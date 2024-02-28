@@ -622,9 +622,9 @@ let get_static_callees pdesc =
   let callees =
     fold_instrs pdesc ~init:Procname.Set.empty ~f:(fun acc _node instr ->
         match instr with
-        | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
-            Procname.Set.add callee_pn acc
-        | Sil.Call (_, Exp.Closure {name}, _, _, _) ->
+        | Sil.Call (_, Exp.Const (Const.Cfun name), _, _, _)
+        | Sil.Call (_, Exp.Closure {name}, _, _, _)
+          when not (BuiltinDecl.is_declared name) ->
             Procname.Set.add name acc
         | _ ->
             acc )

@@ -12,8 +12,6 @@ module type S = sig
 
   include PrettyPrintable.PrintableEquatableOrderedType with type t = key MemoryAccess.t
 
-  val is_strong_access : Tenv.t -> t -> bool
-
   val canonicalize : get_var_repr:(PulseAbstractValue.t -> PulseAbstractValue.t) -> t -> t
 
   val yojson_of_t : t -> Yojson.Safe.t

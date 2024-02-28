@@ -194,8 +194,6 @@ module AddressAttributes : sig
 
   val get_dynamic_type : AbstractValue.t -> t -> Attribute.dynamic_type_data option
 
-  val is_ref_counted : AbstractValue.t -> t -> bool
-
   val get_static_type : AbstractValue.t -> t -> Typ.Name.t option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
@@ -343,8 +341,6 @@ module Summary : sig
        , [> `JavaResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
          | `HackUnawaitedAwaitable of summary * t * Trace.t * Location.t
          | `CSharpResourceLeak of summary * t * CSharpClassName.t * Trace.t * Location.t
-         | `RetainCycle of
-           summary * t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
          | `MemoryLeak of summary * t * Attribute.allocator * Trace.t * Location.t
          | `PotentialInvalidAccessSummary of
            summary * t * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ]

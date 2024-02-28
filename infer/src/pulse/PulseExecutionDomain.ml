@@ -82,10 +82,12 @@ let pp fmt exec_state = pp_ AbductiveDomain.pp fmt exec_state
 (* Pulse infinite *)
 (* We record the global widening state *)
 
-(* let widenstate = ref None;; *)
-let widenstate = ref None
+let widenstate = ref None;; 
+(* let widenstate = ref None *)
                
-let () = AnalysisGlobalState.register_ref ~init:(fun () -> Caml.Hashtbl.create 16) widenstate
+(* not working atm *)
+(* let () = AnalysisGlobalState.register_ref ~init:(fun () -> Caml.Hashtbl.create 16) widenstate *)
+widenstate := Some (Caml.Hashtbl.create 16);;
 
 let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
 

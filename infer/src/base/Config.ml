@@ -642,6 +642,13 @@ Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
 { "sources" : ["Source1", "Source2"], "sink" : "Sink1" }|}
 
 
+and annotation_reachability_builtin_pairs =
+  CLOpt.mk_bool ~long:"annotation-reachability-builtin-pairs"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    ~default:true
+    "include default builtin source/sink pairs for the annotation reachability checker"
+
+
 and append_buck_flavors =
   CLOpt.mk_string_list ~long:"append-buck-flavors"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -3780,6 +3787,8 @@ and annotation_reachability_cxx = !annotation_reachability_cxx
 and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
+
+and annotation_reachability_builtin_pairs = !annotation_reachability_builtin_pairs
 
 and append_buck_flavors = RevList.to_list !append_buck_flavors
 

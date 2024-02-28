@@ -165,7 +165,7 @@ int test_retainCycle_unused_cycle_bad() {
   return *ptr;
 }
 
-int test_retainCycle_unused_cycle_good() {
+int test_retainCycle_unused_cycle_good_FP() {
   RetainCycle* rc = [RetainCycle new];
   rc.selfField = rc;
   int counter = call_counter_3times(rc);

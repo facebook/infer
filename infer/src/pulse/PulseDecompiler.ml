@@ -10,7 +10,6 @@ module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
 module Access = PulseAccess
-module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
 module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
@@ -75,23 +74,13 @@ let add_var_source v var decompiler =
   else decompiler
 
 
-let access_of_field_access src attrs field =
-  let capture_field_access =
-    let open IOption.Let_syntax in
-    let+ captured_var =
-      let* pos = Fieldname.get_capture_field_position field in
-      let* attributes =
-        let* procname = BaseAddressAttributes.get_closure_proc_name src attrs in
-        Attributes.load procname
-      in
-      List.nth attributes.ProcAttributes.captured pos
-    in
-    DecompilerExpr.CaptureFieldAccess captured_var
-  in
-  IOption.if_none_eval capture_field_access ~f:(fun () -> DecompilerExpr.FieldAccess field)
+let access_of_field_access field =
+  if Fieldname.is_capture_field_in_closure field then
+    DecompilerExpr.CaptureFieldAccess (Fieldname.get_field_name field)
+  else DecompilerExpr.FieldAccess field
 
 
-let access_of_memory_access src attrs decompiler (access : Access.t) : DecompilerExpr.access =
+let access_of_memory_access decompiler (access : Access.t) : DecompilerExpr.access =
   match access with
   | ArrayAccess (_, index) ->
       let index_expr =
@@ -99,20 +88,20 @@ let access_of_memory_access src attrs decompiler (access : Access.t) : Decompile
       in
       ArrayAccess index_expr
   | FieldAccess field ->
-      access_of_field_access src attrs field
+      access_of_field_access field
   | TakeAddress ->
       TakeAddress
   | Dereference ->
       Dereference
 
 
-let add_access_source v (access : Access.t) ~src attrs decompiler =
+let add_access_source v (access : Access.t) ~src decompiler =
   let+ decompiler in
   match Map.find src decompiler with
   | Unknown _ ->
       decompiler
   | SourceExpr ((base, accesses), _) ->
-      Map.add v (base, access_of_memory_access src attrs decompiler access :: accesses) decompiler
+      Map.add v (base, access_of_memory_access decompiler access :: accesses) decompiler
 
 
 let replace_getter_call_with_property_access procname v call actuals decompiler =
@@ -128,9 +117,7 @@ let replace_getter_call_with_property_access procname v call actuals decompiler 
     | SourceExpr ((base, accesses), _) ->
         Map.add v
           ( base
-          , access_of_memory_access (AbstractValue.mk_fresh ()) BaseAddressAttributes.empty
-              decompiler
-              (FieldAccess (Fieldname.make typ_name procname_str))
+          , access_of_memory_access decompiler (FieldAccess (Fieldname.make typ_name procname_str))
             :: TakeAddress :: Dereference :: accesses )
           decompiler
 

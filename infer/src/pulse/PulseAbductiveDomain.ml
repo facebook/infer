@@ -689,8 +689,7 @@ module Internal = struct
         map_decompiler astate ~f:(fun decompiler ->
             Decompiler.add_access_source
               (fst addr_hist_dst |> downcast)
-              (downcast_access access) ~src:(downcast addr_src) (astate.post :> base_domain).attrs
-              decompiler )
+              (downcast_access access) ~src:(downcast addr_src) decompiler )
       in
       (astate, addr_hist_dst)
 
@@ -1627,138 +1626,6 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
           Ok () )
 
 
-let is_ref_counted addr astate =
-  let attributed_opt = SafeAttributes.find_opt addr astate in
-  let dynamic_type_data_opt =
-    Option.value_map ~default:None ~f:Attributes.get_dynamic_type attributed_opt
-  in
-  let has_dynamic_type =
-    match dynamic_type_data_opt with
-    | Some dynamic_type_data -> (
-      match dynamic_type_data.Attribute.typ with
-      | {Typ.desc= Tstruct typ_name} ->
-          Typ.Name.is_objc_class typ_name
-      | _ ->
-          false )
-    | None ->
-        false
-  in
-  let has_static_type =
-    Option.value_map ~default:None ~f:Attributes.get_static_type attributed_opt
-    |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
-  in
-  has_dynamic_type || has_static_type
-
-
-(* A retain cycle is a memory path from an address to itself, following only
-   strong references. From that definition, detecting them can be made
-   trivial:
-   Given an address and a list of adresses seen on the path, if the adress is
-   part of the path then it is part of a retain cycle. Otherwise add that
-   adress to the path and reiterate for each strongly referenced adresses
-   there is from that adress. Explore paths starting from all addresses.
-   To improve on that simple algorithm, we can keep track of another marker
-   to indicate adresses that have already been explored to indicate there
-   will not be any retain cycle to be found down that path and skip it.
-   This is handled by [check_retain_cycle] which will recursively explore
-   paths from a given adress and mark explored adresses in the [checked]
-   list. This function is called over all the addresses.
-
-   When reporting a retain cycle, we want to give the location of its
-   creation, therefore we need to remember location of the latest assignement
-   in the cycle *)
-let check_retain_cycles ~live_addresses ~dead_addresses tenv astate =
-  let get_assignment_trace addr =
-    match SafeAttributes.find_opt addr astate with
-    | None ->
-        None
-    | Some attributes ->
-        Attributes.get_written_to attributes |> Option.map ~f:snd
-  in
-  let compare_traces trace1 trace2 =
-    let loc1 = Trace.get_outer_location trace1 in
-    let loc2 = Trace.get_outer_location trace2 in
-    let compared_locs = Location.compare loc2 loc1 in
-    if Int.equal compared_locs 0 then Trace.compare trace1 trace2 else compared_locs
-  in
-  (* remember explored adresses to avoid reexploring path without retain cycles *)
-  let checked = ref AbstractValue.Set.empty in
-  let check_retain_cycle src_addr =
-    let rec contains_cycle decompiler ~assignment_traces ~seen (addr : CanonValue.t) =
-      (* [decompiler] is a decompiler filled during the look out for a cycle
-         [assignment_traces] tracks the assignments met in the retain cycle
-         [seen] tracks addresses met in the current path
-         [addr] is the address to explore
-      *)
-      if AbstractValue.Set.mem (downcast addr) !checked then Ok ()
-      else
-        let value = Decompiler.find (downcast addr) astate.decompiler in
-        let is_known = not (DecompilerExpr.is_unknown value) in
-        let is_seen = AbstractValue.Set.mem (downcast addr) seen in
-        let is_ref_counted = is_ref_counted addr astate in
-        if is_known && is_seen && is_ref_counted then
-          let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
-          match assignment_traces with
-          | [] ->
-              Ok ()
-          | most_recent_trace :: _ ->
-              let location = Trace.get_outer_location most_recent_trace in
-              let path = Decompiler.find (downcast addr) decompiler in
-              Error (assignment_traces, value, path, location)
-        else (
-          if is_seen && ((not is_known) || not is_ref_counted) then
-            (* add the `UNKNOWN` address at which we have found a cycle to the [checked]
-               list in case we would have a cycle of `UNKNOWN` addresses, to avoid
-               looping forever. Also add the not ref_counted addresses to checked, since
-               we could loop forever otherwise *)
-            checked := AbstractValue.Set.add (downcast addr) !checked ;
-          let res =
-            match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
-            | None ->
-                Ok ()
-            | Some edges_pre ->
-                BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
-                  ~f:(fun acc (access, (accessed_addr, _)) ->
-                    let accessed_addr = CanonValue.canon astate accessed_addr in
-                    match acc with
-                    | Error _ ->
-                        acc
-                    | Ok () ->
-                        if BaseMemory.Access.is_strong_access tenv access then
-                          let assignment_traces =
-                            match access with
-                            | MemoryAccess.FieldAccess _ -> (
-                              match get_assignment_trace accessed_addr with
-                              | None ->
-                                  assignment_traces
-                              | Some assignment_trace ->
-                                  assignment_trace :: assignment_traces )
-                            | _ ->
-                                assignment_traces
-                          in
-                          let decompiler =
-                            Decompiler.add_access_source (downcast accessed_addr)
-                              (downcast_access access) ~src:(downcast addr)
-                              (astate.post :> base_domain).attrs decompiler
-                          in
-                          let seen = AbstractValue.Set.add (downcast addr) seen in
-                          contains_cycle decompiler ~assignment_traces ~seen accessed_addr
-                        else Ok () )
-          in
-          (* all paths down [addr] have been explored *)
-          checked := AbstractValue.Set.add (downcast addr) !checked ;
-          res )
-    in
-    let seen = AbstractValue.Set.empty in
-    contains_cycle astate.decompiler ~assignment_traces:[] ~seen src_addr
-  in
-  let live_addresses = CanonValue.Set.elements live_addresses in
-  let dead_addresses = List.map ~f:(CanonValue.canon' astate) dead_addresses in
-  let addresses = List.append live_addresses dead_addresses in
-  List.fold_result addresses ~init:() ~f:(fun () addr ->
-      if is_ref_counted addr astate then check_retain_cycle addr else Ok () )
-
-
 let get_all_addrs_marked_as_always_reachable {post} =
   BaseAddressAttributes.fold
     (fun address attr addresses ->
@@ -2015,54 +1882,46 @@ module Summary = struct
     in
     match error with
     | None -> (
+      (* NOTE: it's important for correctness that we check leaks last because we are going to carry
+         on with the astate after the leak and we don't want to accidentally skip modifications of
+         the state because of the error monad *)
       match
-        check_retain_cycles ~live_addresses ~dead_addresses tenv
-          {astate_before_filter with decompiler= astate0.decompiler}
+        check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses
+          astate_before_filter
       with
-      | Error (assignment_traces, value, path, location) ->
+      | Ok () ->
+          Ok (invalidate_locals proc_attrs.locals astate)
+      | Error (unreachable_location, JavaResource class_name, trace) ->
           Error
-            (`RetainCycle (astate, astate_before_filter, assignment_traces, value, path, location))
-      | Ok () -> (
-        (* NOTE: it's important for correctness that we check leaks last because we are going to carry
-           on with the astate after the leak and we don't want to accidentally skip modifications of
-           the state because of the error monad *)
-        match
-          check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses
-            astate_before_filter
-        with
-        | Ok () ->
-            Ok (invalidate_locals proc_attrs.locals astate)
-        | Error (unreachable_location, JavaResource class_name, trace) ->
-            Error
-              (`JavaResourceLeak
-                ( astate
-                , astate_before_filter
-                , class_name
-                , trace
-                , Option.value unreachable_location ~default:location ) )
-        | Error (unreachable_location, HackAsync, trace) ->
-            Error
-              (`HackUnawaitedAwaitable
-                ( astate
-                , astate_before_filter
-                , trace
-                , Option.value unreachable_location ~default:location ) )
-        | Error (unreachable_location, CSharpResource class_name, trace) ->
-            Error
-              (`CSharpResourceLeak
-                ( astate
-                , astate_before_filter
-                , class_name
-                , trace
-                , Option.value unreachable_location ~default:location ) )
-        | Error (unreachable_location, allocator, trace) ->
-            Error
-              (`MemoryLeak
-                ( astate
-                , astate_before_filter
-                , allocator
-                , trace
-                , Option.value unreachable_location ~default:location ) ) ) )
+            (`JavaResourceLeak
+              ( astate
+              , astate_before_filter
+              , class_name
+              , trace
+              , Option.value unreachable_location ~default:location ) )
+      | Error (unreachable_location, HackAsync, trace) ->
+          Error
+            (`HackUnawaitedAwaitable
+              ( astate
+              , astate_before_filter
+              , trace
+              , Option.value unreachable_location ~default:location ) )
+      | Error (unreachable_location, CSharpResource class_name, trace) ->
+          Error
+            (`CSharpResourceLeak
+              ( astate
+              , astate_before_filter
+              , class_name
+              , trace
+              , Option.value unreachable_location ~default:location ) )
+      | Error (unreachable_location, allocator, trace) ->
+          Error
+            (`MemoryLeak
+              ( astate
+              , astate_before_filter
+              , allocator
+              , trace
+              , Option.value unreachable_location ~default:location ) ) )
     | Some (address, must_be_valid) ->
         Error
           (`PotentialInvalidAccessSummary
@@ -2377,8 +2236,6 @@ module AddressAttributes = struct
   let add_dynamic_type dynamic_type_data v astate =
     SafeAttributes.add_dynamic_type dynamic_type_data (CanonValue.canon' astate v) astate
 
-
-  let is_ref_counted v astate = is_ref_counted (CanonValue.canon' astate v) astate
 
   let add_static_type tenv typ v astate =
     add_static_type tenv typ (CanonValue.canon' astate v) astate

@@ -68,13 +68,6 @@ val ignore_leaks :
          AbductiveDomain.Summary.t * AbductiveDomain.t * Trace.t * Location.t
        | `CSharpResourceLeak of
          AbductiveDomain.Summary.t * AbductiveDomain.t * CSharpClassName.t * Trace.t * Location.t
-       | `RetainCycle of
-         AbductiveDomain.Summary.t
-         * AbductiveDomain.t
-         * Trace.t list
-         * DecompilerExpr.t
-         * DecompilerExpr.t
-         * Location.t
        | abductive_summary_error ] )
      result
   -> (AbductiveDomain.Summary.t, [> abductive_summary_error]) result

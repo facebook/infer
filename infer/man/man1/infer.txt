@@ -68,6 +68,11 @@ OPTIONS
            method annotated with `@Expensive` (Conversely:
            --no-annotation-reachability)           See also infer-analyze(1).
 
+       --no-annotation-reachability-builtin-pairs
+           Deactivates: include default builtin source/sink pairs for the
+           annotation reachability checker (Conversely:
+           --annotation-reachability-builtin-pairs)           See also infer-analyze(1).
+
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
            checker           Example format: for custom annotations

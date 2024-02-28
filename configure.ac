@@ -359,7 +359,7 @@ if test "x$enable_java_analyzers" = "xyes"; then
     JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 2`
   ], [
     # otherwise pick the first number as the major version
-    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | $AWK -F'[[.-]]' '{print $1}'`
   ])
   AC_MSG_RESULT([$JAVA_MAJOR_VERSION])
   AC_SUBST([JAVA_MAJOR_VERSION])

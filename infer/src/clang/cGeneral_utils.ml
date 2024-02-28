@@ -84,7 +84,7 @@ let mk_class_field_name ?cxx_record_decl_info class_tname ni_name =
         | None ->
             ni_name
       in
-      let captured_data = {Fieldname.capture_mode; is_weak= false; captured_pos= index} in
+      let captured_data = {Fieldname.capture_mode; is_weak= false} in
       Fieldname.mk_capture_field_in_closure (Mangled.from_string name) captured_data
   | _ ->
       Fieldname.make class_tname ni_name

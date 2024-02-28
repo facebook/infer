@@ -136,6 +136,8 @@ val annotation_reachability_cxx_sources : Yojson.Basic.t
 
 val annotation_reachability_custom_pairs : Yojson.Basic.t
 
+val annotation_reachability_builtin_pairs : bool
+
 val append_buck_flavors : string list
 
 val biabduction_abs_struct : int

@@ -235,8 +235,7 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
       ( Error (`MemoryLeak (summary, _, _, _, _))
       | Error (`JavaResourceLeak (summary, _, _, _, _))
       | Error (`HackUnawaitedAwaitable (summary, _, _, _))
-      | Error (`CSharpResourceLeak (summary, _, _, _, _)) )
-  | Sat (Error (`RetainCycle (summary, _, _, _, _, _))) ->
+      | Error (`CSharpResourceLeak (summary, _, _, _, _)) ) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)
       Sat (mk_error summary)

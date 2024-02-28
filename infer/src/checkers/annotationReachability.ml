@@ -176,7 +176,6 @@ module AnnotationSpec = struct
 
   type t =
     { description: string  (** for debugging *)
-    ; source_predicate: predicate
     ; sink_predicate: predicate
     ; sanitizer_predicate: predicate
     ; sink_annotation: Annot.t
@@ -193,8 +192,6 @@ module StandardAnnotationSpec = struct
     let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
     let open AnnotationSpec in
     { description= "StandardAnnotationSpec"
-    ; source_predicate=
-        (fun tenv pname -> List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
     ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= snk_annot
@@ -341,7 +338,6 @@ module CxxAnnotationSpecs = struct
         with Caml.Not_found -> ()
     in
     { AnnotationSpec.description= Printf.sprintf "CxxAnnotationSpecs %s from config" spec_name
-    ; source_predicate= (fun _ pname -> src_pred pname) (* not used! *)
     ; sink_predicate= (fun _ pname -> snk_pred pname)
     ; sanitizer_predicate= (fun _ pname -> sanitizer_pred pname)
     ; sink_annotation= snk_annot
@@ -373,7 +369,6 @@ module NoAllocationAnnotationSpec = struct
   let spec =
     let open AnnotationSpec in
     { description= "NoAllocationAnnotationSpec"
-    ; source_predicate= (fun tenv pname -> method_overrides_annot no_allocation_annot tenv pname)
     ; sink_predicate= (fun tenv pname -> is_allocator tenv pname)
     ; sanitizer_predicate=
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
@@ -410,7 +405,6 @@ module ExpensiveAnnotationSpec = struct
   let spec =
     let open AnnotationSpec in
     { description= "ExpensiveAnnotationSpec"
-    ; source_predicate= is_expensive
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
@@ -453,11 +447,14 @@ let annot_specs =
   let cannot_call_non_ui_annots = [any_thread; mainthread; ui_thread] in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())
   ; ( Language.Java
-    , ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
-      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
-      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
-      :: StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread
-      :: user_defined_specs ) ]
+    , ( if Config.annotation_reachability_builtin_pairs then
+          [ ExpensiveAnnotationSpec.spec
+          ; NoAllocationAnnotationSpec.spec
+          ; StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
+          ; StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
+          ; StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread ]
+        else [] )
+      @ user_defined_specs ) ]
 
 
 let get_annot_specs pname =
