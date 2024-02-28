@@ -1317,16 +1317,21 @@ module PulseTransferFunctions = struct
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | InfiniteProgram _ ->
+       L.debug Analysis Quiet "exec_instr: Abort/Latent/Invalid/Infinite \n";
         ([astate], path, astate_n)
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
     | ExceptionRaised _
     (* program already exited, simply propagate the exited state upwards  *)
-    | ExitProgram _ ->
+      | ExitProgram _ ->
+       L.debug Analysis Quiet "exec_instr: ExceptionRaised/ExitProgram \n";
+
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
+         L.debug Analysis Quiet "exec_instr: Load \n";
+
           (* [lhs_id := *rhs_exp] *)
           let model_opt = PulseLoadInstrModels.dispatch ~load:rhs_exp in
           let deref_rhs astate =
@@ -1381,6 +1386,8 @@ module PulseTransferFunctions = struct
           in
           (astates, path, non_disj)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
+         L.debug Analysis Quiet "exec_instr: Store \n";
+
           (* [*lhs_exp := rhs_exp] *)
           let event =
             match lhs_exp with
@@ -1426,6 +1433,8 @@ module PulseTransferFunctions = struct
           let results = SatUnsat.to_list result in
           (PulseReport.report_results tenv proc_desc err_log loc results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
+         L.debug Analysis Quiet "exec_instr: Call \n";
+
           let astate_n = check_modified_before_destructor actuals call_exp astate astate_n in
           let astates, astate_n =
             List.fold actuals ~init:([astate], astate_n) ~f:(fun (astates, astate_n) (exp, typ) ->
@@ -1466,6 +1475,8 @@ module PulseTransferFunctions = struct
           in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
+         L.debug Analysis Quiet "exec_instr: Prune \n";
+         
           let prune_result =
             let=* astate = check_config_usage analysis_data loc condition astate in
             PulseOperations.prune path loc ~condition astate
@@ -1490,30 +1501,55 @@ module PulseTransferFunctions = struct
           in
           (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
       | Metadata EndBranches ->
+         L.debug Analysis Quiet "exec_instr: Metadata EndBranches \n";
+
           (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]
              instruction terminates the most recently seen terminated conditional. The empty case
              shouldn't happen but let's not crash by the fault of possible errors in frontends. *)
           let path = {path with conditions= List.tl path.conditions |> Option.value ~default:[]} in
           ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
+         L.debug Analysis Quiet "exec_instr: Metadata ExitScope \n";
           exit_scope vars location path astate astate_n analysis_data
       | Metadata (VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding})
-        when not (Pvar.is_global pvar) ->
+           when not (Pvar.is_global pvar) ->
+
+         L.debug Analysis Quiet "exec_instr: Metadata VariableLifetimeBegins \n";
+
           let set_uninitialized = (not is_cpp_structured_binding) && not (Typ.is_folly_coro typ) in
           ( [ PulseOperations.realloc_pvar tenv path ~set_uninitialized pvar typ loc astate
               |> ExecutionDomain.continue ]
           , path
           , astate_n )
-      | Metadata
-          ( Abstract _
-          | CatchEntry _
-          | Nullify _
-          | Skip
-          | TryEntry _
-          | TryExit _
-          | VariableLifetimeBegins _ ) ->
-          ([ContinueProgram astate], path, astate_n) )
+          
+      | Metadata (Abstract _) ->
+         L.debug Analysis Quiet "exec_instr: Metadata Abstract \n";
+         ([ContinueProgram astate], path, astate_n)
 
+      | Metadata (CatchEntry _) ->
+         L.debug Analysis Quiet "exec_instr: Metadata CatchEntry \n";
+         ([ContinueProgram astate], path, astate_n)
+
+      | Metadata (Nullify _) ->
+         L.debug Analysis Quiet "exec_instr: Metadata Nullify \n";
+         ([ContinueProgram astate], path, astate_n)
+          
+       | Metadata (Skip) ->
+         L.debug Analysis Quiet "exec_instr: Skip \n";
+         ([ContinueProgram astate], path, astate_n)
+
+       | Metadata (TryEntry _) ->
+         L.debug Analysis Quiet "exec_instr: TryEntry \n";
+         ([ContinueProgram astate], path, astate_n)
+
+       | Metadata (TryExit _) ->
+         L.debug Analysis Quiet "exec_instr: Metadata TryExit \n";
+         ([ContinueProgram astate], path, astate_n)
+
+       | Metadata (VariableLifetimeBegins _) ->
+         L.debug Analysis Quiet "exec_instr: Metadata VariableLifetimeBegins 2 \n";
+          ([ContinueProgram astate], path, astate_n)
+    ) 
 
   let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
       DisjDomain.t list * NonDisjDomain.t =

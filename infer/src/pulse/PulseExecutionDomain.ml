@@ -56,7 +56,6 @@ let leq ~lhs ~rhs =
   | _ ->
       false
 
-
 let pp_ pp_abductive_domain_t fmt = function
   | InfiniteProgram astate ->
       pp_abductive_domain_t fmt astate
@@ -78,13 +77,15 @@ let pp_ pp_abductive_domain_t fmt = function
       F.fprintf fmt "{LatentInvalidAccess(%a) %a}" DecompilerExpr.pp address
         AbductiveDomain.Summary.pp astate
 
-
 let pp fmt exec_state = pp_ AbductiveDomain.pp fmt exec_state
 
 (* Pulse infinite *)
 (* We record the global widening state *)
-let widenstate = ref None;; 
-widenstate := Some (Caml.Hashtbl.create 16);;
+
+(* let widenstate = ref None;; *)
+let widenstate = ref None
+               
+let () = AnalysisGlobalState.register_ref ~init:(fun () -> Caml.Hashtbl.create 16) widenstate
 
 let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
 
@@ -96,15 +97,14 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
   let same = phys_equal prev next in
 
   (* Future work: implement a more generic way to check for recurring sets than filtering on the path condition *)
-  (* let substate _ _ = false (* TODO *) 
-  in *)
-     
-  (*
-  let rec find_equiv_elem e lst =
-    match lst with
-    | [] -> false
-    | hd::tl -> if (substate hd e) then true else (find_equiv_elem e tl)
-  in
+  (* 
+     let substate _ _ = false (* TODO *) 
+     in 
+     let rec find_equiv_elem e lst =
+         match lst with
+         | [] -> false
+         | hd::tl -> if (substate hd e) then true else (find_equiv_elem e tl)
+     in
    *)
   
   let print_warning s cnt state =

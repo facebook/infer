@@ -23,7 +23,7 @@ void two_liner_terminate(int x) {
 }
 
 
-/* Pulse-inf: false negative: no goto support */
+/* Pulse-inf: false negative: no support for infinite goto loops */
 void simple_goto_not_terminate(int y) {
  re:
   y++;
@@ -331,7 +331,6 @@ void loop_with_return_terminate_var3(int y) {
       y++;
 }
 
-
 /* pulse-inf: False negative -- maybe augment the numiters in pulseinf config */
 // From: Gupta POPL 2008 - "Proving non-termination"
 int bsearch_non_terminate_gupta08(int a[], int k,
@@ -528,7 +527,7 @@ void	nondet_loop_non_terminate(int z)
 
 
 /* From: AProVE: Non-termination proving for C Programs (Hensel et al. TACAS 2022)*/
-/* pulse-inf: Works good! (flag bug)
+/* pulse-inf: Works good! (flag bug) */
 void hensel_tacas22_non_terminate(int x, int y)
 {
   y = 0;

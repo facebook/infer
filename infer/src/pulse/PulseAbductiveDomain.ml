@@ -98,8 +98,8 @@ let pp_ ~is_summary f
      *)
   let pp_pre_post f =
     if is_summary
-    then F.fprintf f "PRE=@[%a@] \n @;POST=@[%a@]" PreDomain.pp pre PostDomain.pp post
-    else F.fprintf f "POST=@[%a@]\n @;PRE=[%a]" PostDomain.pp post PreDomain.pp pre
+    then F.fprintf f "PRE=@[%a@] \n @;POST=@[%a@]\n" PreDomain.pp pre PostDomain.pp post
+    else F.fprintf f "POST=@[%a@]\n @;PRE=[%a]\n" PostDomain.pp post PreDomain.pp pre
   in
   F.fprintf f
     "@[<v>PATHCOND=%a@;\
@@ -107,7 +107,7 @@ let pp_ ~is_summary f
      %tneed_dynamic_type_specialization=%a@;\
      transitive_info=%a@;\
      skipped_calls=%a@;\
-     Topl=%a@] \n"
+     Topl=%a@] \n --------------------------------------------------- \n"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
     need_dynamic_type_specialization TransitiveInfo.pp transitive_info SkippedCalls.pp skipped_calls
     PulseTopl.pp_state topl
