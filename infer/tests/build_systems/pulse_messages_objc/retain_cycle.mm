@@ -51,6 +51,12 @@ typedef void (^MyAHandler)(RCBlockAA* name);
   };
 }
 
+- (void)retain_self_in_block_with_store_retain_cycle_bad_FN {
+  self->_handler = ^(RCBlock* b) {
+    self->_child = b;
+  };
+}
+
 - (void)retain_weak_self_in_block_no_retain_cycle {
   __weak RCBlock* weak_self = self;
   self.handler = ^(RCBlock* b) {
