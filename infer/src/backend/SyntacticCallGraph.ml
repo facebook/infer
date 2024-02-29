@@ -99,7 +99,7 @@ let build_from_sources sources =
 
 let to_dotty g = CallGraph.to_dotty g SyntacticDependencyGraphDot
 
-let bottom_up sources : (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t =
+let bottom_up sources : (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t =
   let syntactic_call_graph = build_from_sources sources in
   if Config.debug_level_analysis > 0 then to_dotty syntactic_call_graph ;
   CallGraphScheduler.bottom_up syntactic_call_graph
