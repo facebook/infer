@@ -191,6 +191,8 @@ module Name : sig
 
   val is_objc_class : t -> bool
 
+  val is_objc_block : t -> bool
+
   val is_hack_class : t -> bool
 
   val is_python_class : t -> bool

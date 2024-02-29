@@ -9,6 +9,17 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
+let is_ref_counted_or_block addr astate =
+  AddressAttributes.get_static_type addr astate
+  |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
+  ||
+  match AddressAttributes.get_dynamic_type addr astate with
+  | Some {Attribute.typ= {desc= Tstruct typ_name}} ->
+      Typ.Name.is_objc_class typ_name || Typ.Name.is_objc_block typ_name
+  | _ ->
+      false
+
+
 (* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
@@ -49,8 +60,8 @@ let check_retain_cycles tenv addresses orig_astate =
         let value = Decompiler.find addr orig_astate in
         let is_known = not (DecompilerExpr.is_unknown value) in
         let is_seen = AbstractValue.Set.mem addr seen in
-        let is_ref_counted = PulseRefCounting.is_ref_counted addr astate in
-        if is_known && is_seen && is_ref_counted then
+        let is_ref_counted_or_block = is_ref_counted_or_block addr astate in
+        if is_known && is_seen && is_ref_counted_or_block then
           let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
           match assignment_traces with
           | [] ->
@@ -61,7 +72,7 @@ let check_retain_cycles tenv addresses orig_astate =
               let diagnostic = Diagnostic.RetainCycle {assignment_traces; value; path; location} in
               Recoverable ((), [ReportableError {astate; diagnostic}])
         else (
-          if is_seen && ((not is_known) || not is_ref_counted) then
+          if is_seen && ((not is_known) || not is_ref_counted_or_block) then
             (* add the `UNKNOWN` address at which we have found a cycle to the [checked]
                list in case we would have a cycle of `UNKNOWN` addresses, to avoid
                looping forever. Also add the not ref_counted addresses to checked, since
@@ -106,7 +117,7 @@ let check_retain_cycles tenv addresses orig_astate =
       | Recoverable _ | FatalError _ ->
           acc
       | Ok () ->
-          if PulseRefCounting.is_ref_counted addr orig_astate then check_retain_cycle (addr, hist)
+          if is_ref_counted_or_block addr orig_astate then check_retain_cycle (addr, hist)
           else Ok () )
 
 

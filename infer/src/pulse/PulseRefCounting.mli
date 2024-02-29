@@ -14,5 +14,3 @@ val count_references : Tenv.t -> AbductiveDomain.t -> int AbstractValue.Map.t
 val removable_vars : Tenv.t -> AbductiveDomain.t -> Var.t list -> Var.t list
 
 val is_strong_access : Tenv.t -> 'a MemoryAccess.t -> bool
-
-val is_ref_counted : AbstractValue.t -> AbductiveDomain.t -> bool

@@ -557,6 +557,8 @@ module Name = struct
 
   let is_objc_class name = match name with ObjcClass _ -> true | _ -> false
 
+  let is_objc_block name = match name with ObjcBlock _ -> true | _ -> false
+
   let is_hack_class name = match name with HackClass _ -> true | _ -> false
 
   let is_python_class name = match name with PythonClass _ -> true | _ -> false
