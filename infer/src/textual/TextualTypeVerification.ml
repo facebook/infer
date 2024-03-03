@@ -45,7 +45,7 @@ let rec compat ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       false
 
 
-let is_ptr = function Typ.Ptr _ -> true | _ -> false [@@warning "-unused-value-declaration"]
+let is_ptr = function Typ.Ptr _ -> true | Typ.Void -> true | _ -> false
 
 let is_ptr_struct = function Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
 
@@ -55,7 +55,6 @@ let sub_int = function ty -> compat ~assigned:Int ~given:ty
 
 (** for type errors *)
 type expected_kind = Ptr | PtrArray | PtrStruct | Typ | SubTypeOf of Typ.t | SuperTypeOf of Typ.t
-[@@warning "-unused-constructor"]
 
 let pp_expected_kind fmt expected =
   match expected with
@@ -731,7 +730,7 @@ let rec typecheck_terminator loc (term : Terminator.t) : Terminator.t monad =
       let+ node_calls = mapM node_calls ~f:(typecheck_node_call loc) in
       Terminator.Jump node_calls
   | Throw exp ->
-      let+ exp = typecheck_exp exp ~check:is_ptr_struct ~expected:PtrStruct ~loc in
+      let+ exp = typecheck_exp exp ~check:is_ptr ~expected:Ptr ~loc in
       Terminator.Throw exp
   | Unreachable ->
       ret Terminator.Unreachable
