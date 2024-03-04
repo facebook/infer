@@ -637,9 +637,9 @@ and annotation_reachability_cxx_sources =
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]
-    {|Specify custom sources/sink for the annotation reachability checker
+    {|Specify custom sources/sinks for the annotation reachability checker
 Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
-{ "sources" : ["Source1", "Source2"], "sink" : "Sink1" }|}
+{ "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }|}
 
 
 and annotation_reachability_builtin_pairs =

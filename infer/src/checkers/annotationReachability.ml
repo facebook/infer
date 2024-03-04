@@ -428,7 +428,7 @@ let parse_user_defined_specs = function
       let parse_user_spec json =
         let open Yojson.Basic in
         let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
-        let sinks = Util.member "sink" json |> Util.to_string in
+        let sinks = Util.member "sinks" json |> Util.to_list |> List.map ~f:Util.to_string in
         (sources, sinks)
       in
       List.map ~f:parse_user_spec user_specs
@@ -437,11 +437,16 @@ let parse_user_defined_specs = function
 
 
 let annot_specs =
+  let parse_one_spec (str_src_annots, str_snk_annots) =
+    List.map
+      ~f:(fun str_snk_annot -> StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot)
+      str_snk_annots
+  in
   let user_defined_specs =
     parse_user_defined_specs Config.annotation_reachability_custom_pairs
-    |> List.map ~f:(fun (str_src_annots, str_snk_annot) ->
-           StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot )
+    |> List.map ~f:parse_one_spec
   in
+  let user_defined_specs = List.concat user_defined_specs in
   let open Annotations in
   let cannot_call_ui_annots = [any_thread; worker_thread] in
   let cannot_call_non_ui_annots = [any_thread; mainthread; ui_thread] in

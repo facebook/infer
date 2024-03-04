@@ -13,7 +13,7 @@
   "annotation-reachability-custom-pairs": [
     {
        "sources": ["UserDefinedSource1", "UserDefinedSource2"],
-       "sink": "UserDefinedSink"
+       "sinks": ["UserDefinedSink1", "UserDefinedSink2"]
     }
   ]
 }

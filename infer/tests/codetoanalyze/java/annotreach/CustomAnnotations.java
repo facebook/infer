@@ -22,22 +22,39 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface UserDefinedSink {}
+@interface UserDefinedSink1 {}
+
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.CLASS)
+@interface UserDefinedSink2 {}
 
 class CustomAnnotations {
 
   @UserDefinedSource1
-  void source1Bad() {
-    sink();
+  void source11Bad() {
+    sink1();
+  }
+
+  @UserDefinedSource1
+  void source12Bad() {
+    sink2();
   }
 
   @UserDefinedSource2
-  void source2Bad() {
-    sink();
+  void source21Bad() {
+    sink1();
   }
 
-  @UserDefinedSink
-  void sink() {}
+  @UserDefinedSource2
+  void source22Bad() {
+    sink2();
+  }
+
+  @UserDefinedSink1
+  void sink1() {}
+
+  @UserDefinedSink2
+  void sink2() {}
 
   @UserDefinedSource1
   void source1Ok() {

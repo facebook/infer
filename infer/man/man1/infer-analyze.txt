@@ -622,10 +622,10 @@ JAVA OPTIONS
            --annotation-reachability-builtin-pairs)
 
        --annotation-reachability-custom-pairs json
-           Specify custom sources/sink for the annotation reachability
+           Specify custom sources/sinks for the annotation reachability
            checker           Example format: for custom annotations
            com.my.annotation.{Source1,Source2,Sink1}
-           { "sources" : ["Source1", "Source2"], "sink" : "Sink1" }
+           { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }
 
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
