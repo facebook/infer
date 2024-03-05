@@ -20,16 +20,6 @@
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
   ],
-  "modeled-expensive": [
-    {
-      "class": "android.app.Activity",
-      "method": "findViewById"
-    },
-    {
-      "class": "android.view.View",
-      "method": "findViewById"
-    }
-  ],
   "pulse-taint-policies": [
     { "short_description": "Untrusted Android Intent creation",
       "taint_flows": [
