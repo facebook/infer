@@ -10,4 +10,10 @@ trait T {
   public static function caller(int $i): int {
     return T::callee($i);
   }
+
+  public static function with_optional_argument(
+    int $opt = 0,
+    int ...$opts
+  ): void {
+  }
 }
