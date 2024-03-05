@@ -98,8 +98,12 @@ let access_of_memory_access decompiler (access : Access.t) : DecompilerExpr.acce
 let add_access_source v (access : Access.t) ~src decompiler =
   let+ decompiler in
   match Map.find src decompiler with
-  | Unknown _ ->
-      decompiler
+  | Unknown _ -> (
+    match (Map.find v decompiler, access) with
+    | SourceExpr ((base, [Dereference]), _), Dereference ->
+        Map.add src (base, [TakeAddress]) decompiler
+    | _ ->
+        decompiler )
   | SourceExpr ((base, accesses), _) ->
       Map.add v (base, access_of_memory_access decompiler access :: accesses) decompiler
 
