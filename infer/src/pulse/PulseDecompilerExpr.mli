@@ -10,7 +10,8 @@ module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 
-type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
+type base = PVar of Pvar.t | Block of string | ReturnValue of CallEvent.t
+[@@deriving compare, equal]
 
 type access =
   | CaptureFieldAccess of string

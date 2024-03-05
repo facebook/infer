@@ -315,7 +315,7 @@ let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters i
         | Unknown _ when is_copy_into_local copied_var ->
             (* case 3: analogous to case 1 but source is an unknown call that is known to create a copy *)
             Some (IntoVar {copied_var}, None)
-        | Unknown _ ->
+        | Unknown _ | SourceExpr ((Block _, _), _) ->
             (* case 4: analogous to case 2 but source is an unknown call that is known to create a copy *)
             Some (IntoIntermediate {copied_var}, None)
         | SourceExpr (((ReturnValue _, _) as source_expr), _) ->

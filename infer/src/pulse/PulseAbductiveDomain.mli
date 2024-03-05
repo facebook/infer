@@ -300,6 +300,8 @@ val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 
+val add_block_source : AbstractValue.t -> string -> t -> t
+
 val set_post_edges : AbstractValue.t -> PulseBaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
 

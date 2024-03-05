@@ -2159,6 +2159,10 @@ module Memory = struct
             :> PulseAccess.t * (AbstractValue.t * ValueHistory.t) ) )
 end
 
+let add_block_source v block astate =
+  map_decompiler astate ~f:(fun decompiler -> Decompiler.add_block_source v block decompiler)
+
+
 module AddressAttributes = struct
   let abduce_one v attr astate = SafeAttributes.abduce_one (CanonValue.canon' astate v) attr astate
 

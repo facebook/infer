@@ -184,9 +184,12 @@ and record_closure astate (path : PathContext.t) loc procname
           astate
     | _, Procname.Block bsig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.ObjcBlock bsig)) in
-        AddressAttributes.add_one (fst closure_addr_hist)
-          (Attribute.DynamicType {typ; source_file= None})
-          astate
+        let astate =
+          AddressAttributes.add_one (fst closure_addr_hist)
+            (Attribute.DynamicType {typ; source_file= None})
+            astate
+        in
+        AbductiveDomain.add_block_source (fst closure_addr_hist) bsig.name astate
     | _, Procname.C csig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
         AddressAttributes.add_one (fst closure_addr_hist)

@@ -74,6 +74,11 @@ let add_var_source v var decompiler =
   else decompiler
 
 
+let add_block_source v block decompiler =
+  let+ decompiler in
+  Map.add v (DecompilerExpr.Block block, [Dereference]) decompiler
+
+
 let access_of_field_access field =
   if Fieldname.is_capture_field_in_closure field then
     DecompilerExpr.CaptureFieldAccess (Fieldname.get_field_name field)

@@ -10,7 +10,8 @@ module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 
-type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
+type base = PVar of Pvar.t | Block of string | ReturnValue of CallEvent.t
+[@@deriving compare, equal]
 
 type access =
   | CaptureFieldAccess of string
@@ -27,6 +28,7 @@ and source_expr = base * access list [@@deriving compare, equal]
 (** intermediate representation of [source_expr] used for pretty-printing only *)
 type access_expr =
   | ProgramVar of Pvar.t
+  | ProgramBlock of string
   | Call of CallEvent.t
   | Capture of access_expr * string
   | Deref of access_expr
@@ -50,6 +52,12 @@ let rec pp_access_expr fmt access_expr =
   match access_expr with
   | ProgramVar pvar ->
       Pvar.pp_value fmt pvar
+  | ProgramBlock block ->
+      let block =
+        String.chop_prefix ~prefix:Config.anonymous_block_prefix block
+        |> Option.value ~default:block
+      in
+      F.fprintf fmt "block defined in %s" block
   | Call call ->
       let java_or_objc =
         match call with
@@ -99,6 +107,8 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
         (ProgramVar pvar, true, accesses')
     | PVar pvar, _ ->
         (ProgramVar pvar, false, accesses)
+    | Block block, accesses ->
+        (ProgramBlock block, false, accesses)
     | ReturnValue call, _ ->
         (Call call, false, accesses)
   in

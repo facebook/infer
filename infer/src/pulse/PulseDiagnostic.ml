@@ -383,7 +383,7 @@ let is_from_std_move (base, _) =
       String.is_prefix (Procname.to_string pname) ~prefix:"std::move"
   | ReturnValue (Model pname) ->
       String.is_prefix pname ~prefix:"std::move"
-  | ReturnValue (SkippedUnknownCall _) | PVar _ ->
+  | ReturnValue (SkippedUnknownCall _) | PVar _ | Block _ ->
       false
 
 
@@ -837,7 +837,7 @@ let get_message_and_suggestion diagnostic =
             get_suggestion_msg_move copied_into source_opt
       in
       match (copied_into, source_opt) with
-      | IntoIntermediate _, None ->
+      | IntoIntermediate _, (None | Some (Block _, _)) ->
           ( F.asprintf "An intermediate is %a on %a." CopyOrigin.pp from Location.pp_line location
           , Some (get_suggestion_msg source_opt) )
       | IntoIntermediate _, Some ((PVar _, _) as source_expr) ->

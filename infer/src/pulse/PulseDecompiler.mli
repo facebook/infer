@@ -27,6 +27,8 @@ val invalid : t
 
 val add_var_source : key -> Var.t -> t -> t
 
+val add_block_source : key -> string -> t -> t
+
 val add_call_source :
   key -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
