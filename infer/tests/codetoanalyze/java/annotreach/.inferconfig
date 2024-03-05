@@ -12,8 +12,16 @@
   ],
   "annotation-reachability-custom-pairs": [
     {
-       "sources": ["UserDefinedSource1", "UserDefinedSource2"],
-       "sinks": ["UserDefinedSink1", "UserDefinedSink2"]
+      "sources": ["UserDefinedSource1", "UserDefinedSource2"],
+      "sinks": ["UserDefinedSink1", "UserDefinedSink2"]
+    },
+    {
+      "sources": ["AnyThread", "WorkerThread"],
+      "sinks": ["UiThread", "MainThread"]
+    },
+    {
+      "sources": ["AnyThread", "MainThread", "UiThread"],
+      "sinks": ["WorkerThread"]
     }
   ]
 }

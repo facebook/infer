@@ -9,8 +9,6 @@ open! IStd
 
 (** Annotations. *)
 
-let any_thread = "AnyThread"
-
 let auto_cleanup = "AutoCleanup"
 
 let camel_nonnull = "NonNull"

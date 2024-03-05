@@ -176,9 +176,9 @@ module AnnotationSpec = struct
 
   type t =
     { description: string  (** for debugging *)
-    ; sink_predicate: predicate
+    ; sink_predicate: predicate  (** decide if something is a sink *)
     ; sanitizer_predicate: predicate
-    ; sink_annotation: Annot.t
+    ; sink_annotation: Annot.t  (** used as key in the domain (sink -> procedure -> callsite) *)
     ; report: Domain.t InterproceduralAnalysis.t -> Domain.t -> unit }
 
   (* The default sanitizer does not sanitize anything *)
@@ -447,17 +447,10 @@ let annot_specs =
     |> List.map ~f:parse_one_spec
   in
   let user_defined_specs = List.concat user_defined_specs in
-  let open Annotations in
-  let cannot_call_ui_annots = [any_thread; worker_thread] in
-  let cannot_call_non_ui_annots = [any_thread; mainthread; ui_thread] in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())
   ; ( Language.Java
     , ( if Config.annotation_reachability_builtin_pairs then
-          [ ExpensiveAnnotationSpec.spec
-          ; NoAllocationAnnotationSpec.spec
-          ; StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
-          ; StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
-          ; StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread ]
+          [ExpensiveAnnotationSpec.spec; NoAllocationAnnotationSpec.spec]
         else [] )
       @ user_defined_specs ) ]
 

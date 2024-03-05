@@ -9,8 +9,6 @@ open! IStd
 
 (** Annotations. *)
 
-val any_thread : string
-
 val auto_cleanup : string
 
 val expensive : string
@@ -40,12 +38,6 @@ val guarded_by : string
 val suppress_lint : string
 
 val thread_safe : string
-
-val mainthread : string
-
-val ui_thread : string
-
-val worker_thread : string
 
 val visibleForTesting : string
 
