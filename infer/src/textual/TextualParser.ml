@@ -30,6 +30,8 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
+let error_to_string sourcefile error = Format.asprintf "%a" (pp_error sourcefile) error
+
 let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.Lexbuf.with_tokenizer TextualLexer.textual_mainlex filebuf in

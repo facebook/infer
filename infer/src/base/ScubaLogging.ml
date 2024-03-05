@@ -80,6 +80,8 @@ let log_many = log_many ~loc:None
 
 let log_one = log_one ~loc:None
 
+let log_message_with_location ~label ~loc ~message = log_message ~label ~loc:(Some loc) ~message
+
 let log_message = log_message ~loc:None
 
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)

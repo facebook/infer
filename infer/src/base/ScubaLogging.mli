@@ -24,6 +24,8 @@ val log_duration : label:string -> duration_us:int -> unit
 val log_message : label:string -> message:string -> unit
 (** Log a [string]. Event is prefixed with ["msg."] *)
 
+val log_message_with_location : label:string -> loc:string -> message:string -> unit
+
 val cost_log_message : label:string -> message:string -> unit
 (** Similar to [log_message], but log only when [--cost-scuba-logging] option is given. *)
 

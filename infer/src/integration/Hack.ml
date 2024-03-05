@@ -171,7 +171,11 @@ end = struct
     let line_map = LineMap.create content in
     let trans = TextualFile.translate (TranslatedFile {source_path; content; line_map}) in
     let log_error sourcefile error =
-      if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
+      if Config.keep_going then (
+        L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error ;
+        ScubaLogging.log_message_with_location ~label:"hack_capture_failure"
+          ~loc:(SourceFile.to_rel_path (Textual.SourceFile.file sourcefile))
+          ~message:(error_to_string sourcefile error) )
       else L.external_error "%a@\n" (pp_error sourcefile) error
     in
     let res =
