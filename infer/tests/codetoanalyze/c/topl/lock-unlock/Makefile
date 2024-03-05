@@ -13,4 +13,4 @@ SOURCES = $(wildcard *.c)
 
 include $(TESTS_DIR)/clang.make
 
-infer-out/report.json: $(MAKEFILE_LIST)
+infer-out/report.json: $(MAKEFILE_LIST) property.topl
