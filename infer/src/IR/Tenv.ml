@@ -349,11 +349,7 @@ module MethodInfo = struct
 
     type t = {proc_name: Procname.t; kind: kind} [@@deriving show {with_path= false}]
 
-    let mk_class ~kind proc_name =
-      (* The Hack's init methods are addressed as normal class methods. *)
-      let kind = if Procname.is_hack_init proc_name then IsClass else kind in
-      {proc_name; kind}
-
+    let mk_class ~kind proc_name = {proc_name; kind}
 
     (* [hackc] introduces an extra method argument in traits, to account for [self].
        Because of this, the arity of the procname called might not match the arity of the procname in

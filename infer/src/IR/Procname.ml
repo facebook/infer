@@ -558,9 +558,10 @@ module Hack = struct
 
   let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
 
-  let get_static_init class_name =
+  let get_static_init ~is_trait class_name =
     let static_class_name = HackClassName.static_companion class_name in
-    {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some 1}
+    let arity = if is_trait then 2 else 1 in
+    {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some arity}
 end
 
 module Python = struct
@@ -988,21 +989,12 @@ let is_hack_builtins = function
       false
 
 
-let is_hack_pinit = function
-  | Hack {function_name} ->
-      String.equal function_name "_86pinit"
-  | _ ->
-      false
-
-
 let is_hack_sinit = function
   | Hack {function_name} ->
       String.equal function_name "_86sinit"
   | _ ->
       false
 
-
-let is_hack_init pname = is_hack_sinit pname || is_hack_pinit pname
 
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
@@ -1330,7 +1322,7 @@ let decr_hack_arity procname =
       None
 
 
-let get_hack_static_init class_name = Hack (Hack.get_static_init class_name)
+let get_hack_static_init ~is_trait class_name = Hack (Hack.get_static_init ~is_trait class_name)
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

@@ -403,7 +403,9 @@ let lazy_class_initialize size_exp : model =
     | HackClass class_name ->
         let ret_id = Ident.create_none () in
         let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
-        let pname = Procname.get_hack_static_init class_name in
+        let* {analysis_data= {tenv}} = get_data in
+        let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
+        let pname = Procname.get_hack_static_init ~is_trait class_name in
         let exp = Exp.Lvar (get_static_companion_var type_name) in
         let typ = Typ.mk_struct type_name in
         let* arg_payload = eval_to_value_origin exp in

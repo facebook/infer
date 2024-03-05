@@ -95,7 +95,7 @@ abstract class AbstractUseTrait extends A {
     return self::get_field_from_trait2();
   }
 
-  public static function FN_call_my_trait_get_field_Bad(): string {
+  public static function call_my_trait_get_field_Bad(): string {
     return MyTrait::get_field_from_trait();
   }
 }
@@ -108,7 +108,7 @@ function call_self_get_field2_Bad(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
-function FN_call_my_trait_get_field_Bad(): string {
+function call_my_trait_get_field_Bad(): string {
   return MyTrait::get_field_from_trait();
 }
 

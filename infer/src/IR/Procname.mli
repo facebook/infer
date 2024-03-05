@@ -448,7 +448,7 @@ val decr_hack_arity : t -> t option
 val get_hack_arity : t -> int option
 (** get the arity of a Hack procname *)
 
-val get_hack_static_init : HackClassName.t -> t
+val get_hack_static_init : is_trait:bool -> HackClassName.t -> t
 (** get the sinit procname in Hack *)
 
 val pp_name_only : F.formatter -> t -> unit
@@ -490,8 +490,6 @@ val is_erlang_call_qualified : t -> bool
 val is_hack_builtins : t -> bool
 
 val is_hack_sinit : t -> bool
-
-val is_hack_init : t -> bool
 
 val has_hack_classname : t -> bool
 

@@ -492,7 +492,7 @@ module InjectTraitSinit = struct
               let arg = [(Exp.Var this_id, this_typ)] in
               List.map traits ~f:(fun trait ->
                   let ret_id = Ident.create_none () in
-                  let sinit = Procname.get_hack_static_init trait in
+                  let sinit = Procname.get_hack_static_init ~is_trait:true trait in
                   Sil.Call ((ret_id, ret_typ), Const (Cfun sinit), arg, loc, CallFlags.default) )
             in
             this_load :: sinit_calls
