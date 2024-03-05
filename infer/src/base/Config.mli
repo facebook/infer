@@ -136,7 +136,9 @@ val annotation_reachability_cxx_sources : Yojson.Basic.t
 
 val annotation_reachability_custom_pairs : Yojson.Basic.t
 
-val annotation_reachability_builtin_pairs : bool
+val annotation_reachability_no_allocation : bool
+
+val annotation_reachability_expensive : bool
 
 val append_buck_flavors : string list
 

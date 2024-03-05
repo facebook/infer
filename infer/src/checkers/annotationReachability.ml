@@ -449,9 +449,9 @@ let annot_specs =
   let user_defined_specs = List.concat user_defined_specs in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())
   ; ( Language.Java
-    , ( if Config.annotation_reachability_builtin_pairs then
-          [ExpensiveAnnotationSpec.spec; NoAllocationAnnotationSpec.spec]
-        else [] )
+    , (if Config.annotation_reachability_expensive then [ExpensiveAnnotationSpec.spec] else [])
+      @ ( if Config.annotation_reachability_no_allocation then [NoAllocationAnnotationSpec.spec]
+          else [] )
       @ user_defined_specs ) ]
 
 

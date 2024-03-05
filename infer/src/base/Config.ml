@@ -642,11 +642,30 @@ Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
 { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }|}
 
 
-and annotation_reachability_builtin_pairs =
-  CLOpt.mk_bool ~long:"annotation-reachability-builtin-pairs"
+and _annotation_reachability_builtin_pairs =
+  CLOpt.mk_bool ~long:""
+    ~deprecated:["annotation-reachability-builtin-pairs"]
+    ~deprecated_no:["-no-annotation-reachability-builtin-pairs"]
     ~in_help:InferCommand.[(Analyze, manual_java)]
     ~default:true
-    "include default builtin source/sink pairs for the annotation reachability checker"
+    "include default builtin source/sink pairs for the annotation reachability checker \
+     (deprecated, does nothing)"
+
+
+and annotation_reachability_no_allocation =
+  CLOpt.mk_bool ~long:"annotation-reachability-no-allocation"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    ~default:false
+    "check if methods annotated with @NoAllocation can allocate (with annotation reachability \
+     checker)"
+
+
+and annotation_reachability_expensive =
+  CLOpt.mk_bool ~long:"annotation-reachability-expensive"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    ~default:false
+    "check if expensive methods (annotated @Expensive or modeled) can call @PerformanceCritical \
+     (with annotation reachability checker)"
 
 
 and append_buck_flavors =
@@ -3788,7 +3807,9 @@ and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
-and annotation_reachability_builtin_pairs = !annotation_reachability_builtin_pairs
+and annotation_reachability_no_allocation = !annotation_reachability_no_allocation
+
+and annotation_reachability_expensive = !annotation_reachability_expensive
 
 and append_buck_flavors = RevList.to_list !append_buck_flavors
 

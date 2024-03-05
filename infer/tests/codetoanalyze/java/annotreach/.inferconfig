@@ -1,5 +1,7 @@
 {
   "force-delete-results-dir": true,
+  "annotation-reachability-expensive": true,
+  "annotation-reachability-no-allocation": true,
   "modeled-expensive": [
     {
       "class": "android.app.Activity",

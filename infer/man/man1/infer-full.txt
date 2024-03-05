@@ -68,11 +68,6 @@ OPTIONS
            method annotated with `@Expensive` (Conversely:
            --no-annotation-reachability)           See also infer-analyze(1).
 
-       --no-annotation-reachability-builtin-pairs
-           Deactivates: include default builtin source/sink pairs for the
-           annotation reachability checker (Conversely:
-           --annotation-reachability-builtin-pairs)           See also infer-analyze(1).
-
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks for the annotation reachability
            checker           Example format: for custom annotations
@@ -108,6 +103,17 @@ OPTIONS
        --annotation-reachability-cxx-sources json
            Override sources in all cxx annotation reachability specs with the
            given sources spec           See also infer-analyze(1).
+
+       --annotation-reachability-expensive
+           Activates: check if expensive methods (annotated @Expensive or
+           modeled) can call @PerformanceCritical (with annotation
+           reachability checker) (Conversely:
+           --no-annotation-reachability-expensive)           See also infer-analyze(1).
+
+       --annotation-reachability-no-allocation
+           Activates: check if methods annotated with @NoAllocation can
+           allocate (with annotation reachability checker) (Conversely:
+           --no-annotation-reachability-no-allocation)           See also infer-analyze(1).
 
        --annotation-reachability-only
            Activates: Enable annotation-reachability and disable all other

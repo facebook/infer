@@ -616,16 +616,22 @@ ERLANG OPTIONS
            (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
            ones). (Conversely: --erlang-reliability)
 JAVA OPTIONS
-       --no-annotation-reachability-builtin-pairs
-           Deactivates: include default builtin source/sink pairs for the
-           annotation reachability checker (Conversely:
-           --annotation-reachability-builtin-pairs)
-
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks for the annotation reachability
            checker           Example format: for custom annotations
            com.my.annotation.{Source1,Source2,Sink1}
            { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }
+
+       --annotation-reachability-expensive
+           Activates: check if expensive methods (annotated @Expensive or
+           modeled) can call @PerformanceCritical (with annotation
+           reachability checker) (Conversely:
+           --no-annotation-reachability-expensive)
+
+       --annotation-reachability-no-allocation
+           Activates: check if methods annotated with @NoAllocation can
+           allocate (with annotation reachability checker) (Conversely:
+           --no-annotation-reachability-no-allocation)
 
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
