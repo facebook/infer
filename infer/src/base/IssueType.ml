@@ -740,6 +740,11 @@ let premature_nil_termination =
     ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
+let pulse_dict_missing_key =
+  register ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_DICT_MISSING_KEY.md"]
+
+
 let pulse_transitive_access =
   register ~enabled:true ~id:"PULSE_TRANSITIVE_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]

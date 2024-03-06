@@ -524,8 +524,11 @@ let add_dict_read_const_key timestamp trace address key astate =
   in
   if has_key then Ok astate
   else if AddressAttributes.is_dict_contain_const_keys address astate then
-    (* TODO: Report issue here *)
-    Ok astate
+    let diagnostic =
+      Diagnostic.ReadUninitialized
+        {typ= DictMissingKey {dict= Decompiler.find address astate; key}; calling_context= []; trace}
+    in
+    Recoverable (astate, [ReportableError {astate; diagnostic}])
   else Ok (AddressAttributes.add_dict_read_const_key timestamp trace address key astate)
 
 

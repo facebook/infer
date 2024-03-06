@@ -158,13 +158,19 @@ module Attribute = struct
   end
 
   module UninitializedTyp = struct
-    type t = Value | Const of Fieldname.t [@@deriving compare, equal]
+    type t =
+      | Value
+      | Const of Fieldname.t
+      | DictMissingKey of {dict: DecompilerExpr.t; key: Fieldname.t}
+    [@@deriving compare, equal]
 
     let pp f = function
       | Value ->
           F.pp_print_string f "value"
       | Const fld ->
           F.fprintf f "const(%a)" Fieldname.pp fld
+      | DictMissingKey {dict; key} ->
+          F.fprintf f "DictMissingKey(%a, %a)" DecompilerExpr.pp dict Fieldname.pp key
   end
 
   type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option}

@@ -90,7 +90,11 @@ module ConfigUsage : sig
 end
 
 module UninitializedTyp : sig
-  type t = Value | Const of Fieldname.t [@@deriving compare, equal]
+  type t =
+    | Value
+    | Const of Fieldname.t
+    | DictMissingKey of {dict: DecompilerExpr.t; key: Fieldname.t}
+  [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end
@@ -103,7 +107,6 @@ module ConstKeys : sig
   val singleton : Fieldname.t -> Timestamp.t * Trace.t -> t
 
   val fold : (Fieldname.t -> Timestamp.t * Trace.t -> 'a -> 'a) -> t -> 'a -> 'a
-    [@@warning "-unused-value-declaration"]
 end
 
 type t =

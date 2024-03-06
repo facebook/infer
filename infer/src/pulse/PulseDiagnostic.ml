@@ -730,6 +730,12 @@ let get_message_and_suggestion diagnostic =
               F.fprintf fmt "a value" )
         | Const fld ->
             F.fprintf fmt "`%s`" (Fieldname.to_full_string fld)
+        | DictMissingKey {dict; key} ->
+            F.fprintf fmt "`%t['%s']`"
+              (fun f ->
+                if DecompilerExpr.is_unknown dict then F.pp_print_string f "$_"
+                else DecompilerExpr.pp f dict )
+              (Fieldname.to_string key)
       in
       let pp_location fmt =
         match immediate_or_first_call calling_context trace with
@@ -741,7 +747,7 @@ let get_message_and_suggestion diagnostic =
       ( match typ with
       | Value ->
           F.asprintf "%t is read without initialization%t" pp_access_path pp_location
-      | Const _ ->
+      | Const _ | DictMissingKey _ ->
           F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
             pp_access_path pp_location )
       |> no_suggestion
@@ -1127,6 +1133,8 @@ let get_issue_type ~latent issue_type =
       IssueType.uninitialized_value_pulse ~latent
   | ReadUninitialized {typ= Const _}, _ ->
       IssueType.pulse_uninitialized_const
+  | ReadUninitialized {typ= DictMissingKey _}, _ ->
+      IssueType.pulse_dict_missing_key
   | RetainCycle _, false ->
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->

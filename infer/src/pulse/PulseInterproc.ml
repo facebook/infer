@@ -527,12 +527,36 @@ let translate_access_to_caller astate subst (access_callee : Access.t) : _ * Acc
       (subst, access_callee)
 
 
+let check_dict_keys callee call_location ~pre call_state =
+  let keys_to_check =
+    to_caller_subst_fold_constant_astate call_state.astate
+      (fun addr_pre addr_hist_caller keys_to_check ->
+        match UnsafeAttributes.get_dict_read_const_keys addr_pre pre.BaseDomain.attrs with
+        | None ->
+            keys_to_check
+        | Some keys ->
+            (addr_hist_caller, keys) :: keys_to_check )
+      call_state.subst []
+  in
+  PulseResult.list_fold keys_to_check ~init:call_state.astate
+    ~f:(fun astate ((addr_caller, hist_caller), keys) ->
+      PulseResult.container_fold
+        ~fold:(IContainer.fold_of_pervasives_map_fold Attribute.ConstKeys.fold) keys ~init:astate
+        ~f:(fun astate (key, (timestamp, trace)) ->
+          let trace =
+            Trace.ViaCall
+              {f= Call callee; location= call_location; history= hist_caller; in_call= trace}
+          in
+          PulseOperations.add_dict_read_const_key timestamp trace addr_caller key astate ) )
+
+
 (* {3 reading the pre from the current state} *)
 
 (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
     [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
     addresses are traversed in the process. *)
-let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller path call_state =
+let rec materialize_pre_from_address callee call_location ~pre ~addr_pre cell_id ~addr_hist_caller
+    path call_state =
   let* visited_status, call_state =
     visit call_state ~pre ~addr_callee:addr_pre cell_id ~addr_hist_caller path
   in
@@ -572,8 +596,9 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller pa
                 first_error= Option.first_some call_state.first_error (Some (fst addr_hist_caller))
               }
         | Ok () ->
-            PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
-              ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
+            let* astate = check_dict_keys callee call_location ~pre call_state in
+            PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:{call_state with astate}
+              edges_pre ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
                 match (access_callee : Access.t) with
                 | ArrayAccess _ ->
                     Ok
@@ -589,13 +614,13 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller pa
                     in
                     let call_state = {call_state with astate} in
                     let path = LazyHeapPath.push access_callee path in
-                    materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+                    materialize_pre_from_address callee call_location ~pre ~addr_pre:addr_pre_dest
                       (ValueHistory.get_cell_id_exn pre_hist)
                       ~addr_hist_caller:addr_hist_dest_caller path call_state ) ) )
 
 
-let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
-    path call_state =
+let materialize_pre_from_array_index callee call_location ~pre
+    {addr_pre_dest; pre_hist; access_callee; addr_hist_caller} path call_state =
   let subst, access_caller =
     translate_access_to_caller call_state.astate call_state.subst access_callee
   in
@@ -605,17 +630,18 @@ let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_calle
   let call_state = {call_state with astate; subst} in
   (* HACK: we should probably visit the value in the (array) access too, but since it's a value
      normally it shouldn't appear in the heap anyway so there should be nothing to visit. *)
-  materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+  materialize_pre_from_address callee call_location ~pre ~addr_pre:addr_pre_dest
     (ValueHistory.get_cell_id_exn pre_hist)
     ~addr_hist_caller:addr_hist_dest_caller path call_state
 
 
-let materialize_pre_from_array_indices ~pre call_state =
+let materialize_pre_from_array_indices callee call_location ~pre call_state =
   let path = LazyHeapPath.unsupported in
   let+ call_state =
     PulseResult.list_fold call_state.array_indices_to_visit ~init:call_state
       ~f:(fun call_state array_index_to_translate ->
-        materialize_pre_from_array_index ~pre array_index_to_translate path call_state )
+        materialize_pre_from_array_index callee call_location ~pre array_index_to_translate path
+          call_state )
   in
   {call_state with array_indices_to_visit= []}
 
@@ -631,23 +657,25 @@ let callee_deref_non_c_struct addr typ astate =
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
     been instantiated with the corresponding [actual] into the current state [call_state.astate] *)
-let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) call_state =
+let materialize_pre_from_actual callee call_location ~pre ~formal:(formal, typ) ~actual:(actual, _)
+    call_state =
   let path = LazyHeapPath.from_pvar formal in
   let formal = Var.of_pvar formal in
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
    let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
    let+ formal_pre, cell_id = callee_deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
-   materialize_pre_from_address ~pre ~addr_pre:formal_pre cell_id ~addr_hist_caller:actual path
-     call_state )
+   materialize_pre_from_address callee call_location ~pre ~addr_pre:formal_pre cell_id
+     ~addr_hist_caller:actual path call_state )
   |> function Some result -> result | None -> Ok call_state
 
 
-let materialize_pre_for_captured_vars ~pre ~captured_formals ~captured_actuals call_state =
+let materialize_pre_for_captured_vars callee call_location ~pre ~captured_formals ~captured_actuals
+    call_state =
   match
     PulseResult.list_fold2 captured_formals captured_actuals ~init:call_state
       ~f:(fun call_state formal actual ->
-        materialize_pre_from_actual ~pre ~formal ~actual call_state )
+        materialize_pre_from_actual callee call_location ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
       raise_notrace (Contradiction (CapturedFormalActualLength {captured_formals; captured_actuals}))
@@ -655,13 +683,13 @@ let materialize_pre_for_captured_vars ~pre ~captured_formals ~captured_actuals c
       result
 
 
-let materialize_pre_for_parameters ~pre ~formals ~actuals call_state =
+let materialize_pre_for_parameters callee call_location ~pre ~formals ~actuals call_state =
   (* For each [(formal, actual)] pair, resolve them to addresses in their respective states then
      call [materialize_pre_from] on them.  Give up if calling the function introduces aliasing.
   *)
   match
     PulseResult.list_fold2 formals actuals ~init:call_state ~f:(fun call_state formal actual ->
-        materialize_pre_from_actual ~pre ~formal ~actual call_state )
+        materialize_pre_from_actual callee call_location ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
       raise_notrace (Contradiction (FormalActualLength {formals; actuals}))
@@ -669,11 +697,11 @@ let materialize_pre_for_parameters ~pre ~formals ~actuals call_state =
       result
 
 
-let materialize_pre_for_globals path call_location ~pre call_state =
+let materialize_pre_for_globals path callee call_location ~pre call_state =
   fold_globals_of_callee_stack path call_location pre.BaseDomain.stack call_state
     ~f:(fun pvar ~stack_value:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
       let path = LazyHeapPath.from_pvar pvar in
-      materialize_pre_from_address ~pre ~addr_pre
+      materialize_pre_from_address callee call_location ~pre ~addr_pre
         (ValueHistory.get_cell_id_exn pre_hist)
         ~addr_hist_caller path call_state )
 
@@ -751,14 +779,15 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
   let r =
     let callee_precondition = AbductiveDomain.Summary.get_pre callee_summary in
     (* first make as large a mapping as we can between callee values and caller values... *)
-    materialize_pre_for_parameters ~pre:callee_precondition ~formals ~actuals call_state
-    >>= materialize_pre_for_captured_vars ~pre:callee_precondition ~captured_formals
-          ~captured_actuals
-    >>= materialize_pre_for_globals path call_location ~pre:callee_precondition
+    materialize_pre_for_parameters callee_proc_name call_location ~pre:callee_precondition ~formals
+      ~actuals call_state
+    >>= materialize_pre_for_captured_vars callee_proc_name call_location ~pre:callee_precondition
+          ~captured_formals ~captured_actuals
+    >>= materialize_pre_for_globals path callee_proc_name call_location ~pre:callee_precondition
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     conjoin_callee_arith (AbductiveDomain.Summary.get_path_condition callee_summary)
-    >>= materialize_pre_from_array_indices ~pre:callee_precondition
+    >>= materialize_pre_from_array_indices callee_proc_name call_location ~pre:callee_precondition
     >>| add_attributes `Pre path callee_proc_name call_location callee_precondition.attrs
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;

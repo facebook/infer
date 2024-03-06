@@ -18,9 +18,9 @@ class Main {
     }
   }
 
-  // Flow: dicts do not model the set of defined fields,
-  // so this is really a false positive
-  public function idx_as_get_2_FP(): void {
+  // Flow: The taint sink is unreachable since $w['b'] should raise an exception.  In this function,
+  // PULSE_DICT_MISSING_KEY is reported instead.
+  public function idx_as_get_2_OK(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
