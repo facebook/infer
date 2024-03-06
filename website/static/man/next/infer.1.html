@@ -142,15 +142,15 @@ indirectly, another method annotated with
 <b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-custom-pairs</b> <i>json</i></p>
 
-<p style="margin-left:17%;">Specify custom sources/sink for
-the annotation reachability checker</p>
+<p style="margin-left:17%;">Specify custom sources/sinks
+for the annotation reachability checker</p>
 
 <p style="margin-left:11%;">Example format: for custom
 annotations <br>
 com.my.annotation.{Source1,Source2,Sink1} <br>
 { &quot;sources&quot; : [&quot;Source1&quot;,
-&quot;Source2&quot;], &quot;sink&quot; : &quot;Sink1&quot; }
-<br>
+&quot;Source2&quot;], &quot;sinks&quot; :
+[&quot;Sink1&quot;] } <br>
 See also <b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-cxx</b> <i>json</i></p>
 
@@ -191,6 +191,25 @@ See also <b>infer-analyze</b>(1). <b><br>
 <p style="margin-left:17%;">Override sources in all cxx
 annotation reachability specs with the given sources
 spec</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-expensive</b></p>
+
+<p style="margin-left:17%;">Activates: check if expensive
+methods (annotated @Expensive or modeled) can call
+@PerformanceCritical (with annotation reachability checker)
+(Conversely:
+<b>--no-annotation-reachability-expensive</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-no-allocation</b></p>
+
+<p style="margin-left:17%;">Activates: check if methods
+annotated with @NoAllocation can allocate (with annotation
+reachability checker) (Conversely:
+<b>--no-annotation-reachability-no-allocation</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1011,6 +1030,7 @@ PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PULSE_CONST_REFABLE (enabled by default), <br>
+PULSE_DICT_MISSING_KEY (disabled by default), <br>
 PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_REFERENCE_STABILITY (disabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
@@ -1038,7 +1058,7 @@ PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
-RETAIN_CYCLE (disabled by default), <br>
+RETAIN_CYCLE (enabled by default), <br>
 SCOPE_LEAKAGE (enabled by default), <br>
 SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>

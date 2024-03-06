@@ -11,7 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: Experimental
-- Hack: No
+- Hack: Yes
 - Java: Yes
 - Python: No
 
@@ -176,6 +176,7 @@ The following issue types are reported by this checker:
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [OPTIONAL_EMPTY_ACCESS_LATENT](/docs/next/all-issue-types#optional_empty_access_latent)
 - [PULSE_CONST_REFABLE](/docs/next/all-issue-types#pulse_const_refable)
+- [PULSE_DICT_MISSING_KEY](/docs/next/all-issue-types#pulse_dict_missing_key)
 - [PULSE_READONLY_SHARED_PTR_PARAM](/docs/next/all-issue-types#pulse_readonly_shared_ptr_param)
 - [PULSE_REFERENCE_STABILITY](/docs/next/all-issue-types#pulse_reference_stability)
 - [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
