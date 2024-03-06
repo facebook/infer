@@ -642,16 +642,6 @@ Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
 { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }|}
 
 
-and _annotation_reachability_builtin_pairs =
-  CLOpt.mk_bool ~long:""
-    ~deprecated:["annotation-reachability-builtin-pairs"]
-    ~deprecated_no:["-no-annotation-reachability-builtin-pairs"]
-    ~in_help:InferCommand.[(Analyze, manual_java)]
-    ~default:true
-    "include default builtin source/sink pairs for the annotation reachability checker \
-     (deprecated, does nothing)"
-
-
 and annotation_reachability_no_allocation =
   CLOpt.mk_bool ~long:"annotation-reachability-no-allocation"
     ~in_help:InferCommand.[(Analyze, manual_java)]
