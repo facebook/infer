@@ -97,6 +97,15 @@ end
 
 type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option} [@@deriving compare, equal]
 
+module ConstKeys : sig
+  type t
+
+  val singleton : Fieldname.t -> Timestamp.t * Trace.t -> t
+
+  val fold : (Fieldname.t -> Timestamp.t * Trace.t -> 'a -> 'a) -> t -> 'a -> 'a
+    [@@warning "-unused-value-declaration"]
+end
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -112,6 +121,7 @@ type t =
   | DictContainConstKeys
       (** the dictionary contains only constant keys (note: only string constant is supported for
           now) *)
+  | DictReadConstKeys of ConstKeys.t  (** constant string keys that are read from the dictionary *)
   | DynamicType of dynamic_type_data
   | EndOfCollection
   | Initialized
@@ -183,6 +193,8 @@ module Attributes : sig
   val remove_dict_contain_const_keys : t -> t
 
   val is_dict_contain_const_keys : t -> bool
+
+  val get_dict_read_const_keys : t -> ConstKeys.t option
 
   val get_dynamic_type : t -> dynamic_type_data option
 

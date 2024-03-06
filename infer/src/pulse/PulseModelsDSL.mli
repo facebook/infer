@@ -86,6 +86,8 @@ module Syntax : sig
 
   val add_dict_contain_const_keys : aval -> unit model_monad
 
+  val add_dict_read_const_key : aval -> Fieldname.t -> unit model_monad
+
   val remove_dict_contain_const_keys : aval -> unit model_monad
 
   val add_dynamic_type : Typ.t -> aval -> unit model_monad [@@warning "-unused-value-declaration"]

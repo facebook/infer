@@ -170,6 +170,29 @@ module Attribute = struct
   type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option}
   [@@deriving compare, equal]
 
+  module ConstKeys = struct
+    module Metadata = struct
+      (** The metadata contains a timestamp and a trace. The trace is to construct a proper trace of
+          an issue when reporting and the timestamp is to choose the firstly found issue when
+          deduplicating the same missing key accesses. *)
+      type t = Timestamp.t * Trace.t [@@deriving compare, equal]
+
+      let pp fmt (timestamp, trace) =
+        let pp_immediate fmt = F.pp_print_string fmt "immediate" in
+        F.fprintf fmt "(%a, %a)" Timestamp.pp timestamp (Trace.pp ~pp_immediate) trace
+    end
+
+    include PrettyPrintable.MakePPMonoMap (Fieldname) (Metadata)
+
+    let compare = compare Metadata.compare
+
+    let equal = equal Metadata.equal
+
+    let union =
+      union (fun _ left right ->
+          (if Timestamp.compare (fst left) (fst right) <= 0 then left else right) |> Option.some )
+  end
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -185,6 +208,7 @@ module Attribute = struct
         ; from: CopyOrigin.t
         ; copied_location: Location.t }
     | DictContainConstKeys
+    | DictReadConstKeys of ConstKeys.t
     | DynamicType of dynamic_type_data
     | EndOfCollection
     | Initialized
@@ -239,6 +263,8 @@ module Attribute = struct
   let copy_origin_rank = Variants.sourceoriginofcopy.rank
 
   let dict_contain_const_keys_rank = Variants.dictcontainconstkeys.rank
+
+  let dict_read_const_keys_rank = Variants.dictreadconstkeys.rank
 
   let dynamic_type_rank = Variants.dynamictype.rank
 
@@ -315,6 +341,8 @@ module Attribute = struct
           CopyOrigin.pp from Location.pp copied_location
     | DictContainConstKeys ->
         F.pp_print_string f "DictContainConstKeys"
+    | DictReadConstKeys keys ->
+        F.fprintf f "DictReadConstKeys(@[%a@])" ConstKeys.pp keys
     | DynamicType {typ; source_file} ->
         F.fprintf f "DynamicType %a, SourceFile %a" (Typ.pp Pp.text) typ (Pp.option SourceFile.pp)
           source_file
@@ -382,7 +410,11 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | UsedAsBranchCond _ ->
+    | DictReadConstKeys _
+    | MustBeValid _
+    | MustBeInitialized _
+    | MustNotBeTainted _
+    | UsedAsBranchCond _ ->
         true
     | Invalid _
     | Allocated _
@@ -420,6 +452,7 @@ module Attribute = struct
   let is_suitable_for_pre_summary = is_suitable_for_pre
 
   let is_suitable_for_post = function
+    | DictReadConstKeys _
     | MustBeInitialized _
     | MustNotBeTainted _
     | MustBeValid _
@@ -478,6 +511,7 @@ module Attribute = struct
     | ConstString _
     | CopiedReturn _
     | DictContainConstKeys
+    | DictReadConstKeys _
     | DynamicType _
     | EndOfCollection
     | Initialized
@@ -517,6 +551,11 @@ module Attribute = struct
         ConfigUsage (StringParam {v= subst v; config_type})
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
         CopiedReturn {source= subst source; is_const_ref; from; copied_location}
+    | DictReadConstKeys const_keys ->
+        DictReadConstKeys
+          (ConstKeys.map
+             (fun (_timestamp, trace) -> (timestamp, add_call_to_trace trace))
+             const_keys )
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
     | MustBeValid (_timestamp, trace, reason) ->
@@ -652,6 +691,7 @@ module Attribute = struct
       | CopiedInto _
       | CSharpResourceReleased
       | DictContainConstKeys
+      | DictReadConstKeys _
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
@@ -682,6 +722,12 @@ module Attributes = struct
 
     let get_by_rank rank ~dest attrs = find_rank attrs rank |> Option.map ~f:dest
 
+    let get_dict_read_const_keys attrs =
+      get_by_rank Attribute.dict_read_const_keys_rank
+        ~dest:(function[@warning "-partial-match"] DictReadConstKeys keys -> keys)
+        attrs
+
+
     let get_tainted attrs =
       get_by_rank Attribute.tainted_rank
         ~dest:(function[@warning "-partial-match"] Tainted tainted -> tainted)
@@ -711,6 +757,13 @@ module Attributes = struct
     let add attrs value =
       let open Attribute in
       match value with
+      | DictReadConstKeys keys ->
+          if ConstKeys.is_empty keys then attrs
+          else
+            let existing_set =
+              Option.value ~default:Attribute.ConstKeys.empty (get_dict_read_const_keys attrs)
+            in
+            update (DictReadConstKeys (ConstKeys.union existing_set keys)) attrs
       | Tainted new_set ->
           if TaintedSet.is_empty new_set then attrs
           else

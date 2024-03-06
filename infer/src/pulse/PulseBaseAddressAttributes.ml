@@ -263,6 +263,12 @@ let is_dict_contain_const_keys address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_dict_contain_const_keys
 
 
+let add_dict_read_const_key timestamp trace address key attrs =
+  add_one address (DictReadConstKeys (Attribute.ConstKeys.singleton key (timestamp, trace))) attrs
+
+
+let get_dict_read_const_keys = get_attribute Attributes.get_dict_read_const_keys
+
 let add_dynamic_type {Attribute.typ; source_file} address memory =
   add_one address (Attribute.DynamicType {Attribute.typ; source_file}) memory
 
@@ -412,6 +418,10 @@ module type S = sig
   val remove_dict_contain_const_keys : key -> t -> t
 
   val is_dict_contain_const_keys : key -> t -> bool
+
+  val add_dict_read_const_key : Timestamp.t -> Trace.t -> key -> Fieldname.t -> t -> t
+
+  val get_dict_read_const_keys : key -> t -> Attribute.ConstKeys.t option
 
   val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
 

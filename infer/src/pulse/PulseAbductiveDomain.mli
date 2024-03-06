@@ -191,6 +191,8 @@ module AddressAttributes : sig
   val is_dict_contain_const_keys : AbstractValue.t -> t -> bool
     [@@warning "-unused-value-declaration"]
 
+  val add_dict_read_const_key : Timestamp.t -> Trace.t -> AbstractValue.t -> Fieldname.t -> t -> t
+
   val add_dynamic_type : Attribute.dynamic_type_data -> AbstractValue.t -> t -> t
 
   val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> t -> t

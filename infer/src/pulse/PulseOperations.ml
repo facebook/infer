@@ -513,6 +513,22 @@ let remove_dict_contain_const_keys address astate =
   AddressAttributes.remove_dict_contain_const_keys address astate
 
 
+let add_dict_read_const_key timestamp trace address key astate =
+  let has_key =
+    Memory.exists_edge address astate ~f:(fun (access, _) ->
+        match access with
+        | FieldAccess fld ->
+            Fieldname.equal key fld
+        | ArrayAccess _ | TakeAddress | Dereference ->
+            false )
+  in
+  if has_key then Ok astate
+  else if AddressAttributes.is_dict_contain_const_keys address astate then
+    (* TODO: Report issue here *)
+    Ok astate
+  else Ok (AddressAttributes.add_dict_read_const_key timestamp trace address key astate)
+
+
 let add_dynamic_type typ ?source_file address astate =
   AddressAttributes.add_dynamic_type {typ; source_file} address astate
 

@@ -75,6 +75,10 @@ module type S = sig
 
   val is_dict_contain_const_keys : key -> t -> bool
 
+  val add_dict_read_const_key : Timestamp.t -> Trace.t -> key -> Fieldname.t -> t -> t
+
+  val get_dict_read_const_keys : key -> t -> Attribute.ConstKeys.t option
+
   val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
 
   val get_dynamic_type : t -> key -> Attribute.dynamic_type_data option

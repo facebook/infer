@@ -504,6 +504,11 @@ module Internal = struct
       BaseAddressAttributes.is_dict_contain_const_keys addr (astate.post :> base_domain).attrs
 
 
+    let add_dict_read_const_key timestamp trace address key astate =
+      map_pre_attrs astate
+        ~f:(BaseAddressAttributes.add_dict_read_const_key timestamp trace address key)
+
+
     let add_dynamic_type {Attribute.typ; source_file} address astate =
       map_post_attrs astate
         ~f:(BaseAddressAttributes.add_dynamic_type {Attribute.typ; source_file} address)
@@ -2256,6 +2261,10 @@ module AddressAttributes = struct
 
   let is_dict_contain_const_keys v astate =
     SafeAttributes.is_dict_contain_const_keys (CanonValue.canon' astate v) astate
+
+
+  let add_dict_read_const_key timestamp trace v key astate =
+    SafeAttributes.add_dict_read_const_key timestamp trace (CanonValue.canon' astate v) key astate
 
 
   let add_dynamic_type dynamic_type_data v astate =

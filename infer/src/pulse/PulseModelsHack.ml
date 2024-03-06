@@ -460,6 +460,12 @@ module Dict = struct
     ret (Option.map string ~f:(fun string -> TextualSil.wildcard_sil_fieldname Hack string))
 
 
+  let read_dict_field_with_check dict field : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let* () = add_dict_read_const_key dict field in
+    eval_deref_access Read dict (FieldAccess field)
+
+
   type key_types = AllConstStrs | SomeOthers
 
   let get_bindings values : ((Fieldname.t * DSL.aval) list * key_types) DSL.model_monad =
@@ -510,7 +516,7 @@ module Dict = struct
          list_iter fields ~f:(fun field_access ->
              match (field_access : Access.t) with
              | FieldAccess field_name ->
-                 let* awaitable_value = eval_deref_access Read dict field_access in
+                 let* awaitable_value = read_dict_field_with_check dict field_name in
                  let* awaited_value = await_hack_value awaitable_value in
                  write_deref_field ~ref:new_dict field_name ~obj:awaited_value
              | _ ->
@@ -546,7 +552,7 @@ module Dict = struct
               let* field = field_of_string_value key in
               match field with
               | Some field ->
-                  let* inner_dict = eval_deref_access Read dict (FieldAccess field) in
+                  let* inner_dict = read_dict_field_with_check dict field in
                   let* copied_inned_dict = deep_copy ~depth_max:1 inner_dict in
                   let* () = write_deref_field ~ref:dict field ~obj:copied_inned_dict in
                   ret copied_inned_dict
@@ -576,7 +582,7 @@ module Dict = struct
     let* field = field_of_string_value key in
     match field with
     | Some field ->
-        eval_deref_access Read dict (FieldAccess field)
+        read_dict_field_with_check dict field
     | None ->
         mk_fresh ~model_desc:"hack_array_get_one_dim" ()
 
