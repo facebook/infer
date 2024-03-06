@@ -53,9 +53,14 @@ let method_overrides is_annotated tenv pname =
 
 let method_has_annot annot tenv pname =
   let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
-  if Annotations.annot_ends_with annot dummy_constructor_annot then is_allocator tenv pname
-  else if Annotations.annot_ends_with annot Annotations.expensive then
-    check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
+  if
+    Config.annotation_reachability_no_allocation
+    && Annotations.annot_ends_with annot dummy_constructor_annot
+  then is_allocator tenv pname
+  else if
+    Config.annotation_reachability_expensive
+    && Annotations.annot_ends_with annot Annotations.expensive
+  then check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
   else check_attributes has_annot tenv pname
 
 
