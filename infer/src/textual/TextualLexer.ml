@@ -66,7 +66,9 @@ let upper = [%sedlex.regexp? 'A' .. 'Z']
 
 let letter = [%sedlex.regexp? lower | upper]
 
-let ident = [%sedlex.regexp? (letter | Chars "_$"), Star (letter | digit | Chars "_$" | "::")]
+let ident =
+  [%sedlex.regexp? (letter | Chars "_$"), Star (letter | digit | Chars "_$" | "::" | ":::")]
+
 
 let binary_numeral_prefix = [%sedlex.regexp? "0", Chars "bB"]
 

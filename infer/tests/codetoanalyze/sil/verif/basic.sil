@@ -109,3 +109,17 @@ define if_then_else(x: int, y: float) : void {
   #lab3:
     if [&y] then ret null else jmp lab2
 }
+
+define use_mangled_names(): void {
+  #entry:
+    n0 = A::foo()
+    n1 = mixed:::bar()
+    n2 = A::mixed:::zoo()
+    ret null
+}
+
+declare A::foo() : void
+
+declare mixed:::bar() : void
+
+declare A::mixed:::zoo() : void
