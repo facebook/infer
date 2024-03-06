@@ -16,7 +16,7 @@ usage() ->
         "to execute with [args ...], and in addition to write in \n"
         "<ast_out_dir> the Erlang AST in JSON format for each file compiled\n"
         "Option flag `--with_otp_specs` is to include specs from OTP modules.\n",
-    io:format("~s", [Usage]),
+    io:format(standard_error, "~s", [Usage]),
     halt(1).
 
 main([]) ->
@@ -29,8 +29,15 @@ main(Args) ->
             _ -> usage()
         end,
     ScriptDir = filename:dirname(escript:script_name()),
-    ParseTransformDir = filename:join(ScriptDir, "infer_parse_transform"),
-    run_expect_zero("rebar3 compile", ParseTransformDir),
+    LibPath = mktemp_dir(),
+    run_expect_zero("mkdir ebin", LibPath),
+    run_expect_zero(
+        io_lib:format(
+            "erlc -o ~s/ebin infer_parse_transform.erl",
+            [LibPath]
+        ),
+        ScriptDir
+    ),
     CompiledListPath = mktemp(".list"),
     OutputCmd =
         case Cmd of
@@ -39,10 +46,13 @@ main(Args) ->
             ["erlc" | _] ->
                 erlc(Cmd, CompiledListPath);
             _ ->
-                io:format("error: unrecognized command ~s~n", [string:join(Cmd, " ")]),
-                halt(1)
+                io:format(
+                    standard_error,
+                    "error: unrecognized command ~s~n",
+                    [string:join(Cmd, " ")]
+                ),
+                halt(2)
         end,
-    LibPath = filename:join(ParseTransformDir, "_build/default/lib"),
     MaybeOTPArgs =
         case lists:member(with_otp_specs, Options) of
             true ->
@@ -114,7 +124,7 @@ run_expect_zero(Command, Dir) ->
                     Output
                 ]
             ),
-            halt(1)
+            halt(3)
     end.
 
 run(Command, Dir) ->
@@ -136,13 +146,16 @@ mktemp(Suffix) ->
     os:cmd(io_lib:format("mv ~s ~s", [TempFilePath, WithSuffix])),
     WithSuffix.
 
+mktemp_dir() ->
+    string:trim(os:cmd("mktemp -d")).
+
 rebar3(Cmd, CompiledListPath) ->
     ConfigPaths = [os:getenv("REBAR_CONFIG"), "rebar.config.script", "rebar.config"],
     Original =
         case load_config_from_list(ConfigPaths) of
             false ->
-                io:format("error: no rebar3 config found~n"),
-                halt(1);
+                io:format(standard_error, "error: no rebar3 config found~n", []),
+                halt(4);
             Config ->
                 Config
         end,
