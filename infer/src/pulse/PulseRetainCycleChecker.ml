@@ -20,6 +20,22 @@ let is_ref_counted_or_block addr astate =
       false
 
 
+let rec crop_seen_to_cycle seen_list addr =
+  match seen_list with
+  | [] ->
+      []
+  | hd :: rest ->
+      if AbstractValue.equal hd addr then seen_list else crop_seen_to_cycle rest addr
+
+
+let remove_non_objc_objects cycle astate =
+  let has_static_dynamic_type astate v =
+    let has_static_type = AddressAttributes.get_static_type v astate |> Option.is_some in
+    has_static_type || AddressAttributes.get_dynamic_type v astate |> Option.is_some
+  in
+  List.filter ~f:(fun v -> not (has_static_dynamic_type astate v)) cycle
+
+
 (* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
@@ -57,9 +73,9 @@ let check_retain_cycles tenv addresses orig_astate =
       *)
       if AbstractValue.Set.mem addr !checked then Ok ()
       else
-        let value = Decompiler.find addr orig_astate in
+        let value = Decompiler.find addr astate in
         let is_known = not (DecompilerExpr.is_unknown value) in
-        let is_seen = AbstractValue.Set.mem addr seen in
+        let is_seen = List.mem ~equal:AbstractValue.equal seen addr in
         let is_ref_counted_or_block = is_ref_counted_or_block addr astate in
         if is_known && is_seen && is_ref_counted_or_block then
           let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
@@ -68,8 +84,11 @@ let check_retain_cycles tenv addresses orig_astate =
               Ok ()
           | most_recent_trace :: _ ->
               let location = Trace.get_outer_location most_recent_trace in
-              let path = Decompiler.find addr astate in
-              let diagnostic = Diagnostic.RetainCycle {assignment_traces; value; path; location} in
+              let seen = List.rev seen in
+              let cycle = crop_seen_to_cycle seen addr in
+              let cycle = remove_non_objc_objects cycle astate in
+              let values = List.map ~f:(fun v -> Decompiler.find v astate) cycle in
+              let diagnostic = Diagnostic.RetainCycle {assignment_traces; values; location} in
               Recoverable ((), [ReportableError {astate; diagnostic}])
         else (
           if is_seen && ((not is_known) || not is_ref_counted_or_block) then
@@ -87,9 +106,12 @@ let check_retain_cycles tenv addresses orig_astate =
                 | Ok () ->
                     if PulseRefCounting.is_strong_access tenv access then
                       (* This is needed to update the decompiler and be able to get good values when printing the path (above).
-                         We don't want to return those changes in the decompiler to the rest of the analysis though, that was
+                          We don't want to return those changes in the decompiler to the rest of the analysis though, that was
                          changing some tests. So this checker only returns errors, but not the changes to the state. *)
-                      let astate, _ = Memory.eval_edge (addr, hist) access astate in
+                      let astate =
+                        if not is_known then Memory.eval_edge (addr, hist) access astate |> fst
+                        else astate
+                      in
                       let assignment_traces =
                         match access with
                         | MemoryAccess.FieldAccess _ -> (
@@ -101,7 +123,7 @@ let check_retain_cycles tenv addresses orig_astate =
                         | _ ->
                             assignment_traces
                       in
-                      let seen = AbstractValue.Set.add addr seen in
+                      let seen = addr :: seen in
                       contains_cycle ~assignment_traces ~seen (accessed_addr, hist) astate
                     else Ok () )
           in
@@ -109,8 +131,7 @@ let check_retain_cycles tenv addresses orig_astate =
           checked := AbstractValue.Set.add addr !checked ;
           res )
     in
-    let seen = AbstractValue.Set.empty in
-    contains_cycle ~assignment_traces:[] ~seen src_addr orig_astate
+    contains_cycle ~assignment_traces:[] ~seen:[] src_addr orig_astate
   in
   List.fold addresses ~init:(Ok ()) ~f:(fun acc (addr, hist) ->
       match acc with

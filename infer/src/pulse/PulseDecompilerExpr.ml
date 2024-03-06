@@ -43,7 +43,7 @@ let rec pp_access_expr fmt access_expr =
     let pp_access_expr fmt access_expr =
       match access_expr with
       | Capture (_, captured_var) ->
-          F.fprintf fmt "%a containing %s" pp_access_expr access_expr captured_var
+          F.fprintf fmt "%s" captured_var
       | _ ->
           pp_access_expr fmt access_expr
     in
@@ -75,7 +75,7 @@ let rec pp_access_expr fmt access_expr =
       if java_or_objc then CallEvent.pp_name_only fmt call
       else F.fprintf fmt "%a()" CallEvent.pp_name_only call
   | Capture (access_expr, captured_var) ->
-      F.fprintf fmt "%a capturing %s" pp_access_expr access_expr captured_var
+      F.fprintf fmt "%s captured by %a" captured_var pp_access_expr access_expr
   | ArrowField (access_expr, field) ->
       pp_field_acces_expr fmt access_expr "->" field
   | DotField (access_expr, field) ->

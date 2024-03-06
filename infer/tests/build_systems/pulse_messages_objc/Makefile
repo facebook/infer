@@ -10,8 +10,9 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --pu
 
 # test that the error messages are good; sort of mimicks what gets displayed on the console
 INFERPRINT_OPTIONS = --issues-tests-fields file,procedure,line,column,severity,bug_type,qualifier,suggestion --issues-tests
+CODETOANALYZE_DIR = ../../codetoanalyze/objc/pulse/retain_cycles/
 
-SOURCES = $(wildcard *.mm) $(wildcard *.m)
+SOURCES = $(wildcard *.mm) $(wildcard *.m) $(CODETOANALYZE_DIR)/RetainCycleBlockAsParameter.m
 
 include $(TESTS_DIR)/clang.make
 include $(TESTS_DIR)/objc.make

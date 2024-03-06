@@ -211,7 +211,10 @@ and record_closure astate (path : PathContext.t) loc procname
     let=+ astate, lhs_addr_hist =
       eval_access path Read loc closure_addr_hist (FieldAccess field_name) astate
     in
-    write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, rhs_history) astate
+    let* astate = write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, rhs_history) astate in
+    (* This is to update the decompiler entry for lhs_addr *)
+    let astate, _ = Memory.eval_edge lhs_addr_hist Dereference astate in
+    Ok astate
   in
   let++ astate = List.fold captured_vars ~init:(Sat (Ok astate)) ~f:store_captured_var in
   (astate, ValueOrigin.Unknown closure_addr_hist)
