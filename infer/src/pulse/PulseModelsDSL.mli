@@ -84,6 +84,10 @@ module Syntax : sig
   (* each PulseOperations functions you need should be copied here *)
   val allocation : Attribute.allocator -> aval -> unit model_monad
 
+  val add_dict_contain_const_keys : aval -> unit model_monad
+
+  val remove_dict_contain_const_keys : aval -> unit model_monad
+
   val add_dynamic_type : Typ.t -> aval -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val add_static_type : Typ.name -> aval -> unit model_monad

@@ -242,6 +242,14 @@ module Syntax = struct
     >> sat |> exec_partial_operation
 
 
+  let add_dict_contain_const_keys (addr, _) : unit model_monad =
+    PulseOperations.add_dict_contain_const_keys addr |> exec_command
+
+
+  let remove_dict_contain_const_keys (addr, _) : unit model_monad =
+    PulseOperations.remove_dict_contain_const_keys addr |> exec_command
+
+
   let add_dynamic_type typ (addr, _) : unit model_monad =
     PulseOperations.add_dynamic_type typ addr |> exec_command
 

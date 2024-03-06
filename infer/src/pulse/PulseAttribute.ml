@@ -184,6 +184,7 @@ module Attribute = struct
         ; is_const_ref: bool
         ; from: CopyOrigin.t
         ; copied_location: Location.t }
+    | DictContainConstKeys
     | DynamicType of dynamic_type_data
     | EndOfCollection
     | Initialized
@@ -236,6 +237,8 @@ module Attribute = struct
   let copied_return_rank = Variants.copiedreturn.rank
 
   let copy_origin_rank = Variants.sourceoriginofcopy.rank
+
+  let dict_contain_const_keys_rank = Variants.dictcontainconstkeys.rank
 
   let dynamic_type_rank = Variants.dynamictype.rank
 
@@ -310,6 +313,8 @@ module Attribute = struct
         F.fprintf f "CopiedReturn (%a%t by %a at %a)" AbstractValue.pp source
           (fun f -> if is_const_ref then F.pp_print_string f ":const&")
           CopyOrigin.pp from Location.pp copied_location
+    | DictContainConstKeys ->
+        F.pp_print_string f "DictContainConstKeys"
     | DynamicType {typ; source_file} ->
         F.fprintf f "DynamicType %a, SourceFile %a" (Typ.pp Pp.text) typ (Pp.option SourceFile.pp)
           source_file
@@ -389,6 +394,7 @@ module Attribute = struct
     | ConstString _
     | CopiedInto _
     | CopiedReturn _
+    | DictContainConstKeys
     | DynamicType _
     | EndOfCollection
     | Initialized
@@ -429,6 +435,7 @@ module Attribute = struct
     | ConstString _
     | CopiedInto _
     | CopiedReturn _
+    | DictContainConstKeys
     | DynamicType _
     | EndOfCollection
     | Initialized
@@ -470,6 +477,7 @@ module Attribute = struct
     | ConfigUsage _
     | ConstString _
     | CopiedReturn _
+    | DictContainConstKeys
     | DynamicType _
     | EndOfCollection
     | Initialized
@@ -569,6 +577,7 @@ module Attribute = struct
       | ConfigUsage (ConfigName _)
       | ConstString _
       | CSharpResourceReleased
+      | DictContainConstKeys
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
@@ -642,6 +651,7 @@ module Attribute = struct
       | ConstString _
       | CopiedInto _
       | CSharpResourceReleased
+      | DictContainConstKeys
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
@@ -879,6 +889,10 @@ module Attributes = struct
     get_by_rank Attribute.unknown_effect_rank ~dest:(function [@warning "-partial-match"]
         | UnknownEffect (call, hist) -> (call, hist) )
 
+
+  let remove_dict_contain_const_keys = remove_by_rank Attribute.dict_contain_const_keys_rank
+
+  let is_dict_contain_const_keys = mem_by_rank Attribute.dict_contain_const_keys_rank
 
   let get_dynamic_type =
     get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-partial-match"]

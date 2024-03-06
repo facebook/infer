@@ -69,6 +69,12 @@ module type S = sig
 
   val get_must_be_initialized : key -> t -> (Timestamp.t * Trace.t) option
 
+  val add_dict_contain_const_keys : key -> t -> t
+
+  val remove_dict_contain_const_keys : key -> t -> t
+
+  val is_dict_contain_const_keys : key -> t -> bool
+
   val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
 
   val get_dynamic_type : t -> key -> Attribute.dynamic_type_data option

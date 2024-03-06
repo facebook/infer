@@ -109,6 +109,9 @@ type t =
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
       (** records the copied value for the return address *)
+  | DictContainConstKeys
+      (** the dictionary contains only constant keys (note: only string constant is supported for
+          now) *)
   | DynamicType of dynamic_type_data
   | EndOfCollection
   | Initialized
@@ -176,6 +179,10 @@ module Attributes : sig
   val remove_allocation : t -> t
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
+
+  val remove_dict_contain_const_keys : t -> t
+
+  val is_dict_contain_const_keys : t -> bool
 
   val get_dynamic_type : t -> dynamic_type_data option
 

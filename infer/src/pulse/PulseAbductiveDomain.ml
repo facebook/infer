@@ -492,6 +492,18 @@ module Internal = struct
       BaseAddressAttributes.get_source_origin_of_copy addr (astate.post :> base_domain).attrs
 
 
+    let add_dict_contain_const_keys address astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.add_dict_contain_const_keys address)
+
+
+    let remove_dict_contain_const_keys address astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.remove_dict_contain_const_keys address)
+
+
+    let is_dict_contain_const_keys addr astate =
+      BaseAddressAttributes.is_dict_contain_const_keys addr (astate.post :> base_domain).attrs
+
+
     let add_dynamic_type {Attribute.typ; source_file} address astate =
       map_post_attrs astate
         ~f:(BaseAddressAttributes.add_dynamic_type {Attribute.typ; source_file} address)
@@ -2232,6 +2244,18 @@ module AddressAttributes = struct
 
   let is_csharp_resource_released v astate =
     SafeAttributes.is_csharp_resource_released (CanonValue.canon' astate v) astate
+
+
+  let add_dict_contain_const_keys v astate =
+    SafeAttributes.add_dict_contain_const_keys (CanonValue.canon' astate v) astate
+
+
+  let remove_dict_contain_const_keys v astate =
+    SafeAttributes.remove_dict_contain_const_keys (CanonValue.canon' astate v) astate
+
+
+  let is_dict_contain_const_keys v astate =
+    SafeAttributes.is_dict_contain_const_keys (CanonValue.canon' astate v) astate
 
 
   let add_dynamic_type dynamic_type_data v astate =

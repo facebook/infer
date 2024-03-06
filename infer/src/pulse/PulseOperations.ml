@@ -505,6 +505,14 @@ let csharp_resource_release ~recursive address astate =
   loop AbstractValue.Set.empty address astate
 
 
+let add_dict_contain_const_keys address astate =
+  AddressAttributes.add_dict_contain_const_keys address astate
+
+
+let remove_dict_contain_const_keys address astate =
+  AddressAttributes.remove_dict_contain_const_keys address astate
+
+
 let add_dynamic_type typ ?source_file address astate =
   AddressAttributes.add_dynamic_type {typ; source_file} address astate
 
