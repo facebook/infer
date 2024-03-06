@@ -1066,16 +1066,34 @@ time, it models Erlang exceptions (builtin or OTP ones).
 <p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-custom-pairs</b>
 <i>json</i></p>
 
-<p style="margin-left:17%;">Specify custom sources/sink for
-the annotation reachability checker</p>
+<p style="margin-left:17%;">Specify custom sources/sinks
+for the annotation reachability checker</p>
 
 <p style="margin-left:11%;">Example format: for custom
 annotations <br>
 com.my.annotation.{Source1,Source2,Sink1} <br>
 { &quot;sources&quot; : [&quot;Source1&quot;,
-&quot;Source2&quot;], &quot;sink&quot; : &quot;Sink1&quot; }
-<b><br>
---external-java-packages</b> <i>+prefix</i></p>
+&quot;Source2&quot;], &quot;sinks&quot; :
+[&quot;Sink1&quot;] } <b><br>
+--annotation-reachability-expensive</b></p>
+
+<p style="margin-left:17%;">Activates: check if expensive
+methods (annotated @Expensive or modeled) can call
+@PerformanceCritical (with annotation reachability checker)
+(Conversely:
+<b>--no-annotation-reachability-expensive</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--annotation-reachability-no-allocation</b></p>
+
+<p style="margin-left:17%;">Activates: check if methods
+annotated with @NoAllocation can allocate (with annotation
+reachability checker) (Conversely:
+<b>--no-annotation-reachability-no-allocation</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--external-java-packages</b>
+<i>+prefix</i></p>
 
 <p style="margin-left:17%;">Specify a list of Java package
 prefixes for external Java packages. If set, the analysis
