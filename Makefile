@@ -827,12 +827,8 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/extract.escript \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.app.src \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.erl \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform.erl \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 endif
 	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
 	(cd '$(DESTDIR)$(bindir)/' && \
