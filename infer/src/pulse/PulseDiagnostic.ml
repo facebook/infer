@@ -145,7 +145,9 @@ type t =
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
   | RetainCycle of
-      {assignment_traces: Trace.t list; values: DecompilerExpr.t list; location: Location.t}
+      { assignment_traces: Trace.t list
+      ; values: (DecompilerExpr.t * Location.t option) list
+      ; location: Location.t }
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
@@ -217,7 +219,8 @@ let pp fmt diagnostic =
       F.fprintf fmt "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;values=%a;@;location=%a@]}"
         (Pp.seq ~sep:";@;" (Trace.pp ~pp_immediate))
         assignment_traces
-        (Pp.comma_seq DecompilerExpr.pp_with_abstract_value)
+        (Pp.comma_seq
+           (Pp.pair ~fst:DecompilerExpr.pp_with_abstract_value ~snd:(Pp.option Location.pp)) )
         values Location.pp location
   | StackVariableAddressEscape {variable; history; location} ->
       F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
@@ -421,7 +424,9 @@ let flows_to_decompiled_expr (decompiler_expr : DecompilerExpr.t) ({value_tuple}
 
 
 let pp_retain_cycle fmt values =
-  List.iteri values ~f:(fun i v -> F.fprintf fmt "@\n  %d) %a" (i + 1) DecompilerExpr.pp v)
+  List.iteri values ~f:(fun i (v, loc) ->
+      F.fprintf fmt "@\n  %d) %a" (i + 1) DecompilerExpr.pp v ;
+      Option.iter loc ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
 
 
 let get_message_and_suggestion diagnostic =

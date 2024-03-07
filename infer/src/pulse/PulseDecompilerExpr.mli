@@ -29,6 +29,10 @@ val pp : F.formatter -> t -> unit
 
 val pp_source_expr : F.formatter -> source_expr -> unit
 
+val includes_captured_variable : t -> bool
+
+val includes_block : t -> bool
+
 val pp_with_abstract_value : Format.formatter -> t -> unit
 
 val abstract_value_of_expr : t -> AbstractValue.t option

@@ -15,27 +15,23 @@ build_systems/pulse_messages_objc/nil_issues.mm, nilInsertionIntoCollectionBad, 
 build_systems/pulse_messages_objc/nil_issues.mm, nilInsertionIntoCollectionThroughCallBad, 102, 30, ERROR, NIL_INSERTION_INTO_COLLECTION, `returns_nil()` could be nil (from the call to `returns_nil()` on line 102) and is used as a value when inserting into a collection, potentially causing a crash., 
 build_systems/pulse_messages_objc/nil_issues.mm, property_accessorBad, 107, 3, ERROR, NULLPTR_DEREFERENCE, `obj.x_ptr` could be null (null value originating from line 106) and is dereferenced., 
 build_systems/pulse_messages_objc/retain_cycle.mm, RCBlock.retain_self_in_block_retain_cycle_bad, 49, 8, ERROR, RETAIN_CYCLE, Retain cycle found at line 49, column 8 between the following objects: 
-  1) self->_handler
+  1) self->_handler, assigned on line 49
   2) self captured by block defined in retain_cycle.mm:49., 
 build_systems/pulse_messages_objc/retain_cycle.mm, RCBlock.retain_self_in_block_with_store_retain_cycle_bad, 55, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 55, column 3 between the following objects: 
   1) self captured by block defined in retain_cycle.mm:55
-  2) self->_handler., 
+  2) self->_handler, assigned on line 55., 
 build_systems/pulse_messages_objc/retain_cycle.mm, test_retain_self_in_block_cycle_bad, 73, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 73, column 3 between the following objects: 
-  1) c->_handler
-  2) &c., 
+  1) c->_handler, assigned on line 73
+  2) &c, assigned on line 73., 
 build_systems/pulse_messages_objc/retain_cycle.mm, retain_a_in_block_cycle_bad, 87, 5, ERROR, RETAIN_CYCLE, Retain cycle found at line 87, column 5 between the following objects: 
-  1) a->_b
-  2) b->_a_handler
+  1) a->_b, assigned on line 86
+  2) b->_a_handler, assigned on line 87
   3) a captured by block defined in retain_cycle.mm:87., 
-build_systems/pulse_messages_objc/retain_cycle.mm, retain_a_in_block_cycle_bad, 87, 5, ERROR, RETAIN_CYCLE, Retain cycle found at line 87, column 5 between the following objects: 
-  1) b->_a_handler
-  2) a captured by block defined in retain_cycle.mm:87
-  3) a->_b., 
 codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, FBSomeDataManager.fetchNewData_bad, 46, 14, ERROR, RETAIN_CYCLE, Retain cycle found at line 46, column 14 between the following objects: 
-  1) &block defined in RetainCycleBlockAsParameter.m:46
-  2) self captured by block defined in RetainCycleBlockAsParameter.m:46
-  3) self->_fetcher., 
+  1) self->_fetcher, assigned on line 46
+  2) &block defined in RetainCycleBlockAsParameter.m:46
+  3) self captured by block defined in RetainCycleBlockAsParameter.m:46., 
 codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, test_fetchNewData_bad, 56, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 56, column 3 between the following objects: 
-  1) a->_fetcher
-  2) UNKNOWN
-  3) &a., 
+  1) a->_fetcher, assigned on line 56
+  2) UNKNOWN, assigned on line 56
+  3) &a, assigned on line 56., 

@@ -91,7 +91,9 @@ type t =
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
   | RetainCycle of
-      {assignment_traces: Trace.t list; values: DecompilerExpr.t list; location: Location.t}
+      { assignment_traces: Trace.t list
+      ; values: (DecompilerExpr.t * Location.t option) list
+      ; location: Location.t }
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t

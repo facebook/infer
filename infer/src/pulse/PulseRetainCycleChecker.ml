@@ -36,6 +36,30 @@ let remove_non_objc_objects cycle astate =
   List.filter ~f:(fun v -> not (has_static_dynamic_type astate v)) cycle
 
 
+let create_values astate get_assignment_trace cycle =
+  let values =
+    List.map
+      ~f:(fun v ->
+        let value = Decompiler.find v astate in
+        let trace = get_assignment_trace astate v in
+        let location = Option.map ~f:Trace.get_outer_location trace in
+        (value, location) )
+      cycle
+  in
+  let sorted_values =
+    List.sort ~compare:(fun (_, loc1) (_, loc2) -> Option.compare Location.compare loc1 loc2) values
+  in
+  List.map
+    ~f:(fun (value, loc) ->
+      let location =
+        if DecompilerExpr.includes_captured_variable value || DecompilerExpr.includes_block value
+        then None
+        else loc
+      in
+      (value, location) )
+    sorted_values
+
+
 (* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
@@ -87,7 +111,7 @@ let check_retain_cycles tenv addresses orig_astate =
               let seen = List.rev seen in
               let cycle = crop_seen_to_cycle seen addr in
               let cycle = remove_non_objc_objects cycle astate in
-              let values = List.map ~f:(fun v -> Decompiler.find v astate) cycle in
+              let values = create_values astate get_assignment_trace cycle in
               let diagnostic = Diagnostic.RetainCycle {assignment_traces; values; location} in
               Recoverable ((), [ReportableError {astate; diagnostic}])
         else (

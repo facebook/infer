@@ -167,6 +167,19 @@ let pp fmt = function
       pp_source_expr fmt source_expr
 
 
+let access_expr_exists ~f = function
+  | Unknown _ ->
+      false
+  | SourceExpr (source_expr, _) ->
+      f (access_expr_of_source_expr source_expr)
+
+
+let includes_captured_variable = access_expr_exists ~f:(function Capture _ -> true | _ -> false)
+
+let includes_block =
+  access_expr_exists ~f:(function ProgramBlock _ | AddressOf (ProgramBlock _) -> true | _ -> false)
+
+
 let pp_with_abstract_value fmt decompiled =
   F.fprintf fmt "%a:%a" (Pp.option AbstractValue.pp)
     (abstract_value_of_expr decompiled)
