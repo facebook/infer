@@ -15,9 +15,10 @@ class SuppressExceptional {
     return "bar";
   }
 
-  public static async function genTestOK(): Awaitable<void> {
+  public static async function FP_genTestOK(): Awaitable<void> {
     $a = self::genFirstThing();
-    $b = self::genSecondThing();
+    $b = self::genSecondThing(); // treated as un unknown call because
+    // we use pulse-force-continue option
     await $a;
     await $b;
   }
@@ -33,13 +34,15 @@ class CowSetKnown {
     return "bar";
   }
 
-  public static async function genTestOK(): Awaitable<void> {
+  public static async function FP_genTestOK(): Awaitable<void> {
     $d = dict[];
     $d['first'] = self::genFirstThing();
     $d['second'] = self::genSecondThing();
     // leaving the await commented out is OK because
     // we know we'll throw and suppress the error
     // await Dict\from_async($d);
+    // note: this call is treated as un unknown call because
+    // we use pulse-force-continue option
   }
 }
 

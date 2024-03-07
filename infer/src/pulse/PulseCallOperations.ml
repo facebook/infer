@@ -729,18 +729,16 @@ let call tenv path ~caller_proc_desc
           already_given summary.main
       in
       let res, non_disj =
-        match resolution_status with
-        | `UnknownCall when Config.pulse_force_continue && not (has_continue_program res) ->
-            (* When a function call does not have a post of type ContinueProgram, we may want to treat
-               the call as unknown to make the analysis continue. This may introduce false positives but
-               could uncover additional true positives too. *)
-            L.d_printfln_escaped ~color:Orange
-              "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
-              callee_pname ;
-            let unknown_results, non_disj = call_as_unknown () in
-            (unknown_results @ res, non_disj)
-        | _ ->
-            (res, non_disj)
+        if Config.pulse_force_continue && not (has_continue_program res) then (
+          (* When a function call does not have a post of type ContinueProgram, we may want to treat
+             the call as unknown to make the analysis continue. This may introduce false positives but
+             could uncover additional true positives too. *)
+          L.d_printfln_escaped ~color:Orange
+            "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
+            callee_pname ;
+          let unknown_results, non_disj = call_as_unknown () in
+          (unknown_results @ res, non_disj) )
+        else (res, non_disj)
       in
       (res, non_disj, contradiction, resolution_status)
   | None ->

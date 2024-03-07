@@ -11,6 +11,9 @@ final class Exception2 extends \Exception {}
 
 class ExnTests {
 
+  // because we use pulse-force-continue option,
+  // these always-throwing functions will be treated as
+  // unknown calls
   public function justThrow1OK(): void {
     throw new Exception1();
     $taint = \Level1\taintSource();
@@ -21,7 +24,7 @@ class ExnTests {
     throw new Exception2();
   }
 
-  public function callJustThrowOK(): void {
+  public function FP_callJustThrowOK(): void {
     $this->justThrow1OK();
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
@@ -77,7 +80,7 @@ class ExnTests {
     }
   }
 
-  public function leftNested1OK(): void {
+  public function FP_leftNested1OK(): void {
     try {
       try {
         $this->justThrow1OK();

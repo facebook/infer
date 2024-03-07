@@ -34,26 +34,34 @@ class Unsafe {
   }
 
   // this should be OK because runtime type test prevents call from returning
-  public function callBogusIntOK(): void {
+  public function FP_callBogusIntOK(): void {
     $never_ret = $this->returnBogusInt();
+    // note: this call is treated as un unknown call because
+    // we use pulse-force-continue option
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
   }
 
-  public function callBogusBoolOK(): void {
+  public function FP_callBogusBoolOK(): void {
     $never_ret = $this->returnBogusBool();
+    // note: this call is treated as un unknown call because
+    // we use pulse-force-continue option
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
   }
 
-  public function callBogusVecOK(): void {
+  public function FP_callBogusVecOK(): void {
     $never_ret = $this->returnBogusVec();
+    // note: this call is treated as un unknown call because
+    // we use pulse-force-continue option
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
   }
 
-  public function callBogusDictOK(): void {
+  public function FP_callBogusDictOK(): void {
     $never_ret = $this->returnBogusDict();
+    // note: this call is treated as un unknown call because
+    // we use pulse-force-continue option
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
   }
