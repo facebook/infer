@@ -97,8 +97,8 @@ DEBUG PROCEDURES
 
        --procedures-summary
            Activates: Print the summaries of each procedure in the output of
-           --procedures. See also --procedures-summary-nonempty. (Conversely:
-           --no-procedures-summary)
+           --procedures. See also --procedures-summary-skip-empty.
+           (Conversely: --no-procedures-summary)
 
        --procedures-summary-json
            Activates: Emit the summaries of each procedure in the output of

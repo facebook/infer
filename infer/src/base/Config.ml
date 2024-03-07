@@ -2255,7 +2255,7 @@ and procedures_summary =
   CLOpt.mk_bool ~long:"procedures-summary" ~default:false
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Print the summaries of each procedure in the output of $(b,--procedures). See also \
-     $(b,--procedures-summary-nonempty)."
+     $(b,--procedures-summary-skip-empty)."
 
 
 and procedures_summary_json =
