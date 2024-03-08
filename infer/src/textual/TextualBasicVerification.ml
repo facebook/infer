@@ -15,7 +15,8 @@ type error =
      overloads and provide an error message based on this. *)
   | UnknownProc of {proc: QualifiedProcName.t; args: int}
   | UnknownLabel of {label: NodeName.t; pname: QualifiedProcName.t}
-  | VariadicWrongParam of {proc: QualifiedProcName.t; in_a_trait: bool}
+  | VariadicWrongParam of
+      {proc: QualifiedProcName.t; in_a_trait: bool; has_reified_generics_param: bool}
   | VariadicNotEnoughArgs of {proc: QualifiedProcName.t; nb_args: int; nb_formals: int}
   | WrongArgNumber of {proc: QualifiedProcName.t; args: int; formals: int; loc: Location.t}
 
@@ -53,11 +54,22 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt
         "the variadic function %a is expecting at least %d arguments but is called with only %d"
         QualifiedProcName.pp proc (nb_formals - 1) nb_args
+  | VariadicWrongParam {proc; in_a_trait; has_reified_generics_param}
+    when in_a_trait && has_reified_generics_param ->
+      F.fprintf fmt
+        "variadic parameter is not in second-to-last position in trait function %a which has a \
+         reified generics parameter"
+        QualifiedProcName.pp proc
   | VariadicWrongParam {proc; in_a_trait} when in_a_trait ->
-      F.fprintf fmt "variadic parameter is not in penultimate position in trait fonction %a"
+      F.fprintf fmt "variadic parameter is not in penultimate position in trait function %a"
+        QualifiedProcName.pp proc
+  | VariadicWrongParam {proc; has_reified_generics_param} when has_reified_generics_param ->
+      F.fprintf fmt
+        "variadic parameter is not in penultimate position in function %a which has a reified \
+         generics parameter"
         QualifiedProcName.pp proc
   | VariadicWrongParam {proc} ->
-      F.fprintf fmt "variadic parameter is not in last position in fonction %a" QualifiedProcName.pp
+      F.fprintf fmt "variadic parameter is not in last position in function %a" QualifiedProcName.pp
         proc
   | WrongArgNumber {proc; args; formals} ->
       F.fprintf fmt "function %a called with %d arguments while declared with %d parameters"
@@ -158,20 +170,41 @@ let verify_decl ~env errors (decl : Module.decl) =
         let errors = verify_exp loc generics errors exp1 in
         verify_exp loc generics errors exp2
   in
-  let verify_variadic_position errors {ProcDesc.procdecl= {qualified_name; formals_types}} =
+  let verify_variadic_position errors {ProcDesc.procdecl= {qualified_name; formals_types}; params} =
     let contains_variadic_typ formals =
       List.exists formals ~f:(Typ.is_annotated ~f:Attr.is_variadic)
     in
+    let has_reified_generics_param = List.exists ~f:VarName.is_hack_reified_generics_param params in
     Option.value_map formals_types ~default:errors ~f:(fun formals_types ->
-        let is_defined_in_a_trait = TextualDecls.is_defined_in_a_trait env qualified_name in
+        let in_a_trait = TextualDecls.is_defined_in_a_trait env qualified_name in
         match List.rev formals_types with
         | [] ->
             errors
-        | _ :: others when contains_variadic_typ others && not is_defined_in_a_trait ->
-            VariadicWrongParam {proc= qualified_name; in_a_trait= false} :: errors
-        | self :: _ :: others when contains_variadic_typ (self :: others) && is_defined_in_a_trait
-          ->
-            VariadicWrongParam {proc= qualified_name; in_a_trait= true} :: errors
+        | _ :: others
+          when contains_variadic_typ others && (not in_a_trait) && not has_reified_generics_param ->
+            (* basic variadic function: the variadic argument is expected to appear at the last position *)
+            VariadicWrongParam
+              {proc= qualified_name; in_a_trait= false; has_reified_generics_param= false}
+            :: errors
+        | last :: before_last :: _ :: others
+          when contains_variadic_typ (last :: before_last :: others)
+               && in_a_trait && has_reified_generics_param ->
+            (* variadic trait function with a reified generic parameter: the variadic argument is expected
+               to appear at the second-to-last position, the generic type(s) at the first-to-last position
+               and the [self] parameter at the last position *)
+            VariadicWrongParam
+              {proc= qualified_name; in_a_trait= true; has_reified_generics_param= true}
+            :: errors
+        | last :: _ :: others
+          when contains_variadic_typ (last :: others)
+               && ( (in_a_trait && not has_reified_generics_param)
+                  || ((not in_a_trait) && has_reified_generics_param) ) ->
+            (* case1: variadic trait function without a reified generic parameter: the variadic argument is
+               expected to appear at the first-to-last position, and the [self] parameter at the last position *)
+            (* case2: variadic non-trait function with a reified generic parameter: the variadic argument is
+               expected to appear at the first-to-last position, and the generic type(s) at the last position *)
+            VariadicWrongParam {proc= qualified_name; in_a_trait; has_reified_generics_param}
+            :: errors
         | _ ->
             errors )
   in

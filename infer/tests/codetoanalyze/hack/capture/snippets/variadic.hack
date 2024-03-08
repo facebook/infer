@@ -49,6 +49,15 @@ function main_using_optionnals4(
   variadic_with_optionals($format, $x, $y, $z, $t);
 }
 
+function with_optional_and_reify<reify T>(
+  ?string $msg = null,
+  mixed ...$args
+): void {}
+
+function call_with_optional_and_reify(): void {
+  with_optional_and_reify<int>();
+}
+
 class C {
   use T;
 
@@ -56,9 +65,20 @@ class C {
     $this->foo($a, $b, $c);
     self::static_foo($a, $b, $c);
   }
+
+  public function call_trait_with_optional_and_reify(
+    int $a,
+    int $b,
+    int $c,
+  ): void {
+    $this->foo2<int>($a, $b, $c);
+    self::static_foo2<int>($a, $b, $c);
+  }
 }
 
 trait T {
   public function foo(int $x, int ...$rest): void {}
   public static function static_foo(int $x, int ...$rest): void {}
+  public function foo2<reify T>(int $x = 0, int ...$rest): void {}
+  public static function static_foo2<reify T>(int $x, int ...$rest): void {}
 }

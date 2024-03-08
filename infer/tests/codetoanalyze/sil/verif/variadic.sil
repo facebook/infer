@@ -20,6 +20,16 @@ define f3(x: int, y: int, args: .variadic mixed, z: int) : int {
     ret f1(x, y, z)
 }
 
+define with_generics_ok(x: int, args: .variadic int, $0ReifiedGenerics: *HackVec) : *void {
+  #entry:
+    ret null
+}
+
+define with_generics_bad(x: int, $0ReifiedGenerics: *HackVec, args: .variadic int) : *void {
+  #entry:
+    ret null
+}
+
 type T = .kind="trait" {}
 
 define T.ok(x: int, args: .variadic int, self: *HackMixed) : void {
@@ -28,6 +38,21 @@ define T.ok(x: int, args: .variadic int, self: *HackMixed) : void {
 }
 
 define T.bad(x: int, args: .variadic int) : void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_ok(x: int, args: .variadic int, $0ReifiedGenerics: *HackVec, self: *HackMixed) : *void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_bad1(x: int, $0ReifiedGenerics: *HackVec, args: .variadic int, self: *HackMixed) : *void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_bad2(x: int, $0ReifiedGenerics: *HackVec, self: *HackMixed, args: .variadic int) : *void {
   #entry:
     ret null
 }

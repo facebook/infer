@@ -192,7 +192,15 @@ let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
   F.fprintf fmt "%a%a" TypeName.pp enclosing_class FieldName.pp name
 
 
-module VarName : NAME = Name
+module VarName : sig
+  include NAME
+
+  val is_hack_reified_generics_param : t -> bool
+end = struct
+  include Name
+
+  let is_hack_reified_generics_param {value} = String.equal value "$0ReifiedGenerics"
+end
 
 module NodeName : NAME = Name
 

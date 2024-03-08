@@ -195,10 +195,7 @@ let get_procdecl decls procsig nb_args =
   in
   let generics_status procdesc =
     (* TODO(dpichardie) ask hackc to put an annotation on the function signature instead *)
-    if
-      List.exists procdesc.ProcDesc.params ~f:(fun varname ->
-          String.equal varname.VarName.value "$0ReifiedGenerics" )
-    then Reified
+    if List.exists procdesc.ProcDesc.params ~f:VarName.is_hack_reified_generics_param then Reified
     else NotReified
   in
   let non_variadic_case =

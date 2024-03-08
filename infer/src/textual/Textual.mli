@@ -47,7 +47,12 @@ end
 
 module ProcName : NAME (* procedure names, without their attachement type *)
 
-module VarName : NAME (* variables names *)
+module VarName : sig
+  (* variables names *)
+  include NAME
+
+  val is_hack_reified_generics_param : t -> bool
+end
 
 module FieldName : NAME (* field names, without their enclosing types *)
 
