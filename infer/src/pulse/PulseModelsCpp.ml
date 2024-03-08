@@ -675,7 +675,7 @@ module GenericMapCollection = struct
         (* This should never happen, as we already know from using capt_arg_of_typ that map
            is of some map type, hence it should have a first and second template arguments
            mapping to key and value types respectively. *)
-        L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp Pp.text) map.typ ;
+        L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp_full Pp.text) map.typ ;
         None
 
 
