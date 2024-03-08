@@ -437,16 +437,6 @@ OPTIONS
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
 
-       --uninit
-           Activates: uninit checker: Warns when values are used before
-           having been initialized.           
-           DEPRECATED: Uninitialized value checking has moved to Pulse.
-            (Conversely: --no-uninit)
-
-       --uninit-only
-           Activates: Enable uninit and disable all other checkers
-           (Conversely: --no-uninit-only)
-
        --write-html
            Activates: Produce html debug output for the analyses in
            infer-out/captured. This shows the abstract state of all analyses

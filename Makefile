@@ -62,7 +62,6 @@ DIRECT_TESTS += \
   c_purity \
   c_starvation \
   c_topl \
-  c_uninit \
   cpp_annotation-reachability \
   cpp_biabduction \
   cpp_bufferoverrun \
@@ -83,7 +82,6 @@ DIRECT_TESTS += \
   cpp_racerd \
   cpp_siof \
   cpp_starvation \
-  cpp_uninit \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
@@ -149,7 +147,6 @@ DIRECT_TESTS += \
   objc_pulse-data-lineage \
   objc_quandary \
   objc_self-in-block \
-  objc_uninit \
   objcpp_biabduction \
   objcpp_frontend \
   objcpp_liveness \

@@ -231,8 +231,6 @@ module AccessExpression = struct
         get_base ae
 
 
-  let is_base = function Base _ -> true | _ -> false
-
   let lookup_field_type_annot tenv base_typ field_name =
     let lookup = Tenv.lookup tenv in
     Struct.get_field_type_and_annotation ~lookup field_name base_typ

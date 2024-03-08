@@ -152,8 +152,6 @@ type t =
 
 let get_access attributes = attributes.access
 
-let get_formals attributes = attributes.formals
-
 let get_pvar_formals attributes =
   let pname = attributes.proc_name in
   List.map attributes.formals ~f:(fun (name, typ, _) -> (Pvar.mk name pname, typ))

@@ -3473,10 +3473,6 @@ and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during Topl analysis"
 
 
-and uninit_interproc =
-  CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
-
-
 and unix_fork =
   CLOpt.mk_bool ~long:"unix-fork"
     ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
@@ -4688,8 +4684,6 @@ and trace_events = !trace_events
 and trace_ondemand = !trace_ondemand
 
 and trace_topl = !trace_topl
-
-and uninit_interproc = !uninit_interproc
 
 and unix_fork = !unix_fork
 

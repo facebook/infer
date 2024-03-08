@@ -667,7 +667,6 @@ OPTIONS
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              TOPL_ERROR_LATENT (disabled by default),
-             UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
              UNTRUSTED_DESERIALIZATION (enabled by default),
@@ -1936,17 +1935,6 @@ OPTIONS
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)           See also infer-analyze(1).
-
-       --uninit
-           Activates: uninit checker: Warns when values are used before
-           having been initialized.           
-           DEPRECATED: Uninitialized value checking has moved to Pulse.
-            (Conversely: --no-uninit)
-           See also infer-analyze(1).
-
-       --uninit-only
-           Activates: Enable uninit and disable all other checkers
-           (Conversely: --no-uninit-only)           See also infer-analyze(1).
 
        --version
            Print version information and exit           See also infer-run(1).

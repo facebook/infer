@@ -340,8 +340,6 @@ val thread_safety_violation : t
 
 val topl_error : latent:bool -> t
 
-val uninitialized_value : t
-
 val uninitialized_value_pulse : latent:bool -> t
 
 val unnecessary_copy_pulse : t

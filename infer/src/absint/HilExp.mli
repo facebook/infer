@@ -38,9 +38,6 @@ module AccessExpression : sig
 
   val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
-  val dereference : access_expression -> access_expression
-  (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
-
   val address_of : access_expression -> access_expression option
     [@@warning "-unused-value-declaration"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
@@ -53,8 +50,6 @@ module AccessExpression : sig
 
   val replace_base :
     remove_deref_after_base:bool -> AccessPath.base -> access_expression -> access_expression
-
-  val is_base : access_expression -> bool
 
   val is_return_var : access_expression -> bool
 

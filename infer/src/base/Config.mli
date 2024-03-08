@@ -878,8 +878,6 @@ val trace_ondemand : bool
 
 val trace_topl : bool
 
-val uninit_interproc : bool
-
 val unix_fork : bool
 
 val workspace : string option

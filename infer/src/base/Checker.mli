@@ -39,7 +39,6 @@ type t =
   | SelfInBlock
   | Starvation
   | Topl
-  | Uninit
 [@@deriving equal, enumerate]
 
 (** per-language support for each checker *)
