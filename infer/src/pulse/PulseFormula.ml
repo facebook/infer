@@ -3437,14 +3437,6 @@ let and_equal_vars v1 v2 formula =
 
 let and_not_equal = and_mk_atom Ne
 
-let and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv formula =
-  ignore get_dynamic_type ;
-  ignore tenv ;
-  (* just testing the plumbing *)
-  let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
-  and_atom atom formula
-
-
 let and_is_int v formula =
   let atom = Atom.equal (IsInt (Var v)) Term.one in
   and_atom atom formula
@@ -3556,6 +3548,20 @@ module DynamicTypes = struct
     if has_instanceof formula then really_simplify tenv ~get_dynamic_type formula
     else Sat (formula, RevList.empty)
 end
+
+(* Just do most naive thing of evaluating instanceof if we know the dynamic type at the time of assertion
+   Because that's pretty weak, leave existing normalisation at summary time in for now
+*)
+let and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv formula =
+  let atom =
+    match DynamicTypes.evaluate_instanceof tenv ~get_dynamic_type v2 t with
+    | None ->
+        Atom.equal (Var v1) (IsInstanceOf (v2, t))
+    | Some bool_term ->
+        Atom.equal (Var v1) bool_term
+  in
+  and_atom atom formula
+
 
 let normalize tenv ~get_dynamic_type formula =
   Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
