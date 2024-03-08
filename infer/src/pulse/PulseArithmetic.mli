@@ -109,6 +109,7 @@ val and_equal_instanceof :
      AbstractValue.t
   -> AbstractValue.t
   -> Typ.t
+  -> tenv:Tenv.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t SatUnsat.t
 

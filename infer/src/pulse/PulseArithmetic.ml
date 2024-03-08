@@ -121,8 +121,13 @@ let is_manifest summary =
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
-let and_equal_instanceof v1 v2 t astate =
-  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
+let and_equal_instanceof v1 v2 t ~tenv astate =
+  let get_dynamic_type v =
+    AbductiveDomain.AddressAttributes.get_dynamic_type v astate
+    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
+  in
+  map_path_condition astate ~f:(fun phi ->
+      Formula.and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv phi )
 
 
 let absval_of_int astate i =

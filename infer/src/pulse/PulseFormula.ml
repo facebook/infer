@@ -3437,7 +3437,10 @@ let and_equal_vars v1 v2 formula =
 
 let and_not_equal = and_mk_atom Ne
 
-let and_equal_instanceof v1 v2 t formula =
+let and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv formula =
+  ignore get_dynamic_type ;
+  ignore tenv ;
+  (* just testing the plumbing *)
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
   and_atom atom formula
 

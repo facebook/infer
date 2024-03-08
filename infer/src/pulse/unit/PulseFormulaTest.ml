@@ -47,8 +47,8 @@ let of_binop bop f1 f2 phi =
 (* the following are shorthand notations that are generally useful to keep around *)
 [@@@warning "-unused-value-declaration"]
 
-let instanceof typ x_var y_var phi =
-  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ phi in
+let instanceof typ x_var y_var ~get_dynamic_type ~tenv phi =
+  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ ~get_dynamic_type ~tenv phi in
   phi
 
 
@@ -197,7 +197,9 @@ let%test_module "normalization" =
   ( module struct
     let%expect_test _ =
       normalize_with_all_types_Nil
-        (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && z = i 0) ;
+        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        && z = i 0 ) ;
       [%expect
         {|
         Formula:
@@ -211,7 +213,9 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && w = i 0) ;
+        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        && w = i 0 ) ;
       [%expect
         {|
         Formula:
@@ -225,7 +229,9 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
+        ( instanceof cons_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        && instanceof nil_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        ) ;
       [%expect
         {|
         Formula:
@@ -248,6 +254,15 @@ let%test_module "normalization" =
       [%expect {|
         Formula:
           unsat
+        Result: same|}]
+
+
+    let%expect_test _ =
+      normalize (i 1 = i 1) ;
+      [%expect
+        {|
+        Formula:
+          conditions: (empty) phi: (empty)
         Result: same|}]
 
 
