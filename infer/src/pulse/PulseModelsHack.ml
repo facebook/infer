@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -445,7 +446,12 @@ let hhbc_class_get_c value : model =
                  get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name
                in
                assign_ret class_object ) ]
-       ~default:(fun () -> get_static_class value |> lift_to_monad)
+       ~default:(fun () ->
+         let* {location} = DSL.Syntax.get_data in
+         ScubaLogging.log_message_with_location ~label:"hhbc_class_get_c argument"
+           ~loc:(F.asprintf "%a" Location.pp_file_pos location)
+           ~message:"hhbc_class_get_c received a non-constant-string argument." ;
+         get_static_class value |> lift_to_monad )
 
 
 module Dict = struct
