@@ -2378,6 +2378,12 @@ and pulse_model_cheap_copy_type =
     "Regex of methods that should be cheap to copy in Pulse"
 
 
+and pulse_model_cheap_copy_type_list =
+  CLOpt.mk_string_list ~long:"pulse-model-cheap-copy-type-list" ~meta:"regex"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Regex of methods that should be cheap to copy in Pulse"
+
+
 and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4293,7 +4299,13 @@ and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
-and pulse_model_cheap_copy_type = Option.map ~f:Str.regexp !pulse_model_cheap_copy_type
+and pulse_model_cheap_copy_type =
+  let pulse_model_cheap_copy_type_list =
+    Option.to_list !pulse_model_cheap_copy_type @ RevList.to_list !pulse_model_cheap_copy_type_list
+  in
+  if List.is_empty pulse_model_cheap_copy_type_list then None
+  else Some (String.concat ~sep:"\\|" pulse_model_cheap_copy_type_list |> Str.regexp)
+
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 

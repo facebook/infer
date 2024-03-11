@@ -1295,6 +1295,10 @@ OPTIONS
            Regex of methods that should be cheap to copy in Pulse       
     See also infer-analyze(1).
 
+       --pulse-model-cheap-copy-type-list +regex
+           Regex of methods that should be cheap to copy in Pulse       
+    See also infer-analyze(1).
+
        --pulse-model-free-pattern string
            Regex of methods that should be modelled as wrappers to free(3) in
            Pulse. The pointer to be freed should be the first argument of the
@@ -2693,6 +2697,9 @@ INTERNAL OPTIONS
 
        --pulse-model-alloc-pattern-reset
            Cancel the effect of --pulse-model-alloc-pattern.
+
+       --pulse-model-cheap-copy-type-list-reset
+           Set --pulse-model-cheap-copy-type-list to the empty list.
 
        --pulse-model-cheap-copy-type-reset
            Cancel the effect of --pulse-model-cheap-copy-type.
