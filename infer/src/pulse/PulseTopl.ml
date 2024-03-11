@@ -236,7 +236,7 @@ end = struct
        considerations apply to other predicates, such as LeadsTo.
 
        The iteration order is unspecified in the sense that it's dangerous for callers of this
-       function to rely on it. But, we will look at predicates in an order convenient for
+       function to rely on it. But, we will look at predicates in some fixed order, convenient for
        implementation.
 
        (Terminology for below:
@@ -245,25 +245,24 @@ end = struct
           "path predicate" = value of shape Constraint.Builtin (_, _, _)
           "heap predicate" = value of shape Constraint.LeadsTo (_,_) or Constraint.NotLeadsTo (_,_)
           "path condition" = (possibly modified) pulse_state.path_condition (of type Formula.t)
-          "heap" = (possibly modified) pulse_state.post_?.heap (of type Memory.t)
+          "heap" = (possibly modified) pulse_state.pulse_post.heap (of type Memory.t)
           "new_eqs" = value of type Formula.new_eqs
        end of terminology aside.)
 
        Whenever we process a predicate, we first re-write it according to `Formula.get_var_repr`
        applied to the current path condition.
 
-       First, we iterate through path predicates *except* disequalities. If the predicate is implied
-       by the path condition, we drop it. Otherwise, we conjoin it to the path condition (and detect
-       if it leads to unsatisfiability), and accumulate new_eqs.
-
-       Next, we normalize the path condition, accumulating more new_eqs. And we incorporate new_eqs
-       into the heap (that is, substitute in the heap). From this point on we don't need new_eqs.
-
-       Next, we iterate through disequality path predicates. If the predicate is implied by the path
-       condition *or* by the heap, we drop it. Otherwise, we conjoin it to the path condition (and
-       detect if it leads to unsatisfiability). We assert that no new_eqs are produced (which is
-       what Formula.and_normalized_atom currently does). (TODO: This assumption does not hold
-       anymore T171889331.)
+       First, we iterate through path predicates. If the predicate is implied by the path condition
+       or by the heap, we drop it. Otherwise we conjoin it to the path condition and we normalize
+       the path condition. Both conjoining and normalization may render the path condition
+       unsatisfiable; if they do not then they may generate new deduced equalities. If the predicate
+       was an equality, we also add it to new equalities, before updating the heap according.
+       When we apply new equalities as substitutions to the heap, we have one more opportunity to
+       detect unsatisfiability. After these updates to the path condition and the heap, we are ready
+       to process the next predicate. (The invariant we try to maintain here is that the path
+       condition and the heap reflect all the information in the predicates that have been
+       processed. This may be expensive but: (a) we do not apply this algorithm often; and (b) Topl
+       tends to track few predicates.)
 
        Next, we iterate through LeadsTo predicates. If they are implied by the heap, we drop them;
        otherwise, we keep them and we add them to the heap. (For implementation, we do not actually
@@ -276,12 +275,11 @@ end = struct
       type binary = (Formula.operand * Formula.operand) list
 
       type t =
-        { no_neq_constr: (Binop.t * Formula.operand * Formula.operand) list
-        ; neq_constr: binary
+        { path_constr: (Binop.t * Formula.operand * Formula.operand) list
         ; leadsto_constr: binary
         ; notleadsto_constr: binary }
 
-      let empty = {no_neq_constr= []; neq_constr= []; leadsto_constr= []; notleadsto_constr= []}
+      let empty = {path_constr= []; leadsto_constr= []; notleadsto_constr= []}
     end in
     let module C = ConstraintByType in
     let open SatUnsat.Import in
@@ -289,10 +287,8 @@ end = struct
       let* in_constr =
         let f in_constr predicate =
           match predicate with
-          | Binary (Builtin Ne, l, r) ->
-              Sat C.{in_constr with neq_constr= (l, r) :: in_constr.neq_constr}
           | Binary (Builtin op, l, r) ->
-              Sat C.{in_constr with no_neq_constr= (op, l, r) :: in_constr.no_neq_constr}
+              Sat C.{in_constr with path_constr= (op, l, r) :: in_constr.path_constr}
           | Binary (LeadsTo, l, r) ->
               Sat C.{in_constr with leadsto_constr= (l, r) :: in_constr.leadsto_constr}
           | Binary (NotLeadsTo, l, r) ->
@@ -312,76 +308,74 @@ end = struct
         | other ->
             other
       in
-      (* Handle path predicates, except disequalities. *)
-      let* path_condition, new_eqs, out_constr =
-        let f (path_condition, old_new_eqs, out_constr) (op, l, r) =
-          let l, r = (rep path_condition l, rep path_condition r) in
-          match Formula.prune_binop ~negated:true op l r path_condition with
-          | Sat _ ->
-              let+ path_condition, new_eqs =
-                Formula.prune_binop ~negated:false op l r path_condition
-              in
-              ( path_condition
-              , RevList.append old_new_eqs new_eqs
-              , C.{out_constr with no_neq_constr= (op, l, r) :: out_constr.no_neq_constr} )
-          | Unsat ->
-              Sat (path_condition, old_new_eqs, out_constr)
-        in
-        SatUnsat.list_fold in_constr.C.no_neq_constr ~f
-          ~init:(pulse_state.path_condition, RevList.empty, out_constr)
-      in
-      (* Normalize path condition, and update heap *)
-      let* path_condition, heap =
+      (* Handle path predicates. *)
+      let* _path_condition, heap, out_constr =
         let get_dynamic_type = get_dynamic_type pulse_state in
-        let old_new_eqs = new_eqs in
-        let* path_condition, new_eqs =
-          Formula.normalize default_tenv ~get_dynamic_type path_condition
-        in
-        let new_eqs = RevList.to_list (RevList.append old_new_eqs new_eqs) in
-        let+ heap =
-          let incorporate_eq heap (eq : Formula.new_eq) =
-            match eq with
-            | Equal (v1, v2) ->
-                Memory.subst_var ~for_summary:true (v1, v2) heap
-            | EqZero _ ->
-                (* TODO: Detect more contradictions here. *)
-                Sat heap
-          in
-          SatUnsat.list_fold new_eqs ~init:pulse_state.pulse_post.heap ~f:incorporate_eq
-        in
-        (path_condition, heap)
-      in
-      (* Handle disequalities. *)
-      let* _path_condition, out_constr =
-        let f (path_condition, out_constr) (l, r) =
+        let f (path_condition, heap, out_constr) ((op : Binop.t), l, r) =
           let l, r = (rep path_condition l, rep path_condition r) in
-          if Formula.equal_operand l r then Unsat
+          let is_implied_by_pathcondition () =
+            Formula.prune_binop ~negated:true op l r path_condition
+            |> SatUnsat.sat |> Option.is_none
+          in
+          let is_implied_by_heap () =
+            match (op, l, r) with
+            | Ne, AbstractValueOperand l, AbstractValueOperand r ->
+                Memory.is_allocated heap l && Memory.is_allocated heap r
+            | Ne, AbstractValueOperand v, ConstOperand (Cint z)
+            | Ne, ConstOperand (Cint z), AbstractValueOperand v ->
+                IntLit.iszero z && Memory.is_allocated heap v
+            | _ ->
+                false
+          in
+          let is_trivial_unsat () =
+            match op with Ne | Gt | Lt -> Formula.equal_operand l r | _ -> false
+          in
+          let is_trivial_valid () =
+            match op with Eq | Ge | Le -> Formula.equal_operand l r | _ -> false
+          in
+          if is_trivial_unsat () then Unsat
+          else if is_trivial_valid () || is_implied_by_heap () || is_implied_by_pathcondition ()
+          then (* drop (op.l.r) *) Sat (path_condition, heap, out_constr)
           else
-            let implied_by_pathcondition () =
-              Formula.prune_binop ~negated:true Ne l r path_condition
-              |> SatUnsat.sat |> Option.is_none
+            let* path_condition, new_eqs_a =
+              Formula.prune_binop ~negated:false op l r path_condition
             in
-            let implied_by_heap () =
-              match (l, r) with
-              | AbstractValueOperand l, AbstractValueOperand r ->
-                  Memory.is_allocated heap l && Memory.is_allocated heap r
-              | AbstractValueOperand v, ConstOperand (Cint z)
-              | ConstOperand (Cint z), AbstractValueOperand v ->
-                  IntLit.iszero z && Memory.is_allocated heap v
-              | _ ->
-                  false
+            let* path_condition, new_eqs_b =
+              Formula.normalize default_tenv ~get_dynamic_type path_condition
             in
-            if implied_by_heap () || implied_by_pathcondition () then
-              Sat (path_condition, out_constr)
-            else
-              let+ path_condition, new_eqs =
-                Formula.prune_binop ~negated:false Ne l r path_condition
+            let new_eqs =
+              let new_eqs = RevList.empty in
+              let new_eqs =
+                match (op, l, r) with
+                | Eq, AbstractValueOperand lv, AbstractValueOperand rv ->
+                    RevList.cons (Formula.Equal (lv, rv)) new_eqs
+                | Eq, ConstOperand (Cint z), AbstractValueOperand v
+                | Eq, AbstractValueOperand v, ConstOperand (Cint z)
+                  when IntLit.iszero z ->
+                    RevList.cons (Formula.EqZero v) new_eqs
+                | _ ->
+                    new_eqs
               in
-              if not (RevList.is_empty new_eqs) then
-                L.die InternalError "Oh, no: I expected disequalities to not introduce equalities" ;
-              (path_condition, C.{out_constr with neq_constr= (l, r) :: out_constr.neq_constr})
+              let ( ++ ) = RevList.append in
+              new_eqs ++ new_eqs_a ++ new_eqs_b
+            in
+            let* heap =
+              let incorporate_eq heap (eq : Formula.new_eq) =
+                match eq with
+                | Equal (v1, v2) ->
+                    Memory.subst_var ~for_summary:true (v1, v2) heap
+                | EqZero v ->
+                    if Memory.is_allocated heap v then Unsat else Sat heap
+              in
+              SatUnsat.list_fold (RevList.to_list new_eqs) ~init:heap ~f:incorporate_eq
+            in
+            Sat
+              ( path_condition
+              , heap
+              , C.{out_constr with path_constr= (op, l, r) :: out_constr.path_constr} )
         in
-        SatUnsat.list_fold in_constr.C.neq_constr ~init:(path_condition, out_constr) ~f
+        SatUnsat.list_fold in_constr.C.path_constr ~f
+          ~init:(pulse_state.path_condition, pulse_state.pulse_post.heap, out_constr)
       in
       (* Digresion: heap (and fake-heap) traversal. *)
       let leadsto fake_heap heap source target =
@@ -450,8 +444,7 @@ end = struct
     in
     match go () with
     | Sat out_constr ->
-        List.map out_constr.neq_constr ~f:(function l, r -> Binary (Builtin Ne, l, r))
-        @ List.map out_constr.no_neq_constr ~f:(function op, l, r -> Binary (Builtin op, l, r))
+        List.map out_constr.path_constr ~f:(function op, l, r -> Binary (Builtin op, l, r))
         @ List.map out_constr.leadsto_constr ~f:(function l, r -> Binary (LeadsTo, l, r))
         @ List.map out_constr.notleadsto_constr ~f:(function l, r -> Binary (NotLeadsTo, l, r))
     | Unsat ->

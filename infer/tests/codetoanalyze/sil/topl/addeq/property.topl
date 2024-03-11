@@ -1,0 +1,3 @@
+property P
+  start -> start: *
+  start -> error: g(X, R) when X != 0

@@ -1,0 +1,16 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// This test makes Topl tell Pulse to add an atom 0!=(x==y), which
+// should trigger Pulse to add x==y.
+
+.source_language = "hack"
+define f_Latent(x: int, y: int) : *void {
+#b0:
+  n0 = __sil_eq(x, y)
+  n1 = g(n0)
+  ret null
+}
+declare g(int): void
