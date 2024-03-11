@@ -14,7 +14,8 @@ let is_pair_small_type typ1 typ2 tenv = is_small_type typ1 tenv && is_small_type
 let dispatch : (unit, Tenv.t -> bool, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
-    [ -"folly" &:: "Optional" < capt_typ >--> is_small_type
+    [ (-"folly" &:: "FunctionRef" &--> fun _ -> true)
+    ; -"folly" &:: "Optional" < capt_typ >--> is_small_type
     ; (-"std" &:: "filesystem" &:: "directory_iterator" <>--> fun _ -> true)
     ; (-"std" &:: "filesystem" &:: "recursive_directory_iterator" <>--> fun _ -> true)
     ; -"std" &:: "optional" < capt_typ >--> is_small_type
