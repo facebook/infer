@@ -120,7 +120,7 @@ class Uninit2 {
   int f1;
   int f2;
 
-  void may_read_f1(std::string s) {
+  void may_read_f1_empty(std::string s) {
     if (s.empty()) {
       int x = f1;
     }
@@ -128,28 +128,28 @@ class Uninit2 {
 
   void not_read_f1_ok() {
     Uninit2 o;
-    o.may_read_f1("non empty string");
+    o.may_read_f1_empty("non empty string");
   }
 
   void read_f1_bad() {
     Uninit2 o;
-    o.may_read_f1(std::string());
+    o.may_read_f1_empty(std::string());
   }
 
-  void may_read_f2(std::string s) {
+  void may_read_f2_length(std::string s) {
     if (s.length() == 0) {
-      int x = f1;
+      int x = f2;
     }
   }
 
   void not_read_f2_ok() {
     Uninit2 o;
-    o.may_read_f2("non empty string");
+    o.may_read_f2_length("non empty string");
   }
 
   void read_f2_bad() {
     Uninit2 o;
-    o.may_read_f2("");
+    o.may_read_f2_length("");
   }
 };
 
