@@ -1013,7 +1013,7 @@ end
 module Strings = struct
   (** This is a temporary solution for strings to avoid false positives. For now, we consider that
       the type of strings is list and compute this information whenever a string is created. Strings
-      should be fully supported in future. T93361792 **)
+      should be fully supported in future. T93361792 *)
 
   let of_const_string location path (const_str : String.t) : sat_maker =
    fun astate ->
@@ -1023,7 +1023,7 @@ module Strings = struct
     |> value_die "'of_const_string' failed evaluation"
 
 
-  (* recurese caracter by caracter of the string and build suitable heap allocated data structure *)
+  (** recurse character by character of the string and build suitable heap allocated data structure *)
   let rec handle_string_content location path value str_lst : sat_maker =
    fun astate ->
     match str_lst with

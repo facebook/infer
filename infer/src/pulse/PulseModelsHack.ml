@@ -685,7 +685,7 @@ module DictIter = struct
     let not_finished : unit DSL.model_monad =
       let* () = prune_lt succindex size_val in
       let* () = write_deref_field ~ref:iter index_field ~obj:succindex in
-      let* index_q_opt = get_known_constant_opt succindex in
+      let* index_q_opt = as_constant_q succindex in
       let* key_value, elt_value =
         match index_q_opt with
         | None ->
@@ -1244,7 +1244,7 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
   let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
   let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
-  let* kind_int_opt = get_known_int_opt kind_int_val in
+  let* kind_int_opt = as_constant_int kind_int_val in
   match kind_int_opt with
   | None ->
       L.d_printfln "didn't get known integer tag in check against type struct" ;

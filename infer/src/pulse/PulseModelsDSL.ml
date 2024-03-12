@@ -178,14 +178,14 @@ module Syntax = struct
     ret a data astate
 
 
-  let get_known_constant_opt (v, _) : Q.t option model_monad =
+  let as_constant_q (v, _) : Q.t option model_monad =
    fun data astate ->
     let phi = astate.path_condition in
     ret (Formula.get_known_constant_opt phi v) data astate
 
 
-  let get_known_int_opt v : int option model_monad =
-    let* n_q_opt = get_known_constant_opt v in
+  let as_constant_int v : int option model_monad =
+    let* n_q_opt = as_constant_q v in
     let n = Option.bind n_q_opt ~f:QSafeCapped.to_int in
     ret n
 
@@ -272,14 +272,13 @@ module Syntax = struct
     ret res data astate
 
 
-  let and_eq_int (size_addr, _) i : unit model_monad =
-    PulseArithmetic.and_eq_int size_addr i |> exec_partial_command
+  let and_eq_int (v, _) i : unit model_monad =
+    PulseArithmetic.and_eq_int v i |> exec_partial_command
 
 
   (* and_eq v and_equal inconsistent naming *)
   let and_eq (x, _) (y, _) : unit model_monad =
-    PulseArithmetic.and_equal (PulseArithmetic.AbstractValueOperand x)
-      (PulseArithmetic.AbstractValueOperand y)
+    PulseArithmetic.and_equal (AbstractValueOperand x) (AbstractValueOperand y)
     |> exec_partial_command
 
 
@@ -428,7 +427,7 @@ module Syntax = struct
 
 
   let prune_eq_int arg i : unit model_monad =
-    prune_binop ~negated:false Binop.Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+    prune_binop ~negated:false Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
 
 
   let prune_eq_zero (addr, _) : unit model_monad =
@@ -477,8 +476,7 @@ module Syntax = struct
 
   let invalidate_access cause ref_addr_hist access : unit model_monad =
     let* {path; location} = get_data in
-    PulseOperations.invalidate_access path location cause ref_addr_hist access
-    >> ok >> sat |> exec_partial_command
+    PulseOperations.invalidate_access path location cause ref_addr_hist access |> exec_command
 
 
   let dynamic_dispatch ~(cases : (Typ.name * (unit -> 'a model_monad)) list)

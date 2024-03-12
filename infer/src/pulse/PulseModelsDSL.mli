@@ -17,7 +17,7 @@ type astate = AbductiveDomain.t
 type aval = AbstractValue.t * ValueHistory.t
 
 module Syntax : sig
-  (* polymorphic operations *)
+  (** {2 Polymorphic Operations} *)
 
   val ( let* ) : 'a model_monad -> ('a -> 'b model_monad) -> 'b model_monad
 
@@ -66,7 +66,7 @@ module Syntax : sig
 
   val get_data : PulseModelsImport.model_data model_monad
 
-  (* disjunctive reasonning *)
+  (** {2 Disjunctive reasoning} *)
 
   val disjuncts : 'a model_monad list -> 'a model_monad
 
@@ -80,8 +80,10 @@ module Syntax : sig
   (** apply the model and return its result. fails if the model did not assign the reserved
       [model_data.ret] variable. *)
 
-  (*****************************************************************)
-  (* each PulseOperations functions you need should be copied here *)
+  (** {2 Operations}
+
+      [PulseOperations] functions you need should be copied here *)
+
   val allocation : Attribute.allocator -> aval -> unit model_monad
 
   val add_dict_contain_const_keys : aval -> unit model_monad
@@ -129,10 +131,11 @@ module Syntax : sig
 
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
-  (* Return the fields we know about. There may be more, so use with caution *)
   val get_known_fields : aval -> Access.t list model_monad
+  (** Return the fields we know about. There may be more, so use with caution *)
 
-  (* PulseFormula operations *)
+  (** {2 PulseFormula operations} *)
+
   val prune_eq : aval -> aval -> unit model_monad
 
   val prune_eq_int : aval -> IntLit.t -> unit model_monad
@@ -167,21 +170,26 @@ module Syntax : sig
 
   val and_positive : aval -> unit model_monad [@@warning "-unused-value-declaration"]
 
-  val get_known_constant_opt : aval -> Q.t option model_monad
+  val as_constant_q : aval -> Q.t option model_monad
 
-  val get_known_int_opt : aval -> int option model_monad
+  val as_constant_int : aval -> int option model_monad
 
-  (* Tenv operations *)
+  (** {2 Tenv operations} *)
+
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
   val tenv_resolve_fieldname : Typ.name -> string -> Fieldname.t option model_monad
 
   val write_deref : ref:aval -> obj:aval -> unit model_monad
 
-  (* Invalidation operations. *)
+  (** {2 Invalidation operations} *)
+
   val invalidate_access : Invalidation.t -> aval -> Access.t -> unit model_monad
 
-  (* if necessary you can convert an operation outside of this module with the following operators *)
+  (** {2 Escape Hatches}
+
+      if necessary you can convert an operation outside of this module with the following operators *)
+
   val exec_command : (astate -> astate) -> unit model_monad
 
   val exec_operation : (astate -> 'a * astate) -> 'a model_monad
