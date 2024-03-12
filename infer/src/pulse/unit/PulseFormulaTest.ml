@@ -363,8 +363,7 @@ let%test_module "normalization" =
         Formula:
           conditions: (empty)
           phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-               && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧([z]×[v8])=v9
-                            ∧([v]×[y])=v6∧([v9]÷[w])=v10
+               && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
                && intervals: v10=0
         Result: same|}]
 
@@ -518,10 +517,7 @@ let%test_module "non-linear simplifications" =
         {|
         Formula:
           conditions: (empty)
-          phi: var_eqs: w=v7=v8=v9=v10
-               && linear_eqs: w = 0
-               && term_eqs: 0=w∧([x]×[z])=v6
-               && intervals: w=0
+          phi: var_eqs: w=v7=v8=v9=v10 && linear_eqs: w = 0 && term_eqs: 0=w∧(x×z)=v6 && intervals: w=0
         Result: changed
           conditions: (empty) phi: term_eqs: 0=w|}]
 
@@ -684,10 +680,10 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a4=a3=a2=x=v6=v7=v8=v9=v10
-                 && linear_eqs: a4 = 0
-                 && term_eqs: 0=a4
-                 && intervals: a4=0
+            phi: var_eqs: a5=a4=a3=a2=x=v6=v7=v8=v9=v10
+                 && linear_eqs: a5 = 0
+                 && term_eqs: 0=a5
+                 && intervals: a5=0
           Result: same |}]
 
 
@@ -705,9 +701,9 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a3=a1 ∧ a2=x ∧ v6=v7
-                 && linear_eqs: a2 = a3 +1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a3 +1]=a2
+            phi: var_eqs: a4=a2=x ∧ a3=a1 ∧ v6=v7
+                 && linear_eqs: a3 = a4 -1 ∧ v6 = 1
+                 && term_eqs: 1=v6∧[a4 -1]=a3
                  && intervals: v8≠0
                  && atoms: {v8 ≠ 0}
           Result: same|}]
@@ -757,7 +753,7 @@ let%test_module "non-numerical constants" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=y=v6 && term_eqs: "hello"=x∧"world"=z∧([x]^[z])=x
+          conditions: (empty) phi: var_eqs: x=y=v6 && term_eqs: "hello"=x∧"world"=z∧(x^z)=x
         Result: same |}]
 
 
@@ -766,6 +762,6 @@ let%test_module "non-numerical constants" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=v6 && term_eqs: "hello"=y∧"no match"=x∧([y]^[z])=x
+          conditions: (empty) phi: var_eqs: x=v6 && term_eqs: "hello"=y∧"no match"=x∧(y^z)=x
         Result: same |}]
   end )

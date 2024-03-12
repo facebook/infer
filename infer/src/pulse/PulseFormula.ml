@@ -917,10 +917,15 @@ module Term = struct
               t
         in
         f_post ~prev:t acc t'
-    | Linear l ->
-        let acc, l' = LinArith.fold_subst_variables l ~init ~f:f_subst in
-        let t' = if phys_equal l l' then t else Linear l' in
-        f_post ~prev:t acc t'
+    | Linear l -> (
+      match LinArith.get_as_var l with
+      | Some v ->
+          (* avoid code duplication for the [Var v] case *)
+          fold_subst_variables ~init ~f_subst ~f_post (Var v)
+      | None ->
+          let acc, l' = LinArith.fold_subst_variables l ~init ~f:f_subst in
+          let t' = if phys_equal l l' then t else Linear l' in
+          f_post ~prev:t acc t' )
     | Const _
     | String _
     | Procname _
@@ -1263,7 +1268,11 @@ module Term = struct
 
   let simplify_linear = function
     | Linear l -> (
-      match LinArith.get_as_const l with Some c -> Const c | None -> Linear l )
+      match LinArith.get_as_const l with
+      | Some c ->
+          Const c
+      | None -> (
+        match LinArith.get_as_var l with Some v -> Var v | None -> Linear l ) )
     | t ->
         t
 
@@ -1642,8 +1651,12 @@ module Atom = struct
         Atom atom
 
 
+  let var_terms_to_linear atom =
+    map_terms atom ~f:(function Var v -> Linear (LinArith.of_var v) | t -> t)
+
+
   let get_as_linear atom =
-    match get_terms atom with
+    match get_terms @@ var_terms_to_linear atom with
     | Linear l1, Linear l2 ->
         let l = LinArith.subtract l1 l2 in
         let t = Term.simplify_linear (Linear l) in
@@ -1807,11 +1820,7 @@ module Atom = struct
         None
 
 
-  let simplify_linear atom =
-    map_terms atom ~f:(fun t ->
-        let t = Term.simplify_linear t in
-        match Term.get_as_var t with Some v -> Term.Var v | None -> t )
-
+  let simplify_linear atom = map_terms atom ~f:Term.simplify_linear
 
   module Set = struct
     include Caml.Set.Make (struct
@@ -2765,6 +2774,8 @@ module Formula = struct
       Debug.p "solve_normalized_term_eq: %a=%a in %a, new_eqs=%a@\n" (Term.pp Var.pp) t Var.pp v
         (pp_with_pp_var Var.pp) phi pp_new_eqs new_eqs ;
       match t with
+      | Var v' ->
+          merge_vars ~fuel new_eqs v v' phi
       | Linear l when LinArith.get_as_var l |> Option.is_some ->
           let v' = Option.value_exn (LinArith.get_as_var l) in
           merge_vars ~fuel new_eqs v v' phi
@@ -3024,6 +3035,13 @@ module Formula = struct
                               and_normalized_atoms (phi, new_eqs) atoms >>| snd )
                       | Domain | DomainAndRange -> (
                           let* phi, new_eqs = phi_new_eqs_sat in
+                          let subst_target_x =
+                            match subst_target_x with
+                            | VarSubst v ->
+                                VarSubst (get_repr phi v :> Var.t)
+                            | _ ->
+                                subst_target_x
+                          in
                           let* t' =
                             let exception Unsat in
                             try
@@ -3201,7 +3219,8 @@ module Formula = struct
 
     (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
         [phi.linear_eqs] was changed as a result *)
-    and and_normalized_atom (phi, new_eqs) = function
+    and and_normalized_atom (phi, new_eqs) atom =
+      match Atom.var_terms_to_linear atom with
       | Atom.Equal (Linear _, Linear _) ->
           assert false
       | Atom.Equal (Linear l, Const c) | Atom.Equal (Const c, Linear l) ->
@@ -3228,8 +3247,8 @@ module Formula = struct
           let+ phi', new_eqs = solve_lin_ineq new_eqs (LinArith.of_q (Q.add c Q.one)) l phi in
           (true, (phi', new_eqs))
       | atom' ->
-          (* the previous normalization has "simplified" [Var] and [Const] terms into [Linear]
-             ones, revert this *)
+          (* the previous normalization has "simplified" [Var] terms into [Linear] ones, revert
+             this *)
           let atom = Atom.simplify_linear atom' in
           let+ phi_new_eqs = (add_atom atom phi, new_eqs) |> propagate_atom atom in
           (false, phi_new_eqs)
