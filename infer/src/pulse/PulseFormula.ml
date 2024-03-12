@@ -529,6 +529,7 @@ module Term = struct
     | BitShiftLeft of t * t
     | BitShiftRight of t * t
     | BitXor of t * t
+    | StringConcat of t * t
     | IsInstanceOf of Var.t * Typ.t
     | IsInt of t
   [@@deriving compare, equal, yojson_of]
@@ -564,6 +565,7 @@ module Term = struct
     | BitShiftLeft _
     | BitShiftRight _
     | BitXor _
+    | StringConcat _
     | And _
     | Or _
     | LessThan _
@@ -624,6 +626,8 @@ module Term = struct
     | BitXor (t1, t2) ->
         F.fprintf fmt "%a xor %a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren)
           t2
+    | StringConcat (t1, t2) ->
+        F.fprintf fmt "%a^%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | And (t1, t2) ->
         F.fprintf fmt "%a∧%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Or (t1, t2) ->
@@ -769,7 +773,8 @@ module Term = struct
     | BitNot _
     | BitShiftLeft _
     | BitShiftRight _
-    | BitXor _ ->
+    | BitXor _
+    | StringConcat _ ->
         true
 
 
@@ -819,6 +824,7 @@ module Term = struct
     | BitShiftLeft (t1, t2)
     | BitShiftRight (t1, t2)
     | BitXor (t1, t2)
+    | StringConcat (t1, t2)
     | And (t1, t2)
     | Or (t1, t2)
     | LessThan (t1, t2)
@@ -851,6 +857,8 @@ module Term = struct
                 BitShiftRight (t1', t2')
             | BitXor _ ->
                 BitXor (t1', t2')
+            | StringConcat _ ->
+                StringConcat (t1', t2')
             | And _ ->
                 And (t1', t2')
             | Or _ ->
@@ -936,6 +944,7 @@ module Term = struct
     | BitShiftLeft _
     | BitShiftRight _
     | BitXor _
+    | StringConcat _
     | IsInt _ ->
         let acc, t' =
           fold_map_direct_subterms t ~init ~f:(fun acc t' ->
@@ -1049,6 +1058,10 @@ module Term = struct
                   map_i64_i c1 c2 Int64.shift_right |> or_raise
               | BitXor _ ->
                   map_i64_i64 c1 c2 Int64.bit_xor |> or_raise )
+      | StringConcat (String s1, String s2) ->
+          String (s1 ^ s2)
+      | StringConcat _ ->
+          t0
     in
     match eval_const_shallow_or_raise t0 with
     | Const q as t ->
@@ -1228,6 +1241,7 @@ module Term = struct
       | BitShiftLeft _
       | BitShiftRight _
       | BitXor _
+      | StringConcat _
       | Not _
       | And _
       | Or _
@@ -1282,6 +1296,7 @@ module Term = struct
     | BitShiftLeft _
     | BitShiftRight _
     | BitXor _
+    | StringConcat _
     | IsInstanceOf _
     | IsInt _ ->
         None
@@ -1315,6 +1330,7 @@ module Term = struct
     | BitShiftLeft _
     | BitShiftRight _
     | BitXor _
+    | StringConcat _
     | IsInstanceOf _
     | IsInt _ ->
         None
@@ -1349,6 +1365,7 @@ module Term = struct
     | BitShiftLeft _
     | BitShiftRight _
     | BitXor _
+    | StringConcat _
     | IsInstanceOf _
     | IsInt _ ->
         None
@@ -3454,6 +3471,10 @@ let and_equal_unop v (op : Unop.t) x formula =
 let and_equal_binop v (bop : Binop.t) x y formula =
   let* formula = Intervals.binop v bop x y formula in
   and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) formula
+
+
+let and_equal_string_concat v x y formula =
+  and_atom (Equal (Var v, StringConcat (Term.of_operand x, Term.of_operand y))) formula
 
 
 let prune_atom atom (formula, new_eqs) =
