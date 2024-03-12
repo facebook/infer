@@ -53,7 +53,7 @@ let sanitize_qualifier qualifier =
 
 
 let compute_hash =
-  let num_regexp = Re.Str.regexp "\\(:\\)[0-9]+" in
+  let num_regexp = Re.Str.regexp ":[0-9]+\\(_[0-9a-f]+\\)?" in
   fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
       ~(qualifier : string) ->
     let base_filename = Filename.basename file in
