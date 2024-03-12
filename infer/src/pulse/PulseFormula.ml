@@ -71,6 +71,7 @@ module LinArith : sig
      we resolve the circular dependency further down this file *)
   type 'term_t subst_target =
     | QSubst of Q.t
+    | ConstantSubst of 'term_t
     | VarSubst of Var.t
     | LinSubst of t
     | NonLinearTermSubst of 'term_t
@@ -177,6 +178,7 @@ end = struct
 
   type 'term_t subst_target =
     | QSubst of Q.t
+    | ConstantSubst of 'term_t
     | VarSubst of Var.t
     | LinSubst of t
     | NonLinearTermSubst of 'term_t
@@ -297,7 +299,7 @@ end = struct
         of_var v
     | LinSubst l ->
         l
-    | NonLinearTermSubst _ ->
+    | NonLinearTermSubst _ | ConstantSubst _ ->
         of_var v0
 
 
@@ -491,6 +493,7 @@ end
 
 type 'term_t subst_target = 'term_t LinArith.subst_target =
   | QSubst of Q.t
+  | ConstantSubst of 'term_t
   | VarSubst of Var.t
   | LinSubst of LinArith.t
   | NonLinearTermSubst of 'term_t
@@ -683,7 +686,7 @@ module Term = struct
         Var v
     | LinSubst l ->
         Linear l
-    | NonLinearTermSubst t ->
+    | ConstantSubst t | NonLinearTermSubst t ->
         t
 
 
@@ -913,7 +916,7 @@ module Term = struct
               IsInstanceOf (v', typ)
           | QSubst q when Q.is_zero q ->
               zero
-          | QSubst _ | VarSubst _ | LinSubst _ | NonLinearTermSubst _ ->
+          | QSubst _ | ConstantSubst _ | VarSubst _ | LinSubst _ | NonLinearTermSubst _ ->
               t
         in
         f_post ~prev:t acc t'
@@ -1345,6 +1348,39 @@ module Term = struct
         None
 
 
+  let is_non_numeric_constant = function
+    | String _ ->
+        true
+    | Const _
+    | Linear _
+    | Var _
+    | Procname _
+    | FunctionApplication _
+    | Add _
+    | Minus _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | Mult _
+    | DivI _
+    | DivF _
+    | And _
+    | Or _
+    | Not _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _
+    | StringConcat _
+    | IsInstanceOf _
+    | IsInt _ ->
+        false
+
+
   let get_as_linear = function
     | Linear l ->
         Some l
@@ -1385,11 +1421,13 @@ module Term = struct
     | Some q ->
         QSubst q
     | None -> (
-      match get_as_var t with
-      | Some v ->
-          VarSubst v
-      | None -> (
-        match t with Linear l -> LinSubst l | _ -> NonLinearTermSubst t ) )
+        if is_non_numeric_constant t then ConstantSubst t
+        else
+          match get_as_var t with
+          | Some v ->
+              VarSubst v
+          | None -> (
+            match t with Linear l -> LinSubst l | _ -> NonLinearTermSubst t ) )
 
 
   module VarMap = struct
@@ -1963,6 +2001,7 @@ module Formula = struct
             (** Equality relation between variables. We want to only use canonical representatives
                 from this equality relation in the rest of the formula and more generally in all of
                 the abstract state. See also {!AbductiveDomain}. *)
+      ; const_eqs: Term.t Var.Map.t
       ; linear_eqs: linear_eqs
             (** Equalities of the form [x = l] where [l] is from linear arithmetic. These are
                 interpreted over the *rationals*, not integers (or floats), so this will be
@@ -2055,6 +2094,10 @@ module Formula = struct
 
     (* {2 mutations} *)
 
+    val add_const_eq : Var.t -> Term.t -> t -> t SatUnsat.t
+    (** [add_const_eq v t phi] adds [v=t] to [const_eqs]; [Unsat] if [v] was already bound to a
+        different constant *)
+
     val add_linear_eq : Var.t -> LinArith.t -> t -> t * Var.t option
     (** [add_linear_eq v l phi] adds [v=l] to [linear_eqs] and updates the occurrences maps and
         [term_eqs] appropriately; don't forget to call [propagate_linear_eq] after this *)
@@ -2107,6 +2150,7 @@ module Formula = struct
 
     val unsafe_mk :
          var_eqs:var_eqs
+      -> const_eqs:Term.t Var.Map.t
       -> linear_eqs:linear_eqs
       -> term_eqs:Term.VarMap.t_
       -> tableau:Tableau.t
@@ -2125,6 +2169,7 @@ module Formula = struct
 
     type t =
       { var_eqs: var_eqs
+      ; const_eqs: Term.t Var.Map.t
       ; linear_eqs: linear_eqs
       ; term_eqs: term_eqs
       ; tableau: Tableau.t
@@ -2138,6 +2183,7 @@ module Formula = struct
 
     let ttrue =
       { var_eqs= VarUF.empty
+      ; const_eqs= Var.Map.empty
       ; linear_eqs= Var.Map.empty
       ; term_eqs= Term.VarMap.empty
       ; tableau= Tableau.empty
@@ -2155,6 +2201,7 @@ module Formula = struct
 
     let is_empty
         ({ var_eqs
+         ; const_eqs
          ; linear_eqs
          ; term_eqs
          ; tableau
@@ -2164,8 +2211,9 @@ module Formula = struct
          ; tableau_occurrences= _
          ; term_eqs_occurrences= _
          ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) =
-      VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && term_eqs_is_empty term_eqs
-      && Var.Map.is_empty tableau && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
+      VarUF.is_empty var_eqs && Var.Map.is_empty const_eqs && Var.Map.is_empty linear_eqs
+      && term_eqs_is_empty term_eqs && Var.Map.is_empty tableau && Var.Map.is_empty intervals
+      && Atom.Set.is_empty atoms
 
 
     (* {2 [term_eqs] interface due to the totally opaque type} *)
@@ -2226,6 +2274,7 @@ module Formula = struct
 
     let pp_with_pp_var pp_var fmt
         ( ({ var_eqs
+           ; const_eqs
            ; linear_eqs
            ; term_eqs
            ; tableau
@@ -2243,6 +2292,11 @@ module Formula = struct
       F.pp_open_hvbox fmt 0 ;
       if is_empty phi then F.pp_print_string fmt "(empty)" ;
       (pp_if (not (VarUF.is_empty var_eqs)) "var_eqs" (VarUF.pp pp_var)) fmt var_eqs ;
+      (pp_if
+         (not (Var.Map.is_empty const_eqs))
+         "const_eqs"
+         (pp_var_map ~arrow:"=" (Term.pp pp_var) pp_var) )
+        fmt const_eqs ;
       (pp_if
          (not (Var.Map.is_empty linear_eqs))
          "linear_eqs"
@@ -2274,6 +2328,15 @@ module Formula = struct
 
 
     (* {2 mutations} *)
+
+    let add_const_eq v t phi =
+      Debug.p "add_const_eq %a->%a@\n" Var.pp v (Term.pp Var.pp) t ;
+      match Var.Map.find_opt v phi.const_eqs with
+      | None ->
+          Sat {phi with const_eqs= Var.Map.add v t phi.const_eqs}
+      | Some t' ->
+          if Term.equal_syntax t t' then Sat phi else Unsat
+
 
     let remove_term_eq t v phi =
       Debug.p "remove_term_eq %a->%a in %a@\n" (Term.pp Var.pp) t Var.pp v (pp_with_pp_var Var.pp)
@@ -2455,9 +2518,10 @@ module Formula = struct
       {phi with term_eqs= Term.VarMap.empty; term_eqs_occurrences= Var.Map.empty}
 
 
-    let unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms ~linear_eqs_occurrences
-        ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences =
+    let unsafe_mk ~var_eqs ~const_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms
+        ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences =
       { var_eqs
+      ; const_eqs
       ; linear_eqs
       ; term_eqs
       ; tableau
@@ -2471,18 +2535,19 @@ module Formula = struct
 
   include Unsafe
 
+  let fold_constant_var_map map ~init ~f =
+    let f var _constant acc = f acc var in
+    Var.Map.fold f map init
+
+
   let fold_linear_eqs_vars linear_eqs ~init ~f =
     let f_eq var linarith acc = Seq.fold_left f (f acc var) (LinArith.get_variables linarith) in
     Var.Map.fold f_eq linear_eqs init
 
 
-  let fold_intervals_vars intervals ~init ~f =
-    let f_interval var _interval acc = f acc var in
-    Var.Map.fold f_interval intervals init
-
-
   let fold_variables
       ( ({ var_eqs
+         ; const_eqs
          ; linear_eqs
          ; term_eqs= _
          ; tableau
@@ -2493,10 +2558,11 @@ module Formula = struct
          ; term_eqs_occurrences= _
          ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) as phi ) ~init ~f =
     let init = VarUF.fold_elements var_eqs ~init ~f in
+    let init = fold_constant_var_map const_eqs ~init ~f in
     let init = fold_linear_eqs_vars linear_eqs ~init ~f in
     let init = fold_term_eqs_vars phi ~init ~f in
     let init = fold_linear_eqs_vars tableau ~init ~f in
-    let init = fold_intervals_vars intervals ~init ~f in
+    let init = fold_constant_var_map intervals ~init ~f in
     Atom.Set.fold (fun atom acc -> Atom.fold_variables atom ~init:acc ~f) atoms init
 
 
@@ -2802,6 +2868,10 @@ module Formula = struct
           (* same as above but constants ([c]) are always normalized so it's simpler *)
           let* phi, new_eqs = add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t v phi in
           solve_normalized_lin_eq ~fuel new_eqs (LinArith.of_q c) (LinArith.of_var v) phi
+      | String _ ->
+          (* same as above for non-numeric constants *)
+          let* phi = add_const_eq v t phi in
+          add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t v phi >>= propagate_term_eq ~fuel t v
       | _ ->
           solve_normalized_term_eq_no_lin ~fuel new_eqs t v phi >>= propagate_term_eq ~fuel t v
 
@@ -2825,7 +2895,25 @@ module Formula = struct
           let new_eqs = RevList.cons (Equal (v_old, v_new)) new_eqs in
           (* substitute [v_old -> v_new] in [phi.linear_eqs] while maintaining the [linear_eqs]
              invariant *)
-          propagate_linear_eq ~fuel v_old (LinArith.of_var v_new) (phi, new_eqs)
+          propagate_var_eq ~fuel v_old v_new (phi, new_eqs)
+
+
+    and propagate_in_const_eqs x y (phi, new_eqs) =
+      Debug.p "[propagate_in_const_eqs] %a=%a@\n  @[" Var.pp x Var.pp y ;
+      let r =
+        match Var.Map.find_opt x phi.const_eqs with
+        | None ->
+            Sat (phi, new_eqs)
+        | Some c -> (
+          match Var.Map.find_opt y phi.const_eqs with
+          | None ->
+              let+ phi = add_const_eq y c phi in
+              (phi, new_eqs)
+          | Some c' ->
+              if Term.equal_syntax c c' then Sat (phi, new_eqs) else Unsat )
+      in
+      Debug.p "@]end [propagate_in_const_eqs] %a=%a@\n" Var.pp x Var.pp y ;
+      r
 
 
     and propagate_in_linear_eqs_domain ~fuel v_old l (phi, new_eqs) =
@@ -2989,7 +3077,7 @@ module Formula = struct
       match Term.to_subst_target tx with
       | LinSubst _ | NonLinearTermSubst _ ->
           Sat phi_new_eqs
-      | (VarSubst _ | QSubst _) as subst_target_x -> (
+      | (VarSubst _ | QSubst _ | ConstantSubst _) as subst_target_x -> (
         match Var.Map.find_opt x phi.term_eqs_occurrences with
         | None ->
             Sat phi_new_eqs
@@ -3098,7 +3186,11 @@ module Formula = struct
                                           (LinArith.of_var y |> normalize_linear phi)
                                           l' phi
                                     | None ->
-                                        add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t' y phi )
+                                        if Term.is_non_numeric_constant t' then
+                                          let+ phi = add_const_eq y t' phi in
+                                          (phi, new_eqs)
+                                        else add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t' y phi
+                                    )
                                 | Some y' ->
                                     Debug.p "Existing term_eq %a -> %a, merging %a=%a@\n"
                                       (Term.pp Var.pp) t' Var.pp y' Var.pp y Var.pp y' ;
@@ -3145,6 +3237,10 @@ module Formula = struct
       >>= propagate_in_linear_eqs_domain ~fuel x lx
       >>= propagate_in_tableau ~fuel x lx
       >>= propagate_term_eq ~fuel (Term.Linear lx) x
+
+
+    and propagate_var_eq ~fuel x y phi_new_eqs =
+      propagate_in_const_eqs x y phi_new_eqs >>= propagate_linear_eq ~fuel x (LinArith.of_var y)
 
 
     and propagate_atom atom phi_new_eqs =
@@ -3767,6 +3863,7 @@ end = struct
   let subst_var_phi subst
       ({Formula.var_eqs; linear_eqs; tableau; term_eqs= _; intervals; atoms} as phi) =
     Formula.unsafe_mk ~var_eqs:(VarUF.apply_subst subst var_eqs)
+      ~const_eqs:(* trust that rebuilding [term_eqs] will re-generate this map *) Var.Map.empty
       ~linear_eqs:(subst_var_linear_eqs subst linear_eqs)
       ~term_eqs:(Formula.subst_term_eqs subst phi)
       ~tableau:(subst_var_linear_eqs subst tableau)
@@ -3955,7 +4052,11 @@ module DeadVariables = struct
             CItv.requires_integer_reasoning interval && Var.Set.mem v vars_to_keep )
           phi.Formula.intervals
       in
-      Formula.unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals
+      Formula.unsafe_mk ~var_eqs
+        ~const_eqs:
+          (* we simplify for summaries creation, this information is already present in
+             [term_eqs] *)
+          Var.Map.empty ~linear_eqs ~term_eqs ~tableau ~intervals
         ~atoms
           (* we simplify for summaries creation, it's safe to ditch the occurrence maps at this
              point since they will be reconstructed by callers *)

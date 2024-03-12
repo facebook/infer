@@ -717,51 +717,54 @@ let%test_module "non-numerical constants" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: term_eqs: "hello world"=x
+          conditions: (empty) phi: const_eqs: x="hello world" && term_eqs: "hello world"=x
         Result: same |}]
 
 
     let%expect_test _ =
       normalize (x = s "hello" && x = s "world") ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty) phi: term_eqs: "hello"=x∧"world"=x
+          unsat
         Result: same |}]
 
 
     let%expect_test _ =
-      normalize (x = s "hello" ^ s "world" && y = s "hello world" && x = y) ;
+      normalize (x = s "hello" ^ s " " ^ s "world" && y = s "hello world" && x = y) ;
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=y=v6 && term_eqs: "hello world"=x∧"helloworld"=x
+          conditions: (empty)
+          phi: var_eqs: x=y=v7
+               && const_eqs: x="hello world" ∧ y="hello world" ∧ v6=" world"
+               && term_eqs: " world"=v6∧"hello world"=x∧("hello"^v6)=x
         Result: same |}]
 
 
     let%expect_test _ =
-      normalize (x = s "hello" ^ s "world" && y = s "no" && x = y) ;
-      [%expect
-        {|
+      normalize (x = s "hello" ^ s "world" && y = s "no match" && x = y) ;
+      [%expect {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=y=v6 && term_eqs: "helloworld"=x∧"no"=x
+          unsat
         Result: same |}]
 
 
     let%expect_test _ =
       normalize (x = y ^ z && y = s "hello" && z = s "world" && x = y) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=y=v6 && term_eqs: "hello"=x∧"world"=z∧(x^z)=x
+          unsat
         Result: same |}]
 
 
     let%expect_test _ =
-      normalize (x = y ^ z && y = s "hello" && x = s "no match") ;
+      normalize (x = y ^ z && y = s "hello" && x = s "prefix cannot match") ;
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=v6 && term_eqs: "hello"=y∧"no match"=x∧(y^z)=x
+          conditions: (empty)
+          phi: var_eqs: x=v6
+               && const_eqs: x="prefix cannot match" ∧ y="hello"
+               && term_eqs: "hello"=y∧"prefix cannot match"=x∧("hello"^z)=x
         Result: same |}]
   end )
