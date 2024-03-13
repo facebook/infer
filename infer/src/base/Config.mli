@@ -205,6 +205,8 @@ val buck2_build_args : string list
 
 val buck2_build_args_no_inline : string list
 
+val buck2_bxl_capture_file_block_list : string list
+
 val buck2_bxl_target : string option
 
 val buck2_inferconfig_target : string option

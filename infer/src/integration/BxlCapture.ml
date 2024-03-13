@@ -56,13 +56,17 @@ let capture build_cmd =
     let targets_with_arg =
       List.fold targets ~init:[] ~f:(fun acc target -> "--target" :: target :: acc)
     in
+    let block_files =
+      List.fold Config.buck2_bxl_capture_file_block_list ~init:[] ~f:(fun acc b ->
+          "--block-file" :: b :: acc )
+    in
     let args_to_store =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
             [Printf.sprintf "--depth=%i" depth] )
       @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
             ["--inferconfig"; target] )
-      @ targets_with_arg
+      @ block_files @ targets_with_arg
     in
     let buck2_build_cmd =
       ["bxl"; bxl_target; "--console=simple"]

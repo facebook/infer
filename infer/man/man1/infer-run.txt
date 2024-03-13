@@ -186,6 +186,10 @@ BUCK OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression.
 
+       --buck2-bxl-capture-file-block-list +regex
+           Skip capture of files matched by the specified regular expression.
+           Only the clang, Buck2 integration is supported, not Java.
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
 

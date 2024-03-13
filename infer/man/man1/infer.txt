@@ -245,6 +245,11 @@ OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression.           See also infer-capture(1) and infer-run(1).
 
+       --buck2-bxl-capture-file-block-list +regex
+           Skip capture of files matched by the specified regular expression.
+           Only the clang, Buck2 integration is supported, not Java.       
+    See also infer-capture(1) and infer-run(1).
+
        --buck2-bxl-target string
            Buck2 BXL script (as a buck target) to run when capturing with
            buck2/clang integration.           See also infer-capture(1).

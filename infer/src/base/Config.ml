@@ -850,6 +850,14 @@ and buck2_build_args_no_inline_rev =
      args starting with '@'. Only valid for $(b,--buck-clang)."
 
 
+and buck2_bxl_capture_file_block_list =
+  CLOpt.mk_string_list ~long:"buck2-bxl-capture-file-block-list"
+    ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
+    ~meta:"regex"
+    "Skip capture of files matched by the specified regular expression. Only the clang,      Buck2 \
+     integration is supported, not Java."
+
+
 and buck2_bxl_target =
   CLOpt.mk_string_opt ~long:"buck2-bxl-target"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -3828,6 +3836,8 @@ and buck = !buck
 and buck2_build_args = RevList.to_list !buck2_build_args
 
 and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
+
+and buck2_bxl_capture_file_block_list = RevList.to_list !buck2_bxl_capture_file_block_list
 
 and buck2_bxl_target = !buck2_bxl_target
 
