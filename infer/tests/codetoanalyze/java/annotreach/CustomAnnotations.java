@@ -67,4 +67,34 @@ class CustomAnnotations {
   }
 
   void safeMethod() {}
+
+  interface Callback {
+    public void call();
+  }
+
+  void caller(Callback lambda) {
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda1Bad_FN() {
+    Callback lambda = () -> sink1();
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda2Bad_FN() {
+    caller(() -> sink1());
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda3Ok() {
+    Callback lambda = () -> safeMethod();
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda4Ok() {
+    caller(() -> safeMethod());
+  }
 }
