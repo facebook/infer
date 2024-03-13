@@ -128,15 +128,17 @@ infer-out/analysis_dependency_graph</p>
 --annotation-reachability</b></p>
 
 <p style="margin-left:17%;">Activates:
-<i>annotation-reachability</i> checker: Given a pair of
-source and sink annotation, e.g.
-&lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
-some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
-indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
-<b>--no-annotation-reachability</b>)</p>
+<i>annotation-reachability</i> checker: Given pairs of
+source and sink annotations, e.g. &lsquo;@A&lsquo; and
+&lsquo;@B&lsquo;, this checker will warn whenever some
+method annotated with &lsquo;@A&lsquo; calls, directly or
+indirectly, another method annotated with &lsquo;@B&lsquo;.
+Besides the custom pairs, it is also possible to enable some
+built-in checks, such as &lsquo;@PerformanceCritical&lsquo;
+reaching &lsquo;@Expensive&lsquo; or
+&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. See
+flags starting with &lsquo;--annotation-reachability&lsquo;.
+(Conversely: <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -196,10 +198,10 @@ spec</p>
 <b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-expensive</b></p>
 
-<p style="margin-left:17%;">Activates: check if expensive
-methods (annotated @Expensive or modeled) can call
-@PerformanceCritical (with annotation reachability checker)
-(Conversely:
+<p style="margin-left:17%;">Activates: check if methods
+annotated with @PerformanceCritical can call expensive
+methods (annotated @Expensive or modeled, with annotation
+reachability checker) (Conversely:
 <b>--no-annotation-reachability-expensive</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1077,7 +1079,6 @@ TAINT_ERROR (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 TOPL_ERROR_LATENT (disabled by default), <br>
-UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
 UNTRUSTED_DESERIALIZATION (enabled by default), <br>
@@ -2031,7 +2032,7 @@ found in the output of <b>--procedures</b> (Conversely:
 
 <p style="margin-left:17%;">Activates: Print the summaries
 of each procedure in the output of <b>--procedures</b>. See
-also <b>--procedures-summary-nonempty</b>. (Conversely:
+also <b>--procedures-summary-skip-empty</b>. (Conversely:
 <b>--no-procedures-summary</b>)</p>
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
@@ -3225,24 +3226,6 @@ See also <b>infer-analyze</b>(1). <b><br>
 <p style="margin-left:17%;">Activates: Enable <i>topl</i>
 and disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---uninit</b></p>
-
-<p style="margin-left:17%;">Activates: <i>uninit</i>
-checker: Warns when values are used before having been
-initialized.</p>
-
-<p style="margin-left:11%;"><b>DEPRECATED</b>:
-Uninitialized value checking has moved to Pulse. <br>
-(Conversely: <b>--no-uninit</b>) <br>
-See also <b>infer-analyze</b>(1). <b><br>
---uninit-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable <i>uninit</i>
-and disable all other checkers (Conversely:
-<b>--no-uninit-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
