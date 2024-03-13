@@ -118,6 +118,9 @@ let pp_flow_kind fmt flow_kind =
       F.fprintf fmt "flow from a taint source"
 
 
+type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
+[@@deriving equal]
+
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | ConfigUsage of
@@ -144,10 +147,7 @@ type t =
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
-  | RetainCycle of
-      { assignment_traces: Trace.t list
-      ; values: (DecompilerExpr.t * Location.t option) list
-      ; location: Location.t }
+  | RetainCycle of {values: retain_cycle_data list; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
@@ -215,13 +215,15 @@ let pp fmt diagnostic =
         used_locations
   | ReadUninitialized read_uninitialized ->
       F.fprintf fmt "ReadUninitialized %a" ReadUninitialized.pp read_uninitialized
-  | RetainCycle {assignment_traces; values; location} ->
+  | RetainCycle {values; location} ->
+      let values_loc = List.map ~f:(fun {expr; location; _} -> (expr, location)) values in
+      let assignment_traces = List.map ~f:(fun {trace; _} -> trace) values in
       F.fprintf fmt "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;values=%a;@;location=%a@]}"
-        (Pp.seq ~sep:";@;" (Trace.pp ~pp_immediate))
+        (Pp.seq ~sep:";@;" (Pp.option (Trace.pp ~pp_immediate)))
         assignment_traces
         (Pp.comma_seq
            (Pp.pair ~fst:DecompilerExpr.pp_with_abstract_value ~snd:(Pp.option Location.pp)) )
-        values Location.pp location
+        values_loc Location.pp location
   | StackVariableAddressEscape {variable; history; location} ->
       F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
         variable ValueHistory.pp history Location.pp location
@@ -424,9 +426,9 @@ let flows_to_decompiled_expr (decompiler_expr : DecompilerExpr.t) ({value_tuple}
 
 
 let pp_retain_cycle fmt values =
-  List.iteri values ~f:(fun i (v, loc) ->
-      F.fprintf fmt "@\n  %d) %a" (i + 1) DecompilerExpr.pp v ;
-      Option.iter loc ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
+  List.iteri values ~f:(fun i {expr; location} ->
+      F.fprintf fmt "@\n  %d) %a" (i + 1) DecompilerExpr.pp expr ;
+      Option.iter location ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
 
 
 let get_message_and_suggestion diagnostic =
@@ -1053,11 +1055,30 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "read to uninitialized value occurs here")
            trace
       @@ []
-  | RetainCycle {assignment_traces; location} ->
+  | RetainCycle {values; location} ->
       let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
-      Trace.synchronous_add_to_errlog ~nesting:1
-        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-        assignment_traces errlog
+      List.fold_right ~init:errlog
+        ~f:(fun {expr; trace} errlog ->
+          match trace with
+          | Some trace ->
+              if not (DecompilerExpr.includes_captured_variable expr) then
+                let errlog =
+                  Trace.add_to_errlog ~nesting:1
+                    ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+                    trace errlog
+                in
+                let s =
+                  F.asprintf "assignment of %a part of the trace starts here" DecompilerExpr.pp expr
+                in
+                let trace_loc = Trace.get_start_location trace in
+                Errlog.make_trace_element 0 trace_loc s [] :: errlog
+              else
+                let s = F.asprintf "%a here" DecompilerExpr.pp expr in
+                let trace_loc = Trace.get_start_location trace in
+                Errlog.make_trace_element 0 trace_loc s [] :: errlog
+          | None ->
+              errlog )
+        values
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
       @@

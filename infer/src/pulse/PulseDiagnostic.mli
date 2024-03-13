@@ -64,6 +64,9 @@ end
 
 type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
+type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
+[@@deriving equal]
+
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
@@ -90,10 +93,7 @@ type t =
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
-  | RetainCycle of
-      { assignment_traces: Trace.t list
-      ; values: (DecompilerExpr.t * Location.t option) list
-      ; location: Location.t }
+  | RetainCycle of {values: retain_cycle_data list; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t

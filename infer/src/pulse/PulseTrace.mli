@@ -57,6 +57,7 @@ val synchronous_add_to_errlog :
   -> t list
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
+  [@@warning "-unused-value-declaration"]
 (** [synchronous_add_to_errlog] adds a list of the traces to the errlog in the given order while
     grouping traces that take place at the same location to reduce deduplication and ensure events
     happening together are identifiable as such. E.g. if two traces start with a [ViaCall] and they

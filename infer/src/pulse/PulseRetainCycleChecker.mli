@@ -10,10 +10,15 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 
 val check_retain_cycles_store :
-  Tenv.t -> AbstractValue.t * ValueHistory.t -> AbductiveDomain.t -> (unit, base_error) pulse_result
+     Tenv.t
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> AbductiveDomain.t
+  -> (unit, base_error) pulse_result
 
 val check_retain_cycles_call :
      Tenv.t
+  -> Location.t
   -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
   -> (AbstractValue.t * ValueHistory.t) option
   -> AbductiveDomain.t
