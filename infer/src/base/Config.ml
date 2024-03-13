@@ -654,8 +654,8 @@ and annotation_reachability_expensive =
   CLOpt.mk_bool ~long:"annotation-reachability-expensive"
     ~in_help:InferCommand.[(Analyze, manual_java)]
     ~default:false
-    "check if expensive methods (annotated @Expensive or modeled) can call @PerformanceCritical \
-     (with annotation reachability checker)"
+    "check if methods annotated with @PerformanceCritical can call expensive methods (annotated \
+     @Expensive or modeled, with annotation reachability checker)"
 
 
 and append_buck_flavors =

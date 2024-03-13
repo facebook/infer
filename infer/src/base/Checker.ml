@@ -89,10 +89,11 @@ let config_unsafe checker =
       ; kind= UserFacing {title= "Annotation Reachability"; markdown_body= ""}
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
-          "Given a pair of source and sink annotation, e.g. `@PerformanceCritical` and \
-           `@Expensive`, this checker will warn whenever some method annotated with \
-           `@PerformanceCritical` calls, directly or indirectly, another method annotated with \
-           `@Expensive`"
+          "Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn \
+           whenever some method annotated with `@A` calls, directly or indirectly, another method \
+           annotated with `@B`. Besides the custom pairs, it is also possible to enable some \
+           built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or \
+           `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }

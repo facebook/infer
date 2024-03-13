@@ -1948,7 +1948,32 @@ function call_get_field_ok(): string {
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
-See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
+The code uses a variable that has not been initialized, leading to unpredictable or unintended results.
+
+Using uninitialized values can lead to undefined behaviors possibly resulting in crashes, security failures and invalid results.
+
+This can easily be fixed by assigning all variables to an initial value when declaring them.
+
+This, for example, in C:
+
+```c
+struct coordinates {
+  int x;
+  int y;
+};
+
+void foo() {
+  struct coordinates c;
+  c.x = 42;
+  c.y++; // uninitialized value c.y!
+
+  int z;
+  if (z == 0) { // uninitialized value z!
+    // something
+  }
+}
+```
+
 ## PULSE_UNINITIALIZED_VALUE_LATENT
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
@@ -2794,36 +2819,6 @@ See [Topl](/docs/next/checker-topl##what-is-it) for an example
 Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## UNINITIALIZED_VALUE
-
-Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).
-
-The code uses a variable that has not been initialized, leading to unpredictable or unintended results.
-
-Using uninitialized values can lead to undefined behaviors possibly resulting in crashes, security failures and invalid results.
-
-This can easily be fixed by assigning all variables to an initial value when declaring them.
-
-This, for example, in C:
-
-```c
-struct coordinates {
-  int x;
-  int y;
-};
-
-void foo() {
-  struct coordinates c;
-  c.x = 42;
-  c.y++; // uninitialized value c.y!
-
-  int z;
-  if (z == 0) { // uninitialized value z!
-    // something
-  }
-}
-```
-
 ## UNTRUSTED_BUFFER_ACCESS
 
 Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).

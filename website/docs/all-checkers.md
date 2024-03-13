@@ -7,7 +7,7 @@ Here is an overview of the checkers currently available in Infer.
 
 ## Annotation Reachability
 
-Given a pair of source and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`, this checker will warn whenever some method annotated with `@PerformanceCritical` calls, directly or indirectly, another method annotated with `@Expensive`
+Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`.
 
 [Visit here for more information.](/docs/next/checker-annotation-reachability)
 
@@ -168,12 +168,4 @@ Detect various kinds of situations when no progress is being made because of con
 Detect errors based on user-provided state machines describing temporal properties over multiple objects.
 
 [Visit here for more information.](/docs/next/checker-topl)
-
-## Uninitialized Value
-
-Warns when values are used before having been initialized.
-
-**\*\*\*DEPRECATED\*\*\*** Uninitialized value checking has moved to Pulse.
-
-[Visit here for more information.](/docs/next/checker-uninit)
 

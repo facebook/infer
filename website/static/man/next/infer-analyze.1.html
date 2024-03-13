@@ -75,15 +75,17 @@ report.</p>
 <p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability</b></p>
 
 <p style="margin-left:17%;">Activates:
-<i>annotation-reachability</i> checker: Given a pair of
-source and sink annotation, e.g.
-&lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
-some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
-indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
-<b>--no-annotation-reachability</b>)</p>
+<i>annotation-reachability</i> checker: Given pairs of
+source and sink annotations, e.g. &lsquo;@A&lsquo; and
+&lsquo;@B&lsquo;, this checker will warn whenever some
+method annotated with &lsquo;@A&lsquo; calls, directly or
+indirectly, another method annotated with &lsquo;@B&lsquo;.
+Besides the custom pairs, it is also possible to enable some
+built-in checks, such as &lsquo;@PerformanceCritical&lsquo;
+reaching &lsquo;@Expensive&lsquo; or
+&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. See
+flags starting with &lsquo;--annotation-reachability&lsquo;.
+(Conversely: <b>--no-annotation-reachability</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--annotation-reachability-only</b></p>
@@ -748,21 +750,6 @@ describing temporal properties over multiple objects.</p>
 and disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
 
-<p style="margin-left:11%;"><b>--uninit</b></p>
-
-<p style="margin-left:17%;">Activates: <i>uninit</i>
-checker: Warns when values are used before having been
-initialized.</p>
-
-<p style="margin-left:11%;"><b>DEPRECATED</b>:
-Uninitialized value checking has moved to Pulse. <br>
-(Conversely: <b>--no-uninit</b>) <b><br>
---uninit-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable <i>uninit</i>
-and disable all other checkers (Conversely:
-<b>--no-uninit-only</b>)</p>
-
 <p style="margin-left:11%;"><b>--write-html</b></p>
 
 <p style="margin-left:17%;">Activates: Produce html debug
@@ -1077,10 +1064,10 @@ com.my.annotation.{Source1,Source2,Sink1} <br>
 [&quot;Sink1&quot;] } <b><br>
 --annotation-reachability-expensive</b></p>
 
-<p style="margin-left:17%;">Activates: check if expensive
-methods (annotated @Expensive or modeled) can call
-@PerformanceCritical (with annotation reachability checker)
-(Conversely:
+<p style="margin-left:17%;">Activates: check if methods
+annotated with @PerformanceCritical can call expensive
+methods (annotated @Expensive or modeled, with annotation
+reachability checker) (Conversely:
 <b>--no-annotation-reachability-expensive</b>)</p>
 
 

@@ -14,11 +14,14 @@ DESCRIPTION
 
 OPTIONS
        --annotation-reachability
-           Activates: annotation-reachability checker: Given a pair of source
-           and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`,
-           this checker will warn whenever some method annotated with
-           `@PerformanceCritical` calls, directly or indirectly, another
-           method annotated with `@Expensive` (Conversely:
+           Activates: annotation-reachability checker: Given pairs of source
+           and sink annotations, e.g. `@A` and `@B`, this checker will warn
+           whenever some method annotated with `@A` calls, directly or
+           indirectly, another method annotated with `@B`. Besides the custom
+           pairs, it is also possible to enable some built-in checks, such as
+           `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation`
+           reaching `new`. See flags starting with
+           `--annotation-reachability`. (Conversely:
            --no-annotation-reachability)
 
        --annotation-reachability-only
@@ -613,9 +616,9 @@ JAVA OPTIONS
            { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }
 
        --annotation-reachability-expensive
-           Activates: check if expensive methods (annotated @Expensive or
-           modeled) can call @PerformanceCritical (with annotation
-           reachability checker) (Conversely:
+           Activates: check if methods annotated with @PerformanceCritical
+           can call expensive methods (annotated @Expensive or modeled, with
+           annotation reachability checker) (Conversely:
            --no-annotation-reachability-expensive)
 
        --annotation-reachability-no-allocation
