@@ -184,10 +184,9 @@ module AddressAttributes : sig
 
   val is_csharp_resource_released : AbstractValue.t -> t -> bool
 
-  val in_reported_retain_cycle : AbstractValue.t -> t -> t [@@warning "-unused-value-declaration"]
+  val in_reported_retain_cycle : AbstractValue.t -> t -> t
 
   val is_in_reported_retain_cycle : AbstractValue.t -> t -> bool
-    [@@warning "-unused-value-declaration"]
 
   val add_dict_contain_const_keys : AbstractValue.t -> t -> t
 

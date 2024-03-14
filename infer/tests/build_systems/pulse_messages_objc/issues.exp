@@ -20,9 +20,6 @@ build_systems/pulse_messages_objc/retain_cycle.mm, RCBlock.retain_self_in_block_
 build_systems/pulse_messages_objc/retain_cycle.mm, RCBlock.retain_self_in_block_with_store_retain_cycle_bad, 55, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 55, column 3 between the following objects: 
   1) self captured by block defined in retain_cycle.mm:55
   2) self->_handler, assigned on line 55., 
-build_systems/pulse_messages_objc/retain_cycle.mm, test_retain_self_in_block_cycle_bad, 73, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 73, column 3 between the following objects: 
-  1) c->_handler, assigned on line 73
-  2) &c, assigned on line 73., 
 build_systems/pulse_messages_objc/retain_cycle.mm, retain_a_in_block_cycle_bad, 87, 5, ERROR, RETAIN_CYCLE, Retain cycle found at line 87, column 5 between the following objects: 
   1) a->_b, assigned on line 86
   2) b->_a_handler, assigned on line 87
@@ -31,7 +28,3 @@ codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, FBSomeData
   1) self->_fetcher, assigned on line 46
   2) &block defined in RetainCycleBlockAsParameter.m:46
   3) self captured by block defined in RetainCycleBlockAsParameter.m:46., 
-codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, test_fetchNewData_bad, 56, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 56, column 3 between the following objects: 
-  1) a->_fetcher, assigned on line 56
-  2) UNKNOWN, assigned on line 56
-  3) &a, assigned on line 56., 

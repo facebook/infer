@@ -98,7 +98,10 @@ let check_retain_cycles tenv location addresses orig_astate =
         let is_known = not (DecompilerExpr.is_unknown value) in
         let is_seen = List.mem ~equal:AbstractValue.equal seen addr in
         let is_ref_counted_or_block = is_ref_counted_or_block addr astate in
-        if is_known && is_seen && is_ref_counted_or_block then
+        let not_previously_reported =
+          not (AddressAttributes.is_in_reported_retain_cycle addr astate)
+        in
+        if is_known && is_seen && is_ref_counted_or_block && not_previously_reported then
           let seen = List.rev seen in
           let cycle = crop_seen_to_cycle seen addr in
           let cycle = remove_non_objc_objects cycle astate in
@@ -106,6 +109,11 @@ let check_retain_cycles tenv location addresses orig_astate =
           if List.exists ~f:(fun {Diagnostic.trace} -> Option.is_some trace) values then
             match List.rev values with
             | {Diagnostic.trace} :: _ ->
+                let astate =
+                  List.fold ~init:astate
+                    ~f:(fun astate addr -> AddressAttributes.in_reported_retain_cycle addr astate)
+                    seen
+                in
                 let location =
                   Option.value_map trace
                     ~f:(fun trace -> Trace.get_outer_location trace)
