@@ -14,7 +14,7 @@ val check_retain_cycles_store :
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
-  -> (unit, base_error) pulse_result
+  -> (AbductiveDomain.t, base_error) pulse_result
 
 val check_retain_cycles_call :
      Tenv.t
@@ -22,4 +22,4 @@ val check_retain_cycles_call :
   -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
   -> (AbstractValue.t * ValueHistory.t) option
   -> AbductiveDomain.t
-  -> (unit, base_error) pulse_result
+  -> (AbductiveDomain.t, base_error) pulse_result
