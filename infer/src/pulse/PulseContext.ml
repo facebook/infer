@@ -25,4 +25,12 @@ let proc_desc () = !proc_desc_ref
 
 let tenv () = !tenv_ref
 
+let tenv_exn () =
+  match tenv () with
+  | None ->
+      Logging.die InternalError "No tenv available in global state"
+  | Some tenv ->
+      tenv
+
+
 let set_tenv_global_for_testing tenv = tenv_ref := Some tenv

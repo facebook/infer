@@ -159,7 +159,7 @@ let dummy_tenv = Tenv.create ()
 
 let dummy_get_dynamic_type _ = None
 
-let () = PulseCurrentProcedure.set_tenv_global_for_testing dummy_tenv
+let () = PulseContext.set_tenv_global_for_testing dummy_tenv
 
 (* save the global state now after all named variables have been declared *)
 let global_state = AnalysisGlobalState.save ()
