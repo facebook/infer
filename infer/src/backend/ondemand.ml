@@ -85,8 +85,8 @@ let () =
   AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ()) ;
   AnalysisGlobalState.register ~save:Ident.NameGenerator.get_current
     ~restore:Ident.NameGenerator.set_current ~init:Ident.NameGenerator.reset ;
-  AnalysisGlobalState.register_ref_with_proc_desc Dependencies.currently_under_analysis
-    ~init:(fun proc_desc -> Option.some (Procdesc.get_proc_name proc_desc)) ;
+  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv Dependencies.currently_under_analysis
+    ~init:(fun proc_desc _tenv -> Option.some (Procdesc.get_proc_name proc_desc)) ;
   ()
 
 
@@ -316,11 +316,11 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
       >>= fun callee_pdesc ->
       RestartScheduler.with_lock callee_pname ~f:(fun () ->
           let previous_global_state = AnalysisGlobalState.save () in
-          AnalysisGlobalState.initialize callee_pdesc ;
           protect
             ~f:(fun () ->
               (* preload tenv to avoid tainting preanalysis timing with IO *)
               let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
+              AnalysisGlobalState.initialize callee_pdesc tenv ;
               Timer.time Preanalysis
                 ~f:(fun () ->
                   let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in

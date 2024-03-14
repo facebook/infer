@@ -8,3 +8,7 @@
 open! IStd
 
 val proc_desc : unit -> Procdesc.t option
+
+val tenv : unit -> Tenv.t option
+
+val set_tenv_global_for_testing : Tenv.t -> unit [@@warning "-unused-value-declaration"]

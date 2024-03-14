@@ -155,6 +155,12 @@ let w = op_of_var w_var
 
 let v = op_of_var (mk_var "v")
 
+let dummy_tenv = Tenv.create ()
+
+let dummy_get_dynamic_type _ = None
+
+let () = PulseCurrentProcedure.set_tenv_global_for_testing dummy_tenv
+
 (* save the global state now after all named variables have been declared *)
 let global_state = AnalysisGlobalState.save ()
 
@@ -177,10 +183,6 @@ let test ~f phi =
   if SatUnsat.equal equal phi phi' then F.printf "same"
   else F.printf "changed@\n  @[<2>%a@]" (SatUnsat.pp (pp_with_pp_var pp_var)) phi'
 
-
-let dummy_tenv = Tenv.create ()
-
-let dummy_get_dynamic_type _ = None
 
 let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 
