@@ -151,6 +151,8 @@ let hack_async_await address memory = add_one address Attribute.HackAsyncAwaited
 
 let csharp_resource_release address memory = add_one address Attribute.CSharpResourceReleased memory
 
+let in_reported_retain_cycle address memory = add_one address Attribute.InReportedRetainCycle memory
+
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
 
 let check_valid address attrs =
@@ -307,6 +309,10 @@ let is_csharp_resource_released adress attrs =
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_csharp_resource_released
 
 
+let is_in_reported_retain_cycle address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_in_reported_retain_cycle
+
+
 let is_std_moved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_moved
 
@@ -381,6 +387,8 @@ module type S = sig
 
   val csharp_resource_release : key -> t -> t
 
+  val in_reported_retain_cycle : key -> t -> t
+
   val fold : (key -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
   val check_valid : key -> t -> (unit, Invalidation.t * Trace.t) result
@@ -438,6 +446,8 @@ module type S = sig
   val is_java_resource_released : key -> t -> bool
 
   val is_csharp_resource_released : key -> t -> bool
+
+  val is_in_reported_retain_cycle : key -> t -> bool
 
   val is_std_moved : key -> t -> bool
 

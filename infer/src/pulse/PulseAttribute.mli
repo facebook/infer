@@ -127,6 +127,7 @@ type t =
   | DictReadConstKeys of ConstKeys.t  (** constant string keys that are read from the dictionary *)
   | DynamicType of dynamic_type_data
   | EndOfCollection
+  | InReportedRetainCycle
   | Initialized
   | Invalid of Invalidation.t * Trace.t
   | LastLookup of AbstractValue.t
@@ -237,6 +238,8 @@ module Attributes : sig
   val get_written_to : t -> (Timestamp.t * Trace.t) option
 
   val is_always_reachable : t -> bool
+
+  val is_in_reported_retain_cycle : t -> bool
 
   val is_modified : t -> bool
 

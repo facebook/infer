@@ -217,6 +217,7 @@ module Attribute = struct
     | DictReadConstKeys of ConstKeys.t
     | DynamicType of dynamic_type_data
     | EndOfCollection
+    | InReportedRetainCycle
     | Initialized
     | Invalid of Invalidation.t * Trace.t
     | LastLookup of AbstractValue.t
@@ -275,6 +276,8 @@ module Attribute = struct
   let dynamic_type_rank = Variants.dynamictype.rank
 
   let end_of_collection_rank = Variants.endofcollection.rank
+
+  let in_reported_retain_cycle_rank = Variants.inreportedretaincycle.rank
 
   let initialized_rank = Variants.initialized.rank
 
@@ -354,6 +357,8 @@ module Attribute = struct
           source_file
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
+    | InReportedRetainCycle ->
+        F.pp_print_string f "InReportedRetainCycle"
     | Initialized ->
         F.pp_print_string f "Initialized"
     | Invalid (invalidation, trace) ->
@@ -435,6 +440,7 @@ module Attribute = struct
     | DictContainConstKeys
     | DynamicType _
     | EndOfCollection
+    | InReportedRetainCycle
     | Initialized
     | JavaResourceReleased
     | LastLookup _
@@ -477,6 +483,7 @@ module Attribute = struct
     | DictContainConstKeys
     | DynamicType _
     | EndOfCollection
+    | InReportedRetainCycle
     | Initialized
     | Invalid _
     | JavaResourceReleased
@@ -520,6 +527,7 @@ module Attribute = struct
     | DictReadConstKeys _
     | DynamicType _
     | EndOfCollection
+    | InReportedRetainCycle
     | Initialized
     | Invalid _
     | JavaResourceReleased
@@ -562,6 +570,8 @@ module Attribute = struct
           (ConstKeys.map
              (fun (_timestamp, trace) -> (timestamp, add_call_to_trace trace))
              const_keys )
+    | InReportedRetainCycle ->
+        InReportedRetainCycle
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
     | MustBeValid (_timestamp, trace, reason) ->
@@ -701,6 +711,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
+      | InReportedRetainCycle
       | Initialized
       | Invalid _
       | JavaResourceReleased
@@ -824,6 +835,8 @@ module Attributes = struct
   let remove_by_rank = Set.remove_by_rank
 
   let mem_by_rank rank attrs = Set.find_rank attrs rank |> Option.is_some
+
+  let is_in_reported_retain_cycle = mem_by_rank Attribute.in_reported_retain_cycle_rank
 
   let get_invalid =
     get_by_rank Attribute.invalid_rank ~dest:(function [@warning "-partial-match"]

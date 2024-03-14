@@ -37,6 +37,8 @@ module type S = sig
 
   val csharp_resource_release : key -> t -> t
 
+  val in_reported_retain_cycle : key -> t -> t
+
   val fold : (key -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
   val check_valid : key -> t -> (unit, Invalidation.t * Trace.t) result
@@ -94,6 +96,8 @@ module type S = sig
   val is_java_resource_released : key -> t -> bool
 
   val is_csharp_resource_released : key -> t -> bool
+
+  val is_in_reported_retain_cycle : key -> t -> bool
 
   val is_std_moved : key -> t -> bool
 

@@ -460,6 +460,10 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.csharp_resource_release address)
 
 
+    let in_reported_retain_cycle address astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.in_reported_retain_cycle address)
+
+
     let get_dynamic_type addr astate =
       BaseAddressAttributes.get_dynamic_type (astate.post :> base_domain).attrs addr
 
@@ -543,6 +547,10 @@ module Internal = struct
 
     let is_java_resource_released addr astate =
       BaseAddressAttributes.is_java_resource_released addr (astate.post :> base_domain).attrs
+
+
+    let is_in_reported_retain_cycle addr astate =
+      BaseAddressAttributes.is_in_reported_retain_cycle addr (astate.post :> base_domain).attrs
 
 
     let is_csharp_resource_released addr astate =
@@ -2247,6 +2255,14 @@ module AddressAttributes = struct
 
   let is_csharp_resource_released v astate =
     SafeAttributes.is_csharp_resource_released (CanonValue.canon' astate v) astate
+
+
+  let in_reported_retain_cycle v astate =
+    SafeAttributes.in_reported_retain_cycle (CanonValue.canon' astate v) astate
+
+
+  let is_in_reported_retain_cycle v astate =
+    SafeAttributes.is_in_reported_retain_cycle (CanonValue.canon' astate v) astate
 
 
   let add_dict_contain_const_keys v astate =
