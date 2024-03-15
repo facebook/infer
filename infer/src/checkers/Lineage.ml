@@ -29,49 +29,10 @@ module PPNode = struct
     (Procdesc.Node.dummy dummy_procname, dummy_instr_index)
 end
 
+open LineageShape.StdModules
 module Shapes = LineageShape.Summary
-module FieldLabel = LineageShape.FieldLabel
-module FieldPath = LineageShape.FieldPath
-module Cell = LineageShape.Cell
 
 type shapes = Shapes.t option
-
-module VarPath : sig
-  (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
-      are built from their in-program occurrences. They may semantically have sub-fields themselves:
-      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths. *)
-
-  (** The type of variable paths: a variable and a possibly empty list of subscripted fields. *)
-  type t = Var.t * FieldPath.t
-
-  val var : Var.t -> t
-
-  val sub_label : t -> FieldLabel.t -> t
-  (** Subscript one sub-field from a variable path.*)
-
-  val sub_path : t -> FieldPath.t -> t
-  (** Subscript nested sub-fields from a variable path. *)
-
-  val make : Var.t -> FieldPath.t -> t
-
-  val pvar : Pvar.t -> t
-
-  val ident : Ident.t -> t
-end = struct
-  type t = Var.t * FieldPath.t
-
-  let var v = (v, [])
-
-  let sub_path (var, field_path) subfields = (var, field_path @ subfields)
-
-  let sub_label var_path label = sub_path var_path [label]
-
-  let make var field_path = (var, field_path)
-
-  let pvar pvar = var (Var.of_pvar pvar)
-
-  let ident id = var (Var.of_id id)
-end
 
 module Local = struct
   module T = struct
@@ -2087,4 +2048,4 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
 
 
 let checker =
-  LineageUtils.skip_unwanted "Lineage" ~max_size:Config.lineage_max_cfg_size unskipped_checker
+  LineageBase.skip_unwanted "Lineage" ~max_size:Config.lineage_max_cfg_size unskipped_checker

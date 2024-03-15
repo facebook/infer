@@ -18,12 +18,37 @@ module FieldLabel : sig
 end
 
 module FieldPath : sig
+  (** A module to help manipulating lists of (nested) fields. *)
+
   (** The fields are listed in syntactic order: [\[a; b\]] for [x#a#b]. *)
   type t = FieldLabel.t list [@@deriving compare, equal, sexp, hash, yojson_of]
 
   include Comparable.S with type t := t
 
   val pp : t Fmt.t
+end
+
+module VarPath : sig
+  (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
+      are built from their in-program occurrences. They may semantically have sub-fields themselves:
+      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths. *)
+
+  (** The type of variable paths: a variable and a possibly empty list of subscripted fields. *)
+  type t = Var.t * FieldPath.t
+
+  val var : Var.t -> t
+
+  val sub_label : t -> FieldLabel.t -> t
+  (** Subscript one sub-field from a variable path.*)
+
+  val sub_path : t -> FieldPath.t -> t
+  (** Subscript nested sub-fields from a variable path. *)
+
+  val make : Var.t -> FieldPath.t -> t
+
+  val pvar : Pvar.t -> t
+
+  val ident : Ident.t -> t
 end
 
 module Cell : sig
@@ -73,7 +98,7 @@ module Summary : sig
 
   val fold_field_labels :
        t option
-    -> Var.t * FieldPath.t
+    -> VarPath.t
     -> init:'accum
     -> f:('accum -> FieldLabel.t -> 'accum)
     -> fallback:('accum -> 'accum)
@@ -85,8 +110,7 @@ module Summary : sig
 
       If the summary is [None], will always fallback. *)
 
-  val fold_cells :
-    t option -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
+  val fold_cells : t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
   (** Folds over all cells under a variable and field path. A field path is "terminal" if its length
       (that includes the prefixed fields given as parameters) is equal to
       {!IBase.Config.lineage_field_depth}, or no more field can be subscripted from its
@@ -102,8 +126,8 @@ module Summary : sig
 
   val fold_cell_pairs :
        t option
-    -> Var.t * FieldPath.t
-    -> Var.t * FieldPath.t
+    -> VarPath.t
+    -> VarPath.t
     -> init:'accum
     -> f:('accum -> Cell.t -> Cell.t -> 'accum)
     -> 'accum
@@ -126,6 +150,15 @@ module Summary : sig
       if these parameters cross wide shapes, the result will not).
 
       If the summary is [None], [f] will be called once with a var-only abstract cells pair. *)
+end
+
+module StdModules : sig
+  (** Can be safely opened to provide module definitions at once. *)
+
+  module FieldLabel = FieldLabel
+  module FieldPath = FieldPath
+  module VarPath = VarPath
+  module Cell = Cell
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option
