@@ -50,8 +50,8 @@ let of_binop bop f1 f2 phi =
 (* the following are shorthand notations that are generally useful to keep around *)
 [@@@warning "-unused-value-declaration"]
 
-let instanceof typ x_var y_var ~get_dynamic_type ~tenv phi =
-  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ ~get_dynamic_type ~tenv phi in
+let instanceof typ x_var y_var ~get_dynamic_type phi =
+  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ ~get_dynamic_type phi in
   phi
 
 
@@ -189,7 +189,7 @@ let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 let cons_typ = Typ.mk (Tstruct (ErlangType Cons))
 
 let normalize_with ~get_dynamic_type phi =
-  test ~f:(fun phi -> normalize dummy_tenv ~get_dynamic_type phi >>| fst) phi
+  test ~f:(fun phi -> normalize ~get_dynamic_type phi >>| fst) phi
 
 
 let normalize phi = normalize_with ~get_dynamic_type:dummy_get_dynamic_type phi
@@ -201,8 +201,7 @@ let simplify ~keep phi =
   test phi ~f:(fun phi ->
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
-      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type ~precondition_vocabulary:keep
-        ~keep phi
+      simplify ~get_dynamic_type:dummy_get_dynamic_type ~precondition_vocabulary:keep ~keep phi
       >>| fst3 )
 
 
@@ -210,8 +209,8 @@ let%test_module "normalization" =
   ( module struct
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
-        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type
+        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type
         && z = i 0 ) ;
       [%expect
         {|
@@ -226,8 +225,8 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
-        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
+        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type
+        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type
         && w = i 0 ) ;
       [%expect
         {|
@@ -242,9 +241,8 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof cons_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
-        && instanceof nil_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ~tenv:dummy_tenv
-        ) ;
+        ( instanceof cons_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type
+        && instanceof nil_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ) ;
       [%expect
         {|
         Formula:

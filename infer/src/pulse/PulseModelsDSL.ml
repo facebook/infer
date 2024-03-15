@@ -283,8 +283,7 @@ module Syntax = struct
 
 
   let and_equal_instanceof (res, _) (obj, _) ty : unit model_monad =
-    let* {analysis_data= {tenv}} = get_data in
-    PulseArithmetic.and_equal_instanceof res obj ty ~tenv |> exec_partial_command
+    PulseArithmetic.and_equal_instanceof res obj ty |> exec_partial_command
 
 
   let and_positive (addr, _) : unit model_monad =

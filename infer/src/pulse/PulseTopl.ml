@@ -199,9 +199,6 @@ end = struct
 
   let substitute = sub_list substitute_predicate
 
-  (* TODO: Replace with a proper type environment. *)
-  let default_tenv = Tenv.create ()
-
   let pp_operator f operator =
     match operator with
     | Builtin op ->
@@ -340,9 +337,7 @@ end = struct
             let* path_condition, new_eqs_a =
               Formula.prune_binop ~negated:false op l r path_condition
             in
-            let* path_condition, new_eqs_b =
-              Formula.normalize default_tenv ~get_dynamic_type path_condition
-            in
+            let* path_condition, new_eqs_b = Formula.normalize ~get_dynamic_type path_condition in
             let new_eqs =
               let new_eqs = RevList.empty in
               let new_eqs =

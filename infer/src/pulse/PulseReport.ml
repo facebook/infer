@@ -222,9 +222,9 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
         false
 
 
-let summary_of_error_post tenv proc_desc location mk_error astate =
+let summary_of_error_post proc_desc location mk_error astate =
   match
-    AbductiveDomain.Summary.of_post tenv
+    AbductiveDomain.Summary.of_post
       (Procdesc.get_proc_name proc_desc)
       (Procdesc.get_attributes proc_desc)
       location astate
@@ -248,12 +248,12 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
       Unsat
 
 
-let summary_error_of_error tenv proc_desc location (error : AccessResult.error) : _ SatUnsat.t =
+let summary_error_of_error proc_desc location (error : AccessResult.error) : _ SatUnsat.t =
   match error with
   | WithSummary (error, summary) ->
       Sat (error, summary)
   | PotentialInvalidAccess {astate} | ReportableError {astate} ->
-      summary_of_error_post tenv proc_desc location (fun summary -> (error, summary)) astate
+      summary_of_error_post proc_desc location (fun summary -> (error, summary)) astate
 
 
 (* the access error and summary must come from [summary_error_of_error] *)
@@ -309,7 +309,7 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
 
 let report_error tenv proc_desc err_log location access_error =
   let open SatUnsat.Import in
-  summary_error_of_error tenv proc_desc location access_error
+  summary_error_of_error proc_desc location access_error
   >>| report_summary_error tenv proc_desc err_log
 
 

@@ -147,10 +147,10 @@ module Basic = struct
 
 
   let early_exit : model_no_non_disj =
-   fun {analysis_data= {tenv; proc_desc}; location} astate ->
+   fun {analysis_data= {proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      AbductiveDomain.Summary.of_post tenv
+      AbductiveDomain.Summary.of_post
         (Procdesc.get_proc_name proc_desc)
         (Procdesc.get_attributes proc_desc)
         location astate

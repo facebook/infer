@@ -3629,7 +3629,7 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
 
 
 module DynamicTypes = struct
-  let evaluate_instanceof _tenv ~get_dynamic_type v typ =
+  let evaluate_instanceof ~get_dynamic_type v typ =
     let tenv = PulseContext.tenv_exn () in
     get_dynamic_type v
     |> Option.map ~f:(fun dynamic_type ->
@@ -3643,11 +3643,11 @@ module DynamicTypes = struct
            Term.of_bool is_instanceof )
 
 
-  let really_simplify tenv ~get_dynamic_type formula =
+  let really_simplify ~get_dynamic_type formula =
     let simplify_term (t : Term.t) =
       match t with
       | IsInstanceOf (v, typ) -> (
-        match evaluate_instanceof tenv ~get_dynamic_type v typ with None -> t | Some t' -> t' )
+        match evaluate_instanceof ~get_dynamic_type v typ with None -> t | Some t' -> t' )
       | t ->
           t
     in
@@ -3681,17 +3681,17 @@ module DynamicTypes = struct
     || Atom.Set.exists in_atom formula.phi.atoms
 
 
-  let simplify tenv ~get_dynamic_type formula =
-    if has_instanceof formula then really_simplify tenv ~get_dynamic_type formula
+  let simplify ~get_dynamic_type formula =
+    if has_instanceof formula then really_simplify ~get_dynamic_type formula
     else Sat (formula, RevList.empty)
 end
 
 (* Just do most naive thing of evaluating instanceof if we know the dynamic type at the time of assertion
    Because that's pretty weak, leave existing normalisation at summary time in for now
 *)
-let and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv formula =
+let and_equal_instanceof v1 v2 t ~get_dynamic_type formula =
   let atom =
-    match DynamicTypes.evaluate_instanceof tenv ~get_dynamic_type v2 t with
+    match DynamicTypes.evaluate_instanceof ~get_dynamic_type v2 t with
     | None ->
         Atom.equal (Var v1) (IsInstanceOf (v2, t))
     | Some bool_term ->
@@ -3700,10 +3700,10 @@ let and_equal_instanceof v1 v2 t ~get_dynamic_type ~tenv formula =
   and_atom atom formula
 
 
-let normalize tenv ~get_dynamic_type formula =
+let normalize ~get_dynamic_type formula =
   Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
   (* normalization happens incrementally except for dynamic types (TODO) *)
-  DynamicTypes.simplify tenv ~get_dynamic_type formula
+  DynamicTypes.simplify ~get_dynamic_type formula
 
 
 (** translate each variable in [formula_foreign] according to [f] then incorporate each fact into
@@ -4076,9 +4076,9 @@ module DeadVariables = struct
     Sat ({conditions; phi}, vars_to_keep)
 end
 
-let simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep formula =
+let simplify ~get_dynamic_type ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
-  let* formula, new_eqs = normalize tenv ~get_dynamic_type formula in
+  let* formula, new_eqs = normalize ~get_dynamic_type formula in
   L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula Var.Set.pp
     keep Var.Set.pp precondition_vocabulary ;
   (* get rid of as many variables as possible *)

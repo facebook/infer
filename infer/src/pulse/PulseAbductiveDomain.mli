@@ -344,8 +344,7 @@ module Summary : sig
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
 
   val of_post :
-       Tenv.t
-    -> Procname.t
+       Procname.t
     -> ProcAttributes.t
     -> Location.t
     -> t

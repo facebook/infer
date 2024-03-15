@@ -308,7 +308,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       map_call_result astate ~f:(fun _return_val_opt (subst, hist_map) astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
-            AbductiveDomain.Summary.of_post tenv
+            AbductiveDomain.Summary.of_post
               (Procdesc.get_proc_name caller_proc_desc)
               (Procdesc.get_attributes caller_proc_desc)
               call_loc astate_post_call

@@ -70,7 +70,7 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
       ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
     let open SatUnsat.Import in
     let+ summary_result =
-      AbductiveDomain.Summary.of_post tenv
+      AbductiveDomain.Summary.of_post
         (Procdesc.get_proc_name proc_desc)
         (Procdesc.get_attributes proc_desc)
         location astate
@@ -235,7 +235,7 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
   let** astate = PulseArithmetic.prune_eq_zero self_value astate in
   let++ summary =
     let open SatUnsat.Import in
-    AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
+    AbductiveDomain.Summary.of_post proc_name proc_attrs proc_attrs.loc astate
     >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
     >>| AccessResult.with_summary
   in
@@ -258,7 +258,7 @@ let mk_objc_nil_messaging_summary tenv (proc_attrs : ProcAttributes.t) =
       match
         (let** astate = mk_nil_messaging_summary_aux tenv proc_name proc_attrs in
          let open SatUnsat.Import in
-         AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
+         AbductiveDomain.Summary.of_post proc_name proc_attrs proc_attrs.loc astate
          >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
          >>| AccessResult.with_summary )
         |> PulseOperationResult.sat_ok
