@@ -116,8 +116,6 @@ module type S = sig
 
   val get_config_usage : key -> t -> Attribute.ConfigUsage.t option
 
-  val get_const_string : key -> t -> string option
-
   val get_used_as_branch_cond : key -> t -> (Procname.t * Location.t * Trace.t) option
 
   val remove_allocation_attr : key -> t -> t

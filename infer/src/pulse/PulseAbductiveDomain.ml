@@ -586,10 +586,6 @@ module Internal = struct
       BaseAddressAttributes.get_config_usage addr (astate.post :> base_domain).attrs
 
 
-    let get_const_string addr astate =
-      BaseAddressAttributes.get_const_string addr (astate.post :> base_domain).attrs
-
-
     let get_valid_returned_from_unknown addr astate =
       let open IOption.Let_syntax in
       let+ returned_from =
@@ -2371,10 +2367,6 @@ module AddressAttributes = struct
 
 
   let is_std_moved v astate = SafeAttributes.is_std_moved (CanonValue.canon' astate v) astate
-
-  let get_const_string v astate =
-    SafeAttributes.get_const_string (CanonValue.canon' astate v) astate
-
 
   let get_address_of_stack_variable v astate =
     SafeAttributes.get_address_of_stack_variable (CanonValue.canon' astate v) astate

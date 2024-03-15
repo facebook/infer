@@ -280,7 +280,6 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
       Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
   | Const (Cstr s) ->
       let astate, v = PulseArithmetic.absval_of_string astate s in
-      let astate = AddressAttributes.add_one v (ConstString s) astate in
       Sat
         (Ok
            ( astate
@@ -854,7 +853,7 @@ let check_used_as_branch_cond (addr, hist) ~pname_using_config ~branch_location 
   | Some (ConfigName config) ->
       if FbPulseConfigName.has_config_read hist then report_config_usage config else Ok astate
   | Some (StringParam {v; config_type}) -> (
-    match AddressAttributes.get_const_string v astate with
+    match PulseArithmetic.as_constant_string astate v with
     | None ->
         Ok astate
     | Some s ->

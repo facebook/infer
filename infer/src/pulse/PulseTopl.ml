@@ -551,7 +551,7 @@ let deref_field_access pulse_state value class_name field_name : Formula.operand
   let* v1, _hist = Memory.Edges.find_opt (FieldAccess field) edges in
   let* edges = Memory.find_opt v1 heap in
   let* v2, _hist = Memory.Edges.find_opt Dereference edges in
-  match BaseAddressAttributes.get_const_string v2 pulse_state.pulse_post.attrs with
+  match Formula.as_constant_string pulse_state.path_condition v2 with
   | Some r ->
       Some (Formula.ConstOperand (Const.Cstr r))
   | _ ->

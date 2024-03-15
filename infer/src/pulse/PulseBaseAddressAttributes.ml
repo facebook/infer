@@ -291,8 +291,6 @@ let add_copied_return address ~source ~is_const_ref from copied_location memory 
 
 let get_config_usage address attrs = get_attribute Attributes.get_config_usage address attrs
 
-let get_const_string address attrs = get_attribute Attributes.get_const_string address attrs
-
 let get_used_as_branch_cond address attrs =
   get_attribute Attributes.get_used_as_branch_cond address attrs
 
@@ -465,8 +463,6 @@ module type S = sig
     key -> source:key -> is_const_ref:bool -> Attribute.CopyOrigin.t -> Location.t -> t -> t
 
   val get_config_usage : key -> t -> Attribute.ConfigUsage.t option
-
-  val get_const_string : key -> t -> string option
 
   val get_used_as_branch_cond : key -> t -> (Procname.t * Location.t * Trace.t) option
 

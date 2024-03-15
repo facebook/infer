@@ -259,9 +259,10 @@ module BasicString = struct
        let event = Hist.call_event path location desc in
        let this_hist = (this, Hist.add_event path event hist) in
        let* () = write_deref_field ~ref:this_hist ~obj:init_hist ModeledField.internal_string in
+       let* s_opt = as_constant_string init_hist in
        let* len =
          exec_operation (fun astate ->
-             match AddressAttributes.get_const_string (fst init_hist) astate with
+             match s_opt with
              | Some s ->
                  let astate, len =
                    String.length s |> IntLit.of_int |> PulseArithmetic.absval_of_int astate

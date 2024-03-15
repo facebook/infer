@@ -206,7 +206,6 @@ module Attribute = struct
     | AlwaysReachable
     | Closure of Procname.t
     | ConfigUsage of ConfigUsage.t
-    | ConstString of string
     | CopiedInto of CopiedInto.t
     | CopiedReturn of
         { source: AbstractValue.t
@@ -260,8 +259,6 @@ module Attribute = struct
   let closure_rank = Variants.closure.rank
 
   let config_usage_rank = Variants.configusage.rank
-
-  let const_string_rank = Variants.conststring.rank
 
   let copied_into_rank = Variants.copiedinto.rank
 
@@ -340,8 +337,6 @@ module Attribute = struct
         Procname.pp f pname
     | ConfigUsage config ->
         F.fprintf f "ConfigUsage (%a)" ConfigUsage.pp config
-    | ConstString s ->
-        F.fprintf f "ConstString (%s)" s
     | CopiedInto copied_into ->
         CopiedInto.pp f copied_into
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
@@ -434,7 +429,6 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
-    | ConstString _
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
@@ -477,7 +471,6 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
-    | ConstString _
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
@@ -521,7 +514,6 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
-    | ConstString _
     | CopiedReturn _
     | DictContainConstKeys
     | DictReadConstKeys _
@@ -630,7 +622,6 @@ module Attribute = struct
       | AlwaysReachable
       | Closure _
       | ConfigUsage (ConfigName _)
-      | ConstString _
       | CSharpResourceReleased
       | DictContainConstKeys
       | DynamicType _
@@ -703,7 +694,6 @@ module Attribute = struct
       | AlwaysReachable
       | Closure _
       | ConfigUsage (ConfigName _)
-      | ConstString _
       | CopiedInto _
       | CSharpResourceReleased
       | DictContainConstKeys
@@ -881,11 +871,6 @@ module Attributes = struct
   let get_config_usage =
     get_by_rank Attribute.config_usage_rank ~dest:(function [@warning "-partial-match"]
         | ConfigUsage config -> config )
-
-
-  let get_const_string =
-    get_by_rank Attribute.const_string_rank ~dest:(function [@warning "-partial-match"]
-        | ConstString s -> s )
 
 
   let get_used_as_branch_cond =

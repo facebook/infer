@@ -99,7 +99,9 @@ val simplify :
 
 val is_known_zero : t -> Var.t -> bool
 
-val get_known_constant_opt : t -> Var.t -> Q.t option
+val as_constant_q : t -> Var.t -> Q.t option
+
+val as_constant_string : t -> Var.t -> string option
 
 val is_known_non_pointer : t -> Var.t -> bool
 

@@ -31,10 +31,10 @@ let read_boxed_string_value address astate =
   let field = Fieldname.make hack_string_type_name "val" in
   let* box_val, _ = Memory.find_edge_opt address (FieldAccess field) astate in
   let* string_val, _ = Memory.find_edge_opt box_val Dereference astate in
-  AddressAttributes.get_const_string string_val astate
+  PulseArithmetic.as_constant_string astate string_val
 
 
-let read_boxed_string_value_dsl aval : string DSL.model_monad =
+let read_boxed_string_value_or_unreachable aval : string DSL.model_monad =
   (* we cut the current path if no constant string is found *)
   let open PulseModelsDSL.Syntax in
   let operation astate = (read_boxed_string_value (fst aval) astate, astate) in
@@ -42,8 +42,7 @@ let read_boxed_string_value_dsl aval : string DSL.model_monad =
   Option.value_map opt_string ~default:unreachable ~f:ret
 
 
-let read_boxed_string_value_opt_dsl aval : string option DSL.model_monad =
-  (* we cut the current path if no constant string is found *)
+let read_boxed_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in
   let operation astate = (read_boxed_string_value (fst aval) astate, astate) in
   let* opt_string = exec_operation operation in
@@ -438,7 +437,7 @@ let hhbc_class_get_c value : model =
        ~cases:
          [ ( hack_string_type_name
            , fun () ->
-               let* string = read_boxed_string_value_dsl value in
+               let* string = read_boxed_string_value_or_unreachable value in
                (* namespace\\classname becomes namespace::classname *)
                let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
                let typ_name = Typ.HackClass (HackClassName.make string) in
@@ -462,7 +461,7 @@ module Dict = struct
 
   let field_of_string_value value : Fieldname.t option DSL.model_monad =
     let open DSL.Syntax in
-    let* string = read_boxed_string_value_opt_dsl value in
+    let* string = read_boxed_string_value_dsl value in
     ret (Option.map string ~f:(fun string -> TextualSil.wildcard_sil_fieldname Hack string))
 
 
@@ -901,8 +900,8 @@ let hhbc_cmp_same x y : model =
                let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                value_equality_test x_val y_val
              else if Typ.Name.equal x_typ_name hack_string_type_name then
-               let* opt_str_x = read_boxed_string_value_opt_dsl x in
-               let* opt_str_y = read_boxed_string_value_opt_dsl y in
+               let* opt_str_x = read_boxed_string_value_dsl x in
+               let* opt_str_y = read_boxed_string_value_dsl y in
                match (opt_str_x, opt_str_y) with
                | Some str_x, Some str_y ->
                    String.equal str_x str_y |> make_hack_bool
@@ -981,7 +980,7 @@ let hhbc_cls_cns this field : model =
      let* field_v =
        match dynamic_Type_data_opt with
        | Some {Attribute.typ= {Typ.desc= Tstruct name}} ->
-           let* string_field_name = read_boxed_string_value_dsl field in
+           let* string_field_name = read_boxed_string_value_or_unreachable field in
            let* fld_opt = tenv_resolve_fieldname name string_field_name in
            let name, fld =
              match fld_opt with
@@ -1013,9 +1012,9 @@ let hack_get_class this : model =
 let hack_set_static_prop this prop obj : model =
   let open DSL.Syntax in
   start_model
-  @@ let* this = read_boxed_string_value_dsl this in
+  @@ let* this = read_boxed_string_value_or_unreachable this in
      let this = String.substr_replace_all ~pattern:"\\" ~with_:":" this in
-     let* prop = read_boxed_string_value_dsl prop in
+     let* prop = read_boxed_string_value_or_unreachable prop in
      let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
      let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
      write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
@@ -1348,8 +1347,8 @@ let hhbc_cast_string arg : model =
 let hhbc_concat arg1 arg2 : model =
   let open DSL.Syntax in
   start_model
-  @@ let* arg1_opt_string = read_boxed_string_value_opt_dsl arg1 in
-     let* arg2_opt_string = read_boxed_string_value_opt_dsl arg2 in
+  @@ let* arg1_opt_string = read_boxed_string_value_dsl arg1 in
+     let* arg2_opt_string = read_boxed_string_value_dsl arg2 in
      match (arg1_opt_string, arg2_opt_string) with
      | Some arg1_str, Some arg2_str ->
          let* str = eval_const_string (arg1_str ^ arg2_str) in

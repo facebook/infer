@@ -180,6 +180,8 @@ module Syntax : sig
 
   val as_constant_int : aval -> int option model_monad
 
+  val as_constant_string : aval -> string option model_monad
+
   val aval_of_int : ValueHistory.t -> int -> aval model_monad
 
   (** {2 Tenv operations} *)

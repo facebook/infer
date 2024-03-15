@@ -273,7 +273,7 @@ module Atoms = struct
 
   let get_name path location var astate : string option =
     let _astate, _addr, (name, _) = load_field path name_field location var astate in
-    AbductiveDomain.AddressAttributes.get_const_string name astate
+    PulseArithmetic.as_constant_string astate name
 
 
   let make_raw location path name hash : sat_maker =
@@ -1038,7 +1038,7 @@ module Strings = struct
   let make_raw location path (value, _) : sat_maker =
    fun astate ->
     let string_value =
-      AddressAttributes.get_const_string value astate |> value_die "expected string value attribute"
+      PulseArithmetic.as_constant_string astate value |> value_die "expected string value attribute"
     in
     let ls_str = String.to_list string_value in
     handle_string_content location path value ls_str astate

@@ -116,7 +116,6 @@ type t =
   | AlwaysReachable
   | Closure of Procname.t
   | ConfigUsage of ConfigUsage.t
-  | ConstString of string
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
@@ -175,8 +174,6 @@ module Attributes : sig
   val get_closure_proc_name : t -> Procname.t option
 
   val get_config_usage : t -> ConfigUsage.t option
-
-  val get_const_string : t -> string option
 
   val get_used_as_branch_cond : t -> (Procname.t * Location.t * Trace.t) option
 
