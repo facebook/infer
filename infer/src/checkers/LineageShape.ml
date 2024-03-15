@@ -295,6 +295,9 @@ module Env : sig
       -> 'accum
     (* Doc in .mli *)
 
+    val as_field_label_singleton : t option -> VarPath.t -> FieldLabel.t option
+    (* Doc in .mli *)
+
     val fold_cells :
       t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
@@ -1222,6 +1225,19 @@ end = struct
           fold_field_labels_actual summary (var, path) ~init ~f ~fallback
       | None ->
           fallback init
+
+
+    let as_field_label_singleton summary_option var_path =
+      let open IOption.Let_syntax in
+      let* summary = summary_option in
+      match find_var_path_structure summary var_path with
+      | Variant set ->
+          if Int.O.(Set.length set = 1) then
+            let+ constructor = Set.choose set in
+            FieldLabel.map_key constructor
+          else None
+      | _ ->
+          None
   end
 end
 

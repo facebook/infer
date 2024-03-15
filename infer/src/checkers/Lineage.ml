@@ -1859,16 +1859,23 @@ module TransferFunctions = struct
           let key_path = exp_as_single_var_path_exn key_exp in
           let value_path = exp_as_single_var_path_exn value_exp in
           let map_path = exp_as_single_var_path_exn map_exp in
-          (* First copy the argument map into the returned map, except the new key. *)
+          (* First copy the argument map into the returned map. *)
           let exclude_new_key ~src_field_path ~dst_field_path =
-            Shapes.fold_field_labels
-              ~f:(fun acc field_label ->
+            (* Precision optimisation: if the newly put key is statically known to be a single label,
+               then the corresponding field from the source map does not flow into the resulting
+               map.
+
+               Note that we need the single-label property for this optimisation to be
+               correct. Eg. on [M' = put(foo|bar, val, M)], both [M#foo] and [val] may flow into
+               M'#foo. *)
+            match Shapes.as_field_label_singleton shapes key_path with
+            | Some field_label ->
                 (* Since abstraction may truncate either the copied path or the returned one, we
                    check that both are separate from the newly put key. *)
-                acc
-                || [%equal: FieldLabel.t option] (List.hd src_field_path) (Some field_label)
-                || [%equal: FieldLabel.t option] (List.hd dst_field_path) (Some field_label) )
-              ~fallback:(Fn.const false) ~init:false shapes key_path
+                [%equal: FieldLabel.t option] (List.hd src_field_path) (Some field_label)
+                || [%equal: FieldLabel.t option] (List.hd dst_field_path) (Some field_label)
+            | None ->
+                false
           in
           let astate =
             Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path

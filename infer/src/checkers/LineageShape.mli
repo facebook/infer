@@ -110,6 +110,10 @@ module Summary : sig
 
       If the summary is [None], will always fallback. *)
 
+  val as_field_label_singleton : t option -> VarPath.t -> FieldLabel.t option
+  (** If a variable path has the shape that corresponds to a single statically known label, return
+      it. *)
+
   val fold_cells : t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
   (** Folds over all cells under a variable and field path. A field path is "terminal" if its length
       (that includes the prefixed fields given as parameters) is equal to
