@@ -801,10 +801,7 @@ let is_shared_pointer typ =
 
 
 let is_folly_coro =
-  let matcher =
-    QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
-      ["folly::coro::AsyncGenerator"; "folly::coro::Generator"; "folly::coro::Task"]
-  in
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true ["folly::coro"] in
   function
   | {desc= Tstruct (CppClass {name})} | {desc= Tptr ({desc= Tstruct (CppClass {name})}, _)} ->
       QualifiedCppName.Match.match_qualifiers matcher name
