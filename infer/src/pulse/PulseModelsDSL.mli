@@ -17,6 +17,8 @@ type astate = AbductiveDomain.t
 type aval = AbstractValue.t * ValueHistory.t
 
 module Syntax : sig
+  module ModeledField = PulseOperations.ModeledField
+
   (** {2 Polymorphic Operations} *)
 
   val ( let* ) : 'a model_monad -> ('a -> 'b model_monad) -> 'b model_monad
@@ -140,6 +142,10 @@ module Syntax : sig
 
   val prune_eq_int : aval -> IntLit.t -> unit model_monad
 
+  val prune_eq_string : aval -> string -> unit model_monad
+
+  val prune_ne_string : aval -> string -> unit model_monad
+
   val prune_eq_zero : aval -> unit model_monad
 
   val prune_positive : aval -> unit model_monad
@@ -174,6 +180,8 @@ module Syntax : sig
 
   val as_constant_int : aval -> int option model_monad
 
+  val aval_of_int : ValueHistory.t -> int -> aval model_monad
+
   (** {2 Tenv operations} *)
 
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
@@ -192,7 +200,11 @@ module Syntax : sig
 
   val exec_command : (astate -> astate) -> unit model_monad
 
+  val exec_partial_command : (astate -> astate PulseOperationResult.t) -> unit model_monad
+
   val exec_operation : (astate -> 'a * astate) -> 'a model_monad
+
+  val exec_partial_operation : (astate -> (astate * 'a) PulseOperationResult.t) -> 'a model_monad
 
   val exec_pure_operation : (astate -> 'a) -> 'a model_monad
 

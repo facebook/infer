@@ -115,7 +115,7 @@ class Tests {
     return ($arg1 != $arg2);
   }
 
-  public static function FN_call_string_eq_bad(): void {
+  public static function call_string_eq_bad(): void {
     $arg1 = self::get_foo_string();
     $arg2 = self::get_foo_string();
     if (self::string_eq($arg1, $arg2)) {

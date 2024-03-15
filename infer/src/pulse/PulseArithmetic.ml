@@ -134,3 +134,9 @@ let absval_of_int astate i =
   let phi, v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
   let astate = AbductiveDomain.set_path_condition phi astate in
   (astate, v)
+
+
+let absval_of_string astate s =
+  let phi, v = Formula.absval_of_string astate.AbductiveDomain.path_condition s in
+  let astate = AbductiveDomain.set_path_condition phi astate in
+  (astate, v)

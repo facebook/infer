@@ -4168,3 +4168,16 @@ let absval_of_int formula i =
         and_equal (AbstractValueOperand v) (ConstOperand (Cint i)) formula |> assert_sat |> fst
       in
       (formula, v)
+
+
+let absval_of_string formula s =
+  match Formula.get_term_eq formula.phi (String s) with
+  | Some v ->
+      (formula, v)
+  | None ->
+      let assert_sat = function Sat x -> x | Unsat -> assert false in
+      let v = Var.mk_fresh () in
+      let formula =
+        and_equal (AbstractValueOperand v) (ConstOperand (Cstr s)) formula |> assert_sat |> fst
+      in
+      (formula, v)

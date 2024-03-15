@@ -279,18 +279,13 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
       in
       Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
   | Const (Cstr s) ->
-      (* TODO: record actual string value; since we are making strings be a record in memory
-         instead of pure values some care has to be added to access string values once written *)
-      let v = AbstractValue.mk_fresh () in
-      let=* astate, (len_addr, hist) =
-        eval_access path Write location
-          (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
-          (FieldAccess ModeledField.string_length) astate
-      in
-      let len_int = IntLit.of_int (String.length s) in
-      let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
+      let astate, v = PulseArithmetic.absval_of_string astate s in
       let astate = AddressAttributes.add_one v (ConstString s) astate in
-      (astate, ValueOrigin.Unknown (v, hist))
+      Sat
+        (Ok
+           ( astate
+           , ValueOrigin.Unknown (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
+           ) )
   | Const ((Cfloat _ | Cclass _) as c) ->
       let v = AbstractValue.mk_fresh () in
       let++ astate = PulseArithmetic.and_eq_const v c astate in

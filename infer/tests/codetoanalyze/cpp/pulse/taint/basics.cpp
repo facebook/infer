@@ -165,7 +165,7 @@ void via_passthrough_bad1(Obj* obj) {
   obj->string_sink(*laundered_source);
 }
 
-void FN_via_passthrough_bad2(Obj* obj) {
+void via_passthrough_bad2(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string laundered_source = id2<std::string>(source);
   obj->string_sink(laundered_source);
@@ -250,7 +250,7 @@ void via_propagator_ok1(Obj* obj) {
   obj->string_sink(unpropagated);
 }
 
-void via_propagator_ok2(Obj* obj) {
+void FP_via_propagator_ok2(Obj* obj) {
   std::string propagated = obj->string_source(0);
   std::string source("");
   std::string unpropagated = Obj::propagator(source, propagated);

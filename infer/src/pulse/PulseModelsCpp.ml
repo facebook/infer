@@ -14,8 +14,6 @@ open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 module FuncArg = ProcnameDispatcher.Call.FuncArg
 
-let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
-
 (* NOTE: The semantic models do not check overflow for now. *)
 let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model_no_non_disj =
  fun {path; location} astate ->
@@ -253,134 +251,141 @@ module AtomicInteger = struct
 end
 
 module BasicString = struct
-  let internal_string_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.internal_string
+  (** constructor from constant string *)
+  let constructor_from_constant ~desc (this, hist) init_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location desc in
+       let this_hist = (this, Hist.add_event path event hist) in
+       let* () = write_deref_field ~ref:this_hist ~obj:init_hist ModeledField.internal_string in
+       let* len =
+         exec_operation (fun astate ->
+             match AddressAttributes.get_const_string (fst init_hist) astate with
+             | Some s ->
+                 let astate, len =
+                   String.length s |> IntLit.of_int |> PulseArithmetic.absval_of_int astate
+                 in
+                 (len, astate)
+             | None ->
+                 (AbstractValue.mk_fresh_restricted (), astate) )
+       in
+       write_field ~ref:this_hist ~obj:(len, snd init_hist) ModeledField.string_length
 
-  let to_internal_string path location bstring astate =
-    PulseOperations.eval_access path Read location bstring internal_string_access astate
+
+  let copy_constructor ~desc (this, hist) src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location desc in
+       let this_hist = (this, Hist.add_event path event hist) in
+       let* src_string =
+         eval_deref_access Read src_hist (FieldAccess ModeledField.internal_string)
+       in
+       let* src_length = eval_access Read src_hist (FieldAccess ModeledField.string_length) in
+       let* () = write_deref_field ~ref:this_hist ~obj:src_string ModeledField.internal_string in
+       write_field ~ref:this_hist ~obj:src_length ModeledField.string_length
 
 
-  (* constructor from constant string *)
-  let constructor_from_constant ~desc (this, hist) init_hist : model_no_non_disj =
-   fun {path; location} astate ->
+  let constructor_rev ~desc init this : model = copy_constructor ~desc this init
+
+  let data this_hist ~desc : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location desc in
+       let* this_string, this_string_hist =
+         eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+       in
+       assign_ret (this_string, Hist.add_event path event this_string_hist)
+
+
+  let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) ~desc :
+      (ValueHistory.event * PulseModelsDSL.aval * PulseModelsDSL.aval) PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* {path; location} = get_data in
     let event = Hist.call_event path location desc in
-    let<+> astate =
-      PulseOperations.write_field path location
-        ~ref:(this, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+    let* backing_ptr =
+      eval_access Read iter_hist (FieldAccess GenericArrayBackedCollection.field)
     in
-    astate
-
-
-  let constructor ~desc (this, hist) init_hist : model_no_non_disj =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location desc in
-    let<*> astate, init_data = to_internal_string path location init_hist astate in
-    let<*> astate, copied_data = PulseOperations.shallow_copy path location init_data astate in
-    let<+> astate =
-      PulseOperations.write_field path location
-        ~ref:(this, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:copied_data astate
+    let* internal_string =
+      eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string)
     in
-    astate
-
-
-  let constructor_rev ~desc init this : model_no_non_disj = constructor ~desc this init
-
-  let data this_hist ~desc : model_no_non_disj =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location desc in
-    let<+> astate, (string, hist) = to_internal_string path location this_hist astate in
-    PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
-
-
-  let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
-      astate =
-    let event = Hist.call_event path location desc in
-    let* astate, backing_ptr =
-      PulseOperations.eval_access path Read location iter_hist
-        (FieldAccess GenericArrayBackedCollection.field) astate
+    let* () =
+      exec_command
+        (AbductiveDomain.AddressAttributes.add_one iter
+           (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
     in
-    let+ astate, internal_string = to_internal_string path location this_hist astate in
-    let astate =
-      AbductiveDomain.AddressAttributes.add_one iter
-        (PropagateTaintFrom (InternalModel, [{v= this; history= hist}]))
-        astate
-    in
-    (astate, event, backing_ptr, internal_string)
+    ret (event, backing_ptr, internal_string)
 
 
-  let begin_ this_hist iter_hist ~desc : model_no_non_disj =
-   fun ({path; location} as model_data) astate ->
-    let<*> astate, event, backing_ptr, (string, hist) =
-      iterator_common this_hist iter_hist ~desc model_data astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:backing_ptr
-        ~obj:(string, Hist.add_event path event hist)
-        astate
-    in
-    astate
+  let begin_ this_hist iter_hist ~desc : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* event, backing_ptr, (string, hist) = iterator_common this_hist iter_hist ~desc in
+       let* {path} = get_data in
+       write_deref ~ref:backing_ptr ~obj:(string, Hist.add_event path event hist)
 
 
-  let end_ this_hist iter_hist ~desc : model_no_non_disj =
-   fun ({path; location} as model_data) astate ->
-    let<*> astate, event, backing_ptr, string_hist =
-      iterator_common this_hist iter_hist ~desc model_data astate
-    in
-    let<*> astate, (last, hist) =
-      GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:backing_ptr
-        ~obj:(last, Hist.add_event path event hist)
-        astate
-    in
-    astate
+  let end_ this_hist iter_hist ~desc : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let* event, backing_ptr, string_hist = iterator_common this_hist iter_hist ~desc in
+       let* last, hist =
+         exec_partial_operation (fun astate ->
+             Sat
+               (GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist
+                  astate ) )
+       in
+       write_deref ~ref:backing_ptr ~obj:(last, Hist.add_event path event hist)
 
 
-  let destructor this_hist : model_no_non_disj =
-   fun {path; location} astate ->
-    let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
-    let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
-    let string_hist = Hist.add_event path call_event string_hist in
-    let<+> astate =
-      PulseOperations.check_and_invalidate path
-        (MemoryAccess
-           {pointer= this_hist; access= internal_string_access; hist_obj_default= string_hist} )
-        location CppDelete (string_addr, string_hist) astate
-    in
-    astate
+  let destructor this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
+       let* string_addr, string_hist =
+         eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+       in
+       let string_hist = Hist.add_event path call_event string_hist in
+       exec_partial_command (fun astate ->
+           Sat
+             (PulseOperations.check_and_invalidate path
+                (MemoryAccess
+                   { pointer= this_hist
+                   ; access= FieldAccess ModeledField.internal_string
+                   ; hist_obj_default= string_hist } )
+                location CppDelete (string_addr, string_hist) astate ) )
 
 
-  let empty this_hist : model_no_non_disj =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "std::basic_string::empty()" in
-    let<*> astate, internal_string = to_internal_string path location this_hist astate in
-    let<*> astate, (len_addr, hist) =
-      PulseOperations.eval_access path Read location internal_string string_length_access astate
-    in
-    let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), Hist.add_event path event hist) in
-    let astate_empty =
-      let** astate = PulseArithmetic.prune_eq_zero len_addr astate in
-      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
-      PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
-    in
-    let astate_non_empty =
-      let** astate = PulseArithmetic.prune_positive len_addr astate in
-      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
-      PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
-    in
-    SatUnsat.to_list astate_empty @ SatUnsat.to_list astate_non_empty
+  let empty this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location "std::basic_string::empty()" in
+       let* len = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
+       let* string = eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string) in
+       let ret_hist = Hist.add_event path event (snd string) in
+       disjuncts
+         [ (let* () = prune_eq_zero len in
+            let* () = prune_eq_string string "" in
+            let* ret_v = aval_of_int ret_hist 1 in
+            assign_ret ret_v )
+         ; (let* () = prune_positive len in
+            let* () = prune_ne_string string "" in
+            let* ret_v = aval_of_int ret_hist 0 in
+            assign_ret ret_v ) ]
 
 
-  let length this_hist : model_no_non_disj =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "std::basic_string::length()" in
-    let<*> astate, internal_string = to_internal_string path location this_hist astate in
-    let<+> astate, (length, hist) =
-      PulseOperations.eval_access path Read location internal_string string_length_access astate
-    in
-    PulseOperations.write_id ret_id (length, Hist.add_event path event hist) astate
+  let length this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location "std::basic_string::length()" in
+       let* length, hist = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
+       assign_ret (length, Hist.add_event path event hist)
 
 
   let address ~desc ptr_hist (idx, _) : model_no_non_disj =
@@ -904,6 +909,34 @@ let map_matchers =
   let open ProcnameDispatcher.Call in
   let value_it_matcher = -"folly" <>:: "f14" <>:: "detail" <>:: "ValueContainerIterator" in
   let vector_it_matcher = -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" in
+  let basic_string_matchers =
+    let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
+    [ -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $+...$--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.copy_constructor ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload
+      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
+    ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string::data()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string_view::data()"
+    ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+    ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.end_ ~desc:"std::basic_string::end()"
+    ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
+    ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
+    ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
+    ]
+  in
   let folly_matchers =
     List.concat_map
       [ ("F14ValueMap", Invalidation.FollyF14Value, [value_it_matcher])
@@ -1045,11 +1078,11 @@ let map_matchers =
       &++> Basic.unknown_call "folly::ConcurrentHashMap" ]
     |> List.map ~f:with_non_disj
   in
-  folly_matchers @ folly_iterator_matchers @ folly_concurrent_hash_map_matchers
+  basic_string_matchers @ folly_matchers @ folly_iterator_matchers
+  @ folly_concurrent_hash_map_matchers
 
 
 let simple_matchers =
-  let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
   map_matchers
   @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
@@ -1067,30 +1100,6 @@ let simple_matchers =
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
     ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array |> with_non_disj
     ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
-      $+ capt_arg_payload_of_prim_typ char_ptr_typ
-      $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.constructor ~desc:"std::basic_string::basic_string()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
-      $+ capt_arg_payload
-      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.end_ ~desc:"std::basic_string::end()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
-      $--> BasicString.data ~desc:"std::basic_string::data()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
-      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "substr"
       &--> Basic.nondet ~desc:"std::basic_string::substr"
       |> with_non_disj
@@ -1099,18 +1108,6 @@ let simple_matchers =
       |> with_non_disj
     ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.address ~desc:"std::basic_string::operator[]"
-      |> with_non_disj
-    ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
-      |> with_non_disj
-    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
-      $+ capt_arg_payload_of_prim_typ char_ptr_typ
-      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.constructor ~desc:"std::basic_string_view::basic_string_view()"
-      |> with_non_disj
-    ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
-      $--> BasicString.data ~desc:"std::basic_string_view::data()"
       |> with_non_disj
     ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"std::function::function"

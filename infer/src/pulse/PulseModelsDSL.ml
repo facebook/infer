@@ -28,6 +28,8 @@ and 'a execution =
   | Other of ExecutionDomain.t (* should never contain a ExecutionDomain.ContinueProgram *)
 
 module Syntax = struct
+  module ModeledField = PulseOperations.ModeledField
+
   let ret (a : 'a) : 'a model_monad =
    fun _data astate non_disj -> ([Ok (ContinueProgram (a, astate))], non_disj)
 
@@ -188,6 +190,12 @@ module Syntax = struct
     let* n_q_opt = as_constant_q v in
     let n = Option.bind n_q_opt ~f:QSafeCapped.to_int in
     ret n
+
+
+  let aval_of_int hist i : aval model_monad =
+   fun data astate ->
+    let astate, v = PulseArithmetic.absval_of_int astate (IntLit.of_int i) in
+    ret (v, hist) data astate
 
 
   let get_known_fields (v, _) =
@@ -427,6 +435,16 @@ module Syntax = struct
 
   let prune_eq_int arg i : unit model_monad =
     prune_binop ~negated:false Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+
+
+  let prune_eq_string (v, _) s : unit model_monad =
+    PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand v) (ConstOperand (Cstr s))
+    |> exec_partial_command
+
+
+  let prune_ne_string (v, _) s : unit model_monad =
+    PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand v) (ConstOperand (Cstr s))
+    |> exec_partial_command
 
 
   let prune_eq_zero (addr, _) : unit model_monad =
