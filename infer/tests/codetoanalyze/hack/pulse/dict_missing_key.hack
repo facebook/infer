@@ -38,3 +38,8 @@ function call_dict_argument_ok(): int {
 function call_dict_argument_bad(): int {
   return dict_argument(dict['hi' => 42]);
 }
+
+function coalesce_ok(): int {
+  $d = dict['hi' => 42];
+  return $d['bye'] ?? 52;
+}
