@@ -118,6 +118,8 @@ let file_capture () =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
             [Printf.sprintf "--depth=%i" depth] )
+      @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
+            ["--inferconfig"; target] )
       @ files_with_arg
     in
     let buck2_build_cmd =
