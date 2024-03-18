@@ -7,7 +7,9 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-nullsafe-report-npe-as-separate-issue \
 --pulse-report-issues-for-tests --report-suppress-errors SENSITIVE_DATA_FLOW \
 --report-suppress-errors DATA_FLOW_TO_SINK \
---pulse-specialization-partial
+--pulse-specialization-partial \
+--pulse-transitive-access-config TransitiveAccessConfig.json \
+--pulse-monitor-transitive-callees --pulse-monitor-transitive-missed-captures
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java taint/*.java)
 

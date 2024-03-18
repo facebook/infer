@@ -780,7 +780,7 @@ module PulseTransferFunctions = struct
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
     let astate =
-      if Language.curr_language_is Hack then
+      if Language.curr_language_is Hack || Language.curr_language_is Java then
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
@@ -1328,7 +1328,7 @@ module PulseTransferFunctions = struct
                     [astate] )
           in
           let astates =
-            if Language.curr_language_is Hack then
+            if Language.curr_language_is Hack || Language.curr_language_is Java then
               PulseTransitiveAccessChecker.record_load rhs_exp loc astates
             else astates
           in
