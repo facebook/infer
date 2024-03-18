@@ -28,14 +28,6 @@ let hack_string_type_name = TextualSil.hack_string_type_name
 
 let read_string_value address astate = PulseArithmetic.as_constant_string astate address
 
-let read_string_value_or_unreachable aval : string DSL.model_monad =
-  (* we cut the current path if no constant string is found *)
-  let open PulseModelsDSL.Syntax in
-  let operation astate = (read_string_value (fst aval) astate, astate) in
-  let* opt_string = exec_operation operation in
-  Option.value_map opt_string ~default:unreachable ~f:ret
-
-
 let read_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in
   let operation astate = (read_string_value (fst aval) astate, astate) in
@@ -438,24 +430,31 @@ let get_static_class aval : model =
 let hhbc_class_get_c value : model =
   let open DSL.Syntax in
   start_model
-  @@ dynamic_dispatch value
-       ~cases:
-         [ ( hack_string_type_name
-           , fun () ->
-               let* string = read_string_value_or_unreachable value in
-               (* namespace\\classname becomes namespace::classname *)
-               let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
-               let typ_name = Typ.HackClass (HackClassName.make string) in
-               let* class_object =
-                 get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name
-               in
-               assign_ret class_object ) ]
-       ~default:(fun () ->
-         let* {location} = DSL.Syntax.get_data in
-         ScubaLogging.log_message_with_location ~label:"hhbc_class_get_c argument"
-           ~loc:(F.asprintf "%a" Location.pp_file_pos location)
-           ~message:"hhbc_class_get_c received a non-constant-string argument." ;
-         get_static_class value |> lift_to_monad )
+  @@
+  let default () =
+    let* {location} = DSL.Syntax.get_data in
+    ScubaLogging.log_message_with_location ~label:"hhbc_class_get_c argument"
+      ~loc:(F.asprintf "%a" Location.pp_file_pos location)
+      ~message:"hhbc_class_get_c received a non-constant-string argument." ;
+    get_static_class value |> lift_to_monad
+  in
+  dynamic_dispatch value
+    ~cases:
+      [ ( hack_string_type_name
+        , fun () ->
+            let* opt_string = read_string_value_dsl value in
+            match opt_string with
+            | Some string ->
+                (* namespace\\classname becomes namespace::classname *)
+                let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
+                let typ_name = Typ.HackClass (HackClassName.make string) in
+                let* class_object =
+                  get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name
+                in
+                assign_ret class_object
+            | None ->
+                default () ) ]
+    ~default
 
 
 module Dict = struct
@@ -980,7 +979,18 @@ let hhbc_cls_cns this field : model =
      let* field_v =
        match dynamic_Type_data_opt with
        | Some {Attribute.typ= {Typ.desc= Tstruct name}} ->
-           let* string_field_name = read_string_value_or_unreachable field in
+           let* opt_string_field_name = read_string_value_dsl field in
+           let string_field_name =
+             match opt_string_field_name with
+             | Some str ->
+                 str
+             | None ->
+                 (* we do not expect this situation to happen because hhbc_cls_cns takes
+                    as argument a litteral string
+                    see: https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
+                 L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
+                 "__dummy_constant_name__"
+           in
            let* fld_opt = tenv_resolve_fieldname name string_field_name in
            let name, fld =
              match fld_opt with
@@ -1012,12 +1022,16 @@ let hack_get_class this : model =
 let hack_set_static_prop this prop obj : model =
   let open DSL.Syntax in
   start_model
-  @@ let* this = read_string_value_or_unreachable this in
-     let this = String.substr_replace_all ~pattern:"\\" ~with_:":" this in
-     let* prop = read_string_value_or_unreachable prop in
-     let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
-     let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
-     write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
+  @@ let* opt_this = read_string_value_dsl this in
+     let* opt_prop = read_string_value_dsl prop in
+     match (opt_this, opt_prop) with
+     | Some this, Some prop ->
+         let this = String.substr_replace_all ~pattern:"\\" ~with_:":" this in
+         let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
+         let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
+         write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
+     | _, _ ->
+         ret ()
 
 
 let hhbc_cmp_lt x y : model =
