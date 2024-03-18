@@ -10,16 +10,6 @@ declare $builtins.nondet() : int
 
 type HackDict .final {}
 
-type HackString = { val: *string }
-
-define $builtins.hack_string(str: *string): *HackMixed {
-  #entry:
-    n0 = __sil_allocate(<HackString>)
-    n1: *string = load &str
-    store n0.HackString.val <- n1 : *string
-    ret n0
-}
-
 type HackInt = .final { val: int }
 
 define $builtins.hack_int(i: int): *HackInt {
