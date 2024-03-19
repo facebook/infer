@@ -12,6 +12,9 @@ type 'a t [@@deriving compare, equal]
 val empty : 'a t
 (** Return empty list *)
 
+val is_empty : 'a t -> bool
+(** Check if the list is empty *)
+
 val cons : 'a -> 'a t -> 'a t
 (** Add an element to the end of list *)
 
