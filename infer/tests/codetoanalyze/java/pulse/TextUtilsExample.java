@@ -15,7 +15,7 @@ public class TextUtilsExample {
     }
   }
 
-  public void FNlatent_testTextUtilsIsEmptyBad() {
+  public void testTextUtilsIsEmptyBad() {
     String s = "#@%^&%";
     if (!TextUtils.isEmpty(s)) {
       Object o = null;
@@ -23,7 +23,7 @@ public class TextUtilsExample {
     }
   }
 
-  public void FNlatent_testTextUtilsIsEmptyEmptyStrBad() {
+  public void testTextUtilsIsEmptyEmptyStrBad() {
     if (TextUtils.isEmpty("")) {
       Object o = null;
       o.toString();
