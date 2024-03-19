@@ -148,7 +148,7 @@ std::optional<std::string> getOptionalValue() {
   return std::nullopt;
 }
 
-std::optional<std::string> cannot_be_empty() {
+std::optional<std::string> FP_cannot_be_empty() {
   if (getEnum() == E::OP1) {
     return getOptionalValue().value();
   }

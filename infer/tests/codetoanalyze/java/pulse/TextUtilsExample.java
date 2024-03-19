@@ -8,14 +8,14 @@ import android.text.TextUtils;
 
 public class TextUtilsExample {
 
-  public void FP_testTextUtilsIsEmptyOk(String s) {
+  public void testTextUtilsIsEmptyLatent(String s) {
     if (TextUtils.isEmpty(s)) {
       Object o = null;
       o.toString();
     }
   }
 
-  public void testTextUtilsIsEmptyBad() {
+  public void FNlatent_testTextUtilsIsEmptyBad() {
     String s = "#@%^&%";
     if (!TextUtils.isEmpty(s)) {
       Object o = null;
@@ -23,7 +23,7 @@ public class TextUtilsExample {
     }
   }
 
-  public void testTextUtilsIsEmptyEmptyStrBad() {
+  public void FNlatent_testTextUtilsIsEmptyEmptyStrBad() {
     if (TextUtils.isEmpty("")) {
       Object o = null;
       o.toString();

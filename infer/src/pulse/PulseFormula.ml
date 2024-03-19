@@ -71,7 +71,10 @@ module LinArith : sig
      we resolve the circular dependency further down this file *)
   type 'term_t subst_target =
     | QSubst of Q.t
-    | ConstantSubst of 'term_t
+    | ConstantSubst of 'term_t * Var.t option
+        (** the constant term to substitute and, optionally, a fallback variable to substitute with
+            (eg if a variable is equal to a constant string but also to a new canonical
+            representative, the linear arithmetic domain needs to use the latter *)
     | VarSubst of Var.t
     | LinSubst of t
     | NonLinearTermSubst of 'term_t
@@ -178,7 +181,7 @@ end = struct
 
   type 'term_t subst_target =
     | QSubst of Q.t
-    | ConstantSubst of 'term_t
+    | ConstantSubst of 'term_t * Var.t option
     | VarSubst of Var.t
     | LinSubst of t
     | NonLinearTermSubst of 'term_t
@@ -295,11 +298,11 @@ end = struct
   let of_subst_target v0 = function
     | QSubst q ->
         of_q q
-    | VarSubst v ->
+    | VarSubst v | ConstantSubst (_, Some v) ->
         of_var v
     | LinSubst l ->
         l
-    | NonLinearTermSubst _ | ConstantSubst _ ->
+    | NonLinearTermSubst _ | ConstantSubst (_, None) ->
         of_var v0
 
 
@@ -493,7 +496,7 @@ end
 
 type 'term_t subst_target = 'term_t LinArith.subst_target =
   | QSubst of Q.t
-  | ConstantSubst of 'term_t
+  | ConstantSubst of 'term_t * Var.t option
   | VarSubst of Var.t
   | LinSubst of LinArith.t
   | NonLinearTermSubst of 'term_t
@@ -686,7 +689,7 @@ module Term = struct
         Var v
     | LinSubst l ->
         Linear l
-    | ConstantSubst t | NonLinearTermSubst t ->
+    | ConstantSubst (t, _) | NonLinearTermSubst t ->
         t
 
 
@@ -912,7 +915,7 @@ module Term = struct
         let acc, op = f_subst init v in
         let t' =
           match op with
-          | VarSubst v' when not (Var.equal v v') ->
+          | (VarSubst v' | ConstantSubst (_, Some v')) when not (Var.equal v v') ->
               IsInstanceOf (v', typ)
           | QSubst q when Q.is_zero q ->
               zero
@@ -1421,7 +1424,7 @@ module Term = struct
     | Some q ->
         QSubst q
     | None -> (
-        if is_non_numeric_constant t then ConstantSubst t
+        if is_non_numeric_constant t then ConstantSubst (t, None)
         else
           match get_as_var t with
           | Some v ->
@@ -2647,8 +2650,12 @@ module Formula = struct
       Term.subst_variables t ~f:(fun v ->
           let v_canon = (get_repr phi v :> Var.t) in
           match Var.Map.find_opt v_canon phi.linear_eqs with
-          | None ->
-              VarSubst v_canon
+          | None -> (
+            match Var.Map.find_opt v_canon phi.const_eqs with
+            | None ->
+                VarSubst v_canon
+            | Some c ->
+                ConstantSubst (c, Some v_canon) )
           | Some l -> (
             match LinArith.get_as_const l with
             | None ->
