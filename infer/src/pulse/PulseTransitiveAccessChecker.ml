@@ -29,12 +29,14 @@ end = struct
   type procname_to_monitor_spec =
     { class_names: string list option [@yojson.option]
     ; method_names: string list option [@yojson.option]
-    ; class_name_regex: string option [@yojson.option] }
+    ; class_name_regex: string option [@yojson.option]
+    ; annotations: string list option [@yojson.option] }
   [@@deriving of_yojson]
 
   type procname_to_monitor =
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameRegex of {class_name_regex: Str.regexp}
+    | Annotations of {annotations: string list}
 
   let procname_to_monitor_of_yojson json =
     match procname_to_monitor_spec_of_yojson json with
@@ -43,6 +45,8 @@ end = struct
     | {class_name_regex= Some class_name_regex} ->
         let class_name_regex = Str.regexp class_name_regex in
         ClassNameRegex {class_name_regex}
+    | {annotations= Some annotations} ->
+        Annotations {annotations}
     | _ ->
         L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
 
@@ -97,6 +101,13 @@ end = struct
             (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
             class_name )
     in
+    let match_annotation annotations =
+      let match_one_annotation anno =
+        let has_annot ia = Annotations.ia_ends_with ia anno in
+        Annotations.pname_has_return_annot procname has_annot
+      in
+      List.exists annotations ~f:match_one_annotation
+    in
     match get () with
     | None ->
         false
@@ -105,7 +116,9 @@ end = struct
           | ClassAndMethodNames {class_names; method_names} ->
               match_class_name class_names && List.mem ~equal:String.equal method_names method_name
           | ClassNameRegex {class_name_regex} ->
-              match_class_name_regex class_name_regex )
+              match_class_name_regex class_name_regex
+          | Annotations {annotations} ->
+              match_annotation annotations )
 
 
   let is_matching_context tenv procname

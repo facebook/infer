@@ -7,6 +7,11 @@
 
 package codetoanalyze.java.infer;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 public class TransitiveAccess {
   public interface Callback {
     public void call();
@@ -16,10 +21,24 @@ public class TransitiveAccess {
     lambda.call();
   }
 
+  @Target({ElementType.METHOD})
+  @Retention(RetentionPolicy.CLASS)
+  @interface SinkAnno {}
+
+  @Target({ElementType.METHOD})
+  @Retention(RetentionPolicy.CLASS)
+  @interface SomeRandomAnno {}
+
   public static class Sinks {
     public static void safe() {}
 
     public static void sink() {}
+
+    @SinkAnno
+    public static void funcWithAnno() {}
+
+    @SomeRandomAnno
+    public static void safeWithAnno() {}
 
     public static void sink_if_arg_true(boolean arg) {
       if (arg) sink();
@@ -68,6 +87,14 @@ public class TransitiveAccess {
 
     public static void sourceWithLambdaIndirectBad() {
       caller(() -> Sinks.sink());
+    }
+
+    public static void sourceCallsFuncWithAnnoBad() {
+      Sinks.funcWithAnno();
+    }
+
+    public static void sourceCallsFuncWithAnnoOk() {
+      Sinks.safeWithAnno();
     }
   }
 }

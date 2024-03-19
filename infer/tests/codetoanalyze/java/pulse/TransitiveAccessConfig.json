@@ -10,6 +10,9 @@
     {
       "class_names": ["codetoanalyze.java.infer.TransitiveAccess$Sinks"],
       "method_names": ["sink"]
+    },
+    {
+      "annotations": ["TransitiveAccess$SinkAnno"]
     }
   ],
   "contexts": [
