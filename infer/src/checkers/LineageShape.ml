@@ -534,7 +534,7 @@ end = struct
         let local_abstract = LocalAbstract
 
         let variant constructors =
-          if Int.O.(Set.length constructors <= ShapeConfig.variant_width) then Variant constructors
+          if Set.length constructors <= ShapeConfig.variant_width then Variant constructors
           else scalar
 
 
@@ -1067,7 +1067,19 @@ end = struct
       (args_state_shapes, return_state_shape)
 
 
-    let finalise {var_shapes; shape_structures} var field_path =
+    let assert_equal_shapes {var_shapes; shape_structures} var_path_1 var_path_2 =
+      let var_path_shape_1 = find_var_path_shape {var_shapes; shape_structures} var_path_1 in
+      let var_path_shape_2 = find_var_path_shape {var_shapes; shape_structures} var_path_2 in
+      if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
+        L.die InternalError
+          "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
+          VarPath.pp var_path_1 Shape_id.pp var_path_shape_1 (Fmt.option Structure.pp)
+          (Hashtbl.find shape_structures var_path_shape_1)
+          VarPath.pp var_path_2 Shape_id.pp var_path_shape_2 (Fmt.option Structure.pp)
+          (Hashtbl.find shape_structures var_path_shape_2)
+
+
+    let finalise {var_shapes; shape_structures} (var, field_path) =
       let rec aux remaining_depth traversed_shape_set shape (field_path : FieldPath.t) :
           FieldPath.t * bool =
         match field_path with
@@ -1091,7 +1103,7 @@ end = struct
         | field :: fields ->
             let field_table = find_field_table shape_structures shape in
             if
-              Int.(remaining_depth <= 0)
+              remaining_depth <= 0
               || Map.length field_table > ShapeConfig.field_width
               || (ShapeConfig.prevent_cycles && Set.mem traversed_shape_set shape)
             then ([], true)
@@ -1110,59 +1122,66 @@ end = struct
       Cell.create ~var ~field_path ~is_abstract
 
 
-    (** Given field shapes, a particular shape, a maximal width, a maximal search depth and a
-        boolean indicating that cycles should not be traversed, traverses the field shapes table and
-        builds the field paths obtained by recursively adding all the defined fieldnames of the
-        considered shape to the prefixes.
+    (** Given a summary, a variable path and according to {!ShapeConfig} parameters (max depth, max
+        width, prevent cycles), traverses the shape tables and builds the field paths obtained by
+        recursively adding all the defined fieldnames of the varpath to the prefixes.
 
-        The traversal building a field path will stop when the maximal search depth has been
-        reached, a shape with more than [ShapeConfig.field_width] fields is encountered, or a shape
-        that has already been traversed is encountered and [ShapeConfig.prevent_cycles] is true.
+        The traversal building a field path will stop when the maximal search depth has been reached
+        (including the length of the argument field path), a shape with more than
+        [ShapeConfig.field_width] fields is encountered, or a shape that has already been traversed
+        is encountered and [ShapeConfig.prevent_cycles] is true.
 
-        When the building of a field path stops, the folding function [f] will be called on the path
-        built so far.
+        When the building of a field path stops, the folding function [f] will be called on the
+        subpath built so far.
 
-        Note that the traversal and the calling of [f] is done from the original argument shape: for
-        instance, if [X] has the field [X#foo#bar#baz], the depth limit is 2 and this function is
-        called from the shape of [X#foo], then [f] will be called with the field path [bar#baz] --
-        even if [X#foo] and [X#bar#baz] have the same shape, or [X] has a thousand other fields. For
-        this reason, [~max_search_depth] is an explicit parameter, different from the
-        {!ShapeConfig.field_depth} configuration option.
+        Note that the original argument path depth will be used to stop the search and call [f] when
+        {!ShapeConfig.field_depth} has been reached, but no width check will be checked on it and
+        its field shapes will not be considered for cycles (see example below). This is why these
+        sub_paths are called "candidate" and not the actual sub_paths of the eventual Cells.
 
-        The typical use-case is to then have [f] call {!finalise}, with [X#foo] in the parameters,
-        which will repeat a similar traversal to only yield [X#foo#bar] as a final field path. This
-        allows implementing {!fold_cell_pairs} by first getting the candidate final fields from a
-        common shape of two different origin paths, then finalising separately wrt. these two paths
-        (which could have different depths to begin with). *)
-    let fold_final_fields_of_shape shape_structures shape ~search_depth ~init ~f =
-      let rec aux shape depth traversed field_path_acc ~init =
-        if Int.(depth >= search_depth) || (ShapeConfig.prevent_cycles && Set.mem traversed shape)
-        then f init (List.rev field_path_acc)
+        For instance, if [X] has the field [X#foo#bar#baz], the depth limit is 2 and this function
+        is called on [X#foo], then [f] will be called with the field path [#bar] -- even if [X#foo]
+        and [X#bar] have the same shape, or [X#foo] has a thousand other fields.
+
+        The typical current use-case is to then have [f] call {!finalise}, with [X#foo] in the
+        parameters, which will repeat a similar traversal to only yield [X#foo] as a final field
+        path (if reaching width limits).
+
+        Note: this is for historical implementation reasons and could be changed now, for instance
+        by first traversing the argument path and initialise the cycle set and/or stop early if it
+        already exceeds width limit. Note that finalise also processes fields to eg. remove
+        {!BoxedValue} and computes [is_abstract] booleans, thus that logic would need to be moved
+        here too. *)
+    let fold_candidate_final_sub_paths {var_shapes; shape_structures} (var, field_path) ~init ~f =
+      let rec fold_candidate_sub_paths_of_shape shape depth traversed sub_path_acc ~init =
+        if
+          depth >= ShapeConfig.field_depth || (ShapeConfig.prevent_cycles && Set.mem traversed shape)
+        then f init (List.rev sub_path_acc)
         else
           match (Hashtbl.find shape_structures shape : Structure.t option) with
           | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
               (* No more fields. *)
-              f init (List.rev field_path_acc)
+              f init (List.rev sub_path_acc)
           | Some (Vector {fields; _}) ->
               let len = Map.length fields in
-              if Int.(len = 0 || len > ShapeConfig.field_width) then
-                f init (List.rev field_path_acc)
+              if Int.O.(len = 0) || len > ShapeConfig.field_width then
+                f init (List.rev sub_path_acc)
               else
                 let traversed = Set.add traversed shape in
                 Map.fold
                   ~f:(fun ~key:fieldname ~data:fieldshape acc ->
-                    aux fieldshape (depth + 1) traversed (fieldname :: field_path_acc) ~init:acc )
+                    fold_candidate_sub_paths_of_shape fieldshape (depth + 1) traversed
+                      (fieldname :: sub_path_acc) ~init:acc )
                   fields ~init
       in
-      aux shape 0 (Set.empty (module Shape_id)) [] ~init
+      let shape = find_var_path_shape {var_shapes; shape_structures} (var, field_path) in
+      let depth = List.length field_path in
+      fold_candidate_sub_paths_of_shape shape depth (Set.empty (module Shape_id)) [] ~init
 
 
-    let fold_cells_actual {var_shapes; shape_structures} (var, field_path) ~init ~f =
-      let var_path_shape = find_var_path_shape {var_shapes; shape_structures} (var, field_path) in
-      let search_depth = ShapeConfig.field_depth - List.length field_path in
-      fold_final_fields_of_shape shape_structures var_path_shape ~search_depth ~init
-        ~f:(fun acc sub_path ->
-          f acc (finalise {var_shapes; shape_structures} var (field_path @ sub_path)) )
+    let fold_cells_actual summary var_path ~init ~f =
+      fold_candidate_final_sub_paths summary var_path ~init ~f:(fun acc sub_path ->
+          f acc (finalise summary (VarPath.sub_path var_path sub_path)) )
 
 
     let fold_cells summary_option (var, path) ~init ~f =
@@ -1173,32 +1192,19 @@ end = struct
           f init (Cell.var_abstract var)
 
 
-    let fold_cell_pairs_actual {var_shapes; shape_structures} (var_1, field_path_1)
-        (var_2, field_path_2) ~init ~f =
-      let var_path_shape_1 =
-        find_var_path_shape {var_shapes; shape_structures} (var_1, field_path_1)
-      in
-      let var_path_shape_2 =
-        find_var_path_shape {var_shapes; shape_structures} (var_2, field_path_2)
-      in
-      if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
-        L.die InternalError
-          "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
-           @[%a={%a}@]@]"
-          Shape_id.pp var_path_shape_1 (Fmt.option Structure.pp)
-          (Hashtbl.find shape_structures var_path_shape_1)
-          Shape_id.pp var_path_shape_2 (Fmt.option Structure.pp)
-          (Hashtbl.find shape_structures var_path_shape_2)
-      else
-        let search_depth =
-          (* Use the shallowest argument to determine the search depth. *)
-          ShapeConfig.field_depth - Int.min (List.length field_path_1) (List.length field_path_2)
-        in
-        fold_final_fields_of_shape shape_structures var_path_shape_1 ~search_depth ~init
-          ~f:(fun acc sub_path ->
-            f acc
-              (finalise {var_shapes; shape_structures} var_1 (field_path_1 @ sub_path))
-              (finalise {var_shapes; shape_structures} var_2 (field_path_2 @ sub_path)) )
+    (* Fold over the fields of `var_path_1`, then for each `var_path_1#subpath` found, use that as
+       a subscript `var_path_2#subpath` of `var_path_2` to call `f`. To account for the fact that the
+       final subfields may be different, the resulting subscripted path is also fold over (which will
+       degenerate to ultimately fold on `var_path_2#subpath` only if `var_path_1` and `var_path_2`
+       had the same length). *)
+    let fold_cell_pairs_actual summary var_path_1 var_path_2 ~init ~f =
+      assert_equal_shapes summary var_path_1 var_path_2 ;
+      fold_candidate_final_sub_paths summary var_path_1 ~init ~f:(fun acc sub_path_1 ->
+          let matching_path_2 = VarPath.sub_path var_path_2 sub_path_1 in
+          fold_candidate_final_sub_paths summary matching_path_2 ~init:acc ~f:(fun acc sub_path_2 ->
+              f acc
+                (finalise summary (VarPath.sub_path var_path_1 sub_path_1))
+                (finalise summary (VarPath.sub_path matching_path_2 sub_path_2)) ) )
 
 
     let fold_cell_pairs summary_option (var1, f1) (var2, f2) ~init ~f =
