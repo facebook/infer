@@ -20,6 +20,11 @@ public class TransitiveAccess {
     public static void safe() {}
 
     public static void sink() {}
+
+    public static void sink_if_arg_true(boolean arg) {
+      if (arg) sink();
+      else safe();
+    }
   }
 
   public static class Base {}
@@ -31,6 +36,14 @@ public class TransitiveAccess {
 
     public static void sourceBad() {
       Sinks.sink();
+    }
+
+    public static void sourceConditionalOk() {
+      Sinks.sink_if_arg_true(false);
+    }
+
+    public static void sourceConditionalBad() {
+      Sinks.sink_if_arg_true(true);
     }
 
     public static void sourceWithLambdaOk() {
