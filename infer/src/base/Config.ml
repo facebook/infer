@@ -4471,6 +4471,10 @@ and pulse_taint_skip_sources = !pulse_taint_skip_sources
 
 and pulse_transitive_access_config = RevList.to_list !pulse_transitive_access_config
 
+and pulse_transitive_access_enabled =
+  not (List.is_empty (RevList.to_list !pulse_transitive_access_config))
+
+
 and pulse_transitive_access_verbose = !pulse_transitive_access_verbose
 
 and pulse_widen_threshold = !pulse_widen_threshold

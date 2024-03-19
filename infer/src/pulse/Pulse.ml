@@ -780,7 +780,7 @@ module PulseTransferFunctions = struct
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
     let astate =
-      if Language.curr_language_is Hack || Language.curr_language_is Java then
+      if Config.pulse_transitive_access_enabled then
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
@@ -1328,7 +1328,7 @@ module PulseTransferFunctions = struct
                     [astate] )
           in
           let astates =
-            if Language.curr_language_is Hack || Language.curr_language_is Java then
+            if Config.pulse_transitive_access_enabled then
               PulseTransitiveAccessChecker.record_load rhs_exp loc astates
             else astates
           in
@@ -1669,7 +1669,8 @@ let analyze specialization
                 PulseSummary.add_disjunctive_pre_post objc_nil_summary summary )
           else summary
         in
-        PulseTransitiveAccessChecker.report_errors tenv proc_desc err_log summary ;
+        if Config.pulse_transitive_access_enabled then
+          PulseTransitiveAccessChecker.report_errors tenv proc_desc err_log summary ;
         report_topl_errors proc_desc err_log summary.pre_post_list ;
         report_unnecessary_copies tenv proc_desc err_log non_disj_astate ;
         report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
