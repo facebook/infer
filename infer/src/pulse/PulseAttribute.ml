@@ -792,7 +792,7 @@ module Attributes = struct
               else Some sink2
             in
             update (MustNotBeTainted (TaintSinkMap.union aux new_sinks sinks)) attrs
-      | WrittenTo _ ->
+      | Invalid (OptionalEmpty, _) | WrittenTo _ ->
           update value attrs
       | _ ->
           add attrs value
