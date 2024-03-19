@@ -43,3 +43,31 @@ function coalesce_ok(): int {
   $d = dict['hi' => 42];
   return $d['bye'] ?? 52;
 }
+
+function generates_add_elem_c_constant_ok(): int {
+  $key0 = '0';
+  $key1 = '1';
+  $d = dict[$key0 => 0, $key1 => 1];
+  return $d['0'];
+}
+
+function generates_add_elem_c_constant_bad(): int {
+  $key0 = '0';
+  $key1 = '1';
+  $d = dict[$key0 => 0, $key1 => 1];
+  return $d['2'];
+}
+
+function generates_add_elem_c_callee(string $key0): int {
+  $key1 = '1';
+  $d = dict[$key0 => 0, $key1 => 1];
+  return $d['0'];
+}
+
+function caller_generates_add_elem_c_callee_ok(): int {
+  return generates_add_elem_c_callee('0');
+}
+
+function FN_caller_generates_add_elem_c_callee_bad(): int {
+  return generates_add_elem_c_callee('2');
+}
