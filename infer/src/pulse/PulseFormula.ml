@@ -2101,6 +2101,8 @@ module Formula = struct
     (** [add_const_eq v t phi] adds [v=t] to [const_eqs]; [Unsat] if [v] was already bound to a
         different constant *)
 
+    val remove_const_eq : Var.t -> t -> t
+
     val add_linear_eq : Var.t -> LinArith.t -> t -> t * Var.t option
     (** [add_linear_eq v l phi] adds [v=l] to [linear_eqs] and updates the occurrences maps and
         [term_eqs] appropriately; don't forget to call [propagate_linear_eq] after this *)
@@ -2339,6 +2341,11 @@ module Formula = struct
           Sat {phi with const_eqs= Var.Map.add v t phi.const_eqs}
       | Some t' ->
           if Term.equal_syntax t t' then Sat phi else Unsat
+
+
+    let remove_const_eq v phi =
+      Debug.p "remove_const_eq for %a@\n" Var.pp v ;
+      {phi with const_eqs= Var.Map.remove v phi.const_eqs}
 
 
     let remove_term_eq t v phi =
@@ -2912,12 +2919,13 @@ module Formula = struct
         | None ->
             Sat (phi, new_eqs)
         | Some c -> (
-          match Var.Map.find_opt y phi.const_eqs with
-          | None ->
-              let+ phi = add_const_eq y c phi in
-              (phi, new_eqs)
-          | Some c' ->
-              if Term.equal_syntax c c' then Sat (phi, new_eqs) else Unsat )
+            let phi = remove_const_eq x phi in
+            match Var.Map.find_opt y phi.const_eqs with
+            | None ->
+                let+ phi = add_const_eq y c phi in
+                (phi, new_eqs)
+            | Some c' ->
+                if Term.equal_syntax c c' then Sat (phi, new_eqs) else Unsat )
       in
       Debug.p "@]end [propagate_in_const_eqs] %a=%a@\n" Var.pp x Var.pp y ;
       r

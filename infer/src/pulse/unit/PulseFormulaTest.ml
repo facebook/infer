@@ -736,7 +736,7 @@ let%test_module "non-numerical constants" =
         Formula:
           conditions: (empty)
           phi: var_eqs: x=y=v7
-               && const_eqs: x="hello world" ∧ y="hello world" ∧ v6=" world" ∧ v7="hello world"
+               && const_eqs: x="hello world" ∧ v6=" world"
                && term_eqs: " world"=v6∧"hello world"=x
         Result: same |}]
 
@@ -756,7 +756,7 @@ let%test_module "non-numerical constants" =
         Formula:
           conditions: (empty)
           phi: var_eqs: x=v6
-               && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world" ∧ v6="helloworld"
+               && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world"
                && term_eqs: "hello"=y∧"helloworld"=x∧"world"=z
         Result: same |}]
 
