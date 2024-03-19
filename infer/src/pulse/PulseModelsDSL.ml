@@ -335,6 +335,17 @@ module Syntax = struct
 
   let eval_const_string str : aval model_monad = eval_read (Const (Cstr str))
 
+  let eval_string_concat (v1, hist1) (v2, hist2) : aval model_monad =
+    let v = AbstractValue.mk_fresh () in
+    let hist = ValueHistory.binary_op (PlusA None) hist1 hist2 in
+    let* () =
+      exec_partial_command (fun astate ->
+          PulseArithmetic.and_equal_string_concat v (AbstractValueOperand v1)
+            (AbstractValueOperand v2) astate )
+    in
+    ret (v, hist)
+
+
   let eval_to_value_origin exp : ValueOrigin.t model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval_to_value_origin path Read location exp |> exec_partial_operation

@@ -35,6 +35,13 @@ val and_equal :
 val and_not_equal :
   operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
+val and_equal_string_concat :
+     AbstractValue.t
+  -> operand
+  -> operand
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
 val eval_binop :
      AbstractValue.t
   -> Binop.t

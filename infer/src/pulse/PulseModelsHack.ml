@@ -906,10 +906,10 @@ let hhbc_cmp_same x y : model =
              else if Typ.Name.equal x_typ_name hack_string_type_name then
                let* opt_str_x = read_string_value_dsl x in
                let* opt_str_y = read_string_value_dsl y in
-               match (opt_str_x, opt_str_y) with
-               | Some str_x, Some str_y ->
+               match Option.both opt_str_x opt_str_y with
+               | Some (str_x, str_y) ->
                    String.equal str_x str_y |> make_hack_bool
-               | _, _ ->
+               | None ->
                    make_hack_random_bool
              else
                disjuncts
@@ -985,9 +985,9 @@ let hhbc_cls_cns this field : model =
              | Some str ->
                  str
              | None ->
-                 (* we do not expect this situation to happen because hhbc_cls_cns takes
-                    as argument a litteral string
-                    see: https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
+                 (* we do not expect this situation to happen because hhbc_cls_cns takes as argument
+                    a literal string see:
+                    https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
                  L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
                  "__dummy_constant_name__"
            in
@@ -1360,15 +1360,9 @@ let hhbc_cast_string arg : model =
 let hhbc_concat arg1 arg2 : model =
   let open DSL.Syntax in
   start_model
-  @@ let* arg1_opt_string = read_string_value_dsl arg1 in
-     let* arg2_opt_string = read_string_value_dsl arg2 in
-     match (arg1_opt_string, arg2_opt_string) with
-     | Some arg1_str, Some arg2_str ->
-         let* res = make_hack_string (arg1_str ^ arg2_str) in
-         assign_ret res
-     | _, _ ->
-         let* res = constructor hack_string_type_name [] in
-         assign_ret res
+  @@ let* res = eval_string_concat arg1 arg2 in
+     let* res = hack_string_dsl res in
+     assign_ret res
 
 
 let matchers : matcher list =

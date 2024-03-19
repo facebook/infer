@@ -82,6 +82,10 @@ let prune_binop ~negated binop lhs rhs astate =
   map_path_condition astate ~f:(fun phi -> Formula.prune_binop ~negated binop lhs rhs phi)
 
 
+let and_equal_string_concat ret lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_string_concat ret lhs rhs phi)
+
+
 let literal_zero = ConstOperand (Cint IntLit.zero)
 
 let literal_one = ConstOperand (Cint IntLit.one)
