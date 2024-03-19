@@ -858,6 +858,7 @@ let int_val_field = Fieldname.make hack_int_type_name "val"
 let float_val_field = Fieldname.make hack_float_type_name "val"
 
 let hhbc_cmp_same x y : model =
+  L.d_printfln "hhbc_cmp_same(%a, %a)" AbstractValue.pp (fst x) AbstractValue.pp (fst y) ;
   let open DSL.Syntax in
   start_model
   @@
@@ -891,27 +892,33 @@ let hhbc_cmp_same x y : model =
          | ( Some {Attribute.typ= {desc= Tstruct x_typ_name}}
            , Some {Attribute.typ= {desc= Tstruct y_typ_name}} )
            when Typ.Name.equal x_typ_name y_typ_name ->
-             if Typ.Name.equal x_typ_name hack_int_type_name then
+             L.d_printfln "hhbc_cmp_same: known dynamic type" ;
+             if Typ.Name.equal x_typ_name hack_int_type_name then (
+               L.d_printfln "hhbc_cmp_same: both are ints" ;
                let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
-               value_equality_test x_val y_val
-             else if Typ.Name.equal x_typ_name hack_float_type_name then
+               value_equality_test x_val y_val )
+             else if Typ.Name.equal x_typ_name hack_float_type_name then (
+               L.d_printfln "hhbc_cmp_same: both are floats" ;
                let* x_val = eval_deref_access Read x (FieldAccess float_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess float_val_field) in
-               value_equality_test x_val y_val
-             else if Typ.Name.equal x_typ_name hack_bool_type_name then
+               value_equality_test x_val y_val )
+             else if Typ.Name.equal x_typ_name hack_bool_type_name then (
+               L.d_printfln "hhbc_cmp_same: both are bools" ;
                let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
-               value_equality_test x_val y_val
-             else if Typ.Name.equal x_typ_name hack_string_type_name then
+               value_equality_test x_val y_val )
+             else if Typ.Name.equal x_typ_name hack_string_type_name then (
+               L.d_printfln "hhbc_cmp_same: both are strings" ;
                let* opt_str_x = read_string_value_dsl x in
                let* opt_str_y = read_string_value_dsl y in
                match Option.both opt_str_x opt_str_y with
                | Some (str_x, str_y) ->
                    String.equal str_x str_y |> make_hack_bool
                | None ->
-                   make_hack_random_bool
-             else
+                   make_hack_random_bool )
+             else (
+               L.d_printfln "hhbc_cmp_same: not a known primitive type" ;
                disjuncts
                  [ (let* () = prune_eq x y in
                     (* CAUTION: Note that the pruning on a pointer may result in incorrect semantics
@@ -923,11 +930,13 @@ let hhbc_cmp_same x y : model =
                        shape, taking into account the difference between == and ===. *)
                     (* TODO(dpichardie) cover the specificities of == that compare objects properties
                        (structural equality). *)
-                    make_hack_random_bool ) ]
+                    make_hack_random_bool ) ] )
          | Some {Attribute.typ= x_typ}, Some {Attribute.typ= y_typ} when not (Typ.equal x_typ y_typ)
            ->
+             L.d_printfln "hhbc_cmp_same: known different dynamic types: false result" ;
              make_hack_bool false
-         | _, _ ->
+         | _ ->
+             L.d_printfln "hhbc_cmp_same: at least one unknown dynamic type: unknown result" ;
              make_hack_random_bool ) ]
   in
   assign_ret res
