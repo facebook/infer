@@ -131,7 +131,7 @@ class Tests {
     }
   }
 
-  public static function FP_call_string_ne_ok(): void {
+  public static function call_string_ne_ok(): void {
     $arg1 = self::get_foo_string();
     $arg2 = self::get_foo_string();
     if (self::string_ne($arg1, $arg2)) {
