@@ -329,8 +329,7 @@ let aborts_execution = function
       | Case_clause _
       | Function_clause _
       | If_clause _
-      | Try_clause _ )
-  | ReadUninitialized _ ->
+      | Try_clause _ ) ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
@@ -343,6 +342,7 @@ let aborts_execution = function
   | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadonlySharedPtrParameter _
+  | ReadUninitialized _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _

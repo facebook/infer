@@ -18,9 +18,8 @@ class Main {
     }
   }
 
-  // Flow: The taint sink is unreachable since $w['b'] should raise an exception.  In this function,
-  // PULSE_DICT_MISSING_KEY is reported instead.
-  public function idx_as_get_2_OK(): void {
+  // Flow: The taint sink is unreachable since $w['b'] should raise an exception.
+  public function idx_as_get_2_OK_FP(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];

@@ -184,12 +184,11 @@ int uninit_if_zero_bad(int a) {
   return 10;
 }
 
-void uninit_interproc_manifest_bad_FN() {
+void uninit_interproc_manifest_bad() {
   int x = uninit_if_zero_bad(0);
   if (x == 4) {
     int* p = NULL;
     *p = 42; // NPE to test that uninit didn't terminate the symbolic execution
-    // currently FN as uninit does in fact terminate symbolic execution
   }
 }
 
