@@ -16,15 +16,12 @@ SYNOPSIS
        infer capture [--no-xcpretty] [options] -- xcodebuild ...
        infer capture --cfg-json file.json --tenv-json file.json [options]
 
-
 DESCRIPTION
        Capture the build command, compilation database, or cfg/tenv json
        files specified on the command line: infer intercepts calls to the
        compiler to read source files, translate them into infer's
        intermediate representation, and store the result of the translation
        in the results directory.
-
-
 
 OPTIONS
        --capture-block-list json
@@ -48,7 +45,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -159,6 +157,7 @@ OPTIONS
 
        --  Stop argument processing, use remaining arguments as a build
            command
+
 BUCK OPTIONS
        --append-buck-flavors +string
            Additional Buck flavors to append to targets discovered by the
@@ -166,7 +165,8 @@ BUCK OPTIONS
 
        --buck-block-list +regex
            Skip capture of files matched by the specified regular expression.
-           Only the clang, non-compilation-database                Buck integration is supported, not Java.
+           Only the clang, non-compilation-database
+                Buck integration is supported, not Java.
 
        --buck-clang
            Activates: Buck integration for clang-based targets
@@ -274,6 +274,7 @@ BUCK OPTIONS
        --xcode-developer-dir XCODE_DEVELOPER_DIR
            Specify the path to Xcode developer directory, to use for Buck
            clang targets
+
 CLANG OPTIONS
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou
@@ -336,6 +337,7 @@ CLANG OPTIONS
            analyze an iOS app. xcpretty just needs to be in the path, infer
            command is still just `infer -- <xcodebuild command>`.
            (Conversely: --no-xcpretty)
+
 ERLANG OPTIONS
        --erlang-ast-dir dir
            Also load AST from all .json files in the given path. These .json
@@ -362,6 +364,7 @@ ERLANG OPTIONS
            Activates: [EXPERIMENTAL] Use type specs from OTP (available in
            the system) to generate more precise Pulse summaries for unknown
            library functions. (Conversely: --no-erlang-with-otp-specs)
+
 JAVA OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath
@@ -389,7 +392,6 @@ JAVA OPTIONS
            Deactivates: Mask exceptions thrown by Sawja/Javalib during Java
            capture (Conversely: --mask-sawja-exceptions)
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -398,11 +400,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-analyze(1), infer-compile(1), infer-run(1)
-
-
 

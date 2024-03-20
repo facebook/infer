@@ -5,15 +5,12 @@ SYNOPSIS
        infer run [options]
        infer [options] -- compile command
 
-
 DESCRIPTION
        Calling "infer run [options]" is equivalent to performing the
        following sequence of commands:
 
        infer capture [options]
        infer analyze [options]
-
-
 
 OPTIONS
        --capture-block-list json
@@ -52,7 +49,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -177,10 +175,12 @@ OPTIONS
 
        --  Stop argument processing, use remaining arguments as a build
            command
+
 BUCK OPTIONS
        --buck-block-list +regex
            Skip capture of files matched by the specified regular expression.
-           Only the clang, non-compilation-database                Buck integration is supported, not Java.
+           Only the clang, non-compilation-database
+                Buck integration is supported, not Java.
 
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
@@ -193,7 +193,6 @@ BUCK OPTIONS
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -202,11 +201,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-analyze(1), infer-capture(1), infer-report(1)
-
-
 

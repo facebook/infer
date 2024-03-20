@@ -5,12 +5,9 @@ SYNOPSIS
        infer analyze [options]
        infer [options]
 
-
 DESCRIPTION
        Analyze the files captured in the project results directory and
        report.
-
-
 
 OPTIONS
        --annotation-reachability
@@ -30,7 +27,8 @@ OPTIONS
 
        --biabduction
            Activates: biabduction checker: This analysis deals with a range
-           of issues, many linked to memory safety.           
+           of issues, many linked to memory safety.
+           
            DEPRECATED: This has been replaced by Pulse and will be removed
            in the next release.
             (Conversely: --no-biabduction)
@@ -101,7 +99,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -132,7 +131,8 @@ OPTIONS
        --no-fragment-retains-view
            Deactivates: fragment-retains-view checker: Detects when Android
            fragments are not explicitly nullified before becoming
-           unreachable.           
+           unreachable.
+           
            DEPRECATED: Unmaintained due to poor precision.
             (Conversely: --fragment-retains-view)
 
@@ -154,8 +154,8 @@ OPTIONS
 
        --impurity
            Activates: impurity checker: Detects functions with potential
-           side-effects. Same as "purity", but implemented on top of Pulse.       
-    ACTIVATES: pulse (Conversely: --no-impurity)
+           side-effects. Same as "purity", but implemented on top of Pulse.
+           ACTIVATES: pulse (Conversely: --no-impurity)
 
        --impurity-only
            Activates: Enable impurity and disable all other checkers
@@ -278,7 +278,8 @@ OPTIONS
            Activates: printf-args checker: Detect mismatches between the Java
            `printf` format strings and the argument types For example, this
            checker will warn about the type error in `printf("Hello %d",
-           "world")`           
+           "world")`
+           
            DEPRECATED: Unmaintained.
             (Conversely: --no-printf-args)
 
@@ -314,8 +315,8 @@ OPTIONS
            Activates: quandary checker: The Quandary taint analysis detects
            flows of values between sources and sinks, except if the value
            went through a "sanitizer". In addition to some defaults, users
-           can specify their own sources, sinks, and sanitizers functions.       
-    
+           can specify their own sources, sinks, and sanitizers functions.
+           
            DEPRECATED: Taint analysis is now supported by the Pulse checker
            and Quandary will be removed in the next release.
             (Conversely: --no-quandary)
@@ -434,7 +435,8 @@ OPTIONS
        --topl
            Activates: topl checker: Detect errors based on user-provided
            state machines describing temporal properties over multiple
-           objects.           ACTIVATES: pulse (Conversely: --no-topl)
+           objects.
+           ACTIVATES: pulse (Conversely: --no-topl)
 
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
@@ -445,7 +447,8 @@ OPTIONS
            infer-out/captured. This shows the abstract state of all analyses
            at each program point in the source code. Each captured source
            file has its own html page. This HTML file contains the source
-           file, and at each line of           the file there are links to the nodes of the control flow graph
+           file, and at each line of
+           the file there are links to the nodes of the control flow graph
            of Infer's translation of that line of code into its intermediate
            representation (SIL). This way it's possible to see what the
            translation is, and the details of the symbolic execution on each
@@ -454,6 +457,7 @@ OPTIONS
        --xcode-isysroot-suffix string
            Specify the suffix of Xcode isysroot directory, to avoid absolute
            paths in tests
+
 ANALYSIS SCHEDULER OPTIONS
        --analysis-schedule-file path
            The file where an analysis schedule is stored. The default is
@@ -477,7 +481,8 @@ ANALYSIS SCHEDULER OPTIONS
            --no-replay-ondemand-should-error)
 
        --scheduler { file | restart | callgraph }
-           Specify the scheduler used for the analysis phase:           - file: schedules one job per file
+           Specify the scheduler used for the analysis phase:
+           - file: schedules one job per file
            - callgraph: schedules one job per procedure, following the
            syntactic call graph. Usually faster than "file".
            - restart: schedules one job per procedure, using locking to try
@@ -493,6 +498,7 @@ ANALYSIS SCHEDULER OPTIONS
            higher chance of success compared with having to read the previous
            results database successfully as fewer datatypes are involved.
            (Conversely: --no-store-analysis-schedule)
+
 BUFFER OVERRUN OPTIONS
        --no-bo-assume-void
            Deactivates: Assume void type as a type of record fields not in
@@ -527,6 +533,7 @@ BUFFER OVERRUN OPTIONS
            Activates: Join with an unknown set always result in an unknown
            set. When disabled, unknown set behaves as bot. (Conversely:
            --no-bo-sound-unknown-sets-join)
+
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on
@@ -534,7 +541,8 @@ CLANG OPTIONS
            issue name. "sources" and "sinks" can be specified either by
            symbol (including regexps) or path prefix. "sinks" optionally can
            specify "overrides" (by symbol or path prefix) that block the
-           reachability analysis when hit. Example:           {
+           reachability analysis when hit. Example:
+           {
                "ISOLATED_REACHING_CONNECT": {
                  "sources": {
                    "desc": "Code that should not call connect [optional]",
@@ -591,14 +599,15 @@ CLANG OPTIONS
            not read explicitly by the program.
 
        --lock-model json
-           Specify custom lock models for starvation analysis.       
-    Example for pthreads (already included in infer):
+           Specify custom lock models for starvation analysis.
+           Example for pthreads (already included in infer):
            [{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}]
            
 
        --pulse-unsafe-malloc
            Activates: Assume that malloc(3) never returns null. (Conversely:
            --no-pulse-unsafe-malloc)
+
 ERLANG OPTIONS
        --erlang-list-unfold-depth int
            Unfold Erlang lists up to depth int
@@ -608,10 +617,12 @@ ERLANG OPTIONS
            capture and analysis. At capture time, it encodes Erlang specs; at
            (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
            ones). (Conversely: --erlang-reliability)
+
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks for the annotation reachability
-           checker           Example format: for custom annotations
+           checker
+           Example format: for custom annotations
            com.my.annotation.{Source1,Source2,Sink1}
            { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"] }
 
@@ -634,6 +645,7 @@ JAVA OPTIONS
        --java-version int
            The version of Java being used. Set it to your Java version if mvn
            is failing.
+
 LINEAGE OPTIONS
        --no-lineage-dedup
            Deactivates: In JSON output, attempt to print each entity at most
@@ -692,6 +704,7 @@ LINEAGE OPTIONS
            type is the type of a variable whose value is within a statically
            known atom set. The width of the type is the cardinal of that atom
            set.
+
 PULSE CHECKER OPTIONS
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can
@@ -784,7 +797,8 @@ PULSE CHECKER OPTIONS
            directory is given then the subdirectories will be explored and
            names must follow the same convention. SQLite3 format is
            preferable when providing a large number of models because they
-           will be internally indexed by mfa.            
+           will be internally indexed by mfa.
+            
             The format for JSON is [SelectorBehavior, ...] where
             SelectorBehavior := {"selector": Selector, "behavior": Behavior}
             Selector := ["MFA", {
@@ -854,7 +868,8 @@ PULSE CHECKER OPTIONS
            containing such files. This file can define --pulse-taint-sources,
            --pulse-taint-sanitizers, --pulse-taint-propagators,
            --pulse-taint-sinks, --pulse-taint-policies, and
-           --pulse-taint-data-flow-kinds.           If a path to a directory is given then the configuration files
+           --pulse-taint-data-flow-kinds.
+           If a path to a directory is given then the configuration files
            must have the `.json` extension. Any other file will be ignored.
            The subdirectories will be explored and must follow the same
            convention.
@@ -867,7 +882,8 @@ PULSE CHECKER OPTIONS
 
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
-           this JSON format:             { "short_description": "<a short description of the issue>",
+           this JSON format:
+             { "short_description": "<a short description of the issue>",
                "taint_flows": [{ "source_kinds": [<kinds>],
                                  "sink_kinds": [<kinds>],
                                  "sanitizer_kinds": [<kinds>] }],
@@ -915,7 +931,8 @@ PULSE CHECKER OPTIONS
            taint properties. The JSON format of sources also applies to sinks
            and sanitizers. It consists of a list of objects, each with one of
            the following combinations of fields to identify relevant
-           procedures:           
+           procedures:
+           
              - "field_regex": match a field name using an OCaml regex
              - "procedure": match a substring of the procedure name
              - "procedure_regex": as above, but match using an OCaml regex
@@ -999,6 +1016,7 @@ PULSE CHECKER OPTIONS
 
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations
+
 QUANDARY CHECKER OPTIONS
        --quandary-endpoints json
            Specify endpoint classes for Quandary
@@ -1011,6 +1029,7 @@ QUANDARY CHECKER OPTIONS
 
        --quandary-sources json
            Specify custom sources for Quandary
+
 RACERD CHECKER OPTIONS
        --racerd-always-report-java
            Activates: Every Java class analysed is treated as if it were
@@ -1027,6 +1046,7 @@ RACERD CHECKER OPTIONS
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe
+
 SIOF CHECKER OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are
@@ -1039,7 +1059,6 @@ SIOF CHECKER OPTIONS
            Methods that are SIOF-safe; "foo::bar" will match "foo::bar()",
            "foo<int>::bar()", etc. (can be specified multiple times)
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -1048,11 +1067,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-report(1), infer-run(1)
-
-
 

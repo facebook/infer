@@ -230,7 +230,7 @@ let test_from_json_string_with_invalid_input =
          \"methodOne\", \"signature\": \"%s\"}], \"foo\": {}}"
         JProcname.JNI.void_method_with_no_arguments
     , Yojson.Json_error
-        "Line 1, bytes 0-33:\nExpected '[' but found '{\"whatever\": {}, \"methods\": [{\"cl'" )
+        "Line 1, bytes 0-34:\nExpected '[' but found '{\"whatever\": {}, \"methods\": [{\"cl'" )
   ; ( "test_from_json_string_3"
     , "("
     , Yojson.Json_error "Line 1, bytes 0-1:\nExpected '[' but found '('" ) ]

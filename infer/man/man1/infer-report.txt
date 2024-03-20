@@ -8,13 +8,10 @@ SYNOPSIS
        infer report --config-impact-issues-tests
        infer report --merge-report dir1 ... --merge-report dirN
 
-
 DESCRIPTION
        When used without parameters, generate report output in Json. With a
        --tests parameter, write out issues in a format suitable for tests.
        With --merge-report, merge multiple JSON reports in one.
-
-
 
 OPTIONS
        --no-censor-report +issue_type_regex
@@ -64,7 +61,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -91,7 +89,8 @@ OPTIONS
            fine-grained filtering over which types of issue should be
            reported once the checkers have run. In particular, note that
            disabling issue types does not make the corresponding checker not
-           run.           Available issue types are as follows:
+           run.
+           Available issue types are as follows:
              
            ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
@@ -384,18 +383,19 @@ OPTIONS
            Activates: Whether paths in --skip-analysis-in-path should be
            compiled or not (Conversely:
            --no-skip-analysis-in-path-skips-compilation)
+
 HOISTING OPTIONS
        --no-hoisting-report-only-expensive
            Deactivates: [Hoisting] Report loop-invariant calls only when the
            function is expensive, i.e. at least linear (Conversely:
            --hoisting-report-only-expensive)
+
 PULSE CHECKER OPTIONS
        --pulse-report-flows-from-taint-source procname
            Report data flows which originate at taint source procname
 
        --pulse-report-flows-to-taint-sink procname
            Report data flows which pass through taint sink procname
-
 
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
@@ -405,11 +405,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-reportdiff(1), infer-run(1)
-
-
 

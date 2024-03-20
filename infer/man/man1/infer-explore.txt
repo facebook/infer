@@ -4,13 +4,10 @@ NAME
 SYNOPSIS
        infer explore [options]
 
-
 DESCRIPTION
        Show the list of bugs on the console and explore symbolic program
        traces emitted by infer to explain a report. Can also generate an HTML
        report from a JSON report.
-
-
 
 OPTIONS
        --help
@@ -27,6 +24,7 @@ OPTIONS
 
        --results-dir,-o dir
            Write results and internal files in the specified directory
+
 EXPLORE BUGS
        --html
            Activates: Generate an html report of issues found. (Conversely:
@@ -45,7 +43,6 @@ EXPLORE BUGS
            Deactivates: print code excerpts around trace elements
            (Conversely: --source-preview)
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -54,11 +51,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-report(1), infer-run(1)
-
-
 

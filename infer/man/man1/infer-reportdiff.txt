@@ -4,7 +4,6 @@ NAME
 SYNOPSIS
        infer reportdiff --report-current file --report-previous file [options]
 
-
 DESCRIPTION
        Given two infer reports previous and current, compute the following
        three reports and store them inside the "differential/" subdirectory
@@ -16,8 +15,6 @@ DESCRIPTION
        current.
 
        All three files follow the same format as normal infer reports.
-
-
 
 OPTIONS
        --config-impact-current path
@@ -44,7 +41,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -87,7 +85,6 @@ OPTIONS
            computing differential reports (Conversely:
            --skip-duplicated-types)
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -96,11 +93,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-report(1)
-
-
 

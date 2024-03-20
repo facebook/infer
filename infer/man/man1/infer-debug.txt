@@ -6,7 +6,6 @@ SYNOPSIS
        infer debug --procedures [options]
        infer debug --source-files [options]
 
-
 DESCRIPTION
        If --procedures is passed, print information about each procedures
        captured by infer.
@@ -18,8 +17,6 @@ DESCRIPTION
        any).
 
        At least one of the above options must be passed.
-
-
 
 OPTIONS
        --help
@@ -43,10 +40,12 @@ OPTIONS
        --select (N|all)
            Select option number N or all of them. If omitted, prompt for
            input.
+
 DEBUG GLOBAL TYPE ENVIRONMENT
        --global-tenv
            Activates: Print the global type environment. (Conversely:
            --no-global-tenv)
+
 DEBUG PROCEDURES
        --procedures
            Activates: Print functions and methods discovered by infer
@@ -110,6 +109,7 @@ DEBUG PROCEDURES
            conjunction with --procedures-summary or
            --procedures-summary-json. See also --changed-files-index.)
            (Conversely: --no-procedures-summary-skip-empty)
+
 DEBUG SOURCE FILES
        --complete-capture-from path
            Provide the path to an infer results directory containing a
@@ -170,7 +170,6 @@ DEBUG SOURCE FILES
            output of --source-files (Conversely:
            --no-source-files-type-environment)
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -179,11 +178,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-explore(1), infer-report(1)
-
-
 

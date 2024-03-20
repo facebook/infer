@@ -4,14 +4,11 @@ NAME
 SYNOPSIS
        infer compile -- [compile command]
 
-
 DESCRIPTION
        Intercepts compilation commands similarly to infer-capture, but simply
        execute these compilation commands and do not perform any translation
        of the source files. This can be useful to configure build systems or
        for debugging purposes.
-
-
 
 OPTIONS
        --debug,-g
@@ -22,7 +19,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -51,7 +49,6 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -59,8 +56,6 @@ ENVIRONMENT
 FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
-
-
 
 EXAMPLES
        cmake(1) hardcodes the absolute paths to the compiler inside the
@@ -86,9 +81,6 @@ EXAMPLES
          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
          infer capture --compilation-database compile_commands.json
 
-
 SEE ALSO
        infer-capture(1)
-
-
 
