@@ -69,6 +69,9 @@ val with_attached_db :
     the database with the [immutable] Sqlite flag. See [https://www.sqlite.org/uri.html] for more
     info. *)
 
+val transaction : ?immediate:bool -> Sqlite3.db -> f:(unit -> 'a) -> 'a
+(** Run [f] as a transaction. *)
+
 (** An API commonly needed to store and retrieve objects from the database *)
 module type Data = sig
   type t

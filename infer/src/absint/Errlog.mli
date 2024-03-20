@@ -97,3 +97,5 @@ val log_issue :
   -> Checker.t
   -> IssueToReport.t
   -> unit
+
+val merge : into:t -> t -> [`Modified | `Intact]

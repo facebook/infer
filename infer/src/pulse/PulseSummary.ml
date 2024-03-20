@@ -329,3 +329,25 @@ let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) s
       positive_allocated_self proc_name proc_attrs.loc self astate
   | _ ->
       Sat (Ok astate)
+
+
+let merge x y =
+  let merged_is_same_to_x = ref true in
+  let merged_is_same_to_y = ref true in
+  let merged =
+    Specialization.Pulse.Map.merge
+      (fun _ x y ->
+        match (x, y) with
+        | None, None | Some _, Some _ ->
+            x
+        | Some _, None ->
+            merged_is_same_to_y := false ;
+            x
+        | None, Some _ ->
+            merged_is_same_to_x := false ;
+            y )
+      x.specialized y.specialized
+  in
+  if !merged_is_same_to_x then x
+  else if !merged_is_same_to_y then y
+  else {x with specialized= merged}

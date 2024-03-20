@@ -43,19 +43,36 @@ class GenRunTest {
     }
   }
 
-  /* TODO: Fix the issue overwriting issue in DB */
-  // this should be bad, needs specialisation to tell, though
-  // and that seems rather fragile - whether or not I get an error
-  // showing up on inGeneralCaseBad depends on what calls are around
-  /* public static async function mainShouldBeBadFN(): Awaitable<void> {
+  // Note that the actual issue is reported at the callee
+  // inGeneralCaseBad.
+  public static async function callInGeneralCaseBad1(): Awaitable<void> {
     await self::inGeneralCaseBad(new BadRunner(), true);
-  } */
+  }
 
-  // neither of these calls are bad, need appropriate specialisation to detect that
-  /* public static async function mainShouldBeOK(): Awaitable<void> {
+  public static async function callInGeneralCaseBad2(): Awaitable<void> {
     await self::inGeneralCaseBad(new GoodRunner(), true);
     await self::inGeneralCaseBad(new BadRunner(), false);
-  } */
+  }
+
+  // This function is exactly the same to inGeneralCaseBad above, but
+  // it is OK because is invoked only with safe arguments from
+  // callIngeneralCaseOK below.
+  public static async function inGeneralCaseOK(
+    IRunner $r,
+    bool $b,
+  ): Awaitable<void> {
+    $foo = self::genInt();
+    if ($b) {
+      await $r->genRun(async () ==> await $foo);
+    } else {
+      await $foo;
+    }
+  }
+
+  public static async function callInGeneralCaseOK(): Awaitable<void> {
+    await self::inGeneralCaseOK(new GoodRunner(), true);
+    await self::inGeneralCaseOK(new BadRunner(), false);
+  }
 }
 
 // Check we've fixed an FP from a common pattern from www: conditional awaiting

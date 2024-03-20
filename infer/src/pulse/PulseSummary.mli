@@ -53,3 +53,6 @@ val initial_with_positive_self : ProcAttributes.t -> AbductiveDomain.t -> Abduct
     and [this>0] for C++ instance methods. *)
 
 val mk_objc_nil_messaging_summary : Tenv.t -> ProcAttributes.t -> ExecutionDomain.summary option
+
+val merge : t -> t -> t
+(** Merge specialized summaries. *)

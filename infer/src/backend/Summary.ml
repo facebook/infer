@@ -104,9 +104,23 @@ module ReportSummary = struct
     {loc= Location.dummy; cost_opt= None; config_impact_opt= None; err_log= Errlog.empty ()}
 
 
-  module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
-    type nonrec t = t
-  end)
+  let merge ~into x = Errlog.merge ~into:into.err_log x.err_log
+
+  module SQLite = struct
+    include SqliteUtils.MarshalledDataNOTForComparison (struct
+      type nonrec t = t
+    end)
+
+    let serialize report_summary =
+      let default = serialize report_summary in
+      fun ~old_report_summary ->
+        Option.value_map old_report_summary ~default ~f:(fun old_report_summary ->
+            match merge ~into:report_summary (deserialize old_report_summary) with
+            | `Modified ->
+                serialize report_summary
+            | `Intact ->
+                default )
+  end
 end
 
 module SummaryMetadata = struct
@@ -128,9 +142,25 @@ module SummaryMetadata = struct
     ; dependencies= Dependencies.reset proc_name |> Dependencies.freeze proc_name }
 
 
-  module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
-    type nonrec t = t
-  end)
+  let merge x y =
+    let merged = Dependencies.merge x.dependencies y.dependencies in
+    if phys_equal merged x.dependencies then x
+    else if phys_equal merged y.dependencies then y
+    else {x with dependencies= merged}
+
+
+  module SQLite = struct
+    include SqliteUtils.MarshalledDataNOTForComparison (struct
+      type nonrec t = t
+    end)
+
+    let serialize summary_metadata =
+      let default = serialize summary_metadata in
+      fun ~old_summary_metadata ->
+        Option.value_map old_summary_metadata ~default ~f:(fun old_summary_metadata ->
+            let res = merge summary_metadata (deserialize old_summary_metadata) in
+            if phys_equal res summary_metadata then default else serialize res )
+  end
 end
 
 let mk_full_summary payloads (report_summary : ReportSummary.t)
@@ -237,9 +267,9 @@ module OnDisk = struct
     try
       DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
         ~proc_name:(Procname.SQLite.serialize proc_name)
-        ~payloads:(Payloads.SQLite.serialize payloads)
-        ~report_summary:(ReportSummary.SQLite.serialize report_summary)
-        ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata) ;
+        ~merge_pulse_payload:(Payloads.SQLite.serialize payloads)
+        ~merge_report_summary:(ReportSummary.SQLite.serialize report_summary)
+        ~merge_summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata) ;
       summary
     with SqliteUtils.DataTooBig ->
       (* Serialization exceeded size limits, write and return an empty summary  *)

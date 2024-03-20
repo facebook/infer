@@ -125,3 +125,73 @@ let pp fmt = function
         (Pp.seq ~sep:", " Procname.pp) summary_loads Procname.Set.pp recursion_edges
         (Pp.seq ~sep:", " Procname.pp) other_proc_names (Pp.seq ~sep:", " SourceFile.pp)
         used_tenv_sources
+
+
+module MergeMake (S : sig
+  type t
+
+  type elt
+
+  val equal : t -> t -> bool
+
+  val subset : t -> t -> bool
+
+  val union : t -> t -> t
+
+  val of_list : elt list -> t
+
+  val elements : t -> elt list
+end) =
+struct
+  let merge_set merged_is_same_to_x merged_is_same_to_y x y =
+    if S.equal x y then x
+    else if S.subset x y then (
+      merged_is_same_to_x := false ;
+      y )
+    else if S.subset y x then (
+      merged_is_same_to_y := false ;
+      x )
+    else (
+      merged_is_same_to_x := false ;
+      merged_is_same_to_y := false ;
+      S.union x y )
+
+
+  let merge_list merged_is_same_to_x merged_is_same_to_y x y =
+    let local_merged_is_same_to_x = ref true in
+    let local_merged_is_same_to_y = ref true in
+    let res =
+      merge_set local_merged_is_same_to_x local_merged_is_same_to_y (S.of_list x) (S.of_list y)
+    in
+    merged_is_same_to_x := !merged_is_same_to_x && !local_merged_is_same_to_x ;
+    merged_is_same_to_y := !merged_is_same_to_y && !local_merged_is_same_to_y ;
+    if !local_merged_is_same_to_x then x
+    else if !local_merged_is_same_to_y then y
+    else S.elements res
+end
+
+module ProcnamesMerge = MergeMake (Procname.Set)
+module SourceFilesMerge = MergeMake (SourceFile.Set)
+
+let merge x y =
+  let merged_is_same_to_x = ref true in
+  let merged_is_same_to_y = ref true in
+  let summary_loads =
+    ProcnamesMerge.merge_list merged_is_same_to_x merged_is_same_to_y x.summary_loads
+      y.summary_loads
+  in
+  let recursion_edges =
+    ProcnamesMerge.merge_set merged_is_same_to_x merged_is_same_to_y x.recursion_edges
+      y.recursion_edges
+  in
+  let other_proc_names =
+    ProcnamesMerge.merge_list merged_is_same_to_x merged_is_same_to_y x.other_proc_names
+      y.other_proc_names
+  in
+  let used_tenv_sources =
+    SourceFilesMerge.merge_list merged_is_same_to_x merged_is_same_to_y x.used_tenv_sources
+      y.used_tenv_sources
+  in
+  if !merged_is_same_to_x then x
+  else if !merged_is_same_to_y then y
+  else {summary_loads; recursion_edges; other_proc_names; used_tenv_sources}

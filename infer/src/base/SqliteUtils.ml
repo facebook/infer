@@ -106,6 +106,14 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
   result
 
 
+let transaction ?(immediate = false) db ~f =
+  exec db ~log:"begin transaction"
+    ~stmt:(Printf.sprintf "BEGIN%s TRANSACTION" (if immediate then " IMMEDIATE" else "")) ;
+  let result = f () in
+  exec db ~log:"commit transaction" ~stmt:"COMMIT" ;
+  result
+
+
 module type Data = sig
   type t
 
