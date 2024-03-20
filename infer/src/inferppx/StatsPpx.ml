@@ -10,30 +10,36 @@ open Ppxlib
 
 let name_of_type_name ~root type_name = match type_name with "t" -> root | s -> root ^ "_" ^ s
 
+let destruct_stats_field_type ~loc pld_type =
+  match pld_type.ptyp_desc with
+  | Ptyp_constr ({txt= Ldot (module_names, type_name)}, _) ->
+      Ok (module_names, type_name)
+  | Ptyp_any
+  | Ptyp_var _
+  | Ptyp_arrow _
+  | Ptyp_tuple _
+  | Ptyp_constr _
+  | Ptyp_object _
+  | Ptyp_class _
+  | Ptyp_alias _
+  | Ptyp_variant _
+  | Ptyp_poly _
+  | Ptyp_package _
+  | Ptyp_extension _ ->
+      Error
+        (Location.error_extensionf ~loc
+           "ERROR: Unsupported type, please define a module for your type. Only types of the form \
+            [M.blah], [M.N.blah], etc., or variations with type arguments like [some_type M.t] are \
+            supported" )
+
+
 let mk_initial_stats_record_field_exps fields =
   List.map fields ~f:(fun {pld_name= _; pld_type; pld_loc= loc} ->
-      match pld_type.ptyp_desc with
-      | Ptyp_constr ({txt= Ldot (module_names, type_name)}, _) ->
+      match destruct_stats_field_type ~loc pld_type with
+      | Ok (module_names, type_name) ->
           Ast_helper.Exp.mk ~loc
             (Pexp_ident {txt= Ldot (module_names, name_of_type_name ~root:"init" type_name); loc})
-      | Ptyp_any
-      | Ptyp_var _
-      | Ptyp_arrow _
-      | Ptyp_tuple _
-      | Ptyp_constr _
-      | Ptyp_object _
-      | Ptyp_class _
-      | Ptyp_alias _
-      | Ptyp_variant _
-      | Ptyp_poly _
-      | Ptyp_package _
-      | Ptyp_extension _ ->
-          let ext =
-            Location.error_extensionf ~loc
-              "ERROR: Unsupported type, please define a module for your type. Only types of the \
-               form [M.blah], [M.N.blah], etc., or variations with type arguments like [some_type \
-               M.t] are supported"
-          in
+      | Error ext ->
           Ast_builder.Default.pexp_extension ~loc ext )
 
 
@@ -59,6 +65,32 @@ let mk_set_all_mutable_fields_call ~loc fields =
     ((Nolabel, [%expr into]) :: labelled_arguments)
 
 
+(** generate [let merge stats1 stats2 = {f1= M1.merge_stats stats1.f1 stats2.f1; ...}] *)
+let mk_merge_fun_decl ~loc fields =
+  let res =
+    List.fold_result fields ~init:[] ~f:(fun res {pld_name; pld_type; pld_loc= loc} ->
+        let open IResult.Let_syntax in
+        let label = {txt= Lident pld_name.txt; loc} in
+        let+ module_names, type_name = destruct_stats_field_type ~loc pld_type in
+        let merge_fun_exp =
+          Ast_helper.Exp.mk ~loc
+            (Pexp_ident {txt= Ldot (module_names, name_of_type_name ~root:"merge" type_name); loc})
+        in
+        let stats1_field_exp = Ast_helper.Exp.field ~loc [%expr stats1] label in
+        let stats2_field_exp = Ast_helper.Exp.field ~loc [%expr stats2] label in
+        let merge_apply_exp =
+          [%expr [%e merge_fun_exp] [%e stats1_field_exp] [%e stats2_field_exp]]
+        in
+        (label, merge_apply_exp) :: res )
+  in
+  match res with
+  | Error ext ->
+      Ast_builder.Default.pstr_extension ~loc ext []
+  | Ok field_assignments ->
+      let record_assignment = Ast_helper.Exp.record field_assignments None in
+      [%stri let merge stats1 stats2 = [%e record_assignment]]
+
+
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   match type_declarations with
@@ -69,6 +101,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
       let global_stats_init_record = Common.create_record ~loc fields field_exps in
       let all_fields_pattern = mk_all_fields_pattern ~loc fields in
       let set_all_mutable_fields_expression = mk_set_all_mutable_fields_call ~loc fields in
+      let merge_fun_decl = mk_merge_fun_decl ~loc fields in
       [%str
         let global_stats = [%e global_stats_init_record]
 
@@ -76,7 +109,10 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
 
         let copy from ~into =
           let [%p all_fields_pattern] = from in
-          [%e set_all_mutable_fields_expression]]
+          [%e set_all_mutable_fields_expression]
+
+
+        [%%i merge_fun_decl]]
   | _ ->
       let ext =
         Location.error_extensionf ~loc

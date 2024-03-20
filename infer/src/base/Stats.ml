@@ -20,6 +20,8 @@ module PulseSumCountMap = struct
   include IntMap
 
   let init = empty
+
+  let merge = merge (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
 end
 
 module DurationItem = struct
@@ -96,12 +98,16 @@ module AdditiveIntCounter = struct
   type t = int
 
   let init = 0
+
+  let merge = ( + )
 end
 
 module ExecutionDuration = struct
   include ExecutionDuration
 
   let init = zero
+
+  let merge = add
 end
 
 include struct
@@ -222,47 +228,6 @@ let set_useful_times execution_duration =
 
 let incr_spec_store_times counter =
   update_with Fields.spec_store_times ~f:(fun t -> ExecutionDuration.add_duration_since t counter)
-
-
-let merge stats1 stats2 =
-  { useful_times= ExecutionDuration.add stats1.useful_times stats2.useful_times
-  ; longest_proc_duration_heap=
-      LongestProcDurationHeap.merge stats1.longest_proc_duration_heap
-        stats2.longest_proc_duration_heap
-  ; summary_file_try_load= stats1.summary_file_try_load + stats2.summary_file_try_load
-  ; summary_read_from_disk= stats1.summary_read_from_disk + stats2.summary_read_from_disk
-  ; summary_cache_hits= stats1.summary_cache_hits + stats2.summary_cache_hits
-  ; summary_cache_misses= stats1.summary_cache_misses + stats2.summary_cache_misses
-  ; ondemand_procs_analyzed= stats1.ondemand_procs_analyzed + stats2.ondemand_procs_analyzed
-  ; proc_locker_lock_time=
-      ExecutionDuration.add stats1.proc_locker_lock_time stats2.proc_locker_lock_time
-  ; proc_locker_unlock_time=
-      ExecutionDuration.add stats1.proc_locker_unlock_time stats2.proc_locker_unlock_time
-  ; process_times= ExecutionDuration.add stats1.process_times stats2.process_times
-  ; pulse_aliasing_contradictions=
-      stats1.pulse_aliasing_contradictions + stats2.pulse_aliasing_contradictions
-  ; pulse_args_length_contradictions=
-      stats1.pulse_args_length_contradictions + stats2.pulse_args_length_contradictions
-  ; pulse_captured_vars_length_contradictions=
-      stats1.pulse_captured_vars_length_contradictions
-      + stats2.pulse_captured_vars_length_contradictions
-  ; pulse_disjuncts_dropped= stats1.pulse_disjuncts_dropped + stats2.pulse_disjuncts_dropped
-  ; pulse_interrupted_loops= stats1.pulse_interrupted_loops + stats2.pulse_interrupted_loops
-  ; pulse_summaries_contradictions=
-      stats1.pulse_summaries_contradictions + stats2.pulse_summaries_contradictions
-  ; pulse_summaries_count=
-      PulseSumCountMap.merge
-        (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
-        stats1.pulse_summaries_count stats2.pulse_summaries_count
-  ; restart_scheduler_useful_time=
-      ExecutionDuration.add stats1.restart_scheduler_useful_time
-        stats2.restart_scheduler_useful_time
-  ; restart_scheduler_total_time=
-      ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
-  ; spec_store_times= ExecutionDuration.add stats1.spec_store_times stats2.spec_store_times
-  ; topl_reachable_calls= stats1.topl_reachable_calls + stats2.topl_reachable_calls
-  ; timeouts= stats1.timeouts + stats2.timeouts
-  ; timings= TimingsStat.merge stats1.timings stats2.timings }
 
 
 let reset () = copy initial ~into:global_stats

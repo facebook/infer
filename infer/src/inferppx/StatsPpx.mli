@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Currently generates the following:
+(** Currently generates the following (see implementation for examples and details):
 
     {[
       let initial = _initial_stats_
@@ -16,5 +16,9 @@ open! IStd
 
       let copy from ~into =
         (* set all the fields of [into] with values from the fields of [from] *)
+        ...
+
+      let merge stats1 stats2 =
+        (* creates a new stats object merging stats1 and stats2 field by field *)
         ...
     ]} *)
