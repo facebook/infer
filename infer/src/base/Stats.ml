@@ -9,6 +9,14 @@ module F = Format
 module L = Logging
 module PulseSumCountMap = Caml.Map.Make (Int)
 
+module type Stat = sig
+  type t
+
+  val init : t
+
+  val merge : t -> t -> t
+end
+
 module DurationItem = struct
   type t = {duration_us: int; file: string; pname: string} [@@deriving equal]
 
@@ -48,16 +56,34 @@ end
 (** Type for fields that contain non-[Marshal]-serializable data. These need to be serialized by
     [get ()] so they can safely be sent over the pipe to the orchestrator process, where these stats
     end up. *)
-type ('t, 'serialized) serialize_before_marshal = T of 't | Serialized of 'serialized
+module type UnserializableStat = sig
+  include Stat
 
-let serialize serializer = function
-  | T x ->
-      Serialized (serializer x)
-  | Serialized _ as serialized ->
-      serialized
+  type serialized
+
+  val serialize : t -> serialized
+
+  val deserialize : serialized -> t
+end
+
+module OfUnserializable (S : UnserializableStat) = struct
+  type t = T of S.t | Serialized of S.serialized
+
+  let init = T S.init
+
+  let serialize = function
+    | T x ->
+        Serialized (S.serialize x)
+    | Serialized _ as serialized ->
+        serialized
 
 
-let deserialize deserializer = function T x -> x | Serialized s -> deserializer s
+  let deserialize = function T x -> x | Serialized s -> S.deserialize s
+
+  let merge x y = T (S.merge (deserialize x) (deserialize y))
+end
+
+module TimingsStat = OfUnserializable (Timings)
 
 include struct
   (* ignore dead modules added by @@deriving fields *)
@@ -82,7 +108,7 @@ include struct
     ; mutable pulse_summaries_count: int PulseSumCountMap.t
     ; mutable topl_reachable_calls: int
     ; mutable timeouts: int
-    ; mutable timings: (Timings.t, Timings.serialized) serialize_before_marshal
+    ; mutable timings: TimingsStat.t
     ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
     ; mutable process_times: ExecutionDuration.t
     ; mutable useful_times: ExecutionDuration.t
@@ -115,7 +141,7 @@ let global_stats =
   ; spec_store_times= ExecutionDuration.zero
   ; topl_reachable_calls= 0
   ; timeouts= 0
-  ; timings= T Timings.init }
+  ; timings= TimingsStat.init }
 
 
 let update_with field ~f =
@@ -190,7 +216,7 @@ let incr_timeouts () = incr Fields.timeouts
 
 let add_timing timeable t =
   update_with Fields.timings ~f:(function timings ->
-      T (Timings.add timeable t (deserialize Timings.deserialize timings)) )
+      TimingsStat.T (Timings.add timeable t (TimingsStat.deserialize timings)) )
 
 
 let set_process_times execution_duration =
@@ -279,11 +305,7 @@ let merge stats1 stats2 =
   ; spec_store_times= ExecutionDuration.add stats1.spec_store_times stats2.spec_store_times
   ; topl_reachable_calls= stats1.topl_reachable_calls + stats2.topl_reachable_calls
   ; timeouts= stats1.timeouts + stats2.timeouts
-  ; timings=
-      T
-        (Timings.merge
-           (deserialize Timings.deserialize stats1.timings)
-           (deserialize Timings.deserialize stats2.timings) ) }
+  ; timings= TimingsStat.merge stats1.timings stats2.timings }
 
 
 let initial =
@@ -309,7 +331,7 @@ let initial =
   ; spec_store_times= ExecutionDuration.zero
   ; topl_reachable_calls= 0
   ; timeouts= 0
-  ; timings= T Timings.init }
+  ; timings= TimingsStat.init }
 
 
 let reset () = copy initial ~into:global_stats
@@ -319,7 +341,7 @@ let pp fmt stats =
     F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Field.get field stats)
   in
   let pp_serialized_field deserializer pp_value fmt field =
-    pp_field (fun fmt v -> pp_value fmt (deserialize deserializer v)) fmt field
+    pp_field (fun fmt v -> pp_value fmt (deserializer v)) fmt field
   in
   let pp_hit_percent hit miss fmt =
     let total = hit + miss in
@@ -373,7 +395,7 @@ let pp fmt stats =
       ~restart_scheduler_useful_time:(pp_execution_duration_field fmt)
       ~restart_scheduler_total_time:(pp_execution_duration_field fmt)
       ~spec_store_times:(pp_execution_duration_field fmt) ~topl_reachable_calls:(pp_int_field fmt)
-      ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
+      ~timings:(pp_serialized_field TimingsStat.deserialize Timings.pp fmt)
   in
   F.fprintf fmt "@[Backend stats:@\n@[<v2>  %t@]@]@." pp_stats
 
@@ -409,7 +431,7 @@ let log_to_scuba stats =
     LogEntry.mk_count ~label:"backend_stats.pulse_summaries_total" ~value:total :: counts
   in
   let create_timings_entry field =
-    Field.get field stats |> deserialize Timings.deserialize |> Timings.to_scuba
+    Field.get field stats |> TimingsStat.deserialize |> Timings.to_scuba
   in
   let entries =
     Fields.to_list ~useful_times:create_time_entry
@@ -441,4 +463,4 @@ let log_aggregate stats_list =
       log_to_scuba stats
 
 
-let get () = {global_stats with timings= serialize Timings.serialize global_stats.timings}
+let get () = {global_stats with timings= TimingsStat.serialize global_stats.timings}
