@@ -7,7 +7,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module PulseSumCountMap = Caml.Map.Make (Int)
 
 module type Stat = sig
   type t
@@ -15,6 +14,12 @@ module type Stat = sig
   val init : t
 
   val merge : t -> t -> t
+end
+
+module PulseSumCountMap = struct
+  include IntMap
+
+  let init = empty
 end
 
 module DurationItem = struct
@@ -49,6 +54,8 @@ module LongestProcDurationHeap = struct
     let heap = to_list heap |> List.sort ~compare:(fun x y -> DurationItem.compare y x) in
     F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f "@;") DurationItem.pp) heap
 
+
+  let init = Heap.create ~dummy:DurationItem.dummy 10
 
   include Heap
 end
@@ -85,64 +92,50 @@ end
 
 module TimingsStat = OfUnserializable (Timings)
 
+module AdditiveIntCounter = struct
+  type t = int
+
+  let init = 0
+end
+
+module ExecutionDuration = struct
+  include ExecutionDuration
+
+  let init = zero
+end
+
 include struct
   (* ignore dead modules added by @@deriving fields *)
   [@@@warning "-unused-module"]
 
+  (* NOTE: there is a custom ppx for this data structure to generate boilerplate, see
+     src/inferppx/StatsPpx.mli *)
   type t =
-    { mutable summary_file_try_load: int
-    ; mutable summary_read_from_disk: int
-    ; mutable summary_cache_hits: int
-    ; mutable summary_cache_misses: int
-    ; mutable ondemand_procs_analyzed: int
+    { mutable summary_file_try_load: AdditiveIntCounter.t
+    ; mutable summary_read_from_disk: AdditiveIntCounter.t
+    ; mutable summary_cache_hits: AdditiveIntCounter.t
+    ; mutable summary_cache_misses: AdditiveIntCounter.t
+    ; mutable ondemand_procs_analyzed: AdditiveIntCounter.t
     ; mutable proc_locker_lock_time: ExecutionDuration.t
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
     ; mutable restart_scheduler_total_time: ExecutionDuration.t
-    ; mutable pulse_aliasing_contradictions: int
-    ; mutable pulse_args_length_contradictions: int
-    ; mutable pulse_captured_vars_length_contradictions: int
-    ; mutable pulse_disjuncts_dropped: int
-    ; mutable pulse_interrupted_loops: int
-    ; mutable pulse_summaries_contradictions: int
-    ; mutable pulse_summaries_count: int PulseSumCountMap.t
-    ; mutable topl_reachable_calls: int
-    ; mutable timeouts: int
+    ; mutable pulse_aliasing_contradictions: AdditiveIntCounter.t
+    ; mutable pulse_args_length_contradictions: AdditiveIntCounter.t
+    ; mutable pulse_captured_vars_length_contradictions: AdditiveIntCounter.t
+    ; mutable pulse_disjuncts_dropped: AdditiveIntCounter.t
+    ; mutable pulse_interrupted_loops: AdditiveIntCounter.t
+    ; mutable pulse_summaries_contradictions: AdditiveIntCounter.t
+    ; mutable pulse_summaries_count: AdditiveIntCounter.t PulseSumCountMap.t
+    ; mutable topl_reachable_calls: AdditiveIntCounter.t
+    ; mutable timeouts: AdditiveIntCounter.t
     ; mutable timings: TimingsStat.t
     ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
     ; mutable process_times: ExecutionDuration.t
     ; mutable useful_times: ExecutionDuration.t
     ; mutable spec_store_times: ExecutionDuration.t }
-  [@@deriving fields]
+  [@@deriving fields, infer_stats]
 end
-
-let empty_duration_map = LongestProcDurationHeap.create ~dummy:DurationItem.dummy 10
-
-let global_stats =
-  { useful_times= ExecutionDuration.zero
-  ; longest_proc_duration_heap= empty_duration_map
-  ; summary_file_try_load= 0
-  ; summary_read_from_disk= 0
-  ; summary_cache_hits= 0
-  ; summary_cache_misses= 0
-  ; ondemand_procs_analyzed= 0
-  ; proc_locker_lock_time= ExecutionDuration.zero
-  ; proc_locker_unlock_time= ExecutionDuration.zero
-  ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero
-  ; process_times= ExecutionDuration.zero
-  ; pulse_aliasing_contradictions= 0
-  ; pulse_args_length_contradictions= 0
-  ; pulse_captured_vars_length_contradictions= 0
-  ; pulse_disjuncts_dropped= 0
-  ; pulse_interrupted_loops= 0
-  ; pulse_summaries_contradictions= 0
-  ; pulse_summaries_count= PulseSumCountMap.empty
-  ; spec_store_times= ExecutionDuration.zero
-  ; topl_reachable_calls= 0
-  ; timeouts= 0
-  ; timings= TimingsStat.init }
-
 
 let update_with field ~f =
   match Field.setter field with
@@ -306,32 +299,6 @@ let merge stats1 stats2 =
   ; topl_reachable_calls= stats1.topl_reachable_calls + stats2.topl_reachable_calls
   ; timeouts= stats1.timeouts + stats2.timeouts
   ; timings= TimingsStat.merge stats1.timings stats2.timings }
-
-
-let initial =
-  { useful_times= ExecutionDuration.zero
-  ; longest_proc_duration_heap= empty_duration_map
-  ; summary_file_try_load= 0
-  ; summary_read_from_disk= 0
-  ; summary_cache_hits= 0
-  ; summary_cache_misses= 0
-  ; ondemand_procs_analyzed= 0
-  ; proc_locker_lock_time= ExecutionDuration.zero
-  ; proc_locker_unlock_time= ExecutionDuration.zero
-  ; process_times= ExecutionDuration.zero
-  ; pulse_aliasing_contradictions= 0
-  ; pulse_args_length_contradictions= 0
-  ; pulse_captured_vars_length_contradictions= 0
-  ; pulse_disjuncts_dropped= 0
-  ; pulse_interrupted_loops= 0
-  ; pulse_summaries_contradictions= 0
-  ; pulse_summaries_count= PulseSumCountMap.empty
-  ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero
-  ; spec_store_times= ExecutionDuration.zero
-  ; topl_reachable_calls= 0
-  ; timeouts= 0
-  ; timings= TimingsStat.init }
 
 
 let reset () = copy initial ~into:global_stats
