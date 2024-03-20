@@ -18,7 +18,6 @@ module Diagnostic = PulseDiagnostic
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ErlangError of Diagnostic.ErlangError.t
-  | ReadUninitializedValue of Diagnostic.ReadUninitialized.t
 [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit

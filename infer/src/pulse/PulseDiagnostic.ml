@@ -1156,7 +1156,7 @@ let get_issue_type ~latent issue_type =
   | ReadonlySharedPtrParameter _, false ->
       IssueType.readonly_shared_ptr_param
   | ReadUninitialized {typ= Value}, _ ->
-      IssueType.uninitialized_value_pulse ~latent
+      IssueType.uninitialized_value_pulse
   | ReadUninitialized {typ= Const _}, _ ->
       IssueType.pulse_uninitialized_const
   | ReadUninitialized {typ= DictMissingKey _}, _ ->

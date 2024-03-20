@@ -40,7 +40,6 @@ let add_call_to_access_to_invalid_address (call_event, location) (call_subst, hi
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ErlangError of Diagnostic.ErlangError.t
-  | ReadUninitializedValue of Diagnostic.ReadUninitialized.t
 [@@deriving compare, equal, yojson_of]
 
 let to_diagnostic = function
@@ -48,8 +47,6 @@ let to_diagnostic = function
       Diagnostic.AccessToInvalidAddress access_to_invalid_address
   | ErlangError erlang_error ->
       Diagnostic.ErlangError erlang_error
-  | ReadUninitializedValue read_uninitialized ->
-      Diagnostic.ReadUninitialized read_uninitialized
 
 
 let pp fmt latent_issue = Diagnostic.pp fmt (to_diagnostic latent_issue)
@@ -77,8 +74,6 @@ let add_call_to_calling_context call_and_loc = function
       ErlangError (If_clause {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Try_clause {calling_context; location}) ->
       ErlangError (Try_clause {calling_context= call_and_loc :: calling_context; location})
-  | ReadUninitializedValue read ->
-      ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 
 
 let add_call call_and_loc call_substs astate latent_issue =
@@ -106,6 +101,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | TransitiveAccess _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
+  | ReadUninitialized _
   | ReadonlySharedPtrParameter _
   | RetainCycle _
   | StackVariableAddressEscape _
@@ -119,6 +115,3 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
       else `DelayReport (AccessToInvalidAddress latent)
   | ErlangError latent ->
       if PulseArithmetic.is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
-  | ReadUninitialized latent ->
-      if PulseArithmetic.is_manifest astate then `ReportNow
-      else `DelayReport (ReadUninitializedValue latent)

@@ -898,7 +898,7 @@ let topl_error =
 
 
 let uninitialized_value_pulse =
-  register_with_latent ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+  register ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_VALUE.md"]
 
 

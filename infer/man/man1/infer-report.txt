@@ -230,7 +230,6 @@ OPTIONS
              PULSE_UNAWAITED_AWAITABLE (enabled by default),
              PULSE_UNINITIALIZED_CONST (disabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
-             PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (enabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by default),
