@@ -224,42 +224,6 @@ let incr_spec_store_times counter =
   update_with Fields.spec_store_times ~f:(fun t -> ExecutionDuration.add_duration_since t counter)
 
 
-let copy from ~into : unit =
-  let ({ useful_times
-       ; longest_proc_duration_heap
-       ; summary_file_try_load
-       ; summary_read_from_disk
-       ; summary_cache_hits
-       ; summary_cache_misses
-       ; ondemand_procs_analyzed
-       ; proc_locker_lock_time
-       ; proc_locker_unlock_time
-       ; restart_scheduler_useful_time
-       ; restart_scheduler_total_time
-       ; process_times
-       ; pulse_aliasing_contradictions
-       ; pulse_args_length_contradictions
-       ; pulse_captured_vars_length_contradictions
-       ; pulse_disjuncts_dropped
-       ; pulse_interrupted_loops
-       ; pulse_summaries_contradictions
-       ; pulse_summaries_count
-       ; spec_store_times
-       ; topl_reachable_calls
-       ; timeouts
-       ; timings } [@warning "+9"] ) =
-    from
-  in
-  Fields.Direct.set_all_mutable_fields into ~useful_times ~longest_proc_duration_heap
-    ~summary_file_try_load ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses
-    ~ondemand_procs_analyzed ~proc_locker_lock_time ~proc_locker_unlock_time
-    ~restart_scheduler_useful_time ~restart_scheduler_total_time ~process_times
-    ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_disjuncts_dropped ~pulse_interrupted_loops
-    ~pulse_summaries_contradictions ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
-    ~spec_store_times
-
-
 let merge stats1 stats2 =
   { useful_times= ExecutionDuration.add stats1.useful_times stats2.useful_times
   ; longest_proc_duration_heap=

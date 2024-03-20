@@ -13,4 +13,8 @@ open! IStd
       let initial = _initial_stats_
 
       let global_stats = _initial_stats_
+
+      let copy from ~into =
+        (* set all the fields of [into] with values from the fields of [from] *)
+        ...
     ]} *)
