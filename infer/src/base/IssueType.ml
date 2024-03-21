@@ -726,7 +726,7 @@ let multiple_weakself =
 
 
 let nil_block_call =
-  register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
+  register_with_latent ~category:Null_pointer_dereference ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NIL_BLOCK_CALL.md"]
 
 
@@ -772,18 +772,20 @@ let null_argument =
 
 
 let null_dereference =
-  register ~id:"NULL_DEREFERENCE" Error Biabduction
+  register ~category:Null_pointer_dereference ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
 
 
 let nullptr_dereference =
-  register_with_latent ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
+  register_with_latent ~category:Null_pointer_dereference ~id:"NULLPTR_DEREFERENCE"
+    ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let nullptr_dereference_in_nullsafe_class =
-  register_with_latent ~id:"NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS" ~hum:"Null Dereference" Error
-    Pulse ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
+  register_with_latent ~category:Null_pointer_dereference
+    ~id:"NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS" ~hum:"Null Dereference" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
