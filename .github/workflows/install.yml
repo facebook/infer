@@ -129,9 +129,8 @@ jobs:
 
       - name: Install ocamlformat
         run: |
-          opam pin $(cat opam/ocamlformat) --no-action
           opam install --deps-only --locked opam/ocamlformat.opam.locked
-          opam install ocamlformat
+          opam install ocamlformat.$(grep -e '^version:' "$INFER_ROOT"/opam/ocamlformat.opam.locked | cut -d ' ' -f 2 | tr -d \")
           opam exec -- ocamlformat --version
 
       - name: Test infer
