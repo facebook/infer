@@ -554,7 +554,7 @@ let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kin
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 
 let guardedby_violation =
-  register Warning ~id:"GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation" RacerD
+  register Warning ~id:"GUARDEDBY_VIOLATION" ~category:Data_race ~hum:"GuardedBy Violation" RacerD
     ~user_documentation:[%blob "./documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
@@ -640,7 +640,7 @@ let integer_overflow_u5 =
 
 
 let interface_not_thread_safe =
-  register Warning ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
+  register Warning ~category:Data_race ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
     ~user_documentation:[%blob "./documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
 
 
@@ -679,7 +679,7 @@ let leak_in_footprint = register_hidden ~id:"Leak_in_footprint" Error Biabductio
 let leak_unknown_origin = register_hidden ~enabled:false ~id:"Leak_unknown_origin" Error Biabduction
 
 let lock_consistency_violation =
-  register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" RacerD
+  register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" ~category:Data_race RacerD
     ~user_documentation:[%blob "./documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
@@ -943,7 +943,7 @@ let symexec_memory_error =
 
 
 let thread_safety_violation =
-  register Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
+  register Warning ~category:Data_race ~id:"THREAD_SAFETY_VIOLATION" RacerD
     ~user_documentation:[%blob "./documentation/issues/THREAD_SAFETY_VIOLATION.md"]
 
 
