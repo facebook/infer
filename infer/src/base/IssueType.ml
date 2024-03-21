@@ -15,6 +15,21 @@ let string_of_visibility = function User -> "User" | Developer -> "Developer" | 
 
 type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
+type category =
+  | Data_corruption
+  | Data_race
+  | Deadlock
+  | Incorrect_program_semantics
+  | Memory_error
+  | Memory_leak
+  | Null_pointer_dereference
+  | Perf_regression
+  | Privacy_violation
+  | Resource_leak
+  | Runtime_exception
+  | Ungated_code
+[@@deriving compare, equal, enumerate]
+
 let string_of_severity = function
   | Advice ->
       "ADVICE"
@@ -26,12 +41,44 @@ let string_of_severity = function
       "WARNING"
 
 
+let string_of_category category =
+  Option.map
+    ~f:(fun category ->
+      match category with
+      | Deadlock ->
+          "Deadlock"
+      | Data_corruption ->
+          "Data corruption"
+      | Data_race ->
+          "Data race"
+      | Incorrect_program_semantics ->
+          "Incorrect program semantics"
+      | Memory_leak ->
+          "Memory leak"
+      | Memory_error ->
+          "Memory error"
+      | Null_pointer_dereference ->
+          "Null pointer dereference"
+      | Resource_leak ->
+          "Resource leak"
+      | Runtime_exception ->
+          "Runtime exception"
+      | Perf_regression ->
+          "Perf regression"
+      | Privacy_violation ->
+          "Privacy violation"
+      | Ungated_code ->
+          "Ungated code" )
+    category
+
+
 (* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
 module Unsafe : sig
   type t = private
     { unique_id: string
     ; checker: Checker.t
+    ; category: category option
     ; visibility: visibility
     ; user_documentation: string option
     ; mutable default_severity: severity
@@ -46,6 +93,7 @@ module Unsafe : sig
   val register :
        ?enabled:bool
     -> ?hum:string
+    -> ?category:category
     -> id:string
     -> user_documentation:string
     -> severity
@@ -81,6 +129,7 @@ module Unsafe : sig
   val register_with_latent :
        ?enabled:bool
     -> ?hum:string
+    -> ?category:category
     -> id:string
     -> user_documentation:string
     -> severity
@@ -96,6 +145,7 @@ end = struct
     type t =
       { unique_id: string
       ; checker: Checker.t
+      ; category: category option
       ; visibility: visibility
       ; user_documentation: string option
       ; mutable default_severity: severity
@@ -148,11 +198,12 @@ end = struct
         definitely. The [hum]an-readable description can be updated when we encounter the definition
         of the issue type. *)
   let register_static_or_dynamic ?(enabled = true) ~is_cost_issue ?hum:hum0 ~id:unique_id
-      ~visibility ~user_documentation default_severity checker =
+      ~visibility ~user_documentation ?category default_severity checker =
     match find_from_string ~id:unique_id with
     | ((Some
          ( { unique_id= _ (* we know it has to be the same *)
            ; checker= checker_old
+           ; category= _
            ; visibility= visibility_old
            ; user_documentation= _ (* new one must be [None] for dynamic issue types *)
            ; default_severity= _ (* mutable field to update *)
@@ -186,14 +237,21 @@ end = struct
     | None ->
         let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
         let issue =
-          {unique_id; visibility; user_documentation; default_severity; checker; enabled; hum}
+          { unique_id
+          ; visibility
+          ; user_documentation
+          ; default_severity
+          ; checker
+          ; enabled
+          ; hum
+          ; category }
         in
         all_issues := IssueSet.add !all_issues issue ;
         issue
 
 
-  let register ?enabled ?hum ~id ~user_documentation default_severity checker =
-    register_static_or_dynamic ?enabled ~is_cost_issue:false ?hum ~id ~visibility:User
+  let register ?enabled ?hum ?category ~id ~user_documentation default_severity checker =
+    register_static_or_dynamic ?enabled ?category ~is_cost_issue:false ?hum ~id ~visibility:User
       ~user_documentation:(Some user_documentation) default_severity checker
 
 
@@ -236,8 +294,9 @@ end = struct
       Cost ~user_documentation:(Some user_documentation)
 
 
-  let register_with_latent ?enabled ?hum ~id ~user_documentation default_severity checker =
-    let issue = register ?enabled ?hum ~id ~user_documentation default_severity checker in
+  let register_with_latent ?enabled ?hum ?category ~id ~user_documentation default_severity checker
+      =
+    let issue = register ?enabled ?hum ?category ~id ~user_documentation default_severity checker in
     let user_documentation =
       Printf.sprintf
         "A latent [%s](#%s). See the [documentation on Pulse latent \

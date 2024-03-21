@@ -120,8 +120,8 @@ type transitive_callee = {
   callsite_relative_position_in_caller: int;
   kind: transitive_callee_kind;
   resolution: transitive_callee_resolution
-}           
-  
+}
+
 type missed_capture = {
   class_name: string;
 }
@@ -134,7 +134,7 @@ type extra = {
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
   ~transitive_callees: transitive_callee list;
-  ~transitive_missed_captures: missed_capture list;    
+  ~transitive_missed_captures: missed_capture list;
 }
 
 type jsonbug = {
@@ -142,6 +142,7 @@ type jsonbug = {
   qualifier : string;
   ?suggestion : string option;
   severity : string;
+  ?category: string option;
   line: int;
   column: int;
   procedure : string;

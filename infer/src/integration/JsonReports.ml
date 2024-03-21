@@ -218,6 +218,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       && not (is_in_clang_header source_file)
     then
       let severity = IssueType.string_of_severity err_key.severity in
+      let category = IssueType.string_of_category err_key.issue_type.category in
       let bug_type = err_key.issue_type.unique_id in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
@@ -248,6 +249,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         { Jsonbug_j.bug_type
         ; qualifier
         ; severity
+        ; category
         ; suggestion
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col

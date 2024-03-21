@@ -62,6 +62,7 @@ let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
   ; qualifier
   ; suggestion
   ; severity= IssueType.string_of_severity Advice
+  ; category= IssueType.string_of_category issue_type.category
   ; line
   ; column= item.loc.cnum
   ; procedure= item.procedure_id
