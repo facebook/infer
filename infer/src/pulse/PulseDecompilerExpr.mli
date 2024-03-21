@@ -37,6 +37,8 @@ val pp_with_abstract_value : Format.formatter -> t -> unit
 
 val abstract_value_of_expr : t -> AbstractValue.t option
 
+val decomp_source_expr_equal : t -> t -> bool
+
 val is_unknown : t -> bool
 
 val yojson_of_t : t -> Yojson.Safe.t

@@ -21,10 +21,20 @@ build_systems/pulse_messages_objc/retain_cycle.mm, RCBlock.retain_self_in_block_
   1) self captured by block defined in retain_cycle.mm:55
   2) self->_handler, assigned on line 55., 
 build_systems/pulse_messages_objc/retain_cycle.mm, retain_a_in_block_cycle_bad, 87, 5, ERROR, RETAIN_CYCLE, Retain cycle found at line 87, column 5 between the following objects: 
-  1) a->_b, assigned on line 86
-  2) b->_a_handler, assigned on line 87
-  3) a captured by block defined in retain_cycle.mm:87., 
+  1) &b
+  2) a->_b, assigned on line 86
+  3) b->_a_handler, assigned on line 87
+  4) a captured by block defined in retain_cycle.mm:87., 
+codetoanalyze/objc/pulse/retain_cycles/IvarInheritanceRetainCycle.m, field_superclass_main, 30, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 30, column 3 between the following objects: 
+  1) &b
+  2) b->a, assigned on line 30., 
 codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, FBSomeDataManager.fetchNewData_bad, 46, 14, ERROR, RETAIN_CYCLE, Retain cycle found at line 46, column 14 between the following objects: 
-  1) self->_fetcher, assigned on line 46
-  2) &block defined in RetainCycleBlockAsParameter.m:46
-  3) self captured by block defined in RetainCycleBlockAsParameter.m:46., 
+  1) &self
+  2) &Fetcher.initWithCompletionBlock:
+  3) self->_fetcher, assigned on line 46
+  4) &block defined in RetainCycleBlockAsParameter.m:46
+  5) self captured by block defined in RetainCycleBlockAsParameter.m:46., 
+codetoanalyze/objc/pulse/retain_cycles/RetainCycleDeduplication.m, CViewController.setCaptureInteractionController_bad:, 32, 24, ERROR, RETAIN_CYCLE, Retain cycle found at line 32, column 24 between the following objects: 
+  1) &self
+  2) self->_captureController, assigned on line 31
+  3) self->_captureController->_delegate, assigned on line 32., 

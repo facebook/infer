@@ -160,6 +160,16 @@ type t = SourceExpr of source_expr * AbstractValue.t option | Unknown of Abstrac
 
 let abstract_value_of_expr = function Unknown v | SourceExpr (_, v) -> v
 
+let decomp_source_expr_equal expr1 expr2 =
+  match (expr1, expr2) with
+  | SourceExpr (source_expr1, _), SourceExpr (source_expr2, _) ->
+      let s1 = F.asprintf "%a" pp_source_expr source_expr1 in
+      let s2 = F.asprintf "%a" pp_source_expr source_expr2 in
+      String.equal s1 s2
+  | _ ->
+      false
+
+
 let pp fmt = function
   | Unknown _ ->
       F.fprintf fmt "UNKNOWN"
