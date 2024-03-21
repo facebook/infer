@@ -525,7 +525,7 @@ let dangling_pointer_dereference_maybe =
 
 
 let dead_store =
-  register ~id:"DEAD_STORE" Error Liveness
+  register ~id:"DEAD_STORE" ~category:Incorrect_program_semantics Error Liveness
     ~user_documentation:[%blob "./documentation/issues/DEAD_STORE.md"]
 
 
@@ -805,8 +805,8 @@ let pulse_dict_missing_key =
 
 
 let pulse_transitive_access =
-  register ~enabled:true ~id:"PULSE_TRANSITIVE_ACCESS" Error Pulse
-    ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]
+  register ~enabled:true ~category:Incorrect_program_semantics ~id:"PULSE_TRANSITIVE_ACCESS" Error
+    Pulse ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]
 
 
 let pulse_memory_leak_c =
