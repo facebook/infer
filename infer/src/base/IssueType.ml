@@ -858,17 +858,19 @@ let readonly_shared_ptr_param =
 
 
 let taint_error =
-  register ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
+  register ~hum:"Taint Error" ~category:Privacy_violation ~id:"TAINT_ERROR" Error Pulse
     ~user_documentation:"A taint flow was detected from a source to a sink"
 
 
 let sensitive_data_flow =
-  register ~enabled:false ~hum:"Sensitive Data Flow" ~id:"SENSITIVE_DATA_FLOW" Advice Pulse
+  register ~enabled:false ~hum:"Sensitive Data Flow" ~category:Privacy_violation
+    ~id:"SENSITIVE_DATA_FLOW" Advice Pulse
     ~user_documentation:"A flow of sensitive data was detected from a source."
 
 
 let data_flow_to_sink =
-  register ~enabled:false ~hum:"Data Flow to Sink" ~id:"DATA_FLOW_TO_SINK" Advice Pulse
+  register ~enabled:false ~hum:"Data Flow to Sink" ~category:Privacy_violation
+    ~id:"DATA_FLOW_TO_SINK" Advice Pulse
     ~user_documentation:"A flow of data was detected to a sink."
 
 
@@ -894,7 +896,7 @@ let retain_cycle =
 
 
 let scope_leakage =
-  register ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
+  register ~category:Privacy_violation ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
     ~user_documentation:[%blob "./documentation/issues/SCOPE_LEAKAGE.md"]
 
 
