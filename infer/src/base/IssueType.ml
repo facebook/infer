@@ -826,7 +826,7 @@ let pulse_memory_leak_cpp =
 
 
 let pulse_resource_leak =
-  register ~enabled:true ~id:"PULSE_RESOURCE_LEAK" Error Pulse
+  register ~enabled:true ~category:Resource_leak ~id:"PULSE_RESOURCE_LEAK" Error Pulse
     ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
 
 
@@ -886,7 +886,7 @@ let regex_op_on_ui_thread =
 
 
 let resource_leak =
-  register ~id:"RESOURCE_LEAK" Error Biabduction
+  register ~category:Resource_leak ~id:"RESOURCE_LEAK" Error Biabduction
     ~user_documentation:[%blob "./documentation/issues/RESOURCE_LEAK.md"]
 
 
