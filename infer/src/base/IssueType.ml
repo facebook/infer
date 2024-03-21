@@ -530,7 +530,7 @@ let dead_store =
 
 
 let deadlock =
-  register ~id:"DEADLOCK" Error Starvation
+  register ~category:Deadlock ~id:"DEADLOCK" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/DEADLOCK.md"]
 
 
