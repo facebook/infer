@@ -825,7 +825,8 @@ let pulse_resource_leak =
 
 
 let pulse_unawaited_awaitable =
-  register ~enabled:true ~id:"PULSE_UNAWAITED_AWAITABLE" Error Pulse ~hum:"Unawaited Awaitable"
+  register ~enabled:true ~category:Data_corruption ~id:"PULSE_UNAWAITED_AWAITABLE" Error Pulse
+    ~hum:"Unawaited Awaitable"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNAWAITED_AWAITABLE.md"]
 
 
