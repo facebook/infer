@@ -480,7 +480,8 @@ let config_impact_analysis =
 
 
 let config_impact_analysis_strict =
-  register ~enabled:false ~id:"CONFIG_IMPACT_STRICT" Advice ConfigImpactAnalysis
+  register ~enabled:false ~category:Ungated_code ~id:"CONFIG_IMPACT_STRICT" Advice
+    ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
