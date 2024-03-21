@@ -870,6 +870,12 @@ and buck2_inferconfig_target =
     "Buck2 target representing the inferconfig file; used in BXL capture."
 
 
+and buck2_infertoolchain_target =
+  CLOpt.mk_string_opt ~long:"buck2-infertoolchain-target"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Buck2 target representing the infer toolchain; used in BXL capture."
+
+
 and buck2_isolation_dir =
   CLOpt.mk_string_opt ~long:"buck2-isolation-dir" ~deprecated:["-bxl-isolation-dir"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -3842,6 +3848,8 @@ and buck2_bxl_capture_file_block_list = RevList.to_list !buck2_bxl_capture_file_
 and buck2_bxl_target = !buck2_bxl_target
 
 and buck2_inferconfig_target = !buck2_inferconfig_target
+
+and buck2_infertoolchain_target = !buck2_infertoolchain_target
 
 and buck2_isolation_dir = !buck2_isolation_dir
 

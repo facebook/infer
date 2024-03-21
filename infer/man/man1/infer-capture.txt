@@ -231,6 +231,10 @@ BUCK OPTIONS
            Buck2 target representing the inferconfig file; used in BXL
            capture.
 
+       --buck2-infertoolchain-target string
+           Buck2 target representing the infer toolchain; used in BXL
+           capture.
+
        --buck2-isolation-dir string
            Run buck bxl capture with the given isolation directory as
            parameter.

@@ -285,6 +285,11 @@ OPTIONS
            capture.
            See also infer-capture(1).
 
+       --buck2-infertoolchain-target string
+           Buck2 target representing the infer toolchain; used in BXL
+           capture.
+           See also infer-capture(1).
+
        --buck2-isolation-dir string
            Run buck bxl capture with the given isolation directory as
            parameter.
@@ -2399,6 +2404,9 @@ INTERNAL OPTIONS
 
        --buck2-inferconfig-target-reset
            Cancel the effect of --buck2-inferconfig-target.
+
+       --buck2-infertoolchain-target-reset
+           Cancel the effect of --buck2-infertoolchain-target.
 
        --buck2-isolation-dir-reset
            Cancel the effect of --buck2-isolation-dir.

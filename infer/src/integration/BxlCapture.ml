@@ -89,6 +89,8 @@ let capture build_cmd =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
             [Printf.sprintf "--depth=%i" depth] )
+      @ Option.value_map Config.buck2_infertoolchain_target ~default:[] ~f:(fun target ->
+            ["--infer-toolchain"; target] )
       @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
             ["--inferconfig"; target] )
       @ block_files @ files_with_arg @ targets_with_arg
