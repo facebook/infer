@@ -428,13 +428,14 @@ let captured_strong_self =
 
 
 let checkers_allocates_memory =
-  register ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error AnnotationReachability
+  register ~category:Perf_regression ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error
+    AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_ALLOCATES_MEMORY.md"]
 
 
 let checkers_annotation_reachability_error =
-  register ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR" ~hum:"Annotation Reachability Error" Error
-    AnnotationReachability
+  register ~category:Perf_regression ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+    ~hum:"Annotation Reachability Error" Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
 
 
@@ -474,7 +475,7 @@ let condition_always_true =
 
 
 let config_impact_analysis =
-  register ~enabled:false ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
+  register ~enabled:false ~category:Perf_regression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
 
 
@@ -489,7 +490,8 @@ let pulse_config_usage =
 
 
 let pulse_const_refable =
-  register ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
+  register ~category:Perf_regression ~id:"PULSE_CONST_REFABLE" Error Pulse
+    ~hum:"Const Refable Parameter"
     ~user_documentation:[%blob "./documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
@@ -565,7 +567,8 @@ let impure_function =
 
 
 let inefficient_keyset_iterator =
-  register ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning InefficientKeysetIterator
+  register ~category:Perf_regression ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning
+    InefficientKeysetIterator
     ~user_documentation:[%blob "./documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
@@ -849,7 +852,8 @@ let quandary_taint_error =
 
 
 let readonly_shared_ptr_param =
-  register ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse ~hum:"Read-only Shared Parameter"
+  register ~category:Perf_regression ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
+    ~hum:"Read-only Shared Parameter"
     ~user_documentation:[%blob "./documentation/issues/PULSE_READONLY_SHARED_PTR_PARAM.md"]
 
 
@@ -967,57 +971,61 @@ let uninitialized_value_pulse =
 
 
 let unnecessary_copy_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY" Error Pulse
+    ~hum:"Unnecessary Copy"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
 let unnecessary_copy_assignment_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse ~hum:"Unnecessary Copy Assignment"
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
+    ~hum:"Unnecessary Copy Assignment"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_assignment_const_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST" Error Pulse
-    ~hum:"Unnecessary Copy Assignment from Const"
+  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST"
+    Error Pulse ~hum:"Unnecessary Copy Assignment from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_assignment_movable_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Assignment Movable"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable)."
 
 
 let unnecessary_copy_intermediate_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
     ~hum:"Unnecessary Copy Intermediate"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_INTERMEDIATE.md"]
 
 
 let unnecessary_copy_intermediate_const_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST" Error Pulse
-    ~hum:"Unnecessary Copy Intermediate from Const"
+  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST"
+    Error Pulse ~hum:"Unnecessary Copy Intermediate from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_movable_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse ~hum:"Unnecessary Copy Movable"
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Movable"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
 
 
 let unnecessary_copy_optional_pulse =
-  register ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse ~hum:"Unnecessary Copy to Optional"
+  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse
+    ~hum:"Unnecessary Copy to Optional"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_OPTIONAL.md"]
 
 
 let unnecessary_copy_optional_const_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL_CONST" Error Pulse
-    ~hum:"Unnecessary Copy to Optional from Const"
+  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL_CONST"
+    Error Pulse ~hum:"Unnecessary Copy to Optional from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional)."
 
 
 let unnecessary_copy_return_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
+  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
     ~hum:"Unnecessary Copy Return"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_RETURN.md"]
 
