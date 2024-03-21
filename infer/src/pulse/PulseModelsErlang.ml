@@ -83,12 +83,12 @@ let eval_into_fresh eval =
     example, consider [f] of type ['a->('b,'err) result list] and [g] of type
     ['b->('c,'err) result list] and [a] is some value of type ['a]. Note that the type of error is
     the same, so they can be propagated forward. To chain the application of these functions, you
-    can write [let> x=f a in let> y=g x in \[Ok y\]].
+    can write [let> x=f a in let> y=g x in [Ok y]].
 
     In several places, we have to compose with functions of the type ['a->('b,'err) result], which
     don't produce a list. One way to handle this is to wrap those functions in a list. For example,
     if [f] and [a] have the same type as before but [g] has type ['b->('c,'err) result], then we can
-    write [let> =f a in let> y=\[g x\] in \[Ok y\].] *)
+    write [let> =f a in let> y=[g x] in [Ok y].] *)
 let ( let> ) x f =
   List.concat_map
     ~f:(function

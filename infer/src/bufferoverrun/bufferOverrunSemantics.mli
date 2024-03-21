@@ -42,7 +42,7 @@ val conservative_array_length :
 (** Evaluate the array length conservatively, which is useful when there are multiple array
     locations and their lengths are joined to top. For example, if the [arr_locs] points to two
     arrays [a] and [b] and if their lengths are [a.length] and [b.length], this function evaluates
-    its length as [\[0, a.length.ub + b.length.ub\]]. *)
+    its length as [[0, a.length.ub + b.length.ub]]. *)
 
 (** Several modes of ondemand evaluations *)
 type eval_mode =

@@ -36,8 +36,8 @@ type specialized_with_aliasing_info =
   { orig_proc: Procname.t
   ; aliases: Pvar.t list list
         (** all the pvars in a same list are aliasing each other. e.g.
-            [aliases = \[\[x; y; z\]; \[a; b\]\]] indicates that [x], [y] and [z] alias each other
-            and [a] and [b] as well *) }
+            [aliases = [[x; y; z]; [a; b]]] indicates that [x], [y] and [z] alias each other and [a]
+            and [b] as well *) }
 [@@deriving compare]
 
 type 'captured_var passed_closure =

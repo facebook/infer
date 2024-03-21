@@ -2262,8 +2262,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       List.iter
         ~f:(fun n ->
-          Procdesc.node_set_succs context.procdesc n ~normal:res_trans_s2.control.root_nodes ~exn:[]
-          )
+          Procdesc.node_set_succs context.procdesc n ~normal:res_trans_s2.control.root_nodes ~exn:[] )
         prune_to_s2 ;
       let root_nodes_to_parent =
         if List.is_empty res_trans_s1.control.root_nodes then res_trans_s1.control.leaf_nodes
@@ -3123,8 +3122,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             | _ ->
                 None )
           ~mk_second:(fun trans_state stmt_info ->
-            init_expr_trans_aux ~is_structured_binding trans_state var_exp_typ stmt_info init_expr
-            )
+            init_expr_trans_aux ~is_structured_binding trans_state var_exp_typ stmt_info init_expr )
           ~mk_return:(fun ~fst:_ ~snd -> snd.return)
 
 
@@ -3561,7 +3559,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
-  (** Translates an array literal [NSArray* a = @\[ @2, @3 \];] to
+  (** Translates an array literal [NSArray* a = @[ @2, @3 ];] to
 
       {[
         n$1=NSNumber.numberWithInt:(2:int)
@@ -3670,7 +3668,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCArrayDictLiteral_trans trans_state expr_info stmt_info stmts method_pointer
 
 
-  (** Translates an dictionary literal [@\[ @"firstName": @"Foo", @"lastName":@"Bar" \]] to
+  (** Translates an dictionary literal [@[ @"firstName": @"Foo", @"lastName":@"Bar" ]] to
 
       {[
         n$1=NSString.stringWithUTF8:(@"firstName")

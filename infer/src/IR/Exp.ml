@@ -46,7 +46,7 @@ and t =
   | Lvar of Pvar.t  (** The address of a program variable *)
   | Lfield of t * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
-  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
+  | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data
 [@@deriving compare, equal, hash, normalize]
 

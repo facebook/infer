@@ -474,7 +474,7 @@ module Tableau = struct
                    let gain = Q.(-(q_c / coeff)) in
                    if
                      Container.for_all ~iter:(Container.iter ~fold:LinArith.fold) l
-                       ~f:(fun (_, coeff') -> Q.(coeff' >= zero || -(q_c / coeff') >= gain))
+                       ~f:(fun (_, coeff') -> Q.(coeff' >= zero || -(q_c / coeff') >= gain) )
                    then Some (u, (v, coeff))
                    else None
                  else None ) )
@@ -1559,10 +1559,10 @@ module Atom = struct
 
   let nnot_if b atom = if b then nnot atom else atom
 
-  (** [atoms_of_term ~negated t] is [Some \[atom1; ..; atomN\]] if [t] (or [¬t] if [negated]) is
+  (** [atoms_of_term ~negated t] is [Some [atom1; ..; atomN]] if [t] (or [¬t] if [negated]) is
       (mostly syntactically) equivalent to [atom1 ∧ .. ∧ atomN]. For example
       [atoms_of_term ~negated:false (Equal (Or (x, Not y), 0))] should be
-      [\[Equal (x, 0); NotEqual (y, 0)\]]. When the term [y] is known as a boolean, it generates a
+      [[Equal (x, 0); NotEqual (y, 0)]]. When the term [y] is known as a boolean, it generates a
       preciser atom [Equal (y, 1)].
 
       [is_neq_zero] is a function that can tell if a term is known to be [≠0], and [force_to_atom]
@@ -2046,8 +2046,8 @@ module Formula = struct
 
                 INVARIANT: see {!Tableau} *)
       ; intervals: (intervals[@yojson.opaque])
-            (** A simple, non-relational domain of concrete integer intervals of the form
-                [x∈\[i,j\]] or [x∉\[i,j\]].
+            (** A simple, non-relational domain of concrete integer intervals of the form [x∈[i,j]]
+                or [x∉[i,j]].
 
                 This is used to recover a little bit of completeness on integer reasoning at no
                 great cost. *)

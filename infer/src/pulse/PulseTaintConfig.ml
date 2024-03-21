@@ -647,12 +647,12 @@ let fill_policies_from_config () =
   Config.pulse_taint_config.policies
   |> List.iter
        ~f:(fun
-            { Pulse_config_t.short_description= description
-            ; taint_flows
-            ; privacy_effect
-            ; exclude_in
-            ; exclude_matching }
-          ->
+           { Pulse_config_t.short_description= description
+           ; taint_flows
+           ; privacy_effect
+           ; exclude_in
+           ; exclude_matching }
+         ->
          let policy_id = SinkPolicy.next_policy_id () in
          let exclude_matching =
            Option.map exclude_matching ~f:(fun regexes ->

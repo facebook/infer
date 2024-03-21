@@ -24,10 +24,10 @@ module type S = sig
   val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
 
   val unsafe_cast_set : AbstractValue.Set.t -> Set.t
-    [@@deprecated
-      "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
-       locally with [@alert \"-deprecated\"]"]
-    [@@inline always]
+  [@@deprecated
+    "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
+     locally with [@alert \"-deprecated\"]"]
+  [@@inline always]
 
   (** an abstract value that needs to be normalized; just [AbstractValue.t] under the hood too *)
   type needs_canon
@@ -72,10 +72,10 @@ module type S = sig
       representative if the value is not immediately made equal to another one... Use with caution! *)
 
   val unsafe_cast : AbstractValue.t -> t
-    [@@deprecated
-      "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
-       locally with [@alert \"-deprecated\"]"]
-    [@@inline always]
+  [@@deprecated
+    "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
+     locally with [@alert \"-deprecated\"]"]
+  [@@inline always]
 
   (** {2 Domain elements, revisited to be safe wrt value normalization} *)
 

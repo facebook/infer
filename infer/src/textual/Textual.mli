@@ -277,7 +277,7 @@ module Exp : sig
     | Load of {exp: t; typ: Typ.t option}
     | Lvar of VarName.t  (** the address of a program variable *)
     | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
-    | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
+    | Index of t * t  (** an array index offset: [exp1[exp2]] *)
     | Const of Const.t
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
     | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}

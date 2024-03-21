@@ -195,7 +195,7 @@ module SQLite = struct
         Sqlite3.bind_text load_stmt 1 proc_uid
         |> SqliteUtils.check_result_code db ~log:"load payloads bind proc_uid" ;
         SqliteUtils.result_option ~finalize:false db ~log:"load payloads exec" load_stmt
-          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force) )
+          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force ) )
     |> Option.join
 
 

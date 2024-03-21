@@ -117,7 +117,7 @@ and template_spec_info =
       ; args: template_arg list }
 
 val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 
 val is_template_spec_info_empty : template_spec_info -> bool
 

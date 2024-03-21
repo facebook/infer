@@ -190,7 +190,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
                   (fun class_name _ ->
                     Option.exists (Tenv.lookup tenv class_name) ~f:(fun procedure_superclass_type ->
                         Annotations.struct_typ_has_annot procedure_superclass_type
-                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation)
+                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation )
                         && PatternMatch.override_exists ~check_current_type:false
                              (fun superclass_pname ->
                                String.equal (Procname.get_method superclass_pname) method_name )

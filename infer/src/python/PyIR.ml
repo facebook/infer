@@ -290,7 +290,7 @@ module Exp = struct
         "map"
     | String ->
         "string"
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
 
 
   type import_name = {id: Ident.t; fromlist: string list}
@@ -381,7 +381,7 @@ module Exp = struct
         "Packed"
     | Yield _ ->
         "Yield"
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
 
 
   let rec pp fmt = function
@@ -723,7 +723,7 @@ module Jump = struct
         F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
     | Throw exp ->
         F.fprintf fmt "Throw(%a)" Exp.pp exp
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
 end
 
 module Terminator = struct

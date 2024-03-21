@@ -46,7 +46,7 @@ val concat_map_and_fold :
     by threading an accumulator. Preserve physical equality. **)
 
 val concat_map : not_reversed t -> f:(Sil.instr -> Sil.instr array) -> not_reversed t
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** replace every instruction [instr] with the list [f instr]. Preserve physical equality. **)
 
 val reverse_order : not_reversed t -> reversed t

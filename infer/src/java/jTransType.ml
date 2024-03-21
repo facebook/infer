@@ -368,8 +368,7 @@ let get_var_type_from_sig (context : JContext.t) var =
   let tenv = JContext.get_tenv context in
   List.find_map
     ~f:(fun (vt', var') ->
-      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None
-      )
+      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None )
     (JBir.params context.impl)
 
 

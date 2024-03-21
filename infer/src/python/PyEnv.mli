@@ -271,7 +271,7 @@ val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)
 
 val is_static : t -> bool
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** Are we processing instructions from a static method ? *)
 
 val get_params : t -> string list

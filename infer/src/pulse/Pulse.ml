@@ -260,7 +260,8 @@ module PulseTransferFunctions = struct
          let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
          AbductiveDomain.Topl.small_step loc topl_event astate )
         |> PulseOperationResult.sat_ok
-        |> (* don't emit Topl event if evals fail *) Option.value ~default:astate
+        |> (* don't emit Topl event if evals fail *)
+        Option.value ~default:astate
     | _ ->
         astate
 

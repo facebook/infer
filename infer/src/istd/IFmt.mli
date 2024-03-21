@@ -15,7 +15,7 @@ module Labelled : sig
   (** Adapters of [Fmt] functions using labelled interfaces *)
 
   val iter : ?sep:unit Fmt.t -> ('a -> f:('elt -> unit) -> unit) -> 'elt Fmt.t -> 'a Fmt.t
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
   (** [Fmt.iter] using a Core-style labelled iterator function *)
 
   val iter_bindings :

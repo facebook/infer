@@ -437,9 +437,9 @@ module SharedPtr = struct
         let<*> astate, args_without_this =
           PulseResult.list_fold (List.rev args_without_this) ~init:(astate, [])
             ~f:(fun
-                 (astate, rev_func_args)
-                 (ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= value} as arg)
-               ->
+                (astate, rev_func_args)
+                (ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= value} as arg)
+              ->
               let+ astate, new_payload =
                 PulseOperations.eval_access path Read location value Dereference astate
               in

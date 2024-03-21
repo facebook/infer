@@ -594,22 +594,22 @@ module LOAD = struct
     | ATTR
         (** {v LOAD_ATTR(namei) v}
 
-            Replaces top-of-stack with [getattr(top-of-stack, co_names\[namei\])]. *)
+            Replaces top-of-stack with [getattr(top-of-stack, co_names[namei])]. *)
     | CONST  (** {v LOAD_CONST(consti) v}
 
-                 Pushes [co_consts\[consti\]] onto the stack. *)
+                 Pushes [co_consts[consti]] onto the stack. *)
     | FAST
         (** {v LOAD_FAST(var_num) v}
 
-            Pushes a reference to the local [co_varnames\[var_num\]] onto the stack. *)
+            Pushes a reference to the local [co_varnames[var_num]] onto the stack. *)
     | GLOBAL
         (** {v LOAD_GLOBAL(namei) v}
 
-            Loads the global named [co_names\[namei\]] onto the stack. *)
+            Loads the global named [co_names[namei]] onto the stack. *)
     | NAME
         (** {v LOAD_NAME(namei) v}
 
-            Pushes the value associated with [co_names\[namei\]] onto the stack. *)
+            Pushes the value associated with [co_names[namei]] onto the stack. *)
 
   let run kind env ({FFI.Code.co_names; co_varnames; co_consts} as code)
       {FFI.Instruction.opname; arg} =
@@ -1268,11 +1268,11 @@ module METHOD = struct
 
     (** {v LOAD_METHOD(namei) v}
 
-        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
-        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
-        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
-        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
-        [NULL] and the object return by the attribute lookup are pushed. *)
+        Loads a method named [co_names[namei]] from the top-of-stack object. top-of-stack is popped.
+        This bytecode distinguishes two cases: if top-of-stack has a method with the correct name,
+        the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as the
+        first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise, [NULL]
+        and the object return by the attribute lookup are pushed. *)
     let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       let method_name = co_names.(arg) in
@@ -1364,7 +1364,7 @@ module STORE = struct
     | FAST
         (** {v STORE_FAST(var_num) v}
 
-            Stores top-of-stack into the local [co_varnames\[var_num\]]. *)
+            Stores top-of-stack into the local [co_varnames[var_num]]. *)
     | NAME
         (** {v STORE_NAME(namei) v}
 
@@ -1479,7 +1479,7 @@ module STORE = struct
   module SUBSCR = struct
     (** {v STORE_SUBSCR v}
 
-        Implements [top-of-stack1\[top-of-stack\] = top-of-stack2] *)
+        Implements [top-of-stack1[top-of-stack] = top-of-stack2] *)
     let run env {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
@@ -1566,7 +1566,7 @@ module BINARY = struct
   module SUBSCR = struct
     (** {v BINARY_SUBSCR v}
 
-        Implements [top-of-stack = top-of-stack1\[top-of-stack\]]. *)
+        Implements [top-of-stack = top-of-stack1[top-of-stack]]. *)
     let run env {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
@@ -2008,10 +2008,10 @@ module IMPORT = struct
   module NAME = struct
     (** {v IMPORT_NAME(namei) v}
 
-        Imports the module [co_names\[namei\]]. The two top elements from the the stack are popped
-        and provide the [fromlist] and [level] arguments of [__import__()]. The module object is
-        pushed onto the stack. The current namespace is not affected: for a proper import statement,
-        a subsequent STORE_FAST instruction modifies the namespace.
+        Imports the module [co_names[namei]]. The two top elements from the the stack are popped and
+        provide the [fromlist] and [level] arguments of [__import__()]. The module object is pushed
+        onto the stack. The current namespace is not affected: for a proper import statement, a
+        subsequent STORE_FAST instruction modifies the namespace.
 
         Also the doc says: [level] specifies whether to use absolute or relative imports. 0 (the
         default) means only perform absolute imports. Positive values for [level] indicate the
@@ -2094,7 +2094,7 @@ module IMPORT = struct
   module FROM = struct
     (** {v IMPORT_FROM(namei) v}
 
-        Loads the attribute [co_names\[namei\]] from the module found in the top of the stack. The
+        Loads the attribute [co_names[namei]] from the module found in the top of the stack. The
         resulting object is pushed onto the stack, to be subsequently stored by a [STORE_FAST]
         instruction. *)
     let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
@@ -2123,7 +2123,7 @@ end
 module COMPARE_OP = struct
   (** {v COMPARE_OP(opname) v}
 
-      Performs a Boolean operation. The operation name can be found in [cmp_op\[opname\]].
+      Performs a Boolean operation. The operation name can be found in [cmp_op[opname]].
 
       [ dis.cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is', 'is not', 'exception match', 'BAD') ] *)
   let run env {FFI.Instruction.opname; arg} =
@@ -3136,9 +3136,9 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let register_methods env codes method_infos opname =
     List.fold_result method_infos ~init:(env, codes)
       ~f:(fun
-           (env, codes)
-           {PyClassDecl.State.code; signature; defaults; flags; is_static; is_abstract}
-         ->
+          (env, codes)
+          {PyClassDecl.State.code; signature; defaults; flags; is_static; is_abstract}
+        ->
         let* env, default_arguments = load_defaults env defaults in
         let* () = check_flags opname flags in
         let env =

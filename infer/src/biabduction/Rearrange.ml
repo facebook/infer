@@ -164,8 +164,8 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
         (* In this case, we lift t to the t array. *)
         let t', mk_typ_f =
           match t.Typ.desc with
-          | Typ.Tptr (t', _) -> (
-              (t', function desc -> Typ.mk ~default:t desc) )
+          | Typ.Tptr (t', _) ->
+              (t', function desc -> Typ.mk ~default:t desc)
           | _ ->
               (t, fun desc -> Typ.mk desc)
         in

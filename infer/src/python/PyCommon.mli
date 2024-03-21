@@ -183,7 +183,7 @@ end
 type annotated_name = {name: string; annotation: Ident.t}
 
 val pp_annotated_name : Format.formatter -> annotated_name -> unit
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 
 type signature = annotated_name list
 
@@ -227,7 +227,7 @@ val entry : string
 (** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)
 
 val self : string
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** Common name of the [self] argument in Python *)
 
 (** Flags used by MAKE_FUNCTION *)

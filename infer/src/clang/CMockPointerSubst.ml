@@ -65,7 +65,7 @@ let replace_mockpointers_calls globals_map _procname proc_desc =
   in
   ignore
     (Procdesc.replace_instrs_by_using_context proc_desc ~f:add_calls
-       ~update_context:(update_context globals_map) ~context_at_node:(fun _ -> Ident.Map.empty) )
+       ~update_context:(update_context globals_map) ~context_at_node:(fun _ -> Ident.Map.empty ) )
 
 
 let process cfg prefix =

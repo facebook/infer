@@ -20,7 +20,7 @@ end
 module FieldPath : sig
   (** A module to help manipulating lists of (nested) fields. *)
 
-  (** The fields are listed in syntactic order: [\[a; b\]] for [x#a#b]. *)
+  (** The fields are listed in syntactic order: [[a; b]] for [x#a#b]. *)
   type t = FieldLabel.t list [@@deriving compare, equal, sexp, hash, yojson_of]
 
   include Comparable.S with type t := t

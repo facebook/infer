@@ -217,7 +217,7 @@ struct
 
 
   module Domain = struct
-    (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
+    (** a list [[x1; x2; ...; xN]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
     type t = T.DisjDomain.t list * T.NonDisjDomain.t
 
     (** [append_no_duplicates_up_to leq ~limit from ~into ~into_length] is a triple where
@@ -441,10 +441,10 @@ struct
     let ((disjuncts, non_disj_astates), _), need_join_non_disj =
       List.foldi (List.rev pre) ~init:(current_post_n, false)
         ~f:(fun
-             i
-             ((((post, non_disj_astate) as post_astate), n_disjuncts), need_join_non_disj)
-             pre_disjunct
-           ->
+            i
+            ((((post, non_disj_astate) as post_astate), n_disjuncts), need_join_non_disj)
+            pre_disjunct
+          ->
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
           if limit <= 0 then (
@@ -722,7 +722,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   (* shadowed for HTML debug *)
   let compute_pre cfg node inv_map =
     AnalysisCallbacks.html_debug_new_node_session (Node.underlying_node node) ~kind:`ComputePre
-      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map)
+      ~pp_name:(TransferFunctions.pp_session_name node) ~f:(fun () -> compute_pre cfg node inv_map )
 
 
   (** compute and return an invariant map for [pdesc] *)

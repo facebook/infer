@@ -417,8 +417,8 @@ end = struct
                   be the same shape as [X].
 
                   Within [main], the shape of the argument of [f] is actually known to be the
-                  singleton variant [\[ok\]]. That argument is not introduced as an abstract shape
-                  by the call instruction, which allows actually unifying it with a variant at
+                  singleton variant [[ok]]. That argument is not introduced as an abstract shape by
+                  the call instruction, which allows actually unifying it with a variant at
                   call-time. [Y] will still have the same shape as that argument as mandated by the
                   summary of [f], therefore [Y] will correctly be inferred as the variant [ok]. *)
           | Vector of
@@ -856,8 +856,7 @@ end = struct
              also be affected in the process. If it doesn't we don't need to create it. *)
           List.iter
             ~f:(fun constructor ->
-              unify_field state map_shape ~field_label:(FieldLabel.map_key constructor) ~value_shape
-              )
+              unify_field state map_shape ~field_label:(FieldLabel.map_key constructor) ~value_shape )
             constructors
       | None ->
           (* Key isn't variant-shaped: we potentially unify every map value field in the map. *)

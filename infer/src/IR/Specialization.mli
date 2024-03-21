@@ -35,7 +35,7 @@ module Pulse : sig
   (** currently [aliases=None] means we did not detect any alias when applying the previous summary
       and this specialization will not introduce any alias assumption.
 
-      [aliases=Some \[\]] means something went wrong... We have detected some aliases when applying
+      [aliases=Some []] means something went wrong... We have detected some aliases when applying
       the last summary, but we were not able to phrase it in term of parameters equalities. *)
   type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t} [@@deriving equal, compare]
 

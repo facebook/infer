@@ -37,7 +37,7 @@ module rec Constant : sig
   [@@deriving compare]
 
   val show : ?full:bool -> t -> string
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
   (** Only shows the name of a [PYCCode] constant if [full] is [false]. Otherwise, shows everything. *)
 
   val pp : Format.formatter -> t -> unit
@@ -101,7 +101,7 @@ and Instruction : sig
 end
 
 val from_string : source:string -> filename:string -> (Code.t, Error.t) result
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** Compiles the python program describes by [source] into a [Code.t] object *)
 
 val from_file : is_binary:bool -> string -> (Code.t, Error.t) result

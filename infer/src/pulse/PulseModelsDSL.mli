@@ -43,7 +43,7 @@ module Syntax : sig
     -> init:'accum
     -> f:('accum -> AbstractValue.t -> 'accum model_monad)
     -> 'accum model_monad
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
 
   val absvalue_set_iter :
     AbstractValue.Set.t -> f:(AbstractValue.t -> unit model_monad) -> unit model_monad

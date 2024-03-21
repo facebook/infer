@@ -1324,8 +1324,8 @@ let extend_sub sub v e =
   Predicates.sub_join new_exp_sub (Predicates.sub_range_map (Predicates.exp_sub new_exp_sub) sub)
 
 
-(** Extend [sub1] and [sub2] to witnesses that each instance of [e1\[sub1\]] is an instance of
-    [e2\[sub2\]]. Raise IMPL_FALSE if not possible. *)
+(** Extend [sub1] and [sub2] to witnesses that each instance of [e1[sub1]] is an instance of
+    [e2[sub2]]. Raise IMPL_FALSE if not possible. *)
 let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
   let e1 = Prop.exp_normalize_noabs tenv (fst subs) e1_in in
   let e2 = Prop.exp_normalize_noabs tenv (snd subs) e2_in in
@@ -1491,8 +1491,8 @@ let array_len_imply tenv calc_missing subs len1 len2 indices2 =
       subs
 
 
-(** Extend [sub1] and [sub2] to witnesses that each instance of [se1\[sub1\]] is an instance of
-    [se2\[sub2\]]. Raise IMPL_FALSE if not possible. *)
+(** Extend [sub1] and [sub2] to witnesses that each instance of [se1[sub1]] is an instance of
+    [se2[sub2]]. Raise IMPL_FALSE if not possible. *)
 let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
     subst2 * Predicates.strexp option * Predicates.strexp option =
   (* L.d_str "sexp_imply "; Predicates.d_sexp se1; L.d_str " "; Predicates.d_sexp se2;

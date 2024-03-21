@@ -13,7 +13,7 @@ let tenv_ref = ref (None : Tenv.t Option.t)
 
 let () =
   AnalysisGlobalState.register_ref_with_proc_desc_and_tenv proc_desc_ref
-    ~init:(fun proc_desc _tenv -> Some proc_desc)
+    ~init:(fun proc_desc _tenv -> Some proc_desc )
 
 
 let () =

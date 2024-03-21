@@ -30,7 +30,7 @@ val normalize_path_from : root:string -> string -> string * string
     represent the same file) *)
 
 val normalize_path : string -> string
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** Normalize a path without a root *)
 
 val flatten_path : ?sep:string -> string -> string

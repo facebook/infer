@@ -19,7 +19,7 @@ type record =
   ; methods: string list }
 
 val default : record
-(** record encapsulating the default arguments of [call_matches]. [classname=""] and [methods=\[\]].
+(** record encapsulating the default arguments of [call_matches]. [classname=""] and [methods=[]].
     Useful for [with] expressions *)
 
 val of_record : record -> t

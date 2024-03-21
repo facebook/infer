@@ -1072,7 +1072,7 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec
     ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
-    analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
+      analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
     (Prop.normal Prop.t * Paths.Path.t) list =
   AnalysisState.set_instr instr_ ;
   (* mark instruction last seen *)

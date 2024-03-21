@@ -601,7 +601,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
               ||
               let addr_to_explore =
                 UnsafeMemory.Edges.fold edges_curr ~init:addr_to_explore
-                  ~f:(fun acc (_, (addr, _)) -> addr :: acc)
+                  ~f:(fun acc (_, (addr, _)) -> addr :: acc )
               in
               aux ~addr_to_explore ~visited )
   in

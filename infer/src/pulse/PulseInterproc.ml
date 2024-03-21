@@ -159,8 +159,8 @@ module Unsafe : sig
               a broken (partial) summary application. *)
     ; aliases: HeapPath.Set.t HeapPath.Map.t
           (** if an alias was detected between a [addr_callee] and [addr_callee'] with heap path
-              accesses [path] nad [path'], then [aliases\[addr_callee\]] contains [addr_callee'],
-              where [rev_subst\[addr_caller\] = (addr_callee, path)]. *) }
+              accesses [path] nad [path'], then [aliases[addr_callee]] contains [addr_callee'],
+              where [rev_subst[addr_caller] = (addr_callee, path)]. *) }
 
   val to_caller_value_ :
        AbductiveDomain.t

@@ -39,7 +39,7 @@ module AccessExpression : sig
   val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
   val address_of : access_expression -> access_expression option
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
 
   val address_of_base : AccessPath.base -> access_expression [@@warning "-unused-value-declaration"]

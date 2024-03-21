@@ -186,7 +186,7 @@ val write_arr_index :
   -> obj:AbstractValue.t * ValueHistory.t
   -> t
   -> t AccessResult.t
-(** write the edge [ref\[index\]--> obj] *)
+(** write the edge [ref[index]--> obj] *)
 
 val write_deref :
      PathContext.t

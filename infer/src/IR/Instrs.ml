@@ -54,7 +54,7 @@ type reversed
 type not_reversed
 
 (** [Empty] and [Singleton _] can have both directions. We do not attempt to make the representation
-    canonic, e.g. [NotReversed \[||\]], [Reversed \[||\]], and [Empty] are all allowed despite
+    canonic, e.g. [NotReversed [||]], [Reversed [||]], and [Empty] are all allowed despite
     representing the same value. *)
 type _ t =
   | NotReversed : Sil.instr Array.t -> not_reversed t

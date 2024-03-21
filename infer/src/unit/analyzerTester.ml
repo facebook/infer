@@ -347,8 +347,7 @@ struct
     List.concat_map
       ~f:(fun (name, test_program) ->
         List.map ai_list ~f:(fun (ai_name, create_test) ->
-            name ^ "_" ^ ai_name >:: create_test test_program make_analysis_data ~initial pp_opt )
-        )
+            name ^ "_" ^ ai_name >:: create_test test_program make_analysis_data ~initial pp_opt ) )
       tests
 end
 

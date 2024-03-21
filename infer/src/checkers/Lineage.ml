@@ -669,7 +669,7 @@ module Tito : sig
   (** TITO stands for "taint-in taint-out". In this context a tito flow is a data path from an
       argument field to a field of the return node, without going through call edges; more
       precisely, [i#foo#bar] is a tito path to [ret#baz] if there is a path from
-      [Argument (i, \[foo, bar\])] to [Return baz] not going through [ArgumentOf _] nodes.
+      [Argument (i, [foo, bar])] to [Return baz] not going through [ArgumentOf _] nodes.
 
       As the abstraction mandates, fields are to be considered in a prefix sense: a path from
       [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar].
@@ -694,8 +694,7 @@ module Tito : sig
 
   val full : arity:int -> t
   (** A full tito has paths from every argument field to every return field. Due to the prefix
-      abstraction, it is equivalent to having a path from every [Argument (i, \[\])] to
-      [Return \[\]].*)
+      abstraction, it is equivalent to having a path from every [Argument (i, [])] to [Return []].*)
 
   val add :
        arg_index:int

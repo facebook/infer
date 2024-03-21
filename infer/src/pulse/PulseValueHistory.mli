@@ -49,9 +49,9 @@ type event =
 and t = private
   | Epoch  (** start of time *)
   | Sequence of event * t
-      (** [Sequence \[event, hist\]] represents an event [event] occurring *after* [hist].
-          Invariant: the timestamp of [event] is greater than all the (local, i.e. not inside
-          function calls) timestamps in [hist]. *)
+      (** [Sequence [event, hist]] represents an event [event] occurring *after* [hist]. Invariant:
+          the timestamp of [event] is greater than all the (local, i.e. not inside function calls)
+          timestamps in [hist]. *)
   | InContext of
       { main: t  (** trace of the "main" value being traced *)
       ; context: t list  (** contextual traces, eg conditionals that the path is under *) }
@@ -111,7 +111,7 @@ val rev_iter_main : t -> f:(iter_event -> unit) -> unit
     timestamp of the event following the inner [Call] event in the example above. *)
 
 val iter : main_only:bool -> t -> f:(iter_event -> unit) -> unit
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** like [rev_iter_main] but iterates in order (by reversing the order iteration) and iterates on
     only main events like [rev_iter_main] if [main_only] is [true], otherwise iterates on *all*
     events including contexts if [main_only] is [false] *)

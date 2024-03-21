@@ -20,7 +20,7 @@ val pp_error : Textual.SourceFile.t -> F.formatter -> error -> unit
 val error_to_string : Textual.SourceFile.t -> error -> string
 
 val parse_string : Textual.SourceFile.t -> string -> (Textual.Module.t, error list) result
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 
 module TextualFile : sig
   type t =

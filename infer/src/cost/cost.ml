@@ -281,16 +281,16 @@ module Check = struct
     if not (is_report_suppressed pname) then
       CostIssues.CostKindMap.iter2 CostIssues.enabled_cost_map cost
         ~f:(fun
-             _kind
-             CostIssues.
-               { name
-               ; unreachable_issue
-               ; infinite_issue
-               ; expensive_issue
-               ; top_and_unreachable
-               ; expensive }
-             cost
-           ->
+            _kind
+            CostIssues.
+              { name
+              ; unreachable_issue
+              ; infinite_issue
+              ; expensive_issue
+              ; top_and_unreachable
+              ; expensive }
+            cost
+          ->
           let report = mk_report proc_desc pname err_log (Procdesc.get_loc proc_desc) ~name cost in
           if top_and_unreachable then
             report_top_and_unreachable ~report ~unreachable_issue ~infinite_issue cost ;

@@ -141,9 +141,8 @@ val exp_normalize_noabs : Tenv.t -> subst -> Exp.t -> Exp.t
 (** Normalize the expression without abstracting complex subexpressions *)
 
 val exp_collapse_consecutive_indices_prop : Typ.t -> Exp.t -> Exp.t
-(** Collapse consecutive indices that should be added. For instance, this function reduces
-    [x\[1\]\[1\]] to [x\[2\]]. The [typ] argument is used to ensure the soundness of this
-    collapsing. *)
+(** Collapse consecutive indices that should be added. For instance, this function reduces [x[1][1]]
+    to [x[2]]. The [typ] argument is used to ensure the soundness of this collapsing. *)
 
 val lexp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
 (** Normalize [exp] used for the address of a heap cell. This normalization does not combine two

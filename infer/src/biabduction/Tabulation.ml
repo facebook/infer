@@ -767,14 +767,12 @@ let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; _} as analy
       else
         List.map
           ~f:(fun (p, path_post) ->
-            (p, Paths.Path.add_call (include_subtrace callee_pname) path_pre callee_pname path_post)
-            )
+            (p, Paths.Path.add_call (include_subtrace callee_pname) path_pre callee_pname path_post) )
           posts
     in
     List.map
       ~f:(fun (p, path) ->
-        post_process_post analysis_data callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)
-        )
+        post_process_post analysis_data callee_pname loc actual_pre (Prop.prop_sub split.sub p, path) )
       posts'
   in
   L.d_increase_indent () ;

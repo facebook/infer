@@ -236,7 +236,7 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
         , e
         , Some
             ( {Typ.desc= Tint (Typ.IUChar | Typ.IUInt | Typ.IUShort | Typ.IULong | Typ.IULongLong)}
-            as typ ) ) ->
+              as typ ) ) ->
         uminus_unsigned := (e, typ) :: !uminus_unsigned
     | Exp.UnOp (_, e, _) ->
         walk e

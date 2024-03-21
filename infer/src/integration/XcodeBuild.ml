@@ -29,7 +29,7 @@ let capture ~prog ~args =
   let infer_args =
     Option.fold (Sys.getenv CommandLineOption.args_env_var)
       ~init:(Printf.sprintf "%s%c%s" "--fcp-apple-clang" CommandLineOption.env_var_sep apple_clang)
-      ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
+      ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg )
   in
   L.debug Capture Verbose "%s [%s] [%s]@." prog (String.concat ~sep:"," args) infer_args ;
   let {Unix.Process_info.stdin; stdout; stderr; pid} =

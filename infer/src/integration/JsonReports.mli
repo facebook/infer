@@ -22,6 +22,6 @@ val compute_hash :
   -> file:string
   -> qualifier:string
   -> string
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 
 val write_reports : issues_json:string -> costs_json:string -> config_impact_json:string -> unit
