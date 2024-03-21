@@ -83,6 +83,14 @@ end = struct
       ; description
       ; tag } ->
         {condition= Annotation {annotations}; description; tag}
+    | { initial_caller_class_extends= Some _
+      ; initial_caller_class_does_not_extend= Some _
+      ; annotations= Some _ } ->
+        L.die UserError
+          "initial caller constraints and annotations cannot be provided at the same time"
+    | {initial_caller_class_extends= None; initial_caller_class_does_not_extend= Some _}
+    | {initial_caller_class_extends= Some _; initial_caller_class_does_not_extend= None} ->
+        L.die UserError "initial class extends / does not extend must be provided together"
     | _ ->
         L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
 
