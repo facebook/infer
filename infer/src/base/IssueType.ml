@@ -709,7 +709,8 @@ let memory_leak =
 let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error Biabduction
 
 let missing_required_prop =
-  register ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error LithoRequiredProps
+  register ~category:Runtime_exception ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop"
+    Error LithoRequiredProps
     ~user_documentation:[%blob "./documentation/issues/MISSING_REQUIRED_PROP.md"]
 
 
@@ -734,7 +735,7 @@ let nil_block_call =
 
 
 let nil_insertion_into_collection =
-  register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~hum:"Nil Insertion Into Collection"
     ~user_documentation:[%blob "./documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
@@ -770,7 +771,7 @@ let no_matching_branch_in_try =
 
 
 let null_argument =
-  register_with_latent ~id:"NULL_ARGUMENT" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NULL_ARGUMENT" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULL_ARGUMENT.md"]
 
 
@@ -792,7 +793,7 @@ let nullptr_dereference_in_nullsafe_class =
 
 
 let optional_empty_access =
-  register_with_latent ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
@@ -837,7 +838,8 @@ let pulse_unawaited_awaitable =
 
 
 let pulse_uninitialized_const =
-  register ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse ~hum:"Uninitialized Const"
+  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse
+    ~hum:"Uninitialized Const"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_CONST.md"]
 
 
