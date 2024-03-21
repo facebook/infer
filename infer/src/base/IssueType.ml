@@ -499,7 +499,8 @@ let constant_address_dereference =
 
 
 let cxx_ref_captured_in_block =
-  register ~id:"CXX_REF_CAPTURED_IN_BLOCK" ~hum:"C++ Reference Captured in Block" Error SelfInBlock
+  register ~category:Memory_error ~id:"CXX_REF_CAPTURED_IN_BLOCK"
+    ~hum:"C++ Reference Captured in Block" Error SelfInBlock
     ~user_documentation:[%blob "./documentation/issues/CXX_REF_CAPTURED_IN_BLOCK.md"]
 
 
@@ -914,7 +915,7 @@ let sql_injection_risk =
 
 
 let stack_variable_address_escape =
-  register ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
+  register ~category:Memory_error ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
@@ -934,8 +935,8 @@ let strict_mode_violation =
 
 
 let strong_self_not_checked =
-  register ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error SelfInBlock
-    ~user_documentation:[%blob "./documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
+  register ~category:Memory_error ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error
+    SelfInBlock ~user_documentation:[%blob "./documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
 
 
 let symexec_memory_error =
@@ -958,7 +959,8 @@ let topl_error =
 
 
 let uninitialized_value_pulse =
-  register ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+  register ~category:Memory_error ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse
+    ~hum:"Uninitialized Value"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_VALUE.md"]
 
 
@@ -1021,17 +1023,17 @@ let unnecessary_copy_return_pulse =
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =
-  register_with_latent ~id:"USE_AFTER_DELETE" Error Pulse
+  register_with_latent ~category:Memory_error ~id:"USE_AFTER_DELETE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_DELETE.md"]
 
 
 let use_after_free =
-  register_with_latent ~id:"USE_AFTER_FREE" Error Pulse
+  register_with_latent ~category:Memory_error ~id:"USE_AFTER_FREE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_FREE.md"]
 
 
 let use_after_lifetime =
-  register_with_latent ~id:"USE_AFTER_LIFETIME" Error Pulse
+  register_with_latent ~category:Memory_error ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
