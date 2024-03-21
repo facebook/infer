@@ -20,8 +20,13 @@
       "initial_caller_class_extends": ["codetoanalyze.java.infer.TransitiveAccess$Base"],
       "initial_caller_class_does_not_extend": [],
       "final_class_only": false,
-      "tag": "Reachability example",
+      "tag": "Reachability example with extends",
       "description": "Sink is called from matching context"
+    },
+    {
+      "annotations": ["TransitiveAccess$SourceAnno"],
+      "tag": "Reachability example with annotation",
+      "description": "Sink is called from matching source"
     }
   ]
 }

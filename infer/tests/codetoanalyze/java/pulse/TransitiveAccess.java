@@ -27,6 +27,10 @@ public class TransitiveAccess {
 
   @Target({ElementType.METHOD})
   @Retention(RetentionPolicy.CLASS)
+  @interface SourceAnno {}
+
+  @Target({ElementType.METHOD})
+  @Retention(RetentionPolicy.CLASS)
   @interface SomeRandomAnno {}
 
   public static class Sinks {
@@ -96,5 +100,30 @@ public class TransitiveAccess {
     public static void sourceCallsFuncWithAnnoOk() {
       Sinks.safeWithAnno();
     }
+  }
+
+  @SourceAnno
+  public static void sourceWithAnnoBad() {
+    Sinks.sink();
+  }
+
+  @SourceAnno
+  public static void sourceWithAnnoOk() {
+    Sinks.safe();
+  }
+
+  @SourceAnno
+  public static void sourceWithAnnoAndLambdaBad() {
+    caller(() -> Sinks.sink());
+  }
+
+  @SourceAnno
+  public static void sourceWithAnnoAndLambdaOk() {
+    caller(() -> Sinks.safe());
+  }
+
+  @SourceAnno
+  public static void sourceWithAnnoAndLambdaNoCallOk() {
+    Callback lambda = () -> Sinks.sink();
   }
 }

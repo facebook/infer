@@ -17,14 +17,9 @@ module Config : sig
 
   val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
-  type context =
-    { initial_caller_class_extends: string list
-    ; initial_caller_class_does_not_extend: string list
-    ; final_class_only: bool
-    ; description: string
-    ; tag: string }
+  type context_metadata = {description: string; tag: string}
 
-  val find_matching_context : Tenv.t -> Procname.t -> context option
+  val find_matching_context : Tenv.t -> Procname.t -> context_metadata option
 end = struct
   type procname_to_monitor_spec =
     { class_names: string list option [@yojson.option]
@@ -51,13 +46,46 @@ end = struct
         L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
 
 
-  type context =
-    { initial_caller_class_extends: string list
-    ; initial_caller_class_does_not_extend: string list
+  type context_spec =
+    { initial_caller_class_extends: string list option [@yojson.option]
+    ; initial_caller_class_does_not_extend: string list option [@yojson.option]
     ; final_class_only: bool [@yojson.default false]
+    ; annotations: string list option [@yojson.option]
     ; description: string
     ; tag: string }
   [@@deriving of_yojson]
+
+  type context_condition =
+    | Extends of
+        { initial_caller_class_extends: string list
+        ; initial_caller_class_does_not_extend: string list
+        ; final_class_only: bool }
+    | Annotation of {annotations: string list}
+
+  type context = {condition: context_condition; description: string; tag: string}
+
+  let context_of_yojson json =
+    match context_spec_of_yojson json with
+    | { initial_caller_class_extends= Some initial_caller_class_extends
+      ; initial_caller_class_does_not_extend= Some initial_caller_class_does_not_extend
+      ; final_class_only
+      ; annotations= None
+      ; description
+      ; tag } ->
+        { condition=
+            Extends
+              {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only}
+        ; description
+        ; tag }
+    | { initial_caller_class_extends= None
+      ; initial_caller_class_does_not_extend= None
+      ; annotations= Some annotations
+      ; description
+      ; tag } ->
+        {condition= Annotation {annotations}; description; tag}
+    | _ ->
+        L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
+
 
   type t =
     { fieldnames_to_monitor: string list
@@ -78,6 +106,14 @@ end = struct
         false
     | Some {fieldnames_to_monitor} ->
         List.exists fieldnames_to_monitor ~f:(String.equal (Fieldname.get_field_name fieldname))
+
+
+  let procname_has_annotation procname annotations =
+    let match_one_annotation anno =
+      let has_annot ia = Annotations.ia_ends_with ia anno in
+      Annotations.pname_has_return_annot procname has_annot
+    in
+    List.exists annotations ~f:match_one_annotation
 
 
   let procname_must_be_monitored tenv procname =
@@ -101,13 +137,6 @@ end = struct
             (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
             class_name )
     in
-    let match_annotation annotations =
-      let match_one_annotation anno =
-        let has_annot ia = Annotations.ia_ends_with ia anno in
-        Annotations.pname_has_return_annot procname has_annot
-      in
-      List.exists annotations ~f:match_one_annotation
-    in
     match get () with
     | None ->
         false
@@ -118,11 +147,11 @@ end = struct
           | ClassNameRegex {class_name_regex} ->
               match_class_name_regex class_name_regex
           | Annotations {annotations} ->
-              match_annotation annotations )
+              procname_has_annotation procname annotations )
 
 
-  let is_matching_context tenv procname
-      {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only} =
+  let is_matching_extends_context tenv procname initial_caller_class_extends
+      initial_caller_class_does_not_extend final_class_only =
     match Procname.get_class_type_name procname with
     | Some type_name ->
         let check_final_status () =
@@ -152,10 +181,26 @@ end = struct
         false
 
 
+  let is_matching_context tenv procname {condition} =
+    match condition with
+    | Extends {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only}
+      ->
+        is_matching_extends_context tenv procname initial_caller_class_extends
+          initial_caller_class_does_not_extend final_class_only
+    | Annotation {annotations} ->
+        procname_has_annotation procname annotations
+
+
+  type context_metadata = {description: string; tag: string}
+
   let find_matching_context tenv procname =
     let open IOption.Let_syntax in
     let* {contexts} = get () in
-    List.find contexts ~f:(is_matching_context tenv procname)
+    match List.find contexts ~f:(is_matching_context tenv procname) with
+    | Some {tag; description} ->
+        Some {tag; description}
+    | None ->
+        None
 
 
   let () =
