@@ -381,7 +381,7 @@ let biabduction_analysis_stops =
 
 
 let biabduction_retain_cycle =
-  register ~enabled:true ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
+  register ~enabled:true ~category:Memory_leak ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
     ~user_documentation:"See [RETAIN_CYCLE](#retain_cycle)."
 
 
@@ -423,8 +423,8 @@ let buffer_overrun_u5 =
 let cannot_star = register_hidden ~id:"Cannot_star" Error Biabduction
 
 let captured_strong_self =
-  register ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error SelfInBlock
-    ~user_documentation:[%blob "./documentation/issues/CAPTURED_STRONG_SELF.md"]
+  register ~category:Memory_leak ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error
+    SelfInBlock ~user_documentation:[%blob "./documentation/issues/CAPTURED_STRONG_SELF.md"]
 
 
 let checkers_allocates_memory =
@@ -699,8 +699,8 @@ let expensive_loop_invariant_call =
 
 
 let memory_leak =
-  register ~enabled:false ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak" Error Biabduction
-    ~user_documentation:"See [MEMORY_LEAK](#memory_leak)."
+  register ~enabled:false ~category:Memory_leak ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak"
+    Error Biabduction ~user_documentation:"See [MEMORY_LEAK](#memory_leak)."
 
 
 let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error Biabduction
@@ -711,8 +711,8 @@ let missing_required_prop =
 
 
 let mixed_self_weakself =
-  register ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error SelfInBlock
-    ~user_documentation:[%blob "./documentation/issues/MIXED_SELF_WEAKSELF.md"]
+  register ~category:Memory_leak ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error
+    SelfInBlock ~user_documentation:[%blob "./documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
 let modifies_immutable =
@@ -811,12 +811,12 @@ let pulse_transitive_access =
 
 
 let pulse_memory_leak_c =
-  register ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
+  register ~category:Memory_leak ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/MEMORY_LEAK_C.md"]
 
 
 let pulse_memory_leak_cpp =
-  register ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error Pulse
+  register ~category:Memory_leak ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error Pulse
     ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)"
 
 
@@ -883,7 +883,7 @@ let resource_leak =
 
 
 let retain_cycle =
-  register ~enabled:true ~id:"RETAIN_CYCLE" Error Pulse
+  register ~enabled:true ~category:Memory_leak ~id:"RETAIN_CYCLE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
