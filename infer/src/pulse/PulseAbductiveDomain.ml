@@ -1442,7 +1442,10 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
     List.fold proc_attrs.locals ~init:post
       ~f:(fun
           (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr; tmp_id} ->
-        if modify_in_block || is_constexpr || Option.is_some tmp_id then acc
+        if
+          modify_in_block || is_constexpr || Option.is_some tmp_id
+          || not (Language.curr_language_is Clang)
+        then acc
         else
           SafeAttributes.set_uninitialized_post tenv Timestamp.t0
             (`LocalDecl (Pvar.mk name proc_name, None))
@@ -2212,15 +2215,17 @@ module AddressAttributes = struct
   let initialize v astate = SafeAttributes.initialize (CanonValue.canon' astate v) astate
 
   let set_uninitialized tenv {PathContext.timestamp} src typ location astate =
-    let src =
-      match src with
-      | `LocalDecl (pvar, v_opt) ->
-          `LocalDecl (pvar, CanonValue.canon_opt' astate v_opt)
-      | `Malloc v ->
-          `Malloc (CanonValue.canon' astate v)
-    in
-    { astate with
-      post= SafeAttributes.set_uninitialized_post tenv timestamp src typ location astate.post }
+    if Language.curr_language_is Clang then
+      let src =
+        match src with
+        | `LocalDecl (pvar, v_opt) ->
+            `LocalDecl (pvar, CanonValue.canon_opt' astate v_opt)
+        | `Malloc v ->
+            `Malloc (CanonValue.canon' astate v)
+      in
+      { astate with
+        post= SafeAttributes.set_uninitialized_post tenv timestamp src typ location astate.post }
+    else astate
 
 
   let always_reachable v astate =
