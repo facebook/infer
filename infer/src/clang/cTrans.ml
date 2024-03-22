@@ -640,7 +640,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | DeclRefExpr ->
           {empty_control with instrs= this_instrs}
     in
-    mk_trans_result ~is_cpp_call_virtual ~method_name:pname this_exp_typ context_control_with_this
+    mk_trans_result ~is_cpp_call_virtual ~method_name:pname ?method_signature:ms_opt this_exp_typ
+      context_control_with_this
 
 
   let get_destructor_decl_ref class_type_ptr =
@@ -1613,12 +1614,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state_pri.context in
     let sil_loc = CLocation.location_of_stmt_info context.translation_unit_context.source_file si in
     let callee_pname = Option.value_exn result_trans_callee.method_name in
+    let callee_ms_opt = result_trans_callee.method_signature in
     (* As we may have nodes coming from different parameters we need to call instruction for each
        parameter and collect the results afterwards. The 'instructions' function does not do that *)
     let result_trans_params =
       let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
       let instruction' = exec_with_glvalue_as_reference instruction in
-      let res_trans_p = List.map ~f:(instruction' trans_state_param) params_stmt in
+      let res_trans_p =
+        List.mapi
+          ~f:(fun i param_stmt ->
+            let trans_state_param =
+              (* We don't need to check the `this` parameter *)
+              if i > 0 then add_block_as_arg_attributes trans_state_param callee_ms_opt i
+              else trans_state_param
+            in
+            instruction' trans_state_param param_stmt )
+          params_stmt
+      in
       result_trans_callee :: res_trans_p
     in
     (* params including 'this' parameter *)

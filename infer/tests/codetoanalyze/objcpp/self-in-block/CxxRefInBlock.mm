@@ -5,6 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 #import <Foundation/Foundation.h>
+#include <stdlib.h>
+#include <vector>
+#import <Foundation/Foundation.h>
+
+typedef void (^MyHandler)();
+
+struct A {
+  template <typename Model>
+  void call_block(std::vector<Model> models, NS_NOESCAPE MyHandler block) {}
+};
 
 typedef struct InternalInput {
   BOOL flag;
@@ -111,6 +121,16 @@ void foo(Attachments* attachments);
   dispatch_async(dispatch_get_main_queue(), ^{
     int a = copied_y;
     return;
+  });
+  return 1;
+}
+
+- (int)ref_captured_in_noescaping_block_good:(int&)y and:(int*)ptr {
+  std::vector<int> v;
+  A* a = new A();
+  a->call_block(v, ^{
+    int a = y;
+    int i = *ptr;
   });
   return 1;
 }
