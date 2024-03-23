@@ -33,7 +33,10 @@ type cost_args =
 type 'a interproc_analysis =
   (BufferOverrunAnalysisSummary.t option * 'a * CostDomain.summary option) InterproceduralAnalysis.t
 
-type instantiated_cost = Cheap | NoModel | Symbolic of CostDomain.BasicCost.t
+type instantiated_cost =
+  | Cheap
+  | NoModel
+  | Symbolic of CostDomain.BasicCost.t
 
 let get_instantiated_cost
     { tenv
@@ -47,30 +50,30 @@ let get_instantiated_cost
       (BufferOverrunAnalysis.extract_pre (ProcCfg.InstrNode.id node) inferbo_invariant_map)
   in
   let loc = ProcCfg.InstrNode.loc node in
-  let get_symbolic cost = if CostDomain.BasicCost.is_symbolic cost then Symbolic cost else Cheap in
   let get_summary pname = Option.map ~f:fst (get_callee_cost_summary_and_formals pname) in
   match get_callee_cost_summary_and_formals pname with
   | Some (CostDomain.{post= cost_record}, callee_formals) ->
       let callee_cost = CostDomain.get_operation_cost cost_record in
       if CostDomain.BasicCost.is_symbolic callee_cost.cost then
-        (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
+        Symbolic (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
            ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~captured_vars
-           ~callee_cost ~loc )
-          .cost |> get_symbolic
+           ~callee_cost ~loc ).cost
       else Cheap
   | None ->
       let fun_arg_list =
         List.map args ~f:(fun (exp, typ) ->
             ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
       in
-      CostModels.Call.dispatch tenv pname fun_arg_list
-      |> Option.value_map ~default:NoModel ~f:(fun model ->
-             let model_env =
-               let node_hash = ProcCfg.InstrNode.hash node in
-               BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
-                 integer_type_widths inferbo_get_summary
-             in
-             model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem |> get_symbolic )
+      match CostModels.Call.dispatch tenv pname fun_arg_list with
+      | Some model ->
+          let model_env =
+            let node_hash = ProcCfg.InstrNode.hash node in
+            BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
+              integer_type_widths inferbo_get_summary
+          in
+          let cost = model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem in
+          if CostDomain.BasicCost.is_symbolic cost then Symbolic cost else NoModel
+      | None -> NoModel
 
 
 let prepare_call_args
@@ -103,4 +106,6 @@ let prepare_call_args
 let get_cost_if_expensive analysis_data call =
   let open IOption.Let_syntax in
   let* call_args = prepare_call_args analysis_data call in
-  match get_instantiated_cost call_args with Symbolic cost -> Some cost | Cheap | NoModel -> None
+  match get_instantiated_cost call_args with
+  | Symbolic cost -> Some cost
+  | Cheap | NoModel -> None
