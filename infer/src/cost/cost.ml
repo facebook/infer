@@ -206,7 +206,7 @@ end
 
 let compute_errlog_extras cost =
   Jsonbug_t.
-    { cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
+    { cost_polynomial= Some (Printf.sprintf "%a" BasicCostWithReason.pp_hum cost)
     ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
     ; nullsafe_extra= None
     ; copy_type= None
@@ -244,7 +244,7 @@ module WorstCaseCost = struct
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
         ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"
           ~message:
-            (F.asprintf "[Top Cost] Unmodeled Function: %a" Procname.pp_without_templates top_pname) ) ;
+            (Printf.sprintf "[Top Cost] Unmodeled Function: %a" Procname.pp_without_templates top_pname) ) ;
     cost
 end
 
