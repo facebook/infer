@@ -315,7 +315,10 @@ include sig
 
     val remove_all : Key.t -> t -> t [@@warning "-unused-value-declaration"]
 
-    val get_all : Key.t -> t -> Value.t list
+    val find_all : Key.t -> t -> Value.t list
+
+    val find_fold : (Value.t -> 'a -> 'a) -> Key.t -> t -> 'a -> 'a
+    (** Fold over the values associated to one key *)
 
     val get_all_keys : t -> Key.t list
 

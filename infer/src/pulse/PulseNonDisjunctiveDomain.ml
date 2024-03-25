@@ -154,7 +154,7 @@ module Captured = struct
   let is_captured_by_ref var x =
     match (var : Var.t) with
     | ProgramVar pvar ->
-        get_all pvar x
+        find_all pvar x
         |> List.exists ~f:(fun mode -> CapturedVar.equal_capture_mode mode ByReference)
     | LogicalVar _ ->
         false
@@ -208,7 +208,7 @@ module Loads = struct
     (IdentToVars.add ident var ident_to_vars, LoadedVars.add var loc timestamp loaded_vars)
 
 
-  let get_all ident (ident_to_vars, _) = IdentToVars.get_all ident ident_to_vars
+  let get_all ident (ident_to_vars, _) = IdentToVars.find_all ident ident_to_vars
 
   let is_loaded var (_, loaded_vars) = LoadedVars.mem var loaded_vars
 

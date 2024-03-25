@@ -1321,8 +1321,9 @@ end = struct
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
             f init (Vertex.Local (local, node))
         | Cell cell ->
-            let source_nodes = Real.LastWrites.get_all cell last_writes in
-            List.fold ~f:(fun acc node -> f acc (Vertex.Local (local, node))) ~init source_nodes
+            Real.LastWrites.find_fold
+              (fun node acc -> f acc (Vertex.Local (local, node)))
+              cell last_writes init
     end
   end
 

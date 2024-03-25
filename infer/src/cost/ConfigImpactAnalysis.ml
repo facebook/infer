@@ -495,6 +495,8 @@ module LatentConfigAlias = struct
   let add_all src tgt x = LatentConfigs.fold (fun src acc -> add src tgt acc) src x
 
   let union x y = fold (fun key field acc -> add key field acc) y x
+
+  let get_all src x = find_all src x
 end
 
 module Summary = struct
