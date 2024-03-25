@@ -138,6 +138,26 @@ module Cell : sig
   val is_abstract : t -> bool
 
   val var_appears_in_source_code : t -> bool
+
+  val path_from_origin : origin:VarPath.t -> t -> FieldPath.t
+  (** Assuming the cell represents a component of the origin variable path, returns the sub-path
+      subscriptable from this origin path to reach the cell component.
+
+      If the cell is larger than the origin path (eg. because the origin path is longer than the
+      limit and the cells groups it with other paths), returns an empty path. The rationale is that
+      the result of this function can be seen as the subpath which, when extracted from the origin,
+      will cover all the components of that origin stored in the cell. If the cell is larger than
+      the origin then all the components of the origin are in the cell.
+
+      Raises if the cell and the origin path are incompatible (eg. their variables are different).
+
+      Examples assuming a depth limit of 3:
+
+      - origin: X#a ; cell: X#a#b#c ; result : #b#c
+      - origin: X#a#b#c ; cell : X#a#b#c ; result : empty
+      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
+      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
+      - origin: X#a#b#c#d ; cell : X#a#b#c ; result : empty *)
 end = struct
   type t = {var: Var.t; field_path: FieldPath.t; is_abstract: bool}
   [@@deriving compare, equal, sexp, hash, fields]
@@ -157,6 +177,21 @@ end = struct
   let yojson_of_t x = `String (Fmt.to_to_string pp x)
 
   let var_appears_in_source_code x = Var.appears_in_source_code (var x)
+
+  let path_from_origin ~origin:(origin_var, origin_path) {var; field_path; _} =
+    if not ([%equal: Var.t] origin_var var) then L.internal_error "incompatible var paths" ;
+    let rec aux origin_path cell_path =
+      match (origin_path, cell_path) with
+      | [], _ ->
+          cell_path
+      | _ :: _, [] ->
+          []
+      | origin_field :: origin_tail, cell_field :: cell_tail ->
+          if not ([%equal: FieldLabel.t] origin_field cell_field) then
+            L.internal_error "incompatible var paths" ;
+          aux origin_tail cell_tail
+    in
+    aux origin_path field_path
 end
 
 module StdModules = struct
@@ -1066,16 +1101,20 @@ end = struct
       (args_state_shapes, return_state_shape)
 
 
-    let assert_equal_shapes {var_shapes; shape_structures} var_path_1 var_path_2 =
-      let var_path_shape_1 = find_var_path_shape {var_shapes; shape_structures} var_path_1 in
-      let var_path_shape_2 = find_var_path_shape {var_shapes; shape_structures} var_path_2 in
-      if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
-        L.die InternalError
-          "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
-          VarPath.pp var_path_1 Shape_id.pp var_path_shape_1 (Fmt.option Structure.pp)
-          (Hashtbl.find shape_structures var_path_shape_1)
-          VarPath.pp var_path_2 Shape_id.pp var_path_shape_2 (Fmt.option Structure.pp)
-          (Hashtbl.find shape_structures var_path_shape_2)
+    let assert_equal_shapes summary_option var_path_1 var_path_2 =
+      match summary_option with
+      | None ->
+          ()
+      | Some {var_shapes; shape_structures} ->
+          let var_path_shape_1 = find_var_path_shape {var_shapes; shape_structures} var_path_1 in
+          let var_path_shape_2 = find_var_path_shape {var_shapes; shape_structures} var_path_2 in
+          if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
+            L.die InternalError
+              "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
+              VarPath.pp var_path_1 Shape_id.pp var_path_shape_1 (Fmt.option Structure.pp)
+              (Hashtbl.find shape_structures var_path_shape_1)
+              VarPath.pp var_path_2 Shape_id.pp var_path_shape_2 (Fmt.option Structure.pp)
+              (Hashtbl.find shape_structures var_path_shape_2)
 
 
     let finalise {var_shapes; shape_structures} (var, field_path) =
@@ -1196,22 +1235,13 @@ end = struct
        final subfields may be different, the resulting subscripted path is also fold over (which will
        degenerate to ultimately fold on `var_path_2#subpath` only if `var_path_1` and `var_path_2`
        had the same length). *)
-    let fold_cell_pairs_actual summary var_path_1 var_path_2 ~init ~f =
-      assert_equal_shapes summary var_path_1 var_path_2 ;
-      fold_candidate_final_sub_paths summary var_path_1 ~init ~f:(fun acc sub_path_1 ->
+    let fold_cell_pairs summary_option var_path_1 var_path_2 ~init ~f =
+      assert_equal_shapes summary_option var_path_1 var_path_2 ;
+      fold_cells summary_option var_path_1 ~init ~f:(fun acc cell_1 ->
+          let sub_path_1 = Cell.path_from_origin ~origin:var_path_1 cell_1 in
           let matching_path_2 = VarPath.sub_path var_path_2 sub_path_1 in
-          fold_candidate_final_sub_paths summary matching_path_2 ~init:acc ~f:(fun acc sub_path_2 ->
-              f acc
-                (finalise summary (VarPath.sub_path var_path_1 sub_path_1))
-                (finalise summary (VarPath.sub_path matching_path_2 sub_path_2)) ) )
-
-
-    let fold_cell_pairs summary_option (var1, f1) (var2, f2) ~init ~f =
-      match summary_option with
-      | Some summary ->
-          fold_cell_pairs_actual summary (var1, f1) (var2, f2) ~init ~f
-      | None ->
-          f init (Cell.var_abstract var1) (Cell.var_abstract var2)
+          fold_cells summary_option matching_path_2 ~init:acc ~f:(fun acc cell_2 ->
+              f acc cell_1 cell_2 ) )
 
 
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =
