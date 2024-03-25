@@ -1226,8 +1226,8 @@ module Domain : sig
       every cell under the source variable path. This can be used for instance to record injecting
       [Call] edges where the edge holds the field information.
 
-      [kind_f] and [dst_f] will be passed the full field path of each relevant cell, including
-      fields already present in the [src] path. *)
+      [kind_f] and [dst_f] will be passed the sub each relevant cell extracted from the [src] path,
+      as obtained by {!Cell.path_from_origin}. *)
 
   (** {2 Add flow to non-variable nodes} *)
 
@@ -1250,8 +1250,8 @@ module Domain : sig
       under the destination variable path. This can be used for instance to record projecting
       [Return] edges where the edge holds the field information.
 
-      [kind_f] and [src_f] will be passed the full field path of each relevant cell, including
-      fields already present in the [dst] path. *)
+      [kind_f] and [dst_f] will be passed the sub each relevant cell extracted from the [dst] path,
+      as obtained by {!Cell.path_from_origin}. *)
 
   val add_write_from_local :
     shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:Local.t -> dst:VarPath.t -> t -> t
@@ -1374,9 +1374,9 @@ end = struct
   let add_flow_from_path_f ~shapes ~node ~kind_f ~src ~dst_f astate =
     Shapes.fold_cells
       ~f:(fun acc src_cell ->
-        let source_field_path = Cell.field_path src_cell in
-        add_flow_from_local ~node ~kind:(kind_f source_field_path) ~src:(Cell src_cell)
-          ~dst:(dst_f source_field_path) acc )
+        let source_sub_path = Cell.path_from_origin ~origin:src src_cell in
+        add_flow_from_local ~node ~kind:(kind_f source_sub_path) ~src:(Cell src_cell)
+          ~dst:(dst_f source_sub_path) acc )
       ~init:astate shapes src
 
 
@@ -1408,8 +1408,8 @@ end = struct
   let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
     Shapes.fold_cells
       ~f:(fun acc_astate dst_cell ->
-        let dst_field_path = Cell.field_path dst_cell in
-        add_cell_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path) ~dst:dst_cell
+        let dst_sub_path = Cell.path_from_origin ~origin:dst dst_cell in
+        add_cell_write ~node ~kind:(kind_f dst_sub_path) ~src:(src_f dst_sub_path) ~dst:dst_cell
           acc_astate )
       ~init:astate shapes dst
 
