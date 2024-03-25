@@ -101,35 +101,3 @@ let capture build_cmd =
       @ Buck.store_args_in_file ~identifier:"buck2_bxl" args_to_store
     in
     run_capture buck2_build_cmd
-
-
-let file_capture () =
-  let bxl_target =
-    match Config.buck2_bxl_target with
-    | None ->
-        L.die UserError "A BXL script must be provided when using file capture with bxl/clang.@\n"
-    | Some target ->
-        target
-  in
-  if Option.is_none (SourceFile.read_config_changed_files ()) then
-    L.die UserError "File capture requires supplying a --changed-files-index argument.@\n" ;
-  let buck2_root_relative_paths = get_buck2_root_relative_changed_files () in
-  if List.is_empty buck2_root_relative_paths then
-    L.user_warning "No files found to capture relative to buck2 root.@\n"
-  else
-    let files_with_arg =
-      List.fold buck2_root_relative_paths ~init:[] ~f:(fun acc path -> "--file" :: path :: acc)
-    in
-    let args_to_store =
-      ["--"]
-      @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
-            [Printf.sprintf "--depth=%i" depth] )
-      @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
-            ["--inferconfig"; target] )
-      @ files_with_arg
-    in
-    let buck2_build_cmd =
-      ["bxl"; bxl_target] @ Config.buck2_build_args @ Config.buck2_build_args_no_inline
-      @ Buck.store_args_in_file ~identifier:"clang_buck2_bxl_file" args_to_store
-    in
-    run_capture buck2_build_cmd
