@@ -1343,19 +1343,22 @@ end = struct
     end
   end
 
-  let update_write ~node ~cell ((last_writes, has_unsupported_features), partial_graph) =
-    let last_writes = Real.LastWrites.set_to_single_value cell node last_writes in
-    ((last_writes, has_unsupported_features), partial_graph)
-
-
-  let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), partial_graph) : t =
+  let add_flow_edge ~node ~kind ~src ~(dst : Vertex.t)
+      ((last_writes, has_unsupported_features), partial_graph) : t =
     let partial_graph = PartialGraph.add_edge ~node ~kind ~src ~dst partial_graph in
+    let last_writes =
+      match dst with
+      | Local (Cell cell, _) ->
+          Real.LastWrites.set_to_single_value cell node last_writes
+      | _ ->
+          last_writes
+    in
     ((last_writes, has_unsupported_features), partial_graph)
 
 
   let add_flow_from_local ~node ~kind ~src ~dst astate : t =
     Src.Private.fold_local
-      ~f:(fun acc_astate one_source -> add_edge ~node ~kind ~src:one_source ~dst acc_astate)
+      ~f:(fun acc_astate one_source -> add_flow_edge ~node ~kind ~src:one_source ~dst acc_astate)
       ~init:astate node astate src
 
 
@@ -1381,21 +1384,15 @@ end = struct
 
 
   let add_cell_write ~node ~kind ~src ~dst astate =
-    astate
-    |> add_edge ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~cell:dst
+    add_flow_edge ~node ~kind ~src ~dst:(Dst.Private.cell node dst) astate
 
 
   let add_cell_write_from_local ~node ~kind ~src ~dst astate =
-    astate
-    |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~cell:dst
+    add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.cell node dst) astate
 
 
   let add_cell_write_from_local_set ~node ~kind ~src ~dst astate =
-    astate
-    |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~cell:dst
+    add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.cell node dst) astate
 
 
   (* Update all the cells under a path, as obtained from the shapes information. *)
