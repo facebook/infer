@@ -140,24 +140,6 @@ module Cell : sig
   val var_appears_in_source_code : t -> bool
 
   val path_from_origin : origin:VarPath.t -> t -> FieldPath.t
-  (** Assuming the cell represents a component of the origin variable path, returns the sub-path
-      subscriptable from this origin path to reach the cell component.
-
-      If the cell is larger than the origin path (eg. because the origin path is longer than the
-      limit and the cells groups it with other paths), returns an empty path. The rationale is that
-      the result of this function can be seen as the subpath which, when extracted from the origin,
-      will cover all the components of that origin stored in the cell. If the cell is larger than
-      the origin then all the components of the origin are in the cell.
-
-      Raises if the cell and the origin path are incompatible (eg. their variables are different).
-
-      Examples assuming a depth limit of 3:
-
-      - origin: X#a ; cell: X#a#b#c ; result : #b#c
-      - origin: X#a#b#c ; cell : X#a#b#c ; result : empty
-      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
-      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
-      - origin: X#a#b#c#d ; cell : X#a#b#c ; result : empty *)
 end = struct
   type t = {var: Var.t; field_path: FieldPath.t; is_abstract: bool}
   [@@deriving compare, equal, sexp, hash, fields]
@@ -321,6 +303,8 @@ module Env : sig
     (** Makes a summary from a state environment. Further updates to the state will have no effect
         on the summary. *)
 
+    val assert_equal_shapes : t option -> VarPath.t -> VarPath.t -> unit
+
     val fold_field_labels :
          t option
       -> VarPath.t
@@ -335,15 +319,6 @@ module Env : sig
 
     val fold_cells :
       t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
-    (* Doc in .mli *)
-
-    val fold_cell_pairs :
-         t option
-      -> VarPath.t
-      -> VarPath.t
-      -> init:'accum
-      -> f:('accum -> Cell.t -> Cell.t -> 'accum)
-      -> 'accum
     (* Doc in .mli *)
 
     val introduce :
@@ -1228,20 +1203,6 @@ end = struct
           fold_cells_actual summary (var, path) ~init ~f
       | None ->
           f init (Cell.var_abstract var)
-
-
-    (* Fold over the fields of `var_path_1`, then for each `var_path_1#subpath` found, use that as
-       a subscript `var_path_2#subpath` of `var_path_2` to call `f`. To account for the fact that the
-       final subfields may be different, the resulting subscripted path is also fold over (which will
-       degenerate to ultimately fold on `var_path_2#subpath` only if `var_path_1` and `var_path_2`
-       had the same length). *)
-    let fold_cell_pairs summary_option var_path_1 var_path_2 ~init ~f =
-      assert_equal_shapes summary_option var_path_1 var_path_2 ;
-      fold_cells summary_option var_path_1 ~init ~f:(fun acc cell_1 ->
-          let sub_path_1 = Cell.path_from_origin ~origin:var_path_1 cell_1 in
-          let matching_path_2 = VarPath.sub_path var_path_2 sub_path_1 in
-          fold_cells summary_option matching_path_2 ~init:acc ~f:(fun acc cell_2 ->
-              f acc cell_1 cell_2 ) )
 
 
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =

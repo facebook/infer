@@ -1265,7 +1265,7 @@ module Domain : sig
     -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
-    -> ?exclude:(src_field_path:FieldPath.t -> dst_field_path:FieldPath.t -> bool)
+    -> ?exclude:(src_sub_path:FieldPath.t -> dst_sub_path:FieldPath.t -> bool)
     -> t
     -> t
   (** Add flow from every cell under the source variable path to the cell with the same field path
@@ -1430,18 +1430,16 @@ end = struct
       ~init:astate shapes dst
 
 
-  (* Update all the cells under a destination path, as obtained from the shapes information, as being
-     written in parallel from the corresponding cells under a source path. *)
   let add_write_parallel ~shapes ~node ~kind ~src ~dst
-      ?(exclude = fun ~src_field_path:_ ~dst_field_path:_ -> false) astate =
-    Shapes.fold_cell_pairs
-      ~f:(fun acc_astate src_cell dst_cell ->
-        if
-          exclude ~src_field_path:(Cell.field_path src_cell)
-            ~dst_field_path:(Cell.field_path dst_cell)
-        then acc_astate
-        else add_cell_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
-      ~init:astate shapes src dst
+      ?(exclude = fun ~src_sub_path:_ ~dst_sub_path:_ -> false) astate =
+    Shapes.assert_equal_shapes shapes src dst ;
+    Shapes.fold_cells shapes src ~init:astate ~f:(fun acc src_cell ->
+        let src_sub_path = Cell.path_from_origin ~origin:src src_cell in
+        let dst_matching_path = VarPath.sub_path dst src_sub_path in
+        Shapes.fold_cells shapes dst_matching_path ~init:acc ~f:(fun acc_astate dst_cell ->
+            if exclude ~src_sub_path ~dst_sub_path:(Cell.path_from_origin ~origin:dst dst_cell) then
+              acc_astate
+            else add_cell_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate ) )
 
 
   let add_write_product ~shapes ~node ~kind ~src ~dst astate =
@@ -1860,7 +1858,7 @@ module TransferFunctions = struct
           let value_path = exp_as_single_var_path_exn value_exp in
           let map_path = exp_as_single_var_path_exn map_exp in
           (* First copy the argument map into the returned map. *)
-          let exclude_new_key ~src_field_path ~dst_field_path =
+          let exclude_new_key ~src_sub_path ~dst_sub_path =
             (* Precision optimisation: if the newly put key is statically known to be a single label,
                then the corresponding field from the source map does not flow into the resulting
                map.
@@ -1872,8 +1870,8 @@ module TransferFunctions = struct
             | Some field_label ->
                 (* Since abstraction may truncate either the copied path or the returned one, we
                    check that both are separate from the newly put key. *)
-                [%equal: FieldLabel.t option] (List.hd src_field_path) (Some field_label)
-                || [%equal: FieldLabel.t option] (List.hd dst_field_path) (Some field_label)
+                [%equal: FieldLabel.t option] (List.hd src_sub_path) (Some field_label)
+                || [%equal: FieldLabel.t option] (List.hd dst_sub_path) (Some field_label)
             | None ->
                 false
           in
