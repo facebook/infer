@@ -1279,13 +1279,15 @@ module Domain : sig
   (** Add flow from every cell under the source variable path to every cell under the destination
       variable path. *)
 end = struct
-  module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
-    module UnsupportedFeatures = AbstractDomain.BooleanOr
-    include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
-  end
+  module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
+  module HasUnsupportedFeatures = AbstractDomain.BooleanOr
 
+  (** Actual domain for iterations *)
+  module Real = AbstractDomain.PairWithBottom (LastWrites) (HasUnsupportedFeatures)
+
+  (** Stored with abstract states for convenience, not used for iteration purposes *)
   module Unit = PartialGraph
+
   include AbstractDomain.PairWithBottom (Real) (Unit)
 
   let get_partial_graph (_, partial_graph) = partial_graph
@@ -1321,7 +1323,7 @@ end = struct
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
             f init (Vertex.Local (local, node))
         | Cell cell ->
-            Real.LastWrites.find_fold
+            LastWrites.find_fold
               (fun node acc -> f acc (Vertex.Local (local, node)))
               cell last_writes init
     end
@@ -1349,7 +1351,7 @@ end = struct
     let last_writes =
       match dst with
       | Local (Cell cell, _) ->
-          Real.LastWrites.set_to_single_value cell node last_writes
+          LastWrites.set_to_single_value cell node last_writes
       | _ ->
           last_writes
     in
