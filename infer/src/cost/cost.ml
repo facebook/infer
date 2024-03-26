@@ -227,11 +227,13 @@ module WorstCaseCost = struct
       InstrBasicCostWithReason.get_instr_node_cost_record tenv extras instr_node
     in
     let node = InstrCFG.Node.underlying_node instr_node in
-    let nb_exec = get_node_nb_exec node in
-    if BasicCost.is_top nb_exec then
-      L.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
-        (Node.id node) ;
-    CostDomain.mult_by instr_cost_record ~nb_exec
+    match get_node_nb_exec node with
+    | nb_exec when BasicCost.is_top nb_exec ->
+        L.d_printfln_escaped "Node %a is analyzed to visit infinite (top) times." Node.pp_id
+          (Node.id node) ;
+        CostDomain.mult_by instr_cost_record ~nb_exec
+    | nb_exec ->
+        CostDomain.mult_by instr_cost_record ~nb_exec
 
 
   let compute tenv extras cfg =
