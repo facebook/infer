@@ -82,3 +82,10 @@ trait T {
   public function foo2<reify T>(int $x = 0, int ...$rest): void {}
   public static function static_foo2<reify T>(int $x, int ...$rest): void {}
 }
+
+function arity3(int $arg1, int $arg2, int $arg3): void {}
+
+function call_not_really_variadic_with_splat(): void {
+  $args = tuple(1, 2, 3);
+  arity3(...$args);
+}

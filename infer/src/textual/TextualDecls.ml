@@ -18,6 +18,13 @@ module ProcEntry = struct
   let desc = function Decl _ -> None | Desc p -> Some p
 
   let signature t lang = ProcDecl.to_sig (decl t) lang
+
+  let remove_formals_types = function
+    | Decl pdecl ->
+        Decl {pdecl with formals_types= None}
+    | Desc pdesc ->
+        let procdecl = {pdesc.procdecl with formals_types= None} in
+        Desc {pdesc with procdecl}
 end
 
 type t =
@@ -107,10 +114,25 @@ let declare_variadic_proc_if_necessary decls = function
       ()
 
 
+(* every declared/implemented function is also given a default proc entry without
+   formals types. This is useful to avoid capture errors with variadic function and/or
+   splated arguments. *)
+let declare_default_if_necessary decls proc =
+  let procsig = ProcEntry.signature proc decls.lang in
+  match procsig with
+  | ProcSig.Hack {qualified_name; arity= Some _} ->
+      let procsig_default = ProcSig.Hack {qualified_name; arity= None} in
+      if not (ProcSig.Hashtbl.mem decls.procs procsig_default) then
+        ProcSig.Hashtbl.add decls.procs procsig_default (ProcEntry.remove_formals_types proc)
+  | _ ->
+      ()
+
+
 let declare_proc decls (proc : ProcEntry.t) =
   let procsig = ProcEntry.signature proc decls.lang in
   let existing_proc = ProcSig.Hashtbl.find_opt decls.procs procsig in
   declare_variadic_proc_if_necessary decls proc ;
+  declare_default_if_necessary decls proc ;
   match (existing_proc, proc) with
   | Some (Desc _), Decl _ ->
       ()

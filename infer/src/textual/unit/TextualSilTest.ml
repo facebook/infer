@@ -50,6 +50,7 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
+                     Foo.f
                      Foo.f#2
                    }
          exported_obj_methods: {}
@@ -83,6 +84,7 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
+                     Bar.f
                      Bar.f#0
                    }
          exported_obj_methods: {}
@@ -217,6 +219,7 @@ let%expect_test "overloads in tenv" =
     supers: {}
     objc_protocols: {}
     methods: {
+                C.f
                 C.f#1
                 C.f#2
               }
@@ -284,6 +287,7 @@ let%expect_test "undefined + overloads in merged tenv" =
     supers: {}
     objc_protocols: {}
     methods: {
+                Dep.f
                 Dep.f#1
                 Dep.f#2
               }
