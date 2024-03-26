@@ -70,6 +70,7 @@ let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
   ; file
   ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace
   ; bug_trace_length= Errlog.loc_trace_length trace
+  ; bug_trace_max_depth= Errlog.loc_trace_max_depth trace
   ; key= ""
   ; node_key= None
   ; hash= item.hash

@@ -283,3 +283,6 @@ let merge ~into x =
 
 
 let loc_trace_length loc_trace = List.length loc_trace
+
+let loc_trace_max_depth loc_trace =
+  List.fold loc_trace ~init:0 ~f:(fun max {lt_level} -> if lt_level > max then lt_level else max)

@@ -101,3 +101,5 @@ val log_issue :
 val merge : into:t -> t -> [`Modified | `Intact]
 
 val loc_trace_length : loc_trace -> int
+
+val loc_trace_max_depth : loc_trace -> int

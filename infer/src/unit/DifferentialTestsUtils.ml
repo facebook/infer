@@ -25,6 +25,7 @@ let create_fake_jsonbug ?(bug_type = "bug_type") ?(qualifier = "qualifier")
   ; file
   ; bug_trace
   ; bug_trace_length= 0
+  ; bug_trace_max_depth= 0
   ; node_key
   ; key
   ; hash

@@ -258,6 +258,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace
         ; bug_trace_length= Errlog.loc_trace_length err_data.loc_trace
+        ; bug_trace_max_depth= Errlog.loc_trace_max_depth err_data.loc_trace
         ; node_key= Option.map ~f:Procdesc.NodeKey.to_string err_data.node_key
         ; key= compute_key bug_type proc_name file
         ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
