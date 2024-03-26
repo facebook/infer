@@ -1453,11 +1453,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               sil_loc Sil.Ik_compexch
           in
           let instrs =
+            (* NOTE: Added dummy loads to avoid dead store false positives. *)
             if branch then
               [ Sil.Store {e1= ptr_exp; e2= desired_exp; typ; loc= sil_loc}
+              ; Sil.Load {id= Ident.create_fresh Ident.knormal; e= ptr_exp; typ; loc= sil_loc}
               ; Sil.Store {e1= exp_to_init; e2= Exp.one; typ= ret_typ; loc= sil_loc} ]
             else
               [ Sil.Store {e1= expected_exp; e2= Exp.Var ptr_id; typ; loc= sil_loc}
+              ; Sil.Load {id= Ident.create_fresh Ident.knormal; e= expected_exp; typ; loc= sil_loc}
               ; Sil.Store {e1= exp_to_init; e2= Exp.zero; typ= ret_typ; loc= sil_loc} ]
           in
           let return = (exp_to_init, ret_typ) in

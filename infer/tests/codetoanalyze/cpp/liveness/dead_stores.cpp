@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <cstdint>
 #include <exception>
 #include <map>
 #include <mutex>
@@ -757,5 +758,16 @@ void unknown_call_in_try_ok_FP() {
   } catch (int) {
   }
   read(x);
+}
+
+bool atomic_compare_exchange_ok() {
+  uint32_t ptr = 1;
+  uint32_t expected = 1;
+  uint32_t desired = 0;
+
+  bool success = __atomic_compare_exchange(
+      &ptr, &expected, &desired, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+
+  return success;
 }
 } // namespace dead_stores
