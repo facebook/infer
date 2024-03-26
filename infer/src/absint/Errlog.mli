@@ -99,3 +99,5 @@ val log_issue :
   -> unit
 
 val merge : into:t -> t -> [`Modified | `Intact]
+
+val loc_trace_length : loc_trace -> int

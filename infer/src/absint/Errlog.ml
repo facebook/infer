@@ -280,3 +280,6 @@ let merge ~into x =
         ErrLogHash.add into k v ) )
     x ;
   if !modified then `Modified else `Intact
+
+
+let loc_trace_length loc_trace = List.length loc_trace

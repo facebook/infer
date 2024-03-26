@@ -149,6 +149,7 @@ type jsonbug = {
   procedure_start_line : int;
   file : string;
   bug_trace : json_trace_item list;
+  bug_trace_length : int;
   key : string;
   ?node_key : string option;
   hash : string;
