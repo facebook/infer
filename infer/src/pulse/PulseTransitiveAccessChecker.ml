@@ -21,30 +21,16 @@ module Config : sig
 
   val find_matching_context : Tenv.t -> Procname.t -> context_metadata option
 end = struct
-  type procname_to_monitor_spec =
-    { class_names: string list option [@yojson.option]
-    ; method_names: string list option [@yojson.option]
-    ; class_name_regex: string option [@yojson.option]
-    ; annotations: string list option [@yojson.option] }
-  [@@deriving of_yojson]
+  type regexp_type = Str.regexp
+
+  let regexp_type_of_yojson json = Str.regexp (string_of_yojson json)
 
   type procname_to_monitor =
-    | ClassAndMethodNames of {class_names: string list; method_names: string list}
-    | ClassNameRegex of {class_name_regex: Str.regexp}
-    | Annotations of {annotations: string list}
-
-  let procname_to_monitor_of_yojson json =
-    match procname_to_monitor_spec_of_yojson json with
-    | {class_names= Some class_names; method_names= Some method_names} ->
-        ClassAndMethodNames {class_names; method_names}
-    | {class_name_regex= Some class_name_regex} ->
-        let class_name_regex = Str.regexp class_name_regex in
-        ClassNameRegex {class_name_regex}
-    | {annotations= Some annotations} ->
-        Annotations {annotations}
-    | _ ->
-        L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
-
+    { class_names: string list option [@yojson.option]
+    ; method_names: string list option [@yojson.option]
+    ; class_name_regex: regexp_type option [@yojson.option]
+    ; annotations: string list option [@yojson.option] }
+  [@@deriving of_yojson]
 
   type context_spec =
     { initial_caller_class_extends: string list option [@yojson.option]
@@ -145,17 +131,23 @@ end = struct
             (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
             class_name )
     in
+    let check_one_procname_spec spec =
+      match spec with
+      | {class_names= None; method_names= None; class_name_regex= None; annotations= None} ->
+          false
+      | {class_names; method_names; class_name_regex; annotations} ->
+          let map_or_true = Option.value_map ~default:true in
+          map_or_true class_names ~f:match_class_name
+          && map_or_true method_names ~f:(function mn ->
+                 List.mem ~equal:String.equal mn method_name )
+          && map_or_true class_name_regex ~f:match_class_name_regex
+          && map_or_true annotations ~f:(procname_has_annotation procname)
+    in
     match get () with
     | None ->
         false
     | Some {procnames_to_monitor} ->
-        List.exists procnames_to_monitor ~f:(function
-          | ClassAndMethodNames {class_names; method_names} ->
-              match_class_name class_names && List.mem ~equal:String.equal method_names method_name
-          | ClassNameRegex {class_name_regex} ->
-              match_class_name_regex class_name_regex
-          | Annotations {annotations} ->
-              procname_has_annotation procname annotations )
+        List.exists procnames_to_monitor ~f:check_one_procname_spec
 
 
   let is_matching_extends_context tenv procname initial_caller_class_extends
