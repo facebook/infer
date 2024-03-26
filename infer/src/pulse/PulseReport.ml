@@ -203,13 +203,22 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
       is_constant_deref_without_invalidation invalidation access_trace
 
 
+let is_optional_empty diagnostic =
+  match (diagnostic : Diagnostic.t) with
+  | AccessToInvalidAddress {invalidation= OptionalEmpty} ->
+      true
+  | _ ->
+      false
+
+
 (* Skip reporting nullptr dereferences in Java classes annotated with [@Nullsafe] if requested *)
 let should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
   (not Config.pulse_nullsafe_report_npe)
   && is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn
 
 
-let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation =
+let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
+    ~is_optional_empty =
   if is_constant_deref_without_invalidation then (
     L.d_printfln ~color:Red
       "Dropping error: constant dereference with no invalidation in the access trace" ;
@@ -218,8 +227,8 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
     match Procdesc.get_proc_name proc_desc with
     | Procname.Java jn when is_nullptr_dereference ->
         should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn
-    | _ ->
-        false
+    | pname ->
+        Procname.is_cpp_lambda pname && is_optional_empty
 
 
 let summary_of_error_post proc_desc location mk_error astate =
@@ -268,7 +277,7 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference:true
-          ~is_constant_deref_without_invalidation
+          ~is_constant_deref_without_invalidation ~is_optional_empty:false
       in
       if is_suppressed then L.d_printfln "suppressed error" ;
       if Config.pulse_report_latent_issues then
@@ -289,8 +298,10 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       let is_constant_deref_without_invalidation =
         is_constant_deref_without_invalidation_diagnostic diagnostic
       in
+      let is_optional_empty = is_optional_empty diagnostic in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
+          ~is_optional_empty
       in
       match LatentIssue.should_report summary diagnostic with
       | `ReportNow ->
