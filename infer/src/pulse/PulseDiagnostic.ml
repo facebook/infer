@@ -633,10 +633,10 @@ let get_message_and_suggestion diagnostic =
       let pp fmt (trace : Trace.t) =
         match trace with
         | Immediate {location} ->
-            F.fprintf fmt "on line %a" Location.pp_line location
+            F.fprintf fmt "on %a" Location.pp_line location
         | ViaCall {f; location; _} ->
-            F.fprintf fmt "indirectly via call to %a on line %a" CallEvent.describe f
-              Location.pp_line location
+            F.fprintf fmt "indirectly via call to %a on %a" CallEvent.describe f Location.pp_line
+              location
       in
       F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
