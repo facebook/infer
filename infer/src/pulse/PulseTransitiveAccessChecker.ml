@@ -21,32 +21,18 @@ module Config : sig
 
   val find_matching_context : Tenv.t -> Procname.t -> context_metadata option
 end = struct
-  type procname_to_monitor_spec =
+  type regexp_type = Str.regexp
+
+  let regexp_type_of_yojson json = Str.regexp (string_of_yojson json)
+
+  type procname_to_monitor =
     { class_names: string list option [@yojson.option]
     ; method_names: string list option [@yojson.option]
-    ; class_name_regex: string option [@yojson.option]
+    ; class_name_regex: regexp_type option [@yojson.option]
     ; annotations: string list option [@yojson.option] }
   [@@deriving of_yojson]
 
-  type procname_to_monitor =
-    | ClassAndMethodNames of {class_names: string list; method_names: string list}
-    | ClassNameRegex of {class_name_regex: Str.regexp}
-    | Annotations of {annotations: string list}
-
-  let procname_to_monitor_of_yojson json =
-    match procname_to_monitor_spec_of_yojson json with
-    | {class_names= Some class_names; method_names= Some method_names} ->
-        ClassAndMethodNames {class_names; method_names}
-    | {class_name_regex= Some class_name_regex} ->
-        let class_name_regex = Str.regexp class_name_regex in
-        ClassNameRegex {class_name_regex}
-    | {annotations= Some annotations} ->
-        Annotations {annotations}
-    | _ ->
-        L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
-
-
-  type context_spec =
+  type context =
     { initial_caller_class_extends: string list option [@yojson.option]
     ; initial_caller_class_does_not_extend: string list option [@yojson.option]
     ; final_class_only: bool [@yojson.default false]
@@ -54,46 +40,6 @@ end = struct
     ; description: string
     ; tag: string }
   [@@deriving of_yojson]
-
-  type context_condition =
-    | Extends of
-        { initial_caller_class_extends: string list
-        ; initial_caller_class_does_not_extend: string list
-        ; final_class_only: bool }
-    | Annotation of {annotations: string list}
-
-  type context = {condition: context_condition; description: string; tag: string}
-
-  let context_of_yojson json =
-    match context_spec_of_yojson json with
-    | { initial_caller_class_extends= Some initial_caller_class_extends
-      ; initial_caller_class_does_not_extend= Some initial_caller_class_does_not_extend
-      ; final_class_only
-      ; annotations= None
-      ; description
-      ; tag } ->
-        { condition=
-            Extends
-              {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only}
-        ; description
-        ; tag }
-    | { initial_caller_class_extends= None
-      ; initial_caller_class_does_not_extend= None
-      ; annotations= Some annotations
-      ; description
-      ; tag } ->
-        {condition= Annotation {annotations}; description; tag}
-    | { initial_caller_class_extends= Some _
-      ; initial_caller_class_does_not_extend= Some _
-      ; annotations= Some _ } ->
-        L.die UserError
-          "initial caller constraints and annotations cannot be provided at the same time"
-    | {initial_caller_class_extends= None; initial_caller_class_does_not_extend= Some _}
-    | {initial_caller_class_extends= Some _; initial_caller_class_does_not_extend= None} ->
-        L.die UserError "initial class extends / does not extend must be provided together"
-    | _ ->
-        L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
-
 
   type t =
     { fieldnames_to_monitor: string list
@@ -145,58 +91,71 @@ end = struct
             (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
             class_name )
     in
+    let check_one_procname_spec spec =
+      match spec with
+      | {class_names= None; method_names= None; class_name_regex= None; annotations= None} ->
+          false
+      | {class_names; method_names; class_name_regex; annotations} ->
+          let map_or_true = Option.value_map ~default:true in
+          map_or_true class_names ~f:match_class_name
+          && map_or_true method_names ~f:(function mn ->
+                 List.mem ~equal:String.equal mn method_name )
+          && map_or_true class_name_regex ~f:match_class_name_regex
+          && map_or_true annotations ~f:(procname_has_annotation procname)
+    in
     match get () with
     | None ->
         false
     | Some {procnames_to_monitor} ->
-        List.exists procnames_to_monitor ~f:(function
-          | ClassAndMethodNames {class_names; method_names} ->
-              match_class_name class_names && List.mem ~equal:String.equal method_names method_name
-          | ClassNameRegex {class_name_regex} ->
-              match_class_name_regex class_name_regex
-          | Annotations {annotations} ->
-              procname_has_annotation procname annotations )
+        List.exists procnames_to_monitor ~f:check_one_procname_spec
 
 
-  let is_matching_extends_context tenv procname initial_caller_class_extends
-      initial_caller_class_does_not_extend final_class_only =
-    match Procname.get_class_type_name procname with
-    | Some type_name ->
-        let check_final_status () =
-          let is_final () =
-            Tenv.lookup tenv type_name
-            |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
-          in
-          pulse_transitive_access_verbose || (not final_class_only) || is_final ()
-        in
-        let check_parents () =
-          let has_parents =
-            let parents =
-              Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
-                  String.Set.add acc (Typ.Name.name parent) )
-            in
-            fun classes -> List.exists classes ~f:(String.Set.mem parents)
-          in
-          let check_extends = has_parents initial_caller_class_extends in
-          let check_does_not_extend () =
-            pulse_transitive_access_verbose
-            || not (has_parents initial_caller_class_does_not_extend)
-          in
-          check_extends && check_does_not_extend ()
-        in
-        check_final_status () && check_parents ()
-    | None ->
+  let is_matching_context tenv procname context =
+    let check_final_status tenv type_name final_class_only =
+      let is_final () =
+        Tenv.lookup tenv type_name
+        |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+      in
+      pulse_transitive_access_verbose || (not final_class_only) || is_final ()
+    in
+    let has_parents tenv type_name =
+      let parents =
+        Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
+            String.Set.add acc (Typ.Name.name parent) )
+      in
+      fun classes -> List.exists classes ~f:(String.Set.mem parents)
+    in
+    let check_extends tenv procname final_class_only initial_caller_class_extends =
+      match Procname.get_class_type_name procname with
+      | Some type_name ->
+          check_final_status tenv type_name final_class_only
+          && has_parents tenv type_name initial_caller_class_extends
+      | None ->
+          false
+    in
+    let check_not_extends tenv procname final_class_only initial_caller_class_does_not_extend =
+      match Procname.get_class_type_name procname with
+      | Some type_name ->
+          check_final_status tenv type_name final_class_only
+          && ( pulse_transitive_access_verbose
+             || not (has_parents tenv type_name initial_caller_class_does_not_extend) )
+      | None ->
+          false
+    in
+    match context with
+    | { initial_caller_class_extends= None
+      ; initial_caller_class_does_not_extend= None
+      ; annotations= None } ->
         false
-
-
-  let is_matching_context tenv procname {condition} =
-    match condition with
-    | Extends {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only}
-      ->
-        is_matching_extends_context tenv procname initial_caller_class_extends
-          initial_caller_class_does_not_extend final_class_only
-    | Annotation {annotations} ->
-        procname_has_annotation procname annotations
+    | { initial_caller_class_extends
+      ; initial_caller_class_does_not_extend
+      ; final_class_only
+      ; annotations } ->
+        let map_or_true = Option.value_map ~default:true in
+        map_or_true initial_caller_class_extends ~f:(check_extends tenv procname final_class_only)
+        && map_or_true initial_caller_class_does_not_extend
+             ~f:(check_not_extends tenv procname final_class_only)
+        && map_or_true annotations ~f:(procname_has_annotation procname)
 
 
   type context_metadata = {description: string; tag: string}

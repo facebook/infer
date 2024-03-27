@@ -103,11 +103,10 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as ana
     let final_trace = List.rev (update_trace call_loc trace) in
     let exp_pname_str = string_of_pname snk_pname in
     let description =
-      Format.asprintf "Method %a annotated with %a calls %a where %a is annotated with %a"
-        MF.pp_monospaced
+      Format.asprintf "Method %a (annotated with %a) calls %a (annotated with %a)" MF.pp_monospaced
         (Procname.to_simplified_string src_pname)
         MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced exp_pname_str MF.pp_monospaced
-        exp_pname_str MF.pp_monospaced ("@" ^ snk_annot)
+        ("@" ^ snk_annot)
     in
     let issue_type =
       if String.equal src_annot Annotations.performance_critical then

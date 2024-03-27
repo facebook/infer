@@ -20,7 +20,6 @@ basic.sil, line 88, column 4: textual type error: expression 0 has type int, whi
 basic.sil, line 106, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 108, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 110, column 9: textual type error: expression [&y:float] has type float, while a subtype of int was expected
-basic_error_argnum.sil, line 12, column 7: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
 error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
@@ -49,4 +48,3 @@ variadic.sil, line 50, column 7: SIL consistency error: variadic parameter is no
 variadic.sil, line 40, column 7: SIL consistency error: variadic parameter is not in penultimate position in trait function T.bad
 variadic.sil, line 28, column 7: SIL consistency error: variadic parameter is not in penultimate position in function with_generics_bad which has a reified generics parameter
 variadic.sil, line 18, column 7: SIL consistency error: variadic parameter is not in last position in function f3
-variadic.sil, line 10, column 8: SIL consistency error: function f2 which can be called with 1 arguments is not declared

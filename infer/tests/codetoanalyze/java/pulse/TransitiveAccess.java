@@ -126,4 +126,21 @@ public class TransitiveAccess {
   public static void sourceWithAnnoAndLambdaNoCallOk() {
     Callback lambda = () -> Sinks.sink();
   }
+
+  @SourceAnno
+  public static void sourceWithChainOfCallsBad() {
+    f1();
+  }
+
+  public static void f1() {
+    f2();
+  }
+
+  public static void f2() {
+    f3();
+  }
+
+  public static void f3() {
+    Sinks.funcWithAnno();
+  }
 }

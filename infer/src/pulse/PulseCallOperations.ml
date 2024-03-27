@@ -701,7 +701,9 @@ let call tenv path ~caller_proc_desc
               Specialization.Pulse.pp specialization ;
           if nth_iteration >= max_iteration then
             L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
-          if nth_iteration >= max_iteration || has_already_be_given || ask_caller_of_caller_first
+          if
+            nth_iteration >= max_iteration || has_already_be_given || ask_caller_of_caller_first
+            || Specialization.Pulse.is_empty specialization
           then
             case_if_specialization_is_impossible
               ~f:(add_need_dynamic_type_specialization needs_from_caller)
