@@ -16,20 +16,30 @@ open IOption.Let_syntax
 
 type value = AbstractValue.t [@@deriving compare, equal]
 
+type static_type = Typ.t [@@deriving compare, equal]
+
+type value_and_type = value * static_type [@@deriving compare, equal]
+
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
-  | Call of {return: value option; arguments: value list; procname: Procname.t}
+  | Call of {return: value_and_type option; arguments: value_and_type list; procname: Procname.t}
 [@@deriving compare, equal]
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
+
+let pp_value = AbstractValue.pp
+
+let pp_type f type_ = F.fprintf f "%s" (Typ.to_string type_)
+
+let pp_value_and_type f (value, type_) = F.fprintf f "@[%a:@ %a@]" pp_value value pp_type type_
 
 let pp_event f = function
   | ArrayWrite {aw_array; aw_index} ->
       F.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
   | Call {return; arguments; procname} ->
       let procname = Procname.hashable_name procname (* as in [static_match] *) in
-      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
-        (pp_comma_seq AbstractValue.pp) arguments
+      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option pp_value_and_type) return procname
+        (pp_comma_seq pp_value_and_type) arguments
 
 
 type vertex = ToplAutomaton.vindex [@@deriving compare, equal]
@@ -645,6 +655,8 @@ let static_match_array_write arr index label : tcontext option =
 
 
 let static_match_call return arguments procname label : tcontext option =
+  let return = Option.map ~f:fst return in
+  let arguments = List.map ~f:fst arguments in
   let rev_arguments = List.rev arguments in
   let procname = Procname.hashable_name procname in
   let match_name () : bool =
