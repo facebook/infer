@@ -304,8 +304,8 @@ module Topl = struct
     match language with
     | Erlang ->
         (* for erlang, we assume [pattern] looks like "module:function" *)
-        let proc_pattern = Printf.sprintf "%s/%d" pattern arity in
-        ToplAst.ProcedureNamePattern proc_pattern
+        let procedure_name_regex = Printf.sprintf "%s/%d" pattern arity in
+        ToplAst.CallPattern {procedure_name_regex; type_regexes= None}
     | Clang | CIL | Hack | Python | Java ->
         L.die InternalError "Unsupported language for data flow queries"
 

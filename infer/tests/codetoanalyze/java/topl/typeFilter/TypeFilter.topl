@@ -1,0 +1,5 @@
+property CallWithB
+  message "Called f() with an argument whose static type is known to be B"
+  start -> start: *
+  start -> error: f(Arg: B, Ret)
+  start -> error: f(Arg: ".*Bad.*", Ret)

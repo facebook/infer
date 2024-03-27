@@ -100,10 +100,14 @@ let make properties =
           let ps = List.map ~f:(fun p -> "\\|" ^ p ^ ".") p.ToplAst.prefixes in
           "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "\\((\\|$\\)"
       in
-      let prefix_pattern =
-        ToplAst.(
-          function
-          | ProcedureNamePattern pname -> ProcedureNamePattern (prefix_pname pname) | p -> p )
+      let prefix_pattern (label_pattern : ToplAst.label_pattern) =
+        match label_pattern with
+        | CallPattern call_pattern ->
+            ToplAst.CallPattern
+              { call_pattern with
+                procedure_name_regex= prefix_pname call_pattern.procedure_name_regex }
+        | _ ->
+            label_pattern
       in
       let prefix_label label = ToplAst.{label with pattern= prefix_pattern label.pattern} in
       let f {ToplAst.source; target; label} =

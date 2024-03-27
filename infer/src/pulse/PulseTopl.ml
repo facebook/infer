@@ -661,8 +661,8 @@ let static_match_call return arguments procname label : tcontext option =
   let procname = Procname.hashable_name procname in
   let match_name () : bool =
     match label.ToplAst.pattern with
-    | ProcedureNamePattern pname ->
-        Str.string_match (Str.regexp pname) procname 0
+    | CallPattern {procedure_name_regex} ->
+        Str.string_match (Str.regexp procedure_name_regex) procname 0
     | _ ->
         false
   in

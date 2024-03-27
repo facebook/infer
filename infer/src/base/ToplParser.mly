@@ -63,10 +63,13 @@ state: i=identifier { i }
 
 label:
     STAR { None }
-  | pattern=procedure_pattern arguments=arguments_pattern?
+  | procedure_name_regex=regex arg_types=arguments_pattern?
     condition=condition? action=action?
     { let condition = Option.value ~default:[] condition in
       let action = Option.value ~default:[] action in
+      let arguments = Option.map ~f:(List.map ~f:fst) arg_types in
+      let type_regexes = Option.map ~f:(List.map ~f:snd) arg_types in
+      let pattern = ToplAst.CallPattern {procedure_name_regex; type_regexes} in
       Some ToplAst.{ arguments; condition; action; pattern } }
   | ARRAYWRITE LP arr=UID COMMA index=UID RP
     condition=condition? action=action?
@@ -106,11 +109,18 @@ predop:
 
 and_predicate: AND p=predicate { p }
 
-procedure_pattern:
-    i=identifier { ToplAst.ProcedureNamePattern i }
-  | s=STRING { ToplAst.ProcedureNamePattern s }
+arguments_pattern:
+    LP a=separated_list(COMMA, argument_typeopt) RP { a }
 
-arguments_pattern: LP a=separated_list(COMMA, UID) RP { a }
+argument_typeopt:
+    a=UID t=colon_regex? { (a, t) }
+
+colon_regex:
+    COLON r=regex { r }
+
+regex:
+    i=identifier { i }
+  | s=STRING { s }
 
 action:
     ARROWARROW a=separated_nonempty_list(SEMI, assignment) { a }
