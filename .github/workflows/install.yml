@@ -99,7 +99,7 @@ jobs:
       - name: Compute hash of clang installation
         id: clang-hash
         run: |
-          echo "::set-output name=value::$(./facebook-clang-plugins/clang/setup.sh --clang-hash)"
+          echo "value=$(./facebook-clang-plugins/clang/setup.sh --clang-hash)" >> $GITHUB_OUTPUT
 
       - name: Attempt to get clang from the cache
         id: cache-clang
