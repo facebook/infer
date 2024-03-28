@@ -377,16 +377,20 @@ let iter_dir name ~f =
   iter dir
 
 
+let is_string_in_list_option list_opt s =
+  Option.exists list_opt ~f:(fun l -> List.mem ~equal:String.equal l s)
+
+
 (** delete [name] recursively, return whether the file is not there at the end *)
-let rec rmtree_ ?(except = []) name =
+let rec rmtree_ ?except name =
   match (Unix.lstat name).st_kind with
   | S_DIR ->
-      if rm_all_in_dir_ ~except name then (
+      if rm_all_in_dir_ ?except name then (
         Unix.rmdir name ;
         true )
       else false
   | _ ->
-      if List.mem ~equal:String.equal except name then false
+      if is_string_in_list_option except name then false
       else (
         Unix.unlink name ;
         true )
@@ -398,7 +402,9 @@ let rec rmtree_ ?(except = []) name =
 and rm_all_in_dir_ ?except name =
   let no_files_left = ref true in
   iter_dir name ~f:(fun entry ->
-      let entry_was_deleted = rmtree_ ?except entry in
+      let entry_was_deleted =
+        if is_string_in_list_option except name then false else rmtree_ ?except entry
+      in
       no_files_left := !no_files_left && entry_was_deleted ) ;
   !no_files_left
 
