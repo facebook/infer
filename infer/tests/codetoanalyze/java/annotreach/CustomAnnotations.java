@@ -28,6 +28,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSink2 {}
 
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.CLASS)
+@interface UserDefinedSanitizer {}
+
 class CustomAnnotations {
 
   @UserDefinedSource1
@@ -67,6 +71,16 @@ class CustomAnnotations {
   }
 
   void safeMethod() {}
+
+  @UserDefinedSource1
+  void source1withSanitizerOk() {
+    canCallSink();
+  }
+
+  @UserDefinedSanitizer
+  void canCallSink() {
+    sink1();
+  }
 
   interface Callback {
     public void call();

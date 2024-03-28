@@ -190,14 +190,17 @@ module AnnotationSpec = struct
 end
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot =
+  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots =
     let src_annots = List.map str_src_annots ~f:annotation_of_str in
+    let sanitizer_annots = List.map str_sanitizer_annots ~f:annotation_of_str in
     let snk_annot = annotation_of_str str_snk_annot in
-    let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
+    let has_annot annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
     let open AnnotationSpec in
     { description= "StandardAnnotationSpec"
-    ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
-    ; sanitizer_predicate= default_sanitizer
+    ; sink_predicate= (fun tenv pname -> check_attributes (has_annot snk_annot) tenv pname)
+    ; sanitizer_predicate=
+        (fun tenv pname ->
+          List.exists sanitizer_annots ~f:(fun s -> check_attributes (has_annot s) tenv pname) )
     ; sink_annotation= snk_annot
     ; report=
         (fun proc_data annot_map -> report_src_snk_paths proc_data annot_map src_annots snk_annot)
@@ -433,7 +436,14 @@ let parse_user_defined_specs = function
         let open Yojson.Basic in
         let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
         let sinks = Util.member "sinks" json |> Util.to_list |> List.map ~f:Util.to_string in
-        (sources, sinks)
+        let sanitizers =
+          match Util.member "sanitizers" json with
+          | `List s ->
+              s |> List.map ~f:Util.to_string
+          | _ ->
+              []
+        in
+        (sources, sinks, sanitizers)
       in
       List.map ~f:parse_user_spec user_specs
   | _ ->
@@ -441,9 +451,10 @@ let parse_user_defined_specs = function
 
 
 let annot_specs =
-  let parse_one_spec (str_src_annots, str_snk_annots) =
+  let parse_one_spec (str_src_annots, str_snk_annots, str_sanitizer_annots) =
     List.map
-      ~f:(fun str_snk_annot -> StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot)
+      ~f:(fun str_snk_annot ->
+        StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot str_sanitizer_annots )
       str_snk_annots
   in
   let user_defined_specs =
