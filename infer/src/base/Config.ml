@@ -2619,17 +2619,32 @@ and pulse_model_transfer_ownership =
      are method or namespace::method"
 
 
-and pulse_monitor_transitive_callees =
-  CLOpt.mk_bool ~long:"pulse-monitor-transitive-callees" ~default:false
-    "Record the transitive call resolutions and output them in PULSE_TRANSITIVE_ACCESS signals. \
-     Should only be used for debugging purpose due to its potential large size."
-
-
-and pulse_monitor_transitive_missed_captures =
-  CLOpt.mk_bool ~long:"pulse-monitor-transitive-missed-captures" ~default:false
-    "Record the transitive name resolutions that may have been altered or have failed becaud a \
-     type was not captured. The list of types is output them in PULSE_TRANSITIVE_ACCESS signals. \
-     Should only be used for debugging purpose due to its potential large size."
+and ( pulse_monitor_transitive_callees
+    , pulse_monitor_transitive_missed_captures
+    , pulse_transitive_access_verbose ) =
+  let pulse_monitor_transitive_callees =
+    CLOpt.mk_bool ~long:"pulse-monitor-transitive-callees" ~default:false
+      "Record the transitive call resolutions and output them in PULSE_TRANSITIVE_ACCESS signals. \
+       Should only be used for debugging purpose due to its potential large size."
+  and pulse_monitor_transitive_missed_captures =
+    CLOpt.mk_bool ~long:"pulse-monitor-transitive-missed-captures" ~default:false
+      "Record the transitive name resolutions that may have been altered or have failed becaud a \
+       type was not captured. The list of types is output them in PULSE_TRANSITIVE_ACCESS signals. \
+       Should only be used for debugging purpose due to its potential large size."
+  in
+  let pulse_transitive_access_verbose =
+    CLOpt.mk_bool_group ~long:"pulse-transitive-access-verbose"
+      "Force the transitive-access analysis to be more verbose by ignoring the fields \
+       final_class_only and initial_caller_class_does_not_extend. Additionally, if no signal is \
+       found, still generate a fake one for each eligible entries. Also set \
+       $(b,--pulse-monitor-transitive-callees), $(b,--pulse-monitor-transitive-missed-captures) so \
+       that every signal gets extra information in report.json."
+      [pulse_monitor_transitive_callees; pulse_monitor_transitive_missed_captures]
+      []
+  in
+  ( pulse_monitor_transitive_callees
+  , pulse_monitor_transitive_missed_captures
+  , pulse_transitive_access_verbose )
 
 
 and pulse_nullsafe_report_npe =
@@ -3549,17 +3564,6 @@ and xcpretty =
     ~in_help:InferCommand.[(Capture, manual_clang)]
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs \
      to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`)."
-
-
-let pulse_transitive_access_verbose =
-  CLOpt.mk_bool_group ~long:"pulse-transitive-access-verbose"
-    "Forces the transitive-access analysis to be more verbose by ignoring the fields \
-     final_class_only and initial_caller_class_does_not_extend and if no signal is found, still \
-     generate a fake one for each eligible entries.It also sets \
-     $(b,--pulse-monitor-transitive-callees), $(b,--pusle-monitor-transitive-missed-captures) so \
-     that every signal gets extra informations to look at in report.json"
-    [pulse_monitor_transitive_callees; pulse_monitor_transitive_missed_captures]
-    []
 
 
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
