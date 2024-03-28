@@ -656,7 +656,9 @@ let static_match_array_write arr index label : tcontext option =
 
 
 let static_match_call return arguments procname label : tcontext option =
-  let is_match re text = Option.for_all re ~f:(fun re -> Str.string_match (Str.regexp re) text 0) in
+  let is_match re text =
+    Option.for_all re ~f:(fun re -> Re.Str.string_match (Re.Str.regexp re) text 0)
+  in
   let match_name () : bool =
     match label.ToplAst.pattern with
     | CallPattern {procedure_name_regex; type_regexes} -> (
