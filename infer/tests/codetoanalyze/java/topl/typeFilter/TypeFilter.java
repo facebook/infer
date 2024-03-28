@@ -17,12 +17,15 @@ public class TypeFilter {
     f(x);
   }
 
-  // FN because not implemented yet
-  static void bBad_FN(B x) {
+  static void bBad(B x) {
     f(x);
   }
 
-  static void cBad_FN(LongBadName x) {
+  static void cBad(LongBadName x) {
     f(x);
+  }
+
+  static void dBad() {
+    f(new B());
   }
 }

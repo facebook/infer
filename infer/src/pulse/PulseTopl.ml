@@ -29,6 +29,7 @@ let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
 let pp_value = AbstractValue.pp
 
+(* When printing types below, use only this function, to make sure it's done always in the same way. *)
 let pp_type f type_ = F.fprintf f "%s" (Typ.to_string type_)
 
 let pp_value_and_type f (value, type_) = F.fprintf f "@[%a:@ %a@]" pp_value value pp_type type_
@@ -655,18 +656,31 @@ let static_match_array_write arr index label : tcontext option =
 
 
 let static_match_call return arguments procname label : tcontext option =
-  let return = Option.map ~f:fst return in
-  let arguments = List.map ~f:fst arguments in
-  let rev_arguments = List.rev arguments in
-  let procname = Procname.hashable_name procname in
+  let is_match re text = Option.for_all re ~f:(fun re -> Str.string_match (Str.regexp re) text 0) in
   let match_name () : bool =
     match label.ToplAst.pattern with
-    | CallPattern {procedure_name_regex} ->
-        Str.string_match (Str.regexp procedure_name_regex) procname 0
+    | CallPattern {procedure_name_regex; type_regexes} -> (
+        is_match (Some procedure_name_regex) (Procname.hashable_name procname)
+        &&
+        match type_regexes with
+        | None ->
+            true
+        | Some regexes -> (
+            let type_names =
+              let pt (_name, typ) = F.asprintf "%a" pp_type typ in
+              List.map ~f:pt arguments @ [Option.value_map ~default:"void" ~f:pt return]
+            in
+            let f ok regex name = ok && is_match regex name in
+            match List.fold2 regexes type_names ~init:true ~f with
+            | Ok ok ->
+                ok
+            | Unequal_lengths ->
+                false ) )
     | _ ->
         false
   in
   let match_args () : tcontext option =
+    let rev_arguments = List.rev_map ~f:fst arguments in
     let match_formals formals : tcontext option =
       let bind ~init rev_formals =
         let f tcontext variable value = (variable, value) :: tcontext in
@@ -676,7 +690,7 @@ let static_match_call return arguments procname label : tcontext option =
         | Unequal_lengths ->
             None
       in
-      match (List.rev formals, return) with
+      match (List.rev formals, Option.map ~f:fst return) with
       | [], Some _ ->
           None
       | rev_formals, None ->
