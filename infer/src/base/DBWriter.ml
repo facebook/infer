@@ -10,7 +10,7 @@ module L = Logging
 module F = Format
 
 module ServerSocket = struct
-  let socket_name = "sqlite_write_socket"
+  let socket_name = ResultsDirEntryName.db_writer_socket_name
 
   let socket_addr = Unix.ADDR_UNIX socket_name
 
