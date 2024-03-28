@@ -1688,8 +1688,6 @@ let analyze specialization
         Procname.pp_unique_id
         (Procdesc.get_proc_name proc_desc) ;
     let summary_count = List.length summary.PulseSummary.pre_post_list in
-    if Config.pulse_scuba_logging then
-      ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
     Stats.add_pulse_summaries_count summary_count ;
     if Config.pulse_log_summary_count then
       log_summary_count proc_name summary.PulseSummary.pre_post_list ;

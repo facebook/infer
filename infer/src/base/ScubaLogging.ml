@@ -61,7 +61,7 @@ let sample_from_event ~loc ({label; created_at_ts; data} : LogEntry.t) =
 (** Consider buffering or batching if proves to be a problem *)
 let log_many ~loc entries =
   let samples = List.map entries ~f:(sample_from_event ~loc) in
-  Scuba.log Scuba.InferEvents samples
+  Scuba.log InferEvents samples
 
 
 (** If scuba logging is disabled, we would not log anyway, but let's not even try to create samples
@@ -71,10 +71,6 @@ let log_many ~loc = if Config.scuba_logging then log_many ~loc else fun _ -> ()
 let log_one ~loc entry = log_many ~loc [entry]
 
 let log_message ~label ~loc ~message = log_one ~loc (LogEntry.mk_string ~label ~message)
-
-let pulse_log_message ~label ~loc ~message =
-  if Config.pulse_scuba_logging then log_message ~label ~loc:(Some loc) ~message
-
 
 let log_many = log_many ~loc:None
 
@@ -87,8 +83,6 @@ let log_message = log_message ~loc:None
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
 
 let log_duration ~label ~duration_us = log_one (LogEntry.mk_time ~label ~duration_us)
-
-let cost_log_message ~label ~message = if Config.cost_scuba_logging then log_message ~label ~message
 
 let execute_with_time_logging label f =
   let ret_val, duration = Utils.timeit ~f in

@@ -323,7 +323,7 @@ val costs_current : string option
 
 val cost_issues_tests : string option
 
-val cost_scuba_logging : bool
+val cost_log_unknown_calls : bool
 
 val costs_previous : string option
 
@@ -588,6 +588,8 @@ val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool
 
+val pulse_log_unknown_calls : bool
+
 val pulse_max_cfg_size : int
 
 val pulse_max_disjuncts : int
@@ -643,8 +645,6 @@ val pulse_report_issues_for_tests : bool
 val pulse_sanity_checks : bool
 
 val pulse_recency_limit : int
-
-val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
 

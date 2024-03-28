@@ -2584,10 +2584,9 @@ INTERNAL OPTIONS
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 
-       --cost-scuba-logging
-           Activates: Log unknown functions to scuba in cost/inferbo
-           checkers; also sets --scuba-logging. (Conversely:
-           --no-cost-scuba-logging)
+       --cost-log-unknown-calls
+           Activates: log calls to unknown functions in the cost and inferbo
+           checkers (Conversely: --no-cost-log-unknown-calls)
 
        --costs-current-reset
            Cancel the effect of --costs-current.
@@ -2947,6 +2946,10 @@ INTERNAL OPTIONS
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
 
+       --pulse-log-unknown-calls
+           Activates: log calls to unknown functions in pulse in stats
+           (Conversely: --no-pulse-log-unknown-calls)
+
        --pulse-max-heap-reset
            Cancel the effect of --pulse-max-heap.
 
@@ -3033,10 +3036,6 @@ INTERNAL OPTIONS
        --pulse-sanity-checks
            Activates: Enable expensive internal checks/assertions.
            (Conversely: --no-pulse-sanity-checks)
-
-       --pulse-scuba-logging
-           Activates: Log unknown functions to scuba in pulse checkers; also
-           sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
 
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.

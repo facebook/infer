@@ -1307,6 +1307,11 @@ and cost_issues_tests =
     ~meta:"file" "Write a list of cost issues in a format suitable for cost tests to $(i,file)"
 
 
+and cost_log_unknown_calls =
+  CLOpt.mk_bool ~long:"cost-log-unknown-calls"
+    "log calls to unknown functions in the cost and inferbo checkers"
+
+
 and costs_previous =
   CLOpt.mk_path_opt ~long:"costs-previous"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -2795,6 +2800,10 @@ and pulse_log_summary_count =
      analysis job. Note that when joining the files, deduplication might be needed."
 
 
+and pulse_log_unknown_calls =
+  CLOpt.mk_bool ~long:"pulse-log-unknown-calls" "log calls to unknown functions in pulse in stats"
+
+
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -3065,20 +3074,7 @@ and select =
     "Select option number $(i,N) or $(i,all) of them. If omitted, prompt for input."
 
 
-and scuba_logging, cost_scuba_logging, pulse_scuba_logging =
-  let scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba" in
-  let cost_scuba_logging =
-    CLOpt.mk_bool_group ~long:"cost-scuba-logging"
-      "Log unknown functions to scuba in cost/inferbo checkers; also sets $(b,--scuba-logging)."
-      [scuba_logging] []
-  in
-  let pulse_scuba_logging =
-    CLOpt.mk_bool_group ~long:"pulse-scuba-logging"
-      "Log unknown functions to scuba in pulse checkers; also sets $(b,--scuba-logging)."
-      [scuba_logging] []
-  in
-  (scuba_logging, cost_scuba_logging, pulse_scuba_logging)
-
+and scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba"
 
 and scuba_execution_id =
   CLOpt.mk_int64_opt ~long:"scuba-execution-id"
@@ -4002,7 +3998,7 @@ and costs_current = !costs_current
 
 and cost_issues_tests = !cost_issues_tests
 
-and cost_scuba_logging = !cost_scuba_logging
+and cost_log_unknown_calls = !cost_log_unknown_calls
 
 and costs_previous = !costs_previous
 
@@ -4307,6 +4303,8 @@ and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_point
 
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
+and pulse_log_unknown_calls = !pulse_log_unknown_calls
+
 and pulse_max_cfg_size = !pulse_max_cfg_size
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
@@ -4397,8 +4395,6 @@ and pulse_report_latent_issues = !pulse_report_latent_issues
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_sanity_checks = !pulse_sanity_checks
-
-and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 

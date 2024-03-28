@@ -465,10 +465,11 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
     |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
          ~actuals ~formals_opt
   in
-  ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
-    ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
-    ~message:
-      (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
+  if Config.pulse_log_unknown_calls then
+    ScubaLogging.log_message_with_location ~label:"unmodeled_function_operation_pulse"
+      ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
+      ~message:
+        (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
   if Procname.is_objc_instance_method callee_pname then
     (* a special case for objc nil messaging *)
     let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =

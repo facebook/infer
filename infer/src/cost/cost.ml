@@ -65,10 +65,11 @@ module InstrBasicCostWithReason = struct
       | Some callee_cost when not (Procname.is_hack_builtins callee_pname) ->
           callee_cost
       | _ ->
-          ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"
-            ~message:
-              (F.asprintf "[Operation Cost] Unmodeled Function: %a" Procname.pp_without_templates
-                 callee_pname ) ;
+          if Config.cost_log_unknown_calls then
+            ScubaLogging.log_message ~label:"unmodeled_function_operation_cost"
+              ~message:
+                (F.asprintf "[Operation Cost] Unmodeled Function: %a" Procname.pp_without_templates
+                   callee_pname ) ;
           BasicCostWithReason.one )
 
 
@@ -242,9 +243,11 @@ module WorstCaseCost = struct
           CostDomain.plus acc cost )
     in
     Option.iter (CostDomain.get_operation_cost cost).top_pname_opt ~f:(fun top_pname ->
-        ScubaLogging.cost_log_message ~label:"unmodeled_function_top_cost"
-          ~message:
-            (F.asprintf "[Top Cost] Unmodeled Function: %a" Procname.pp_without_templates top_pname) ) ;
+        if Config.cost_log_unknown_calls then
+          ScubaLogging.log_message ~label:"unmodeled_function_top_cost"
+            ~message:
+              (F.asprintf "[Top Cost] Unmodeled Function: %a" Procname.pp_without_templates
+                 top_pname ) ) ;
     cost
 end
 
