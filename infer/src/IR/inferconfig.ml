@@ -213,10 +213,10 @@ let patterns_of_json_with_key (json_key, json) =
     loop assoc
   in
   (* Translate a JSON entry into a matching pattern *)
-  let create_pattern (assoc : (string * Yojson.Basic.t) list) =
+  let create_pattern (assoc : (string * Yojson.Safe.t) list) =
     let deprecated_language_key () =
       CLOpt.warnf "\"language\" in matchers is deprecated and ignored. Offending config: %s@\n"
-        (Yojson.Basic.to_string (`Assoc assoc))
+        (Yojson.Safe.to_string (`Assoc assoc))
     in
     let create_method_pattern assoc =
       let loop mp = function
@@ -228,7 +228,7 @@ let patterns_of_json_with_key (json_key, json) =
             deprecated_language_key () ;
             mp
         | _ ->
-            L.die UserError "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
+            L.die UserError "Failed to parse %s" (Yojson.Safe.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_method_pattern assoc
     and create_string_contains assoc =
@@ -241,7 +241,7 @@ let patterns_of_json_with_key (json_key, json) =
             deprecated_language_key () ;
             cp
         | _ ->
-            L.die UserError "Failed to parse here %s" (Yojson.Basic.to_string (`Assoc assoc))
+            L.die UserError "Failed to parse here %s" (Yojson.Safe.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_not_contains assoc
     in
@@ -268,7 +268,7 @@ let patterns_of_json_with_key (json_key, json) =
     | json ->
         warn_user
           (Printf.sprintf "expected list or assoc json type, but got value %s"
-             (Yojson.Basic.to_string json) ) ;
+             (Yojson.Safe.to_string json) ) ;
         accu
   in
   translate [] json

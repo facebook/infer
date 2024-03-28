@@ -433,7 +433,7 @@ end
 let parse_user_defined_specs = function
   | `List user_specs ->
       let parse_user_spec json =
-        let open Yojson.Basic in
+        let open Yojson.Safe in
         let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
         let sinks = Util.member "sinks" json |> Util.to_list |> List.map ~f:Util.to_string in
         let sanitizers =

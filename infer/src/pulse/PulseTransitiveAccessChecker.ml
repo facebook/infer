@@ -178,7 +178,7 @@ end = struct
         let rev_config =
           List.fold config_files ~init:empty ~f:(fun merged_config config_file ->
               let new_config =
-                match Utils.read_safe_json_file config_file with
+                match Utils.read_json_file config_file with
                 | Ok (`List []) ->
                     L.die ExternalError "The content of transitive-access JSON config is empty@."
                 | Ok json -> (

@@ -211,10 +211,6 @@ let directory_iter f path =
 let string_crc_hex32 s = Caml.Digest.to_hex (Caml.Digest.string s)
 
 let read_json_file path =
-  try Ok (Yojson.Basic.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
-
-
-let read_safe_json_file path =
   try Ok (Yojson.Safe.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
 
 
@@ -275,7 +271,7 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
 
 
 let write_json_to_file destfile json =
-  with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+  with_file_out destfile ~f:(fun oc -> Yojson.Safe.pretty_to_channel oc json)
 
 
 let with_channel_in ~f chan_in =
@@ -433,7 +429,7 @@ let strip_balanced_once ~drop s =
 let die_expected_yojson_type expected yojson_obj ~src ~example =
   let eg = if String.equal example "" then "" else " (e.g. '" ^ example ^ "')" in
   Die.die UserError "in %s expected json %s%s not %s" src expected eg
-    (Yojson.Basic.to_string yojson_obj)
+    (Yojson.Safe.to_string yojson_obj)
 
 
 let assoc_of_yojson yojson_obj ~src =

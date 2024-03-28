@@ -84,7 +84,7 @@ let of_records records = List.map ~f:of_record records |> of_list
 
 let of_json top_json =
   let error json =
-    L.(die UserError "Could not parse json matcher(s): %s" (Yojson.Basic.to_string json))
+    L.(die UserError "Could not parse json matcher(s): %s" (Yojson.Safe.to_string json))
   in
   let make_matcher_from_json json =
     let parse_method_name = function `String methodname -> methodname | _ -> error json in

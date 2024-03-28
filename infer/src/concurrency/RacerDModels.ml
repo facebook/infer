@@ -12,7 +12,7 @@ open ConcurrencyModels
 module AnnotationAliases = struct
   let of_json = function
     | `List aliases ->
-        List.map ~f:Yojson.Basic.Util.to_string aliases
+        List.map ~f:Yojson.Safe.Util.to_string aliases
     | _ ->
         L.(die UserError)
           "Couldn't parse thread-safety annotation aliases; expected list of strings"

@@ -140,7 +140,7 @@ val mk_symbol_seq :
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
     element of [symbols]. *)
 
-val mk_json : Yojson.Basic.t ref t
+val mk_json : Yojson.Safe.t ref t
 
 val mk_anon : unit -> string RevList.t ref
 [@@warning "-unused-value-declaration"]

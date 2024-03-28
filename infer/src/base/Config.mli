@@ -128,13 +128,13 @@ val abstract_pulse_models_for_erlang : bool
 
 val analysis_schedule_file : string option
 
-val annotation_reachability_cxx : Yojson.Basic.t
+val annotation_reachability_cxx : Yojson.Safe.t
 
 val run_as_child : int option
 
-val annotation_reachability_cxx_sources : Yojson.Basic.t
+val annotation_reachability_cxx_sources : Yojson.Safe.t
 
-val annotation_reachability_custom_pairs : Yojson.Basic.t
+val annotation_reachability_custom_pairs : Yojson.Safe.t
 
 val annotation_reachability_no_allocation : bool
 
@@ -251,7 +251,7 @@ val bxl_file_capture : bool
 
 val capture : bool
 
-val capture_block_list : string * Yojson.Basic.t
+val capture_block_list : string * Yojson.Safe.t
 
 val capture_textual : string list
 
@@ -331,7 +331,7 @@ val cost_suppress_func_ptr : bool
 
 val cxx : bool
 
-val cxx_scope_guards : Yojson.Basic.t
+val cxx_scope_guards : Yojson.Safe.t
 
 val liveness_block_list_var_regex : Str.regexp option
 
@@ -484,13 +484,13 @@ val list_checkers : bool
 
 val list_issue_types : bool
 
-val liveness_dangerous_classes : Yojson.Basic.t
+val liveness_dangerous_classes : Yojson.Safe.t
 
 val liveness_ignored_constant : string list
 
 val load_average : float option
 
-val lock_model : Yojson.Basic.t
+val lock_model : Yojson.Safe.t
 
 val log_missing_deps : bool
 
@@ -514,11 +514,11 @@ val merge_summaries : string list
 
 val method_decls_info : string option
 
-val modeled_expensive : string * Yojson.Basic.t
+val modeled_expensive : string * Yojson.Safe.t
 
 val modified_lines : string option
 
-val never_returning_null : string * Yojson.Basic.t
+val never_returning_null : string * Yojson.Safe.t
 
 val no_censor_report : Str.regexp list
 
@@ -690,15 +690,15 @@ val pyc_file : string list
 
 val python_builtin_models : string
 
-val quandary_endpoints : Yojson.Basic.t
+val quandary_endpoints : Yojson.Safe.t
 
-val quandary_sanitizers : Yojson.Basic.t
+val quandary_sanitizers : Yojson.Safe.t
 
 val quandary_show_passthroughs : bool
 
-val quandary_sinks : Yojson.Basic.t
+val quandary_sinks : Yojson.Safe.t
 
-val quandary_sources : Yojson.Basic.t
+val quandary_sources : Yojson.Safe.t
 
 val quiet : bool
 
@@ -752,7 +752,7 @@ val sarif : bool
 
 val scheduler : scheduler
 
-val scope_leakage_config : Yojson.Basic.t
+val scope_leakage_config : Yojson.Safe.t
 
 val scuba_logging : bool
 
@@ -836,7 +836,7 @@ val sqlite_mmap_size : int
 
 val sqlite_vfs : string option
 
-val starvation_skip_analysis : Yojson.Basic.t
+val starvation_skip_analysis : Yojson.Safe.t
 
 val starvation_strict_mode : bool
 
@@ -860,7 +860,7 @@ val export_changed_functions : bool
 
 val testing_mode : bool
 
-val threadsafe_aliases : Yojson.Basic.t
+val threadsafe_aliases : Yojson.Safe.t
 
 val timeout : float option
 

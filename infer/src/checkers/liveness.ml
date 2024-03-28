@@ -84,7 +84,7 @@ let is_always_in_scope proc_desc pvar =
 
 let json_error ~option_name ~expected ~actual =
   L.die UserError "When parsing option %s: expected %s but got '%s'" option_name expected
-    (Yojson.Basic.Util.to_string actual)
+    (Yojson.Safe.Util.to_string actual)
 
 
 let string_list_of_json ~option_name ~init = function

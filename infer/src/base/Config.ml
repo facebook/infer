@@ -4413,23 +4413,23 @@ and pulse_taint_config =
      extra fields, meaning we won't report errors to users when they spell things wrong. *)
   let base_taint_config =
     let mk_matchers json_ref =
-      Pulse_config_j.matchers_of_string (Yojson.Basic.to_string !json_ref)
+      Pulse_config_j.matchers_of_string (Yojson.Safe.to_string !json_ref)
     in
     { sources= mk_matchers pulse_taint_sources
     ; sanitizers= mk_matchers pulse_taint_sanitizers
     ; propagators= mk_matchers pulse_taint_propagators
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
-        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
+        Pulse_config_j.taint_policies_of_string (Yojson.Safe.to_string !pulse_taint_policies)
     ; data_flow_kinds=
         Pulse_config_j.data_flow_kinds_of_string
-          (Yojson.Basic.to_string !pulse_taint_data_flow_kinds) }
+          (Yojson.Safe.to_string !pulse_taint_data_flow_kinds) }
   in
   let explore_file taint_config filepath =
     let json_list =
       match Utils.read_json_file filepath with
       | Ok json ->
-          Yojson.Basic.Util.to_assoc json
+          Yojson.Safe.Util.to_assoc json
       | Error msg ->
           L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
             filepath msg
@@ -4439,7 +4439,7 @@ and pulse_taint_config =
       | None ->
           old_entries
       | Some (_, taint_json) ->
-          let new_entries = parser (Yojson.Basic.to_string taint_json) in
+          let new_entries = parser (Yojson.Safe.to_string taint_json) in
           new_entries @ old_entries
     in
     let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in

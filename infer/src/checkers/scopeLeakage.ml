@@ -58,7 +58,7 @@ module AnalysisConfig : sig
 
   val empty : t
 
-  val parse : Yojson.Basic.t -> t
+  val parse : Yojson.Safe.t -> t
   (** Parses a JSON configuration into a custom data type. *)
 
   val pp : F.formatter -> t -> unit
@@ -111,7 +111,7 @@ end = struct
   let find_node map key node =
     try Hashtbl.find map key
     with _ ->
-      L.die UserError "Missing key \"%s\" in association node %a!@\n" key Yojson.Basic.pp node
+      L.die UserError "Missing key \"%s\" in association node %a!@\n" key Yojson.Safe.pp node
 
 
   (* Converts a JSON `Assoc into a Hashtbl. *)
@@ -125,9 +125,9 @@ end = struct
   let json_list_to_string_list node =
     match node with
     | `List nodes ->
-        List.map nodes ~f:Yojson.Basic.Util.to_string
+        List.map nodes ~f:Yojson.Safe.Util.to_string
     | _ ->
-        L.die UserError "Failed parsing a list of strings from %a!@\n" Yojson.Basic.pp node
+        L.die UserError "Failed parsing a list of strings from %a!@\n" Yojson.Safe.pp node
 
 
   (** node is a JSON entry of the form "classname" : string, "methods": [list of strings]. *)
@@ -135,11 +135,11 @@ end = struct
     match node with
     | `Assoc assoc_list ->
         let node_as_map = json_assoc_list_to_map assoc_list in
-        let classname = Yojson.Basic.Util.to_string (find_node node_as_map "classname" node) in
+        let classname = Yojson.Safe.Util.to_string (find_node node_as_map "classname" node) in
         let methods = json_list_to_string_list (find_node node_as_map "methods" node) in
         {classname; methods}
     | _ ->
-        L.die UserError "Failed parsing a classname+methods node from %a!@\n" Yojson.Basic.pp node
+        L.die UserError "Failed parsing a classname+methods node from %a!@\n" Yojson.Safe.pp node
 
 
   let parse_generators node =
@@ -147,8 +147,8 @@ end = struct
     | `List list_node ->
         List.map list_node ~f:parse_classname_methods
     | _ ->
-        L.die UserError "Failed parsing a list of classname+methods list from %a!@\n"
-          Yojson.Basic.pp node
+        L.die UserError "Failed parsing a list of classname+methods list from %a!@\n" Yojson.Safe.pp
+          node
 
 
   let parse_scope node =
@@ -157,10 +157,10 @@ end = struct
         let node_as_map = json_assoc_list_to_map generators_list in
         let classname_node = find_node node_as_map "classname" node in
         let generators_node = find_node node_as_map "generators" node in
-        { classname= Yojson.Basic.Util.to_string classname_node
+        { classname= Yojson.Safe.Util.to_string classname_node
         ; generators= parse_generators generators_node }
     | _ ->
-        L.die UserError "Failed parsing scope node from %a!@\n" Yojson.Basic.pp node
+        L.die UserError "Failed parsing scope node from %a!@\n" Yojson.Safe.pp node
 
 
   let parse_scope_list node =
@@ -168,7 +168,7 @@ end = struct
     | `List node_list ->
         List.map node_list ~f:parse_scope
     | _ ->
-        L.die UserError "Failed parsing a list of scopes from %a" Yojson.Basic.pp node
+        L.die UserError "Failed parsing a list of scopes from %a" Yojson.Safe.pp node
 
 
   let parse_must_not_hold_pair node =
@@ -177,9 +177,9 @@ end = struct
         let node_as_map = json_assoc_list_to_map node_assoc_list in
         let left_node = find_node node_as_map "holds" node in
         let right_node = find_node node_as_map "held" node in
-        {holder= Yojson.Basic.Util.to_string left_node; held= Yojson.Basic.Util.to_string right_node}
+        {holder= Yojson.Safe.Util.to_string left_node; held= Yojson.Safe.Util.to_string right_node}
     | _ ->
-        L.die UserError "Failed parsing a must-not-hold pair from %a!@\n" Yojson.Basic.pp node
+        L.die UserError "Failed parsing a must-not-hold pair from %a!@\n" Yojson.Safe.pp node
 
 
   let parse_must_not_hold node =
@@ -187,7 +187,7 @@ end = struct
     | `List node_list ->
         List.map node_list ~f:parse_must_not_hold_pair
     | _ ->
-        L.die UserError "Failed parsing a must-not-hold pair from %a!@\n" Yojson.Basic.pp node
+        L.die UserError "Failed parsing a must-not-hold pair from %a!@\n" Yojson.Safe.pp node
 
 
   (** Basic semantic checks. *)
@@ -214,7 +214,7 @@ end = struct
         let scopes_node = find_node node_as_map "scopes" node in
         let must_not_hold_node = find_node node_as_map "must-not-hold" node in
         let result =
-          { annotation_classname= Yojson.Basic.Util.to_string annot_classname_node
+          { annotation_classname= Yojson.Safe.Util.to_string annot_classname_node
           ; scope_defs= parse_scope_list scopes_node
           ; must_not_hold_pairs= parse_must_not_hold must_not_hold_node }
         in
@@ -224,8 +224,7 @@ end = struct
         L.debug Analysis Verbose "scope-leakage-config is empty!@\n" ;
         empty
     | _ ->
-        L.die UserError "Failed parsing a scope-leakage-config node from %a!@\n" Yojson.Basic.pp
-          node
+        L.die UserError "Failed parsing a scope-leakage-config node from %a!@\n" Yojson.Safe.pp node
 end
 
 (** Parse the configuration into a global. *)
