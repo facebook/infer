@@ -46,6 +46,7 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
+  | Stats
   | SyntacticDependencyGraphDot
   | Temporary
   | TestDeterminatorReport
@@ -270,6 +271,12 @@ let of_id = function
       { rel_path= ".infer_runstate.json"
       ; kind= File
       ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete
+      ; before_new_capture= Delete }
+  | Stats ->
+      { rel_path= "stats"
+      ; kind= Directory
+      ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
   | SyntacticDependencyGraphDot ->

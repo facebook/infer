@@ -19,6 +19,8 @@ let maybe_add_normal ~name ~value sample =
 let set_command_line_normales sample =
   let add_normal ~key ~data = Scuba.add_normal ~name:key ~value:data in
   Map.fold Config.scuba_normals ~init:sample ~f:add_normal
+  |> maybe_add_normal ~name:"execution_id"
+       ~value:(Option.map ~f:Int64.to_string Config.scuba_execution_id)
 
 
 let set_command_line_tagsets sample =
@@ -35,14 +37,12 @@ let set_common_fields sample =
   |> maybe_add_normal ~name:"job_id" ~value:Config.job_id
   |> add_normal ~name:"command" ~value:(InferCommand.to_string Config.command)
   |> add_normal ~name:"infer_commit" ~value:Version.commit
-  |> maybe_add_normal ~name:"execution_id"
-       ~value:(Option.map ~f:Int64.to_string Config.scuba_execution_id)
 
 
 let sample_from_event ~loc ({label; created_at_ts; data} : LogEntry.t) =
   let create_sample_with_label label =
     Scuba.new_sample ~time:(Some created_at_ts)
-    |> set_common_fields |> set_command_line_normales |> set_command_line_tagsets
+    |> set_common_fields
     |> Scuba.add_normal ~name:"event" ~value:label
     |> maybe_add_normal ~name:"location" ~value:loc
   in
@@ -58,15 +58,36 @@ let sample_from_event ~loc ({label; created_at_ts; data} : LogEntry.t) =
       |> Scuba.add_normal ~name:"message" ~value:message
 
 
+let log_to_debug samples =
+  let log_file =
+    (* cannot use [ResultsDir.get_path], it would introduce a circular dependency *)
+    let dir_name = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Stats in
+    Utils.create_dir dir_name ;
+    let file_name =
+      match !ProcessPoolState.in_child with
+      | None ->
+          "stats.jsonl"
+      | Some rank ->
+          Printf.sprintf "stats-%d.jsonl" rank
+    in
+    dir_name ^/ file_name
+  in
+  Utils.with_file_out ~append:true log_file ~f:(fun out ->
+      List.iter samples ~f:(fun sample ->
+          Yojson.to_channel out (Scuba.sample_to_json sample) ;
+          Printf.fprintf out ",\n" ) )
+
+
 (** Consider buffering or batching if proves to be a problem *)
 let log_many ~loc entries =
   let samples = List.map entries ~f:(sample_from_event ~loc) in
-  Scuba.log InferEvents samples
+  log_to_debug samples ;
+  if Config.scuba_logging then
+    (* add the columns that are relevant for scuba only at this point *)
+    List.map samples ~f:(fun sample ->
+        sample |> set_command_line_normales |> set_command_line_tagsets )
+    |> Scuba.log InferEvents
 
-
-(** If scuba logging is disabled, we would not log anyway, but let's not even try to create samples
-    to save perf *)
-let log_many ~loc = if Config.scuba_logging then log_many ~loc else fun _ -> ()
 
 let log_one ~loc entry = log_many ~loc [entry]
 

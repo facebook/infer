@@ -49,6 +49,7 @@ type id =
   | ReportXML  (** a PMD-style XML version of [report.json] *)
   | RetainCycles  (** directory of retain cycles dotty files *)
   | RunState  (** internal data about the last infer run *)
+  | Stats  (** internal statistics about the infer run *)
   | SyntacticDependencyGraphDot
       (** the inter-procedures dependencies obtained by syntactically inspecting the source of each
           procedure and recording the (static) calls it makes during an analysis phase; used by the
