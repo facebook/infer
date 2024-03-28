@@ -308,14 +308,14 @@ let get_filtered_paths ~results_dir ~f =
       if f entry then Some (path_of_entry ~results_dir entry) else None )
 
 
-let to_delete_before_incremental_capture_and_analysis ~results_dir =
+let to_keep_before_incremental_capture_and_analysis ~results_dir =
   get_filtered_paths ~results_dir ~f:(fun {before_incremental_analysis; _} ->
-      equal_cleanup_action before_incremental_analysis Delete )
+      equal_cleanup_action before_incremental_analysis Keep )
 
 
-let to_delete_before_caching_capture ~results_dir =
+let to_keep_before_caching_capture ~results_dir =
   get_filtered_paths ~results_dir ~f:(fun {before_caching_capture; _} ->
-      equal_cleanup_action before_caching_capture Delete )
+      equal_cleanup_action before_caching_capture Keep )
 
 
 let to_keep_before_new_capture ~results_dir =

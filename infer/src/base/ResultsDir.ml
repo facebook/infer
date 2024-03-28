@@ -136,9 +136,10 @@ let assert_results_dir advice =
 
 
 let scrub_for_incremental () =
-  List.iter ~f:Utils.rmtree
-    (ResultsDirEntryName.to_delete_before_incremental_capture_and_analysis
-       ~results_dir:Config.results_dir )
+  Utils.rm_all_in_dir Config.results_dir
+    ~except:
+      (ResultsDirEntryName.to_keep_before_incremental_capture_and_analysis
+         ~results_dir:Config.results_dir )
 
 
 let scrub_for_caching () =
@@ -146,5 +147,5 @@ let scrub_for_caching () =
   if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
   Database.db_close () ;
-  List.iter ~f:Utils.rmtree
-    (ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir)
+  Utils.rm_all_in_dir Config.results_dir
+    ~except:(ResultsDirEntryName.to_keep_before_caching_capture ~results_dir:Config.results_dir)

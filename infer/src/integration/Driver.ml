@@ -614,13 +614,9 @@ let run_prologue mode =
 
 
 let run_epilogue () =
+  GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
   if Config.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;
   ()
-
-
-let run_epilogue () =
-  GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
-  ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue

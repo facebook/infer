@@ -60,10 +60,10 @@ type id =
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)
 
-val to_delete_before_incremental_capture_and_analysis : results_dir:string -> string list
+val to_keep_before_incremental_capture_and_analysis : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_incremental}, you probably want to use that instead *)
 
-val to_delete_before_caching_capture : results_dir:string -> string list
+val to_keep_before_caching_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_caching}, you probably want to use that instead *)
 
 val to_keep_before_new_capture : results_dir:string -> string list
