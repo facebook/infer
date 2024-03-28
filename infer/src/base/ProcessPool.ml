@@ -392,7 +392,7 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
 
     Children never return. Instead they exit when done. *)
 let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
-  ProcessPoolState.in_child := true ;
+  ProcessPoolState.in_child := Some slot ;
   ProcessPoolState.reset_pid () ;
   child_prologue () ;
   let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
