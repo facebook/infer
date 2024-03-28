@@ -14,14 +14,26 @@ module type Stat = sig
   val init : t
 
   val merge : t -> t -> t
+
+  val to_log_entries : field_name:string -> t -> LogEntry.t list
 end
 
-module PulseSumCountMap = struct
+module PulseSummaryCountMap = struct
   include IntMap
 
   let init = empty
 
   let merge = merge (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
+
+  let to_log_entries ~field_name:_ summary_counts =
+    let total, counts =
+      List.fold_map (bindings summary_counts) ~init:0 ~f:(fun total (n, count) ->
+          ( total + (n * count)
+          , LogEntry.mk_count
+              ~label:(F.sprintf "backend_stats.pulse_summaries_count_%d" n)
+              ~value:count ) )
+    in
+    LogEntry.mk_count ~label:"backend_stats.pulse_summaries_total" ~value:total :: counts
 end
 
 module DurationItem = struct
@@ -30,8 +42,6 @@ module DurationItem = struct
   let dummy = {duration_us= 0; file= ""; pname= ""}
 
   let compare {duration_us= dr1} {duration_us= dr2} = Int.compare dr1 dr2
-
-  let pp f {pname; file; duration_us} = F.fprintf f "%5dus: %s: %s" duration_us file pname
 end
 
 module LongestProcDurationHeap = struct
@@ -52,9 +62,16 @@ module LongestProcDurationHeap = struct
     heap1
 
 
-  let pp_sorted f heap =
-    let heap = to_list heap |> List.sort ~compare:(fun x y -> DurationItem.compare y x) in
-    F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f "@;") DurationItem.pp) heap
+  let to_log_entries ~field_name:_ heap =
+    to_list heap
+    |> List.foldi ~init:[] ~f:(fun i acc DurationItem.{duration_us; file; pname} ->
+           LogEntry.mk_time
+             ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
+             ~duration_us
+           :: LogEntry.mk_string
+                ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_name_%d" i)
+                ~message:(F.sprintf "%s:%s" file pname)
+           :: acc )
 
 
   let init = Heap.create ~dummy:DurationItem.dummy 10
@@ -90,9 +107,15 @@ module OfUnserializable (S : UnserializableStat) = struct
   let deserialize = function T x -> x | Serialized s -> S.deserialize s
 
   let merge x y = T (S.merge (deserialize x) (deserialize y))
+
+  let to_log_entries ~field_name v = S.to_log_entries ~field_name (deserialize v)
 end
 
-module TimingsStat = OfUnserializable (Timings)
+module TimingsStat = OfUnserializable (struct
+  include Timings
+
+  let to_log_entries ~field_name:_ ts = Timings.to_scuba ts
+end)
 
 module AdditiveIntCounter = struct
   type t = int
@@ -100,6 +123,9 @@ module AdditiveIntCounter = struct
   let init = 0
 
   let merge = ( + )
+
+  let to_log_entries ~field_name n =
+    [LogEntry.mk_count ~label:("backend_stats." ^ field_name) ~value:n]
 end
 
 module ExecutionDuration = struct
@@ -108,6 +134,9 @@ module ExecutionDuration = struct
   let init = zero
 
   let merge = add
+
+  let to_log_entries ~field_name duration =
+    ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ field_name) duration
 end
 
 include struct
@@ -132,7 +161,7 @@ include struct
     ; mutable pulse_disjuncts_dropped: AdditiveIntCounter.t
     ; mutable pulse_interrupted_loops: AdditiveIntCounter.t
     ; mutable pulse_summaries_contradictions: AdditiveIntCounter.t
-    ; mutable pulse_summaries_count: AdditiveIntCounter.t PulseSumCountMap.t
+    ; mutable pulse_summaries_count: AdditiveIntCounter.t PulseSummaryCountMap.t
     ; mutable topl_reachable_calls: AdditiveIntCounter.t
     ; mutable timeouts: AdditiveIntCounter.t
     ; mutable timings: TimingsStat.t
@@ -199,7 +228,7 @@ let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contrad
 
 let add_pulse_summaries_count n =
   update_with Fields.pulse_summaries_count ~f:(fun counters ->
-      PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
+      PulseSummaryCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
 
 
 let add_proc_duration_us file pname duration_us =
@@ -232,121 +261,17 @@ let incr_spec_store_times counter =
 
 let reset () = copy initial ~into:global_stats
 
-let pp fmt stats =
-  let pp_field pp_value fmt field =
-    F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Field.get field stats)
-  in
-  let pp_serialized_field deserializer pp_value fmt field =
-    pp_field (fun fmt v -> pp_value fmt (deserializer v)) fmt field
-  in
-  let pp_hit_percent hit miss fmt =
-    let total = hit + miss in
-    if Int.equal total 0 then F.pp_print_string fmt "N/A%%"
-    else F.fprintf fmt "%d%%" (hit * 100 / total)
-  in
-  let pp_int_field fmt field = pp_field F.pp_print_int fmt field in
-  let pp_execution_duration_field fmt field =
-    let field_value = Field.get field stats in
-    let field_name = Field.name field in
-    F.fprintf fmt "%a@;" (ExecutionDuration.pp ~prefix:field_name) field_value
-  in
-  let pp_cache_hits stats cache_misses fmt cache_hits_field =
-    let cache_hits = Field.get cache_hits_field stats in
-    F.fprintf fmt "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
-      (pp_hit_percent cache_hits cache_misses)
-  in
-  let pp_longest_proc_duration_heap fmt field =
-    let heap : LongestProcDurationHeap.t = Field.get field stats in
-    F.fprintf fmt "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted
-      heap
-  in
-  let pp_pulse_summaries_count fmt field =
-    let sumcounters : int PulseSumCountMap.t = Field.get field stats in
-    let pp_binding fmt (n, count) = Format.fprintf fmt "%d -> %d" n count in
-    F.fprintf fmt "%s= [%a]@;" (Field.name field)
-      (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt ", ") pp_binding)
-      (PulseSumCountMap.bindings sumcounters) ;
-    let total =
-      PulseSumCountMap.bindings sumcounters
-      |> List.fold ~init:0 ~f:(fun total (n, count) -> total + (n * count))
-    in
-    F.fprintf fmt "pulse_summaries_total_disjuncts= %d@;" total
-  in
-  let pp_stats fmt =
-    Fields.iter ~summary_file_try_load:(pp_int_field fmt)
-      ~useful_times:(pp_execution_duration_field fmt)
-      ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
-      ~summary_read_from_disk:(pp_int_field fmt)
-      ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses fmt)
-      ~summary_cache_misses:(pp_int_field fmt) ~ondemand_procs_analyzed:(pp_int_field fmt)
-      ~proc_locker_lock_time:(pp_execution_duration_field fmt)
-      ~proc_locker_unlock_time:(pp_execution_duration_field fmt)
-      ~process_times:(pp_execution_duration_field fmt)
-      ~pulse_aliasing_contradictions:(pp_int_field fmt)
-      ~pulse_args_length_contradictions:(pp_int_field fmt)
-      ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
-      ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
-      ~pulse_summaries_contradictions:(pp_int_field fmt)
-      ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
-      ~restart_scheduler_useful_time:(pp_execution_duration_field fmt)
-      ~restart_scheduler_total_time:(pp_execution_duration_field fmt)
-      ~spec_store_times:(pp_execution_duration_field fmt) ~topl_reachable_calls:(pp_int_field fmt)
-      ~timings:(pp_serialized_field TimingsStat.deserialize Timings.pp fmt)
-  in
-  F.fprintf fmt "@[Backend stats:@\n@[<v2>  %t@]@]@." pp_stats
-
-
 let log_to_scuba stats =
-  let create_counter field =
-    [LogEntry.mk_count ~label:("backend_stats." ^ Field.name field) ~value:(Field.get field stats)]
+  let hit_percent hit miss =
+    let total = hit + miss in
+    if Int.equal total 0 then None else Some (hit * 100 / total)
   in
-  let create_longest_proc_duration_heap field =
-    Field.get field stats |> LongestProcDurationHeap.to_list
-    |> List.foldi ~init:[] ~f:(fun i acc DurationItem.{duration_us; file; pname} ->
-           LogEntry.mk_time
-             ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
-             ~duration_us
-           :: LogEntry.mk_string
-                ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_name_%d" i)
-                ~message:(F.sprintf "%s:%s" file pname)
-           :: acc )
+  let summary_cache_hit_percent_entry =
+    hit_percent stats.summary_cache_hits stats.summary_cache_misses
+    |> Option.map ~f:(fun hit_percent ->
+           LogEntry.mk_count ~label:"backend_stats.summary_cache_hit_rate" ~value:hit_percent )
   in
-  let create_time_entry field =
-    Field.get field stats
-    |> ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ Field.name field)
-  in
-  let create_pulse_summaries_count_entry field =
-    let counters : int PulseSumCountMap.t = Field.get field stats in
-    let total, counts =
-      List.fold_map (PulseSumCountMap.bindings counters) ~init:0 ~f:(fun total (n, count) ->
-          ( total + (n * count)
-          , LogEntry.mk_count
-              ~label:(F.sprintf "backend_stats.pulse_summaries_count_%d" n)
-              ~value:count ) )
-    in
-    LogEntry.mk_count ~label:"backend_stats.pulse_summaries_total" ~value:total :: counts
-  in
-  let create_timings_entry field =
-    Field.get field stats |> TimingsStat.deserialize |> Timings.to_scuba
-  in
-  let entries =
-    Fields.to_list ~useful_times:create_time_entry
-      ~longest_proc_duration_heap:create_longest_proc_duration_heap
-      ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
-      ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
-      ~ondemand_procs_analyzed:create_counter ~proc_locker_lock_time:create_time_entry
-      ~proc_locker_unlock_time:create_time_entry ~process_times:create_time_entry
-      ~pulse_aliasing_contradictions:create_counter ~pulse_args_length_contradictions:create_counter
-      ~pulse_captured_vars_length_contradictions:create_counter
-      ~pulse_disjuncts_dropped:create_counter ~pulse_interrupted_loops:create_counter
-      ~pulse_summaries_contradictions:create_counter
-      ~pulse_summaries_count:create_pulse_summaries_count_entry
-      ~restart_scheduler_useful_time:create_time_entry
-      ~restart_scheduler_total_time:create_time_entry ~spec_store_times:create_time_entry
-      ~timeouts:create_counter ~topl_reachable_calls:create_counter ~timings:create_timings_entry
-    |> List.concat
-  in
-  ScubaLogging.log_many entries
+  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
 
 
 let log_aggregate stats_list =
@@ -355,7 +280,6 @@ let log_aggregate stats_list =
       L.internal_error "Empty list of backend stats to aggregate, weird!@\n"
   | one :: rest ->
       let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
-      L.debug Analysis Quiet "%a" pp stats ;
       log_to_scuba stats
 
 

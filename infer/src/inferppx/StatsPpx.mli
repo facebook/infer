@@ -21,4 +21,8 @@ open! IStd
       let merge stats1 stats2 =
         (* creates a new stats object merging stats1 and stats2 field by field *)
         ...
+
+      to_log_entries stats =
+        (* concatenate the result of calling [to_log_entries] on each field *)
+        ...
     ]} *)
