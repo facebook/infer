@@ -251,27 +251,39 @@ module AtomicInteger = struct
 end
 
 module BasicString = struct
+  let constructor_from_constant_dsl ~desc (this, hist) init_hist : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* {path; location} = get_data in
+    let event = Hist.call_event path location desc in
+    let this_hist = (this, Hist.add_event path event hist) in
+    let* () = write_deref_field ~ref:this_hist ~obj:init_hist ModeledField.internal_string in
+    let* s_opt = as_constant_string init_hist in
+    let* len =
+      exec_operation (fun astate ->
+          match s_opt with
+          | Some s ->
+              let astate, len =
+                String.length s |> IntLit.of_int |> PulseArithmetic.absval_of_int astate
+              in
+              (len, astate)
+          | None ->
+              (AbstractValue.mk_fresh_restricted (), astate) )
+    in
+    write_field ~ref:this_hist ~obj:(len, snd init_hist) ModeledField.string_length
+
+
   (** constructor from constant string *)
-  let constructor_from_constant ~desc (this, hist) init_hist : model =
+  let constructor_from_constant ~desc this_hist init_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ constructor_from_constant_dsl ~desc this_hist init_hist
+
+
+  let default_constructor ~desc this_hist : model =
     let open PulseModelsDSL.Syntax in
     start_model
-    @@ let* {path; location} = get_data in
-       let event = Hist.call_event path location desc in
-       let this_hist = (this, Hist.add_event path event hist) in
-       let* () = write_deref_field ~ref:this_hist ~obj:init_hist ModeledField.internal_string in
-       let* s_opt = as_constant_string init_hist in
-       let* len =
-         exec_operation (fun astate ->
-             match s_opt with
-             | Some s ->
-                 let astate, len =
-                   String.length s |> IntLit.of_int |> PulseArithmetic.absval_of_int astate
-                 in
-                 (len, astate)
-             | None ->
-                 (AbstractValue.mk_fresh_restricted (), astate) )
-       in
-       write_field ~ref:this_hist ~obj:(len, snd init_hist) ModeledField.string_length
+    @@
+    let* init_hist = eval_const_string "" in
+    constructor_from_constant_dsl ~desc this_hist init_hist
 
 
   let copy_constructor ~desc (this, hist) src_hist : model =
@@ -917,6 +929,8 @@ let map_matchers =
       $+...$--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
     ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.copy_constructor ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+      $--> BasicString.default_constructor ~desc:"std::basic_string::basic_string()"
     ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload
       $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
