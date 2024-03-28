@@ -256,6 +256,8 @@ module AddressAttributes : sig
 
   val get_address_of_stack_variable :
     AbstractValue.t -> t -> (Var.t * Location.t * ValueHistory.t) option
+
+  val has_unknown_effect : AbstractValue.t -> t -> bool
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
