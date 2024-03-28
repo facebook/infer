@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module L = Logging
 
+(** stat field datatypes must have their own module and implement at least this interface *)
 module type Stat = sig
   type t
 
@@ -17,6 +18,66 @@ module type Stat = sig
 
   val to_log_entries : field_name:string -> t -> LogEntry.t list
 end
+
+(** Type for fields that contain non-[Marshal]-serializable data. These need to be serialized by
+    [get ()] so they can safely be sent over the pipe to the orchestrator process, where these stats
+    end up. *)
+module type UnmarshallableStat = sig
+  include Stat
+
+  type serialized
+
+  val serialize : t -> serialized
+
+  val deserialize : serialized -> t
+end
+
+module OfUnmarshallable (S : UnmarshallableStat) = struct
+  type t = T of S.t | Serialized of S.serialized
+
+  let init = T S.init
+
+  let serialize = function
+    | T x ->
+        Serialized (S.serialize x)
+    | Serialized _ as serialized ->
+        serialized
+
+
+  let deserialize = function T x -> x | Serialized s -> S.deserialize s
+
+  let merge x y = T (S.merge (deserialize x) (deserialize y))
+
+  let to_log_entries ~field_name v = S.to_log_entries ~field_name (deserialize v)
+end
+
+module IntCounter = struct
+  type t = int
+
+  let init = 0
+
+  let merge = ( + )
+
+  let to_log_entries ~field_name n =
+    [LogEntry.mk_count ~label:("backend_stats." ^ field_name) ~value:n]
+end
+
+module TimeCounter = struct
+  include ExecutionDuration
+
+  let init = zero
+
+  let merge = add
+
+  let to_log_entries ~field_name duration =
+    ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ field_name) duration
+end
+
+module TimingsStat = OfUnmarshallable (struct
+  include Timings
+
+  let to_log_entries ~field_name:_ ts = Timings.to_scuba ts
+end)
 
 module PulseSummaryCountMap = struct
   include IntMap
@@ -79,98 +140,59 @@ module LongestProcDurationHeap = struct
   include Heap
 end
 
-(** Type for fields that contain non-[Marshal]-serializable data. These need to be serialized by
-    [get ()] so they can safely be sent over the pipe to the orchestrator process, where these stats
-    end up. *)
-module type UnserializableStat = sig
-  include Stat
+(* NOTE: there is a custom ppx for this data structure to generate boilerplate, see
+   src/inferppx/StatsPpx.mli *)
+type t =
+  { mutable summary_file_try_load: IntCounter.t
+  ; mutable summary_read_from_disk: IntCounter.t
+  ; mutable summary_cache_hits: IntCounter.t
+  ; mutable summary_cache_misses: IntCounter.t
+  ; mutable ondemand_procs_analyzed: IntCounter.t
+  ; mutable proc_locker_lock_time: TimeCounter.t
+  ; mutable proc_locker_unlock_time: TimeCounter.t
+  ; mutable restart_scheduler_useful_time: TimeCounter.t
+  ; mutable restart_scheduler_total_time: TimeCounter.t
+  ; mutable pulse_aliasing_contradictions: IntCounter.t
+  ; mutable pulse_args_length_contradictions: IntCounter.t
+  ; mutable pulse_captured_vars_length_contradictions: IntCounter.t
+  ; mutable pulse_disjuncts_dropped: IntCounter.t
+  ; mutable pulse_interrupted_loops: IntCounter.t
+  ; mutable pulse_summaries_contradictions: IntCounter.t
+  ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
+  ; mutable topl_reachable_calls: IntCounter.t
+  ; mutable timeouts: IntCounter.t
+  ; mutable timings: TimingsStat.t
+  ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
+  ; mutable process_times: TimeCounter.t
+  ; mutable useful_times: TimeCounter.t
+  ; mutable spec_store_times: TimeCounter.t }
+[@@deriving fields, infer_stats]
 
-  type serialized
+let reset () = copy initial ~into:global_stats
 
-  val serialize : t -> serialized
-
-  val deserialize : serialized -> t
-end
-
-module OfUnserializable (S : UnserializableStat) = struct
-  type t = T of S.t | Serialized of S.serialized
-
-  let init = T S.init
-
-  let serialize = function
-    | T x ->
-        Serialized (S.serialize x)
-    | Serialized _ as serialized ->
-        serialized
+let log_to_scuba stats =
+  let hit_percent hit miss =
+    let total = hit + miss in
+    if Int.equal total 0 then None else Some (hit * 100 / total)
+  in
+  let summary_cache_hit_percent_entry =
+    hit_percent stats.summary_cache_hits stats.summary_cache_misses
+    |> Option.map ~f:(fun hit_percent ->
+           LogEntry.mk_count ~label:"backend_stats.summary_cache_hit_rate" ~value:hit_percent )
+  in
+  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
 
 
-  let deserialize = function T x -> x | Serialized s -> S.deserialize s
+let log_aggregate stats_list =
+  match stats_list with
+  | [] ->
+      L.internal_error "Empty list of backend stats to aggregate, weird!@\n"
+  | one :: rest ->
+      let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
+      log_to_scuba stats
 
-  let merge x y = T (S.merge (deserialize x) (deserialize y))
 
-  let to_log_entries ~field_name v = S.to_log_entries ~field_name (deserialize v)
-end
-
-module TimingsStat = OfUnserializable (struct
-  include Timings
-
-  let to_log_entries ~field_name:_ ts = Timings.to_scuba ts
-end)
-
-module AdditiveIntCounter = struct
-  type t = int
-
-  let init = 0
-
-  let merge = ( + )
-
-  let to_log_entries ~field_name n =
-    [LogEntry.mk_count ~label:("backend_stats." ^ field_name) ~value:n]
-end
-
-module ExecutionDuration = struct
-  include ExecutionDuration
-
-  let init = zero
-
-  let merge = add
-
-  let to_log_entries ~field_name duration =
-    ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ field_name) duration
-end
-
-include struct
-  (* ignore dead modules added by @@deriving fields *)
-  [@@@warning "-unused-module"]
-
-  (* NOTE: there is a custom ppx for this data structure to generate boilerplate, see
-     src/inferppx/StatsPpx.mli *)
-  type t =
-    { mutable summary_file_try_load: AdditiveIntCounter.t
-    ; mutable summary_read_from_disk: AdditiveIntCounter.t
-    ; mutable summary_cache_hits: AdditiveIntCounter.t
-    ; mutable summary_cache_misses: AdditiveIntCounter.t
-    ; mutable ondemand_procs_analyzed: AdditiveIntCounter.t
-    ; mutable proc_locker_lock_time: ExecutionDuration.t
-    ; mutable proc_locker_unlock_time: ExecutionDuration.t
-    ; mutable restart_scheduler_useful_time: ExecutionDuration.t
-    ; mutable restart_scheduler_total_time: ExecutionDuration.t
-    ; mutable pulse_aliasing_contradictions: AdditiveIntCounter.t
-    ; mutable pulse_args_length_contradictions: AdditiveIntCounter.t
-    ; mutable pulse_captured_vars_length_contradictions: AdditiveIntCounter.t
-    ; mutable pulse_disjuncts_dropped: AdditiveIntCounter.t
-    ; mutable pulse_interrupted_loops: AdditiveIntCounter.t
-    ; mutable pulse_summaries_contradictions: AdditiveIntCounter.t
-    ; mutable pulse_summaries_count: AdditiveIntCounter.t PulseSummaryCountMap.t
-    ; mutable topl_reachable_calls: AdditiveIntCounter.t
-    ; mutable timeouts: AdditiveIntCounter.t
-    ; mutable timings: TimingsStat.t
-    ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
-    ; mutable process_times: ExecutionDuration.t
-    ; mutable useful_times: ExecutionDuration.t
-    ; mutable spec_store_times: ExecutionDuration.t }
-  [@@deriving fields, infer_stats]
-end
+let get () = {global_stats with timings= TimingsStat.serialize global_stats.timings}
 
 let update_with field ~f =
   match Field.setter field with
@@ -184,7 +206,7 @@ let add field n = update_with field ~f:(( + ) n)
 
 let incr field = add field 1
 
-let add_exe_duration field exe_duration = update_with field ~f:(ExecutionDuration.add exe_duration)
+let add_exe_duration field exe_duration = update_with field ~f:(TimeCounter.add exe_duration)
 
 let incr_summary_file_try_load () = incr Fields.summary_file_try_load
 
@@ -256,31 +278,4 @@ let set_useful_times execution_duration =
 
 
 let incr_spec_store_times counter =
-  update_with Fields.spec_store_times ~f:(fun t -> ExecutionDuration.add_duration_since t counter)
-
-
-let reset () = copy initial ~into:global_stats
-
-let log_to_scuba stats =
-  let hit_percent hit miss =
-    let total = hit + miss in
-    if Int.equal total 0 then None else Some (hit * 100 / total)
-  in
-  let summary_cache_hit_percent_entry =
-    hit_percent stats.summary_cache_hits stats.summary_cache_misses
-    |> Option.map ~f:(fun hit_percent ->
-           LogEntry.mk_count ~label:"backend_stats.summary_cache_hit_rate" ~value:hit_percent )
-  in
-  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
-
-
-let log_aggregate stats_list =
-  match stats_list with
-  | [] ->
-      L.internal_error "Empty list of backend stats to aggregate, weird!@\n"
-  | one :: rest ->
-      let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
-      log_to_scuba stats
-
-
-let get () = {global_stats with timings= TimingsStat.serialize global_stats.timings}
+  update_with Fields.spec_store_times ~f:(fun t -> TimeCounter.add_duration_since t counter)
