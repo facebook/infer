@@ -439,14 +439,16 @@ let parse_user_defined_specs = function
         let sanitizers =
           match Util.member "sanitizers" json with
           | `List s ->
-              s |> List.map ~f:Util.to_string
+              List.map ~f:Util.to_string s
           | _ ->
+              L.user_warning "Expected a list of strings as sanitizers, ignoring.\n" ;
               []
         in
         (sources, sinks, sanitizers)
       in
       List.map ~f:parse_user_spec user_specs
   | _ ->
+      L.user_warning "Expected a list as custom annotations, ignoring.\n" ;
       []
 
 
