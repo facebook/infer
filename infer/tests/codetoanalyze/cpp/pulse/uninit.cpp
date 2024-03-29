@@ -117,6 +117,7 @@ class Uninit {
 };
 
 class Uninit2 {
+ public:
   int f1;
   int f2;
 
@@ -167,4 +168,22 @@ int init_in_callee_ok() {
   int x;
   init_param(&x);
   return x;
+}
+
+class Nested {
+ public:
+  int i;
+  Uninit2 mc;
+};
+
+void unknown_init_nested(Nested& x);
+
+int read_nested(Nested& x) {
+  unknown_init_nested(x);
+  return x.mc.f1;
+}
+
+int call_read_nested_ok() {
+  Nested x;
+  return read_nested(x);
 }

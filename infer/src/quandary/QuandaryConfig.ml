@@ -10,7 +10,7 @@ open! IStd
 (** utilities for importing JSON specifications of sources/sinks into Quandary *)
 
 let get_kinds json =
-  let open Yojson.Basic in
+  let open Yojson.Safe in
   match (Util.member "kinds" json, Util.member "kind" json) with
   | `Null, kind ->
       [Util.to_string kind]
@@ -24,7 +24,7 @@ module Source = struct
   let of_json = function
     | `List sources ->
         let parse_source json =
-          let open Yojson.Basic in
+          let open Yojson.Safe in
           let procedure = Util.member "procedure" json |> Util.to_string in
           let kinds = get_kinds json in
           let index =
@@ -43,7 +43,7 @@ module Sink = struct
   let of_json = function
     | `List sinks ->
         let parse_sink json =
-          let open Yojson.Basic in
+          let open Yojson.Safe in
           let procedure = Util.member "procedure" json |> Util.to_string in
           let kinds = get_kinds json in
           let index =
@@ -62,7 +62,7 @@ module Sanitizer = struct
   let of_json = function
     | `List sinks ->
         let parse_sanitizer json =
-          let open Yojson.Basic in
+          let open Yojson.Safe in
           let procedure = Util.member "procedure" json |> Util.to_string in
           let kind =
             Util.member "kind" json |> Util.to_string_option |> Option.value ~default:"All"
@@ -77,7 +77,7 @@ end
 module Endpoints = struct
   let of_json = function
     | `List endpoints ->
-        let parse_endpoint = Yojson.Basic.Util.to_string in
+        let parse_endpoint = Yojson.Safe.Util.to_string in
         List.map ~f:parse_endpoint endpoints
     | _ ->
         []

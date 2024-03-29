@@ -59,7 +59,7 @@ let parse_translate_store ?(base_dir = None) result_dir =
       let t0 = Mtime_clock.now () in
       let status = Filename.basename json_file in
       !ProcessPoolState.update_status t0 status ;
-      match Utils.read_safe_json_file json_file with
+      match Utils.read_json_file json_file with
       | Ok json ->
           if not (process_one_ast json) then
             L.debug Capture Verbose "Failed to parse %s@." json_file

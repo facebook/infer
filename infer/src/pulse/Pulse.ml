@@ -228,13 +228,16 @@ module PulseTransferFunctions = struct
         Sat (Ok exec_state)
 
 
-  let topl_small_step loc procname arguments (return, _typ) exec_state_res =
+  let topl_small_step loc procname arguments (return, return_type) exec_state_res =
     let arguments =
-      List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> fst arg_payload)
+      List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
+          (ValueOrigin.value arg_payload, typ) )
     in
     let return = Var.of_id return in
     let do_astate astate =
-      let return = Option.map ~f:fst (Stack.find_opt return astate) in
+      let return =
+        Option.map ~f:(fun (value, _history) -> (value, return_type)) (Stack.find_opt return astate)
+      in
       let topl_event = PulseTopl.Call {return; arguments; procname} in
       AbductiveDomain.Topl.small_step loc topl_event astate
     in
@@ -941,9 +944,7 @@ module PulseTransferFunctions = struct
       if Topl.is_active () then
         match callee_pname with
         | Some callee_pname ->
-            topl_small_step call_loc callee_pname
-              (ValueOrigin.addr_hist_args func_args)
-              ret exec_states_res
+            topl_small_step call_loc callee_pname func_args ret exec_states_res
         | None ->
             (* skip, as above for non-topl *) exec_states_res
       else exec_states_res
@@ -1687,8 +1688,6 @@ let analyze specialization
         Procname.pp_unique_id
         (Procdesc.get_proc_name proc_desc) ;
     let summary_count = List.length summary.PulseSummary.pre_post_list in
-    if Config.pulse_scuba_logging then
-      ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
     Stats.add_pulse_summaries_count summary_count ;
     if Config.pulse_log_summary_count then
       log_summary_count proc_name summary.PulseSummary.pre_post_list ;

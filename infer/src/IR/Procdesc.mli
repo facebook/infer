@@ -227,6 +227,9 @@ val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 val create_node_from_not_reversed :
   t -> Location.t -> Node.nodekind -> Instrs.not_reversed_t -> Node.t
 
+val remove_node : t -> Node.t -> unit
+(** Remove a node from a cfg *)
+
 val fold_instrs : t -> init:'accum -> f:('accum -> Node.t -> Sil.instr -> 'accum) -> 'accum
 (** fold over all nodes and their instructions *)
 

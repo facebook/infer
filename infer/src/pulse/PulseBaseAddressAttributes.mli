@@ -129,6 +129,8 @@ module type S = sig
   val initialize : key -> t -> t
 
   val get_address_of_stack_variable : key -> t -> (Var.t * Location.t * ValueHistory.t) option
+
+  val has_unknown_effect : key -> t -> bool
 end
 
 include S with type key := AbstractValue.t

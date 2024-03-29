@@ -325,6 +325,11 @@ let get_address_of_stack_variable address attrs =
   get_attribute Attributes.get_address_of_stack_variable address attrs
 
 
+let has_unknown_effect address attrs =
+  Graph.find_opt address attrs
+  |> Option.exists ~f:(fun attribute -> Option.is_some (Attributes.get_unknown_effect attribute))
+
+
 let merge attrs attrs' =
   (* "merge" attributes if two different values ([addr] and [addr']) are found to be
      equal after attributes of the same kind were recorded for them. This arbitrarily
@@ -477,4 +482,6 @@ module type S = sig
   val initialize : key -> t -> t
 
   val get_address_of_stack_variable : key -> t -> (Var.t * Location.t * ValueHistory.t) option
+
+  val has_unknown_effect : key -> t -> bool
 end

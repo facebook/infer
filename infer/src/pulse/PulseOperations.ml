@@ -165,6 +165,14 @@ let write_deref path location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
   write_access path location addr_trace_ref Dereference addr_trace_obj astate
 
 
+let degrade_mode addr astate mode =
+  match mode with
+  | Read when AbductiveDomain.AddressAttributes.has_unknown_effect addr astate ->
+      NoAccess
+  | _ ->
+      mode
+
+
 let rec eval (path : PathContext.t) mode location exp astate :
     (t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t =
   let++ astate, value_origin = eval_to_value_origin path mode location exp astate in
@@ -232,11 +240,13 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
   | Lvar pvar ->
       Sat (Ok (eval_var_to_value_origin path location pvar astate))
   | Lfield (exp', field, _) ->
-      let+* astate, addr_hist = eval path Read location exp' astate in
+      let+* astate, ((addr, _) as addr_hist) = eval path Read location exp' astate in
+      let mode = degrade_mode addr astate mode in
       eval_access_to_value_origin path mode location addr_hist (FieldAccess field) astate
   | Lindex (exp', exp_index) ->
       let** astate, addr_hist_index = eval path Read location exp_index astate in
-      let+* astate, addr_hist = eval path Read location exp' astate in
+      let+* astate, ((addr, _) as addr_hist) = eval path Read location exp' astate in
+      let mode = degrade_mode addr astate mode in
       eval_access_to_value_origin path mode location addr_hist
         (ArrayAccess (StdTyp.void, fst addr_hist_index))
         astate
@@ -345,9 +355,29 @@ let prune path location ~condition astate =
   prune_aux ~negated:false condition astate
 
 
+let degrade_mode_exp path location exp astate mode =
+  let rec has_unknown_effect exp =
+    match (exp : Exp.t) with
+    | Lfield (exp, _, _) | Lindex (exp, _) ->
+        let** astate, (addr, _) = eval path NoAccess location exp astate in
+        if AddressAttributes.has_unknown_effect addr astate then Sat (Ok true)
+        else has_unknown_effect exp
+    | _ ->
+        let** astate, (addr, _) = eval path NoAccess location exp astate in
+        Sat (Ok (AddressAttributes.has_unknown_effect addr astate))
+  in
+  match mode with
+  | Read ->
+      let++ has_unknown_effect = has_unknown_effect exp in
+      if has_unknown_effect then NoAccess else Read
+  | _ ->
+      Sat (Ok mode)
+
+
 let eval_deref_to_value_origin path ?must_be_valid_reason location exp astate =
-  let+* astate, addr_hist = eval path Read location exp astate in
-  let+ astate = check_addr_access path ?must_be_valid_reason Read location addr_hist astate in
+  let** astate, addr_hist = eval path Read location exp astate in
+  let+* mode = degrade_mode_exp path location exp astate Read in
+  let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   let astate, dest_addr_hist = Memory.eval_edge addr_hist Dereference astate in
   (astate, ValueOrigin.InMemory {src= addr_hist; access= Dereference; dest= dest_addr_hist})
 

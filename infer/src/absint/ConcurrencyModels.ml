@@ -130,9 +130,7 @@ end = struct
       ; trylock= ["attemptRead"; "attemptWrite"]
       ; unlock= ["release"] }
     in
-    let config_locks =
-      lock_model_cfg_of_yojson (Yojson.Safe.from_string (Yojson.Basic.to_string Config.lock_model))
-    in
+    let config_locks = lock_model_cfg_of_yojson Config.lock_model in
     [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
     ; { def with
         classname= "apache::thrift::concurrency::Monitor"

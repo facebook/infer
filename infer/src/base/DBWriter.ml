@@ -10,7 +10,7 @@ module L = Logging
 module F = Format
 
 module ServerSocket = struct
-  let socket_name = "sqlite_write_socket"
+  let socket_name = ResultsDirEntryName.db_writer_socket_name
 
   let socket_addr = Unix.ADDR_UNIX socket_name
 
@@ -555,6 +555,8 @@ end
 
 type response = Ack | Error of (exn * Caml.Printexc.raw_backtrace)
 
+let server_pid : Pid.t option ref = ref None
+
 module Server = struct
   (* General comment about socket/channel destruction: closing the in_channel associated with the socket
      will close the file descriptor too, so closing also the out_channel sometimes throws an exception.
@@ -595,7 +597,8 @@ module Server = struct
 
 
   let server socket =
-    L.debug Analysis Quiet "Server starting, pid= %a@." Pid.pp (Unix.getpid ()) ;
+    L.debug Analysis Quiet "Sqlite write daemon: process starting, pid= %a@." Pid.pp
+      (Unix.getpid ()) ;
     let finally () = ServerSocket.remove_socket socket in
     Exception.try_finally ~finally ~f:(fun () ->
         let ExecutionDuration.{execution_duration} =
@@ -627,7 +630,8 @@ module Server = struct
     | `In_the_child ->
         ForkUtils.protect ~f:server socket ;
         L.exit 0
-    | `In_the_parent _child_pid ->
+    | `In_the_parent child_pid ->
+        server_pid := Some child_pid ;
         send Command.Handshake
 end
 
@@ -663,13 +667,16 @@ let shrink_analysis_db () = perform ShrinkAnalysisDB
 
 let stop () =
   (try Server.send Command.Terminate with Unix.Unix_error _ -> ()) ;
-  let rec loop_until_socket_file_removed count_down =
-    if count_down < 0 then try ServerSocket.remove_socket_file () with Unix.Unix_error _ -> ()
-    else if ServerSocket.socket_exists () then (
-      Unix.sleep 1 ;
-      loop_until_socket_file_removed (count_down - 1) )
-  in
-  loop_until_socket_file_removed 5
+  (* don't terminate the main infer process before the server has finished *)
+  Option.iter !server_pid ~f:(fun server_pid ->
+      L.debug Analysis Quiet "Sqlite write daemon: waiting for process %a to finish@." Pid.pp
+        server_pid ;
+      let pid, exit_or_signal = Unix.wait (`Pid server_pid) in
+      Result.iter_error exit_or_signal ~f:(function error ->
+          ( L.internal_error "ERROR: Sqlite write daemon terminated with an error: %s@\n"
+              (Core_unix.Exit_or_signal.to_string_hum (Error error)) ;
+            try ServerSocket.remove_socket_file () with Unix.Unix_error _ -> () ) ) ;
+      L.debug Analysis Quiet "Sqlite write daemon: process %a terminated@." Pid.pp pid )
 
 
 let start =

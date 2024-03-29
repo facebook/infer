@@ -629,6 +629,10 @@ module Internal = struct
       abduce_one addr
         (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
         astate
+
+
+    let has_unknown_effect addr astate =
+      BaseAddressAttributes.has_unknown_effect addr (astate.post :> base_domain).attrs
   end
 
   module SafeMemory = struct
@@ -2375,6 +2379,10 @@ module AddressAttributes = struct
 
   let get_address_of_stack_variable v astate =
     SafeAttributes.get_address_of_stack_variable (CanonValue.canon' astate v) astate
+
+
+  let has_unknown_effect v astate =
+    SafeAttributes.has_unknown_effect (CanonValue.canon' astate v) astate
 end
 
 module CanonValue = struct

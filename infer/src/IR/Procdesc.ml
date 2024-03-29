@@ -675,13 +675,22 @@ let set_start_node pdesc node = pdesc.start_node <- node
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
 
+let remove_node_from_list to_remove nodes =
+  List.filter nodes ~f:(fun node -> not (Node.equal node to_remove))
+
+
+let remove_pred_node ~to_remove (from_node : Node.t) =
+  from_node.preds <- remove_node_from_list to_remove from_node.preds
+
+
+let remove_succ_node ~to_remove (from_node : Node.t) =
+  from_node.succs <- remove_node_from_list to_remove from_node.succs
+
+
 let set_succs (node : Node.t) ~normal:succs_opt ~exn:exn_opt =
-  let remove_pred pred_node (from_node : Node.t) =
-    from_node.preds <- List.filter from_node.preds ~f:(fun pred -> not (Node.equal pred pred_node))
-  in
   let add_pred pred_node (to_node : Node.t) = to_node.preds <- pred_node :: to_node.preds in
   Option.iter succs_opt ~f:(fun new_succs ->
-      List.iter node.succs ~f:(remove_pred node) ;
+      List.iter node.succs ~f:(remove_pred_node ~to_remove:node) ;
       List.iter new_succs ~f:(add_pred node) ;
       node.succs <- new_succs ) ;
   Option.iter exn_opt ~f:(fun exn -> node.exn <- exn)
@@ -710,6 +719,12 @@ let create_node_from_not_reversed pdesc loc kind instrs =
 
 let create_node pdesc loc kind instrs =
   create_node_from_not_reversed pdesc loc kind (Instrs.of_list instrs)
+
+
+let remove_node pdesc ({Node.preds; succs} as node) =
+  List.iter preds ~f:(remove_succ_node ~to_remove:node) ;
+  List.iter succs ~f:(remove_pred_node ~to_remove:node) ;
+  pdesc.nodes <- remove_node_from_list node pdesc.nodes
 
 
 (** Set the successor and exception nodes. If this is a join node right before the exit node, add an

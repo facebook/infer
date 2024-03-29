@@ -28,6 +28,7 @@ type id =
   | ChangedFunctions  (** results of the clang test determinator *)
   | ChangedFunctionsTempResults  (** a directory for temporary [ChangedFunctions] files *)
   | DatalogFacts  (** directory for datalog facts *)
+  | DBWriterSocket  (** socket to the DBWriter process for serializing writes to SQLite *)
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)
   | DuplicateFunctions  (** list of duplicated functions *)
@@ -48,6 +49,7 @@ type id =
   | ReportXML  (** a PMD-style XML version of [report.json] *)
   | RetainCycles  (** directory of retain cycles dotty files *)
   | RunState  (** internal data about the last infer run *)
+  | Stats  (** internal statistics about the infer run *)
   | SyntacticDependencyGraphDot
       (** the inter-procedures dependencies obtained by syntactically inspecting the source of each
           procedure and recording the (static) calls it makes during an analysis phase; used by the
@@ -59,14 +61,17 @@ type id =
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)
 
-val to_delete_before_incremental_capture_and_analysis : results_dir:string -> string list
+val to_keep_before_incremental_capture_and_analysis : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_incremental}, you probably want to use that instead *)
 
-val to_delete_before_caching_capture : results_dir:string -> string list
+val to_keep_before_caching_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_caching}, you probably want to use that instead *)
 
 val to_keep_before_new_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.remove_results_dir}, you probably want to use that instead *)
+
+val db_writer_socket_name : string
+(** see comment in {!DBWriter} as to why we need the relative path of the socket *)
 
 val infer_deps_file_name : string
 (** sad that we have to have this here but some code path is looking for all files with that name in

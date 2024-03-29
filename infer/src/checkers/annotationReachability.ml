@@ -190,14 +190,17 @@ module AnnotationSpec = struct
 end
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot =
+  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots =
     let src_annots = List.map str_src_annots ~f:annotation_of_str in
+    let sanitizer_annots = List.map str_sanitizer_annots ~f:annotation_of_str in
     let snk_annot = annotation_of_str str_snk_annot in
-    let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
+    let has_annot annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
     let open AnnotationSpec in
     { description= "StandardAnnotationSpec"
-    ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
-    ; sanitizer_predicate= default_sanitizer
+    ; sink_predicate= (fun tenv pname -> check_attributes (has_annot snk_annot) tenv pname)
+    ; sanitizer_predicate=
+        (fun tenv pname ->
+          List.exists sanitizer_annots ~f:(fun s -> check_attributes (has_annot s) tenv pname) )
     ; sink_annotation= snk_annot
     ; report=
         (fun proc_data annot_map -> report_src_snk_paths proc_data annot_map src_annots snk_annot)
@@ -426,29 +429,22 @@ module ExpensiveAnnotationSpec = struct
     }
 end
 
-(* parse user-defined specs from .inferconfig *)
-let parse_user_defined_specs = function
-  | `List user_specs ->
-      let parse_user_spec json =
-        let open Yojson.Basic in
-        let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
-        let sinks = Util.member "sinks" json |> Util.to_list |> List.map ~f:Util.to_string in
-        (sources, sinks)
-      in
-      List.map ~f:parse_user_spec user_specs
-  | _ ->
-      []
+type user_defined_spec =
+  {sources: string list; sinks: string list; sanitizers: string list [@yojson.default []]}
+[@@deriving of_yojson]
 
+type user_defined_specs = user_defined_spec list [@@deriving of_yojson]
 
 let annot_specs =
-  let parse_one_spec (str_src_annots, str_snk_annots) =
-    List.map
-      ~f:(fun str_snk_annot -> StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot)
-      str_snk_annots
+  let make_standard_spec_from_user_spec {sources; sinks; sanitizers} =
+    List.map ~f:(fun sink -> StandardAnnotationSpec.from_annotations sources sink sanitizers) sinks
   in
   let user_defined_specs =
-    parse_user_defined_specs Config.annotation_reachability_custom_pairs
-    |> List.map ~f:parse_one_spec
+    let specs =
+      try user_defined_specs_of_yojson Config.annotation_reachability_custom_pairs
+      with _ -> L.die ExternalError "Could not parse annotation reachability custom pairs@."
+    in
+    List.map specs ~f:make_standard_spec_from_user_spec
   in
   let user_defined_specs = List.concat user_defined_specs in
   [ (Language.Clang, CxxAnnotationSpecs.from_config ())

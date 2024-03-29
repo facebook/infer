@@ -2584,10 +2584,9 @@ INTERNAL OPTIONS
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
 
-       --cost-scuba-logging
-           Activates: Log unknown functions to scuba in cost/inferbo
-           checkers; also sets --scuba-logging. (Conversely:
-           --no-cost-scuba-logging)
+       --cost-log-unknown-calls
+           Activates: log calls to unknown functions in the cost and inferbo
+           checkers (Conversely: --no-cost-log-unknown-calls)
 
        --costs-current-reset
            Cancel the effect of --costs-current.
@@ -2947,6 +2946,10 @@ INTERNAL OPTIONS
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
 
+       --pulse-log-unknown-calls
+           Activates: log calls to unknown functions in pulse in stats
+           (Conversely: --no-pulse-log-unknown-calls)
+
        --pulse-max-heap-reset
            Cancel the effect of --pulse-max-heap.
 
@@ -3034,10 +3037,6 @@ INTERNAL OPTIONS
            Activates: Enable expensive internal checks/assertions.
            (Conversely: --no-pulse-sanity-checks)
 
-       --pulse-scuba-logging
-           Activates: Log unknown functions to scuba in pulse checkers; also
-           sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
-
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.
 
@@ -3076,13 +3075,13 @@ INTERNAL OPTIONS
            Set --pulse-transitive-access-config to the empty list.
 
        --pulse-transitive-access-verbose
-           Activates: Forces the transitive-access analysis to be more
-           verbose by ignoring the fields final_class_only and
-           initial_caller_class_does_not_extend and if no signal is found,
-           still generate a fake one for each eligible entries.It also sets
-           --pulse-monitor-transitive-callees,
-           --pusle-monitor-transitive-missed-captures so that every signal
-           gets extra informations to look at in report.json (Conversely:
+           Activates: Force the transitive-access analysis to be more verbose
+           by ignoring the fields final_class_only and
+           initial_caller_class_does_not_extend. Additionally, if no signal
+           is found, still generate a fake one for each eligible entries.
+           Also set --pulse-monitor-transitive-callees,
+           --pulse-monitor-transitive-missed-captures so that every signal
+           gets extra information in report.json. (Conversely:
            --no-pulse-transitive-access-verbose)
 
        --pure-by-default

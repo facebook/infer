@@ -16,20 +16,31 @@ open IOption.Let_syntax
 
 type value = AbstractValue.t [@@deriving compare, equal]
 
+type static_type = Typ.t [@@deriving compare, equal]
+
+type value_and_type = value * static_type [@@deriving compare, equal]
+
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
-  | Call of {return: value option; arguments: value list; procname: Procname.t}
+  | Call of {return: value_and_type option; arguments: value_and_type list; procname: Procname.t}
 [@@deriving compare, equal]
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
+
+let pp_value = AbstractValue.pp
+
+(* When printing types below, use only this function, to make sure it's done always in the same way. *)
+let pp_type f type_ = F.fprintf f "%s" (Typ.to_string type_)
+
+let pp_value_and_type f (value, type_) = F.fprintf f "@[%a:@ %a@]" pp_value value pp_type type_
 
 let pp_event f = function
   | ArrayWrite {aw_array; aw_index} ->
       F.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
   | Call {return; arguments; procname} ->
       let procname = Procname.hashable_name procname (* as in [static_match] *) in
-      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
-        (pp_comma_seq AbstractValue.pp) arguments
+      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option pp_value_and_type) return procname
+        (pp_comma_seq pp_value_and_type) arguments
 
 
 type vertex = ToplAutomaton.vindex [@@deriving compare, equal]
@@ -645,16 +656,33 @@ let static_match_array_write arr index label : tcontext option =
 
 
 let static_match_call return arguments procname label : tcontext option =
-  let rev_arguments = List.rev arguments in
-  let procname = Procname.hashable_name procname in
+  let is_match re text =
+    Option.for_all re ~f:(fun re -> Re.Str.string_match (Re.Str.regexp re) text 0)
+  in
   let match_name () : bool =
     match label.ToplAst.pattern with
-    | ProcedureNamePattern pname ->
-        Str.string_match (Str.regexp pname) procname 0
+    | CallPattern {procedure_name_regex; type_regexes} -> (
+        is_match (Some procedure_name_regex) (Procname.hashable_name procname)
+        &&
+        match type_regexes with
+        | None ->
+            true
+        | Some regexes -> (
+            let type_names =
+              let pt (_name, typ) = F.asprintf "%a" pp_type typ in
+              List.map ~f:pt arguments @ [Option.value_map ~default:"void" ~f:pt return]
+            in
+            let f ok regex name = ok && is_match regex name in
+            match List.fold2 regexes type_names ~init:true ~f with
+            | Ok ok ->
+                ok
+            | Unequal_lengths ->
+                false ) )
     | _ ->
         false
   in
   let match_args () : tcontext option =
+    let rev_arguments = List.rev_map ~f:fst arguments in
     let match_formals formals : tcontext option =
       let bind ~init rev_formals =
         let f tcontext variable value = (variable, value) :: tcontext in
@@ -664,7 +692,7 @@ let static_match_call return arguments procname label : tcontext option =
         | Unequal_lengths ->
             None
       in
-      match (List.rev formals, return) with
+      match (List.rev formals, Option.map ~f:fst return) with
       | [], Some _ ->
           None
       | rev_formals, None ->

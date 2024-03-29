@@ -2596,13 +2596,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
             [Metadata (CatchEntry {try_id; loc= try_loc})]
         in
-        Procdesc.set_succs try_exit_node ~normal:(Some trans_state.succ_nodes)
-          ~exn:(Some [catch_entry_node]) ;
-        Procdesc.set_succs catch_entry_node ~normal:(Some catch_start_nodes) ~exn:None ;
         (* add catch block as exceptional successor to end of try block. not ideal, but we will at
            least reach the code in the catch block this way *)
         (* TODO (T28898377): instead, we should extend trans_state with a list of maybe-throwing
            blocks, and add transitions from those to the catch block instead *)
+        if List.is_empty (Procdesc.Node.get_preds try_exit_node) then (
+          (* Add exception edges forcibly when [try_exit_node] does not have a predecessor.  This
+             can happen when the [try_body_stmt] ends with [return] always.  Note that [TryEntry]
+             and [TryExit] may mismatch in this case. *)
+          List.iter try_trans_result.control.leaf_nodes ~f:(fun leaf ->
+              Procdesc.set_succs leaf ~normal:None ~exn:(Some [catch_entry_node]) ) ;
+          Procdesc.remove_node procdesc try_exit_node )
+        else
+          Procdesc.set_succs try_exit_node ~normal:(Some trans_state.succ_nodes)
+            ~exn:(Some [catch_entry_node]) ;
+        Procdesc.set_succs catch_entry_node ~normal:(Some catch_start_nodes) ~exn:None ;
         let try_control = try_trans_result.control in
         {try_trans_result with control= {try_control with leaf_nodes= [try_exit_node]}}
     | _ ->
