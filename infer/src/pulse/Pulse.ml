@@ -1563,6 +1563,18 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
   else astate
 
 
+let assume_notnull_params {ProcAttributes.proc_name; formals} astate =
+  List.fold formals ~init:astate ~f:(fun astate (mangled, _typ, anno) ->
+      if Annot.Item.is_notnull anno then
+        (let open IOption.Let_syntax in
+         let var = Pvar.mk mangled proc_name |> Var.of_pvar in
+         let* addr_var = Stack.find_opt var astate in
+         let astate, (addr, _) = Memory.eval_edge addr_var Dereference astate in
+         PulseArithmetic.and_positive addr astate |> PulseOperationResult.sat_ok )
+        |> Option.value ~default:astate
+      else astate )
+
+
 let initial tenv proc_attrs specialization =
   let path = PathContext.initial in
   let initial_astate =
@@ -1571,6 +1583,7 @@ let initial tenv proc_attrs specialization =
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
+    |> assume_notnull_params proc_attrs
   in
   [(ContinueProgram initial_astate, path)]
 

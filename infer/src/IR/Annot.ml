@@ -32,7 +32,11 @@ let volatile = {class_name= "volatile"; parameters= []}
 
 let final = {class_name= "final"; parameters= []}
 
+let notnull = {class_name= "notnull"; parameters= []}
+
 let is_final x = equal final x
+
+let is_notnull x = equal notnull x
 
 let rec has_matching_str_value ~pred = function
   | Str s ->
@@ -101,6 +105,8 @@ module Item = struct
   let is_empty ia = List.is_empty ia
 
   let is_final ia = List.exists ia ~f:is_final
+
+  let is_notnull ia = List.exists ia ~f:is_notnull
 end
 
 module Class = struct

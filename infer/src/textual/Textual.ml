@@ -235,6 +235,8 @@ module Attr = struct
 
   let is_final {name; values} = String.equal name "final" && List.is_empty values
 
+  let is_notnull {name; values} = String.equal name "notnull" && List.is_empty values
+
   let is_interface {name; values} =
     String.equal name "kind" && List.equal String.equal values ["interface"]
 

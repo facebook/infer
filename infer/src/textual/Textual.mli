@@ -110,6 +110,8 @@ module Attr : sig
 
   val is_final : t -> bool
 
+  val is_notnull : t -> bool
+
   val is_static : t -> bool
 
   val is_interface : t -> bool

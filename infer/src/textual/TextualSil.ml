@@ -985,10 +985,13 @@ module ProcDescBridge = struct
   open ProcDesc
 
   let build_formals lang ({procdecl; params} as procdesc) =
-    let mk_formal ({typ} : Typ.annotated) vname =
+    let mk_formal ({typ; attributes} : Typ.annotated) vname =
       let name = Mangled.from_string vname.VarName.value in
       let typ = TypBridge.to_sil lang typ in
-      (name, typ, Annot.Item.empty)
+      let annots =
+        if List.exists ~f:Attr.is_notnull attributes then [Annot.notnull] else Annot.Item.empty
+      in
+      (name, typ, annots)
     in
     match List.map2 (ProcDesc.formals procdesc) params ~f:mk_formal with
     | Ok l ->

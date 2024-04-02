@@ -83,7 +83,7 @@ class Tests {
     }
   }
 
-  public static function concat_ok(): void {
+  public static function FP_concat_ok(): void {
     if (Main::concat_test("hello", "world") == "hello world") {
       \Level1\taintSink(\Level1\taintSource());
     }

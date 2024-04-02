@@ -34,6 +34,9 @@ val volatile : t
 val final : t
 (** annotation for fields marked with the "final" keyword *)
 
+val notnull : t
+(** annotation for fields/params marked as "never null" *)
+
 val has_matching_str_value : pred:(string -> bool) -> value -> bool
 (** Check if annotation parameter value contains a string satisfying a predicate. For convenience it
     works both with raw [Str], [Str] inside [Array] and [Enum] values. *)
@@ -57,6 +60,9 @@ module Item : sig
 
   val is_final : t -> bool
   (** Check if final annotation is included in. *)
+
+  val is_notnull : t -> bool
+  (** Check if notnull annotation is included in. *)
 end
 
 module Class : sig
