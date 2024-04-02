@@ -2129,6 +2129,12 @@ and _log_events =
     "[DOES NOTHING] Turn on the feature that logs events in a machine-readable format"
 
 
+and log_pulse_disjunct_increase_after_model_call =
+  CLOpt.mk_bool ~long:"log-pulse-disjunct-increase-after-model-call" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Log which model did increase the current number of Pulse disjuncts."
+
+
 and log_missing_deps =
   CLOpt.mk_bool ~long:"log-missing-deps" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4214,6 +4220,8 @@ and load_average =
 
 
 and lock_model = !lock_model
+
+and log_pulse_disjunct_increase_after_model_call = !log_pulse_disjunct_increase_after_model_call
 
 and log_missing_deps = !log_missing_deps
 

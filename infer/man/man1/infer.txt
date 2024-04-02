@@ -1190,6 +1190,12 @@ OPTIONS
            (Conversely: --no-log-missing-deps)
            See also infer-analyze(1).
 
+       --log-pulse-disjunct-increase-after-model-call
+           Activates: Log which model did increase the current number of
+           Pulse disjuncts. (Conversely:
+           --no-log-pulse-disjunct-increase-after-model-call)
+           See also infer-analyze(1).
+
        --loop-hoisting
            Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for

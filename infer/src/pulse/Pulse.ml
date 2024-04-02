@@ -862,6 +862,10 @@ module PulseTransferFunctions = struct
               ; ret }
               astate non_disj
           in
+          if Config.log_pulse_disjunct_increase_after_model_call && List.length astates > 1 then
+            L.debug Analysis Quiet "[disjunct-increase] from %a, model %a has added %d disjuncts\n"
+              Location.pp_file_pos call_loc Procname.pp callee_procname
+              (List.length astates - 1) ;
           (astates, non_disj, `KnownCall)
       | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;

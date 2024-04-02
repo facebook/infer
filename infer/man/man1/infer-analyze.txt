@@ -227,6 +227,11 @@ OPTIONS
            Activates: Log analysis dependencies that cannot be found.
            (Conversely: --no-log-missing-deps)
 
+       --log-pulse-disjunct-increase-after-model-call
+           Activates: Log which model did increase the current number of
+           Pulse disjuncts. (Conversely:
+           --no-log-pulse-disjunct-increase-after-model-call)
+
        --loop-hoisting
            Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for
