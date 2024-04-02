@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="Infer" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.8e3ace37.css">
-<script src="/assets/js/runtime~main.55292082.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.c1718cf6.js" defer="defer"></script>
 <script src="/assets/js/main.c71ddf7a.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -50,7 +50,7 @@ different parts of memory. In other words, <img decoding="async" loading="lazy" 
 (i.e., these pointers are not aliased). The heaplet partitioning defined by the
 formula above can be visualized like so:</p>
 <p><img decoding="async" loading="lazy" src="/assets/images/SepSplit-dca4e1fe63cb590718402c7c0c9ab7f8.jpg" width="473" height="129" class="img_ev3q"></p>
-<p>The important thing about separating conjunction is the way that it fits
+<p>The important thing about the separating conjunction is the way that it fits
 together with mutation to computer memory; reasoning about program commands
 tends to work by updating <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(*%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">-conjuncts in-place, mimicking
 the operational in-place update of RAM.</p>
@@ -113,26 +113,25 @@ it runs over program statements. Infer&#x27;s question</p>
 <p>is called <em>bi-abduction</em>. The problem here is for the theorem prover to <i>
 discover </i> a pair of frame and antiframe formulae that make the entailment
 statement valid.</p>
-<p>Global analyses of large programs are normally computational untractable.
-However, bi-abduction allows to break the large analysis of a large program in
+<p>Global analyses of large programs are normally computationally intractable.
+However, bi-abduction breaks apart a large analysis of a large program into
 small independent analyses of its procedures. This gives Infer the ability to
 scale independently of the size of the analyzed code. Moreover, by breaking the
-analysis in small independent parts, when the full program is analyzed again
+analysis into small independent parts, when the full program is analyzed again
 because of a code change the analysis results of the unchanged part of the code
-can be reused and only the code change needs to be re-analyzed. This process is
-called incremental analysis and it is very powerful when integrating a static
-analysis tool like infer in a development environment.</p>
-<p>In order to be able to decompose a global analysis in small independent
+can be reused, and only the code change needs to be re-analyzed. This process
+is called incremental analysis and it is very powerful when integrating a
+static analysis tool like Infer in a development environment.</p>
+<p>In order to be able to decompose a global analysis into small independent
 analyses, let&#x27;s first consider how a function call is analyzed in separation
 logic. Assume we have the following spec for a function
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20f()%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20pre%5C_f%20%5Crbrace%20%5C%3B%5C%3B%20f()%20%5C%3B%5C%3B%20%5Clbrace%20post%5C_f%20%5Crbrace%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
-<p>and by analyzing the caller function, we compute that before the call of
-<img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20f%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, the formula <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20CallingState%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
-hold. Then to utilize the specification of <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20f%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> the
-following implication must holds:</p>
+<p>and by analyzing the caller function, we compute that before the call of <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20f%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, the formula <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20CallingState%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
+holds. Then to utilize the specification of <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20f%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> the
+following implication must hold:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20CallingState%20%5Cvdash%20pre%5C_f%20%20%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%5C%3B%20(Function%20Call)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
@@ -147,15 +146,15 @@ procedure leaves unchanged (the frame).</p>
 <p>but no overall specification; we are going to describe how to discover a
 pre/post spec for it. Considering the first statement and the (spec) above, the
 human might say: if only we had <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r1%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> in the
-precondition then we could proceed. Technically, we ask a bi-abduction question</p>
+precondition then we could proceed. Technically, we ask a bi-abduction question:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(emp%20*%20%3Fantiframe%20%5Cvdash%20r1%20%5Cmapsto%20open%20*%20%3Fframe%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
 <p>and we can fill this in easily by picking
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(antiframe%20%3D%20r1%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> and
-<img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(frame%20%3D%20emp%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, where emp means the empty state. The emp is
-recording that at the start we presume nothing. So we obtain the trivially true
-implication:</p>
+<img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(frame%20%3D%20emp%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, where <img decoding="async" loading="lazy" src="https://math.now.sh?from=emp&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
+means the empty state. The <img decoding="async" loading="lazy" src="https://math.now.sh?from=emp&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> is recording that at the start
+we presume nothing. So we obtain the trivially true implication:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(emp%20*%20r1%20%5Cmapsto%20open%20%5Cvdash%20r1%20%5Cmapsto%20open%20*%20emp%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
@@ -163,9 +162,10 @@ implication:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r1%20%5Cmapsto%20open%20%5Cvdash%20r1%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
-<p>Notice that this satisfy the (Function Call) requirement to correctly make the
-call. So let&#x27;s add that information in the pre, and while we are at it record
-the information in the post of the first statement that comes from (spec).</p>
+<p>Notice that this satisfies the (Function Call) requirement to correctly make
+the call. So let&#x27;s add that information in the <img decoding="async" loading="lazy" src="https://math.now.sh?from=pre&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, and while
+we are at it, record the information in the <img decoding="async" loading="lazy" src="https://math.now.sh?from=post&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> of the first
+statement that comes from <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(spec%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">.</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r1%20%5Cmapsto%20open%20%20%5Crbrace%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20closeResource(r1)%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
@@ -176,8 +176,8 @@ the information in the post of the first statement that comes from (spec).</p>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r1%20%5Cmapsto%20closed%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> in the partial symbolic execution trace
 just given does not have the information needed by
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(closeResource(r2)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">, so we can fill that in and continue by
-putting <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r2%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> in the pre. While we are at it we
-can thread this assertion back to the beginning.</p>
+putting <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r2%20%5Cmapsto%20open%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> in the <img decoding="async" loading="lazy" src="https://math.now.sh?from=pre&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">. While
+we are at it, we can thread this assertion back to the beginning.</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r1%20%5Cmapsto%20open%20*%20r2%20%5Cmapsto%20open%20%20%5Crbrace%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20closeResource(r1)%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
@@ -185,7 +185,7 @@ can thread this assertion back to the beginning.</p>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20closeResource(r2)%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
 <p>This information on what to thread backwards can be obtained as the antiframe
-part of the bi-abduction question</p>
+part of the bi-abduction question:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r1%20%5Cmapsto%20closed%20*%20%3Fantiframe%20%5Cvdash%20r2%20%5Cmapsto%20open%20*%20%3Fframe%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
@@ -196,7 +196,7 @@ precondition in order for <img decoding="async" loading="lazy" src="https://math
 the other hand, the frame <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(r1%20%5Cmapsto%20closed%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> is the portion
 of state not changed by <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(closeResource(r2)%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">; we can thread
 that through to the overall postconditon (as justified by the frame rule),
-giving us</p>
+giving us:</p>
 <hr>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r1%20%5Cmapsto%20open%20*%20r2%20%5Cmapsto%20open%20%20%5Crbrace%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20closeResource(r1)%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
@@ -204,9 +204,10 @@ giving us</p>
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20closeResource(r2)%20%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <img decoding="async" loading="lazy" src="https://math.now.sh?from=%5C%5C(%20%5Clbrace%20r1%20%5Cmapsto%20closed%20*%20r2%20%5Cmapsto%20closed%20%5Crbrace%5C%5C)&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q">
 <hr>
-<p>Thus, we have obtained a pre and post for this code by symbolically executing
-it, using bi-abduction to discover preconditions (abduction of antiframes) as
-well as untouched portions of memory (frames) as we go along.</p>
+<p>Thus, we have obtained a <img decoding="async" loading="lazy" src="https://math.now.sh?from=pre&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> and <img decoding="async" loading="lazy" src="https://math.now.sh?from=post&amp;color=mediumslateblue" style="height:100%;vertical-align:middle" class="img_ev3q"> for this
+code by symbolically executing it, using bi-abduction to discover preconditions
+(abduction of antiframes) as well as untouched portions of memory (frames) as
+we go along.</p>
 <p>In general, bi-abduction provides a way to infer a pre/post specs from bare
 code, as long as we know specs for the primitives at the base level of the code.
 The human does not need to write preconditions and postconditions for all the
