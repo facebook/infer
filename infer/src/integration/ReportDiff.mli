@@ -8,10 +8,10 @@
 open! IStd
 
 val reportdiff :
-     current_report:string option
-  -> previous_report:string option
-  -> current_costs:string option
-  -> previous_costs:string option
-  -> current_config_impact:string option
-  -> previous_config_impact:string option
+     report_current:string option
+  -> report_previous:string option
+  -> costs_current:string option
+  -> costs_previous:string option
+  -> config_impact_current:string option
+  -> config_impact_previous:string option
   -> unit

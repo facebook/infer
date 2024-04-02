@@ -846,6 +846,10 @@ val starvation_strict_mode : bool
 
 val starvation_whole_program : bool
 
+val stats_dir_current : string option
+
+val stats_dir_previous : string option
+
 val store_analysis_schedule : bool
 
 val subtype_multirange : bool

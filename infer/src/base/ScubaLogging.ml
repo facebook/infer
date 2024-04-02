@@ -75,7 +75,7 @@ let log_to_debug samples =
   Utils.with_file_out ~append:true log_file ~f:(fun out ->
       List.iter samples ~f:(fun sample ->
           Yojson.to_channel out (Scuba.sample_to_json sample) ;
-          Printf.fprintf out ",\n" ) )
+          Printf.fprintf out "\n" ) )
 
 
 (** Consider buffering or batching if proves to be a problem *)

@@ -2140,6 +2140,17 @@ OPTIONS
            (Conversely: --no-starvation-only)
            See also infer-analyze(1).
 
+       --stats-dir-current path
+           The infer-out/stats from the current run. Together with
+           --stats-dir-previous, make infer reportdiff compute the difference
+           between two stats directories and output the results in
+           infer-out/differential/stats_*.json files.
+           See also infer-reportdiff(1).
+
+       --stats-dir-previous path
+           The infer-out/stats from a previous run. See --stats-dir-current.
+           See also infer-reportdiff(1).
+
        --store-analysis-schedule
            Activates: Store the analysis schedule for later replay, honoring
            --replay-analysis-schedule-file if present. This can be useful to

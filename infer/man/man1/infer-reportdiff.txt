@@ -85,6 +85,15 @@ OPTIONS
            computing differential reports (Conversely:
            --skip-duplicated-types)
 
+       --stats-dir-current path
+           The infer-out/stats from the current run. Together with
+           --stats-dir-previous, make infer reportdiff compute the difference
+           between two stats directories and output the results in
+           infer-out/differential/stats_*.json files.
+
+       --stats-dir-previous path
+           The infer-out/stats from a previous run. See --stats-dir-current.
+
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).

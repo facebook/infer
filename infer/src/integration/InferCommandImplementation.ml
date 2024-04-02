@@ -301,23 +301,27 @@ let report () =
 
 
 let report_diff () =
-  (* at least one report must be passed in input to compute differential *)
+  (* at least one pair of reports must be passed as input to compute a differential *)
+  let open Config in
   match
-    Config.
-      ( report_current
-      , report_previous
-      , costs_current
-      , costs_previous
-      , config_impact_current
-      , config_impact_previous )
+    ( Option.both report_current report_previous
+    , Option.both costs_current costs_previous
+    , Option.both config_impact_current config_impact_previous
+    , Option.both stats_dir_current stats_dir_previous )
   with
-  | None, None, None, None, None, None ->
+  | None, None, None, None ->
       L.die UserError
-        "Expected at least one argument among '--report-current', '--report-previous', \
-         '--costs-current', '--costs-previous', '--config-impact-current', and \
-         '--config-impact-previous'\n"
+        "Expected at least one pair of arguments among '--report-current'/'--report-previous', \
+         '--costs-current'/'--costs-previous', \
+         '--config-impact-current'/'--config-impact-previous', or \
+         '--stats-dir-current'/'--stats-dir-previous'"
   | _ ->
-      ReportDiff.reportdiff ~current_report:Config.report_current
-        ~previous_report:Config.report_previous ~current_costs:Config.costs_current
-        ~previous_costs:Config.costs_previous ~current_config_impact:Config.config_impact_current
-        ~previous_config_impact:Config.config_impact_previous
+      if
+        (is_some @@ Option.both report_current report_previous)
+        || (is_some @@ Option.both costs_current costs_previous)
+        || (is_some @@ Option.both config_impact_current config_impact_previous)
+      then
+        ReportDiff.reportdiff ~report_current ~report_previous ~costs_current ~costs_previous
+          ~config_impact_current ~config_impact_previous ;
+      Option.both stats_dir_previous stats_dir_current
+      |> Option.iter ~f:(fun (previous, current) -> StatsDiff.diff ~previous ~current)
