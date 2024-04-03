@@ -2914,6 +2914,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         res_super @ List.map2_exn field_exps stmts ~f:init_field
     | [], stmts when Int.equal (List.length field_exps) (List.length stmts) ->
         List.map2_exn field_exps stmts ~f:init_field
+    | [], [stmt] ->
+        (* This handles the case when a single element with a reference type is given.  In that
+           case, it loads/store the argument. *)
+        [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
     | _, _ ->
         (* This happens with some braced-init-list for instance; translate each sub-statement so
            as not to lose instructions (we might even get the translation right) *)
