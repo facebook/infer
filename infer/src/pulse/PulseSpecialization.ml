@@ -7,7 +7,6 @@
 
 open! IStd
 open PulseDomainInterface
-module L = Logging
 
 let prune_eq_list_values astate values =
   let prune_eq astate val1 val2 =
@@ -26,8 +25,6 @@ let rec initialize_heap_path heap_path astate =
   match (heap_path : Specialization.HeapPath.t) with
   | Pvar pvar ->
       let opt_addr = Stack.find_opt (Var.of_pvar pvar) astate in
-      if Option.is_none opt_addr then
-        L.internal_error "pvar %a should be defined in pre" Var.pp (Var.of_pvar pvar) ;
       let default () = (PulseAbstractValue.mk_fresh (), PulseValueHistory.epoch) in
       (astate, Option.value_or_thunk opt_addr ~default)
   | FieldAccess (fieldname, heap_path) ->
