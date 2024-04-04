@@ -51,7 +51,6 @@ module CustomModelSet = Set.Make (struct
   type t = custom_model [@@deriving compare, sexp]
 end)
 
-(** Turn triplets into map of annotation -> class name -> set of methods. *)
 let parse_custom_models () =
   CustomModelSet.of_list (custom_models_of_yojson Config.annotation_reachability_custom_models)
 
