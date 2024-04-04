@@ -187,7 +187,7 @@ let report_src_snk_path ({InterproceduralAnalysis.proc_desc; tenv} as analysis_d
       report_annotation_stack analysis_data src_annot.Annot.class_name snk_annot.Annot.class_name
     in
     report_call_stack
-      (method_has_annot snk_annot models tenv)
+      (method_overrides_annot snk_annot models tenv)
       (lookup_annotation_calls analysis_data snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 

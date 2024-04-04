@@ -48,6 +48,16 @@
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
       "method_name": "sanitizerDefinedInConfig",
       "annotation": "UserDefinedSanitizer"
+    },
+    {
+      "class_name": "codetoanalyze.java.checkers.CustomAnnotations$Base",
+      "method_name": "sourceDefinedInConfigBad",
+      "annotation": "UserDefinedSource1"
+    },
+    {
+      "class_name": "codetoanalyze.java.checkers.CustomAnnotations$Base",
+      "method_name": "sinkDefinedInConfig",
+      "annotation": "UserDefinedSink1"
     }
   ]
 }
