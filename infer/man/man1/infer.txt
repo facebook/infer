@@ -1204,6 +1204,11 @@ OPTIONS
            --no-log-pulse-disjunct-increase-after-model-call)
            See also infer-analyze(1).
 
+       --log-pulse-unreachable-nodes
+           Activates: Log for each function and each summary, the ratio of
+           unreached nodes. (Conversely: --no-log-pulse-unreachable-nodes)
+           See also infer-analyze(1).
+
        --loop-hoisting
            Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for

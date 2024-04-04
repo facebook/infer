@@ -232,6 +232,10 @@ OPTIONS
            Pulse disjuncts. (Conversely:
            --no-log-pulse-disjunct-increase-after-model-call)
 
+       --log-pulse-unreachable-nodes
+           Activates: Log for each function and each summary, the ratio of
+           unreached nodes. (Conversely: --no-log-pulse-unreachable-nodes)
+
        --loop-hoisting
            Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for
