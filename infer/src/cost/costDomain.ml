@@ -27,9 +27,7 @@ module BasicCostWithReason = struct
 
   let zero = {cost= BasicCost.zero; top_pname_opt= None}
 
-  let one ?autoreleasepool_trace () =
-    {cost= BasicCost.one ?autoreleasepool_trace (); top_pname_opt= None}
-
+  let one = {cost= BasicCost.one; top_pname_opt= None}
 
   let of_basic_cost cost = {cost; top_pname_opt= None}
 
@@ -56,9 +54,7 @@ module BasicCostWithReason = struct
 
   let mult_unreachable cost record = {record with cost= BasicCost.mult_unreachable cost record.cost}
 
-  let polynomial_traces ~is_autoreleasepool_trace {cost} =
-    BasicCost.polynomial_traces ~is_autoreleasepool_trace cost
-
+  let polynomial_traces {cost} = BasicCost.polynomial_traces cost
 
   let pp format {cost} = BasicCost.pp format cost
 
@@ -86,8 +82,7 @@ module VariantCostMap = struct
         record
 
 
-  let increment ?autoreleasepool_trace kind record =
-    increase_by kind (BasicCostWithReason.one ?autoreleasepool_trace ()) record
+  let increment kind record = increase_by kind BasicCostWithReason.one record
 end
 
 type t = VariantCostMap.t
@@ -99,10 +94,6 @@ let pp_summary fmt {post} = F.fprintf fmt "@\n Post: %a @\n" VariantCostMap.pp p
 let get_cost_kind kind cost_record = VariantCostMap.get kind cost_record
 
 let get_operation_cost cost_record = get_cost_kind CostKind.OperationCost cost_record
-
-let set_autoreleasepool_size_zero cost_record =
-  VariantCostMap.remove CostKind.AutoreleasepoolSize cost_record
-
 
 let set_operation_cost_zero cost_record = VariantCostMap.remove CostKind.OperationCost cost_record
 
@@ -116,7 +107,7 @@ let construct ~f =
   let open CostKind in
   List.fold_left ~init:zero_record
     ~f:(fun acc kind -> VariantCostMap.increase_by kind (f kind) acc)
-    [OperationCost; AllocationCost; AutoreleasepoolSize]
+    [OperationCost; AllocationCost]
 
 
 (** If nb_exec is unreachable, we map to unreachable, not 0 *)
@@ -132,7 +123,7 @@ let plus cost_record1 cost_record2 =
       match (kind, cost1, cost2) with
       | OperationCost, Some cost, None | OperationCost, None, Some cost ->
           Some cost
-      | (OperationCost | AllocationCost | AutoreleasepoolSize), _, _ ->
+      | (OperationCost | AllocationCost), _, _ ->
           let cost1 = Option.value cost1 ~default:BasicCostWithReason.zero in
           let cost2 = Option.value cost2 ~default:BasicCostWithReason.zero in
           Some (BasicCostWithReason.plus cost1 cost2) )

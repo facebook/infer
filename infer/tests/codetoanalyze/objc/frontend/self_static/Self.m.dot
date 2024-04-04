@@ -3,7 +3,7 @@ digraph cfg {
 "class_method_in_conditional.2a19b0bd8eafdb32_1" [label="1: Start class_method_in_conditional\nFormals: \nLocals:  c:objc_class* \n  " color=yellow style=filled]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_1" -> "class_method_in_conditional.2a19b0bd8eafdb32_8" ;
+	 "class_method_in_conditional.2a19b0bd8eafdb32_1" -> "class_method_in_conditional.2a19b0bd8eafdb32_9" ;
 "class_method_in_conditional.2a19b0bd8eafdb32_2" [label="2: Exit class_method_in_conditional \n  " color=yellow style=filled]
 	
 
@@ -15,23 +15,27 @@ digraph cfg {
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb32_4" -> "class_method_in_conditional.2a19b0bd8eafdb32_3" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_5" [label="5:  Message Call: class \n   n$0=*&c:objc_class* [line 104, column 8]\n " shape="box"]
 	
 
+	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_6" ;
 	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_7" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_6" -> "class_method_in_conditional.2a19b0bd8eafdb32_4" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7:  Return Stmt \n   *&return:_Bool=1 [line 105, column 5]\n " shape="box"]
+	 "class_method_in_conditional.2a19b0bd8eafdb32_6" -> "class_method_in_conditional.2a19b0bd8eafdb32_8" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_7" -> "class_method_in_conditional.2a19b0bd8eafdb32_2" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(c:objc_class*); [line 103, column 3]\n  n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
+	 "class_method_in_conditional.2a19b0bd8eafdb32_7" -> "class_method_in_conditional.2a19b0bd8eafdb32_4" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_8" [label="8:  Return Stmt \n   *&return:_Bool=1 [line 105, column 5]\n " shape="box"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_5" ;
-	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_6" ;
+	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_2" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(c:objc_class*); [line 103, column 3]\n  n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
+	
+
+	 "class_method_in_conditional.2a19b0bd8eafdb32_9" -> "class_method_in_conditional.2a19b0bd8eafdb32_5" ;
 "call_alloc_class#A#[class].ad5ad169bfefdaf6_1" [label="1: Start A.call_alloc_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -65,10 +69,10 @@ digraph cfg {
 	
 
 	 "calling_super#A#[class].d5d1550005d53f32_3" -> "calling_super#A#[class].d5d1550005d53f32_2" ;
-"class_method_fst_arg_of_class_met.9ddf691765febed7_1" [label="1: Start A.class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  stringsBundlePath:NSString* \n  " color=yellow style=filled]
+"class_method_fst_arg_of_class_met.9ddf691765febed7_1" [label="1: Start A.class_method_fst_arg_of_class_method_inside_instance_method\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle* stringsBundlePath:NSString* \n  " color=yellow style=filled]
 	
 
-	 "class_method_fst_arg_of_class_met.9ddf691765febed7_1" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_11" ;
+	 "class_method_fst_arg_of_class_met.9ddf691765febed7_1" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_13" ;
 "class_method_fst_arg_of_class_met.9ddf691765febed7_2" [label="2: Exit A.class_method_fst_arg_of_class_method_inside_instance_method \n  " color=yellow style=filled]
 	
 
@@ -83,7 +87,7 @@ digraph cfg {
 "class_method_fst_arg_of_class_met.9ddf691765febed7_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "class_method_fst_arg_of_class_met.9ddf691765febed7_5" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_3" ;
+	 "class_method_fst_arg_of_class_met.9ddf691765febed7_5" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_11" ;
 "class_method_fst_arg_of_class_met.9ddf691765febed7_6" [label="6: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$26, true); [line 119, column 12]\n " shape="invhouse"]
 	
 
@@ -92,11 +96,11 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_7" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_9" ;
-"class_method_fst_arg_of_class_met.9ddf691765febed7_8" [label="8:  ConditionalStmt Branch \n   *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$26 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_met.9ddf691765febed7_8" [label="8:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle*=n$26 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_8" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_5" ;
-"class_method_fst_arg_of_class_met.9ddf691765febed7_9" [label="9:  ConditionalStmt Branch \n   n$27=_fun_NSBundle.mainBundle() [line 119, column 59]\n  *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$27 [line 119, column 12]\n " shape="box"]
+"class_method_fst_arg_of_class_met.9ddf691765febed7_9" [label="9:  ConditionalStmt Branch \n   n$28=_fun_NSBundle.mainBundle() [line 119, column 59]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle*=n$28 [line 119, column 12]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_9" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_5" ;
@@ -105,10 +109,18 @@ digraph cfg {
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_10" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_6" ;
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_10" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_7" ;
-"class_method_fst_arg_of_class_met.9ddf691765febed7_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$30=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$28=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$29=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$31=_fun_NSBundle.pathForResource:ofType:(n$30:NSBundle*,n$28:NSString*,n$29:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$31 [line 116, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_met.9ddf691765febed7_11" [label="11:  BinaryConditionalStmt Init \n   n$29=*&0$?%__sil_tmpSIL_temp_conditional___n$27:NSBundle* [line 119, column 12]\n " shape="box"]
 	
 
-	 "class_method_fst_arg_of_class_met.9ddf691765febed7_11" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_10" ;
+	 "class_method_fst_arg_of_class_met.9ddf691765febed7_11" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_12" ;
+"class_method_fst_arg_of_class_met.9ddf691765febed7_12" [label="12:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/frontend/self_static/Self.m>$A.class_method_fst_arg_of_class_method_inside_instance_method.bundle:NSBundle*=n$29 [line 119, column 3]\n " shape="box"]
+	
+
+	 "class_method_fst_arg_of_class_met.9ddf691765febed7_12" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_3" ;
+"class_method_fst_arg_of_class_met.9ddf691765febed7_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$32=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$30=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$31=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$33=_fun_NSBundle.pathForResource:ofType:(n$32:NSBundle*,n$30:NSString*,n$31:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$33 [line 116, column 3]\n " shape="box"]
+	
+
+	 "class_method_fst_arg_of_class_met.9ddf691765febed7_13" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_10" ;
 "test_class#A#[class].eca678ace24c19fb_1" [label="1: Start A.test_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -222,16 +234,16 @@ digraph cfg {
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dc_3" -> "dealloc#A#[instance].cb1004dc8428c0dc_2" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_4" [label="4:  Call dealloc \n   n$0=*&self:A* [line 40, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:A*) [line 40, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:A*,(n$1 - 1):unsigned int) [line 40, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:A*) [line 40, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dc_4" [label="4:  Call dealloc \n   n$4=*&self:A* [line 40, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:A*) [line 40, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:A*,(n$5 - 1):unsigned int) [line 40, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:A*) [line 40, column 1]\n " shape="box"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dc_4" -> "dealloc#A#[instance].cb1004dc8428c0dc_5" ;
 	 "dealloc#A#[instance].cb1004dc8428c0dc_4" -> "dealloc#A#[instance].cb1004dc8428c0dc_6" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 40, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 40, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dc_5" -> "dealloc#A#[instance].cb1004dc8428c0dc_3" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 40, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 40, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dc_6" -> "dealloc#A#[instance].cb1004dc8428c0dc_2" ;
@@ -253,7 +265,7 @@ digraph cfg {
 "loggerName#A#[instance].0134c8e794cdf775_2" [label="2: Exit A.loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$19=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n " shape="box"]
+"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$18=*&self:A* [line 90, column 29]\n  n$19=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n " shape="box"]
 	
 
 	 "loggerName#A#[instance].0134c8e794cdf775_3" -> "loggerName#A#[instance].0134c8e794cdf775_4" ;
@@ -290,7 +302,7 @@ digraph cfg {
 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_2" [label="2: Exit A.use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n " shape="box"]
+"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$12=*&self:A* [line 78, column 23]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" -> "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_4" ;
@@ -316,16 +328,16 @@ digraph cfg {
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c_3" -> "dealloc#B#[instance].62d516b6d74de70c_2" ;
-"dealloc#B#[instance].62d516b6d74de70c_4" [label="4:  Call dealloc \n   n$4=*&self:B* [line 17, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:B*) [line 17, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:B*,(n$5 - 1):unsigned int) [line 17, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:B*) [line 17, column 1]\n " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c_4" [label="4:  Call dealloc \n   n$0=*&self:B* [line 17, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:B*) [line 17, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:B*,(n$1 - 1):unsigned int) [line 17, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:B*) [line 17, column 1]\n " shape="box"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c_4" -> "dealloc#B#[instance].62d516b6d74de70c_5" ;
 	 "dealloc#B#[instance].62d516b6d74de70c_4" -> "dealloc#B#[instance].62d516b6d74de70c_6" ;
-"dealloc#B#[instance].62d516b6d74de70c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 17, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c_5" -> "dealloc#B#[instance].62d516b6d74de70c_3" ;
-"dealloc#B#[instance].62d516b6d74de70c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 17, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c_6" -> "dealloc#B#[instance].62d516b6d74de70c_2" ;

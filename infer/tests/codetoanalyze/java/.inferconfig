@@ -20,16 +20,6 @@
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
   ],
-  "modeled-expensive": [
-    {
-      "class": "android.app.Activity",
-      "method": "findViewById"
-    },
-    {
-      "class": "android.view.View",
-      "method": "findViewById"
-    }
-  ],
   "pulse-taint-policies": [
     { "short_description": "Untrusted Android Intent creation",
       "taint_flows": [
@@ -283,11 +273,48 @@
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [0]]
     },
-    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" }
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" },
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarkerWithValue",
+      "annotation_values": ["EMAIL", "LOCATION"]
+    },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker",
+      "taint_target": "GetField"
+    },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarkerWithValue",
+      "annotation_values": ["EMAIL", "LOCATION"],
+      "taint_target": "GetField"
+    },
+    { "class_names": ["codetoanalyze.java.pulse.Fields"],
+      "field_names": ["sourceField"],
+      "taint_target": "GetField"
+    },
+    { "class_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" },
+    { "class_name_regex": ".*RegexSources",
+      "procedure_regex": "source.*"
+    },
+    { "class_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker2",
+      "class_name_regex": "RegexAndAnnotation.*",
+      "procedure_regex": "source.*"
+    },
+    {
+      "procedure_regex": ".*",
+      "taint_target": [
+        "ArgumentsMatchingTypes",
+        [
+          "SensitiveClass"
+        ]
+      ]
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
     { "class_name_regex": "codetoanalyze.java.pulse.sinks.*"},
+    {
+      "class_names": [
+        "codetoanalyze.java.pulse.InferTaint"
+      ],
+      "procedure_regex": "regex.*"
+    },
     { "class_names": ["android.app.Activity"],
       "method_names": ["startActivityFromChild", "startActivityFromFragment"],
       "kinds": ["StartComponent"],
@@ -425,7 +452,14 @@
     { "class_names": ["codetoanalyze.java.pulse.Logger"],
       "method_names": ["log"],
       "kinds": ["Logger"] },
-    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" }
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker",
+      "taint_target": "SetField"
+    },
+    { "class_names": ["codetoanalyze.java.pulse.Fields"],
+      "field_names": ["sinkField"],
+      "taint_target": "SetField"
+    }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },

@@ -42,7 +42,7 @@ $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(REMOVE) $@
 	$(QUIET)$(INFER_BIN) capture --mark-unchanged-procs $(INFER_OPTIONS) -- clang -c src/*.c
 	$(INFER_BIN) analyze --invalidate-only $(INFER_OPTIONS) --debug-level 1 2>&1 \
-		| grep "Invalidated" > invalidation_stats.exp.test
+		| grep "Invalidated" | cut -f1 -d"[" > invalidation_stats.exp.test
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/analysis_dependency_invalidation_graph.dot \
 	        analysis_dependency_invalidation_graph.dot.test
 	$(QUIET)$(INFER_BIN) -P $(INFER_OPTIONS) analyze

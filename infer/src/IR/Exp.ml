@@ -14,12 +14,13 @@ module F = Format
 module L = Logging
 
 (* reverse the natural order on Var *)
-type ident_ = Ident.t [@@deriving equal, hash]
+type ident_ = Ident.t [@@deriving equal, hash, normalize]
 
 let compare_ident_ x y = Ident.compare y x
 
-type closure =
-  {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * CapturedVar.capture_mode) list}
+type closure = {name: Procname.t; captured_vars: captured_var list}
+
+and captured_var = t * Pvar.t * Typ.t * CapturedVar.capture_mode
 
 (** This records information about a [sizeof(typ)] expression.
 
@@ -45,9 +46,9 @@ and t =
   | Lvar of Pvar.t  (** The address of a program variable *)
   | Lfield of t * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
-  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
+  | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data
-[@@deriving compare, equal, hash]
+[@@deriving compare, equal, hash, normalize]
 
 module Set = Caml.Set.Make (struct
   type nonrec t = t [@@deriving compare]
@@ -309,7 +310,7 @@ let pp_texp_full pe f = function
 (** Dump a type expression with all the details. *)
 let d_texp_full (te : t) = L.d_pp_with_pe pp_texp_full te
 
-let is_objc_block_closure = function Closure {name} -> Procname.is_objc_block name | _ -> false
+let is_cpp_closure = function Closure {name} -> Procname.is_cpp_lambda name | _ -> false
 
 let rec gen_free_vars =
   let open Sequence.Generator in

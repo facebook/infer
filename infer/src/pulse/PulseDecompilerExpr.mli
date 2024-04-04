@@ -10,10 +10,11 @@ module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 
-type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
+type base = PVar of Pvar.t | Block of string | ReturnValue of CallEvent.t
+[@@deriving compare, equal]
 
 type access =
-  | CaptureFieldAccess of CapturedVar.t
+  | CaptureFieldAccess of string
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
   | TakeAddress
@@ -28,9 +29,15 @@ val pp : F.formatter -> t -> unit
 
 val pp_source_expr : F.formatter -> source_expr -> unit
 
+val includes_captured_variable : t -> bool
+
+val includes_block : t -> bool
+
 val pp_with_abstract_value : Format.formatter -> t -> unit
 
 val abstract_value_of_expr : t -> AbstractValue.t option
+
+val decomp_source_expr_equal : t -> t -> bool
 
 val is_unknown : t -> bool
 

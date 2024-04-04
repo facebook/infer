@@ -17,10 +17,10 @@ type error =
 
 val pp_error : Textual.SourceFile.t -> F.formatter -> error -> unit
 
-val parse_string : Textual.SourceFile.t -> string -> (Textual.Module.t, error list) result
-  [@@warning "-unused-value-declaration"]
+val error_to_string : Textual.SourceFile.t -> error -> string
 
-type whichCapture = DoliCapture | TextualCapture
+val parse_string : Textual.SourceFile.t -> string -> (Textual.Module.t, error list) result
+[@@warning "-unused-value-declaration"]
 
 module TextualFile : sig
   type t =
@@ -41,5 +41,5 @@ module TextualFile : sig
   val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end
 
-val capture : capture:whichCapture -> TextualFile.t list -> unit
-(** turn a list of textual files or doli files into a SIL-Java program and capture them. *)
+val capture : TextualFile.t list -> unit
+(** turn a list of textual files into a SIL-Java program and capture them. *)

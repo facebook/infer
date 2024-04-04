@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-only --topl-properties property.topl --topl-report-latent-issues -F --project-root $(TESTS_DIR)
+INFER_OPTIONS = --topl-only --topl-properties property.topl --enable-issue-type TOPL_ERROR_LATENT --topl-report-latent-issues -F --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.erl)

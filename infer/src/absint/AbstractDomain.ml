@@ -183,6 +183,10 @@ module TopLiftedUtils = struct
   let pp_top f = F.pp_print_string f SpecialChars.down_tack
 
   let pp ~pp f = function Top -> pp_top f | NonTop astate -> pp f astate
+
+  let map f = function Top -> Top | NonTop astate -> NonTop (f astate)
+
+  let get ~default f = function Top -> default | NonTop astate -> f astate
 end
 
 module TopLifted (Domain : S) = struct
@@ -213,6 +217,10 @@ module TopLifted (Domain : S) = struct
       | NonTop prev, NonTop next ->
           PhysEqual.optim2 ~res:(NonTop (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
+
+  let map = TopLiftedUtils.map
+
+  let get = TopLiftedUtils.get
 
   let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end
@@ -884,6 +892,10 @@ struct
 
   let exists f m = M.exists (fun key values -> S.exists (fun value -> f key value) values) m
 
+  let find_fold f key (m : t) acc =
+    match M.find_opt key m with None -> acc | Some values -> S.fold f values acc
+
+
   let fold f (m : t) acc =
     M.fold (fun key values acc -> S.fold (fun v acc -> f key v acc) values acc) m acc
 
@@ -909,7 +921,7 @@ struct
 
   let remove_all k m = M.remove k m
 
-  let get_all k m = match M.find_opt k m with None -> [] | Some vs -> S.elements vs
+  let find_all k m = match M.find_opt k m with None -> [] | Some vs -> S.elements vs
 
   let get_all_keys m = M.fold (fun key _ acc -> key :: acc) m [] |> List.rev
 end

@@ -16,7 +16,7 @@ val create : unit -> t
 (** Create a new type environment. *)
 
 val load : SourceFile.t -> t option
-  [@@alert tenv "Analysis code should use [Exe_env.get_source_tenv] instead."]
+[@@alert tenv "Analysis code should use [Exe_env.get_source_tenv] instead."]
 (** Load a type environment for a source file *)
 
 val store_debug_file_for_source : SourceFile.t -> t -> unit
@@ -39,15 +39,14 @@ val lookup : t -> Typ.Name.t -> Struct.t option
 val mk_struct :
      t
   -> ?default:Struct.t
-  -> ?fields:Struct.fields
-  -> ?statics:Struct.fields
+  -> ?fields:Struct.field list
+  -> ?statics:Struct.field list
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
-  -> ?java_class_info:Struct.java_class_info
-  -> ?hack_class_info:Struct.Hack.t
+  -> ?class_info:Struct.ClassInfo.t
   -> ?dummy:bool
   -> ?source_file:SourceFile.t
   -> Typ.Name.t
@@ -60,14 +59,32 @@ val add_field : t -> Typ.Name.t -> Struct.field -> unit
 val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
-val fold_supers : t -> Typ.Name.t -> init:'a -> f:(Typ.Name.t -> Struct.t option -> 'a -> 'a) -> 'a
+val fold : t -> init:'acc -> f:(Typ.Name.t -> Struct.t -> 'acc -> 'acc) -> 'acc
+
+val fold_supers :
+     ?ignore_require_extends:bool
+  -> t
+  -> Typ.Name.t
+  -> init:'a
+  -> f:(Typ.Name.t -> Struct.t option -> 'a -> 'a)
+  -> 'a
 
 val mem_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> bool) -> bool
 
-val find_map_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> 'a option) -> 'a option
+val get_parent : t -> Typ.Name.t -> Typ.Name.t option
+
+val find_map_supers :
+     ?ignore_require_extends:bool
+  -> t
+  -> Typ.Name.t
+  -> f:(Typ.Name.t -> Struct.t option -> 'a option)
+  -> 'a option
 
 val implements_remodel_class : t -> Typ.Name.t -> bool
 (** Check if a class implements the Remodel class *)
+
+val get_fields_trans : t -> Typ.Name.t -> Struct.field list
+(** Get all fields from the super classes transitively *)
 
 type per_file = Global | FileLocal of t
 
@@ -83,10 +100,14 @@ val merge_per_file : src:per_file -> dst:per_file -> per_file
 
 module MethodInfo : sig
   module Hack : sig
-    type kind = private IsClass | IsTrait of {used: Typ.Name.t}
+    type kind = private
+      | IsClass  (** Normal method call *)
+      | IsTrait of {used: Typ.Name.t; is_direct: bool}
+          (** Trait method call: [used] is the name of the class uses the trait. If it is a direct
+              trait method call, e.g. [Trait::foo], [used] is the name of the trait. *)
   end
 
-  type t
+  type t [@@deriving show]
 
   val mk_class : Procname.t -> t
 
@@ -100,15 +121,29 @@ val resolve_method :
   -> t
   -> Typ.Name.t
   -> Procname.t
-  -> MethodInfo.t option
-(** [resolve_method ~method_exists tenv class_name procname] tries to resolve [procname] to a method
-    in [class_name] or its super-classes, that is non-virtual (non-Java-interface method).
-    [method_exists adapted_procname methods] should check if [adapted_procname] ([procname] but with
-    its class potentially changed to some [other_class]) is among the [methods] of [other_class]. *)
+  -> MethodInfo.t option * Typ.Name.Set.t
+(** [resolve_method ~method_exists tenv class_name procname] return a pair
+    [(info_opt, missed_captures)] where [info_opt] tries to resolve [procname] to a method in
+    [class_name] or its super-classes, that is non-virtual (non-Java-interface method).
+    [missed_captures] is the set of classnames for which the hierarchy traversal would have need to
+    examine its members but the class was not captured. [method_exists adapted_procname methods]
+    should check if [adapted_procname] ([procname] but with its class potentially changed to some
+    [other_class]) is among the [methods] of [other_class]. *)
+
+val resolve_field_info : t -> Typ.Name.t -> Fieldname.t -> Struct.field_info option
+(** [resolve_field_info tenv class_name field] tries to find the first field declaration that
+    matches [field] name (ignoring its enclosing declared type), starting from class [class_name]. *)
+
+val resolve_fieldname : t -> Typ.Name.t -> string -> Fieldname.t option
+(** Similar to [resolve_field_info], but returns the resolved field name. *)
 
 val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
 
 val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
+
+val is_trivially_copyable : t -> Typ.t -> bool
+
+val get_hack_direct_used_traits : t -> Typ.Name.t -> HackClassName.t list
 
 module SQLite : SqliteUtils.Data with type t = per_file
 

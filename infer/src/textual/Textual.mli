@@ -34,6 +34,8 @@ module type NAME = sig
 
   val pp : F.formatter -> t -> unit
 
+  val is_hack_init : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 
   module HashSet : HashSet.S with type elt = t
@@ -45,9 +47,16 @@ end
 
 module ProcName : NAME (* procedure names, without their attachement type *)
 
-module VarName : NAME (* variables names *)
+module VarName : sig
+  (* variables names *)
+  include NAME
+
+  val is_hack_reified_generics_param : t -> bool
+end
 
 module FieldName : NAME (* field names, without their enclosing types *)
+
+val builtin_allocate : string
 
 module NodeName : NAME (* node names, also called labels *)
 
@@ -55,18 +64,25 @@ module TypeName : sig
   (* structured value type name *)
   include NAME
 
+  val hack_generics : t
+
   val wildcard : t
 end
 
-type enclosing_class = TopLevel | Enclosing of TypeName.t
+module QualifiedProcName : sig
+  type enclosing_class = TopLevel | Enclosing of TypeName.t
 
-type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
-[@@deriving compare, equal, hash]
-(* procedure name [name] is attached to the name space [enclosing_class] *)
+  type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
+  (* procedure name [name] is attached to the name space [enclosing_class] *)
 
-val pp_qualified_procname : F.formatter -> qualified_procname -> unit
+  val pp : F.formatter -> t -> unit
 
-val qualified_procname_contains_wildcard : qualified_procname -> bool
+  val name : t -> ProcName.t
+
+  val contains_wildcard : t -> bool
+
+  module Hashtbl : Hashtbl.S with type key = t
+end
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
@@ -86,15 +102,25 @@ module Attr : sig
 
   val mk_final : t
 
+  val is_async : t -> bool
+
+  val is_abstract : t -> bool
+
+  val is_hack_wrapper : t -> bool
+
   val is_final : t -> bool
+
+  val is_notnull : t -> bool
 
   val is_static : t -> bool
 
+  val is_interface : t -> bool
+
   val is_trait : t -> bool
 
-  val is_async : t -> bool
+  val is_variadic : t -> bool
 
-  val is_experimental_self_parent_in_trait : t -> bool
+  val is_const : t -> bool
 
   val mk_trait : t
 
@@ -117,6 +143,8 @@ module Typ : sig
   val pp : F.formatter -> t -> unit
 
   type annotated = {typ: t; attributes: Attr.t list}
+
+  val is_annotated : f:(Attr.t -> bool) -> annotated -> bool
 
   val mk_without_attributes : t -> annotated
 end
@@ -152,11 +180,14 @@ end
 module ProcSig : sig
   (** Signature uniquely identifies a called procedure in a target language. *)
   type t =
-    | Hack of {qualified_name: qualified_procname; arity: int option}
+    | Hack of {qualified_name: QualifiedProcName.t; arity: int option}
         (** Hack doesn't support function overloading but it does support functions with default
             arguments. This means that a procedure is uniquely identified by its name and the number
             of arguments. *)
-    | Other of {qualified_name: qualified_procname}
+    | Python of {qualified_name: QualifiedProcName.t; arity: int option}
+        (** Python supports function overloading and default arguments. This means that a procedure
+            is uniquely identified by its name and the number of arguments. *)
+    | Other of {qualified_name: QualifiedProcName.t}
         (** Catch-all case for languages that currently lack support for function overloading at the
             Textual level.
 
@@ -165,16 +196,24 @@ module ProcSig : sig
             formals and inferring them from the types of arguments would be brittle. We should
             extend the syntax of Textual to allow unambiguous call target resolution when we need to
             add support for other languages. *)
-  [@@deriving equal, hash]
+  [@@deriving equal, hash, show]
 
-  val to_qualified_procname : t -> qualified_procname
+  val to_qualified_procname : t -> QualifiedProcName.t
+
+  val arity : t -> int option
+
+  val incr_arity : t -> t
+
+  val decr_arity : t -> int -> t
+
+  val is_hack_init : t -> bool
 
   module Hashtbl : Hashtbl.S with type key = t
 end
 
 module ProcDecl : sig
   type t =
-    { qualified_name: qualified_procname
+    { qualified_name: QualifiedProcName.t
     ; formals_types: Typ.annotated list option
           (** The list of formal argument types may be unknown. Currently, it is possible only for
               external function declarations when translating from Hack and is denoted with a
@@ -189,31 +228,39 @@ module ProcDecl : sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_unop : Unop.t -> qualified_procname
+  val of_unop : Unop.t -> QualifiedProcName.t
 
-  val to_unop : qualified_procname -> Unop.t option
+  val to_unop : QualifiedProcName.t -> Unop.t option
 
-  val of_binop : Binop.t -> qualified_procname
+  val of_binop : Binop.t -> QualifiedProcName.t
 
-  val to_binop : qualified_procname -> Binop.t option
+  val to_binop : QualifiedProcName.t -> Binop.t option
 
-  val is_cast_builtin : qualified_procname -> bool
+  val is_cast_builtin : QualifiedProcName.t -> bool
 
-  val is_instanceof_builtin : qualified_procname -> bool
+  val is_generics_constructor_builtin : QualifiedProcName.t -> bool
 
-  val allocate_object_name : qualified_procname
+  val is_instanceof_builtin : QualifiedProcName.t -> bool
 
-  val is_allocate_object_builtin : qualified_procname -> bool
+  val allocate_object_name : QualifiedProcName.t
 
-  val allocate_array_name : qualified_procname
+  val is_allocate_object_builtin : QualifiedProcName.t -> bool
 
-  val is_allocate_array_builtin : qualified_procname -> bool
+  val allocate_array_name : QualifiedProcName.t
 
-  val is_lazy_class_initialize_builtin : qualified_procname -> bool
+  val is_allocate_array_builtin : QualifiedProcName.t -> bool
 
-  val is_side_effect_free_sil_expr : qualified_procname -> bool
+  val is_get_lazy_class_builtin : QualifiedProcName.t -> bool
 
-  val is_not_regular_proc : qualified_procname -> bool
+  val is_lazy_class_initialize_builtin : QualifiedProcName.t -> bool
+
+  val is_side_effect_free_sil_expr : QualifiedProcName.t -> bool
+
+  val is_not_regular_proc : QualifiedProcName.t -> bool
+
+  val is_curry_invoke : t -> bool
+
+  val is_variadic : t -> bool
 end
 
 module Global : sig
@@ -229,18 +276,23 @@ module Exp : sig
 
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
+    | Load of {exp: t; typ: Typ.t option}
     | Lvar of VarName.t  (** the address of a program variable *)
     | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
-    | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
+    | Index of t * t  (** an array index offset: [exp1[exp2]] *)
     | Const of Const.t
-    | Call of {proc: qualified_procname; args: t list; kind: call_kind}
+    | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
+    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 
-  val call_non_virtual : qualified_procname -> t list -> t
+  val call_non_virtual : QualifiedProcName.t -> t list -> t
 
-  val call_virtual : qualified_procname -> t -> t list -> t
+  val call_virtual : QualifiedProcName.t -> t -> t list -> t
 
-  val call_sig : qualified_procname -> t list -> Lang.t option -> ProcSig.t
+  val call_sig : QualifiedProcName.t -> int -> Lang.t option -> ProcSig.t
+
+  val allocate_object : TypeName.t -> t
 
   (* logical not ! *)
   val not : t -> t
@@ -252,11 +304,17 @@ module Exp : sig
   val pp : F.formatter -> t -> unit
 end
 
+module BoolExp : sig
+  type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
+
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+end
+
 module Instr : sig
   type t =
-    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
+    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t option; loc: Location.t}
         (** id <- *exp with *exp:typ *)
-    | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
+    | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
         (** *exp1 <- exp2 with exp2:typ *)
     | Prune of {exp: Exp.t; loc: Location.t}  (** assume exp *)
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}  (** id = exp *)
@@ -273,6 +331,7 @@ module Terminator : sig
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
+    | If of {bexp: BoolExp.t; then_: t; else_: t}
     | Ret of Exp.t
     | Jump of node_call list  (** non empty list *)
     | Throw of Exp.t
@@ -300,6 +359,8 @@ module ProcDesc : sig
     ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
 
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+
   val formals : t -> Typ.annotated list
 
   val is_ready_for_to_sil_conversion : t -> bool
@@ -307,6 +368,8 @@ end
 
 module Body : sig
   type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+
+  val dummy : Location.t -> t
 end
 
 module Struct : sig
@@ -349,3 +412,5 @@ type transform_error = {loc: Location.t; msg: string Lazy.t}
 val pp_transform_error : SourceFile.t -> F.formatter -> transform_error -> unit
 
 exception TextualTransformError of transform_error list
+
+exception SpecialSyntaxError of Location.t * string

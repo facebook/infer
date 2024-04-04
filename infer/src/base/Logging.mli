@@ -60,10 +60,10 @@ val debug : debug_kind -> debug_level -> ('a, F.formatter, unit) format -> 'a
 (** log debug info *)
 
 val debug_dev : ('a, Format.formatter, unit) format -> 'a
-  [@@deprecated
-    "Only use to debug during development. If you want more permanent logging, use [Logging.debug] \
-     instead."]
-  [@@warning "-unused-value-declaration"]
+[@@deprecated
+  "Only use to debug during development. If you want more permanent logging, use [Logging.debug] \
+   instead."]
+[@@warning "-unused-value-declaration"]
 (** For debugging during development. *)
 
 (** Type of location in ml source: __POS__ *)
@@ -140,7 +140,7 @@ val d_decrease_indent : unit -> unit
 (** dump command to decrease the indentation level NOTE: most likely, you need [d_with_indent]
     instead. *)
 
-val d_with_indent :
+val with_indent :
      ?name_color:Pp.color
   -> ?collapsible:bool
   -> ?escape_result:bool
@@ -148,8 +148,8 @@ val d_with_indent :
   -> f:(unit -> 'a)
   -> ('b, F.formatter, unit, 'a) format4
   -> 'b
-(** Execute arbitrary function (the last argument) with a given [name] so that all logs written
-    inside (if any) are written with indentation.
+(** Unconditionally execute [f] so that all logs written inside (if any) are written with
+    indentation, using the title format provided.
 
     [pp_result], if provided, will make the result of a call to be printed as well (useful for cases
     when there are several places when the function returns).

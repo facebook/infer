@@ -221,7 +221,9 @@ class Specialization {
   abstract static class A {
     abstract C buildC();
 
-    abstract C callBuildC(A a);
+    C callBuildC(A a) {
+      return a.buildC();
+    }
   }
 
   static class A_Good extends A {
@@ -229,9 +231,6 @@ class Specialization {
       return new C();
     }
 
-    C callBuildC(A a) {
-      return a.buildC();
-    }
   }
 
   static class A_Bad extends A {
@@ -239,9 +238,6 @@ class Specialization {
       return null;
     }
 
-    C callBuildC(A a) {
-      return a.buildC();
-    }
   }
 
   // basic specialization on parameters
@@ -305,5 +301,30 @@ class Specialization {
 
   C buildCTransitivelyAndDerefGood() {
     return callCallBuildC(new A_Bad(), new A_Good()).f;
+  }
+
+  C callBuildCWithEmptyPaths(A a, boolean b) {
+    return b ? a.buildC(): null;
+  }
+
+  C buildCWithInfeasiblePathsAndDerefBad() {
+    return callBuildCWithEmptyPaths(new A_Bad(), true).f;
+  }
+
+  C buildCWithInfeasiblePathsAndDerefGood() {
+    return callBuildCWithEmptyPaths(new A_Good(), true).f;
+  }
+
+  C callBuildCTwiceGood(A a1, A a2) {
+    C c = (a1 == null) ? null : a1.buildC();
+    return (a2 == null) ? null : a2.buildC();
+  }
+
+  C buildCAndDerefNeedPartialSpecializationBad(A a) {
+    return callBuildCTwiceGood(a, new A_Bad()).f;
+  }
+
+  C buildCAndDerefNeedPartialSpecializationGood(A a) {
+    return callBuildCTwiceGood(a, new A_Good()).f;
   }
 }

@@ -5,11 +5,18 @@
 
 namespace ControlFlow;
 
-class SensitiveClass {
-  public function __construct(public $flag) {}
+class Foo {}
+
+class MyMixed {
+  public function __construct(public bool $flag) {}
 }
 
-function typeCheckDoesntConfuseTheAnalysis_maintainsTaint_Bad(mixed $arg1, SensitiveClass $sc): void {
+class SensitiveClass extends MyMixed {}
+
+function typeCheckDoesntConfuseTheAnalysis_maintainsTaint_Bad(
+  mixed $arg1,
+  SensitiveClass $sc,
+): void {
   if ($arg1 is Foo) {
     \Level1\taintSink($sc);
   }
@@ -38,10 +45,9 @@ function nullsafeAccessNullOk(): void {
 }
 
 // Checking handling of `is (non)null
-
-function logWhenNonnull(?mixed $arg): void {
+function logWhenNonnull(?MyMixed $arg): void {
   if ($arg is nonnull) {
-    \Level1\taintSink($arg->data);
+    \Level1\taintSink($arg->flag);
   }
 }
 
@@ -85,7 +91,6 @@ function logWhenC(mixed $arg): void {
   }
 }
 
-
 function loggingSensitiveViaCBad(SensitiveClass $sc, mixed $carrier): void {
   if ($carrier is C) {
     $carrier->data = $sc;
@@ -93,7 +98,10 @@ function loggingSensitiveViaCBad(SensitiveClass $sc, mixed $carrier): void {
   }
 }
 
-function FP_notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void {
+function FP_notLoggingSensitiveViaDOk(
+  SensitiveClass $sc,
+  mixed $carrier,
+): void {
   if ($carrier is D) {
     $carrier->data = $sc;
     logWhenC($carrier);
@@ -101,12 +109,12 @@ function FP_notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void 
 }
 
 // This example shows a case where a taint is assigned to an unrelated bool because the abstract
-// values get unified (a = b = 0) and taint attributes from one affect the other
-function FP_taintOnUnrelatedBoolOk(SensitiveClass $sc, bool $flag): void {
+// values get unified (a = b = 0) and taint attributes from one affect the other. We need to check
+// value history to avoid such FPs.
+function taintOnUnrelatedBoolOk(SensitiveClass $sc, bool $flag): void {
   $tainted_flag = $sc->flag;
   $uber_flag = $flag || $tainted_flag;
   if (!$uber_flag) {
-    // This is OK but $flag is considered tainted because of the merged attributes
     \Level1\taintSink($flag);
   }
 }

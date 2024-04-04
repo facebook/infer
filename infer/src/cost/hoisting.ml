@@ -89,11 +89,9 @@ let do_report extract_cost_if_expensive proc_desc err_log
     | None ->
         (IssueType.invariant_call, "", [loop_inv_trace_elem])
   in
-  let message =
-    F.asprintf "%s%s. It can be moved out of the loop at %a." exp_desc cost_msg Location.pp
-      loop_head_loc
-  in
-  Reporting.log_issue proc_desc err_log ~loc ~ltr LoopHoisting issue message
+  let message = F.asprintf "%s%s." exp_desc cost_msg in
+  let suggestion = F.asprintf "Move it out of the loop at %a." Location.pp loop_head_loc in
+  Reporting.log_issue ~suggestion proc_desc err_log ~loc ~ltr LoopHoisting issue message
 
 
 let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map

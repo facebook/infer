@@ -1,11 +1,14 @@
 opam-version: "2.0"
 name: "ocamlformat"
-version: "0.25.1"
+version: "0.26.1"
 synopsis: "Auto-formatter for OCaml code"
-description:
-  "OCamlFormat is a tool to automatically format OCaml code in a uniform style."
-maintainer: "OCamlFormat Team <ocamlformat-dev@lists.ocaml.org>"
-authors: "Josh Berdine <jjb@fb.com>"
+description: """\
+**ocamlformat** is a code formatter for OCaml. It comes with opinionated default settings but is also fully customizable to suit your coding style.
+
+- **Profiles:** ocamlformat offers profiles we predefined formatting configurations. Profiles include `default`, `ocamlformat`, `janestreet`.
+- **Configurable:** Users can change the formatting profile and configure every option in their `.ocamlformat` configuration file.
+- **Format Comments:** ocamlformat can format comments, docstrings, and even code blocks in your comments.
+- **RPC:** ocamlformat provides an RPC server that can be used by other tools to easily format OCaml Code."""
 license: ["MIT" "LGPL-2.1-only WITH OCaml-LGPL-linking-exception"]
 homepage: "https://github.com/ocaml-ppx/ocamlformat"
 bug-reports: "https://github.com/ocaml-ppx/ocamlformat/issues"
@@ -17,34 +20,35 @@ depends: [
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "camlp-streams" {= "5.0.1"}
-  "cmdliner" {= "1.1.1"}
-  "csexp" {= "1.5.1"}
-  "dune" {= "3.7.0"}
-  "dune-build-info" {= "3.4.1"}
-  "dune-configurator" {= "3.7.0"}
+  "cmdliner" {= "1.2.0"}
+  "csexp" {= "1.5.2"}
+  "dune" {= "3.14.2"}
+  "dune-build-info" {= "3.14.2"}
+  "dune-configurator" {= "3.14.2"}
   "either" {= "1.0.0"}
-  "fix" {= "20220121"}
+  "fix" {= "20230505"}
   "fpath" {= "0.7.3"}
-  "menhir" {= "20220210"}
-  "menhirLib" {= "20220210"}
-  "menhirSdk" {= "20220210"}
+  "menhir" {= "20231231"}
+  "menhirCST" {= "20231231"}
+  "menhirLib" {= "20231231"}
+  "menhirSdk" {= "20231231"}
   "ocaml" {= "4.14.0"}
   "ocaml-config" {= "2"}
   "ocaml-option-flambda" {= "1"}
   "ocaml-variants" {= "4.14.0+options"}
-  "ocaml-version" {= "3.5.0"}
-  "ocamlbuild" {= "0.14.2"}
+  "ocaml-version" {= "3.6.4"}
+  "ocamlbuild" {= "0.14.3"}
   "ocamlfind" {= "1.9.6"}
-  "ocamlformat-lib" {= "0.25.1"}
+  "ocamlformat-lib" {= "0.26.1"}
   "ocp-indent" {= "1.8.1"}
-  "re" {= "1.10.4"}
+  "re" {= "1.11.0"}
   "result" {= "1.5"}
   "seq" {= "base"}
   "sexplib0" {= "v0.15.1"}
   "stdio" {= "v0.15.0"}
   "topkg" {= "1.0.7"}
-  "uucp" {= "15.0.0"}
-  "uuseg" {= "15.0.0"}
+  "uucp" {= "15.1.0"}
+  "uuseg" {= "15.1.0"}
   "uutf" {= "1.0.3"}
 ]
 build: [
@@ -63,5 +67,11 @@ build: [
 ]
 dev-repo: "git+https://github.com/ocaml-ppx/ocamlformat.git"
 url {
-  src: "git+https://github.com/ocaml-ppx/ocamlformat.git#0.25.1"
+  src:
+    "https://github.com/ocaml-ppx/ocamlformat/releases/download/0.26.1/ocamlformat-0.26.1.tbz"
+  checksum: [
+    "sha256=da006e427f15b9ec612fb808d446599bd9b7c3ee25abeb3d555747a70d74c6d7"
+    "sha512=b7413f8dc47ba3a2372e89d59cae54f9a602ab81e31cd14ed986a831111080b79a5a3cc45dac04d8ffae5054c35bf29fe9559f145c76c87a30e191ed5400942a"
+  ]
 }
+x-commit-hash: "651f767b48e14ba6b24db9421306942d9e51adcc"

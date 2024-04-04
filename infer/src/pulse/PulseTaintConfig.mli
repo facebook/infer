@@ -9,17 +9,13 @@ open! IStd
 module F = Format
 
 module Kind : sig
-  type t [@@deriving compare, equal]
+  type t = private string [@@deriving compare, equal]
+
+  module Set : PrettyPrintable.PPSet with type elt = t
 
   val pp : F.formatter -> t -> unit
 
-  val of_string : string -> t
-
-  val mark_data_flow_only : t -> unit
-
   val is_data_flow_only : t -> bool
-
-  val simple_kind : t
 end
 
 module Target : sig
@@ -41,10 +37,21 @@ module Unit : sig
     | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
+    | ClassNameAndMethodRegex of
+        {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
+    | ClassRegexAndMethodRegex of
+        {class_name_regex: Str.regexp; method_name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
+    | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
+    | ClassWithAnnotationAndRegexAndMethodRegex of
+        { annotation: string
+        ; annotation_values: string list option
+        ; class_name_regex: Str.regexp
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option }
     | OverridesOfClassWithAnnotation of {annotation: string}
-    | MethodWithAnnotation of {annotation: string}
+    | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
     | BlockNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | Allocation of {class_name: string}
@@ -52,6 +59,7 @@ module Unit : sig
   type field_matcher =
     | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
+    | FieldWithAnnotation of {annotation: string; annotation_values: string list option}
 
   type procedure_unit =
     { procedure_matcher: procedure_matcher
@@ -59,23 +67,14 @@ module Unit : sig
     ; kinds: Kind.t list
     ; procedure_target: Target.procedure_target }
 
-  val pp_procedure_unit : F.formatter -> procedure_unit -> unit
-
   type field_unit =
     { field_matcher: field_matcher
     ; kinds: Kind.t list
     ; field_target: Target.field_target
     ; sanitized_in: string list option }
 
-  val pp_field_unit : F.formatter -> field_unit -> unit
-
   type t = ProcedureUnit of procedure_unit | FieldUnit of field_unit
-
-  val of_config :
-       default_taint_target:Pulse_config_t.taint_target
-    -> option_name:string
-    -> Pulse_config_t.matcher list
-    -> t list
+  [@@warning "-unused-type-declaration"]
 end
 
 module SinkPolicy : sig
@@ -85,12 +84,31 @@ module SinkPolicy : sig
     ; description: string [@ignore]
     ; policy_id: int
     ; privacy_effect: string option [@ignore]
-    ; exclude_in: string list option [@ignore] }
+    ; exclude_in: string list option [@ignore]
+    ; exclude_matching: Str.regexp list option [@ignore] }
   [@@deriving equal]
 
-  val next_policy_id : unit -> int
-
   val sink_policies : (Kind.t, t list) Base.Hashtbl.t
-
-  val pp_sink_policies : F.formatter -> (Kind.t, t list) Base.Hashtbl.t -> unit
 end
+
+val allocation_sources : (string * Kind.t list) list
+
+val source_procedure_matchers : Unit.procedure_unit list
+
+val source_block_matchers : Unit.procedure_unit list
+
+val source_field_getters_matchers : Unit.field_unit list
+
+val source_field_setters_matchers : Unit.field_unit list [@@warning "-unused-value-declaration"]
+
+val sink_procedure_matchers : Unit.procedure_unit list
+
+val sink_field_getters_matchers : Unit.field_unit list
+
+val sink_field_setters_matchers : Unit.field_unit list
+
+val sanitizer_matchers : Unit.procedure_unit list
+
+val propagator_matchers : Unit.procedure_unit list
+
+val log_taint_config : unit -> unit [@@warning "-unused-value-declaration"]

@@ -23,8 +23,4 @@ end
 type 'a interproc_analysis =
   (BufferOverrunAnalysisSummary.t option * 'a * CostDomain.summary option) InterproceduralAnalysis.t
 
-type instantiated_cost = Cheap | NoModel | Symbolic of CostDomain.BasicCost.t
-
 val get_cost_if_expensive : 'a interproc_analysis -> Call.t -> CostDomain.BasicCost.t option
-
-val get_instantiated_cost : 'a interproc_analysis -> Call.t -> instantiated_cost option

@@ -28,4 +28,4 @@
    Biabduction))
  (libraries base64 core IStdlib ATDGenerated IBase IR Absint Biabduction)
  (preprocess
-  (pps ppx_compare)))
+  (pps ppx_compare inferppx)))

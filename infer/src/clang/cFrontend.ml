@@ -38,8 +38,7 @@ let compute_icfg trans_unit_ctx tenv ast =
 
 let init_global_state_capture () =
   Ident.NameGenerator.reset () ;
-  CFrontend_config.global_translation_unit_decls := [] ;
-  CFrontend_config.reset_block_counter ()
+  CFrontend_config.global_translation_unit_decls := []
 
 
 let do_objc_preanalyses cfg tenv =
@@ -48,6 +47,8 @@ let do_objc_preanalyses cfg tenv =
   CReplaceDynamicDispatch.process cfg ;
   CViewControllerLifecycle.process cfg tenv
 
+
+let do_cpp_preanalyses cfg = CppLambdaCalls.process cfg
 
 let do_source_file (translation_unit_context : CFrontend_config.translation_unit_context) ast =
   let tenv = Tenv.create () in
@@ -63,6 +64,11 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   ( match translation_unit_context.CFrontend_config.lang with
   | CFrontend_config.ObjC | CFrontend_config.ObjCPP ->
       do_objc_preanalyses cfg tenv
+  | _ ->
+      () ) ;
+  ( match translation_unit_context.CFrontend_config.lang with
+  | CFrontend_config.CPP | CFrontend_config.ObjCPP ->
+      do_cpp_preanalyses cfg
   | _ ->
       () ) ;
   L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;

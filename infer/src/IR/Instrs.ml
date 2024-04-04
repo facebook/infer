@@ -54,7 +54,7 @@ type reversed
 type not_reversed
 
 (** [Empty] and [Singleton _] can have both directions. We do not attempt to make the representation
-    canonic, e.g. [NotReversed \[||\]], [Reversed \[||\]], and [Empty] are all allowed despite
+    canonic, e.g. [NotReversed [||]], [Reversed [||]], and [Empty] are all allowed despite
     representing the same value. *)
 type _ t =
   | NotReversed : Sil.instr Array.t -> not_reversed t
@@ -82,18 +82,14 @@ let empty = Empty
 
 let singleton instr = Singleton instr
 
-let copy = function
-  | NotReversed instrs ->
-      NotReversed (Array.copy instrs)
-  | Empty ->
-      Empty
-  | Singleton instr ->
-      Singleton instr
-
-
 let append_list t list =
   let instrs = get_underlying_not_reversed t in
   NotReversed (Array.append instrs (Array.of_list list))
+
+
+let prepend_list t list =
+  let instrs = get_underlying_not_reversed t in
+  NotReversed (Array.append (Array.of_list list) instrs)
 
 
 let of_list l = NotReversed (Array.of_list l)

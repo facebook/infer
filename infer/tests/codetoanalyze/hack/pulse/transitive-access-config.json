@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+{
+  "fieldnames_to_monitor": ["GlobalVARIABLES"],
+  "procnames_to_monitor": [
+    {
+      "class_names": ["GlobalAccess::Unsafe", "GlobalAccess::VeryUnsafe"],
+      "method_names": ["dangerous", "suspicious"]
+    },
+    { "class_name_regex": "BadPattern" }
+  ],
+  "contexts": [
+    {
+      "initial_caller_class_extends": ["GlobalAccess::EventHandler"],
+      "initial_caller_class_does_not_extend": ["GlobalAccess::Unsafe"],
+      "final_class_only": true,
+      "tag": "Unsafe Globals",
+      "description": "The value is accessed in an unsafe context"
+    }
+  ]
+}

@@ -141,10 +141,10 @@ let is_modeled_as_cheap_to_copy tenv actual_typ =
       false
 
 
-let is_known_cheap_copy typ =
+let is_known_cheap_copy tenv typ =
   match typ.Typ.desc with
   | Tptr ({desc= Tstruct typename}, _) ->
-      CheapCopyTypes.is_known_cheap_copy typename
+      CheapCopyTypes.is_known_cheap_copy tenv typename
   | _ ->
       false
 
@@ -181,11 +181,16 @@ let is_smaller_than_64_bits integer_type_widths tenv typ =
       false
 
 
-let is_cheap_to_copy integer_type_widths tenv typ =
-  (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
+let is_cheap_to_copy_one integer_type_widths tenv typ =
+  (Typ.is_pointer typ && Tenv.is_trivially_copyable tenv (Typ.strip_ptr typ))
   || is_modeled_as_cheap_to_copy tenv typ
-  || is_known_cheap_copy typ
+  || is_known_cheap_copy tenv typ
   || is_smaller_than_64_bits integer_type_widths tenv typ
+
+
+let is_cheap_to_copy integer_type_widths tenv ~source ~target =
+  is_cheap_to_copy_one integer_type_widths tenv target
+  || is_cheap_to_copy_one integer_type_widths tenv source
 
 
 let has_copy_in str = String.is_substring (String.lowercase str) ~substring:"copy"
@@ -231,66 +236,55 @@ let continue_fold_map astates ~init ~f =
              (acc, ExecutionDomain.continue astate) ) )
 
 
-(* [astates_before] represents the state after we eval the args but before we apply the callee. This is needed so that we can distinguish if source points to an address pointed to by this before the copy is executed. *)
-let is_address_reachable_from_this source_addr ~astates_before : bool =
+(* [astates_before] represents the state after we eval the args but before we apply the callee. This is needed so that we can distinguish if source points to an unowned address ( this, global or reference parameter) before the copy is executed. *)
+let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters : bool
+    =
   List.exists astates_before ~f:(fun astate_before ->
       let reachable_addresses_from_source =
-        BaseDomain.reachable_addresses_from (Caml.List.to_seq [source_addr])
-          (astate_before.AbductiveDomain.post :> BaseDomain.t)
+        AbductiveDomain.reachable_addresses_from (Seq.return source_addr)
+          ~edge_filter:(function Dereference -> false | _ -> true)
+          astate_before `Post
       in
       Stack.exists
         (fun var (this_addr, _) ->
-          Var.is_this var
+          ( Var.is_this var || Var.is_global var
+          || List.exists proc_lvalue_ref_parameters ~f:(fun (pvar, _) ->
+                 Var.equal (Var.of_pvar pvar) var ) )
           &&
-          let reachable_addresses_from_this =
-            BaseDomain.reachable_addresses_from (Caml.List.to_seq [this_addr])
-              (astate_before.AbductiveDomain.post :> BaseDomain.t)
+          let reachable_addresses_from_unowned =
+            AbductiveDomain.reachable_addresses_from (Seq.return this_addr) astate_before `Post
           in
-          AbstractValue.Set.disjoint reachable_addresses_from_source reachable_addresses_from_this
+          AbstractValue.Set.disjoint reachable_addresses_from_source
+            reachable_addresses_from_unowned
           |> not )
         astate_before )
 
 
-let is_this_or_global_source source_addr_typ_opt ~astates_before =
-  Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
-      is_address_reachable_from_this source_addr ~astates_before
-      ||
-      match source_expr with
-      | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
-          Pvar.is_this pvar || Pvar.is_global pvar
-      | _ ->
-          false )
+let is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_intermediate ~from
+    source_addr_typ_opt proc_lvalue_ref_parameters ~astates_before =
+  ( is_intermediate
+  || Attribute.CopyOrigin.equal from CopyAssignment
+  || Attribute.CopyOrigin.equal from CopyToOptional )
+  && Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
+         ( match source_expr with
+         | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
+             Pvar.is_this pvar || Pvar.is_global pvar || is_captured_by_ref pvar
+         | DecompilerExpr.SourceExpr ((ReturnValue (Call pname), _), _)
+           when Procname.is_std_move pname ->
+             (* When [std::move] is used explicitly, we can say the source is owned. *)
+             false
+         | _ ->
+             (* When the source is unclear, we conservatively conclude it is unowned. *)
+             true )
+         || is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters )
 
 
-let is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before =
-  Attribute.CopyOrigin.equal from CopyAssignment
-  && is_this_or_global_source source_addr_typ_opt ~astates_before
-
-
-let is_reachable_from_lvalue_ref_params ~is_intermediate ~from source_expr_opt source_addr_typ_opt
-    proc_lvalue_ref_parameters astate =
-  Option.exists source_expr_opt ~f:(fun source_expr ->
-      match (source_expr : DecompilerExpr.source_expr) with
-      | PVar pvar, _ ->
-          ( is_intermediate
-          || Attribute.CopyOrigin.equal from CopyAssignment
-          || Attribute.CopyOrigin.equal from CopyToOptional )
-          && Option.exists source_addr_typ_opt ~f:(fun (source_addr, _, _) ->
-                 List.exists proc_lvalue_ref_parameters ~f:(fun (param_pvar, _param_typ) ->
-                     Pvar.equal pvar param_pvar
-                     && BaseDomain.reachable_addresses_from (Caml.List.to_seq [source_addr])
-                          (astate.AbductiveDomain.post :> BaseDomain.t)
-                        |> AbstractValue.Set.mem source_addr ) )
-      | _ ->
-          false )
-
-
-let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path location
-    from args ~astates_before (astate_n, astate) =
+let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters integer_type_widths
+    tenv path location from args ~astates_before (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
-  | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
-    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
+  | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: ((_, source_typ) :: _ as rest_args)
+    when (not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type))
          && not (NonDisjDomain.is_locked astate_n) ->
       let copied_var = Var.of_pvar copy_pvar in
       let get_copy_spec, astate, source_addr_typ_opt =
@@ -299,44 +293,43 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
       let* _, source_expr, _ = source_addr_typ_opt in
       let copy_into_source_opt : (Attribute.CopiedInto.t * DecompilerExpr.source_expr option) option
           =
-        if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before then
-          (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
-          None
-        else
-          (* order matters here  *)
-          match (source_expr : DecompilerExpr.t) with
-          | SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
-              (* case 1: we copy into a local variable that occurs in the code with a known source  *)
-              if
-                is_reachable_from_lvalue_ref_params ~is_intermediate:false (Some source_expr)
-                  source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
-              then None
-              else Some (IntoVar {copied_var}, Some source_expr)
-          | SourceExpr (((PVar pvar, _) as source_expr), _) ->
-              (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
-              if
-                Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar
-                || is_reachable_from_lvalue_ref_params ~is_intermediate:true (Some source_expr)
-                     source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
-              then None
-              else Some (IntoIntermediate {copied_var}, Some source_expr)
-          | Unknown _ when is_copy_into_local copied_var ->
-              (* case 3: analogous to case 1 but source is an unknown call that is known to create a copy *)
-              Some (IntoVar {copied_var}, None)
-          | Unknown _ ->
-              (* case 4: analogous to case 2 but source is an unknown call that is known to create a copy *)
-              Some (IntoIntermediate {copied_var}, None)
-          | SourceExpr (((ReturnValue _, _) as source_expr), _) ->
-              if Var.is_global copied_var then
-                (* We don't want to track copies into globals since they can be modified by any procedure as their lifetime extends till the end of the program*)
-                None
-              else if
-                is_reachable_from_lvalue_ref_params ~is_intermediate:true (Some source_expr)
-                  source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
-              then None
-              else
-                (* case 5: analogous to case 2 but source is returned from a call that is known to create a copy into a non-global *)
-                Some (IntoIntermediate {copied_var}, Some source_expr)
+        (* order matters here  *)
+        match (source_expr : DecompilerExpr.t) with
+        | SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
+            (* case 1: we copy into a local variable that occurs in the code with a known source  *)
+            if
+              is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                ~is_intermediate:false source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                ~astates_before
+            then None
+            else Some (IntoVar {copied_var}, Some source_expr)
+        | SourceExpr (((PVar pvar, _) as source_expr), _) ->
+            (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
+            if
+              Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar
+              || is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                   ~is_intermediate:true source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                   ~astates_before
+            then None
+            else Some (IntoIntermediate {copied_var}, Some source_expr)
+        | Unknown _ when is_copy_into_local copied_var ->
+            (* case 3: analogous to case 1 but source is an unknown call that is known to create a copy *)
+            Some (IntoVar {copied_var}, None)
+        | Unknown _ | SourceExpr ((Block _, _), _) ->
+            (* case 4: analogous to case 2 but source is an unknown call that is known to create a copy *)
+            Some (IntoIntermediate {copied_var}, None)
+        | SourceExpr (((ReturnValue _, _) as source_expr), _) ->
+            if Var.is_global copied_var then
+              (* We don't want to track copies into globals since they can be modified by any procedure as their lifetime extends till the end of the program*)
+              None
+            else if
+              is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                ~is_intermediate:true source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                ~astates_before
+            then None
+            else
+              (* case 5: analogous to case 2 but source is returned from a call that is known to create a copy into a non-global *)
+              Some (IntoIntermediate {copied_var}, Some source_expr)
       in
       Option.map copy_into_source_opt ~f:(fun (copy_into, source_opt) ->
           let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var astate) in
@@ -346,21 +339,26 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                 AddressAttributes.add_one source_addr (CopiedInto copy_into) astate
                 |> AddressAttributes.add_one copy_addr
                      (SourceOriginOfCopy
-                        {source= source_addr; is_const_ref= Typ.is_const_reference source_typ} ) )
+                        { source= source_addr
+                        ; is_const_ref= Typ.is_const_reference_on_source source_typ } ) )
           in
           ( NonDisjDomain.add_var copy_into
               ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst3)
               (get_copy_spec source_opt) astate_n
           , astate' ) )
   | ((Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args)
-    when not (is_cheap_to_copy integer_type_widths tenv copy_type) ->
+    when not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type) ->
       (* NOTE: Before running get_copied_and_source, we need to evaluate exp first to update the decompiler map in the abstract state. *)
       try_eval path location exp astate
       |> Option.bind ~f:(fun (astate, copy_addr) ->
              let get_copy_spec, astate, source_addr_typ_opt =
                get_copied_and_source path rest_args location from astate
              in
-             if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before then
+             if
+               is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                 ~is_intermediate:false source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                 ~astates_before
+             then
                (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
                None
              else
@@ -370,8 +368,8 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                      ( AddressAttributes.add_one source_addr (CopiedInto (IntoField {field})) astate
                        |> AddressAttributes.add_one copy_addr
                             (SourceOriginOfCopy
-                               {source= source_addr; is_const_ref= Typ.is_const_reference source_typ}
-                            )
+                               { source= source_addr
+                               ; is_const_ref= Typ.is_const_reference_on_source source_typ } )
                      , Some source_addr
                      , match (source : DecompilerExpr.t) with
                        | SourceExpr (source_expr, _) ->
@@ -379,15 +377,10 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                        | Unknown _ ->
                            None ) )
                in
-               if
-                 is_reachable_from_lvalue_ref_params ~is_intermediate:false source_expr_opt
-                   source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
-               then None
-               else
-                 Some
-                   ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
-                       astate_n
-                   , astate' ) )
+               Some
+                 ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
+                     astate_n
+                 , astate' ) )
   | _ ->
       None
 
@@ -406,7 +399,7 @@ let add_copies_to_return integer_type_widths tenv proc_desc path location from a
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | (Var copy_var, copy_type) :: (source_exp, source_typ) :: _
-    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
+    when (not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type))
          && (not (Typ.is_pointer_to_smart_pointer copy_type))
          && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
          && (not (NonDisjDomain.is_locked astate_n))
@@ -415,7 +408,7 @@ let add_copies_to_return integer_type_widths tenv proc_desc path location from a
       let+ astate, source = try_eval path location source_exp astate in
       let astate =
         AddressAttributes.add_copied_return copy_addr ~source
-          ~is_const_ref:(Typ.is_const_reference source_typ)
+          ~is_const_ref:(Typ.is_const_reference_on_source source_typ)
           from location astate
       in
       (astate_n, astate)
@@ -436,6 +429,13 @@ let remove_optional_copies_to_return proc_desc path location pname args (astate_
 
 let add_copies integer_type_widths tenv proc_desc path location pname actuals ~astates_before
     default =
+  let is_captured_by_ref =
+    let captured_by_ref =
+      List.filter_map (Procdesc.get_captured proc_desc) ~f:(fun {CapturedVar.pvar; capture_mode} ->
+          match capture_mode with ByValue -> None | ByReference -> Some pvar )
+    in
+    fun pvar -> List.mem captured_by_ref pvar ~equal:Pvar.equal
+  in
   let aux copy_check_fn args_map_fn default =
     Option.bind (copy_check_fn pname) ~f:(fun from ->
         let ( |-> ) = IOption.continue ~default in
@@ -444,8 +444,8 @@ let add_copies integer_type_widths tenv proc_desc path location pname actuals ~a
           Procdesc.get_passed_by_ref_formals proc_desc
           |> List.filter ~f:(fun (_, typ) -> not (Typ.is_rvalue_reference typ))
         in
-        add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path
-          location from args ~astates_before default
+        add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters
+          integer_type_widths tenv path location from args ~astates_before default
         |-> add_copies_to_return integer_type_widths tenv proc_desc path location from args
         (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
         |-> remove_optional_copies_to_return proc_desc path location pname args )
@@ -461,6 +461,8 @@ let add_copies integer_type_widths tenv proc_desc path location pname actuals ~a
 let is_lock pname =
   let method_name = Procname.get_method pname in
   String.equal method_name "lock" || String.equal method_name "rlock"
+  || String.is_suffix method_name ~suffix:"_lock"
+  || String.is_suffix method_name ~suffix:"_trylock"
 
 
 let get_copied_into copied_var : Attribute.CopiedInto.t =
@@ -525,21 +527,9 @@ let call integer_type_widths tenv proc_desc path loc ~call_exp ~actuals ~astates
       (astate_n, astates)
 
 
-let is_folly_coro =
-  let matcher =
-    QualifiedCppName.Match.of_fuzzy_qual_names ["folly::coro::Generator"; "folly::coro::Task"]
-  in
-  fun typ ->
-    match typ.Typ.desc with
-    | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
-        QualifiedCppName.Match.match_qualifiers matcher name
-    | _ ->
-        false
-
-
 let init_const_refable_parameters procdesc integer_type_widths tenv astates astate_n =
   if
-    Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro
+    Option.exists (Procdesc.get_ret_param_type procdesc) ~f:Typ.is_folly_coro
     || Procname.is_lambda_or_block (Procdesc.get_proc_name procdesc)
   then astate_n
   else
@@ -550,11 +540,12 @@ let init_const_refable_parameters procdesc integer_type_widths tenv astates asta
             let var = Var.of_pvar pvar in
             if
               Var.appears_in_source_code var && Typ.is_reference typ
-              && (not (is_cheap_to_copy integer_type_widths tenv typ))
+              && (not (is_cheap_to_copy_one integer_type_widths tenv typ))
               && (not (Var.is_cpp_unnamed_param var))
-              && (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
-                    we can distinguish whether a class has a copy constructor or not. *)
-              not (Typ.is_pointer_to_unique_pointer typ)
+              && (not (Pvar.is_gmock_param pvar))
+              (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
+                 we can distinguish whether a class has a copy constructor or not. *)
+              && not (Typ.is_pointer_to_unique_pointer typ)
             then
               (* [&] is added by the frontend and type is pass-by-value anyways so strip it *)
               NonDisjDomain.add_parameter var
@@ -610,7 +601,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
               ||
               let addr_to_explore =
                 UnsafeMemory.Edges.fold edges_curr ~init:addr_to_explore
-                  ~f:(fun acc (_, (addr, _)) -> addr :: acc)
+                  ~f:(fun acc (_, (addr, _)) -> addr :: acc )
               in
               aux ~addr_to_explore ~visited )
   in
@@ -631,8 +622,7 @@ let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp 
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
   if Config.debug_mode then (
     let reachable_addresses_from_copy =
-      BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
-        (astate.AbductiveDomain.post :> BaseDomain.t)
+      AbductiveDomain.reachable_addresses_from (Seq.return address) astate `Post
     in
     let reachable_from heap =
       UnsafeMemory.filter
@@ -687,7 +677,7 @@ let mark_modified_copies_and_parameters_on_abductive vars astate astate_n =
 
 let mark_modified_copies_and_parameters vars astates astate_n =
   let unchecked_vars =
-    List.filter vars ~f:(fun var -> not (NonDisjDomain.is_checked_via_dtor var astate_n))
+    List.filter vars ~f:(fun var -> not (NonDisjDomain.is_checked_via_destructor var astate_n))
   in
   continue_fold astates ~init:astate_n ~f:(fun astate_n astate ->
       mark_modified_copies_and_parameters_on_abductive unchecked_vars astate astate_n )

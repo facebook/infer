@@ -9,6 +9,8 @@ module L = Logging
 
 exception Error of string
 
+exception DataTooBig
+
 let error fmt = Format.kasprintf (fun err -> raise (Error err)) fmt
 
 let check_result_code db ~log rc =
@@ -97,10 +99,18 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
       (if immutable then "?immutable=1" else "")
       db_name
   in
-  L.debug Capture Quiet "Attach: %s@\n" attach_stmt ;
+  L.debug Capture Verbose "Attach: %s@\n" attach_stmt ;
   exec db ~stmt:attach_stmt ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   let result = f () in
   exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
+  result
+
+
+let transaction ?(immediate = false) db ~f =
+  exec db ~log:"begin transaction"
+    ~stmt:(Printf.sprintf "BEGIN%s TRANSACTION" (if immediate then " IMMEDIATE" else "")) ;
+  let result = f () in
+  exec db ~log:"commit transaction" ~stmt:"COMMIT" ;
   result
 
 
@@ -124,7 +134,9 @@ module MarshalledDataNOTForComparison (D : T) = struct
         Marshal.from_string b 0
 
 
-  let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [])
+  let serialize x =
+    let s = Marshal.to_string x [] in
+    if String.length s < Config.sqlite_max_blob_size then Sqlite3.Data.BLOB s else raise DataTooBig
 end
 
 module MarshalledNullableDataNOTForComparison (D : T) = struct
@@ -141,5 +153,7 @@ module MarshalledNullableDataNOTForComparison (D : T) = struct
     | None ->
         Sqlite3.Data.NULL
     | Some x ->
-        Sqlite3.Data.BLOB (Marshal.to_string x [])
+        let s = Marshal.to_string x [] in
+        if String.length s < Config.sqlite_max_blob_size then Sqlite3.Data.BLOB s
+        else raise DataTooBig
 end

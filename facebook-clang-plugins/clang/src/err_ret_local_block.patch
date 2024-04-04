@@ -1,6 +1,6 @@
 --- a/llvm-project/clang/lib/Sema/SemaInit.cpp
 +++ b/llvm-project/clang/lib/Sema/SemaInit.cpp
-@@ -7147,7 +7147,9 @@ void Sema::checkInitializerLifetime(const InitializedEntity &Entity,
+@@ -8258,7 +8258,9 @@ void Sema::checkInitializerLifetime(cons
              << Entity.getType()->isReferenceType() << DRE->getDecl()
              << isa<ParmVarDecl>(DRE->getDecl()) << DiagRange;
        } else if (isa<BlockExpr>(L)) {

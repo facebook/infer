@@ -42,7 +42,7 @@
     test_bool6_Ok/1,
     test_bool5_Latent/1,
     test_bool4_Latent/1,
-    fp_test_bool3_Ok/1,
+    fpl_test_bool3_Ok/1,
     test_bool2_Latent/1,
     test_bool1_Ok/1,
     test_atom_literal4_Latent/1,
@@ -91,9 +91,9 @@ test_bool1_Ok(X) when is_atom(X) -> ok.
 test_bool2_Latent(X) when is_atom(X) -> ok.
 
 % T115354480
--spec fp_test_bool3_Ok(boolean()) -> any().
-fp_test_bool3_Ok(true) -> ok;
-fp_test_bool3_Ok(false) -> ok.
+-spec fpl_test_bool3_Ok(boolean()) -> any().
+fpl_test_bool3_Ok(true) -> ok;
+fpl_test_bool3_Ok(false) -> ok.
 
 -spec test_bool4_Latent(boolean()) -> any().
 test_bool4_Latent(true) -> ok.

@@ -11,7 +11,7 @@ module L = Logging
 
 type version = V1 | V2
 
-let binary_of_version = function V1 -> "buck" | V2 -> "buck2"
+let binary_of_version = function V1 -> "buck1" | V2 -> "buck2"
 
 let max_command_line_length = 50
 
@@ -35,6 +35,14 @@ let store_args_in_file ~identifier args =
   else args
 
 
+let infer_vars_to_kill =
+  [ CommandLineOption.infer_cwd_env_var
+  ; CommandLineOption.args_env_var
+  ; CommandLineOption.strict_mode_env_var
+  ; CommandLineOption.infer_top_results_dir_env_var
+  ; CommandDoc.inferconfig_env_var ]
+
+
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
     redirecting standard out to a file, the contents of which are returned; (iii) protect the child
     process from [SIGQUIT].
@@ -47,8 +55,15 @@ let store_args_in_file ~identifier args =
 let wrap_buck_call ?(extend_env = []) version ~label cmd =
   let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
-    let prefix = Printf.sprintf "%s_%s" (if is_buck2 then "buck2" else "buck") label in
+    let prefix = Printf.sprintf "%s_%s" (binary_of_version version) label in
     Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
+  in
+  let cmd =
+    match (cmd, Config.buck2_isolation_dir) with
+    | buck2 :: rest, Some isolation_dir when is_buck2 ->
+        buck2 :: ("--isolation-dir=" ^ isolation_dir) :: rest
+    | _ ->
+        cmd
   in
   let command =
     let escaped_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
@@ -58,8 +73,8 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
       (* Uninstall the default handler for [SIGQUIT]. *)
       Printf.sprintf "trap '' SIGQUIT ; %s" cmd_with_output
   in
-  let env =
-    if is_buck2 then `Extend []
+  let env_vars =
+    if is_buck2 then []
     else
       let explicit_buck_java_heap_size =
         Option.map Config.buck_java_heap_size_gb ~f:(fun size -> Printf.sprintf "-Xmx%dG" size)
@@ -75,7 +90,14 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
       in
       L.environment_info "Buck: setting %s to '%s'@\n" buck_extra_java_args_env_var
         new_buck_extra_java_args ;
-      `Extend ((buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env)
+      (buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env
+  in
+  let env =
+    if is_buck2 then
+      `Override
+        ( List.map infer_vars_to_kill ~f:(fun var -> (var, None))
+        @ List.map env_vars ~f:(fun (lhs, rhs) -> (lhs, Some rhs)) )
+    else `Extend env_vars
   in
   L.debug Capture Quiet "Running buck command '%s'@." command ;
   let Unix.Process_info.{stdin; stdout; stderr; pid} =
@@ -140,7 +162,7 @@ let config =
     List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
   in
   let get_java_flavor_config () =
-    if Config.buck_java_flavor_suppress_config then []
+    if Config.buck_java_suppress_config then []
     else ["infer.version=" ^ Version.versionString; "infer.binary=" ^ Config.infer_binary]
   in
   let get_clang_flavor_config () =
@@ -365,7 +387,7 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) version targets =
   let deps_query =
     match (buck_mode, version) with
     | Clang, V2 ->
-        Query.deps Config.buck_dependency_depth
+        if Config.buck2_query_deps then Query.deps Config.buck_dependency_depth else Fn.id
     | Clang, V1 | ClangCompilationDB NoDependencies, _ | Erlang, _ ->
         Fn.id
     | Java, _ ->

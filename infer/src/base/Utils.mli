@@ -30,7 +30,12 @@ val normalize_path_from : root:string -> string -> string * string
     represent the same file) *)
 
 val normalize_path : string -> string
+[@@warning "-unused-value-declaration"]
 (** Normalize a path without a root *)
+
+val flatten_path : ?sep:string -> string -> string
+(** Flatten a/b/c as a-b-c. Special dirs .. and . are abbreviated. The separator [-] can be
+    customized. *)
 
 val filename_to_absolute : root:string -> string -> string
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
@@ -59,9 +64,7 @@ val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 val directory_iter : (string -> unit) -> string -> unit
 (** Functional iter function over all the files of a directory *)
 
-val read_json_file : string -> (Yojson.Basic.t, string) Result.t
-
-val read_safe_json_file : string -> (Yojson.Safe.t, string) Result.t
+val read_json_file : string -> (Yojson.Safe.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
@@ -71,7 +74,7 @@ val with_intermediate_temp_file_out : ?retry:bool -> string -> f:(Out_channel.t 
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid
     write-write races *)
 
-val write_json_to_file : string -> Yojson.Basic.t -> unit
+val write_json_to_file : string -> Yojson.Safe.t -> unit
 
 val consume_in : In_channel.t -> unit
 (** consume and ignore all the lines from the channel until End_of_file is reached *)
@@ -122,23 +125,23 @@ val strip_balanced_once : drop:(char -> bool) -> string -> string
     string; for instance,
     [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"] returns "aaba" *)
 
-val assoc_of_yojson : Yojson.Basic.t -> src:string -> (string, Yojson.Basic.t) List.Assoc.t
+val assoc_of_yojson : Yojson.Safe.t -> src:string -> (string, Yojson.Safe.t) List.Assoc.t
 (** Verify we have a json object (or empty list) and return the corresponding assoc list. Otherwise
     die with a message including src. *)
 
-val string_of_yojson : Yojson.Basic.t -> src:string -> string
+val string_of_yojson : Yojson.Safe.t -> src:string -> string
 (** Verify we have a json string and return the corresponding ocaml string. Otherwise die with a
     message including src. *)
 
-val string_list_of_yojson : Yojson.Basic.t -> src:string -> string list
+val string_list_of_yojson : Yojson.Safe.t -> src:string -> string list
 (** Verify we have a json list of strings and return the corresponding ocaml string list. Otherwise
     die with a message including src. *)
 
 val yojson_lookup :
-     (string, Yojson.Basic.t) List.Assoc.t
+     (string, Yojson.Safe.t) List.Assoc.t
   -> string
   -> src:string
-  -> f:(Yojson.Basic.t -> src:string -> 'a)
+  -> f:(Yojson.Safe.t -> src:string -> 'a)
   -> default:'a
   -> 'a
 (** Lookup a json value on an assoc list. If not present, returns default. Otherwise returns (f
@@ -165,10 +168,8 @@ val inline_argument_files : string list -> string list
 (** Given a list of arguments return the extended list of arguments where the args in a file have
     been extracted *)
 
-val numcores : int
-(** - On Linux return the number of physical cores (sockets * cores per socket).
-    - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware
-      threads per core. *)
+val cpus : int
+(** Number of CPUs as computed by [Setcore.numcores]. *)
 
 val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filename:string -> 'a
 (** fold over each file in the given [zip_filename]. *)

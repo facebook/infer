@@ -7,86 +7,98 @@
 
 open! IStd
 module T = Textual
+module Ident = PyCommon.Ident
+
+(** Type information about various entities (toplevel declarations, temporaries, ...). *)
+module Info : sig
+  type kind = Code | Class | Other
+
+  type t = {kind: kind; typ: T.Typ.t}
+
+  val default : T.Typ.t -> t
+
+  val is_code : kind -> bool
+
+  val is_class : kind -> bool
+end
+
+module Symbol : sig
+  type kind =
+    | Name of {is_imported: bool; typ: T.Typ.t}
+        (** The identifier is a name, like a variable name, or any name that might have been
+            imported *)
+    | Builtin  (** The identifier is a known builtin, like [print] or [range] *)
+    | Code  (** The identifier is a code object, like a function declaration *)
+    | Class  (** The identifier is a class name *)
+    | ImportCall
+        (** The identifier is an imported name that has been used in a call, so we can suppose it is
+            a function *)
+    | Import  (** The identifier is the name of an imported module *)
+
+  val pp_kind : Format.formatter -> kind -> unit
+
+  type t = {id: Ident.t; kind: kind; loc: T.Location.t}
+
+  type key = Global of Ident.t | Local of string
+
+  val pp_key : Format.formatter -> key -> unit
+
+  val pp : Format.formatter -> t -> unit
+end
+
+module Signature : sig
+  type t = {annotations: PyCommon.annotated_name list; is_static: bool; is_abstract: bool}
+
+  val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+end
 
 (** In Python, everything is an object, and the interpreter maintains a stack of references to such
     objects. Pushing and popping on the stack are always references to objets that leave in a heap.
     There is no need to model this heap, but the data stack is quite important. *)
 module DataStack : sig
   type cell =
-    | Const of int  (** index in [co_consts] *)
-    | Name of {global: bool; ndx: int}  (** reference to a name, stored in [co_names]. *)
-    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
+    | Const of FFI.Constant.t  (** constant from [co_consts] *)
+    | Name of {global: bool; name: string}  (** reference to a name, from [co_names]. *)
+    | VarName of string  (** reference to a local name, from[co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
         (** [code] Python object with its name. It can be a function, class, closure, ... *)
-    | Map of (string * cell) list
-        (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
+    | List of (PyBuiltin.builder * cell list)  (** Light encoding of raw Python tuples/lists. *)
+    | Map of (T.Exp.t * cell) list  (** Light encoding of raw Python maps/dicts. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
-    | Import of {import_path: string; symbols: string list}
-        (** imported module path, with optional name of symbols *)
-    | ImportCall of T.qualified_procname  (** Static call to export definition *)
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
+    | Import of {import_path: Ident.t; from_list: string list}
+        (** imported module path, with optional names of symbols from that module *)
+    | ImportFrom of {import_path: Ident.t; imported_name: string}
+        (** imported symbol from a module. Must have been loaded via [Import] first *)
+    | ImportCall of {id: Ident.t; loc: T.Location.t}  (** Static call to export definition *)
+    | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
         (** Virtual call, usually of a method of a class. Could be an access to a closure that is
             called straight away *)
-    | StaticCall of T.qualified_procname  (** call to static method in class *)
-  [@@deriving show]
+    | StaticCall of {call_name: T.QualifiedProcName.t; receiver: T.Exp.t option}
+        (** call to static method in class. Because we turn some method calls into static ones, we
+            have to keep the receiver around, just in case. *)
+    | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
+    | Path of Ident.t  (** Qualified path for sequence of imports, attribute accesses, ... *)
+    | WithContext of T.Ident.t
+        (** value to be used for calling __enter__ and __exit__ with the `with context` statement *)
+    | NoException
+        (** Special NONE symbol pushed by the exception infra to express that no exception has been
+            raised *)
 
-  val as_code : FFI.Code.t -> cell -> FFI.Code.t option
+  val pp_cell : Format.formatter -> cell -> unit
 
-  val as_name : FFI.Code.t -> cell -> string option
+  val as_code : cell -> FFI.Code.t option
+
+  val as_name : cell -> string option
+
+  val as_id : cell -> Ident.t option
+
+  val is_path : cell -> bool
+
+  val is_no_exception : cell -> bool
 
   type t = cell list
 end
-
-(** Type information about various entities (toplevel declarations, temporaries, ...). *)
-type info =
-  { is_code: bool  (** is the entity a function / method ? *)
-  ; is_class: bool  (** is the entity a class ? *)
-  ; typ: T.Typ.t  (** Type annotation, if any (otherwise, [object] is used) *) }
-
-module SMap : Caml.Map.S with type key = string
-
-module Symbol : sig
-  module Qualified : sig
-    type prefix = string list
-
-    (** Fully expanded name of a symbol *)
-    type t
-
-    val mk : prefix:prefix -> string -> T.Location.t -> t
-  end
-
-  (** A symbol can either be a name (a variable), a function, a class name or a supported builtin
-      (like [print]) *)
-  type t =
-    | Name of {symbol_name: Qualified.t; is_imported: bool; typ: T.Typ.t}
-    | Builtin
-    | Code of {code_name: Qualified.t}
-    | Class of {class_name: Qualified.t}
-    | Import of {import_path: string}
-
-  val to_string : ?code_sep:string -> ?static:bool -> t -> string
-
-  val to_qualified_procname : t -> T.qualified_procname
-
-  val to_type_name : is_static:bool -> t -> T.TypeName.t
-
-  val to_typ : t -> T.Typ.t option
-
-  val pp : Format.formatter -> t -> unit
-end
-
-module Signature : sig
-  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
-end
-
-module Import : sig
-  (** Tracking data about external information, from import *)
-  type t = TopLevel of string | Call of T.qualified_procname
-end
-
-(** Information about class declaration. Right now, we only support single inheritance. *)
-type class_info = {parent: Symbol.t option}
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids
@@ -119,7 +131,15 @@ module Label : sig
   (** Process a label [info] and turn it into Textual information *)
 end
 
-val empty : t
+(** Class level info. For now, only the parent info (if present) is tracked, supporting multiple
+    inheritance and its full qualified name (for nested classes). We may track more information in
+    the future, like being an abstract class, a dataclass, ... *)
+type class_info = {qualified_name: Ident.t; parents: Ident.t list}
+
+(** Method level info. We store a method/function signature, and its default arugments *)
+type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
+
+val empty : Ident.t -> t
 
 val loc : t -> T.Location.t
 (** Return the last recorded line information from the Python code-unit, if any. *)
@@ -127,7 +147,7 @@ val loc : t -> T.Location.t
 val stack : t -> DataStack.t
 (** Returns the [DataStack.t] for the current declaration *)
 
-val globals : t -> Symbol.t SMap.t
+val globals : t -> Symbol.t Ident.Map.t
 (** Return the [globals] map *)
 
 val get_used_builtins : t -> PyBuiltin.Set.t
@@ -140,10 +160,10 @@ val label_of_offset : t -> int -> Label.info option
 (** Check if the instruction is a possible jump location, and return the label information found
     there, if any. *)
 
-val mk_fresh_ident : t -> info -> t * T.Ident.t
+val mk_fresh_ident : t -> Info.t -> t * T.Ident.t
 (** Generate a fresh temporary name *)
 
-val get_ident_info : t -> T.Ident.t -> info option
+val get_ident_info : t -> T.Ident.t -> Info.t option
 (** Get back the information of a temporary *)
 
 val mk_fresh_label : t -> t * string
@@ -152,9 +172,21 @@ val mk_fresh_label : t -> t * string
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
-val enter_proc : is_toplevel:bool -> module_name:string -> t -> t
+val map_result : f:(t -> 'a -> (t * 'b, 'c) result) -> env:t -> 'a list -> (t * 'b list, 'c) result
+(** Similar to [map] but supports functions that return [Result.t] *)
+
+val enter_proc :
+  is_toplevel:bool -> is_static:bool -> module_name:Ident.t -> params:string list -> t -> t
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
     id/label generators. *)
+
+val set_annotations : t -> t
+(** Configure the environment to keep track of variable annotations in the dedicated
+    [__annotations__] dictionary. Right now, we register its existence but don't store anything in
+    it *)
+
+val has_annotations : t -> bool
+(** Returns the fact that annotations are tracked or not *)
 
 val enter_node : t -> t
 (** Set the environment when entering a new node. Reset the [instructions] buffer. *)
@@ -180,42 +212,57 @@ val push_instr : t -> T.Instr.t -> t
 val register_label : offset:int -> Label.info -> t -> t
 (** Register the fact that a new label [info] must be inserted before the instruction at [offset] *)
 
+val register_with_target : offset:int -> t -> t
+(** Register the location of a [with] statement clean up code *)
+
+val is_with_target : offset:int -> t -> bool
+(** Check whether a code offset is the target of a [with] statement *)
+
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_symbol : t -> global:bool -> string -> Symbol.t -> bool * t
+val register_symbol : t -> Symbol.key -> Symbol.t -> t
 (** Register a name (function, variable, ...). It might be a [global] symbol at the module level or
-    in a local object. Also returns if the symbol was already bound *)
+    in a local object. *)
 
-val lookup_symbol : t -> global:bool -> string -> Symbol.t option
+val lookup_symbol : t -> Symbol.key -> Symbol.t option
 (** Lookup information about a global/local symbol previously registered via [register_symbol] *)
 
-val register_call : t -> string -> t
+val register_call : t -> Ident.t -> t
 (** Register a function call. It enables us to deal correctly with builtin declaration. *)
 
 val mk_builtin_call : t -> PyBuiltin.textual -> T.Exp.t list -> t * T.Ident.t * T.Typ.t
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 
-val register_function : t -> string -> T.Location.t -> PyCommon.annotated_name list -> t
+val register_function : t -> string -> T.Location.t -> PyCommon.signature -> T.Exp.t list -> t
 (** Register a function declaration. We keep track of them since they might shadow Python builtins
     or previous definitions *)
 
-val register_method : t -> enclosing_class:string -> method_name:string -> Signature.t -> t
+val register_method :
+  t -> enclosing_class:Ident.t -> method_name:string -> Signature.t -> T.Exp.t list -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
-val lookup_method : t -> enclosing_class:string -> string -> Signature.t option
+val register_fields : t -> T.TypeName.t -> PyCommon.signature -> t
+(** Extended the set of fields of class [class_name] with [class_fields]. We might have multiple
+    calls to this function with the same class name in a best effort attempt: Python is dynamic, and
+    any [self.foo] access could give rise to such a registration *)
+
+val lookup_method : t -> enclosing_class:Ident.t -> string -> method_info option
 (** Lookup the information stored for a function/method in the relevant [enclosing_class] *)
+
+val lookup_fields : t -> T.TypeName.t -> PyCommon.signature option
 
 (** Lookup the signature of a function / method *)
 
-val register_class : t -> string -> class_info -> t
+val register_class : t -> string -> Ident.t -> Ident.t list -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
-val get_declared_classes : t -> class_info SMap.t
+val get_declared_classes : t -> class_info PyCommon.SMap.t
+(** Return information of classes defined in the current module *)
 
-val register_import : t -> Import.t -> t
-(** Register a import declaration (based on [IMPORT_NAME]) *)
+val register_imported_value : t -> Ident.t -> t
+(** register global names imported from other modules *)
 
 val get_textual_imports : t -> T.Module.decl list
 (** Get back the list of registered imports *)
@@ -223,5 +270,12 @@ val get_textual_imports : t -> T.Module.decl list
 val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)
 
-val module_name : t -> string
+val is_static : t -> bool
+[@@warning "-unused-value-declaration"]
+(** Are we processing instructions from a static method ? *)
+
+val get_params : t -> string list
+(** Return the name of the method/function parameters, if any *)
+
+val module_name : t -> Ident.t
 (** Returns the name of the current module *)

@@ -8,7 +8,7 @@ import android.text.TextUtils;
 
 public class TextUtilsExample {
 
-  public void FP_testTextUtilsIsEmptyOk(String s) {
+  public void testTextUtilsIsEmptyLatent(String s) {
     if (TextUtils.isEmpty(s)) {
       Object o = null;
       o.toString();

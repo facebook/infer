@@ -8,8 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-// uninit is fatal because it can also be latent
-void FN_uninit_continues_execution_bad() {
+void uninit_continues_execution_bad() {
   int x;
   int y = x + 1;
   int* p = NULL;

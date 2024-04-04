@@ -47,7 +47,7 @@ formula above can be visualized like so:
 
 ![](/img/SepSplit.jpg)
 
-The important thing about separating conjunction is the way that it fits
+The important thing about the separating conjunction is the way that it fits
 together with mutation to computer memory; reasoning about program commands
 tends to work by updating <Math code="\\(*\\)" />-conjuncts in-place, mimicking
 the operational in-place update of RAM.
@@ -138,17 +138,17 @@ is called _bi-abduction_. The problem here is for the theorem prover to <i>
 discover </i> a pair of frame and antiframe formulae that make the entailment
 statement valid.
 
-Global analyses of large programs are normally computational untractable.
-However, bi-abduction allows to break the large analysis of a large program in
+Global analyses of large programs are normally computationally intractable.
+However, bi-abduction breaks apart a large analysis of a large program into
 small independent analyses of its procedures. This gives Infer the ability to
 scale independently of the size of the analyzed code. Moreover, by breaking the
-analysis in small independent parts, when the full program is analyzed again
+analysis into small independent parts, when the full program is analyzed again
 because of a code change the analysis results of the unchanged part of the code
-can be reused and only the code change needs to be re-analyzed. This process is
-called incremental analysis and it is very powerful when integrating a static
-analysis tool like infer in a development environment.
+can be reused, and only the code change needs to be re-analyzed. This process
+is called incremental analysis and it is very powerful when integrating a
+static analysis tool like Infer in a development environment.
 
-In order to be able to decompose a global analysis in small independent
+In order to be able to decompose a global analysis into small independent
 analyses, let's first consider how a function call is analyzed in separation
 logic. Assume we have the following spec for a function
 <Math code="\\( f() \\)" />:
@@ -159,10 +159,10 @@ logic. Assume we have the following spec for a function
 
 ---
 
-and by analyzing the caller function, we compute that before the call of
-<Math code="\\( f \\)" />, the formula <Math code="\\( CallingState \\)" />
-hold. Then to utilize the specification of <Math code="\\( f \\)" /> the
-following implication must holds:
+and by analyzing the caller function, we compute that before the call of <Math
+code="\\( f \\)" />, the formula <Math code="\\( CallingState \\)" />
+holds. Then to utilize the specification of <Math code="\\( f \\)" /> the
+following implication must hold:
 
 ---
 
@@ -186,7 +186,7 @@ To see how this works suppose we have some bare code
 but no overall specification; we are going to describe how to discover a
 pre/post spec for it. Considering the first statement and the (spec) above, the
 human might say: if only we had <Math code="\\(r1 \mapsto open\\)" /> in the
-precondition then we could proceed. Technically, we ask a bi-abduction question
+precondition then we could proceed. Technically, we ask a bi-abduction question:
 
 ---
 
@@ -196,9 +196,9 @@ precondition then we could proceed. Technically, we ask a bi-abduction question
 
 and we can fill this in easily by picking
 <Math code="\\(antiframe = r1 \mapsto open\\)" /> and
-<Math code="\\(frame = emp\\)" />, where emp means the empty state. The emp is
-recording that at the start we presume nothing. So we obtain the trivially true
-implication:
+<Math code="\\(frame = emp\\)" />, where <Math code="emp"/>
+means the empty state. The <Math code="emp" /> is recording that at the start
+we presume nothing. So we obtain the trivially true implication:
 
 ---
 
@@ -214,9 +214,10 @@ which, by applying logical rules, can be re-written equivalently to:
 
 ---
 
-Notice that this satisfy the (Function Call) requirement to correctly make the
-call. So let's add that information in the pre, and while we are at it record
-the information in the post of the first statement that comes from (spec).
+Notice that this satisfies the (Function Call) requirement to correctly make
+the call. So let's add that information in the <Math code="pre" />, and while
+we are at it, record the information in the <Math code="post" /> of the first
+statement that comes from <Math code="\\(spec\\)" />.
 
 ---
 
@@ -231,8 +232,8 @@ Now, let's move to the second statement. Its precondition
 <Math code="\\(r1 \mapsto closed\\)" /> in the partial symbolic execution trace
 just given does not have the information needed by
 <Math code="\\(closeResource(r2)\\)" />, so we can fill that in and continue by
-putting <Math code="\\(r2 \mapsto open\\)" /> in the pre. While we are at it we
-can thread this assertion back to the beginning.
+putting <Math code="\\(r2 \mapsto open\\)" /> in the <Math code="pre" />. While
+we are at it, we can thread this assertion back to the beginning.
 
 ---
 
@@ -244,7 +245,7 @@ can thread this assertion back to the beginning.
 ---
 
 This information on what to thread backwards can be obtained as the antiframe
-part of the bi-abduction question
+part of the bi-abduction question:
 
 ---
 
@@ -259,7 +260,7 @@ precondition in order for <Math code="\\(closeResource(r2)\\)" /> to proceed. On
 the other hand, the frame <Math code="\\(r1 \mapsto closed\\)" /> is the portion
 of state not changed by <Math code="\\(closeResource(r2)\\)" />; we can thread
 that through to the overall postconditon (as justified by the frame rule),
-giving us
+giving us:
 
 ---
 
@@ -271,9 +272,10 @@ giving us
 
 ---
 
-Thus, we have obtained a pre and post for this code by symbolically executing
-it, using bi-abduction to discover preconditions (abduction of antiframes) as
-well as untouched portions of memory (frames) as we go along.
+Thus, we have obtained a <Math code="pre" /> and <Math code="post" /> for this
+code by symbolically executing it, using bi-abduction to discover preconditions
+(abduction of antiframes) as well as untouched portions of memory (frames) as
+we go along.
 
 In general, bi-abduction provides a way to infer a pre/post specs from bare
 code, as long as we know specs for the primitives at the base level of the code.

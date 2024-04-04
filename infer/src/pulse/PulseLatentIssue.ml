@@ -14,10 +14,11 @@ module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
 module L = Logging
 
-let add_call_to_access_to_invalid_address call_subst astate invalid_access =
+let add_call_to_access_to_invalid_address (call_event, location) (call_subst, hist_map) astate
+    invalid_access =
   let expr_callee = invalid_access.Diagnostic.invalid_address in
   L.d_printfln "adding call to invalid address %a" DecompilerExpr.pp_with_abstract_value expr_callee ;
-  let expr_caller =
+  let expr_caller, default_caller_history =
     match
       let open IOption.Let_syntax in
       let* addr_callee = DecompilerExpr.abstract_value_of_expr expr_callee in
@@ -25,20 +26,20 @@ let add_call_to_access_to_invalid_address call_subst astate invalid_access =
     with
     | None ->
         (* the abstract value doesn't make sense in the caller: forget about it *)
-        DecompilerExpr.reset_abstract_value expr_callee
+        (DecompilerExpr.reset_abstract_value expr_callee, ValueHistory.epoch)
     | Some (invalid_address, caller_history) ->
-        let address_caller = Decompiler.find invalid_address astate in
-        L.d_printfln "invalid_address= %a; address_caller= %a; caller_history= %a" AbstractValue.pp
-          invalid_address DecompilerExpr.pp address_caller ValueHistory.pp caller_history ;
-        address_caller
+        (Decompiler.find invalid_address astate, caller_history)
   in
-  {invalid_access with Diagnostic.invalid_address= expr_caller}
+  let access_trace =
+    Trace.add_call call_event location hist_map ~default_caller_history
+      invalid_access.Diagnostic.access_trace
+  in
+  {invalid_access with Diagnostic.access_trace; invalid_address= expr_caller}
 
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ErlangError of Diagnostic.ErlangError.t
-  | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
 
 let to_diagnostic = function
@@ -46,8 +47,6 @@ let to_diagnostic = function
       Diagnostic.AccessToInvalidAddress access_to_invalid_address
   | ErlangError erlang_error ->
       Diagnostic.ErlangError erlang_error
-  | ReadUninitializedValue read_uninitialized_value ->
-      Diagnostic.ReadUninitializedValue read_uninitialized_value
 
 
 let pp fmt latent_issue = Diagnostic.pp fmt (to_diagnostic latent_issue)
@@ -75,16 +74,14 @@ let add_call_to_calling_context call_and_loc = function
       ErlangError (If_clause {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Try_clause {calling_context; location}) ->
       ErlangError (Try_clause {calling_context= call_and_loc :: calling_context; location})
-  | ReadUninitializedValue read ->
-      ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
 
 
-let add_call call_and_loc call_subst astate latent_issue =
+let add_call call_and_loc call_substs astate latent_issue =
   let latent_issue =
     match latent_issue with
     | AccessToInvalidAddress invalid_access ->
         let invalid_access =
-          add_call_to_access_to_invalid_address call_subst astate invalid_access
+          add_call_to_access_to_invalid_address call_and_loc call_substs astate invalid_access
         in
         AccessToInvalidAddress invalid_access
     | _ ->
@@ -101,8 +98,10 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | JavaResourceLeak _
+  | TransitiveAccess _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
+  | ReadUninitialized _
   | ReadonlySharedPtrParameter _
   | RetainCycle _
   | StackVariableAddressEscape _
@@ -116,6 +115,3 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
       else `DelayReport (AccessToInvalidAddress latent)
   | ErlangError latent ->
       if PulseArithmetic.is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
-  | ReadUninitializedValue latent ->
-      if PulseArithmetic.is_manifest astate then `ReportNow
-      else `DelayReport (ReadUninitializedValue latent)

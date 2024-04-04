@@ -1,6 +1,6 @@
 # Infer annotations
 
-This project provides extra annotations for Java checkers, such as starvation or nullsafe.
+This project provides extra annotations for Java checkers, such as starvation.
 
 ## How to build JARs (suitable for release)
 

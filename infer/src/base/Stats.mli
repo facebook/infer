@@ -36,15 +36,27 @@ val incr_pulse_args_length_contradictions : unit -> unit
 
 val incr_pulse_captured_vars_length_contradictions : unit -> unit
 
+val add_pulse_disjuncts_dropped : int -> unit
+
+val add_pulse_interrupted_loops : int -> unit
+
+val incr_pulse_summaries_contradictions : unit -> unit
+
 val add_pulse_summaries_count : int -> unit
 
-val add_proc_duration_us : string -> int -> unit
+val add_proc_duration_us : string -> string -> int -> unit
 
 val incr_topl_reachable_calls : unit -> unit
 
 val incr_timeouts : unit -> unit
 
 val add_timing : Timeable.t -> float -> unit
+
+val set_process_times : ExecutionDuration.t -> unit
+
+val set_useful_times : ExecutionDuration.t -> unit
+
+val incr_spec_store_times : ExecutionDuration.counter -> unit
 
 val reset : unit -> unit
 (** reset all stats *)

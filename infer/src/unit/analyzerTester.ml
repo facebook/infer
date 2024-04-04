@@ -347,13 +347,12 @@ struct
     List.concat_map
       ~f:(fun (name, test_program) ->
         List.map ai_list ~f:(fun (ai_name, create_test) ->
-            name ^ "_" ^ ai_name >:: create_test test_program make_analysis_data ~initial pp_opt )
-        )
+            name ^ "_" ^ ai_name >:: create_test test_program make_analysis_data ~initial pp_opt ) )
       tests
 end
 
 module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
   MakeTesters (AbstractInterpreter.MakeRPO (T)) (AbstractInterpreter.MakeWTO (T))
 module MakeBackwardExceptional
-    (T : AbstractInterpreter.TransferFunctionsWithExceptions with type CFG.Node.t = Procdesc.Node.t) =
+    (T : AbstractInterpreter.TransferFunctions with type CFG.Node.t = Procdesc.Node.t) =
   MakeTesters (AbstractInterpreter.MakeBackwardRPO (T)) (AbstractInterpreter.MakeBackwardWTO (T))

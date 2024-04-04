@@ -97,14 +97,12 @@ module TypePointerOrd = struct
       let[@warning "+missing-record-field-pattern"] { Clang_ast_t.qt_type_ptr= t1
                                                     ; qt_is_const= c1
                                                     ; qt_is_restrict= r1
-                                                    ; qt_is_trivially_copyable= tc1
                                                     ; qt_is_volatile= v1 } =
         qt1
       in
       let[@warning "+missing-record-field-pattern"] { Clang_ast_t.qt_type_ptr= t2
                                                     ; qt_is_const= c2
                                                     ; qt_is_restrict= r2
-                                                    ; qt_is_trivially_copyable= tc2
                                                     ; qt_is_volatile= v2 } =
         qt2
       in
@@ -115,10 +113,7 @@ module TypePointerOrd = struct
         if const_cmp <> 0 then const_cmp
         else
           let restrict_cmp = Bool.compare r1 r2 in
-          if restrict_cmp <> 0 then restrict_cmp
-          else
-            let trivially_copyable_cmp = Bool.compare tc1 tc2 in
-            if trivially_copyable_cmp <> 0 then trivially_copyable_cmp else Bool.compare v1 v2
+          if restrict_cmp <> 0 then restrict_cmp else Bool.compare v1 v2
 end
 
 module TypePointerMap = Caml.Map.Make (TypePointerOrd)

@@ -25,10 +25,28 @@ type value =
   | TaintProcedure of Procname.t
 [@@deriving compare, equal]
 
-type t = {kinds: TaintConfig.Kind.t list; value: value; origin: origin} [@@deriving compare, equal]
+type value_tuple =
+  | Basic of {value: value; origin: origin}
+  | FieldOf of {name: string; value_tuple: value_tuple}
+  | PointedToBy of {value_tuple: value_tuple}
+[@@deriving compare, equal]
+
+type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple} [@@deriving compare, equal]
 
 val pp_value : F.formatter -> value -> unit
 
 val pp_value_plain : F.formatter -> value -> unit
 
+val pp_value_tuple_debug : F.formatter -> value_tuple -> unit
+
 val pp : F.formatter -> t -> unit
+
+val is_argument_origin : t -> bool
+
+val is_set_field_origin : t -> bool
+
+val value_of_taint : t -> value
+
+val field_of_origin : t -> string -> t
+
+val get_rev_field_access_list : value_tuple -> [> `Field of string | `Deref] list

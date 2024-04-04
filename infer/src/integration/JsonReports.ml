@@ -9,15 +9,19 @@ open! IStd
 module L = Logging
 module F = Format
 
-let error_desc_to_plain_string error_desc =
-  let pp fmt = Localise.pp_error_desc fmt error_desc in
+let error_desc_to_qualifier_string error_desc =
+  let pp fmt = Localise.pp_error_qualifier fmt error_desc in
   let s = F.asprintf "%t" pp in
   let s = String.strip s in
-  let s =
-    (* end error description with a dot *)
-    if String.is_suffix ~suffix:"." s then s else s ^ "."
-  in
-  s
+  (* end error description with a dot *)
+  if String.is_suffix ~suffix:"." s then s else s ^ "."
+
+
+let error_desc_to_suggestion_string error_desc =
+  Option.map error_desc.Localise.suggestion ~f:(fun suggestion ->
+      let s = F.asprintf "%s" suggestion in
+      (* end error suggestion with a dot *)
+      if String.is_suffix ~suffix:"." s then s else s ^ "." )
 
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
@@ -28,9 +32,28 @@ let compute_key (bug_type : string) (proc_name : Procname.t) (filename : string)
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
+let sanitize_qualifier qualifier =
+  (* Removing the line,column, line and column in lambda's name
+     (e.g. test::lambda.cpp:10:15::operator()),
+     and infer temporary variable (e.g., n$67) information from the
+     error message as well as the index of the annonymmous class to make the hash invariant
+     when moving the source code in the file *)
+  let qualifier_regexp =
+    Re.(
+      seq
+        [ alt (["line"; "column"; "parameter"; "argument"; "$"; ":"] |> List.map ~f:str)
+        ; str " " |> rep
+        ; opt @@ char '`'
+        ; opt @@ char '#'
+        ; rep1 digit
+        ; opt @@ char '`' ]
+      |> no_case |> compile )
+  in
+  Re.replace_string qualifier_regexp ~by:"$_" qualifier
+
+
 let compute_hash =
-  let num_regexp = Re.Str.regexp "\\(:\\)[0-9]+" in
-  let qualifier_regexp = Re.Str.regexp "\\(line \\|column \\|:\\|parameter \\|\\$\\)[0-9]+" in
+  let num_regexp = Re.Str.regexp ":[0-9]+\\(_[0-9a-f]+\\)?" in
   fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
       ~(qualifier : string) ->
     let base_filename = Filename.basename file in
@@ -38,14 +61,7 @@ let compute_hash =
     let location_independent_proc_name =
       Re.Str.global_replace num_regexp "$_" hashable_procedure_name
     in
-    let location_independent_qualifier =
-      (* Removing the line,column, line and column in lambda's name
-         (e.g. test::lambda.cpp:10:15::operator()),
-         and infer temporary variable (e.g., n$67) information from the
-         error message as well as the index of the annonymmous class to make the hash invariant
-         when moving the source code in the file *)
-      Re.Str.global_replace qualifier_regexp "$_" qualifier
-    in
+    let location_independent_qualifier = sanitize_qualifier qualifier in
     Utils.better_hash
       ( severity
       , bug_type
@@ -202,6 +218,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       && not (is_in_clang_header source_file)
     then
       let severity = IssueType.string_of_severity err_key.severity in
+      let category = IssueType.string_of_category err_key.issue_type.category in
       let bug_type = err_key.issue_type.unique_id in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
@@ -214,7 +231,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
             None
       in
       let qualifier =
-        let base_qualifier = error_desc_to_plain_string err_key.err_desc in
+        let base_qualifier = error_desc_to_qualifier_string err_key.err_desc in
         if IssueType.(equal resource_leak) err_key.issue_type then
           match Errlog.compute_local_exception_line err_data.loc_trace with
           | None ->
@@ -227,16 +244,21 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
               Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
         else base_qualifier
       in
+      let suggestion = error_desc_to_suggestion_string err_key.err_desc in
       let bug =
         { Jsonbug_j.bug_type
         ; qualifier
         ; severity
+        ; category
+        ; suggestion
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace
+        ; bug_trace_length= Errlog.loc_trace_length err_data.loc_trace
+        ; bug_trace_max_depth= Errlog.loc_trace_max_depth err_data.loc_trace
         ; node_key= Option.map ~f:Procdesc.NodeKey.to_string err_data.node_key
         ; key= compute_key bug_type proc_name file
         ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
@@ -284,15 +306,13 @@ module JsonCostsPrinterElt = struct
               Format.asprintf "%a" (CostDomain.BasicCost.pp_degree ~only_bigO:true) degree_with_term
           }
         in
-        let cost_info ?is_autoreleasepool_trace cost =
+        let cost_info cost =
           { Jsoncost_t.polynomial_version= CostDomain.BasicCost.version
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
           ; hum= hum cost
-          ; trace=
-              loc_trace_to_jsonbug_record
-                (CostDomain.BasicCost.polynomial_traces ?is_autoreleasepool_trace cost) }
+          ; trace= loc_trace_to_jsonbug_record (CostDomain.BasicCost.polynomial_traces cost) }
         in
         let cost_item =
           let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
@@ -303,10 +323,7 @@ module JsonCostsPrinterElt = struct
           ; procedure_name
           ; procedure_id
           ; is_on_ui_thread
-          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost
-          ; autoreleasepool_size=
-              cost_info ~is_autoreleasepool_trace:true
-                (CostDomain.get_cost_kind CostKind.AutoreleasepoolSize post).cost }
+          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost }
         in
         Some (Jsoncost_j.string_of_item cost_item)
     | _ ->
@@ -362,8 +379,12 @@ let collect_issues proc_name proc_location_opt err_log issues_acc =
 
 
 let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
-  if (not (Cost.is_report_suppressed proc_name)) && is_in_files_to_analyze loc then
-    JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
+  if
+    (not (Cost.is_report_suppressed proc_name))
+    && is_in_files_to_analyze loc
+    && (not (Procname.is_hack_builtins proc_name))
+    && not (SourceFile.is_matching [Str.regexp ".*.sil.*"] loc.Location.file)
+  then JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
 let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =
@@ -371,7 +392,6 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
     Config.is_checker_enabled Checker.ConfigImpactAnalysis
     && ( (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
        || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
-       || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file
        || ExternalConfigImpactData.is_in_config_data_file proc_name )
     && is_in_files_to_analyze loc
   then

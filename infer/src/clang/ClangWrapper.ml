@@ -14,10 +14,8 @@ type action_item =
   | ClangError of string
   | ClangWarning of string
 
-let clang_ignore_regex = Option.map ~f:Str.regexp Config.clang_ignore_regex
-
 let check_for_existing_file args =
-  match (Config.buck_mode, clang_ignore_regex) with
+  match (Config.buck_mode, Config.clang_ignore_regex) with
   | Some (ClangCompilationDB _), Some clang_ignore_regex ->
       let arg_files, args_list = List.partition_tf ~f:(String.is_prefix ~prefix:"@") args in
       let read_arg_files args_list arg_file_at =

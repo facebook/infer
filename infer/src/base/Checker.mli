@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 type t =
   | AnnotationReachability
@@ -16,15 +17,12 @@ type t =
   | Cost
   | Datalog
   | DisjunctiveDemo
-  | Eradicate
   | FragmentRetainsView
-  | ImmutableCast
   | Impurity
   | InefficientKeysetIterator
   | LithoRequiredProps
   | Liveness
   | LoopHoisting
-  | NullsafeDeprecated
   | ParameterNotNullChecked
   | PrintfArgs
   | Pulse
@@ -41,7 +39,6 @@ type t =
   | SelfInBlock
   | Starvation
   | Topl
-  | Uninit
 [@@deriving equal, enumerate]
 
 (** per-language support for each checker *)
@@ -88,3 +85,6 @@ val get_id : t -> string
 (** [get_id c] is [(config c).id] *)
 
 val from_id : string -> t option
+
+val pp_manual : F.formatter -> t -> unit
+(** prints a short explanation of the checker; used for the man pages *)

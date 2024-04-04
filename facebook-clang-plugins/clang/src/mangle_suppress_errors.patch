@@ -1,6 +1,6 @@
 --- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
 +++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-@@ -1064,10 +1064,7 @@ void CXXNameMangler::mangleFloatLiteral(QualType T, const llvm::APFloat &V) {
+@@ -1192,10 +1192,7 @@ void CXXNameMangler::mangleFloatLiteral(
  }
 
  void CXXNameMangler::mangleFixedPointLiteral() {
@@ -12,7 +12,7 @@
  }
 
  void CXXNameMangler::mangleNullPointer(QualType T) {
-@@ -3270,11 +3267,7 @@ void CXXNameMangler::mangleNeonVectorType(const VectorType *T) {
+@@ -3635,11 +3632,7 @@ void CXXNameMangler::mangleNeonVectorTyp
  }
 
  void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
@@ -25,7 +25,7 @@
  }
 
  static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
-@@ -3347,11 +3340,7 @@ void CXXNameMangler::mangleAArch64NeonVectorType(const VectorType *T) {
+@@ -3712,11 +3705,7 @@ void CXXNameMangler::mangleAArch64NeonVe
    Out << TypeName.length() << TypeName;
  }
  void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
@@ -38,7 +38,7 @@
  }
 
  // The AArch64 ACLE specifies that fixed-length SVE vector and predicate types
-@@ -3444,11 +3433,7 @@ void CXXNameMangler::mangleAArch64FixedSveVectorType(const VectorType *T) {
+@@ -3809,11 +3798,7 @@ void CXXNameMangler::mangleAArch64FixedS
 
  void CXXNameMangler::mangleAArch64FixedSveVectorType(
      const DependentVectorType *T) {
@@ -50,8 +50,8 @@
 +  Out << "__unhandled_AArch64FixedSveVectorType";
  }
 
- // GNU extension: vector types
-@@ -4040,12 +4025,7 @@ recurse:
+ void CXXNameMangler::mangleRISCVFixedRVVVectorType(const VectorType *T) {
+@@ -4487,12 +4472,7 @@ recurse:
    {
      NotPrimaryExpr();
      if (!NullOut) {
@@ -65,7 +65,7 @@
        return;
      }
      break;
-@@ -4081,12 +4061,7 @@ recurse:
+@@ -4528,12 +4508,7 @@ recurse:
    // Even gcc-4.5 doesn't mangle this.
    case Expr::BinaryConditionalOperatorClass: {
      NotPrimaryExpr();
@@ -79,7 +79,7 @@
      return;
    }
 
-@@ -4425,18 +4400,11 @@ recurse:
+@@ -4872,18 +4847,11 @@ recurse:
        MangleAlignofSizeofArg();
        break;
      case UETT_VecStep: {

@@ -48,7 +48,8 @@ let replace_mockpointers_calls globals_map _procname proc_desc =
   let add_calls _node ids_map instr =
     let instrs =
       match (instr : Sil.instr) with
-      | Sil.Call (ret_id_typ, Var caller_var, args, loc, flags) -> (
+      | Sil.Call (ret_id_typ, Const (Cfun procname), (Var caller_var, _) :: args, loc, flags)
+        when Procname.equal BuiltinDecl.__call_c_function_ptr procname -> (
         match Ident.Map.find_opt caller_var ids_map with
         | Some procname ->
             let new_loc = {loc with macro_file_opt= None; macro_line= 0} in
@@ -64,7 +65,7 @@ let replace_mockpointers_calls globals_map _procname proc_desc =
   in
   ignore
     (Procdesc.replace_instrs_by_using_context proc_desc ~f:add_calls
-       ~update_context:(update_context globals_map) ~context_at_node:(fun _ -> Ident.Map.empty) )
+       ~update_context:(update_context globals_map) ~context_at_node:(fun _ -> Ident.Map.empty ) )
 
 
 let process cfg prefix =

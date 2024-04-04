@@ -1,8 +1,8 @@
 Infer reports this issue when an *expensive* function is called without a *config check*.  The
 *config* is usually a boolean value that enables experimental new features and it is defined per
 application/codebase, e.g. gatekeepers.  To determine whether a function is expensive or not, the
-checker relies on [Cost analysis](/docs/next/checker-cost) results and modeled functions that are
-assumed to be expensive, e.g. string operations, regular expression match, or DB accesses.
+checker relies on modeled functions that are assumed to be expensive, e.g. string operations,
+regular expression match, or DB accesses.
 
 Similar to [Cost analysis](/docs/next/checker-cost), this issue type is reported only in
 differential mode, i.e. when there are original code and modified one and we can compare Infer's

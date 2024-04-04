@@ -431,7 +431,7 @@ let method_exists right_proc_name methods =
 
 
 let resolve_method tenv class_name proc_name =
-  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
+  match Tenv.resolve_method ~method_exists tenv class_name proc_name |> fst with
   | None ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;
@@ -985,7 +985,7 @@ let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; 
 
 let is_variadic_procname callee_pname =
   Option.exists (Attributes.load callee_pname) ~f:(fun proc_attrs ->
-      proc_attrs.ProcAttributes.is_variadic )
+      proc_attrs.ProcAttributes.is_clang_variadic )
 
 
 let resolve_and_analyze_no_dynamic_dispatch {InterproceduralAnalysis.analyze_dependency; tenv}
@@ -1072,7 +1072,7 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec
     ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
-    analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
+      analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
     (Prop.normal Prop.t * Paths.Path.t) list =
   AnalysisState.set_instr instr_ ;
   (* mark instruction last seen *)
@@ -1179,8 +1179,9 @@ let rec sym_exec
                 proc_call resolved_pname resolved_summary
                   (call_args prop_ callee_pname norm_args ret_id_typ loc)
             | Some reason ->
-                let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
-                exec_skip_call ~reason resolved_pname ret_annots ret_type ) )
+                let ret_typ = Procname.Java.get_return_typ callee_pname_java in
+                let ret_annots = load_ret_annots callee_pname in
+                exec_skip_call ~reason resolved_pname ret_annots ret_typ ) )
       | CSharp callee_pname_csharp ->
           let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
@@ -1203,8 +1204,9 @@ let rec sym_exec
                   let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
                   proc_call callee_pname callee_summary handled_args
               | Some reason ->
-                  let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
-                  exec_skip_call ~reason ret_annots ret_type )
+                  let ret_typ = Procname.CSharp.get_return_typ callee_pname_csharp in
+                  let ret_annots = load_ret_annots callee_pname in
+                  exec_skip_call ~reason ret_annots ret_typ )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _ ->

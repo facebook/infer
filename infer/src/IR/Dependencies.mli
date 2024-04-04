@@ -51,3 +51,5 @@ val record_srcfile_dep : SourceFile.t -> unit
 
 val clear : unit -> unit
 (** drop all currently-recorded dependency edges to reclaim memory *)
+
+val merge : complete -> complete -> complete

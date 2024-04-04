@@ -81,13 +81,16 @@ void dispatch_sync_specializable(dispatch_queue_t queue,
   }
 }
 
-int dispatch_sync_specialized_ok(dispatch_queue_t queue) {
+int dispatch_sync_specialized_ok_FP(dispatch_queue_t queue) {
   __block int x = 0;
   __block int* ptr = NULL;
   dispatch_sync_specializable(queue, ^{
     ptr = &x;
   });
-  return *ptr;
+  return *ptr; // We get NULLPTR_DEREFERENCE_LATENT here because even though we
+               // run the block, we also take into account other specs of
+               // dispatch_sync_specializable without block execution and thus
+               // we report NPE here.
 }
 
 int dispatch_sync_specialized_latent(dispatch_queue_t queue) {
@@ -111,14 +114,17 @@ void performAsCurrentTraitCollection_specializable(
   }
 }
 
-int performAsCurrentTraitCollection_specialized_ok(
+int performAsCurrentTraitCollection_specialized_ok_FP(
     UITraitCollection* traitCollection) {
   __block int x = 0;
   __block int* ptr = NULL;
   performAsCurrentTraitCollection_specializable(traitCollection, ^{
     ptr = &x;
   });
-  return *ptr;
+  return *ptr; // We get NULLPTR_DEREFERENCE_LATENT here because even though we
+               // run the block, we also take into account other specs of
+               // performAsCurrentTraitCollection_specializable without block
+               // execution and thus we report NPE here.
 }
 
 int performAsCurrentTraitCollection_specialized_latent(

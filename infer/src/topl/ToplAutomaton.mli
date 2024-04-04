@@ -7,19 +7,16 @@
 
 open! IStd
 
-(* An automaton is a different representation for a set of Topl properties: states and transitions
+(* An automaton is a different representation for a set of Topl properties: vertices and transitions
    are identified by nonnegative integers; and transitions are grouped by their source. Also, the
    meaning of transition labels does not depend on context (e.g., prefixes are now included).
 
-   We identify states by integers because biabduction tracks integers well; for example, equality
+   We identify vertices by integers because Pulse tracks integers well; for example, equality
    checks on integers are obvious, we don't need to worry about whether we should be using an
-   equals() method.
+   equals() method. (Transitions are identified by integers for historical reasons.)
 
-   We identify transitions by integers because, in the monitor code that we generate, we use a
-   boolean variable transitionN to tell if the static part of a transition guard is satisfied. The N
-   is just some identifier for the transition, and integers are convenient identifiers.
-
-   Transitions are grouped by their source to ease generation of the monitor code.
+   Transitions are grouped by their source because symbolic execution often needs to find all
+   outgoing transitions of a particular vertex.
 *)
 type t
 

@@ -13,7 +13,7 @@ module Decompiler = PulseDecompiler
 module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
-(** {2 Abductive, value-normalizing layer on top of {!BaseDomain}}
+(** {2 Abductive, value-normalizing layer on top of [BaseDomain]}
 
     The operations in this module take care of two things that are important for the safety of
     domain operations:
@@ -64,11 +64,10 @@ type t = private
   ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
-  ; need_closure_specialization: bool
-        (** a call that could be resolved via analysis-time specialization has been skipped *)
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
+  ; transitive_info: TransitiveInfo.t  (** record transitive information inter-procedurally *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -77,7 +76,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> ProcAttributes.t -> Specialization.Pulse.t option -> t
+val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
 (** Safe version of {!PulseBaseStack} *)
 module Stack : sig
@@ -104,46 +103,40 @@ module Memory : sig
   val add_edge :
        PathContext.t
     -> AbstractValue.t * ValueHistory.t
-    -> PulseBaseMemory.Access.t
+    -> PulseAccess.t
     -> AbstractValue.t * ValueHistory.t
     -> Location.t
     -> t
     -> t
 
   val eval_edge :
-       AbstractValue.t * ValueHistory.t
-    -> PulseBaseMemory.Access.t
-    -> t
-    -> t * (AbstractValue.t * ValueHistory.t)
+    AbstractValue.t * ValueHistory.t -> PulseAccess.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist. *)
 
   val fold_edges :
-       AbstractValue.t
-    -> (t, PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
+    AbstractValue.t -> (t, PulseAccess.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
 
   val find_edge_opt :
-    AbstractValue.t -> PulseBaseMemory.Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+    AbstractValue.t -> PulseAccess.t -> t -> (AbstractValue.t * ValueHistory.t) option
 
   val exists_edge :
-       AbstractValue.t
-    -> t
-    -> f:(PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) -> bool)
-    -> bool
+    AbstractValue.t -> t -> f:(PulseAccess.t * (AbstractValue.t * ValueHistory.t) -> bool) -> bool
 end
 
 (** Safe version of {!PulseBaseAddressAttributes} *)
 module AddressAttributes : sig
-  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
+  val abduce_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute to the pre, if the address is in pre *)
 
-  val abduce_and_add : AbstractValue.t -> Attributes.t -> t -> t
-  (** add the attributes to both the current state and, if meaningful, the pre *)
+  val abduce_all : AbstractValue.t -> Attributes.t -> t -> t
+  (** [abduce_one] on each attribute in the set *)
 
   val add_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute only to the post *)
 
-  val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
+  val add_all : AbstractValue.t -> Attributes.t -> t -> t
+  (** [add_one] on each attribute in the set *)
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 
@@ -155,7 +148,8 @@ module AddressAttributes : sig
     -> t
     -> (t, Invalidation.t * Trace.t) result
 
-  val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
+  val check_initialized :
+    PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, Attribute.UninitializedTyp.t) result
 
   val add_taint_sink : PathContext.t -> TaintItem.t -> Trace.t -> AbstractValue.t -> t -> t
 
@@ -190,25 +184,29 @@ module AddressAttributes : sig
 
   val is_csharp_resource_released : AbstractValue.t -> t -> bool
 
-  val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
+  val in_reported_retain_cycle : AbstractValue.t -> t -> t
 
-  val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> AbstractValue.t -> t -> t
+  val is_in_reported_retain_cycle : AbstractValue.t -> t -> bool
 
-  val add_ref_counted : AbstractValue.t -> t -> t
+  val add_dict_contain_const_keys : AbstractValue.t -> t -> t
 
-  val is_ref_counted : AbstractValue.t -> t -> bool
+  val remove_dict_contain_const_keys : AbstractValue.t -> t -> t
+
+  val is_dict_contain_const_keys : AbstractValue.t -> t -> bool
+
+  val add_dict_read_const_key : Timestamp.t -> Trace.t -> AbstractValue.t -> Fieldname.t -> t -> t
+
+  val add_dynamic_type : Attribute.dynamic_type_data -> AbstractValue.t -> t -> t
+
+  val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
   val remove_taint_attrs : AbstractValue.t -> t -> t
 
-  val get_dynamic_type : AbstractValue.t -> t -> Typ.t option
-
-  val get_dynamic_type_source_file : AbstractValue.t -> t -> (Typ.t * SourceFile.t option) option
+  val get_dynamic_type : AbstractValue.t -> t -> Attribute.dynamic_type_data option
 
   val get_static_type : AbstractValue.t -> t -> Typ.Name.t option
-
-  val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
@@ -224,7 +222,8 @@ module AddressAttributes : sig
   val get_taint_sources_and_sanitizers :
     AbstractValue.t -> t -> Attribute.TaintedSet.t * Attribute.TaintSanitizedSet.t
 
-  val get_propagate_taint_from : AbstractValue.t -> t -> Attribute.taint_in list option
+  val get_propagate_taint_from :
+    AbstractValue.t -> t -> (Attribute.taint_propagation_reason * Attribute.taint_in list) option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
 
@@ -232,9 +231,9 @@ module AddressAttributes : sig
 
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
-  val std_vector_reserve : AbstractValue.t -> t -> t
+  val get_last_lookup : AbstractValue.t -> t -> AbstractValue.t option
 
-  val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+  val std_vector_reserve : AbstractValue.t -> t -> t
 
   val add_copied_return :
        AbstractValue.t
@@ -247,8 +246,6 @@ module AddressAttributes : sig
 
   val get_config_usage : AbstractValue.t -> t -> Attribute.ConfigUsage.t option
 
-  val get_const_string : AbstractValue.t -> t -> string option
-
   val get_valid_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
 
   val get_written_to : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
@@ -259,13 +256,14 @@ module AddressAttributes : sig
 
   val get_address_of_stack_variable :
     AbstractValue.t -> t -> (Var.t * Location.t * ValueHistory.t) option
+
+  val has_unknown_effect : AbstractValue.t -> t -> bool
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
 
 val apply_unknown_effect :
-     ?havoc_filter:
-       (AbstractValue.t -> PulseBaseMemory.Access.t -> AbstractValue.t * ValueHistory.t -> bool)
+     ?havoc_filter:(AbstractValue.t -> PulseAccess.t -> AbstractValue.t * ValueHistory.t -> bool)
   -> ValueHistory.t
   -> AbstractValue.t
   -> t
@@ -278,22 +276,43 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
+val reachable_addresses_from :
+     ?edge_filter:(Access.t -> bool)
+  -> AbstractValue.t Seq.t
+  -> t
+  -> [`Pre | `Post]
+  -> AbstractValue.Set.t
+(** Compute the set of abstract addresses that are reachable from given abstract addresses. *)
+
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
+
+val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
+val add_missed_captures : Typ.Name.Set.t -> t -> t
+
 val set_path_condition : Formula.t -> t -> t
 
-val set_need_closure_specialization : t -> t
+val record_transitive_access : Location.t -> t -> t
 
-val unset_need_closure_specialization : t -> t
+val record_call_resolution :
+     caller_name:string
+  -> caller_loc:Location.t
+  -> callsite_loc:Location.t
+  -> TransitiveInfo.Callees.call_kind
+  -> TransitiveInfo.Callees.resolution
+  -> t
+  -> t
 
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
+
+val add_block_source : AbstractValue.t -> string -> t -> t
 
 val set_post_edges : AbstractValue.t -> PulseBaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
@@ -301,9 +320,6 @@ val set_post_edges : AbstractValue.t -> PulseBaseMemory.Edges.t -> t -> t
 val set_post_cell :
   PathContext.t -> AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
-
-val remove_from_post : AbstractValue.t -> t -> t
-(** remove any association from the given address, bypassing abduction altogether *)
 
 val incorporate_new_eqs :
      Formula.new_eqs
@@ -325,15 +341,10 @@ module Summary : sig
       not called twice *)
   type summary = private t [@@deriving compare, equal, yojson_of]
 
-  val skipped_calls_match_pattern : summary -> bool
-
-  val with_need_closure_specialization : summary -> summary
-
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
 
   val of_post :
-       Tenv.t
-    -> Procname.t
+       Procname.t
     -> ProcAttributes.t
     -> Location.t
     -> t
@@ -341,8 +352,6 @@ module Summary : sig
        , [> `JavaResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
          | `HackUnawaitedAwaitable of summary * t * Trace.t * Location.t
          | `CSharpResourceLeak of summary * t * CSharpClassName.t * Trace.t * Location.t
-         | `RetainCycle of
-           summary * t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
          | `MemoryLeak of summary * t * Attribute.allocator * Trace.t * Location.t
          | `PotentialInvalidAccessSummary of
            summary * t * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ]
@@ -364,8 +373,6 @@ module Summary : sig
 
   val get_topl : summary -> PulseTopl.state
 
-  val need_closure_specialization : summary -> bool
-
   val heap_paths_that_need_dynamic_type_specialization :
     summary -> AbstractValue.t Specialization.HeapPath.Map.t
 
@@ -379,8 +386,19 @@ module Summary : sig
     -> summary
     -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
+  val remove_all_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> summary -> summary
+
+  val pre_heap_has_assumptions : summary -> bool
+  (** whether the pre heap encodes some assumptions about values: either a value is restricted (>=
+      0) or there is sharing in the heap. Both represent implicit assumptions that the program must
+      have made. *)
+
   type t = summary [@@deriving compare, equal, yojson_of]
+
+  val get_transitive_info : t -> TransitiveInfo.t
 end
+
+val transfer_transitive_info_to_caller : Procname.t -> Location.t -> Summary.t -> t -> t
 
 module Topl : sig
   val small_step : Location.t -> PulseTopl.event -> t -> t

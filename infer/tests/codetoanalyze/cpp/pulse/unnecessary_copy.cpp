@@ -4,14 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
 #include <algorithm>
+#include <assert.h>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
+
 #include "header.h"
-#include <assert.h>
 
 struct Arr {
   int arr[2];
@@ -661,6 +664,34 @@ void copy_assignment_const_ref_member_ok(const Arr& arr) {
   my_vec = arr.vec;
 }
 
+void copy_assignment_const_value_param_bad(const Arr arr) {
+  Arr my_arr;
+  my_arr = arr; // fix here is to remove const from param type
+}
+
+void copy_assignment_const_ref_param_ok(const Arr& arr) {
+  Arr my_arr;
+  const Arr& c = arr;
+  my_arr = c;
+}
+
+int intermediate_copy_assignment_const_ref_ok(const Arr& arr) {
+  const auto& c = arr;
+  return get_first_elem(c);
+}
+
+int intermediate_copy_assignment_const_value_bad(const Arr arr) {
+  return get_first_elem(arr); // fix here is to remove const from param type
+}
+
+struct Wrapper {
+  Arr my_field;
+  const Arr& get_const_ref();
+
+  void intermediate_const_ref_callee_ok() { get_first_elem(get_const_ref()); }
+
+  void assignment_const_ref_ok() { my_field = get_const_ref(); }
+};
 class FVector {
 
   FVector(FVector const& rhs) {
@@ -841,3 +872,82 @@ struct NonDisjJoinLoop_ok_FP {
 
   NonDisjJoinLoop_ok_FP(std::string s) {}
 };
+
+struct Ptr {
+  int* ptr;
+  std::vector<int> vec;
+};
+
+Ptr* get_unknown_ptr_field();
+
+Ptr global_ptr;
+class UnownedTest {
+  Arr field;
+  Ptr ptr_field;
+  std::vector<int> vec_field;
+  int* ptr;
+
+  void copy_assignment_points_to_global_ok() {
+    auto& ref = global;
+    field = ref; // we can't suggest moving here
+  }
+
+  void copy_assignment_copy_of_global_bad() {
+    auto ref = global;
+    field = ref; // moving is ok here
+  }
+
+  Arr* get_global_ptr() { return &global; }
+
+  void copy_assignment_via_callee_points_to_global_ok() {
+    auto& ref = get_global_ptr()->vec;
+    vec_field = ref; // we can't suggest moving here
+  }
+
+  void copy_assignment_points_to_ref_param_ok(Arr& param) {
+    auto& ref = param;
+    field = ref; // we can't suggest moving here
+  }
+
+  void intermediate_copy_points_to_global_ok() {
+    auto& ref = global;
+    get_first_elem(ref);
+  }
+
+  void intermediate_copy_copy_of_global_bad() {
+    auto ref = global;
+    get_first_elem(ref); // ok to move here
+  }
+
+  void intermediate_copy_via_callee_points_to_global_ok() {
+    auto& ref = get_global_ptr()->vec;
+    modify_arg(ref); // we can't suggest moving here
+  }
+
+  void intermediate_copy_points_to_ref_param_ok(Arr& param) {
+    auto& ref = param;
+    get_first_elem(ref);
+  }
+
+  void copy_assignment_copy_ptr_bad() {
+    Ptr c{};
+    c.ptr = global_ptr.ptr;
+    ptr_field = c; // ok to move here
+  }
+
+  void copy_assign_from_unknown_ok() { ptr_field = *get_unknown_ptr_field(); }
+};
+
+struct ArrWrap {
+  Arr arr;
+};
+
+void captured_by_ref_ok() {
+  Arr x;
+  auto _ = [&]() {
+    ArrWrap y;
+    y.arr = x;
+    return y;
+  };
+  x.arr[0] = 42;
+}

@@ -67,10 +67,6 @@ let file payload_field checker = File (CallbackOfChecker.interprocedural_file pa
 
 let intraprocedural checker = Procedure (CallbackOfChecker.intraprocedural checker)
 
-let intraprocedural_with_payload payload_field checker =
-  Procedure (CallbackOfChecker.intraprocedural_with_field payload_field checker)
-
-
 let intraprocedural_with_field_dependency payload_field checker =
   Procedure (CallbackOfChecker.intraprocedural_with_field_dependency payload_field checker)
 
@@ -134,8 +130,7 @@ let all_checkers =
            interprocedural3 ~set_payload:(Field.fset Payloads.Fields.cost) Payloads.Fields.cost
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Cost.checker
          in
-         [(checker, Clang); (checker, Java)] ) }
-  ; {checker= Uninit; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)]}
+         [(checker, Clang); (checker, Java); (checker, Hack)] ) }
   ; {checker= SIOF; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)]}
   ; { checker= LithoRequiredProps
     ; callbacks= [(interprocedural Payloads.Fields.litho_required_props RequiredProps.checker, Java)]
@@ -190,16 +185,9 @@ let all_checkers =
   ; {checker= Liveness; callbacks= [(intraprocedural Liveness.checker, Clang)]}
   ; { checker= InefficientKeysetIterator
     ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)] }
-  ; { checker= ImmutableCast
-    ; callbacks=
-        [(intraprocedural_with_payload Payloads.Fields.nullsafe ImmutableChecker.analyze, Java)] }
   ; { checker= FragmentRetainsView
     ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)]
     }
-  ; { checker= Eradicate
-    ; callbacks=
-        [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
-        ; (file Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ] }
   ; { checker= Biabduction
     ; callbacks=
         (let biabduction =
@@ -215,10 +203,7 @@ let all_checkers =
   ; { checker= ConfigImpactAnalysis
     ; callbacks=
         (let checker =
-           interprocedural3
-             ~set_payload:(Field.fset Payloads.Fields.config_impact_analysis)
-             Payloads.Fields.buffer_overrun_analysis Payloads.Fields.config_impact_analysis
-             Payloads.Fields.cost ConfigImpactAnalysis.checker
+           interprocedural Payloads.Fields.config_impact_analysis ConfigImpactAnalysis.checker
          in
          [(checker, Clang); (checker, Java)] ) }
   ; { checker= LineageShape

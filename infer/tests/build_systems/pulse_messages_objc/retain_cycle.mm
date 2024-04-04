@@ -45,8 +45,14 @@ typedef void (^MyAHandler)(RCBlockAA* name);
   NSLog(@"Dealloc");
 }
 
-- (void)retain_self_in_block_retain_cycle {
+- (void)retain_self_in_block_retain_cycle_bad {
   self.handler = ^(RCBlock* b) {
+    self->_child = b;
+  };
+}
+
+- (void)retain_self_in_block_with_store_retain_cycle_bad {
+  self->_handler = ^(RCBlock* b) {
     self->_child = b;
   };
 }
@@ -64,7 +70,7 @@ typedef void (^MyAHandler)(RCBlockAA* name);
 
 int test_retain_self_in_block_cycle_bad() {
   RCBlock* c = [[RCBlock alloc] init];
-  [c retain_self_in_block_retain_cycle];
+  [c retain_self_in_block_retain_cycle_bad];
   return 0;
 }
 

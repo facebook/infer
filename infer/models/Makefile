@@ -15,7 +15,7 @@ RESULTS_DIR = infer-out
 RESULTS_DB = $(RESULTS_DIR)/results.db
 CAPTURE_DB = $(RESULTS_DIR)/capture.db
 
-INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(RESULTS_DIR) --biabduction-models-mode
+INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(RESULTS_DIR) --biabduction-models-mode --scheduler=file
 
 JAVA_MODELS_OUT = java/models
 MODELS_JAR = models.jar
@@ -23,7 +23,7 @@ MODELS_JAR = models.jar
 JAVA_SOURCES = $(shell find $(JAVA_BUILTINS_DIR) $(JAVA_MODELS_DIR) -name "*.java")
 JAVA_MODELS_CLASSPATH = $(ANDROID_JAR):$(GUAVA_JAR):$(JACKSON_JAR):$(JSR_305_JAR):$(INFER_ANNOTATIONS_JAR)
 JAVAC_OPTIONS = -bootclasspath $(ANDROID_JAR) -d $(JAVA_MODELS_OUT) -classpath $(JAVA_MODELS_CLASSPATH) \
-	$(JAVA_SOURCES) -source 7 -target 7
+	$(JAVA_SOURCES) -source 8 -target 8
 
 SQL_DUMP_MODEL_SPECS = \
 	-cmd ".mode insert model_specs" \

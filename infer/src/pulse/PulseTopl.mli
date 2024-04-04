@@ -11,9 +11,13 @@ module BaseDomain = PulseBaseDomain
 
 type value = AbstractValue.t
 
+type static_type = Typ.t
+
+type value_and_type = value * static_type
+
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
-  | Call of {return: value option; arguments: value list; procname: Procname.t}
+  | Call of {return: value_and_type option; arguments: value_and_type list; procname: Procname.t}
 
 type state [@@deriving compare, equal]
 

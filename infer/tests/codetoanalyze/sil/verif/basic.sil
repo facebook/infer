@@ -37,14 +37,40 @@ define f(x: int, y: float, n: *node, a: *int[]) : void {
     jmp
 }
 
+define without_load_store_types(x: int, y: float, n: *node, a: *int[]) : void {
+  local z: int
+  #entry:
+    n0 = load &y
+    n1 = load &x
+    n2 = load &a
+    n3 = load &n
+    n7 = f(3, 3.0, n3, n2)
+    n70 = f(3, 3.0, n2, n3)
+    jmp lab1
+  #lab1:
+    store &y <- n0
+    store &y <- n1
+    store n2[1] <- n1
+    n8 = load n2[0]
+    store &y <- n8
+    store &x <- n8
+    n4 = load &n
+    store n4.node.val <- n1
+    store n3.node.val <- n1
+    store n4.?.val <- n1
+    store n3.node.val <- n2
+    n5 = ?.cons(1, n3)
+    ret n2
+}
+
 define unreachable_example(i: int) : void {
   #entry:
     n0: int = load &i
-    jmp then, else
-  #then:
+    jmp then_node, else_node
+  #then_node:
     prune __sil_lt(n0, 0)
     ret null
-  #else:
+  #else_node:
     prune ! __sil_lt(n0, 0)
     n2 = n1
     unreachable
@@ -70,3 +96,30 @@ define call_throws() : void {
     n0 = A.throws()
     ret null
 }
+
+define if_then_else(x: int, y: float) : void {
+  #entry:
+    n0: int = load &x
+    if n0 then ret null else jmp lab1
+  #lab1:
+    n1: float = load &y
+    if n1 then ret null else jmp lab2
+  #lab2:
+    if n0 && n1 then ret null else jmp lab3
+  #lab3:
+    if [&y] then ret null else jmp lab2
+}
+
+define use_mangled_names(): void {
+  #entry:
+    n0 = A::foo()
+    n1 = mixed:::bar()
+    n2 = A::mixed:::zoo()
+    ret null
+}
+
+declare A::foo() : void
+
+declare mixed:::bar() : void
+
+declare A::mixed:::zoo() : void

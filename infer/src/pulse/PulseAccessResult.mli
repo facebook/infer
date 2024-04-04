@@ -23,6 +23,8 @@ type error =
           times. For convenience this is part of the [error] datatype but the invariant that an
           [error] within a [WithSummary (error, summary)] cannot itself be a [WithSummary _]. *)
 
+val astate_of_error : error -> AbductiveDomain.t
+
 type 'a t = ('a, error) PulseResult.t
 
 val with_summary : ('a, error * AbductiveDomain.Summary.t) PulseResult.t -> 'a t
@@ -66,13 +68,6 @@ val ignore_leaks :
          AbductiveDomain.Summary.t * AbductiveDomain.t * Trace.t * Location.t
        | `CSharpResourceLeak of
          AbductiveDomain.Summary.t * AbductiveDomain.t * CSharpClassName.t * Trace.t * Location.t
-       | `RetainCycle of
-         AbductiveDomain.Summary.t
-         * AbductiveDomain.t
-         * Trace.t list
-         * DecompilerExpr.t
-         * DecompilerExpr.t
-         * Location.t
        | abductive_summary_error ] )
      result
   -> (AbductiveDomain.Summary.t, [> abductive_summary_error]) result

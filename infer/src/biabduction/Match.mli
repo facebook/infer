@@ -39,7 +39,7 @@ val prop_match_with_impl :
 (** [prop_match_with_impl p condition vars hpat hpats] returns [(subst, p_leftover)] such that
 
     + [dom(subst) = vars]
-    + [p |- (hpat.hpred * hpats.hpred)\[subst\] * p_leftover].
+    + [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
 
     Using the flag [field], we can control the strength of |-. *)
 

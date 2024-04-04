@@ -5,21 +5,11 @@ title: Getting started with Infer
 
 ## Get Infer
 
-You can use Homebrew (Mac only), our binary releases, build infer from source,
-or use our Docker image.
+You can use our binary releases, build infer from source, or use our Docker image.
 
-On Mac, the simplest way is to use [Homebrew](http://brew.sh/). Type this into a
-terminal:
-
-```sh
-brew install infer
-```
-
-On Linux, or if you do not wish to use Homebrew on Mac, use our latest
-[binary release](https://github.com/facebook/infer/releases/latest). Download
-the tarball then extract it anywhere on your system to start using infer. For
-example, this downloads infer in /opt on Linux (replace `VERSION` with the
-latest release, eg `VERSION=1.0.0`):
+Find our latest [binary release here](https://github.com/facebook/infer/releases/latest). Download
+the tarball then extract it anywhere on your system to start using infer. For example, this
+downloads infer in /opt on Linux (replace `VERSION` with the latest release, eg `VERSION=1.1.0`):
 
 ```bash
 VERSION=0.XX.Y; \

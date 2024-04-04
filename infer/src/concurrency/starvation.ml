@@ -408,7 +408,7 @@ let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) as
   let procname = Procdesc.get_proc_name proc_desc in
   if not Config.starvation_whole_program then astate
   else
-    match Procname.base_of procname with
+    match procname with
     | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
         (* we are analyzing the class initializer, don't go through on-demand again *)
         astate
@@ -432,12 +432,16 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
     let formals = FormalMap.make (Procdesc.get_attributes proc_desc) in
     let proc_data = {interproc; formals} in
     let loc = Procdesc.get_loc proc_desc in
-    let set_lock_state_for_synchronized_proc astate =
+    let locks_for_synchronized_proc =
       if Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc then
-        Domain.Lock.make_java_synchronized formals procname
-        |> Option.to_list
-        |> Domain.acquire ~tenv astate ~procname ~loc
-      else astate
+        Domain.Lock.make_java_synchronized formals procname |> Option.to_list
+      else []
+    in
+    let set_lock_state_for_synchronized_proc astate =
+      Domain.acquire ~tenv astate ~procname ~loc locks_for_synchronized_proc
+    in
+    let release_lock_state_for_synchronized_proc astate =
+      Domain.release astate locks_for_synchronized_proc
     in
     let set_thread_status_by_annotation (astate : Domain.t) =
       let thread =
@@ -461,6 +465,7 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       |> set_ignore_blocking_calls_flag
     in
     Analyzer.compute_post proc_data ~initial proc_desc
+    |> Option.map ~f:release_lock_state_for_synchronized_proc
     |> Option.map ~f:(Domain.summary_of_astate proc_desc)
 
 
@@ -635,14 +640,20 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
 
 
 let should_report attrs =
-  match Procname.base_of (ProcAttributes.get_proc_name attrs) with
-  | Procname.Java java_pname ->
-      (not (Procname.Java.is_autogen_method java_pname))
-      && not (Procname.Java.is_class_initializer java_pname)
-  | Procname.ObjC_Cpp _ ->
-      true
-  | _ ->
-      false
+  let procname = ProcAttributes.get_proc_name attrs in
+  let should_report' procname =
+    match procname with
+    | Procname.Java java_pname ->
+        (not (Procname.Java.is_autogen_method java_pname))
+        && not (Procname.Java.is_class_initializer java_pname)
+    | Procname.ObjC_Cpp _ ->
+        true
+    | Procname.C _ ->
+        true
+    | _ ->
+        false
+  in
+  should_report' procname
 
 
 let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =

@@ -1,3 +1,3 @@
-src/hello.c, test1, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure test1()]
-src/hello.c, test3, 3, BIABDUCTION_MEMORY_LEAK, no_bucket, ERROR, [start of procedure test3(),Taking true branch]
-src/hello2.c, test_hello2, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure test_hello2()]
+src/hello.c, test1, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+src/hello.c, test3, 3, MEMORY_LEAK_C, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `malloc` here,memory becomes unreachable here]
+src/hello2.c, test_hello2, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

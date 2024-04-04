@@ -91,7 +91,7 @@ digraph cfg {
 "set_f#struct_pass_by_value#449985.3244dc0de9a72d4e_2" [label="2: Exit struct_pass_by_value::set_f \n  " color=yellow style=filled]
 	
 
-"set_f#struct_pass_by_value#449985.3244dc0de9a72d4e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&val:struct_pass_by_value::X& [line 23, column 28]\n  n$1=*&f:int [line 23, column 36]\n  *n$0.f:int=n$1 [line 23, column 28]\n " shape="box"]
+"set_f#struct_pass_by_value#449985.3244dc0de9a72d4e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&f:int [line 23, column 36]\n  n$0=*&val:struct_pass_by_value::X& [line 23, column 28]\n  *n$0.f:int=n$1 [line 23, column 28]\n " shape="box"]
 	
 
 	 "set_f#struct_pass_by_value#449985.3244dc0de9a72d4e_3" -> "set_f#struct_pass_by_value#449985.3244dc0de9a72d4e_2" ;

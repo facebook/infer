@@ -64,7 +64,7 @@ let pp_ pp_abductive_domain_t fmt = function
       F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.Summary.pp astate
   | LatentAbortProgram {astate; latent_issue} ->
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
-      let message = Diagnostic.get_message diagnostic in
+      let message, _suggestion = Diagnostic.get_message_and_suggestion diagnostic in
       let location = Diagnostic.get_location diagnostic in
       F.fprintf fmt "{LatentAbortProgram(%a: %s)@ %a@ %a}" Location.pp location message
         LatentIssue.pp latent_issue AbductiveDomain.Summary.pp astate

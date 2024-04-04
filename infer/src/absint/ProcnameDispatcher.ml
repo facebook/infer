@@ -63,6 +63,10 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list (HackClassName.components mangled_name), [])
   | PythonClass mangled_name ->
       (QualifiedCppName.of_list (PythonClassName.components mangled_name), [])
+  | ObjcBlock bsig ->
+      (QualifiedCppName.of_list [bsig.name], [])
+  | CFunction csig ->
+      (csig.c_name, [])
 
 
 let templated_name_of_hack hack =
@@ -266,6 +270,9 @@ module type Common = sig
   val make_dispatcher :
     ('context, 'f, 'arg_payload) matcher list -> ('context, 'f, 'arg_payload) dispatcher
 
+  val map_matcher :
+    ('context, 'f1, 'arg_payload) matcher -> f:('f1 -> 'f2) -> ('context, 'f2, 'arg_payload) matcher
+
   (* Template arguments *)
 
   val any_typ : ('f, 'f, accept_more) template_arg
@@ -430,6 +437,8 @@ module Call = struct
 
     let is_var {exp} = match exp with Var _ -> true | _ -> false
 
+    let map_payload ~f ({arg_payload} as func_arg) = {func_arg with arg_payload= f arg_payload}
+
     let get_var_exn {exp; typ} =
       match exp with
       | Exp.Var v ->
@@ -478,6 +487,32 @@ module Call = struct
     ; on_java: 'context -> java -> 'arg_payload FuncArg.t list -> 'f option
     ; on_erlang: 'context -> erlang -> 'arg_payload FuncArg.t list -> 'f option
     ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option }
+
+  let map_matcher matcher ~f : (_, _, _) matcher =
+    let transform_for_lang lang_matcher ctx lang args =
+      lang_matcher ctx lang args |> Option.map ~f
+    in
+    let ({on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} : (_, _, _) matcher) =
+      matcher
+    in
+    { on_objc_cpp= transform_for_lang on_objc_cpp
+    ; on_c= transform_for_lang on_c
+    ; on_hack= transform_for_lang on_hack
+    ; on_java= transform_for_lang on_java
+    ; on_erlang= transform_for_lang on_erlang
+    ; on_csharp= transform_for_lang on_csharp }
+
+
+  let contramap_arg_payload matcher ~f =
+    let map_args args = List.map ~f:(FuncArg.map_payload ~f) args in
+    let transform_for_lang lang_matcher ctx lang args = lang_matcher ctx lang (map_args args) in
+    { on_objc_cpp= transform_for_lang matcher.on_objc_cpp
+    ; on_c= transform_for_lang matcher.on_c
+    ; on_hack= transform_for_lang matcher.on_hack
+    ; on_java= transform_for_lang matcher.on_java
+    ; on_erlang= transform_for_lang matcher.on_erlang
+    ; on_csharp= transform_for_lang matcher.on_csharp }
+
 
   type ('context, 'f, 'arg_payload) pre_result =
     | DoesNotMatch
@@ -543,8 +578,8 @@ module Call = struct
     fun m ->
       let {on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}} = m in
       let on_c context f (c : c) =
-        let template_args = template_args_of_template_spec_info c.template_args in
-        on_templated_name context f (c.name, template_args)
+        let template_args = template_args_of_template_spec_info c.c_template_args in
+        on_templated_name context f (c.c_name, template_args)
       in
       let on_java context f (java : java) =
         on_templated_name context f (templated_name_of_java java)
@@ -692,7 +727,7 @@ module Call = struct
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_csharp context csharp args)
     in
     fun context procname args ->
-      let rec match_procname procname =
+      let match_procname procname =
         match (procname : Procname.t) with
         | ObjC_Cpp objc_cpp ->
             on_objc_cpp context objc_cpp args
@@ -706,8 +741,6 @@ module Call = struct
             on_erlang context erlang args
         | CSharp csharp ->
             on_csharp context csharp args
-        | WithFunctionParameters (procname, _, _) ->
-            match_procname procname
         | _ ->
             None
       in
@@ -756,6 +789,16 @@ module Call = struct
           false
     in
     let match_arg context arg = match_typ context (FuncArg.typ arg) in
+    {match_arg}
+
+
+  (** Matches the type matched by any of the given path_matchers *)
+  let match_typ_exists :
+         ('context, _, _, non_empty, 'arg_payload) path_matcher list
+      -> ('context, 'arg_payload) one_arg_matcher =
+   fun matchers ->
+    let matchers = List.map matchers ~f:(fun m -> (match_typ m).match_arg) in
+    let match_arg context arg = List.exists matchers ~f:(fun matcher -> matcher context arg) in
     {match_arg}
 
 
@@ -853,6 +896,11 @@ module Call = struct
     {eat_func_arg}
 
 
+  let all_arg_payloads : ('context, 'arg_payload list -> 'f_out, 'f_out, 'arg_payload) func_arg =
+    let eat_func_arg _context (f, args) = Some (f (List.map args ~f:FuncArg.arg_payload), []) in
+    {eat_func_arg}
+
+
   let capt_arg_payload :
       ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_val}
@@ -868,13 +916,31 @@ module Call = struct
 
   let any_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= no_capture}
 
+  let any_arg_of_typ_exists m =
+    {one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ())); capture= no_capture}
+
+
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
+
+  let capt_arg_of_typ_exists m =
+    {one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ())); capture= capture_arg}
+
 
   let capt_arg_payload_of_typ m =
     {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_val}
 
 
+  let capt_arg_payload_of_typ_exists m =
+    { one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ()))
+    ; capture= capture_arg_val }
+
+
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
+
+  let capt_exp_of_typ_exists m =
+    { one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ()))
+    ; capture= capture_arg_exp }
+
 
   let one_arg_matcher_of_prim_typ typ =
     let on_typ typ' = Typ.equal_ignore_quals typ typ' in
@@ -960,6 +1026,8 @@ module Call = struct
 
   let ( $++ ) args_matcher () = args_matcher $+! all_args
 
+  let ( $+++ ) args_matcher () = args_matcher $+! all_arg_payloads
+
   let ( $+? ) args_matcher one_arg = args_matcher $+! (one_arg $?! ())
 
   let ( >$ ) templ_matcher one_arg = templ_matcher >$! () $+ one_arg
@@ -975,6 +1043,8 @@ module Call = struct
   let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
   let ( $++$--> ) args_matcher f = args_matcher $++ () $--> f
+
+  let ( $+++$--> ) args_matcher f = args_matcher $+++ () $--> f
 
   let ( >--> ) templ_matcher f = templ_matcher >$! () $+...$--> f
 
@@ -993,6 +1063,8 @@ module Call = struct
   let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+...$--> f
 
   let ( &::.*++> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $++$--> f
+
+  let ( &::.*+++> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+++$--> f
 
   let ( $!--> ) args_matcher f =
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
@@ -1050,6 +1122,13 @@ module NameCommon = struct
     {on_templated_name; on_objc_cpp}
 
 
+  let map_matcher matcher ~f : (_, _, _) matcher =
+    let transform_for_lang lang_matcher ctx lang = lang_matcher ctx lang |> Option.map ~f in
+    let ({on_objc_cpp; on_templated_name} : (_, _, _) matcher) = matcher in
+    { on_objc_cpp= transform_for_lang on_objc_cpp
+    ; on_templated_name= transform_for_lang on_templated_name }
+
+
   let ( &-->! ) path_matcher f = make_matcher path_matcher f
 
   let ( >--> ) templ_matcher f = templ_matcher >! () &-->! f
@@ -1094,8 +1173,8 @@ module ProcName = struct
       on_templated_name context templated_name
     in
     let on_c context (c : c) =
-      let template_args = template_args_of_template_spec_info c.template_args in
-      let templated_name = (c.name, template_args) in
+      let template_args = template_args_of_template_spec_info c.c_template_args in
+      let templated_name = (c.c_name, template_args) in
       on_templated_name context templated_name
     in
     fun context procname ->

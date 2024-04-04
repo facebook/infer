@@ -20,14 +20,15 @@ let debug () =
         | Some tenv ->
             L.result "Global type environment:@\n@[<v>%a@]" Tenv.pp tenv ) ;
     ( if Config.procedures then
-        let filter = Lazy.force Filtering.procedures_filter in
+        let procedures_filter = Lazy.force Filtering.procedures_filter in
+        let summary_of proc_name = Summary.OnDisk.get ~lazy_payloads:false proc_name in
+        let filter source_file proc_name =
+          procedures_filter source_file proc_name
+          &&
+          if Config.procedures_summary_skip_empty then Option.is_some (summary_of proc_name)
+          else true
+        in
         if Config.procedures_summary || Config.procedures_summary_json then
-          let summary_of proc_name = Summary.OnDisk.get ~lazy_payloads:false proc_name in
-          let filter =
-            if Config.procedures_summary_skip_empty then fun source_file proc_name ->
-              filter source_file proc_name && Option.is_some (summary_of proc_name)
-            else filter
-          in
           let f_console_output proc_names =
             let pp_summary fmt proc_name =
               match summary_of proc_name with
@@ -237,12 +238,11 @@ let merge_reports () =
   ReportSet.store acc
 
 
-let merge_report_summaries () =
+let merge_summaries () =
   let (), duration =
-    Utils.timeit ~f:(fun () ->
-        DBWriter.merge_report_summaries ~infer_outs:Config.merge_report_summaries )
+    Utils.timeit ~f:(fun () -> DBWriter.merge_summaries ~infer_outs:Config.merge_summaries)
   in
-  L.debug Analysis Quiet "Merging report summaries took %a.@\n" Mtime.Span.pp duration
+  L.debug Analysis Quiet "Merging summaries took %a.@\n" Mtime.Span.pp duration
 
 
 let report () =
@@ -264,12 +264,12 @@ let report () =
     , Config.config_impact_issues_tests
     , Config.lineage_json_report
     , Config.merge_report
-    , Config.merge_report_summaries
+    , Config.merge_summaries
     , Config.pulse_report_flows_from_taint_source
     , Config.pulse_report_flows_to_taint_sink )
   with
   | None, None, None, false, [], _, None, None ->
-      if not (List.is_empty Config.merge_report_summaries) then merge_report_summaries () ;
+      if not (List.is_empty Config.merge_summaries) then merge_summaries () ;
       Driver.report ()
   | _, _, _, _, [], _, Some _, Some _ ->
       L.die UserError
@@ -294,30 +294,34 @@ let report () =
       merge_reports ()
   | _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _ :: _, _, _ ->
       L.die UserError
-        "Options '--merge-report' or '--merge-summaries' cannot be used with '--issues-tests', \
-         '--cost-issues-tests', '--config-impact-issues-tests', '--lineage-json-report', \
-         '--pulse-report-flows-from-taint-source', '--pulse-report-flows-to-taint-sink', or each \
-         other.@\n"
+        "Options '--merge-report' or '--merge-summaries' or '--merge-report-sumamries' cannot be \
+         used with '--issues-tests', '--cost-issues-tests', '--config-impact-issues-tests', \
+         '--lineage-json-report', '--pulse-report-flows-from-taint-source', \
+         '--pulse-report-flows-to-taint-sink', or each other.@\n"
 
 
 let report_diff () =
-  (* at least one report must be passed in input to compute differential *)
+  (* at least one pair of reports must be passed as input to compute a differential *)
+  let open Config in
   match
-    Config.
-      ( report_current
-      , report_previous
-      , costs_current
-      , costs_previous
-      , config_impact_current
-      , config_impact_previous )
+    ( Option.both report_current report_previous
+    , Option.both costs_current costs_previous
+    , Option.both config_impact_current config_impact_previous
+    , Option.both stats_dir_current stats_dir_previous )
   with
-  | None, None, None, None, None, None ->
+  | None, None, None, None ->
       L.die UserError
-        "Expected at least one argument among '--report-current', '--report-previous', \
-         '--costs-current', '--costs-previous', '--config-impact-current', and \
-         '--config-impact-previous'\n"
+        "Expected at least one pair of arguments among '--report-current'/'--report-previous', \
+         '--costs-current'/'--costs-previous', \
+         '--config-impact-current'/'--config-impact-previous', or \
+         '--stats-dir-current'/'--stats-dir-previous'"
   | _ ->
-      ReportDiff.reportdiff ~current_report:Config.report_current
-        ~previous_report:Config.report_previous ~current_costs:Config.costs_current
-        ~previous_costs:Config.costs_previous ~current_config_impact:Config.config_impact_current
-        ~previous_config_impact:Config.config_impact_previous
+      if
+        (is_some @@ Option.both report_current report_previous)
+        || (is_some @@ Option.both costs_current costs_previous)
+        || (is_some @@ Option.both config_impact_current config_impact_previous)
+      then
+        ReportDiff.reportdiff ~report_current ~report_previous ~costs_current ~costs_previous
+          ~config_impact_current ~config_impact_previous ;
+      Option.both stats_dir_previous stats_dir_current
+      |> Option.iter ~f:(fun (previous, current) -> StatsDiff.diff ~previous ~current)

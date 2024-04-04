@@ -1,0 +1,20 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+type T = { handlers_: *HackMixed }
+
+define parsing_ok($this: *T) : void {
+  #entry:
+    n0 : *T = load &$this
+    n1 : *HackMixed = load n0.T.handlers_
+    n2 = load $this
+    n3 = load n0.T.handlers_
+    n4 = $this->T.handlers_
+    store n0.T.handlers_ <- n1 : *HackMixed
+    store n0.T.handlers_ <- n1
+    ret null
+}

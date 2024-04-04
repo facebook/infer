@@ -9,7 +9,6 @@ SYNOPSIS
        infer help --list-issue-types
        infer help --write-website website_root
 
-
 DESCRIPTION
        Without arguments, show the Infer manual as with infer --help
 
@@ -23,8 +22,6 @@ DESCRIPTION
        Use --write-website to build some of the documentation for the
        fbinfer.com website. (Used in scripts, not meant to be used except
        when publishing content to fbinfer.com)
-
-
 
 OPTIONS
        --help
@@ -61,7 +58,6 @@ OPTIONS
            under path_to_website_dir/. Meant to be used within the Infer
            directory to generate its website at fbinfer.com at website/.
 
-
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
@@ -69,9 +65,4 @@ ENVIRONMENT
 FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
-
-
-
-
-
 

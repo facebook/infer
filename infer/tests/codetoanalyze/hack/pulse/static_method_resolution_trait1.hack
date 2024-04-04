@@ -5,7 +5,7 @@
 
 namespace SMRT1;
 
-// testing trait in parent + override in class
+// testing trait + self (fn is in the trait)
 
 trait T {
   public static function f(): int {
@@ -20,7 +20,7 @@ trait T {
     return 42;
   }
 
-  public static function g_self() : int {
+  public static function g_self(): int {
     return self::g();
   }
 }

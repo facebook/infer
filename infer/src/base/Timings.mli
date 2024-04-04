@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 
 (** Data structure to collect timing percentile informations on all {!Timeable.t} elements *)
 
@@ -18,8 +17,6 @@ val add : Timeable.t -> float -> t -> t
 (** register a new timing measurement *)
 
 val merge : t -> t -> t
-
-val pp : F.formatter -> t -> unit
 
 type serialized
 

@@ -269,3 +269,20 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extra
         in
         d warn_str ;
         L.d_ln () ) )
+
+
+let merge ~into x =
+  let modified = ref false in
+  ErrLogHash.iter
+    (fun k v ->
+      if not (ErrLogHash.mem into k) then (
+        modified := true ;
+        ErrLogHash.add into k v ) )
+    x ;
+  if !modified then `Modified else `Intact
+
+
+let loc_trace_length loc_trace = List.length loc_trace
+
+let loc_trace_max_depth loc_trace =
+  List.fold loc_trace ~init:0 ~f:(fun max {lt_level} -> if lt_level > max then lt_level else max)

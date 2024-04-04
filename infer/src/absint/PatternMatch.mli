@@ -160,13 +160,6 @@ module Java : sig
   val find_superclasses_with_attributes :
     (Annot.Item.t -> bool) -> Tenv.t -> Typ.Name.t -> Typ.Name.t list
   (** find superclasss with attributes (e.g., [@ThreadSafe]), including current class*)
-
-  val is_override_of_lang_object_equals : Procname.t -> bool
-  (** Whether the method is an override of `java.lang.Object.equals(Object)` or
-      `java.lang.Object.equals(Object)` itself *)
-
-  val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
-  (** Check if the method is one of the known initializer methods. *)
 end
 
 val supertype_exists : Tenv.t -> (Typ.Name.t -> Struct.t -> bool) -> Typ.Name.t -> bool
@@ -175,13 +168,6 @@ val supertype_exists : Tenv.t -> (Typ.Name.t -> Struct.t -> bool) -> Typ.Name.t 
 val supertype_find_map_opt : Tenv.t -> (Typ.Name.t -> 'a option) -> Typ.Name.t -> 'a option
 (** Return the first non-None result found when applying the given function to supertypes of the
     named type, including the type itself *)
-
-val proc_calls :
-     (Procname.t -> ProcAttributes.t option)
-  -> Procdesc.t
-  -> (Procname.t -> ProcAttributes.t -> bool)
-  -> (Procname.t * ProcAttributes.t) list
-(** Return the callees that satisfy [filter]. *)
 
 val override_exists :
   ?check_current_type:bool -> (Procname.t -> bool) -> Tenv.t -> Procname.t -> bool
@@ -192,16 +178,9 @@ val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
     works for Java *)
 
-val lookup_attributes : Tenv.t -> Procname.t -> ProcAttributes.t option
-
-val lookup_attributes_exn : Tenv.t -> Procname.t -> ProcAttributes.t
-
 val type_name_get_annotation : Tenv.t -> Typ.name -> Annot.Item.t option
 
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
-
-val type_get_class_name : Typ.t -> Typ.Name.t option
-(** Get the class name of the type *)
 
 val type_is_class : Typ.t -> bool
 (** Is the type a class type *)

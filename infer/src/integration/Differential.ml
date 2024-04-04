@@ -56,17 +56,21 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
-let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsoncost_t.sub_item)
-    ~(issue_type : IssueType.t) =
+let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
+    ~(item : Jsoncost_t.sub_item) ~(issue_type : IssueType.t) =
   { Jsonbug_t.bug_type= issue_type.unique_id
   ; qualifier
+  ; suggestion
   ; severity= IssueType.string_of_severity Advice
+  ; category= IssueType.string_of_category issue_type.category
   ; line
   ; column= item.loc.cnum
   ; procedure= item.procedure_id
   ; procedure_start_line= line
   ; file
   ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace
+  ; bug_trace_length= Errlog.loc_trace_length trace
+  ; bug_trace_max_depth= Errlog.loc_trace_max_depth trace
   ; key= ""
   ; node_key= None
   ; hash= item.hash
@@ -234,13 +238,11 @@ module Cost = struct
         (pp_degree ~only_bigO:false) curr_item
   end
 
-  let polynomial_traces issue_type = function
+  let polynomial_traces = function
     | None ->
         []
     | Some (Val (_, degree_term)) ->
-        Polynomials.NonNegativeNonTopPolynomial.polynomial_traces
-          ~is_autoreleasepool_trace:(IssueType.is_autoreleasepool_size_issue issue_type)
-          degree_term
+        Polynomials.NonNegativeNonTopPolynomial.polynomial_traces degree_term
     | Some (Below traces) ->
         [("", Polynomials.UnreachableTraces.make_err_trace traces)]
     | Some (Above traces) ->
@@ -309,18 +311,16 @@ module Cost = struct
               (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
               [] ]
         in
-        ("", marker_cost_trace "Previous" prev_item)
-        :: polynomial_traces issue_type prev_degree_with_term
-        @ ("", marker_cost_trace "Updated" curr_item)
-          :: polynomial_traces issue_type curr_degree_with_term
+        (("", marker_cost_trace "Previous" prev_item) :: polynomial_traces prev_degree_with_term)
+        @ (("", marker_cost_trace "Updated" curr_item) :: polynomial_traces curr_degree_with_term)
         |> Errlog.concat_traces
       in
       let convert Jsoncost_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.sub_item =
         {hash; loc; procedure_name; procedure_id}
       in
       Some
-        (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
-           ~issue_type )
+        (create_json_bug ~qualifier ~suggestion:None ~line ~file ~source_file ~trace
+           ~item:(convert cost_info) ~issue_type )
     else None
 
 
@@ -450,13 +450,11 @@ module ConfigImpactItem = struct
         match config_impact_item.mode with
         | `Normal ->
             IssueType.config_impact_analysis
-        | `StrictBeta ->
-            IssueType.config_impact_analysis_strict_beta
         | `Strict ->
             IssueType.config_impact_analysis_strict
       in
       Some
-        (create_json_bug ~qualifier ~line ~file ~source_file ~trace
+        (create_json_bug ~qualifier ~suggestion:None ~line ~file ~source_file ~trace
            ~item:(convert config_impact_item) ~issue_type )
     else None
 

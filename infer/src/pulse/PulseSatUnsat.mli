@@ -10,7 +10,7 @@ module F = Format
 
 [@@@warning "-32-60"]
 
-type 'a t = Unsat | Sat of 'a
+type 'a t = Unsat | Sat of 'a [@@deriving equal]
 
 val pp : (F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 

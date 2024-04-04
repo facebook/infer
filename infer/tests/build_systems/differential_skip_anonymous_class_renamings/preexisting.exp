@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, no_bucket, src/DiffExample.java, DiffExample$4.aaa():int, 0
+NULLPTR_DEREFERENCE, no_bucket, src/DiffExample.java, DiffExample$4.aaa():int, 0

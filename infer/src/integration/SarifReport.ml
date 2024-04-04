@@ -94,8 +94,12 @@ let loc_trace_to_sarifbug_record trace_list =
 
 
 let pp_jsonbug fmt
-    {Jsonbug_t.file; severity; bug_type; qualifier; line; column; bug_trace; hash; key} =
-  let message = {Sarifbug_j.text= qualifier} in
+    {Jsonbug_t.file; severity; bug_type; qualifier; suggestion; line; column; bug_trace; hash; key}
+    =
+  let message =
+    { Sarifbug_j.text=
+        qualifier ^ Option.value_map ~default:"" ~f:(fun sugg -> " " ^ sugg) suggestion }
+  in
   let level = String.lowercase severity in
   let ruleId = bug_type in
   let absolute_source_name = Config.project_root ^/ file in

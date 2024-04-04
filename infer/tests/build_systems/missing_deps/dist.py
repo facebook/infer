@@ -61,7 +61,7 @@ def main():
             if complete(results_dir, index_file, SOURCE_CAPTURE):
                 break
 
-        extra_args.extend(['--merge-report-summaries', results_dir])
+        extra_args.extend(['--merge-summaries', results_dir])
 
     subprocess.run([INFER, 'report'] + extra_args)
 

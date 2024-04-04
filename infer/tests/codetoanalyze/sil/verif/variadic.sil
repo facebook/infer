@@ -1,0 +1,58 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+define f1(x: int, y: int, args: .variadic mixed) : int {
+  #entry:
+    ret f2(x)
+}
+
+define f2(x: int, y: int, args: .variadic mixed) : int {
+  #entry:
+    ret f1(x, y, 0, 1)
+}
+
+define f3(x: int, y: int, args: .variadic mixed, z: int) : int {
+  #entry:
+    ret f1(x, y, z)
+}
+
+define with_generics_ok(x: int, args: .variadic int, $0ReifiedGenerics: *HackVec) : *void {
+  #entry:
+    ret null
+}
+
+define with_generics_bad(x: int, $0ReifiedGenerics: *HackVec, args: .variadic int) : *void {
+  #entry:
+    ret null
+}
+
+type T = .kind="trait" {}
+
+define T.ok(x: int, args: .variadic int, self: *HackMixed) : void {
+  #entry:
+    ret null
+}
+
+define T.bad(x: int, args: .variadic int) : void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_ok(x: int, args: .variadic int, $0ReifiedGenerics: *HackVec, self: *HackMixed) : *void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_bad1(x: int, $0ReifiedGenerics: *HackVec, args: .variadic int, self: *HackMixed) : *void {
+  #entry:
+    ret null
+}
+
+define T.with_generics_bad2(x: int, $0ReifiedGenerics: *HackVec, self: *HackMixed, args: .variadic int) : *void {
+  #entry:
+    ret null
+}

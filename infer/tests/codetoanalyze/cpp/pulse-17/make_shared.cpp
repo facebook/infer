@@ -10,33 +10,27 @@
 namespace make_shared_ptr {
 
 struct X {
-  int field;
   int* pointer_field;
-  int get() { return field; }
-  void set(int value) { field = value; }
+  int get() { return *pointer_field; }
+  void set(int value) { *pointer_field = value; }
   X() {
     pointer_field = new int;
-    field = *pointer_field;
   }
   X(int arg) {
     pointer_field = new int(arg);
-    field = *pointer_field;
   }
   X(int* arg) {
     pointer_field = arg;
-    field = *pointer_field;
   }
   ~X() { delete pointer_field; }
 };
 
 struct Y {
-  int field;
   int* pointer_field;
-  int get() { return field; }
-  void set(int value) { field = value; }
+  int get() { return *pointer_field; }
+  void set(int value) { *pointer_field = value; }
   Y() {
     pointer_field = new int;
-    field = *pointer_field;
   }
   Y(const Y& other) { pointer_field = new int(*(other.pointer_field)); }
   ~Y() { delete pointer_field; }

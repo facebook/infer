@@ -49,29 +49,15 @@ module Java : sig
 
   type t [@@deriving compare, equal]
 
-  val to_simplified_string : ?withclass:bool -> t -> string
-
   val constructor_method_name : string
 
   val class_initializer_method_name : string
-
-  val replace_method_name : string -> t -> t
-  (** Replace the method name of an existing java procname. *)
-
-  val replace_parameters : Typ.t list -> t -> t
-  (** Replace the parameters of a java procname. *)
-
-  val replace_return_type : Typ.t -> t -> t
-  (** Replace the method of a java procname. *)
 
   val get_class_name : t -> string
   (** Return the fully qualified class name of a java procedure name (package + class name) *)
 
   val get_class_type_name : t -> Typ.Name.t
   (** Return the class name as a typename of a java procedure name. *)
-
-  val get_simple_class_name : t -> string
-  (** Return the simple class name of a java procedure name (i.e. name without the package info). *)
 
   val get_package : t -> string option
   (** Return the package name of a java procedure name. *)
@@ -95,10 +81,6 @@ module Java : sig
   val is_autogen_method : t -> bool
   (** Check if the procedure name is of an auto-generated/synthetic method. *)
 
-  val is_anonymous_inner_class_constructor_exn : t -> bool
-  (** Check if the procedure name is an anonymous inner class constructor. Throws if it is not a
-      Java type *)
-
   val is_close : t -> bool
   (** Check if the method name is "close". *)
 
@@ -108,9 +90,6 @@ module Java : sig
   val is_vararg : t -> bool
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)
-
-  val is_lambda : t -> bool
-  (** Check if the proc name comes from a lambda expression *)
 
   val is_generated : t -> bool
   (** Check if the proc name comes from generated code *)
@@ -188,18 +167,9 @@ end
 
 module C : sig
   (** Type of c procedure names. *)
-  type t = private
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; parameters: Parameter.clang_parameter list
-    ; template_args: Typ.template_spec_info }
+  type t = Typ.c_function_sig
 
-  val c :
-       QualifiedCppName.t
-    -> ?mangled:string
-    -> Parameter.clang_parameter list
-    -> Typ.template_spec_info
-    -> t
+  val c : QualifiedCppName.t -> ?mangled:string -> Typ.template_spec_info -> t
   (** Create a C procedure name from plain and mangled name. *)
 
   val is_make_shared : t -> bool
@@ -207,24 +177,12 @@ end
 
 module Block : sig
   (** Type of Objective C block names. *)
-  type block_type =
-    | InOuterScope of {outer_scope: block_type; block_index: int}
-        (** a block nested in the scope of an outer one *)
-    | SurroundingProc of {class_name: Typ.name option; name: string}
-        (** tracks the name of the surrounding proc and an optional class name where the procedure
-            is defined *)
 
-  type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
-
-  val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
+  type t = Typ.objc_block_sig [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 end
 
 module Erlang : sig
   type t = private {module_name: string; function_name: string; arity: int}
-end
-
-module FunctionParameters : sig
-  type t = private FunPtr of C.t | Block of Block.t
 end
 
 module Hack : sig
@@ -241,13 +199,14 @@ end
 module Python : sig
   (* TODO: revamp this once modules are implemented *)
   type t = private {class_name: PythonClassName.t option; function_name: string; arity: int option}
+
+  type kind =
+    | Fun of PythonClassName.t  (** Toplevel function name, or class constructor *)
+    | Init of PythonClassName.t  (** Initialized of a class, like [C.__init__] *)
+    | Other  (** Other methods *)
 end
 
-(** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
-    method that contains non-empty function parameters and it's called with concrete functions. For
-    example: [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
-    [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
-    [my_block]) *)
+(** Type of procedure names. *)
 type t =
   | Block of Block.t
   | C of C.t
@@ -255,18 +214,9 @@ type t =
   | Erlang of Erlang.t
   | Hack of Hack.t
   | Java of Java.t
-  | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
-  | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
-[@@deriving compare, yojson_of, sexp, hash]
-
-val base_of : t -> t
-(** if a procedure has been specialised, return the original one, otherwise itself *)
-
-val of_function_parameter : FunctionParameters.t -> t
-
-val to_function_parameter : t -> FunctionParameters.t
+[@@deriving compare, yojson_of, sexp, hash, normalize]
 
 val equal : t -> t -> bool
 
@@ -276,6 +226,13 @@ val compare_name : t -> t -> int
 val get_class_type_name : t -> Typ.Name.t option
 
 val get_class_name : t -> string option
+
+val python_classify : t -> Python.kind option
+(** Classify a Python name into a [Python.kind] *)
+
+val mk_python_init : t -> t
+(** Turns a Python **toplevel** name into a valid initializer. E.g. it is used to turn a statement
+    like [x = C(42)] into [C.__init__(x, 42)] *)
 
 val get_parameters : t -> Parameter.t list
 
@@ -379,8 +336,6 @@ val make_python :
 val empty_block : t
 (** Empty block name. *)
 
-val get_block_type : t -> Block.block_type
-
 val get_language : t -> Language.t
 (** Return the language of the procedure. *)
 
@@ -389,9 +344,6 @@ val get_method : t -> string
 
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
-
-val is_specialized_with_function_parameters : t -> bool
-(** Return whether the procname is a specialized with functions procname. *)
 
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
@@ -425,10 +377,6 @@ val is_python : t -> bool
 
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
-
-val with_function_parameters : t -> FunctionParameters.t list -> t option
-(** Create a procedure name instantiated with function parameters from a base procedure name and a
-    list of function procedures. It returns [None] when the given function parameter list is empty. *)
 
 val objc_cpp_replace_method_name : t -> string -> t
 
@@ -494,6 +442,15 @@ val to_filename : t -> string
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
 
+val decr_hack_arity : t -> t option
+(** return a Hack procname with decremented arity. Return None if input has no arity or 0 arity *)
+
+val get_hack_arity : t -> int option
+(** get the arity of a Hack procname *)
+
+val get_hack_static_init : is_trait:bool -> HackClassName.t -> t
+(** get the sinit procname in Hack *)
+
 val pp_name_only : F.formatter -> t -> unit
 (** Print name of procedure with at most one-level path. For example,
 
@@ -502,6 +459,10 @@ val pp_name_only : F.formatter -> t -> unit
     - In C/Erlang: "<ProcName>" *)
 
 val is_c : t -> bool
+
+val is_lambda_name : string -> bool
+
+val is_lambda : t -> bool
 
 val is_lambda_or_block : t -> bool
 
@@ -528,6 +489,9 @@ val is_erlang_call_qualified : t -> bool
 
 val is_hack_builtins : t -> bool
 
+val is_hack_sinit : t -> bool
+
 val has_hack_classname : t -> bool
 
-module Normalizer : HashNormalizer.S with type t = t
+val is_hack_async_name : t -> bool
+(* Checks if the function name starts with "gen", which is a (lint-checked) convention for it being async at Meta *)

@@ -7,10 +7,10 @@
 
 #include <stdlib.h>
 
-void foo_defined_in_subtarget1();
+void null_deref_spec_defined_in_subtarget1();
 
-void goo() {
-  foo_defined_in_subtarget1();
+void null_deref_after_error_spec_ok() {
+  null_deref_spec_defined_in_subtarget1();
   int* s = NULL;
   *s = 42;
 }

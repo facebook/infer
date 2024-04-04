@@ -392,7 +392,7 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
 
     Children never return. Instead they exit when done. *)
 let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
-  ProcessPoolState.in_child := true ;
+  ProcessPoolState.in_child := Some slot ;
   ProcessPoolState.reset_pid () ;
   child_prologue () ;
   let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
@@ -459,9 +459,7 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
 
 
 module Worker = struct
-  type id = int
-
-  let id_to_int = Fn.id
+  type id = int [@@deriving show]
 end
 
 (** Data marshalled to describe what a child spawned by [spawn_child] below must do. The only data

@@ -250,7 +250,7 @@ void via_propagator_ok1(Obj* obj) {
   obj->string_sink(unpropagated);
 }
 
-void via_propagator_ok2(Obj* obj) {
+void FP_via_propagator_ok2(Obj* obj) {
   std::string propagated = obj->string_source(0);
   std::string source("");
   std::string unpropagated = Obj::propagator(source, propagated);

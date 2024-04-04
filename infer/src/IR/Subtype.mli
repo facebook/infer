@@ -11,7 +11,7 @@
 open! IStd
 module F = Format
 
-type t [@@deriving compare, equal, hash]
+type t [@@deriving compare, equal, hash, normalize]
 
 val pp : F.formatter -> t -> unit
 

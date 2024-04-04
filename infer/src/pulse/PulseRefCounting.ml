@@ -9,6 +9,61 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
+let is_ref_counted v astate =
+  AddressAttributes.get_static_type v astate
+  |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
+  ||
+  match AddressAttributes.get_dynamic_type v astate with
+  | Some {Attribute.typ= {desc= Tstruct typ_name}} ->
+      Typ.Name.is_objc_class typ_name
+  | _ ->
+      false
+
+
+let is_strong_access tenv (access : _ MemoryAccess.t) =
+  let has_weak_or_unretained_or_assign annotations =
+    List.exists annotations ~f:(fun (ann : Annot.t) ->
+        ( String.equal ann.class_name Config.property_attributes
+        || String.equal ann.class_name Config.ivar_attributes )
+        && List.exists
+             ~f:(fun Annot.{value} ->
+               Annot.has_matching_str_value value ~pred:(fun att ->
+                   String.equal Config.unsafe_unret att
+                   || String.equal Config.weak att || String.equal Config.assign att ) )
+             ann.parameters )
+  in
+  match access with
+  | FieldAccess fieldname -> (
+      let classname = Fieldname.get_class_name fieldname in
+      let is_capture_field_strong fieldname =
+        (* a strongly referencing capture field is a capture field that is not weak *)
+        Fieldname.is_capture_field_in_closure fieldname
+        && not (Fieldname.is_weak_capture_field_in_closure fieldname)
+      in
+      match Tenv.lookup tenv classname with
+      | None when is_capture_field_strong fieldname ->
+          (* Strongly referencing captures *)
+          true
+      | None ->
+          (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
+             assume weak reference by default *)
+          false
+      | Some {fields} -> (
+        match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+        | None ->
+            (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
+               assume weak reference by default *)
+            false
+        | Some (_, typ, anns) -> (
+          match typ.Typ.desc with
+          | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
+              false
+          | _ ->
+              not (has_weak_or_unretained_or_assign anns) ) ) )
+  | _ ->
+      true
+
+
 (* Starting from each variable in the stack, count all unique strong
    references to each RefCounted object. If a RefCounted object lives in the
    stack but has no strong reference, then it considered as strongly
@@ -18,16 +73,16 @@ let count_references tenv astate =
     if AbstractValue.Set.mem addr seen then (seen, ref_counts)
     else
       let ref_counts =
-        if PulseOperations.is_ref_counted addr astate then
+        if is_ref_counted addr astate then
           AbstractValue.Map.update addr (function None -> Some 0 | some -> some) ref_counts
         else ref_counts
       in
       let seen = AbstractValue.Set.add addr seen in
       Memory.fold_edges addr astate ~init:(seen, ref_counts)
         ~f:(fun (seen, ref_counts) (access, (accessed_addr, _)) ->
-          if Access.is_strong_access tenv access then
+          if is_strong_access tenv access then
             let ref_counts =
-              if PulseOperations.is_ref_counted accessed_addr astate then
+              if is_ref_counted accessed_addr astate then
                 AbstractValue.Map.update accessed_addr
                   (function None -> Some 1 | Some n -> Some (n + 1))
                   ref_counts
@@ -53,7 +108,7 @@ let is_released tenv astate addr non_retaining_addrs =
     if List.mem seen src_addr ~equal:AbstractValue.equal then false
     else
       Memory.exists_edge src_addr astate ~f:(fun (access, (accessed_addr, _)) ->
-          Access.is_strong_access tenv access
+          is_strong_access tenv access
           && ( AbstractValue.equal accessed_addr addr
              || is_retained_by accessed_addr (src_addr :: seen) ) )
   in
@@ -82,8 +137,7 @@ let removable_vars tenv astate vars =
     List.filter_map vars ~f:(fun var -> Stack.find_opt var astate |> Option.map ~f:fst)
   in
   let is_removable addr =
-    (not (PulseOperations.is_ref_counted addr astate))
-    || is_released tenv astate addr non_retaining_addrs
+    (not (is_ref_counted addr astate)) || is_released tenv astate addr non_retaining_addrs
   in
   List.filter vars ~f:(fun var ->
       Stack.find_opt var astate |> Option.for_all ~f:(fun (addr, _) -> is_removable addr) )

@@ -25,7 +25,8 @@ val add : t -> t -> t
 
 val wall_time : t -> Mtime.span
 
-val pp : prefix:string -> Format.formatter -> t -> unit
+val total_useful_s : t -> float
+(** seconds of user plus system time *)
 
 val timed_evaluate : f:(unit -> 'a) -> 'a evaluation_result
 

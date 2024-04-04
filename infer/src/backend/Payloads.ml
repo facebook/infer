@@ -26,9 +26,7 @@ type t =
   ; siof: SiofDomain.Summary.t option Lazy.t
   ; lineage: Lineage.Summary.t option Lazy.t
   ; lineage_shape: LineageShape.Summary.t option Lazy.t
-  ; starvation: StarvationDomain.summary option Lazy.t
-  ; nullsafe: NullsafeSummary.t option Lazy.t
-  ; uninit: UninitDomain.Summary.t option Lazy.t }
+  ; starvation: StarvationDomain.summary option Lazy.t }
 [@@deriving fields]
 
 let yojson_of_t {pulse} =
@@ -62,8 +60,6 @@ let all_fields =
     ~lineage:(fun f -> mk f Lineage Lineage.Summary.pp)
     ~lineage_shape:(fun f -> mk f LineageShape LineageShape.Summary.pp)
     ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
-    ~nullsafe:(fun f -> mk f Nullsafe NullsafeSummary.pp)
-    ~uninit:(fun f -> mk f Uninit UninitDomain.Summary.pp)
   (* sorted to help serialization, see {!SQLite.serialize} below *)
   |> List.sort ~compare:(fun (F {payload_id= payload_id1}) (F {payload_id= payload_id2}) ->
          Int.compare
@@ -97,9 +93,7 @@ let empty =
   ; siof= no_payload
   ; lineage= no_payload
   ; lineage_shape= no_payload
-  ; starvation= no_payload
-  ; nullsafe= no_payload
-  ; uninit= no_payload }
+  ; starvation= no_payload }
 
 
 module SQLite = struct
@@ -132,6 +126,25 @@ module SQLite = struct
     List.map all_fields ~f:(fun (F {field}) -> Field.get field payloads |> serialize_payload_opt)
 
 
+  let serialize ({pulse} as payloads) =
+    let default = serialize payloads in
+    fun ~old_pulse_payload ->
+      (* All payloads must be null or blob. *)
+      match[@warning "-partial-match"] (old_pulse_payload : Sqlite3.Data.t option) with
+      | None | Some NULL ->
+          (* No row or no pulse payload is in the DB. *)
+          default
+      | Some (BLOB blob) -> (
+          let old_pulse_payload : PulseSummary.t = Marshal.from_string blob 0 in
+          match Lazy.force pulse with
+          | None ->
+              serialize {payloads with pulse= lazy (Some old_pulse_payload)}
+          | Some pulse_payload ->
+              let res = PulseSummary.merge pulse_payload old_pulse_payload in
+              if phys_equal res pulse_payload then default
+              else serialize {payloads with pulse= lazy (Some res)} )
+
+
   let make_eager =
     let data_of_sqlite_column _field column =
       ( (fun stmt ->
@@ -147,8 +160,7 @@ module SQLite = struct
       ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
       ~scope_leakage:data_of_sqlite_column ~siof:data_of_sqlite_column
       ~lineage:data_of_sqlite_column ~lineage_shape:data_of_sqlite_column
-      ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
-      ~uninit:data_of_sqlite_column
+      ~starvation:data_of_sqlite_column
 
 
   let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
@@ -183,7 +195,7 @@ module SQLite = struct
         Sqlite3.bind_text load_stmt 1 proc_uid
         |> SqliteUtils.check_result_code db ~log:"load payloads bind proc_uid" ;
         SqliteUtils.result_option ~finalize:false db ~log:"load payloads exec" load_stmt
-          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force) )
+          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force ) )
     |> Option.join
 
 
@@ -205,7 +217,5 @@ module SQLite = struct
     ; siof= lazy (load table ~proc_uid SIOF)
     ; lineage= lazy (load table ~proc_uid Lineage)
     ; lineage_shape= lazy (load table ~proc_uid LineageShape)
-    ; starvation= lazy (load table ~proc_uid Starvation)
-    ; nullsafe= lazy (load table ~proc_uid Nullsafe)
-    ; uninit= lazy (load table ~proc_uid Uninit) }
+    ; starvation= lazy (load table ~proc_uid Starvation) }
 end

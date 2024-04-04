@@ -11,6 +11,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module F = Format
 
 (** Represents the result of a transfer function that may (a) nondeterministically split the state,
     and (b) some of the nondeterministic branches may be errors. Goes well with [let>] defined later
@@ -51,8 +52,8 @@ let write_field_and_deref path location ~struct_addr ~field_addr ~field_val fiel
 let get_erlang_type_or_any val_ astate =
   let open IOption.Let_syntax in
   let typename =
-    let* typ_ = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
-    Typ.name typ_
+    let* {Attribute.typ} = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
+    Typ.name typ
   in
   match typename with Some (Typ.ErlangType erlang_type) -> erlang_type | _ -> ErlangTypeName.Any
 
@@ -82,12 +83,12 @@ let eval_into_fresh eval =
     example, consider [f] of type ['a->('b,'err) result list] and [g] of type
     ['b->('c,'err) result list] and [a] is some value of type ['a]. Note that the type of error is
     the same, so they can be propagated forward. To chain the application of these functions, you
-    can write [let> x=f a in let> y=g x in \[Ok y\]].
+    can write [let> x=f a in let> y=g x in [Ok y]].
 
     In several places, we have to compose with functions of the type ['a->('b,'err) result], which
     don't produce a list. One way to handle this is to wrap those functions in a list. For example,
     if [f] and [a] have the same type as before but [g] has type ['b->('c,'err) result], then we can
-    write [let> =f a in let> y=\[g x\] in \[Ok y\].] *)
+    write [let> =f a in let> y=[g x] in [Ok y].] *)
 let ( let> ) x f =
   List.concat_map
     ~f:(function
@@ -156,48 +157,114 @@ let load_field path field location obj astate =
       result
 
 
-module Errors = struct
+let get_module_attribute tenv ~tag =
+  let open IOption.Let_syntax in
+  let typ = Typ.ErlangType ModuleInfo in
+  let* field_info =
+    Tenv.resolve_field_info tenv typ (Fieldname.make typ ErlangTypeName.module_info_field_name)
+  in
+  let* annot =
+    List.find field_info.Struct.annotations ~f:(function ({class_name} : Annot.t) ->
+        String.equal class_name ErlangTypeName.module_info_attributes_class_name )
+  in
+  match Annot.find_parameter annot ~name:tag with
+  | Some (Annot.Str module_name) ->
+      Some module_name
+  | _ ->
+      None
+
+
+module type ERRORS = sig
+  val badarg : model_no_non_disj
+
+  val badkey : model_no_non_disj
+
+  val badmap : model_no_non_disj
+
+  val badmatch : model_no_non_disj
+
+  val badrecord : model_no_non_disj
+
+  val badreturn : model_no_non_disj
+
+  val case_clause : model_no_non_disj
+
+  val function_clause : model_no_non_disj
+
+  val if_clause : model_no_non_disj
+
+  val try_clause : model_no_non_disj
+end
+
+module ErrorsReport : ERRORS = struct
   let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 
-  let badarg : model =
+  let badarg : model_no_non_disj =
    fun {location} astate -> error (Badarg {calling_context= []; location}) astate
 
 
-  let badkey : model =
+  let badkey : model_no_non_disj =
    fun {location} astate -> error (Badkey {calling_context= []; location}) astate
 
 
-  let badmap : model =
+  let badmap : model_no_non_disj =
    fun {location} astate -> error (Badmap {calling_context= []; location}) astate
 
 
-  let badmatch : model =
+  let badmatch : model_no_non_disj =
    fun {location} astate -> error (Badmatch {calling_context= []; location}) astate
 
 
-  let badrecord : model =
+  let badrecord : model_no_non_disj =
    fun {location} astate -> error (Badrecord {calling_context= []; location}) astate
 
 
-  let badreturn : model =
+  let badreturn : model_no_non_disj =
    fun {location} astate -> error (Badreturn {calling_context= []; location}) astate
 
 
-  let case_clause : model =
+  let case_clause : model_no_non_disj =
    fun {location} astate -> error (Case_clause {calling_context= []; location}) astate
 
 
-  let function_clause : model =
+  let function_clause : model_no_non_disj =
    fun {location} astate -> error (Function_clause {calling_context= []; location}) astate
 
 
-  let if_clause : model =
+  let if_clause : model_no_non_disj =
    fun {location} astate -> error (If_clause {calling_context= []; location}) astate
 
 
-  let try_clause : model =
+  let try_clause : model_no_non_disj =
    fun {location} astate -> error (Try_clause {calling_context= []; location}) astate
 end
+
+module ErrorsSilent : ERRORS = struct
+  let stuck : model_no_non_disj = fun _data _astate -> []
+
+  let badarg = stuck
+
+  let badkey = stuck
+
+  let badmap = stuck
+
+  let badmatch = stuck
+
+  let badrecord = stuck
+
+  let badreturn = stuck
+
+  let case_clause = stuck
+
+  let function_clause = stuck
+
+  let if_clause = stuck
+
+  let try_clause = stuck
+end
+
+module Errors : ERRORS =
+  (val if Config.erlang_reliability then (module ErrorsReport) else (module ErrorsSilent) : ERRORS)
 
 module Atoms = struct
   let name_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_name
@@ -206,7 +273,7 @@ module Atoms = struct
 
   let get_name path location var astate : string option =
     let _astate, _addr, (name, _) = load_field path name_field location var astate in
-    AbductiveDomain.AddressAttributes.get_const_string name astate
+    PulseArithmetic.as_constant_string astate name
 
 
   let make_raw location path name hash : sat_maker =
@@ -227,7 +294,7 @@ module Atoms = struct
     , addr_atom )
 
 
-  let make name hash : model =
+  let make name hash : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<+> astate, ret = make_raw location path name hash astate in
     PulseOperations.write_id ret_id ret astate
@@ -286,7 +353,7 @@ module Integers = struct
     (PulseOperations.add_dynamic_type typ (fst addr) astate, addr)
 
 
-  let make value : model =
+  let make value : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<+> astate, ret = make_raw location path value astate in
     PulseOperations.write_id ret_id ret astate
@@ -456,43 +523,6 @@ module Comparison = struct
     let lt = ordering Lt incompatible_lt
 
     let le = ordering Le incompatible_lt
-
-    (** Compare two abstract values, when one of them might be an integer, by disjuncting on the
-        case whether it is (an integer) or not.
-
-        Parameters (not in order):
-
-        - Two abstract values [x] and [y]. One of them is expected to ba a known integer, and the
-          other one to have an undetermined dynamic type.
-
-        - The (erlang) types of [x] and [y] as determined by the caller. Corresponding to the
-          expectation mentioned above, [(ty_x, ty_y)] is expected to be either [(Integer, Any)] or
-          [(Any, Integer)] (this is not checked by the function and is the caller responsibility).
-
-        - An [are_compatible] (boolean) abstract value that witnesses if the types of [x] and [y]
-          are both integers or if one of them is not (this is typically obtained by using
-          {!has_erlang_type} on the Any-typed argument).
-
-        Returns: a disjunction built on top of [are_compatible], that compares [x] and [y] as
-        integers when they both are, and as incompatible values when the any-typed one is not an
-        integer. *)
-    let any_with_integer_split cmp location path ~are_compatible ty_x ty_y x y : disjunction_maker =
-     fun astate ->
-      let int_result =
-        let** astate_int = PulseArithmetic.prune_positive are_compatible astate in
-        let++ astate_int, int_comparison = cmp.integer x y location path astate_int in
-        let int_hist = Hist.single_alloc path location "any_int_comparison" in
-        (astate_int, (int_comparison, int_hist))
-      in
-      let incompatible_result =
-        let** astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
-        let++ astate_incompatible, incompatible_comparison =
-          cmp.incompatible ty_x ty_y x y location path astate_incompatible
-        in
-        let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
-        (astate_incompatible, (incompatible_comparison, incompatible_hist))
-      in
-      SatUnsat.to_list int_result @ SatUnsat.to_list incompatible_result
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -515,15 +545,21 @@ module Comparison = struct
 
       The final result is computed as follows:
 
-      - If the parameters are both of a supported type, integers, then we compare them accordingly
-        (eg. the [cmp.integer] function will then typically compare their value fields).
+      - If the parameters are both of a supported type, eg. integers, then we compare them
+        accordingly (eg. the [cmp.integer] function will then typically compare their value fields).
       - If the parameters have incompatible types, then we return the result of a comparison of
         incompatible types (eg. equality would be false, and inequality would be true).
       - If both parameters have the same unsupported type, then the comparison is unsupported and we
         use the [cmp.unsupported] function (that could for instance return an - overapproximating -
         unconstrained result).
-      - If at least one parameter has no known dynamic type (or, equivalently, its type is [Any]),
-        then the comparison is also unsupported.
+      - If one parameter has a supported type, say [Integer] and the other has no known dynamic type
+        (or, equivalently, its type is [Any]), then we will assume that the unknown-typed value is
+        an [Integer] and use the appropriate comparison. Note: this is strictly under-approximating
+        in some cases, but seems to be the better alternative (for instance, case-splitting on the
+        [Any] type yields too many disjunctions).
+      - If both parameters have no known dynamic type (or, equivalently, their type is [Any]), or
+        one has an unsupported type and the other one has [Any] type, then the comparison is also
+        unsupported.
 
       Note that, on supported types (eg. integers), it is important that the [cmp] functions decide
       themselves if they should compare some specific fields or not, instead of getting these fields
@@ -538,21 +574,36 @@ module Comparison = struct
     let x_typ = get_erlang_type_or_any x_val astate in
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
+    (* When supporting more types, this should probably be refactored to avoid N² cases. *)
     | Integer, Integer ->
         let<**> astate, result = cmp.integer x y location path astate in
-        let hist = Hist.single_alloc path location "integer_comparison" in
+        let hist = Hist.single_call path location "integer_comparison" in
         [Ok (astate, (result, hist))]
     | Atom, Atom ->
         let<**> astate, result = cmp.atom x y location path astate in
-        let hist = Hist.single_alloc path location "atom_comparison" in
+        let hist = Hist.single_call path location "atom_comparison" in
         [Ok (astate, (result, hist))]
     | Integer, Any ->
-        let<**> astate, are_compatible = has_erlang_type y_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible Integer Any x y astate
+        let> astate = prune_type path location y Integer astate in
+        let<**> astate, result = cmp.integer x y location path astate in
+        let hist = Hist.single_call path location "integer_any_comparison" in
+        [Ok (astate, (result, hist))]
     | Any, Integer ->
-        let<**> astate, are_compatible = has_erlang_type x_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible Any Integer x y astate
-    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
+        let> astate = prune_type path location x Integer astate in
+        let<**> astate, result = cmp.integer x y location path astate in
+        let hist = Hist.single_call path location "any_integer_comparison" in
+        [Ok (astate, (result, hist))]
+    | Atom, Any ->
+        let> astate = prune_type path location y Atom astate in
+        let<**> astate, result = cmp.atom x y location path astate in
+        let hist = Hist.single_call path location "atom_any_comparison" in
+        [Ok (astate, (result, hist))]
+    | Any, Atom ->
+        let> astate = prune_type path location x Atom astate in
+        let<**> astate, result = cmp.atom x y location path astate in
+        let hist = Hist.single_call path location "any_atom_comparison" in
+        [Ok (astate, (result, hist))]
+    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map | Any, _ | _, Any ->
         let<**> astate, result = cmp.unsupported x y location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         [Ok (astate, (result, hist))]
@@ -564,7 +615,7 @@ module Comparison = struct
 
   (** A model of comparison operators where we store in the destination the result of comparing two
       parameters. *)
-  let make cmp x y : model =
+  let make cmp x y : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let> astate, (result, _hist) = make_raw cmp location path x y astate in
     Atoms.write_return_from_bool path location result ret_id astate
@@ -611,7 +662,7 @@ module Lists = struct
 
 
   (** Create a Nil structure and assign it to return value *)
-  let make_nil : model =
+  let make_nil : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<+> astate, addr_nil = make_nil_raw location path astate in
     PulseOperations.write_id ret_id addr_nil astate
@@ -676,7 +727,7 @@ module Lists = struct
 
 
   (** Create a Cons structure and assign it to return value *)
-  let make_cons head tail : model =
+  let make_cons head tail : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<+> astate, addr_cons = make_cons_raw path location head tail astate in
     PulseOperations.write_id ret_id addr_cons astate
@@ -719,7 +770,7 @@ module Lists = struct
     Errors.badarg data astate
 
 
-  let append2 ~reverse list1 list2 : model =
+  let append2 ~reverse list1 list2 : model_no_non_disj =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     let mk_astate_badarg = make_astate_badarg list1 data astate in
     (* Makes an abstract state corresponding to appending to a list of given length *)
@@ -738,7 +789,7 @@ module Lists = struct
       |> List.map ~f:Basic.map_continue )
 
 
-  let reverse list : model =
+  let reverse list : model_no_non_disj =
    fun ({location; path; _} as data) astate ->
     let<*> astate, nil = make_nil_raw location path astate in
     append2 ~reverse:true list nil data astate
@@ -755,7 +806,7 @@ module Lists = struct
 
 
   (** Approximation: we don't actually do the side-effect, just assume the return value. *)
-  let foreach _fun _list : model =
+  let foreach _fun _list : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<**> astate, ret = Atoms.of_string location path "ok" astate in
     PulseOperations.write_id ret_id ret astate |> Basic.ok_continue
@@ -792,7 +843,7 @@ module Tuples = struct
     , addr_tuple )
 
 
-  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
     let arg_payloads = List.map ~f:get_payload args in
@@ -810,7 +861,7 @@ module Maps = struct
 
   let is_empty_field = mk_field "__infer_model_backing_map_is_empty"
 
-  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let hist = Hist.single_alloc path location "#{}" in
     let addr_map = (AbstractValue.mk_fresh (), hist) in
@@ -843,7 +894,7 @@ module Maps = struct
     write_dynamic_type_and_return addr_map Map ret_id astate
 
 
-  let new_ : model = make []
+  let new_ : model_no_non_disj = make []
 
   let make_astate_badmap (map_val, _map_hist) data astate =
     let typ = Typ.mk_struct (ErlangType Map) in
@@ -855,7 +906,7 @@ module Maps = struct
 
   let make_astate_goodmap path location map astate = prune_type path location map Map astate
 
-  let is_key key map : model =
+  let is_key key map : model_no_non_disj =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Return 3 cases:
      * - Error & assume not map
@@ -890,7 +941,7 @@ module Maps = struct
     astate_empty @ astate_haskey @ astate_badmap
 
 
-  let get (key, key_history) map : model =
+  let get (key, key_history) map : model_no_non_disj =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Return 3 cases:
      * - Error & assume not map
@@ -920,7 +971,7 @@ module Maps = struct
     List.map ~f:Basic.map_continue astate_ok @ astate_badkey @ astate_badmap
 
 
-  let put key value map : model =
+  let put key value map : model_no_non_disj =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
     (* Return 2 cases:
@@ -959,7 +1010,7 @@ end
 module Strings = struct
   (** This is a temporary solution for strings to avoid false positives. For now, we consider that
       the type of strings is list and compute this information whenever a string is created. Strings
-      should be fully supported in future. T93361792 **)
+      should be fully supported in future. T93361792 *)
 
   let of_const_string location path (const_str : String.t) : sat_maker =
    fun astate ->
@@ -969,7 +1020,7 @@ module Strings = struct
     |> value_die "'of_const_string' failed evaluation"
 
 
-  (* recurese caracter by caracter of the string and build suitable heap allocated data structure *)
+  (** recurse character by character of the string and build suitable heap allocated data structure *)
   let rec handle_string_content location path value str_lst : sat_maker =
    fun astate ->
     match str_lst with
@@ -987,20 +1038,20 @@ module Strings = struct
   let make_raw location path (value, _) : sat_maker =
    fun astate ->
     let string_value =
-      AddressAttributes.get_const_string value astate |> value_die "expected string value attribute"
+      PulseArithmetic.as_constant_string astate value |> value_die "expected string value attribute"
     in
     let ls_str = String.to_list string_value in
     handle_string_content location path value ls_str astate
 
 
-  let make value : model =
+  let make value : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let> astate, (result, _hist) = [make_raw location path value astate] in
     PulseOperations.write_id ret_id (result, _hist) astate |> Basic.ok_continue
 end
 
 module BIF = struct
-  let has_type (value, _hist) type_ : model =
+  let has_type (value, _hist) type_ : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType type_) in
     let is_typ = AbstractValue.mk_fresh () in
@@ -1008,9 +1059,9 @@ module BIF = struct
     Atoms.write_return_from_bool path location is_typ ret_id astate
 
 
-  let is_atom x : model = has_type x Atom
+  let is_atom x : model_no_non_disj = has_type x Atom
 
-  let is_boolean ((atom_val, _atom_hist) as atom) : model =
+  let is_boolean ((atom_val, _atom_hist) as atom) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let astate_not_atom =
       (* Assume not atom: just return false *)
@@ -1052,9 +1103,9 @@ module BIF = struct
     astate_not_atom @ astate_is_atom
 
 
-  let is_integer x : model = has_type x Integer
+  let is_integer x : model_no_non_disj = has_type x Integer
 
-  let is_list (list_val, _list_hist) : model =
+  let is_list (list_val, _list_hist) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
     let nil_typ = Typ.mk_struct (ErlangType Nil) in
@@ -1083,7 +1134,7 @@ module BIF = struct
     astate_is_cons @ astate_is_nil @ astate_not_list
 
 
-  let is_map x : model = has_type x Map
+  let is_map x : model_no_non_disj = has_type x Map
 end
 
 (** Custom models, specified by Config.pulse_models_for_erlang. *)
@@ -1091,11 +1142,11 @@ module Custom = struct
   (* TODO: see T110841433 *)
 
   (** Note: [None] means unknown/nondeterministic. *)
-  type erlang_value = known_erlang_value option [@@deriving of_yojson]
+  type erlang_value = known_erlang_value option [@@deriving of_yojson, compare]
 
   and known_erlang_value =
     | Atom of string option
-    | IntLit of string
+    | IntLit of string option
     | List of erlang_value list
     | Tuple of erlang_value list
     | GenServer of {module_name: string option}
@@ -1107,7 +1158,7 @@ module Custom = struct
   [@@deriving of_yojson]
 
   type arguments_return = {arguments: erlang_value list; return: erlang_value}
-  [@@deriving of_yojson]
+  [@@deriving of_yojson, compare]
 
   type behavior = ReturnValue of erlang_value | ArgumentsReturnList of arguments_return list
   [@@deriving of_yojson]
@@ -1115,6 +1166,124 @@ module Custom = struct
   type rule = {selector: selector; behavior: behavior} [@@deriving of_yojson]
 
   type spec = rule list [@@deriving of_yojson]
+
+  let max_nesting_level_bastraction = 3
+
+  let max_concrete_list_lenght = 3
+
+  (* Used as non deterministic erlang value in abstraction *)
+  let non_det_erlang_value = Some (List [None])
+
+  let rec pp_erlang_value fmt ev =
+    match ev with
+    | Some kev -> (
+      match kev with
+      | Atom (Some s) ->
+          F.fprintf fmt "Atom(%s)" s
+      | Atom None ->
+          F.pp_print_string fmt "Atom(None)"
+      | IntLit None ->
+          F.fprintf fmt "IntLit(None)"
+      | IntLit (Some s) ->
+          F.fprintf fmt "IntLit(%s)" s
+      | List [None] ->
+          (* corresponds to non_det_erlang_value *)
+          F.pp_print_string fmt "NonDetErlangValue"
+      | List evl ->
+          F.fprintf fmt "List[ %a ]" pp_erlang_value_list evl
+      | Tuple evl ->
+          F.fprintf fmt "Tuple[ %a ]" pp_erlang_value_list evl
+      | GenServer {module_name= Some s} ->
+          F.fprintf fmt "GenServer( %s )" s
+      | GenServer {module_name= None} ->
+          F.pp_print_string fmt "GenServer()" )
+    | None ->
+        F.pp_print_string fmt "NoneErlangValue"
+
+
+  and pp_erlang_value_list fmt evl =
+    List.iter ~f:(fun ev -> Format.fprintf fmt " %a,  " pp_erlang_value ev) evl
+
+
+  let pp_behavior fmt b =
+    match b with
+    | ReturnValue ev ->
+        F.fprintf fmt "@\n ReturnValue ( %a )@\n@\n@\n" pp_erlang_value ev
+    | ArgumentsReturnList arl ->
+        let helpf fmt arl =
+          List.iter arl ~f:(fun {arguments= evl; return= ev} ->
+              F.fprintf fmt "Arguments: %a ; @\n Return: %a @\n@\n@\n" pp_erlang_value_list evl
+                pp_erlang_value ev )
+        in
+        F.fprintf fmt "@\n ArgumentReturnList ( %a )@\n@\n@\n" helpf arl
+
+
+  let rec abstract_erlang_value nesting_level ev =
+    let abs_max_nesting evl =
+      if nesting_level <= max_nesting_level_bastraction then
+        List.map evl ~f:(abstract_erlang_value (nesting_level + 1))
+      else []
+    in
+    match ev with
+    | None ->
+        None
+    | Some ev' ->
+        let ev'' =
+          match ev' with
+          | Atom None ->
+              Atom None
+          | Atom (Some s) ->
+              let s' =
+                if
+                  List.mem
+                    ["false"; "true"; "timeout"; "return"; "error"; "exit"; "undefined"]
+                    ~equal:String.( = ) s
+                then Some s
+                else None
+              in
+              Atom s'
+          | (IntLit None | IntLit (Some "0") | IntLit (Some "1")) as il ->
+              il
+          | IntLit (Some _) ->
+              IntLit None
+          | List evs ->
+              let abs_evs = abs_max_nesting evs in
+              let abs_evs = fst (List.split_n abs_evs max_concrete_list_lenght) in
+              let abs_evs = List.append abs_evs [non_det_erlang_value] in
+              List abs_evs
+          | Tuple evs ->
+              let abs_evs = abs_max_nesting evs in
+              let abs_evs = List.append abs_evs [non_det_erlang_value] in
+              Tuple abs_evs
+          | GenServer _mn ->
+              GenServer _mn
+        in
+        Some ev''
+
+
+  let join_behaviour_arguments_list abs_arl =
+    List.dedup_and_sort abs_arl ~compare:compare_arguments_return
+
+
+  let abstract_behavior mfa behavior =
+    let do_argument_return ar =
+      let abs_arg_val = List.map ar.arguments ~f:(abstract_erlang_value 0) in
+      let abs_ret_val = abstract_erlang_value 0 ar.return in
+      {arguments= abs_arg_val; return= abs_ret_val}
+    in
+    match behavior with
+    | ReturnValue nev ->
+        ReturnValue (abstract_erlang_value 0 nev)
+    | ArgumentsReturnList args ->
+        let abs_arguments_return_list = List.map args ~f:do_argument_return in
+        let joined_arguments_return_list =
+          join_behaviour_arguments_list abs_arguments_return_list
+        in
+        L.log_task "\n Function '%s'   Argument-Return List size =%i, After Abs+Join size = %i\n"
+          mfa (List.length args)
+          (List.length joined_arguments_return_list) ;
+        ArgumentsReturnList joined_arguments_return_list
+
 
   let make_selector selector model =
     let l0 f = f [] in
@@ -1165,8 +1334,17 @@ module Custom = struct
                    (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
                    ret_addr astate
                , (ret_addr, ret_hist) ) )
-      | Some (IntLit intlit) ->
+      | Some (IntLit (Some intlit)) ->
           Sat (Integers.of_string location path intlit astate)
+      | Some (IntLit None) ->
+          let ret_addr = AbstractValue.mk_fresh () in
+          let ret_hist = Hist.single_alloc path location "nondet_abstr_intlit" in
+          Sat
+            (Ok
+               ( PulseOperations.add_dynamic_type
+                   (Typ.mk_struct (ErlangType Integer))
+                   ret_addr astate
+               , (ret_addr, ret_hist) ) )
       | Some (List elements) ->
           let mk = Lists.make_raw location path in
           many mk elements astate
@@ -1186,7 +1364,7 @@ module Custom = struct
     fun ret_val astate -> one ret_val astate
 
 
-  let return_value_model (ret_val : erlang_value) : model =
+  let return_value_model (ret_val : erlang_value) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let<++> astate, ret = return_value_helper location path ret_val astate in
     PulseOperations.write_id ret_id ret astate
@@ -1208,6 +1386,20 @@ module Custom = struct
             (ConstOperand name_hash) astate
           |> SatUnsat.to_list
     in
+    let of_intlit_like typ value_opt =
+      match value_opt with
+      | None ->
+          prune_type path location actual_arg typ astate
+      | Some intlit ->
+          let> astate = prune_type path location actual_arg typ astate in
+          let astate, _, (value, _hist) =
+            load_field path Integers.value_field location actual_arg astate
+          in
+          PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value)
+            (Formula.ConstOperand (Cint (IntLit.of_string intlit)))
+            astate
+          |> SatUnsat.to_list
+    in
     match pre_arg with
     | None ->
         [Ok astate]
@@ -1215,15 +1407,8 @@ module Custom = struct
         of_atom_like Atom value_opt
     | Some (GenServer {module_name}) ->
         of_atom_like (GenServerPid {module_name}) module_name
-    | Some (IntLit intlit) ->
-        let> astate = prune_type path location actual_arg Integer astate in
-        let astate, _, (value, _hist) =
-          load_field path Integers.value_field location actual_arg astate
-        in
-        PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value)
-          (ConstOperand (Cint (IntLit.of_string intlit)))
-          astate
-        |> SatUnsat.to_list
+    | Some (IntLit intlit_opt) ->
+        of_intlit_like Integer intlit_opt
     | Some (Tuple elements) ->
         let size = List.length elements in
         let> astate = prune_type path location actual_arg (Tuple size) astate in
@@ -1246,9 +1431,11 @@ module Custom = struct
         go actual_arg elements astate
 
 
-  let arguments_return_model args (summaries : arguments_return list) : model =
+  let arguments_return_model args (summaries : arguments_return list) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
-    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
+    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) =
+      arg.arg_payload |> ValueOrigin.addr_hist
+    in
     let actual_arguments = args |> List.map ~f:get_payload in
     let one_summary {arguments; return} =
       let one_arg astate (actual_arg, pre_arg) =
@@ -1269,7 +1456,7 @@ module Custom = struct
     List.concat_map ~f:one_summary summaries |> List.map ~f:Basic.map_continue
 
 
-  let make_model behavior args : model =
+  let make_model behavior args : model_no_non_disj =
     match behavior with
     | ReturnValue ret_val ->
         return_value_model ret_val
@@ -1315,8 +1502,10 @@ module Custom = struct
             path details Yojson.Safe.pp json ;
           []
     in
-    let spec = List.concat (load_files ".json" load_spec) in
-    List.map ~f:matcher_of_rule spec
+    let convert_rule rule =
+      matcher_of_rule rule |> ProcnameDispatcher.Call.map_matcher ~f:lift_model
+    in
+    List.concat_map (load_files ".json" load_spec) ~f:(List.map ~f:convert_rule)
 
 
   let mfa_to_db_map =
@@ -1338,25 +1527,40 @@ module Custom = struct
         List.fold mfas ~init:map ~f:(fun map mfa -> Map.set map ~key:mfa ~data:db) )
 
 
+  let dynamic_behavior_models = Hashtbl.create (module String)
+
   let fetch_model db mfa =
-    let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
-    let stmt = Sqlite3.prepare db query in
-    Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-    let model =
-      match Sqlite3.step stmt with
-      | Sqlite3.Rc.ROW -> (
-          let behavior_json = Sqlite3.column_text stmt 0 in
-          match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
-          | behavior ->
-              Some (make_model behavior)
-          | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _) ->
-              L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
-              None )
-      | _ ->
-          None
-    in
-    Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-    model
+    match Hashtbl.find dynamic_behavior_models mfa with
+    | None ->
+        let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
+        let stmt = Sqlite3.prepare db query in
+        Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+        let model_opt =
+          match Sqlite3.step stmt with
+          | Sqlite3.Rc.ROW -> (
+              let behavior_json = Sqlite3.column_text stmt 0 in
+              match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
+              | behavior ->
+                  let abs_behavior =
+                    if Config.abstract_pulse_models_for_erlang then abstract_behavior mfa behavior
+                    else behavior
+                  in
+                  L.debug Analysis Quiet "Function '%s' ABS BEHAVIOR:[  %a ] @\n@\n" mfa pp_behavior
+                    abs_behavior ;
+                  let model_abs_behavior = make_model abs_behavior in
+                  Some model_abs_behavior
+              | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _)
+                ->
+                  L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
+                  None )
+          | _ ->
+              None
+        in
+        Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+        Hashtbl.add_exn dynamic_behavior_models ~key:mfa ~data:model_opt ;
+        model_opt
+    | Some model_opt ->
+        model_opt
 
 
   let get_model_from_db proc_name args =
@@ -1365,16 +1569,22 @@ module Custom = struct
     let* db = Map.find mfa_to_db_map mfa in
     let+ m = fetch_model db mfa in
     m args
+
+
+  let exists_db_model proc_name =
+    let mfa = Fmt.to_to_string Procname.pp_verbose proc_name in
+    match Map.find mfa_to_db_map mfa with None -> false | Some _ -> true
 end
 
 module GenServer = struct
   type request = Call | Cast
 
-  let start_link module_atom _ _ : model =
+  let start_link module_atom args _ : model =
    (* gen_server:start_link(Module, _, _) -> {ok, Pid}
       where Pid is `GenServerPid of Module` *)
-   fun ({path; location} as data) astate ->
-    let module_name =
+   fun ({path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} as data) astate
+       non_disj ->
+    let module_name_opt =
       match get_erlang_type_or_any (fst module_atom) astate with
       | Atom ->
           Atoms.get_name path location module_atom astate
@@ -1384,23 +1594,102 @@ module GenServer = struct
             ErlangTypeName.pp typ ;
           None
     in
-    let rval =
-      Some (Custom.Tuple [Some (Custom.Atom (Some "ok")); Some (Custom.GenServer {module_name})])
+    let res_list, non_disj =
+      match module_name_opt with
+      | None ->
+          ([Ok (ContinueProgram astate)], non_disj)
+      | Some module_name ->
+          let procname = Procname.make_erlang ~module_name ~function_name:"init" ~arity:1 in
+          let actuals =
+            [(args, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst args) astate)))]
+          in
+          let res_list, non_disj, _, _ =
+            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+              location procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+              non_disj
+          in
+          (res_list, non_disj)
     in
-    Custom.return_value_model rval data astate
+    let post_process_handle_init res =
+      (*
+        Convert Module:init Result = {ok,State}
+          | {ok,State,Timeout}
+          | {ok,State,hibernate}
+          | {ok,State,{continue,Continue}}
+          | {stop,Reason}
+          | {error,Reason}
+          | ignore
+        to
+          gen_server:start_link start_ret() = {ok, Pid :: pid()}
+          | ignore
+          | {error, Reason :: term()}
+        https://www.erlang.org/doc/man/gen_server.html#Module:init-1
+        https://www.erlang.org/doc/man/gen_server.html#type-start_ret
+      *)
+      let start_ret, astate =
+        match PulseResult.ok res with
+        | None ->
+            (* Module:init crashes returns {error, _} *)
+            (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate)
+        | Some exec_state -> (
+          match exec_state with
+          | ContinueProgram astate -> (
+              let _, ret_val = PulseOperations.eval_ident (fst ret) astate in
+              match get_erlang_type_or_any (fst ret_val) astate with
+              | Tuple n when n >= 2 && n <= 3 -> (
+                  let _, _, first_element =
+                    load_field path (Tuples.field_name n 1) location ret_val astate
+                  in
+                  match get_erlang_type_or_any (fst first_element) astate with
+                  | Atom -> (
+                    match Atoms.get_name path location first_element astate with
+                    | Some "ok" ->
+                        (* the second element is the server state - not considered for now *)
+                        ( Some
+                            (Custom.Tuple
+                               [ Some (Custom.Atom (Some "ok"))
+                               ; Some (Custom.GenServer {module_name= module_name_opt}) ] )
+                        , astate )
+                    | Some "stop" | Some "error" ->
+                        (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate)
+                    | _ ->
+                        (None, astate) )
+                  | typ ->
+                      L.debug Analysis Verbose
+                        "@[<v>gen_server:init returned tuple with first element unexpected type %a@;\
+                         @]"
+                        ErlangTypeName.pp typ ;
+                      (None, astate) )
+              | Atom -> (
+                match Atoms.get_name path location ret_val astate with
+                | Some "ignore" ->
+                    (Some (Custom.Atom (Some "ignore")), astate)
+                | _ ->
+                    (None, astate) )
+              | typ ->
+                  L.debug Analysis Verbose "@[<v>gen_server:init returned unexpected type %a@;@]"
+                    ErlangTypeName.pp typ ;
+                  (None, astate) )
+          | _ ->
+              (* Module:init exceptions returns {error, _} *)
+              (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate) )
+      in
+      Custom.return_value_model start_ret data astate
+    in
+    (List.concat_map res_list ~f:post_process_handle_init, non_disj)
 
 
   let handle_request req_type server_ref request
-      {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate =
+      {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate non_disj =
     let astate = AbductiveDomain.add_need_dynamic_type_specialization (fst server_ref) astate in
     let module_name_opt =
       (* Cf. https://www.erlang.org/doc/man/gen_server.html#type-server_ref :
-         server_ref() =
-             pid() |
-             (LocalName :: atom()) |
-             {Name :: atom(), Node :: atom()} |
-             {global, GlobalName :: term()} |
-             {via, RegMod :: module(), ViaName :: term()}
+               server_ref() =
+                   pid() |
+                   (LocalName :: atom()) |
+                   {Name :: atom(), Node :: atom()} |
+                   {global, GlobalName :: term()} |
+         {via, RegMod :: module(), ViaName :: term()}
       *)
       match get_erlang_type_or_any (fst server_ref) astate with
       | GenServerPid {module_name= Some module_name} ->
@@ -1430,7 +1719,7 @@ module GenServer = struct
               module_name_opt )
       | Tuple 3 ->
           (* unsupported case: `server_ref() = {via, RegMod :: module(), ViaName :: term()}`.
-             Note: we don't check that the first element is the atom `via` as we don't support that case yet anyway. *)
+                                                 Note: we don't check that the first element is the atom `via` as we don't support that case yet anyway. *)
           L.debug Analysis Verbose
             "@[gen_server:call/cast called with unsupported `gen_server:server_ref()`: `{via, \
              RegMod :: module(), ViaName :: term()}`@." ;
@@ -1459,17 +1748,20 @@ module GenServer = struct
               ( Procname.make_erlang ~module_name ~function_name:"handle_cast" ~arity:2
               , [arg_req; arg_nondet ()] )
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-        |> fst3
+        let execs, non_disj, _, _ =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+            location procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+            non_disj
+        in
+        (execs, non_disj)
     | None ->
         L.debug Analysis Verbose "@[gen_server:call/cast failed to derive gen_server module name@." ;
-        [Ok (ContinueProgram astate)]
+        ([Ok (ContinueProgram astate)], non_disj)
 
 
   let call2 server_ref request : model =
-   fun ({ret; path; location} as data) astate ->
-    let res_list = handle_request Call server_ref request data astate in
+   fun ({ret; path; location} as data) astate non_disj ->
+    let res_list, non_disj = handle_request Call server_ref request data astate non_disj in
     let post_process_handle_call res =
       match PulseResult.ok res with
       | None ->
@@ -1532,14 +1824,14 @@ module GenServer = struct
         | _ ->
             res )
     in
-    List.map res_list ~f:post_process_handle_call
+    (List.map res_list ~f:post_process_handle_call, non_disj)
 
 
   let call3 server_ref request _timeout : model = call2 server_ref request
 
   let cast server_ref request : model =
-   fun data astate ->
-    let res_list = handle_request Cast server_ref request data astate in
+   fun data astate non_disj ->
+    let res_list, non_disj = handle_request Cast server_ref request data astate non_disj in
     let post_process_handle_call res =
       match PulseResult.ok res with
       | None ->
@@ -1551,7 +1843,7 @@ module GenServer = struct
         | _ ->
             [res] )
     in
-    List.concat (List.map res_list ~f:post_process_handle_call)
+    (List.concat_map res_list ~f:post_process_handle_call, non_disj)
 end
 
 let matchers : matcher list =
@@ -1559,52 +1851,68 @@ let matchers : matcher list =
   let arg = capt_arg_payload in
   let erlang_ns = ErlangTypeName.erlang_namespace in
   Custom.matchers ()
-  @ [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
-    ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
-    ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
-    ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
-    ; +BuiltinDecl.(match_builtin __erlang_error_badreturn) <>--> Errors.badreturn
-    ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
-    ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
-    ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
-    ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
-    ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
-    ; +BuiltinDecl.(match_builtin __erlang_make_str_const) <>$ arg $--> Strings.make
-    ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
-    ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
-      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-    ; +BuiltinDecl.(match_builtin __erlang_not_equal)
-      <>$ arg $+ arg $--> Comparison.exactly_not_equal
-      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-    ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
-      <>$ arg $+ arg $--> Comparison.exactly_not_equal
-    ; +BuiltinDecl.(match_builtin __erlang_greater) <>$ arg $+ arg $--> Comparison.greater
-    ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
-      <>$ arg $+ arg $--> Comparison.greater_or_equal
-    ; +BuiltinDecl.(match_builtin __erlang_lesser) <>$ arg $+ arg $--> Comparison.lesser
-    ; +BuiltinDecl.(match_builtin __erlang_lesser_or_equal)
-      <>$ arg $+ arg $--> Comparison.lesser_or_equal
-    ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
-    ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
-    ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
-    ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
-    ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
-    ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
-    ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
-    ; -"maps" &:: "new" <>$$--> Maps.new_
-    ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
-    ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2
-    ; -"gen_server" &:: "call" <>$ arg $+ arg $+ arg $--> GenServer.call3
-    ; -"gen_server" &:: "cast" <>$ arg $+ arg $--> GenServer.cast
-    ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
-    ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
-    ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
-    ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
-    ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
-    ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]
+  @ List.map
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+      [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_badrecord)
+        <>--> Errors.badrecord |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_badreturn)
+        <>--> Errors.badreturn |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_case_clause)
+        <>--> Errors.case_clause |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_function_clause)
+        <>--> Errors.function_clause |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_if_clause)
+        <>--> Errors.if_clause |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_try_clause)
+        <>--> Errors.try_clause |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_atom)
+        <>$ arg $+ arg $--> Atoms.make |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_integer)
+        <>$ arg $--> Integers.make |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_cons)
+        <>$ arg $+ arg $--> Lists.make_cons |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_str_const)
+        <>$ arg $--> Strings.make |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_equal)
+        <>$ arg $+ arg $--> Comparison.equal |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_exactly_equal)
+        <>$ arg $+ arg $--> Comparison.equal |> with_non_disj
+        (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+      ; +BuiltinDecl.(match_builtin __erlang_not_equal)
+        <>$ arg $+ arg $--> Comparison.exactly_not_equal |> with_non_disj
+        (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+      ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
+        <>$ arg $+ arg $--> Comparison.exactly_not_equal |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_greater)
+        <>$ arg $+ arg $--> Comparison.greater |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
+        <>$ arg $+ arg $--> Comparison.greater_or_equal |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_lesser)
+        <>$ arg $+ arg $--> Comparison.lesser |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_lesser_or_equal)
+        <>$ arg $+ arg $--> Comparison.lesser_or_equal |> with_non_disj
+      ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false |> with_non_disj
+      ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach |> with_non_disj
+      ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make |> with_non_disj
+      ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key |> with_non_disj
+      ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get |> with_non_disj
+      ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put |> with_non_disj
+      ; -"maps" &:: "new" <>$$--> Maps.new_ |> with_non_disj
+      ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
+      ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2
+      ; -"gen_server" &:: "call" <>$ arg $+ arg $+ arg $--> GenServer.call3
+      ; -"gen_server" &:: "cast" <>$ arg $+ arg $--> GenServer.cast
+      ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make |> with_non_disj
+      ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom |> with_non_disj
+      ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean |> with_non_disj
+      ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer |> with_non_disj
+      ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list |> with_non_disj
+      ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map |> with_non_disj ]
 
 
 let get_model_from_db = Custom.get_model_from_db

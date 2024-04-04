@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type 'a t = Unsat | Sat of 'a
+type 'a t = Unsat | Sat of 'a [@@deriving equal]
 
 let pp pp_sat fmt = function Unsat -> F.pp_print_string fmt "unsat" | Sat x -> pp_sat fmt x
 

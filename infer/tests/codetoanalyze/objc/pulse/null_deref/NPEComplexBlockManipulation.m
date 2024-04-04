@@ -215,7 +215,7 @@ BOOL test_Example_YES_using_ivar_bad() {
   return *ptr == x;
 }
 
-BOOL test_Example_YES_using_ivar_good() {
+BOOL test_Example_YES_using_ivar_good_FP() {
   Example* example = [Example new];
   [example application:YES];
   int x = [example.manipulatedContent get_x];

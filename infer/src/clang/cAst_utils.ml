@@ -10,6 +10,7 @@ open! IStd
 (** Functions for transformations of ast nodes *)
 
 module L = Logging
+module F = Format
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
@@ -20,10 +21,63 @@ type procname_from_decl =
   -> Clang_ast_t.decl
   -> Procname.t
 
-let sanitize_name s = Str.global_replace (Str.regexp "[/ ]") "_" s
+let sanitize_name = String.tr_multi ~target:"/ " ~replacement:"_" |> Staged.unstage
+
+(** Here we simplify the name "lambda_at_path" to keep just the file name and line and column, these
+    are sufficient as identifiers and the full path to the file causes too long names. *)
+let reduce_lambda_anon_name name =
+  let path = String.chop_prefix_if_exists ~prefix:"lambda_" name in
+  let path_items = String.split ~on:'/' path in
+  match List.hd (List.rev path_items) with
+  | Some last -> (
+    match String.split ~on:':' last with
+    | [file; line; _] ->
+        let hash = String.sub (Utils.string_crc_hex32 name) ~pos:0 ~len:8 in
+        F.asprintf "lambda_%s:%s_%s" file line hash
+    | _ ->
+        name )
+  | _ ->
+      name
+
+
+let create_objc_block_name decl_info block_decl_info =
+  let source_location, _ = decl_info.Clang_ast_t.di_source_range in
+  let path = Option.value source_location.Clang_ast_t.sl_file ~default:"" in
+  let line = Option.value source_location.Clang_ast_t.sl_line ~default:(-1) in
+  let path_items = String.split ~on:'/' path in
+  let file = List.hd_exn (List.rev path_items) in
+  let hash =
+    String.sub (Utils.string_crc_hex32 block_decl_info.Clang_ast_t.bdi_mangled_name) ~pos:0 ~len:8
+  in
+  (F.asprintf "%s%s:%d" Config.anonymous_block_prefix file line, hash)
+
+
+let is_lambda_qual name =
+  let is_lambda = String.is_substring name ~substring:"lambda" in
+  match String.index name ':' with
+  | Some colon_index -> (
+    match String.index name '<' with
+    | None ->
+        is_lambda
+    | Some template_index ->
+        is_lambda && template_index > colon_index
+        (* only transform lambda when it is not a template argument *) )
+  | None ->
+      false
+
 
 let get_qual_name qual_name_list =
-  List.map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_rev_list
+  (* The name given to the lambda has two qualifiers, "lambda_at_path" and "method_name". The first one is enough
+     to identify the lambda, so we remove the second. *)
+  let names =
+    match qual_name_list with
+    | name :: _ when is_lambda_qual name ->
+        [reduce_lambda_anon_name name]
+    | _ ->
+        qual_name_list
+  in
+  let names = List.map ~f:sanitize_name names in
+  QualifiedCppName.of_rev_list names
 
 
 let get_qualified_name ?(linters_mode = false) name_info =
@@ -42,7 +96,7 @@ let get_unqualified_name name_info =
   let name =
     match name_info.Clang_ast_t.ni_qual_name with
     | name :: _ ->
-        name
+        if is_lambda_qual name then reduce_lambda_anon_name name else name
     | [] ->
         name_info.Clang_ast_t.ni_name
   in
@@ -226,7 +280,6 @@ let qual_type_of_decl_ptr decl_ptr =
     Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
   ; qt_is_const= false
   ; qt_is_volatile= false
-  ; qt_is_trivially_copyable= false
   ; qt_is_restrict= false }
 
 
@@ -406,3 +459,22 @@ let get_method_body_opt decl =
   | _ ->
       Logging.die InternalError "Should only be called with method, but got %s"
         (Clang_ast_proj.get_decl_kind_string decl)
+
+
+let get_captured_mode ~lci_capture_this ~lci_capture_kind =
+  (* see http://en.cppreference.com/w/cpp/language/lambda *)
+  let is_by_ref =
+    match lci_capture_kind with
+    | `LCK_ByRef (* explicit with [&x] or implicit with [&] *)
+    | `LCK_This (* explicit with [this] or implicit with [&] *)
+    | `LCK_VLAType
+      (* capture a variable-length array by reference. we probably don't handle
+         this correctly elsewhere, but it's definitely not captured by value! *) ->
+        true
+    | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
+        (* [=] captures this by reference and everything else by value *)
+        lci_capture_this
+    | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
+        false
+  in
+  if is_by_ref then CapturedVar.ByReference else CapturedVar.ByValue

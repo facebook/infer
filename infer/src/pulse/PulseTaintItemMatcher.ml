@@ -11,8 +11,7 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-type taint_match =
-  {taint: TaintItem.t; addr_hist: AbstractValue.t * ValueHistory.t; typ: Typ.t; exp: Exp.t option}
+type taint_match = {taint: TaintItem.t; value_origin: ValueOrigin.t; typ: Typ.t; exp: Exp.t option}
 
 let type_matches tenv actual_typ types =
   (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
@@ -32,7 +31,7 @@ let type_matches tenv actual_typ types =
 let class_names_match tenv class_names class_name =
   Option.exists class_name ~f:(fun class_name ->
       let class_name =
-        if Language.curr_language_is Hack && Typ.Name.Hack.is_static class_name then
+        if Language.curr_language_is Hack && Typ.Name.Hack.is_static_companion class_name then
           (* in Hack, instance and static method are dispatched in the class and in its static
              companion, but they can not appear in both *)
           Typ.Name.Hack.static_companion_origin class_name
@@ -59,12 +58,9 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
 
 
 let check_regex name_regex elem ?source_file exclude_in =
-  L.d_printfln "Matching regex wrt %s" elem ;
   let should_exclude_location =
     match (source_file, exclude_in) with
     | Some source_file, Some exclude_in ->
-        L.d_printfln "Checking exclude_in list with location of elem = %a and exclude_in = %a"
-          SourceFile.pp source_file (Pp.comma_seq String.pp) exclude_in ;
         List.exists exclude_in ~f:(fun exclude ->
             (* This is needed because in clang languages the location of the elem can be either in the header
                or in the source file, depending whether the source file is available in the analysis or not.
@@ -75,16 +71,13 @@ let check_regex name_regex elem ?source_file exclude_in =
     | _ ->
         false
   in
-  if should_exclude_location then (
-    L.d_printfln "No match because of exclude_in" ;
-    false )
+  if should_exclude_location then false
   else
     match Str.search_forward name_regex elem 0 with
     | _ ->
-        L.d_printfln "Found match" ;
+        L.d_printfln " Matching regex wrt %s, found match!" elem ;
         true
     | exception Caml.Not_found ->
-        L.d_printfln "No match" ;
         false
 
 
@@ -93,10 +86,64 @@ let get_proc_name_s proc_name =
   else F.asprintf "%a" Procname.pp_verbose proc_name
 
 
+let match_annotation_with_values annot_item annotation annotation_values =
+  let annot_item_matches = Annotations.ia_ends_with annot_item annotation in
+  match (annot_item_matches, annotation_values) with
+  | false, _ ->
+      false
+  | true, None ->
+      true
+  | true, Some annot_values ->
+      Annotations.ia_has_annotation_with annot_item (fun annot ->
+          (* For now we need to support only simple parameter with default name "value" *)
+          match Annot.find_parameter annot ~name:"value" with
+          | Some annot_value ->
+              List.exists annot_values ~f:(fun value ->
+                  Annot.has_matching_str_value
+                    ~pred:(fun value_str -> String.is_suffix value_str ~suffix:value)
+                    annot_value )
+          | None ->
+              false )
+
+
+let check_regex_class tenv class_name_opt name_regex exclude_in proc_attributes =
+  let check_regex_class_aux class_name class_struct_opt =
+    let class_name_s = Typ.Name.name class_name in
+    let source_file =
+      Option.value_map class_struct_opt ~default:None ~f:(fun class_struct ->
+          class_struct.Struct.source_file )
+    in
+    (* Sometimes the classes don't get added to the tenv, so we use the proc_attributes loc as a backup *)
+    let source_file =
+      if Option.is_some source_file then source_file
+      else Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+    in
+    check_regex ?source_file name_regex class_name_s exclude_in
+  in
+  match class_name_opt with
+  | Some class_name ->
+      Tenv.mem_supers tenv ~f:check_regex_class_aux class_name
+  | None ->
+      false
+
+
+let check_class_annotation tenv class_name_opt annotation annotation_values =
+  let res =
+    let open IOption.Let_syntax in
+    let* name = class_name_opt in
+    let* struct_typ = Tenv.lookup tenv name in
+    Annotations.struct_typ_has_annot struct_typ (fun annot_item ->
+        match_annotation_with_values annot_item annotation annotation_values )
+    |> Option.some
+  in
+  Option.value res ~default:false
+
+
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
       let class_name = Procname.get_class_type_name proc_name in
+      let proc_name_s = get_proc_name_s proc_name in
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
@@ -105,30 +152,23 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in
-            check_regex name_regex (get_proc_name_s proc_name) ?source_file exclude_in
-        | ClassNameRegex {name_regex; exclude_in} -> (
-            let check_regex_class class_name class_struct_opt =
-              let class_name_s = Typ.Name.name class_name in
-              let source_file =
-                Option.value_map class_struct_opt ~default:None ~f:(fun class_struct ->
-                    class_struct.Struct.source_file )
-              in
-              (* Sometimes the classes don't get added to the tenv, so we use the proc_attributes loc as a backup *)
-              let source_file =
-                if Option.is_some source_file then source_file
-                else
-                  Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
-              in
-              check_regex ?source_file name_regex class_name_s exclude_in
+            let proc_name_s =
+              if Procname.is_objc_method proc_name then
+                match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
+              else proc_name_s
             in
-            match class_name with
-            | Some class_name ->
-                Tenv.mem_supers tenv ~f:check_regex_class class_name
-            | None ->
-                false )
+            check_regex name_regex proc_name_s ?source_file exclude_in
+        | ClassNameRegex {name_regex; exclude_in} ->
+            check_regex_class tenv class_name name_regex exclude_in proc_attributes
         | ClassAndMethodNames {class_names; method_names} ->
             class_names_match tenv class_names class_name
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
+        | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in} ->
+            class_names_match tenv class_names class_name
+            && check_regex method_name_regex proc_name_s exclude_in
+        | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in} ->
+            check_regex_class tenv class_name class_name_regex exclude_in proc_attributes
+            && check_regex method_name_regex proc_name_s exclude_in
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
             let procedure_return_type_match method_return_type_names =
               Option.exists proc_attributes ~f:(fun attrs ->
@@ -136,6 +176,13 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             in
             class_names_match tenv class_names class_name
             && procedure_return_type_match method_return_type_names
+        | ClassWithAnnotation {annotation; annotation_values} ->
+            check_class_annotation tenv class_name annotation annotation_values
+        | ClassWithAnnotationAndRegexAndMethodRegex
+            {annotation; annotation_values; class_name_regex; method_name_regex; exclude_in} ->
+            check_class_annotation tenv class_name annotation annotation_values
+            && check_regex_class tenv class_name class_name_regex exclude_in proc_attributes
+            && check_regex method_name_regex proc_name_s exclude_in
         | OverridesOfClassWithAnnotation {annotation} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
                 let method_name = Procname.get_method proc_name in
@@ -143,15 +190,15 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
                   (fun class_name _ ->
                     Option.exists (Tenv.lookup tenv class_name) ~f:(fun procedure_superclass_type ->
                         Annotations.struct_typ_has_annot procedure_superclass_type
-                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation)
+                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation )
                         && PatternMatch.override_exists ~check_current_type:false
                              (fun superclass_pname ->
                                String.equal (Procname.get_method superclass_pname) method_name )
                              tenv proc_name ) )
                   procedure_class_name )
-        | MethodWithAnnotation {annotation} ->
+        | MethodWithAnnotation {annotation; annotation_values} ->
             Annotations.pname_has_return_annot proc_name (fun annot_item ->
-                Annotations.ia_ends_with annot_item annotation )
+                match_annotation_with_values annot_item annotation annotation_values )
         | Allocation _ | Block _ | BlockNameRegex _ ->
             false
       in
@@ -185,13 +232,15 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
 
 let match_field_target matches actual potential_taint_value : taint_match list =
   let open TaintConfig.Target in
-  let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} = actual in
+  let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} = actual in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
     in
-    let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
-    {taint; addr_hist; typ; exp= Some exp} :: acc
+    let taint =
+      {TaintItem.value_tuple= Basic {value= potential_taint_value; origin}; kinds= matcher.kinds}
+    in
+    {taint; value_origin; typ; exp= Some exp} :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
       match_target acc matcher )
@@ -232,7 +281,79 @@ let field_matches tenv loc matchers field_name =
               class_names_match tenv class_names (Some class_name)
               && List.mem ~equal:String.equal field_names (Fieldname.get_field_name field_name)
             then Some matcher
-            else None )
+            else None
+        | FieldWithAnnotation {annotation; annotation_values} -> (
+            let class_name = Fieldname.get_class_name field_name in
+            match Tenv.lookup tenv class_name with
+            | Some struct_typ ->
+                if
+                  Annotations.field_has_annot field_name struct_typ (fun annot_item ->
+                      match_annotation_with_values annot_item annotation annotation_values )
+                then Some matcher
+                else None
+            | None ->
+                None ) )
+
+
+let move_taint_to_field tenv path location potential_taint_value taint_match fieldname astate =
+  let type_check astate value_origin typ fieldname =
+    (* Dereference the value as much as possible and verify the result is of structure type
+       holding the expected fieldname.
+
+       TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
+       typed languages like Hack or Python.*)
+    let open IOption.Let_syntax in
+    let rec get_val_and_typ_name astate value_origin typ =
+      match typ.Typ.desc with
+      | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
+          Some (astate, value_origin, typ_name)
+      | Tptr (typ', _) ->
+          let* astate, value_origin =
+            PulseOperations.eval_access_to_value_origin path Read location
+              (ValueOrigin.addr_hist value_origin)
+              Dereference astate
+            |> PulseResult.ok
+          in
+          get_val_and_typ_name astate value_origin typ'
+      | _ ->
+          None
+    in
+    let* astate, value_origin, typ_name = get_val_and_typ_name astate value_origin typ in
+    let+ field_typ =
+      let* {Struct.fields} = Tenv.lookup tenv typ_name in
+      List.find_map fields ~f:(fun (field, typ, _) ->
+          if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
+    in
+    (astate, value_origin, typ_name, field_typ)
+  in
+  (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
+  match type_check astate taint_match.value_origin taint_match.typ fieldname with
+  | None ->
+      (* The value cannot hold the expected field.
+         This is a type mismatch and we need to inform the user. *)
+      L.die UserError
+        "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field `%s`"
+        TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ fieldname
+  | Some (astate, value_origin, typ_name, field_typ) ->
+      let result =
+        let open PulseResult.Let_syntax in
+        let addr_hist = ValueOrigin.addr_hist value_origin in
+        let* astate, ret_value =
+          PulseOperations.eval_access path Read location addr_hist
+            (FieldAccess (Fieldname.make typ_name fieldname))
+            astate
+        in
+        let+ astate, ret_value =
+          PulseOperations.eval_access_to_value_origin path Read location ret_value Dereference
+            astate
+        in
+        L.d_printfln "match! tainting field %s with type %a" fieldname (Typ.pp_full Pp.text)
+          field_typ ;
+        let taint = TaintItem.field_of_origin taint_match.taint fieldname in
+        ( astate (* TODO(arr): replace with a proper value path *)
+        , Some {taint; value_origin= ret_value; typ= field_typ; exp= None} )
+      in
+      PulseResult.ok result |> Option.value ~default:(astate, None)
 
 
 let match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
@@ -256,9 +377,12 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             match return_as_actual with
             | Some actual ->
                 let astate, acc = acc in
-                let taint = {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds} in
-                let addr_hist, typ, exp = actual in
-                (astate, {taint; addr_hist; typ; exp} :: acc)
+                let taint =
+                  { TaintItem.value_tuple= Basic {value= potential_taint_value; origin= ReturnValue}
+                  ; kinds }
+                in
+                let value_origin, typ, exp = actual in
+                (astate, {taint; value_origin; typ; exp} :: acc)
             | None ->
                 let return = Var.of_id return in
                 let astate =
@@ -270,25 +394,31 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                 Stack.find_opt return astate
                 |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
                        let taint =
-                         {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds}
+                         { TaintItem.value_tuple=
+                             Basic {value= potential_taint_value; origin= ReturnValue}
+                         ; kinds }
                        in
-                       ( astate
-                       , {taint; addr_hist= return_value; typ= return_typ; exp= None} :: tainted ) )
-            ) )
+                       let value_origin =
+                         ValueOrigin.OnStack {var= return; addr_hist= return_value}
+                       in
+                       (astate, {taint; value_origin; typ= return_typ; exp= None} :: tainted) ) ) )
     | (AllArguments | ArgumentPositions _ | AllArgumentsButPositions _ | ArgumentsMatchingTypes _)
       as taint_target ->
         L.d_printf "matching actuals... " ;
         List.foldi actuals ~init:acc
-          ~f:(fun i ((astate, tainted) as acc) (actual_addr_hist, actual_typ, exp) ->
+          ~f:(fun i ((astate, tainted) as acc) (actual_value_origin, actual_typ, exp) ->
             let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
             if taint_procedure_target_matches tenv taint_target i actual_typ && not is_const_exp
             then (
               L.d_printfln_escaped "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
               let taint =
-                {TaintItem.value= potential_taint_value; origin= Argument {index= i}; kinds}
+                { TaintItem.value_tuple=
+                    Basic {value= potential_taint_value; origin= Argument {index= i}}
+                ; kinds }
               in
-              (astate, {taint; addr_hist= actual_addr_hist; typ= actual_typ; exp} :: tainted) )
+              (astate, {taint; value_origin= actual_value_origin; typ= actual_typ; exp} :: tainted)
+              )
             else (
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
@@ -297,88 +427,36 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
         L.d_printf "matching this/self... " ;
         match instance_reference with
         | Some instance_reference ->
-            let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} =
+            let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} =
               instance_reference
             in
             let taint =
-              {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
+              { TaintItem.value_tuple=
+                  Basic {value= potential_taint_value; origin= InstanceReference}
+              ; kinds }
             in
             let astate, tainted = acc in
-            (astate, {taint; addr_hist; typ; exp= Some exp} :: tainted)
+            (astate, {taint; value_origin; typ; exp= Some exp} :: tainted)
         | None ->
             L.die UserError "Error in taint configuration: `%a` is not an instance method"
               TaintItem.pp_value potential_taint_value )
     | FieldsOfValue fields ->
-        let type_check astate value typ fieldname =
-          (* Dereference the value as much as possible and verify the result is of structure type
-             holding the expected fieldname.
-
-             TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
-             typed languages like Hack or Python.*)
-          let open IOption.Let_syntax in
-          let rec get_val_and_typ_name astate value typ =
-            match typ.Typ.desc with
-            | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
-                Some (astate, value, typ_name)
-            | Tptr (typ', _) ->
-                let* astate, value =
-                  PulseOperations.eval_access path Read location value Dereference astate
-                  |> PulseResult.ok
-                in
-                get_val_and_typ_name astate value typ'
-            | _ ->
-                None
-          in
-          let* astate, value, typ_name = get_val_and_typ_name astate value typ in
-          let+ field_typ =
-            let* {Struct.fields} = Tenv.lookup tenv typ_name in
-            List.find_map fields ~f:(fun (field, typ, _) ->
-                if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
-          in
-          (astate, value, typ_name, field_typ)
-        in
-        let move_taint_to_field ((astate, taint_matches) as acc) taint_match fieldname =
-          (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
-          match type_check astate taint_match.addr_hist taint_match.typ fieldname with
-          | None ->
-              (* The value cannot hold the expected field.
-                 This is a type mismatch and we need to inform the user. *)
-              L.die UserError
-                "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field \
-                 `%s`"
-                TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ
-                fieldname
-          | Some (astate, addr_hist, typ_name, field_typ) ->
-              Option.value ~default:acc
-                (PulseResult.ok
-                   (let open PulseResult.Let_syntax in
-                    let* astate, ret_value =
-                      PulseOperations.eval_access path Read location addr_hist
-                        (FieldAccess (Fieldname.make typ_name fieldname))
-                        astate
-                    in
-                    let+ astate, ret_value =
-                      PulseOperations.eval_access path Read location ret_value Dereference astate
-                    in
-                    L.d_printfln "match! tainting field %s with type %a" fieldname
-                      (Typ.pp_full Pp.text) field_typ ;
-                    let taint =
-                      TaintItem.
-                        { taint_match.taint with
-                          origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin}
-                        }
-                    in
-                    ( astate
-                    , {taint; addr_hist= ret_value; typ= field_typ; exp= None} :: taint_matches ) ) )
-        in
         List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
             let astate', tainted' = match_target kinds acc origin in
             let new_taints, _ =
               List.split_n tainted' (List.length tainted' - List.length tainted)
             in
             let acc = if phys_equal astate' astate then acc else (astate', tainted) in
-            List.fold new_taints ~init:acc ~f:(fun acc taint ->
-                move_taint_to_field acc taint fieldname ) )
+            List.fold new_taints ~init:acc ~f:(fun (astate, taint_items) taint ->
+                let astate, taint_item_opt =
+                  move_taint_to_field tenv path location potential_taint_value taint fieldname
+                    astate
+                in
+                match taint_item_opt with
+                | Some taint_item ->
+                    (astate, taint_item :: taint_items)
+                | None ->
+                    (astate, taint_items) ) )
   in
   List.fold matches ~init:(astate, []) ~f:(fun acc (matcher : TaintConfig.Unit.procedure_unit) ->
       match_target matcher.kinds acc matcher.procedure_target )
@@ -386,6 +464,13 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
 
 let procedure_matches_any tenv procname proc_attributes procedure_matchers =
   procedure_matches tenv procedure_matchers ?proc_attributes procname [] |> List.is_empty |> not
+
+
+let procedure_matching_kinds tenv procname proc_attributes procedure_matchers =
+  let matching_units = procedure_matches tenv procedure_matchers ?proc_attributes procname [] in
+  List.fold matching_units ~init:TaintConfig.Kind.Set.empty
+    ~f:(fun kind_set (unit : TaintConfig.Unit.procedure_unit) ->
+      TaintConfig.Kind.Set.add_seq (Stdlib.List.to_seq unit.kinds) kind_set )
 
 
 (** Returns a pair of (instance_reference, args) depending on the type of the proc *)
@@ -413,32 +498,27 @@ let split_args procname args =
       else (None, args)
 
 
-let match_procedure_impl tenv path location ?proc_attributes procname actuals return_opt matchers
-    astate : AbductiveDomain.t * taint_match list =
-  let instance_reference, actuals = split_args procname actuals in
-  let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
-  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-  let has_added_return_param =
-    match proc_attributes with
-    | Some attrs when attrs.ProcAttributes.has_added_return_param ->
-        true
-    | _ ->
-        false
-  in
-  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-    actuals ~instance_reference (TaintItem.TaintProcedure procname)
+let match_procedure_impl tenv path location ?proc_attributes ~has_added_return_param procname
+    actuals return_opt matchers astate : AbductiveDomain.t * taint_match list =
+  if Procname.is_hack_builtins procname then (astate, [])
+  else
+    let instance_reference, actuals = split_args procname actuals in
+    let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
+    if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+    match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+      actuals ~instance_reference (TaintItem.TaintProcedure procname)
 
 
-let match_procedure_call tenv path location ?proc_attributes procname actuals return matchers astate
-    =
-  match_procedure_impl tenv path location ?proc_attributes procname actuals (Some return) matchers
-    astate
+let match_procedure_call tenv path location ?proc_attributes ~has_added_return_param procname
+    actuals return matchers astate =
+  match_procedure_impl tenv path location ?proc_attributes ~has_added_return_param procname actuals
+    (Some return) matchers astate
 
 
 let match_procedure tenv (proc_attributes : ProcAttributes.t) formals matchers astate :
     AbductiveDomain.t * taint_match list =
-  match_procedure_impl tenv PathContext.initial proc_attributes.loc proc_attributes.proc_name
-    formals None matchers astate
+  match_procedure_impl tenv PathContext.initial proc_attributes.loc ~has_added_return_param:false
+    proc_attributes.proc_name formals None matchers astate
 
 
 let match_block tenv location ?proc_attributes procname actuals matchers astate :

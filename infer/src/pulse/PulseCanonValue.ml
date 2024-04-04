@@ -16,6 +16,12 @@ module type S = sig
 
   val pp : F.formatter -> t -> unit
 
+  module Set : PrettyPrintable.PPSet with type elt = t
+
+  val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
+
+  val unsafe_cast_set : AbstractValue.Set.t -> Set.t [@@deprecated ""] [@@inline always]
+
   type needs_canon
 
   val canon : astate -> needs_canon -> t
@@ -39,8 +45,7 @@ module type S = sig
 
   val mk_fresh : unit -> t
 
-  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""]
-  (* ocaml insists that [\[@@deprecated\]] appear here too since it's in the .mli *)
+  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""] [@@inline always]
 
   module Stack : sig
     include
@@ -57,7 +62,7 @@ module type S = sig
        and type t = PulseBaseMemory.t
        and type Edges.t = PulseBaseMemory.Edges.t
 
-  val canon_access : astate -> PulseBaseMemory.Access.t -> Memory.Access.t
+  val canon_access : astate -> PulseAccess.t -> Memory.Access.t
 
   module Attributes :
     PulseBaseAddressAttributes.S with type key := t and type t = PulseBaseAddressAttributes.t
@@ -73,6 +78,12 @@ end) : S with type astate = AbductiveDomain.astate = struct
   type t = AbstractValue.t [@@deriving compare, equal]
 
   let pp = AbstractValue.pp
+
+  module Set = AbstractValue.Set
+
+  let downcast_set = Fn.id
+
+  let unsafe_cast_set = Fn.id
 
   type needs_canon = AbstractValue.t
 
@@ -131,7 +142,7 @@ end) : S with type astate = AbductiveDomain.astate = struct
         if AbstractValue.equal v v' then tuple_opt else Some (v', snd, trd, frt)
 
 
-  let canon_access astate (access : PulseBaseMemory.Access.t) : Memory.Access.t =
+  let canon_access astate (access : PulseAccess.t) : Memory.Access.t =
     match access with
     | ArrayAccess (typ, index) ->
         ArrayAccess (typ, canon astate index)

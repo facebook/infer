@@ -7,10 +7,6 @@
 
 open! IStd
 
-val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node.t option
-(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
-    parameter indicates whether the true or false branch is required. *)
-
 val find_normal_variable_funcall :
   Procdesc.Node.t -> Ident.t -> (Exp.t * Exp.t list * Location.t * CallFlags.t) option
 (** Find the function call instruction used to initialize normal variable [id], and return the

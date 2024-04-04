@@ -53,7 +53,3 @@ module Container : S
 module CString : S
 
 module NSCollection : S
-
-val get_nodes_in_autoreleasepool : Procdesc.t -> Procdesc.NodeSet.t
-(** Return nodes inside autorelease pool block, i.e. which are between [autoreleasePoolPush] and
-    [autoreleasePoolPop] *)

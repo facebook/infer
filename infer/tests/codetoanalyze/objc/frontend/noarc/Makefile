@@ -36,7 +36,6 @@ SOURCES = \
   ../shared/block/block_no_args.m \
   ../shared/block/block_release.m \
   ../shared/block/dispatch.m \
-  ../shared/block/dispatch_examples.m \
   ../shared/block/dispatch_in_macro.m \
   ../shared/field_superclass/SuperExample.m \
   ../shared/memory_leaks_benchmark/AutoreleaseExample.m \

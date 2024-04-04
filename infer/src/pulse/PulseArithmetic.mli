@@ -35,6 +35,13 @@ val and_equal :
 val and_not_equal :
   operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
+val and_equal_string_concat :
+     AbstractValue.t
+  -> operand
+  -> operand
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
 val eval_binop :
      AbstractValue.t
   -> Binop.t
@@ -76,6 +83,10 @@ val prune_ne_zero :
   AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 (** helper function wrapping [prune_binop] *)
 
+val prune_nonnegative :
+  AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
+(** helper function wrapping [prune_binop] *)
+
 val prune_positive :
   AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 (** helper function wrapping [prune_binop] *)
@@ -91,6 +102,13 @@ val prune_eq_one :
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 
 val is_manifest : AbductiveDomain.Summary.t -> bool
+(** whether the state is *manifest* according to {!PulseFormula.is_manifest}, with an additional
+    condition that some equalities path conditions may be represented implicitly by having several
+    edges pointing to the same value in the precondition; if the pre exhibits sharing that means
+    some access paths in the precondition are equal, which means that equality on these access paths
+    has been assumed at some point in the function so the set of assumptions is not empty (see also
+    the documentation for {!PulseFormula.is_manifest} and
+    {!PulseAbductiveDomain.Summary.pre_heap_has_assumptions}) *)
 
 val and_is_int : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
@@ -100,3 +118,9 @@ val and_equal_instanceof :
   -> Typ.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
+val absval_of_int : AbductiveDomain.t -> IntLit.t -> AbductiveDomain.t * AbstractValue.t
+
+val absval_of_string : AbductiveDomain.t -> string -> AbductiveDomain.t * AbstractValue.t
+
+val as_constant_string : AbductiveDomain.t -> AbstractValue.t -> string option

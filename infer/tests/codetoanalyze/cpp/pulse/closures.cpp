@@ -419,7 +419,7 @@ S* update_inside_lambda_as_argument(S* s) {
   return object;
 }
 
-int update_inside_lambda_as_argument_ok_FP(S* param_s) {
+int update_inside_lambda_as_argument_ok(S* param_s) {
   return update_inside_lambda_as_argument(param_s)->f;
 }
 

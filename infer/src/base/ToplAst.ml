@@ -36,11 +36,11 @@ type condition = predicate list (* conjunction *) [@@deriving show]
 
 type assignment = register_name * variable_name [@@deriving show]
 
-(** a regular expression *)
-type procedure_name_pattern = string [@@deriving show]
-
-type label_pattern = ArrayWritePattern | ProcedureNamePattern of procedure_name_pattern
+type call_pattern =
+  {procedure_name_regex: string; type_regexes: string option list option (* [None] means anything *)}
 [@@deriving show]
+
+type label_pattern = ArrayWritePattern | CallPattern of call_pattern [@@deriving show]
 
 (* TODO(rgrigore): Check that variable names don't repeat.  *)
 (* TODO(rgrigore): Check that registers are written at most once. *)

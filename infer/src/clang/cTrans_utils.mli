@@ -304,4 +304,4 @@ val last_or_mk_fresh_void_exp_typ : (Exp.t * Typ.t) list -> Exp.t * Typ.t
 
 val should_remove_first_param : trans_state -> Clang_ast_t.stmt -> Typ.name option
 (** Return a class name when the first parameter should be removed according to its context, for
-    example, when [self] or [\[x class\]] is given as the first parameter for a class method. *)
+    example, when [self] or [[x class]] is given as the first parameter for a class method. *)

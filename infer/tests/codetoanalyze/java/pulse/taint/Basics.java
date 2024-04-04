@@ -232,4 +232,21 @@ public class Basics {
     InferTaint.inferSensitiveSink(
         InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()));
   }
+
+  Object inferUniversalSanitizer() {
+    return InferTaint.inferSecretSource();
+  }
+
+  // sanitizer should take precedence
+  void FP_returnedFromSanitizedTaintedToSinkOk() {
+    InferTaint.inferSensitiveSink(inferUniversalSanitizer());
+  }
+
+  void taintOnUnrelatedBoolOk(boolean notTaintedFlag) {
+    boolean taintedFlag = (boolean) InferTaint.inferSecretSource();
+    boolean uberFlag = notTaintedFlag || taintedFlag;
+    if (!uberFlag) {
+      InferTaint.inferSensitiveSink(notTaintedFlag);
+    }
+  }
 }

@@ -38,6 +38,19 @@ void assume_non_negative_is_non_negative_ok() {
   }
 }
 
+void if_negative_then_crash_latent(int x) {
+  if (x < 0) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void call_if_negative_then_crash_with_negative_bad() {
+  int x = random();
+  assume_non_negative(-x);
+  if_negative_then_crash_latent(x);
+}
+
 float return_non_negative_float() {
   float x = ((float)random()) / (2 ^ 31 - 1);
   if (x < 0.) {

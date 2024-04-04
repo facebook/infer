@@ -4,12 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 
-let reportdiff ~current_report:current_report_fname ~previous_report:previous_report_fname
-    ~current_costs:current_costs_fname ~previous_costs:previous_costs_fname
-    ~current_config_impact:current_config_impact_fname
-    ~previous_config_impact:previous_config_impact_fname =
+let reportdiff ~report_current:current_report_fname ~report_previous:previous_report_fname
+    ~costs_current:current_costs_fname ~costs_previous:previous_costs_fname
+    ~config_impact_current:current_config_impact_fname
+    ~config_impact_previous:previous_config_impact_fname =
   let load_aux ~f filename_opt =
     Option.value_map
       ~f:(fun filename -> Atdgen_runtime.Util.Json.from_file f filename)

@@ -93,7 +93,6 @@ codetoanalyze/c/biabduction/null_dereference/memcpy-test.c, testError2, 5, NULL_
 codetoanalyze/c/biabduction/null_dereference/memcpy-test.c, testError3, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, simple_null_pointer, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, null_pointer_interproc, 2, NULL_DEREFERENCE, B1
-codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, null_pointer_with_function_pointer, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, basic_null_dereference, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, no_check_for_null_after_malloc, 3, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/null_dereference/null_pointer_dereference.c, no_check_for_null_after_realloc, 9, NULL_DEREFERENCE, B1

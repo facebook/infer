@@ -10,7 +10,8 @@ open PulseDomainInterface
 
 [@@@warning "-unused-value-declaration"]
 
-val report : is_suppressed:bool -> latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
+val report :
+  Tenv.t -> is_suppressed:bool -> latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
 
 val report_summary_error :
      Tenv.t

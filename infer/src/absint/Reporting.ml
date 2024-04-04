@@ -11,6 +11,7 @@ type log_t =
      ?loc_instantiated:Location.t
   -> ?ltr:Errlog.loc_trace
   -> ?extras:Jsonbug_t.extra
+  -> ?suggestion:string
   -> Checker.t
   -> IssueType.t
   -> string
@@ -131,19 +132,21 @@ let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~
       checker exn
 
 
-let mk_issue_to_report issue_type error_message =
-  {IssueToReport.issue_type; description= Localise.verbatim_desc error_message; ocaml_pos= None}
+let mk_issue_to_report ?suggestion issue_type error_message =
+  { IssueToReport.issue_type
+  ; description= Localise.verbatim_desc error_message ?suggestion
+  ; ocaml_pos= None }
 
 
 let log_issue_from_summary_simplified ?severity_override proc_desc err_log ~loc ?(ltr = []) ?extras
-    checker issue_type error_message =
-  let issue_to_report = mk_issue_to_report issue_type error_message in
+    ?suggestion checker issue_type error_message =
+  let issue_to_report = mk_issue_to_report issue_type error_message ?suggestion in
   log_issue_from_summary ?severity_override proc_desc err_log ~node:Errlog.UnknownNode ~session:0
     ~loc ~ltr ?extras checker issue_to_report
 
 
-let log_issue proc_desc err_log ~loc ?loc_instantiated ?ltr ?extras checker issue_type error_message
-    =
+let log_issue proc_desc err_log ~loc ?loc_instantiated ?ltr ?extras ?suggestion checker issue_type
+    error_message =
   let ltr =
     Option.map ltr ~f:(fun default ->
         Option.value_map ~default loc_instantiated ~f:(fun loc_instantiated ->
@@ -152,12 +155,12 @@ let log_issue proc_desc err_log ~loc ?loc_instantiated ?ltr ?extras checker issu
             Errlog.make_trace_element depth loc_instantiated "first instantiated at" tags :: default ) )
   in
   log_issue_from_summary_simplified proc_desc err_log ~loc ?ltr ?extras checker issue_type
-    error_message
+    error_message ?suggestion
 
 
-let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access ?extras checker
-    issue_type error_message =
-  let issue_to_report = mk_issue_to_report issue_type error_message in
+let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access ?extras ?suggestion
+    checker issue_type error_message =
+  let issue_to_report = mk_issue_to_report issue_type error_message ?suggestion in
   let issue_log, errlog = IssueLog.get_or_add issue_log ~proc:procname in
   let node = Errlog.UnknownNode in
   log_issue_from_errlog ?severity_override errlog ~loc ~node ~session:0 ~ltr ~access ~extras checker

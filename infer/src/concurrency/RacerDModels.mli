@@ -44,7 +44,7 @@ val is_thread_safe_method : Procname.t -> Tenv.t -> bool
 
 val is_marked_thread_safe : Procname.t -> Tenv.t -> bool
 
-val is_safe_access : 'a HilExp.Access.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
+val is_safe_access : 'a MemoryAccess.t -> HilExp.AccessExpression.t -> Tenv.t -> bool
 (** check if an access to a field is thread-confined, or whether the field is volatile *)
 
 val should_flag_interface_call : Tenv.t -> HilExp.t list -> CallFlags.t -> Procname.t -> bool

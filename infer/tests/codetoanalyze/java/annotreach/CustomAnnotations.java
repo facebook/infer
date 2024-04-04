@@ -22,22 +22,43 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
-@interface UserDefinedSink {}
+@interface UserDefinedSink1 {}
+
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.CLASS)
+@interface UserDefinedSink2 {}
+
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.CLASS)
+@interface UserDefinedSanitizer {}
 
 class CustomAnnotations {
 
   @UserDefinedSource1
-  void source1Bad() {
-    sink();
+  void source11Bad() {
+    sink1();
+  }
+
+  @UserDefinedSource1
+  void source12Bad() {
+    sink2();
   }
 
   @UserDefinedSource2
-  void source2Bad() {
-    sink();
+  void source21Bad() {
+    sink1();
   }
 
-  @UserDefinedSink
-  void sink() {}
+  @UserDefinedSource2
+  void source22Bad() {
+    sink2();
+  }
+
+  @UserDefinedSink1
+  void sink1() {}
+
+  @UserDefinedSink2
+  void sink2() {}
 
   @UserDefinedSource1
   void source1Ok() {
@@ -50,4 +71,44 @@ class CustomAnnotations {
   }
 
   void safeMethod() {}
+
+  @UserDefinedSource1
+  void source1withSanitizerOk() {
+    canCallSink();
+  }
+
+  @UserDefinedSanitizer
+  void canCallSink() {
+    sink1();
+  }
+
+  interface Callback {
+    public void call();
+  }
+
+  void caller(Callback lambda) {
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda1Bad_FN() {
+    Callback lambda = () -> sink1();
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda2Bad_FN() {
+    caller(() -> sink1());
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda3Ok() {
+    Callback lambda = () -> safeMethod();
+    lambda.call();
+  }
+
+  @UserDefinedSource1
+  void sourceWithLambda4Ok() {
+    caller(() -> safeMethod());
+  }
 }

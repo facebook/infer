@@ -19,5 +19,5 @@
    sedlex.ppx)))
 
 (menhir
- (modules CombinedMenhir)
+ (modules TextualMenhir)
  (flags --explain --unused-tokens))

@@ -9,7 +9,7 @@ open! IStd
 
 exception ParseError of string
 
-type t [@@deriving compare, equal, yojson_of, sexp, hash]
+type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val empty : t
 (** empty qualified name *)
@@ -91,7 +91,3 @@ module Match : sig
 
   val match_qualifiers : quals_matcher -> t -> bool
 end
-
-module Set : PrettyPrintable.PPSet with type elt = t
-
-module Normalizer : HashNormalizer.S with type t = t

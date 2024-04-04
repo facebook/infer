@@ -38,9 +38,12 @@ run_test(Module, Function) ->
     after 10000 -> io:format("timeout~n")
     end.
 
+% See ../README.md for naming conventions
 is_test_func("test_" ++ _) -> true;
 is_test_func("fp_test_" ++ _) -> true;
 is_test_func("fn_test_" ++ _) -> true;
+is_test_func("fpl_test_" ++ _) -> true;
+is_test_func("fnl_test_" ++ _) -> true;
 is_test_func(_) -> false.
 
 run_tests(File) ->

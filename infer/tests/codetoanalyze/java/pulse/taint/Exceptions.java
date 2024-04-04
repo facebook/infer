@@ -117,7 +117,12 @@ class Exceptions {
     throw new RuntimeException(param.toString());
   }
 
-  public static void callSinkWithSourceInsideExceptionObjectBad() {
+  // FN because object initialization of the exception thrown in doThrow(), which is
+  // [java.lang.RuntimeException.<init>], is treated as an unknown function. The unknown function
+  // heuristic is defeated by this form of call. We should revisit the unknown function heuristic to
+  // be more like the taint unknown function heuristic and detect assignment via the first argument,
+  // or just model [<init>] unknown functions separately
+  public static void FN_callSinkWithSourceInsideExceptionObjectBad() {
     try {
       doThrow(InferTaint.inferSecretSource());
     } catch (RuntimeException e) {

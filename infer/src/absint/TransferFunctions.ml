@@ -34,10 +34,14 @@ module type MakeHIL = functor (C : ProcCfg.S) -> sig
   include HIL with module CFG = C
 end
 
-module type DisjunctiveConfig = sig
-  val join_policy : [`UnderApproximateAfter of int]
+type join_policy_t = UnderApproximateAfter of int
 
-  val widen_policy : [`UnderApproximateAfterNumIterations of int]
+type widen_policy_t = UnderApproximateAfterNumIterations of int
+
+module type DisjunctiveConfig = sig
+  val join_policy : join_policy_t
+
+  val widen_policy : widen_policy_t
 end
 
 module type DisjReady = sig
@@ -55,6 +59,8 @@ module type DisjReady = sig
     -> CFG.Node.t
     -> Sil.instr
     -> DisjDomain.t list * NonDisjDomain.t
+
+  val remember_dropped_disjuncts : DisjDomain.t list -> NonDisjDomain.t -> NonDisjDomain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

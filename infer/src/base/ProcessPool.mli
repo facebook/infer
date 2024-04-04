@@ -54,10 +54,8 @@ end
 type (_, _, _) t
 
 module Worker : sig
-  type id
-
-  val id_to_int : id -> int
-  (** returns the number that matches the index of the worker in the array of final results *)
+  (** the number matches the index of the worker in the array of final results *)
+  type id = private int [@@deriving show]
 end
 
 val create :

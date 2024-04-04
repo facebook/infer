@@ -1,1 +1,1 @@
-codetoanalyze/dotnet/box/NullDerefBox.cs, Void TestCodeBox.NullExceptionBoxIntegersBad(), 5, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/box/NullDerefBox.cs, Void TestCodeBox.NullExceptionBoxIntegersBad(), 5, NULLPTR_DEREFERENCE, no_bucket

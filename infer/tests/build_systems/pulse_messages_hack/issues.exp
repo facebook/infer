@@ -1,0 +1,1 @@
+uninit.hack, $root.Uninit::call_get_field_bad, 17, -1, ERROR, PULSE_UNINITIALIZED_CONST, `Uninit::A$static::FIELD` doesn't seem to be initialized. This will cause a runtime error during the call to `Uninit::A$static.get_field`., 

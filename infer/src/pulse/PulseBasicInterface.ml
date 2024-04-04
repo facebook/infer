@@ -10,6 +10,8 @@ open! IStd
 (** Basic Pulse modules that are safe to use in any module *)
 
 module AbstractValue = PulseAbstractValue
+module Access = PulseAccess
+module AccessSet = PulseAccess.Set
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent
@@ -21,7 +23,10 @@ module TaintConfig = PulseTaintConfig
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
+module TransitiveInfo = PulseTransitiveInfo
 module ValueHistory = PulseValueHistory
+module CellId = ValueHistory.CellId
+module ValueOrigin = PulseValueOrigin
 include SatUnsat.Types
 
 (** {2 Enforce short form usage} *)

@@ -117,10 +117,11 @@ class Uninit {
 };
 
 class Uninit2 {
+ public:
   int f1;
   int f2;
 
-  void may_read_f1(std::string s) {
+  void may_read_f1_empty(std::string s) {
     if (s.empty()) {
       int x = f1;
     }
@@ -128,28 +129,28 @@ class Uninit2 {
 
   void not_read_f1_ok() {
     Uninit2 o;
-    o.may_read_f1("non empty string");
+    o.may_read_f1_empty("non empty string");
   }
 
   void read_f1_bad() {
     Uninit2 o;
-    o.may_read_f1(std::string());
+    o.may_read_f1_empty(std::string());
   }
 
-  void may_read_f2(std::string s) {
+  void may_read_f2_length(std::string s) {
     if (s.length() == 0) {
-      int x = f1;
+      int x = f2;
     }
   }
 
   void not_read_f2_ok() {
     Uninit2 o;
-    o.may_read_f2("non empty string");
+    o.may_read_f2_length("non empty string");
   }
 
   void read_f2_bad() {
     Uninit2 o;
-    o.may_read_f2("");
+    o.may_read_f2_length("");
   }
 };
 
@@ -160,3 +161,45 @@ int init_by_capture_good() {
   unknown_call_lambda([&]() { x = 42; });
   return x;
 }
+
+void init_param(int* p) { p[0] = 42; }
+
+int init_in_callee_ok() {
+  int x;
+  init_param(&x);
+  return x;
+}
+
+class Nested {
+ public:
+  int i;
+  Uninit2 mc;
+};
+
+void unknown_init_nested(Nested& x);
+
+int read_nested(Nested& x) {
+  unknown_init_nested(x);
+  return x.mc.f1;
+}
+
+int call_read_nested_ok() {
+  Nested x;
+  return read_nested(x);
+}
+
+class Uninit3 {
+ public:
+  int f1;
+  int f2;
+};
+
+class Uninit4 {
+  Uninit3& uninit3_;
+  int x;
+
+ public:
+  Uninit4(Uninit3& uninit3) : uninit3_{uninit3} { Uninit3 dummy = uninit3_; }
+};
+
+void construct_unint4_ok(Uninit3 uninit3) { Uninit4 uninit4(uninit3); }

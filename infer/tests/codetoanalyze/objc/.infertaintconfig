@@ -16,32 +16,38 @@
       ]
     },
     { "short_description": "Token stored in ivar",
-    "taint_flows": [
-      { "source_kinds": ["Token"],
-        "sink_kinds": ["StoreIvar"]
-      }
-    ]
+      "taint_flows": [
+        { "source_kinds": ["Token"],
+          "sink_kinds": ["StoreIvar"]
+        }
+      ]
     },
     { "short_description": "Token stored in ivar",
-    "taint_flows": [
-      { "source_kinds": ["SimpleSource"],
-        "sink_kinds": ["StoreOtherIvar"]
-      }
-    ]
+      "taint_flows": [
+        { "source_kinds": ["SimpleSource"],
+          "sink_kinds": ["StoreOtherIvar"]
+        }
+      ]
     },
     { "short_description": "Field _elem logged",
-    "taint_flows": [
-      { "source_kinds": ["TaintedField"],
-        "sink_kinds": ["SimpleSink"]
-      }
-    ]
+      "taint_flows": [
+        { "source_kinds": ["TaintedField"],
+          "sink_kinds": ["SimpleSink"]
+        }
+      ]
     },
     { "short_description": "Field _elem used",
-    "taint_flows": [
-      { "source_kinds": ["TaintedField"],
-        "sink_kinds": ["TaintedField"]
-      }
-    ]
+      "taint_flows": [
+        { "source_kinds": ["TaintedField"],
+          "sink_kinds": ["TaintedField"]
+        }
+      ]
+    },
+    { "short_description": "Data in ivar",
+      "taint_flows": [
+        { "source_kinds": ["CacheData"],
+          "sink_kinds": ["Logging"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -84,6 +90,11 @@
         "field_names" : ["_elem"],
         "taint_target": "GetField",
         "kinds": ["TaintedField"]
+      },
+      {
+        "class_names": ["MyData"],
+        "method_names": ["data"],
+        "kinds": ["CacheData"]
       }
   ],
   "pulse-taint-sanitizers": [
@@ -142,6 +153,10 @@
       "field_names" : ["_elem"],
       "taint_target": "GetField",
       "kinds": ["TaintedField"]
+    },
+    {
+      "procedure_regex": "log.*",
+      "kinds": ["Logging"]
     }
   ],
   "pulse-taint-propagators": [

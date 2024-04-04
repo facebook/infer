@@ -16,5 +16,5 @@ end
 
 module CXXTemporaries : sig
   val get_destroyable_temporaries :
-    CContext.t -> Clang_ast_t.stmt list -> CContext.cxx_temporary list
+    CContext.t -> Clang_ast_t.stmt list -> CContext.CXXTemporarySet.t
 end

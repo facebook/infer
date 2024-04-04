@@ -19,6 +19,16 @@ module type S = sig
 
   val pp : F.formatter -> t -> unit
 
+  module Set : PrettyPrintable.PPSet with type elt = t
+
+  val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
+
+  val unsafe_cast_set : AbstractValue.Set.t -> Set.t
+  [@@deprecated
+    "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
+     locally with [@alert \"-deprecated\"]"]
+  [@@inline always]
+
   (** an abstract value that needs to be normalized; just [AbstractValue.t] under the hood too *)
   type needs_canon
 
@@ -37,10 +47,10 @@ module type S = sig
       operate on [AbstractValue.t] instead of [needs_canon] ones. *)
 
   val canon : astate -> needs_canon -> t
-  (** fetch the canonical representative of the given [AbstractValue.t] *)
+  (** fetch the canonical representative of the given [needs_canon] *)
 
   val canon' : astate -> AbstractValue.t -> t
-  (** fetch the canonical representative of the given [needs_canon] *)
+  (** fetch the canonical representative of the given [AbstractValue.t] *)
 
   val canon_fst : astate -> needs_canon * 'a -> t * 'a
 
@@ -62,9 +72,10 @@ module type S = sig
       representative if the value is not immediately made equal to another one... Use with caution! *)
 
   val unsafe_cast : AbstractValue.t -> t
-    [@@deprecated
-      "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
-       locally with [@alert \"-deprecated\"]"]
+  [@@deprecated
+    "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
+     locally with [@alert \"-deprecated\"]"]
+  [@@inline always]
 
   (** {2 Domain elements, revisited to be safe wrt value normalization} *)
 
@@ -85,7 +96,7 @@ module type S = sig
        and type t = PulseBaseMemory.t
        and type Edges.t = PulseBaseMemory.Edges.t
 
-  val canon_access : astate -> PulseBaseMemory.Access.t -> Memory.Access.t
+  val canon_access : astate -> PulseAccess.t -> Memory.Access.t
 
   module Attributes :
     PulseBaseAddressAttributes.S with type key := t and type t = PulseBaseAddressAttributes.t

@@ -5,7 +5,6 @@ SYNOPSIS
        infer run [options]
        infer [options] -- compile command
 
-
 DESCRIPTION
        Calling "infer run [options]" is equivalent to performing the
        following sequence of commands:
@@ -13,12 +12,10 @@ DESCRIPTION
        infer capture [options]
        infer analyze [options]
 
-
-
 OPTIONS
        --capture-block-list json
            Matcher or list of matchers for names of files that should not be
-           captured, hence not analyzed either. Clang and Java only.
+           captured, hence not analyzed either. Clang, Java, and Hack only.
 
        --no-censor-report +issue_type_regex
            For debugging/experimentation only: Specify issues not to be
@@ -52,7 +49,8 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level):             - 0: only basic debugging enabled
+           --debug-level-capture level):
+             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -75,7 +73,7 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac,
+           values: ant, buck1, buck, buck2, gradle, gradlew, java, javac,
            kotlinc, cc, clang, gcc, clang++, c++, g++, hackc, make,
            configure, cmake, waf, mvn, mvnw, ndk-build, python3, rebar3,
            erlc, xcodebuild.
@@ -154,6 +152,13 @@ OPTIONS
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
 
+       --sqlite-max-blob-size int
+           Maximum blob/string size for data written in SQLite.
+
+       --sqlite-mmap-size int
+           Size of memory map for mmaped SQLite databases, zero value
+           disables memory mapping.
+
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
@@ -170,18 +175,23 @@ OPTIONS
 
        --  Stop argument processing, use remaining arguments as a build
            command
+
 BUCK OPTIONS
        --buck-block-list +regex
            Skip capture of files matched by the specified regular expression.
-           Only the clang, non-compilation-database                Buck integration is supported, not Java.
+           Only the clang, non-compilation-database
+                Buck integration is supported, not Java.
 
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression.
 
+       --buck2-bxl-capture-file-block-list +regex
+           Skip capture of files matched by the specified regular expression.
+           Only the clang, Buck2 integration is supported, not Java.
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
-
 
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
@@ -191,11 +201,6 @@ FILES
        .inferconfig
            See the FILES section in the manual of infer(1).
 
-
-
-
 SEE ALSO
        infer-analyze(1), infer-capture(1), infer-report(1)
-
-
 

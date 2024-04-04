@@ -11,35 +11,36 @@ module F = Format
 
 type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
-type fields = field list
-
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
-type java_class_info =
-  { kind: java_class_kind  (** class kind in Java *)
-  ; loc: Location.t option
-        (** None should correspond to rare cases when it was impossible to fetch the location in
-            source file *) }
+type hack_class_kind = Class | Interface | Trait
 
-module Hack : sig
-  type kind = Class | Trait
-
-  type t = {kind: kind; experimental_self_parent_in_trait: bool}
+module ClassInfo : sig
+  type t =
+    | NoInfo
+    | CppClassInfo of {is_trivially_copyable: bool}  (** class kind in C++ *)
+    | JavaClassInfo of
+        { kind: java_class_kind  (** class kind in Java *)
+        ; loc: Location.t option
+              (** None should correspond to rare cases when it was impossible to fetch the location
+                  in source file *) }
+    | HackClassInfo of hack_class_kind
+  [@@deriving equal, hash, show]
 end
 
 (** Type for a structured value. *)
 type t = private
-  { fields: fields  (** non-static fields *)
-  ; statics: fields  (** static fields *)
+  { fields: field list  (** non-static fields *)
+  ; statics: field list  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
   ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
+  ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
-  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *)
-  ; hack_class_info: Hack.t option  (** present if and only if the class is Hack *) }
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
+[@@deriving normalize]
 
 type lookup = Typ.Name.t -> t option
 
@@ -50,15 +51,14 @@ val pp : Pp.env -> Typ.Name.t -> F.formatter -> t -> unit
 
 val internal_mk_struct :
      ?default:t
-  -> ?fields:fields
-  -> ?statics:fields
+  -> ?fields:field list
+  -> ?statics:field list
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
-  -> ?java_class_info:java_class_info
-  -> ?hack_class_info:Hack.t
+  -> ?class_info:ClassInfo.t
   -> ?dummy:bool
   -> ?source_file:SourceFile.t
   -> Typ.name
@@ -93,4 +93,8 @@ val is_not_java_interface : t -> bool
 
 val get_source_file : t -> SourceFile.t option
 
-module Normalizer : HashNormalizer.S with type t = t
+val is_hack_class : t -> bool
+
+val is_hack_interface : t -> bool
+
+val is_hack_trait : t -> bool

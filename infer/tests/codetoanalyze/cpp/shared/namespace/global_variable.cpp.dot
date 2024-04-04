@@ -46,27 +46,27 @@ digraph cfg {
 	
 
 	 "div0_static_field#122314706996311.dca5ebae856e9b40_6" -> "div0_static_field#122314706996311.dca5ebae856e9b40_5" ;
-"div0_static_field_member_access(c.e5b80b8e0139e41b_1" [label="1: Start div0_static_field_member_access\nFormals:  a:f1::A* b:C*\nLocals:  \n  " color=yellow style=filled]
+"div0_static_field_member_access#8.b606a4de40e2ad34_1" [label="1: Start div0_static_field_member_access\nFormals:  a:f1::A* b:C*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_static_field_member_access(c.e5b80b8e0139e41b_1" -> "div0_static_field_member_access(c.e5b80b8e0139e41b_6" ;
-"div0_static_field_member_access(c.e5b80b8e0139e41b_2" [label="2: Exit div0_static_field_member_access \n  " color=yellow style=filled]
+	 "div0_static_field_member_access#8.b606a4de40e2ad34_1" -> "div0_static_field_member_access#8.b606a4de40e2ad34_6" ;
+"div0_static_field_member_access#8.b606a4de40e2ad34_2" [label="2: Exit div0_static_field_member_access \n  " color=yellow style=filled]
 	
 
-"div0_static_field_member_access(c.e5b80b8e0139e41b_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n " shape="box"]
+"div0_static_field_member_access#8.b606a4de40e2ad34_3" [label="3:  Return Stmt \n   n$0=*&#GB<>$f1::A::v:int [line 41, column 15]\n  n$1=*&#GB<>$B::v:int [line 41, column 26]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(c.e5b80b8e0139e41b_3" -> "div0_static_field_member_access(c.e5b80b8e0139e41b_4" ;
-"div0_static_field_member_access(c.e5b80b8e0139e41b_4" [label="4:  Return Stmt \n   *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n " shape="box"]
+	 "div0_static_field_member_access#8.b606a4de40e2ad34_3" -> "div0_static_field_member_access#8.b606a4de40e2ad34_4" ;
+"div0_static_field_member_access#8.b606a4de40e2ad34_4" [label="4:  Return Stmt \n   *&return:int=(1 / ((n$0 + n$1) + 1)) [line 41, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(c.e5b80b8e0139e41b_4" -> "div0_static_field_member_access(c.e5b80b8e0139e41b_2" ;
-"div0_static_field_member_access(c.e5b80b8e0139e41b_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=-2 [line 40, column 3]\n " shape="box"]
+	 "div0_static_field_member_access#8.b606a4de40e2ad34_4" -> "div0_static_field_member_access#8.b606a4de40e2ad34_2" ;
+"div0_static_field_member_access#8.b606a4de40e2ad34_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<>$B::v:int=-2 [line 40, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(c.e5b80b8e0139e41b_5" -> "div0_static_field_member_access(c.e5b80b8e0139e41b_3" ;
-"div0_static_field_member_access(c.e5b80b8e0139e41b_6" [label="6:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=1 [line 39, column 3]\n " shape="box"]
+	 "div0_static_field_member_access#8.b606a4de40e2ad34_5" -> "div0_static_field_member_access#8.b606a4de40e2ad34_3" ;
+"div0_static_field_member_access#8.b606a4de40e2ad34_6" [label="6:  BinaryOperatorStmt: Assign \n   *&#GB<>$f1::A::v:int=1 [line 39, column 3]\n " shape="box"]
 	
 
-	 "div0_static_field_member_access(c.e5b80b8e0139e41b_6" -> "div0_static_field_member_access(c.e5b80b8e0139e41b_5" ;
+	 "div0_static_field_member_access#8.b606a4de40e2ad34_6" -> "div0_static_field_member_access#8.b606a4de40e2ad34_5" ;
 }

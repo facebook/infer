@@ -8,67 +8,63 @@
 open! IStd
 module F = Format
 
-type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
-[@@deriving compare, equal, yojson_of, sexp, hash]
+type captured_data = {capture_mode: CapturedVar.capture_mode; is_weak: bool}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of, sexp, hash]
-
-let pp f fld = F.pp_print_string f fld.field_name
-
-let compare_name = compare_t_ Typ.Name.compare_name
-
-let make class_name field_name = {class_name; field_name}
-
-let fake_capture_field_prefix = "__capture_"
-
-let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
+type t = {class_name: Typ.Name.t; field_name: string; captured_data: captured_data option}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let string_of_capture_mode = function
   | CapturedVar.ByReference ->
-      "by_ref_"
+      "by_ref"
   | CapturedVar.ByValue ->
-      "by_value_"
+      "by_value"
 
 
-let prefix_of_typ typ =
-  match typ.Typ.desc with
-  | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
-      fake_capture_field_weak_prefix
-  | _ ->
-      fake_capture_field_prefix
+let pp_captured_data f (captured_data : captured_data) =
+  F.fprintf f "captured_%s_%s"
+    (string_of_capture_mode captured_data.capture_mode)
+    (if captured_data.is_weak then "_weak" else "")
 
 
-let mk_fake_capture_field ~id typ mode =
-  make
-    (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
-    (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
+let pp f fld =
+  match fld.captured_data with
+  | Some captured_data ->
+      F.fprintf f "%s_%a" fld.field_name pp_captured_data captured_data
+  | None ->
+      F.pp_print_string f fld.field_name
 
 
-let is_fake_capture_field {field_name} =
-  String.is_prefix ~prefix:fake_capture_field_prefix field_name
+type name_ = Typ.name
+
+let compare_name_ = Typ.Name.compare_name
+
+let compare_name f f' =
+  [%compare: name_ * string * captured_data option]
+    (f.class_name, f.field_name, f.captured_data)
+    (f'.class_name, f'.field_name, f'.captured_data)
 
 
-let is_fake_capture_field_weak {field_name} =
-  String.is_prefix ~prefix:fake_capture_field_weak_prefix field_name
+let make ?captured_data class_name field_name = {class_name; field_name; captured_data}
+
+let mk_capture_field_in_closure var_name captured_data =
+  (* We use this type as before rather than the lambda struct name because
+     when we want to create the same names in Pulse we don't have easy access
+     to that lambda struct name. The struct name as part of the field name is
+     there just to help with inheritance anyway and is not used otherwise. *)
+  let class_tname = Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]) in
+  let name = Printf.sprintf "%s" (Mangled.to_string var_name) in
+  make ~captured_data class_tname name
 
 
-let is_fake_capture_field_by_ref {field_name} =
-  let capture_by_ref_str = string_of_capture_mode ByReference in
-  let fake_capture_field_by_ref_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_prefix capture_by_ref_str
-  in
-  let fake_capture_field_weak_by_ref_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_weak_prefix capture_by_ref_str
-  in
-  String.is_prefix ~prefix:fake_capture_field_by_ref_prefix field_name
-  || String.is_prefix ~prefix:fake_capture_field_weak_by_ref_prefix field_name
+let is_capture_field_in_closure {captured_data} = Option.is_some captured_data
+
+let is_weak_capture_field_in_closure {captured_data} =
+  Option.exists captured_data ~f:(fun {is_weak} -> is_weak)
 
 
-let get_capture_field_position ({field_name} as field) =
-  if is_fake_capture_field field then
-    String.rsplit2 field_name ~on:'_'
-    |> Option.bind ~f:(fun (_, str_pos) -> int_of_string_opt str_pos)
-  else None
+let is_capture_field_in_closure_by_ref {captured_data} =
+  Option.exists captured_data ~f:(fun {capture_mode} -> CapturedVar.is_captured_by_ref capture_mode)
 
 
 let get_class_name {class_name} = class_name
@@ -91,7 +87,7 @@ module T = struct
   let pp = pp
 end
 
-module Set = Caml.Set.Make (T)
+module Set = PrettyPrintable.MakePPSet (T)
 module Map = PrettyPrintable.MakePPMap (T)
 
 let join ~sep c f = String.concat ~sep [c; f]
@@ -117,7 +113,7 @@ let to_simplified_string ({class_name; field_name} : t) =
         QualifiedCppName.extract_last name |> Option.map ~f:fst
     | CSharpClass name ->
         Some (CSharpClassName.classname name)
-    | ErlangType _ ->
+    | ErlangType _ | ObjcBlock _ | CFunction _ ->
         None
     | HackClass name ->
         Some (HackClassName.classname name)
@@ -147,14 +143,3 @@ let is_java_outer_instance ({field_name} as field) =
   let last_char = field_name.[String.length field_name - 1] in
   Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
-
-
-module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
-
-  let normalize t =
-    let class_name = Typ.NameNormalizer.normalize t.class_name in
-    let field_name = HashNormalizer.StringNormalizer.normalize t.field_name in
-    if phys_equal class_name t.class_name && phys_equal field_name t.field_name then t
-    else {class_name; field_name}
-end)

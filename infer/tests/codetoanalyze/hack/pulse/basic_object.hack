@@ -12,17 +12,17 @@ class A {
     $this->f1 = $f1;
   }
 
-  public function getField1() : int {
+  public function getField1(): int {
     return $this->f1;
   }
 
-  public function setField1(int $f1) : void {
+  public function setField1(int $f1): void {
     $this->f1 = $f1;
   }
 
 }
 
-class B extends A { }
+class B extends A {}
 
 class C extends B {
   private int $f2;
@@ -32,11 +32,11 @@ class C extends B {
     $this->f2 = $f2;
   }
 
-  public function getField2() : int {
+  public function getField2(): int {
     return $this->f2;
   }
 
-  public function setField2(int $f2) : void {
+  public function setField2(int $f2): void {
     $this->f2 = $f2;
   }
 
@@ -60,7 +60,7 @@ final class Derived extends Base {
     parent::__construct($f);
   }
 
-  public function copy() : this {
+  public function copy(): this {
     return parent::copy();
   }
 }
@@ -115,7 +115,7 @@ class Main {
   // testing parent::__constuctor call
   public function set_and_get_C_bad(int $u, int $v, int $x, int $y): void {
     $tainted = \Level1\taintSource();
-    $a = new C($u,$v);
+    $a = new C($u, $v);
     $i0 = $a->getField1();
     $j0 = $a->getField2();
     $a->setField1($x);
@@ -129,7 +129,7 @@ class Main {
 
   public function set_and_get_C_good(int $u, int $v, int $x, int $y): void {
     $tainted = \Level1\taintSource();
-    $a = new C($u,$v);
+    $a = new C($u, $v);
     $i0 = $a->getField1();
     $j0 = $a->getField2();
     $a->setField1($x);

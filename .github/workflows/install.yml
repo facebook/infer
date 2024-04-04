@@ -99,7 +99,7 @@ jobs:
       - name: Compute hash of clang installation
         id: clang-hash
         run: |
-          echo "::set-output name=value::$(./facebook-clang-plugins/clang/setup.sh --clang-hash)"
+          echo "value=$(./facebook-clang-plugins/clang/setup.sh --clang-hash)" >> $GITHUB_OUTPUT
 
       - name: Attempt to get clang from the cache
         id: cache-clang
@@ -129,9 +129,8 @@ jobs:
 
       - name: Install ocamlformat
         run: |
-          opam pin $(cat opam/ocamlformat) --no-action
           opam install --deps-only --locked opam/ocamlformat.opam.locked
-          opam install ocamlformat
+          opam install ocamlformat.$(grep -e '^version:' ./opam/ocamlformat.opam.locked | cut -d ' ' -f 2 | tr -d \")
           opam exec -- ocamlformat --version
 
       - name: Test infer

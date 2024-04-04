@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+{
+  "fieldnames_to_monitor": [],
+  "procnames_to_monitor": [
+    {
+      "class_names": ["codetoanalyze.java.infer.TransitiveAccess$Sinks"],
+      "method_names": ["sink"]
+    },
+    {
+      "annotations": ["TransitiveAccess$SinkAnno"]
+    }
+  ],
+  "contexts": [
+    {
+      "initial_caller_class_extends": ["codetoanalyze.java.infer.TransitiveAccess$Base"],
+      "initial_caller_class_does_not_extend": [],
+      "final_class_only": false,
+      "tag": "Reachability example with extends",
+      "description": "Sink is called from matching context"
+    },
+    {
+      "annotations": ["TransitiveAccess$SourceAnno"],
+      "tag": "Reachability example with annotation",
+      "description": "Sink is called from matching source"
+    }
+  ]
+}

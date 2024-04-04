@@ -7,7 +7,9 @@
 
 open! IStd
 
-let buck_infer_deps_file_name = "infer-deps.txt"
+let db_writer_socket_name = "sqlite_write_socket"
+
+let infer_deps_file_name = "infer-deps.txt"
 
 type id =
   | AllocationTraces
@@ -25,10 +27,11 @@ type id =
   | ChangedFunctions
   | ChangedFunctionsTempResults
   | DatalogFacts
+  | DBWriterSocket
   | Debug
   | Differential
   | DuplicateFunctions
-  | JavaGlobalTypeEnvironment
+  | GlobalTypeEnvironment
   | Logs
   | MissingSourceFiles
   | MissingProcedures
@@ -43,6 +46,7 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
+  | Stats
   | SyntacticDependencyGraphDot
   | Temporary
   | TestDeterminatorReport
@@ -132,7 +136,7 @@ let of_id = function
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
   | CaptureDependencies ->
-      { rel_path= buck_infer_deps_file_name
+      { rel_path= infer_deps_file_name
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete
@@ -148,6 +152,12 @@ let of_id = function
       ; kind= Directory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Keep
+      ; before_new_capture= Delete }
+  | DBWriterSocket ->
+      { rel_path= db_writer_socket_name
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete
       ; before_new_capture= Delete }
   | Debug ->
       { rel_path= "captured"
@@ -173,7 +183,7 @@ let of_id = function
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
-  | JavaGlobalTypeEnvironment ->
+  | GlobalTypeEnvironment ->
       { rel_path= ".global.tenv"
       ; kind= File
       ; before_incremental_analysis= Keep
@@ -263,6 +273,12 @@ let of_id = function
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
+  | Stats ->
+      { rel_path= "stats"
+      ; kind= Directory
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete
+      ; before_new_capture= Delete }
   | SyntacticDependencyGraphDot ->
       { rel_path= "syntactic_dependency_graph.dot"
       ; kind= File
@@ -299,14 +315,14 @@ let get_filtered_paths ~results_dir ~f =
       if f entry then Some (path_of_entry ~results_dir entry) else None )
 
 
-let to_delete_before_incremental_capture_and_analysis ~results_dir =
+let to_keep_before_incremental_capture_and_analysis ~results_dir =
   get_filtered_paths ~results_dir ~f:(fun {before_incremental_analysis; _} ->
-      equal_cleanup_action before_incremental_analysis Delete )
+      equal_cleanup_action before_incremental_analysis Keep )
 
 
-let to_delete_before_caching_capture ~results_dir =
+let to_keep_before_caching_capture ~results_dir =
   get_filtered_paths ~results_dir ~f:(fun {before_caching_capture; _} ->
-      equal_cleanup_action before_caching_capture Delete )
+      equal_cleanup_action before_caching_capture Keep )
 
 
 let to_keep_before_new_capture ~results_dir =

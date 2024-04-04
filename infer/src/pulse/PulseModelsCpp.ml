@@ -6,16 +6,16 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
-
-let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
+module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 (* NOTE: The semantic models do not check overflow for now. *)
-let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model =
+let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model_no_non_disj =
  fun {path; location} astate ->
   let bop_addr = AbstractValue.mk_fresh () in
   let<**> astate, bop_addr = PulseArithmetic.eval_binop_absval bop_addr binop x y astate in
@@ -40,26 +40,15 @@ let delete_array deleted_arg : model =
  fun model_data astate -> Basic.free_or_delete `Delete CppDeleteArray deleted_arg model_data astate
 
 
-let new_ type_name : model =
- fun model_data astate ->
-  let<++> astate =
-    (* Java, Hack and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
-       builtin for [\[Class new\]]) *)
-    let proc_name = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
-    if
-      Procname.is_java proc_name || Procname.is_csharp proc_name || Procname.is_hack proc_name
-      || Procname.is_python proc_name
-    then
-      Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
-    else
-      (* C++ *)
-      Basic.alloc_not_null ~initialize:true ~desc:"new" CppNew (Some type_name) model_data astate
-  in
-  astate
+let new_ type_exp =
+  let open PulseModelsDSL.Syntax in
+  start_model
+  @@ let* ret_val = new_ type_exp in
+     assign_ret ret_val
 
 
 (* TODO: actually allocate an array  *)
-let new_array type_name : model =
+let new_array type_name : model_no_non_disj =
  fun model_data astate ->
   let<++> astate =
     (* Java, Hack and C++ [new\[\]] share the same builtin *)
@@ -78,7 +67,7 @@ let placement_new =
   let std_nothrow_t_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::nothrow_t"] in
   fun actuals {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "<placement new>()" in
-    ( match (List.rev actuals : _ ProcnameDispatcher.Call.FuncArg.t list) with
+    ( match (List.rev actuals : _ FuncArg.t list) with
     | {typ= {desc= Tstruct (CppClass {name})}} :: _
       when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
         PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
@@ -87,6 +76,20 @@ let placement_new =
     | _ ->
         PulseOperations.havoc_id ret_id (Hist.single_event path event) astate )
     |> Basic.ok_continue
+
+
+let infer_structured_binding var {FuncArg.exp= arg; arg_payload} _ astate =
+  let astate =
+    match (var, arg) with
+    | Exp.Lvar pvar, Var arg ->
+        AbductiveDomain.Stack.remove_vars [Var.of_id arg] astate
+        |> AbductiveDomain.Stack.add (Var.of_pvar pvar) arg_payload
+    | _ ->
+        L.internal_error "Unexpected arguments for c17_structured_binding: %a, %a" Exp.pp var Exp.pp
+          arg ;
+        astate
+  in
+  Basic.ok_continue astate
 
 
 module AtomicInteger = struct
@@ -107,7 +110,7 @@ module AtomicInteger = struct
     (astate, int_addr, int_val)
 
 
-  let constructor this_address init_value : model =
+  let constructor this_address init_value : model_no_non_disj =
    fun {path; location} astate ->
     let this =
       (AbstractValue.mk_fresh (), Hist.single_call path location "std::atomic::atomic()")
@@ -136,7 +139,7 @@ module AtomicInteger = struct
     PulseOperations.write_id ret_id (ret_int, hist) astate
 
 
-  let fetch_add this (increment, _) _memory_ordering : model =
+  let fetch_add this (increment, _) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_add()" in
     let<++> astate =
@@ -146,7 +149,7 @@ module AtomicInteger = struct
     astate
 
 
-  let fetch_sub this (increment, _) _memory_ordering : model =
+  let fetch_sub this (increment, _) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_sub()" in
     let<++> astate =
@@ -156,7 +159,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_plus_plus_pre this : model =
+  let operator_plus_plus_pre this : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator++()" in
     let<++> astate =
@@ -166,7 +169,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_plus_plus_post this _int : model =
+  let operator_plus_plus_post this _int : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator++(T)" in
     let<++> astate =
@@ -176,7 +179,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_minus_minus_pre this : model =
+  let operator_minus_minus_pre this : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator--()" in
     let<++> astate =
@@ -186,7 +189,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_minus_minus_post this _int : model =
+  let operator_minus_minus_post this _int : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator--(T)" in
     let<++> astate =
@@ -196,7 +199,7 @@ module AtomicInteger = struct
     astate
 
 
-  let load_instr model_desc this _memory_ordering_opt : model =
+  let load_instr model_desc this _memory_ordering_opt : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<+> astate, _int_addr, (int, hist) = load_backing_int path location this astate in
     PulseOperations.write_id ret_id (int, Hist.add_call path location model_desc hist) astate
@@ -223,7 +226,7 @@ module AtomicInteger = struct
     PulseOperations.write_deref path location ~ref:int_field ~obj:new_value astate
 
 
-  let store this_address (new_value, new_hist) _memory_ordering : model =
+  let store this_address (new_value, new_hist) _memory_ordering : model_no_non_disj =
    fun {path; location} astate ->
     let<+> astate =
       store_backing_int path location this_address
@@ -233,7 +236,7 @@ module AtomicInteger = struct
     astate
 
 
-  let exchange this_address (new_value, new_hist) _memory_ordering : model =
+  let exchange this_address (new_value, new_hist) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::exchange()" in
     let<*> astate, _int_addr, (old_int, old_hist) =
@@ -248,135 +251,157 @@ module AtomicInteger = struct
 end
 
 module BasicString = struct
-  let internal_string_access =
-    HilExp.Access.FieldAccess PulseOperations.ModeledField.internal_string
-
-
-  let to_internal_string path location bstring astate =
-    PulseOperations.eval_access path Read location bstring internal_string_access astate
-
-
-  (* constructor from constant string *)
-  let constructor_from_constant ~desc (this, hist) init_hist : model =
-   fun {path; location} astate ->
+  let constructor_from_constant_dsl ~desc (this, hist) init_hist : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* {path; location} = get_data in
     let event = Hist.call_event path location desc in
-    let<+> astate =
-      PulseOperations.write_field path location
-        ~ref:(this, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+    let this_hist = (this, Hist.add_event path event hist) in
+    let* () = write_deref_field ~ref:this_hist ~obj:init_hist ModeledField.internal_string in
+    let* s_opt = as_constant_string init_hist in
+    let* len =
+      exec_operation (fun astate ->
+          match s_opt with
+          | Some s ->
+              let astate, len =
+                String.length s |> IntLit.of_int |> PulseArithmetic.absval_of_int astate
+              in
+              (len, astate)
+          | None ->
+              (AbstractValue.mk_fresh_restricted (), astate) )
     in
-    astate
+    write_field ~ref:this_hist ~obj:(len, snd init_hist) ModeledField.string_length
 
 
-  let constructor (this, hist) init_hist : model =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location "std::basic_string::basic_string()" in
-    let<*> astate, init_data = to_internal_string path location init_hist astate in
-    let<*> astate, copied_data = PulseOperations.shallow_copy path location init_data astate in
-    let<+> astate =
-      PulseOperations.write_field path location
-        ~ref:(this, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:copied_data astate
-    in
-    astate
+  (** constructor from constant string *)
+  let constructor_from_constant ~desc this_hist init_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ constructor_from_constant_dsl ~desc this_hist init_hist
 
+
+  let default_constructor ~desc this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
+    let* init_hist = eval_const_string "" in
+    constructor_from_constant_dsl ~desc this_hist init_hist
+
+
+  let copy_constructor ~desc (this, hist) src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location desc in
+       let this_hist = (this, Hist.add_event path event hist) in
+       let* src_string =
+         eval_deref_access Read src_hist (FieldAccess ModeledField.internal_string)
+       in
+       let* src_length = eval_access Read src_hist (FieldAccess ModeledField.string_length) in
+       let* () = write_deref_field ~ref:this_hist ~obj:src_string ModeledField.internal_string in
+       write_field ~ref:this_hist ~obj:src_length ModeledField.string_length
+
+
+  let constructor_rev ~desc init this : model = copy_constructor ~desc this init
 
   let data this_hist ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location desc in
-    let<+> astate, (string, hist) = to_internal_string path location this_hist astate in
-    PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location desc in
+       let* this_string, this_string_hist =
+         eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+       in
+       assign_ret (this_string, Hist.add_event path event this_string_hist)
 
 
-  let iterator_common ((this, _) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
-      astate =
+  let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) ~desc :
+      (ValueHistory.event * PulseModelsDSL.aval * PulseModelsDSL.aval) PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* {path; location} = get_data in
     let event = Hist.call_event path location desc in
-    let* astate, backing_ptr =
-      PulseOperations.eval_access path Read location iter_hist
-        (FieldAccess GenericArrayBackedCollection.field) astate
+    let* backing_ptr =
+      eval_access Read iter_hist (FieldAccess GenericArrayBackedCollection.field)
     in
-    let+ astate, internal_string = to_internal_string path location this_hist astate in
-    let astate =
-      AbductiveDomain.AddressAttributes.add_one iter (PropagateTaintFrom [{v= this}]) astate
+    let* internal_string =
+      eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string)
     in
-    (astate, event, backing_ptr, internal_string)
+    let* () =
+      exec_command
+        (AbductiveDomain.AddressAttributes.add_one iter
+           (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
+    in
+    ret (event, backing_ptr, internal_string)
 
 
   let begin_ this_hist iter_hist ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let<*> astate, event, backing_ptr, (string, hist) =
-      iterator_common this_hist iter_hist ~desc model_data astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:backing_ptr
-        ~obj:(string, Hist.add_event path event hist)
-        astate
-    in
-    astate
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* event, backing_ptr, (string, hist) = iterator_common this_hist iter_hist ~desc in
+       let* {path} = get_data in
+       write_deref ~ref:backing_ptr ~obj:(string, Hist.add_event path event hist)
 
 
   let end_ this_hist iter_hist ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let<*> astate, event, backing_ptr, string_hist =
-      iterator_common this_hist iter_hist ~desc model_data astate
-    in
-    let<*> astate, (last, hist) =
-      GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:backing_ptr
-        ~obj:(last, Hist.add_event path event hist)
-        astate
-    in
-    astate
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let* event, backing_ptr, string_hist = iterator_common this_hist iter_hist ~desc in
+       let* last, hist =
+         exec_partial_operation (fun astate ->
+             Sat
+               (GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist
+                  astate ) )
+       in
+       write_deref ~ref:backing_ptr ~obj:(last, Hist.add_event path event hist)
 
 
   let destructor this_hist : model =
-   fun {path; location} astate ->
-    let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
-    let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
-    let string_hist = Hist.add_event path call_event string_hist in
-    let<+> astate =
-      PulseOperations.check_and_invalidate path
-        (MemoryAccess
-           {pointer= this_hist; access= internal_string_access; hist_obj_default= string_hist} )
-        location CppDelete (string_addr, string_hist) astate
-    in
-    astate
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
+       let* string_addr, string_hist =
+         eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+       in
+       let string_hist = Hist.add_event path call_event string_hist in
+       exec_partial_command (fun astate ->
+           Sat
+             (PulseOperations.check_and_invalidate path
+                (MemoryAccess
+                   { pointer= this_hist
+                   ; access= FieldAccess ModeledField.internal_string
+                   ; hist_obj_default= string_hist } )
+                location CppDelete (string_addr, string_hist) astate ) )
 
 
   let empty this_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "std::basic_string::empty()" in
-    let<*> astate, internal_string = to_internal_string path location this_hist astate in
-    let<*> astate, (len_addr, hist) =
-      PulseOperations.eval_access path Read location internal_string string_length_access astate
-    in
-    let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), Hist.add_event path event hist) in
-    let astate_empty =
-      let** astate = PulseArithmetic.prune_eq_zero len_addr astate in
-      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
-      PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
-    in
-    let astate_non_empty =
-      let** astate = PulseArithmetic.prune_positive len_addr astate in
-      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
-      PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
-    in
-    SatUnsat.to_list astate_empty @ SatUnsat.to_list astate_non_empty
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location "std::basic_string::empty()" in
+       let* len = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
+       let* string = eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string) in
+       let ret_hist = Hist.add_event path event (snd string) in
+       disjuncts
+         [ (let* () = prune_eq_zero len in
+            let* () = prune_eq_string string "" in
+            let* ret_v = aval_of_int ret_hist 1 in
+            assign_ret ret_v )
+         ; (let* () = prune_positive len in
+            let* () = prune_ne_string string "" in
+            let* ret_v = aval_of_int ret_hist 0 in
+            assign_ret ret_v ) ]
 
 
   let length this_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "std::basic_string::length()" in
-    let<*> astate, internal_string = to_internal_string path location this_hist astate in
-    let<+> astate, (length, hist) =
-      PulseOperations.eval_access path Read location internal_string string_length_access astate
-    in
-    PulseOperations.write_id ret_id (length, Hist.add_event path event hist) astate
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* {path; location} = get_data in
+       let event = Hist.call_event path location "std::basic_string::length()" in
+       let* length, hist = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
+       assign_ret (length, Hist.add_event path event hist)
 
 
-  let address ~desc ptr_hist (idx, _) : model =
+  let address ~desc ptr_hist (idx, _) : model_no_non_disj =
    fun ({ret= ret_id, _} as model_env) astate ->
     let astate_zero_idx =
       let++ astate = PulseArithmetic.prune_eq_zero idx astate in
@@ -390,41 +415,54 @@ module BasicString = struct
 end
 
 module Function = struct
-  let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
-      model =
+  let operator_call FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
    fun { path
        ; analysis_data= {analyze_dependency; tenv; proc_desc}
        ; location
-       ; ret= (ret_id, _) as ret } astate ->
+       ; ret= (ret_id, _) as ret } astate non_disj ->
+    let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
     in
     let<*> astate = PulseOperations.Closures.check_captured_addresses path location lambda astate in
-    match AddressAttributes.get_closure_proc_name lambda astate with
-    | None ->
+    let callee_proc_name_opt =
+      match AddressAttributes.get_dynamic_type lambda astate with
+      | Some {typ= {desc= Typ.Tstruct name}} -> (
+        match Tenv.lookup tenv name with
+        | Some tstruct ->
+            List.find ~f:(fun m -> Procname.is_cpp_lambda m) tstruct.Struct.methods
+        | None ->
+            None )
+      | _ ->
+          None
+    in
+    match callee_proc_name_opt with
+    | Some callee_proc_name ->
+        let actuals =
+          (lambda_ptr_hist, typ)
+          :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
+        in
+        let astate, non_disj, _, _ =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+            location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+            astate non_disj
+        in
+        (astate, non_disj)
+    | _ ->
         (* we don't know what proc name this lambda resolves to *)
         let desc = "std::function::operator()" in
         let hist = Hist.single_event path (Hist.call_event path location desc) in
         let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate = AbductiveDomain.add_need_dynamic_type_specialization lambda astate in
         let astate =
           let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
-          List.fold actuals ~init:astate
-            ~f:(fun acc ProcnameDispatcher.Call.FuncArg.{arg_payload= actual, _} ->
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
               AddressAttributes.add_one actual unknown_effect acc )
         in
-        [Ok (ContinueProgram astate)]
-    | Some callee_proc_name ->
-        let actuals =
-          (lambda_ptr_hist, typ)
-          :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-                 (arg_payload, typ) )
-        in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-        |> fst3
+        ([Ok (ContinueProgram astate)], non_disj)
 
 
-  let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
+  let assign dest FuncArg.{arg_payload= src; typ= src_typ} ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     if PulseArithmetic.is_known_zero astate (fst src) then
@@ -444,7 +482,7 @@ module Function = struct
 end
 
 module Std = struct
-  let make_move_iterator vector : model =
+  let make_move_iterator vector : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<+> astate, (backing_array, _) =
       PulseOperations.eval_deref_access path NoAccess location vector
@@ -477,7 +515,7 @@ module Vector = struct
       astate
 
 
-  let init_list_constructor this init_list ~desc : model =
+  let init_list_constructor this init_list ~desc : model_no_non_disj =
    fun {path; location} astate ->
     (* missing a more precise model for std::initializer_list *)
     let<**> astate =
@@ -488,7 +526,7 @@ module Vector = struct
     astate
 
 
-  let init_copy_constructor this init_vector ~desc : model =
+  let init_copy_constructor this init_vector ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<*> astate, init_list =
       PulseOperations.eval_deref_access path Read location init_vector
@@ -505,7 +543,7 @@ module Vector = struct
     astate
 
 
-  let invalidate_references vector_f vector : model =
+  let invalidate_references vector_f vector : model_no_non_disj =
    fun {path; location} astate ->
     let event =
       Hist.call_event path location
@@ -517,13 +555,13 @@ module Vector = struct
     astate
 
 
-  let invalidate_references_with_ret vector_f vector : model =
+  let invalidate_references_with_ret vector_f vector : model_no_non_disj =
    fun ({ret= ret_id, _} as model_data) astate ->
     PulseOperations.write_id ret_id vector astate
     |> invalidate_references vector_f vector model_data
 
 
-  let at ~desc vector index : model =
+  let at ~desc vector index : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate, (addr, hist) =
@@ -532,7 +570,7 @@ module Vector = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
-  let vector_begin vector iter : model =
+  let vector_begin vector iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::vector::begin()" in
     let pointer_hist = Hist.add_event path event (snd iter) in
@@ -556,7 +594,7 @@ module Vector = struct
     astate
 
 
-  let vector_end vector iter : model =
+  let vector_end vector iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::vector::end()" in
     let<*> astate, (arr_addr, _) =
@@ -578,7 +616,7 @@ module Vector = struct
     astate
 
 
-  let reserve vector : model =
+  let reserve vector : model_no_non_disj =
    fun {path; location} astate ->
     let hist = Hist.single_call path location "std::vector::reserve()" in
     let<+> astate =
@@ -588,13 +626,13 @@ module Vector = struct
     astate
 
 
-  let pop_back vector ~desc : model =
+  let pop_back vector ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<++> astate = GenericArrayBackedCollection.decrease_size path location vector ~desc astate in
     astate
 
 
-  let push_back_common vector ~vector_f ~desc : model =
+  let push_back_common vector ~vector_f ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
     let<+> astate =
@@ -621,6 +659,215 @@ module Vector = struct
   let push_back vector ~desc = push_back_common vector ~vector_f:None ~desc
 end
 
+module GenericMapCollection = struct
+  let pair_field = Fieldname.make PulseOperations.pulse_model_type "__infer_map_pair"
+
+  let pair_access = MemoryAccess.FieldAccess pair_field
+
+  let pair_type key_t value_t =
+    Typ.CppClass
+      { name= QualifiedCppName.of_qual_string "std::pair"
+      ; template_spec_info=
+          Template {mangled= None; args= [TType (Typ.set_to_const key_t); TType value_t]}
+      ; is_union= false }
+
+
+  let pair_first_field key_t value_t = Fieldname.make (pair_type key_t value_t) "first"
+
+  let pair_first_access key_t value_t = MemoryAccess.FieldAccess (pair_first_field key_t value_t)
+
+  let pair_second_field key_t value_t = Fieldname.make (pair_type key_t value_t) "second"
+
+  let pair_second_access key_t value_t = MemoryAccess.FieldAccess (pair_second_field key_t value_t)
+
+  let extract_key_and_value_types (map : 'a FuncArg.t) =
+    match map.typ.desc with
+    | Typ.Tptr
+        ( { desc=
+              Tstruct
+                (CppClass {template_spec_info= Template {args= TType key_t :: TType value_t :: _}})
+          }
+        , _ ) ->
+        Some (key_t, value_t)
+    | _ ->
+        (* This should never happen, as we already know from using capt_arg_of_typ that map
+           is of some map type, hence it should have a first and second template arguments
+           mapping to key and value types respectively. *)
+        L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp_full Pp.text) map.typ ;
+        None
+
+
+  let unwrap_pointer_to_struct_type (typ : Typ.t) =
+    match typ.desc with Tptr ({desc= Tstruct pointee}, _) -> pointee | _ -> assert false
+
+
+  let return_value_reference_dsl ?desc ({FuncArg.arg_payload} as map) :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let* pair = eval_access Read arg_payload pair_access in
+        let* value_ref = eval_access ?desc Read pair (pair_second_access key_t value_t) in
+        assign_ret value_ref )
+
+
+  let return_value_reference desc map =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ return_value_reference_dsl ~desc map
+
+
+  let return_it_dsl ?desc arg_payload it : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* pair = eval_access ?desc Read arg_payload pair_access in
+    write_deref ~ref:it ~obj:pair
+
+
+  let return_it desc arg_payload it =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ return_it_dsl ~desc arg_payload it
+
+
+  (* A number of map functions return pair<iterator, bool>. *)
+  (* Make an iterator the first field of a pair and return it. *)
+  let return_it_pair_first_dsl desc map_payload FuncArg.{arg_payload; typ} :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* it = mk_fresh ~model_desc:desc () in
+    let* pair = eval_access Read map_payload pair_access in
+    let* () = write_deref ~ref:it ~obj:pair in
+    write_field ~ref:arg_payload ~obj:it
+      (Fieldname.make (unwrap_pointer_to_struct_type typ) "first")
+
+
+  let reset_backing_fields_dsl ({FuncArg.arg_payload} as map) desc : unit PulseModelsDSL.model_monad
+      =
+    let open PulseModelsDSL.Syntax in
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let* first = mk_fresh ~model_desc:desc () in
+        let* second = mk_fresh ~model_desc:desc () in
+        let* pair = mk_fresh ~model_desc:desc () in
+        let* () = write_field ~ref:pair ~obj:first (pair_first_field key_t value_t) in
+        let* () = write_field ~ref:pair ~obj:second (pair_second_field key_t value_t) in
+        write_field ~ref:arg_payload ~obj:pair pair_field )
+
+
+  let update_last_dsl arg_payload key_payload : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    AddressAttributes.add_one (fst arg_payload) (LastLookup (fst key_payload)) |> exec_command
+
+
+  let update_last arg_payload key_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ update_last_dsl arg_payload key_payload
+
+
+  let check_and_update_last_dsl arg_payload key_payload : bool PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* last_lookup = AddressAttributes.get_last_lookup (fst arg_payload) |> exec_pure_operation in
+    let* () = update_last_dsl arg_payload key_payload in
+    ret (Option.value_map last_lookup ~default:false ~f:(AbstractValue.equal (fst key_payload)))
+
+
+  let constructor map_t classname map =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ reset_backing_fields_dsl map
+         (Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname)
+
+
+  let invalidate_references_dsl map_t map_f ({FuncArg.arg_payload} as map) :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let desc =
+          Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+        in
+        let cause = Invalidation.CppMap (map_t, map_f) in
+        let* pair = eval_access NoAccess arg_payload pair_access in
+        let* () = invalidate_access cause arg_payload pair_access in
+        let* () = invalidate_access cause pair (pair_first_access key_t value_t) in
+        let* () = invalidate_access cause pair (pair_second_access key_t value_t) in
+        reset_backing_fields_dsl map desc )
+
+
+  let invalidate_references map_t map_f map =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ invalidate_references_dsl map_t map_f map
+
+
+  let operator_bracket map_t ({FuncArg.arg_payload} as map) key_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* double_lookup = check_and_update_last_dsl arg_payload key_payload in
+       let* () =
+         if double_lookup then ret () else invalidate_references_dsl map_t OperatorBracket map
+       in
+       return_value_reference_dsl map
+
+
+  let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
+    (* We expect the last argument to be the returned iterator. *)
+    (* This will only throw if SIL intermediate representation changes. *)
+    let it = (List.last_exn args).FuncArg.arg_payload in
+    let* () = invalidate_references_dsl map_t map_f map in
+    return_it_dsl arg_payload it
+
+
+  let emplace map_t map_f ({FuncArg.arg_payload} as map) args =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
+    let desc =
+      Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+    in
+    let last_arg = List.last_exn args in
+    let* () = invalidate_references_dsl map_t map_f map in
+    return_it_pair_first_dsl desc arg_payload last_arg
+
+
+  let try_emplace ~hinted map_t map_f map args =
+    (* The hinted version returns an iterator, other overloads a pair<iterator, bool>. *)
+    if hinted then emplace_hint map_t map_f map args else emplace map_t map_f map args
+
+
+  let insert ~hinted map_t map_f map return_arg = try_emplace ~hinted map_t map_f map [return_arg]
+
+  let find map_t arg_payload key_payload it =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* () = update_last_dsl arg_payload key_payload in
+       return_it_dsl
+         ~desc:(Format.asprintf "%a::find" Invalidation.pp_map_type map_t)
+         arg_payload it
+
+
+  let swap map_t arg_payload other_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
+    let desc = Format.asprintf "%a::swap" Invalidation.pp_map_type map_t in
+    let* arg_pair = eval_access ~desc Read arg_payload pair_access in
+    let* other_pair = eval_access ~desc Read other_payload pair_access in
+    let* () = write_field ~ref:arg_payload ~obj:other_pair pair_field in
+    write_field ~ref:other_payload ~obj:arg_pair pair_field
+
+
+  let iterator_star desc it =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* pair = eval_access ~desc Read it Dereference in
+       assign_ret pair
+
+
+  let iterator_copy desc it other =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* pair = eval_access ~desc Read other Dereference in
+       write_deref ~ref:it ~obj:pair
+end
+
 let get_cpp_matchers config ~model =
   let open ProcnameDispatcher.Call in
   let cpp_separator_regex = Str.regexp_string "::" in
@@ -636,10 +883,11 @@ let get_cpp_matchers config ~model =
 
 let abort_matchers : matcher list =
   get_cpp_matchers ~model:(fun _ -> Basic.early_exit) Config.pulse_model_abort
+  |> List.map ~f:(ProcnameDispatcher.Call.map_matcher ~f:lift_model)
 
 
 module Pair = struct
-  let make_pair type1 type2 value1 value2 (return_param, _) : model =
+  let make_pair type1 type2 value1 value2 (return_param, _) : model_no_non_disj =
     let make_pair_field =
       Fieldname.make
         (Typ.CppClass
@@ -649,8 +897,11 @@ module Pair = struct
     in
     let first = make_pair_field "first" in
     let second = make_pair_field "second" in
+    let desc = "std::make_pair()" in
     fun {path; location} astate ->
-      let hist = Hist.single_call path location "std::make_pair()" in
+      let hist = Hist.single_call path location desc in
+      let<**> astate, value1 = Basic.deep_copy path location ~value:value1 ~desc astate in
+      let<**> astate, value2 = Basic.deep_copy path location ~value:value2 ~desc astate in
       let<*> astate =
         PulseOperations.write_field path location ~ref:(return_param, hist) first ~obj:value1 astate
       in
@@ -662,119 +913,326 @@ module Pair = struct
 end
 
 let matchers : matcher list =
-  let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
-  [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
-  ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
-  ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
-  ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
-  ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
-  ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
-  ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
-  ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
-  ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
-  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
-    $+ capt_arg_payload_of_prim_typ char_ptr_typ
-    $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
-  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.constructor
-  ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
-  ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.end_ ~desc:"std::basic_string::end()"
-  ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
-    $--> BasicString.data ~desc:"std::basic_string::data()"
-  ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
-  ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
-  ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
-  ; -"std" &:: "basic_string" &:: "size" &--> Basic.nondet ~desc:"std::basic_string::size"
-  ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.address ~desc:"std::basic_string::operator[]"
-  ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
-  ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
-    $+ capt_arg_payload_of_prim_typ char_ptr_typ
-    $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
-  ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
-    $--> BasicString.data ~desc:"std::basic_string_view::data()"
-  ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
-    $--> Function.assign ~desc:"std::function::function"
-  ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
-  ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
-    $--> Function.assign ~desc:"std::function::operator="
-  ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.constructor
-  ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.fetch_add
-  ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.fetch_sub
-  ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.exchange
-  ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
-    $--> AtomicInteger.load
-  ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.store
-  ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
-    $--> AtomicInteger.operator_plus_plus_pre
-  ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.operator_plus_plus_post
-  ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
-    $--> AtomicInteger.operator_minus_minus_pre
-  ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.operator_minus_minus_post
-  ; -"std" &:: "__atomic_base"
-    &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-    <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
-  ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
-  ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> Pair.make_pair
-  ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
-    $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
-    $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "vector")
-    $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references Assign
-  ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.at ~desc:"std::vector::at()"
-  ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.vector_begin
-  ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
-  ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload $--> Vector.invalidate_references Clear
-  ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
-    $+...$--> Vector.invalidate_references Emplace
-  ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-    $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
-  ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references Insert
-  ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references_with_ret Assign
-  ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.at ~desc:"std::vector::at()"
-  ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
-    $--> Vector.invalidate_references ShrinkToFit
-  ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
-    $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
-  ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
-    $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
-  ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
-    $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
-  ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
-    $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
-  ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"
-  ; -"std" &:: "integral_constant" < any_typ &+ capt_int
-    >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-    <>--> Basic.return_int ~desc:"std::integral_constant"
-  ; (* consider that all fbstrings are small strings to avoid false positives due to manual
-       ref-counting *)
-    -"folly" &:: "fbstring_core" &:: "category"
-    &--> Basic.return_int Int64.zero ~desc:"folly::fbstring_core::category"
-  ; -"folly" &:: "DelayedDestruction" &:: "destroy"
-    &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
-  ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
-    &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip" ]
+  [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
+  ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array ]
+
+
+let map_matchers =
+  let open ProcnameDispatcher.Call in
+  let value_it_matcher = -"folly" <>:: "f14" <>:: "detail" <>:: "ValueContainerIterator" in
+  let vector_it_matcher = -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" in
+  let basic_string_matchers =
+    let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
+    [ -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $+...$--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.copy_constructor ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+      $--> BasicString.default_constructor ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload
+      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
+    ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string::data()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string_view::data()"
+    ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+    ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.end_ ~desc:"std::basic_string::end()"
+    ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
+    ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
+    ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
+    ]
+  in
+  let folly_matchers =
+    List.concat_map
+      [ ("F14ValueMap", Invalidation.FollyF14Value, [value_it_matcher])
+      ; ("F14VectorMap", Invalidation.FollyF14Vector, [vector_it_matcher])
+      ; ("F14FastMap", Invalidation.FollyF14Fast, [value_it_matcher; vector_it_matcher]) ]
+      ~f:(fun (map_s, map_t, it_matchers) ->
+        [ -"folly" <>:: map_s &:: map_s
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.constructor map_t map_s
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t OperatorEqual
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $--> GenericMapCollection.invalidate_references map_t Clear
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t Rehash
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t Reserve
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.return_value_reference
+                      (Format.asprintf "folly::%s::at" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.emplace_hint map_t EmplaceHint
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.emplace map_t Emplace
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace_token"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.emplace map_t TryEmplaceToken
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
+          $+...$--> GenericMapCollection.operator_bracket map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
+          $ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload $+ capt_arg_payload $--> GenericMapCollection.find map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
+          $--> GenericMapCollection.return_it (Format.asprintf "folly::%s::begin" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "cbegin"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
+          $--> GenericMapCollection.return_it (Format.asprintf "folly::%s::cbegin" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "contains"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload $--> GenericMapCollection.update_last
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "count"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload $--> GenericMapCollection.update_last
+        ; -"folly" <>:: map_s &:: "swap"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $--> GenericMapCollection.swap map_t
+          (* Order matters for the next matchers in this list. *)
+          (* insert_or_assign:
+              1. Two arguments only: non-hinted case.
+              2. Three arguments with the first being a token: non-hinted case.
+              3. Else: hinted case.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:false map_t InsertOrAssign
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ (-"folly" <>:: "F14HashToken")
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:false map_t InsertOrAssign
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:true map_t InsertOrAssign
+          (* try_emplace:
+              1. First argument is an iterator: hinted case.
+              2. Else: non-hinted case.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ_exists it_matchers
+          $++$--> GenericMapCollection.try_emplace ~hinted:true map_t TryEmplace
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace
+          (* insert:
+              1. One argument and it's std::initializer_list: return void.
+              2. Three arguments (including SIL return): return iterator.
+              3. Two arguments (including SIL return matching std::pair type):
+                   return pair<iterator, bool>.
+              4. Else if two arguments: return void.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ (-"std" &:: "initializer_list")
+          $--> GenericMapCollection.invalidate_references map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:true map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg
+          $+ capt_arg_of_typ (-"std" &:: "pair")
+          $--> GenericMapCollection.insert ~hinted:false map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg
+          $--> GenericMapCollection.invalidate_references map_t Insert ] )
+  in
+  let folly_iterator_matchers =
+    List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
+        [ -"folly" <>:: "f14" <>:: "detail" <>:: it &:: it <>$ capt_arg_payload $+ capt_arg_payload
+          $--> GenericMapCollection.iterator_copy
+                 (Format.asprintf "folly::f14::detail::%s::%s" it it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator=" <>$ capt_arg_payload
+          $+ capt_arg_payload
+          $--> GenericMapCollection.iterator_copy
+                 (Format.asprintf "folly::f14::detail::%s::operator=" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator->" <>$ capt_arg_payload
+          $--> GenericMapCollection.iterator_star
+                 (Format.asprintf "folly::f14::detail::%s::operator->" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator*" <>$ capt_arg_payload
+          $--> GenericMapCollection.iterator_star
+                 (Format.asprintf "folly::f14::detail::%s::operator*" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++"
+          &++> Basic.unknown_call "folly::f14::detail::it::operator++"
+          |> with_non_disj ] )
+  in
+  let folly_concurrent_hash_map_matchers =
+    (* We ignore all [folly::ConcurrentHashMap] methods as of now, because the summaries from the
+       actual source code are too imprecise. *)
+    [ -"folly" <>:: "ConcurrentHashMap"
+      &::+ (fun _ _ -> true)
+      &++> Basic.unknown_call "folly::ConcurrentHashMap" ]
+    |> List.map ~f:with_non_disj
+  in
+  basic_string_matchers @ folly_matchers @ folly_iterator_matchers
+  @ folly_concurrent_hash_map_matchers
+
+
+let simple_matchers =
+  let open ProcnameDispatcher.Call in
+  map_matchers
+  @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
+      |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
+      |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
+      |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __infer_structured_binding)
+      <>$ capt_exp $+ capt_arg $--> infer_structured_binding |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
+    ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new |> with_non_disj
+    ; -"std" &:: "basic_string" &:: "substr"
+      &--> Basic.nondet ~desc:"std::basic_string::substr"
+      |> with_non_disj
+    ; -"std" &:: "basic_string" &:: "size"
+      &--> Basic.nondet ~desc:"std::basic_string::size"
+      |> with_non_disj
+    ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.address ~desc:"std::basic_string::operator[]"
+      |> with_non_disj
+    ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"std::function::function"
+      |> with_non_disj
+    ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
+    ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"std::function::operator="
+      |> with_non_disj
+    ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.constructor |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.fetch_add |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.fetch_sub |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.exchange |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
+      $--> AtomicInteger.load |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.store |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
+      $--> AtomicInteger.operator_plus_plus_pre |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.operator_plus_plus_post |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
+      $--> AtomicInteger.operator_minus_minus_pre |> with_non_disj
+    ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.operator_minus_minus_post |> with_non_disj
+    ; -"std" &:: "__atomic_base"
+      &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+      <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t |> with_non_disj
+    ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
+      |> with_non_disj
+    ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> Pair.make_pair |> with_non_disj
+    ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
+      $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
+      $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "vector")
+      $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references Assign
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.at ~desc:"std::vector::at()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_begin |> with_non_disj
+    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
+      $--> Vector.invalidate_references Clear
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references Emplace
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
+      $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references Insert
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references_with_ret Assign
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.at ~desc:"std::vector::at()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
+      $--> Vector.invalidate_references ShrinkToFit
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
+      $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
+      $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
+      $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
+      $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
+      |> with_non_disj
+    ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance" |> with_non_disj
+    ; -"std" &:: "integral_constant" < any_typ &+ capt_int
+      >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+      <>--> Basic.return_int ~desc:"std::integral_constant"
+      |> with_non_disj
+    ; (* consider that all fbstrings are small strings to avoid false positives due to manual
+         ref-counting *)
+      -"folly" &:: "fbstring_core" &:: "category"
+      &--> Basic.return_int Int64.zero ~desc:"folly::fbstring_core::category"
+      |> with_non_disj
+    ; -"folly" &:: "DelayedDestruction" &:: "destroy"
+      &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
+      |> with_non_disj
+    ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
+      &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip"
+      |> with_non_disj ]
+
+
+let matchers =
+  matchers
+  @ List.map simple_matchers
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

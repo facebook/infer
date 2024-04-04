@@ -252,8 +252,7 @@ public class NullPointerExceptions {
     return null;
   }
 
-  // weakness in canonicalization across inter-procedural calls
-  void FN_nullPointerExceptionCallArrayReadMethod() {
+  void nullPointerExceptionCallArrayReadMethod() {
     arr[0] = new Object();
     arrayReadShouldNotCauseSymexMemoryError(0).toString();
   }
@@ -751,7 +750,7 @@ public class NullPointerExceptions {
   }
 
   // need combination of alias specialization and dynamic type specialization
-  void FN_test_capture_alias_bad() {
+  void test_capture_alias_bad() {
     A a = new A();
     a.x = 0;
     AFunction incr_deref =

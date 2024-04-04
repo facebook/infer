@@ -19,11 +19,29 @@ val string_of_visibility : visibility -> string
 (** severity of the report *)
 type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
+type category =
+  | Data_corruption
+  | Data_race
+  | Deadlock
+  | Incorrect_program_semantics
+  | Memory_error
+  | Memory_leak
+  | Null_pointer_dereference
+  | Perf_regression
+  | Privacy_violation
+  | Resource_leak
+  | Runtime_exception
+  | Ungated_code
+[@@deriving compare, equal, enumerate]
+
 val string_of_severity : severity -> string
+
+val string_of_category : category option -> string option
 
 type t = private
   { unique_id: string
   ; checker: Checker.t
+  ; category: category option
   ; visibility: visibility
   ; user_documentation: string option
   ; mutable default_severity: severity
@@ -129,8 +147,6 @@ val checkers_expensive_overrides_unexpensive : t
 
 val checkers_fragment_retain_view : t
 
-val checkers_immutable_cast : t
-
 val checkers_printf_args : t
 
 val class_cast_exception : t
@@ -145,13 +161,13 @@ val config_impact_analysis : t
 
 val config_impact_analysis_strict : t
 
-val config_impact_analysis_strict_beta : t
-
 val pulse_config_usage : t
 
 val pulse_const_refable : t
 
 val constant_address_dereference : latent:bool -> t
+
+val cxx_ref_captured_in_block : t
 
 val create_intent_from_uri : t
 
@@ -175,42 +191,6 @@ val do_not_report : t
 (** an issue type that should never be reported *)
 
 val empty_vector_access : t
-
-val eradicate_annotation_graph : t
-
-val eradicate_condition_redundant : t
-
-val eradicate_field_not_initialized : t
-
-val eradicate_field_not_nullable : t
-
-val eradicate_field_over_annotated : t
-
-val eradicate_inconsistent_subclass_parameter_annotation : t
-
-val eradicate_inconsistent_subclass_return_annotation : t
-
-val eradicate_redundant_nested_class_annotation : t
-
-val eradicate_bad_nested_class_annotation : t
-
-val eradicate_nullable_dereference : t
-
-val eradicate_parameter_not_nullable : t
-
-val eradicate_return_not_nullable : t
-
-val eradicate_return_over_annotated : t
-
-val eradicate_unvetted_third_party_in_nullsafe : t
-
-val eradicate_unchecked_usage_in_nullsafe : t
-
-val eradicate_meta_class_can_be_nullsafe : t
-
-val eradicate_meta_class_needs_improvement : t
-
-val eradicate_meta_class_is_nullsafe : t
 
 val exposed_insecure_intent_handling : t
 
@@ -310,6 +290,8 @@ val null_dereference : t
 
 val nullptr_dereference : latent:bool -> t
 
+val nullptr_dereference_in_nullsafe_class : latent:bool -> t
+
 val optional_empty_access : latent:bool -> t
 
 val precondition_not_found : t
@@ -318,11 +300,19 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
+val pulse_dict_missing_key : t
+
+val pulse_transitive_access : t
+
 val pulse_memory_leak_c : t
 
 val pulse_memory_leak_cpp : t
 
 val pulse_resource_leak : t
+
+val pulse_unawaited_awaitable : t
+
+val pulse_uninitialized_const : t
 
 val pure_function : t
 
@@ -368,9 +358,7 @@ val thread_safety_violation : t
 
 val topl_error : latent:bool -> t
 
-val uninitialized_value : t
-
-val uninitialized_value_pulse : latent:bool -> t
+val uninitialized_value_pulse : t
 
 val unnecessary_copy_pulse : t
 
@@ -424,12 +412,12 @@ val user_controlled_sql_risk : t
 
 val vector_invalidation : latent:bool -> t
 
+val pulse_reference_stability : t
+
 val weak_self_in_noescape_block : t
 
 val wrong_argument_number : t
 
 val unreachable_cost_call : kind:CostKind.t -> t
-
-val is_autoreleasepool_size_issue : t -> bool
 
 module Map : PrettyPrintable.PPMap with type key = t

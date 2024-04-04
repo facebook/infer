@@ -11,17 +11,17 @@ digraph cfg {
 	
 
 	 "deleteInt#11507157942721721842.63c462d9916f225a_3" -> "deleteInt#11507157942721721842.63c462d9916f225a_2" ;
-"deleteX(class X)#8359832236310221.de7d98d32d68fd20_1" [label="1: Start deleteX\nFormals:  x:X*\nLocals:  \n  " color=yellow style=filled]
+"deleteX#8359832236310221055.8e97d527465f9865_1" [label="1: Start deleteX\nFormals:  x:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "deleteX(class X)#8359832236310221.de7d98d32d68fd20_1" -> "deleteX(class X)#8359832236310221.de7d98d32d68fd20_3" ;
-"deleteX(class X)#8359832236310221.de7d98d32d68fd20_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
+	 "deleteX#8359832236310221055.8e97d527465f9865_1" -> "deleteX#8359832236310221055.8e97d527465f9865_3" ;
+"deleteX#8359832236310221055.8e97d527465f9865_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
 	
 
-"deleteX(class X)#8359832236310221.de7d98d32d68fd20_3" [label="3:  Call delete \n   n$0=*&x:X* [line 12, column 29]\n  n$1=_fun___delete(n$0:X*) [line 12, column 22]\n " shape="box"]
+"deleteX#8359832236310221055.8e97d527465f9865_3" [label="3:  Call delete \n   n$0=*&x:X* [line 12, column 29]\n  n$1=_fun___delete(n$0:X*) [line 12, column 22]\n " shape="box"]
 	
 
-	 "deleteX(class X)#8359832236310221.de7d98d32d68fd20_3" -> "deleteX(class X)#8359832236310221.de7d98d32d68fd20_2" ;
+	 "deleteX#8359832236310221055.8e97d527465f9865_3" -> "deleteX#8359832236310221055.8e97d527465f9865_2" ;
 "__infer_inner_destructor_~X#X#(10.9760ffe42533c893_1" [label="1: Start X::__infer_inner_destructor_~X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 

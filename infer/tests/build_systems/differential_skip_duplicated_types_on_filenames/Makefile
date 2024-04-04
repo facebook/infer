@@ -13,15 +13,18 @@ include $(TESTS_DIR)/differential.make
 
 $(CURRENT_REPORT) $(PREVIOUS_REPORT): $(JAVA_DEPS)
 
+# TODO: the renaming heuristic doesn't work for Pulse because the error messages include class
+# names. Find a more robust way to deal with this issue.
+
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffExampleTwo.java.current src/DiffExampleTwo.java
 	$(QUIET)$(call silent_on_success,Testing\
 	Differential skips duplicated types on filenames: current,\
-	$(INFER_BIN) -o $(CURRENT_DIR) -- $(JAVAC) src/DiffExample.java src/DiffExampleTwo.java)
+	$(INFER_BIN) --biabduction-only -o $(CURRENT_DIR) -- $(JAVAC) src/DiffExample.java src/DiffExampleTwo.java)
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
 	$(QUIET)$(call silent_on_success,Testing\
 	Differential skips duplicated types on filenames: previous,\
-	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/DiffExample.java)
+	$(INFER_BIN) --biabduction-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/DiffExample.java)

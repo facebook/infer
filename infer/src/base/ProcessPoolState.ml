@@ -8,7 +8,7 @@
 open! IStd
 
 (** Keep track of whether the current execution is in a child process *)
-let in_child = ref false
+let in_child = ref None
 
 let update_status = ref (fun _ _ -> ())
 

@@ -1294,12 +1294,10 @@ module BoundTrace = struct
     | Loop of Location.t
     | Call of {callee_pname: Procname.t; callee_trace: t; location: Location.t}
     | ModeledFunction of {pname: string; location: Location.t}
-    | ArcFromNonArc of {pname: string; location: Location.t}
-    | FuncPtr of {path: Symb.SymbolPath.partial; location: Location.t}
   [@@deriving compare]
 
   let rec length = function
-    | Loop _ | ModeledFunction _ | ArcFromNonArc _ | FuncPtr _ ->
+    | Loop _ | ModeledFunction _ ->
         1
     | Call {callee_trace} ->
         1 + length callee_trace
@@ -1314,25 +1312,12 @@ module BoundTrace = struct
         F.fprintf f "Loop (%a)" Location.pp loc
     | ModeledFunction {pname; location} ->
         F.fprintf f "ModeledFunction `%s` (%a)" pname Location.pp location
-    | ArcFromNonArc {pname; location} ->
-        F.fprintf f "ArcFromNonArc `%s` (%a)" pname Location.pp location
     | Call {callee_pname; callee_trace; location} ->
         F.fprintf f "%a -> Call `%a` (%a)" pp callee_trace Procname.pp callee_pname Location.pp
           location
-    | FuncPtr {path; location} ->
-        F.fprintf f "FuncPtr `%a` (%a)" Symb.SymbolPath.pp_partial path Location.pp location
 
 
   let call ~callee_pname ~location callee_trace = Call {callee_pname; callee_trace; location}
-
-  let rec is_func_ptr = function
-    | Call {callee_trace} ->
-        is_func_ptr callee_trace
-    | FuncPtr _ ->
-        true
-    | Loop _ | ModeledFunction _ | ArcFromNonArc _ ->
-        false
-
 
   let rec make_err_trace_of_non_func_ptr ~depth trace =
     match trace with
@@ -1345,37 +1330,11 @@ module BoundTrace = struct
     | ModeledFunction {pname; location} ->
         let desc = F.asprintf "Modeled call to %s" pname in
         [Errlog.make_trace_element depth location desc []]
-    | ArcFromNonArc {pname; location} ->
-        let desc = F.asprintf "ARC function call to %s from non-ARC caller" pname in
-        [Errlog.make_trace_element depth location desc []]
-    | FuncPtr _ ->
-        assert false
 
 
-  let make_err_trace ~depth trace =
-    (* Function pointer trace is suppressed. *)
-    if is_func_ptr trace then [] else make_err_trace_of_non_func_ptr ~depth trace
-
+  let make_err_trace ~depth trace = make_err_trace_of_non_func_ptr ~depth trace
 
   let of_loop location = Loop location
-
-  let of_modeled_function pname location = ModeledFunction {pname; location}
-
-  let of_arc_from_non_arc pname location = ArcFromNonArc {pname; location}
-
-  let of_function_ptr path location = FuncPtr {path; location}
-
-  let rec subst ~get_autoreleasepool_trace x =
-    match x with
-    | Call {callee_pname; callee_trace; location} ->
-        subst ~get_autoreleasepool_trace callee_trace
-        |> Option.map ~f:(fun callee_trace' ->
-               if phys_equal callee_trace callee_trace' then x
-               else Call {callee_pname; callee_trace= callee_trace'; location} )
-    | FuncPtr {path} ->
-        get_autoreleasepool_trace path
-    | Loop _ | ModeledFunction _ | ArcFromNonArc _ ->
-        Some x
 end
 
 (** A NonNegativeBound is a Bound that is either non-negative or symbolic but will be evaluated to a

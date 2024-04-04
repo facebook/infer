@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module ValueHistory = PulseValueHistory
+module CellId = PulseValueHistory.CellId
 
 type t =
   | Immediate of {location: Location.t; history: ValueHistory.t}
@@ -18,6 +19,12 @@ type t =
       ; in_call: t  (** last step of the trace is in a call to [f] made at [location] *) }
 [@@deriving compare, equal]
 
+module Set : sig
+  include PrettyPrintable.PPSet with type elt = t
+
+  val map_callee : CallEvent.t -> Location.t -> t -> t
+end
+
 val pp : pp_immediate:(F.formatter -> unit) -> F.formatter -> t -> unit
 
 val get_outer_location : t -> Location.t
@@ -27,8 +34,17 @@ val get_outer_location : t -> Location.t
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)
 
+val add_call :
+     CallEvent.t
+  -> Location.t
+  -> ValueHistory.t CellId.Map.t
+  -> default_caller_history:ValueHistory.t
+  -> t
+  -> t
+
 val add_to_errlog :
      ?include_value_history:bool
+  -> ?include_taint_events:bool (** to avoid showing unrelated taint traces for non-taint issues *)
   -> nesting:int
   -> pp_immediate:(F.formatter -> unit)
   -> t
@@ -41,6 +57,7 @@ val synchronous_add_to_errlog :
   -> t list
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
+[@@warning "-unused-value-declaration"]
 (** [synchronous_add_to_errlog] adds a list of the traces to the errlog in the given order while
     grouping traces that take place at the same location to reduce deduplication and ensure events
     happening together are identifiable as such. E.g. if two traces start with a [ViaCall] and they

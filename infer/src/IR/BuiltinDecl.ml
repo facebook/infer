@@ -74,6 +74,10 @@ let __builtin_offsetof = create_procname "__builtin_offsetof"
 
 let __cast = create_procname "__cast"
 
+let __call_objc_block = create_procname "__call_objc_block"
+
+let __call_c_function_ptr = create_procname "__call_c_function_ptr"
+
 let __cxx_typeid = create_procname "__cxx_typeid"
 
 let __delete = create_procname "__delete"
@@ -162,9 +166,15 @@ let __infer_skip_function = Procname.from_string_c_fun "__infer_skip_function"
 
 let __infer_skip_gcc_asm_stmt = Procname.from_string_c_fun "__infer_skip_gcc_asm_stmt"
 
+let __infer_structured_binding = create_procname "__infer_structured_binding"
+
 let __instanceof = create_procname "__instanceof"
 
 let __java_throw = create_procname "__java_throw"
+
+let __hack_throw = create_procname "__hack_throw"
+
+let __get_lazy_class = create_procname "__get_lazy_class"
 
 let __lazy_class_initialize = create_procname "__lazy_class_initialize"
 

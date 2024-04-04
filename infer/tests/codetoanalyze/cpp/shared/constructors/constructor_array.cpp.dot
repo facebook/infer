@@ -122,7 +122,7 @@ digraph cfg {
 "Person#Person#{114236389361886311.cbf379a3b60d914d_2" [label="2: Exit Person::Person \n  " color=yellow style=filled]
 	
 
-"Person#Person#{114236389361886311.cbf379a3b60d914d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:Person* [line 10, column 19]\n  n$1=*&i:int [line 10, column 23]\n  *n$0.x:int=n$1 [line 10, column 19]\n " shape="box"]
+"Person#Person#{114236389361886311.cbf379a3b60d914d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&i:int [line 10, column 23]\n  n$0=*&this:Person* [line 10, column 19]\n  *n$0.x:int=n$1 [line 10, column 19]\n " shape="box"]
 	
 
 	 "Person#Person#{114236389361886311.cbf379a3b60d914d_3" -> "Person#Person#{114236389361886311.cbf379a3b60d914d_2" ;

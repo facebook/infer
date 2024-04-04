@@ -17,7 +17,7 @@ type position = Argument of int | Return
 
 type value =
   | Position of position
-  | Constant of Yojson.Basic.t (* constants are interpreted during translation, based on language *)
+  | Constant of Yojson.Safe.t (* constants are interpreted during translation, based on language *)
 
 type eq_condition = Eq of {left: value; right: value}
 
@@ -33,7 +33,7 @@ type matcher =
 type query = Query of {language: Language.t; matchers: matcher list; questions: question list}
 
 let ignoring path json =
-  L.user_error "@[<v>%s: Ignoring:@ @[%a@]@;@]" path (Yojson.Basic.pretty_print ~std:false) json
+  L.user_error "@[<v>%s: Ignoring:@ @[%a@]@;@]" path (Yojson.Safe.pretty_print ~std:false) json
 
 
 let parse_position ?(path = None) json : position option =
@@ -83,7 +83,7 @@ let parse_condition path json =
 
 (** [parse_assoc path record_name mandatory optionals assocs] parses [assocs] trying to find the
     values of [mandatory] and [optional] fields. Typically, [assocs] comes from an [`Assoc] value of
-    type [Yojson.Basic.t].
+    type [Yojson.Safe.t].
 
     {[
       parse_assoc path record_name ["a"; "b"]
@@ -115,14 +115,14 @@ let parse_assoc path record_name fields fields_with_default assocs =
       L.die InternalError "precondition: a field cannot be both mandatory and optional: %a"
         (pp_and_list Fmt.string) (Set.elements both)
   in
-  let index : Yojson.Basic.t String.Map.t =
+  let index : Yojson.Safe.t String.Map.t =
     (* Transform assocs into a map. If there are duplicates, drop them and warn. *)
     let index = String.Map.of_alist_multi assocs in
     let f ~key:field ~data:json_list =
       let extra = List.tl_exn json_list in
       ( if not (List.is_empty extra) then
           let pv f json =
-            Format.fprintf f "\"%s\":%a" field (Yojson.Basic.pretty_print ~std:false) json
+            Format.fprintf f "\"%s\":%a" field (Yojson.Safe.pretty_print ~std:false) json
           in
           L.user_error "@[<v>%s: In %s, found repeated field. Ignoring %a@.;@]" path record_name
             (pp_and_list pv) extra ) ;
@@ -130,8 +130,8 @@ let parse_assoc path record_name fields fields_with_default assocs =
     in
     Map.mapi ~f index
   in
-  let mandatory : Yojson.Basic.t String.Map.t = Map.filter_keys index ~f:(Set.mem fields_set) in
-  let optional : Yojson.Basic.t String.Map.t =
+  let mandatory : Yojson.Safe.t String.Map.t = Map.filter_keys index ~f:(Set.mem fields_set) in
+  let optional : Yojson.Safe.t String.Map.t =
     let f ~key:_ = function
       | `Left _given ->
           None
@@ -168,8 +168,7 @@ let parse_string path name json =
   | `String value ->
       Some value
   | _ ->
-      L.user_error "@[<v>%s: for %s, expecting a string; found %a@;@]" path name Yojson.Basic.pp
-        json ;
+      L.user_error "@[<v>%s: for %s, expecting a string; found %a@;@]" path name Yojson.Safe.pp json ;
       None
 
 
@@ -179,7 +178,7 @@ let parse_arity path json =
       Some value
   | _ ->
       L.user_error "@[<v>%s: Arity should be a nonnegative integer; found %a@;@]" path
-        Yojson.Basic.pp json ;
+        Yojson.Safe.pp json ;
       None
 
 
@@ -304,8 +303,8 @@ module Topl = struct
     match language with
     | Erlang ->
         (* for erlang, we assume [pattern] looks like "module:function" *)
-        let proc_pattern = Printf.sprintf "%s/%d" pattern arity in
-        ToplAst.ProcedureNamePattern proc_pattern
+        let procedure_name_regex = Printf.sprintf "%s/%d" pattern arity in
+        ToplAst.CallPattern {procedure_name_regex; type_regexes= None}
     | Clang | CIL | Hack | Python | Java ->
         L.die InternalError "Unsupported language for data flow queries"
 
@@ -369,7 +368,7 @@ module Topl = struct
         start --t1--> tracking --t2--> error
        and
         start --t3--> leaked --t4 --> error
-      
+
        where
          t1 matches on a source pattern (and saves value seen at source)
          t2 matches on a sink pattern (and checks value seen at sink)

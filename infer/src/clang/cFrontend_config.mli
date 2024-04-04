@@ -31,6 +31,8 @@ val alloc : string
 
 val allocWithZone : string
 
+val anon_field : string
+
 val arrayWithObjects_count : string
 
 val dictionaryWithObjects_forKeys_count : string
@@ -116,9 +118,5 @@ val sil_types_map : Typ.desc Clang_ast_extend.TypePointerMap.t ref
 val procedures_attempted : int ref
 
 val procedures_failed : int ref
-
-val get_fresh_block_index : unit -> int
-
-val reset_block_counter : unit -> unit
 
 val reset_global_state : unit -> unit

@@ -6,65 +6,215 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module T = Textual
 module Debug = PyDebug
 module Builtin = PyBuiltin
+module Ident = PyCommon.Ident
+module Labels = Caml.Map.Make (Int)
+module ISet = Caml.Set.Make (Int)
 
-let type_name = PyCommon.type_name
+module Signature = struct
+  type t = {annotations: PyCommon.signature; is_static: bool; is_abstract: bool}
+
+  let pp fmt {annotations; is_static} =
+    Format.fprintf fmt "MethodSignature%s : %a"
+      (if is_static then "(static)" else "")
+      PyCommon.pp_signature annotations
+end
+
+module SMap = PyCommon.SMap
+
+module Info = struct
+  type kind = Code | Class | Other
+
+  type t = {kind: kind; typ: T.Typ.t}
+
+  let default typ = {kind= Other; typ}
+
+  let is_code = function Code -> true | Class | Other -> false
+
+  let is_class = function Class -> true | Code | Other -> false
+end
+
+module Symbol = struct
+  type kind =
+    | Name of {is_imported: bool; typ: T.Typ.t}
+    | Builtin
+    | Code
+    | Class
+    | ImportCall
+    | Import
+
+  let pp_kind fmt = function
+    | Name {typ} ->
+        Format.fprintf fmt "Name(%a)" T.Typ.pp typ
+    | Builtin ->
+        Format.pp_print_string fmt "Builtin"
+    | Code ->
+        Format.pp_print_string fmt "Code"
+    | Class ->
+        Format.pp_print_string fmt "Class"
+    | Import ->
+        Format.fprintf fmt "Import"
+    | ImportCall ->
+        Format.pp_print_string fmt "ImportCall"
+
+
+  type t = {id: Ident.t; kind: kind; loc: T.Location.t}
+
+  type key = Global of Ident.t | Local of string
+
+  let pp_key fmt = function
+    | Global id ->
+        Format.fprintf fmt "global %a" Ident.pp id
+    | Local local_id ->
+        Format.pp_print_string fmt local_id
+
+
+  let pp fmt {id; kind} = Format.fprintf fmt "%a[%a]" Ident.pp id pp_kind kind
+end
 
 module DataStack = struct
   type cell =
-    | Const of int
-    | Name of {global: bool; ndx: int}
-    | VarName of int
+    | Const of FFI.Constant.t
+    | Name of {global: bool; name: string}
+    | VarName of string
     | Temp of T.Ident.t
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
-    | Map of (string * cell) list
+    | List of (Builtin.builder * cell list)
+    | Map of (T.Exp.t * cell) list
     | BuiltinBuildClass
-    | Import of {import_path: string; symbols: string list}
-      (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
-    | ImportCall of T.qualified_procname
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
-    | StaticCall of T.qualified_procname
-  [@@deriving show]
+    | Import of {import_path: Ident.t; from_list: string list}
+    | ImportFrom of {import_path: Ident.t; imported_name: string}
+    | ImportCall of {id: Ident.t; loc: T.Location.t}
+    | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
+    | StaticCall of {call_name: T.QualifiedProcName.t; receiver: T.Exp.t option}
+    | Super
+    | Path of Ident.t
+    | WithContext of
+        T.Ident.t (* see https://docs.python.org/3.8/reference/compound_stmts.html#with *)
+    | NoException
 
-  let as_code FFI.Code.{co_consts} = function
-    | Const n ->
-        let code = co_consts.(n) in
-        FFI.Constant.as_code code
+  let pp_cell fmt = function
+    | Const c ->
+        F.fprintf fmt "Const(%a)" FFI.Constant.pp c
+    | Name {global; name} ->
+        F.fprintf fmt "Name(%s, %s)" (if global then "global" else "local") name
+    | VarName varname ->
+        F.fprintf fmt "VarName(%s)" varname
+    | Temp id ->
+        F.fprintf fmt "Temp(%a)" T.Ident.pp id
+    | Code {fun_or_class; code_name} ->
+        F.fprintf fmt "Code(%s, %s)" (if fun_or_class then "fun" else "class") code_name
+    | List _ ->
+        F.pp_print_string fmt "List"
+    | Map _ ->
+        F.pp_print_string fmt "Map"
+    | BuiltinBuildClass ->
+        F.pp_print_string fmt "LOAD_BUILD_CLASS"
+    | Import {import_path; from_list= []} ->
+        F.fprintf fmt "Import(%a)" Ident.pp import_path
+    | Import {import_path; from_list} ->
+        F.fprintf fmt "Import(%a, %a)" Ident.pp import_path
+          (Pp.seq ~sep:" " F.pp_print_string)
+          from_list
+    | ImportFrom {import_path; imported_name} ->
+        F.fprintf fmt "ImportFrom(%a, %s)" Ident.pp import_path imported_name
+    | ImportCall {id} ->
+        F.fprintf fmt "ImportCall(%a)" Ident.pp id
+    | MethodCall {receiver; name} ->
+        F.fprintf fmt "MethodCall(%a, %a)" T.Exp.pp receiver T.QualifiedProcName.pp name
+    | StaticCall {call_name; receiver} ->
+        F.fprintf fmt "StaticCall(%a, %a)" T.QualifiedProcName.pp call_name (Pp.option T.Exp.pp)
+          receiver
+    | Super ->
+        F.pp_print_string fmt "Super"
+    | Path id ->
+        F.fprintf fmt "Path(%a)" Ident.pp id
+    | WithContext id ->
+        F.fprintf fmt "WithContext(%a)" T.Ident.pp id
+    | NoException ->
+        F.pp_print_string fmt "NoExpception"
+
+
+  let as_code = function
+    | Const const ->
+        FFI.Constant.as_code const
     | Code {code} ->
         Some code
+    | Path _
     | Name _
     | Temp _
     | VarName _
+    | List _
     | Map _
     | BuiltinBuildClass
     | Import _
+    | ImportFrom _
     | ImportCall _
     | MethodCall _
-    | StaticCall _ ->
+    | StaticCall _
+    | Super
+    | WithContext _
+    | NoException ->
         None
 
 
-  let as_name FFI.Code.{co_varnames; co_names; co_consts} = function
-    | Const ndx ->
-        let cst = co_consts.(ndx) in
+  let as_name = function
+    | Const cst ->
         FFI.Constant.as_name cst
-    | Name {ndx} ->
-        Some co_names.(ndx)
-    | VarName ndx ->
-        Some co_varnames.(ndx)
+    | Name {name} ->
+        Some name
+    | VarName varname ->
+        Some varname
+    | Path _
     | Code _
     | Temp _
+    | List _
     | Map _
     | BuiltinBuildClass
     | Import _
+    | ImportFrom _
     | ImportCall _
     | MethodCall _
-    | StaticCall _ ->
+    | StaticCall _
+    | Super
+    | WithContext _
+    | NoException ->
         None
 
+
+  let as_id cell =
+    match cell with
+    | Const _ ->
+        Option.map ~f:Ident.mk (as_name cell)
+    | Name {global} ->
+        Option.map ~f:(Ident.mk ~global) (as_name cell)
+    | VarName _ ->
+        Option.map ~f:(Ident.mk ~global:false) (as_name cell)
+    | Path id ->
+        Some id
+    | Code _
+    | Temp _
+    | List _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportFrom _
+    | ImportCall _
+    | MethodCall _
+    | StaticCall _
+    | Super
+    | WithContext _
+    | NoException ->
+        None
+
+
+  let is_path = function Path _ -> true | _ -> false
+
+  let is_no_exception = function NoException -> true | _ -> false
 
   type t = cell list
 
@@ -75,162 +225,45 @@ module DataStack = struct
   let peek = function [] -> None | hd :: _ -> Some hd
 end
 
-module Labels = Caml.Map.Make (Int)
+(* TODO: try to merge this in a [globals]/[Symbol]. However be careful not to override the
+   original parent info since it might not be locally available when we executer [register_symbol]
+   after [register_class] *)
+type class_info = {qualified_name: Ident.t; parents: Ident.t list}
 
-(* TODO(vsiles): maybe revamp Signature maps to benefits from the new
-   qualified name structure *)
-module Signature = struct
-  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
-end
-
-module SMap = Caml.Map.Make (String)
-
-type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
-
-module Symbol = struct
-  module Qualified = struct
-    type prefix = string list
-
-    (** Fully qualified name. Each identifier for global variables / function names / class names
-        have a prefix sequence with the module and optional class names. The suffix is usually the
-        original "short" name. *)
-    type t = {prefix: prefix; name: string; loc: T.Location.t}
-
-    let mk ~prefix name loc = {prefix; name; loc}
-
-    let prefix_to_string prefix = String.concat ~sep:"::" prefix
-
-    let to_string ~sep ?(static = false) {prefix; name} =
-      let name = if static then PyCommon.static_companion name else name in
-      if List.is_empty prefix then name
-      else
-        let prefix = prefix_to_string prefix in
-        sprintf "%s%s%s" prefix sep name
-
-
-    let to_qualified_procname {prefix; name; loc} : T.qualified_procname =
-      let enclosing_class =
-        if List.is_empty prefix then T.TopLevel
-        else
-          let value = String.concat ~sep:"::" prefix in
-          let type_name = type_name ~loc value in
-          T.Enclosing type_name
-      in
-      let name = {T.ProcName.value= name; loc} in
-      {T.enclosing_class; name}
-
-
-    let to_type_name ~is_static {prefix; name; loc} : T.TypeName.t =
-      let value = String.concat ~sep:"::" prefix in
-      let name = if is_static then PyCommon.static_companion name else name in
-      let value = if String.is_empty value then name else sprintf "%s::%s" value name in
-      type_name ~loc value
-
-
-    let to_typ qual : T.Typ.t =
-      let typ = to_type_name ~is_static:false qual in
-      T.Typ.(Ptr (Struct typ))
-  end
-
-  type t =
-    | Name of {symbol_name: Qualified.t; is_imported: bool; typ: T.Typ.t}
-    | Builtin
-    | Code of {code_name: Qualified.t}
-    | Class of {class_name: Qualified.t}
-    | Import of {import_path: string}
-
-  let to_string ?(code_sep = ".") ?(static = false) = function
-    | Class {class_name= qname} | Name {symbol_name= qname} ->
-        (* Names and classes are global symobls, without an enclosing class, so we mangle them
-           using the "::" separator *)
-        Qualified.to_string ~sep:"::" ~static qname
-    | Builtin ->
-        L.die InternalError "Symbol.to_string called with Builtin"
-    | Code {code_name= qname} ->
-        (* Functions are used as qualified_procnames so we using "." as a separator.
-           However because of how classes are initialized, we might end up
-           registering a [Code] but really it's a class. Because we can't
-           detect this early, we allow to override "." with "::", using
-           [code_sep].
-        *)
-        Qualified.to_string ~sep:code_sep qname
-    | Import {import_path} ->
-        import_path
-
-
-  let to_qualified_procname = function
-    | Builtin ->
-        L.die InternalError "Symbol.to_qualified_procname called with Builtin"
-    | Import _ ->
-        L.die InternalError "Symbol.to_qualified_procname called with Import"
-    | Name {symbol_name= qname} | Code {code_name= qname} | Class {class_name= qname} ->
-        Qualified.to_qualified_procname qname
-
-
-  let to_type_name ~is_static = function
-    | Builtin ->
-        L.die InternalError "Symbol.to_type_name called with Builtin"
-    | Import _ ->
-        L.die InternalError "Symbol.to_type_name called with Import"
-    | Name _ ->
-        L.die InternalError "Symbol.to_type_name called with Name"
-    | Code _ ->
-        L.die InternalError "Symbol.to_type_name called with Code"
-    | Class {class_name= qname} ->
-        Qualified.to_type_name ~is_static qname
-
-
-  let to_typ = function
-    | Class {class_name} ->
-        Some (Qualified.to_typ class_name)
-    | Builtin | Import _ | Name _ | Code _ ->
-        None
-
-
-  let pp fmt = function
-    | Name {symbol_name; typ} ->
-        Format.fprintf fmt "Name(%s: %a)" (Qualified.to_string ~sep:"::" symbol_name) T.Typ.pp typ
-    | Builtin ->
-        Format.pp_print_string fmt "Builtin"
-    | Code {code_name} ->
-        Format.fprintf fmt "Code(%s)" (Qualified.to_string ~sep:"." code_name)
-    | Class {class_name} ->
-        Format.fprintf fmt "Class(%s)" (Qualified.to_string ~sep:"::" class_name)
-    | Import {import_path} ->
-        Format.fprintf fmt "Import(%s)" import_path
-end
-
-module Import = struct
-  type t = TopLevel of string | Call of T.qualified_procname [@@deriving compare]
-end
-
-module ImportSet = Caml.Set.Make (Import)
-
-type class_info = {parent: Symbol.t option}
+type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
 
 type label_info =
-  { label_name: string
-  ; ssa_parameters: T.Typ.t list
-  ; prelude: T.Location.t -> t -> t
-  ; processed: bool }
+  {label_name: string; ssa_parameters: T.Typ.t list; prelude: prelude option; processed: bool}
+
+and prelude = T.Location.t -> t -> t
 
 (** Part of the environment shared by most structures. It gathers information like which builtin has
     been spotted, or what idents and labels have been generated so far. *)
 and shared =
-  { idents: T.Ident.Set.t
-  ; idents_info: info T.Ident.Map.t
-  ; globals: Symbol.t SMap.t
+  { local_idents: T.Ident.Set.t
+  ; local_idents_info: Info.t T.Ident.Map.t
+  ; globals: Symbol.t Ident.Map.t
+        (** Information about global symbols (function, classes, imports, global variables, ... *)
   ; locals: Symbol.t SMap.t
+  ; classes: class_info SMap.t  (** Class level info *)
   ; builtins: Builtin.Set.t
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
-  ; classes: class_info SMap.t  (** All the classes that have been defined *)
-  ; imports: ImportSet.t
-  ; signatures: Signature.t SMap.t SMap.t
-        (** Map from module names to the signature of all of their functions/methods *)
-  ; module_name: string
+  ; imported_values: Ident.Set.t
+  ; methods: method_info SMap.t Ident.Map.t
+        (** Map from module names to information about their methods (signatures, default arguments,
+            ... *)
+  ; fields: PyCommon.signature T.TypeName.Map.t
+        (** Map from fully qualified class name to the list of known fields and their types *)
+  ; module_name: Ident.t
+  ; params: string list  (** Name of function / method parameters *)
   ; is_toplevel: bool
+  ; is_static: bool (* is the current method a static method or an instance method ? *)
   ; next_label: int
+  ; with_targets: ISet.t (* targets for clean up code of [with] statements or [finally] blocks *)
+  ; has_global_annotations: bool
+        (* True iff [SETUP_ANNOTATIONS] was used in the top level context *)
+  ; has_local_annotations: bool (* True iff [SETUP_ANNOTATIONS] was used in a local contextn *)
   ; labels: label_info Labels.t }
 
 (** State of the capture while processing a single node: each node has a dedicated data stack, and
@@ -248,18 +281,34 @@ let rec map ~f ~(env : t) = function
       (env, hd :: tl)
 
 
+let map_result ~f ~(env : t) l =
+  let open IResult.Let_syntax in
+  let rec aux acc l =
+    match (acc, l) with
+    | Error s, _ ->
+        Error s
+    | Ok env, [] ->
+        Ok (env, [])
+    | Ok env, hd :: tl ->
+        let* env, hd = f env hd in
+        let* env, tl = aux (Ok env) tl in
+        Ok (env, hd :: tl)
+  in
+  aux (Ok env) l
+
+
 let mk_fresh_ident ({shared} as env) info =
-  let mk_fresh_ident ({idents; idents_info} as env) =
-    let fresh = T.Ident.fresh idents in
-    let idents = T.Ident.Set.add fresh idents in
-    let idents_info = T.Ident.Map.add fresh info idents_info in
-    ({env with idents; idents_info}, fresh)
+  let mk_fresh_ident ({local_idents; local_idents_info} as env) =
+    let fresh = T.Ident.fresh local_idents in
+    let local_idents = T.Ident.Set.add fresh local_idents in
+    let local_idents_info = T.Ident.Map.add fresh info local_idents_info in
+    ({env with local_idents; local_idents_info}, fresh)
   in
   let shared, fresh = mk_fresh_ident shared in
   ({env with shared}, fresh)
 
 
-let get_ident_info {shared= {idents_info}} id = T.Ident.Map.find_opt id idents_info
+let get_ident_info {shared= {local_idents_info}} id = T.Ident.Map.find_opt id local_idents_info
 
 let push ({node} as env) cell =
   let push ({stack} as env) cell =
@@ -283,8 +332,6 @@ module Label = struct
   type info = label_info
 
   let mk ?(ssa_parameters = []) ?prelude label_name =
-    let default _loc env = env in
-    let prelude = Option.value prelude ~default in
     {label_name; ssa_parameters; prelude; processed= false}
 
 
@@ -299,13 +346,13 @@ module Label = struct
       map ~env ssa_parameters ~f:(fun env typ ->
           let info =
             (* TODO: track code/class for SSA parameters *)
-            {typ; is_code= false; is_class= false}
+            {Info.kind= Other; typ}
           in
           let env, id = mk_fresh_ident env info in
           (env, (id, typ)) )
     in
     (* Install the prelude before processing the instructions *)
-    let env = prelude label_loc env in
+    let env = match prelude with Some action -> action label_loc env | None -> env in
     (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
        Doing a fold_right is important to keep the correct order. *)
     let env =
@@ -317,42 +364,69 @@ end
 let empty_node = {stack= []; instructions= []; last_line= None}
 
 let initial_globals =
-  List.fold ~init:SMap.empty
+  let loc = T.Location.Unknown in
+  List.fold ~init:Ident.Map.empty
     ~f:(fun acc value ->
-      let global_info = Symbol.Builtin in
-      SMap.add value global_info acc )
+      let key = Ident.mk value in
+      let id = Ident.mk_builtin value in
+      let global_info = {Symbol.id; loc; kind= Builtin} in
+      Ident.Map.add key global_info acc )
     (Builtin.Set.supported_builtins ())
 
 
-let empty =
-  { idents= T.Ident.Set.empty
-  ; idents_info= T.Ident.Map.empty
+let empty module_name =
+  { local_idents= T.Ident.Set.empty
+  ; local_idents_info= T.Ident.Map.empty
   ; globals= initial_globals
   ; locals= SMap.empty
-  ; builtins= Builtin.Set.empty
   ; classes= SMap.empty
-  ; imports= ImportSet.empty
-  ; signatures= SMap.empty
-  ; module_name= ""
+  ; builtins= Builtin.Set.empty
+  ; imported_values= Ident.Set.empty
+  ; methods= Ident.Map.empty
+  ; fields= T.TypeName.Map.empty
+  ; module_name
+  ; params= []
   ; is_toplevel= true
+  ; is_static= false
   ; next_label= 0
+  ; with_targets= ISet.empty
+  ; has_global_annotations= false
+  ; has_local_annotations= false
   ; labels= Labels.empty }
 
 
-let empty = {shared= empty; node= empty_node}
+let empty module_name = {shared= empty module_name; node= empty_node}
 
 let stack {node= {stack}} = stack
 
-let enter_proc ~is_toplevel ~module_name {shared} =
+let enter_proc ~is_toplevel ~is_static ~module_name ~params {shared} =
+  Debug.p "[enter_proc] %a\n" Ident.pp module_name ;
   let shared =
     { shared with
       module_name
+    ; params
     ; is_toplevel
-    ; idents= T.Ident.Set.empty
+    ; is_static
+    ; local_idents= T.Ident.Set.empty
     ; next_label= 0
+    ; labels= Labels.empty
+    ; has_local_annotations= false
     ; locals= SMap.empty }
   in
   {shared; node= empty_node}
+
+
+let set_annotations ({shared} as env) =
+  let {is_toplevel} = shared in
+  let shared =
+    if is_toplevel then {shared with has_global_annotations= true}
+    else {shared with has_local_annotations= true}
+  in
+  {env with shared}
+
+
+let has_annotations {shared= {is_toplevel; has_global_annotations; has_local_annotations}} =
+  if is_toplevel then has_global_annotations else has_local_annotations
 
 
 let enter_node ({node} as env) =
@@ -394,22 +468,52 @@ let mk_fresh_label ({shared} as env) =
   (env, fresh_label)
 
 
-let register_label ~offset label_info ({shared} as env) =
+let register_label ~offset ({label_name; ssa_parameters} as label_info) ({shared} as env) =
+  Debug.p "[register_label] %s at offset %d (arity %d)\n" label_name offset
+    (List.length ssa_parameters) ;
   let register_label offset label_info ({labels} as env) =
-    let exists = Labels.mem offset labels in
-    let exists = if exists then "existing" else "non existing" in
-    if label_info.processed then Debug.p "processing %s label at %d\n" exists offset
-    else Debug.p "registering %s label at %d\n" exists offset ;
-    let labels = Labels.add offset label_info labels in
+    let labels =
+      match Labels.find_opt offset labels with
+      | None ->
+          Labels.add offset label_info labels
+      | Some old_info ->
+          (* Sanity check: at the moment we *never* have to combine preludes, we do this using
+             the Textual [If] terminator *)
+          let {prelude= old_prelude} = old_info in
+          let {prelude= new_prelude} = label_info in
+          if Option.is_some old_prelude && Option.is_some new_prelude then
+            L.die InternalError "register_label: failure to combine preludes@\n" ;
+          labels
+    in
     {env with labels}
   in
   let shared = register_label offset label_info shared in
   {env with shared}
 
 
-let process_label ~offset label_info env =
+let register_with_target ~offset ({shared} as env) =
+  Debug.p "[register_with_target] at offset %d\n" offset ;
+  let {with_targets} = shared in
+  let with_targets = ISet.add offset with_targets in
+  let shared = {shared with with_targets} in
+  {env with shared}
+
+
+let is_with_target ~offset {shared} =
+  Debug.p "[is_with_target] %d ?\n" offset ;
+  let {with_targets} = shared in
+  ISet.mem offset with_targets
+
+
+let process_label ~offset ({label_name} as label_info) ({shared} as env) =
+  Debug.p "[process_label] %s at %d\n" label_name offset ;
   let label_info = {label_info with processed= true} in
-  register_label ~offset label_info env
+  let process_label ({labels} as env) =
+    let labels = Labels.add offset label_info labels in
+    {env with labels}
+  in
+  let shared = process_label shared in
+  {env with shared}
 
 
 let label_of_offset {shared} offset =
@@ -419,29 +523,30 @@ let label_of_offset {shared} offset =
 
 let instructions {node= {instructions}} = List.rev instructions
 
-let register_symbol ({shared} as env) ~global name symbol_info =
-  PyDebug.p "[register_symbol] %b %s %a\n" global name Symbol.pp symbol_info ;
-  let register map name symbol_info =
-    let exists = SMap.mem name map in
-    let map = SMap.add name symbol_info map in
-    (exists, map)
+let register_symbol ({shared} as env) key symbol_info =
+  PyDebug.p "[register_symbol] %a %a\n" Symbol.pp_key key Symbol.pp symbol_info ;
+  let {globals; locals} = shared in
+  match key with
+  | Symbol.Global id ->
+      let globals = Ident.Map.add id symbol_info globals in
+      let shared = {shared with globals} in
+      {env with shared}
+  | Symbol.Local local_id ->
+      let locals = SMap.add local_id symbol_info locals in
+      let shared = {shared with locals} in
+      {env with shared}
+
+
+let lookup_symbol {shared} key =
+  PyDebug.p "[lookup_symbol] %a\n" Symbol.pp_key key ;
+  let {globals; locals} = shared in
+  let res =
+    match key with
+    | Symbol.Global id ->
+        Ident.Map.find_opt id globals
+    | Symbol.Local local_id ->
+        SMap.find_opt local_id locals
   in
-  let {globals; locals} = shared in
-  if global then
-    let exists, globals = register globals name symbol_info in
-    let shared = {shared with globals} in
-    (exists, {env with shared})
-  else
-    let exists, locals = register locals name symbol_info in
-    let shared = {shared with locals} in
-    (exists, {env with shared})
-
-
-let lookup_symbol {shared} ~global name =
-  PyDebug.p "[lookup_symbol] %b %s\n" global name ;
-  let lookup map name = SMap.find_opt name map in
-  let {globals; locals} = shared in
-  let res = if global then lookup globals name else lookup locals name in
   PyDebug.p "> %a\n" (Pp.option Symbol.pp) res ;
   res
 
@@ -451,7 +556,7 @@ let globals {shared= {globals}} = globals
 let get_used_builtins {shared= {builtins}} = builtins
 
 let register_builtin ({shared} as env) builtin =
-  PyDebug.p "[register_builtin] %a\n" T.pp_qualified_procname (Builtin.to_proc_name builtin) ;
+  PyDebug.p "[register_builtin] %a\n" T.QualifiedProcName.pp (Builtin.to_proc_name builtin) ;
   let register_builtin ({builtins} as env) builtin =
     {env with builtins= Builtin.Set.register builtins builtin}
   in
@@ -460,17 +565,8 @@ let register_builtin ({shared} as env) builtin =
 
 let mk_builtin_call env builtin args =
   let textual_builtin = Builtin.textual builtin in
-  let typ =
-    (* Special casing to make the type of new instances more precise *)
-    match (builtin, args) with
-    | Builtin.PythonClassConstructor, T.Exp.Const (T.Const.Str arg) :: _ ->
-        (* TODO: how can we track the loc ? via args ?*)
-        let type_name = type_name arg in
-        T.Typ.Ptr (T.Typ.Struct type_name)
-    | _, _ ->
-        Builtin.Set.get_type textual_builtin
-  in
-  let info = {typ; is_class= false; is_code= false} in
+  let typ = Builtin.Set.get_type textual_builtin in
+  let info = {Info.kind= Other; typ} in
   let env = register_builtin env textual_builtin in
   let env, id = mk_fresh_ident env info in
   let proc = Builtin.to_proc_name textual_builtin in
@@ -481,91 +577,142 @@ let mk_builtin_call env builtin args =
   (env, id, typ)
 
 
-let is_builtin {shared= {globals}} fname =
-  match SMap.find_opt fname globals with
-  | Some Symbol.Builtin ->
-      true
-  | None | Some (Name _ | Class _ | Code _ | Import _) ->
-      false
+let is_builtin {shared= {globals}} fid =
+  match Ident.Map.find_opt fid globals with
+  | Some {Symbol.kind= Builtin} ->
+      Some (Ident.to_string ~sep:"." fid)
+  | _ ->
+      None
 
 
-let register_call env fname =
-  PyDebug.p "[register_call] %s\n" fname ;
-  match (is_builtin env fname, Builtin.of_string fname) with
-  | true, Some builtin ->
-      register_builtin env builtin
-  | _, _ ->
+let register_call env fid =
+  PyDebug.p "[register_call] %a\n" Ident.pp fid ;
+  match is_builtin env fid with
+  | Some fname -> (
+    match Builtin.of_string fname with Some builtin -> register_builtin env builtin | None -> env )
+  | None ->
       env
 
 
-let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
-  PyDebug.p "[register_method] %s.%s" enclosing_class method_name ;
-  let {signatures} = shared in
-  let class_info = SMap.find_opt enclosing_class signatures |> Option.value ~default:SMap.empty in
-  let class_info = SMap.add method_name annotations class_info in
-  let signatures = SMap.add enclosing_class class_info signatures in
-  let shared = {shared with signatures} in
+let register_method ({shared} as env) ~enclosing_class ~method_name signature default_arguments =
+  PyDebug.p "[register_method] %a.%s\n" Ident.pp enclosing_class method_name ;
+  PyDebug.p "                  %a\n" Signature.pp signature ;
+  PyDebug.p "                  %a\n" (Pp.seq ~sep:", " T.Exp.pp) default_arguments ;
+  let {methods} = shared in
+  let method_info =
+    Ident.Map.find_opt enclosing_class methods |> Option.value ~default:SMap.empty
+  in
+  let info = {signature; default_arguments} in
+  let method_info = SMap.add method_name info method_info in
+  let methods = Ident.Map.add enclosing_class method_info methods in
+  let shared = {shared with methods} in
   {env with shared}
 
 
-let register_function ({shared} as env) name loc annotations =
-  PyDebug.p "[register_function] %s" name ;
+(* We keep the fields sorted to be able to use List.merge *)
+let register_fields ({shared} as env) class_name class_fields =
+  (* FYI doc says:
+     If several elements compare equal, the elements of l1 will be before the elements of l2.
+
+     TODO(vsiles)
+     Right now we only register once, but we might try to capture more field
+     when an explicit [__init__] is present, and then the order will matter.
+  *)
+  let compare : PyCommon.annotated_name -> PyCommon.annotated_name -> int =
+   fun {PyCommon.name= n0} {PyCommon.name= n1} -> String.compare n0 n1
+  in
+  let {fields} = shared in
+  let old_fields = T.TypeName.Map.find_opt class_name fields |> Option.value ~default:[] in
+  let new_fields = List.sort ~compare class_fields in
+  let new_fields = List.merge ~compare old_fields new_fields in
+  let new_fields = List.dedup_and_sort ~compare new_fields in
+  let fields = T.TypeName.Map.add class_name new_fields fields in
+  let shared = {shared with fields} in
+  {env with shared}
+
+
+let register_function ({shared} as env) fname loc annotations default_arguments =
+  PyDebug.p "[register_function] %s\n" fname ;
   let {module_name} = shared in
-  let info = {Signature.is_static= false; annotations} in
-  let env = register_method env ~enclosing_class:module_name ~method_name:name info in
-  let code_name = Symbol.Qualified.mk ~prefix:[module_name] name loc in
-  let symbol_info = Symbol.Code {code_name} in
-  snd @@ register_symbol env ~global:true name symbol_info
+  let info = {Signature.is_static= false; is_abstract= false; annotations} in
+  let env =
+    register_method env ~enclosing_class:module_name ~method_name:fname info default_arguments
+  in
+  let key = Ident.mk ~loc fname in
+  let id = Ident.extend ~prefix:module_name fname in
+  let symbol_info = {Symbol.kind= Code; id; loc} in
+  register_symbol env (Symbol.Global key) symbol_info
 
 
-let lookup_method {shared= {signatures}} ~enclosing_class name =
+let lookup_method {shared= {methods}} ~enclosing_class name =
   let open Option.Let_syntax in
-  SMap.find_opt enclosing_class signatures >>= SMap.find_opt name
+  Ident.Map.find_opt enclosing_class methods >>= SMap.find_opt name
 
 
-let register_class ({shared} as env) class_name ({parent} as class_info) =
-  PyDebug.p "[register_class] %s" class_name ;
-  ( match parent with
-  | None ->
+let lookup_fields {shared= {fields}} class_name = T.TypeName.Map.find_opt class_name fields
+
+let register_class ({shared} as env) class_name qualified_name parents =
+  PyDebug.p "[register_class] %a as %s\n" Ident.pp qualified_name class_name ;
+  ( match parents with
+  | [] ->
       PyDebug.p "\n"
-  | Some parent ->
-      PyDebug.p " extending %a" Symbol.pp parent ) ;
+  | _ :: _ ->
+      PyDebug.p " extending %a\n" (Pp.seq ~sep:", " Ident.pp) parents ) ;
   let {classes} = shared in
-  let classes = SMap.add class_name class_info classes in
+  let classes = SMap.add class_name {qualified_name; parents} classes in
   let shared = {shared with classes} in
-  {env with shared}
-
-
-let register_import ({shared} as env) import_name =
-  let {imports} = shared in
-  let imports = ImportSet.add import_name imports in
-  let shared = {shared with imports} in
   {env with shared}
 
 
 let get_declared_classes {shared= {classes}} = classes
 
+let register_imported_value ({shared} as env) value =
+  let {imported_values} = shared in
+  let imported_values = Ident.Set.add value imported_values in
+  let shared = {shared with imported_values} in
+  {env with shared}
+
+
 (* TODO: rethink that when adding more support for imports, probably changing it into a
    "lookup_import" version *)
-let get_textual_imports {shared= {imports}} =
+let get_textual_imports {shared= {globals; imported_values}} =
   let result_type = {T.Typ.typ= PyCommon.pyObject; attributes= []} in
-  ImportSet.fold
-    (fun import acc ->
-      match (import : Import.t) with
-      | TopLevel import_name ->
-          let enclosing_class = type_name import_name in
-          let qualified_name =
-            PyCommon.qualified_procname ~enclosing_class
-            @@ PyCommon.proc_name PyCommon.toplevel_function
-          in
-          T.Module.Procdecl {qualified_name; formals_types= Some []; result_type; attributes= []}
-          :: acc
-      | Call qualified_name ->
-          T.Module.Procdecl {qualified_name; formals_types= None; result_type; attributes= []}
-          :: acc )
-    imports []
+  let calls =
+    Ident.Map.fold
+      (fun _key {Symbol.id; kind} acc ->
+        match kind with
+        | Symbol.ImportCall ->
+            let qualified_name = Ident.to_qualified_procname id in
+            let procdecl =
+              {T.ProcDecl.qualified_name; formals_types= None; result_type; attributes= []}
+            in
+            T.Module.Procdecl procdecl :: acc
+        | Symbol.Import ->
+            let enclosing_class = Ident.to_type_name id in
+            let qualified_name =
+              PyCommon.qualified_procname ~enclosing_class
+              @@ PyCommon.proc_name PyCommon.toplevel_function
+            in
+            let procdecl =
+              {T.ProcDecl.qualified_name; formals_types= Some []; result_type; attributes= []}
+            in
+            T.Module.Procdecl procdecl :: acc
+        | _ ->
+            acc )
+      globals []
+  in
+  Ident.Set.fold
+    (fun id acc ->
+      let var_name = Ident.to_var_name id in
+      let global_var = {T.Global.name= var_name; typ= PyCommon.pyObject; attributes= []} in
+      T.Module.Global global_var :: acc )
+    imported_values calls
 
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel
+
+let is_static {shared= {is_static}} = is_static
+
+let get_params {shared= {params}} = params
 
 let module_name {shared= {module_name}} = module_name

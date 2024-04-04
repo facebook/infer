@@ -9,17 +9,6 @@ type cell = { value:int; next: *cell }
 
 type list = { header: *cell }
 
-define use_hack_new_dict_builtin_bad(l: *list) : void {
-  #entry:
-    n0: *list = load &l
-    store n0.list.header <- null: *cell
-    n1: *list = load &l
-    n2 = $builtins.hack_new_dict(n1, n1, n1, n1)
-    n3: *cell = load n0.list.header
-    n4: int = load n3.cell.value
-    ret null
-}
-
 define use_not_modeled_bad(l: *list) : void {
   #entry:
     n0: *list = load &l
@@ -35,5 +24,4 @@ define use_not_modeled_bad(l: *list) : void {
 }
 
 
-declare $builtins.hack_new_dict(...): *HackMixed
 declare $builtins.not_modeled(...): *HackMixed

@@ -9,54 +9,122 @@ package codetoanalyze.java.pulse;
 
 class Annotations {
 
-  @SensitiveSourceMarker
-  String markedSource() {
-    return "";
+  static class Methods {
+
+    @SensitiveSourceMarker
+    String markedSource() {
+      return "";
+    }
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.EMAIL)
+    String email() {
+      return "";
+    }
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.LOCATION)
+    String location() {
+      return "";
+    }
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.OTHER)
+    String other() {
+      return "";
+    }
+
+    @SensitiveSinkMarker
+    void markedSink(String input) {}
+
+    @SanitizerMarker
+    String markedSanitizer(String input) {
+      return input;
+    }
+
+    String unmarkedSource() {
+      return "";
+    }
+
+    void unmarkedSink(String input) {}
+
+    String unmarkedSanitizer(String input) {
+      return input;
+    }
+
+    void markedSourceToMarkedSinkBad() {
+      markedSink(markedSource());
+    }
+
+    void markedSourceUsingMarkedSanitizerToMarkedSinkOk() {
+      markedSink(markedSanitizer(markedSource()));
+    }
+
+    void markedSourceUsingUnmarkedSanitizerToMarkedSinkBad() {
+      markedSink(unmarkedSanitizer(markedSource()));
+    }
+
+    void unmarkedSourceToMarkedSinkOk() {
+      markedSink(unmarkedSource());
+    }
+
+    void unmarkedSourceUsingMarkedSanitizerToMarkedSinkOk() {
+      markedSink(markedSanitizer(unmarkedSource()));
+    }
+
+    void markedSourceToUnmarkedSinkOk() {
+      unmarkedSink(markedSource());
+    }
+
+    void emailToSinkBad() {
+      markedSink(email());
+    }
+
+    void locationToSinkBad() {
+      markedSink(location());
+    }
+
+    void otherToSinkOk() {
+      markedSink(other());
+    }
   }
 
-  @SensitiveSinkMarker
-  void markedSink(String input) {}
+  static class Fields {
 
-  @SanitizerMarker
-  String markedSanitizer(String input) {
-    return input;
-  }
+    @SensitiveSourceMarker static String markedSource;
 
-  String unmarkedSource() {
-    return "";
-  }
+    @SensitiveSinkMarker static String markedSink;
 
-  void unmarkedSink(String input) {}
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.EMAIL)
+    static String email;
 
-  String unmarkedSanitizer(String input) {
-    return input;
-  }
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.LOCATION)
+    static String location;
 
-  void markedSourceToMarkedSinkBad() {
-    markedSink(markedSource());
-  }
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.OTHER)
+    static String other;
 
-  void markedSourceUsingMarkedSanitizerToMarkedSinkOk() {
-    markedSink(markedSanitizer(markedSource()));
-  }
+    static String unmarked;
 
-  void markedSourceUsingUnmarkedSanitizerToMarkedSinkBad() {
-    markedSink(unmarkedSanitizer(markedSource()));
-  }
+    void markedSourceToMarkedSinkBad() {
+      markedSink = markedSource;
+    }
 
-  void unmarkedSourceToMarkedSinkOk() {
-    markedSink(unmarkedSource());
-  }
+    void unmarkedSourceToMarkedSinkOk() {
+      markedSink = unmarked;
+    }
 
-  void unmarkedSourceUsingMarkedSanitizerToMarkedSinkOk() {
-    markedSink(markedSanitizer(unmarkedSource()));
-  }
+    void markedSourceToUnmarkedSinkOk() {
+      unmarked = markedSource;
+    }
 
-  void markedSourceToUnmarkedSinkOk() {
-    unmarkedSink(markedSource());
-  }
+    void emailToMarkedSinkBad() {
+      markedSink = email;
+    }
 
-  void unmarkedSourceToUnmarkedSinkOk() {
-    unmarkedSink(unmarkedSource());
+    void locationToMarkedSinkBad() {
+      markedSink = location;
+    }
+
+    void otherToMarkedSinkOk() {
+      markedSink = other;
+    }
   }
 }

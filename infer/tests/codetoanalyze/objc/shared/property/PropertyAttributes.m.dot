@@ -61,15 +61,15 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#[instance].069a3c4354a28603_7" -> "copy#PropertyA#[instance].069a3c4354a28603_5" ;
-"copy#PropertyA#[instance].069a3c4354a28603_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&other:PropertyA* [line 33, column 5]\n  n$4=*&self:PropertyA* [line 33, column 21]\n  n$5=*n$4._child:PropertyA* [line 33, column 21]\n  *n$3._child:PropertyA*=n$5 [line 33, column 5]\n " shape="box"]
+"copy#PropertyA#[instance].069a3c4354a28603_8" [label="8:  BinaryOperatorStmt: Assign \n   n$4=*&self:PropertyA* [line 33, column 21]\n  n$5=*n$4._child:PropertyA* [line 33, column 21]\n  n$3=*&other:PropertyA* [line 33, column 5]\n  *n$3._child:PropertyA*=n$5 [line 33, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#[instance].069a3c4354a28603_8" -> "copy#PropertyA#[instance].069a3c4354a28603_5" ;
-"copy#PropertyA#[instance].069a3c4354a28603_9" [label="9:  BinaryOperatorStmt: Assign \n   n$6=*&other:PropertyA* [line 32, column 5]\n  n$7=*&self:PropertyA* [line 32, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 32, column 25]\n  *n$6._last_name:PropertyA*=n$8 [line 32, column 5]\n " shape="box"]
+"copy#PropertyA#[instance].069a3c4354a28603_9" [label="9:  BinaryOperatorStmt: Assign \n   n$7=*&self:PropertyA* [line 32, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 32, column 25]\n  n$6=*&other:PropertyA* [line 32, column 5]\n  *n$6._last_name:PropertyA*=n$8 [line 32, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#[instance].069a3c4354a28603_9" -> "copy#PropertyA#[instance].069a3c4354a28603_8" ;
-"copy#PropertyA#[instance].069a3c4354a28603_10" [label="10:  BinaryOperatorStmt: Assign \n   n$9=*&other:PropertyA* [line 31, column 5]\n  n$10=*&self:PropertyA* [line 31, column 20]\n  n$11=*n$10._name:PropertyA* [line 31, column 20]\n  *n$9._name:PropertyA*=n$11 [line 31, column 5]\n " shape="box"]
+"copy#PropertyA#[instance].069a3c4354a28603_10" [label="10:  BinaryOperatorStmt: Assign \n   n$10=*&self:PropertyA* [line 31, column 20]\n  n$11=*n$10._name:PropertyA* [line 31, column 20]\n  n$9=*&other:PropertyA* [line 31, column 5]\n  *n$9._name:PropertyA*=n$11 [line 31, column 5]\n " shape="box"]
 	
 
 	 "copy#PropertyA#[instance].069a3c4354a28603_10" -> "copy#PropertyA#[instance].069a3c4354a28603_9" ;

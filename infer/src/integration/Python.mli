@@ -13,6 +13,6 @@ open! IStd
 
     [Files] is a list of Python source files, which are then captured and analyzed. This is the main
     way of running infer on Python code. *)
-type kind = Bytecode of string | Files of {prog: string; args: string list}
+type kind = Bytecode of {files: string list} | Files of {prog: string; args: string list}
 
 val capture : kind -> unit

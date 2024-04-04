@@ -13,7 +13,7 @@ open! IStd
     as possible!), it is sometimes too convenient to ignore. This module lets us do it safely, at
     least until infer becomes multicore. In particular, global state is appropriately and safely
     stashed away and restored when the analysis of a procedure is suspended to go analyze another
-    procedure with ondemand (see the {!Ondemand} module). *)
+    procedure with ondemand (see the {!Backend.Ondemand} module). *)
 
 type t
 
@@ -21,7 +21,7 @@ val save : unit -> t
 
 val restore : t -> unit
 
-val initialize : Procdesc.t -> unit
+val initialize : Procdesc.t -> Tenv.t -> unit
 
 val register : init:(unit -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) -> unit
 (** Register pieces of global state from other analysis modules:
@@ -33,5 +33,5 @@ val register : init:(unit -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) 
 val register_ref : init:(unit -> 'a) -> 'a ref -> unit
 (** special case of a value stored in a reference; [init] sets the ref to [init ()] *)
 
-val register_ref_with_proc_desc : init:(Procdesc.t -> 'a) -> 'a ref -> unit
-(** same as [register_ref] but [init] takes a proc desc *)
+val register_ref_with_proc_desc_and_tenv : init:(Procdesc.t -> Tenv.t -> 'a) -> 'a ref -> unit
+(** same as [register_ref] but [init] takes a proc desc and a tenv *)

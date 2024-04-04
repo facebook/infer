@@ -240,6 +240,14 @@ let rec validate_expr env (expr : Ast.expression) =
           List.for_all ~f:validate_create updates
       | Some expr ->
           validate_expr env expr && List.for_all ~f:validate_update updates )
+  | MapComprehension {expression= e; qualifiers= qs} -> (
+    match e.kind with
+    | Arrow ->
+        validate_expr env e.key && validate_expr env e.value
+        && List.for_all ~f:(validate_qualifier env) qs
+    | _ ->
+        L.debug Capture Verbose "Invalid map association kind (not =>) in map comprehension@." ;
+        false )
   | Match {pattern; body} ->
       validate_pattern env pattern && validate_expr env body
   | Nil ->
@@ -288,6 +296,13 @@ and validate_qualifier env (q : Ast.qualifier) =
       validate_expr env e
   | Generator {pattern= p; expression= e} ->
       validate_pattern env p && validate_expr env e
+  | MapGenerator {pattern= p; expression= e} -> (
+    match p.kind with
+    | Exact ->
+        validate_pattern env p.key && validate_pattern env p.value && validate_expr env e
+    | _ ->
+        L.debug Capture Verbose "Invalid map association kind (not :=) in map generator@." ;
+        false )
 
 
 and validate_body env = List.for_all ~f:(validate_expr env)

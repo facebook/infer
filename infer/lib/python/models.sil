@@ -24,6 +24,65 @@ define $builtins.python_is_true(b: *PyObject) : int {
     ret n1
 }
 
+define $builtins.python_make_true(): *PyBool {
+  #entry:
+    ret $builtins.python_bool(1)
+}
+
+define $builtins.python_make_false(): *PyBool {
+  #entry:
+    ret $builtins.python_bool(0)
+}
+
+define $builtins.python_not(b: *PyBool) : *PyBool {
+  #entry:
+    n0: *PyBool = load &b
+    // We assume a not-null argument similar to python_is_true
+    prune __sil_ne(n0, 0)
+    n1: int = load n0.PyBool.val
+    jmp is_true, is_false
+  #is_true:
+    prune n1
+    ret $builtins.python_make_false()
+  #is_false:
+    prune !n1
+    ret $builtins.python_make_true()
+
+}
+define $builtins.python_eq(x: *PyObject, y: *PyObject) : *PyBool {
+  // TODO: we need a better model for polymorphic equality. The current one is null-safe and works
+  // for ints but otherwise is questionable when applied to some random types
+  #entry:
+    n0: *PyObject = load &x
+    n1: *PyObject = load &y
+    jmp eq, x_eq_null, x_ne_null, ne
+  #eq:
+    prune __sil_eq(n0, n1)
+    ret $builtins.python_make_true()
+  #x_eq_null:
+    prune __sil_eq(n0, 0)
+    prune __sil_ne(n1, 0)
+    ret $builtins.python_make_false()
+  #x_ne_null:
+    prune __sil_ne(n0, 0)
+    prune __sil_eq(n1, 0)
+    ret $builtins.python_make_false()
+  #ne:
+    prune __sil_ne(n0, n1)
+    prune __sil_ne(n0, 0)
+    prune __sil_ne(n1, 0)
+    n2: int = load n0.PyInt.val
+    n3: int = load n1.PyInt.val
+    ret $builtins.python_bool(__sil_eq(n2, n3))
+}
+
+define $builtins.python_neq(x: *PyObject, y: *PyObject) : *PyBool {
+  #entry:
+    n0: *PyObject = load &x
+    n1: *PyObject = load &y
+    ret $builtins.python_not($builtins.python_eq(n0, n1))
+}
+
 type PyInt = { val: int }
 
 define $builtins.python_int(i: int): *PyInt {
@@ -33,3 +92,4 @@ define $builtins.python_int(i: int): *PyInt {
     store n0.PyInt.val <- n1 : int
     ret n0
 }
+

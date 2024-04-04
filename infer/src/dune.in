@@ -101,8 +101,8 @@ let inferunit_stanza =
  (modules Inferunit)
  (flags (:standard
      -open Core -open IStdlib -open IStd -open IBase -open Backend -open Integration -open Textuallib
-     -open UnitTests -open NullsafeUnitTests -open ClangFrontend %s %s))
- (libraries %s oUnit core IStdlib IBase Backend Integration UnitTests NullsafeUnitTests Textuallib %s)
+     -open UnitTests -open ClangFrontend %s %s))
+ (libraries %s oUnit core IStdlib IBase Backend Integration UnitTests Textuallib %s)
  (link_flags %s)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
@@ -120,7 +120,7 @@ let infertop_stanza =
  (modes byte_complete)
  (modules Infertop)
  (flags (:standard -open Core -open IStdlib -open IStd -open Textuallib %s))
- (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR Textuallib IStdlib Labs Nullsafe Pulselib PythonFrontend Quandary Integration TestDeterminators Topllib UnitTests)
+ (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR Textuallib IStdlib Labs Pulselib PythonFrontend Quandary Integration TestDeterminators Topllib UnitTests)
  (link_flags (-linkall -warn-error -31))
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))

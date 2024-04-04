@@ -1,8 +1,11 @@
 # Website
 
-This website is built using Docusaurus 2, a modern static website generator.
+This website is built using Docusaurus 3, a modern static website generator.
 
 ### Installation
+
+NOTE: On Debian, you likely want to use `corepack yarn` (yarn
+"classic") instead of `yarn`, e.g. `corepack yarn start`.
 
 ```
 $ yarn

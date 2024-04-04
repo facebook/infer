@@ -20,35 +20,44 @@ type contradiction = private
       (** raised when the precondition and the current state disagree on the aliasing, i.e. some
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
-          [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+          [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. We only raise
+          this information if we have found this alias through a heap path that is not supported by
+          our current abstraction (like array accesses). *)
+  | AliasingWithAllAliases of Specialization.HeapPath.t list list
+      (** similar to [Aliasing] case above but we have collected in a list of alias classes all
+          alias information before raising and all of them rely on heap paths that we support. *)
   | DynamicTypeNeeded of AbstractValue.t Specialization.HeapPath.Map.t
       (** A map [path -> value] such that each path leads to a value (in the caller space) that
           requires dynamic type specialization *)
   | CapturedFormalActualLength of
-      { captured_formals: (Var.t * Typ.t) list
+      { captured_formals: (Pvar.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
-      {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+      {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
-
-val is_aliasing_contradiction : contradiction -> bool
 
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option
+
+val merge_contradictions : contradiction option -> contradiction option -> contradiction option
+(** applying a summary in the caller context may lead to a contradiction; if the summary is a
+    non-trivial list of disjuncts, we will merge all possible contradictions, in each disjunct, into
+    a single one, using this [merge_contradictions] function. *)
 
 val apply_summary :
      PathContext.t
   -> Procname.t
   -> Location.t
   -> callee_summary:AbductiveDomain.Summary.t
-  -> captured_formals:(Var.t * Typ.t) list
+  -> captured_formals:(Pvar.t * Typ.t) list
   -> captured_actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-  -> formals:(Var.t * Typ.t) list
+  -> formals:(Pvar.t * Typ.t) list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> AbductiveDomain.t
   -> ( AbductiveDomain.t
      * (AbstractValue.t * ValueHistory.t) option
-     * (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t )
+     * (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+     * ValueHistory.t CellId.Map.t )
      AccessResult.t
      SatUnsat.t
      * contradiction option

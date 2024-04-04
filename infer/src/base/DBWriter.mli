@@ -8,6 +8,9 @@
 
 open! IStd
 
+val override_use_daemon : bool -> unit
+(** override the default of whether the process should use DB daemon [true] or not [false] *)
+
 val add_source_file :
      source_file:Sqlite3.Data.t
   -> tenv:Sqlite3.Data.t
@@ -24,13 +27,13 @@ val delete_attributes : proc_uid:string -> unit
 
 val delete_issue_logs : source_file:Sqlite3.Data.t -> unit
 
-val delete_spec : proc_uid:string -> unit
+val delete_specs : proc_uids:string list -> unit
 
 val mark_all_source_files_stale : unit -> unit
 
 val merge_captures : root:string -> infer_deps_file:string -> unit
 
-val merge_report_summaries : infer_outs:string list -> unit
+val merge_summaries : infer_outs:string list -> unit
 
 val replace_attributes :
      proc_uid:string
@@ -51,7 +54,7 @@ val store_issue_log :
 val store_spec :
      proc_uid:string
   -> proc_name:Sqlite3.Data.t
-  -> payloads:Sqlite3.Data.t list
-  -> report_summary:Sqlite3.Data.t
-  -> summary_metadata:Sqlite3.Data.t
+  -> merge_pulse_payload:(old_pulse_payload:Sqlite3.Data.t option -> Sqlite3.Data.t list)
+  -> merge_report_summary:(old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t)
+  -> merge_summary_metadata:(old_summary_metadata:Sqlite3.Data.t option -> Sqlite3.Data.t)
   -> unit

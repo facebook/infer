@@ -31,8 +31,6 @@ type t =
     path, with Dpvar being the simplest one *)
 type vpath = t option
 
-let eradicate_java () = Config.is_checker_enabled Eradicate && Language.curr_language_is Java
-
 let split_var_clang var_name =
   match String.rsplit2 ~on:'.' var_name with Some (_, name) -> name | _ -> var_name
 
@@ -67,10 +65,7 @@ let rec pp fmt = function
   | Dderef de ->
       F.fprintf fmt "*%a" pp de
   | Dfcall (fun_dexp, args, _, {cf_virtual= isvirtual}) ->
-      let pp_args fmt des =
-        if eradicate_java () then (if not (List.is_empty des) then F.pp_print_string fmt "...")
-        else Pp.comma_seq pp fmt des
-      in
+      let pp_args fmt des = Pp.comma_seq pp fmt des in
       let pp_fun fmt = function
         | Dconst (Cfun pname) ->
             let s =
@@ -102,9 +97,6 @@ let rec pp fmt = function
       if Language.curr_language_is Java then
         F.fprintf fmt "%a.%s" pp de (Fieldname.get_field_name f)
       else F.fprintf fmt "%a->%s" pp de (Fieldname.to_string f)
-  | Ddot (Dpvar _, fe) when eradicate_java () ->
-      (* static field access *)
-      F.pp_print_string fmt (Fieldname.to_simplified_string fe)
   | Ddot (de, f) ->
       let field_text =
         if Language.curr_language_is Java then Fieldname.get_field_name f else Fieldname.to_string f
@@ -117,11 +109,10 @@ let rec pp fmt = function
   | Dpvaraddr pv ->
       let var_name = Mangled.to_string (Pvar.get_name pv) in
       let s =
-        if eradicate_java () then Pvar.get_simplified_name pv
-        else if Language.curr_language_is Clang then split_var_clang var_name
+        if Language.curr_language_is Clang then split_var_clang var_name
         else Mangled.to_string (Pvar.get_name pv)
       in
-      let pp_ampersand fmt = if not (eradicate_java ()) then F.pp_print_string fmt "&" in
+      let pp_ampersand fmt = F.pp_print_string fmt "&" in
       F.fprintf fmt "%t%s" pp_ampersand s
   | Dunop (op, de) ->
       F.fprintf fmt "%s%a" (Unop.to_string op) pp de

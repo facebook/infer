@@ -12,10 +12,29 @@ module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 
+module CellId = struct
+  type t = int [@@deriving compare, equal, yojson_of]
+
+  let pp = Int.pp
+
+  let next_id = ref 0
+
+  let () = AnalysisGlobalState.register_ref ~init:(fun () -> 0) next_id
+
+  let next () =
+    let id = !next_id in
+    incr next_id ;
+    id
+
+
+  module Map = IntMap
+  module Set = IntSet
+end
+
 type event =
   | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
   | Assignment of Location.t * Timestamp.t
-  | Call of {f: CallEvent.t; location: Location.t; in_call: t; timestamp: Timestamp.t}
+  | Call of {f: CallEvent.t; location: Location.t; in_call: t [@ignore]; timestamp: Timestamp.t}
   | Capture of
       { captured_as: Pvar.t
       ; mode: CapturedVar.capture_mode
@@ -30,15 +49,56 @@ type event =
   | Returned of Location.t * Timestamp.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
   | TaintSource of TaintItem.t * Location.t * Timestamp.t
+  | TaintPropagated of Location.t * Timestamp.t
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
+(** INVARIANT: [InContext] always comes first in a given history, if any, then [FromCellIds], if
+    any. This is for efficient querying of context and cell ids. *)
 and t =
   | Epoch
   | Sequence of event * t
   | InContext of {main: t; context: t list}
   | BinaryOp of Binop.t * t * t
+  | FromCellIds of CellId.Set.t * t
+  | Multiplex of t list
+  | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
 [@@deriving compare, equal]
+
+module EventSet = Caml.Set.Make (struct
+  type t = event [@@deriving compare]
+end)
+
+let get_cell_ids = function
+  (* thanks to INVARIANT these are the only cases we need to check *)
+  | FromCellIds (ids, _) | InContext {main= FromCellIds (ids, _)} ->
+      Some ids
+  | _ ->
+      None
+
+
+let get_cell_id_exn hist =
+  let open Option.Monad_infix in
+  get_cell_ids hist >>| CellId.Set.min_elt
+
+
+let pop_cell_ids = function
+  | FromCellIds (ids, hist) ->
+      Some (ids, hist)
+  | InContext {main= FromCellIds (ids, main); context} ->
+      Some (ids, InContext {main; context})
+  | _ ->
+      None
+
+
+let pop_all_cell_ids hists =
+  List.fold_map hists ~init:CellId.Set.empty ~f:(fun ids hist' ->
+      match pop_cell_ids hist' with
+      | None ->
+          (ids, hist')
+      | Some (ids', hist'') ->
+          (CellId.Set.union ids ids', hist'') )
+
 
 let epoch = Epoch
 
@@ -50,17 +110,68 @@ let in_context_f from new_context_opt ~f =
     match from with
     | InContext {main; context} when phys_equal context new_context ->
         InContext {main= f main; context}
-    | Epoch | Sequence _ | BinaryOp _ | InContext _ ->
+    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellIds _ | Multiplex _ | UnknownCall _ ->
         InContext {main= f from; context= new_context} )
 
 
-let sequence ?context event hist = in_context_f hist context ~f:(fun hist -> Sequence (event, hist))
+(** assumes the given history has [FromCellIds] at the front in the *inner* (sub-)history or
+    sub-histories (i.e. INVARIANT holds of the immediate sub-history) and restores INVARIANT by
+    putting [FromCellIds] back at the front of the entire history (or just under [InContext]); used
+    for constructors of most of the variants of [t] *)
+let cell_ids_first = function
+  | (Epoch | InContext _) as hist ->
+      hist
+  | Sequence (event, FromCellIds (ids, hist)) ->
+      FromCellIds (ids, Sequence (event, hist))
+  | FromCellIds (ids, FromCellIds (ids', hist')) ->
+      FromCellIds (CellId.Set.union ids ids', hist')
+  | (Sequence _ | FromCellIds _) as hist ->
+      hist
+  | BinaryOp (bop, hist1, hist2) as hist -> (
+    match (pop_cell_ids hist1, pop_cell_ids hist2) with
+    | None, None ->
+        hist
+    | Some (ids, hist1'), None ->
+        FromCellIds (ids, BinaryOp (bop, hist1', hist2))
+    | None, Some (ids, hist2') ->
+        FromCellIds (ids, BinaryOp (bop, hist1, hist2'))
+    | Some (ids1, hist1'), Some (ids2, hist2') ->
+        FromCellIds (CellId.Set.union ids1 ids2, BinaryOp (bop, hist1', hist2')) )
+  | Multiplex hists as hist ->
+      let ids, hists' = pop_all_cell_ids hists in
+      if CellId.Set.is_empty ids then hist else FromCellIds (ids, Multiplex hists')
+  | UnknownCall {f; actuals= hists; location; timestamp} as hist ->
+      let ids, hists' = pop_all_cell_ids hists in
+      if CellId.Set.is_empty ids then hist
+      else FromCellIds (ids, UnknownCall {f; actuals= hists'; location; timestamp})
+
+
+let sequence ?context event hist =
+  in_context_f hist context ~f:(fun hist -> Sequence (event, hist) |> cell_ids_first)
+
 
 let in_context context hist = in_context_f hist (Some context) ~f:Fn.id
 
-let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2)
+let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2) |> cell_ids_first
+
+let from_cell_id id hist = FromCellIds (CellId.Set.singleton id, hist) |> cell_ids_first
+
+let multiplex hists = Multiplex hists |> cell_ids_first
+
+let unknown_call f actuals location timestamp =
+  UnknownCall {f; actuals; location; timestamp} |> cell_ids_first
+
 
 let singleton event = Sequence (event, Epoch)
+
+let of_cell_ids_in_map hist_map ids =
+  let hists =
+    CellId.Set.fold
+      (fun id hists -> (CellId.Map.find_opt id hist_map |> Option.to_list) @ hists)
+      ids []
+  in
+  match hists with [] -> None | [hist] -> Some hist | _ :: _ :: _ -> Some (multiplex hists)
+
 
 let location_of_event = function
   | Allocation {location}
@@ -75,6 +186,7 @@ let location_of_event = function
   | Returned (location, _)
   | StructFieldAddressCreated (_, location, _)
   | TaintSource (_, location, _)
+  | TaintPropagated (location, _)
   | VariableAccessed (_, location, _)
   | VariableDeclared (_, location, _) ->
       location
@@ -93,6 +205,7 @@ let timestamp_of_event = function
   | Returned (_, timestamp)
   | StructFieldAddressCreated (_, _, timestamp)
   | TaintSource (_, _, timestamp)
+  | TaintPropagated (_, timestamp)
   | VariableAccessed (_, _, timestamp)
   | VariableDeclared (_, _, timestamp) ->
       timestamp
@@ -106,6 +219,8 @@ let pop_least_timestamp ~main_only hists0 =
         (latest_events, curr_ts_hists_prefix)
     | _, Epoch :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
+    | _, FromCellIds (_, hist) :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist :: hists)
     | _, InContext {main} :: hists when main_only ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (main :: hists)
     | _, InContext {main; context} :: hists ->
@@ -113,6 +228,12 @@ let pop_least_timestamp ~main_only hists0 =
           (main :: List.rev_append context hists)
     | _, BinaryOp (_, hist1, hist2) :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist1 :: hist2 :: hists)
+    | _, Multiplex hists' :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hists' @ hists)
+    | _, UnknownCall {f; location; timestamp} :: hists ->
+        (* cheat a bit: transform an [UnknownCall] history into a singleton [Call] history *)
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+          (Sequence (Call {f; location; timestamp; in_call= Epoch}, Epoch) :: hists)
     | None, (Sequence (event, hist') as hist) :: hists ->
         aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
           (Some (timestamp_of_event event))
@@ -147,23 +268,43 @@ let rec rev_iter_branches ~main_only hists ~f =
 
 
 and rev_iter_simultaneous_events ~main_only events ~f =
-  let is_nonempty = function Epoch -> false | Sequence _ | InContext _ | BinaryOp _ -> true in
-  let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
-  match events with
-  | [] ->
+  let is_nonempty = function
+    | Epoch | FromCellIds (_, Epoch) ->
+        false
+    | Sequence _ | InContext _ | BinaryOp _ | FromCellIds _ | Multiplex _ | UnknownCall _ ->
+        true
+  in
+  let in_calls =
+    let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
+    List.filter_map events ~f:in_call
+  in
+  (* is there any call event in the list? *)
+  ( match
+      List.find_map events ~f:(function
+        | Call {f= callee; location; in_call} when is_nonempty in_call ->
+            Some (callee, location)
+        | _ ->
+            None )
+    with
+  | Some (callee, location) ->
+      (* if there are call events in the list, iterate on their inner histories first; we stored
+         those in [in_calls] just above and it will be non-empty in this match branch by
+         construction *)
+      f (ReturnFromCall (callee, location)) ;
+      rev_iter_branches ~main_only in_calls ~f ;
+      f (EnterCall (callee, location)) ;
       ()
-  | event :: _ ->
-      (* operate on just one representative, they should all be the same given they have the same
-         timestamp inside the same path of the same procedure call *)
-      ( match event with
-      | Call {f= callee; location; in_call= in_call'} when is_nonempty in_call' ->
-          f (ReturnFromCall (callee, location)) ;
-          rev_iter_branches ~main_only (List.filter_map events ~f:in_call) ~f ;
-          f (EnterCall (callee, location)) ;
-          ()
-      | _ ->
-          () ) ;
-      f (Event event)
+  | _ ->
+      () ) ;
+  (* iterate over each unique event; events have been "reversed" (i.e. put in the correct order,
+     which is the wrong one here since we do a [rev_iter_...]) so reverse them once more using
+     [fold_left] *)
+  List.fold_left events ~init:EventSet.empty ~f:(fun seen event ->
+      if EventSet.mem event seen then seen
+      else (
+        f (Event event) ;
+        EventSet.add event seen ) )
+  |> ignore
 
 
 and rev_iter ~main_only (history : t) ~f =
@@ -173,6 +314,8 @@ and rev_iter ~main_only (history : t) ~f =
   | Sequence (event, rest) ->
       rev_iter_simultaneous_events ~main_only [event] ~f ;
       rev_iter ~main_only rest ~f
+  | FromCellIds (_, hist) ->
+      rev_iter ~main_only hist ~f
   | InContext {main} when main_only ->
       rev_iter ~main_only main ~f
   | InContext {main; context} ->
@@ -180,6 +323,10 @@ and rev_iter ~main_only (history : t) ~f =
       rev_iter_branches ~main_only (main :: context) ~f
   | BinaryOp (_, hist1, hist2) ->
       rev_iter_branches ~main_only [hist1; hist2] ~f
+  | Multiplex hists ->
+      rev_iter_branches ~main_only hists ~f
+  | UnknownCall {f= f_; location; timestamp} ->
+      rev_iter_simultaneous_events ~main_only [Call {f= f_; location; timestamp; in_call= Epoch}] ~f
 
 
 let rev_iter_main = rev_iter ~main_only:true
@@ -252,6 +399,8 @@ let pp_event_no_location fmt event =
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
   | TaintSource (taint_source, _, _) ->
       F.fprintf fmt "source of the taint here: %a" TaintItem.pp taint_source
+  | TaintPropagated _ ->
+      F.fprintf fmt "taint propagated"
   | VariableAccessed (pvar, _, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _, _) ->
@@ -264,22 +413,42 @@ let pp_event fmt event =
 
 
 let pp fmt history =
-  let rec pp_aux fmt = function
+  let rec pp_aux ~is_first fmt hist =
+    (match hist with Epoch -> () | _ when not is_first -> F.fprintf fmt "@,::" | _ -> ()) ;
+    match hist with
     | Epoch ->
         ()
-    | Sequence ((Call {in_call} as event), tail) ->
-        F.fprintf fmt "%a@;" pp_event event ;
-        F.fprintf fmt "[@[%a@]]@;" pp_aux in_call ;
-        pp_aux fmt tail
+    | FromCellIds (ids, hist) ->
+        F.fprintf fmt "@[<h>from_cell_ids%a@]" CellId.Set.pp ids ;
+        pp_aux ~is_first:false fmt hist
+    | Sequence ((Call {in_call= sub_hist} as event), tail) ->
+        F.pp_open_box fmt 0 ;
+        pp_event fmt event ;
+        ( match sub_hist with
+        | Epoch ->
+            F.pp_print_string fmt "[]"
+        | _ ->
+            F.fprintf fmt "[@\n  @[%a@]@\n]" (pp_aux ~is_first:true) sub_hist ) ;
+        F.pp_close_box fmt () ;
+        pp_aux ~is_first:false fmt tail
     | Sequence (event, tail) ->
-        F.fprintf fmt "%a@;" pp_event event ;
-        pp_aux fmt tail
+        pp_event fmt event ;
+        pp_aux ~is_first:false fmt tail
     | InContext {main; context} ->
-        F.fprintf fmt "(@[%a@]){@[%a@]}" (Pp.seq ~sep:"; " pp_aux) context pp_aux main
+        F.fprintf fmt "(@[%a@]){@[%a@]}"
+          (Pp.seq ~sep:"; " (pp_aux ~is_first:true))
+          context (pp_aux ~is_first:true) main
     | BinaryOp (bop, hist1, hist2) ->
-        F.fprintf fmt "[@[%a@]] %a [@[%a@]]" pp_aux hist1 Binop.pp bop pp_aux hist2
+        F.fprintf fmt "[@[%a@]] %a [@[%a@]]" (pp_aux ~is_first:true) hist1 Binop.pp bop
+          (pp_aux ~is_first:true) hist2
+    | Multiplex hists ->
+        F.fprintf fmt "{@[<v>%a@]}" (Pp.seq ~sep:"||" (pp_aux ~is_first:true)) hists
+    | UnknownCall {f} ->
+        F.fprintf fmt "in unknown call to %a" CallEvent.pp f
   in
-  F.fprintf fmt "@[%a@]" pp_aux history
+  F.pp_open_box fmt 0 ;
+  pp_aux ~is_first:true fmt history ;
+  F.pp_close_box fmt ()
 
 
 let add_event_to_errlog ~nesting event errlog =
@@ -295,12 +464,32 @@ let add_returned_from_call_to_errlog ~nesting f location errlog =
   Errlog.make_trace_element nesting location description tags :: errlog
 
 
-let add_to_errlog ~nesting history errlog =
+let is_taint_event = function
+  | Allocation _
+  | Assignment _
+  | Call _
+  | Capture _
+  | ConditionPassed _
+  | CppTemporaryCreated _
+  | FormalDeclared _
+  | Invalidated _
+  | NilMessaging _
+  | Returned _
+  | StructFieldAddressCreated _
+  | VariableAccessed _
+  | VariableDeclared _ ->
+      false
+  | TaintSource _ | TaintPropagated _ ->
+      true
+
+
+let add_to_errlog ?(include_taint_events = false) ~nesting history errlog =
   let nesting = ref nesting in
   let errlog = ref errlog in
   let one_iter_event = function
     | Event event ->
-        errlog := add_event_to_errlog ~nesting:!nesting event !errlog
+        if include_taint_events || not (is_taint_event event) then
+          errlog := add_event_to_errlog ~nesting:!nesting event !errlog
     | EnterCall _ ->
         decr nesting
     | ReturnFromCall (call, location) ->
@@ -314,3 +503,7 @@ let add_to_errlog ~nesting history errlog =
 let get_first_main_event hist =
   Iter.head (Iter.from_labelled_iter (iter ~main_only:true hist))
   |> Option.bind ~f:(function Event event -> Some event | _ -> None)
+
+
+let exists_main t ~f =
+  Container.exists ~iter:rev_iter_main t ~f:(function Event event -> f event | _ -> false)

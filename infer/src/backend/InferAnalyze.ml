@@ -61,6 +61,8 @@ let proc_name_of_uid uid =
       L.die InternalError "Requested non-existent proc_uid: %s@." uid
 
 
+let useful_time = ref ExecutionDuration.zero
+
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
     DB.Results_dir.init source_file ;
@@ -96,6 +98,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
         None
   in
   fun target ->
+    let start = ExecutionDuration.counter () in
     let exe_env = Exe_env.mk () in
     let result =
       match target with
@@ -110,6 +113,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
        release memory before potentially going idle *)
     clear_caches () ;
     do_compaction_if_needed () ;
+    useful_time := ExecutionDuration.add_duration_since !useful_time start ;
     result
 
 
@@ -193,6 +197,7 @@ let analyze replay_call_graph source_files_to_analyze =
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
+  RestartScheduler.setup () ;
   if Int.equal Config.jobs 1 then (
     let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
@@ -211,7 +216,6 @@ let analyze replay_call_graph source_files_to_analyze =
       tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze)
     in
     (* Prepare tasks one file at a time while executing in parallel *)
-    RestartScheduler.setup () ;
     let allocation_traces_dir = ResultsDir.get_path AllocationTraces in
     if Config.memtrace_analysis then (
       Utils.create_dir allocation_traces_dir ;
@@ -222,9 +226,11 @@ let analyze replay_call_graph source_files_to_analyze =
     let runner =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in
+      let process_times_counter = ref None in
       let child_prologue _ =
         Stats.reset () ;
         gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart) ;
+        process_times_counter := Some (ExecutionDuration.counter ()) ;
         if Config.memtrace_analysis then
           let filename =
             allocation_traces_dir ^/ F.asprintf "memtrace.%a" Pid.pp (Unix.getpid ())
@@ -242,11 +248,20 @@ let analyze replay_call_graph source_files_to_analyze =
               L.internal_error "child did not store GC stats in its prologue, what happened?" ;
               None
         in
+        let () =
+          match !process_times_counter with
+          | Some counter ->
+              Stats.set_process_times (ExecutionDuration.since counter)
+          | None ->
+              L.internal_error
+                "Child did not start the process times counter in its prologue, what happened?"
+        in
+        Stats.set_useful_times !useful_time ;
         (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
       ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
-        ~tasks:build_tasks_generator
+        build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
     let collected_backend_stats, collected_gc_stats, collected_missing_deps =

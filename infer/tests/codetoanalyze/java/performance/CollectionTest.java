@@ -69,29 +69,6 @@ public class CollectionTest {
     for (int i = 0; i < new_arr.size(); i++) {}
   }
 
-  static class Dummy {}
-
-  public enum MyEnumType {
-    /* The elements of enum is initialized in `<clinit>`. */
-    A(1);
-
-    public final int mValue;
-
-    private MyEnumType(int i) {
-      mValue = i;
-    }
-
-    /* This field is also initialized in `<clinit>`, in which `<init>` is called. */
-    private static Dummy s =
-        new Dummy() {
-          {
-            /* This loop is in `<init>` function. It needs the results of `<clinit>` in order to
-            get `MyEnumType.values()`. */
-            for (MyEnumType type : MyEnumType.values()) {}
-          }
-        };
-  }
-
   void immutable_set_of_constant() {
 
     ImmutableSet<Integer> set = ImmutableSet.of();

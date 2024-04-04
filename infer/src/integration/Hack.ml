@@ -8,8 +8,7 @@
 open! IStd
 module L = Logging
 module F = Format
-
-let textual_ext = ".sil"
+module Worker = ProcessPool.Worker
 
 let textual_subcommand = "compile-infer"
 
@@ -153,22 +152,8 @@ end = struct
         (count_opt, Seq.of_dispenser (fun () -> extract_unit pic))
 
 
-  (** Flatten a/b/c as a-b-c. Special dirs .. and . are abbreviated. *)
-  let flatten_path path =
-    let normalized_path = Utils.normalize_path path in
-    let path_parts = Filename.parts normalized_path in
-    let process_part = function ".." -> ["dd"] | "." -> [] | other -> [other] in
-    List.bind path_parts ~f:process_part |> String.concat ~sep:"-"
-
-
-  let to_textual_filename path =
-    let flat = flatten_path path in
-    let noext, _ = Filename.split_extension flat in
-    noext ^ textual_ext
-
-
   let dump_textual_to_tmp_file source_path content =
-    let textual_filename = to_textual_filename source_path in
+    let textual_filename = TextualSil.to_filename source_path in
     try
       let out_file =
         Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
@@ -186,7 +171,11 @@ end = struct
     let line_map = LineMap.create content in
     let trans = TextualFile.translate (TranslatedFile {source_path; content; line_map}) in
     let log_error sourcefile error =
-      if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
+      if Config.keep_going then (
+        L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error ;
+        ScubaLogging.log_message_with_location ~label:"hack_capture_failure"
+          ~loc:(SourceFile.to_rel_path (Textual.SourceFile.file sourcefile))
+          ~message:(error_to_string sourcefile error) )
       else L.external_error "%a@\n" (pp_error sourcefile) error
     in
     let res =
@@ -235,6 +224,82 @@ module IterSeq = struct
         0
 end
 
+(** Setup for capture workers where each worker writes into its own [capture.db] and [.global.tenv].
+    These are then merged in the main process. *)
+module CaptureWorker = struct
+  type t =
+    { action: Unit.t -> unit option
+          (** Process individual Hack compilation units. Returns None on success and Some on error
+              (due to ProcessPool contract). *)
+    ; prologue: Worker.id -> unit
+    ; epilogue: Worker.id -> string
+          (** Returns the absolute path to infer-out of a worker containing a [capture.db] and
+              [.global.tenv] *) }
+
+  let worker_out_dir_name id = F.asprintf "worker-%a-out" Worker.pp_id id
+
+  let is_file_block_listed file =
+    Option.exists ~f:(fun re -> Str.string_match re file 0) Config.skip_analysis_in_path
+    || Inferconfig.capture_block_list_file_matcher (SourceFile.create file)
+
+
+  let mk_blueprint () =
+    (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
+       filepath returned to the main process. *)
+    let child_tenv = Tenv.create () in
+    let action (unit : Unit.t) =
+      let t0 = Mtime_clock.now () in
+      if is_file_block_listed unit.source_path then None
+      else (
+        !ProcessPoolState.update_status t0 unit.Unit.source_path ;
+        match Unit.capture_unit unit with
+        | Ok file_tenv ->
+            Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+            None
+        | Error () ->
+            Some () )
+    in
+    (* Create worker's [infer-out] and connect to a secondary capture DB inside it *)
+    let prologue id =
+      L.debug Capture Quiet "Running worker %a prologue@\n" Worker.pp_id id ;
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
+      Utils.create_dir worker_out_dir_abspath ;
+      let capture_db_abspath =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath CaptureDB
+      in
+      let capture_db = Database.Secondary capture_db_abspath in
+      DBWriter.override_use_daemon false ;
+      Database.create_db capture_db CaptureDatabase ;
+      Database.new_database_connection capture_db CaptureDatabase
+    in
+    (* Write out a [.globa.tenv] and return the path to the worker's out folder *)
+    let epilogue id =
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
+      let tenv_path =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath GlobalTypeEnvironment
+      in
+      L.debug Capture Quiet "Epilogue: writing worker %a tenv to %s@\n" Worker.pp_id id tenv_path ;
+      Tenv.write child_tenv (DB.filename_from_string tenv_path) ;
+      worker_out_dir_abspath
+    in
+    {action; prologue; epilogue}
+
+
+  (** Generate [infer-deps.txt] from paths to workers' output folders *)
+  let write_infer_deps worker_outs =
+    let infer_deps_content =
+      let pp fmt =
+        Pp.seq ~sep:"\n"
+          (fun fmt (child_num, out_path) -> F.fprintf fmt "%d\t<skip>\t%s" child_num out_path)
+          fmt
+      in
+      F.asprintf "%a" pp (Array.to_list worker_outs)
+    in
+    let infer_deps_file = ResultsDir.get_path CaptureDependencies in
+    Utils.with_file_out infer_deps_file ~f:(fun oc ->
+        Out_channel.output_string oc infer_deps_content )
+end
+
 (** Process hackc output from [ic] extracting and capturing individual textual units.
 
     The structure of hackc output is as follows:
@@ -257,31 +322,7 @@ let process_output_in_parallel ic =
   (* action's output and on_finish's input are connected and consistent with
      ProcessPool.TaskGenerator's contract *)
   let unit_iter = IterSeq.create ?estimated_size:unit_count units in
-  let child_action, child_epilogue =
-    (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
-       filepath returned to the main process. *)
-    let child_tenv = Tenv.create () in
-    let child_action unit =
-      let t0 = Mtime_clock.now () in
-      !ProcessPoolState.update_status t0 unit.Unit.source_path ;
-      match Unit.capture_unit unit with
-      | Ok file_tenv ->
-          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
-          None
-      | Error () ->
-          Some ()
-    in
-    let child_epilogue worker_id =
-      let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
-      let worker_num = ProcessPool.Worker.id_to_int worker_id in
-      let tenv_path = DB.filename_add_suffix tenv_path (Int.to_string worker_num) in
-      L.debug Capture Quiet "Epilogue: writing child %d tenv to %s@\n" worker_num
-        (DB.filename_to_string tenv_path) ;
-      Tenv.write child_tenv tenv_path ;
-      tenv_path
-    in
-    (child_action, child_epilogue)
-  in
+  let worker_blueprint = CaptureWorker.mk_blueprint () in
   let on_finish = function Some () -> incr n_error | None -> incr n_captured in
   let tasks () =
     ProcessPool.TaskGenerator.
@@ -291,7 +332,7 @@ let process_output_in_parallel ic =
       ; next= (fun () -> IterSeq.next unit_iter) }
   in
   (* Cap the number of capture workers based on the number of textual units. This will make the
-     default behavior more reasonable on a high core-count machine. *)
+       default behavior more reasonable on a high core-count machine. *)
   let jobs =
     match unit_count with
     | Some unit_count ->
@@ -302,22 +343,44 @@ let process_output_in_parallel ic =
   in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner =
-    Tasks.Runner.create ~jobs ~child_prologue:ignore ~f:child_action ~child_epilogue ~tasks
+    Tasks.Runner.create ~with_primary_db:false ~jobs ~child_prologue:worker_blueprint.prologue
+      ~f:worker_blueprint.action ~child_epilogue:worker_blueprint.epilogue tasks
   in
-  let child_tenv_paths = Tasks.Runner.run runner in
-  (* Merge worker tenvs into a global tenv *)
-  let child_tenv_paths =
-    Array.mapi child_tenv_paths ~f:(fun child_num tenv_path ->
-        match tenv_path with
-        | Some tenv_path ->
-            tenv_path
-        | None ->
-            L.die ExternalError "Child %d did't return a path to its tenv" child_num )
+  let worker_outs =
+    Tasks.Runner.run runner
+    |> Array.mapi ~f:(fun worker_num out_path ->
+           match out_path with
+           | Some out_path ->
+               (worker_num, out_path)
+           | None ->
+               L.die ExternalError "Worker %d did't return a path to its output folder" worker_num )
   in
-  L.progress "Merging type environments...@\n%!" ;
-  let tenv = MergeCapture.merge (Array.to_list child_tenv_paths) in
-  Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink) ;
+  CaptureWorker.write_infer_deps worker_outs ;
+  MergeCapture.merge_captured_targets ~root:Config.results_dir ;
+  let tenv =
+    Tenv.load_global ()
+    |> Option.value_or_thunk ~default:(fun () ->
+           L.die InternalError "Global tenv not found after capture merge" )
+  in
   L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
+  ( if Config.debug_level_capture > 0 then (
+      let types_with_source, types_without_source =
+        Tenv.fold tenv ~init:(Typ.Name.Set.empty, Typ.Name.Set.empty)
+          ~f:(fun name {Struct.source_file} (with_, without) ->
+            match source_file with
+            | None ->
+                (with_, Typ.Name.Set.add name without)
+            | Some _ ->
+                (Typ.Name.Set.add name with_, without) )
+      in
+      L.progress "Tenv types with source: %a.@\n" Typ.Name.Set.pp types_with_source ;
+      L.progress "Tenv types without source: %a.@\n" Typ.Name.Set.pp types_without_source )
+    else
+      let nb_types_without_source =
+        Tenv.fold tenv ~init:0 ~f:(fun _name {Struct.source_file} counter ->
+            match source_file with None -> 1 + counter | Some _ -> counter )
+      in
+      L.progress "Tenv contains %d types without source file@\n" nb_types_without_source ) ;
   (tenv, !n_captured, !n_error)
 
 
@@ -401,9 +464,7 @@ let load_hack_models compiler filenames =
 let load_models compiler =
   let builtins = Config.hack_builtin_models in
   let textual, hack =
-    Config.hack_models
-    |> List.map ~f:(Utils.filename_to_absolute ~root:Config.project_root)
-    |> List.partition_tf ~f:(String.is_suffix ~suffix:textual_ext)
+    Config.hack_models |> List.partition_tf ~f:(String.is_suffix ~suffix:TextualSil.textual_ext)
   in
   let textual_tenv = load_textual_models (builtins :: textual) in
   let hack_tenv = load_hack_models compiler hack in
@@ -414,11 +475,15 @@ let capture ~prog ~args =
   if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then (
     (* In force_integration mode we should use whatever program is provided on the command line to
        support cases where hackc is invoked via buck run or similar. *)
-    let compiler = if Option.is_some Config.force_integration then prog else Config.hackc_binary in
+    let compiler =
+      if Option.is_some Config.force_integration then prog
+      else Option.value Config.hackc_binary ~default:"hackc"
+    in
     let captured_tenv = compile compiler args ~process_output:process_output_in_parallel in
     let textual_model_tenv, hack_model_tenv = load_models compiler in
     Tenv.merge ~src:hack_model_tenv ~dst:captured_tenv ;
     Tenv.merge ~src:textual_model_tenv ~dst:captured_tenv ;
+    (* normalization already happened in the compile call through merging, no point repeating it *)
     Tenv.store_global ~normalize:false captured_tenv )
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand
 

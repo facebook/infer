@@ -4,7 +4,6 @@
     "inefficient-keyset-iterator": false,
     "starvation": false,
     "racerd": false,
-    "eradicate": false,
     "pulse": true,
     "report-block-list-path-regex": [
         ".*\\.class$"

@@ -24,14 +24,20 @@ type var_data =
         (** __block attribute of Objective-C variables, means that it will be modified inside a
             block *)
   ; is_constexpr: bool
-  ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
+  ; is_declared_unused: bool  (** variable declared with attribute [unused] *)
+  ; is_structured_binding: bool  (** variable declared by structured binding *)
+  ; has_cleanup_attribute: bool
+        (** variable declared with attribute [cleanup], only set in clang frontend *)
+  ; tmp_id: Ident.t option
+        (** the tmp id used to build the variable name in case of a temp variable, None otherwise. *)
+  }
 
 type specialized_with_aliasing_info =
   { orig_proc: Procname.t
   ; aliases: Pvar.t list list
         (** all the pvars in a same list are aliasing each other. e.g.
-            [aliases = \[\[x; y; z\]; \[a; b\]\]] indicates that [x], [y] and [z] alias each other
-            and [a] and [b] as well *) }
+            [aliases = [[x; y; z]; [a; b]]] indicates that [x], [y] and [z] alias each other and [a]
+            and [b] as well *) }
 [@@deriving compare]
 
 type 'captured_var passed_closure =
@@ -71,6 +77,7 @@ type t =
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
   ; is_hack_async: bool
+  ; is_hack_wrapper: bool  (** a generated wrapper for LSB or default parameters *)
   ; block_as_arg_attributes: block_as_arg_attributes option
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
@@ -78,7 +85,10 @@ type t =
   ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
-  ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; is_clang_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; hack_variadic_position: int option
+        (** the procedure is variadic and [Some n] means the variadic vector is composed of the
+            arguments n, n+1, ..., length formals -1 *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
         (** the procedure is a clone specialized with captured variables and paramaters sharing
@@ -105,13 +115,12 @@ type t =
 val default : SourceFile.t -> Procname.t -> t
 (** Create a proc_attributes with default values. *)
 
+val default_var_data : Pvar.t -> Typ.t -> var_data
+
 val pp : Format.formatter -> t -> unit
 
 val get_access : t -> access
 (** Return the visibility attribute *)
-
-val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
-(** Return name, type, and annotation of formal parameters *)
 
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)

@@ -37,7 +37,7 @@ end
 
 module NonDisjDomain = AbstractDomain.BottomTopLifted (AbstractDomain.Empty)
 
-module TransferFunctions = struct
+module DisjunctiveAnalyzerTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module DisjDomain = DisjDomain
   module NonDisjDomain = NonDisjDomain
@@ -66,18 +66,20 @@ module TransferFunctions = struct
     (astate', astate_non_disj)
 
 
+  let remember_dropped_disjuncts _ non_disj = non_disj
+
   let pp_session_name _node fmt = F.pp_print_string fmt "Disjunctive Domain demo"
 end
 
 module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
-    (TransferFunctions)
+    (DisjunctiveAnalyzerTransferFunctions)
     (struct
       (* re-use pulse options to avoid complicating the command-line interface just for testing *)
-      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
+      let join_policy = TransferFunctions.UnderApproximateAfter Config.pulse_max_disjuncts
 
       (* just 2 for now, we may want to parameterize this in the future *)
-      let widen_policy = `UnderApproximateAfterNumIterations 2
+      let widen_policy = TransferFunctions.UnderApproximateAfterNumIterations 2
     end)
 
 type domain = DisjunctiveAnalyzer.TransferFunctions.Domain.t
@@ -88,6 +90,9 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let result =
     DisjunctiveAnalyzer.compute_post analysis_data ~initial:([[]], NonDisjDomain.bottom) proc_desc
   in
+  L.result "%a:@\n  @[<2>" Procname.pp (Procdesc.get_proc_name proc_desc) ;
   Option.iter result ~f:(fun post ->
-      L.result "%a:@\n  @[<2>%a@]@\n" Procname.pp (Procdesc.get_proc_name proc_desc) pp_domain post ) ;
+      L.result "%a@\n" DisjunctiveAnalyzer.TransferFunctions.Domain.pp post ) ;
+  let cfg_metadata = DisjunctiveAnalyzer.get_cfg_metadata () in
+  L.result "CFG Metadata: @[<h>%a@]@\n@\n" AbstractInterpreter.DisjunctiveMetadata.pp cfg_metadata ;
   result

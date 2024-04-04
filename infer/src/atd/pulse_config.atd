@@ -20,22 +20,28 @@ type taint_target = [
 type argument_constraint = { index: int; type_matches: string list }
 
 type matcher = {
-  (* exactly one of field_regex or procedure or procedure_regex or class_name_regex or allocation
+  (* exactly one of field_regex or procedure or procedure_regex or class_name_regex or class_with_annotation or allocation
   or block_passed_to or block_passed_to_regex must be specified,
   or else class_names and method_names must be specified,
+  or else class_names and procedure_regex must be specified
   or else class_names and field_names must be specified,
   or else class_names and method_return_type_names must be specified,
-  or else overrides_of_class_with_annotation/method_with_annotation *)
+  or else class_name_regex and procedure_regex must be specified
+  or else overrides_of_class_with_annotation/method_with_annotation
+  or else class_with_annotation and class_name_regex and procedure_regex must be specified *)
   ?field_regex: string option;
   ?procedure: string option;
   ?procedure_regex: string option;
   ?class_name_regex: string option;
   ?class_names: string list option;
+  ?class_with_annotation: string option;
   ?field_names: string list option;
   ?method_names: string list option;
   ?method_return_type_names: string list option;
   ?overrides_of_class_with_annotation: string option;
   ?method_with_annotation: string option;
+  ?field_with_annotation: string option;
+  ?annotation_values: string list option;
   ?block_passed_to: string option;
   ?block_passed_to_regex: string option;
   ?allocation: string option;
@@ -62,6 +68,7 @@ type taint_policy = {
   taint_flows: taint_flow list;
   ?privacy_effect: string option;
   ?exclude_in: string list option;
+  ?exclude_matching: string list option;
 }
 
 type taint_policies = taint_policy list

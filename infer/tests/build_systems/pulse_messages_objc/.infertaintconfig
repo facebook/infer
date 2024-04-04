@@ -12,13 +12,20 @@
     { "block_passed_to": "InferTaint.callBlockUnknown:",
       "kinds": ["SimpleSource"],
       "taint_target": ["ArgumentPositions", [0]]
-    }
+    },
+    { "procedure": "my_source",
+    "taint_target": ["ArgumentPositions", [0]],
+    "kinds": ["SimpleSource"]
+  }
   ],
   "pulse-taint-sinks": [
     { "class_names": ["InferTaint"],
       "method_names": ["sink:"],
       "kinds": ["SimpleSink"],
       "taint_target": ["ArgumentPositions", [0]]
-    }
+    },
+    { "procedure": "my_log",
+    "kinds": ["SimpleSink"]
+  }
   ]
 }

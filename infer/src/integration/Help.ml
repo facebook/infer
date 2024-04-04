@@ -148,18 +148,21 @@ let list_issue_types () =
   IssueType.all_issues ()
   |> List.iter
        ~f:(fun
-            ({ IssueType.unique_id
-             ; checker
-             ; visibility
-             ; user_documentation=
-                 _
-                 (* do not show this as this can be a big multi-line string and not tool-friendly *)
-             ; default_severity
-             ; enabled
-             ; hum } [@warning "+missing-record-field-pattern"] )
-          ->
-         L.result "%s:%s:%s:%s:%b:%s@;" unique_id hum
+           ({ IssueType.unique_id
+            ; checker
+            ; visibility
+            ; category
+            ; user_documentation=
+                _
+                (* do not show this as this can be a big multi-line string and not tool-friendly *)
+            ; default_severity
+            ; enabled
+            ; hum } [@warning "+missing-record-field-pattern"] )
+         ->
+         let category_s = Option.value (IssueType.string_of_category category) ~default:"" in
+         L.result "%s:%s:%s:%s:%s:%b:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
+           category_s
            (IssueType.string_of_severity default_severity)
            enabled (Checker.get_id checker) ) ;
   L.result "@]%!"

@@ -1,4 +1,4 @@
-codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref1Bad(), 4, NULL_DEREFERENCE, no_bucket
-codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref2Bad(), 4, NULL_DEREFERENCE, no_bucket
-codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref1Bad(), 2, NULL_DEREFERENCE, no_bucket
-codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref2Bad(), 2, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref1Bad(), 4, NULLPTR_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionFieldDeref2Bad(), 4, NULLPTR_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref1Bad(), 2, NULLPTR_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/fieldderef/NullDerefFieldDeref.cs, Void TestCodeFieldDeref.NullExceptionStaticDeref2Bad(), 2, NULLPTR_DEREFERENCE, no_bucket

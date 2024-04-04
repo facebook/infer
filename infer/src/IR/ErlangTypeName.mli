@@ -15,7 +15,8 @@ type t =
   | Tuple of int
   | Map
   | GenServerPid of {module_name: string option}
-[@@deriving compare, equal, yojson_of, sexp, hash]
+  | ModuleInfo
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val pp : Format.formatter -> t -> unit
 
@@ -30,6 +31,10 @@ val atom_hash : string
 val atom_true : string
 
 val atom_false : string
+
+val module_info_field_name : string
+
+val module_info_attributes_class_name : string
 
 val calculate_hash : string -> int
 
@@ -48,5 +53,3 @@ val erlang_namespace : string
 val unsupported : string
 
 val infer_erlang_namespace : string
-
-module Normalizer : HashNormalizer.S with type t = t

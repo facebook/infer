@@ -13,17 +13,17 @@ TEST_DETERMINATOR_RESULT = infer-out/changed_functions.json
 DIFF_OUTPUT = diff.mod.test
 INFER_OPTIONS = --buck-clang --process-clang-ast --no-capture --export-changed-functions --modified-lines $(DIFF_OUTPUT)
 
-$(DIFF_OUTPUT):
-	$(QUIET)echo -n '$(A_CPP):' > diff.mod.test
+$(DIFF_OUTPUT): $(A_CPP) src/mod-a.cpp $(B_CPP) src/mod-b.cpp $(MAKEFILE_LIST)
+	$(QUIET)echo -n '$(A_CPP):' > $@
 	$(QUIET)(diff -N --unchanged-line-format="U" --old-line-format="O" --new-line-format="N" \
-		$(A_CPP) src/mod-a.cpp || [ $$? = 1 ]) >> diff.mod.test
-	$(QUIET)echo >> diff.mod.test
-	$(QUIET)echo -n '$(B_CPP):' >> diff.mod.test
+		$(A_CPP) src/mod-a.cpp || [ $$? = 1 ]) >> $@
+	$(QUIET)echo >> $@
+	$(QUIET)echo -n '$(B_CPP):' >> $@
 	$(QUIET)(diff -N --unchanged-line-format="U" --old-line-format="O" --new-line-format="N" \
-		$(B_CPP) src/mod-b.cpp || [ $$? = 1 ]) >> diff.mod.test
-	$(QUIET)echo >> diff.mod.test
+		$(B_CPP) src/mod-b.cpp || [ $$? = 1 ]) >> $@
+	$(QUIET)echo >> $@
 
-$(TEST_DETERMINATOR_RESULT): $(DIFF_OUTPUT)
+$(TEST_DETERMINATOR_RESULT): $(CLANG_DEPS) $(DIFF_OUTPUT) $(MAKEFILE_LIST)
 	$(QUIET)$(BUCK) clean
 	$(call silent_on_success,Testing export-changed-functions with set of changes,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -- $(BUCK) build --no-cache $(BUCK_TARGET))

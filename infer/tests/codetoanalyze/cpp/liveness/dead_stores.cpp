@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <cstdint>
 #include <exception>
 #include <map>
 #include <mutex>
@@ -540,7 +541,7 @@ class Exceptions {
     return 3;
   }
 
-  int FP_return_in_try_in_for_ok() {
+  int return_in_try_in_for_ok() {
     constexpr int i1 = 3;
     for (int i = 1;; ++i) {
       try {
@@ -729,5 +730,44 @@ void underscore_binding_ok(std::map<std::string, int> m) {
   for (const auto& [key, _] : m) {
     use_string(key);
   }
+}
+
+void read(int);
+
+void swich_in_try_ok(int a) {
+  int x = 42;
+  try {
+    switch (a) {
+      case 42: {
+        return;
+      }
+      default:;
+    }
+  } catch (int) {
+  }
+  read(x);
+}
+
+void unknown();
+
+void unknown_call_in_try_ok() {
+  int x = 42;
+  try {
+    unknown();
+    return;
+  } catch (int) {
+  }
+  read(x);
+}
+
+bool atomic_compare_exchange_ok() {
+  uint32_t ptr = 1;
+  uint32_t expected = 1;
+  uint32_t desired = 0;
+
+  bool success = __atomic_compare_exchange(
+      &ptr, &expected, &desired, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+
+  return success;
 }
 } // namespace dead_stores

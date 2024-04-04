@@ -23,6 +23,6 @@ end
 let dispatch tenv proc_name args =
   match ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args with
   | None ->
-      PulseModelsErlang.get_model_from_db proc_name args
+      PulseModelsErlang.get_model_from_db proc_name args |> Option.map ~f:lift_model
   | m ->
       m

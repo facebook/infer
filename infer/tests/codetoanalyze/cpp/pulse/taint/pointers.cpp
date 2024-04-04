@@ -63,25 +63,27 @@ void reuse_pointer_as_local_ok(std::string* pointer) {
   __infer_taint_sink(*pointer);
 }
 
-void funptr_bad0() {
+void __infer_taint_sink1(std::string) {}
+
+void funptr_bad0_FN() {
   auto f = __infer_taint_sink;
   f(*(__infer_taint_source()));
 }
 
-void funptr_helper_bad1(void (*sink)(std::string)) {
+void funptr_helper_bad1_FN(void (*sink)(std::string)) {
   sink(*(__infer_taint_source()));
 }
 
 void funptr1() {
   auto f = __infer_taint_sink;
-  funptr_helper_bad1(f);
+  funptr_helper_bad1_FN(f);
 }
 
-void funptr_helper_bad2(std::string* (*source)()) {
+void funptr_helper_bad2_FN(std::string* (*source)()) {
   __infer_taint_sink(*(source()));
 }
 
-void funptr2() { funptr_helper_bad2(__infer_taint_source); }
+void funptr2() { funptr_helper_bad2_FN(__infer_taint_source); }
 
 void pointer_arithmetic_ok1(int* i) { *(i + 1) = 7; }
 

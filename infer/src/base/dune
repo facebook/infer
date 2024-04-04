@@ -48,7 +48,8 @@
    ppx_hash
    ppx_sexp_conv
    ppx_show
-   ppx_variants_conv))
+   ppx_variants_conv
+   inferppx))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
   (glob_files ../../documentation/issues/*.md)))

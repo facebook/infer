@@ -8,6 +8,4 @@
 open! IStd
 
 val make :
-     CallGraph.t
-  -> SourceFile.t list
-  -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t
+  CallGraph.t -> SourceFile.t list -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t

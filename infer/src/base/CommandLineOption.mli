@@ -100,7 +100,7 @@ val mk_string_list :
   -> ?default_to_string:(string list -> string)
   -> ?f:(string -> string)
   -> string RevList.t ref t
-(** [mk_string_list] defines a [string list ref], initialized to [\[\]] unless overridden by
+(** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
     [~default]. Each argument of an occurrence of the option will be prepended to the list, so the
     final value will be in the reverse order they appeared on the command line.
 
@@ -140,10 +140,10 @@ val mk_symbol_seq :
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
     element of [symbols]. *)
 
-val mk_json : Yojson.Basic.t ref t
+val mk_json : Yojson.Safe.t ref t
 
 val mk_anon : unit -> string RevList.t ref
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 (** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse
     order they appeared on the command line. *)
 
@@ -195,7 +195,7 @@ val mk_command_doc :
     - [short_description] is a one-line description of the command
     - [options] can be either [`Replace blocks], which populates the OPTIONS section with [blocks],
       or [`Prepend blocks], in which case the options from the command are used, prepended by
-      [blocks]. If unspecified it defaults to [`Prepend \[\]].
+      [blocks]. If unspecified it defaults to [`Prepend []].
     - All the other [section_name] options correspond to the contents of the section [section_name].
       Some are mandatory and some are not. *)
 
@@ -213,6 +213,12 @@ val mk_subcommand :
     automatically generated for [command] based on the information in [command_doc], if available
     (otherwise the command is considered internal). [on_unknown_arg] is the action taken on unknown
     anonymous arguments; it is `Reject by default. *)
+
+val infer_top_results_dir_env_var : string
+(** environment variable used for the results dir of the originator process *)
+
+val infer_cwd_env_var : string
+(** environment variable pointing to the originator's process working directory *)
 
 val args_env_var : string
 (** environment variable use to pass arguments from parent to child processes *)

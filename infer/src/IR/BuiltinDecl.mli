@@ -74,6 +74,8 @@ val __infer_skip_function : Procname.t
 
 val __infer_skip_gcc_asm_stmt : Procname.t
 
+val __infer_structured_binding : Procname.t
+
 val __infer_generic_selection_expr : Procname.t
 
 val __atomic_fetch_max : Procname.t
@@ -92,6 +94,10 @@ val __c11_atomic_fetch_max : Procname.t
 
 val __c11_atomic_fetch_min : Procname.t
 
+val __call_objc_block : Procname.t
+
+val __call_c_function_ptr : Procname.t
+
 val __opencl_atomic_fetch_max : Procname.t
 
 val __opencl_atomic_fetch_min : Procname.t
@@ -99,6 +105,11 @@ val __opencl_atomic_fetch_min : Procname.t
 val __builtin_cxx_co_return : Procname.t
 
 val __builtin_cxx_co_await : Procname.t
+
+val __get_lazy_class : t
+(** returns the a LazyClass representation of its arguement (a type name). A LazyClass represents a
+    class that we know the name of but don't necessarily know if the class has been defined
+    somewhere. *)
 
 val __lazy_class_initialize : t
 (** returns the singleton object associated with a given type, and performs lazily its

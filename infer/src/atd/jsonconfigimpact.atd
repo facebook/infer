@@ -7,7 +7,7 @@
 type loc <ocaml from="Jsonbug"> = abstract
 type sub_item <ocaml from="Jsoncost"> = {hash: string ; loc: loc ; procedure_name: string ; procedure_id: string }
 
-type config_impact_mode = [Normal | StrictBeta | Strict]
+type config_impact_mode = [Normal | Strict]
 
 type item = {
   inherit sub_item;

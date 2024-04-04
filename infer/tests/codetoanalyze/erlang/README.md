@@ -23,14 +23,12 @@ The prefixes (`fp_`, `fpl_`, `fn_`, `fnl_`) correspond to deviations with the re
 
 For example, for a function `test_f`:
 
-|          |          |                    | Reported         |                    |
-|----------|----------|--------------------|------------------|--------------------|
-|          |          | Ok                 | Latent           | Manifest           |
-|          | Ok       | `test_f_Ok`        | `fpl_test_f_Ok`  | `fp_test_f_Ok`     |
-| Expected | Latent   | `fn_test_f_Latent` | `test_f_Latent`  | `fp_test_f_Latent` |
-|          | Manifest | `fn_test_f_Bad`    | `fnl_test_f_Bad` | `test_f_Bad`       |
-
-
+|              |              |                    | **Reported**     |                    |
+|--------------|--------------|--------------------|------------------|--------------------|
+|              |              | **Ok**             | **Latent**       | **Manifest**       |
+|              | **Ok**       | `test_f_Ok`        | `fpl_test_f_Ok`  | `fp_test_f_Ok`     |
+| **Expected** | **Latent**   | `fn_test_f_Latent` | `test_f_Latent`  | `fp_test_f_Latent` |
+|              | **Manifest** | `fn_test_f_Bad`    | `fnl_test_f_Bad` | `test_f_Bad`       |
 
 Furthermore, test functions should be exported.
 

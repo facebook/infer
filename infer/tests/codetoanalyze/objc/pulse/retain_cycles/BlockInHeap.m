@@ -26,7 +26,7 @@ typedef void (^BlockInHeapHandler)(BlockInHeap* name);
   };
 }
 
-- (void)assign_strong_handler_to_ivar {
+- (void)assign_strong_handler_to_ivar_bad {
   self.strongHandler = ^(BlockInHeap* b) {
     self->_child = b;
   };
@@ -43,7 +43,7 @@ int weak_handler_retain_cycle_ok() {
 
 int strong_handler_retain_cycle_bad() {
   BlockInHeap* c = [[BlockInHeap alloc] init];
-  [c assign_strong_handler_to_ivar];
+  [c assign_strong_handler_to_ivar_bad];
   BlockInHeap* b = [[BlockInHeap alloc] init];
   c.strongHandler(b);
   return 5;

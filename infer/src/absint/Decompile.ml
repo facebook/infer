@@ -8,27 +8,6 @@
 open! IStd
 module L = Logging
 
-(** Find a boolean assignment to a temporary variable holding a boolean condition. The boolean
-    parameter indicates whether the true or false branch is required. *)
-let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
-  let find_instr n =
-    let filter = function
-      | Sil.Store {e1= Exp.Lvar pvar_; e2= Exp.Const (Const.Cint i)} when Pvar.equal pvar pvar_ ->
-          Bool.(IntLit.iszero i <> true_branch)
-      | _ ->
-          false
-    in
-    Instrs.exists ~f:filter (Procdesc.Node.get_instrs n)
-  in
-  match Procdesc.Node.get_preds node with
-  | [pred_node] ->
-      find_boolean_assignment pred_node pvar true_branch
-  | [n1; n2] ->
-      if find_instr n1 then Some n1 else if find_instr n2 then Some n2 else None
-  | _ ->
-      None
-
-
 (** Find the function call instruction used to initialize normal variable [id], and return the
     function name and arguments *)
 let find_normal_variable_funcall (node : Procdesc.Node.t) (id : Ident.t) :

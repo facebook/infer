@@ -31,7 +31,7 @@ module BasicCostWithReason : sig
 
   type t = {cost: BasicCost.t; top_pname_opt: Procname.t option}
 
-  val one : ?autoreleasepool_trace:Bounds.BoundTrace.t -> unit -> t
+  val one : t
 
   val zero : t
 
@@ -40,8 +40,6 @@ module BasicCostWithReason : sig
   val of_basic_cost : BasicCost.t -> t
 
   val is_unreachable : t -> bool
-
-  val plus : t -> t -> t
 
   val subst :
        Procname.t
@@ -55,7 +53,7 @@ module BasicCostWithReason : sig
 
   val degree : t -> Polynomials.Degree.t option
 
-  val polynomial_traces : is_autoreleasepool_trace:bool -> t -> Errlog.loc_trace
+  val polynomial_traces : t -> Errlog.loc_trace
 
   val pp_hum : Format.formatter -> t -> unit
 end
@@ -76,8 +74,6 @@ val get_cost_kind : CostKind.t -> t -> BasicCostWithReason.t
 
 val get_operation_cost : t -> BasicCostWithReason.t
 
-val set_autoreleasepool_size_zero : t -> t
-
 val set_operation_cost_zero : t -> t
 
 val find_opt : CostKind.t -> t -> BasicCostWithReason.t option
@@ -85,13 +81,13 @@ val find_opt : CostKind.t -> t -> BasicCostWithReason.t option
 val construct : f:(CostKind.t -> BasicCostWithReason.t) -> t
 
 val zero_record : t
-(** Map representing cost record \{OperationCost:0; AllocationCost:0; AutoreleasepoolSize:0\} *)
+(** Map representing cost record \{OperationCost:0; AllocationCost:0\} *)
 
 val mult_by : t -> nb_exec:BasicCost.t -> t
-(** Special map where each element is multiplied by the number of executions *)
+(** Special map where each element is multipli by the number of executions *)
 
 val plus : t -> t -> t
 (** Union of two maps where common costs are added together *)
 
 val unit_cost_atomic_operation : t
-(** Map representing cost record \{OperationCost:1; AllocationCost:0; AutoreleasepoolSize:0\} *)
+(** Map representing cost record \{OperationCost:1; AllocationCost:0\} *)

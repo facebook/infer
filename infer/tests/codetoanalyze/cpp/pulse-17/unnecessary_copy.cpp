@@ -91,4 +91,15 @@ void structured_binding_no_holding_var_bad(Pair myPair) {
   auto [l1, l2] = myPair;
   auto c = l1; // can detect the copy
 }
+
+void use_recursive_directory_iterator_ok(const std::string& root) {
+  for (auto& p : std::filesystem::recursive_directory_iterator(root)) {
+  }
+}
+
+class OptionalTiriviallyCopyable_ok {
+  std::optional<std::string> f;
+
+  OptionalTiriviallyCopyable_ok(std::string_view x) : f(x) {}
+};
 } // namespace unnecessary_copy

@@ -8,12 +8,25 @@
 open! IStd
 module F = Format
 
+let pp_regex f regex =
+  (* TODO: Maybe have some proper escaping here. Used for debugging now. *)
+  F.fprintf f "\"%s\"" regex
+
+
+let pp_type_regexes f type_regexes =
+  match type_regexes with
+  | None ->
+      ()
+  | Some type_regexes ->
+      F.fprintf f "(%a)" (Fmt.list ~sep:Fmt.comma (Fmt.option pp_regex)) type_regexes
+
+
 let pp_pattern f (pattern : ToplAst.label_pattern) =
   match pattern with
   | ArrayWritePattern ->
       F.fprintf f "#ArrayWrite"
-  | ProcedureNamePattern procedure_name ->
-      F.fprintf f "\"%s\"" procedure_name
+  | CallPattern {procedure_name_regex; type_regexes} ->
+      F.fprintf f "%a%a" pp_regex procedure_name_regex pp_type_regexes type_regexes
 
 
 let pp_constant f (constant : ToplAst.constant) =

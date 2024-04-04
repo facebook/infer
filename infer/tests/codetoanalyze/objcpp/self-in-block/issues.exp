@@ -1,0 +1,4 @@
+codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:39, 1, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Using captured &y]
+codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:49, 1, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Using captured &y]
+codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:111, 1, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Using captured &y]
+codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:111, 2, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Using captured &z]

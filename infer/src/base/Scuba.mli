@@ -36,3 +36,5 @@ val add_tagset : name:string -> value:string list -> sample -> sample
 
 val log : table -> sample list -> unit
 (** The main function. Log a collection of samples to the given table. *)
+
+val sample_to_json : sample -> Yojson.t

@@ -13,6 +13,7 @@ type log_t =
      ?loc_instantiated:Location.t
   -> ?ltr:Errlog.loc_trace
   -> ?extras:Jsonbug_t.extra
+  -> ?suggestion:string
   -> Checker.t
   -> IssueType.t
   -> string
@@ -42,6 +43,7 @@ val log_issue_external :
   -> ltr:Errlog.loc_trace
   -> ?access:string
   -> ?extras:Jsonbug_t.extra
+  -> ?suggestion:string
   -> Checker.t
   -> IssueType.t
   -> string

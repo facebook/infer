@@ -104,7 +104,7 @@ module Val : sig
       particular assignment (this affects the field traces - see Val.add_assign_trace_elem). *)
 
   val is_mone : t -> bool
-  (** Check if the value is [\[-1,-1\]] *)
+  (** Check if the value is [[-1,-1]] *)
 
   val array_sizeof : t -> Itv.t
   (** Get array size *)
@@ -118,8 +118,8 @@ module Val : sig
   val get_array_blk : t -> ArrayBlk.t
 
   val get_range_of_iterator : t -> t
-  (** Get a range of an iterator value, for example, if iterator value is [\[lb,ub\]], it returns
-      [\[0,ub\]]. *)
+  (** Get a range of an iterator value, for example, if iterator value is [[lb,ub]], it returns
+      [[0,ub]]. *)
 
   val get_itv : t -> Itv.t
 
@@ -279,28 +279,28 @@ module Val : sig
 
   module Itv : sig
     val nat : t
-    (** [\[0,+oo\]] *)
+    (** [[0,+oo]] *)
 
     val pos : t
-    (** [\[1,+oo\]] *)
+    (** [[1,+oo]] *)
 
     val top : t
-    (** [\[-oo,+oo\]] *)
+    (** [[-oo,+oo]] *)
 
     val zero : t
-    (** [\[0,0\]] *)
+    (** [[0,0]] *)
 
     val one : t
-    (** [\[1,1\]] *)
+    (** [[1,1]] *)
 
     val zero_255 : t
-    (** [\[0,255\]] *)
+    (** [[0,255]] *)
 
     val m1_255 : t
-    (** [\[-1,255\]] *)
+    (** [[-1,255]] *)
 
     val unknown_bool : t
-    (** [\[0,1\]] *)
+    (** [[0,1]] *)
   end
 end
 

@@ -127,6 +127,7 @@ test_send5_Ok() ->
         X -> sink(X)
     end.
 
+% The violation from the test below is not reported
 fn_test_send6_Bad() ->
     Pid = spawn(fun() -> tito_process() end),
     Pid ! {self(), source()},

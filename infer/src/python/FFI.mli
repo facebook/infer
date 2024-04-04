@@ -13,19 +13,31 @@
 
 open! IStd
 
+module Error : sig
+  type kind
+
+  type t = Logging.error * kind
+
+  val pp_kind : Format.formatter -> kind -> unit
+end
+
 module rec Constant : sig
   type t = private
     | PYCBool of bool
-    | PYCInt of int64
+    | PYCInt of Z.t
     | PYCFloat of float
+    | PYCComplex of {real: float; imag: float}
     | PYCString of string
+    | PYCInvalidUnicode of int array
     | PYCBytes of bytes
     | PYCTuple of t array
+    | PYCFrozenSet of t list
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare]
 
   val show : ?full:bool -> t -> string
+  [@@warning "-unused-value-declaration"]
   (** Only shows the name of a [PYCCode] constant if [full] is [false]. Otherwise, shows everything. *)
 
   val pp : Format.formatter -> t -> unit
@@ -68,9 +80,11 @@ and Code : sig
 
   val full_show : t -> string [@@warning "-unused-value-declaration"]
 
-  val full_pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
-
   val is_closure : t -> bool
+
+  val get_arguments : t -> string array
+
+  val get_locals : t -> string array
 end
 
 and Instruction : sig
@@ -86,12 +100,11 @@ and Instruction : sig
   [@@deriving show, compare]
 end
 
-val from_string : source:string -> filename:string -> Code.t
-  [@@warning "-unused-value-declaration"]
+val from_string : source:string -> filename:string -> (Code.t, Error.t) result
+[@@warning "-unused-value-declaration"]
 (** Compiles the python program describes by [source] into a [Code.t] object *)
 
-val from_file : is_binary:bool -> string -> Code.t
-  [@@warning "-unused-value-declaration"]
+val from_file : is_binary:bool -> string -> (Code.t, Error.t) result
 (** Generates a [Code.t] object from a file. If the file is a source file, the builtin [compile]
     from Python is called to generate the bytecode. If the file is already a bytecode file, it is
     used right away using the Python module Marshal *)

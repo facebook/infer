@@ -48,3 +48,7 @@ val binop : Binop.t -> t -> t -> t option
 val unop : Unop.t -> t -> t option
 
 val to_singleton : t -> IntLit.t option
+
+val requires_integer_reasoning : t -> bool
+(** whether the interval can be expressed by a relation over rationals; used in [PulseFormula] to
+    decide whether an interval is already expressed by another part of the formula *)

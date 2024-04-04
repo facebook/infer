@@ -55,9 +55,10 @@ public class Assertions {
   }
 
   /**
-   * Makes Nullsafe stop complaining when {@code object} is dereferenced or converted to a
-   * non-nullable. In contrast with {@code #assumeNotNull()}, indicates cases when the proper fix
-   * needs to be committed, but for some reason it is hard or impossible to do it staight away.
+   * Makes Nullsafe (a nullability type checker) stop complaining when {@code object} is
+   * dereferenced or converted to a non-nullable. In contrast with {@code #assumeNotNull()},
+   * indicates cases when the proper fix needs to be committed, but for some reason it is hard or
+   * impossible to do it staight away.
    */
   public static <T> T nullsafeFIXME(@Nullable T object, String explanationOrTask) {
     return object;

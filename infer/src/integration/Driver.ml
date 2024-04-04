@@ -16,7 +16,6 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | Buck2Clang of {build_cmd: string list}
-  | Buck2Java of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -24,6 +23,7 @@ type mode =
   | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlClangFile
+  | BxlJava of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -33,7 +33,7 @@ type mode =
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}
-  | PythonBytecode of {pyc: string}
+  | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
@@ -44,7 +44,7 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
-  | Javac _ | PythonBytecode _ ->
+  | Javac _ | Python _ | PythonBytecode _ ->
       true
   | _ ->
       false
@@ -57,8 +57,6 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Buck2Clang {build_cmd} ->
       F.fprintf fmt "Buck2/Clang driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | Buck2Java {build_cmd} ->
-      F.fprintf fmt "Buck2/Java driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
@@ -74,6 +72,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BxlClangFile ->
       F.fprintf fmt "BxlClang file driver mode"
+  | BxlJava {build_cmd} ->
+      F.fprintf fmt "BxlJava driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -92,8 +92,8 @@ let pp_mode fmt = function
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | Python {prog; args} ->
       F.fprintf fmt "Python driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | PythonBytecode {pyc} ->
-      F.fprintf fmt "Python driver mode:@\npyc = '%s'" pyc
+  | PythonBytecode {files} ->
+      F.fprintf fmt "Python driver mode:@\nfiles = '%a'" Pp.cli_args files
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
@@ -152,15 +152,6 @@ let capture ~changed_files mode =
       |> Out_channel.write_lines infer_deps_file ;
       () )
     else
-      let dolifiles = Config.capture_doli in
-      ( match dolifiles with
-      | [] ->
-          ()
-      | _ :: _ ->
-          let dfiles =
-            List.map dolifiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
-          in
-          TextualParser.capture ~capture:DoliCapture dfiles ) ;
       match mode with
       | Analyze ->
           ()
@@ -170,9 +161,6 @@ let capture ~changed_files mode =
       | Buck2Clang {build_cmd} ->
           L.progress "Capturing in buck2/clang mode...@." ;
           Buck2Clang.capture build_cmd
-      | Buck2Java {build_cmd} ->
-          L.progress "Capturing in buck2/java mode...@." ;
-          Buck2Java.capture build_cmd
       | BuckClangFlavor {build_cmd} ->
           L.progress "Capturing in buck mode...@." ;
           BuckFlavors.capture build_cmd
@@ -193,10 +181,13 @@ let capture ~changed_files mode =
           BuckJavaFlavor.capture build_cmd
       | BxlClang {build_cmd} ->
           L.progress "Capturing in bxl/clang mode...@." ;
-          BxlClang.capture build_cmd
+          BxlCapture.capture build_cmd
       | BxlClangFile ->
           L.progress "Capturing in bxl/clang file mode...@." ;
-          BxlClang.file_capture ()
+          BxlCapture.file_capture ()
+      | BxlJava {build_cmd} ->
+          L.progress "Capturing in bxl/java mode...@." ;
+          BxlCapture.capture build_cmd
       | Clang {compiler; prog; args} ->
           if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
           Clang.capture compiler ~prog ~args
@@ -224,9 +215,9 @@ let capture ~changed_files mode =
       | Python {prog; args} ->
           L.progress "Capturing in python mode...@." ;
           Python.capture (Python.Files {prog; args})
-      | PythonBytecode {pyc} ->
-          L.progress "Capturing python byte-code from %s...@." pyc ;
-          Python.capture (Python.Bytecode pyc)
+      | PythonBytecode {files} ->
+          L.progress "Capturing in python byte-code mode...@." ;
+          Python.capture (Python.Bytecode {files})
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
@@ -237,10 +228,8 @@ let capture ~changed_files mode =
           L.progress "Capturing in hackc mode...@." ;
           Hack.capture ~prog ~args
       | Textual {textualfiles} ->
-          let tfiles =
-            List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
-          in
-          TextualParser.capture ~capture:TextualCapture tfiles
+          List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
+          |> TextualParser.capture
       | XcodeBuild {prog; args} ->
           L.progress "Capturing in xcodebuild mode...@." ;
           XcodeBuild.capture ~prog ~args
@@ -254,11 +243,11 @@ let capture ~changed_files mode =
   let should_merge =
     match mode with
     | Buck2Clang _
-    | Buck2Java _
     | BuckClangFlavor _
     | BuckJavaFlavor _
     | BxlClang _
     | BxlClangFile
+    | BxlJava _
     | Gradle _ ->
         true
     | _ ->
@@ -268,12 +257,23 @@ let capture ~changed_files mode =
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     let root =
       match mode with
-      | Buck2Clang _ | BxlClang _ | BxlClangFile ->
+      | Buck2Clang _ | BxlClang _ | BxlClangFile | BxlJava _ ->
           Config.buck2_root
       | _ ->
           Config.project_root
     in
     MergeCapture.merge_captured_targets ~root )
+
+
+let log_db_size_mb db db_entry debug_mode label =
+  if Config.developer_mode then (
+    Database.get_database db
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint(TRUNCATE)" ;
+    let lstat = ResultsDir.get_path db_entry |> Unix.lstat in
+    let size = Int64.to_int lstat.st_size |> Option.value_exn in
+    let value = size / 1024 / 1024 in
+    L.debug debug_mode Quiet "Database size %s: %d@\n" label value ;
+    ScubaLogging.log_count ~label ~value )
 
 
 (* shadowed for tracing *)
@@ -284,6 +284,7 @@ let capture ~changed_files mode =
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"capture" ())) ;
   capture ~changed_files mode ;
+  log_db_size_mb CaptureDatabase CaptureDB Capture "capture_db_size_mb" ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
@@ -292,6 +293,7 @@ let execute_analyze ~changed_files =
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
   InferAnalyze.main ~changed_files ;
+  log_db_size_mb AnalysisDatabase AnalysisDB Analysis "analysis_db_size_mb" ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
@@ -484,9 +486,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] when Config.bxl_file_capture ->
       BxlClangFile
-  | [] when Option.is_some Config.pyc_file ->
-      let pyc = Option.value_exn Config.pyc_file in
-      PythonBytecode {pyc}
+  | [] when not (List.is_empty Config.pyc_file) ->
+      PythonBytecode {files= Config.pyc_file}
   | [] -> (
       let textualfiles = Config.capture_textual in
       match (Config.clang_compilation_dbs, textualfiles) with
@@ -536,14 +537,14 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
         match buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some Erlang ->
-            BuckErlang {prog; args}
         | Some Clang when Config.buck2_use_bxl ->
             BxlClang {build_cmd}
         | Some Clang ->
             Buck2Clang {build_cmd}
-        | Some Java ->
-            Buck2Java {build_cmd}
+        | Some Erlang ->
+            BuckErlang {prog; args}
+        | Some Java when Config.buck2_use_bxl ->
+            BxlJava {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )
       | BClang ->
@@ -613,13 +614,9 @@ let run_prologue mode =
 
 
 let run_epilogue () =
+  GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
   if Config.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
   if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;
   ()
-
-
-let run_epilogue () =
-  GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
-  ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue

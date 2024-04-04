@@ -50,13 +50,14 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
+                     Foo.f
                      Foo.f#2
                    }
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+         class_info: {HackClassInfo (Class)}
          dummy: false
+         source_file: dummy.sil
          hack Quux
          fields: {}
          statics: {}
@@ -65,8 +66,7 @@ let%expect_test "undefined types are included in tenv" =
          methods: {}
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: true
          hack Baz
          fields: {}
@@ -76,8 +76,7 @@ let%expect_test "undefined types are included in tenv" =
          methods: {}
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: true
          hack Bar
          fields: {}
@@ -85,12 +84,12 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
+                     Bar.f
                      Bar.f#0
                    }
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: false |}]
 
 
@@ -115,9 +114,9 @@ let%expect_test "final annotation" =
       methods: {}
       exported_obj_methods: {}
       annots: {<_final>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+      class_info: {HackClassInfo (Class)}
       dummy: false
+      source_file: dummy.sil
       hack Bar
       fields: {}
       statics: {}
@@ -126,9 +125,9 @@ let%expect_test "final annotation" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
-      dummy: false |}]
+      class_info: {HackClassInfo (Class)}
+      dummy: false
+      source_file: dummy.sil |}]
 
 
 let%expect_test "unknown formal calls" =
@@ -164,7 +163,7 @@ let%expect_test "unknown formal calls" =
         ; proc_id= foo#2 }
             #n1:
 
-            #n3:
+            #n4:
               n$0=*&x:HackMixed* [line 8, column 11];
               n$1=_fun_unknown(n$0:HackMixed*) [line 9, column 11];
               n$2=*&y:HackMixed* [line 10, column 11];
@@ -178,7 +177,7 @@ let%expect_test "hack extends is ordered" =
   let source =
     {|
       .source_language = "hack"
-      type A extends P0, P1, T1, P2, T0, T2, P3, T3 = .kind="class" { }
+      type A extends P0, P1, P2, P3, T0, T1, T2, T3 = .kind="class" { }
 
       type T3 = .kind="trait" {}
       type T0 = .kind="trait" {}
@@ -198,7 +197,7 @@ let%expect_test "hack extends is ordered" =
   let supers = Tenv.fold_supers tenv name ~init:[] ~f:(fun name _ acc -> name :: acc) in
   F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
   [%expect {|
-    hack A hack T1 hack T0 hack T2 hack T3 hack P0 hack P1 hack P2 hack P3 |}]
+    hack A hack T0 hack T1 hack T2 hack T3 hack P0 hack P1 hack P2 hack P3 |}]
 
 
 let%expect_test "overloads in tenv" =
@@ -220,13 +219,13 @@ let%expect_test "overloads in tenv" =
     supers: {}
     objc_protocols: {}
     methods: {
-                C.f#2
+                C.f
                 C.f#1
+                C.f#2
               }
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: false
     hack bool
     fields: {}
@@ -236,8 +235,7 @@ let%expect_test "overloads in tenv" =
     methods: {}
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: true |}]
 
 
@@ -289,13 +287,13 @@ let%expect_test "undefined + overloads in merged tenv" =
     supers: {}
     objc_protocols: {}
     methods: {
+                Dep.f
                 Dep.f#1
                 Dep.f#2
               }
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: false |}]
 
 
@@ -333,15 +331,15 @@ let%expect_test "instanceof translation" =
     ; proc_id= bar#0 }
         #n1:
 
-        #n3:
+        #n4:
           n$0=_fun_foo() [line 7, column 9];
 
-        #n4:
+        #n5:
           n$1=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 10, column 9];
           *&return:int=n$1 [line 11, column 9];
 
-        #n5:
-          n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line -1];
+        #n6:
+          n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 13, column 9];
           *&return:int=n$2 [line 13, column 9];
 
         #n2: |}]
@@ -369,9 +367,9 @@ let%expect_test "trait vs class kind" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+      class_info: {HackClassInfo (Class)}
       dummy: false
+      source_file: dummy.sil
       hack T
       fields: {}
       statics: {}
@@ -380,45 +378,46 @@ let%expect_test "trait vs class kind" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = false }]}
-      dummy: false |}]
+      class_info: {HackClassInfo (Trait)}
+      dummy: false
+      source_file: dummy.sil |}]
 
 
-let%expect_test "experimental self/parent in trait" =
+let%expect_test "const" =
   let source =
     {|
-          .source_language = "hack"
-          .experimental_options = "self_parent_in_trait"
+     .source_language = "hack"
 
-          type T = .kind="trait" {}
-          type C = .kind="class" {}
-    |}
+     type Uninit::A$static = .kind="class" .static {
+       FIELD: .public .constant *HackMixed
+     }
+     |}
   in
   let m = parse_module source in
   let _, tenv = TextualSil.module_to_sil m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|
-      hack C
-      fields: {}
-      statics: {}
-      supers: {}
-      objc_protocols: {}
-      methods: {}
-      exported_obj_methods: {}
-      annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = true }]}
-      dummy: false
-      hack T
-      fields: {}
-      statics: {}
-      supers: {}
-      objc_protocols: {}
-      methods: {}
-      exported_obj_methods: {}
-      annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = true }]}
-      dummy: false |}]
+    hack HackMixed
+    fields: {}
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {}
+    exported_obj_methods: {}
+    annots: {<>}
+    class_info: {NoInfo}
+    dummy: true
+    hack Uninit::A$static
+    fields: {
+               HackMixed* const  FIELD <>
+             }
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {}
+    exported_obj_methods: {}
+    annots: {<>}
+    class_info: {HackClassInfo (Class)}
+    dummy: false
+    source_file: dummy.sil |}]

@@ -78,7 +78,7 @@ digraph cfg {
 "X#X#constructor_with_body#{144029.c2bb8c6ae9afcc4e_2" [label="2: Exit constructor_with_body::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#constructor_with_body#{144029.c2bb8c6ae9afcc4e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:constructor_with_body::X* [line 25, column 3]\n  n$1=*&c:int [line 25, column 7]\n  *n$0.f:int=n$1 [line 25, column 3]\n " shape="box"]
+"X#X#constructor_with_body#{144029.c2bb8c6ae9afcc4e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&c:int [line 25, column 7]\n  n$0=*&this:constructor_with_body::X* [line 25, column 3]\n  *n$0.f:int=n$1 [line 25, column 3]\n " shape="box"]
 	
 
 	 "X#X#constructor_with_body#{144029.c2bb8c6ae9afcc4e_3" -> "X#X#constructor_with_body#{144029.c2bb8c6ae9afcc4e_2" ;

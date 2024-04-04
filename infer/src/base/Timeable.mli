@@ -6,14 +6,11 @@
  *)
 
 open! IStd
-module F = Format
 
 (** types of everything we might possibly want to time *)
 type t =
   | Checker of Checker.t
   | Preanalysis  (** the "pre-analysis" phase of a procedure, before we run the checkers *)
-
-val pp : F.formatter -> t -> unit
 
 val to_string : t -> string
 

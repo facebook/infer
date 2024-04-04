@@ -92,6 +92,7 @@ and simple_expression =
   | ListComprehension of {expression: expression; qualifiers: qualifier list}
   | Literal of literal
   | Map of {map: expression option; updates: association list}
+  | MapComprehension of {expression: association; qualifiers: qualifier list}
   | Match of {pattern: expression; body: (* body is a pattern within patterns *) expression}
   | Nil
   | Receive of {cases: case_clause list; timeout: timeout option}
@@ -109,6 +110,7 @@ and qualifier =
   | BitsGenerator of {pattern: expression; expression: expression}
   | Filter of expression
   | Generator of {pattern: expression; expression: expression}
+  | MapGenerator of {pattern: association; expression: expression}
 
 and timeout = {time: expression; handler: body}
 
@@ -177,10 +179,17 @@ type spec = spec_disjunct list [@@deriving sexp_of]
 (* TODO: Add types, and specs. *)
 type record_field = {field_name: string; initializer_: expression option} [@@deriving sexp_of]
 
+type attribute_record = {tag: string; value: string} [@@deriving sexp_of]
+
+(* for now we only keep string-like attributes: those attributes which value is
+   translated to a json string: erlang atoms and strings *)
+type attribute = StringAttribute of attribute_record [@@deriving sexp_of]
+
 type simple_form =
   | Export of function_ list
   | Import of {module_name: string; functions: function_ list}
   | Module of string
+  | Attribute of attribute
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
   | Record of {name: string; fields: record_field list}

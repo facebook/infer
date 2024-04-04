@@ -589,8 +589,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
             ~f:(fun (k, lab_src, m, lab_trg) ->
               mk_link k
                 (mk_coordinate (n + 1) lambda)
-                (strip_special_chars lab_src) (mk_coordinate m lambda) (strip_special_chars lab_trg)
-              )
+                (strip_special_chars lab_src) (mk_coordinate m lambda) (strip_special_chars lab_trg) )
             target_list
         in
         let links_from_elements = List.concat_map ~f:ff (n :: nl) in

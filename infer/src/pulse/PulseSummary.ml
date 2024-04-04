@@ -14,8 +14,10 @@ open PulseOperationResult.Import
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type t =
-  {main: pre_post_list; specialized: (pre_post_list Specialization.Pulse.Map.t[@yojson.opaque])}
+type summary = {pre_post_list: pre_post_list; non_disj: (NonDisjDomain.Summary.t[@yojson.opaque])}
+[@@deriving yojson_of]
+
+type t = {main: summary; specialized: (summary Specialization.Pulse.Map.t[@yojson.opaque])}
 [@@deriving yojson_of]
 
 let pp_pre_post_list fmt ~pp_kind pre_posts =
@@ -26,32 +28,49 @@ let pp_pre_post_list fmt ~pp_kind pre_posts =
   F.close_box ()
 
 
+let pp_summary fmt ~pp_kind {pre_post_list; non_disj} =
+  F.fprintf fmt "@[<hov>pre/posts:%a@\nnon_disj:%a@]" (pp_pre_post_list ~pp_kind) pre_post_list
+    NonDisjDomain.Summary.pp non_disj
+
+
 let pp fmt {main; specialized} =
   if Specialization.Pulse.Map.is_empty specialized then
-    pp_pre_post_list fmt ~pp_kind:(fun _fmt -> ()) main
+    pp_summary fmt ~pp_kind:(fun _fmt -> ()) main
   else
     let pp_kind fmt = F.pp_print_string fmt " main" in
     F.open_hvbox 0 ;
-    pp_pre_post_list fmt ~pp_kind main ;
+    pp_summary fmt ~pp_kind main ;
     Specialization.Pulse.Map.iter
       (fun specialization pre_posts ->
         F.fprintf fmt "@\n" ;
         let pp_kind fmt =
           F.fprintf fmt " specialized with %a" Specialization.Pulse.pp specialization
         in
-        pp_pre_post_list fmt ~pp_kind pre_posts )
+        pp_summary fmt ~pp_kind pre_posts )
       specialized ;
     F.close_box ()
+
+
+let add_disjunctive_pre_post pre_post {pre_post_list; non_disj} =
+  {pre_post_list= pre_post :: pre_post_list; non_disj}
+
+
+let empty = {pre_post_list= []; non_disj= NonDisjDomain.Summary.bottom}
+
+let join summary1 summary2 =
+  let pre_post_list = summary1.pre_post_list @ summary2.pre_post_list in
+  let non_disj = NonDisjDomain.Summary.join summary1.non_disj summary2.non_disj in
+  {pre_post_list; non_disj}
 
 
 let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
-      ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t) :
-      _ ExecutionDomain.base_t SatUnsat.t =
+      ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
+      ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
     let open SatUnsat.Import in
     let+ summary_result =
-      AbductiveDomain.Summary.of_post tenv
+      AbductiveDomain.Summary.of_post
         (Procdesc.get_proc_name proc_desc)
         (Procdesc.get_attributes proc_desc)
         location astate
@@ -59,12 +78,6 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
     match (summary_result : _ result) with
     | Ok summary ->
         exec_domain_of_summary summary
-    | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
-          ( ReportableError
-              {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}}
-          , summary )
-        |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
@@ -77,10 +90,17 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`HackUnawaitedAwaitable (summary, astate, allocation_trace, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
-          ( ReportableError {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
-          , summary )
-        |> Option.value ~default:(exec_domain_of_summary summary)
+        (* suppress unawaited awaitable reporting in the case that we're throwing an exception because it leads to
+           too many true-but-unhelpful positives. TODO: reinstate reporting in the case that the exception is caught *)
+        if is_exceptional_state then (
+          L.d_printfln "Suppressing Unawaited Awaitable report because exception thown" ;
+          exec_domain_of_summary summary )
+        else
+          PulseReport.report_summary_error tenv proc_desc err_log
+            ( ReportableError
+                {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
+            , summary )
+          |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError
@@ -117,9 +137,9 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
   in
   match exec_astate with
   | ExceptionRaised astate ->
-      summarize astate ~exec_domain_of_summary:exception_raised
+      summarize astate ~exec_domain_of_summary:exception_raised ~is_exceptional_state:true
   | ContinueProgram astate ->
-      summarize astate ~exec_domain_of_summary:continue_program
+      summarize astate ~exec_domain_of_summary:continue_program ~is_exceptional_state:false
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
       Sat (AbortProgram astate)
@@ -137,13 +157,16 @@ let force_exit_program tenv proc_desc err_log post =
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts tenv proc_desc err_log location posts =
-  List.filter_mapi posts ~f:(fun i exec_state ->
-      L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
-      exec_summary_of_post_common tenv proc_desc err_log location exec_state
-        ~continue_program:(fun astate -> ContinueProgram astate)
-        ~exception_raised:(fun astate -> ExceptionRaised astate)
-      |> SatUnsat.sat )
+let of_posts tenv proc_desc err_log location posts non_disj =
+  let pre_post_list =
+    List.filter_mapi posts ~f:(fun i exec_state ->
+        L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
+        exec_summary_of_post_common tenv proc_desc err_log location exec_state
+          ~continue_program:(fun astate -> ContinueProgram astate)
+          ~exception_raised:(fun astate -> ExceptionRaised astate)
+        |> SatUnsat.sat )
+  in
+  {pre_post_list; non_disj= NonDisjDomain.make_summary non_disj}
 
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name
@@ -175,7 +198,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs in
   let** astate, (self_value, self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -204,7 +227,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
 let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs in
   let** astate, (self_value, _self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -212,7 +235,7 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
   let** astate = PulseArithmetic.prune_eq_zero self_value astate in
   let++ summary =
     let open SatUnsat.Import in
-    AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
+    AbductiveDomain.Summary.of_post proc_name proc_attrs proc_attrs.loc astate
     >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
     >>| AccessResult.with_summary
   in
@@ -235,7 +258,7 @@ let mk_objc_nil_messaging_summary tenv (proc_attrs : ProcAttributes.t) =
       match
         (let** astate = mk_nil_messaging_summary_aux tenv proc_name proc_attrs in
          let open SatUnsat.Import in
-         AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
+         AbductiveDomain.Summary.of_post proc_name proc_attrs proc_attrs.loc astate
          >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
          >>| AccessResult.with_summary )
         |> PulseOperationResult.sat_ok
@@ -306,3 +329,25 @@ let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) s
       positive_allocated_self proc_name proc_attrs.loc self astate
   | _ ->
       Sat (Ok astate)
+
+
+let merge x y =
+  let merged_is_same_to_x = ref true in
+  let merged_is_same_to_y = ref true in
+  let merged =
+    Specialization.Pulse.Map.merge
+      (fun _ x y ->
+        match (x, y) with
+        | None, None | Some _, Some _ ->
+            x
+        | Some _, None ->
+            merged_is_same_to_y := false ;
+            x
+        | None, Some _ ->
+            merged_is_same_to_x := false ;
+            y )
+      x.specialized y.specialized
+  in
+  if !merged_is_same_to_x then x
+  else if !merged_is_same_to_y then y
+  else {x with specialized= merged}

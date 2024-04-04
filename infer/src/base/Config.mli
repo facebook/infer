@@ -43,15 +43,17 @@ val env_inside_maven : Unix.env
 
 (** {2 Constant configuration values} *)
 
-val anonymous_block_num_sep : string
+val allow_listed_cpp_classes : string list
+
+val allow_listed_cpp_methods : string list
 
 val anonymous_block_prefix : string
 
 val assign : string
 
-val biabduction_models_sql : string
-
 val biabduction_models_jar : string
+
+val biabduction_models_sql : string
 
 val bin_dir : string
 
@@ -78,6 +80,9 @@ val fcp_dir : string
 val idempotent_getters : bool
 
 val initial_analysis_time : float
+
+val is_running_unit_test : bool
+(** whether the infer executable looks like we are just running infer unit tests *)
 
 val ivar_attributes : string
 
@@ -115,23 +120,23 @@ val unsafe_unret : string
 
 val weak : string
 
-val allow_listed_cpp_classes : string list
-
-val allow_listed_cpp_methods : string list
-
 val wrappers_dir : string
 
 (** {2 Configuration values specified by command-line options} *)
 
+val abstract_pulse_models_for_erlang : bool
+
 val analysis_schedule_file : string option
 
-val annotation_reachability_cxx : Yojson.Basic.t
+val annotation_reachability_custom_pairs : Yojson.Safe.t
 
-val run_as_child : int option
+val annotation_reachability_cxx : Yojson.Safe.t
 
-val annotation_reachability_cxx_sources : Yojson.Basic.t
+val annotation_reachability_cxx_sources : Yojson.Safe.t
 
-val annotation_reachability_custom_pairs : Yojson.Basic.t
+val annotation_reachability_expensive : bool
+
+val annotation_reachability_no_allocation : bool
 
 val append_buck_flavors : string list
 
@@ -143,14 +148,14 @@ val biabduction_allow_leak : bool
 
 val biabduction_array_level : int
 
-val biabduction_models_mode : bool
-
 val biabduction_iterations : int
 
 val biabduction_join_cond : int
 
 val biabduction_memleak_buckets :
   [`MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown] list
+
+val biabduction_models_mode : bool
 
 val biabduction_monitor_prop_size : bool
 
@@ -174,21 +179,21 @@ val biabduction_worklist_mode : int
 
 val biabduction_write_dotty : bool
 
+val bo_assume_void : bool
+
+val bo_bottom_as_default : bool
+
+val bo_context_sensitive_allocsites : bool
+
 val bo_debug : int
+
+val bo_exit_frontend_gener_vars : bool
 
 val bo_field_depth_limit : int option
 
 val bo_max_cfg_size : int
 
 val bo_sound_unknown_sets_join : bool
-
-val bo_bottom_as_default : bool
-
-val bo_context_sensitive_allocsites : bool
-
-val bo_assume_void : bool
-
-val bo_exit_frontend_gener_vars : bool
 
 val bootclasspath : string option
 
@@ -198,7 +203,19 @@ val buck2_build_args : string list
 
 val buck2_build_args_no_inline : string list
 
+val buck2_bxl_capture_file_block_list : string list
+
 val buck2_bxl_target : string option
+
+val buck2_inferconfig_target : string option
+
+val buck2_infertoolchain_target : string option
+
+val buck2_isolation_dir : string option
+
+val buck2_query_deps : bool
+
+val buck2_root : string
 
 val buck2_use_bxl : bool
 
@@ -214,9 +231,9 @@ val buck_clang_use_toolchain_config : bool
 
 val buck_dependency_depth : int option
 
-val buck_java_flavor_suppress_config : bool
-
 val buck_java_heap_size_gb : int option
+
+val buck_java_suppress_config : bool
 
 val buck_merge_all_deps : bool
 
@@ -226,17 +243,13 @@ val buck_out : string
 
 val buck_out_gen : string
 
-val buck2_root : string
-
 val buck_targets_block_list : string list
 
 val bxl_file_capture : bool
 
 val capture : bool
 
-val capture_block_list : string * Yojson.Basic.t
-
-val capture_doli : string list
+val capture_block_list : string * Yojson.Safe.t
 
 val capture_textual : string list
 
@@ -250,21 +263,21 @@ val check_version : string option
 
 val clang_ast_file : [`Biniou of string | `Yojson of string] option
 
-val clang_compound_literal_init_limit : int
-
-val clang_extra_flags : string list
-
 val clang_block_listed_flags : string list
 
 val clang_block_listed_flags_with_arg : string list
 
+val clang_compound_literal_init_limit : int
+
+val clang_extra_flags : string list
+
 val clang_frontend_action_string : string
 
-val clang_ignore_regex : string option
+val clang_idirafter_to_override_regex : Str.regexp option
+
+val clang_ignore_regex : Str.regexp option
 
 val clang_isystem_to_override_regex : Str.regexp option
-
-val clang_idirafter_to_override_regex : Str.regexp option
 
 val clang_libcxx_include_to_override_regex : string option
 
@@ -298,35 +311,29 @@ val config_impact_strict_mode : bool
 
 val config_impact_strict_mode_paths : Str.regexp list
 
-val config_impact_strict_beta_mode_paths : Str.regexp list
-
 val config_impact_test_paths : Str.regexp list
 
 val continue_analysis : bool
 
 val continue_capture : bool
 
-val costs_current : string option
-
 val cost_issues_tests : string option
 
-val cost_scuba_logging : bool
-
-val costs_previous : string option
+val cost_log_unknown_calls : bool
 
 val cost_suppress_func_ptr : bool
 
-val cost_tests_only_autoreleasepool : bool
+val costs_current : string option
+
+val costs_previous : string option
 
 val cxx : bool
 
-val cxx_scope_guards : Yojson.Basic.t
+val cxx_scope_guards : Yojson.Safe.t
 
 val data_flow_queries_on_topl : string list
 
 val dbwriter : bool
-
-val deduplicate : bool
 
 val debug_exceptions : bool
 
@@ -337,6 +344,8 @@ val debug_level_capture : int
 val debug_level_test_determinator : int
 
 val debug_mode : bool
+
+val deduplicate : bool
 
 val dependency_mode : bool
 
@@ -354,23 +363,19 @@ val dump_textual : bool
 
 val dynamic_dispatch_json_file_path : string option
 
-val eradicate_condition_redundant : bool
-
-val eradicate_field_over_annotated : bool
-
-val eradicate_return_over_annotated : bool
-
-val eradicate_verbose : bool
-
 val erlang_ast_dir : string option
 
 val erlang_check_return : bool
+
+val erlang_list_unfold_depth : int
+
+val erlang_reliability : bool
 
 val erlang_skip_compile : bool
 
 val erlang_with_otp_specs : bool
 
-val erlang_list_unfold_depth : int
+val export_changed_functions : bool
 
 val extract_capture_from : string option
 
@@ -392,17 +397,15 @@ val force_delete_results_dir : bool
 
 val force_integration : build_system option
 
-val from_json_report : string
-
 val from_json_config_impact_report : string
 
 val from_json_costs_report : string
 
+val from_json_report : string
+
 val frontend_stats : bool
 
 val frontend_tests : bool
-
-val function_pointer_specialization : bool
 
 val generated_classes : string option
 
@@ -410,13 +413,13 @@ val genrule_mode : bool
 
 val global_tenv : bool
 
-val hack_naming_table : string option [@@warning "-unused-value-declaration"]
-
-val hackc_binary : string
-
 val hack_builtin_models : string
 
 val hack_models : string list
+
+val hack_naming_table : string option [@@warning "-unused-value-declaration"]
+
+val hackc_binary : string option
 
 val help_checker : Checker.t list
 
@@ -426,30 +429,28 @@ val hoisting_report_only_expensive : bool
 
 val html : bool
 
-val infer_binary : string
-(** absolute canonicalized path to the current executable *)
-
 val icfg_dotty_outfile : string option
+
+val implicit_sdk_root : string option
 
 val impurity_report_immutable_modifications : bool
 
+val inclusive_cost : bool
+
 val incremental_analysis : bool
 
-val inline_func_pointer_for_testing : string option
+val infer_binary : string
+(** absolute canonicalized path to the current executable *)
 
 val infer_is_clang : bool
 
 val infer_is_javac : bool
 
-val invalidate_only : bool
-
-val implicit_sdk_root : string option
-
-val inclusive_cost : bool
-
 val inferconfig_file : string option
 
-val inferconfig_dir : string option
+val inline_func_pointer_for_testing : string option
+
+val invalidate_only : bool
 
 val is_checker_enabled : Checker.t -> bool
 
@@ -477,15 +478,43 @@ val keep_going : bool
 
 val kotlin_capture : bool
 
+val lineage_dedup : bool
+
+val lineage_field_depth : int
+
+val lineage_field_max_cfg_size : int option
+
+val lineage_field_width : int option
+
+val lineage_include_builtins : bool
+
+val lineage_json_report : bool
+
+val lineage_keep_temporaries : bool
+
+val lineage_max_cfg_size : int option
+
+val lineage_prevent_cycles : bool
+
+val lineage_seed : int
+
+val lineage_variant_width : int
+
 val list_checkers : bool
 
 val list_issue_types : bool
 
-val liveness_dangerous_classes : Yojson.Basic.t
+val liveness_block_list_var_regex : Str.regexp option
+
+val liveness_dangerous_classes : Yojson.Safe.t
 
 val liveness_ignored_constant : string list
 
 val load_average : float option
+
+val lock_model : Yojson.Safe.t
+
+val log_pulse_disjunct_increase_after_model_call : bool
 
 val log_missing_deps : bool
 
@@ -505,15 +534,15 @@ val merge_capture : string list
 
 val merge_report : string list
 
-val merge_report_summaries : string list
+val merge_summaries : string list
 
 val method_decls_info : string option
 
-val modeled_expensive : string * Yojson.Basic.t
+val modeled_expensive : string * Yojson.Safe.t
 
 val modified_lines : string option
 
-val never_returning_null : string * Yojson.Basic.t
+val never_returning_null : string * Yojson.Safe.t
 
 val no_censor_report : Str.regexp list
 
@@ -521,23 +550,9 @@ val no_translate_libs : bool
 
 val nullable_annotation : string option
 
-val nullsafe_annotation_graph : bool
-
-val nullsafe_disable_field_not_initialized_in_nonstrict_classes : bool
-
-val nullsafe_optimistic_third_party_in_default_mode : bool
-
-val nullsafe_third_party_signatures : string option
-
-val nullsafe_third_party_location_for_messaging_only : string option
-
-val nullsafe_strict_containers : bool
-
-val oom_threshold : int option
-
 val only_cheap_debug : bool
 
-val parse_doli : string option
+val oom_threshold : int option
 
 val pmd_xml : bool
 
@@ -559,9 +574,9 @@ val procedures : bool
 
 val procedures_attributes : bool
 
-val procedures_callees : bool
-
 val procedures_call_graph : bool
+
+val procedures_callees : bool
 
 val procedures_cfg : bool
 
@@ -591,9 +606,15 @@ val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
 val pulse_force_continue : bool
 
+val pulse_havoc_arguments : bool
+
 val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool
+
+val pulse_log_summary_count : bool
+
+val pulse_log_unknown_calls : bool
 
 val pulse_max_cfg_size : int
 
@@ -615,45 +636,53 @@ val pulse_model_realloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
 
-val pulse_model_returns_copy_pattern : Str.regexp option
-
 val pulse_model_return_first_arg : Str.regexp option
-
-val pulse_model_return_this : Str.regexp option
 
 val pulse_model_return_nonnull : Str.regexp option
 
+val pulse_model_return_this : Str.regexp option
+
+val pulse_model_returns_copy_pattern : Str.regexp option
+
 val pulse_model_skip_pattern : Str.regexp option
+
+val pulse_model_transfer_ownership : string list
+
+val pulse_model_transfer_ownership_namespace : (string * string) list
 
 val pulse_models_for_erlang : string list
 
+val pulse_monitor_transitive_callees : bool
+
+val pulse_monitor_transitive_missed_captures : bool
+
+val pulse_nullsafe_report_npe : bool
+
+val pulse_nullsafe_report_npe_as_separate_issue_type : bool
+
 val pulse_prevent_non_disj_top : bool
 
-val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
+val pulse_recency_limit : int
 
 val pulse_report_flows_from_taint_source : string option
 
 val pulse_report_flows_to_taint_sink : string option
 
-val pulse_model_transfer_ownership_namespace : (string * string) list
-
-val pulse_model_transfer_ownership : string list
+val pulse_report_issues_for_tests : bool
 
 val pulse_report_latent_issues : bool
 
-val pulse_report_issues_for_tests : bool
-
 val pulse_sanity_checks : bool
-
-val pulse_recency_limit : int
-
-val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
 
+val pulse_specialization_iteration_limit : int
+
 val pulse_specialization_limit : int
 
-val pulse_specialization_iteration_limit : int
+val pulse_specialization_partial : bool
+
+val pulse_taint_check_history : bool
 
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
@@ -665,27 +694,35 @@ type pulse_taint_config =
 
 val pulse_taint_config : pulse_taint_config
 
+val pulse_taint_short_traces : bool
+
+val pulse_taint_skip_sources : bool
+
+val pulse_transitive_access_config : string list
+
+val pulse_transitive_access_enabled : bool
+
+val pulse_transitive_access_verbose : bool
+
+val pulse_unsafe_malloc : bool
+
 val pulse_widen_threshold : int
-
-val pulse_nullsafe_report_npe : bool
-
-val pulse_log_summary_count : bool
 
 val pure_by_default : bool
 
-val pyc_file : string option
+val pyc_file : string list
 
 val python_builtin_models : string
 
-val quandary_endpoints : Yojson.Basic.t
+val quandary_endpoints : Yojson.Safe.t
 
-val quandary_sanitizers : Yojson.Basic.t
+val quandary_sanitizers : Yojson.Safe.t
 
 val quandary_show_passthroughs : bool
 
-val quandary_sinks : Yojson.Basic.t
+val quandary_sinks : Yojson.Safe.t
 
-val quandary_sources : Yojson.Basic.t
+val quandary_sources : Yojson.Safe.t
 
 val quiet : bool
 
@@ -721,9 +758,9 @@ val report_force_relative_path : bool
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 
-val report_path_regex_block_list : string list
-
 val report_path_regex_allow_list : string list
+
+val report_path_regex_block_list : string list
 
 val report_previous : string option
 
@@ -735,11 +772,13 @@ val rest : string list
 
 val results_dir : string
 
+val run_as_child : int option
+
 val sarif : bool
 
 val scheduler : scheduler
 
-val scope_leakage_config : Yojson.Basic.t
+val scope_leakage_config : Yojson.Safe.t
 
 val scuba_logging : bool
 
@@ -752,24 +791,6 @@ val select : [`All | `Select of int] option
 val show_buckets : bool
 
 val shrink_analysis_db : bool
-
-val lineage_include_builtins : bool
-
-val lineage_field_depth : int
-
-val lineage_prevent_cycles : bool
-
-val lineage_field_width : int option
-
-val lineage_json_report : bool
-
-val lineage_keep_temporaries : bool
-
-val lineage_max_cfg_size : int option
-
-val lineage_dedup : bool
-
-val lineage_seed : int
 
 val siof_check_iostreams : bool
 
@@ -809,17 +830,25 @@ val sources : string list
 
 val sqlite_cache_size : int
 
-val sqlite_page_size : int
-
 val sqlite_lock_timeout : int
+
+val sqlite_max_blob_size : int
+
+val sqlite_mmap_size : int
+
+val sqlite_page_size : int
 
 val sqlite_vfs : string option
 
-val starvation_skip_analysis : Yojson.Basic.t
+val starvation_skip_analysis : Yojson.Safe.t
 
 val starvation_strict_mode : bool
 
 val starvation_whole_program : bool
+
+val stats_dir_current : string option
+
+val stats_dir_previous : string option
 
 val store_analysis_schedule : bool
 
@@ -835,11 +864,9 @@ val tenv_json : string option
 
 val test_determinator : bool
 
-val export_changed_functions : bool
-
 val testing_mode : bool
 
-val threadsafe_aliases : Yojson.Basic.t
+val threadsafe_aliases : Yojson.Safe.t
 
 val timeout : float option
 
@@ -862,8 +889,6 @@ val trace_events : bool
 val trace_ondemand : bool
 
 val trace_topl : bool
-
-val uninit_interproc : bool
 
 val unix_fork : bool
 

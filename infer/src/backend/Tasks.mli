@@ -17,11 +17,12 @@ module Runner : sig
   type ('work, 'final, 'result) t
 
   val create :
-       jobs:int
+       ?with_primary_db:bool
+    -> jobs:int
     -> child_prologue:(ProcessPool.Worker.id -> unit)
     -> f:('work, 'result) doer
     -> child_epilogue:(ProcessPool.Worker.id -> 'final)
-    -> tasks:(unit -> ('work, 'result) ProcessPool.TaskGenerator.t)
+    -> (unit -> ('work, 'result) ProcessPool.TaskGenerator.t)
     -> ('work, 'final, 'result) t
   (** Create a runner running [jobs] jobs in parallel *)
 

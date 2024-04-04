@@ -11,18 +11,20 @@ include AbstractDomain.S
 
 val initial : t
 
-val acquire_resource : AccessPath.t -> t -> t
+val acquire_resource : Exp.t * Typ.t -> t -> t
 
-val release_resource : AccessPath.t -> t -> t
+val release_resource : Exp.t * Typ.t -> t -> t
 
-val assign : AccessPath.t -> AccessPath.t -> t -> t
+val load : Ident.t * Typ.t -> Exp.t -> t -> t
+
+val store : lhs:Exp.t -> rhs:Exp.t * Typ.t -> t -> t
 
 val has_leak : FormalMap.t -> t -> bool
 
 type summary
 
 module Summary : sig
-  val apply : callee:summary -> return:AccessPath.base -> actuals:HilExp.t list -> t -> t
+  val apply : callee:summary -> return:Ident.t * Typ.t -> actuals:(Exp.t * Typ.t) list -> t -> t
 
   val make : FormalMap.t -> t -> summary
 

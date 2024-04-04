@@ -1,9 +1,9 @@
 ---
 title: "Pulse"
-description: "Memory and lifetime analysis."
+description: "General-purpose memory and value analysis engine."
 ---
 
-Memory and lifetime analysis.
+General-purpose memory and value analysis engine.
 
 Activate with `--pulse`.
 
@@ -11,7 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: Experimental
-- Hack: No
+- Hack: Yes
 - Java: Yes
 - Python: No
 
@@ -86,7 +86,7 @@ void false_negative() {
   int* x = (int*) malloc(sizeof(int));
   if (x) {
     // unknown call to x makes Pulse forget that x was allocated, in case it frees x
-    unknown(x); 
+    unknown(x);
   }
 } // no memory leak reported: false negative!
 
@@ -111,7 +111,7 @@ $ infer debug --procedures --procedures-filter 'false_negative' --procedures-sum
 
 ## Pulse x Nullsafe
 
-[Nullsafe](/docs/next/checker-eradicate) is a type checker for `@Nullable` annotations for Java. Classes following the Nullsafe discipline are annotated with `@Nullsafe`.
+Nullsafe is a type checker for `@Nullable` annotations for Java. Classes following the Nullsafe discipline are annotated with `@Nullsafe`.
 
 Consider the classes `Person` and `Registry` from the previous example. Assuming that class `Person` is annotated with `@Nullsafe`. In this case, we also annotate `getEmergencyContact()` with `@Nullable`, to make explicit that this method can return the `null` value. There is still the risk that classes depending on `Person` have Null dereferences. In this case, Pulse would report a Null dereference on `Registry`. It could also be the case that class `Registry` is annotated with `@Nullsafe`. By default Pulse reports on `@Nullsafe` files too, see the `--pulse-nullsafe-report-npe` option (Facebook-specific: Pulse does not report on `@Nullsafe` files).
 
@@ -168,14 +168,21 @@ The following issue types are reported by this checker:
 - [NO_TRUE_BRANCH_IN_IF](/docs/next/all-issue-types#no_true_branch_in_if)
 - [NO_TRUE_BRANCH_IN_IF_LATENT](/docs/next/all-issue-types#no_true_branch_in_if_latent)
 - [NULLPTR_DEREFERENCE](/docs/next/all-issue-types#nullptr_dereference)
+- [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](/docs/next/all-issue-types#nullptr_dereference_in_nullsafe_class)
+- [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT](/docs/next/all-issue-types#nullptr_dereference_in_nullsafe_class_latent)
 - [NULLPTR_DEREFERENCE_LATENT](/docs/next/all-issue-types#nullptr_dereference_latent)
 - [NULL_ARGUMENT](/docs/next/all-issue-types#null_argument)
 - [NULL_ARGUMENT_LATENT](/docs/next/all-issue-types#null_argument_latent)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [OPTIONAL_EMPTY_ACCESS_LATENT](/docs/next/all-issue-types#optional_empty_access_latent)
 - [PULSE_CONST_REFABLE](/docs/next/all-issue-types#pulse_const_refable)
+- [PULSE_DICT_MISSING_KEY](/docs/next/all-issue-types#pulse_dict_missing_key)
 - [PULSE_READONLY_SHARED_PTR_PARAM](/docs/next/all-issue-types#pulse_readonly_shared_ptr_param)
+- [PULSE_REFERENCE_STABILITY](/docs/next/all-issue-types#pulse_reference_stability)
 - [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
+- [PULSE_TRANSITIVE_ACCESS](/docs/next/all-issue-types#pulse_transitive_access)
+- [PULSE_UNAWAITED_AWAITABLE](/docs/next/all-issue-types#pulse_unawaited_awaitable)
+- [PULSE_UNINITIALIZED_CONST](/docs/next/all-issue-types#pulse_uninitialized_const)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [PULSE_UNINITIALIZED_VALUE_LATENT](/docs/next/all-issue-types#pulse_uninitialized_value_latent)
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)

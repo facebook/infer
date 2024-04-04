@@ -11,7 +11,7 @@ module F = Format
 exception ParseError of string
 
 (* internally it uses reversed list to store qualified name, for example: ["get", "shared_ptr<int>", "std"]*)
-type t = string list [@@deriving compare, equal, yojson_of, sexp, hash]
+type t = string list [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let empty = []
 
@@ -112,11 +112,3 @@ module Match = struct
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
 end
-
-module Set = PrettyPrintable.MakePPSet (struct
-  type nonrec t = t [@@deriving compare]
-
-  let pp = pp
-end)
-
-module Normalizer = HashNormalizer.StringListNormalizer

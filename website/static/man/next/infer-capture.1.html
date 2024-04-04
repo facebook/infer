@@ -98,7 +98,7 @@ translation in the results directory.</p>
 
 <p style="margin-left:17%;">Matcher or list of matchers for
 names of files that should not be captured, hence not
-analyzed either. Clang and Java only.</p>
+analyzed either. Clang, Java, and Hack only.</p>
 
 <p style="margin-left:11%;"><b>--cfg-json</b>
 <i>file</i></p>
@@ -159,7 +159,7 @@ infer results directory. (Conversely:
 
 <p style="margin-left:17%;">Proceed as if the first
 argument after <b>--</b> was <i>command</i>. Possible
-values: <i>ant</i>, <i>buck</i>, <i>buck1</i>, <i>buck2</i>,
+values: <i>ant</i>, <i>buck1</i>, <i>buck</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>kotlinc</i>, <i>cc</i>, <i>clang</i>, <i>gcc</i>,
 <i>clang++</i>, <i>c++</i>, <i>g++</i>, <i>hackc</i>,
@@ -270,6 +270,18 @@ corresponding SQLite PRAGMA.</p>
 <p style="margin-left:17%;">Timeout for SQLite results
 database operations, in milliseconds.</p>
 
+<p style="margin-left:11%;"><b>--sqlite-max-blob-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Maximum blob/string size for
+data written in SQLite.</p>
+
+<p style="margin-left:11%;"><b>--sqlite-mmap-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Size of memory map for mmaped
+SQLite databases, zero value disables memory mapping.</p>
+
 <p style="margin-left:11%;"><b>--sqlite-page-size</b>
 <i>int</i></p>
 
@@ -375,20 +387,10 @@ provided and nothing else.</p>
 <p style="margin-left:17%;">Activates: Buck integration for
 Erlang. (Conversely: <b>--no-buck-erlang</b>)</p>
 
-<p style="margin-left:11%;"><b>--buck-java-flavor</b></p>
+<p style="margin-left:11%;"><b>--buck-java</b></p>
 
 <p style="margin-left:17%;">Activates: Buck integration for
-Java which uses the buck flavor #infer-java-capture instead
-of genrules like buck-java. (Conversely:
-<b>--no-buck-java-flavor</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--buck-java-flavor-suppress-config</b></p>
-
-<p style="margin-left:17%;">Activates: Suppress setting
-buck config values for the infer binary and its version in
-the buck-java-flavor integration. (Conversely:
-<b>--no-buck-java-flavor-suppress-config</b>)</p>
+Java. (Conversely: <b>--no-buck-java</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--buck-java-heap-size-gb</b>
@@ -396,6 +398,14 @@ the buck-java-flavor integration. (Conversely:
 
 <p style="margin-left:17%;">Explicitly set the size of the
 Java heap of Buck processes, in gigabytes.</p>
+
+
+<p style="margin-left:11%;"><b>--buck-java-suppress-config</b></p>
+
+<p style="margin-left:17%;">Activates: Suppress setting
+buck config values for the infer binary and its version in
+the buck-java integration. (Conversely:
+<b>--no-buck-java-suppress-config</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--buck-merge-all-deps</b></p>
@@ -419,6 +429,27 @@ matched by the specified regular expression.</p>
 <p style="margin-left:17%;">Buck2 BXL script (as a buck
 target) to run when capturing with buck2/clang
 integration.</p>
+
+
+<p style="margin-left:11%;"><b>--buck2-inferconfig-target</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Buck2 target representing the
+inferconfig file; used in BXL capture.</p>
+
+<p style="margin-left:11%;"><b>--buck2-isolation-dir</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Run buck bxl capture with the
+given isolation directory as parameter.</p>
+
+
+<p style="margin-left:11%;"><b>--no-buck2-query-deps</b></p>
+
+<p style="margin-left:17%;">Deactivates: Query deps of
+given targets and run capture on the result (alternatively
+run capture on given targets) (Conversely:
+<b>--buck2-query-deps</b>)</p>
 
 <p style="margin-left:11%;"><b>--buck2-root</b>
 <i>dir</i></p>
@@ -444,14 +475,14 @@ specified by <b>--buck2_bxl_target</b>. (Conversely:
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -459,15 +490,15 @@ don't inline any args starting with '@'. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck2
-build&rsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck2-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck2
-build&rsquo;</i>, don't inline any args starting with '@'.
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>, don't inline any args starting with '@'.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--xcode-developer-dir</b>
@@ -582,8 +613,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>ERLANG OPTIONS
@@ -607,6 +638,15 @@ values returned by functions correspond to what the
 function's spec promises. This check is introduced at
 capture time. (Conversely:
 <b>--no-erlang-check-return</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-erlang-reliability</b></p>
+
+<p style="margin-left:17%;">Deactivates: Analyze crashing
+executions. This flag affects both capture and analysis. At
+capture time, it encodes Erlang specs; at (Pulse) analysis
+time, it models Erlang exceptions (builtin or OTP ones).
+(Conversely: <b>--erlang-reliability</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--erlang-skip-compile</b></p>

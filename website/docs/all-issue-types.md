@@ -34,35 +34,6 @@ Example:
   }
 ```
 
-## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE
-
-Reported as "Autoreleasepool Size Complexity Increase" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's size complexity of a
-program increases in degree: e.g. from constant to linear or from logarithmic to quadratic. This
-issue type is only reported in differential mode: i.e when we are comparing the analysis results of
-two runs of infer on a file.
-
-## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD
-
-Reported as "Autoreleasepool Size Complexity Increase Ui Thread" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's complexity of the
-procedure increases in degree **and** the procedure runs on the UI (main) thread.
-
-Infer considers a method as running on the UI thread whenever:
-
-- The method, one of its overrides, its class, or an ancestral class, is annotated with `@UiThread`.
-- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`, etc.
-- The method or its callees call a `Litho.ThreadUtils` method such as `assertMainThread`.
-
-## AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT
-
-Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
-node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
-
 ## BAD_ARG
 
 Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
@@ -173,7 +144,7 @@ Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
 See [MEMORY_LEAK](#memory_leak).
 ## BIABDUCTION_RETAIN_CYCLE
 
-Reported as "Biabduction Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
+Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
 
 See [RETAIN_CYCLE](#retain_cycle).
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
@@ -427,29 +398,9 @@ retain a useless reference to that `View` that will not be cleaned up until the
 
 Action: Nullify the `View` in question in `onDestroyView`.
 
-## CHECKERS_IMMUTABLE_CAST
-
-Reported as "Checkers Immutable Cast" by [immutable-cast](/docs/next/checker-immutable-cast).
-
-This error type is reported in Java. It fires when an immutable collection is
-returned from a method whose type is mutable.
-
-```java
-  public List<String> getSomeList() {
-    ImmutableList<String> l = foo(...);
-    return l;
-  }
-```
-
-This can lead to a runtime error if users of `getSomeList` try to modify the
-list e.g. by adding elements.
-
-Action: you can change the return type to be immutable, or make a copy of the
-collection so that it can be modified.
-
 ## CHECKERS_PRINTF_ARGS
 
-Reported as "Checkers Printf Args" by [printf-args](/docs/next/checker-printf-args).
+Reported as "Printf Args" by [printf-args](/docs/next/checker-printf-args).
 
 This error is reported when the argument types to a `printf` method do not match the format string.
 
@@ -468,8 +419,8 @@ Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-confi
 Infer reports this issue when an *expensive* function is called without a *config check*.  The
 *config* is usually a boolean value that enables experimental new features and it is defined per
 application/codebase, e.g. gatekeepers.  To determine whether a function is expensive or not, the
-checker relies on [Cost analysis](/docs/next/checker-cost) results and modeled functions that are
-assumed to be expensive, e.g. string operations, regular expression match, or DB accesses.
+checker relies on modeled functions that are assumed to be expensive, e.g. string operations,
+regular expression match, or DB accesses.
 
 Similar to [Cost analysis](/docs/next/checker-cost), this issue type is reported only in
 differential mode, i.e. when there are original code and modified one and we can compare Infer's
@@ -526,13 +477,6 @@ Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checke
 This is similar to [`CONFIG_IMPACT` issue](#config_impact) but the analysis reports **all** ungated
 codes irrespective of whether they are expensive or not.
 
-## CONFIG_IMPACT_STRICT_BETA
-
-Reported as "Config Impact Strict Beta" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
-
-This is similar to [`CONFIG_IMPACT_STRICT` issue](#config_impact_strict) but it is only used for
-beta testing that fine-tunes the checker to analysis targets.
-
 ## CONFIG_USAGE
 
 Reported as "Config Usage" by [pulse](/docs/next/checker-pulse).
@@ -583,6 +527,30 @@ Create an intent/start a component using a (possibly user-controlled) URI. may o
 Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into HTML; XSS risk.
+## CXX_REF_CAPTURED_IN_BLOCK
+
+Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).
+
+This check flags when a C++ reference is captured in an escaping block.
+This means that the block will be leaving the current scope, i.e. it is
+not annotated with `__attribute__((noescape))`.
+
+Example:
+
+```
+- (void)ref_captured_in_escaping_block_bad:(int&)y {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    int a = y;
+    ...
+  });
+  ...;
+}
+```
+
+This could cause crashes because C++ references are not managed pointers
+(like ARC pointers) and so the referent is likely to be gone if the block
+dereferences it later.
+
 ## DANGLING_POINTER_DEREFERENCE
 
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -692,297 +660,6 @@ int foo(){
 }
 ```
 
-## ERADICATE_ANNOTATION_GRAPH
-
-Reported as "Annotation Graph" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_BAD_NESTED_CLASS_ANNOTATION
-
-Reported as "@Nullsafe annotation is inconsistent with outer class" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_CONDITION_REDUNDANT
-
-Reported as "Condition Redundant" by [eradicate](/docs/next/checker-eradicate).
-
-This report is inactive by default. Condition (x != null) or (x == null) when x
-cannot be null: the first condition is always true and the second is always
-false
-
-Example:
-
-```java
-class C {
-  void m() {
-    String s = new String("abc");
-    if (s != null) {
-      int n = s.length();
-    }
-  }
-}
-```
-
-Action: Make sure that the annotations are correct, as the condition is
-considered redundant based on the existing annotations. In particular, check the
-annotation of any input parameters and fields of the current method, as well as
-the annotations of any method called directly by the current method, if
-relevant. If the annotations are correct, you can remove the redundant case.
-
-## ERADICATE_FIELD_NOT_INITIALIZED
-
-Reported as "Field Not Initialized" by [eradicate](/docs/next/checker-eradicate).
-
-The constructor does not initialize a field f which is not annotated with
-@Nullable
-
-Example:
-
-```java
-class C {
-  String f;
-
-  C () { // field f not initialized and not annotated @Nullable
-  }
-}
-```
-
-Action: The preferred action is to initialize the field with a value that is not
-null. If, by design, null is a valid value for the field, then it should be
-annotated with @Nullable.
-
-## ERADICATE_FIELD_NOT_NULLABLE
-
-Reported as "Field Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-An assignment x.f = v where v could be null and field f is not annotated with
-@Nullable.
-
-Example:
-
-```java
-class C {
-  String f;
-
-  void foo(@Nullable String s) {
-    f = s;
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never stored in
-the field, by changing the code or changing annotations. If this cannot be done,
-add a @Nullable annotation to the field. This annotation might trigger more
-warnings in other code that uses the field, as that code must now deal with null
-values.
-
-## ERADICATE_FIELD_OVER_ANNOTATED
-
-Reported as "Field Over Annotated" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION
-
-Reported as "Inconsistent Subclass Parameter Annotation" by [eradicate](/docs/next/checker-eradicate).
-
-A parameter of the overridden method is missing a @Nullable annotation present in the superclass.
-
-Action: choose a consistent annotation based on the desired invariant.
-
-Example:
-
-```java
-class A {
-
-  int len(@Nullable String s) {
-    if (s != null) {
-      return s.length();
-    } else {
-      return 0;
-    }
-  }
-}
-
-class B extends A {
-
-  int len(String s) {  // @Nullable missing.
-    return s.length();
-  }
-}
-```
-
-A consistent use of @Nullable on parameters across subtyping should prevent runtime issue like in:
-
-```java
-public class Main {
-
-  String s;
-
-  int foo() {
-    A a = new B();
-    return a.len(s);
-  }
-}
-```
-
-
-## ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION
-
-Reported as "Inconsistent Subclass Return Annotation" by [eradicate](/docs/next/checker-eradicate).
-
-The return type of the overridden method is annotated @Nullable, but the
-corresponding method in the superclass is not.
-
-Action: choose a consistent annotation based on the desired invariant.
-
-Example:
-
-```java
-class A {
-  String create() {
-    return new String("abc");
-  }
-}
-
-class B extends A {
-  @Nullable String create() {  // Inconsistent @Nullable annotation.
-      return null;
-  }
-}
-```
-
-A consistent use of `@Nullable` on the return type across subtyping should prevent
-runtime issue like in:
-
-```java
-class Main {
-
-  int foo(A a) {
-     String s = a.create();
-     return s.length();
-  }
-
-  void main(String[] args) {
-     A a = new B();
-     foo(a);
-  }
-
-}
-```
-
-## ERADICATE_META_CLASS_CAN_BE_NULLSAFE
-
-Reported as "Class has 0 issues and can be marked @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_META_CLASS_IS_NULLSAFE
-
-Reported as "Class is marked @Nullsafe and has 0 issues" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_META_CLASS_NEEDS_IMPROVEMENT
-
-Reported as "Class needs improvement to become @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
-
-Reported when the class either:
-- has at least one nullability issue, or
-- has at least one (currently possibly hidden) issue preventing it from being marked `@Nullsafe`.
-
-## ERADICATE_NULLABLE_DEREFERENCE
-
-Reported as "Nullable Dereference" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_PARAMETER_NOT_NULLABLE
-
-Reported as "Parameter Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-Method call x.m(..., v, ...) where v can be null and the corresponding parameter
-in method m is not annotated with @Nullable
-
-Example:
-
-```java
-class C {
-  void m(C x) {
-    String s = x.toString()
-  }
-
-  void test(@Nullable C x) {
-    m(x);
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never passed to
-the method, by changing the code or changing annotations. If this cannot be
-done, add a @Nullable annotation to the relevant parameter in the method
-declaration. This annotation might trigger more warnings in the implementation
-of method m, as that code must now deal with null values.
-
-## ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION
-
-Reported as "@Nullsafe annotation is redundant" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_RETURN_NOT_NULLABLE
-
-Reported as "Return Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-Method m can return null, but the method's return type is not annotated with
-@Nullable
-
-Example:
-
-```java
-class C {
-  String m() {
-    return null;
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never returned by
-the method, by changing the code or changing annotations. If this cannot be
-done, add a @Nullable annotation to the method declaration. This annotation
-might trigger more warnings in the callers of method m, as the callers must now
-deal with null values.
-
-## ERADICATE_RETURN_OVER_ANNOTATED
-
-Reported as "Return Over Annotated" by [eradicate](/docs/next/checker-eradicate).
-
-This report is inactive by default. Method m is annotated with @Nullable but the
-method cannot return null
-
-Example:
-
-```java
-class C {
-  @Nullable String m() {
-    String s = new String("abc");
-    return s;
-  }
-}
-```
-
-Action: Make sure that the annotations are correct, as the return annotation is
-considered redundant based on the existing annotations. In particular, check the
-annotation of any input parameters and fields of the current method, as well as
-the annotations of any method called directly by the current method, if
-relevant. If the annotations are correct, you can remove the @Nullable
-annotation.
-
-## ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE
-
-Reported as "Nullsafe mode: unchecked usage of a value" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE
-
-Reported as "Nullsafe mode: unchecked usage of unvetted third-party" by [eradicate](/docs/next/checker-eradicate).
-
-
 ## EXECUTION_TIME_COMPLEXITY_INCREASE
 
 Reported as "Execution Time Complexity Increase" by [cost](/docs/next/checker-cost).
@@ -1030,13 +707,6 @@ void infeasible_path_unreachable() {
     Preconditions.checkState(false); // like assert false, state pruned to bottom
 }
 ```
-
-## EXPENSIVE_AUTORELEASEPOOL_SIZE
-
-Reported as "Expensive Autoreleasepool Size" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This warning indicates that non-constant and non-top ObjC autoreleasepool's size in
-the procedure.  By default, this issue type is disabled.
 
 ## EXPENSIVE_EXECUTION_TIME
 
@@ -1158,49 +828,39 @@ void efficient_loop_ok(HashMap<String, Integer> testMap) {
 
 ## INFERBO_ALLOC_IS_BIG
 
-Reported as "Inferbo Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or make sure it is really needed.
 ## INFERBO_ALLOC_IS_NEGATIVE
 
-Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_IS_ZERO
 
-Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_MAY_BE_BIG
 
-Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { malloc(n); }`.
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
-Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`.
-## INFINITE_AUTORELEASEPOOL_SIZE
-
-Reported as "Infinite Autoreleasepool Size" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This warning indicates that Infer was not able to determine a static upper bound on
-the Objective-C's autoreleasepool size in the procedure. This issuee type is similar to [INFINITE_EXECUTION_COST](#infinite_execution_time), with the difference that rather than the execution cost, we account for the size of the Objective-C autoreleasepool size.
-
-By default, this issue type is disabled.
-
-
 ## INFINITE_EXECUTION_TIME
 
 Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).
@@ -1889,6 +1549,112 @@ Moreover, inserting `nil` into a collection will cause a crash as well. We
 also have a dedicated issue type for this case:
 [Nil Insertion Into Collection](/docs/next/all-issue-types#nil_insertion_into_collection).
 
+## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS
+
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+
+Infer reports null dereference bugs in Java, C, C++, and Objective-C
+when it is possible that the null pointer is dereferenced, leading to
+a crash.
+
+### Null dereference in Java
+
+Many of Infer's reports of potential Null Pointer Exceptions (NPE) come from code of the form
+
+```java
+  p = foo(); // foo() might return null
+  stuff();
+  p.goo();   // dereferencing p, potential NPE
+```
+
+If you see code of this form, then you have several options.
+
+**If you are unsure whether or not `foo()` will return null**, you should
+ideally either
+
+1. Change the code to ensure that `foo()` can not return null, or
+
+2. Add a check that `p` is not `null` before dereferencing `p`.
+
+Sometimes, in case (2) it is not obvious what you should do when `p`
+is `null`. One possibility is to throw an exception, failing early but
+explicitly. This can be done using `checkNotNull` as in the following
+code:
+
+```java
+// code idiom for failing early
+import static com.google.common.base.Preconditions.checkNotNull;
+
+  //... intervening code
+
+  p = checkNotNull(foo()); // foo() might return null
+  stuff();
+  p.goo(); // p cannot be null here
+```
+
+The call `checkNotNull(foo())` will never return `null`: if `foo()`
+returns `null` then it fails early by throwing a Null Pointer
+Exception.
+
+Facebook NOTE: **If you are absolutely sure that foo() will not be
+null**, then if you land your diff this case will no longer be
+reported after your diff makes it to trunk.
+
+### Null dereference in C
+
+Here is an example of an inter-procedural null dereference bug in C:
+
+```c
+struct Person {
+  int age;
+  int height;
+  int weight;
+};
+int get_age(struct Person *who) {
+  return who->age;
+}
+int null_pointer_interproc() {
+  struct Person *joe = 0;
+  return get_age(joe);
+}
+```
+
+### Null dereference in Objective-C
+
+In Objective-C, null dereferences are less common than in Java, but they still
+happen and their cause can be hidden. In general, passing a message to nil does
+not cause a crash and returns `nil`, but dereferencing a pointer directly does
+cause a crash.
+
+Example:
+
+```objectivec
+(int) foo:(C*) param {  // passing nil
+  D* d = [param bar];   // nil message passing
+  return d->fld;        // crash
+}
+(void) callFoo {
+  C* c = [self bar];    // returns nil
+  [foo:c];              // crash reported here
+}
+```
+
+**Action**:
+Adding a `nil` check either for `param` above or for `d`, or making sure that `foo:` will never
+be called with `nil`.
+
+Calling a `nil` block will also cause a crash.
+We have a dedicated issue type for this case: [Nil Block Call](/docs/next/all-issue-types#nil_block_call).
+
+Moreover, inserting `nil` into a collection will cause a crash as well. We
+also have a dedicated issue type for this case:
+[Nil Insertion Into Collection](/docs/next/all-issue-types#nil_insertion_into_collection).
+
+## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT
+
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+
+A latent [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](#nullptr_dereference_in_nullsafe_class). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULLPTR_DEREFERENCE_LATENT
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
@@ -2022,6 +1788,24 @@ void const_refable(std::vector<int> vec) {
 }
 ```
 
+## PULSE_DICT_MISSING_KEY
+
+Reported as "Dict Missing Key" by [pulse](/docs/next/checker-pulse).
+
+This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to warn
+reading a missing key of dictionary in Hack.
+
+For example, in the following code, the dictionary `$d` has no entry for `bye`, so reading
+`$d['bye']` will throw the `OutOfBoundsException` exception, which is usually unexpected from
+developers.  We can use a safer function `idx` instead when keys of a dictionary is unclear.
+
+```hack
+function simple_bad() : int {
+  $d = dict['hi' => 42, 'hello' => 52];
+  return $d['bye'];
+}
+```
+
 ## PULSE_READONLY_SHARED_PTR_PARAM
 
 Reported as "Read-only Shared Parameter" by [pulse](/docs/next/checker-pulse).
@@ -2052,16 +1836,144 @@ void caller() {
 }
 ```
 
+## PULSE_REFERENCE_STABILITY
+
+Reported as "Reference Stability" by [pulse](/docs/next/checker-pulse).
+
+The family of maps `folly::F14ValueMap`, `folly::F14VectorMap`, and by extension
+`folly::F14FastMap` differs slightly from `std::unordered_map` as it does not
+provide reference stability. When the map resizes such as when `reserve` is
+called or new elements are added, all existing references become invalid and
+should not be used.
+
+`operator[]` is an interesting case as it can easily introduce unsafe code when
+used twice in the same expression. Depending on what keys are present and which
+order the compiler sequences sub-expressions, an insert via `operator[]` can
+invalidate a reference obtained in the same expression before it's read from.
+Typically, those cases can be improved by using other map functions such as
+`at`, `find`, `emplace`, or `insert_or_assign` to increase code quality and
+safety.
+
+Examples:
+
+```cpp
+#include <folly/container/F14Map.h>
+
+void use_reference_after_growth_bad(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(1);
+  map.emplace(13, 71);
+  const auto valueCopy = valueRef;
+}
+
+void unsafe_expressions_bad(folly::F14FastMap<int, int>& map) {
+  // Unsafe expressions in situations where one or both keys are not present.
+  map[13] = map[71];
+  const auto p = map[13] * map[71];
+  const auto q = f(map[13], map[71]);
+}
+```
+
 ## PULSE_RESOURCE_LEAK
 
-Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
+Reported as "Resource Leak" by [pulse](/docs/next/checker-pulse).
 
 See [RESOURCE_LEAK](#resource_leak)
+## PULSE_TRANSITIVE_ACCESS
+
+Reported as "Transitive Access" by [pulse](/docs/next/checker-pulse).
+
+This issue tracks spurious accesses that are reachable from specific entry functions.
+
+Spurious accesses are specified as specific load/calls.
+
+Entry functions are specified through their enclosing class that must extend a specific 
+class and should not extend a list of specific classes.
+
+
+## PULSE_UNAWAITED_AWAITABLE
+
+Reported as "Unawaited Awaitable" by [pulse](/docs/next/checker-pulse).
+
+`Awaitable` values created by calls to asynchronous methods should eventually be `await`ed along all codepaths (even if their value is unused). Hence the following is *not* OK
+
+```hack
+class A {
+  public static async genInt() : Awaitable<int>{
+    // typically do something involving IO
+  }
+
+  public static async genBad() : Awaitable<void> {
+    $_unused = self::genInt(); // ERROR: should have done $_unused = await self::genInt();
+    return;
+  }
+}
+```
+
+Failure to `await` an `Awaitable` can lead to non-deterministic amount of the asynchronous call actually being executed, and can also indicate a logical confusion between `T` and `Awaitable<T>` that may not be caught by the type-checker.
+
+## PULSE_UNINITIALIZED_CONST
+
+Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).
+
+This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
+
+For example, in the following code, the `FIELD` can be read by the static method `get_field`.
+
+* It is problematic invoking `static::FIELD`, since it may be resolved to a `A::FIELD` access, if called from `A::get_field()`. Because `FIELD` is abstract in `A`, it is never assigned a value and the vm will crash. Unfortunately, Hack's type system cannot catch this.
+* In the `B` class, `FIELD` is initialized, thus invoking `B::get_field` is safe.
+
+```hack
+abstract class A {
+  abstract const string FIELD;
+  
+  public static function get_field(): string {
+    return static::FIELD;
+  }
+}
+
+function call_get_field_bad(): string {
+  return A::get_field();
+}
+
+class B extends A {
+  const string FIELD = "defined";
+}
+
+function call_get_field_ok(): string {
+  return B::get_field();
+}
+```
+
 ## PULSE_UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
-See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
+The code uses a variable that has not been initialized, leading to unpredictable or unintended results.
+
+Using uninitialized values can lead to undefined behaviors possibly resulting in crashes, security failures and invalid results.
+
+This can easily be fixed by assigning all variables to an initial value when declaring them.
+
+This, for example, in C:
+
+```c
+struct coordinates {
+  int x;
+  int y;
+};
+
+void foo() {
+  struct coordinates c;
+  c.x = 42;
+  c.y++; // uninitialized value c.y!
+
+  int z;
+  if (z == 0) { // uninitialized value z!
+    // something
+  }
+}
+```
+
 ## PULSE_UNINITIALIZED_VALUE_LATENT
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
@@ -2591,7 +2503,7 @@ either directly or transitively.
 A configuration is used to list the set of scopes and the must-not-hold relation.
 
 In the following Java example, the set of scopes is Outer and Inner, and the must-not-hold
-relation is simply {(Outer, Inner)}:
+relation is simply \{(Outer, Inner)\}:
 ```java
 @ScopeType(value = Outer.class)
 class ClassOfOuterScope {
@@ -2907,36 +2819,6 @@ See [Topl](/docs/next/checker-topl##what-is-it) for an example
 Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## UNINITIALIZED_VALUE
-
-Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).
-
-The code uses a variable that has not been initialized, leading to unpredictable or unintended results.
-
-Using uninitialized values can lead to undefined behaviors possibly resulting in crashes, security failures and invalid results.
-
-This can easily be fixed by assigning all variables to an initial value when declaring them.
-
-This, for example, in C:
-
-```c
-struct coordinates {
-  int x;
-  int y;
-};
-
-void foo() {
-  struct coordinates c;
-  c.x = 42;
-  c.y++; // uninitialized value c.y!
-
-  int z;
-  if (z == 0) { // uninitialized value z!
-    // something
-  }
-}
-```
-
 ## UNTRUSTED_BUFFER_ACCESS
 
 Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).

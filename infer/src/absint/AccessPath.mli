@@ -41,7 +41,7 @@ val append : t -> access list -> t
 
 (* used in infer/src/labs/ *)
 val replace_prefix : prefix:t -> replace_with:t -> t -> t option
-  [@@warning "-unused-value-declaration"]
+[@@warning "-unused-value-declaration"]
 
 val equal_base : base -> base -> bool
 

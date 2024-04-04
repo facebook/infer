@@ -76,7 +76,7 @@ module Lock = struct
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 
   let make_java_synchronized formals procname =
-    match Procname.base_of procname with
+    match procname with
     | Procname.Java java_pname when Procname.Java.is_static java_pname ->
         (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
         let typename_str = Procname.Java.get_class_type_name java_pname |> Typ.Name.name in
@@ -335,7 +335,7 @@ module Acquisition = struct
     Errlog.make_trace_element 0 acquisition.loc description []
 
 
-  let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.Linters_dummy_method}
+  let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.from_string_c_fun ""}
 
   let apply_subst subst acquisition =
     match Lock.apply_subst subst acquisition.lock with
@@ -768,6 +768,7 @@ type t =
   ; var_state: VarDomain.t
   ; null_locs: NullLocs.t
   ; lazily_initalized: LazilyInitialized.t }
+[@@deriving abstract_domain]
 
 let initial =
   { ignore_blocking_calls= false
@@ -797,35 +798,6 @@ let pp fmt astate =
     NullLocsCriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes
     ThreadDomain.pp astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp
     astate.var_state NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
-
-
-let join lhs rhs =
-  { ignore_blocking_calls=
-      IgnoreBlockingCalls.join lhs.ignore_blocking_calls rhs.ignore_blocking_calls
-  ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
-  ; lock_state= LockState.join lhs.lock_state rhs.lock_state
-  ; critical_pairs= NullLocsCriticalPairs.join lhs.critical_pairs rhs.critical_pairs
-  ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
-  ; thread= ThreadDomain.join lhs.thread rhs.thread
-  ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work
-  ; var_state= VarDomain.join lhs.var_state rhs.var_state
-  ; null_locs= NullLocs.join lhs.null_locs rhs.null_locs
-  ; lazily_initalized= LazilyInitialized.join lhs.lazily_initalized rhs.lazily_initalized }
-
-
-let widen ~prev ~next ~num_iters:_ = join prev next
-
-let leq ~lhs ~rhs =
-  IgnoreBlockingCalls.leq ~lhs:lhs.ignore_blocking_calls ~rhs:rhs.ignore_blocking_calls
-  && GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
-  && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
-  && NullLocsCriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
-  && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
-  && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
-  && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
-  && VarDomain.leq ~lhs:lhs.var_state ~rhs:rhs.var_state
-  && NullLocs.leq ~lhs:lhs.null_locs ~rhs:rhs.null_locs
-  && LazilyInitialized.leq ~lhs:lhs.lazily_initalized ~rhs:rhs.lazily_initalized
 
 
 let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
@@ -1008,7 +980,7 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let attributes =
     let var_predicate =
-      match Procname.base_of proc_name with
+      match proc_name with
       | Procname.Java jname when Procname.Java.is_class_initializer jname ->
           (* only keep static attributes for the class initializer *)
           fun v -> Var.is_global v

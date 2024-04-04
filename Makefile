@@ -34,7 +34,8 @@ BUILD_SYSTEMS_TESTS += \
   j1 \
   missing_deps \
   project_root_rel \
-  pulse_messages \
+  pulse_messages_c \
+  pulse_messages_cpp \
   reactive \
   replay_scheduler \
   results_xml \
@@ -59,15 +60,18 @@ DIRECT_TESTS += \
   c_performance \
   c_pulse \
   c_purity \
-  c_uninit \
+  c_starvation \
+  c_topl \
   cpp_annotation-reachability \
   cpp_biabduction \
   cpp_bufferoverrun \
   cpp_conflicts \
   cpp_frontend \
   cpp_frontend-17 \
+  cpp_frontend-20 \
   cpp_impurity \
   cpp_liveness \
+  cpp_liveness-20 \
   cpp_performance \
   cpp_performance-11 \
   cpp_pulse \
@@ -78,13 +82,21 @@ DIRECT_TESTS += \
   cpp_racerd \
   cpp_siof \
   cpp_starvation \
-  cpp_uninit \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
   c_fb-pulse \
   cpp_fb-config-usage \
 
+ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
+ifneq ($(ERLC),no)
+ifneq ($(ESCRIPT),no)
+DIRECT_TESTS += \
+  erlang_fb-pulse \
+
+endif
+endif
+endif
 endif
 
 ifneq ($(BUCK),no)
@@ -117,14 +129,14 @@ BUILD_SYSTEMS_TESTS += \
   pulse_messages_objc \
   pulse_taint_regex_objc \
   pulse_taint_sanitize_objc \
-  pulse_taint_exclude_in_objc
+  pulse_taint_exclude_in_objc \
+	pulse_taint_exclude_matching_objc
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
 BUILD_SYSTEMS_TESTS += clang_test_determinator
 endif
 
 DIRECT_TESTS += \
-  objc_autoreleasepool \
   objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \
@@ -135,13 +147,13 @@ DIRECT_TESTS += \
   objc_pulse-data-lineage \
   objc_quandary \
   objc_self-in-block \
-  objc_uninit \
   objcpp_biabduction \
   objcpp_frontend \
   objcpp_liveness \
   objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \
+  objcpp_self-in-block \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
@@ -151,6 +163,7 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   objc_fb-config-impact \
   objc_fb-config-impact-strict \
+  objcpp_fb-pulse \
 
 endif
 
@@ -183,20 +196,24 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
   hack_pulse \
+  hack_performance \
+
+BUILD_SYSTEMS_TESTS += \
+  pulse_messages_hack \
 
 endif
-endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_PYTHON_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
+ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
+ifneq ($(PYTHON),no)
 DIRECT_TESTS += \
   python_pulse \
 
-endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
+endif
+endif # BUILD_PYTHON_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
@@ -230,8 +247,6 @@ DIRECT_TESTS += \
   java_immutability \
   java_inefficientKeysetIterator \
   java_litho-required-props \
-  java_nullsafe \
-  java_nullsafe-annotation-graph \
   java_performance \
   java_performance-exclusive \
   java_pulse \
@@ -244,11 +259,8 @@ DIRECT_TESTS += \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
-  sil_doli-capture  \
-  sil_doli-parsing \
-  sil_java-and-doli \
-  sil_sil-and-doli \
   sil_pulse \
+  sil_topl \
   sil_verif \
 
 ifneq ($(KOTLINC), no)
@@ -257,6 +269,8 @@ DIRECT_TESTS += \
   kotlin_racerd \
   kotlin_resources \
   kotlin_scopeleakage \
+
+BUILD_SYSTEMS_TESTS += pulse_messages_kotlin \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
@@ -273,7 +287,6 @@ DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-config-impact-paths \
   java_fb-config-impact-strict \
-  java_fb-config-impact-strict-beta-paths \
   java_fb-immutability \
   java_fb-performance
 endif
@@ -345,7 +358,7 @@ DUNE_ML:=$(shell find * -name 'dune*.in' | grep -v workspace | grep -v infer-sou
 fmt_dune:
 	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(DUNE_ML)
 
-SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies -or -path sledge/llvm -or -path sledge/.llvm_build \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
+SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
 
 .PHONY: fmt_all
 fmt_all:
@@ -476,9 +489,9 @@ PLUGIN_SETUP_SCRIPT ?= setup.sh
 .PHONY: clang_setup
 clang_setup:
 #	if clang is already built then let the user know they might not need to rebuild clang
-	$(QUIET)export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
-	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
-	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
+	$(QUIET)export CC='$(CC)' CFLAGS='$(CFLAGS)'; \
+	export CXX='$(CXX)' CXXFLAGS='$(CXXFLAGS)'; \
+	export CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)'; \
 	$(FCP_DIR)/clang/$(PLUGIN_SETUP_SCRIPT) --only-check-install || { \
 	  if [ -x '$(FCP_DIR)'/clang/install/bin/clang ]; then \
 	    echo '$(TERM_INFO)*** Now building clang, this will take a while...$(TERM_RESET)' >&2; \
@@ -497,68 +510,68 @@ clang_setup:
 clang_plugin: clang_setup
 	$(QUIET)$(call silent_on_success,Building clang plugin,\
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
-	  CC="$(CC)" CXX="$(CXX)" \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml build/clang_ast_proj.ml build/clang_ast_proj.mli \
-	  CC=$(CC) CXX=$(CXX) \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 .PHONY: clang_plugin_test
 clang_plugin_test: clang_setup
 	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ tests,\
 	$(MAKE) -C $(FCP_DIR)/libtooling test \
-	  CC=$(CC) CXX=$(CXX) \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ tests,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml test \
-	  CC=$(CC) CXX=$(CXX) \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 
 .PHONY: clang_plugin_test_replace
 clang_plugin_test_replace: clang_setup
 	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/libtooling/ record tests,\
 	$(MAKE) -C $(FCP_DIR)/libtooling record-test-outputs \
-	  CC=$(CC) CXX=$(CXX) \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 	$(QUIET)$(call silent_on_success,Running facebook-clang-plugins/clang-ocaml/ record tests,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml record-test-outputs \
-	  CC=$(CC) CXX=$(CXX) \
-	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
-	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  CC='$(CC)' CXX='$(CXX)' \
+	  CFLAGS='$(CFLAGS)' CXXFLAGS='$(CXXFLAGS)' \
+	  CPP='$(CPP)' LDFLAGS='$(LDFLAGS)' LIBS='$(LIBS)' \
+	  LOCAL_CLANG='$(CLANG_PREFIX)'/bin/clang \
+	  CLANG_PREFIX='$(CLANG_PREFIX)' \
+	  CLANG_INCLUDES='$(CLANG_INCLUDES)' \
+	  SDKPATH='$(XCODE_ISYSROOT)' \
 	)
 
 .PHONY: ocaml_unit_test
@@ -812,12 +825,8 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/extract.escript \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.app.src \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
-	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.erl \
-	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform.erl \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 endif
 	$(INSTALL_PROGRAM) -C '$(INFER_BIN)' '$(DESTDIR)$(libdir)'/infer/infer/bin/
 	(cd '$(DESTDIR)$(bindir)/' && \

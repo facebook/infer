@@ -13,8 +13,6 @@ val pp_mode : Format.formatter -> mode -> unit
 
 val is_in_strict_mode_paths : SourceFile.t -> bool
 
-val is_in_strict_beta_mode_paths : SourceFile.t -> bool
-
 val mode : mode
 
 module LatentConfig : sig
@@ -78,7 +76,4 @@ module Summary : sig
   val instantiate_unchecked_callees_cond : all_configs:LatentConfigs.t -> t -> t
 end
 
-val checker :
-     (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
-     InterproceduralAnalysis.t
-  -> Summary.t option
+val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

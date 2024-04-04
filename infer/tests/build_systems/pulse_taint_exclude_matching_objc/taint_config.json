@@ -1,0 +1,23 @@
+{
+    "pulse-taint-policies": [
+        { "short_description": "Logging news",
+          "taint_flows": [
+            { "source_kinds": ["News"],
+              "sink_kinds": ["Logging"]
+            }
+          ],
+          "exclude_in": ["TaintFunctionDoNotReport.m"]
+        }
+    ],
+    "pulse-taint-sources": [
+      {
+        "procedure": "GlobalNews.produce_news",
+        "kinds": ["News"]
+      }
+    ],
+    "pulse-taint-sinks": [
+      { "procedure": "NSLog",
+        "kinds": ["Logging"]
+      }
+    ]
+  }

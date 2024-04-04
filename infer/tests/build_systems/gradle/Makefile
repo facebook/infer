@@ -14,9 +14,11 @@ TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make
 
+# TODO: fix FN_twoResourcesBad in pulse tests and remove --biabduction-only below
+
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 #	mock version of gradle
 	$(QUIET)PATH=$(CURDIR)/../mock:"$$PATH"; \
 	cd $(SOURCES_DIR) && \
 	$(call silent_on_success,Testing gradle Java integration,\
-	  $(INFER_BIN) --results-dir $(CURDIR)/infer-out -- gradle build)
+	  $(INFER_BIN) --biabduction-only --results-dir $(CURDIR)/infer-out -- gradle build)

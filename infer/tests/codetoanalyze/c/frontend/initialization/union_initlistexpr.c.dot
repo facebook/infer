@@ -1,0 +1,34 @@
+/* @generated */
+digraph cfg {
+"union_initialize_FIXME.324b85335f5d2e41_1" [label="1: Start union_initialize_FIXME\nFormals: \nLocals:  set_f1_implicit:U set_f2:U set_f1:U \n  " color=yellow style=filled]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_1" -> "union_initialize_FIXME.324b85335f5d2e41_8" ;
+"union_initialize_FIXME.324b85335f5d2e41_2" [label="2: Exit union_initialize_FIXME \n  " color=yellow style=filled]
+	
+
+"union_initialize_FIXME.324b85335f5d2e41_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(set_f1_implicit:U); [line 15, column 29]\n  *&set_f1_implicit:int=1 [line 15, column 29]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_3" -> "union_initialize_FIXME.324b85335f5d2e41_2" ;
+"union_initialize_FIXME.324b85335f5d2e41_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(set_f1_implicit:U); [line 15, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_4" -> "union_initialize_FIXME.324b85335f5d2e41_3" ;
+"union_initialize_FIXME.324b85335f5d2e41_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(set_f2:U); [line 14, column 20]\n  *&set_f2[0]:int=1 [line 14, column 27]\n  *&set_f2[1]:int=2 [line 14, column 27]\n  *&set_f2[2]:int=3 [line 14, column 27]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_5" -> "union_initialize_FIXME.324b85335f5d2e41_4" ;
+"union_initialize_FIXME.324b85335f5d2e41_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(set_f2:U); [line 14, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_6" -> "union_initialize_FIXME.324b85335f5d2e41_5" ;
+"union_initialize_FIXME.324b85335f5d2e41_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(set_f1:U); [line 13, column 20]\n  *&set_f1:int=2 [line 13, column 20]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_7" -> "union_initialize_FIXME.324b85335f5d2e41_6" ;
+"union_initialize_FIXME.324b85335f5d2e41_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(set_f1:U); [line 13, column 3]\n " shape="box"]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e41_8" -> "union_initialize_FIXME.324b85335f5d2e41_7" ;
+}

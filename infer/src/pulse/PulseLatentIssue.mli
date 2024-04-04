@@ -18,7 +18,6 @@ module Diagnostic = PulseDiagnostic
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ErlangError of Diagnostic.ErlangError.t
-  | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
@@ -29,7 +28,7 @@ val should_report : AbductiveDomain.Summary.t -> Diagnostic.t -> [> `DelayReport
 
 val add_call :
      CallEvent.t * Location.t
-  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * ValueHistory.t CellId.Map.t
   -> AbductiveDomain.t
   -> t
   -> t

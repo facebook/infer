@@ -11,9 +11,7 @@ module F = Format
 (** Single abstraction for all the kinds of variables in SIL *)
 
 type t = LogicalVar of Ident.t | ProgramVar of Pvar.t
-[@@deriving compare, equal, yojson_of, sexp, hash]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let compare_modulo_this x y =
   if phys_equal x y then 0
@@ -49,9 +47,7 @@ let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
 
 let is_this = function ProgramVar pv -> Pvar.is_this pv | LogicalVar _ -> false
 
-let is_local_to_procedure proc_name var =
-  get_pvar var |> Option.exists ~f:(fun pvar -> Pvar.is_local_to_procedure proc_name pvar)
-
+let is_artificial = function ProgramVar pv -> Pvar.is_artificial pv | LogicalVar _ -> false
 
 let get_all_vars_in_exp e =
   let acc = Exp.free_vars e |> Sequence.map ~f:of_id in

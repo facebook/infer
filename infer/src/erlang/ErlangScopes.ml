@@ -82,7 +82,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
   | If clauses ->
       annotate_clauses env lambda_cntr scopes clauses
   | ListComprehension {expression; qualifiers} | BitstringComprehension {expression; qualifiers} ->
-      (* TODO: support local variables in list comprehensions: T105967634 *)
+      (* TODO: support local variables in list/bitstring comprehensions: T105967634 *)
       let scopes = annotate_expression env lambda_cntr scopes expression in
       List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
   | Literal _ | Nil | RecordIndex _ | Fun _ ->
@@ -90,6 +90,11 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
   | Map {map; updates} ->
       let scopes = annotate_expression_opt env lambda_cntr scopes map in
       List.fold_left ~f:(annotate_association env lambda_cntr) ~init:scopes updates
+  | MapComprehension {expression; qualifiers} ->
+      (* TODO: support local variables in map comprehensions: T105967634 *)
+      let scopes = annotate_expression env lambda_cntr scopes expression.key in
+      let scopes = annotate_expression env lambda_cntr scopes expression.value in
+      List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
   | Match {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
   | Receive {cases; timeout} ->
@@ -193,6 +198,8 @@ and annotate_qualifier (env : (_, _) Env.t) lambda_cntr (scopes : scope list) (q
       annotate_expression env lambda_cntr scopes expression
   | Generator {pattern; expression} ->
       annotate_expression_list env lambda_cntr scopes [pattern; expression]
+  | MapGenerator {pattern; expression} ->
+      annotate_expression_list env lambda_cntr scopes [pattern.key; pattern.value; expression]
 
 
 and annotate_association (env : (_, _) Env.t) lambda_cntr (scopes : scope list)

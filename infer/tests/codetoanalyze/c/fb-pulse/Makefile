@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
---pulse-report-issues-for-tests --function-pointer-specialization \
+--pulse-report-issues-for-tests \
 --pulse-taint-config .infertaintconfig --pulse-taint-config taint/.infertaintconfig \
 --pulse-taint-config taint/config --report-force-relative-path
 

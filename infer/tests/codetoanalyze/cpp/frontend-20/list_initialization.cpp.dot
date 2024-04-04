@@ -1,0 +1,62 @@
+/* @generated */
+digraph cfg {
+"init_all#16312083996044697104.b802f2b6193bc69c_1" [label="1: Start init_all\nFormals: \nLocals:  x:CurrentClass \n  " color=yellow style=filled]
+	
+
+	 "init_all#16312083996044697104.b802f2b6193bc69c_1" -> "init_all#16312083996044697104.b802f2b6193bc69c_3" ;
+"init_all#16312083996044697104.b802f2b6193bc69c_2" [label="2: Exit init_all \n  " color=yellow style=filled]
+	
+
+"init_all#16312083996044697104.b802f2b6193bc69c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:CurrentClass); [line 19, column 19]\n  *&x.super_f1:int=42 [line 19, column 34]\n  *&x.super_f2:int=52 [line 19, column 34]\n  *&x.cur_f1:int=62 [line 19, column 33]\n  *&x.cur_f2:int=72 [line 19, column 33]\n  *&x.cur_f3:int=82 [line 19, column 33]\n " shape="box"]
+	
+
+	 "init_all#16312083996044697104.b802f2b6193bc69c_3" -> "init_all#16312083996044697104.b802f2b6193bc69c_2" ;
+"init_class_in_header#181929391833.02fc198379f1411d_1" [label="1: Start init_class_in_header\nFormals: \nLocals:  x:ClassInHeader \n  " color=yellow style=filled]
+	
+
+	 "init_class_in_header#181929391833.02fc198379f1411d_1" -> "init_class_in_header#181929391833.02fc198379f1411d_3" ;
+"init_class_in_header#181929391833.02fc198379f1411d_2" [label="2: Exit init_class_in_header \n  " color=yellow style=filled]
+	
+
+"init_class_in_header#181929391833.02fc198379f1411d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:ClassInHeader); [line 29, column 31]\n  *&x.f:int=52 [line 29, column 46]\n " shape="box"]
+	
+
+	 "init_class_in_header#181929391833.02fc198379f1411d_3" -> "init_class_in_header#181929391833.02fc198379f1411d_2" ;
+"init_some#8538535122353085284.3304c4fd95fd5f9e_1" [label="1: Start init_some\nFormals: \nLocals:  x:CurrentClass \n  " color=yellow style=filled]
+	
+
+	 "init_some#8538535122353085284.3304c4fd95fd5f9e_1" -> "init_some#8538535122353085284.3304c4fd95fd5f9e_3" ;
+"init_some#8538535122353085284.3304c4fd95fd5f9e_2" [label="2: Exit init_some \n  " color=yellow style=filled]
+	
+
+"init_some#8538535122353085284.3304c4fd95fd5f9e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:CurrentClass); [line 21, column 20]\n  *&x.super_f1:int=42 [line 21, column 35]\n  *&x.super_f2:int=52 [line 21, column 35]\n  *&x.cur_f1:int=62 [line 21, column 34]\n  *&x.cur_f2:int=0 [line 21, column 43]\n  *&x.cur_f3:int=0 [line 21, column 43]\n " shape="box"]
+	
+
+	 "init_some#8538535122353085284.3304c4fd95fd5f9e_3" -> "init_some#8538535122353085284.3304c4fd95fd5f9e_2" ;
+"init_with_field_name#773079224408.5cfe20dbecd3fd22_1" [label="1: Start init_with_field_name\nFormals: \nLocals:  x:CurrentClass \n  " color=yellow style=filled]
+	
+
+	 "init_with_field_name#773079224408.5cfe20dbecd3fd22_1" -> "init_with_field_name#773079224408.5cfe20dbecd3fd22_3" ;
+"init_with_field_name#773079224408.5cfe20dbecd3fd22_2" [label="2: Exit init_with_field_name \n  " color=yellow style=filled]
+	
+
+"init_with_field_name#773079224408.5cfe20dbecd3fd22_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:CurrentClass); [line 23, column 31]\n  *&x.super_f1:int=0 [line 23, column 72]\n  *&x.super_f2:int=0 [line 23, column 72]\n  *&x.cur_f1:int=42 [line 23, column 45]\n  *&x.cur_f2:int=0 [line 23, column 56]\n  *&x.cur_f3:int=62 [line 23, column 45]\n " shape="box"]
+	
+
+	 "init_with_field_name#773079224408.5cfe20dbecd3fd22_3" -> "init_with_field_name#773079224408.5cfe20dbecd3fd22_2" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_1" [label="1: Start CurrentClass2::CurrentClass2\nFormals:  this:CurrentClass2*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_1" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_2" [label="2: Exit CurrentClass2::CurrentClass2 \n  " color=yellow style=filled]
+	
+
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" [label="3:  Constructor Init \n   n$1=*&this:CurrentClass2* [line 35, column 34]\n " shape="box"]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" [label="4:  Constructor Init \n   *n$1.super_f1:int=42 [line 35, column 44]\n  *n$1.super_f2:int=52 [line 35, column 44]\n " shape="box"]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_2" ;
+}

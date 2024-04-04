@@ -11,7 +11,8 @@
 open! IStd
 module F = Format
 
-type t = {plain: string; mangled: string option} [@@deriving compare, yojson_of, equal, sexp, hash]
+type t = {plain: string; mangled: string option}
+[@@deriving compare, yojson_of, equal, sexp, hash, normalize]
 
 (** Convert a string to a mangled name *)
 let from_string (s : string) = {plain= s; mangled= None}
@@ -34,11 +35,13 @@ let pp f pn = F.pp_print_string f (to_string pn)
 
 let this = from_string "this"
 
-let is_this = function {plain= "this"} -> true | _ -> false
+let is_this = function {plain= "this" | "$this"} -> true | _ -> false
 
 let self = from_string "self"
 
 let is_self = function {plain= "self"} -> true | _ -> false
+
+let is_artificial = function {plain= "__promise" | "__coro_frame"} -> true | _ -> false
 
 let return_param = from_string "__return_param"
 

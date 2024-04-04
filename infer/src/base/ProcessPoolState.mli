@@ -7,7 +7,7 @@
 
 open! IStd
 
-val in_child : bool ref
+val in_child : int option ref
 (** Keep track of whether the current execution is in a child process *)
 
 val update_status : (Mtime.t -> string -> unit) ref

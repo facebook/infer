@@ -93,6 +93,19 @@ module Import = struct
         List.map (f y) ~f:(fun result -> PulseResult.append_errors errors result)
 
 
+  let bind_sat_result non_disj x f =
+    match x with
+    | Unsat ->
+        ([], non_disj)
+    | Sat (FatalError _ as err) ->
+        ([err], non_disj)
+    | Sat (Ok y) ->
+        f y
+    | Sat (Recoverable (y, errors)) ->
+        let execs, non_disj = f y in
+        (List.map execs ~f:(fun result -> PulseResult.append_errors errors result), non_disj)
+
+
   let ( let<+> ) x f : _ PulseResult.t list =
     match (x : _ PulseResult.t) with
     | FatalError _ as err ->

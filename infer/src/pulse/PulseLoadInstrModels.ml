@@ -22,13 +22,11 @@ type model =
 let std_is_same_v t1 t2 : model =
  fun {path; location} astate ->
   if Typ.equal_template_arg t1 t2 then
-    let one = Formula.absval_of_int astate.AbductiveDomain.path_condition IntLit.one in
-    let++ astate = PulseArithmetic.and_eq_int one IntLit.one astate in
-    (astate, (one, Hist.single_call path location "std_is_same_v is true"))
+    let astate, one = PulseArithmetic.absval_of_int astate IntLit.one in
+    Sat (Ok (astate, (one, Hist.single_call path location "std_is_same_v is true")))
   else
-    let zero = Formula.absval_of_int astate.AbductiveDomain.path_condition IntLit.zero in
-    let++ astate = PulseArithmetic.and_eq_int zero IntLit.zero astate in
-    (astate, (zero, Hist.single_call path location "std_is_same_v is false"))
+    let astate, zero = PulseArithmetic.absval_of_int astate IntLit.zero in
+    Sat (Ok (astate, (zero, Hist.single_call path location "std_is_same_v is false")))
 
 
 let dispatch ~load:load_exp =

@@ -7,19 +7,10 @@
 
 // These functions have OCaml models
 declare $builtins.nondet() : int
-declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
 
-type HackString = { val: *string }
+type HackDict .final {}
 
-define $builtins.hack_string(str: *string): *HackMixed {
-  #entry:
-    n0 = __sil_allocate(<HackString>)
-    n1: *string = load &str
-    store n0.HackString.val <- n1 : *string
-    ret n0
-}
-
-type HackInt = { val: int }
+type HackInt = .final { val: int }
 
 define $builtins.hack_int(i: int): *HackInt {
   #entry:
@@ -29,7 +20,17 @@ define $builtins.hack_int(i: int): *HackInt {
     ret n0
 }
 
-type HackBool = { val: int }
+type HackFloat = .final { val: float }
+
+define $builtins.hack_float(f: float): *HackFloat {
+  #entry:
+    n0 = __sil_allocate(<HackFloat>)
+    n1: float = load &f
+    store n0.HackFloat.val <- n1 : float
+    ret n0
+}
+
+type HackBool = .final { val: int }
 
 define $builtins.hack_bool(b: int): *HackBool {
   #entry:
@@ -54,97 +55,6 @@ define $builtins.hack_make_random_bool(): *HackBool {
     ret $builtins.hack_bool($builtins.nondet())
 }
 
-define $builtins.hack_is_true(b: *HackMixed) : int {
-  #entry:
-    n0: *HackMixed = load &b
-    // We assume that this function is never called with null in a valid execution. Values of type
-    // ?bool should have the necessary null-checks in place
-    prune __sil_ne(n0, 0)
-    n1: int = load n0.HackBool.val
-    ret n1
-}
-
-define $builtins.hhbc_not(b: *HackBool) : *HackBool {
-  #entry:
-    n0: *HackBool = load &b
-    // We assume a not-null argument similar to hack_is_true
-    prune __sil_ne(n0, 0)
-    n1: int = load n0.HackBool.val
-    jmp is_true, is_false
-  #is_true:
-    prune n1
-    ret $builtins.hack_make_false()
-  #is_false:
-    prune !n1
-    ret $builtins.hack_make_true()
-
-}
-
-define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
-  // TODO: we need a better model for polymorphic equality. The current one is null-safe and works
-  // for ints but otherwise is questionable when applied to some random types
-  #entry:
-    n0: *HackMixed = load &x
-    n1: *HackMixed = load &y
-    jmp eq, x_eq_null, x_ne_null, ne
-  #eq:
-    prune __sil_eq(n0, n1)
-    ret $builtins.hack_make_true()
-  #x_eq_null:
-    prune __sil_eq(n0, 0)
-    prune __sil_ne(n1, 0)
-    ret $builtins.hack_make_false()
-  #x_ne_null:
-    prune __sil_ne(n0, 0)
-    prune __sil_eq(n1, 0)
-    ret $builtins.hack_make_false()
-  #ne:
-    prune __sil_ne(n0, n1)
-    prune __sil_ne(n0, 0)
-    prune __sil_ne(n1, 0)
-    n2: int = load n0.HackInt.val
-    n3: int = load n1.HackInt.val
-    ret $builtins.hack_bool(__sil_eq(n2, n3))
-}
-
-define $builtins.hhbc_cmp_neq(x: *HackMixed, y: *HackMixed) : *HackBool {
-  #entry:
-    n0: *HackMixed = load &x
-    n1: *HackMixed = load &y
-    ret $builtins.hhbc_not($builtins.hhbc_cmp_eq(n0, n1))
-}
-
-define $builtins.hhbc_cmp_same(x: *HackMixed, y: *HackMixed) : *HackBool {
-  #entry:
-    n0: *HackMixed = load &x
-    n1: *HackMixed = load &y
-    jmp eq, x_eq_null, x_ne_null, ne
-  #eq:
-    prune __sil_eq(n0, n1)
-    ret $builtins.hack_make_true()
-  #x_eq_null:
-    prune __sil_eq(n0, 0)
-    prune __sil_ne(n1, 0)
-    ret $builtins.hack_make_false()
-  #x_ne_null:
-    prune __sil_ne(n0, 0)
-    prune __sil_eq(n1, 0)
-    ret $builtins.hack_make_false()
-  #ne:
-    prune __sil_ne(n0, n1)
-    prune __sil_ne(n0, 0)
-    prune __sil_ne(n1, 0)
-    ret $builtins.hack_make_random_bool()
-    // TODO: refine for primitives value (because they are boxed)
-}
-
-define $builtins.hhbc_cmp_nsame(x: *HackMixed, y: *HackMixed) : *HackBool {
-  #entry:
-    n0: *HackMixed = load &x
-    n1: *HackMixed = load &y
-    ret $builtins.hhbc_not($builtins.hhbc_cmp_same(n0, n1))
-}
-
 define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_false()
@@ -153,16 +63,6 @@ define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed 
 define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_false()
-}
-
-define $builtins.hhbc_is_type_struct_c(o: *HackMixed, dict: *HackMixed, i: *HackMixed): *HackMixed {
-  #entry:
-    ret $builtins.hack_make_true()
-}
-
-define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
-  #entry:
-    ret $builtins.hack_make_random_bool()
 }
 
 define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
@@ -185,17 +85,6 @@ define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
     ret $builtins.hack_make_random_bool()
 }
 
-define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMixed {
-  #entry:
-    ret null
-}
-
-
-define $builtins.hhbc_verify_param_type_ts(o: *HackMixed, typ: *HackMixed): *HackMixed {
-  #entry:
-    ret null
-}
-
 define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {
   #entry:
     ret null
@@ -206,7 +95,7 @@ define $builtins.hhbc_check_this(o: *HackMixed): *HackMixed {
     ret null
 }
 
-type HackVec = {
+type HackVec = .final {
   __infer_model_backing_vec_fst: *HackMixed;
   __infer_model_backing_vec_snd: *HackMixed;
   __infer_model_backing_vec_size: int;
@@ -221,7 +110,7 @@ declare $builtins.hhbc_await(*HackMixed): *HackMixed
 // new snd is appended value
 // size is incremented
 // old fst is fake awaited
-define $builtins.hack_array_cow_append(v: *HackMixed, o: *HackMixed): *HackMixed {
+define $builtins.hack_array_cow_append(v: *HackVec, o: *HackMixed): *HackMixed {
   #entry:
     n0: *HackMixed = load &v
     n1: *HackMixed = load n0.HackVec.__infer_model_backing_vec_fst
@@ -231,22 +120,6 @@ define $builtins.hack_array_cow_append(v: *HackMixed, o: *HackMixed): *HackMixed
     n5 = $builtins.hhbc_new_vec(n2, n4)
     n6: int = load n0.HackVec.__infer_model_backing_vec_size
     store n5.HackVec.__infer_model_backing_vec_size <- __sil_plusa_int(n6,1) : int
-    ret n5
-}
-
-// model of set is very like that of append, since it ignores the index
-// TODO: add in-bounds assertion like that of hack_array_get
-define $builtins.hack_array_cow_set(v: *HackMixed, i: *HackMixed, o: *HackMixed) : *HackMixed {
-  #entry:
-    n0: *HackMixed = load &v
-    n1: *HackMixed = load n0.HackVec.__infer_model_backing_vec_fst
-    n2: *HackMixed = load n0.HackVec.__infer_model_backing_vec_snd
-    // fake await of v.fst to avoid FPs
-    n3 = $builtins.hhbc_await(n1)
-    n4: *HackMixed = load &o
-    n5 = $builtins.hhbc_new_vec(n2, n4)
-    n6: int = load n0.HackVec.__infer_model_backing_vec_size
-    store n5.HackVec.__infer_model_backing_vec_size <- n6 : int // overwrite default size of 2
     ret n5
 }
 

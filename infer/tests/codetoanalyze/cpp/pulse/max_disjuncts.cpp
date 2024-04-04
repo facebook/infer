@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <vector>
+
+namespace max_disjuncts {
+
 int rand_int();
 
 // This returns the state with current maximum disjuncts (20).
@@ -102,3 +106,55 @@ void call_join_full_disjs3_bad() {
   int* p = nullptr;
   *p = 42;
 }
+
+struct Arr {
+  int arr[2];
+  std::vector<int> vec;
+};
+
+void copy_and_modify_ok(const std::vector<int>& v, const Arr& arg) {
+  int x = get_full_disjs(); // make max disjuncts
+  auto copied_arg = arg; // copy arg
+  for (const int& e : v) {
+    copied_arg.arr[0] = 42; // modify copied_arg
+    int y = arg.arr[0];
+  }
+}
+
+void full_disjs_call_after_branch_bad_FN() {
+  bool b = unknown_bool() ? 1 : 0;
+  // two disjuncts
+  // #0: {b=1}
+  // #1: {b=0}
+
+  get_full_disjs();
+  // 20 disjuncts only with #0, i.e. in all disjuncts b=1.
+
+  if (!b) {
+    // 0 disjunct here!
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+class FullDisjsInLoop {
+  Arr arr;
+
+  void full_disjs_in_loop_ok1(int k) {
+    Arr x;
+    for (int i = 0; i < k; i++) {
+      arr = x;
+    }
+  }
+
+  void full_disjs_in_loop_ok2_FP(int k) {
+    Arr x;
+    get_full_disjs();
+    for (int i = 0; i < k; i++) {
+      // Pulse does not know `x` is copied multiple times here.
+      arr = x;
+    }
+  }
+};
+
+} // namespace max_disjuncts

@@ -14,6 +14,7 @@ module DomainData = struct
     | SELF
     | UNCHECKED_STRONG_SELF
     | WEAK_SELF
+    | CXX_REF
   [@@deriving compare]
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
@@ -31,6 +32,8 @@ module DomainData = struct
           "UNCHECKED_STRONG_SELF"
       | WEAK_SELF ->
           "WEAK_SELF"
+      | CXX_REF ->
+          "CXX_REF"
     in
     F.fprintf fmt "%s" s
 
@@ -258,6 +261,24 @@ module Mem = struct
       attributes.ProcAttributes.captured
 
 
+  let get_captured_cpp_reference attributes pvar =
+    let is_ref typ capture_mode =
+      (* In the frontend, if the variable is captured by reference, which is the case if it's
+         declared with the __block attribute, we add an extra reference to the type, so we need to
+         remove it here to check the real type. *)
+      if CapturedVar.is_captured_by_ref capture_mode then
+        match typ with
+        | {Typ.desc= Typ.Tptr (t, _)} ->
+            Typ.is_reference t
+        | _ ->
+            Logging.die InternalError "Not a possible case because of frontend constraints."
+      else Typ.is_reference typ
+    in
+    List.exists attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
+        pvar_same_name captured pvar && is_ref typ capture_mode )
+
+
   let load attributes id pvar loc typ astate =
     let vars =
       if is_captured_self attributes pvar then Vars.add id {pvar; typ; loc; kind= SELF} astate.vars
@@ -265,6 +286,8 @@ module Mem = struct
         Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
       else if is_captured_weak_self attributes pvar then
         Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
+      else if get_captured_cpp_reference attributes pvar then
+        Vars.add id {pvar; typ; loc; kind= CXX_REF} astate.vars
       else
         try
           let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
@@ -313,7 +336,8 @@ type report_issues_result =
   { reported_captured_strong_self: Pvar.Set.t
   ; reported_weak_self_in_noescape_block: Pvar.Set.t
   ; selfList: DomainData.t list
-  ; weakSelfList: DomainData.t list }
+  ; weakSelfList: DomainData.t list
+  ; reported_cxx_ref: Pvar.Set.t }
 
 module TransferFunctions = struct
   module Domain = Domain
@@ -433,12 +457,12 @@ let make_trace_use_self_weakself domain =
       Location.compare loc1 loc2 )
 
 
-let make_trace_captured_strong_self domain =
+let make_trace_captured domain var =
   let trace_elems =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | CAPTURED_STRONG_SELF ->
+        | (CAPTURED_STRONG_SELF | CXX_REF) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -473,12 +497,13 @@ let report_weakself_in_no_escape_block_issues proc_desc err_log domain (weakSelf
     let message =
       F.asprintf
         "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
-         method `%s` in a position annotated with NS_NOESCAPE. Use `self` instead."
+         method `%s` in a position annotated with NS_NOESCAPE."
         (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
         (Procname.to_simplified_string procname)
     in
+    let suggestion = "Use `self` instead." in
     let ltr = make_trace_use_self_weakself domain in
-    Reporting.log_issue proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
+    Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
       IssueType.weak_self_in_noescape_block message ;
     reported_weak_self_in_noescape_block )
   else reported_weak_self_in_noescape_block
@@ -490,13 +515,13 @@ let report_weakself_multiple_issue proc_desc err_log domain (weakSelf1 : DomainD
     F.asprintf
       "This block uses the weak pointer `%a` more than once (%a) and (%a). This could lead to \
        unexpected behavior. Even if `%a` is not nil in the first use, it could be nil in the \
-       following uses since the object that `%a` points to could be freed anytime; assign it to a \
-       strong variable first."
+       following uses since the object that `%a` points to could be freed anytime."
       (Pvar.pp Pp.text) weakSelf1.pvar Location.pp weakSelf1.loc Location.pp weakSelf2.loc
       (Pvar.pp Pp.text) weakSelf1.pvar (Pvar.pp Pp.text) weakSelf1.pvar
   in
+  let suggestion = "Assign it to a strong variable first." in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_issue proc_desc err_log ~ltr ~loc:weakSelf1.loc SelfInBlock
+  Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:weakSelf1.loc SelfInBlock
     IssueType.multiple_weakself message
 
 
@@ -519,15 +544,39 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
     let message =
       F.asprintf
         "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \
-         This could lead to retain cycles or unexpected behavior since to avoid retain cycles one \
-         usually uses a local strong pointer or a captured weak pointer instead."
+         This could lead to retain cycles or unexpected behavior."
         (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
     in
-    let ltr = make_trace_captured_strong_self domain in
-    Reporting.log_issue proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
+    let suggestion = "Use a local strong pointer or a captured weak pointer instead." in
+    let ltr = make_trace_captured domain capturedStrongSelf.pvar in
+    Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
       IssueType.captured_strong_self message ;
     report_captured_strongself )
   else report_captured_strongself
+
+
+let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
+    reported_cxx_ref =
+  let attributes = Procdesc.get_attributes proc_desc in
+  let passed_as_noescape_block =
+    Option.value_map
+      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
+        passed_as_noescape_block )
+      ~default:false attributes.ProcAttributes.block_as_arg_attributes
+  in
+  if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref) then (
+    let reported_cxx_ref = Pvar.Set.add cxx_ref.pvar reported_cxx_ref in
+    let message =
+      F.asprintf
+        "The variable `%a` is a C++ reference and it's captured in the block. This can lead to \
+         crashes."
+        (Pvar.pp Pp.text) cxx_ref.pvar
+    in
+    let ltr = make_trace_captured domain cxx_ref.pvar in
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_ref.loc SelfInBlock
+      IssueType.cxx_ref_captured_in_block message ;
+    reported_cxx_ref )
+  else reported_cxx_ref
 
 
 let report_issues proc_desc err_log domain =
@@ -539,6 +588,12 @@ let report_issues proc_desc err_log domain =
             result.reported_captured_strong_self
         in
         {result with reported_captured_strong_self}
+    | DomainData.CXX_REF ->
+        let reported_cxx_ref =
+          report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
+            result.reported_cxx_ref
+        in
+        {result with reported_cxx_ref}
     | DomainData.WEAK_SELF ->
         let reported_weak_self_in_noescape_block =
           let attributes = Procdesc.get_attributes proc_desc in
@@ -561,7 +616,8 @@ let report_issues proc_desc err_log domain =
     { reported_captured_strong_self= Pvar.Set.empty
     ; reported_weak_self_in_noescape_block= Pvar.Set.empty
     ; selfList= []
-    ; weakSelfList= [] }
+    ; weakSelfList= []
+    ; reported_cxx_ref= Pvar.Set.empty }
   in
   let domain_bindings =
     Vars.bindings domain

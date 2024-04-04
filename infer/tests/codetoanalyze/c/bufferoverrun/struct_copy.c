@@ -67,7 +67,7 @@ void struct_copy_from_function_call_Ok() {
   a[x.a] = 0;
 }
 
-void struct_copy_from_function_call_Bad() {
+void struct_copy_from_function_call_Bad_FN() {
   int a[3];
   struct s x;
   x = get_struct();
@@ -85,7 +85,7 @@ void struct_copy_from_wrapper_call_Ok() {
   a[x.a] = 0;
 }
 
-void struct_copy_from_wrapper_call_Bad() {
+void struct_copy_from_wrapper_call_Bad_FN() {
   int a[3];
   struct s x;
   x = get_struct_wrapper();

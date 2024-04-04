@@ -272,8 +272,10 @@ and get_class_struct_typ =
           Location.pp_file_pos loc
     | None ->
         () ) ;
-    let java_class_info : Struct.java_class_info = {kind= java_class_kind; loc= java_location} in
-    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~java_class_info name
+    let class_info : Struct.ClassInfo.t =
+      JavaClassInfo {kind= java_class_kind; loc= java_location}
+    in
+    Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~class_info name
   in
   fun program tenv cn ->
     let name = typename_of_classname cn in
@@ -366,8 +368,7 @@ let get_var_type_from_sig (context : JContext.t) var =
   let tenv = JContext.get_tenv context in
   List.find_map
     ~f:(fun (vt', var') ->
-      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None
-      )
+      if JBir.var_equal var var' then Some (param_type program tenv context.cn var' vt') else None )
     (JBir.params context.impl)
 
 

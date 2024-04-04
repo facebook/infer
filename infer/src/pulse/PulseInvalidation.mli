@@ -20,6 +20,25 @@ type std_vector_function =
 
 val pp_std_vector_function : F.formatter -> std_vector_function -> unit
 
+type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
+
+type map_function =
+  | Clear
+  | Rehash
+  | Reserve
+  | OperatorEqual
+  | Insert
+  | InsertOrAssign
+  | Emplace
+  | TryEmplace
+  | TryEmplaceToken
+  | EmplaceHint
+  | OperatorBracket
+
+val pp_map_type : F.formatter -> map_type -> unit
+
+val pp_map_function : F.formatter -> map_function -> unit
+
 type t =
   | CFree
   | ConstantDereference of IntLit.t
@@ -29,18 +48,21 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
+  | CppMap of map_type * map_function
 [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit
 
+val suggest : t -> string option
+
 type must_be_valid_reason =
   | BlockCall
   | InsertionIntoCollectionKey
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
-  | NullArgumentWhereNonNullExpected of string
+  | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
 [@@deriving compare, equal]
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit

@@ -82,6 +82,8 @@ module type NAME = sig
 
   val pp : F.formatter -> t -> unit
 
+  val is_hack_init : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 
   module HashSet : HashSet.S with type elt = t
@@ -105,6 +107,8 @@ module Name : NAME = struct
 
   let pp fmt name = F.pp_print_string fmt name.value
 
+  let is_hack_init {value} = String.equal value "_86pinit" || String.equal value "_86sinit"
+
   module Hashtbl = Hashtbl.Make (T)
   module HashSet = HashSet.Make (T)
   module Map = Caml.Map.Make (T)
@@ -121,44 +125,65 @@ let builtin_allocate_array = "__sil_allocate_array"
 
 let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
 
+let builtin_generics_constructor = "__sil_generics"
+
 let builtin_cast = "__sil_cast"
+
+let builtin_get_lazy_class = "__sil_get_lazy_class"
 
 let builtin_instanceof = "__sil_instanceof"
 
 module TypeName : sig
   include NAME
 
+  val hack_builtin : t
+
+  val hack_generics : t
+
   val wildcard : t
 end = struct
   include Name
 
   let wildcard = {value= "?"; loc= Location.Unknown}
+
+  let hack_builtin = {value= "$builtins"; loc= Location.Unknown}
+
+  let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
 end
 
-type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash, compare]
+module QualifiedProcName = struct
+  type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash, compare]
 
-type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
-[@@deriving compare, equal, hash]
-(* procedure name [name] is attached to the name space [enclosing_class] *)
+  type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
+  (* procedure name [name] is attached to the name space [enclosing_class] *)
 
-let pp_enclosing_class fmt = function
-  | TopLevel ->
-      ()
-  | Enclosing tname ->
-      F.fprintf fmt "%a." TypeName.pp tname
-
-
-let pp_qualified_procname fmt ({enclosing_class; name} : qualified_procname) =
-  F.fprintf fmt "%a%a" pp_enclosing_class enclosing_class ProcName.pp name
+  let pp_enclosing_class fmt = function
+    | TopLevel ->
+        ()
+    | Enclosing tname ->
+        F.fprintf fmt "%a." TypeName.pp tname
 
 
-let qualified_procname_contains_wildcard {enclosing_class} =
-  match enclosing_class with
-  | Enclosing class_name ->
-      TypeName.equal class_name TypeName.wildcard
-  | TopLevel ->
-      false
+  let pp fmt {enclosing_class; name} =
+    F.fprintf fmt "%a%a" pp_enclosing_class enclosing_class ProcName.pp name
 
+
+  let contains_wildcard {enclosing_class} =
+    match enclosing_class with
+    | Enclosing class_name ->
+        TypeName.equal class_name TypeName.wildcard
+    | TopLevel ->
+        false
+
+
+  let name {name} = name
+
+  let is_hack_init {name} = ProcName.is_hack_init name
+
+  module Hashtbl = Hashtbl.Make (struct
+    type nonrec t = t [@@deriving equal, hash]
+  end)
+end
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
@@ -167,7 +192,15 @@ let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
   F.fprintf fmt "%a%a" TypeName.pp enclosing_class FieldName.pp name
 
 
-module VarName : NAME = Name
+module VarName : sig
+  include NAME
+
+  val is_hack_reified_generics_param : t -> bool
+end = struct
+  include Name
+
+  let is_hack_reified_generics_param {value} = String.equal value "$0ReifiedGenerics"
+end
 
 module NodeName : NAME = Name
 
@@ -192,16 +225,27 @@ module Attr = struct
 
   let is_async {name; values} = String.equal name "async" && List.is_empty values
 
+  let is_hack_wrapper {name; values} = String.equal name "wrapper" && List.is_empty values
+
+  let is_abstract {name; values} = String.equal name "abstract" && List.is_empty values
+
+  let is_const {name; values} = String.equal name "constant" && List.is_empty values
+
+  let is_curry {name; values} = String.equal name "curry" && List.is_empty values
+
   let is_final {name; values} = String.equal name "final" && List.is_empty values
+
+  let is_notnull {name; values} = String.equal name "notnull" && List.is_empty values
+
+  let is_interface {name; values} =
+    String.equal name "kind" && List.equal String.equal values ["interface"]
+
 
   let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]
 
   let is_static {name; values} = String.equal name "static" && List.is_empty values
 
-  let is_experimental_self_parent_in_trait {name; values} =
-    String.equal name "experimental_options"
-    && List.mem ~equal:String.equal values "self_parent_in_trait"
-
+  let is_variadic {name; values} = String.equal name "variadic" && List.is_empty values
 
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
@@ -236,6 +280,8 @@ module Typ = struct
 
 
   type annotated = {typ: t; attributes: Attr.t list}
+
+  let is_annotated ~f {attributes} = List.exists ~f attributes
 
   let pp_annotated fmt {typ; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
@@ -304,16 +350,40 @@ let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 module ProcSig = struct
   module T = struct
     type t =
-      | Hack of {qualified_name: qualified_procname; arity: int option}
-      | Other of {qualified_name: qualified_procname}
-    [@@deriving equal, hash]
+      | Hack of {qualified_name: QualifiedProcName.t; arity: int option}
+      | Python of {qualified_name: QualifiedProcName.t; arity: int option}
+      | Other of {qualified_name: QualifiedProcName.t}
+    [@@deriving equal, hash, show {with_path= false}]
   end
 
   include T
 
   let to_qualified_procname = function
-    | Hack {qualified_name} | Other {qualified_name} ->
+    | Hack {qualified_name} | Python {qualified_name} | Other {qualified_name} ->
         qualified_name
+
+
+  let arity = function Hack {arity} | Python {arity} -> arity | Other _ -> None
+
+  let map_arity procsig ~f =
+    match procsig with
+    | Hack {qualified_name; arity= Some arity} ->
+        Hack {qualified_name; arity= Some (f arity)}
+    | Python {qualified_name; arity= Some arity} ->
+        Python {qualified_name; arity= Some (f arity)}
+    | Hack {arity= None} | Python {arity= None} | Other _ ->
+        procsig
+
+
+  let incr_arity procsig = map_arity procsig ~f:(( + ) 1)
+
+  let decr_arity procsig n = map_arity procsig ~f:(fun arity -> arity - n)
+
+  let is_hack_init = function
+    | Hack {qualified_name} ->
+        QualifiedProcName.is_hack_init qualified_name
+    | Python _ | Other _ ->
+        false
 
 
   module Hashtbl = Hashtbl.Make (T)
@@ -321,21 +391,23 @@ end
 
 module ProcDecl = struct
   type t =
-    { qualified_name: qualified_procname
+    { qualified_name: QualifiedProcName.t
     ; formals_types: Typ.annotated list option
     ; result_type: Typ.annotated
     ; attributes: Attr.t list }
 
   let formals_or_die ?(context = "<no context>") {qualified_name; formals_types} =
     Option.value_or_thunk formals_types ~default:(fun () ->
-        L.die InternalError "List of formals is unknown in %a: %s" pp_qualified_procname
+        L.die InternalError "List of formals is unknown in %a: %s" QualifiedProcName.pp
           qualified_name context )
 
 
   let to_sig {qualified_name; formals_types} = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Java | Some Lang.Python | None ->
+    | Some Lang.Python ->
+        ProcSig.Python {qualified_name; arity= Option.map formals_types ~f:List.length}
+    | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -349,13 +421,18 @@ module ProcDecl = struct
 
   let pp fmt {qualified_name; formals_types; result_type; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
-    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name pp_formals formals_types
+    F.fprintf fmt "%a(%a) : %a" QualifiedProcName.pp qualified_name pp_formals formals_types
       Typ.pp_annotated result_type
 
 
-  let make_toplevel_name string loc : qualified_procname =
+  let make_toplevel_name string loc : QualifiedProcName.t =
     let name : ProcName.t = {value= string; loc} in
     {enclosing_class= TopLevel; name}
+
+
+  let make_builtin_name string loc : QualifiedProcName.t =
+    let name : ProcName.t = {value= string; loc} in
+    {enclosing_class= Enclosing TypeName.hack_builtin; name}
 
 
   let allocate_object_name = make_toplevel_name builtin_allocate Location.Unknown
@@ -364,7 +441,11 @@ module ProcDecl = struct
 
   let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
 
+  let get_lazy_class_name = make_toplevel_name builtin_get_lazy_class Location.Unknown
+
   let cast_name = make_toplevel_name builtin_cast Location.Unknown
+
+  let generics_constructor = make_builtin_name builtin_generics_constructor Location.Unknown
 
   let instanceof_name = make_toplevel_name builtin_instanceof Location.Unknown
 
@@ -381,7 +462,7 @@ module ProcDecl = struct
     make_toplevel_name value Location.Unknown
 
 
-  let to_unop ({enclosing_class; name} : qualified_procname) : Unop.t option =
+  let to_unop ({enclosing_class; name} : QualifiedProcName.t) : Unop.t option =
     match enclosing_class with
     | TopLevel ->
         List.Assoc.find ~equal:String.equal unop_inverse_table name.value
@@ -470,29 +551,36 @@ module ProcDecl = struct
   let binop_inverse_map = inverse_assoc_list binop_table |> Map.Poly.of_alist_exn
 
   let is_allocate_object_builtin qualified_name =
-    equal_qualified_procname allocate_object_name qualified_name
+    QualifiedProcName.equal allocate_object_name qualified_name
 
 
   let is_allocate_array_builtin qualified_name =
-    equal_qualified_procname allocate_array_name qualified_name
+    QualifiedProcName.equal allocate_array_name qualified_name
 
 
   let is_lazy_class_initialize_builtin qualified_name =
-    equal_qualified_procname lazy_class_initialize_name qualified_name
+    QualifiedProcName.equal lazy_class_initialize_name qualified_name
 
 
-  let is_cast_builtin = equal_qualified_procname cast_name
+  let is_get_lazy_class_builtin qualified_name =
+    QualifiedProcName.equal get_lazy_class_name qualified_name
 
-  let is_instanceof_builtin = equal_qualified_procname instanceof_name
+
+  let is_generics_constructor_builtin = QualifiedProcName.equal generics_constructor
+
+  let is_cast_builtin = QualifiedProcName.equal cast_name
+
+  let is_instanceof_builtin = QualifiedProcName.equal instanceof_name
 
   let is_type_builtin qualified_name =
     is_allocate_object_builtin qualified_name
     || is_allocate_array_builtin qualified_name
+    || is_get_lazy_class_builtin qualified_name
     || is_lazy_class_initialize_builtin qualified_name
     || is_instanceof_builtin qualified_name
 
 
-  let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : qualified_procname)
+  let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : QualifiedProcName.t)
       =
     is_cast_builtin qualified_name
     ||
@@ -507,8 +595,17 @@ module ProcDecl = struct
 
   let is_not_regular_proc proc = is_type_builtin proc || is_side_effect_free_sil_expr proc
 
-  let to_binop ({enclosing_class; name} : qualified_procname) : Binop.t option =
+  let to_binop ({enclosing_class; name} : QualifiedProcName.t) : Binop.t option =
     match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
+
+
+  let is_curry_invoke {qualified_name= {name}; attributes} =
+    String.equal name.value "__invoke" && List.exists attributes ~f:Attr.is_curry
+
+
+  let is_variadic {formals_types} =
+    Option.value_map formals_types ~default:false
+      ~f:(List.exists ~f:(Typ.is_annotated ~f:Attr.is_variadic))
 end
 
 module Global = struct
@@ -552,22 +649,27 @@ module Exp = struct
 
   type t =
     | Var of Ident.t
+    | Load of {exp: t; typ: Typ.t option}
     | Lvar of VarName.t
     | Field of {exp: t; field: qualified_fieldname}
     | Index of t * t
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
-    | Call of {proc: qualified_procname; args: t list; kind: call_kind}
+    | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
+    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 
   let call_non_virtual proc args = Call {proc; args; kind= NonVirtual}
 
   let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
 
-  let call_sig qualified_name args = function
+  let call_sig qualified_name nb_args = function
     | Some Lang.Hack ->
-        ProcSig.Hack {qualified_name; arity= Some (List.length args)}
-    | Some Lang.Java | Some Lang.Python | None ->
+        ProcSig.Hack {qualified_name; arity= Some nb_args}
+    | Some Lang.Python ->
+        ProcSig.Python {qualified_name; arity= Some nb_args}
+    | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -575,9 +677,21 @@ module Exp = struct
 
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
 
+  let allocate_object typename =
+    Call {proc= ProcDecl.allocate_object_name; args= [Typ (Typ.Struct typename)]; kind= NonVirtual}
+
+
   let rec pp fmt = function
+    | Apply {closure; args} ->
+        F.fprintf fmt "%a%a" pp closure pp_list args
     | Var id ->
         Ident.pp fmt id
+    | Load {exp= Lvar x; typ= None} ->
+        F.fprintf fmt "%a" VarName.pp x
+    | Load {exp; typ= None} ->
+        F.fprintf fmt "[%a]" pp exp
+    | Load {exp; typ= Some typ} ->
+        F.fprintf fmt "[%a:%a]" pp exp Typ.pp typ
     | Lvar x ->
         F.fprintf fmt "&%a" VarName.pp x
     | Field {exp; field} ->
@@ -591,11 +705,17 @@ module Exp = struct
       | Virtual -> (
         match args with
         | recv :: other ->
-            F.fprintf fmt "%a.%a%a" pp recv pp_qualified_procname proc pp_list other
+            F.fprintf fmt "%a.%a%a" pp recv QualifiedProcName.pp proc pp_list other
         | _ ->
-            L.die InternalError "virtual call with 0 args: %a" pp_qualified_procname proc )
+            L.die InternalError "virtual call with 0 args: %a" QualifiedProcName.pp proc )
       | NonVirtual ->
-          F.fprintf fmt "%a%a" pp_qualified_procname proc pp_list args )
+          F.fprintf fmt "%a%a" QualifiedProcName.pp proc pp_list args )
+    | Closure {proc; captured; params} ->
+        let captured_and_params =
+          captured @ List.map params ~f:(fun varname -> Load {exp= Lvar varname; typ= None})
+        in
+        F.fprintf fmt "(%a) -> %a(%a)" (pp_list_with_comma VarName.pp) params QualifiedProcName.pp
+          proc (pp_list_with_comma pp) captured_and_params
     | Typ typ ->
         F.fprintf fmt "<%a>" Typ.pp typ
 
@@ -606,12 +726,16 @@ module Exp = struct
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
         true
-    | Field {exp} ->
+    | Load {exp} | Field {exp} ->
         do_not_contain_regular_call exp
     | Index (exp1, exp2) ->
         do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
     | Call {proc; args} ->
         ProcDecl.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
+    | Apply {closure; args} ->
+        do_not_contain_regular_call closure && List.for_all args ~f:do_not_contain_regular_call
+    | Closure {captured} ->
+        List.for_all captured ~f:do_not_contain_regular_call
 
 
   let vars exp =
@@ -621,29 +745,62 @@ module Exp = struct
           Ident.Set.add id acc
       | Lvar _ | Const _ | Typ _ ->
           acc
-      | Field {exp} ->
+      | Load {exp} | Field {exp} ->
           aux acc exp
       | Index (exp1, exp2) ->
           aux (aux acc exp1) exp2
+      | Apply {closure; args} ->
+          List.fold args ~init:(aux acc closure) ~f:aux
       | Call {args} ->
           List.fold args ~init:acc ~f:aux
+      | Closure {captured} ->
+          List.fold captured ~init:acc ~f:aux
     in
     aux Ident.Set.empty exp
 end
 
+module BoolExp = struct
+  type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
+
+  let rec pp fmt bexp =
+    match bexp with
+    | Exp exp ->
+        Exp.pp fmt exp
+    | Not bexp ->
+        F.fprintf fmt "!(%a)" pp bexp
+    | And (bexp1, bexp2) ->
+        F.fprintf fmt "(%a) && (%a)" pp bexp1 pp bexp2
+    | Or (bexp1, bexp2) ->
+        F.fprintf fmt "(%a) || (%a)" pp bexp1 pp bexp2
+
+
+  let rec do_not_contain_regular_call bexp =
+    match bexp with
+    | Exp exp ->
+        Exp.do_not_contain_regular_call exp
+    | Not bexp ->
+        do_not_contain_regular_call bexp
+    | Or (bexp1, bexp2) | And (bexp1, bexp2) ->
+        do_not_contain_regular_call bexp1 && do_not_contain_regular_call bexp2
+end
+
 module Instr = struct
   type t =
-    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
-    | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
+    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t option; loc: Location.t}
+    | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
     | Prune of {exp: Exp.t; loc: Location.t}
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 
   let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
 
   let pp fmt = function
-    | Load {id; exp; typ} ->
+    | Load {id; exp; typ= None} ->
+        F.fprintf fmt "%a = load %a" Ident.pp id Exp.pp exp
+    | Load {id; exp; typ= Some typ} ->
         F.fprintf fmt "%a:%a = load %a" Ident.pp id Typ.pp typ Exp.pp exp
-    | Store {exp1; typ; exp2} ->
+    | Store {exp1; typ= None; exp2} ->
+        F.fprintf fmt "store %a <- %a" Exp.pp exp1 Exp.pp exp2
+    | Store {exp1; typ= Some typ; exp2} ->
         F.fprintf fmt "store %a <- %a:%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
     | Prune {exp} ->
         F.fprintf fmt "prune %a" Exp.pp exp
@@ -674,19 +831,27 @@ end
 module Terminator = struct
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
-  type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t | Unreachable
+  type t =
+    | If of {bexp: BoolExp.t; then_: t; else_: t}
+    | Ret of Exp.t
+    | Jump of node_call list
+    | Throw of Exp.t
+    | Unreachable
 
-  let pp fmt = function
+  let pp_block_call fmt {label; ssa_args} =
+    match ssa_args with
+    | [] ->
+        NodeName.pp fmt label
+    | _ ->
+        F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
+
+
+  let rec pp fmt = function
+    | If {bexp; then_; else_} ->
+        F.fprintf fmt "if %a then %a else %a" BoolExp.pp bexp pp then_ pp else_
     | Ret e ->
         F.fprintf fmt "ret %a" Exp.pp e
     | Jump l ->
-        let pp_block_call fmt {label; ssa_args} =
-          match ssa_args with
-          | [] ->
-              NodeName.pp fmt label
-          | _ ->
-              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
-        in
         F.fprintf fmt "jmp %a" (pp_list_with_comma pp_block_call) l
     | Throw e ->
         F.fprintf fmt "throw %a" Exp.pp e
@@ -694,8 +859,11 @@ module Terminator = struct
         F.pp_print_string fmt "unreachable"
 
 
-  let do_not_contain_regular_call t =
+  let rec do_not_contain_regular_call t =
     match t with
+    | If {bexp; then_; else_} ->
+        BoolExp.do_not_contain_regular_call bexp
+        && do_not_contain_regular_call then_ && do_not_contain_regular_call else_
     | Ret exp | Throw exp ->
         Exp.do_not_contain_regular_call exp
     | Jump _ | Unreachable ->
@@ -758,7 +926,7 @@ module ProcDesc = struct
     let formals_types = formals t in
     match List.zip formals_types params with
     | Ok args ->
-        F.fprintf fmt "%a(%a) : %a" pp_qualified_procname procdecl.qualified_name
+        F.fprintf fmt "%a(%a) : %a" QualifiedProcName.pp procdecl.qualified_name
           (pp_list_with_comma pp) args Typ.pp_annotated procdecl.result_type
     | _ ->
         L.die InternalError
@@ -779,6 +947,18 @@ end
 
 module Body = struct
   type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+
+  let dummy loc =
+    let node : Node.t =
+      { label= {value= "entry"; loc}
+      ; ssa_parameters= []
+      ; exn_succs= []
+      ; last= Terminator.Ret (Exp.Const Const.Null)
+      ; instrs= []
+      ; last_loc= loc
+      ; label_loc= loc }
+    in
+    {nodes= [node]; locals= []}
 end
 
 module SsaVerification = struct
@@ -861,3 +1041,5 @@ module Module = struct
     List.iter ~f:(pp_attr fmt) module_.attrs ;
     List.iter ~f:(pp_decl fmt) module_.decls
 end
+
+exception SpecialSyntaxError of Location.t * string

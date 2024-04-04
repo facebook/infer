@@ -59,7 +59,7 @@ digraph cfg {
 "foo#Derived<int>#class_specializa.157c4cba925bdfdc_2" [label="2: Exit class_specialization::Derived<int>::foo \n  " color=yellow style=filled]
 	
 
-"foo#Derived<int>#class_specializa.157c4cba925bdfdc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class_specialization::Derived<int>* [line 16, column 19]\n  n$1=*&t:int [line 16, column 29]\n  *n$0.x:int=n$1 [line 16, column 19]\n " shape="box"]
+"foo#Derived<int>#class_specializa.157c4cba925bdfdc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&t:int [line 16, column 29]\n  n$0=*&this:class_specialization::Derived<int>* [line 16, column 19]\n  *n$0.x:int=n$1 [line 16, column 19]\n " shape="box"]
 	
 
 	 "foo#Derived<int>#class_specializa.157c4cba925bdfdc_3" -> "foo#Derived<int>#class_specializa.157c4cba925bdfdc_2" ;
@@ -85,7 +85,7 @@ digraph cfg {
 "foo2#Derived<int*>#class_speciali.9c7a2e679a7d7dcf_2" [label="2: Exit class_specialization::Derived<int*>::foo2 \n  " color=yellow style=filled]
 	
 
-"foo2#Derived<int*>#class_speciali.9c7a2e679a7d7dcf_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class_specialization::Derived<int*>* [line 21, column 21]\n  n$1=*&t:int* [line 21, column 31]\n  *n$0.x:int*=n$1 [line 21, column 21]\n " shape="box"]
+"foo2#Derived<int*>#class_speciali.9c7a2e679a7d7dcf_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&t:int* [line 21, column 31]\n  n$0=*&this:class_specialization::Derived<int*>* [line 21, column 21]\n  *n$0.x:int*=n$1 [line 21, column 21]\n " shape="box"]
 	
 
 	 "foo2#Derived<int*>#class_speciali.9c7a2e679a7d7dcf_3" -> "foo2#Derived<int*>#class_speciali.9c7a2e679a7d7dcf_2" ;

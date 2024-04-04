@@ -82,6 +82,10 @@ let prune_binop ~negated binop lhs rhs astate =
   map_path_condition astate ~f:(fun phi -> Formula.prune_binop ~negated binop lhs rhs phi)
 
 
+let and_equal_string_concat ret lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_string_concat ret lhs rhs phi)
+
+
 let literal_zero = ConstOperand (Cint IntLit.zero)
 
 let literal_one = ConstOperand (Cint IntLit.one)
@@ -92,6 +96,10 @@ let prune_eq_zero v astate =
 
 let prune_ne_zero v astate =
   prune_binop ~negated:false Ne (AbstractValueOperand v) literal_zero astate
+
+
+let prune_nonnegative v astate =
+  prune_binop ~negated:false Ge (AbstractValueOperand v) literal_zero astate
 
 
 let prune_positive v astate =
@@ -112,9 +120,30 @@ let is_manifest summary =
   Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
       AbductiveDomain.Summary.is_heap_allocated summary v
       || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
+  && not (AbductiveDomain.Summary.pre_heap_has_assumptions summary)
 
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
 let and_equal_instanceof v1 v2 t astate =
-  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
+  let get_dynamic_type v =
+    AbductiveDomain.AddressAttributes.get_dynamic_type v astate
+    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
+  in
+  map_path_condition astate ~f:(fun phi ->
+      Formula.and_equal_instanceof v1 v2 t ~get_dynamic_type phi )
+
+
+let absval_of_int astate i =
+  let phi, v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
+  let astate = AbductiveDomain.set_path_condition phi astate in
+  (astate, v)
+
+
+let absval_of_string astate s =
+  let phi, v = Formula.absval_of_string astate.AbductiveDomain.path_condition s in
+  let astate = AbductiveDomain.set_path_condition phi astate in
+  (astate, v)
+
+
+let as_constant_string astate v = Formula.as_constant_string astate.AbductiveDomain.path_condition v

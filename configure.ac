@@ -12,14 +12,14 @@ AC_PREREQ([2.63])
 # - the values below
 # - opam
 AC_INIT([Infer],
-        [1.1.0],
+        [1.2.0],
         [https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/istd/IStd.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=1
-INFER_MINOR=1
+INFER_MINOR=2
 INFER_PATCH=0
 
 AC_SUBST([INFER_MAJOR])
@@ -197,6 +197,9 @@ AS_IF([test "x$enable_python_analyzers" != "xno"], [
   esac
 ]) # end if($enable_python_analyzers)
 
+AC_ARG_VAR([PYTHONHOME], [the location of the standard Python libraries])
+AC_SUBST([PYTHONHOME])
+
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
 
@@ -294,12 +297,7 @@ AC_ASSERT_OCAML_PKG([oUnit])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
-AC_MSG_CHECKING([which ocamlformat to use])
-AS_IF([test x"$is_facebook_tree" = x"yes"],
-  [OCAMLFORMAT="$(pwd)"/facebook/dependencies/bin/ocamlformat],
-  [OCAMLFORMAT=ocamlformat])
-AC_MSG_RESULT([$OCAMLFORMAT])
-AC_SUBST([OCAMLFORMAT])
+AC_CHECK_TOOL([OCAMLFORMAT], [ocamlformat], [no])
 
 AC_ARG_VAR([CPATH], [Additional directories to search for C headers.])
 AC_ARG_VAR([LIBRARY_PATH], [Additional directories to search for C shared objects.])
@@ -336,15 +334,12 @@ if test "x$enable_erlang_analyzers" = "xyes"; then
 fi
 # end if($enable_erlang_analyzers)
 
-if test "x$enable_hack_analyzers" = "xyes"; then
-  if test "x$is_facebook_tree" = "xyes"; then
-    # Look for hackc in $PATH first, then fallback to the bundled version
-    AC_PATH_TOOL([HACKC], [hackc], [no], [$PATH$PATH_SEPARATOR$ac_pwd/facebook/dependencies/bin])
-  else
-    AC_PATH_TOOL([HACKC], [hackc], [no])
-  fi
-fi
-# end if($enable_hack_analyzers)
+AC_PATH_TOOL([HACKC], [hackc], [no])
+AC_MSG_CHECKING([if hackc can run])
+AS_IF([$HACKC --version >/dev/null 2>/dev/null],
+  [AC_MSG_RESULT([yes])],
+  [HACKC=no
+   AC_MSG_RESULT([no])])
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
@@ -364,7 +359,7 @@ if test "x$enable_java_analyzers" = "xyes"; then
     JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 2`
   ], [
     # otherwise pick the first number as the major version
-    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | $AWK -F'[[.-]]' '{print $1}'`
   ])
   AC_MSG_RESULT([$JAVA_MAJOR_VERSION])
   AC_SUBST([JAVA_MAJOR_VERSION])
@@ -442,7 +437,7 @@ AC_SUBST([NCPU])
 # optional progs and libraries that, eg build systems to be run in integration tests
 
 AC_CHECK_TOOL([ANT], [ant], [no])
-AC_CHECK_TOOL([BUCK], [buck], [no])
+AC_CHECK_TOOL([BUCK], [buck1], [no])
 AC_CHECK_TOOL([EMACS], [emacs], [no])
 AC_ARG_VAR([MVN], [command to execute Maven when running tests])
 AS_IF([test "x$MVN" = "x"], [
@@ -494,6 +489,8 @@ AC_CHECK_TOOL([OTOOL], [otool], [no])
 AC_SUBST([OTOOL])
 AC_CHECK_TOOL([PATCHELF], [patchelf], [no])
 AC_SUBST([PATCHELF])
+
+AC_CHECK_TOOL([HH_SINGLE_TYPE_CHECK], [hh_single_type_check], [no])
 
 AC_CHECK_INFER_MAN_LAST_MODIFIED()
 

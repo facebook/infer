@@ -14,7 +14,7 @@ module F = Format
 (** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
     other annotations. *)
 type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
-[@@deriving compare, equal]
+[@@deriving compare, equal, normalize]
 
 and parameter = {name: string option; value: value} [@@deriving compare]
 
@@ -34,9 +34,12 @@ val volatile : t
 val final : t
 (** annotation for fields marked with the "final" keyword *)
 
+val notnull : t
+(** annotation for fields/params marked as "never null" *)
+
 val has_matching_str_value : pred:(string -> bool) -> value -> bool
 (** Check if annotation parameter value contains a string satisfying a predicate. For convenience it
-    works both with raw [Str] and [Str] inside [Array]. *)
+    works both with raw [Str], [Str] inside [Array] and [Enum] values. *)
 
 val find_parameter : t -> name:string -> value option
 
@@ -45,7 +48,7 @@ val pp : F.formatter -> t -> unit
 
 module Item : sig
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = t list [@@deriving compare, equal, hash]
+  type nonrec t = t list [@@deriving compare, equal, hash, normalize]
 
   val pp : F.formatter -> t -> unit
   (** Pretty print an item annotation. *)
@@ -58,7 +61,8 @@ module Item : sig
   val is_final : t -> bool
   (** Check if final annotation is included in. *)
 
-  module Normalizer : HashNormalizer.S with type t = t
+  val is_notnull : t -> bool
+  (** Check if notnull annotation is included in. *)
 end
 
 module Class : sig

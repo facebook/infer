@@ -6,8 +6,23 @@
       "method_return_type_names": ["java.lang.String"],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.kotlin.pulse.TaintFormals"],
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintedFormals"],
       "method_names": ["firstParameterTainted"],
+      "taint_target": ["ArgumentPositions", [0]],
+      "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintedFormals"],
+      "method_names": ["<init>"],
+      "taint_target": ["ArgumentPositions", [0]],
+      "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintedFormals"],
+      "method_names": ["staticFirstParameterTainted"],
+      "taint_target": ["ArgumentPositions", [0]],
+      "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintedFormals"],
+      "method_names": ["instanceFirstParameterTainted"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
@@ -17,6 +32,9 @@
       "kinds": ["Simple"]
     },
     { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" },
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarkerWithValue",
+      "annotation_values": ["EMAIL", "LOCATION"]
+    },
     { "class_names": ["codetoanalyze.kotlin.pulse.Constants"],
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [0]]
@@ -25,12 +43,20 @@
       "method_names": ["taintThisBad"],
       "taint_target": "InstanceReference",
       "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Fields"],
+      "field_names": ["sourceField"],
+      "taint_target": "GetField"
     }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
     { "class_name_regex": "codetoanalyze.kotlin.pulse.sinks.*"},
-    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSinkMarker" }
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSinkMarker" },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Fields"],
+      "field_names": ["sinkField"],
+      "taint_target": "SetField"
+    }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },

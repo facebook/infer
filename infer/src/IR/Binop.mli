@@ -34,7 +34,7 @@ type t =
   | BOr  (** inclusive-or *)
   | LAnd  (** logical and. Does not always evaluate both operands. *)
   | LOr  (** logical or. Does not always evaluate both operands. *)
-[@@deriving compare, hash]
+[@@deriving compare, hash, normalize]
 
 val str : Pp.env -> t -> string
 

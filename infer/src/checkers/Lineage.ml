@@ -17,43 +17,22 @@ module PPNode = struct
   include CFG.Node
 
   let pp fmt node = pp_id fmt (id node)
+
+  let dummy () : t =
+    (* This is to fulfill ocamlgraph interface types, it should not appear in the graph. Otherwise
+       it's a lineage implementation bug, meaning some code is adding edges without specifying
+       a label. *)
+    let dummy_procname =
+      Procname.make_erlang ~module_name:"__infer__lineage__" ~function_name:"__dummy__" ~arity:0
+    in
+    let dummy_instr_index = -42 in
+    (Procdesc.Node.dummy dummy_procname, dummy_instr_index)
 end
 
+open LineageShape.StdModules
 module Shapes = LineageShape.Summary
-module FieldPath = LineageShape.FieldPath
-module Cell = LineageShape.Cell
 
-module VarPath : sig
-  (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
-      are built from their in-program occurrences. They may semantically have sub-fields themselves:
-      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths. *)
-
-  (** The type of variable paths: a variable and a possibly empty list of subscripted fields. *)
-  type t = Var.t * FieldPath.t
-
-  val var : Var.t -> t
-
-  val sub_path : t -> FieldPath.t -> t
-  (** Subscript nested sub-fields from a variable path. *)
-
-  val make : Var.t -> FieldPath.t -> t
-
-  val pvar : Pvar.t -> t
-
-  val ident : Ident.t -> t
-end = struct
-  type t = Var.t * FieldPath.t
-
-  let var v = (v, [])
-
-  let sub_path (var, field_path) subfields = (var, field_path @ subfields)
-
-  let make var field_path = (var, field_path)
-
-  let pvar pvar = var (Var.of_pvar pvar)
-
-  let ident id = var (Var.of_id id)
-end
+type shapes = Shapes.t option
 
 module Local = struct
   module T = struct
@@ -62,7 +41,7 @@ module Local = struct
       | ConstantInt of string
       | ConstantString of string
       | Cell of (Cell.t[@sexp.opaque])
-    [@@deriving compare, equal, sexp]
+    [@@deriving compare, equal, sexp, hash]
   end
 
   include T
@@ -88,70 +67,30 @@ module Local = struct
   end
 end
 
-module LineageGraph = struct
-  (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
-      associates them with a location, in a proc. *)
+module Vertex = struct
+  module T = struct
+    type t =
+      | Local of ((Local.t * PPNode.t)[@sexp.opaque])
+      | Argument of int * FieldPath.t
+      | ArgumentOf of (Procname.t[@sexp.opaque]) * int
+      | Captured of int
+      | CapturedBy of (Procname.t[@sexp.opaque]) * int
+      | Return of FieldPath.t
+      | ReturnOf of (Procname.t[@sexp.opaque])
+      | Self
+      | Function of (Procname.t[@sexp.opaque])
+    [@@deriving compare, equal, sexp, hash]
+  end
 
-  type data =
-    | Local of ((Local.t * PPNode.t)[@sexp.opaque])
-    | Argument of int * FieldPath.t
-    | ArgumentOf of int * (Procname.t[@sexp.opaque])
-    | Captured of int
-    | CapturedBy of int * (Procname.t[@sexp.opaque])
-    | Return of FieldPath.t
-    | ReturnOf of (Procname.t[@sexp.opaque])
-    | Self
-    | Function of (Procname.t[@sexp.opaque])
-  [@@deriving compare, equal, sexp]
+  include T
+  include Comparable.Make (T)
 
   let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
 
-  module FlowKind = struct
-    module T = struct
-      (** - INV1. There is no direct flow from ReturnOf to ArgumentOf. In that case a Return flow is
-            followed by a Call flow, with a Local in the middle (which may be a temporary variable).
-          - INV2: There is no loop, because they don't mean anything. *)
-      type t =
-        | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
-        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
-        | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
-        | Builtin  (** Flow coming from a suppressed builtin call, ultimately exported as a Copy *)
-        | Summary  (** Summarizes the effect of a procedure call *)
-        | DynamicCallFunction
-        | DynamicCallModule
-      [@@deriving compare, equal, sexp, variants]
-    end
+  let cell_local node cell = Local (Cell cell, node)
 
-    include T
-    include Comparable.Make (T)
-  end
-
-  type flow_kind = FlowKind.t [@@deriving compare, equal, sexp]
-
-  let rank_of_flow_kind = FlowKind.Variants.to_rank
-
-  type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
-  [@@deriving compare, equal, sexp]
-
-  type t = flow list
-
-  let empty = []
-
-  let is_empty = List.is_empty
-
-  (** Make [data] usable in Maps/Sets. *)
-  module Vertex = struct
-    module T = struct
-      type t = data [@@deriving compare, equal, sexp]
-    end
-
-    include T
-    include Comparable.Make (T)
-  end
-
-  let pp_data fmt data =
-    match data with
+  let pp fmt vertex =
+    match vertex with
     | Local (local, node) ->
         Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
     | Argument (index, field_path) ->
@@ -160,9 +99,9 @@ module LineageGraph = struct
         Format.fprintf fmt "cap%d" index
     | Return field_path ->
         Format.fprintf fmt "ret%a" FieldPath.pp field_path
-    | CapturedBy (index, proc_name) ->
+    | CapturedBy (proc_name, index) ->
         Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
-    | ArgumentOf (index, proc_name) ->
+    | ArgumentOf (proc_name, index) ->
         Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
     | ReturnOf proc_name ->
         Format.fprintf fmt "%a.ret" Procname.pp proc_name
@@ -170,66 +109,95 @@ module LineageGraph = struct
         Format.fprintf fmt "%a.fun" Procname.pp proc_name
     | Self ->
         Format.fprintf fmt "self"
+end
+
+module Edge = struct
+  module Kind = struct
+    module T = struct
+      (** - INV1. There is no direct edge from ReturnOf to ArgumentOf. In that case a Return edge is
+            followed by a Call edge, with a Local in the middle (which may be a temporary variable).
+          - INV2: There is no loop, because they don't mean anything. *)
+      type t =
+        | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
+        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
+        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
+        | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
+        | Builtin  (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
+        | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
+        | DynamicCallFunction
+        | DynamicCallModule
+      [@@deriving compare, equal, sexp, variants]
+    end
+
+    include T
+    include Comparable.Make (T)
+
+    let to_rank = Variants.to_rank
+
+    let pp fmt kind =
+      match kind with
+      | Capture ->
+          Format.fprintf fmt "Capture"
+      | Direct ->
+          Format.fprintf fmt "Direct"
+      | Call field_path ->
+          Format.fprintf fmt "Call%a" FieldPath.pp field_path
+      | Return field_path ->
+          Format.fprintf fmt "Return%a" FieldPath.pp field_path
+      | Builtin ->
+          Format.fprintf fmt "Builtin"
+      | Summary {shape_is_preserved} ->
+          Format.fprintf fmt "Summary" ;
+          if not shape_is_preserved then Format.fprintf fmt "#"
+      | DynamicCallFunction ->
+          Format.fprintf fmt "DynamicCallFunction"
+      | DynamicCallModule ->
+          Format.fprintf fmt "DynamicCallModule"
+  end
+
+  type kind = Kind.t [@@deriving compare, equal, sexp]
+
+  type t = {kind: kind; node: (PPNode.t[@sexp.opaque])} [@@deriving compare, equal, sexp]
+
+  let default = {kind= Direct; node= PPNode.dummy ()}
+
+  let pp_e fmt (src, {kind; node}, dst) =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" Vertex.pp src Vertex.pp dst Kind.pp kind
+      PPNode.pp node
+end
+
+module G = struct
+  (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
+      associates them with a location, in a proc. *)
+
+  module Impl = Graph.Persistent.Digraph.ConcreteBidirectionalLabeled (Vertex) (Edge)
+  include Impl
+
+  let pp fmt graph =
+    Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (nb_edges graph)
+      (nb_vertex graph) (Fmt.iter iter_edges_e Edge.pp_e) graph
 
 
-  let pp_flow_kind fmt kind =
-    match (kind : flow_kind) with
-    | Capture ->
-        Format.fprintf fmt "Capture"
+  let preserves_shape ((src, {kind; _}, dst) : E.t) =
+    match kind with
     | Direct ->
-        Format.fprintf fmt "Direct"
-    | Call field_path ->
-        Format.fprintf fmt "Call%a" FieldPath.pp field_path
-    | Return field_path ->
-        Format.fprintf fmt "Return%a" FieldPath.pp field_path
+        Fn.non Vertex.is_abstract_cell src && Fn.non Vertex.is_abstract_cell dst
     | Builtin ->
-        Format.fprintf fmt "Builtin"
-    | Summary ->
-        Format.fprintf fmt "Summary"
-    | DynamicCallFunction ->
-        Format.fprintf fmt "DynamicCallFunction"
-    | DynamicCallModule ->
-        Format.fprintf fmt "DynamicCallModule"
-
-
-  let pp_flow fmt {source; target; kind; node} =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" pp_data source pp_data target pp_flow_kind
-      kind PPNode.pp node
-
-
-  let vertices flows =
-    let data = List.concat_map ~f:(function {source; target} -> [source; target]) flows in
-    Vertex.Set.of_list data
-
-
-  let count_data flows = Set.length (vertices flows)
-
-  let pp fmt flows =
-    Format.fprintf fmt "@[<v 2>LineageGraph: flows %d data %d@;@[%a@]@]" (List.length flows)
-      (count_data flows) (Format.pp_print_list pp_flow) flows
-
-
-  let add_flow ~kind ~node ~source ~target graph =
-    let added = {source; target; kind; node} :: graph in
-    match ((kind : FlowKind.t), equal_data target source, target, source) with
-    | Direct, true, _, _ ->
-        graph (* skip Direct loops *)
-    | Builtin, true, _, _ ->
-        graph (* skip Builtin loops *)
-    | Summary, true, _, _ ->
-        graph (* skip Summary loops*)
-    | _, true, _, _ ->
-        L.die InternalError "There shall be no fancy (%a) loops!" pp_flow_kind kind
-    | Call _, _, ArgumentOf _, _ ->
-        added
-    | Call _, _, _, _ ->
-        L.die InternalError "Call edges shall return ArgumentOf!"
-    | Return _, _, _, ReturnOf _ ->
-        added
-    | Return _, _, _, _ ->
-        L.die InternalError "Return edges shall come form ReturnOf!"
-    | _ ->
-        added
+        (* Builtins are considered as unknown functions for shape preservation purposes.
+           TODO T154077173: does this introduce undesirable imprecision? *)
+        false
+    | Call _ ->
+        (* Target is ArgumentOf *)
+        Fn.non Vertex.is_abstract_cell src
+    | Return _ ->
+        (* Source is ReturnOf *)
+        Fn.non Vertex.is_abstract_cell dst
+    | Summary {shape_is_preserved} ->
+        shape_is_preserved
+    | Capture ->
+        false (* TODO T154077173: investigate if more precision is worthwile *)
+    | DynamicCallFunction | DynamicCallModule ->
+        false (* TODO T154077173: model as a call? *)
 
 
   module Out = struct
@@ -293,7 +261,7 @@ module LineageGraph = struct
 
 
       type term =
-        { term_data: string [@key "name" (* T106560112 *)]
+        { term_name: string [@key "name" (* T106560112 *)]
         ; term_type: term_type [@key "variable_type" (* T106560112 *)] }
       [@@deriving yojson_of]
 
@@ -387,13 +355,13 @@ module LineageGraph = struct
 
     type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-    (** Like [LineageGraph.data], but :
+    (** Like [G.vertex], but :
 
         - Without the ability to refer to other procedures, which makes it "local".
         - With some information lost/summarised, such as fields of procedure arguments/return
           (although the Derive edges will be generated taking fields into account, we only output
           one node for each argument in the Json graph to denote function calls). *)
-    type data_local = Argument of int | Captured of int | Return | Normal of Local.t | Function
+    type local_vertex = Argument of int | Captured of int | Return | Normal of Local.t | Function
 
     module Id = struct
       (** Internal representation of an Id. *)
@@ -450,20 +418,30 @@ module LineageGraph = struct
 
       let of_term_type (term_type : Json.term_type) = Z.of_int (Json.rank_of_term_type term_type)
 
-      let of_term {Json.term_data; term_type} : t =
-        of_list [of_string term_data; of_term_type term_type]
+      let of_term {Json.term_name; term_type} : t =
+        of_list [of_string term_name; of_term_type term_type]
 
 
-      let of_kind (kind : flow_kind) : t = Z.of_int (rank_of_flow_kind kind)
+      let of_kind (kind : Edge.kind) : t = Z.of_int (Edge.Kind.to_rank kind)
+
+      let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
+
+      let of_edge_metadata ({inject; project} : Json.edge_metadata) =
+        of_list [of_field_path inject; of_field_path project]
+
+
+      let of_option of_elt option =
+        match option with None -> of_list [] | Some elt -> of_list [of_elt elt]
+
 
       (** Converts the internal representation to an [int64], as used by the [Out] module. *)
       let out id : int64 =
         try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
     end
 
-    let term_of_data (data : data_local) : Json.term =
-      let term_data =
-        match data with
+    let term_of_vertex (vertex : local_vertex) : Json.term =
+      let term_name =
+        match vertex with
         | Argument index ->
             Format.asprintf "$arg%d" index
         | Captured index ->
@@ -478,7 +456,7 @@ module LineageGraph = struct
             "$fun"
       in
       let term_type : Json.term_type =
-        match data with
+        match vertex with
         | Argument _ | Captured _ ->
             Argument
         | Return ->
@@ -494,7 +472,7 @@ module LineageGraph = struct
         | Function ->
             Function
       in
-      {Json.term_data; term_type}
+      {Json.term_name; term_type}
 
 
     module JsonCacheKey = struct
@@ -552,10 +530,10 @@ module LineageGraph = struct
       location_id
 
 
-    let save_node proc_desc (data : data) =
-      let save ?(write = true) procname state_local data_local =
+    let save_vertex proc_desc (vertex : V.t) =
+      let save ?(write = true) procname state_local local_vertex =
         let state_id = save_state ~write procname state_local in
-        let term = term_of_data data_local in
+        let term = term_of_vertex local_vertex in
         let node_id = Id.of_list [state_id; Id.of_term term] in
         if write then
           write_json Node node_id
@@ -565,18 +543,18 @@ module LineageGraph = struct
       let procname = Procdesc.get_proc_name proc_desc in
       let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
       let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
-      match data with
+      match vertex with
       | Local (var, node) ->
           save procname (Normal node) (Normal var)
       | Argument (index, _field_path) ->
           (* We don't distinguish the fields of arguments when generating Argument nodes. See
              {!type:data_local}. *)
           save procname start (Argument index)
-      | ArgumentOf (index, callee_procname) ->
+      | ArgumentOf (callee_procname, index) ->
           save callee_procname (Start Location.dummy) (Argument index)
       | Captured index ->
           save procname start (Captured index)
-      | CapturedBy (index, lambda_procname) ->
+      | CapturedBy (lambda_procname, index) ->
           save ~write:false lambda_procname (Start Location.dummy) (Captured index)
       | Return _field_path ->
           (* We don't distinguish the fields of the returned value when generating Return nodes. See
@@ -590,15 +568,14 @@ module LineageGraph = struct
           save ~write:false procname (Start Location.dummy) Function
 
 
-    let save_edge proc_desc {source; target; kind; node} =
-      let source_id = save_node proc_desc source in
-      let target_id = save_node proc_desc target in
+    let save_edge proc_desc ((src, {kind; node}, dst) : edge) =
+      let src_id = save_vertex proc_desc src in
+      let dst_id = save_vertex proc_desc dst in
       let kind_id = Id.of_kind kind in
       let location_id =
         let procname = Procdesc.get_proc_name proc_desc in
         save_location ~write:true procname (Normal node)
       in
-      let edge_id = Id.of_list [source_id; target_id; kind_id; location_id] in
       let edge_type =
         match kind with
         | Call _ ->
@@ -609,7 +586,7 @@ module LineageGraph = struct
             Json.Copy
         | Builtin ->
             Json.Copy
-        | Summary ->
+        | Summary _ ->
             Json.Derive
         | DynamicCallFunction ->
             Json.DynamicCallFunction
@@ -620,7 +597,7 @@ module LineageGraph = struct
       in
       let edge_metadata =
         match kind with
-        | Builtin | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+        | Builtin | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
             None
         | Call field_path ->
             Json.metadata_nonempty_inject field_path
@@ -633,7 +610,7 @@ module LineageGraph = struct
 
              We similarly generate projection metadata from [Argument (index, path)] nodes, that will
              be merged into a summarising [Argument index] one. *)
-          match (source, target) with
+          match (src, dst) with
           | Argument (_index, arg_path), Return ret_path ->
               (* $arg -> $ret edges may happen in infer-generated procedures (that only get
                  non-source-occurring variables by definition) *)
@@ -645,26 +622,32 @@ module LineageGraph = struct
           | _ ->
               None )
       in
+      let metadata_id =
+        (* Contrary to other ids which are computed from the source components, this one must be
+           computed on the generated metadata since it doesn't exist as-is in the source. *)
+        Id.of_option Id.of_edge_metadata edge_metadata
+      in
+      let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
       write_json Edge edge_id
         (Json.yojson_of_edge
            { edge=
-               { source= Id.out source_id
-               ; target= Id.out target_id
+               { source= Id.out src_id
+               ; target= Id.out dst_id
                ; edge_type
                ; edge_metadata
                ; location= Id.out location_id } } ) ;
       edge_id
 
 
-    let report_summary flows has_unsupported_features proc_desc =
+    let report_summary graph has_unsupported_features proc_desc =
       let procname = Procdesc.get_proc_name proc_desc in
       let fun_id = Id.of_procname procname in
       write_json Function fun_id
         (Json.yojson_of_function_
            {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
-      let _fun_id = save_node proc_desc Self in
-      let record_flow flow = ignore (save_edge proc_desc flow) in
-      List.iter ~f:record_flow flows ;
+      let _fun_id = save_vertex proc_desc Self in
+      let record_edge edge = ignore (save_edge proc_desc edge) in
+      iter_edges_e record_edge graph ;
       Out_channel.flush (channel ()) ;
       Hash_set.clear write_json_cache
   end
@@ -688,7 +671,7 @@ module Tito : sig
   (** TITO stands for "taint-in taint-out". In this context a tito flow is a data path from an
       argument field to a field of the return node, without going through call edges; more
       precisely, [i#foo#bar] is a tito path to [ret#baz] if there is a path from
-      [Argument (i, \[foo, bar\])] to [Return baz] not going through [ArgumentOf _] nodes.
+      [Argument (i, [foo, bar])] to [Return baz] not going through [ArgumentOf _] nodes.
 
       As the abstraction mandates, fields are to be considered in a prefix sense: a path from
       [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar].
@@ -713,8 +696,7 @@ module Tito : sig
 
   val full : arity:int -> t
   (** A full tito has paths from every argument field to every return field. Due to the prefix
-      abstraction, it is equivalent to having a path from every [Argument (i, \[\])] to
-      [Return \[\]].*)
+      abstraction, it is equivalent to having a path from every [Argument (i, [])] to [Return []].*)
 
   val add :
        arg_index:int
@@ -726,15 +708,15 @@ module Tito : sig
 
   val fold :
        t
-    -> init:'init
+    -> init:'accum
     -> f:
          (   arg_index:int
           -> arg_field_path:FieldPath.t
           -> ret_field_path:FieldPath.t
           -> shape_is_preserved:bool
-          -> 'init
-          -> 'init )
-    -> 'init
+          -> 'accum
+          -> 'accum )
+    -> 'accum
 end = struct
   (* Utility pretty printers *)
 
@@ -882,121 +864,106 @@ end
 module Summary = struct
   type tito_arguments = Tito.t
 
-  type t = {graph: LineageGraph.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
+  type t = {graph: G.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
 
   let pp_tito_arguments fmt arguments =
     Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
 
 
   let pp fmt {graph; tito_arguments} =
-    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments
-      LineageGraph.pp graph
+    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments G.pp
+      graph
 
 
-  let tito_arguments_of_graph graph return_field_paths =
+  let extract_tito shapes proc_desc (graph : G.t) =
     (* - Construct an adjacency list representation of the reversed graph.
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
-    let graph_rev, shape_mixing_nodes =
-      let add_flow g {LineageGraph.source; target; kind} =
-        match kind with
-        | Call _ | Return _ ->
-            g (* skip call/return edges *)
-        | _ ->
-            Map.add_multi ~key:target ~data:source g
+    let shape_mixing_nodes =
+      let add_dst_if_shape_mixing ((_, _, dst) as edge) set =
+        if G.preserves_shape edge then set else Set.add set dst
       in
-      let add_if_shape_mixing set {LineageGraph.source= _; target; kind} =
-        let may_be_shape_mixing =
-          match kind with
-          | Direct ->
-              LineageGraph.is_abstract_cell target
-          | Builtin ->
-              (* Builtins are considered as unknown functions for shape preservation purposes. *)
-              true
-          | Call _ | Return _ ->
-              false (* Skip Call/Return edges anyway *)
-          | Summary ->
-              true (* TODO T154077173: which function is called? *)
-          | Capture ->
-              true (* TODO T154077173: investigate if more precision is worthwile *)
-          | DynamicCallFunction | DynamicCallModule ->
-              true (* TODO T154077173: model as a call? *)
-        in
-        if may_be_shape_mixing then Set.add set target else set
-      in
-      let walk_edge (g, s) edge = (add_flow g edge, add_if_shape_mixing s edge) in
-      List.fold
-        ~init:(LineageGraph.Vertex.Map.empty, LineageGraph.Vertex.Set.empty)
-        ~f:walk_edge graph
+      G.fold_edges_e add_dst_if_shape_mixing graph Vertex.Set.empty
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
       if Set.mem seen node then (shape_is_preserved, seen)
       else
         let seen = Set.add seen node in
-        let parents = Map.find_multi graph_rev node in
+        let incoming = G.pred_e graph node in
+        let parents =
+          List.filter_map
+            ~f:(fun (src, {Edge.kind; _}, _) ->
+              match kind with Call _ | Return _ -> None | _ -> Some src )
+            incoming
+        in
         let shape_is_preserved =
           (* That return field path is shape-preserved if it is only reachable by a direct path
              through shape-preserving one-source nodes. *)
           shape_is_preserved
           && (not (Set.mem shape_mixing_nodes node))
-          && match parents with [] | [_] -> true | _ -> false
+          &&
+          match parents with
+          | [] | [_] ->
+              true
+          | _ ->
+              (* TODO T154077173: `ite(true, X, Y) -> X`: X and Y are shape-preserved, but support of
+                 ite(_, {a, b}, 42) may be not trivial due to not-same-shaped parallel writes. *)
+              false
         in
         List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
     let collect_reachable return_field_path =
-      dfs (true, LineageGraph.Vertex.Set.empty) (LineageGraph.Return return_field_path)
+      dfs (true, Vertex.Set.empty) (Vertex.Return return_field_path)
     in
     (* Collect reachable arguments from a Return field path. *)
     let collect_tito tito ret_field_path =
       let shape_is_preserved, reachable = collect_reachable ret_field_path in
-      Set.fold reachable ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
+      Set.fold reachable ~init:tito ~f:(fun acc (node : G.vertex) ->
           match node with
           | Argument (arg_index, arg_field_path) ->
               Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
           | _ ->
               acc )
     in
+    let ret_var_path = VarPath.pvar (Procdesc.get_ret_var proc_desc) in
+    let return_field_paths =
+      Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell ->
+          Cell.field_path cell :: acc )
+    in
     List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
 
 
-  (** Reduces the size of the graph by possibly some data and some flows. Consider the following
-      pattern: A -1-> B -2-> C. (Here, A, B and C are data; 1 and 2 are flows.) The basic trick is
-      to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
-      "uninteresting". Data is uninteresting when it corresponds to a temporary variable introduced
-      by the frontend; Flows are uninteresting when they are of kind [Direct].
+  (** Reduces the size of the graph by possibly some vertices and some edges. Consider the following
+      pattern: A -1-> B -2-> C. (Here, A, B and C are vertices; 1 and 2 are edges.) The basic trick
+      is to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
+      "uninteresting". Vertex is uninteresting when it corresponds to a temporary variable
+      introduced by the frontend; Edges are uninteresting when they are of kind [Direct].
 
-      The basic trick is slightly generalized below: B may have 1 flow on one side, but 0..oo on the
+      The basic trick is slightly generalized below: B may have 1 edge on one side, but 0..oo on the
       other side. This allows considerably more reduction in size.
 
-      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting data
-      is removed from the graph (but this happens only for data that is not connected in lineage to
-      other interesting data); and (b) it is possible that the number of data nodes is reduced more
-      than the number of flows (otherwise, each transform step would reduce both the number of data
-      nodes and the number of flows by exactly 1, so the reduction would be equal to the number of
-      transform steps applied).
+      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting vertex
+      is removed from the graph (but this happens only for vertex that is not connected in lineage
+      to other interesting vertex); and (b) it is possible that the number of vertices is reduced
+      more than the number of edges (otherwise, each transform step would reduce both the number of
+      vertices and the number of edges by exactly 1, so the reduction would be equal to the number
+      of transform steps applied).
 
       Note1: The implementation assumes no loops; otherwise, it may not terminate. (This is easy to
       change, but there should be no loops in lineage anyway.)
 
-      Note2: The algorithm guarantees that the number of flows does not increase, and that the
-      number of data nodes does not increase. *)
+      Note2: The algorithm guarantees that the number of edges does not increase, and that the
+      number of vertices does not increase. *)
   let remove_temporaries proc_desc graph =
-    (* Build adjacency list representation, to make DFS easy. *)
-    let parents, children =
-      let add_flow (parents, children) ({LineageGraph.source; target} as flow) =
-        (Map.add_multi ~key:target ~data:flow parents, Map.add_multi ~key:source ~data:flow children)
-      in
-      List.fold ~init:LineageGraph.Vertex.Map.(empty, empty) ~f:add_flow graph
-    in
     (* A check for vertex interestingness, used in the graph simplification that follows. *)
     let special_variables =
       let formals = get_formals proc_desc in
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       Var.Set.of_list (ret_var :: formals)
     in
-    let is_interesting_data (data : LineageGraph.data) =
-      match data with
+    let is_interesting_vertex (vertex : G.vertex) =
+      match vertex with
       | Local (Cell cell, _node) ->
           Cell.var_appears_in_source_code cell
           && not (Var.Set.mem (Cell.var cell) special_variables)
@@ -1007,21 +974,25 @@ module Summary = struct
       | Function _ | Self ->
           true
     in
-    let is_interesting_flow ({LineageGraph.kind} : LineageGraph.flow) =
+    let is_interesting_edge ((src, {kind; _}, dst) : G.edge) =
       match kind with
-      | Direct ->
-          false
+      | Direct -> (
+        match (src, dst) with
+        | Argument (_, _ :: _), _ | _, Return (_ :: _) ->
+            (* The edge will have non-empty injection/projection metadata. *)
+            true
+        | _ ->
+            false )
       | Builtin ->
-          (* Suppressed builtins are considered as direct flows for being simplification
+          (* Suppressed builtins are considered as direct edges for being simplification
              candidates. *)
           false
-      | Call _ | Return _ | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+      | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
           true
     in
-    let merge_flows {LineageGraph.kind= kind_ab; source= source_ab; target= _; node= node_ab}
-        {LineageGraph.kind= kind_bc; source= _; target= target_bc; node= node_bc} :
-        LineageGraph.flow =
-      (* Merge both flows together, keeping source of the first one, the target of the second one,
+    let merge_edges (src_ab, {Edge.kind= kind_ab; node= node_ab}, _)
+        (_, {Edge.kind= kind_bc; node= node_bc}, dst_bc) : G.edge =
+      (* Merge both edges together, keeping source of the first one, the target of the second one,
          and the kind of node of the most interesting one. The interesting order is Direct < Builtin
          < anything. *)
       let kind, node =
@@ -1037,9 +1008,9 @@ module Summary = struct
         | _ (* not Direct *), Builtin ->
             (kind_ab, node_ab)
         | _ ->
-            L.die InternalError "I can't merge two interesting flows together"
+            L.die InternalError "I can't merge two interesting edges together"
       in
-      {LineageGraph.kind; node; source= source_ab; target= target_bc}
+      (src_ab, {Edge.kind; node}, dst_bc)
     in
     (* The set [todo] contains vertices considered for removal. We initialize this set with all
      * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
@@ -1051,77 +1022,57 @@ module Summary = struct
      * is initialized, and at most m while in the main loop. And each iteration of the main loop
      * does one deletion from the set [todo].) *)
     let todo =
-      LineageGraph.Vertex.Set.of_list
-        (List.concat_map ~f:(function {LineageGraph.source; target} -> [source; target]) graph)
+      (* Initialise todo with the set of non interesting vertices *)
+      G.fold_vertex
+        (fun vertex set -> if is_interesting_vertex vertex then set else Set.add set vertex)
+        graph Vertex.Set.empty
     in
-    let todo = Set.filter ~f:(Fn.non is_interesting_data) todo in
-    let remove_flow (parents, children) ({LineageGraph.source; target} as flow) =
-      let rm map key =
-        let flow_list = Map.find_multi map key in
-        let flow_list =
-          List.filter ~f:(fun elem -> not (LineageGraph.equal_flow elem flow)) flow_list
-        in
-        Map.set map ~key ~data:flow_list
-      in
-      (rm parents target, rm children source)
-    in
-    let rec simplify todo parents children =
+    let rec simplify todo graph =
       match Set.choose todo with
       | None ->
-          (parents, children)
-      | Some data ->
-          if is_interesting_data data then L.die InternalError "Shouldn't happen" ;
-          let todo = Set.remove todo data in
-          let before = Map.find_multi parents data in
-          let after = Map.find_multi children data in
-          let before_interesting = List.exists ~f:is_interesting_flow before in
-          let after_interesting = List.exists ~f:is_interesting_flow after in
+          graph
+      | Some vertex ->
+          if is_interesting_vertex vertex then L.die InternalError "Shouldn't happen" ;
+          let todo = Set.remove todo vertex in
+          let before = G.pred_e graph vertex in
+          let after = G.succ_e graph vertex in
+          let before_interesting = List.exists ~f:is_interesting_edge before in
+          let after_interesting = List.exists ~f:is_interesting_edge after in
           let short list = match list with [] | [_] -> true | _ -> false in
           let before_short = short before in
           let after_short = short after in
           if (before_short || after_short) && not (before_interesting && after_interesting) then
             let pairs = List.cartesian_product before after in
             (* (A) remove old edges *)
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow before in
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow after in
-            let do_pair (todo, (parents, children))
-                ((flow_ab : LineageGraph.flow), (flow_bc : LineageGraph.flow)) =
-              let keep = merge_flows flow_ab flow_bc in
-              if LineageGraph.equal_data keep.source keep.target then
+            let graph = G.remove_vertex graph vertex in
+            let do_pair (todo, graph) ((edge_ab : G.edge), (edge_bc : G.edge)) =
+              let ((keep_src, _, keep_dst) as keep_edge) = merge_edges edge_ab edge_bc in
+              if Vertex.equal keep_src keep_dst then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
-              let parents = Map.add_multi ~key:keep.target ~data:keep parents in
-              let children = Map.add_multi ~key:keep.source ~data:keep children in
-              (* The following two lines insert at most 1 vertex into [todo] for each [flow_ab]/
-               * [flow_bc] edge that gets removed from the graph, in step (A) above. This is where
+              let graph = G.add_edge_e graph keep_edge in
+              (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
+               * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
                * the earlier claim that at most m insertions happen in the main loop. However,
-               * this claim is invalidated if one of the [flow_ab]/[flow_bc] edges gets re-added
+               * this claim is invalidated if one of the [edge_ab]/[edge_bc] edges gets re-added
                * to the graph in step (B) above, which may happen if there is an (isolated) loop
                * in the graph. *)
-              let todo =
-                if is_interesting_data keep.source then todo else Set.add todo keep.source
-              in
-              let todo =
-                if is_interesting_data keep.target then todo else Set.add todo keep.target
-              in
-              (todo, (parents, children))
+              let todo = if is_interesting_vertex keep_src then todo else Set.add todo keep_src in
+              let todo = if is_interesting_vertex keep_dst then todo else Set.add todo keep_dst in
+              (todo, graph)
             in
-            let todo, (parents, children) =
-              List.fold ~init:(todo, (parents, children)) ~f:do_pair pairs
-            in
-            simplify todo parents children
-          else simplify todo parents children
+            let todo, graph = List.fold ~init:(todo, graph) ~f:do_pair pairs in
+            simplify todo graph
+          else simplify todo graph
     in
-    let parents, _children = simplify todo parents children in
-    (* Simplified graph: from adjacency list to edge list representation.*)
-    List.concat (Map.data parents)
+    simplify todo graph
 
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let make has_unsupported_features proc_desc graph return_field_paths =
+  let make shapes proc_desc has_unsupported_features graph =
     (* We need to compute the Tito arguments before reducing the graph to make use of information
        hold by temporary nodes (eg. if they're abstract or not). *)
-    let tito_arguments = tito_arguments_of_graph graph return_field_paths in
+    let tito_arguments = extract_tito shapes proc_desc graph in
     let graph =
       if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
@@ -1129,27 +1080,65 @@ module Summary = struct
 
 
   let report {graph; has_unsupported_features} proc_desc =
-    LineageGraph.report graph has_unsupported_features proc_desc
+    G.report graph has_unsupported_features proc_desc
 end
 
-(** A summary is computed by taking the union of all partial summaries present in the final
-    invariant map. Partial summaries are stored in abstract states only because it is convenient.
-    But, they do not influence how abstract states are joined, widened, etc, which explains why
-    below all functions having to do with the abstract domain are dummies. *)
-module PartialSummary = struct
-  type t = LineageGraph.t
+(** A summary is computed by taking the union of all partial graphs present in the final invariant
+    map. Partial graphs are stored in abstract states only because it is convenient. But, they do
+    not influence how abstract states are joined, widened, etc, which explains why below all
+    functions having to do with the abstract domain are dummies. *)
+module PartialGraph : sig
+  type t
 
-  let pp = LineageGraph.pp
+  include AbstractDomain.WithBottom with type t := t
 
-  let bottom = LineageGraph.empty
+  val pp : t Fmt.t
 
-  let is_bottom = LineageGraph.is_empty
+  val add_edge : node:PPNode.t -> kind:Edge.kind -> src:Vertex.t -> dst:Vertex.t -> t -> t
+
+  val aggregate : t list -> G.t
+end = struct
+  type t = G.edge list
+
+  let pp = Fmt.box @@ Fmt.list Edge.pp_e
+
+  let bottom = []
+
+  let is_bottom = List.is_empty
 
   let leq ~lhs:_ ~rhs:_ = true
 
   let join _ _ = bottom
 
   let widen ~prev:_ ~next ~num_iters:_ = next
+
+  let add_edge ~node ~kind ~src ~dst partial_graph =
+    let added = (src, {Edge.kind; node}, dst) :: partial_graph in
+    match ((kind : Edge.kind), Vertex.equal dst src, (dst : Vertex.t), (src : Vertex.t)) with
+    | Direct, true, _, _ ->
+        partial_graph (* skip Direct loops *)
+    | Builtin, true, _, _ ->
+        partial_graph (* skip Builtin loops *)
+    | Summary _, true, _, _ ->
+        partial_graph (* skip Summary loops*)
+    | _, true, _, _ ->
+        L.die InternalError "There shall be no fancy (%a) loops!" Edge.Kind.pp kind
+    | Call _, _, ArgumentOf _, _ ->
+        added
+    | Call _, _, _, _ ->
+        L.die InternalError "Call edges shall return ArgumentOf!"
+    | Return _, _, _, ReturnOf _ ->
+        added
+    | Return _, _, _, _ ->
+        L.die InternalError "Return edges shall come form ReturnOf!"
+    | _ ->
+        added
+
+
+  let aggregate partial_graph_list : G.t =
+    List.fold
+      ~f:(fun acc partial_graph -> List.fold ~f:G.add_edge_e ~init:acc partial_graph)
+      ~init:G.empty partial_graph_list
 end
 
 module Domain : sig
@@ -1164,13 +1153,9 @@ module Domain : sig
   include AbstractDomain.WithBottom
 
   module Src : sig
-    (** Constructors for data that can be used a source node of edges in the flow graph.
+    (** Constructors for source nodes of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.data} type.
-
-        This module does not provide constructors for [Local]-typed sources (eg. variables), as
-        [Domain] itself implements functions that directly take these values as sources and fetches
-        the corresponding nodes accordingly. *)
+        Each function corresponds to a collection of {!G.vertex}. *)
 
     type t
 
@@ -1181,30 +1166,40 @@ module Domain : sig
     val captured : int -> t
 
     val return_of : Procname.t -> t
+
+    val atom : string -> t
+
+    val local_set : Local.Set.t -> t
+
+    val var_path : VarPath.t -> t
+
+    val pvar : Pvar.t -> t
   end
 
   module Dst : sig
-    (** Constructors for data that can be used as destination node of edges in the flow graph.
+    (** Constructors for destination nodes of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.data} type.
-
-        As for the {!Src} module, we don't provide [Local] destinations here (that is, [Cell] ones),
-        as they should be processed differently. This is done by using the [add_write_...] family of
-        functions of the {!Domain} module itself. *)
+        Each function corresponds to a collection of {!G.vertex}. *)
 
     type t
 
-    val captured_by : int -> Procname.t -> t
+    val captured_by : Procname.t -> int -> t
 
-    val argument_of : int -> Procname.t -> t
+    val argument_of : Procname.t -> int -> t
 
     val return : FieldPath.t -> t
+
+    val var_path : VarPath.t -> t
+
+    val var : Var.t -> t
+
+    val ident : Ident.t -> t
   end
 
-  val get_lineage_partial_graph : t -> LineageGraph.flow list
+  val partial_graph : t -> PartialGraph.t
   (** Extract the edges accumulated in an abstract state. *)
 
-  val clear_graph : t -> t
+  val clear_partial_graph : t -> t
   (** Forget the collected edges. One can use this when going to analyse another instruction as the
       finalisation of the procedure analysis will go through all nodes to collect the complete edges
       set. *)
@@ -1215,279 +1210,245 @@ module Domain : sig
   val record_supported : Procname.t -> t -> t
   (** If the given procedure is an unsupported Erlang feature, record that in the abstract state. *)
 
-  val add_flow_from_local_set :
-    node:PPNode.t -> kind:LineageGraph.flow_kind -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
+  (** {2 Record data flow} *)
 
-  (** {2 Add flow to non-variable nodes} *)
+  val add_flow :
+    shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:Src.t -> dst:Dst.t -> t -> t
+  (** Record flow from all nodes under the source into all nodes under the destination. *)
 
-  (** The [add_flow_...] functions can be used to record a taint flow from various types of sources
-      to destinations that are not written variables. To record flow to a variable, use the
-      corresponding [add_write_...] function instead. *)
+  (** {3 Specific flow from/to variable paths} *)
 
-  val add_flow_from_path :
-       shapes:Shapes.t
+  (** Variable paths as source or destination have the specificity that each cell under can be
+      characterised by its sub-path (extracted from the origin variable path).
+
+      We thus provide here a set of ad-hoc functions that can make use of this information to record
+      specific flows where variable paths occur. This can be used to set different, thus more
+      precise, sources/destinations/kinds depending on each underlying cell.
+
+      Every [kind_f], [src_f] and [dst_f] function will be passed the sub-path of earch underlying
+      cell extracted from the variable path argument of the same function, as obtained by
+      {!Cell.path_from_origin}. *)
+
+  val add_flow_from_var_path :
+       shapes:shapes
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
-    -> src:VarPath.t
-    -> dst:Dst.t
-    -> t
-    -> t
-
-  val add_flow_from_path_f :
-       shapes:Shapes.t
-    -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> kind_f:(FieldPath.t -> Edge.kind)
     -> src:VarPath.t
     -> dst_f:(FieldPath.t -> Dst.t)
     -> t
     -> t
-  (** [add_flow_from_path_f] allows recording flow whose kind and destination can be different for
-      every terminal field of the source variable path. This can be used for instance to record
-      [Injection] edges where the edge holds the field information. *)
 
-  (** {2 Add flow to non-variable nodes} *)
-
-  (** The [add_write_...] functions can be used to record a taint flow from various types of sources
-      to written variable destinations. To record flow to another type of node, use the
-      corresponding [add_flow_...] function instead. *)
-
-  val add_write :
-       shapes:Shapes.t
+  val add_flow_to_var_path :
+       shapes:shapes
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
-    -> src:Src.t
-    -> dst:VarPath.t
-    -> t
-    -> t
-
-  val add_write_f :
-       shapes:Shapes.t
-    -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> kind_f:(FieldPath.t -> Edge.kind)
     -> src_f:(FieldPath.t -> Src.t)
     -> dst:VarPath.t
     -> t
     -> t
-  (** [add_flow_from_path_f] allows recording flow whose kind and source can be different for every
-      terminal field of the destination variable path. This can be used for instance to record
-      [Projection] edges where the edge holds the field information. *)
 
-  val add_write_from_local :
-       shapes:Shapes.t
+  val add_parallel_var_path_flow :
+       shapes:shapes
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
-    -> src:Local.t
-    -> dst:VarPath.t
-    -> t
-    -> t
-
-  val add_write_from_local_set :
-       shapes:Shapes.t
-    -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
-    -> src:(Local.t, _) Set.t
-    -> dst:VarPath.t
-    -> t
-    -> t
-
-  val add_write_parallel :
-       shapes:Shapes.t
-    -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
+    -> ?exclude:(src_sub_path:FieldPath.t -> dst_sub_path:FieldPath.t -> bool)
     -> t
     -> t
-  (** Add flow from every terminal field of the source variable path to the corresponding terminal
-      field of the destination variable path. See {!Cell.fold_terminal_pairs}. *)
+  (** Add flow from every cell under the source variable path to the cell with the same field path
+      under the destination variable path.
 
-  val add_write_product :
-       shapes:Shapes.t
-    -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
-    -> src:VarPath.t
-    -> dst:VarPath.t
-    -> t
-    -> t
-  (** Add flow from every terminal field of the source variable path to every terminal field of the
-      destination variable path. *)
+      If the [exclude] predicate is set, flows for which the predicates holds (on the flow source
+      and destination paths) won't be added. *)
 end = struct
-  module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
-    module UnsupportedFeatures = AbstractDomain.BooleanOr
-    include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
-  end
+  module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
+  module HasUnsupportedFeatures = AbstractDomain.BooleanOr
 
-  module Unit = PartialSummary
+  (** Actual domain for iterations *)
+  module Real = AbstractDomain.PairWithBottom (LastWrites) (HasUnsupportedFeatures)
+
+  (** Stored with abstract states for convenience, not used for iteration purposes *)
+  module Unit = PartialGraph
+
   include AbstractDomain.PairWithBottom (Real) (Unit)
 
-  let get_lineage_partial_graph (_, graph) = graph
+  type domain = t
 
-  let clear_graph (real, _graph) = (real, [])
+  let partial_graph (_, partial_graph) = partial_graph
+
+  let clear_partial_graph (real, _partial_graph) = (real, PartialGraph.bottom)
+
+  let last_writes ((last_writes, _), _) = last_writes
 
   let has_unsupported_features ((_, has_unsupported_features), _) = has_unsupported_features
 
-  let record_supported name (((last_writes, has_unsupported_features), local_graph) : t) : t =
+  let record_supported name (((last_writes, has_unsupported_features), partial_graph) : t) : t =
     let has_unsupported_features =
       has_unsupported_features || Procname.is_erlang_unsupported name
     in
-    ((last_writes, has_unsupported_features), local_graph)
+    ((last_writes, has_unsupported_features), partial_graph)
 
+
+  module Fold = struct
+    (** Sequences of elements encoded by a fold function accumulating over domains.
+
+        Implementation note: we use domains as accumulators as using a generic type would bring us
+        into the bureaucracy hell of higher order polymorphism. The other generic alternative would
+        be to use iterators [('a -> unit) -> unit], but since we're in fact only using this to build
+        domains we can just instantiate folds to that specific type. *)
+
+    (** The type of sequences of ['a], represented by their fold function over domains. Order of
+        calls to the accumulating argument function is generally unspecified. *)
+    type 'a t = (domain -> 'a -> domain) -> domain -> domain
+
+    let singleton (elt : 'a) : 'a t = fun f init -> f init elt
+  end
 
   module Src = struct
-    type t = LineageGraph.data
+    (** A source is a sequence of vertices that can be built from shapes at a procedure current
+        node. *)
+    type t = shapes -> PPNode.t -> Vertex.t Fold.t
 
-    let function_ procname : t = Function procname
+    let single_vertex (vertex : Vertex.t) : t = fun _shapes _node -> Fold.singleton vertex
 
-    let argument i field_path : t = Argument (i, field_path)
+    let function_ procname : t = single_vertex (Function procname)
 
-    let captured i : t = Captured i
+    let argument i field_path : t = single_vertex (Argument (i, field_path))
 
-    let return_of procname : t = ReturnOf procname
+    let captured i : t = single_vertex (Captured i)
 
-    module Private = struct
-      (** A module grouping functions that should only be used inside Domain and not exported. *)
+    let return_of procname : t = single_vertex (ReturnOf procname)
 
-      (** Fold over the sources of a given local. *)
-      let fold_local ~f ~init node ((last_writes, _), _) (local : Local.t) =
-        match local with
-        | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            f init (LineageGraph.Local (local, node))
-        | Cell cell ->
-            let source_nodes = Real.LastWrites.get_all cell last_writes in
-            List.fold
-              ~f:(fun acc node -> f acc (LineageGraph.Local (local, node)))
-              ~init source_nodes
-    end
+    let local (local : Local.t) : t =
+     fun _shapes node f astate ->
+      match local with
+      | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
+          f astate (Vertex.Local (local, node))
+      | Cell cell ->
+          (* Fold over the last_writes sources of the cell *)
+          LastWrites.find_fold
+            (fun lw_node acc -> f acc (Vertex.Local (local, lw_node)))
+            cell (last_writes astate) astate
+
+
+    let local_set local_set : t =
+     fun shapes node f astate ->
+      Set.fold ~f:(fun acc one_local -> local one_local shapes node f acc) ~init:astate local_set
+
+
+    let atom atom_name : t = local (ConstantAtom atom_name)
+
+    let var_path var_path : t =
+     fun shapes node f astate ->
+      Shapes.fold_cells
+        ~f:(fun acc cell -> local (Cell cell) shapes node f acc)
+        ~init:astate shapes var_path
+
+
+    let pvar pvar : t = var_path (VarPath.pvar pvar)
   end
 
   module Dst = struct
-    type t = LineageGraph.data
+    (** A source is a sequence of vertices that can be built from shapes at a procedure current
+        node. *)
+    type t = shapes -> PPNode.t -> Vertex.t Fold.t
 
-    let captured_by i proc_name : t = CapturedBy (i, proc_name)
+    let single_vertex (vertex : Vertex.t) : t = fun _shapes _node -> Fold.singleton vertex
 
-    let argument_of i callee_pname : t = ArgumentOf (i, callee_pname)
+    let captured_by i proc_name : t = single_vertex (CapturedBy (i, proc_name))
 
-    let return field_path : t = Return field_path
+    let argument_of callee_pname index : t = single_vertex (ArgumentOf (callee_pname, index))
+
+    let return field_path : t = single_vertex (Return field_path)
+
+    let var_path var_path : t =
+     fun shapes node f astate ->
+      Shapes.fold_cells
+        ~f:(fun acc dst_cell -> f acc (Vertex.cell_local node dst_cell))
+        ~init:astate shapes var_path
+
+
+    let var var : t = var_path (VarPath.var var)
+
+    let ident ident : t = var_path (VarPath.ident ident)
 
     module Private = struct
-      (** A module grouping functions that should only be used inside Domain and not exported. *)
-
-      let cell node cell : t = Local (Cell cell, node)
+      let cell node cell = single_vertex (Vertex.cell_local node cell)
     end
   end
 
-  let update_write ~node ~var_path ((last_writes, has_unsupported_features), graph) =
-    let last_writes = Real.LastWrites.set_to_single_value var_path node last_writes in
-    ((last_writes, has_unsupported_features), graph)
+  let add_flow_edge ~node ~kind ~(src : Vertex.t) ~(dst : Vertex.t)
+      ((last_writes, has_unsupported_features), partial_graph) : t =
+    let partial_graph = PartialGraph.add_edge ~node ~kind ~src ~dst partial_graph in
+    let last_writes =
+      match dst with
+      | Local (Cell cell, _) ->
+          LastWrites.set_to_single_value cell node last_writes
+      | _ ->
+          last_writes
+    in
+    ((last_writes, has_unsupported_features), partial_graph)
 
 
-  let add_flow ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
-    let graph = LineageGraph.add_flow ~node ~kind ~source:src ~target:dst graph in
-    ((last_writes, has_unsupported_features), graph)
+  let add_flow ~shapes ~node ~kind ~(src : Src.t) ~(dst : Dst.t) astate : t =
+    src shapes node
+      (fun accum src_vertex ->
+        dst shapes node
+          (fun accum dst_vertex -> add_flow_edge ~node ~kind ~src:src_vertex ~dst:dst_vertex accum)
+          accum )
+      astate
 
 
-  let add_flow_from_local ~node ~kind ~src ~dst astate : t =
-    Src.Private.fold_local
-      ~f:(fun acc_astate one_source -> add_flow ~node ~kind ~src:one_source ~dst acc_astate)
-      ~init:astate node astate src
-
-
-  let add_flow_from_local_set ~node ~kind ~src ~dst astate =
-    Set.fold
-      ~f:(fun acc_astate one_local -> add_flow_from_local ~node ~kind ~src:one_local ~dst acc_astate)
-      ~init:astate src
-
-
-  let add_flow_from_path ~shapes ~node ~kind ~src ~dst astate =
-    Shapes.fold_cells
-      ~f:(fun acc src_cell -> add_flow_from_local ~node ~kind ~src:(Cell src_cell) ~dst acc)
-      ~init:astate shapes src
-
-
-  let add_flow_from_path_f ~shapes ~node ~kind_f ~src ~dst_f astate =
+  let add_flow_from_var_path ~shapes ~node ~kind_f ~src ~dst_f astate =
     Shapes.fold_cells
       ~f:(fun acc src_cell ->
-        let source_field_path = Cell.field_path src_cell in
-        add_flow_from_local ~node ~kind:(kind_f source_field_path) ~src:(Cell src_cell)
-          ~dst:(dst_f source_field_path) acc )
+        let source_sub_path = Cell.path_from_origin ~origin:src src_cell in
+        add_flow ~shapes ~node ~kind:(kind_f source_sub_path) ~src:(Src.local (Cell src_cell))
+          ~dst:(dst_f source_sub_path) acc )
       ~init:astate shapes src
 
 
-  let add_terminal_write ~node ~kind ~src ~dst astate =
-    astate
-    |> add_flow ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~var_path:dst
-
-
-  let add_terminal_write_from_local ~node ~kind ~src ~dst astate =
-    astate
-    |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~var_path:dst
-
-
-  let add_terminal_write_from_local_set ~node ~kind ~src ~dst astate =
-    astate
-    |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
-    |> update_write ~node ~var_path:dst
-
-
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
-  let add_write ~shapes ~node ~kind ~src ~dst astate =
+  let add_flow_to_var_path ~shapes ~node ~kind_f ~src_f ~dst astate =
     Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~f:(fun acc_astate dst_cell ->
+        let dst_sub_path = Cell.path_from_origin ~origin:dst dst_cell in
+        add_flow ~shapes ~node ~kind:(kind_f dst_sub_path) ~src:(src_f dst_sub_path)
+          ~dst:(Dst.Private.cell node dst_cell) acc_astate )
       ~init:astate shapes dst
 
 
-  let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
-    Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        let dst_field_path = Cell.field_path dst_terminal in
-        add_terminal_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path)
-          ~dst:dst_terminal acc_astate )
-      ~init:astate shapes dst
-
-
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
-  let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
-    Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
-      ~init:astate shapes dst
-
-
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
-  let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
-    Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
-      ~init:astate shapes dst
-
-
-  (* Update all the terminal fields of a destination path, as obtained from the shapes information,
-     as being written in parallel from the corresponding terminal fields of a source path. *)
-  let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
-    Shapes.fold_cell_pairs
-      ~f:(fun acc_astate src_cell dst_cell ->
-        add_terminal_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
-      ~init:astate shapes src dst
-
-
-  let add_write_product ~shapes ~node ~kind ~src ~dst astate =
-    Shapes.fold_cells
-      ~f:(fun acc_astate src_cell ->
-        add_write_from_local ~shapes ~node ~kind ~src:(Cell src_cell) ~dst acc_astate )
-      ~init:astate shapes src
+  let add_parallel_var_path_flow ~shapes ~node ~kind ~src ~dst
+      ?(exclude = fun ~src_sub_path:_ ~dst_sub_path:_ -> false) astate =
+    Shapes.assert_equal_shapes shapes src dst ;
+    Shapes.fold_cells shapes src ~init:astate ~f:(fun acc src_cell ->
+        let src_sub_path = Cell.path_from_origin ~origin:src src_cell in
+        let dst_matching_path = VarPath.sub_path dst src_sub_path in
+        Shapes.fold_cells shapes dst_matching_path ~init:acc ~f:(fun acc_astate dst_cell ->
+            if exclude ~src_sub_path ~dst_sub_path:(Cell.path_from_origin ~origin:dst dst_cell) then
+              acc_astate
+            else
+              add_flow ~shapes ~node ~kind ~src:(Src.local (Cell src_cell))
+                ~dst:(Dst.Private.cell node dst_cell) acc_astate ) )
 end
 
 module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
+  module Src = Domain.Src
+  module Dst = Domain.Dst
 
-  type analysis_data = Shapes.t * Summary.t InterproceduralAnalysis.t
+  (** The payload returned by the interprocedural analysis of dependency procedures *)
+  type payload = Summary.t option * shapes
 
-  (** If an expression is made of a single variable, return it *)
+  (** Un-nest options from a payload option *)
+  let join_payload (payload_opt : payload option) : payload =
+    match payload_opt with None -> (None, None) | Some payload -> payload
+
+
+  type analysis_data = shapes * payload InterproceduralAnalysis.t
+
+  (** If an expression is made of a single variable, return it. *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
     match e with
     | Exp.Lvar pvar ->
@@ -1506,7 +1467,7 @@ module TransferFunctions = struct
         None
 
 
-  (** If an expression is made of a single variable path, return it *)
+  (** If an expression is made of a single variable path, return it. *)
   let exp_as_single_var_path (e : Exp.t) : VarPath.t option =
     let rec aux field_path_acc = function
       | Exp.Lvar pvar ->
@@ -1514,7 +1475,7 @@ module TransferFunctions = struct
       | Exp.Var id ->
           Some (VarPath.make (Var.of_id id) field_path_acc)
       | Exp.Lfield (e, fieldname, _) ->
-          aux (fieldname :: field_path_acc) e
+          aux (FieldLabel.fieldname fieldname :: field_path_acc) e
       | Exp.UnOp (_, _, _)
       | Exp.BinOp (_, _, _)
       | Exp.Exn _
@@ -1528,27 +1489,37 @@ module TransferFunctions = struct
     aux [] e
 
 
+  (** Assume an expression is made of a single variable path and return it. Dies if that assumption
+      does not hold. *)
+  let exp_as_single_var_path_exn exp =
+    match exp_as_single_var_path exp with
+    | Some var_path ->
+        var_path
+    | None ->
+        (* Debugging hint: if you run into this assertion, the easiest is likely to change the
+           frontend to introduce a temporary variable. *)
+        L.die InternalError "Unexpected non-variable-path expression"
+
+
   (** Return the free cells that can be derived from a variable path *)
   let free_locals_from_path shapes var_path =
     Shapes.fold_cells shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
 
 
-  (** Return constants and free terminal indices that occur in [e]. *)
+  (** Return constants and free cells that occur in [e].
+
+      Note: we build (and return) the set, rather than for instance directly folding over its
+      elements, to make sure we end up with unique free locals. *)
   let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
         free_locals_from_path shapes (VarPath.pvar pvar)
     | Var id ->
         free_locals_from_path shapes (VarPath.ident id)
-    | Lfield _ -> (
-      (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single path *)
-      match exp_as_single_var_path e with
-      | None ->
-          (* Debugging hint: if you run into this assertion, the easiest is likely to change the
-             frontend to introduce a temporary variable. *)
-          L.die InternalError "I don't support field paths from non-variables expressions"
-      | Some var_path ->
-          free_locals_from_path shapes var_path )
+    | Lfield _ ->
+        (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single path *)
+        let var_path = exp_as_single_var_path_exn e in
+        free_locals_from_path shapes var_path
     | Const (Cint x) ->
         Local.Set.singleton (ConstantInt (IntLit.to_string x))
     | Const (Cstr x) ->
@@ -1610,9 +1581,8 @@ module TransferFunctions = struct
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index astate (_exp, pvar, _typ, _mode) =
-        Domain.add_flow_from_path ~shapes ~node ~kind:Direct ~src:(VarPath.pvar pvar)
-          ~dst:(Domain.Dst.captured_by index name)
-          astate
+        Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.pvar pvar)
+          ~dst:(Dst.captured_by name index) astate
       in
       List.foldi ~init:astate ~f:one_var captured_vars
     in
@@ -1638,17 +1608,17 @@ module TransferFunctions = struct
              nested fields) *)
           warn_on_complex_arg actual_arg ;
           let read_set = free_locals_of_exp shapes actual_arg in
-          Domain.add_flow_from_local_set ~node:call_node ~kind:(Call []) ~src:read_set
-            ~dst:(Domain.Dst.argument_of index callee_pname)
+          Domain.add_flow ~shapes ~node:call_node ~kind:(Call []) ~src:(Src.local_set read_set)
+            ~dst:(Dst.argument_of callee_pname index)
             astate
       | Some actual_arg_var ->
           (* The concrete argument is a single var: we collect all its cells and have
              them flow onto the corresponding field path of the formal parameter. *)
           let actual_arg_var_path = VarPath.var actual_arg_var in
-          Domain.add_flow_from_path_f ~shapes ~node:call_node
+          Domain.add_flow_from_var_path ~shapes ~node:call_node
             ~kind_f:(fun arg_field_path -> Call arg_field_path)
             ~src:actual_arg_var_path
-            ~dst_f:(fun _ -> Domain.Dst.argument_of index callee_pname)
+            ~dst_f:(fun _ -> Dst.argument_of callee_pname index)
             astate
     in
     List.foldi argument_list ~init:astate ~f:add_one_arg_flows
@@ -1657,16 +1627,16 @@ module TransferFunctions = struct
   (* Add Return flow from the special ReturnOf nodes to the destination variable of a call *)
   let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
       Domain.t =
-    Domain.add_write_f ~shapes ~node
+    Domain.add_flow_to_var_path ~shapes ~node
       ~kind_f:(fun field_path -> Return field_path)
-      ~src_f:(Fn.const @@ Domain.Src.return_of callee_pname)
+      ~src_f:(Fn.const @@ Src.return_of callee_pname)
       ~dst:(VarPath.ident ret_id) astate
 
 
   let add_lambda_edges shapes node written_var_path lambdas astate =
     let add_one_lambda one_lambda astate =
-      Domain.add_write ~shapes ~node ~kind:Direct ~dst:written_var_path
-        ~src:(Domain.Src.function_ one_lambda) astate
+      Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.var_path written_var_path)
+        ~src:(Src.function_ one_lambda) astate
     in
     Procname.Set.fold add_one_lambda lambdas astate
 
@@ -1676,36 +1646,40 @@ module TransferFunctions = struct
     | Some src_path ->
         (* Simple assignment of the form [dst := src_path]: we copy the fields of [src_path] into
            the corresponding fields of [dst]. *)
-        Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path astate
+        Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path
+          astate
     | None ->
-        (* Complex assignment of any other form: we copy every terminal field from the source to
-           (every terminal field of) the destination, and also process the potential captured indices
-           and lambdas. *)
+        (* Complex assignment of any other form: we copy every cell under the source to (every cell
+           under) the destination, and also process the potential captured indices and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
-        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Direct ~dst:dst_path ~src:free_locals
-        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Capture ~dst:dst_path
-             ~src:captured_locals
+        |> Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.var_path dst_path)
+             ~src:(Src.local_set free_locals)
+        |> Domain.add_flow ~shapes ~node ~kind:Capture ~dst:(Dst.var_path dst_path)
+             ~src:(Src.local_set captured_locals)
         |> add_lambda_edges shapes node dst_path lambdas
 
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t) (tito : Tito.t)
-      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+  let add_tito (shapes : shapes) node kind_f (tito : Tito.t) (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved astate =
       let arg_expr = List.nth_exn argument_list arg_index in
       let ret_path = VarPath.make (Var.of_id ret_id) ret_field_path in
       match exp_as_single_var_path arg_expr with
       | None ->
           warn_on_complex_arg arg_expr ;
-          Domain.add_write_from_local_set ~shapes ~node ~kind ~dst:ret_path
-            ~src:(free_locals_of_exp shapes arg_expr)
+          let kind = kind_f ~shape_is_preserved:false in
+          Domain.add_flow ~shapes ~node ~kind ~dst:(Dst.var_path ret_path)
+            ~src:(Src.local_set @@ free_locals_of_exp shapes arg_expr)
             astate
       | Some arg_path ->
-          let add_write =
-            if shape_is_preserved then Domain.add_write_parallel else Domain.add_write_product
+          let add_write ~src ~dst eta_args =
+            if shape_is_preserved then Domain.add_parallel_var_path_flow ~src ~dst eta_args
+            else Domain.add_flow ~src:(Src.var_path src) ~dst:(Dst.var_path dst) eta_args
           in
+          let kind = kind_f ~shape_is_preserved in
           add_write ~shapes ~node ~kind ~dst:ret_path
             ~src:(VarPath.sub_path arg_path arg_field_path)
             astate
@@ -1715,32 +1689,34 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t)
-      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+  let add_tito_all (shapes : shapes) node kind_f (argument_list : Exp.t list) (ret_id : Ident.t)
+      (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
-    add_tito shapes node kind tito_full argument_list ret_id astate
+    add_tito shapes node kind_f tito_full argument_list ret_id astate
 
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows shapes node (kind : LineageGraph.FlowKind.t) (callee : Summary.t option)
+  let add_summary_flows shapes node kind_f (callee_payload : payload option)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
-    match callee with
-    | None ->
-        add_tito_all shapes node kind argument_list ret_id astate
-    | Some {Summary.tito_arguments} ->
-        add_tito shapes node kind tito_arguments argument_list ret_id astate
+    match join_payload callee_payload with
+    | None, _ ->
+        add_tito_all shapes node kind_f argument_list ret_id astate
+    | Some {Summary.tito_arguments}, _ ->
+        add_tito shapes node kind_f tito_arguments argument_list ret_id astate
 
 
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Builtin else Summary in
+    let kind_f ~shape_is_preserved : Edge.kind =
+      if rm_builtin then Builtin else Summary {shape_is_preserved}
+    in
     astate |> Domain.record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
     |> if_not_builtin (add_ret_flows shapes node procname ret_id)
-    |> add_summary_flows shapes node summary_type (analyze_dependency procname) args ret_id
+    |> add_summary_flows shapes node kind_f (analyze_dependency procname) args ret_id
 
 
   module CustomModel = struct
@@ -1749,8 +1725,8 @@ module TransferFunctions = struct
       | fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(VarPath.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction ~dst:(Dst.ident ret_id)
+               ~src:(Src.local_set @@ free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
@@ -1760,11 +1736,10 @@ module TransferFunctions = struct
       | module_ :: fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(VarPath.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
-          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallModule
-               ~dst:(VarPath.ident ret_id)
-               ~src:(free_locals_of_exp shapes module_)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction ~dst:(Dst.ident ret_id)
+               ~src:(Src.local_set @@ free_locals_of_exp shapes fun_)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallModule ~dst:(Dst.ident ret_id)
+               ~src:(Src.local_set @@ free_locals_of_exp shapes module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
@@ -1777,20 +1752,165 @@ module TransferFunctions = struct
         | _ ->
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
-      Domain.add_write_from_local ~shapes ~node ~kind:LineageGraph.FlowKind.Direct
-        ~dst:(VarPath.ident ret_id) ~src:(ConstantAtom atom_name) astate
+      Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.ident ret_id) ~src:(Src.atom atom_name)
+        astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
       let size = List.length args in
       let tuple_type = ErlangTypeName.Tuple size in
       let field_names = ErlangTypeName.tuple_field_names size in
-      let fieldname name = Fieldname.make (ErlangType tuple_type) name in
-      let ret_path name = VarPath.make (Var.of_id ret_id) [fieldname name] in
+      let field_label name = FieldLabel.make_fieldname (ErlangType tuple_type) name in
+      let ret_path name = VarPath.make (Var.of_id ret_id) [field_label name] in
       List.fold2_exn
         ~f:(fun astate field_name arg ->
           exec_assignment shapes node (ret_path field_name) arg astate )
         ~init:astate field_names args
+
+
+    (** Helper to read a map element into a destination path *)
+    let maps_get shapes node dst_path ~key_exp ~map_exp astate =
+      (* Erlang frontend currently always puts arguments in variables. We could fall back to
+         generic calls otherwise but that would introduce undesirable imprecision. We thus keep
+         the failure for now and let precise support be done if the need arises. *)
+      let key_path = exp_as_single_var_path_exn key_exp in
+      let map_path = exp_as_single_var_path_exn map_exp in
+      Shapes.fold_field_labels
+        ~f:(fun astate_acc field_label ->
+          Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct
+            ~src:(VarPath.sub_label map_path field_label)
+            ~dst:dst_path astate_acc )
+        ~fallback:
+          (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path map_path)
+             ~dst:(Dst.var_path dst_path) )
+        ~init:astate shapes key_path
+
+
+    let maps_get_2 shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; map_exp] ->
+          let dst_path = VarPath.ident ret_id in
+          maps_get shapes node dst_path ~key_exp ~map_exp astate
+      | _ ->
+          L.die InternalError "`maps:get/2` expects two arguments"
+
+
+    let maps_get_3 shapes node analyze_dependency ret_id procname args astate =
+      match args with
+      | [key_exp; map_exp; default_exp] ->
+          astate
+          |> maps_get_2 shapes node analyze_dependency ret_id procname [key_exp; map_exp]
+          |> exec_assignment shapes node (VarPath.ident ret_id) default_exp
+      | _ ->
+          L.die InternalError "`maps:get/3` expects three arguments"
+
+
+    let maps_find shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; map_exp] ->
+          let atom_ok = Src.atom "ok" in
+          let atom_error = Src.atom "error" in
+          let dst_tuple_path index =
+            VarPath.make (Var.of_id ret_id) [FieldLabel.tuple_elem_zero_based ~size:2 ~index]
+          in
+          astate
+          (* key is present => {ok, Value} *)
+          |> Domain.add_flow ~shapes ~node ~kind:Direct ~src:atom_ok
+               ~dst:(Dst.var_path @@ dst_tuple_path 0)
+          |> maps_get shapes node (dst_tuple_path 1) ~key_exp ~map_exp
+          (* key is absent => error *)
+          |> Domain.add_flow ~shapes ~node ~kind:Direct ~src:atom_error ~dst:(Dst.ident ret_id)
+      | _ ->
+          L.die InternalError "`maps:find` expects three arguments"
+
+
+    let maps_new =
+      (* The generic call model with zero parameter will simply add a flow from maps:new$ret to
+         ret_id. We could also consider doing nothing and simply return the abstract state, which
+         would amount to considering maps:new as a zero-argument builtin and would generate no flow
+         at all. *)
+      generic_call_model
+
+
+    let maps_put shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; value_exp; map_exp] ->
+          (* The Erlang frontend currently always puts arguments in variables. We could fall back to
+             generic calls otherwise but that would introduce undesirable imprecision. We thus keep
+             this assumption explicit for now and let precise support be implemented later if the
+             need arises. *)
+          let ret_path = VarPath.ident ret_id in
+          let key_path = exp_as_single_var_path_exn key_exp in
+          let value_path = exp_as_single_var_path_exn value_exp in
+          let map_path = exp_as_single_var_path_exn map_exp in
+          (* First copy the argument map into the returned map. *)
+          let exclude_new_key ~src_sub_path ~dst_sub_path =
+            (* Precision optimisation: if the newly put key is statically known to be a single label,
+               then the corresponding field from the source map does not flow into the resulting
+               map.
+
+               Note that we need the single-label property for this optimisation to be
+               correct. Eg. on [M' = put(foo|bar, val, M)], both [M#foo] and [val] may flow into
+               M'#foo. *)
+            match Shapes.as_field_label_singleton shapes key_path with
+            | Some field_label ->
+                (* Since abstraction may truncate either the copied path or the returned one, we
+                   check that both are separate from the newly put key. *)
+                [%equal: FieldLabel.t option] (List.hd src_sub_path) (Some field_label)
+                || [%equal: FieldLabel.t option] (List.hd dst_sub_path) (Some field_label)
+            | None ->
+                false
+          in
+          let astate =
+            Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
+              ~exclude:exclude_new_key astate
+          in
+          (* Then have the put value flow into the put-key-indexed cells. *)
+          Shapes.fold_field_labels
+            ~f:(fun astate_acc field_label ->
+              Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
+                ~dst:(VarPath.sub_label ret_path field_label)
+                astate_acc )
+            ~fallback:
+              (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path value_path)
+                 ~dst:(Dst.var_path ret_path) )
+            ~init:astate shapes key_path
+      | _ ->
+          L.die InternalError "`maps:put` expects three arguments"
+
+
+    let make_map shapes node _analyze_dependency ret_id _procname args astate =
+      let ret_path = VarPath.ident ret_id in
+      let args = List.chunks_of ~length:2 args in
+      List.fold
+        ~f:(fun acc_astate key_and_value ->
+          let [key_exp; value_exp] = key_and_value [@@warning "-partial-match"] in
+          let key_path = exp_as_single_var_path_exn key_exp in
+          let value_path = exp_as_single_var_path_exn value_exp in
+          Shapes.fold_field_labels
+            ~f:(fun astate_acc field_label ->
+              Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
+                ~dst:(VarPath.sub_label ret_path field_label)
+                astate_acc )
+            ~fallback:
+              (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path value_path)
+                 ~dst:(Dst.var_path ret_path) )
+            ~init:acc_astate shapes key_path )
+        ~init:astate args
+
+
+    let make_cons shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
+      let cons_type = Typ.ErlangType Cons in
+      let head_field = FieldLabel.make_fieldname cons_type ErlangTypeName.cons_head in
+      let tail_field = FieldLabel.make_fieldname cons_type ErlangTypeName.cons_tail in
+      let ret_path field = VarPath.make (Var.of_id ret_id) [field] in
+      match args with
+      | [head_exp; tail_exp] ->
+          astate
+          |> exec_assignment shapes node (ret_path head_field) head_exp
+          |> exec_assignment shapes node (ret_path tail_field) tail_exp
+      | _ ->
+          assert false
 
 
     let custom_call_models =
@@ -1801,6 +1921,13 @@ module TransferFunctions = struct
       let pairs =
         [ (BuiltinDecl.__erlang_make_atom, make_atom)
         ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
+        ; (BuiltinDecl.__erlang_make_map, make_map)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"find" ~arity:2, maps_find)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
+        ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (apply 2, call_unqualified)
         ; (apply 3, call_qualified) ]
       in
@@ -1835,7 +1962,7 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "Lineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = Domain.clear_graph astate (* Don't repeat edges *) in
+    let astate = Domain.clear_partial_graph astate (* Don't repeat edges *) in
     let astate = add_cap_flows shapes node instr astate in
     match instr with
     | Load {id; e; _} ->
@@ -1854,17 +1981,9 @@ module TransferFunctions = struct
   let pp_session_name _node fmt = Format.pp_print_string fmt "Lineage"
 end
 
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_opt =
-  let shapes =
-    match shapes_opt with
-    | Some shapes ->
-        shapes
-    | None ->
-        L.die InternalError "Failed to compute shape information for %a" Procname.pp
-          (Procdesc.get_proc_name proc_desc)
-  in
+let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes : shapes) =
   let analysis_data = (shapes, analysis) in
   let cfg = CFG.from_pdesc proc_desc in
   (* Build the initial abstract state *)
@@ -1873,13 +1992,12 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let captured = get_captured proc_desc in
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
-      TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
+      Domain.add_flow_to_var_path ~shapes ~node:start_node ~kind_f:(Fn.const Edge.Kind.Direct)
         ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
-      TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
-        ~dst:(VarPath.var var) ~src:(Domain.Src.captured i) astate
+      Domain.add_flow ~shapes ~node:start_node ~kind:Direct ~dst:(Domain.Dst.var var)
+        ~src:(Domain.Src.captured i) astate
     in
     let astate = Domain.bottom in
     let astate = List.foldi ~init:astate ~f:add_arg_flow formals in
@@ -1899,27 +2017,21 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
         post
   in
   let final_astate =
-    Domain.add_flow_from_path_f ~shapes ~node:exit_node
-      ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
+    Domain.add_flow_from_var_path ~shapes ~node:exit_node ~kind_f:(Fn.const Edge.Kind.Direct)
       ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
   let graph =
-    let collect _nodeid {AbstractInterpreter.State.post} edges =
-      let post_edges = Domain.get_lineage_partial_graph post in
-      post_edges :: edges
+    let collect _nodeid {AbstractInterpreter.State.post} acc_partial_graphs =
+      let post_partial_graph = Domain.partial_graph post in
+      post_partial_graph :: acc_partial_graphs
     in
     Analyzer.InvariantMap.fold collect invmap
-      [ Domain.get_lineage_partial_graph initial_astate
-      ; Domain.get_lineage_partial_graph final_astate ]
-    |> List.concat
-  in
-  (* Collect the return fields to finish the summary *)
-  let known_ret_field_paths =
-    Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell -> Cell.field_path cell :: acc)
+      [Domain.partial_graph initial_astate; Domain.partial_graph final_astate]
+    |> PartialGraph.aggregate
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
-  let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in
+  let summary = Summary.make shapes proc_desc exit_has_unsupported_features graph in
   if Config.lineage_json_report then Summary.report summary proc_desc ;
   L.debug Analysis Verbose "@[Lineage summary for %a:@;@[%a@]@]@;" Procname.pp
     (Procdesc.get_proc_name proc_desc)
@@ -1927,4 +2039,5 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   Some summary
 
 
-let checker = LineageUtils.skip_unwanted unskipped_checker
+let checker =
+  LineageBase.skip_unwanted "Lineage" ~max_size:Config.lineage_max_cfg_size unskipped_checker

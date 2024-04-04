@@ -224,7 +224,7 @@ digraph cfg {
 "vec#vec#{14372719777012317208}.d88ff419231dda7e_2" [label="2: Exit vec::vec \n  " color=yellow style=filled]
 	
 
-"vec#vec#{14372719777012317208}.d88ff419231dda7e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:vec* [line 24, column 5]\n  n$1=*&size:int [line 24, column 16]\n  *n$0.end_.val:int=n$1 [line 24, column 5]\n " shape="box"]
+"vec#vec#{14372719777012317208}.d88ff419231dda7e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&size:int [line 24, column 16]\n  n$0=*&this:vec* [line 24, column 5]\n  *n$0.end_.val:int=n$1 [line 24, column 5]\n " shape="box"]
 	
 
 	 "vec#vec#{14372719777012317208}.d88ff419231dda7e_3" -> "vec#vec#{14372719777012317208}.d88ff419231dda7e_2" ;

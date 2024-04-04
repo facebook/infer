@@ -30,7 +30,6 @@ type item = {
   inherit sub_item;
   is_on_ui_thread : bool;
   exec_cost : info;
-  autoreleasepool_size : info;
 }
 
 type report = item list

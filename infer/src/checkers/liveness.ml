@@ -84,7 +84,7 @@ let is_always_in_scope proc_desc pvar =
 
 let json_error ~option_name ~expected ~actual =
   L.die UserError "When parsing option %s: expected %s but got '%s'" option_name expected
-    (Yojson.Basic.Util.to_string actual)
+    (Yojson.Safe.Util.to_string actual)
 
 
 let string_list_of_json ~option_name ~init = function
@@ -400,16 +400,24 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
     |> Option.exists ~f:(fun local ->
            local.ProcAttributes.is_constexpr || local.ProcAttributes.is_declared_unused )
   in
+  let is_block_listed pvar =
+    match Config.liveness_block_list_var_regex with
+    | Some r ->
+        Str.string_match r (Pvar.to_string pvar) 0
+    | None ->
+        false
+  in
   let should_report pvar typ live_vars passed_by_ref_vars =
-    not
-      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-      || is_constexpr_or_unused pvar
-      || VarSet.mem (Var.of_pvar pvar) passed_by_ref_vars
-      || ExtendedDomain.mem (Var.of_pvar pvar) live_vars
-      || Procdesc.is_captured_pvar proc_desc pvar
-      || is_scope_guard typ
-      || Procdesc.has_modify_in_block_attr proc_desc pvar
-      || Mangled.is_underscore (Pvar.get_name pvar) )
+    Procdesc.is_non_structured_binding_local_or_formal proc_desc pvar
+    && not
+         ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+         || is_constexpr_or_unused pvar
+         || VarSet.mem (Var.of_pvar pvar) passed_by_ref_vars
+         || ExtendedDomain.mem (Var.of_pvar pvar) live_vars
+         || is_scope_guard typ
+         || Procdesc.has_modify_in_block_attr proc_desc pvar
+         || Mangled.is_underscore (Pvar.get_name pvar)
+         || is_block_listed pvar )
   in
   let log_report pvar typ loc =
     let message = F.asprintf "The value written to `%a` is never used" (Pvar.pp Pp.text) pvar in

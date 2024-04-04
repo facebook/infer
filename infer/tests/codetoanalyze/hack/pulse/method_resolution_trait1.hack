@@ -125,7 +125,7 @@ function basicFlowBad13(): void {
 }
 
 function basicFlowOk13(): void {
-  $c = new  Ok13();
+  $c = new Ok13();
   $untainted = $c->runSource();
   \Level1\taintSink($untainted);
 }

@@ -72,21 +72,21 @@ digraph cfg {
 	
 
 	 "div0_method_op#164586340103275013.9f8c8af0fef3459b_5" -> "div0_method_op#164586340103275013.9f8c8af0fef3459b_3" ;
-"div0_method_op_ptr(class X)#10912.208aa82119402d74_1" [label="1: Start div0_method_op_ptr\nFormals:  x:X*\nLocals:  \n  " color=yellow style=filled]
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_1" [label="1: Start div0_method_op_ptr\nFormals:  x:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_method_op_ptr(class X)#10912.208aa82119402d74_1" -> "div0_method_op_ptr(class X)#10912.208aa82119402d74_3" ;
-"div0_method_op_ptr(class X)#10912.208aa82119402d74_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
+	 "div0_method_op_ptr#10912550985860.096d01aa199facb5_1" -> "div0_method_op_ptr#10912550985860.096d01aa199facb5_3" ;
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
 	
 
-"div0_method_op_ptr(class X)#10912.208aa82119402d74_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 24, column 45]\n  n$2=_fun_X::operator[](n$1:X&,0:int) [line 24, column 43]\n " shape="box"]
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 24, column 45]\n  n$2=_fun_X::operator[](n$1:X&,0:int) [line 24, column 43]\n " shape="box"]
 	
 
-	 "div0_method_op_ptr(class X)#10912.208aa82119402d74_3" -> "div0_method_op_ptr(class X)#10912.208aa82119402d74_4" ;
-"div0_method_op_ptr(class X)#10912.208aa82119402d74_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 24, column 32]\n " shape="box"]
+	 "div0_method_op_ptr#10912550985860.096d01aa199facb5_3" -> "div0_method_op_ptr#10912550985860.096d01aa199facb5_4" ;
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 24, column 32]\n " shape="box"]
 	
 
-	 "div0_method_op_ptr(class X)#10912.208aa82119402d74_4" -> "div0_method_op_ptr(class X)#10912.208aa82119402d74_2" ;
+	 "div0_method_op_ptr#10912550985860.096d01aa199facb5_4" -> "div0_method_op_ptr#10912550985860.096d01aa199facb5_2" ;
 "div1_method_op#543966324959376189.a2cc6fb171f5c009_1" [label="1: Start div1_method_op\nFormals:  x:X&\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -91,60 +91,60 @@ digraph cfg {
 	
 
 	 "div1_B#inheritance_casts#15202051.6fa30ed113dcaca4_5" -> "div1_B#inheritance_casts#15202051.6fa30ed113dcaca4_2" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_1" [label="1: Start inheritance_casts::getA\nFormals:  f:int __return_param:inheritance_casts::A*\nLocals:  x:inheritance_casts::A \n  " color=yellow style=filled]
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_1" [label="1: Start inheritance_casts::getA\nFormals:  f:int __return_param:inheritance_casts::A*\nLocals:  x:inheritance_casts::A \n  " color=yellow style=filled]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_1" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_7" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_2" [label="2: Exit inheritance_casts::getA \n  " color=yellow style=filled]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_1" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_7" ;
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_2" [label="2: Exit inheritance_casts::getA \n  " color=yellow style=filled]
 	
 
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::A* [line 21, column 3]\n " shape="box"]
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::A* [line 21, column 3]\n " shape="box"]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_3" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_4" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_4" [label="4:  Return Stmt \n   n$1=_fun_inheritance_casts::A::A(n$0:inheritance_casts::A*,&x:inheritance_casts::A&) [line 21, column 10]\n " shape="box"]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_3" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_4" ;
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_4" [label="4:  Return Stmt \n   n$1=_fun_inheritance_casts::A::A(n$0:inheritance_casts::A*,&x:inheritance_casts::A&) [line 21, column 10]\n " shape="box"]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_4" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_5" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_4" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_5" ;
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_5" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_2" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 20, column 9]\n  *&x.f:int=n$2 [line 20, column 3]\n " shape="box"]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_5" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_2" ;
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 20, column 9]\n  *&x.f:int=n$2 [line 20, column 3]\n " shape="box"]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_6" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_3" ;
-"getA#inheritance_casts(class inhe.bf770d8fdf04212f_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::A); [line 19, column 3]\n  n$3=_fun_inheritance_casts::A::A(&x:inheritance_casts::A*) [line 19, column 5]\n " shape="box"]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_6" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_3" ;
+"getA#inheritance_casts#5702196550.a31441c26ae3c842_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::A); [line 19, column 3]\n  n$3=_fun_inheritance_casts::A::A(&x:inheritance_casts::A*) [line 19, column 5]\n " shape="box"]
 	
 
-	 "getA#inheritance_casts(class inhe.bf770d8fdf04212f_7" -> "getA#inheritance_casts(class inhe.bf770d8fdf04212f_6" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_1" [label="1: Start inheritance_casts::getB\nFormals:  f:int __return_param:inheritance_casts::B*\nLocals:  x:inheritance_casts::B \n  " color=yellow style=filled]
+	 "getA#inheritance_casts#5702196550.a31441c26ae3c842_7" -> "getA#inheritance_casts#5702196550.a31441c26ae3c842_6" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_1" [label="1: Start inheritance_casts::getB\nFormals:  f:int __return_param:inheritance_casts::B*\nLocals:  x:inheritance_casts::B \n  " color=yellow style=filled]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_1" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_7" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_2" [label="2: Exit inheritance_casts::getB \n  " color=yellow style=filled]
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_1" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_7" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_2" [label="2: Exit inheritance_casts::getB \n  " color=yellow style=filled]
 	
 
-"getB#inheritance_casts(class inhe.903fb8dc56797768_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::B* [line 16, column 3]\n " shape="box"]
+"getB#inheritance_casts#7572693428.2a52889292973e0a_3" [label="3:  Return Stmt \n   n$0=*&__return_param:inheritance_casts::B* [line 16, column 3]\n " shape="box"]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_3" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_4" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_4" [label="4:  Return Stmt \n   n$1=_fun_inheritance_casts::B::B(n$0:inheritance_casts::B*,&x:inheritance_casts::B&) [line 16, column 10]\n " shape="box"]
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_3" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_4" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_4" [label="4:  Return Stmt \n   n$1=_fun_inheritance_casts::B::B(n$0:inheritance_casts::B*,&x:inheritance_casts::B&) [line 16, column 10]\n " shape="box"]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_4" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_5" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_4" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_5" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_5" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_2" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 15, column 9]\n  *&x.f:int=n$2 [line 15, column 3]\n " shape="box"]
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_5" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_2" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 15, column 9]\n  *&x.f:int=n$2 [line 15, column 3]\n " shape="box"]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_6" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_3" ;
-"getB#inheritance_casts(class inhe.903fb8dc56797768_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::B); [line 14, column 3]\n  n$3=_fun_inheritance_casts::B::B(&x:inheritance_casts::B*) [line 14, column 5]\n " shape="box"]
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_6" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_3" ;
+"getB#inheritance_casts#7572693428.2a52889292973e0a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:inheritance_casts::B); [line 14, column 3]\n  n$3=_fun_inheritance_casts::B::B(&x:inheritance_casts::B*) [line 14, column 5]\n " shape="box"]
 	
 
-	 "getB#inheritance_casts(class inhe.903fb8dc56797768_7" -> "getB#inheritance_casts(class inhe.903fb8dc56797768_6" ;
+	 "getB#inheritance_casts#7572693428.2a52889292973e0a_7" -> "getB#inheritance_casts#7572693428.2a52889292973e0a_6" ;
 "A#A#inheritance_casts#{5177723221.49b928799db38605_1" [label="1: Start inheritance_casts::A::A\nFormals:  this:inheritance_casts::A* __param_0:inheritance_casts::A&&\nLocals:  \n  " color=yellow style=filled]
 	
 

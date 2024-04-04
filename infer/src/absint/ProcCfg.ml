@@ -13,15 +13,13 @@ module F = Format
     backward one, or view a cfg as having a single instruction per node. *)
 
 module type NodeCommonS = sig
-  type t
+  type t [@@deriving hash]
 
   type id [@@deriving compare, equal]
 
   val kind : t -> Procdesc.Node.nodekind
 
   val id : t -> id
-
-  val hash : t -> int
 
   val loc : t -> Location.t
 
@@ -66,6 +64,8 @@ end = struct
 
   let hash node = hash_id (id node)
 
+  let hash_fold_t state node = hash_fold_id state (id node)
+
   let loc (t, _) = Procdesc.Node.get_loc t
 
   let pp_id fmt (id, index) = F.fprintf fmt "(%a: %d)" Procdesc.Node.pp_id id index
@@ -89,7 +89,7 @@ module type Node = sig
 end
 
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id = struct
-  type t = Procdesc.Node.t
+  type t = Procdesc.Node.t [@@deriving hash]
 
   type id = Procdesc.Node.id [@@deriving compare, equal]
 

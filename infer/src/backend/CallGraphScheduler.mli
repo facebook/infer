@@ -7,4 +7,4 @@
 
 open! IStd
 
-val bottom_up : CallGraph.t -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t
+val bottom_up : CallGraph.t -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t

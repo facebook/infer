@@ -1,0 +1,17 @@
+{
+  "scheduler": "callgraph",
+  "pulse-only": true,
+  "pulse-force-continue": true,
+  "pulse-taint-sources": [
+    { "procedure": "level1.taintSource" },
+    { "class_names": ["level2::C1$static"], "method_names": ["taintSource"] },
+    { "class_names": ["level3::C10"], "method_names": ["taintSource"] },
+    { "class_names": ["level4::C20$static"], "method_names": ["taintSource"] }
+  ],
+  "pulse-taint-sinks": [
+    { "procedure": "level1.taintSink" },
+    { "class_names": ["level2::C2$static"], "method_names": ["taintSink"] },
+    { "class_names": ["level3::C11"], "method_names": ["taintSink"] },
+    { "class_names": ["level4::C20$static"], "method_names": ["taintSink"] }
+  ]
+}

@@ -104,16 +104,20 @@ module Clang : sig
   val is_recursive_lock_type : QualifiedCppName.t -> bool
 end = struct
   type lock_model =
-    { classname: string
-    ; lock: string list
-    ; trylock: string list
-    ; unlock: string list
-    ; recursive: bool }
+    { classname: string [@default ""]
+    ; lock: string list [@default []]
+    ; trylock: string list [@default []]
+    ; unlock: string list [@default []]
+    ; recursive: bool [@default true] }
+  [@@deriving of_yojson]
+
+  type lock_model_cfg = lock_model list [@@deriving of_yojson]
 
   let lock_models =
     let def =
       {classname= ""; lock= ["lock"]; trylock= ["try_lock"]; unlock= ["unlock"]; recursive= false}
     in
+    let c_rec = {classname= ""; lock= []; trylock= []; unlock= []; recursive= true} in
     let shd =
       { def with
         lock= "lock_shared" :: def.lock
@@ -126,7 +130,9 @@ end = struct
       ; trylock= ["attemptRead"; "attemptWrite"]
       ; unlock= ["release"] }
     in
-    [ { def with
+    let config_locks = lock_model_cfg_of_yojson Config.lock_model in
+    [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
+    ; { def with
         classname= "apache::thrift::concurrency::Monitor"
       ; trylock= "timedlock" :: def.trylock }
     ; {def with classname= "apache::thrift::concurrency::Mutex"; trylock= "timedlock" :: def.trylock}
@@ -145,6 +151,7 @@ end = struct
     ; {def with classname= "std::recursive_timed_mutex"; recursive= true}
     ; {shd with classname= "std::shared_mutex"}
     ; {def with classname= "std::timed_mutex"} ]
+    @ config_locks
 
 
   let is_recursive_lock_type qname =
@@ -348,7 +355,9 @@ let is_android_lifecycle_method tenv pname =
            | HackClass _
            | ObjcClass _
            | ObjcProtocol _
-           | PythonClass _ ->
+           | PythonClass _
+           | ObjcBlock _
+           | CFunction _ ->
                false
            | JavaClass java_class_name ->
                JavaClassName.package java_class_name
@@ -368,15 +377,7 @@ let is_android_lifecycle_method tenv pname =
   in
   let test_pname pname =
     match (pname : Procname.t) with
-    | C _
-    | Erlang _
-    | Hack _
-    | Linters_dummy_method
-    | Block _
-    | ObjC_Cpp _
-    | CSharp _
-    | Python _
-    | WithFunctionParameters _ ->
+    | C _ | Erlang _ | Hack _ | Block _ | ObjC_Cpp _ | CSharp _ | Python _ ->
         false
     | Java _ ->
         method_starts_with_on pname

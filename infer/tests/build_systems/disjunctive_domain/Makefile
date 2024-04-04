@@ -17,17 +17,17 @@ disjunctive.exp.test: $(INFER_BIN) $(SRC) $(MAKEFILE_LIST)
 	$(QUIET)echo "" >> $@
 	$(QUIET)echo "N_disjuncts = 1" >> $@
 	$(QUIET)echo "" >> $@
-	$(QUIET)$(INFER_BIN) --disjunctive-demo-only --pulse-max-disjuncts 1 -- clang -c $(SRC) >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 1 -- clang -c $(SRC) >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)echo "----------------------------------------" >> $@
 	$(QUIET)echo "N_disjuncts = 4" >> $@
 	$(QUIET)echo "" >> $@
-	$(QUIET)$(INFER_BIN) --disjunctive-demo-only --pulse-max-disjuncts 4 >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 4 >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)echo "----------------------------------------" >> $@
 	$(QUIET)echo "N_disjuncts = 10" >> $@
 	$(QUIET)echo "" >> $@
-	$(QUIET)$(INFER_BIN) --disjunctive-demo-only --pulse-max-disjuncts 10 >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 10 >> $@
 
 .PHONY: print
 print: disjunctive.exp.test

@@ -19,13 +19,13 @@ type record =
   ; methods: string list }
 
 val default : record
-(** record encapsulating the default arguments of [call_matches]. [classname=""] and [methods=\[\]].
+(** record encapsulating the default arguments of [call_matches]. [classname=""] and [methods=[]].
     Useful for [with] expressions *)
 
 val of_record : record -> t
 (** make a matcher out of a record; optional values use defaults *)
 
-val of_json : Yojson.Basic.t -> t
+val of_json : Yojson.Safe.t -> t
 (** Parse a JSon object into a matcher. The Json object must be a list of records, each
     corresponding to a single matcher. Each record must have a ["classname"] field with a [string]
     value, and a ["methods"] field with a list of strings. The record may also have boolean fields

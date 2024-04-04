@@ -6,8 +6,8 @@
 (library
  (name IntegrationTest)
  (flags
-  (:standard -open IStdlib -open IStd -open IBase))
- (libraries IStdlib IBase Integration)
+  (:standard -open IStdlib -open IStd -open IBase -open IR -open Integration))
+ (libraries IStdlib IBase IR Integration)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (inline_tests))

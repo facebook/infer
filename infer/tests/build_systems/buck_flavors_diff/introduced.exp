@@ -1,1 +1,1 @@
-NULL_DEREFERENCE, B1, src/hello.c, test2, 2
+NULLPTR_DEREFERENCE, no_bucket, src/hello.c, test2, 2

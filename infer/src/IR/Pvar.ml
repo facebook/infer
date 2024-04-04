@@ -12,7 +12,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-type translation_unit = SourceFile.t option [@@deriving sexp]
+type translation_unit = SourceFile.t option [@@deriving compare, equal, sexp, hash, normalize]
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -22,7 +22,7 @@ type pvar_kind =
   | Abduced_ref_param of Procname.t * int * Location.t
       (** synthetic variable to represent param passed by reference *)
   | Global_var of
-      { translation_unit: translation_unit [@ignore]
+      { translation_unit: translation_unit
       ; template_args: Typ.template_spec_info
       ; is_constexpr: bool  (** is it compile constant? *)
       ; is_ice: bool  (** is it integral constant expression? *)
@@ -32,11 +32,11 @@ type pvar_kind =
       ; is_constant_array: bool
       ; is_const: bool }  (** global variable *)
   | Seed_var  (** variable used to store the initial value of formal parameters *)
-[@@deriving compare, equal, sexp, hash]
+[@@deriving compare, equal, sexp, hash, normalize]
 
 (** Names for program variables. *)
-type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind}
-[@@deriving compare, equal, sexp, hash]
+type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option [@ignore]}
+[@@deriving compare, equal, sexp, hash, normalize]
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
 
@@ -118,11 +118,16 @@ let is_this pvar = Mangled.is_this (get_name pvar)
 (** Check if a pvar is the special "self" var *)
 let is_self pvar = Mangled.is_self (get_name pvar)
 
+let is_artificial pvar = Mangled.is_artificial (get_name pvar)
+
 (** Check if the pvar is a return var *)
 let is_return pv = Mangled.equal (get_name pv) Ident.name_return
 
 (** something that can't be part of a legal identifier in any conceivable language *)
 let tmp_prefix = "0$?%__sil_tmp"
+
+(** In case of a temporary variable, returns the id used to create it, or None otherwise. *)
+let get_tmp_id pvar = pvar.pv_tmp_id
 
 (** name given to variables representing C++ temporary objects *)
 let materialized_cpp_temporary = "SIL_materialize_temp__"
@@ -166,6 +171,11 @@ let is_cpp_temporary pvar =
 let is_cpp_unnamed_param pvar =
   let name = to_string pvar in
   String.is_substring ~substring:unnamed_param_prefix name
+
+
+let is_gmock_param pvar =
+  let name = to_string pvar in
+  String.is_prefix ~prefix:"gmock" name
 
 
 let pp_ ~verbose f pv =
@@ -236,9 +246,11 @@ let to_callee pname pvar =
 let name_hash (name : Mangled.t) = Mangled.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
-let mk (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name}
+let mk_with_tmp_id ~tmp_id (name : Mangled.t) (proc_name : Procname.t) : t =
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name; pv_tmp_id= tmp_id}
 
+
+let mk (name : Mangled.t) (proc_name : Procname.t) : t = mk_with_tmp_id ~tmp_id:None name proc_name
 
 let get_ret_pvar pname = mk Ident.name_return pname
 
@@ -247,7 +259,7 @@ let get_ret_param_pvar pname = mk Mangled.return_param pname
 (** [mk_callee name proc_name] creates a program var for a callee function with the given function
     name *)
 let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name}
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name; pv_tmp_id= None}
 
 
 (** create a global variable with the given name *)
@@ -256,6 +268,7 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
     ?(template_args = Typ.NoTemplate) (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
+  ; pv_tmp_id= None
   ; pv_kind=
       Global_var
         { translation_unit
@@ -271,20 +284,23 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
 
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 let mk_tmp name pname =
-  let id = Ident.create_fresh Ident.knormal in
-  let pvar_mangled = Mangled.from_string (tmp_prefix ^ name ^ Ident.to_string id) in
-  mk pvar_mangled pname
+  let tmp_id = Ident.create_fresh Ident.knormal in
+  let pvar_mangled = Mangled.from_string (tmp_prefix ^ name ^ Ident.to_string tmp_id) in
+  mk_with_tmp_id ~tmp_id:(Some tmp_id) pvar_mangled pname
 
 
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 let mk_abduced_ret (proc_name : Procname.t) (loc : Location.t) : t =
   let name = Mangled.from_string (F.asprintf "$RET_%a" Procname.pp_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc); pv_tmp_id= None}
 
 
 let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.t) : t =
   let name = Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Procname.pp_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_kind= Abduced_ref_param (proc_name, index, loc)
+  ; pv_tmp_id= None }
 
 
 let get_translation_unit pvar =
@@ -323,27 +339,13 @@ let get_initializer_pname {pv_name; pv_kind} =
           SourceFile.to_string file |> Utils.string_crc_hex32 |> Option.return
         else Some None
       in
-      Procname.C (Procname.C.c qual_name ?mangled [] template_args)
+      Procname.C (Procname.C.c qual_name ?mangled template_args)
   | _ ->
       None
 
 
 let get_template_args pvar =
   match pvar.pv_kind with Global_var {template_args} -> template_args | _ -> Typ.NoTemplate
-
-
-let swap_proc_in_local_pvar pvar proc_name =
-  match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
-
-
-let rec specialize_pvar pvar proc_name =
-  match proc_name with
-  | Procname.WithFunctionParameters (orig_pname, _, _) ->
-      let pvar = specialize_pvar pvar orig_pname in
-      if equal (mk (get_name pvar) orig_pname) pvar then swap_proc_in_local_pvar pvar proc_name
-      else pvar
-  | _ ->
-      pvar
 
 
 let is_objc_static_local_of_proc_name pname pvar =
@@ -372,6 +374,3 @@ module Map = PrettyPrintable.MakePPMap (struct
 
   let pp = pp Pp.text
 end)
-
-let is_local_to_procedure proc_name pvar =
-  get_declaring_function pvar |> Option.exists ~f:(Procname.equal proc_name)

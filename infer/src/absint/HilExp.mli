@@ -8,24 +8,6 @@
 open! IStd
 module F = Format
 
-module Access : sig
-  type ('fieldname, 'array_index) t_ =
-    | FieldAccess of 'fieldname
-    | ArrayAccess of Typ.t * 'array_index
-    | TakeAddress
-    | Dereference
-  [@@deriving compare, equal, yojson_of]
-
-  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, equal, yojson_of]
-
-  val loose_compare :
-    ('array_index -> 'array_index -> int) -> 'array_index t -> 'array_index t -> int
-
-  val pp : (Format.formatter -> 'array_index -> unit) -> Format.formatter -> 'array_index t -> unit
-
-  val is_field_or_array_access : 'a t -> bool
-end
-
 type t =
   | AccessExpression of access_expression  (** access path (e.g., x.f.g or x[i]) *)
   | UnaryOperator of Unop.t * t * Typ.t option
@@ -56,11 +38,8 @@ module AccessExpression : sig
 
   val array_offset : access_expression -> Typ.t -> t option -> access_expression
 
-  val dereference : access_expression -> access_expression
-  (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
-
   val address_of : access_expression -> access_expression option
-    [@@warning "-unused-value-declaration"]
+  [@@warning "-unused-value-declaration"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
 
   val address_of_base : AccessPath.base -> access_expression [@@warning "-unused-value-declaration"]
@@ -72,8 +51,6 @@ module AccessExpression : sig
   val replace_base :
     remove_deref_after_base:bool -> AccessPath.base -> access_expression -> access_expression
 
-  val is_base : access_expression -> bool
-
   val is_return_var : access_expression -> bool
 
   val get_typ : access_expression -> Tenv.t -> Typ.t option
@@ -82,12 +59,12 @@ module AccessExpression : sig
 
   val equal : access_expression -> access_expression -> bool
 
-  val to_accesses : access_expression -> access_expression * t option Access.t list
+  val to_accesses : access_expression -> access_expression * t option MemoryAccess.t list
   (** return the base and a list of accesses equivalent to the input expression *)
 
-  val add_access : access_expression -> t option Access.t -> access_expression option
+  val add_access : access_expression -> t option MemoryAccess.t -> access_expression option
 
-  val truncate : access_expression -> (access_expression * t option Access.t) option
+  val truncate : access_expression -> (access_expression * t option MemoryAccess.t) option
   (** remove and return the prefix and the last access of the expression if it's a base; otherwise
       return None *)
 

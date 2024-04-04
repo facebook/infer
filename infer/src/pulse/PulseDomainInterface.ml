@@ -30,9 +30,7 @@ module CanonValue = AbductiveDomain.CanonValue
 module BaseStack = CanonValue.Stack
 module BaseMemory = CanonValue.Memory
 module CanonAccess = BaseMemory.Access
-module CanonAccessSet = BaseMemory.AccessSet
-module Access = PulseBaseMemory.Access
-module AccessSet = PulseBaseMemory.AccessSet
+module CanonAccessSet = BaseMemory.Access.Set
 module BaseAddressAttributes = CanonValue.Attributes
 module Decompiler = PulseAbductiveDecompiler
 module NonDisjDomain = PulseNonDisjunctiveDomain
@@ -51,9 +49,8 @@ module LatentIssue = PulseLatentIssue
     Misusing these modules may miss abducing addresses to the pre-condition or mistakenly manipulate
     non-normalized values. See {!PulseAbductiveDomain} for more information.
 
-    These can usually safely be used when manipulating pre-conditions where values shouldn't be
-    normalized against the current path condition, or when reading summaries, where all values have
-    already been normalized on creation. *)
+    These can safely be used when reading summaries, where all values have already been normalized
+    on creation. *)
 
 module BaseDomain = PulseBaseDomain
 module UnsafeStack = PulseBaseStack

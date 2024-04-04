@@ -1,5 +1,7 @@
 {
   "force-delete-results-dir": true,
+  "annotation-reachability-expensive": true,
+  "annotation-reachability-no-allocation": true,
   "modeled-expensive": [
     {
       "class": "android.app.Activity",
@@ -12,8 +14,17 @@
   ],
   "annotation-reachability-custom-pairs": [
     {
-       "sources": ["UserDefinedSource1", "UserDefinedSource2"],
-       "sink": "UserDefinedSink"
+      "sources": ["UserDefinedSource1", "UserDefinedSource2"],
+      "sinks": ["UserDefinedSink1", "UserDefinedSink2"],
+      "sanitizers": ["UserDefinedSanitizer"]
+    },
+    {
+      "sources": ["AnyThread", "WorkerThread"],
+      "sinks": ["UiThread", "MainThread"]
+    },
+    {
+      "sources": ["AnyThread", "MainThread", "UiThread"],
+      "sinks": ["WorkerThread"]
     }
   ]
 }
