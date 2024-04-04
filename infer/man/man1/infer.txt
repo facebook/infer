@@ -70,6 +70,13 @@ OPTIONS
            --no-annotation-reachability)
            See also infer-analyze(1).
 
+       --annotation-reachability-custom-models json
+           Specify a list of class, method, annotation triplets to treat
+           these methods as if they had the annotation.
+           Example format: [{"class_name": "com.my.Class", "method_name":
+           "foo", "annotation": "Anno"}]
+           See also infer-analyze(1).
+
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks, and optionally sanitizers for the
            annotation reachability checker

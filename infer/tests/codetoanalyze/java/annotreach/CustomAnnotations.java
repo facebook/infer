@@ -111,4 +111,23 @@ class CustomAnnotations {
   void sourceWithLambda4Ok() {
     caller(() -> safeMethod());
   }
+
+  void sourceDefinedInConfigOk() {
+    safeMethod();
+  }
+
+  void sinkDefinedInConfig() {}
+
+  void sourceDefinedInConfigBad() {
+    sinkDefinedInConfig();
+  }
+
+  void sanitizerDefinedInConfig() {
+    sink1();
+  }
+
+  @UserDefinedSource1
+  void sourceWithSanitizerDefinedInConfigOk() {
+    sanitizerDefinedInConfig();
+  }
 }

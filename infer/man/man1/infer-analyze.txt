@@ -624,6 +624,12 @@ ERLANG OPTIONS
            ones). (Conversely: --erlang-reliability)
 
 JAVA OPTIONS
+       --annotation-reachability-custom-models json
+           Specify a list of class, method, annotation triplets to treat
+           these methods as if they had the annotation.
+           Example format: [{"class_name": "com.my.Class", "method_name":
+           "foo", "annotation": "Anno"}]
+
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks, and optionally sanitizers for the
            annotation reachability checker
