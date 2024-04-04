@@ -787,3 +787,7 @@ int mul(const int& a, const int& b) { return a * b; }
 void unsafe_function_call_bad(folly::F14FastMap<int, int>& map) {
   const auto result = mul(map[13], map[71]);
 }
+
+void unsafe_function_call_lambda_bad(folly::F14FastMap<int, int>&& map) {
+  [&]() { const auto result = mul(map[13], map[71]); };
+}
