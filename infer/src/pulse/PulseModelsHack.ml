@@ -1168,6 +1168,11 @@ let hhbc_add x y : model =
          assign_ret sum (* unconstrained value *)
 
 
+let hhbc_iter_base arg : model =
+  let open DSL.Syntax in
+  start_model @@ assign_ret arg
+
+
 let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
   let open DSL.Syntax in
   start_model
@@ -1422,6 +1427,7 @@ let matchers : matcher list =
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Dict.dict_from_async
+  ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
