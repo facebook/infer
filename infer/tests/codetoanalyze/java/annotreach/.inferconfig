@@ -31,32 +31,42 @@
   [
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
-      "method_name": "sourceDefinedInConfigOk",
+      "method_regex": "sourceDefinedInConfigOk",
       "annotation": "UserDefinedSource1"
     },
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
-      "method_name": "sinkDefinedInConfig",
+      "method_regex": "sinkDefinedInConfig",
       "annotation": "UserDefinedSink1"
     },
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
-      "method_name": "sourceDefinedInConfigBad",
+      "method_regex": "sourceDefinedInConfigBad",
       "annotation": "UserDefinedSource1"
     },
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
-      "method_name": "sanitizerDefinedInConfig",
+      "method_regex": "sanitizerDefinedInConfig",
       "annotation": "UserDefinedSanitizer"
     },
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations$Base",
-      "method_name": "sourceDefinedInConfigBad",
+      "method_regex": "sourceDefinedInConfigBad",
       "annotation": "UserDefinedSource1"
     },
     {
       "class_name": "codetoanalyze.java.checkers.CustomAnnotations$Base",
-      "method_name": "sinkDefinedInConfig",
+      "method_regex": "sinkDefinedInConfig",
+      "annotation": "UserDefinedSink1"
+    },
+    {
+      "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
+      "method_regex": "sourceDefinedInConfig.*WithRegex.*",
+      "annotation": "UserDefinedSource1"
+    },
+    {
+      "class_name": "codetoanalyze.java.checkers.CustomAnnotations",
+      "method_regex": "sinkDefinedInConfig.*WithRegex",
       "annotation": "UserDefinedSink1"
     }
   ]

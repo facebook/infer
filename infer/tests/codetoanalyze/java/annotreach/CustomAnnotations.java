@@ -170,4 +170,20 @@ class CustomAnnotations {
     @Override
     void sinkDefinedInConfig() {}
   }
+
+  void sourceDefinedInConfig_1_WithRegexBad() {
+    sinkDefinedInConfig_1_WithRegex();
+  }
+
+  void sourceDefinedInConfig_2_WithRegexBad() {
+    sinkDefinedInConfig_2_WithRegex();
+  }
+
+  void sourceDefinedInConfig_3_WithRegexOk() {
+    safeMethod();
+  }
+
+  void sinkDefinedInConfig_1_WithRegex() {}
+
+  void sinkDefinedInConfig_2_WithRegex() {}
 }
