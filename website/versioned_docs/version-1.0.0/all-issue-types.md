@@ -903,7 +903,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/1.0.0/checker-inefficient-keyset-iterator).
 
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
+- iterating over a HashMap with `keySet()` iterator
 - looking up the key each time
 
 Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
@@ -1070,7 +1070,7 @@ parameter is `nil`. For example:
 
 ```objectivec
   -(int) foo {
-      B b* = [self->_a foo]; // sending a message with receiver nil returns nil
+      B *b = [self->_a foo]; // sending a message with receiver nil returns nil
       return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
   }
 ```
@@ -1323,7 +1323,7 @@ as an argument. Therefore it is only a warning. For example:
 
 ```objectivec
   -(int) foo:(A* a) {
-      B b* = [a foo]; // sending a message with receiver nil returns nil
+      B *b = [a foo]; // sending a message with receiver nil returns nil
       return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
   }
 ```

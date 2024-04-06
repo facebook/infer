@@ -798,7 +798,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/next/checker-inefficient-keyset-iterator).
 
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
+- iterating over a HashMap with `keySet()` iterator
 - looking up the key each time
 
 Example:
