@@ -183,7 +183,7 @@ let build_mainlex keywords =
     | ident ->
         let lexeme = Lexbuf.lexeme lexbuf in
         Option.value ~default:(IDENT lexeme) (Map.find keywords lexeme)
-    | '"', Star (Compl ('"' | '\\'), Opt ('\\', any)), '"' ->
+    | '"', Star (Compl ('"' | '\\') | '\\', any), '"' ->
         (* a string literal may contain an escaped double quote *)
         let lexeme = Lexbuf.lexeme lexbuf in
         STRING (String.sub ~pos:1 ~len:(String.length lexeme - 2) lexeme)
