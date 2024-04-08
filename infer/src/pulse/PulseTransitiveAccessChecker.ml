@@ -43,11 +43,14 @@ end = struct
 
   type t =
     { fieldnames_to_monitor: string list
+    ; procnames_to_skip: string list option [@yojson.option]
     ; procnames_to_monitor: procname_to_monitor list
     ; contexts: context list }
   [@@deriving of_yojson]
 
-  let empty = {fieldnames_to_monitor= []; procnames_to_monitor= []; contexts= []}
+  let empty =
+    {fieldnames_to_monitor= []; procnames_to_monitor= []; procnames_to_skip= None; contexts= []}
+
 
   let get, set =
     let current = ref (None : t option) in
@@ -196,10 +199,14 @@ end = struct
                     merged_config.fieldnames_to_monitor
               ; procnames_to_monitor=
                   List.rev_append new_config.procnames_to_monitor merged_config.procnames_to_monitor
+              ; procnames_to_skip=
+                  Option.merge new_config.procnames_to_skip merged_config.procnames_to_skip
+                    ~f:List.rev_append
               ; contexts= List.rev_append new_config.contexts merged_config.contexts } )
         in
         { fieldnames_to_monitor= List.rev rev_config.fieldnames_to_monitor
         ; procnames_to_monitor= List.rev rev_config.procnames_to_monitor
+        ; procnames_to_skip= Option.map ~f:List.rev rev_config.procnames_to_skip
         ; contexts= List.rev rev_config.contexts }
         |> set
 end
