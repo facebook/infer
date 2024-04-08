@@ -17,6 +17,8 @@ module Config : sig
 
   val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
+  val procname_must_be_skipped : Procname.t -> bool
+
   type context_metadata = {description: string; tag: string}
 
   val find_matching_context : Tenv.t -> Procname.t -> context_metadata option
@@ -25,7 +27,7 @@ end = struct
 
   let regexp_type_of_yojson json = Str.regexp (string_of_yojson json)
 
-  type procname_to_monitor =
+  type procname_match_spec =
     { class_names: string list option [@yojson.option]
     ; method_names: string list option [@yojson.option]
     ; class_name_regex: regexp_type option [@yojson.option]
@@ -44,7 +46,7 @@ end = struct
   type t =
     { fieldnames_to_monitor: string list
     ; procnames_to_skip: string list option [@yojson.option]
-    ; procnames_to_monitor: procname_to_monitor list
+    ; procnames_to_monitor: procname_match_spec list
     ; contexts: context list }
   [@@deriving of_yojson]
 
@@ -71,6 +73,16 @@ end = struct
       Annotations.pname_has_return_annot procname has_annot
     in
     List.exists annotations ~f:match_one_annotation
+
+
+  let procname_must_be_skipped procname =
+    match get () with
+    | None ->
+        false
+    | Some {procnames_to_skip} ->
+        Option.exists procnames_to_skip ~f:(fun names ->
+            let method_name = Procname.get_method procname in
+            List.exists names ~f:(String.equal method_name) )
 
 
   let procname_must_be_monitored tenv procname =
@@ -228,6 +240,8 @@ let record_call tenv procname location astate =
     AbductiveDomain.record_transitive_access location astate
   else astate
 
+
+let should_skip_call procname = Config.procname_must_be_skipped procname
 
 let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} =
   let procname = Procdesc.get_proc_name proc_desc in

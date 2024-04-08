@@ -951,11 +951,13 @@ let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
 
 
 let record_transitive_info callee_proc_name call_location callee_summary call_state =
-  let astate =
-    AbductiveDomain.transfer_transitive_info_to_caller callee_proc_name call_location callee_summary
-      call_state.astate
-  in
-  {call_state with astate}
+  if PulseTransitiveAccessChecker.should_skip_call callee_proc_name then call_state
+  else
+    let astate =
+      AbductiveDomain.transfer_transitive_info_to_caller callee_proc_name call_location
+        callee_summary call_state.astate
+    in
+    {call_state with astate}
 
 
 let apply_unknown_effects callee_summary call_state =

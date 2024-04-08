@@ -431,8 +431,10 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
   (* we propagate transitive accesses from callee to caller using *)
+  let skip_transitive_accesses = PulseTransitiveAccessChecker.should_skip_call callee_pname in
   let non_disj =
-    NonDisjDomain.apply_summary ~callee_pname ~call_loc non_disj_caller non_disj_callee
+    NonDisjDomain.apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses non_disj_caller
+      non_disj_callee
   in
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   let posts, contradiction =
