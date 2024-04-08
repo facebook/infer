@@ -629,10 +629,9 @@ ERLANG OPTIONS
 
 JAVA OPTIONS
        --annotation-reachability-custom-models json
-           Specify a list of method regex and annotation pairs to treat these
-           methods as if they had the annotation.
-           Example format: [{"method_regex": "com\\.Myclass\\.foo.*",
-           "annotation": "Anno"}]
+           Specify a map from annotations to lists of regexps to treat
+           matching methods as if they had the annotation.
+           Example format: {"Annotation": ["com\\.Myclass\\.foo.*"]}
 
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks, and optionally sanitizers for the

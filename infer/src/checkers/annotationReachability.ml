@@ -47,13 +47,18 @@ type custom_model = {method_regex: string; annotation: string} [@@deriving of_yo
 type custom_models = custom_model list [@@deriving of_yojson]
 
 let parse_custom_models () =
-  let specs = custom_models_of_yojson Config.annotation_reachability_custom_models in
-  let process_one_spec models {method_regex; annotation} =
-    let method_regex = Str.regexp method_regex in
-    let add_method = Option.value_map ~default:[method_regex] ~f:(fun ms -> method_regex :: ms) in
-    String.Map.update models annotation ~f:add_method
-  in
-  List.fold specs ~f:process_one_spec ~init:String.Map.empty
+  match Config.annotation_reachability_custom_models with
+  (* The default value for JSON options is an empty list and not an empty object *)
+  | `List [] ->
+      String.Map.empty
+  | json ->
+      json |> Yojson.Safe.Util.to_assoc
+      |> List.map ~f:(fun (key, val_arr) ->
+             ( key
+             , val_arr |> Yojson.Safe.Util.to_list
+               |> List.map ~f:Yojson.Safe.Util.to_string
+               |> List.map ~f:Str.regexp ) )
+      |> String.Map.of_alist_exn
 
 
 let check_attributes check tenv pname =

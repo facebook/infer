@@ -28,38 +28,20 @@
     }
   ],
   "annotation-reachability-custom-models":
-  [
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigOk",
-      "annotation": "UserDefinedSource1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig",
-      "annotation": "UserDefinedSink1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigBad",
-      "annotation": "UserDefinedSource1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sanitizerDefinedInConfig",
-      "annotation": "UserDefinedSanitizer"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sourceDefinedInConfigBad",
-      "annotation": "UserDefinedSource1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sinkDefinedInConfig",
-      "annotation": "UserDefinedSink1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfig.*WithRegex.*",
-      "annotation": "UserDefinedSource1"
-    },
-    {
-      "method_regex": "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig.*WithRegex",
-      "annotation": "UserDefinedSink1"
-    }
-  ]
+  {
+    "UserDefinedSource1": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigOk",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigBad",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sourceDefinedInConfigBad",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfig.*WithRegex.*"
+    ],
+    "UserDefinedSink1": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sinkDefinedInConfig",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig.*WithRegex"
+    ],
+    "UserDefinedSanitizer": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sanitizerDefinedInConfig"
+    ]
+  }
 }
