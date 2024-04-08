@@ -42,21 +42,16 @@ let is_allocator tenv pname =
       false
 
 
-type custom_model = {class_name: string; method_regex: string; annotation: string}
-[@@deriving of_yojson]
+type custom_model = {method_regex: string; annotation: string} [@@deriving of_yojson]
 
 type custom_models = custom_model list [@@deriving of_yojson]
 
 let parse_custom_models () =
   let specs = custom_models_of_yojson Config.annotation_reachability_custom_models in
-  let process_one_spec models {class_name; method_regex; annotation} =
+  let process_one_spec models {method_regex; annotation} =
     let method_regex = Str.regexp method_regex in
     let add_method = Option.value_map ~default:[method_regex] ~f:(fun ms -> method_regex :: ms) in
-    let add_class =
-      Option.value_map ~default:(String.Map.singleton class_name [method_regex]) ~f:(fun cs ->
-          String.Map.update cs class_name ~f:add_method )
-    in
-    String.Map.update models annotation ~f:add_class
+    String.Map.update models annotation ~f:add_method
   in
   List.fold specs ~f:process_one_spec ~init:String.Map.empty
 
@@ -71,12 +66,9 @@ let method_overrides is_annotated tenv pname =
 
 
 let check_modeled_annotation models annot pname =
-  let method_name = Procname.get_method pname in
-  Option.both (Procname.get_class_type_name pname) (String.Map.find models annot.Annot.class_name)
-  |> Option.bind ~f:(fun (class_name, classes) ->
-         String.Map.find classes (Typ.Name.name class_name) )
-  |> Option.exists ~f:(fun methods ->
-         List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
+  let method_name = Procname.to_string ~verbosity:Verbose pname in
+  Option.exists (String.Map.find models annot.Annot.class_name) ~f:(fun methods ->
+      List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
 
 
 let method_has_annot annot models tenv pname =

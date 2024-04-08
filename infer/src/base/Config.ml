@@ -604,8 +604,8 @@ and analysis_schedule_file =
 and annotation_reachability_custom_models =
   CLOpt.mk_json ~long:"annotation-reachability-custom-models"
     ~in_help:InferCommand.[(Analyze, manual_java)]
-    {|Specify a list of class, method, annotation triplets to treat these methods as if they had the annotation.
-Example format: [{"class_name": "com.my.Class", "method_name": "foo", "annotation": "Anno"}]|}
+    {|Specify a list of method regex and annotation pairs to treat these methods as if they had the annotation.
+Example format: [{"method_regex": "com\\\\.Myclass\\\\.foo.*", "annotation": "Anno"}]|}
 
 
 and annotation_reachability_custom_pairs =
