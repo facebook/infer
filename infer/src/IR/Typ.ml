@@ -260,6 +260,10 @@ let make_cpp_class_matcher ?(non_ptr = true) ?(ptr = true) ?prefix fuzzy_qual_na
       false
 
 
+let is_std_function = make_cpp_class_matcher ~non_ptr:true ["std::function"]
+
+let is_cpp_lambda = make_cpp_class_matcher ~non_ptr:true ~prefix:true ["lambda_"]
+
 let rec equal_ignore_quals t1 t2 = equal_desc_ignore_quals t1.desc t2.desc
 
 and equal_desc_ignore_quals d1 d2 =
@@ -289,16 +293,16 @@ let rec strict_compatible_match formal actual =
      const T&& binds const T&& and T&& *)
   | Tptr (t1, Pk_rvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
       ((not t2.quals.is_const) || t1.quals.is_const) && strict_compatible_match t1 t2
+  (* T& binds T& and T&&
+     const T& binds const T&, T&. *)
+  | Tptr (t1, Pk_lvalue_reference), Tptr (t2, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
+      ((not t2.quals.is_const) || t1.quals.is_const) && strict_compatible_match t1 t2
   (* Any non-reference type T binds T&& *)
   | t1, Tptr (t2, Pk_rvalue_reference) ->
       equal_desc_ignore_quals t1 t2.desc
   (* T&& does not bind any l-value references *)
   | Tptr (_, Pk_rvalue_reference), Tptr (_, Pk_lvalue_reference) ->
       false
-  (* T& binds T&
-     const T& binds const T&, T&. *)
-  | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_lvalue_reference) ->
-      ((not t2.quals.is_const) || t1.quals.is_const) && strict_compatible_match t1 t2
   (* Any non-reference type T binds T& *)
   | t1, Tptr (t2, Pk_lvalue_reference) ->
       equal_desc_ignore_quals t1 t2.desc
@@ -311,7 +315,7 @@ let rec strict_compatible_match formal actual =
   | Tvoid, Tvoid | Tfun, Tfun ->
       true
   | Tstruct name1, Tstruct name2 ->
-      equal_name name1 name2
+      equal_name name1 name2 || (is_std_function formal && is_cpp_lambda actual)
   | TVar s1, TVar s2 ->
       String.equal s1 s2
   | Tarray {elt= t1}, Tarray {elt= t2} ->
