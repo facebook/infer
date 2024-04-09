@@ -203,3 +203,10 @@ class Uninit4 {
 };
 
 void construct_unint4_ok(Uninit3 uninit3) { Uninit4 uninit4(uninit3); }
+
+int dummy_func(int);
+
+void comma_operator_ok() {
+  int i, j;
+  i = ({ dummy_func(42); }), j = ({ dummy_func(i); });
+}

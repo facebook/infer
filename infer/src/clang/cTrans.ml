@@ -1068,6 +1068,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
         |> mk_trans_result res_trans_e1.return
+    | [s1; s2], _, `Comma ->
+        let ({control= {instrs}} as res_trans) =
+          CTrans_utils.PriorityNode.force_sequential sil_loc node_name trans_state stmt_info
+            ~mk_first_opt:(fun trans_state _ -> Some (instruction trans_state s1))
+            ~mk_second:(fun trans_state _ -> instruction trans_state s2)
+            ~mk_return:(fun ~fst:_ ~snd -> snd.return)
+        in
+        (* HACK: With the empty instruction, the control is not correctly connected to the parent in
+           some cases, e.g. the comma binary operator is used on the top-level.  See
+           [CTrans_utils.PriorityNode.compute_controls_to_parent]; the condition [create_node] is
+           true only when the instruction is non-empty. *)
+        if List.is_empty instrs then
+          {res_trans with control= {res_trans.control with instrs= [Metadata Skip]}}
+        else res_trans
     | [s1; s2], _, _ ->
         let {control= control1; return= (exp1, typ1) as exp_typ1} = instruction trans_state' s1 in
         let {control= control2; return= exp_typ2} =
