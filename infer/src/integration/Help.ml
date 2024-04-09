@@ -159,10 +159,9 @@ let list_issue_types () =
             ; enabled
             ; hum } [@warning "+missing-record-field-pattern"] )
          ->
-         let category_s = Option.value (IssueType.string_of_category category) ~default:"" in
          L.result "%s:%s:%s:%s:%s:%b:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
-           category_s
+           (IssueType.string_of_category category)
            (IssueType.string_of_severity default_severity)
            enabled (Checker.get_id checker) ) ;
   L.result "@]%!"
