@@ -628,6 +628,11 @@ ERLANG OPTIONS
            ones). (Conversely: --erlang-reliability)
 
 JAVA OPTIONS
+       --no-annotation-reachability-apply-class-annotations
+           Deactivates: Applies annotations of a class/interface to all its
+           methods (Conversely:
+           --annotation-reachability-apply-class-annotations)
+
        --annotation-reachability-custom-models json
            Specify a map from annotations to lists of regexps to treat
            matching methods as if they had the annotation.

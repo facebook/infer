@@ -62,7 +62,8 @@ let parse_custom_models () =
 
 
 let check_attributes check tenv pname =
-  PatternMatch.Java.check_class_attributes check tenv pname
+  Config.annotation_reachability_apply_class_annotations
+  && PatternMatch.Java.check_class_attributes check tenv pname
   || Annotations.pname_has_return_annot pname check
 
 

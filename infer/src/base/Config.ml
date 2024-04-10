@@ -601,6 +601,12 @@ and analysis_schedule_file =
     ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
 
 
+and annotation_reachability_apply_class_annotations =
+  CLOpt.mk_bool ~long:"annotation-reachability-apply-class-annotations"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "Applies annotations of a class/interface to all its methods" ~default:true
+
+
 and annotation_reachability_custom_models =
   CLOpt.mk_json ~long:"annotation-reachability-custom-models"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -3801,6 +3807,10 @@ let rest = !rest
 and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
 and analysis_schedule_file = !analysis_schedule_file
+
+and annotation_reachability_apply_class_annotations =
+  !annotation_reachability_apply_class_annotations
+
 
 and annotation_reachability_custom_models = !annotation_reachability_custom_models
 

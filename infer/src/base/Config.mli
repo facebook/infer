@@ -128,6 +128,8 @@ val abstract_pulse_models_for_erlang : bool
 
 val analysis_schedule_file : string option
 
+val annotation_reachability_apply_class_annotations : bool
+
 val annotation_reachability_custom_models : Yojson.Safe.t
 
 val annotation_reachability_custom_pairs : Yojson.Safe.t
