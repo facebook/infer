@@ -72,17 +72,17 @@ std::string makeRelativePath(const std::string &repoRoot,
                              bool allowSiblingsToRepoRoot,
                              const std::string &path) {
   if (repoRoot != "") {
-    if (llvm::StringRef(path).startswith(repoRoot + "/")) {
+    if (llvm::StringRef(path).starts_with(repoRoot + "/")) {
       return path.substr(repoRoot.size() + 1);
     }
     if (allowSiblingsToRepoRoot) {
       std::string parentOfRoot = llvm::sys::path::parent_path(repoRoot).str();
-      if (llvm::StringRef(path).startswith(parentOfRoot + "/")) {
+      if (llvm::StringRef(path).starts_with(parentOfRoot + "/")) {
         return "../" + path.substr(parentOfRoot.size() + 1);
       }
     }
   }
-  if (sysRoot != "" && llvm::StringRef(path).startswith(sysRoot + "/")) {
+  if (sysRoot != "" && llvm::StringRef(path).starts_with(sysRoot + "/")) {
     // Intentionally keep the heading "/" in this case.
     return path.substr(sysRoot.size());
   }

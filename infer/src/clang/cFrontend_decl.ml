@@ -188,7 +188,6 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | BlockDecl _
     | BuiltinTemplateDecl _
     | CapturedDecl _
-    | ClassScopeFunctionSpecializationDecl _
     | ClassTemplateDecl _
     | ClassTemplatePartialSpecializationDecl _
     | ClassTemplateSpecializationDecl _
