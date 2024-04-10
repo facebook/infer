@@ -9,7 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 open PulseBasicInterface
-module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module Memory = PulseBaseMemory
 open IOption.Let_syntax
@@ -78,11 +77,6 @@ type pulse_state =
   ; pulse_pre: BaseDomain.t
   ; path_condition: Formula.t
   ; get_reachable: unit -> AbstractValue.Set.t }
-
-let get_dynamic_type {pulse_post} value =
-  BaseAddressAttributes.get_dynamic_type pulse_post.attrs value
-  |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
-
 
 module Constraint : sig
   type predicate
@@ -318,7 +312,6 @@ end = struct
       in
       (* Handle path predicates. *)
       let* _path_condition, heap, out_constr =
-        let get_dynamic_type = get_dynamic_type pulse_state in
         let f (path_condition, heap, out_constr) ((op : Binop.t), l, r) =
           let l, r = (rep path_condition l, rep path_condition r) in
           let is_implied_by_pathcondition () =
@@ -348,7 +341,7 @@ end = struct
             let* path_condition, new_eqs_a =
               Formula.prune_binop ~negated:false op l r path_condition
             in
-            let* path_condition, new_eqs_b = Formula.normalize ~get_dynamic_type path_condition in
+            let* path_condition, new_eqs_b = Formula.normalize path_condition in
             let new_eqs =
               let new_eqs = RevList.empty in
               let new_eqs =

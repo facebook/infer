@@ -1729,6 +1729,8 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
 
 let filter_for_summary proc_name astate0 =
   let open SatUnsat.Import in
+  L.d_printfln "state *before* calling canonicalize:" ;
+  L.d_printfln "%a" pp astate0 ;
   L.d_printfln "Canonicalizing..." ;
   let* astate_before_filter = canonicalize astate0 in
   let pp_state = Pp.html_collapsible_block ~name:"Show/hide canonicalized state" pp in
@@ -1752,16 +1754,8 @@ let filter_for_summary proc_name astate0 =
   let live_addresses =
     CanonValue.Set.union pre_live_addresses post_live_addresses |> CanonValue.downcast_set
   in
-  (* [unsafe_cast] is safe because the state has been normalized so all values are already
-     canonical ones *)
-  let get_dynamic_type v =
-    BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs
-      (CanonValue.unsafe_cast v [@alert "-deprecated"])
-    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
-  in
   let+ path_condition, live_via_arithmetic, new_eqs =
-    Formula.simplify ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
-      astate.path_condition
+    Formula.simplify ~precondition_vocabulary ~keep:live_addresses astate.path_condition
   in
   (* [unsafe_cast_set] is safe because a) all the values are actually canon_values in disguise,
      and b) we have canonicalised all the values in the state already so all we have left are
@@ -1884,15 +1878,7 @@ module Summary = struct
     (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
        canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
        contradictions about addresses we are about to garbage collect *)
-    let* path_condition, new_eqs =
-      Formula.normalize
-        ~get_dynamic_type:(fun v ->
-          (* [unsafe_cast] is safe because the formula will only query canonical values *)
-          BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs
-            (CanonValue.unsafe_cast v [@alert "-deprecated"])
-          |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ) )
-        astate.path_condition
-    in
+    let* path_condition, new_eqs = Formula.normalize astate.path_condition in
     let astate = {astate with path_condition} in
     let* astate, error = incorporate_new_eqs astate new_eqs in
     let astate_before_filter = astate in

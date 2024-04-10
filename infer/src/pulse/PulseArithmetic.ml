@@ -126,16 +126,24 @@ let is_manifest summary =
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
 let and_equal_instanceof v1 v2 t astate =
-  let get_dynamic_type v =
-    AbductiveDomain.AddressAttributes.get_dynamic_type v astate
-    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
-  in
-  map_path_condition astate ~f:(fun phi ->
-      Formula.and_equal_instanceof v1 v2 t ~get_dynamic_type phi )
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
 
 
 let and_dynamic_type_is v t astate =
   map_path_condition astate ~f:(fun phi -> Formula.and_dynamic_type_is v t phi)
+
+
+(* this is just to ease migration of existing calls to PulseOperations.add_dynamic_type, which can't fail
+   TODO: something with the source_file optional argument, which is currently ignored
+*)
+let and_dynamic_type_is_unsafe v t ?source_file:_ astate =
+  let open SatUnsat.Import in
+  match and_dynamic_type_is v t astate with
+  | Sat (Ok astate) ->
+      astate
+  | _ ->
+      Logging.(die InternalError)
+        "failed to add dynamic type %a to value %a" (Typ.pp Pp.text) t AbstractValue.pp v
 
 
 let absval_of_int astate i =

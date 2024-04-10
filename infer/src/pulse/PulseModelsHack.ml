@@ -370,7 +370,9 @@ let get_static_companion ~model_desc path location type_name astate =
   let astate, ((addr, _) as addr_hist) = AbductiveDomain.Stack.eval hist var astate in
   let static_type_name = Typ.Name.Hack.static_companion type_name in
   let typ = Typ.mk_struct static_type_name in
+  (* TODO: remove redundant versions of dynamic types *)
   let astate = PulseOperations.add_dynamic_type typ addr astate in
+  let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ astate in
   (addr_hist, astate)
 
 

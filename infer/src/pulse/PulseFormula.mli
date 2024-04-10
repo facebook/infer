@@ -62,13 +62,7 @@ val and_equal_vars : Var.t -> Var.t -> t -> (t * new_eqs) SatUnsat.t
 
 val and_not_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val and_equal_instanceof :
-     Var.t
-  -> Var.t
-  -> Typ.t
-  -> get_dynamic_type:(Var.t -> Typ.t option)
-  -> t
-  -> (t * new_eqs) SatUnsat.t
+val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
 
 val and_dynamic_type_is : Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
 
@@ -88,15 +82,11 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new
 
 (** {3 Operations} *)
 
-val normalize : get_dynamic_type:(Var.t -> Typ.t option) -> t -> (t * new_eqs) SatUnsat.t
+val normalize : t -> (t * new_eqs) SatUnsat.t
 (** think a bit harder about the formula *)
 
 val simplify :
-     get_dynamic_type:(Var.t -> Typ.t option)
-  -> precondition_vocabulary:Var.Set.t
-  -> keep:Var.Set.t
-  -> t
-  -> (t * Var.Set.t * new_eqs) SatUnsat.t
+  precondition_vocabulary:Var.Set.t -> keep:Var.Set.t -> t -> (t * Var.Set.t * new_eqs) SatUnsat.t
 
 val is_known_zero : t -> Var.t -> bool
 

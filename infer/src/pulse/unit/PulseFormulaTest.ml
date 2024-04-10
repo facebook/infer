@@ -50,8 +50,8 @@ let of_binop bop f1 f2 phi =
 (* the following are shorthand notations that are generally useful to keep around *)
 [@@@warning "-unused-value-declaration"]
 
-let instanceof typ x_var y_var ~get_dynamic_type phi =
-  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ ~get_dynamic_type phi in
+let instanceof typ x_var y_var phi =
+  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ phi in
   phi
 
 
@@ -157,8 +157,6 @@ let v = op_of_var (mk_var "v")
 
 let dummy_tenv = Tenv.create ()
 
-let dummy_get_dynamic_type _ = None
-
 let () = PulseContext.set_tenv_global_for_testing dummy_tenv
 
 (* save the global state now after all named variables have been declared *)
@@ -172,11 +170,11 @@ let pp_var fmt v =
       AbstractValue.pp fmt v
 
 
-let test ~f phi =
+let test ~f phi init_phi =
   (* reset global state before each test so that variable id's remain stable when tests are added in
       the future *)
   AnalysisGlobalState.restore global_state ;
-  let phi = phi ttrue in
+  let phi = phi init_phi in
   F.printf "Formula:@\n  @[<2>%a@]@\n" (SatUnsat.pp (pp_with_pp_var pp_var)) phi ;
   let phi' = phi >>= f in
   F.printf "Result: " ;
@@ -188,67 +186,60 @@ let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 
 let cons_typ = Typ.mk (Tstruct (ErlangType Cons))
 
-let normalize_with ~get_dynamic_type phi =
-  test ~f:(fun phi -> normalize ~get_dynamic_type phi >>| fst) phi
+let normalize_with phi init_phi = test ~f:(fun phi -> normalize phi >>| fst) phi init_phi
 
+let normalize phi = normalize_with phi ttrue
 
-let normalize phi = normalize_with ~get_dynamic_type:dummy_get_dynamic_type phi
+let normalize_with_all_types_Nil phi =
+  match
+    SatUnsat.list_fold [x_var; y_var; z_var; w_var] ~init:ttrue ~f:(fun phi v ->
+        let* phi, _ = and_dynamic_type_is v nil_typ phi in
+        Sat phi )
+  with
+  | Unsat ->
+      Logging.die InternalError "Failed to initialise test phi"
+  | Sat init_phi ->
+      normalize_with phi init_phi
 
-let normalize_with_all_types_Nil phi = normalize_with ~get_dynamic_type:(fun _ -> Some nil_typ) phi
 
 let simplify ~keep phi =
   let keep = AbstractValue.Set.of_list keep in
-  test phi ~f:(fun phi ->
+  test phi
+    ~f:(fun phi ->
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
-      simplify ~get_dynamic_type:dummy_get_dynamic_type ~precondition_vocabulary:keep ~keep phi
-      >>| fst3 )
+      simplify ~precondition_vocabulary:keep ~keep phi >>| fst3 )
+    ttrue
 
 
+(* These instanceof tests now normalize at construction time *)
 let%test_module "normalization" =
   ( module struct
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type
-        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type
-        && z = i 0 ) ;
-      [%expect
-        {|
+        (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && z = i 0) ;
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: linear_eqs: z = 0
-               && term_eqs: 0=z∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
-               && intervals: z=0
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof nil_typ x_var z_var ~get_dynamic_type:dummy_get_dynamic_type
-        && instanceof nil_typ y_var w_var ~get_dynamic_type:dummy_get_dynamic_type
-        && w = i 0 ) ;
-      [%expect
-        {|
+        (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && w = i 0) ;
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: linear_eqs: w = 0
-               && term_eqs: 0=w∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
-               && intervals: w=0
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     let%expect_test _ =
       normalize_with_all_types_Nil
-        ( instanceof cons_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type
-        && instanceof nil_typ x_var y_var ~get_dynamic_type:dummy_get_dynamic_type ) ;
-      [%expect
-        {|
+        (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
+      [%expect {|
         Formula:
-          conditions: (empty) phi: term_eqs: (x instanceof ErlangCons)=y∧(x instanceof ErlangNil)=y
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     let%expect_test _ =
@@ -680,10 +671,7 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a5=a4=a3=a2=x=v6=v7=v8=v9=v10
-                 && linear_eqs: a5 = 0
-                 && term_eqs: 0=a5
-                 && intervals: a5=0
+            phi: var_eqs: a1=x=v6=v7=v8=v9=v10 && linear_eqs: a1 = 0 && term_eqs: 0=a1 && intervals: a1=0
           Result: same |}]
 
 
