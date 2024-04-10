@@ -57,7 +57,10 @@ let add_missing_objects path loc cycle astate =
           (astate, cycle)
     else (astate, cycle)
   in
-  List.fold ~f:add_missing_object cycle ~init:(astate, cycle)
+  (* We aim to add the missing objects only on cycles of length 1 where this will help make the message clearer.
+     Here we write 2 because it's before we remove non objects (the values that have the dynamic type attribute) *)
+  if Int.equal (List.length cycle) 2 then List.fold ~f:add_missing_object cycle ~init:(astate, cycle)
+  else (astate, cycle)
 
 
 let get_assignment_trace astate addr =
