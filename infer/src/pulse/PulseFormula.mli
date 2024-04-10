@@ -70,6 +70,8 @@ val and_equal_instanceof :
   -> t
   -> (t * new_eqs) SatUnsat.t
 
+val and_dynamic_type_is : Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
+
 val and_less_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_less_than : operand -> operand -> t -> (t * new_eqs) SatUnsat.t

@@ -134,6 +134,10 @@ let and_equal_instanceof v1 v2 t astate =
       Formula.and_equal_instanceof v1 v2 t ~get_dynamic_type phi )
 
 
+let and_dynamic_type_is v t astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_dynamic_type_is v t phi)
+
+
 let absval_of_int astate i =
   let phi, v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
   let astate = AbductiveDomain.set_path_condition phi astate in

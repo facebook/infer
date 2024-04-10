@@ -1977,6 +1977,30 @@ module AtomMapOccurrences = MakeOccurrences (struct
   let pp_set = Atom.Set.pp_with_pp_var
 end)
 
+module InstanceOf = struct
+  (** Domain for tracking dynamic type of variables via positive and negative instanceof constraints *)
+
+  type instance_fact = Known of Typ.t | Unknown of {below: Typ.t list; notbelow: Typ.t list}
+  [@@warning "-unused-constructor"] [@@deriving compare, equal, yojson_of]
+
+  let pp_instance_fact fmt inf =
+    match inf with
+    | Known typ ->
+        F.fprintf fmt "%a" (Typ.pp Pp.text) typ
+    | Unknown {below; notbelow} ->
+        let tlist_pp = Pp.seq ~sep:"," (Typ.pp Pp.text) in
+        F.fprintf fmt "{%a \\ %a}" tlist_pp below tlist_pp notbelow
+
+
+  type t = instance_fact Var.Map.t [@@deriving compare, equal, yojson_of]
+
+  let pp_with_pp_var pp_var fmt m =
+    Pp.collection ~sep:"∧"
+      ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+      ~pp_item:(fun fmt (var, inf) -> F.fprintf fmt "%a:%a" pp_var var pp_instance_fact inf)
+      fmt m
+end
+
 module Formula = struct
   (* redefined for yojson output *)
   type var_eqs = VarUF.t [@@deriving compare, equal]
@@ -2005,6 +2029,7 @@ module Formula = struct
                 from this equality relation in the rest of the formula and more generally in all of
                 the abstract state. See also {!AbductiveDomain}. *)
       ; const_eqs: Term.t Var.Map.t
+      ; type_constraints: InstanceOf.t
       ; linear_eqs: linear_eqs
             (** Equalities of the form [x = l] where [l] is from linear arithmetic. These are
                 interpreted over the *rationals*, not integers (or floats), so this will be
@@ -2103,6 +2128,8 @@ module Formula = struct
 
     val remove_const_eq : Var.t -> t -> t
 
+    val add_dynamic_type : Var.t -> Typ.t -> t -> t SatUnsat.t
+
     val add_linear_eq : Var.t -> LinArith.t -> t -> t * Var.t option
     (** [add_linear_eq v l phi] adds [v=l] to [linear_eqs] and updates the occurrences maps and
         [term_eqs] appropriately; don't forget to call [propagate_linear_eq] after this *)
@@ -2156,6 +2183,7 @@ module Formula = struct
     val unsafe_mk :
          var_eqs:var_eqs
       -> const_eqs:Term.t Var.Map.t
+      -> type_constraints:InstanceOf.t
       -> linear_eqs:linear_eqs
       -> term_eqs:Term.VarMap.t_
       -> tableau:Tableau.t
@@ -2175,6 +2203,7 @@ module Formula = struct
     type t =
       { var_eqs: var_eqs
       ; const_eqs: Term.t Var.Map.t
+      ; type_constraints: InstanceOf.t
       ; linear_eqs: linear_eqs
       ; term_eqs: term_eqs
       ; tableau: Tableau.t
@@ -2189,6 +2218,7 @@ module Formula = struct
     let ttrue =
       { var_eqs= VarUF.empty
       ; const_eqs= Var.Map.empty
+      ; type_constraints= Var.Map.empty
       ; linear_eqs= Var.Map.empty
       ; term_eqs= Term.VarMap.empty
       ; tableau= Tableau.empty
@@ -2207,6 +2237,7 @@ module Formula = struct
     let is_empty
         ({ var_eqs
          ; const_eqs
+         ; type_constraints
          ; linear_eqs
          ; term_eqs
          ; tableau
@@ -2216,9 +2247,9 @@ module Formula = struct
          ; tableau_occurrences= _
          ; term_eqs_occurrences= _
          ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) =
-      VarUF.is_empty var_eqs && Var.Map.is_empty const_eqs && Var.Map.is_empty linear_eqs
-      && term_eqs_is_empty term_eqs && Var.Map.is_empty tableau && Var.Map.is_empty intervals
-      && Atom.Set.is_empty atoms
+      VarUF.is_empty var_eqs && Var.Map.is_empty const_eqs && Var.Map.is_empty type_constraints
+      && Var.Map.is_empty linear_eqs && term_eqs_is_empty term_eqs && Var.Map.is_empty tableau
+      && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
 
 
     (* {2 [term_eqs] interface due to the totally opaque type} *)
@@ -2280,6 +2311,7 @@ module Formula = struct
     let pp_with_pp_var pp_var fmt
         ( ({ var_eqs
            ; const_eqs
+           ; type_constraints
            ; linear_eqs
            ; term_eqs
            ; tableau
@@ -2302,6 +2334,11 @@ module Formula = struct
          "const_eqs"
          (pp_var_map ~arrow:"=" (Term.pp pp_var) pp_var) )
         fmt const_eqs ;
+      (pp_if
+         (not (Var.Map.is_empty type_constraints))
+         "type_constraints"
+         (InstanceOf.pp_with_pp_var pp_var) )
+        fmt type_constraints ;
       (pp_if
          (not (Var.Map.is_empty linear_eqs))
          "linear_eqs"
@@ -2346,6 +2383,16 @@ module Formula = struct
     let remove_const_eq v phi =
       Debug.p "remove_const_eq for %a@\n" Var.pp v ;
       {phi with const_eqs= Var.Map.remove v phi.const_eqs}
+
+
+    let add_dynamic_type v t phi =
+      match Var.Map.find_opt v phi.type_constraints with
+      | None ->
+          Sat {phi with type_constraints= Var.Map.add v (InstanceOf.Known t) phi.type_constraints}
+      | Some (InstanceOf.Known t') ->
+          if Typ.equal t t' then Sat phi else Unsat
+      | _ ->
+          assert false (* TODO: because we're only adding Known facts in the first instance *)
 
 
     let remove_term_eq t v phi =
@@ -2528,10 +2575,12 @@ module Formula = struct
       {phi with term_eqs= Term.VarMap.empty; term_eqs_occurrences= Var.Map.empty}
 
 
-    let unsafe_mk ~var_eqs ~const_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms
-        ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences =
+    let unsafe_mk ~var_eqs ~const_eqs ~type_constraints ~linear_eqs ~term_eqs ~tableau ~intervals
+        ~atoms ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences
+        =
       { var_eqs
       ; const_eqs
+      ; type_constraints
       ; linear_eqs
       ; term_eqs
       ; tableau
@@ -2550,6 +2599,11 @@ module Formula = struct
     Var.Map.fold f map init
 
 
+  let fold_type_constraints_map map ~init ~f =
+    let f var _constraint acc = f acc var in
+    Var.Map.fold f map init
+
+
   let fold_linear_eqs_vars linear_eqs ~init ~f =
     let f_eq var linarith acc = Seq.fold_left f (f acc var) (LinArith.get_variables linarith) in
     Var.Map.fold f_eq linear_eqs init
@@ -2558,6 +2612,7 @@ module Formula = struct
   let fold_variables
       ( ({ var_eqs
          ; const_eqs
+         ; type_constraints
          ; linear_eqs
          ; term_eqs= _
          ; tableau
@@ -2569,6 +2624,7 @@ module Formula = struct
          ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) as phi ) ~init ~f =
     let init = VarUF.fold_elements var_eqs ~init ~f in
     let init = fold_constant_var_map const_eqs ~init ~f in
+    let init = fold_type_constraints_map type_constraints ~init ~f in
     let init = fold_linear_eqs_vars linear_eqs ~init ~f in
     let init = fold_term_eqs_vars phi ~init ~f in
     let init = fold_linear_eqs_vars tableau ~init ~f in
@@ -3699,6 +3755,19 @@ module DynamicTypes = struct
   let simplify ~get_dynamic_type formula =
     if has_instanceof formula then really_simplify ~get_dynamic_type formula
     else Sat (formula, RevList.empty)
+
+
+  (* TODO: fix messy separation between (new) InstanceOf and (old) DynamicTypes - not sure where to put the next definition *)
+  let and_callee_type_constraints v type_constraints_foreign (phi, new_eqs) =
+    let type_constraints_caller_opt = Var.Map.find_opt v phi.Formula.type_constraints in
+    match (type_constraints_foreign, type_constraints_caller_opt) with
+    | InstanceOf.Known t, None ->
+        let+ phi = Formula.add_dynamic_type v t phi in
+        (phi, new_eqs)
+    | InstanceOf.Known t, Some (InstanceOf.Known t') ->
+        if Typ.equal t t' then Sat (phi, new_eqs) else Unsat
+    | _, _ ->
+        assert false (* only Known facts at the moment *)
 end
 
 (* Just do most naive thing of evaluating instanceof if we know the dynamic type at the time of assertion
@@ -3719,6 +3788,11 @@ let normalize ~get_dynamic_type formula =
   Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
   (* normalization happens incrementally except for dynamic types (TODO) *)
   DynamicTypes.simplify ~get_dynamic_type formula
+
+
+let and_dynamic_type_is v t formula =
+  let+ phi = Formula.add_dynamic_type v t formula.phi in
+  ({formula with phi}, RevList.empty)
 
 
 (** translate each variable in [formula_foreign] according to [f] then incorporate each fact into
@@ -3768,6 +3842,16 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
         in
         (acc_f, phi_new_eqs) )
   in
+  let and_type_constraints type_constraints_foreign acc_phi_new_eqs =
+    IContainer.fold_of_pervasives_map_fold Var.Map.fold type_constraints_foreign
+      ~init:acc_phi_new_eqs ~f:(fun (acc_f, phi_new_eqs) (v_foreign, type_constraints_foreign) ->
+        let acc_f, v = f_var acc_f v_foreign in
+        let phi_new_eqs =
+          DynamicTypes.and_callee_type_constraints v type_constraints_foreign phi_new_eqs
+          |> sat_value_exn
+        in
+        (acc_f, phi_new_eqs) )
+  in
   let and_atoms atoms_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
@@ -3782,6 +3866,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
         |> and_linear_eqs phi_foreign.Formula.linear_eqs
         |> and_term_eqs phi_foreign
         |> and_intervals phi_foreign.Formula.intervals
+        |> and_type_constraints phi_foreign.Formula.type_constraints
         |> and_atoms phi_foreign.Formula.atoms )
     with Contradiction -> Unsat
   in
@@ -3839,11 +3924,12 @@ end = struct
       linear_eqs Var.Map.empty
 
 
-  let subst_var_intervals subst intervals =
+  (* used for both intervals and type constraints *)
+  let subst_key_var_only subst intervals =
     Var.Map.fold
       (fun x citv new_map ->
         let x' = subst_f subst x in
-        (* concrete intervals have no variables inside them *)
+        (* concrete intervals/types have no variables inside them *)
         Var.Map.add x' citv new_map )
       intervals Var.Map.empty
 
@@ -3877,13 +3963,15 @@ end = struct
 
 
   let subst_var_phi subst
-      ({Formula.var_eqs; linear_eqs; tableau; term_eqs= _; intervals; atoms} as phi) =
+      ( {Formula.var_eqs; type_constraints; linear_eqs; tableau; term_eqs= _; intervals; atoms} as
+        phi ) =
     Formula.unsafe_mk ~var_eqs:(VarUF.apply_subst subst var_eqs)
       ~const_eqs:(* trust that rebuilding [term_eqs] will re-generate this map *) Var.Map.empty
+      ~type_constraints:(subst_key_var_only subst type_constraints)
       ~linear_eqs:(subst_var_linear_eqs subst linear_eqs)
       ~term_eqs:(Formula.subst_term_eqs subst phi)
       ~tableau:(subst_var_linear_eqs subst tableau)
-      ~intervals:(subst_var_intervals subst intervals)
+      ~intervals:(subst_key_var_only subst intervals)
       ~atoms:(subst_var_atoms subst atoms)
         (* this is only ever called during summary creation, it's safe to ditch the occurrence maps
            at this point since they will be reconstructed by callers *)
@@ -4030,6 +4118,9 @@ module DeadVariables = struct
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     let simplify_phi phi =
       let var_eqs = VarUF.filter ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs in
+      let type_constraints =
+        Var.Map.filter (fun x _ -> Var.Set.mem x vars_to_keep) phi.Formula.type_constraints
+      in
       (* all linear equalities have a counterpart in [term_eqs] so it's safe to drop them here to
          save space in summaries *)
       let linear_eqs = Var.Map.empty in
@@ -4072,7 +4163,7 @@ module DeadVariables = struct
         ~const_eqs:
           (* we simplify for summaries creation, this information is already present in
              [term_eqs] *)
-          Var.Map.empty ~linear_eqs ~term_eqs ~tableau ~intervals
+          Var.Map.empty ~linear_eqs ~term_eqs ~tableau ~intervals ~type_constraints
         ~atoms
           (* we simplify for summaries creation, it's safe to ditch the occurrence maps at this
              point since they will be reconstructed by callers *)

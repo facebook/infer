@@ -270,7 +270,13 @@ module Syntax = struct
     PulseOperations.remove_dict_contain_const_keys addr |> exec_command
 
 
+  let and_dynamic_type_is v t : unit model_monad =
+    PulseArithmetic.and_dynamic_type_is v t |> exec_partial_command
+
+
   let add_dynamic_type typ (addr, _) : unit model_monad =
+    (* TODO: redundantly and dynamic type to formula as well as adding to attributes *)
+    let* () = and_dynamic_type_is addr typ in
     PulseOperations.add_dynamic_type typ addr |> exec_command
 
 
@@ -401,7 +407,15 @@ module Syntax = struct
     |> lift_model
 
 
-  let new_ type_name = lift_to_monad_and_get_result (internal_new_ type_name)
+  let new_ type_name_exp =
+    let* new_obj = lift_to_monad_and_get_result (internal_new_ type_name_exp) in
+    match type_name_exp with
+    | Exp.Sizeof {typ} ->
+        let* () = and_dynamic_type_is (fst new_obj) typ in
+        ret new_obj
+    | _ ->
+        unreachable
+
 
   let constructor type_name fields : aval model_monad =
     let exp =

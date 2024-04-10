@@ -46,4 +46,18 @@ class Wrapper {
     }
     return;
   }
+
+  // this is designed to test propagation of instanceof facts
+  public async function preserveTypeTestOK(mixed $m): Awaitable<void> {
+    if ($m is D) {
+      if ($m is D) {
+        return;
+      } else {
+        $_ = $this->fail();
+      }
+    } else {
+      return;
+    }
+  }
+
 }
