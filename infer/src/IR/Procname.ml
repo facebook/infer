@@ -326,6 +326,8 @@ module ObjC_Cpp = struct
 
   let make_dealloc name = make name "dealloc" ObjCInstanceMethod Typ.NoTemplate []
 
+  let make_copy name = make name "copy" ObjCInstanceMethod Typ.NoTemplate []
+
   let make_copyWithZone ~is_mutable name =
     let zone = Typ.CStruct (QualifiedCppName.of_qual_string "_NSZone") in
     let method_name = if is_mutable then "mutableCopyWithZone:" else "copyWithZone:" in
@@ -1303,6 +1305,8 @@ let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; functi
 let make_hack ~class_name ~function_name ~arity = Hack {class_name; function_name; arity}
 
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
+
+let make_objc_copy name = ObjC_Cpp (ObjC_Cpp.make_copy name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
 

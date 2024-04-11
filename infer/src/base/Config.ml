@@ -223,6 +223,8 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
 
+let copy = "<\"Copy\">"
+
 (* Allow lists for C++ library functions *)
 
 let std_allow_listed_cpp_methods =

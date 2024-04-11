@@ -67,6 +67,8 @@ val clang_inner_destructor_prefix : string
 
 val clang_plugin_path : string
 
+val copy : string
+
 val default_failure_name : string
 
 val dotty_frontend_output : string
