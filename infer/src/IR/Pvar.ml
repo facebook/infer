@@ -71,7 +71,12 @@ let get_simplified_name pv =
   let s =
     match String.rsplit2 s ~on:'.' with
     | Some (s1, s2) -> (
-      match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> Printf.sprintf "%s.%s" s4 s2 | _ -> s )
+      match pv with
+      | {pv_kind= Global_var _} when Language.curr_language_is Language.Clang ->
+          s2
+      | _ -> (
+        match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> Printf.sprintf "%s.%s" s4 s2 | _ -> s )
+      )
     | _ ->
         s
   in
@@ -200,11 +205,12 @@ let pp_ ~verbose f pv =
       if verbose then F.fprintf f "|abducedRefParam%d" index
   | Global_var {translation_unit; template_args; is_constexpr; is_ice; is_pod} ->
       if verbose then
-        F.fprintf f "#GB<%a%s%s%s>$" pp_translation_unit translation_unit
+        F.fprintf f "#GB<%a%s%s%s>$%a" pp_translation_unit translation_unit
           (if is_constexpr then "|const" else "")
           (if is_ice then "|ice" else "")
-          (if not is_pod then "|!pod" else "") ;
-      Mangled.pp f name ;
+          (if not is_pod then "|!pod" else "")
+          Mangled.pp name
+      else F.fprintf f "%s" (get_simplified_name pv) ;
       (Typ.pp_template_spec_info Pp.text) f template_args
   | Seed_var ->
       F.fprintf f "old_%a" Mangled.pp name
