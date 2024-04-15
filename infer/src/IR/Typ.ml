@@ -260,9 +260,9 @@ let make_cpp_class_matcher ?(non_ptr = true) ?(ptr = true) ?prefix fuzzy_qual_na
       false
 
 
-let is_std_function = make_cpp_class_matcher ~non_ptr:true ["std::function"]
+let is_std_function = make_cpp_class_matcher ~ptr:false ["std::function"]
 
-let is_cpp_lambda = make_cpp_class_matcher ~non_ptr:true ~prefix:true ["lambda_"]
+let is_cpp_lambda = make_cpp_class_matcher ~ptr:false ~prefix:true ["lambda_"]
 
 let rec equal_ignore_quals t1 t2 = equal_desc_ignore_quals t1.desc t2.desc
 
