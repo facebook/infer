@@ -27,7 +27,7 @@ typedef void (^MyBlock)();
   ImageView* _headerImageView;
 }
 
-- (void)test_retain_cycle_bad_FP {
+- (void)test_retain_cycle_good {
   MyBlock block = ^() {
     _headerImageView = [self _createHeaderImageView];
   };

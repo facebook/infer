@@ -132,7 +132,10 @@ let check_retain_cycles path tenv location addresses orig_astate =
         let not_previously_reported =
           not (AddressAttributes.is_in_reported_retain_cycle addr astate)
         in
-        if is_known && is_seen && is_ref_counted_or_block && not_previously_reported then
+        let path_condition = astate.AbductiveDomain.path_condition in
+        let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
+        if is_known && is_seen && is_ref_counted_or_block && not_previously_reported && is_not_null
+        then
           let seen = List.rev seen in
           let cycle = crop_seen_to_cycle seen addr in
           let astate, cycle = add_missing_objects path location cycle astate in
