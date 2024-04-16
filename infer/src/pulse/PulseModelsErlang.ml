@@ -52,7 +52,7 @@ let write_field_and_deref path location ~struct_addr ~field_addr ~field_val fiel
 let get_erlang_type_or_any val_ astate =
   let open IOption.Let_syntax in
   let typename =
-    let* {Attribute.typ} = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
+    let* {Formula.typ} = PulseArithmetic.get_dynamic_type val_ astate in
     Typ.name typ
   in
   match typename with Some (Typ.ErlangType erlang_type) -> erlang_type | _ -> ErlangTypeName.Any
@@ -60,7 +60,6 @@ let get_erlang_type_or_any val_ astate =
 
 let write_dynamic_type_and_return (addr_val, hist) typ ret_id astate =
   let typ = Typ.mk_struct (ErlangType typ) in
-  let astate = PulseOperations.add_dynamic_type typ addr_val astate in
   let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr_val typ astate in
   PulseOperations.write_id ret_id (addr_val, hist) astate
 
@@ -291,11 +290,8 @@ module Atoms = struct
         ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:hash hash_field astate
     in
-    let astate =
-      PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_atom) (Typ.mk_struct (ErlangType Atom))
+    ( PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_atom) (Typ.mk_struct (ErlangType Atom))
         astate
-    in
-    ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) (fst addr_atom) astate
     , addr_atom )
 
 
@@ -333,7 +329,7 @@ module Atoms = struct
     let> astate, (addr, hist) = SatUnsat.to_list astate_true @ SatUnsat.to_list astate_false in
     let typ = Typ.mk_struct (ErlangType Atom) in
     let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ astate in
-    [Ok (PulseOperations.add_dynamic_type typ addr astate, (addr, hist))]
+    [Ok (astate, (addr, hist))]
 
 
   (** Takes a boolean value, converts it to true/false atom and writes to return value. *)
@@ -357,7 +353,7 @@ module Integers = struct
         ~field_val:value value_field astate
     in
     let astate = PulseArithmetic.and_dynamic_type_is_unsafe (fst addr) typ astate in
-    (PulseOperations.add_dynamic_type typ (fst addr) astate, addr)
+    (astate, addr)
 
 
   let make value : model_no_non_disj =
@@ -666,9 +662,6 @@ module Lists = struct
       PulseArithmetic.and_dynamic_type_is_unsafe addr_nil_val (Typ.mk_struct (ErlangType Nil))
         astate
     in
-    let astate =
-      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Nil)) addr_nil_val astate
-    in
     Ok (astate, addr_nil)
 
 
@@ -699,9 +692,6 @@ module Lists = struct
       PulseArithmetic.and_dynamic_type_is_unsafe addr_cons_val (Typ.mk_struct (ErlangType Cons))
         astate
     in
-    let astate =
-      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) addr_cons_val astate
-    in
     (astate, addr_cons)
 
 
@@ -721,9 +711,6 @@ module Lists = struct
         let astate' =
           PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_cons)
             (Typ.mk_struct (ErlangType Cons)) astate'
-        in
-        let astate' =
-          PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) (fst addr_cons) astate'
         in
         (astate', addr_cons)
     | (fname, fval) :: fld_ls' ->
@@ -862,8 +849,7 @@ module Tuples = struct
       PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_tuple) (Typ.mk_struct tuple_typ_name)
         astate
     in
-    ( PulseOperations.add_dynamic_type (Typ.mk_struct tuple_typ_name) (fst addr_tuple) astate
-    , addr_tuple )
+    (astate, addr_tuple)
 
 
   let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model_no_non_disj =
@@ -1346,10 +1332,7 @@ module Custom = struct
             PulseArithmetic.and_dynamic_type_is_unsafe ret_addr (Typ.mk_struct (ErlangType Atom))
               astate
           in
-          Sat
-            (Ok
-               ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) ret_addr astate
-               , (ret_addr, ret_hist) ) )
+          Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (Atom (Some name)) ->
           Atoms.of_string location path name astate
       | Some (GenServer {module_name}) ->
@@ -1360,12 +1343,7 @@ module Custom = struct
               (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
               astate
           in
-          Sat
-            (Ok
-               ( PulseOperations.add_dynamic_type
-                   (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
-                   ret_addr astate
-               , (ret_addr, ret_hist) ) )
+          Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (IntLit (Some intlit)) ->
           Sat (Integers.of_string location path intlit astate)
       | Some (IntLit None) ->
@@ -1376,12 +1354,7 @@ module Custom = struct
               (Typ.mk_struct (ErlangType Integer))
               astate
           in
-          Sat
-            (Ok
-               ( PulseOperations.add_dynamic_type
-                   (Typ.mk_struct (ErlangType Integer))
-                   ret_addr astate
-               , (ret_addr, ret_hist) ) )
+          Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (List elements) ->
           let mk = Lists.make_raw location path in
           many mk elements astate

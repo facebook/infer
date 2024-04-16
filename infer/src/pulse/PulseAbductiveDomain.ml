@@ -464,10 +464,6 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.in_reported_retain_cycle address)
 
 
-    let get_dynamic_type addr astate =
-      BaseAddressAttributes.get_dynamic_type (astate.post :> base_domain).attrs addr
-
-
     let get_static_type addr astate =
       BaseAddressAttributes.get_static_type (astate.post :> base_domain).attrs addr
 
@@ -511,11 +507,6 @@ module Internal = struct
     let add_dict_read_const_key timestamp trace address key astate =
       map_pre_attrs astate
         ~f:(BaseAddressAttributes.add_dict_read_const_key timestamp trace address key)
-
-
-    let add_dynamic_type {Attribute.typ; source_file} address astate =
-      map_post_attrs astate
-        ~f:(BaseAddressAttributes.add_dynamic_type {Attribute.typ; source_file} address)
 
 
     let add_static_type typ address astate =
@@ -731,7 +722,11 @@ module Internal = struct
       |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
     in
     if is_final then
-      SafeAttributes.add_dynamic_type {typ= Typ.mk_struct typ_name; source_file= None} addr astate
+      let phi' =
+        PulseFormula.add_dynamic_type_unsafe (downcast addr) (Typ.mk_struct typ_name)
+          astate.path_condition
+      in
+      set_path_condition phi' astate
     else SafeAttributes.add_static_type typ_name addr astate
 
 
@@ -2270,10 +2265,6 @@ module AddressAttributes = struct
     SafeAttributes.add_dict_read_const_key timestamp trace (CanonValue.canon' astate v) key astate
 
 
-  let add_dynamic_type dynamic_type_data v astate =
-    SafeAttributes.add_dynamic_type dynamic_type_data (CanonValue.canon' astate v) astate
-
-
   let add_static_type tenv typ v astate =
     add_static_type tenv typ (CanonValue.canon' astate v) astate
 
@@ -2284,10 +2275,6 @@ module AddressAttributes = struct
 
   let remove_taint_attrs v astate =
     SafeAttributes.remove_taint_attrs (CanonValue.canon' astate v) astate
-
-
-  let get_dynamic_type v astate =
-    SafeAttributes.get_dynamic_type (CanonValue.canon' astate v) astate
 
 
   let get_closure_proc_name v astate =

@@ -13,8 +13,8 @@ let is_ref_counted v astate =
   AddressAttributes.get_static_type v astate
   |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
   ||
-  match AddressAttributes.get_dynamic_type v astate with
-  | Some {Attribute.typ= {desc= Tstruct typ_name}} ->
+  match PulseArithmetic.get_dynamic_type v astate with
+  | Some {typ= {desc= Tstruct typ_name}} ->
       Typ.Name.is_objc_class typ_name
   | _ ->
       false

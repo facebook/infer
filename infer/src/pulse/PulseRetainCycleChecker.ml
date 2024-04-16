@@ -13,8 +13,8 @@ let is_ref_counted_or_block addr astate =
   AddressAttributes.get_static_type addr astate
   |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
   ||
-  match AddressAttributes.get_dynamic_type addr astate with
-  | Some {Attribute.typ= {desc= Tstruct typ_name}} ->
+  match PulseArithmetic.get_dynamic_type addr astate with
+  | Some {typ= {desc= Tstruct typ_name}} ->
       Typ.Name.is_objc_class typ_name || Typ.Name.is_objc_block typ_name
   | _ ->
       false
@@ -30,7 +30,7 @@ let rec crop_seen_to_cycle seen_list addr =
 
 let has_static_dynamic_type astate v =
   let has_static_type = AddressAttributes.get_static_type v astate |> Option.is_some in
-  has_static_type || AddressAttributes.get_dynamic_type v astate |> Option.is_some
+  has_static_type || PulseArithmetic.get_dynamic_type v astate |> Option.is_some
 
 
 let remove_non_objc_objects cycle astate =

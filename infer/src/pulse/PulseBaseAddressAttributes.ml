@@ -271,12 +271,6 @@ let add_dict_read_const_key timestamp trace address key attrs =
 
 let get_dict_read_const_keys = get_attribute Attributes.get_dict_read_const_keys
 
-let add_dynamic_type {Attribute.typ; source_file} address memory =
-  add_one address (Attribute.DynamicType {Attribute.typ; source_file}) memory
-
-
-let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
-
 let add_static_type typ address memory = add_one address (Attribute.StaticType typ) memory
 
 let get_static_type attrs v = get_attribute Attributes.get_static_type v attrs
@@ -433,10 +427,6 @@ module type S = sig
   val add_dict_read_const_key : Timestamp.t -> Trace.t -> key -> Fieldname.t -> t -> t
 
   val get_dict_read_const_keys : key -> t -> Attribute.ConstKeys.t option
-
-  val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
-
-  val get_dynamic_type : t -> key -> Attribute.dynamic_type_data option
 
   val add_static_type : Typ.Name.t -> key -> t -> t
 
