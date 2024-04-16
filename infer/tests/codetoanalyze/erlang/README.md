@@ -3,6 +3,7 @@
 ## Directories
 
 Put the test in the folder based on the analyzer that is being tested:
+
 - Pulse: `pulse` or `pulse-otp` if OTP specs (`--erlang-with-otp-specs`) are needed.
 - Topl: `topl`.
 - Create new files/directories as needed.
@@ -11,11 +12,13 @@ Put the test in the folder based on the analyzer that is being tested:
 ## Naming
 
 Test functions should be named `(fp_|fpl_|fn_|fnl_)?test_.*_(Ok|Latent|Bad)`, where the suffix (`_Ok`, `_Bad`, `_Latent`) indicates the expected outcome:
+
 - `_Ok` means that no issue is expected,
 - `_Bad` means that a (manifest) issue is expected,
 - `_Latent` means that a [latent issue](https://fbinfer.com/docs/next/checker-pulse/#latent-issues) is expected (e.g. because the function has arguments).
 
 The prefixes (`fp_`, `fpl_`, `fn_`, `fnl_`) correspond to deviations with the reported output:
+
 - `fp_` means a false positive: no issue, or a latent issue was expected, but Infer reports a manifest issue.
 - `fpl_` is false positive latent, meaning that no issue was expected but a latent one is reported.
 - `fn_` means a false negative: manifest or latent issue is expected, but no issue is reported.

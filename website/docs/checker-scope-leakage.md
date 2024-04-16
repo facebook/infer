@@ -8,6 +8,7 @@ The Java/Kotlin checker takes into account a set of "scope" annotations and a mu
 Activate with `--scope-leakage`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -15,9 +16,8 @@ Supported languages:
 - Java: Yes
 - Python: No
 
-
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [SCOPE_LEAKAGE](/docs/next/all-issue-types#scope_leakage)

@@ -12,6 +12,7 @@ A call that may execute arbitrary code (such as registered, or chained, callback
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
 
 Example:
+
 ```java
   SettableFuture future = null;
 
@@ -41,6 +42,7 @@ Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
 Bad arg in Erlang: Reports an error when the type of an argument is wrong or the argument is badly formed. Corresponds to the `badarg` error in the Erlang runtime.
 
 For example, trying to concatenate the number `3` with  the list `[1,2]` gives `badarg` error because `3` is not a list.
+
 ```erlang
 f() ->
     3 ++ [1,2]. // badarg error
@@ -48,6 +50,7 @@ f() ->
 
 Note that although the first argument needs to be a list, the second argument may not be a list.
 For instance, concatenating [1,2] with the number `3` raises no error in Erlang.
+
 ```erlang
 g() ->
     [1,2] ++ 3. // no error. Result: [1,2|3]
@@ -58,6 +61,7 @@ g() ->
 Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_ARG](#bad_arg). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## BAD_KEY
 
 Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
@@ -65,6 +69,7 @@ Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
 Bad key in Erlang: Reports an error when trying to access or update a non-existing key in a map. Corresponds to the `{badkey,K}` error in the Erlang runtime.
 
 For example, trying to update the key `2` in `M` gives `{badkey,2}` error because `2` is not present as a key in `M`.
+
 ```erlang
 f() ->
     M = #{},
@@ -79,6 +84,7 @@ Therefore, if a map is non-empty and we try to access a key other than the one w
 Reported as "Bad Key Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_KEY](#bad_key). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## BAD_MAP
 
 Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
@@ -86,6 +92,7 @@ Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
 Bad map in Erlang: Reports an error when trying to access or update a key for a term that is not a map. Corresponds to the `{badmap,...}` error in the Erlang runtime.
 
 For example, trying to update `L` as if it was a map gives `{badmap,[1,2,3]}` error because `L` is actually a list (`[1,2,3]`).
+
 ```erlang
 f() ->
     L = [1,2,3],
@@ -97,6 +104,7 @@ f() ->
 Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_MAP](#bad_map). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## BAD_RECORD
 
 Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
@@ -104,6 +112,7 @@ Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
 Bad record in Erlang: Reports an error when trying to access or update a record with the wrong name. Corresponds to the `{badrecord,Name}` error in the Erlang runtime.
 
 For example, accessing `R` as a `person` record gives `{badrecord,person}` error because `R` is `rabbit` (even though both share the `name` field).
+
 ```erlang
 -record(person, {name, phone}).
 -record(rabbit, {name, color}).
@@ -118,6 +127,7 @@ f() ->
 Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_RECORD](#bad_record). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## BAD_RETURN
 
 Reported as "Bad Return" by [pulse](/docs/next/checker-pulse).
@@ -125,6 +135,7 @@ Reported as "Bad Return" by [pulse](/docs/next/checker-pulse).
 Bad return in Erlang: The dynamic type of a returned value disagrees with the static type given in the spec.
 
 For example, this function returns an integer, while the spec says it returns an atom.
+
 ```erlang
 -spec f() -> atom().
 f() -> 1.
@@ -137,16 +148,19 @@ Note that this will *not* lead to a runtime error when running the Erlang progra
 Reported as "Bad Return Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_RETURN](#bad_return). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## BIABDUCTION_MEMORY_LEAK
 
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
 
 See [MEMORY_LEAK](#memory_leak).
+
 ## BIABDUCTION_RETAIN_CYCLE
 
 Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
 
 See [RETAIN_CYCLE](#retain_cycle).
+
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
 
 Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).
@@ -184,57 +198,57 @@ For example, `int a[3]; a[5] = 42;` generates a `BUFFER_OVERRUN_L1` on `a[5] = 4
 Buffer overrun reports fall into several "buckets" corresponding to the expected precision of the
 report.  The higher the number, the more likely it is to be a false positive.
 
-*   `L1`: The most faithful report, when it *must* be unsafe.  For example, array size: `[3,3]`,
-    offset: `[5,5]`.
-
-*   `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example, array size:`[3,3]`,
-    offset: `[0,5]`.  Note that the offset may be a safe value in the real execution, i.e. safe when
-    0, 1, or 2; unsafe when 3, 4, or 5.
-
-*   `L5`: The least faithful report, when there is an interval top.  For example, array size:
-    `[3,3]`, offset: `[-oo,+oo]`.
-
-*   `L4`: More faithful report than `L5`, when there is an infinity value.  For example, array size:
-    `[3,3]`, offset: `[0, +oo]`.
-
-*   `L3`: The reports that are not included in the above cases.
-
-*   `S2`: An array access is unsafe by symbolic values.  For example, array size: `[n,n]`, offset
-    `[n,+oo]`.
-
-*   `U5`: An array access is unsafe by unknown values, which are usually from unknown function
-    calls.
+* `L1`: The most faithful report, when it *must* be unsafe.  For example, array size: `[3,3]`,
+  offset: `[5,5]`.
+* `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example, array size:`[3,3]`,
+  offset: `[0,5]`.  Note that the offset may be a safe value in the real execution, i.e. safe when
+  0, 1, or 2; unsafe when 3, 4, or 5.
+* `L5`: The least faithful report, when there is an interval top.  For example, array size:
+  `[3,3]`, offset: `[-oo,+oo]`.
+* `L4`: More faithful report than `L5`, when there is an infinity value.  For example, array size:
+  `[3,3]`, offset: `[0, +oo]`.
+* `L3`: The reports that are not included in the above cases.
+* `S2`: An array access is unsafe by symbolic values.  For example, array size: `[n,n]`, offset
+  `[n,+oo]`.
+* `U5`: An array access is unsafe by unknown values, which are usually from unknown function
+  calls.
 
 ## BUFFER_OVERRUN_L2
 
 Reported as "Buffer Overrun L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## BUFFER_OVERRUN_L3
 
 Reported as "Buffer Overrun L3" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## BUFFER_OVERRUN_L4
 
 Reported as "Buffer Overrun L4" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## BUFFER_OVERRUN_L5
 
 Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## BUFFER_OVERRUN_S2
 
 Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## BUFFER_OVERRUN_U5
 
 Reported as "Buffer Overrun U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
+
 ## CAPTURED_STRONG_SELF
 
 Reported as "Captured strongSelf" by [self-in-block](/docs/next/checker-self-in-block).
@@ -247,18 +261,17 @@ This will happen in one of two cases generally:
 
 1. One uses `weakSelf` but forgot to declare it weak first.
 
-Example:
+    Example:
 
-```objectivec
-  __typeof(self) weakSelf = self;
-  int (^my_block)(BOOL) = ^(BOOL isTapped) {
-    __strong __typeof(weakSelf) strongSelf = weakSelf;
-    return strongSelf->x;
-  };
-```
+    ```objectivec
+      __typeof(self) weakSelf = self;
+      int (^my_block)(BOOL) = ^(BOOL isTapped) {
+        __strong __typeof(weakSelf) strongSelf = weakSelf;
+        return strongSelf->x;
+      };
+    ```
 
-**Action:** Replace the first line with `__weak __typeof(self) weakSelf = self;`.
-
+    **Action:** Replace the first line with `__weak __typeof(self) weakSelf = self;`.
 
 2. One is using `strongSelf`, declared in a block, in another inner block.
    The retain cycle is avoided in the outer block because `strongSelf` is a
@@ -267,60 +280,60 @@ Example:
 
    Example:
 
-```objectivec
-  __weak __typeof(self) weakSelf = self;
-  int (^my_block)() = ^() {
-    __strong typeof(self) strongSelf = weakSelf;
-    if (strongSelf) {
+    ```objectivec
+      __weak __typeof(self) weakSelf = self;
       int (^my_block)() = ^() {
-        int x = strongSelf->x;
+        __strong typeof(self) strongSelf = weakSelf;
+        if (strongSelf) {
+          int (^my_block)() = ^() {
+            int x = strongSelf->x;
+            ...
+          };
+          ...
+        }
         ...
       };
-      ...
-    }
-    ...
-  };
-```
+    ```
 
-In this example, `strongSelf` is a captured variable of the inner block, and this could cause retain cycles.
+    In this example, `strongSelf` is a captured variable of the inner block, and this could cause retain cycles.
 
-**Action:** Use a new pointer to self local to the inner block. In the example:
+    **Action:** Use a new pointer to self local to the inner block. In the example:
 
-```objectivec
-  __weak __typeof(self) weakSelf = self;
-  int (^my_block)() = ^() {
-    __strong typeof(self) strongSelf = weakSelf;
-    if (strongSelf) {
+    ```objectivec
+      __weak __typeof(self) weakSelf = self;
       int (^my_block)() = ^() {
-         __typeof(self) innerStrongSelf = weakSelf;
-        int x = innerStrongSelf->x;
+        __strong typeof(self) strongSelf = weakSelf;
+        if (strongSelf) {
+          int (^my_block)() = ^() {
+            __typeof(self) innerStrongSelf = weakSelf;
+            int x = innerStrongSelf->x;
+            ...
+          };
+          ...
+        }
         ...
       };
-      ...
-    }
-    ...
-  };
-```
+    ```
 
-Or, to improve readability, move the inner block logic into a separate method.
+    Or, to improve readability, move the inner block logic into a separate method.
 
-Another solution could be to copy the instance variable that one needs to access inside the inner block to a local variable, and use the local variable instead:
+    Another solution could be to copy the instance variable that one needs to access inside the inner block to a local variable, and use the local variable instead:
 
-```objectivec
-  __weak __typeof(self) weakSelf = self;
-  int (^my_block)() = ^() {
-    __strong typeof(self) strongSelf = weakSelf;
-    if (strongSelf) {
-      int my_x = strongSelf->x;
+    ```objectivec
+      __weak __typeof(self) weakSelf = self;
       int (^my_block)() = ^() {
-        int x = my_x;
+        __strong typeof(self) strongSelf = weakSelf;
+        if (strongSelf) {
+          int my_x = strongSelf->x;
+          int (^my_block)() = ^() {
+            int x = my_x;
+            ...
+          };
+          ...
+        }
         ...
       };
-      ...
-    }
-    ...
-  };
-```
+    ```
 
 ## CHECKERS_ALLOCATES_MEMORY
 
@@ -517,16 +530,19 @@ For more information see the [`NULLPTR_DEREFERENCE`](#nullptr_dereference) issue
 Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## CREATE_INTENT_FROM_URI
 
 Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).
 
 Create an intent/start a component using a (possibly user-controlled) URI. may or may not be an issue depending on where the URI comes from.
+
 ## CROSS_SITE_SCRIPTING
 
 Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into HTML; XSS risk.
+
 ## CXX_REF_CAPTURED_IN_BLOCK
 
 Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).
@@ -537,7 +553,7 @@ not annotated with `__attribute__((noescape))`.
 
 Example:
 
-```
+```cpp
 - (void)ref_captured_in_escaping_block_bad:(int&)y {
   dispatch_async(dispatch_get_main_queue(), ^{
     int a = y;
@@ -555,17 +571,18 @@ dereferences it later.
 
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
 
-
 ## DATALOG_FACT
 
 Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).
 
 Datalog fact used as input for a datalog solver.
+
 ## DATA_FLOW_TO_SINK
 
 Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).
 
 A flow of data was detected to a sink.
+
 ## DEADLOCK
 
 Reported as "Deadlock" by [starvation](/docs/next/checker-starvation).
@@ -642,7 +659,6 @@ is never used (e.g., `int i = 1; i = 2; return i;`).
 
 Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).
 
-
 ## EMPTY_VECTOR_ACCESS
 
 Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).
@@ -670,8 +686,6 @@ logarithmic to quadratic. This issue type is only reported in
 differential mode: i.e when we are comparing the cost analysis results of
 two runs of infer on a file. Check out examples in [here](/docs/next/checker-cost#examples).
 
-
-
 ## EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD
 
 Reported as "Execution Time Complexity Increase Ui Thread" by [cost](/docs/next/checker-cost).
@@ -680,13 +694,12 @@ Infer reports this issue when the execution time complexity of the procedure inc
 
 Infer considers a method as running on the UI thread whenever:
 
-- The method, one of its overrides, its class, or an ancestral class, is
+* The method, one of its overrides, its class, or an ancestral class, is
   annotated with `@UiThread`.
-- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`,
+* The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`,
   etc.
-- The method or its callees call a `Litho.ThreadUtils` method such as
+* The method or its callees call a `Litho.ThreadUtils` method such as
   `assertMainThread`.
-
 
 ## EXECUTION_TIME_UNREACHABLE_AT_EXIT
 
@@ -696,8 +709,8 @@ This issue type indicates that the program's execution doesn't reach
 the exit node (where our analysis computes the final cost of the
 procedure). Hence, we cannot compute a static bound for the procedure.
 
-
 Examples:
+
 ```java
 void exit_unreachable() {
   exit(0); // modeled as unreachable
@@ -715,6 +728,7 @@ Reported as "Expensive Execution Time" by [cost](/docs/next/checker-cost).
 \[EXPERIMENTAL\] This warning indicates that the procedure has non-constant and non-top execution cost. By default, this issue type is disabled. To enable it, set `enabled=true` in [costKind.ml](https://github.com/facebook/infer/blob/main/infer/src/base/costKind.ml#L55).
 
 For instance, a simple example where we report this issue is a function with linear cost:
+
 ```java
 int sum_linear(ArrayList<Integer> list){
  int sum = 0;
@@ -757,6 +771,7 @@ void symbolic_expensive_hoist(int size) {
 Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).
 
 Undocumented.
+
 ## GUARDEDBY_VIOLATION
 
 Reported as "GuardedBy Violation" by [racerd](/docs/next/checker-racerd).
@@ -783,6 +798,7 @@ Action: Protect the offending access by acquiring the lock indicated by the `@Gu
 Reported as "Impure Function" by [impurity](/docs/next/checker-impurity).
 
 This issue type indicates impure functions. For instance, below functions would be marked as impure:
+
 ```java
 void makeAllZero_impure(ArrayList<Foo> list) {
   Iterator<Foo> listIterator = list.iterator();
@@ -798,8 +814,9 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/next/checker-inefficient-keyset-iterator).
 
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
-- looking up the key each time
+
+* iterating over a HashMap with `ketSet()` iterator
+* looking up the key each time
 
 Example:
 
@@ -815,7 +832,7 @@ void inefficient_loop_bad(HashMap<String, Integer> testMap) {
 **Action**:
 
 Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
- 
+
 ```java
 void efficient_loop_ok(HashMap<String, Integer> testMap) {
   for (Map.Entry<String, Integer> entry : testMap.entrySet()) {
@@ -833,6 +850,7 @@ Reported as "Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 `malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or make sure it is really needed.
+
 ## INFERBO_ALLOC_IS_NEGATIVE
 
 Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -840,6 +858,7 @@ Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferover
 `malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument.
+
 ## INFERBO_ALLOC_IS_ZERO
 
 Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -847,6 +866,7 @@ Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun)
 `malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.
 
 Action: Fix the size argument.
+
 ## INFERBO_ALLOC_MAY_BE_BIG
 
 Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -854,6 +874,7 @@ Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverr
 `malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { malloc(n); }`.
+
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
 Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -861,6 +882,7 @@ Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-buffer
 `malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`.
+
 ## INFINITE_EXECUTION_TIME
 
 Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).
@@ -874,6 +896,7 @@ issue type is disabled.
 For instance, Inferbo's interval analysis is limited to affine
 expressions. Hence, we can't statically estimate an upper bound on the
 below example and obtain T(unknown) cost:
+
 ```java
 // Expected: square root(x), got T
 void square_root_FP(int x) {
@@ -883,20 +906,23 @@ void square_root_FP(int x) {
  }
 }
 ```
-### Example 2: T due to unmodeled calls 
-Another common case where we get T cost is when Infer cannot statically determine the range of values for loop bounds. For instance, 
+
+### Example 2: T due to unmodeled calls
+
+Another common case where we get T cost is when Infer cannot statically determine the range of values for loop bounds. For instance,
 
 ```java
 void loop_over_charArray_FP(StringBuilder builder, String input) {
   for (Character c : input.toCharArray()) {}
 }
 ```
-Here, Infer does not have any InferBo models for the range of values returned by `String.toCharArray`, hence it cannot determine that we will be iterating over a char array in the size of `input` string.  
+
+Here, Infer does not have any InferBo models for the range of values returned by `String.toCharArray`, hence it cannot determine that we will be iterating over a char array in the size of `input` string.
 
 To teach InferBo about such library calls, they should be semantically modeled in [InferBo](https://github.com/facebook/infer/blob/main/infer/src/bufferoverrun/bufferOverrunModels.ml).
 
-
 ### Example 3: T due to calling another T-costed function
+
 Since the analysis is inter-procedural, another example we can have T cost is if at least one of the callees has T cost.
 
 ```java
@@ -906,12 +932,12 @@ void call_top_cost_FP() {
 }
 ```
 
-
 ## INSECURE_INTENT_HANDLING
 
 Reported as "Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).
 
 Undocumented.
+
 ## INTEGER_OVERFLOW_L1
 
 Reported as "Integer Overflow L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -923,33 +949,33 @@ on `n + 3`.
 Integer overflows reports fall into several "buckets" corresponding to the expected precision of the
 report. The higher the number, the more likely it is to be a false positive.
 
-*   `L1`: The most faithful report, when it *must* be unsafe.  For example,
-    `[2147483647,2147483647] + [1,1]` in 32-bit signed integer type.
-
-*   `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example,
-    `[2147483647,2147483647] + [0,1]` in 32-bit signed integer type.  Note that the integer of RHS
-    can be 0, which is safe.
-
-*   `L5`: The reports that are not included in the above cases.
-
-*   `U5`: A binary integer operation is unsafe by unknown values, which are usually from unknown
-    function calls.
+* `L1`: The most faithful report, when it *must* be unsafe.  For example,
+  `[2147483647,2147483647] + [1,1]` in 32-bit signed integer type.
+* `L2`: Less faithful report than `L1`, when it *may* be unsafe.  For example,
+  `[2147483647,2147483647] + [0,1]` in 32-bit signed integer type.  Note that the integer of RHS
+  can be 0, which is safe.
+* `L5`: The reports that are not included in the above cases.
+* `U5`: A binary integer operation is unsafe by unknown values, which are usually from unknown
+  function calls.
 
 ## INTEGER_OVERFLOW_L2
 
 Reported as "Integer Overflow L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+
 ## INTEGER_OVERFLOW_L5
 
 Reported as "Integer Overflow L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+
 ## INTEGER_OVERFLOW_U5
 
 Reported as "Integer Overflow U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
+
 ## INTERFACE_NOT_THREAD_SAFE
 
 Reported as "Interface Not Thread Safe" by [racerd](/docs/next/checker-racerd).
@@ -973,9 +999,10 @@ expected for the front-end of the language for the analyzed code.
 Reported as "Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).
 
 We report this issue type when a function call is loop-invariant and hoistable, i.e.
-- the function has no side side effects (pure)
-- has invariant arguments and result (i.e. have the same value in all loop iterations)
-- it is guaranteed to execute, i.e. it dominates all loop sources
+
+* the function has no side side effects (pure)
+* has invariant arguments and result (i.e. have the same value in all loop iterations)
+* it is guaranteed to execute, i.e. it dominates all loop sources
 
 ```java
 int foo(int x, int y) {
@@ -997,16 +1024,19 @@ void invariant_hoist(int size) {
 Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).
 
 A blocking `Binder` IPC call occurs on the UI thread.
+
 ## JAVASCRIPT_INJECTION
 
 Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into JavaScript.
+
 ## LAB_RESOURCE_LEAK
 
 Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).
 
 Toy issue.
+
 ## LOCKLESS_VIOLATION
 
 Reported as "Lockless Violation" by [starvation](/docs/next/checker-starvation).
@@ -1036,20 +1066,20 @@ Reported as "Lock Consistency Violation" by [racerd](/docs/next/checker-racerd).
 
 This is an error reported on C++ and Objective C classes whenever:
 
-- Some class method directly uses locking primitives (not transitively).
-- It has a public method which writes to some member `x` while holding a lock.
-- It has a public method which reads `x` without holding a lock.
+* Some class method directly uses locking primitives (not transitively).
+* It has a public method which writes to some member `x` while holding a lock.
+* It has a public method which reads `x` without holding a lock.
 
 The above may happen through a chain of calls. Above, `x` may also be a
 container (an array, a vector, etc).
 
 ### Fixing Lock Consistency Violation reports
 
-- Avoid the offending access (most often the read). Of course, this may not be
+* Avoid the offending access (most often the read). Of course, this may not be
   possible.
-- Use synchronization to protect the read, by using the same lock protecting the
+* Use synchronization to protect the read, by using the same lock protecting the
   corresponding write.
-- Make the method doing the read access private. This should silence the
+* Make the method doing the read access private. This should silence the
   warning, since Infer looks for a pair of non-private methods. Objective-C:
   Infer considers a method as private if it's not exported in the header-file
   interface.
@@ -1059,6 +1089,7 @@ container (an array, a vector, etc).
 Reported as "Logging Private Data" by [quandary](/docs/next/checker-quandary).
 
 Undocumented.
+
 ## MEMORY_LEAK_C
 
 Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
@@ -1093,12 +1124,12 @@ objects from Core Foundation or Core Graphics don't get released.
 Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
 
 See [MEMORY_LEAK_C](#memory_leak_c)
+
 ## MISSING_REQUIRED_PROP
 
 Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).
 
 This issues is reported when a required `@Prop` is missing.
-
 
 ## Examples
 
@@ -1147,7 +1178,6 @@ MyComponent.create(c)
 
 or alternatively, if the `prop2` is not really required, we could change the component spec to reflect that:
 
-
 ```java
 class MyComponentSpec {
 
@@ -1159,6 +1189,7 @@ class MyComponentSpec {
   ...
 }
 ```
+
 ## MIXED_SELF_WEAKSELF
 
 Reported as "Mixed Self WeakSelf" by [self-in-block](/docs/next/checker-self-in-block).
@@ -1191,13 +1222,14 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 Reported as "Modifies Immutable" by [impurity](/docs/next/checker-impurity).
 
 This issue type indicates modifications to fields marked as @Immutable. For instance, below function `mutateArray` would be marked as modifying immutable field `testArray`:
+
 ```java
   @Immutable int[] testArray = new int[]{0, 1, 2, 4};
-  
+
   int[] getTestArray() {
     return testArray;
-  }                
-          
+  }
+
   void mutateArray() {
     int[] array = getTestArray();
     array[2] = 7;
@@ -1271,6 +1303,7 @@ Adding a check for `nil` before calling the block, or making sure never to call 
 Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NIL_BLOCK_CALL](#nil_block_call). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NIL_INSERTION_INTO_COLLECTION
 
 Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
@@ -1321,6 +1354,7 @@ that the object passed will never be `nil`, or adding a check for `nil` before c
 Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
 
 A latent [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NIL_MESSAGING_TO_NON_POD
 
 Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
@@ -1355,6 +1389,7 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 Reported as "Nil Messaging To Non Pod Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NIL_MESSAGING_TO_NON_POD](#nil_messaging_to_non_pod). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NO_MATCHING_BRANCH_IN_TRY
 
 Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
@@ -1362,6 +1397,7 @@ Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
 No matching branch is found when evaluating the `of` section of a `try` expression. Corresponds to the `{try_clause,V}` error in the Erlang runtime.
 
 For example, if we call `tail([])` and the full definition of `tail` is
+
 ```erlang
 tail(X) ->
     try X of
@@ -1376,6 +1412,7 @@ tail(X) ->
 Reported as "No Matching Branch In Try Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_MATCHING_BRANCH_IN_TRY](#no_matching_branch_in_try). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NO_MATCHING_CASE_CLAUSE
 
 Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
@@ -1383,6 +1420,7 @@ Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
 No matching case clause in Erlang: Reports an error when none of the clauses of a `case` match the expression. Corresponds to the `{case_clause,V}` error in the Erlang runtime.
 
 For example, if we call `tail([])` and the full definition of `tail` is
+
 ```erlang
 tail(X) ->
     case X of
@@ -1397,6 +1435,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NO_MATCHING_FUNCTION_CLAUSE
 
 Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
@@ -1404,6 +1443,7 @@ Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
 No matching function clause in Erlang: Reports an error when none of the clauses of a function match the arguments of a call. Corresponds to the `function_clause` error in the Erlang runtime.
 
 For example, if we call `tail([])` and the full definition of `tail` is
+
 ```erlang
 tail([_|Xs]) -> Xs.
 ```
@@ -1415,6 +1455,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 Reported as "No Matching Function Clause Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_MATCHING_FUNCTION_CLAUSE](#no_matching_function_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NO_MATCH_OF_RHS
 
 Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
@@ -1428,6 +1469,7 @@ For example, `[H|T] = []` gives the error because the left hand side pattern req
 Reported as "No Match Of Rhs Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_MATCH_OF_RHS](#no_match_of_rhs). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NO_TRUE_BRANCH_IN_IF
 
 Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
@@ -1435,6 +1477,7 @@ Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
 No true branch when evaluating an if expression in Erlang: Reports an error when none of the branches of an `if` expression evaluate to true. Corresponds to the `if_clause` error in the Erlang runtime.
 
 For example, if we call `sign(0)` and the full definition of `sign` is
+
 ```erlang
 sign(X) ->
     if
@@ -1448,6 +1491,7 @@ sign(X) ->
 Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NULLPTR_DEREFERENCE
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
@@ -1655,11 +1699,13 @@ also have a dedicated issue type for this case:
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
 A latent [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](#nullptr_dereference_in_nullsafe_class). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NULLPTR_DEREFERENCE_LATENT
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
 A latent [NULLPTR_DEREFERENCE](#nullptr_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NULL_ARGUMENT
 
 Reported as "Null Argument" by [pulse](/docs/next/checker-pulse).
@@ -1673,7 +1719,7 @@ This issue type indicates `nil` being passed as argument where a non-nil value e
 NSString* stringNotNil(NSString* str) {
   if (!str) {
         // ERROR: NSString:stringWithString: expects a non-nil value
-	return [NSString stringWithString:nil];
+  return [NSString stringWithString:nil];
   }
   return str;
 }
@@ -1684,11 +1730,13 @@ NSString* stringNotNil(NSString* str) {
 Reported as "Null Argument Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NULL_ARGUMENT](#null_argument). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
 
 See [NULLPTR_DEREFERENCE](#nullptr_dereference).
+
 ## OPTIONAL_EMPTY_ACCESS
 
 Reported as "Optional Empty Access" by [pulse](/docs/next/checker-pulse).
@@ -1750,6 +1798,7 @@ int value_no_check() {
 Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [OPTIONAL_EMPTY_ACCESS](#optional_empty_access). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## PREMATURE_NIL_TERMINATION_ARGUMENT
 
 Reported as "Premature Nil Termination Argument" by [biabduction](/docs/next/checker-biabduction).
@@ -1878,6 +1927,7 @@ void unsafe_expressions_bad(folly::F14FastMap<int, int>& map) {
 Reported as "Resource Leak" by [pulse](/docs/next/checker-pulse).
 
 See [RESOURCE_LEAK](#resource_leak)
+
 ## PULSE_TRANSITIVE_ACCESS
 
 Reported as "Transitive Access" by [pulse](/docs/next/checker-pulse).
@@ -1886,9 +1936,8 @@ This issue tracks spurious accesses that are reachable from specific entry funct
 
 Spurious accesses are specified as specific load/calls.
 
-Entry functions are specified through their enclosing class that must extend a specific 
+Entry functions are specified through their enclosing class that must extend a specific
 class and should not extend a list of specific classes.
-
 
 ## PULSE_UNAWAITED_AWAITABLE
 
@@ -1925,7 +1974,7 @@ For example, in the following code, the `FIELD` can be read by the static method
 ```hack
 abstract class A {
   abstract const string FIELD;
-  
+
   public static function get_field(): string {
     return static::FIELD;
   }
@@ -1979,6 +2028,7 @@ void foo() {
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
 A latent [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## PULSE_UNNECESSARY_COPY
 
 Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
@@ -2002,21 +2052,25 @@ int use_reference_instead(A& x){
   return y.a;
 }
 ```
+
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT
 
 Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST
 
 Reported as "Unnecessary Copy Assignment from Const" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE
 
 Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
+
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE
 
 Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).
@@ -2032,32 +2086,33 @@ void callee(ExpensiveObject obj) {
 
 void caller() {
   callee(myExpensiveObj); // a copy of myExpensiveObj is created
-  // the copy is destroyed right after the call  
+  // the copy is destroyed right after the call
 }
 ```
 
 In this case, when we call `callee`, under the hood, a copy of the argument `myExpensiveObj` is created to be passed to the function call. However, the copy might be unnecessary if
 
- -   `callee` doesn’t modify its parameter → then we can change its type to `const ExpensiveObject&`, getting rid of the copy at caller
- -   even if `callee` might modify the object, if the argument `myExpensiveObj` is never used later on, we can get rid of the copy by moving it instead: `callee(std::move(myExpensiveObj))`.
-
+* `callee` doesn’t modify its parameter → then we can change its type to `const ExpensiveObject&`, getting rid of the copy at caller
+* even if `callee` might modify the object, if the argument `myExpensiveObj` is never used later on, we can get rid of the copy by moving it instead: `callee(std::move(myExpensiveObj))`.
 
 The analysis is careful about suggesting moves blindly though: if the argument `myExpensiveObj` is of type `const & ExpensiveObject` then we also recommend that for move to work, const-reference needs to be removed.
 
-
 PS: We check for other conditions on the argument here: e.g. it should be local to the procedure, as moving a non-local member might cause other memory correctness issues like use-after-move later on.
+
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST
 
 Reported as "Unnecessary Copy Intermediate from Const" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+
 ## PULSE_UNNECESSARY_COPY_MOVABLE
 
 Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).
 
 This is reported when Infer detects an unnecessary copy into a field where
-- the source is an rvalue-reference
-- the source is not modified before it goes out of scope or is destroyed.
+
+* the source is an rvalue-reference
+* the source is not modified before it goes out of scope or is destroyed.
 
 Note that the copy can be modified since it has the ownership of the object.
 
@@ -2082,6 +2137,7 @@ class Test {
 };
 
 ```
+
 ## PULSE_UNNECESSARY_COPY_OPTIONAL
 
 Reported as "Unnecessary Copy to Optional" by [pulse](/docs/next/checker-pulse).
@@ -2107,6 +2163,7 @@ void pass_non_optional_value(A x) {
 Reported as "Unnecessary Copy to Optional from Const" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional).
+
 ## PULSE_UNNECESSARY_COPY_RETURN
 
 Reported as "Unnecessary Copy Return" by [pulse](/docs/next/checker-pulse).
@@ -2173,11 +2230,13 @@ void set_impure(int x, int y) {
 Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).
 
 Generic taint error when nothing else fits.
+
 ## REGEX_OP_ON_UI_THREAD
 
 Reported as "Regex Op On Ui Thread" by [starvation](/docs/next/checker-starvation).
 
 A potentially costly operation on a regular expression occurs on the UI thread.
+
 ## RESOURCE_LEAK
 
 Reported as "Resource Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -2202,14 +2261,14 @@ This is an example of a resource leak in C code:
 For the remaining of this section, we will consider examples of resource leaks
 in Java code.
 
-TIP: A common source of bugs is <b>exceptions skipping past close()
-statements</b>. That is the first thing to look for if INFER reports a potential
+TIP: A common source of bugs is **exceptions skipping past close()
+statements**. That is the first thing to look for if INFER reports a potential
 resource leak.
 
 ### Basics and Standard Idiom
 
-Some objects in Java, the <i>resources</i>, are supposed to be closed when you
-stop using them, and failure to close is a <i>resource leak</i>. Resources
+Some objects in Java, the *resources*, are supposed to be closed when you
+stop using them, and failure to close is a *resource leak*. Resources
 include input streams, output streams, readers, writers, sockets, http
 connections, cursors, and json parsers.
 
@@ -2347,10 +2406,10 @@ during execution of the GZIPOutputStream constructor.
 
 Here are resources that can throw exceptions i their constructor(s).
 
-- ObjectInputStream , ObjectOutputStream, PipedInputStream, PipedOutputStream,
+* ObjectInputStream , ObjectOutputStream, PipedInputStream, PipedOutputStream,
   PipedReader, PipedWriter, JarInputStream, JarOutputStream, GZIPInputStream,
   GZIPOutputStream , ZipFile all throw IOException
-- PrintStream throws UnsupportedEncodingException
+* PrintStream throws UnsupportedEncodingException
 
 The constructors for FileInputStream, FileOutputStream and RandomAccessFile
 throw FileNotFoundException, but these cases are not problematic in the sense
@@ -2447,7 +2506,7 @@ legitimate to simply convert the code over to try-with-resources if you have
 access to Java 7, so as to save yourself some brain-cycles. You will also end up
 with cleaner code.
 
-If try-with-resources is so great you should <i>always</i> use it. But you
+If try-with-resources is so great you should *always* use it. But you
 shouldn't… Try-with-resources gives resources static scoping, and works via a
 stack discipline. Sometimes, you want a resource to persist beyond scope, as in
 the escaping example above. In an escaping example maybe you could refactor lots
@@ -2502,8 +2561,9 @@ either directly or transitively.
 
 A configuration is used to list the set of scopes and the must-not-hold relation.
 
-In the following Java example, the set of scopes is Outer and Inner, and the must-not-hold
-relation is simply \{(Outer, Inner)\}:
+In the following Java example, the set of scopes is Outer and Inner, and the
+must-not-hold relation is simply \{(Outer, Inner)\}:
+
 ```java
 @ScopeType(value = Outer.class)
 class ClassOfOuterScope {
@@ -2540,26 +2600,31 @@ given scope.
 Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).
 
 A flow of sensitive data was detected from a source.
+
 ## SHELL_INJECTION
 
 Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).
 
 Environment variable or file data flowing to shell.
+
 ## SHELL_INJECTION_RISK
 
 Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).
 
 Code injection if the caller of the endpoint doesn't sanitize on its end.
+
 ## SQL_INJECTION
 
 Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).
 
 Untrusted and unescaped data flows to SQL.
+
 ## SQL_INJECTION_RISK
 
 Reported as "Sql Injection Risk" by [quandary](/docs/next/checker-quandary).
 
 Untrusted and unescaped data flows to SQL.
+
 ## STACK_VARIABLE_ADDRESS_ESCAPE
 
 Reported as "Stack Variable Address Escape" by [pulse](/docs/next/checker-pulse).
@@ -2588,25 +2653,25 @@ leading to an Application Not Responding error.
 
 Infer considers a method as running on the UI thread whenever:
 
-- The method, one of its overrides, its class, or an ancestral class, is
+* The method, one of its overrides, its class, or an ancestral class, is
   annotated with `@UiThread`.
-- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`,
+* The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`,
   etc.
-- The method or its callees call a `Litho.ThreadUtils` method such as
+* The method or its callees call a `Litho.ThreadUtils` method such as
   `assertMainThread`.
 
 The issue is reported when a method deemed to run on the UI thread
 
-- Makes a method call which may block.
-- Takes a lock, and another thread takes the same lock, and before releasing it,
+* Makes a method call which may block.
+* Takes a lock, and another thread takes the same lock, and before releasing it,
   makes a call that may block.
 
 Calls that may block are considered:
 
-- Certain I/O calls.
-- Two way `Binder.transact` calls.
-- Certain OS calls.
-- `Future` or `AsyncTask` calls to `get` without timeouts, or with too large
+* Certain I/O calls.
+* Two way `Binder.transact` calls.
+* Certain OS calls.
+* `Future` or `AsyncTask` calls to `get` without timeouts, or with too large
   timeouts.
 
 To suppress starvation reports in a method `m()` use the
@@ -2707,6 +2772,7 @@ a local strong pointer that has been assigned `weakSelf`.
 Reported as "Taint Error" by [pulse](/docs/next/checker-pulse).
 
 A taint flow was detected from a source to a sink
+
 ## THREAD_SAFETY_VIOLATION
 
 Reported as "Thread Safety Violation" by [racerd](/docs/next/checker-racerd).
@@ -2720,30 +2786,30 @@ examples.
 
 Here a data race is a pair of accesses to the same member field such that:
 
-- at least one is a write, and,
-- at least one occurs without any lock synchronization, and,
-- the two accesses occur on threads (if known) which can run in parallel.
+* at least one is a write, and,
+* at least one occurs without any lock synchronization, and,
+* the two accesses occur on threads (if known) which can run in parallel.
 
 ### Thread-safety: Potential fixes
 
-- Synchronizing the accesses (using the `synchronized` keyword, thread-exclusion
+* Synchronizing the accesses (using the `synchronized` keyword, thread-exclusion
   such as atomic objects, `volatile` etc).
-- Making an offending method private -- this will exclude it from being checked
+* Making an offending method private -- this will exclude it from being checked
   at the top level, though it will be checked if called by a public method which
   may itself, e.g., hold a lock when calling it.
-- Putting the two accesses on the same thread, e.g., by using `@MainThread` or
+* Putting the two accesses on the same thread, e.g., by using `@MainThread` or
   `@ThreadConfined`.
 
 ### Thread-safety: Conditions checked before reporting
 
 The class and method are not marked `@ThreadSafe(enableChecks = false)`, and,
 
-- The method is declared `synchronized`, or employs (non-transitively) locking,
+* The method is declared `synchronized`, or employs (non-transitively) locking,
   or,
-- The class is not marked `@NotThreadSafe`, and,
-  - The class/method is marked `@ThreadSafe,` or one of the configured synonyms
+* The class is not marked `@NotThreadSafe`, and,
+  * The class/method is marked `@ThreadSafe,` or one of the configured synonyms
     in `.inferconfig`, or,
-  - A parent class, or an override method are marked with the above annotations.
+  * A parent class, or an override method are marked with the above annotations.
 
 NB currently RacerD **does not take into account `@GuardedBy`**.
 
@@ -2774,14 +2840,14 @@ NB RacerD currently **does not recognize `@WorkerThread`, `@BinderThread` or
 
 These annotations can be found at `com.facebook.infer.annotation.*`.
 
-- `@Functional` This is a method annotation indicating the method always returns
+* `@Functional` This is a method annotation indicating the method always returns
   the same value. When a method `foo` is annotated `@Functional`, RacerD will
   ignore any writes of the return value of `foo`. For example, in
   `this.x = foo()`, the write to `this.x` is ignored. The reasoning is that if
   the method returns the same value whenever it's called, any data race on
   `this.x` is benign, if that is the only write.
 
-- `@ThreadConfined` This is a class/method/field annotation which takes a single
+* `@ThreadConfined` This is a class/method/field annotation which takes a single
   parameter which can be `UI`, `ANY` or a user chosen string. It indicates to
   RacerD a thread identifier for the class/method/field. Thus,
   `@ThreadConfined(UI)` is equivalent to `@UiThread`, and `@ThreadConfined(ANY)`
@@ -2793,11 +2859,11 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   However, only the UI thread is supported at this time, and any user provided
   value is considered equal to `UI`.
 
-- `@VisibleForTesting` A method annotation making Infer consider the method as
+* `@VisibleForTesting` A method annotation making Infer consider the method as
   effectively `private`. This means it will not be checked for races against
   other non-private methods of the class, but only if called by one.
 
-- `@ReturnsOwnership` A method annotation indicating that the method returns a
+* `@ReturnsOwnership` A method annotation indicating that the method returns a
   freshly owned object. Accesses to the returned value will not be considered
   for data races, as the object is in-effect unique and not accessible yet from
   other threads. The main utility of this annotation is in interfaces, where
@@ -2819,61 +2885,73 @@ See [Topl](/docs/next/checker-topl##what-is-it) for an example
 Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## UNTRUSTED_BUFFER_ACCESS
 
 Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data of any kind flowing to buffer.
+
 ## UNTRUSTED_DESERIALIZATION
 
 Reported as "Untrusted Deserialization" by [quandary](/docs/next/checker-quandary).
 
 User-controlled deserialization.
+
 ## UNTRUSTED_DESERIALIZATION_RISK
 
 Reported as "Untrusted Deserialization Risk" by [quandary](/docs/next/checker-quandary).
 
 User-controlled deserialization
+
 ## UNTRUSTED_ENVIRONMENT_CHANGE_RISK
 
 Reported as "Untrusted Environment Change Risk" by [quandary](/docs/next/checker-quandary).
 
 User-controlled environment mutation.
+
 ## UNTRUSTED_FILE
 
 Reported as "Untrusted File" by [quandary](/docs/next/checker-quandary).
 
 User-controlled file creation; may be vulnerable to path traversal and more.
+
 ## UNTRUSTED_FILE_RISK
 
 Reported as "Untrusted File Risk" by [quandary](/docs/next/checker-quandary).
 
 User-controlled file creation; may be vulnerable to path traversal and more.
+
 ## UNTRUSTED_HEAP_ALLOCATION
 
 Reported as "Untrusted Heap Allocation" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS.
+
 ## UNTRUSTED_INTENT_CREATION
 
 Reported as "Untrusted Intent Creation" by [quandary](/docs/next/checker-quandary).
 
 Creating an Intent from user-controlled data.
+
 ## UNTRUSTED_URL_RISK
 
 Reported as "Untrusted Url Risk" by [quandary](/docs/next/checker-quandary).
 
 Untrusted flag, environment variable, or file data flowing to URL.
+
 ## UNTRUSTED_VARIABLE_LENGTH_ARRAY
 
 Reported as "Untrusted Variable Length Array" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack buffer that's too large will cause a stack overflow.
+
 ## USER_CONTROLLED_SQL_RISK
 
 Reported as "User Controlled Sql Risk" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows to SQL (no injection risk).
+
 ## USE_AFTER_DELETE
 
 Reported as "Use After Delete" by [pulse](/docs/next/checker-pulse).
@@ -2885,6 +2963,7 @@ An address that was invalidated by a call to `delete` in C++ is dereferenced.
 Reported as "Use After Delete Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [USE_AFTER_DELETE](#use_after_delete). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## USE_AFTER_FREE
 
 Reported as "Use After Free" by [pulse](/docs/next/checker-pulse).
@@ -2896,6 +2975,7 @@ An address that was invalidated by a call to `free` in C is dereferenced.
 Reported as "Use After Free Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [USE_AFTER_FREE](#use_after_free). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## USE_AFTER_LIFETIME
 
 Reported as "Use After Lifetime" by [pulse](/docs/next/checker-pulse).
@@ -2920,6 +3000,7 @@ void foo() {
 Reported as "Use After Lifetime Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [USE_AFTER_LIFETIME](#use_after_lifetime). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## VECTOR_INVALIDATION
 
 Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).
@@ -2948,6 +3029,7 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
 Reported as "Vector Invalidation Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [VECTOR_INVALIDATION](#vector_invalidation). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+
 ## WEAK_SELF_IN_NO_ESCAPE_BLOCK
 
 Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/next/checker-self-in-block).
@@ -2983,4 +3065,3 @@ Replace `weakSelf` with `self`:
 
 *Limitations:* To keep this check simple and intra-procedural, we rely on names to find `weakSelf`:
 we assume that any captured weak pointer whose name contains "self" is a weak reference to `self`.
-

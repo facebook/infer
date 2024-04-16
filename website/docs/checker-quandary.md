@@ -10,6 +10,7 @@ The Quandary taint analysis detects flows of values between sources and sinks, e
 Activate with `--quandary`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
@@ -26,10 +27,10 @@ and you can define custom sources and sinks in your `.inferconfig` file (see
 example
 [here](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/quandary/.inferconfig)).
 
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [CREATE_INTENT_FROM_URI](/docs/next/all-issue-types#create_intent_from_uri)
 - [CROSS_SITE_SCRIPTING](/docs/next/all-issue-types#cross_site_scripting)
 - [EXPOSED_INSECURE_INTENT_HANDLING](/docs/next/all-issue-types#exposed_insecure_intent_handling)

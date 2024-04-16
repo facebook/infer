@@ -2,37 +2,37 @@
 
 This website is built using Docusaurus 3, a modern static website generator.
 
-### Installation
+## Installation
 
 NOTE: On Debian, you likely want to use `corepack yarn` (yarn
 "classic") instead of `yarn`, e.g. `corepack yarn start`.
 
-```
-$ yarn
+```console
+yarn
 ```
 
-### Local Development
+## Local Development
 
-```
-$ yarn start
+```console
+yarn start
 ```
 
 This command starts a local development server and open up a browser window.
 Most changes are reflected live without having to restart the server.
 
-### Build
+## Build
 
-```
-$ yarn build
+```console
+yarn build
 ```
 
 This command generates static content into the `build` directory and can be
 served using any static contents hosting service.
 
-### Deployment
+## Deployment
 
-```
-$ GIT_USER=<Your GitHub username> USE_SSH=1 yarn deploy
+```console
+GIT_USER=<Your GitHub username> USE_SSH=1 yarn deploy
 ```
 
 If you are using GitHub pages for hosting, this command is a convenient way to

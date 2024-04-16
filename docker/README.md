@@ -5,7 +5,6 @@ contains a docker file to install Infer within a
 [docker](https://www.docker.com/) container. This can be used to
 quickly try Infer or to deploy Infer.
 
-
 ## Pre-requisites
 
 To use this docker image, you will need a working docker
@@ -13,12 +12,11 @@ installation. See the instructions for
 [Linux](http://docs.docker.com/linux/step_one/) or
 [MacOSX](http://docs.docker.com/mac/step_one/) as appropriate.
 
-
 ## How to use
 
 This docker file will use the latest
 [released](https://github.com/facebook/infer/releases) version of
-Infer. 
+Infer.
 
 1. Get docker running, e.g. using Docker Quickstart Terminal.
 2. go to the version of your choice, e.g. `cd docker/1.1.0/`

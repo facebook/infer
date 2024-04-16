@@ -8,4 +8,3 @@ Infer considers a method as running on the UI thread whenever:
   etc.
 - The method or its callees call a `Litho.ThreadUtils` method such as
   `assertMainThread`.
-

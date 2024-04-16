@@ -1,6 +1,5 @@
 This issues is reported when a required `@Prop` is missing.
 
-
 ## Examples
 
 Assume that the following Litho Component specification is defined as follows where `prop1` is optional and `prop2` is required.
@@ -47,7 +46,6 @@ MyComponent.create(c)
 ```
 
 or alternatively, if the `prop2` is not really required, we could change the component spec to reflect that:
-
 
 ```java
 class MyComponentSpec {

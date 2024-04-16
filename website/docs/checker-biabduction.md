@@ -10,6 +10,7 @@ This analysis deals with a range of issues, many linked to memory safety.
 Activate with `--biabduction`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: Yes
 - Erlang: No
@@ -22,6 +23,7 @@ Read more about its foundations in the [Separation Logic and Biabduction page](s
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [BIABDUCTION_MEMORY_LEAK](/docs/next/all-issue-types#biabduction_memory_leak)
 - [BIABDUCTION_RETAIN_CYCLE](/docs/next/all-issue-types#biabduction_retain_cycle)
 - [DANGLING_POINTER_DEREFERENCE](/docs/next/all-issue-types#dangling_pointer_dereference)

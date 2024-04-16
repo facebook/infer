@@ -49,7 +49,7 @@ analyze your files.
 A workaround consists in setting the `LD` environment variable to a dummy
 linker, for instance:
 
-```
+```sh
 LD=/bin/true infer [options] -- <build command>
 ```
 

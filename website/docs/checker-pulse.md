@@ -8,6 +8,7 @@ General-purpose memory and value analysis engine.
 Activate with `--pulse`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: Experimental
@@ -45,6 +46,7 @@ class Registry {
 ```
 
 How to run pulse for Java:
+
 ```bash
 infer run --pulse -- javac Test.java
 ```
@@ -101,6 +103,7 @@ void false_positive(int *x) {
 ```
 
 You can check if a given function called any unknown functions by inspecting its Pulse summary. For example, for the code above:
+
 ```console
 $ infer --pulse-only -- clang -c unknown_code.c
   No issues found
@@ -131,10 +134,10 @@ class Registry {
 }
 ```
 
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [BAD_ARG](/docs/next/all-issue-types#bad_arg)
 - [BAD_ARG_LATENT](/docs/next/all-issue-types#bad_arg_latent)
 - [BAD_KEY](/docs/next/all-issue-types#bad_key)
