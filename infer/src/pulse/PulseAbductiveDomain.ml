@@ -716,14 +716,14 @@ module Internal = struct
     let exists_edge v astate ~f = Container.exists ~iter:(iter_edges v) astate ~f
   end
 
-  let add_static_type tenv typ_name addr astate =
+  let add_static_type tenv typ_name addr location astate =
     let is_final =
       Tenv.lookup tenv typ_name
       |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
     in
     if is_final then
       let phi' =
-        PulseFormula.add_dynamic_type_unsafe (downcast addr) (Typ.mk_struct typ_name)
+        PulseFormula.add_dynamic_type_unsafe (downcast addr) (Typ.mk_struct typ_name) location
           astate.path_condition
       in
       set_path_condition phi' astate
@@ -749,7 +749,7 @@ module Internal = struct
           , Option.value attrs_opt ~default:Attributes.empty )
 
 
-  let add_static_types tenv astate formals_and_captured =
+  let add_static_types tenv location astate formals_and_captured =
     let record_static_type astate (_var, typ, _, (src_addr, src_addr_hist)) =
       match typ with
       | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)}
@@ -772,7 +772,7 @@ module Internal = struct
               pre= PreDomain.update ~heap:pre_heap astate.pre
             ; post= PostDomain.update ~heap:post_heap astate.post }
           in
-          add_static_type tenv typ_name addr astate
+          add_static_type tenv typ_name addr location astate
       | _ ->
           astate
     in
@@ -1467,7 +1467,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
     then
       (* The Hack and Python and Clang frontends do not propagate types from declarations to usage,
          so we redo part of the work ourself *)
-      add_static_types tenv astate formals_and_captured
+      add_static_types tenv proc_attrs.loc astate formals_and_captured
     else astate
   in
   update_pre_for_kotlin_proc astate proc_attrs formals
@@ -2265,8 +2265,8 @@ module AddressAttributes = struct
     SafeAttributes.add_dict_read_const_key timestamp trace (CanonValue.canon' astate v) key astate
 
 
-  let add_static_type tenv typ v astate =
-    add_static_type tenv typ (CanonValue.canon' astate v) astate
+  let add_static_type tenv typ v location astate =
+    add_static_type tenv typ (CanonValue.canon' astate v) location astate
 
 
   let remove_allocation_attr v astate =

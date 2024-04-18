@@ -639,7 +639,8 @@ module PulseTransferFunctions = struct
         let astate, self = PulseOperations.eval_ident (fst ret) astate in
         (* Also register its static type *)
         let astate =
-          AbductiveDomain.AddressAttributes.add_static_type tenv type_name (fst self) astate
+          AbductiveDomain.AddressAttributes.add_static_type tenv type_name (fst self) call_loc
+            astate
         in
         let self_origin = ValueOrigin.OnStack {var= Var.of_id (fst ret); addr_hist= self} in
         let ret_exp, ret_ty = ret in
@@ -1302,7 +1303,7 @@ module PulseTransferFunctions = struct
              let rhs_addr, _ = rhs_addr_hist in
              and_is_int_if_integer_type typ rhs_addr astate
              >>|| PulseOperations.hack_python_propagates_type_on_load tenv path loc rhs_exp rhs_addr
-             >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr
+             >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
             |> SatUnsat.to_list
             |> PulseReport.report_results tenv proc_desc err_log loc
@@ -1576,11 +1577,12 @@ let assume_notnull_params {ProcAttributes.proc_name; formals} astate =
       else astate )
 
 
-let initial tenv proc_attrs specialization =
+let initial tenv proc_attrs specialization location =
   let path = PathContext.initial in
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_attrs
-    |> Option.value_map specialization ~default:Fun.id ~f:PulseSpecialization.apply
+    |> Option.value_map specialization ~default:Fun.id ~f:(fun spec ->
+           PulseSpecialization.apply spec location )
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
@@ -1684,11 +1686,12 @@ let analyze specialization
     ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_attrs = Procdesc.get_attributes proc_desc in
+  let location = Procdesc.get_loc proc_desc in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let initial =
     with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
       ~f:(fun () ->
-        let initial_disjuncts = initial tenv proc_attrs specialization in
+        let initial_disjuncts = initial tenv proc_attrs specialization location in
         let initial_non_disj =
           PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc integer_type_widths
             tenv

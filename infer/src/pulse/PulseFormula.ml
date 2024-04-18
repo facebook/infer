@@ -3963,20 +3963,22 @@ type dynamic_type_data = InstanceOf.dynamic_type_data =
 
 let get_dynamic_type = DynamicTypes.get_dynamic_type
 
-let add_dynamic_type_unsafe v t ?source_file {conditions; phi} =
+let add_dynamic_type_unsafe v t ?source_file location {conditions; phi} =
   match Formula.add_dynamic_type v t ?source_file phi with
   | Sat phi ->
       {conditions; phi}
   | _ ->
       (* It seems this "can't happen" case does, in fact, sometimes happen
-         Just return original phi and log to html for now
-         TODO: add Scuba logging
+         Just return original phi and log to html and scuba
       *)
       let prev_fact = Var.Map.find_opt v phi.type_constraints in
       L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
         (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
         (Pp.option InstanceOf.pp_instance_fact)
         prev_fact ;
+      ScubaLogging.log_message_with_location ~label:"add_dynamic_type_unsafe"
+        ~loc:(F.asprintf "%a" Location.pp_file_pos location)
+        ~message:"Failed to add inconsistent dynamic type." ;
       {conditions; phi}
 
 
