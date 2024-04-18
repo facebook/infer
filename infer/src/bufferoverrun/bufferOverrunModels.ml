@@ -801,11 +801,10 @@ module StdVector = struct
       let arr_locs = deref_of model_env elt_typ vec_arg mem in
       let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
       let internal_arr =
-        let eval_vec_internal_array_locs coll_exp mem =
-          Sem.eval_locs coll_exp mem
-          |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
+        let internal_array_locs =
+          Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
         in
-        Dom.Mem.find_set (eval_vec_internal_array_locs lst_exp mem) mem
+        Dom.Mem.find_set internal_array_locs mem
       in
       let arr_blk = Dom.Val.get_array_blk internal_arr in
       let lst_elet = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
