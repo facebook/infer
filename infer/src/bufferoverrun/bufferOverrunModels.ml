@@ -1290,7 +1290,7 @@ module StdInitializerList = struct
     let internal_array =
       let offset = ArrayBlk.get_offset arrblk in
       let size = ArrayBlk.get_size arrblk in
-      let stride = Some 1 in
+      let stride = None in
       Dom.Val.of_c_array_alloc arr_as ~offset ~size ~stride ~traces
     in
     mem
