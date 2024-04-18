@@ -721,8 +721,7 @@ module StdVector = struct
       in
       let vec_arr_ploc = append_field deref_of_vec ~vec_typ ~elt_typ |> PowLoc.singleton in
       let mem =
-        let lst = Dom.Mem.find_set (Sem.eval_locs lst_exp mem) mem in
-        let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces lst) in
+        let traces = Trace.Set.singleton location ArrayDeclaration in
         let arr_as =
           Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
             ~represents_multiple_values:true
