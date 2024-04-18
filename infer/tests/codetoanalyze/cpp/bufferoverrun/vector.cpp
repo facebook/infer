@@ -40,7 +40,7 @@ void constructor_overload2_Good() {
 
 void constructor_overload2_Bad() {
   std::vector<int> v = {1, 2, 3};
-  v[v[0]] = 2;
+  v[v[2]] = 2;
 }
 
 void push_back_Good() {
