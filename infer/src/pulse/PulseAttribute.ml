@@ -173,9 +173,6 @@ module Attribute = struct
           F.fprintf f "DictMissingKey(%a, %a)" DecompilerExpr.pp dict Fieldname.pp key
   end
 
-  type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option}
-  [@@deriving compare, equal]
-
   module ConstKeys = struct
     module Metadata = struct
       (** The metadata contains a timestamp and a trace. The trace is to construct a proper trace of
@@ -214,7 +211,6 @@ module Attribute = struct
         ; copied_location: Location.t }
     | DictContainConstKeys
     | DictReadConstKeys of ConstKeys.t
-    | DynamicType of dynamic_type_data
     | EndOfCollection
     | InReportedRetainCycle
     | Initialized
@@ -269,8 +265,6 @@ module Attribute = struct
   let dict_contain_const_keys_rank = Variants.dictcontainconstkeys.rank
 
   let dict_read_const_keys_rank = Variants.dictreadconstkeys.rank
-
-  let dynamic_type_rank = Variants.dynamictype.rank
 
   let end_of_collection_rank = Variants.endofcollection.rank
 
@@ -347,9 +341,6 @@ module Attribute = struct
         F.pp_print_string f "DictContainConstKeys"
     | DictReadConstKeys keys ->
         F.fprintf f "DictReadConstKeys(@[%a@])" ConstKeys.pp keys
-    | DynamicType {typ; source_file} ->
-        F.fprintf f "DynamicType %a, SourceFile %a" (Typ.pp Pp.text) typ (Pp.option SourceFile.pp)
-          source_file
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
     | InReportedRetainCycle ->
@@ -432,7 +423,6 @@ module Attribute = struct
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
-    | DynamicType _
     | EndOfCollection
     | InReportedRetainCycle
     | Initialized
@@ -474,7 +464,6 @@ module Attribute = struct
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
-    | DynamicType _
     | EndOfCollection
     | InReportedRetainCycle
     | Initialized
@@ -517,7 +506,6 @@ module Attribute = struct
     | CopiedReturn _
     | DictContainConstKeys
     | DictReadConstKeys _
-    | DynamicType _
     | EndOfCollection
     | InReportedRetainCycle
     | Initialized
@@ -624,7 +612,6 @@ module Attribute = struct
       | ConfigUsage (ConfigName _)
       | CSharpResourceReleased
       | DictContainConstKeys
-      | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
       | Initialized
@@ -698,7 +685,6 @@ module Attribute = struct
       | CSharpResourceReleased
       | DictContainConstKeys
       | DictReadConstKeys _
-      | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
       | InReportedRetainCycle
@@ -950,11 +936,6 @@ module Attributes = struct
   let remove_dict_contain_const_keys = remove_by_rank Attribute.dict_contain_const_keys_rank
 
   let is_dict_contain_const_keys = mem_by_rank Attribute.dict_contain_const_keys_rank
-
-  let get_dynamic_type =
-    get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-partial-match"]
-        | DynamicType dynamic_type_data -> dynamic_type_data )
-
 
   let get_must_be_initialized =
     get_by_rank Attribute.must_be_initialized_rank ~dest:(function [@warning "-partial-match"]

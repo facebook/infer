@@ -250,8 +250,6 @@ val add_dict_read_const_key :
   -> t
   -> (t, AccessResult.error) PulseResult.t
 
-val add_dynamic_type : Typ.t -> ?source_file:SourceFile.t -> AbstractValue.t -> t -> t
-
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
 val invalidate_access :

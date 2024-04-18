@@ -426,7 +426,7 @@ module Function = struct
     in
     let<*> astate = PulseOperations.Closures.check_captured_addresses path location lambda astate in
     let callee_proc_name_opt =
-      match AddressAttributes.get_dynamic_type lambda astate with
+      match PulseArithmetic.get_dynamic_type lambda astate with
       | Some {typ= {desc= Typ.Tstruct name}} -> (
         match Tenv.lookup tenv name with
         | Some tstruct ->

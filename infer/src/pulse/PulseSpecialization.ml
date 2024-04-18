@@ -53,8 +53,7 @@ let apply {Specialization.Pulse.aliases; dynamic_types} astate =
       (fun heap_path typename astate ->
         let astate, (addr, _) = initialize_heap_path heap_path astate in
         let typ = Typ.mk_struct typename in
-        let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ astate in
-        AddressAttributes.add_dynamic_type {typ; source_file= None} addr astate )
+        PulseArithmetic.and_dynamic_type_is_unsafe addr typ astate )
       dynamic_types astate
   in
   astate

@@ -187,22 +187,16 @@ and record_closure astate (path : PathContext.t) loc procname
     match (Procname.get_class_type_name procname, procname) with
     | Some typ_name, _ when Procname.is_cpp_lambda procname ->
         let typ = Typ.mk (Typ.Tstruct typ_name) in
-        AddressAttributes.add_one (fst closure_addr_hist)
-          (Attribute.DynamicType {typ; source_file= None})
-          astate
+        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
     | _, Procname.Block bsig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.ObjcBlock bsig)) in
         let astate =
-          AddressAttributes.add_one (fst closure_addr_hist)
-            (Attribute.DynamicType {typ; source_file= None})
-            astate
+          PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
         in
         AbductiveDomain.add_block_source (fst closure_addr_hist) bsig.name astate
     | _, Procname.C csig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
-        AddressAttributes.add_one (fst closure_addr_hist)
-          (Attribute.DynamicType {typ; source_file= None})
-          astate
+        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
     | _ ->
         astate
   in
@@ -556,10 +550,6 @@ let add_dict_read_const_key timestamp trace address key astate =
   else Ok (AddressAttributes.add_dict_read_const_key timestamp trace address key astate)
 
 
-let add_dynamic_type typ ?source_file address astate =
-  AddressAttributes.add_dynamic_type {typ; source_file} address astate
-
-
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
 
 type invalidation_access =
@@ -642,7 +632,8 @@ let shallow_copy path location addr_hist astate =
   let cell_opt = AbductiveDomain.find_post_cell_opt (fst addr_hist) astate in
   let copy = (AbstractValue.mk_fresh (), snd addr_hist) in
   ( Option.value_map cell_opt ~default:astate ~f:(fun cell ->
-        AbductiveDomain.set_post_cell path copy cell location astate )
+        let astate = AbductiveDomain.set_post_cell path copy cell location astate in
+        PulseArithmetic.copy_type_constraints (fst addr_hist) (fst copy) astate )
   , copy )
 
 
@@ -665,6 +656,7 @@ let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_his
             in
             Memory.add_edge path copy access addr_hist_dest_copy location astate )
       in
+      let astate = PulseArithmetic.copy_type_constraints (fst addr_hist_src) (fst copy) astate in
       let astate =
         AddressAttributes.find_opt (fst addr_hist_src) astate
         |> Option.value_map ~default:astate ~f:(fun src_attrs ->
@@ -762,8 +754,7 @@ let get_dynamic_type_unreachable_values vars astate =
   let res =
     List.fold unreachable_addrs ~init:[] ~f:(fun res addr ->
         (let open IOption.Let_syntax in
-         let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-         let* ({typ} : Attribute.dynamic_type_data) = Attributes.get_dynamic_type attrs in
+         let* {Formula.typ} = PulseArithmetic.get_dynamic_type addr astate in
          let+ var = find_var_opt astate addr in
          (var, addr, typ) :: res )
         |> Option.value ~default:res )

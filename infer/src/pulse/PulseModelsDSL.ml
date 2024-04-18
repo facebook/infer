@@ -270,20 +270,14 @@ module Syntax = struct
     PulseOperations.remove_dict_contain_const_keys addr |> exec_command
 
 
-  let and_dynamic_type_is v t : unit model_monad =
+  let and_dynamic_type_is (v, _) t : unit model_monad =
     PulseArithmetic.and_dynamic_type_is v t |> exec_partial_command
 
 
-  let add_dynamic_type typ (addr, _) : unit model_monad =
-    (* TODO: redundantly and dynamic type to formula as well as adding to attributes *)
-    let* () = and_dynamic_type_is addr typ in
-    PulseOperations.add_dynamic_type typ addr |> exec_command
-
-
-  let get_dynamic_type ~ask_specialization (addr, _) :
-      Attribute.dynamic_type_data option model_monad =
+  let get_dynamic_type ~ask_specialization (addr, _) : Formula.dynamic_type_data option model_monad
+      =
    fun data astate ->
-    let res = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
+    let res = PulseArithmetic.get_dynamic_type addr astate in
     let astate =
       if ask_specialization && Option.is_none res then
         AbductiveDomain.add_need_dynamic_type_specialization addr astate
@@ -411,7 +405,7 @@ module Syntax = struct
     let* new_obj = lift_to_monad_and_get_result (internal_new_ type_name_exp) in
     match type_name_exp with
     | Exp.Sizeof {typ} ->
-        let* () = and_dynamic_type_is (fst new_obj) typ in
+        let* () = and_dynamic_type_is new_obj typ in
         ret new_obj
     | _ ->
         unreachable
@@ -531,7 +525,7 @@ module Syntax = struct
       ?(default : (unit -> 'a model_monad) option) aval : 'a model_monad =
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true aval in
     match opt_dynamic_type_data with
-    | Some {Attribute.typ= {Typ.desc= Tstruct type_name}} -> (
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
       match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
       | Some (_, case_fun), _ ->
           Logging.d_printfln

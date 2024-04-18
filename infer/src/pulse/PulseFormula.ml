@@ -1982,15 +1982,21 @@ end)
 module InstanceOf = struct
   (** Domain for tracking dynamic type of variables via positive and negative instanceof constraints *)
 
-  type instance_fact = Known of Typ.t | Unknown of {below: Typ.t list; notbelow: Typ.t list}
-  [@@warning "-unused-constructor"] [@@deriving compare, equal, yojson_of]
+  type dynamic_type_data = {typ: Typ.t; source_file: (SourceFile.t[@yojson.opaque]) option}
+  [@@deriving compare, equal, yojson_of]
+
+  type instance_fact =
+    | Known of dynamic_type_data
+    | Unknown of {below: Typ.t list; notbelow: Typ.t list}
+  [@@deriving compare, equal, yojson_of]
 
   let pp_instance_fact fmt inf =
     match inf with
-    | Known typ ->
-        F.fprintf fmt "%a" (Typ.pp Pp.text) typ
+    | Known {typ; source_file} ->
+        F.fprintf fmt "%a, SourceFile %a" (Typ.pp_full Pp.text) typ (Pp.option SourceFile.pp)
+          source_file
     | Unknown {below; notbelow} ->
-        let tlist_pp = Pp.seq ~sep:"," (Typ.pp Pp.text) in
+        let tlist_pp = Pp.seq ~sep:"," (Typ.pp_full Pp.text) in
         F.fprintf fmt "{%a \\ %a}" tlist_pp below tlist_pp notbelow
 
 
@@ -2140,11 +2146,13 @@ module Formula = struct
 
     val remove_const_eq : Var.t -> t -> t
 
-    val add_dynamic_type : Var.t -> Typ.t -> t -> t SatUnsat.t
+    val add_dynamic_type : Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> t SatUnsat.t
 
     val add_below : Var.t -> Typ.t -> t -> t SatUnsat.t
 
     val add_notbelow : Var.t -> Typ.t -> t -> t SatUnsat.t
+
+    val copy_type_constraints : Var.t -> Var.t -> t -> t
 
     val add_linear_eq : Var.t -> LinArith.t -> t -> t * Var.t option
     (** [add_linear_eq v l phi] adds [v=l] to [linear_eqs] and updates the occurrences maps and
@@ -2401,17 +2409,24 @@ module Formula = struct
       {phi with const_eqs= Var.Map.remove v phi.const_eqs}
 
 
-    let add_dynamic_type v t phi =
+    let add_dynamic_type v t ?source_file phi =
       match Var.Map.find_opt v phi.type_constraints with
       | None ->
-          Sat {phi with type_constraints= Var.Map.add v (InstanceOf.Known t) phi.type_constraints}
-      | Some (InstanceOf.Known t') ->
+          Sat
+            { phi with
+              type_constraints=
+                Var.Map.add v (InstanceOf.Known {typ= t; source_file}) phi.type_constraints }
+      | Some (InstanceOf.Known {typ= t'}) ->
           if Typ.equal t t' then Sat phi else Unsat
       | Some (InstanceOf.Unknown {below; notbelow}) ->
           if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t t' |> not) then Unsat
           else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then Unsat
           else
-            Sat {phi with type_constraints= Var.Map.add v (InstanceOf.Known t) phi.type_constraints}
+            Sat
+              { phi with
+                type_constraints=
+                  Var.Map.add v (InstanceOf.Known {typ= t; source_file= None}) phi.type_constraints
+              }
 
 
     let add_below v t phi =
@@ -2428,7 +2443,7 @@ module Formula = struct
           in
           Debug.p "new phi is %a@\n" (pp_with_pp_var Var.pp) phi ;
           Sat phi
-      | Some (InstanceOf.Known t') ->
+      | Some (InstanceOf.Known {typ= t'}) ->
           if InstanceOf.is_subtype t' t then Sat phi else Unsat
       | Some (InstanceOf.Unknown {below; notbelow}) ->
           (* new below constraint is redundant with an existing one *)
@@ -2454,7 +2469,7 @@ module Formula = struct
               type_constraints=
                 Var.Map.add v (InstanceOf.Unknown {below= []; notbelow= [t]}) phi.type_constraints
             }
-      | Some (InstanceOf.Known t') ->
+      | Some (InstanceOf.Known {typ= t'}) ->
           if InstanceOf.is_subtype t' t then Unsat else Sat phi
       | Some (InstanceOf.Unknown {below; notbelow}) ->
           (* new notbelow constraint is redundant with an existing one *)
@@ -2472,6 +2487,18 @@ module Formula = struct
                   Var.Map.add v
                     (InstanceOf.Unknown {below; notbelow= t :: notbelow})
                     phi.type_constraints } )
+
+
+    let copy_type_constraints v_src v_target phi =
+      match Var.Map.find_opt v_src phi.type_constraints with
+      | None ->
+          phi
+      | Some src_constraints -> (
+        match Var.Map.find_opt v_target phi.type_constraints with
+        | None ->
+            {phi with type_constraints= Var.Map.add v_target src_constraints phi.type_constraints}
+        | Some _ ->
+            L.die InternalError "Failed attempt to copy type constraints" )
 
 
     let remove_term_eq t v phi =
@@ -3826,11 +3853,21 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
 
 
 module DynamicTypes = struct
+  let get_dynamic_type v formula =
+    (* TODO: canonicalize more uniformly - sticking this here is almost certainly not enough since we look things up in lots of places *)
+    let v_canon = (Formula.get_repr formula.phi v :> Var.t) in
+    match Var.Map.find_opt v_canon formula.phi.type_constraints with
+    | Some (InstanceOf.Known dtd) ->
+        Some dtd
+    | _ ->
+        None
+
+
   let evaluate_instanceof formula v typ =
     match Var.Map.find_opt v formula.phi.type_constraints with
     | None ->
         None
-    | Some (InstanceOf.Known t) ->
+    | Some (InstanceOf.Known {typ= t}) ->
         Some (InstanceOf.is_subtype t typ |> Term.of_bool)
     | Some (InstanceOf.Unknown {below; notbelow}) ->
         if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' typ) then Some Term.one
@@ -3845,7 +3882,6 @@ module DynamicTypes = struct
               (not (InstanceOf.is_subtype t' typ)) && not (InstanceOf.is_subtype typ t') )
         then Some Term.zero
         else None
-  [@@warning "-unused-value-declaration"]
 
 
   let really_simplify formula =
@@ -3907,8 +3943,8 @@ module DynamicTypes = struct
   (* TODO: fix messy separation between (new) InstanceOf and (old) DynamicTypes - not sure where to put the next definition *)
   let and_callee_type_constraints v type_constraints_foreign (phi, new_eqs) =
     match type_constraints_foreign with
-    | InstanceOf.Known t ->
-        let+ phi = Formula.add_dynamic_type v t phi in
+    | InstanceOf.Known {typ= t; source_file} ->
+        let+ phi = Formula.add_dynamic_type v t ?source_file phi in
         (phi, new_eqs)
     | InstanceOf.Unknown {below; notbelow} ->
         let* phi =
@@ -3921,6 +3957,32 @@ module DynamicTypes = struct
         in
         Sat (phi, new_eqs)
 end
+
+type dynamic_type_data = InstanceOf.dynamic_type_data =
+  {typ: Typ.t; source_file: SourceFile.t option}
+
+let get_dynamic_type = DynamicTypes.get_dynamic_type
+
+let add_dynamic_type_unsafe v t ?source_file {conditions; phi} =
+  match Formula.add_dynamic_type v t ?source_file phi with
+  | Sat phi ->
+      {conditions; phi}
+  | _ ->
+      (* It seems this "can't happen" case does, in fact, sometimes happen
+         Just return original phi and log to html for now
+         TODO: add Scuba logging
+      *)
+      let prev_fact = Var.Map.find_opt v phi.type_constraints in
+      L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
+        (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
+        (Pp.option InstanceOf.pp_instance_fact)
+        prev_fact ;
+      {conditions; phi}
+
+
+let copy_type_constraints v_src v_target {conditions; phi} =
+  {conditions; phi= Formula.copy_type_constraints v_src v_target phi}
+
 
 let and_equal_instanceof v1 v2 t formula =
   let* formula, new_eqs =
@@ -3941,8 +4003,8 @@ let normalize formula =
   DynamicTypes.simplify formula
 
 
-let and_dynamic_type_is v t formula =
-  let+ phi = Formula.add_dynamic_type v t formula.phi in
+let and_dynamic_type_is v t ?source_file formula =
+  let+ phi = Formula.add_dynamic_type v t ?source_file formula.phi in
   ({formula with phi}, RevList.empty)
 
 

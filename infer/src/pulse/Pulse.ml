@@ -276,7 +276,7 @@ module PulseTransferFunctions = struct
 
 
   let get_dynamic_type_name astate v =
-    match AbductiveDomain.AddressAttributes.get_dynamic_type v astate with
+    match PulseArithmetic.get_dynamic_type v astate with
     | Some {typ= {desc= Tstruct name}; source_file} ->
         Some (name, source_file)
     | Some {typ} ->
@@ -307,11 +307,15 @@ module PulseTransferFunctions = struct
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
+        L.d_printfln "finding override for dynamic type %a, proc_name %a with sourcefile %a"
+          Typ.Name.pp dynamic_type_name Procname.pp proc_name (Pp.option SourceFile.pp)
+          source_file_opt ;
         let tenv =
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
         let opt_proc_name, missed_captures = tenv_resolve_method tenv dynamic_type_name proc_name in
+        L.d_printfln "opt_procname is %a" (Pp.option Tenv.MethodInfo.pp) opt_proc_name ;
         ( (let+ proc_name = opt_proc_name in
            (proc_name, `ExactDevirtualization) )
         , missed_captures )
@@ -392,13 +396,13 @@ module PulseTransferFunctions = struct
       | None ->
           (Some static_class_name, astate)
       | Some (astate, (value, _)) -> (
-        match AbductiveDomain.AddressAttributes.get_dynamic_type value astate with
+        match PulseArithmetic.get_dynamic_type value astate with
         | None ->
             (* No information is available from the [self] argument at this time, we need to
                wait for specialization *)
             (None, need_dynamic_type_specialization astate value)
         | Some dynamic_type_data ->
-            (Typ.name dynamic_type_data.Attribute.typ, astate) )
+            (Typ.name dynamic_type_data.Formula.typ, astate) )
     in
     (* If we spot a call on [__parent__$static], we push further and get the parent of
        [__self__$static] *)
@@ -1058,10 +1062,7 @@ module PulseTransferFunctions = struct
               | ContinueProgram astate as default_astate ->
                   (let open IOption.Let_syntax in
                    let* self_var = find_var_opt astate addr in
-                   let+ {Attribute.typ} =
-                     let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-                     Attributes.get_dynamic_type attrs
-                   in
+                   let+ {Formula.typ} = PulseArithmetic.get_dynamic_type addr astate in
                    let ret_id = Ident.create_fresh Ident.knormal in
                    ret_vars := Var.of_id ret_id :: !ret_vars ;
                    let ret = (ret_id, StdTyp.void) in

@@ -95,7 +95,7 @@ let call_c_function_ptr FuncArg.{arg_payload= function_ptr_hist; typ} actuals : 
      astate non_disj ->
   let block = fst function_ptr_hist in
   let callee_proc_name_opt =
-    match AddressAttributes.get_dynamic_type block astate with
+    match PulseArithmetic.get_dynamic_type block astate with
     | Some {typ= {desc= Typ.Tstruct (Typ.CFunction csig)}} ->
         Some (Procname.C csig)
     | _ ->

@@ -81,10 +81,6 @@ module type S = sig
 
   val get_dict_read_const_keys : key -> t -> Attribute.ConstKeys.t option
 
-  val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
-
-  val get_dynamic_type : t -> key -> Attribute.dynamic_type_data option
-
   val add_static_type : Typ.Name.t -> key -> t -> t
 
   val get_static_type : t -> key -> Typ.Name.t option
