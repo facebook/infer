@@ -702,8 +702,7 @@ module StdVector = struct
 
   (* The (10) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_initializer_list elt_typ {exp= vec_exp; typ= vec_typ} lst_exp =
-    let exec ({pname; caller_pname; node_hash; integer_type_widths; location} as model_env) ~ret:_
-        mem =
+    let exec {pname; caller_pname; node_hash; location} ~ret:_ mem =
       let arr_blk =
         let internal_locs =
           Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
@@ -720,26 +719,18 @@ module StdVector = struct
         Dom.Mem.update_mem vec_locs (Dom.Val.of_loc deref_of_vec) mem
       in
       let vec_arr_ploc = append_field deref_of_vec ~vec_typ ~elt_typ |> PowLoc.singleton in
-      let mem =
-        let traces = Trace.Set.singleton location ArrayDeclaration in
-        let arr_as =
-          Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
-            ~represents_multiple_values:true
-        in
-        let v =
-          Dom.Val.of_c_array_alloc arr_as
-            ~stride:(Some (integer_type_widths.char_width / 8))
-            ~offset:Itv.zero ~size:Itv.zero ~traces
-        in
-        mem
-        |> Dom.Mem.strong_update vec_arr_ploc v
-        |> Dom.Mem.add_heap (Loc.of_allocsite arr_as) Dom.Val.bot
+      let traces = Trace.Set.singleton location ArrayDeclaration in
+      let arr_as =
+        Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values:true
       in
-      let vec_elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set vec_arr_ploc mem) in
+      let v =
+        Dom.Val.of_c_array_alloc arr_as ~stride:None ~offset:Itv.zero
+          ~size:(ArrayBlk.get_size arr_blk) ~traces
+      in
+      let vec_elt_locs = arr_as |> Loc.of_allocsite |> PowLoc.singleton in
       let lst_elem_v = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
-      mem
-      |> set_size model_env vec_arr_ploc (arr_blk |> ArrayBlk.get_size |> Dom.Val.of_itv)
-      |> Dom.Mem.update_mem vec_elt_locs lst_elem_v
+      mem |> Dom.Mem.strong_update vec_arr_ploc v |> Dom.Mem.update_mem vec_elt_locs lst_elem_v
     in
     {exec; check= no_check}
 
