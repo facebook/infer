@@ -423,6 +423,14 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 <p style="margin-left:17%;">Skip capture of buck targets
 matched by the specified regular expression.</p>
 
+
+<p style="margin-left:11%;"><b>--buck2-bxl-capture-file-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:17%;">Skip capture of files matched
+by the specified regular expression. Only the clang, Buck2
+integration is supported, not Java.</p>
+
 <p style="margin-left:11%;"><b>--buck2-bxl-target</b>
 <i>string</i></p>
 
@@ -436,6 +444,13 @@ integration.</p>
 
 <p style="margin-left:17%;">Buck2 target representing the
 inferconfig file; used in BXL capture.</p>
+
+
+<p style="margin-left:11%;"><b>--buck2-infertoolchain-target</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Buck2 target representing the
+infer toolchain; used in BXL capture.</p>
 
 <p style="margin-left:11%;"><b>--buck2-isolation-dir</b>
 <i>string</i></p>
@@ -462,14 +477,6 @@ run capture on given targets) (Conversely:
 <p style="margin-left:17%;">Activates: Use BXL script when
 capturing with buck2. (Conversely:
 <b>--no-buck2-use-bxl</b>)</p>
-
-<p style="margin-left:11%;"><b>--bxl-file-capture</b></p>
-
-<p style="margin-left:17%;">Activates: Given an
-<b>--changed-file-index</b> file, capture the owning buck2
-targets and their dependencies using the BXL script
-specified by <b>--buck2_bxl_target</b>. (Conversely:
-<b>--no-bxl-file-capture</b>)</p>
 
 <p style="margin-left:11%;"><b>--Xbuck</b>
 <i>+string</i></p>

@@ -1974,11 +1974,6 @@ void foo() {
 }
 ```
 
-## PULSE_UNINITIALIZED_VALUE_LATENT
-
-Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
-
-A latent [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## PULSE_UNNECESSARY_COPY
 
 Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
