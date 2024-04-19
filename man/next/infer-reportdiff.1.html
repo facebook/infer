@@ -188,6 +188,21 @@ fixed-then-introduced duplicated types while computing
 differential reports (Conversely:
 <b>--skip-duplicated-types</b>)</p>
 
+<p style="margin-left:11%;"><b>--stats-dir-current</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">The infer-out/stats from the
+current run. Together with <b>--stats-dir-previous</b>, make
+<i>infer reportdiff</i> compute the difference between two
+stats directories and output the results in
+infer-out/differential/stats_*.json files.</p>
+
+<p style="margin-left:11%;"><b>--stats-dir-previous</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">The infer-out/stats from a
+previous run. See <b>--stats-dir-current</b>.</p>
+
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
 </h2>

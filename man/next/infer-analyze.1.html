@@ -411,6 +411,20 @@ ignored by liveness analysis</p>
 dependencies that cannot be found. (Conversely:
 <b>--no-log-missing-deps</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--log-pulse-disjunct-increase-after-model-call</b></p>
+
+<p style="margin-left:17%;">Activates: Log which model did
+increase the current number of Pulse disjuncts. (Conversely:
+<b>--no-log-pulse-disjunct-increase-after-model-call</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--log-pulse-unreachable-nodes</b></p>
+
+<p style="margin-left:17%;">Activates: Log for each
+function and each summary, the ratio of unreached nodes.
+(Conversely: <b>--no-log-pulse-unreachable-nodes</b>)</p>
+
 <p style="margin-left:11%;"><b>--loop-hoisting</b></p>
 
 <p style="margin-left:17%;">Activates: <i>loop-hoisting</i>
@@ -1050,18 +1064,37 @@ time, it models Erlang exceptions (builtin or OTP ones).
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-custom-pairs</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-annotation-reachability-apply-class-annotations</b></p>
+
+<p style="margin-left:17%;">Deactivates: Applies
+annotations of a class/interface to all its methods
+(Conversely:
+<b>--annotation-reachability-apply-class-annotations</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--annotation-reachability-custom-models</b>
 <i>json</i></p>
 
-<p style="margin-left:17%;">Specify custom sources/sinks
-for the annotation reachability checker</p>
+<p style="margin-left:17%;">Specify a map from annotations
+to lists of regexps to treat matching methods as if they had
+the annotation.</p>
+
+<p style="margin-left:11%;">Example format:
+{&quot;Annotation&quot;:
+[&quot;com\\.Myclass\\.foo.*&quot;]} <b><br>
+--annotation-reachability-custom-pairs</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Specify custom sources/sinks,
+and optionally sanitizers for the annotation reachability
+checker</p>
 
 <p style="margin-left:11%;">Example format: for custom
 annotations <br>
-com.my.annotation.{Source1,Source2,Sink1} <br>
+com.my.annotation.{Source1,Source2,Sink1,Sanitizer1} <br>
 { &quot;sources&quot; : [&quot;Source1&quot;,
 &quot;Source2&quot;], &quot;sinks&quot; :
-[&quot;Sink1&quot;] } <b><br>
+[&quot;Sink1&quot;], <br>
+&quot;sanitizers&quot;: [&quot;Sanitizer1&quot;] } <b><br>
 --annotation-reachability-expensive</b></p>
 
 <p style="margin-left:17%;">Activates: check if methods
@@ -1258,6 +1291,13 @@ modelled as allocs in Pulse</p>
 
 <p style="margin-left:11%;"><b>--pulse-model-cheap-copy-type</b>
 <i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+cheap to copy in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-cheap-copy-type-list</b>
+<i>+regex</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
 cheap to copy in Pulse</p>
