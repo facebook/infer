@@ -982,7 +982,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/checker-inefficient-keyset-iterator).
 
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
+- iterating over a HashMap with `keySet()` iterator
 - looking up the key each time
 
 Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
@@ -1154,7 +1154,7 @@ parameter is `nil`. For example:
 
 ```objectivec
   -(int) foo {
-      B b* = [self->_a foo]; // sending a message with receiver nil returns nil
+      B *b = [self->_a foo]; // sending a message with receiver nil returns nil
       return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
   }
 ```
@@ -1481,7 +1481,7 @@ as an argument. Therefore it is only a warning. For example:
 
 ```objectivec
   -(int) foo:(A* a) {
-      B b* = [a foo]; // sending a message with receiver nil returns nil
+      B *b = [a foo]; // sending a message with receiver nil returns nil
       return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
   }
 ```
@@ -2275,10 +2275,11 @@ For example:
 ```C++
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
+  int* y = elt;
   vec.push_back(42); // if the array backing the vector was full already, this
                      // will re-allocate it and copy the previous contents
                      // into the new array, then delete the previous array
-  std::cout << *y << "\n"; // bad: elt might be invalid
+  std::cout << *y << "\n"; // bad: y might be invalid
 }
 ```
 
