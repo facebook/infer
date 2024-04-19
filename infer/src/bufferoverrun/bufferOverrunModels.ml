@@ -652,6 +652,11 @@ module StdVector = struct
     ArrObjCommon.deref_of model_env vec_exp ~fn ~fn_typ:(Typ.mk_ptr elt_typ) mem
 
 
+  let set_size {location} locs new_size mem =
+    Dom.Mem.transform_mem locs mem ~f:(fun v ->
+        Dom.Val.set_array_length location ~length:new_size v )
+
+
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
     let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
@@ -695,15 +700,45 @@ module StdVector = struct
     {exec; check= no_check}
 
 
+  (* The (10) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
+  let constructor_initializer_list elt_typ {exp= vec_exp; typ= vec_typ} lst_exp =
+    let exec {pname; caller_pname; node_hash; location} ~ret:_ mem =
+      let arr_blk =
+        let internal_locs =
+          Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
+        in
+        Dom.Mem.find_set internal_locs mem |> Dom.Val.get_array_blk
+      in
+      let deref_of_vec =
+        Allocsite.make pname ~caller_pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+          ~represents_multiple_values:false
+        |> Loc.of_allocsite
+      in
+      let mem =
+        let vec_locs = Sem.eval_locs vec_exp mem in
+        Dom.Mem.update_mem vec_locs (Dom.Val.of_loc deref_of_vec) mem
+      in
+      let vec_arr_ploc = append_field deref_of_vec ~vec_typ ~elt_typ |> PowLoc.singleton in
+      let traces = Trace.Set.singleton location ArrayDeclaration in
+      let arr_as =
+        Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values:true
+      in
+      let v =
+        Dom.Val.of_c_array_alloc arr_as ~stride:None ~offset:Itv.zero
+          ~size:(ArrayBlk.get_size arr_blk) ~traces
+      in
+      let vec_elt_locs = arr_as |> Loc.of_allocsite |> PowLoc.singleton in
+      let lst_elem_v = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
+      mem |> Dom.Mem.strong_update vec_arr_ploc v |> Dom.Mem.update_mem vec_elt_locs lst_elem_v
+    in
+    {exec; check= no_check}
+
+
   let at elt_typ {exp= vec_exp; typ= vec_typ} index_exp =
     ArrObjCommon.at vec_exp
       ~fn:(BufferOverrunField.cpp_vector_elem ~vec_typ)
       ~fn_typ:(Typ.mk_ptr elt_typ) index_exp
-
-
-  let set_size {location} locs new_size mem =
-    Dom.Mem.transform_mem locs mem ~f:(fun v ->
-        Dom.Val.set_array_length location ~length:new_size v )
 
 
   let empty elt_typ vec_arg =
@@ -731,18 +766,42 @@ module StdVector = struct
     {exec; check= no_check}
 
 
-  let push_back elt_typ vec_arg elt_exp =
-    let exec model_env ~ret:_ mem =
+  let add_n_element ~n elt_typ vec_arg elt_exp =
+    let exec ({integer_type_widths} as model_env) ~ret:_ mem =
       let arr_locs = deref_of model_env elt_typ vec_arg mem in
       let mem =
         let new_size =
-          Dom.Val.plus_a (Sem.eval_array_locs_length arr_locs mem) (Dom.Val.of_int 1)
+          Sem.eval integer_type_widths n mem
+          |> Dom.Val.plus_a (Sem.eval_array_locs_length arr_locs mem)
         in
         set_size model_env arr_locs new_size mem
       in
       let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
       let elt_v = Dom.Mem.find_set (Sem.eval_locs elt_exp mem) mem in
       Dom.Mem.update_mem elt_locs elt_v mem
+    in
+    {exec; check= no_check}
+
+
+  let push_back = add_n_element ~n:Exp.one
+
+  let insert_n elt_typ vec_arg n elt_exp = add_n_element ~n elt_typ vec_arg elt_exp
+
+  let insert_initializer_list elt_typ vec_arg lst_exp =
+    let exec model_env ~ret:_ mem =
+      let arr_locs = deref_of model_env elt_typ vec_arg mem in
+      let elt_locs = Dom.Val.get_all_locs (Dom.Mem.find_set arr_locs mem) in
+      let internal_arr =
+        let internal_array_locs =
+          Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
+        in
+        Dom.Mem.find_set internal_array_locs mem
+      in
+      let arr_blk = Dom.Val.get_array_blk internal_arr in
+      let lst_elet = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
+      let add_cnt = arr_blk |> ArrayBlk.get_size |> Dom.Val.of_itv in
+      let new_size = add_cnt |> Dom.Val.plus_a (Sem.eval_array_locs_length arr_locs mem) in
+      mem |> set_size model_env arr_locs new_size |> Dom.Mem.update_mem elt_locs lst_elet
     in
     {exec; check= no_check}
 
@@ -1201,6 +1260,43 @@ module Container = struct
   module Iterator = struct
     let end_ vec temp_exp = Iterator.end_ ~size_exec:(size vec).exec temp_exp
   end
+end
+
+module StdInitializerList = struct
+  let create_lst {pname; caller_pname; node_hash; location} ~ret:(id, _) mem arrblk ~arr =
+    let represents_multiple_values = true in
+    let traces = Trace.(Set.singleton location ArrayDeclaration) in
+    let lst_allocsite =
+      Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+        ~represents_multiple_values
+    in
+    let lst_loc = Loc.of_allocsite lst_allocsite in
+    let internal_array_loc =
+      Loc.append_field lst_loc BufferOverrunField.cpp_collection_internal_array
+    in
+    let arr_as =
+      Allocsite.make pname ~caller_pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+        ~represents_multiple_values
+    in
+    let internal_array =
+      let offset = ArrayBlk.get_offset arrblk in
+      let size = ArrayBlk.get_size arrblk in
+      let stride = None in
+      Dom.Val.of_c_array_alloc arr_as ~offset ~size ~stride ~traces
+    in
+    mem
+    |> Dom.Mem.add_heap (Loc.of_allocsite arr_as) arr
+    |> Dom.Mem.add_heap internal_array_loc internal_array
+    |> Dom.Mem.add_stack (Loc.of_id id) (lst_loc |> PowLoc.singleton |> Dom.Val.of_pow_loc ~traces)
+
+
+  let constructor exp =
+    let exec ({integer_type_widths} as model_env) ~ret mem =
+      let v = Sem.eval integer_type_widths exp mem in
+      let arr = Dom.Mem.find_set (Dom.Val.get_all_locs v) mem in
+      create_lst model_env ~ret mem (Dom.Val.get_array_blk v) ~arr
+    in
+    {exec; check= no_check}
 end
 
 module NSCollection = struct
@@ -1865,6 +1961,8 @@ module Call = struct
         <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
       ; +BuiltinDecl.(match_builtin __set_array_length)
         <>$ capt_arg $+ capt_exp $!--> set_array_length
+      ; +BuiltinDecl.(match_builtin __infer_initializer_list)
+        <>$ capt_exp $+...$--> StdInitializerList.constructor
       ; -"calloc" <>$ capt_exp $+ capt_exp $!--> calloc ~can_be_zero:false
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
@@ -2102,6 +2200,13 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "push_back" $ capt_arg $+ capt_exp
         $--> StdVector.push_back
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "insert" $ capt_arg $+ any_arg
+        $+ capt_exp_of_typ (-"std" &:: "initializer_list")
+        $+ any_arg $--> StdVector.insert_initializer_list
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "insert" $ capt_arg $+ any_arg $+ capt_exp
+        $+ any_arg $--> StdVector.push_back
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "insert" $ capt_arg $+ any_arg $+ capt_exp
+        $+ capt_exp $+ any_arg $--> StdVector.insert_n
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "resize" $ capt_arg $+ capt_exp
         $--> StdVector.resize
@@ -2116,6 +2221,10 @@ module Call = struct
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_typ (-"std" &:: "vector")
         $+? any_arg $--> StdVector.constructor_copy
+      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
+        $ capt_arg_of_typ (-"std" &:: "vector")
+        $+ capt_exp_of_typ (-"std" &:: "initializer_list")
+        $+? any_arg $--> StdVector.constructor_initializer_list
         (*             Models for std::vector <end>               *)
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
