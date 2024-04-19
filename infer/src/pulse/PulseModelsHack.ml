@@ -54,6 +54,13 @@ let hack_await arg : model =
      assign_ret rv
 
 
+let hack_await_static _ arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* rv = await_hack_value arg in
+     assign_ret rv
+
+
 let make_new_awaitable av =
   let open DSL.Syntax in
   let* av = constructor awaitable_type_name [("val", av)] in
@@ -1427,6 +1434,8 @@ let matchers : matcher list =
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Dict.dict_from_async
+  ; -"Asio$static" &:: "awaitSynchronously" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hack_await_static
   ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
