@@ -196,7 +196,7 @@ module AddressAttributes : sig
 
   val add_dict_read_const_key : Timestamp.t -> Trace.t -> AbstractValue.t -> Fieldname.t -> t -> t
 
-  val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> t -> t
+  val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> Location.t -> t -> t
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 

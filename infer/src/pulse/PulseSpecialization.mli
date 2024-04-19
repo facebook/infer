@@ -7,4 +7,4 @@
 
 open! IStd
 
-val apply : Specialization.Pulse.t -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t
+val apply : Specialization.Pulse.t -> Location.t -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t

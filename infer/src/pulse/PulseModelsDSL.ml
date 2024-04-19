@@ -305,8 +305,10 @@ module Syntax = struct
 
 
   let add_static_type typ_name (addr, _) : unit model_monad =
-   fun ({analysis_data= {tenv}} as data) astate ->
-    let astate = AbductiveDomain.AddressAttributes.add_static_type tenv typ_name addr astate in
+   fun ({analysis_data= {tenv}; location} as data) astate ->
+    let astate =
+      AbductiveDomain.AddressAttributes.add_static_type tenv typ_name addr location astate
+    in
     ret () data astate
 
 

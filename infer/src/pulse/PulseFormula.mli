@@ -71,7 +71,7 @@ val get_dynamic_type : Var.t -> t -> dynamic_type_data option
 val and_dynamic_type_is :
   Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> (t * new_eqs) SatUnsat.t
 
-val add_dynamic_type_unsafe : Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> t
+val add_dynamic_type_unsafe : Var.t -> Typ.t -> ?source_file:SourceFile.t -> Location.t -> t -> t
 
 val copy_type_constraints : Var.t -> Var.t -> t -> t
 

@@ -136,9 +136,9 @@ let and_dynamic_type_is v t ?source_file astate =
 let get_dynamic_type v astate = Formula.get_dynamic_type v astate.AbductiveDomain.path_condition
 
 (* this is just to ease migration of previous calls to PulseOperations.add_dynamic_type, which can't fail *)
-let and_dynamic_type_is_unsafe v t ?source_file astate =
+let and_dynamic_type_is_unsafe v t ?source_file location astate =
   let phi =
-    Formula.add_dynamic_type_unsafe v t ?source_file astate.AbductiveDomain.path_condition
+    Formula.add_dynamic_type_unsafe v t ?source_file location astate.AbductiveDomain.path_condition
   in
   AbductiveDomain.set_path_condition phi astate
 

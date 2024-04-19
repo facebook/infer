@@ -187,16 +187,16 @@ and record_closure astate (path : PathContext.t) loc procname
     match (Procname.get_class_type_name procname, procname) with
     | Some typ_name, _ when Procname.is_cpp_lambda procname ->
         let typ = Typ.mk (Typ.Tstruct typ_name) in
-        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
+        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
     | _, Procname.Block bsig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.ObjcBlock bsig)) in
         let astate =
-          PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
+          PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
         in
         AbductiveDomain.add_block_source (fst closure_addr_hist) bsig.name astate
     | _, Procname.C csig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
-        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ astate
+        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
     | _ ->
         astate
   in
@@ -409,10 +409,10 @@ let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc asta
 
 let read_id id astate = Stack.find_opt (Var.of_id id) astate
 
-let add_static_type_objc_class tenv typ address astate =
+let add_static_type_objc_class tenv typ address location astate =
   match typ with
   | {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct (ObjcClass class_name)}, _)} ->
-      AddressAttributes.add_static_type tenv (ObjcClass class_name) address astate
+      AddressAttributes.add_static_type tenv (ObjcClass class_name) address location astate
   | _ ->
       astate
 
@@ -460,7 +460,7 @@ let hack_python_propagates_type_on_load tenv path loc rhs_exp addr astate =
           let+ field_typ_name =
             if Typ.is_pointer field_typ then Typ.name (Typ.strip_ptr field_typ) else None
           in
-          AbductiveDomain.AddressAttributes.add_static_type tenv field_typ_name addr astate
+          AbductiveDomain.AddressAttributes.add_static_type tenv field_typ_name addr loc astate
       | _ ->
           None
     else None )

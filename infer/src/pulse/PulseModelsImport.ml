@@ -139,8 +139,9 @@ module Basic = struct
     in
     let astate =
       if Typ.is_objc_class typ then
-        PulseArithmetic.and_dynamic_type_is_unsafe value typ ~source_file:location.file astate
-      else PulseArithmetic.and_dynamic_type_is_unsafe value typ astate
+        PulseArithmetic.and_dynamic_type_is_unsafe value typ ~source_file:location.file location
+          astate
+      else PulseArithmetic.and_dynamic_type_is_unsafe value typ location astate
     in
     let++ astate = PulseArithmetic.and_positive value astate in
     (astate, (value, hist))
@@ -385,8 +386,8 @@ module Basic = struct
       | Some (Exp.Sizeof {typ}) ->
           if Typ.is_objc_class typ then
             PulseArithmetic.and_dynamic_type_is_unsafe ret_addr typ ~source_file:location.file
-              astate
-          else PulseArithmetic.and_dynamic_type_is_unsafe ret_addr typ astate
+              location astate
+          else PulseArithmetic.and_dynamic_type_is_unsafe ret_addr typ location astate
       | _ ->
           (* The type expr is sometimes a Var expr in Java but this is not expected.
               This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
