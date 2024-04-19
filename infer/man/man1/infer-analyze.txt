@@ -320,6 +320,9 @@ OPTIONS
            Activates: Enable purity and disable all other checkers
            (Conversely: --no-purity-only)
 
+       --qualified-cpp-name-block-list +string
+           Skip analyzing the procedures under the qualified cpp type name.
+
        --quandary
            Activates: quandary checker: The Quandary taint analysis detects
            flows of values between sources and sinks, except if the value

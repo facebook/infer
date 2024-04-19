@@ -1805,6 +1805,10 @@ OPTIONS
            (Conversely: --no-purity-only)
            See also infer-analyze(1).
 
+       --qualified-cpp-name-block-list +string
+           Skip analyzing the procedures under the qualified cpp type name.
+           See also infer-analyze(1).
+
        --quandary
            Activates: quandary checker: The Quandary taint analysis detects
            flows of values between sources and sinks, except if the value
@@ -3125,6 +3129,9 @@ INTERNAL OPTIONS
        --python-builtin-models string
            Specify .sil file to use as Python builtin models (uses bundled
            models by default)
+
+       --qualified-cpp-name-block-list-reset
+           Set --qualified-cpp-name-block-list to the empty list.
 
        --quandary-show-passthroughs
            Activates: In error traces, show intermediate steps that propagate

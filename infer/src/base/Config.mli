@@ -720,6 +720,8 @@ val pyc_file : string list
 
 val python_builtin_models : string
 
+val qualified_cpp_name_block_list : string list
+
 val quandary_endpoints : Yojson.Safe.t
 
 val quandary_sanitizers : Yojson.Safe.t

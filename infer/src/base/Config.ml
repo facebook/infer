@@ -2944,6 +2944,12 @@ and python_builtin_models =
     "Specify .sil file to use as Python builtin models (uses bundled models by default)"
 
 
+and qualified_cpp_name_block_list =
+  CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Skip analyzing the procedures under the qualified cpp type name."
+
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:InferCommand.[(Analyze, manual_quandary)]
@@ -4560,6 +4566,8 @@ and pure_by_default = !pure_by_default
 and pyc_file = RevList.to_list !pyc_file
 
 and python_builtin_models = !python_builtin_models
+
+and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 
 and quandary_endpoints = !quandary_endpoints
 
