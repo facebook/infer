@@ -132,16 +132,26 @@ module Lock = struct
         true
 end
 
+module AccessExpressionOrConst = struct
+  type t = AE of HilExp.AccessExpression.t | Const of Const.t [@@deriving equal]
+
+  let pp fmt = function
+    | AE exp ->
+        HilExp.AccessExpression.pp fmt exp
+    | Const c ->
+        Const.pp Pp.text fmt c
+end
+
 module AccessExpressionDomain = struct
   open AbstractDomain.Types
 
-  type t = HilExp.AccessExpression.t top_lifted [@@deriving equal]
+  type t = AccessExpressionOrConst.t top_lifted [@@deriving equal]
 
   let pp fmt = function
     | Top ->
         F.pp_print_string fmt "AccExpTop"
     | NonTop lock ->
-        HilExp.AccessExpression.pp fmt lock
+        AccessExpressionOrConst.pp fmt lock
 
 
   let top = Top
@@ -166,7 +176,9 @@ module VarDomain = struct
             | Top ->
                 (* should never happen in a safe inverted map *)
                 false
-            | NonTop acc_exp ->
+            | NonTop (Const _) ->
+                true
+            | NonTop (AE acc_exp) ->
                 let var, _ = HilExp.AccessExpression.get_base acc_exp in
                 not (Var.equal var deadvar) )
           acc

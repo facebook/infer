@@ -45,14 +45,18 @@ module Lock : sig
   (** a stable order for avoiding reporting deadlocks twice based on the root variable type *)
 end
 
+module AccessExpressionOrConst : sig
+  type t = AE of HilExp.AccessExpression.t | Const of Const.t [@@deriving equal]
+end
+
 module VarDomain : sig
   include AbstractDomain.WithTop
 
   type key = Var.t
 
-  val get : key -> t -> HilExp.AccessExpression.t option
+  val get : key -> t -> AccessExpressionOrConst.t option
 
-  val set : key -> HilExp.AccessExpression.t -> t -> t
+  val set : key -> AccessExpressionOrConst.t -> t -> t
 end
 
 module Event : sig
