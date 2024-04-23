@@ -71,3 +71,78 @@ function caller_generates_add_elem_c_callee_ok(): int {
 function FN_caller_generates_add_elem_c_callee_bad(): int {
   return generates_add_elem_c_callee('2');
 }
+
+type MyShapeT = shape(
+  ?'hi' => int,
+);
+
+function shape_param(MyShapeT $x): int {
+  if (Shapes::keyExists($x, 'hi')) {
+    return $x['hi'];
+  }
+  return 0;
+}
+
+function call_shape_param_ok_FP(): int {
+  return shape_param(shape());
+}
+
+function shape_param2(MyShapeT $x): int {
+  if (Shapes::idx($x, 'hi') is nonnull) {
+    return $x['hi'];
+  }
+  return 0;
+}
+
+function call_shape_param2_ok_FP(): int {
+  return shape_param2(shape());
+}
+
+function return_shape(bool $b): MyShapeT {
+  return shape();
+}
+
+function call_return_shape_ok(bool $b): int {
+  $x = return_shape($b);
+  if (Shapes::keyExists($x, 'hi')) {
+    return $x['hi'];
+  }
+  return 0;
+}
+
+function return_shape2(bool $b): shape(?'hi' => int) {
+  return shape();
+}
+
+function call_return_shape2_ok_FP(bool $b): int {
+  $x = return_shape2($b);
+  if (Shapes::keyExists($x, 'hi')) {
+    return $x['hi'];
+  }
+  return 0;
+}
+
+class ShapeField {
+  public shape(?'bye' => int) $f = shape();
+
+  public function read_shape(): int {
+    $this->f['bye'] ??= 42;
+    return $this->f['bye'];
+  }
+
+  public function call_read_shape_ok_FP(): int {
+    $this->f = shape();
+    return $this->read_shape();
+  }
+}
+
+function container_param(dict<string, int> $p): int {
+  if (C\contains_key($p, 'hi')) {
+    return $p['hi'];
+  }
+  return 42;
+}
+
+function call_container_param_ok_FP(): int {
+  return container_param(dict[]);
+}
