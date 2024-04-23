@@ -62,7 +62,11 @@ end
 module Event : sig
   type t =
     | Ipc of {callee: Procname.t; thread: ThreadDomain.t}
-    | LockAcquire of {locks: Lock.t list; thread: ThreadDomain.t}
+    | LockAcquire of
+        { locks: Lock.t list
+        ; thread: ThreadDomain.t
+        ; callsite: CallSite.t option
+        ; call_context: Errlog.loc_trace [@compare.ignore] }
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
@@ -75,14 +79,18 @@ module Event : sig
   val get_acquired_locks : t -> Lock.t list
 end
 
-module LockState : AbstractDomain.WithTop
-
 (** a lock acquisition with location information *)
-module Acquisition : sig
+module AcquisitionElem : sig
   type t = private
     {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Procname.t [@compare.ignore]}
   [@@deriving compare]
 end
+
+module Acquisition : sig
+  type t = private {elem: AcquisitionElem.t; loc: Location.t; trace: CallSite.t list}
+end
+
+module LockState : AbstractDomain.WithTop
 
 (** A set of lock acquisitions with source locations and procnames. *)
 module Acquisitions : sig
@@ -247,6 +255,7 @@ type summary =
   { critical_pairs: CriticalPairs.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
+  ; lock_state: LockState.t
   ; attributes: AttributeDomain.t  (** final-state attributes that affect instance variables only *)
   ; return_attribute: Attribute.t }
 
@@ -256,6 +265,7 @@ val pp_summary : F.formatter -> summary -> unit
 
 val integrate_summary :
      tenv:Tenv.t
+  -> procname:Procname.t
   -> lhs:HilExp.AccessExpression.t
   -> subst:Lock.subst
   -> FormalMap.t

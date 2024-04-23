@@ -174,9 +174,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else Domain.set_non_null formals lhs_access_exp astate
 
 
-  let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
+  let do_call {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
       (astate : Domain.t) =
     let open Domain in
+    let procname = Procdesc.get_proc_name proc_desc in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
     let actuals_acc_exps = get_access_expr_list actuals in
@@ -270,7 +271,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
              let subst = Lock.make_subst formals actuals in
              let callsite = CallSite.make callee loc in
-             Domain.integrate_summary ~tenv ~lhs ~subst formals callsite astate summary )
+             Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -834,7 +835,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       (* warn only at the innermost procedure taking a lock around the final call *)
       let procs_with_acquisitions =
         Acquisitions.fold
-          (fun (acquisition : Acquisition.t) acc -> Procname.Set.add acquisition.procname acc)
+          (fun (acquisition : Acquisition.t) acc -> Procname.Set.add acquisition.elem.procname acc)
           pair.elem.acquisitions Procname.Set.empty
       in
       match Procname.Set.is_singleton_or_more procs_with_acquisitions with
