@@ -91,7 +91,7 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new
 
 (** {3 Operations} *)
 
-val normalize : t -> (t * new_eqs) SatUnsat.t
+val normalize : ?location:Location.t -> t -> (t * new_eqs) SatUnsat.t
 (** think a bit harder about the formula *)
 
 val simplify :

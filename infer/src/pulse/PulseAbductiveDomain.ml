@@ -1873,7 +1873,7 @@ module Summary = struct
     (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
        canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
        contradictions about addresses we are about to garbage collect *)
-    let* path_condition, new_eqs = Formula.normalize astate.path_condition in
+    let* path_condition, new_eqs = Formula.normalize ~location astate.path_condition in
     let astate = {astate with path_condition} in
     let* astate, error = incorporate_new_eqs astate new_eqs in
     let astate_before_filter = astate in

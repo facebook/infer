@@ -3928,12 +3928,15 @@ module DynamicTypes = struct
      phase anyway. Instead, we just log situations in which the simplification would lead to Unsat, as those are ones in which the
      new on-the-fly propagation is deficient. If none show up, we can safely remove simplification.
   *)
-  let simplify formula =
+  let simplify ?location formula =
     if has_instanceof formula then
       match really_simplify formula with
       | Unsat ->
           L.d_printfln ~color:Pp.Orange "WARNING: Summary-time simplify returned Unsat on %a" pp
-            formula
+            formula ;
+          ScubaLogging.log_message_with_location ~label:"summary_unsat"
+            ~loc:(Option.value_map location ~default:"missing" ~f:Location.to_string)
+            ~message:"summary-time normalization returned Unsat"
       | Sat _ ->
           ()
     else () ;
@@ -3998,11 +4001,11 @@ let and_equal_instanceof v1 v2 t formula =
   Sat (formula, RevList.append new_eqs new_eqs')
 
 
-let normalize formula =
+let normalize ?location formula =
   (* Sat (formula, RevList.empty) *)
   Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
   (* normalization happens incrementally except for dynamic types (TODO) *)
-  DynamicTypes.simplify formula
+  DynamicTypes.simplify ?location formula
 
 
 let and_dynamic_type_is v t ?source_file formula =
