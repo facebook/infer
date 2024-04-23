@@ -116,15 +116,7 @@ let add_or_get_build_report_path args =
   (build_report_path, before_build @ ["build"] @ after_build)
 
 
-let save_beams_from_report ~buck_root ~build_report_path beam_list_path =
-  let report =
-    match Utils.read_json_file build_report_path with
-    | Ok json ->
-        json
-    | Error message ->
-        L.external_warning "@[<v>@[Failed to parse Buck report: %s@]@;@]" message ;
-        `Assoc []
-  in
+let save_beams_from_report ~project_root ~report beam_list_path =
   let rec get_strings under_outputs strings json =
     match json with
     | `String s when under_outputs ->
@@ -140,7 +132,7 @@ let save_beams_from_report ~buck_root ~build_report_path beam_list_path =
         strings
   in
   let get_beams beams dir =
-    let ebin_dir = buck_root ^/ dir ^/ "ebin" in
+    let ebin_dir = project_root ^/ dir ^/ "ebin" in
     match Sys.is_directory ebin_dir with
     | `Yes ->
         let new_beams = Utils.find_files ~path:ebin_dir ~extension:".beam" in
@@ -160,8 +152,9 @@ let run_in_dir ~dir ~prog ~args =
   Sys.chdir here
 
 
-let process_beams ~buck_root beam_list_path =
-  Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
+let process_beams ~project_root beam_list_path =
+  let base_dir = Some project_root in
+  Option.iter ~f:(parse_translate_store ~base_dir) Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let jsonast_dir =
       let in_dir = ResultsDir.get_path Temporary in
@@ -175,8 +168,8 @@ let process_beams ~buck_root beam_list_path =
     in
     (* extract.escript prints a warning to stdout if the abstract forms are missing,
        but keeps going *)
-    run_in_dir ~dir:buck_root ~prog ~args ;
-    parse_translate_store jsonast_dir ;
+    run_in_dir ~dir:project_root ~prog ~args ;
+    parse_translate_store ~base_dir jsonast_dir ;
     if not Config.debug_mode then Utils.rmtree jsonast_dir )
 
 
@@ -263,11 +256,16 @@ let capture_buck ~command ~args =
   let args = update_buck_targets ~command ~args in
   let build_report_path, args = add_or_get_build_report_path args in
   run_buck ~command ~args |> ignore ;
-  let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
-  let buck_root =
-    String.strip
-      (Process.create_process_and_wait_with_output ~prog:command ~args:["root"] ReadStdout)
+  let report, project_root =
+    match Utils.read_json_file build_report_path with
+    | Ok json ->
+        let open Yojson.Safe.Util in
+        let root = json |> member "project_root" |> to_string in
+        (json, root)
+    | Error message ->
+        L.die InternalError "@[<v>@[Failed to parse Buck report: %s@]@;@]" message
   in
-  save_beams_from_report ~buck_root ~build_report_path beam_list_path ;
+  let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
+  save_beams_from_report ~project_root ~report beam_list_path ;
   L.progress "translating generated beam files@." ;
-  process_beams ~buck_root beam_list_path
+  process_beams ~project_root beam_list_path
