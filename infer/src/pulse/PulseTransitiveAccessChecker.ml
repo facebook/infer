@@ -17,7 +17,7 @@ module Config : sig
 
   val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
-  val procname_must_be_skipped : Procname.t -> bool
+  val procname_must_be_skipped : Tenv.t -> Procname.t -> bool
 
   type context_metadata = {description: string; tag: string}
 
@@ -45,7 +45,7 @@ end = struct
 
   type t =
     { fieldnames_to_monitor: string list
-    ; procnames_to_skip: string list option [@yojson.option]
+    ; procnames_to_skip: procname_match_spec list option [@yojson.option]
     ; procnames_to_monitor: procname_match_spec list
     ; contexts: context list }
   [@@deriving of_yojson]
@@ -75,17 +75,7 @@ end = struct
     List.exists annotations ~f:match_one_annotation
 
 
-  let procname_must_be_skipped procname =
-    match get () with
-    | None ->
-        false
-    | Some {procnames_to_skip} ->
-        Option.exists procnames_to_skip ~f:(fun names ->
-            let method_name = Procname.get_method procname in
-            List.exists names ~f:(String.equal method_name) )
-
-
-  let procname_must_be_monitored tenv procname =
+  let procname_is_matched specs tenv procname =
     let class_name = Procname.get_class_type_name procname in
     let method_name = Procname.get_method procname in
     let match_class_name names =
@@ -118,11 +108,24 @@ end = struct
           && map_or_true class_name_regex ~f:match_class_name_regex
           && map_or_true annotations ~f:(procname_has_annotation procname)
     in
+    List.exists specs ~f:check_one_procname_spec
+
+
+  let procname_must_be_monitored tenv procname =
     match get () with
     | None ->
         false
     | Some {procnames_to_monitor} ->
-        List.exists procnames_to_monitor ~f:check_one_procname_spec
+        procname_is_matched procnames_to_monitor tenv procname
+
+
+  let procname_must_be_skipped tenv procname =
+    match get () with
+    | None ->
+        false
+    | Some {procnames_to_skip} ->
+        Option.exists procnames_to_skip ~f:(fun procnames_to_skip ->
+            procname_is_matched procnames_to_skip tenv procname )
 
 
   let is_matching_context tenv procname context =

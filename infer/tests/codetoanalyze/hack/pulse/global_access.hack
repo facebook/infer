@@ -37,11 +37,13 @@ class Parent1 extends Parent2 {
 
 class ExtendsVeryUnsafe extends VeryUnsafe {}
 
-class B {
+class C {
   public function skip_me(A $a): int {
     return $a->get();
   }
+}
 
+class B extends C {
   public function skip_me_too(A $a): int {
     return $a->get();
   }
