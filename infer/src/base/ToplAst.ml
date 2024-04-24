@@ -36,8 +36,12 @@ type condition = predicate list (* conjunction *) [@@deriving show]
 
 type assignment = register_name * variable_name [@@deriving show]
 
+type regex = {re_text: string; re: (Re.Str.regexp[@show.opaque])} [@@deriving show]
+
+let mk_regex re_text = {re_text; re= Re.Str.regexp re_text}
+
 type call_pattern =
-  {procedure_name_regex: string; type_regexes: string option list option (* [None] means anything *)}
+  {procedure_name_regex: regex; type_regexes: regex option list option (* [None] means anything *)}
 [@@deriving show]
 
 type label_pattern = ArrayWritePattern | CallPattern of call_pattern [@@deriving show]

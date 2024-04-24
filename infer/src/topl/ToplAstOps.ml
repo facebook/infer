@@ -10,7 +10,7 @@ module F = Format
 
 let pp_regex f regex =
   (* TODO: Maybe have some proper escaping here. Used for debugging now. *)
-  F.fprintf f "\"%s\"" regex
+  F.fprintf f "\"%a\"" ToplAst.pp_regex regex
 
 
 let pp_type_regexes f type_regexes =

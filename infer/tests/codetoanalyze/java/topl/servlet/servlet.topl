@@ -7,7 +7,7 @@
 // but never both a writer and a stream.
 property InterleavedResponse
   message "A ServletResponse was asked for both a writer and a stream."
-  prefix "ServletResponse"
+  prefix "javax.servlet.ServletResponse"
   start -> start: *
   start -> gotWriter: getWriter(R, IgnoreRet) => r := R
   start -> gotStream: getOutputStream(R, IgnoreRet) => r := R
@@ -16,6 +16,7 @@ property InterleavedResponse
 
 property ForwardUncommitted
   message "A ServletResponse was forwarded before being committed."
+  prefix "javax.servlet"
   start -> start: *
   start -> gotChannel: "ServletResponse.\\(getWriter\\|getOutputStream\\)"(R, C) => r := R; c := C
   gotChannel -> ok: "\\(PrintWriter\\|ServletOutputStream\\).flush.*"(C, IgnoreRet) when C == c

@@ -32,7 +32,7 @@ let pp_value = AbstractValue.pp
 let pp_type f type_ = F.fprintf f "%s" (Typ.to_string type_)
 
 (* When printing Procname.t below for matching purposes, use only this function. *)
-let pp_procname f procname = Procname.pp_name_only f procname
+let pp_procname f procname = Procname.pp_fullname_only f procname
 
 let pp_value_and_type f (value, type_) = F.fprintf f "@[%a:@ %a@]" pp_value value pp_type type_
 
@@ -652,7 +652,7 @@ let static_match_array_write arr index label : tcontext option =
 
 let static_match_call return arguments procname label : tcontext option =
   let is_match re text =
-    Option.for_all re ~f:(fun re -> Re.Str.string_match (Re.Str.regexp re) text 0)
+    Option.for_all re ~f:(fun re -> Re.Str.string_match re.ToplAst.re text 0)
   in
   let match_name () : bool =
     match label.ToplAst.pattern with

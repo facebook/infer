@@ -119,8 +119,8 @@ colon_regex:
     COLON r=regex { r }
 
 regex:
-    i=identifier { i }
-  | s=STRING { s }
+    i=identifier { ToplAst.mk_regex i }
+  | s=STRING { ToplAst.mk_regex s }
 
 action:
     ARROWARROW a=separated_nonempty_list(SEMI, assignment) { a }
