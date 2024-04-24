@@ -956,7 +956,11 @@ let interproc_acquire ~tenv ~procname ~callsite ~subst summary_lock_state astate
       (fun acquisition acc ->
         let loc = CallSite.loc callsite in
         let event =
-          Event.make_interprocedural_acquire callsite [acquisition.elem.lock] astate.thread
+          let lock =
+            Lock.apply_subst subst acquisition.elem.lock
+            |> Option.value ~default:acquisition.elem.lock
+          in
+          Event.make_interprocedural_acquire callsite [lock] astate.thread
             (Acquisition.make_loc_trace acquisition)
         in
         add_critical_pair ~tenv_opt:(Some tenv) astate.lock_state astate.null_locs event ~loc acc )

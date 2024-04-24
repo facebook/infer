@@ -21,7 +21,7 @@ struct MutexWrapper {
 
 struct Wrapper {
   struct FakeMut* m1;
-  struct MutexWrapper* m2;
+  struct MutexWrapper m2;
 };
 
 struct SomethingElse {
@@ -30,9 +30,7 @@ struct SomethingElse {
 
 struct SomethingElse some_global;
 
-void mutex_wrapper_lock(struct MutexWrapper* w) {
-  pthread_mutex_lock(w->mutex);
-}
+void mutex_wrapper_lock(struct MutexWrapper w) { pthread_mutex_lock(w.mutex); }
 
 void lock_m2_and_do_soemthing_else(struct SomethingElse* other) {
   pthread_mutex_lock(&global_m1);
@@ -48,17 +46,17 @@ int m1_then_m2(struct Wrapper* s) {
   struct SomethingElse* other = malloc(100);
   lock_m2_and_do_soemthing_else(other);
   pthread_mutex_unlock(&global_m1);
-  pthread_mutex_unlock(s->m2->mutex);
+  pthread_mutex_unlock(s->m2.mutex);
   pthread_mutex_unlock(s->m1);
   return 0;
 }
 
 int simple_locking(struct Wrapper* s) {
   pthread_mutex_lock(&global_m1);
-  pthread_mutex_lock(s->m2->mutex);
+  pthread_mutex_lock(s->m2.mutex);
   pthread_mutex_lock(s->m1);
   pthread_mutex_unlock(s->m1);
-  pthread_mutex_unlock(s->m2->mutex);
+  pthread_mutex_unlock(s->m2.mutex);
   pthread_mutex_unlock(&global_m1);
   return 1;
 }
