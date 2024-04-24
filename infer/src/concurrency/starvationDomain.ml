@@ -427,7 +427,8 @@ module LockState : sig
 
   val acquire : procname:Procname.t -> loc:Location.t -> Lock.t -> t -> t
 
-  val integrate_summary : procname:Procname.t -> callsite:CallSite.t -> other:t -> t -> t
+  val integrate_summary :
+    procname:Procname.t -> callsite:CallSite.t -> subst:AbstractAddress.subst -> other:t -> t -> t
 
   val release : Lock.t -> t -> t
 
@@ -551,11 +552,17 @@ end = struct
     {held; unlocked; acquisitions}
 
 
-  let integrate_summary ~procname ~callsite ~other lock_state =
+  let integrate_summary ~procname ~callsite ~subst ~other lock_state =
     (* Release all locks that were unlocked by summary *)
+    let subst_lock lock =
+      match Lock.apply_subst subst lock with Some lock' -> lock' | None -> lock
+    in
     let rec unlocked_folder lock other_count lock_state =
       if UnlockCount.is_bottom other_count then lock_state
-      else unlocked_folder lock (UnlockCount.decrement other_count) (release lock lock_state)
+      else
+        unlocked_folder lock
+          (UnlockCount.decrement other_count)
+          (release (subst_lock lock) lock_state)
     in
     let lock_state = UnlockedMap.fold unlocked_folder other.unlocked lock_state in
     (* acquire all locks that are held in the summary, adding the callsite to the acquisitions *)
@@ -564,7 +571,14 @@ end = struct
       else
         let acquisition = Acquisitions.find (Acquisition.make_dummy lock) other.acquisitions in
         let acquisition = Acquisition.with_callsite_at_proc ~procname acquisition callsite in
-        let lock_state = acquire' acquisition lock lock_state in
+        let acquisition =
+          match Acquisition.apply_subst subst acquisition with
+          | None ->
+              acquisition
+          | Some acq ->
+              acq
+        in
+        let lock_state = acquire' acquisition (subst_lock lock) lock_state in
         held_folder lock (LockCount.decrement other_count) lock_state
     in
     let lock_state = HeldMap.fold held_folder other.held lock_state in
@@ -935,7 +949,7 @@ let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
   |> Option.value_map ~default:acc ~f:(fun pair -> NullLocsCriticalPairs.add {null_locs; pair} acc)
 
 
-let interproc_acquire ~tenv ~procname ~callsite summary_lock_state astate =
+let interproc_acquire ~tenv ~procname ~callsite ~subst summary_lock_state astate =
   let new_acquisitions = LockState.get_acquisitions summary_lock_state in
   let critical_pairs =
     Acquisitions.fold
@@ -949,7 +963,8 @@ let interproc_acquire ~tenv ~procname ~callsite summary_lock_state astate =
       new_acquisitions astate.critical_pairs
   in
   let lock_state =
-    LockState.integrate_summary ~procname ~callsite ~other:summary_lock_state astate.lock_state
+    LockState.integrate_summary ~procname ~callsite ~subst ~other:summary_lock_state
+      astate.lock_state
   in
   {astate with critical_pairs; lock_state}
 
@@ -1117,7 +1132,7 @@ let integrate_summary ~tenv ~procname ~lhs ~subst formals callsite (astate : t) 
       astate.null_locs callsite astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
   in
   (* apply summary held locks *)
-  let astate = interproc_acquire ~procname ~callsite ~tenv summary.lock_state astate in
+  let astate = interproc_acquire ~procname ~callsite ~subst ~tenv summary.lock_state astate in
   let astate =
     { astate with
       critical_pairs= NullLocsCriticalPairs.join astate.critical_pairs critical_pairs'
