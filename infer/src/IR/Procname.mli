@@ -11,7 +11,7 @@ module F = Format
 (** Module for Procedure Names. *)
 
 (** Level of verbosity of some to_string functions. *)
-type detail_level = Verbose | Non_verbose | Simple | NameOnly
+type detail_level = FullNameOnly | NameOnly | Non_verbose | Simple | Verbose
 
 (** Type of csharp procedure names. *)
 module CSharp : sig
@@ -459,7 +459,11 @@ val pp_name_only : F.formatter -> t -> unit
 
     - In C++: "<ClassName>::<ProcName>"
     - In Java, ObjC, C#: "<ClassName>.<ProcName>"
-    - In C/Erlang: "<ProcName>" *)
+    - In C: "<ProcName>"
+    - In Erlang: "<ModuleName>:<ProcName>" *)
+
+val pp_fullname_only : F.formatter -> t -> unit
+(** Like [pp_name_only], but include package name for Java. *)
 
 val is_c : t -> bool
 
