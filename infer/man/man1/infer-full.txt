@@ -1527,6 +1527,10 @@ OPTIONS
            Regex of methods that should be modelled as "skip" in Pulse
            See also infer-analyze(1).
 
+       --pulse-model-skip-pattern-list +string
+           Regex of methods that should be modelled as "skip" in Pulse
+           See also infer-analyze(1).
+
        --pulse-model-transfer-ownership +string
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
@@ -3020,6 +3024,9 @@ INTERNAL OPTIONS
 
        --pulse-model-returns-copy-pattern-reset
            Cancel the effect of --pulse-model-returns-copy-pattern.
+
+       --pulse-model-skip-pattern-list-reset
+           Set --pulse-model-skip-pattern-list to the empty list.
 
        --pulse-model-skip-pattern-reset
            Cancel the effect of --pulse-model-skip-pattern.

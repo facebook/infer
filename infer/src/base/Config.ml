@@ -2591,6 +2591,12 @@ and pulse_model_skip_pattern =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
+and pulse_model_skip_pattern_list =
+  CLOpt.mk_string_list ~long:"pulse-model-skip-pattern-list"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Regex of methods that should be modelled as \"skip\" in Pulse"
+
+
 and pulse_models_for_erlang =
   CLOpt.mk_path_list ~long:"pulse-models-for-erlang"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -3794,6 +3800,11 @@ let post_parsing_initialization command_opt =
   Option.value ~default:InferCommand.Run command_opt
 
 
+let join_patterns ~pattern_opt ~pattern_list =
+  let patterns = Option.to_list !pattern_opt @ RevList.to_list !pattern_list in
+  if List.is_empty patterns then None else Some (String.concat ~sep:"\\|" patterns |> Str.regexp)
+
+
 let command =
   let command_opt, _usage_exit =
     CLOpt.parse ?config_file:inferconfig_file ~usage:exe_usage startup_action initial_command
@@ -4402,11 +4413,8 @@ and pulse_model_abort = RevList.to_list !pulse_model_abort
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_cheap_copy_type =
-  let pulse_model_cheap_copy_type_list =
-    Option.to_list !pulse_model_cheap_copy_type @ RevList.to_list !pulse_model_cheap_copy_type_list
-  in
-  if List.is_empty pulse_model_cheap_copy_type_list then None
-  else Some (String.concat ~sep:"\\|" pulse_model_cheap_copy_type_list |> Str.regexp)
+  join_patterns ~pattern_opt:pulse_model_cheap_copy_type
+    ~pattern_list:pulse_model_cheap_copy_type_list
 
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
@@ -4425,7 +4433,9 @@ and pulse_model_return_this = Option.map ~f:Str.regexp !pulse_model_return_this
 
 and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
 
-and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
+and pulse_model_skip_pattern =
+  join_patterns ~pattern_opt:pulse_model_skip_pattern ~pattern_list:pulse_model_skip_pattern_list
+
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
