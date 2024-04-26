@@ -950,12 +950,14 @@ let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
   {call_state with astate}
 
 
-let record_transitive_info callee_proc_name call_location callee_summary call_state =
-  let astate =
-    AbductiveDomain.transfer_transitive_info_to_caller callee_proc_name call_location callee_summary
-      call_state.astate
-  in
-  {call_state with astate}
+let record_transitive_info tenv callee_proc_name call_location callee_summary call_state =
+  if PulseTransitiveAccessChecker.should_skip_call tenv callee_proc_name then call_state
+  else
+    let astate =
+      AbductiveDomain.transfer_transitive_info_to_caller callee_proc_name call_location
+        callee_summary call_state.astate
+    in
+    {call_state with astate}
 
 
 let apply_unknown_effects callee_summary call_state =
@@ -1041,7 +1043,7 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
         ) )
 
 
-let apply_post path callee_proc_name call_location callee_summary call_state =
+let apply_post tenv path callee_proc_name call_location callee_summary call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     call_state
@@ -1051,7 +1053,7 @@ let apply_post path callee_proc_name call_location callee_summary call_state =
     >>| add_attributes `Post path callee_proc_name call_location
           (AbductiveDomain.Summary.get_post callee_summary).attrs
     >>| record_skipped_calls callee_proc_name call_location callee_summary
-    >>| record_transitive_info callee_proc_name call_location callee_summary
+    >>| record_transitive_info tenv callee_proc_name call_location callee_summary
     >>| read_return_value path callee_proc_name call_location callee_summary
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
@@ -1164,7 +1166,7 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
    - for each actual, write the post for that actual
 
    - if aliasing is introduced at any time then give up *)
-let apply_summary path callee_proc_name call_location ~callee_summary ~captured_formals
+let apply_summary tenv path callee_proc_name call_location ~callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals astate =
   let aux () =
     let empty_call_state =
@@ -1234,7 +1236,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
           let call_state = {call_state with astate; visited= AddressSet.empty} in
           (* apply the postcondition *)
           let* call_state, return_caller =
-            apply_post path callee_proc_name call_location callee_summary call_state
+            apply_post tenv path callee_proc_name call_location callee_summary call_state
           in
           let astate =
             if Topl.is_active () then

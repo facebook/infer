@@ -10,6 +10,7 @@ CLEAN_EXTRA += duplicates.txt
 include $(TESTS_DIR)/infer.make
 
 HH_AUTO_NAMESPACE_MAP = '{ \
+  "C": "HH\\Lib\\C", \
   "Dict": "HH\\Lib\\Dict", \
   "Vec": "HH\\Lib\\Vec" \
 }'

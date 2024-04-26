@@ -13,8 +13,8 @@ let is_ref_counted_or_block addr astate =
   AddressAttributes.get_static_type addr astate
   |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
   ||
-  match AddressAttributes.get_dynamic_type addr astate with
-  | Some {Attribute.typ= {desc= Tstruct typ_name}} ->
+  match PulseArithmetic.get_dynamic_type addr astate with
+  | Some {typ= {desc= Tstruct typ_name}} ->
       Typ.Name.is_objc_class typ_name || Typ.Name.is_objc_block typ_name
   | _ ->
       false
@@ -30,7 +30,7 @@ let rec crop_seen_to_cycle seen_list addr =
 
 let has_static_dynamic_type astate v =
   let has_static_type = AddressAttributes.get_static_type v astate |> Option.is_some in
-  has_static_type || AddressAttributes.get_dynamic_type v astate |> Option.is_some
+  has_static_type || PulseArithmetic.get_dynamic_type v astate |> Option.is_some
 
 
 let remove_non_objc_objects cycle astate =
@@ -57,7 +57,10 @@ let add_missing_objects path loc cycle astate =
           (astate, cycle)
     else (astate, cycle)
   in
-  List.fold ~f:add_missing_object cycle ~init:(astate, cycle)
+  (* We aim to add the missing objects only on cycles of length 1 where this will help make the message clearer.
+     Here we write 2 because it's before we remove non objects (the values that have the dynamic type attribute) *)
+  if Int.equal (List.length cycle) 2 then List.fold ~f:add_missing_object cycle ~init:(astate, cycle)
+  else (astate, cycle)
 
 
 let get_assignment_trace astate addr =
@@ -129,7 +132,10 @@ let check_retain_cycles path tenv location addresses orig_astate =
         let not_previously_reported =
           not (AddressAttributes.is_in_reported_retain_cycle addr astate)
         in
-        if is_known && is_seen && is_ref_counted_or_block && not_previously_reported then
+        let path_condition = astate.AbductiveDomain.path_condition in
+        let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
+        if is_known && is_seen && is_ref_counted_or_block && not_previously_reported && is_not_null
+        then
           let seen = List.rev seen in
           let cycle = crop_seen_to_cycle seen addr in
           let astate, cycle = add_missing_objects path location cycle astate in

@@ -1,7 +1,7 @@
 property Field
   start -> start: *
-  start -> error: "topl_fields:bar/1"(T, R) when 11 <= (T:Cons.head):Integer.value
+  start -> error: "topl_fields:bar"(T, R) when 11 <= (T:Cons.head):Integer.value
 
 property NoOne
   start -> start: *
-  start -> error: "topl_fields:dontSayOne/1"(A, R) when A:Integer.value == 1
+  start -> error: "topl_fields:dontSayOne"(A, R) when A:Integer.value == 1

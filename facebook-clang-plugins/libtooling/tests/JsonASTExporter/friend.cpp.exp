@@ -1364,9 +1364,17 @@
           "type_ptr" : 32
         }
       ]],
-      ["ObjCObjectType" , [
+      ["LValueReferenceType" , [
         {
           "pointer" : 139
+        },
+        {
+          "type_ptr" : 13
+        }
+      ]],
+      ["ObjCObjectType" , [
+        {
+          "pointer" : 140
         },
         {
           "base_type" : 91
@@ -1374,32 +1382,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 140
+          "pointer" : 141
         },
         {
-          "type_ptr" : 139
+          "type_ptr" : 140
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 141,
-          "desugared_type" : 140
+          "pointer" : 142,
+          "desugared_type" : 141
         },
         {
           "child_type" : {
-            "type_ptr" : 140
+            "type_ptr" : 141
           },
-          "decl_ptr" : 142
+          "decl_ptr" : 143
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 35,
-          "desugared_type" : 140
+          "desugared_type" : 141
         },
         {
           "child_type" : {
-            "type_ptr" : 141
+            "type_ptr" : 142
           },
           "decl_ptr" : 34
         }

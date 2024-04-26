@@ -11,6 +11,7 @@ let dispatch : (unit, unit, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
     [ -"folly" &:: "Optional" &::.*--> ()
+    ; -"folly" &:: "small_vector" &::.*--> ()
     ; -"std" &:: "__wrap_iter" &::.*--> ()
     ; -"std" &:: "atomic" &::.*--> ()
     ; -"std" &:: "function" &::.*--> ()

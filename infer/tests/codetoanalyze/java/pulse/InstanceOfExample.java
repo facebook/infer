@@ -128,7 +128,7 @@ public class InstanceOfExample {
     }
   }
 
-  public void FP_testSubclassOk(Person p) {
+  public void testSubclassOk(Person p) {
     if (p instanceof Faculty) {
       if (!(p instanceof Person)) { // must be false
         Object o = null;
@@ -137,7 +137,7 @@ public class InstanceOfExample {
     }
   }
 
-  public void FP_testUnrelatedOk(Person p) {
+  public void testUnrelatedOk(Person p) {
     if (p instanceof Faculty && p instanceof Student) {
       Object o = null;
       o.toString();

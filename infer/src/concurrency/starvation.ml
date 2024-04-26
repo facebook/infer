@@ -29,21 +29,53 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let hilexp_of_sil ~add_deref (astate : Domain.t) silexp typ =
-    let f_resolve_id var = Domain.VarDomain.get var astate.var_state in
-    HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref silexp typ
+    (* If there is a structure like this
+     * varA -> varB, varB -> SomeConstantLock (static class)
+     * and there is code unlock(varB), we want to varB to resolve to SomeConstantLock
+     * Unfortuantely, this can't be done directly, because SomeConstantLock is not an access expression
+     * so we do it via side effects of constant_var *)
+    let constant_var = ref None in
+    let f_resolve_id var =
+      Domain.VarDomain.get var astate.var_state
+      |> Option.bind ~f:(function
+           | StarvationDomain.AccessExpressionOrConst.AE exp ->
+               Some exp
+           | StarvationDomain.AccessExpressionOrConst.Const exp ->
+               ( match !constant_var with
+               | None ->
+                   ()
+               | Some _e ->
+                   L.internal_error "Double resolved id %a in expression %a" (Const.pp Pp.text) exp
+                     Exp.pp silexp ) ;
+               constant_var := Some exp ;
+               None )
+    in
+    let hil = HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref silexp typ in
+    let hil = match !constant_var with None -> hil | Some c -> HilExp.Constant c in
+    hil
 
 
   let hilexp_of_sils ~add_deref astate silexps =
     List.map silexps ~f:(fun (exp, typ) -> hilexp_of_sil ~add_deref astate exp typ)
 
 
-  let rec get_access_expr (hilexp : HilExp.t) =
+  let rec get_access_expr_or_const (hilexp : HilExp.t) =
     match hilexp with
     | AccessExpression access_exp ->
-        Some access_exp
+        Some (Domain.AccessExpressionOrConst.AE access_exp)
+    | Constant c ->
+        Some (Domain.AccessExpressionOrConst.Const c)
     | Cast (_, hilexp) | Exception hilexp | UnaryOperator (_, hilexp, _) ->
-        get_access_expr hilexp
-    | BinaryOperator _ | Closure _ | Constant _ | Sizeof _ ->
+        get_access_expr_or_const hilexp
+    | BinaryOperator _ | Closure _ | Sizeof _ ->
+        None
+
+
+  let get_access_expr (hilexp : HilExp.t) =
+    match get_access_expr_or_const hilexp with
+    | Some (Domain.AccessExpressionOrConst.AE access_exp) ->
+        Some access_exp
+    | _ ->
         None
 
 
@@ -142,9 +174,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else Domain.set_non_null formals lhs_access_exp astate
 
 
-  let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
+  let do_call {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
       (astate : Domain.t) =
     let open Domain in
+    let procname = Procdesc.get_proc_name proc_desc in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
     let actuals_acc_exps = get_access_expr_list actuals in
@@ -238,7 +271,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
              let subst = Lock.make_subst formals actuals in
              let callsite = CallSite.make callee loc in
-             Domain.integrate_summary ~tenv ~lhs ~subst formals callsite astate summary )
+             Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -258,7 +291,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
     let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
     let astate =
-      get_access_expr rhs_hil_exp
+      get_access_expr_or_const rhs_hil_exp
       |> Option.value_map ~default:astate ~f:(fun acc_exp ->
              {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
     in
@@ -802,7 +835,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       (* warn only at the innermost procedure taking a lock around the final call *)
       let procs_with_acquisitions =
         Acquisitions.fold
-          (fun (acquisition : Acquisition.t) acc -> Procname.Set.add acquisition.procname acc)
+          (fun (acquisition : Acquisition.t) acc -> Procname.Set.add acquisition.elem.procname acc)
           pair.elem.acquisitions Procname.Set.empty
       in
       match Procname.Set.is_singleton_or_more procs_with_acquisitions with

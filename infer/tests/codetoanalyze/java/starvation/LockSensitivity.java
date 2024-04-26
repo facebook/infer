@@ -33,16 +33,17 @@ class LockSensitivity {
   }
 
   // Asserting a lock is held is not the same as taking it wrt deadlocks.
-  // In the following two methods, AB vs BA pattern is wrongly detected.
+  // In the following two methods, AB vs BA pattern correctly not reported
+  // because the locks/unlocks would not be balanced within the method
 
   Object monitorA, monitorB;
 
-  public void FP_assertHoldsLockAB_Ok() {
+  public void assertHoldsLockAB_Ok() {
     OurThreadUtils.assertHoldsLock(monitorA);
     OurThreadUtils.assertHoldsLock(monitorB);
   }
 
-  public void FP_assertHoldsLockBA_Ok() {
+  public void assertHoldsLockBA_Ok() {
     OurThreadUtils.assertHoldsLock(monitorB);
     OurThreadUtils.assertHoldsLock(monitorA);
   }

@@ -276,7 +276,7 @@ module PulseTransferFunctions = struct
 
 
   let get_dynamic_type_name astate v =
-    match AbductiveDomain.AddressAttributes.get_dynamic_type v astate with
+    match PulseArithmetic.get_dynamic_type v astate with
     | Some {typ= {desc= Tstruct name}; source_file} ->
         Some (name, source_file)
     | Some {typ} ->
@@ -307,11 +307,15 @@ module PulseTransferFunctions = struct
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
+        L.d_printfln "finding override for dynamic type %a, proc_name %a with sourcefile %a"
+          Typ.Name.pp dynamic_type_name Procname.pp proc_name (Pp.option SourceFile.pp)
+          source_file_opt ;
         let tenv =
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
         let opt_proc_name, missed_captures = tenv_resolve_method tenv dynamic_type_name proc_name in
+        L.d_printfln "opt_procname is %a" (Pp.option Tenv.MethodInfo.pp) opt_proc_name ;
         ( (let+ proc_name = opt_proc_name in
            (proc_name, `ExactDevirtualization) )
         , missed_captures )
@@ -392,13 +396,13 @@ module PulseTransferFunctions = struct
       | None ->
           (Some static_class_name, astate)
       | Some (astate, (value, _)) -> (
-        match AbductiveDomain.AddressAttributes.get_dynamic_type value astate with
+        match PulseArithmetic.get_dynamic_type value astate with
         | None ->
             (* No information is available from the [self] argument at this time, we need to
                wait for specialization *)
             (None, need_dynamic_type_specialization astate value)
         | Some dynamic_type_data ->
-            (Typ.name dynamic_type_data.Attribute.typ, astate) )
+            (Typ.name dynamic_type_data.Formula.typ, astate) )
     in
     (* If we spot a call on [__parent__$static], we push further and get the parent of
        [__self__$static] *)
@@ -635,7 +639,8 @@ module PulseTransferFunctions = struct
         let astate, self = PulseOperations.eval_ident (fst ret) astate in
         (* Also register its static type *)
         let astate =
-          AbductiveDomain.AddressAttributes.add_static_type tenv type_name (fst self) astate
+          AbductiveDomain.AddressAttributes.add_static_type tenv type_name (fst self) call_loc
+            astate
         in
         let self_origin = ValueOrigin.OnStack {var= Var.of_id (fst ret); addr_hist= self} in
         let ret_exp, ret_ty = ret in
@@ -1058,10 +1063,7 @@ module PulseTransferFunctions = struct
               | ContinueProgram astate as default_astate ->
                   (let open IOption.Let_syntax in
                    let* self_var = find_var_opt astate addr in
-                   let+ {Attribute.typ} =
-                     let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-                     Attributes.get_dynamic_type attrs
-                   in
+                   let+ {Formula.typ} = PulseArithmetic.get_dynamic_type addr astate in
                    let ret_id = Ident.create_fresh Ident.knormal in
                    ret_vars := Var.of_id ret_id :: !ret_vars ;
                    let ret = (ret_id, StdTyp.void) in
@@ -1301,7 +1303,7 @@ module PulseTransferFunctions = struct
              let rhs_addr, _ = rhs_addr_hist in
              and_is_int_if_integer_type typ rhs_addr astate
              >>|| PulseOperations.hack_python_propagates_type_on_load tenv path loc rhs_exp rhs_addr
-             >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr
+             >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
             |> SatUnsat.to_list
             |> PulseReport.report_results tenv proc_desc err_log loc
@@ -1575,11 +1577,12 @@ let assume_notnull_params {ProcAttributes.proc_name; formals} astate =
       else astate )
 
 
-let initial tenv proc_attrs specialization =
+let initial tenv proc_attrs specialization location =
   let path = PathContext.initial in
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_attrs
-    |> Option.value_map specialization ~default:Fun.id ~f:PulseSpecialization.apply
+    |> Option.value_map specialization ~default:Fun.id ~f:(fun spec ->
+           PulseSpecialization.apply spec location )
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
@@ -1644,15 +1647,51 @@ let log_summary_count proc_name summary =
   Out_channel.output_char (Lazy.force summary_count_channel) '\n'
 
 
+let log_number_of_unreachable_nodes proc_desc invariant_map =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let nodes = Procdesc.get_nodes proc_desc in
+  let nodes_reachable_from_entry =
+    let open Procdesc in
+    let rec visit seen node =
+      if NodeSet.mem node seen then seen
+      else
+        let seen = NodeSet.add node seen in
+        Node.get_succs node |> List.fold ~init:seen ~f:visit
+    in
+    get_start_node proc_desc |> visit NodeSet.empty
+  in
+  let nb_nodes_reachable_from_entry =
+    Procdesc.NodeSet.cardinal nodes_reachable_from_entry |> float_of_int
+  in
+  let has_node_0_disjunct node =
+    let id = Procdesc.Node.get_id node in
+    if Procdesc.NodeSet.mem node nodes_reachable_from_entry |> not then false
+    else if DisjunctiveAnalyzer.InvariantMap.mem id invariant_map |> not then true
+    else
+      let {AbstractInterpreter.State.pre= disjs, _} =
+        DisjunctiveAnalyzer.InvariantMap.find id invariant_map
+      in
+      List.is_empty disjs
+  in
+  let nb_nodes_without_disjuncts = List.count nodes ~f:has_node_0_disjunct |> float_of_int in
+  let unreachable_ratio = nb_nodes_without_disjuncts /. nb_nodes_reachable_from_entry in
+  if Float.(unreachable_ratio > 0.10) then
+    L.debug Analysis Quiet
+      "[Unreachability warning] At %a, function %a, %.2f%% of CFG nodes are unreachable\n"
+      Location.pp_file_pos (Procdesc.get_loc proc_desc) Procname.pp proc_name
+      (100. *. unreachable_ratio)
+
+
 let analyze specialization
     ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_attrs = Procdesc.get_attributes proc_desc in
+  let location = Procdesc.get_loc proc_desc in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let initial =
     with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
       ~f:(fun () ->
-        let initial_disjuncts = initial tenv proc_attrs specialization in
+        let initial_disjuncts = initial tenv proc_attrs specialization location in
         let initial_non_disj =
           PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc integer_type_widths
             tenv
@@ -1662,6 +1701,7 @@ let analyze specialization
         (initial_disjuncts, initial_non_disj) )
   in
   let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
+  if Config.log_pulse_unreachable_nodes then log_number_of_unreachable_nodes proc_desc invariant_map ;
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->

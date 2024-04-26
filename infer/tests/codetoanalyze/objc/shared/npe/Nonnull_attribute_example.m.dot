@@ -115,7 +115,7 @@ digraph cfg {
 "setName:#NonnullC(class NSString).b850b5df43afd06b_2" [label="2: Exit NonnullC.setName: \n  " color=yellow style=filled]
 	
 
-"setName:#NonnullC(class NSString).b850b5df43afd06b_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*&name:NSString* [line 30, column 36]\n  *n$0._name:NSString*=n$1 [line 30, column 36]\n " shape="box"]
+"setName:#NonnullC(class NSString).b850b5df43afd06b_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*&name:NSString* [line 30, column 36]\n  n$2=_fun_NSObject.copy(n$1:NSString*) [line 30, column 36]\n  *n$0._name:NSString*=n$2 [line 30, column 36]\n " shape="box"]
 	
 
 	 "setName:#NonnullC(class NSString).b850b5df43afd06b_3" -> "setName:#NonnullC(class NSString).b850b5df43afd06b_2" ;

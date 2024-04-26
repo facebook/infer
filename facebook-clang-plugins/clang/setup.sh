@@ -192,7 +192,7 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     # Please note that this case only applies to infer/master platform builds
     CMAKE_ARGS+=(
         -DLLVM_ENABLE_PROJECTS="clang"
-        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi"
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
         -DZLIB_INCLUDE_DIR="$ZLIB/include"
         # We disable some tools to avoid adding -isystem /usr/include in platform builds. It is good
         # enough for now, but if we want to use them, we should give proper include directories as
@@ -205,7 +205,7 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
 else
     CMAKE_ARGS+=(
         -DLLVM_ENABLE_PROJECTS="clang;openmp"
-        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi"
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
     )
 fi
 

@@ -18,11 +18,15 @@ struct FakeMut m2;
 int simple_null_pointer() {
   pthread_mutex_lock1(&m1);
   pthread_mutex_lock(&m2);
+  pthread_mutex_unlock(&m2);
+  pthread_mutex_unlock(&m1);
   return 0;
 }
 
 int null_pointer_interproc() {
   pthread_mutex_lock(&m2);
   pthread_mutex_lock1(&m1);
+  pthread_mutex_unlock(&m1);
+  pthread_mutex_unlock(&m2);
   return 1;
 }

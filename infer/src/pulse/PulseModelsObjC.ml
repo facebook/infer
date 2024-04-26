@@ -257,7 +257,7 @@ let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
      astate non_disj ->
   let block = fst block_ptr_hist in
   let callee_proc_name_opt =
-    match AddressAttributes.get_dynamic_type block astate with
+    match PulseArithmetic.get_dynamic_type block astate with
     | Some {typ= {desc= Typ.Tstruct (ObjcBlock bsig)}} ->
         Some (Procname.Block bsig)
     | _ ->

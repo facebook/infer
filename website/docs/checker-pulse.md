@@ -184,7 +184,6 @@ The following issue types are reported by this checker:
 - [PULSE_UNAWAITED_AWAITABLE](/docs/next/all-issue-types#pulse_unawaited_awaitable)
 - [PULSE_UNINITIALIZED_CONST](/docs/next/all-issue-types#pulse_uninitialized_const)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
-- [PULSE_UNINITIALIZED_VALUE_LATENT](/docs/next/all-issue-types#pulse_uninitialized_value_latent)
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)
 - [PULSE_UNNECESSARY_COPY_ASSIGNMENT](/docs/next/all-issue-types#pulse_unnecessary_copy_assignment)
 - [PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST](/docs/next/all-issue-types#pulse_unnecessary_copy_assignment_const)

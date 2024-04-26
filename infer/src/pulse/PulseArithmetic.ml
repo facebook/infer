@@ -126,12 +126,26 @@ let is_manifest summary =
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
 let and_equal_instanceof v1 v2 t astate =
-  let get_dynamic_type v =
-    AbductiveDomain.AddressAttributes.get_dynamic_type v astate
-    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
+
+
+let and_dynamic_type_is v t ?source_file astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_dynamic_type_is v t ?source_file phi)
+
+
+let get_dynamic_type v astate = Formula.get_dynamic_type v astate.AbductiveDomain.path_condition
+
+(* this is just to ease migration of previous calls to PulseOperations.add_dynamic_type, which can't fail *)
+let and_dynamic_type_is_unsafe v t ?source_file location astate =
+  let phi =
+    Formula.add_dynamic_type_unsafe v t ?source_file location astate.AbductiveDomain.path_condition
   in
-  map_path_condition astate ~f:(fun phi ->
-      Formula.and_equal_instanceof v1 v2 t ~get_dynamic_type phi )
+  AbductiveDomain.set_path_condition phi astate
+
+
+let copy_type_constraints v_src v_target astate =
+  let phi = Formula.copy_type_constraints v_src v_target astate.AbductiveDomain.path_condition in
+  AbductiveDomain.set_path_condition phi astate
 
 
 let absval_of_int astate i =

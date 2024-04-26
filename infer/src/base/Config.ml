@@ -223,6 +223,8 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
 
+let copy = "<\"Copy\">"
+
 (* Allow lists for C++ library functions *)
 
 let std_allow_listed_cpp_methods =
@@ -599,6 +601,19 @@ and analysis_schedule_file =
     ~in_help:InferCommand.[(Analyze, manual_scheduler)]
     ( "The file where an analysis schedule is stored. The default is "
     ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
+
+
+and annotation_reachability_apply_class_annotations =
+  CLOpt.mk_bool ~long:"annotation-reachability-apply-class-annotations"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "Applies annotations of a class/interface to all its methods" ~default:true
+
+
+and annotation_reachability_custom_models =
+  CLOpt.mk_json ~long:"annotation-reachability-custom-models"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    {|Specify a map from annotations to lists of regexps to treat matching methods as if they had the annotation.
+Example format: {"Annotation": ["com\\\\.Myclass\\\\.foo.*"]}|}
 
 
 and annotation_reachability_custom_pairs =
@@ -1172,13 +1187,6 @@ and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list" ~deprecated:["-buck-targets-blacklist"]
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
     ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
-
-
-and bxl_file_capture =
-  CLOpt.mk_bool ~long:"bxl-file-capture" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Given an $(b, --changed-file-index) file, capture the owning buck2 targets and their \
-     dependencies using the BXL script specified by $(b, --buck2_bxl_target)."
 
 
 and capture =
@@ -2135,6 +2143,12 @@ and log_pulse_disjunct_increase_after_model_call =
     "Log which model did increase the current number of Pulse disjuncts."
 
 
+and log_pulse_unreachable_nodes =
+  CLOpt.mk_bool ~long:"log-pulse-unreachable-nodes" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Log for each function and each summary, the ratio of unreached nodes."
+
+
 and log_missing_deps =
   CLOpt.mk_bool ~long:"log-missing-deps" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2928,6 +2942,12 @@ and pyc_file = CLOpt.mk_path_list ~long:"pyc-file" "Collection of compiled Pytho
 and python_builtin_models =
   CLOpt.mk_string ~long:"python-builtin-models" ~default:default_python_builtin_models
     "Specify .sil file to use as Python builtin models (uses bundled models by default)"
+
+
+and qualified_cpp_name_block_list =
+  CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Skip analyzing the procedures under the qualified cpp type name."
 
 
 and quandary_endpoints =
@@ -3789,6 +3809,12 @@ and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
 and analysis_schedule_file = !analysis_schedule_file
 
+and annotation_reachability_apply_class_annotations =
+  !annotation_reachability_apply_class_annotations
+
+
+and annotation_reachability_custom_models = !annotation_reachability_custom_models
+
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
 and annotation_reachability_cxx = !annotation_reachability_cxx
@@ -3916,8 +3942,6 @@ and buck_mode : BuckMode.t option =
 
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
-
-and bxl_file_capture = !bxl_file_capture
 
 and capture = !capture
 
@@ -4237,6 +4261,8 @@ and lock_model = !lock_model
 
 and log_pulse_disjunct_increase_after_model_call = !log_pulse_disjunct_increase_after_model_call
 
+and log_pulse_unreachable_nodes = !log_pulse_unreachable_nodes
+
 and log_missing_deps = !log_missing_deps
 
 and margin_html = !margin_html
@@ -4540,6 +4566,8 @@ and pure_by_default = !pure_by_default
 and pyc_file = RevList.to_list !pyc_file
 
 and python_builtin_models = !python_builtin_models
+
+and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 
 and quandary_endpoints = !quandary_endpoints
 

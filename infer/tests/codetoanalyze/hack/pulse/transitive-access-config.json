@@ -13,6 +13,16 @@
     },
     { "class_name_regex": "BadPattern" }
   ],
+  "procnames_to_skip": [
+    {
+      "class_names": ["GlobalAccess::C"],
+      "method_names": ["skip_me"]
+    },
+    {
+      "class_names": ["GlobalAccess::B"],
+      "method_names": ["skip_me_too"]
+    }
+  ],
   "contexts": [
     {
       "initial_caller_class_extends": ["GlobalAccess::EventHandler"],

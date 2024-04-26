@@ -1,6 +1,6 @@
 --- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
 +++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-@@ -1192,10 +1192,7 @@ void CXXNameMangler::mangleFloatLiteral(
+@@ -1239,10 +1239,7 @@ void CXXNameMangler::mangleFloatLiteral(
  }
 
  void CXXNameMangler::mangleFixedPointLiteral() {
@@ -12,7 +12,7 @@
  }
 
  void CXXNameMangler::mangleNullPointer(QualType T) {
-@@ -3635,11 +3632,7 @@ void CXXNameMangler::mangleNeonVectorTyp
+@@ -3812,11 +3809,7 @@ void CXXNameMangler::mangleNeonVectorTyp
  }
 
  void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
@@ -25,7 +25,7 @@
  }
 
  static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
-@@ -3712,11 +3705,7 @@ void CXXNameMangler::mangleAArch64NeonVe
+@@ -3889,11 +3882,7 @@ void CXXNameMangler::mangleAArch64NeonVe
    Out << TypeName.length() << TypeName;
  }
  void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
@@ -38,7 +38,7 @@
  }
 
  // The AArch64 ACLE specifies that fixed-length SVE vector and predicate types
-@@ -3809,11 +3798,7 @@ void CXXNameMangler::mangleAArch64FixedS
+@@ -3986,11 +3975,7 @@ void CXXNameMangler::mangleAArch64FixedS
 
  void CXXNameMangler::mangleAArch64FixedSveVectorType(
      const DependentVectorType *T) {
@@ -51,7 +51,7 @@
  }
 
  void CXXNameMangler::mangleRISCVFixedRVVVectorType(const VectorType *T) {
-@@ -4487,12 +4472,7 @@ recurse:
+@@ -4747,12 +4732,7 @@ recurse:
    {
      NotPrimaryExpr();
      if (!NullOut) {
@@ -65,7 +65,7 @@
        return;
      }
      break;
-@@ -4528,12 +4508,7 @@ recurse:
+@@ -4787,12 +4767,7 @@ recurse:
    // Even gcc-4.5 doesn't mangle this.
    case Expr::BinaryConditionalOperatorClass: {
      NotPrimaryExpr();
@@ -79,9 +79,9 @@
      return;
    }
 
-@@ -4872,18 +4847,11 @@ recurse:
-       MangleAlignofSizeofArg();
-       break;
+@@ -5157,18 +5132,11 @@ recurse:
+       return;
+     }
      case UETT_VecStep: {
 -      DiagnosticsEngine &Diags = Context.getDiags();
 -      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
@@ -99,4 +99,4 @@
 +      Out << "__unhandled_UETT_OpenMPRequiredSimdAlign";
        return;
      }
-     }
+     case UETT_VectorElements: {

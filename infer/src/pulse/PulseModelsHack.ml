@@ -54,6 +54,13 @@ let hack_await arg : model =
      assign_ret rv
 
 
+let hack_await_static _ arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* rv = await_hack_value arg in
+     assign_ret rv
+
+
 let make_new_awaitable av =
   let open DSL.Syntax in
   let* av = constructor awaitable_type_name [("val", av)] in
@@ -259,7 +266,7 @@ let int_to_hack_int n : DSL.aval DSL.model_monad =
 
 let hack_string_dsl str_val : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* () = add_dynamic_type (Typ.mk_struct hack_string_type_name) str_val in
+  let* () = and_dynamic_type_is str_val (Typ.mk_struct hack_string_type_name) in
   let* () = and_positive str_val in
   ret str_val
 
@@ -370,7 +377,7 @@ let get_static_companion ~model_desc path location type_name astate =
   let astate, ((addr, _) as addr_hist) = AbductiveDomain.Stack.eval hist var astate in
   let static_type_name = Typ.Name.Hack.static_companion type_name in
   let typ = Typ.mk_struct static_type_name in
-  let astate = PulseOperations.add_dynamic_type typ addr astate in
+  let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ location astate in
   (addr_hist, astate)
 
 
@@ -416,11 +423,9 @@ let lazy_class_initialize size_exp : model =
 let get_static_class aval : model =
   let open DSL.Syntax in
   start_model
-  @@ let* (opt_dynamic_type_data : Attribute.dynamic_type_data option) =
-       get_dynamic_type ~ask_specialization:true aval
-     in
+  @@ let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true aval in
      match opt_dynamic_type_data with
-     | Some {typ= {desc= Tstruct type_name}} ->
+     | Some {Formula.typ= {desc= Tstruct type_name}} ->
          let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
          assign_ret class_object
      | _ ->
@@ -767,7 +772,10 @@ let hack_array_get this args : model =
   let open DSL.Syntax in
   start_model
   @@
-  let default () = mk_fresh ~model_desc:"hack_array_get" () in
+  let default () =
+    L.d_warning "default case of hack_array_get" ;
+    mk_fresh ~model_desc:"hack_array_get" ()
+  in
   let hack_array_get_one_dim this key : DSL.aval DSL.model_monad =
     dynamic_dispatch this
       ~cases:
@@ -802,7 +810,7 @@ let hack_field_get this field : model =
      | Some string_field_name -> (
          let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true this in
          match opt_dynamic_type_data with
-         | Some {Attribute.typ= {Typ.desc= Tstruct type_name}} ->
+         | Some {Formula.typ= {Typ.desc= Tstruct type_name}} ->
              let field = Fieldname.make type_name string_field_name in
              let* aval = eval_deref_access Read this (FieldAccess field) in
              let* struct_info = tenv_resolve_field_info type_name field in
@@ -889,8 +897,8 @@ let hhbc_cmp_same x y : model =
          let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
          let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
          match (x_dynamic_type_data, y_dynamic_type_data) with
-         | ( Some {Attribute.typ= {desc= Tstruct x_typ_name}}
-           , Some {Attribute.typ= {desc= Tstruct y_typ_name}} )
+         | ( Some {Formula.typ= {desc= Tstruct x_typ_name}}
+           , Some {Formula.typ= {desc= Tstruct y_typ_name}} )
            when Typ.Name.equal x_typ_name y_typ_name ->
              L.d_printfln "hhbc_cmp_same: known dynamic type" ;
              if Typ.Name.equal x_typ_name hack_int_type_name then (
@@ -924,8 +932,7 @@ let hhbc_cmp_same x y : model =
                (* TODO(dpichardie) cover the specificities of == that compare objects properties
                   (structural equality). *)
                make_hack_random_bool )
-         | Some {Attribute.typ= x_typ}, Some {Attribute.typ= y_typ} when not (Typ.equal x_typ y_typ)
-           ->
+         | Some {Formula.typ= x_typ}, Some {Formula.typ= y_typ} when not (Typ.equal x_typ y_typ) ->
              L.d_printfln "hhbc_cmp_same: known different dynamic types: false result" ;
              make_hack_bool false
          | _ ->
@@ -951,7 +958,7 @@ let hack_is_true b : model =
     | None ->
         let* ret = make_hack_random_bool in
         assign_ret ret
-    | Some {Attribute.typ= {Typ.desc= Tstruct b_typ_name}} ->
+    | Some {Formula.typ= {Typ.desc= Tstruct b_typ_name}} ->
         if Typ.Name.equal b_typ_name hack_bool_type_name then
           let* b_val = eval_deref_access Read b (FieldAccess bool_val_field) in
           assign_ret b_val
@@ -980,7 +987,7 @@ let hhbc_cls_cns this field : model =
   @@ let* dynamic_Type_data_opt = get_dynamic_type ~ask_specialization:true this in
      let* field_v =
        match dynamic_Type_data_opt with
-       | Some {Attribute.typ= {Typ.desc= Tstruct name}} ->
+       | Some {Formula.typ= {Typ.desc= Tstruct name}} ->
            let* opt_string_field_name = read_string_value_dsl field in
            let string_field_name =
              match opt_string_field_name with
@@ -1068,8 +1075,8 @@ let hhbc_cmp_lt x y : model =
               | None, _ | _, None ->
                   L.d_printfln "random nones" ;
                   make_hack_random_bool
-              | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
-                , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
+              | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
+                , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
                 when Typ.Name.equal x_typ_name y_typ_name ->
                   if Typ.Name.equal x_typ_name hack_int_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
@@ -1125,8 +1132,8 @@ let hhbc_cmp_le x y : model =
               match (x_dynamic_type_data, y_dynamic_type_data) with
               | None, _ | _, None ->
                   make_hack_random_bool
-              | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
-                , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
+              | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
+                , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
                 when Typ.Name.equal x_typ_name y_typ_name ->
                   if Typ.Name.equal x_typ_name hack_int_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
@@ -1155,8 +1162,8 @@ let hhbc_add x y : model =
   @@ let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
      let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
      match (x_dynamic_type_data, y_dynamic_type_data) with
-     | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
-       , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
+     | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
+       , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
        when Typ.Name.equal x_typ_name y_typ_name && Typ.Name.equal x_typ_name hack_int_type_name ->
          let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
          let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
@@ -1166,6 +1173,11 @@ let hhbc_add x y : model =
      | _, _ ->
          let* sum = mk_fresh ~model_desc:"hhbc_add" () in
          assign_ret sum (* unconstrained value *)
+
+
+let hhbc_iter_base arg : model =
+  let open DSL.Syntax in
+  start_model @@ assign_ret arg
 
 
 let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
@@ -1215,7 +1227,7 @@ module SplatedVec = struct
     | [arg] -> (
         let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:false arg in
         match arg_dynamic_type_data with
-        | Some {Attribute.typ= {Typ.desc= Tstruct name}} when Typ.Name.equal name type_name ->
+        | Some {Formula.typ= {Typ.desc= Tstruct name}} when Typ.Name.equal name type_name ->
             eval_deref_access Read arg (FieldAccess field)
         | _ ->
             Vec.new_vec_dsl args )
@@ -1345,7 +1357,7 @@ let hhbc_cast_string arg : model =
   start_model
   @@ let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
      match dynamic_type_data with
-     | Some {Attribute.typ= {Typ.desc= Tstruct typ_name}}
+     | Some {Formula.typ= {Typ.desc= Tstruct typ_name}}
        when Typ.Name.equal typ_name hack_string_type_name ->
          assign_ret arg
      | Some _ ->
@@ -1422,6 +1434,9 @@ let matchers : matcher list =
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Dict.dict_from_async
+  ; -"Asio$static" &:: "awaitSynchronously" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hack_await_static
+  ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload

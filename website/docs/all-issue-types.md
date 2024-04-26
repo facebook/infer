@@ -798,7 +798,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/next/checker-inefficient-keyset-iterator).
 
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
+- iterating over a HashMap with `keySet()` iterator
 - looking up the key each time
 
 Example:
@@ -1974,11 +1974,6 @@ void foo() {
 }
 ```
 
-## PULSE_UNINITIALIZED_VALUE_LATENT
-
-Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
-
-A latent [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## PULSE_UNNECESSARY_COPY
 
 Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
@@ -2936,10 +2931,11 @@ For example:
 ```cpp
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
+  int* y = elt;
   vec.push_back(42); // if the array backing the vector was full already, this
                      // will re-allocate it and copy the previous contents
                      // into the new array, then delete the previous array
-  std::cout << *y << "\n"; // bad: elt might be invalid
+  std::cout << *y << "\n"; // bad: y might be invalid
 }
 ```
 

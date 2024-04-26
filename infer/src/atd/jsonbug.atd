@@ -142,7 +142,7 @@ type jsonbug = {
   qualifier : string;
   ?suggestion : string option;
   severity : string;
-  ?category: string option;
+  category: string;
   line: int;
   column: int;
   procedure : string;

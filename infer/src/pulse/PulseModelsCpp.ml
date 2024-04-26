@@ -426,7 +426,7 @@ module Function = struct
     in
     let<*> astate = PulseOperations.Closures.check_captured_addresses path location lambda astate in
     let callee_proc_name_opt =
-      match AddressAttributes.get_dynamic_type lambda astate with
+      match PulseArithmetic.get_dynamic_type lambda astate with
       | Some {typ= {desc= Typ.Tstruct name}} -> (
         match Tenv.lookup tenv name with
         | Some tstruct ->
@@ -680,21 +680,25 @@ module GenericMapCollection = struct
 
   let pair_second_access key_t value_t = MemoryAccess.FieldAccess (pair_second_field key_t value_t)
 
-  let extract_key_and_value_types (map : 'a FuncArg.t) =
-    match map.typ.desc with
-    | Typ.Tptr
-        ( { desc=
-              Tstruct
-                (CppClass {template_spec_info= Template {args= TType key_t :: TType value_t :: _}})
-          }
-        , _ ) ->
-        Some (key_t, value_t)
-    | _ ->
-        (* This should never happen, as we already know from using capt_arg_of_typ that map
-           is of some map type, hence it should have a first and second template arguments
-           mapping to key and value types respectively. *)
-        L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp_full Pp.text) map.typ ;
-        None
+  let extract_key_and_value_types {FuncArg.typ= map_typ} =
+    let rec extract_helper {Typ.desc} =
+      match desc with
+      | Tstruct (CppClass {template_spec_info= Template {args= TType key_t :: TType value_t :: _}})
+        ->
+          Some (key_t, value_t)
+      | Tptr (typ, _) ->
+          (* We strip [Tptr] recursively because there can be multiple wrappings of it, e.g. an
+             rvalue-ref parameter can be captured by reference in lambda.  Also, the stripping
+             semantics is aligned with the [ProcnameDispatcher.match_typ] definition. *)
+          extract_helper typ
+      | _ ->
+          (* This should never happen, as we already know from using [capt_arg_of_typ] that map
+             is of some map type, hence it should have a first and second template arguments
+             mapping to key and value types respectively. *)
+          L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp_full Pp.text) map_typ ;
+          None
+    in
+    extract_helper map_typ
 
 
   let unwrap_pointer_to_struct_type (typ : Typ.t) =

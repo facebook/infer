@@ -137,7 +137,7 @@ val eval_proc_name :
 val hack_python_propagates_type_on_load :
   Tenv.t -> PathContext.t -> Location.t -> Exp.t -> AbstractValue.t -> t -> t
 
-val add_static_type_objc_class : Tenv.t -> Typ.t -> AbstractValue.t -> t -> t
+val add_static_type_objc_class : Tenv.t -> Typ.t -> AbstractValue.t -> Location.t -> t -> t
 
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
@@ -249,8 +249,6 @@ val add_dict_read_const_key :
   -> Fieldname.t
   -> t
   -> (t, AccessResult.error) PulseResult.t
-
-val add_dynamic_type : Typ.t -> ?source_file:SourceFile.t -> AbstractValue.t -> t -> t
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 

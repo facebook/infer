@@ -7,6 +7,8 @@
 
 open! IStd
 
+val should_skip_call : Tenv.t -> Procname.t -> bool
+
 val record_load : Exp.t -> Location.t -> PulseExecutionDomain.t list -> PulseExecutionDomain.t list
 
 val record_call :

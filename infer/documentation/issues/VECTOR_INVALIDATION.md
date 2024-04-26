@@ -10,9 +10,10 @@ For example:
 ```cpp
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
+  int* y = elt;
   vec.push_back(42); // if the array backing the vector was full already, this
                      // will re-allocate it and copy the previous contents
                      // into the new array, then delete the previous array
-  std::cout << *y << "\n"; // bad: elt might be invalid
+  std::cout << *y << "\n"; // bad: y might be invalid
 }
 ```

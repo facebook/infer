@@ -37,6 +37,22 @@ class Parent1 extends Parent2 {
 
 class ExtendsVeryUnsafe extends VeryUnsafe {}
 
+class C {
+  public function skip_me(A $a): int {
+    return $a->get();
+  }
+}
+
+class B extends C {
+  public function skip_me_too(A $a): int {
+    return $a->get();
+  }
+
+  public function dont_skip_me(A $a): int {
+    return $a->get();
+  }
+}
+
 final class GlobalAccess extends Parent1 {
 
   public function basic_is_entry_bad(A $a): int {
@@ -49,6 +65,18 @@ final class GlobalAccess extends Parent1 {
 
   public function indirect_other_is_entry_bad(A $a): int {
     return $a->get();
+  }
+
+  public function indirect_skip_me_is_entry_ok(A $a, B $b): int {
+    return $b->skip_me($a);
+  }
+
+  public function indirect_skip_me_too_is_entry_ok(A $a, B $b): int {
+    return $b->skip_me($a);
+  }
+
+  public function indirect_dont_skip_me_is_entry_bad(A $a, B $b): int {
+    return $b->dont_skip_me($a);
   }
 
   public function indirect_is_entry_two_signals_bad(A $a1, A $a2): int {

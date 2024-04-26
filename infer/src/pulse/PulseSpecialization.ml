@@ -36,7 +36,7 @@ let rec initialize_heap_path heap_path astate =
       Memory.eval_edge src_addr Dereference astate
 
 
-let apply {Specialization.Pulse.aliases; dynamic_types} astate =
+let apply {Specialization.Pulse.aliases; dynamic_types} location astate =
   let astate =
     Option.value_map aliases ~default:astate ~f:(fun aliases ->
         List.fold aliases ~init:astate ~f:(fun astate alias ->
@@ -53,7 +53,7 @@ let apply {Specialization.Pulse.aliases; dynamic_types} astate =
       (fun heap_path typename astate ->
         let astate, (addr, _) = initialize_heap_path heap_path astate in
         let typ = Typ.mk_struct typename in
-        AddressAttributes.add_dynamic_type {typ; source_file= None} addr astate )
+        PulseArithmetic.and_dynamic_type_is_unsafe addr typ location astate )
       dynamic_types astate
   in
   astate

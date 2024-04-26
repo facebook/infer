@@ -94,8 +94,6 @@ module Syntax : sig
 
   val remove_dict_contain_const_keys : aval -> unit model_monad
 
-  val add_dynamic_type : Typ.t -> aval -> unit model_monad [@@warning "-unused-value-declaration"]
-
   val add_static_type : Typ.name -> aval -> unit model_monad
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
@@ -118,8 +116,10 @@ module Syntax : sig
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
+  val and_dynamic_type_is : aval -> Typ.t -> unit model_monad
+
   val get_dynamic_type :
-    ask_specialization:bool -> aval -> Attribute.dynamic_type_data option model_monad
+    ask_specialization:bool -> aval -> Formula.dynamic_type_data option model_monad
 
   val new_ : Exp.t -> aval model_monad
 

@@ -1338,9 +1338,17 @@
           "type_ptr" : 29
         }
       )>,
-      <"ObjCObjectType" : (
+      <"LValueReferenceType" : (
         {
           "pointer" : 110
+        },
+        {
+          "type_ptr" : 8
+        }
+      )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 111
         },
         {
           "base_type" : 90
@@ -1348,32 +1356,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 111
+          "pointer" : 112
         },
         {
-          "type_ptr" : 110
+          "type_ptr" : 111
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 112,
-          "desugared_type" : 111
+          "pointer" : 113,
+          "desugared_type" : 112
         },
         {
           "child_type" : {
-            "type_ptr" : 111
+            "type_ptr" : 112
           },
-          "decl_ptr" : 113
+          "decl_ptr" : 114
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 33,
-          "desugared_type" : 111
+          "desugared_type" : 112
         },
         {
           "child_type" : {
-            "type_ptr" : 112
+            "type_ptr" : 113
           },
           "decl_ptr" : 32
         }

@@ -37,7 +37,14 @@ let pp f fld =
 
 type name_ = Typ.name
 
-let compare_name_ = Typ.Name.compare_name
+let compare_name_ n1 n2 =
+  match (n1, n2) with
+  (* Always compare Hack class names equal, so we only use the field name in compare_name *)
+  | Typ.HackClass _hcn1, Typ.HackClass _hcn2 ->
+      0
+  | _, _ ->
+      Typ.Name.compare_name n1 n2
+
 
 let compare_name f f' =
   [%compare: name_ * string * captured_data option]

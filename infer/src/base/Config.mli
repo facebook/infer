@@ -67,6 +67,8 @@ val clang_inner_destructor_prefix : string
 
 val clang_plugin_path : string
 
+val copy : string
+
 val default_failure_name : string
 
 val dotty_frontend_output : string
@@ -127,6 +129,10 @@ val wrappers_dir : string
 val abstract_pulse_models_for_erlang : bool
 
 val analysis_schedule_file : string option
+
+val annotation_reachability_apply_class_annotations : bool
+
+val annotation_reachability_custom_models : Yojson.Safe.t
 
 val annotation_reachability_custom_pairs : Yojson.Safe.t
 
@@ -244,8 +250,6 @@ val buck_out : string
 val buck_out_gen : string
 
 val buck_targets_block_list : string list
-
-val bxl_file_capture : bool
 
 val capture : bool
 
@@ -516,6 +520,8 @@ val lock_model : Yojson.Safe.t
 
 val log_pulse_disjunct_increase_after_model_call : bool
 
+val log_pulse_unreachable_nodes : bool
+
 val log_missing_deps : bool
 
 val margin_html : int
@@ -713,6 +719,8 @@ val pure_by_default : bool
 val pyc_file : string list
 
 val python_builtin_models : string
+
+val qualified_cpp_name_block_list : string list
 
 val quandary_endpoints : Yojson.Safe.t
 

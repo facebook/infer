@@ -46,4 +46,54 @@ class Wrapper {
     }
     return;
   }
+
+  // this is designed to test preservation of instanceof facts
+  // works fine because we do add_term_eq and then merge_vars
+  // does the right thing
+  public async function preserveTypeTestOK(mixed $m): Awaitable<void> {
+    if ($m is D) {
+      if ($m is D) {
+        return;
+      } else {
+        $_ = $this->fail();
+      }
+    } else {
+      return;
+    }
+  }
+
+  // C and E are incomparable
+  public async function belowFactPreservedOK(mixed $m): Awaitable<void> {
+    if ($m is C) {
+      if ($m is E) {
+        $_ = $this->fail();
+        // can't happen because $m can't be C and E at the same time
+        // note that that generall depends on the assumption that types form a tree
+        // rather than a DAG. If C & D were interfaces it would be wrong
+      }
+    }
+    return;
+  }
+
+  // D is a subtype of E
+  public async function belowFactImplicationBad(mixed $m): Awaitable<void> {
+    if ($m is E) {
+      if ($m is D) {
+        $_ = $this->fail();
+        // always fails
+      }
+    }
+    return;
+  }
+
+  public async function belowFactImplicationOK(mixed $m): Awaitable<void> {
+    if ($m is E) {
+      if ($m is D) { // always succeeds
+        return;
+      } else {
+        $_ = $this->fail(); // never happens
+      }
+    }
+    return;
+  }
 }

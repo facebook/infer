@@ -887,7 +887,10 @@ module Summary = struct
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
-      if Set.mem seen node then (shape_is_preserved, seen)
+      if not (G.mem_vertex graph node) then (
+        L.internal_error "Mysteriously missing node from lineage." ;
+        (shape_is_preserved, seen) )
+      else if Set.mem seen node then (shape_is_preserved, seen)
       else
         let seen = Set.add seen node in
         let incoming = G.pred_e graph node in

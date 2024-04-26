@@ -6,14 +6,14 @@
 -module(specs_basic).
 
 -export([
-    test_record6_Latent/1,
+    test_record6_Bad/1,
     test_record5_Ok/1,
     test_record4_Latent/1,
     test_record3_Latent/1,
     test_record2_Latent/1,
     test_record1_Ok/1,
     test_tuple_with_types5_Latent/1,
-    test_tuple_with_types4_Latent/1,
+    test_tuple_with_types4_Bad/1,
     test_tuple_with_types3_Ok/1,
     test_tuple_with_types2_Latent/1,
     test_tuple_with_types1_Ok/1,
@@ -177,8 +177,8 @@ test_tuple_with_types2_Latent({X}) when is_atom(X) -> ok.
 -spec test_tuple_with_types3_Ok({atom(), map()}) -> any().
 test_tuple_with_types3_Ok({X, Y}) when is_atom(X), is_map(Y) -> ok.
 
--spec test_tuple_with_types4_Latent({atom(), map()}) -> any().
-test_tuple_with_types4_Latent({X, Y}) when is_map(X), is_atom(Y) -> ok.
+-spec test_tuple_with_types4_Bad({atom(), map()}) -> any().
+test_tuple_with_types4_Bad({X, Y}) when is_map(X), is_atom(Y) -> ok.
 
 -spec test_tuple_with_types5_Latent({any()}) -> any().
 test_tuple_with_types5_Latent({X}) when is_atom(X) -> ok.
@@ -199,8 +199,8 @@ test_record4_Latent({_, _, _, _}) -> ok.
 -spec test_record5_Ok(#car{}) -> any().
 test_record5_Ok({car, _, _}) -> ok.
 
--spec test_record6_Latent(#car{}) -> any().
-test_record6_Latent({not_a_car, _, _}) -> ok.
+-spec test_record6_Bad(#car{}) -> any().
+test_record6_Bad({not_a_car, _, _}) -> ok.
 
 % Just to check that we don't crash
 -spec test_no_args_Ok() -> any().

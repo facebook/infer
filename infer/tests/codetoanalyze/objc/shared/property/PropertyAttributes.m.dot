@@ -146,7 +146,7 @@ digraph cfg {
 "setChild:#PropertyA(class Propert.d0716bfbd35a49be_2" [label="2: Exit PropertyA.setChild: \n  " color=yellow style=filled]
 	
 
-"setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*&child:PropertyA* [line 12, column 39]\n  *n$0._child:PropertyA*=n$1 [line 12, column 39]\n " shape="box"]
+"setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*&child:PropertyA* [line 12, column 39]\n  n$2=_fun_NSObject.copy(n$1:PropertyA*) [line 12, column 39]\n  *n$0._child:PropertyA*=n$2 [line 12, column 39]\n " shape="box"]
 	
 
 	 "setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" -> "setChild:#PropertyA(class Propert.d0716bfbd35a49be_2" ;

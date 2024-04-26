@@ -8,8 +8,8 @@
 open! IStd
 
 let create_fake_jsonbug ?(bug_type = "bug_type") ?(qualifier = "qualifier")
-    ?(suggestion = Some "suggestion") ?(severity = "severity") ?(category = Some "category")
-    ?(line = 1) ?(column = 1) ?(procedure = "procedure") ?(procedure_start_line = 1)
+    ?(suggestion = Some "suggestion") ?(severity = "severity") ?(category = "category") ?(line = 1)
+    ?(column = 1) ?(procedure = "procedure") ?(procedure_start_line = 1)
     ?(file = "file/at/a/certain/path.java") ?(bug_trace = []) ?(key = "File|method|TYPE")
     ?(node_key = Some "1234") ?(hash = "1") ?(dotty = None) ?(infer_source_loc = None) () :
     Jsonbug_t.jsonbug =

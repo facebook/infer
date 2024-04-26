@@ -10,7 +10,7 @@ module Hashtbl = Caml.Hashtbl
 module F = Format
 module L = Logging
 
-type detail_level = Verbose | Non_verbose | Simple | NameOnly
+type detail_level = FullNameOnly | NameOnly | Non_verbose | Simple | Verbose
 
 let is_verbose v = match v with Verbose -> true | _ -> false
 
@@ -74,25 +74,27 @@ module CSharp = struct
   (** Prints a string of a csharp procname with the given level of verbosity *)
   let pp ?(withclass = false) verbosity fmt cs =
     let verbose = is_verbose verbosity in
-    let pp_class_name_dot fmt cs =
-      CSharpClassName.pp_with_verbosity ~verbose fmt (get_csharp_class_name_exn cs) ;
+    let pp_class_name_dot ~with_namespace fmt cs =
+      CSharpClassName.pp_with_verbosity ~verbose:with_namespace fmt (get_csharp_class_name_exn cs) ;
       F.pp_print_char fmt '.'
     in
-    let pp_package_method_and_params fmt cs =
+    let pp_package_method_and_params ~with_namespace fmt cs =
       let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_cs ~verbose) fmt params in
-      F.fprintf fmt "%a%s(%a)" pp_class_name_dot cs cs.method_name pp_param_list cs.parameters
+      F.fprintf fmt "%a%s(%a)"
+        (pp_class_name_dot ~with_namespace)
+        cs cs.method_name pp_param_list cs.parameters
     in
     match verbosity with
     | Verbose ->
-        (* [package.class.method(params): rtype], used for example to create unique filenames *)
+        (* [namespace.class.method(params): rtype], used for example to create unique filenames *)
         let separator = if Option.is_none cs.return_type then "" else ":" in
-        pp_package_method_and_params fmt cs ;
+        pp_package_method_and_params ~with_namespace:true fmt cs ;
         F.fprintf fmt "%s%a" separator (pp_return_type ~verbose) cs
     | Non_verbose ->
         (* [rtype class.method(params)], for creating reports *)
         let separator = if Option.is_none cs.return_type then "" else " " in
         F.fprintf fmt "%a%s" (pp_return_type ~verbose) cs separator ;
-        pp_package_method_and_params fmt cs
+        pp_package_method_and_params ~with_namespace:false fmt cs
     | Simple ->
         (* [methodname(...)] or without ... if there are no parameters *)
         let params = match cs.parameters with [] -> "" | _ -> "..." in
@@ -100,13 +102,16 @@ module CSharp = struct
           if String.equal cs.method_name constructor_method_name then
             F.pp_print_string fmt (get_simple_class_name cs)
           else (
-            if withclass then pp_class_name_dot fmt cs ;
+            if withclass then pp_class_name_dot ~with_namespace:false fmt cs ;
             F.pp_print_string fmt cs.method_name )
         in
         F.fprintf fmt "%a(%s)" pp_method_name cs params
+    | FullNameOnly ->
+        (* [namespace.class.method], for name matching *)
+        F.fprintf fmt "%a%s" (pp_class_name_dot ~with_namespace:true) cs cs.method_name
     | NameOnly ->
-        (* [class.method], for simple name matching *)
-        F.fprintf fmt "%a%s" pp_class_name_dot cs cs.method_name
+        (* [package.class.method], for name matching *)
+        F.fprintf fmt "%a%s" (pp_class_name_dot ~with_namespace:false) cs cs.method_name
 end
 
 module Java = struct
@@ -166,25 +171,26 @@ module Java = struct
   (** Prints a string of a java procname with the given level of verbosity *)
   let pp ?(withclass = false) verbosity fmt j =
     let verbose = is_verbose verbosity in
-    let pp_class_name_dot fmt j =
-      JavaClassName.pp_with_verbosity ~verbose fmt (get_java_class_name_exn j) ;
+    let pp_class_name_dot ~with_package fmt j =
+      JavaClassName.pp_with_verbosity ~verbose:with_package fmt (get_java_class_name_exn j) ;
       F.pp_print_char fmt '.'
     in
-    let pp_package_method_and_params fmt j =
+    let pp_package_method_and_params ~with_package fmt j =
       let pp_param_list fmt params = Pp.seq ~sep:"," (Typ.pp_java ~verbose) fmt params in
-      F.fprintf fmt "%a%s(%a)" pp_class_name_dot j j.method_name pp_param_list j.parameters
+      F.fprintf fmt "%a%s(%a)" (pp_class_name_dot ~with_package) j j.method_name pp_param_list
+        j.parameters
     in
     match verbosity with
     | Verbose ->
         (* [package.class.method(params): rtype], used for example to create unique filenames *)
         let separator = if Option.is_none j.return_type then "" else ":" in
-        pp_package_method_and_params fmt j ;
+        pp_package_method_and_params ~with_package:true fmt j ;
         F.fprintf fmt "%s%a" separator (pp_return_type ~verbose) j
     | Non_verbose ->
         (* [rtype class.method(params)], for creating reports *)
         let separator = if Option.is_none j.return_type then "" else " " in
         F.fprintf fmt "%a%s" (pp_return_type ~verbose) j separator ;
-        pp_package_method_and_params fmt j
+        pp_package_method_and_params ~with_package:false fmt j
     | Simple ->
         let params = match j.parameters with [] -> "" | _ -> "..." in
         (* [methodname(...)] or without ... if there are no parameters *)
@@ -192,13 +198,16 @@ module Java = struct
           if String.equal j.method_name constructor_method_name then
             F.pp_print_string fmt (get_simple_class_name j)
           else (
-            if withclass then pp_class_name_dot fmt j ;
+            if withclass then pp_class_name_dot ~with_package:false fmt j ;
             F.pp_print_string fmt j.method_name )
         in
         F.fprintf fmt "%a(%s)" pp_method_name j params
+    | FullNameOnly ->
+        (* [package.class.method], for name matching *)
+        F.fprintf fmt "%a%s" (pp_class_name_dot ~with_package:true) j j.method_name
     | NameOnly ->
         (* [class.method], for simple name matching *)
-        F.fprintf fmt "%a%s" pp_class_name_dot j j.method_name
+        F.fprintf fmt "%a%s" (pp_class_name_dot ~with_package:false) j j.method_name
 
 
   let get_return_typ pname_java = Option.value ~default:StdTyp.void pname_java.return_type
@@ -326,6 +335,8 @@ module ObjC_Cpp = struct
 
   let make_dealloc name = make name "dealloc" ObjCInstanceMethod Typ.NoTemplate []
 
+  let make_copy name = make name "copy" ObjCInstanceMethod Typ.NoTemplate []
+
   let make_copyWithZone ~is_mutable name =
     let zone = Typ.CStruct (QualifiedCppName.of_qual_string "_NSZone") in
     let method_name = if is_mutable then "mutableCopyWithZone:" else "copyWithZone:" in
@@ -383,6 +394,8 @@ module ObjC_Cpp = struct
         F.pp_print_string fmt osig.method_name
     | Non_verbose | NameOnly ->
         F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep osig.method_name
+    | FullNameOnly ->
+        F.fprintf fmt "%a%s%s" Typ.Name.pp osig.class_name sep osig.method_name
     | Verbose ->
         F.fprintf fmt "%a%s%s%a%a" Typ.Name.pp osig.class_name sep osig.method_name
           Parameter.pp_parameters osig.parameters pp_verbose_kind osig.kind
@@ -416,7 +429,7 @@ module C = struct
     match verbosity with
     | Simple ->
         F.fprintf fmt "%s()" plain
-    | Non_verbose | NameOnly ->
+    | Non_verbose | FullNameOnly | NameOnly ->
         F.pp_print_string fmt plain
     | Verbose ->
         let pp_mangled fmt = function None -> () | Some s -> F.fprintf fmt "{%s}" s in
@@ -452,7 +465,7 @@ module Erlang = struct
         F.fprintf fmt "%s%c%d" function_name arity_sep arity
     | Verbose ->
         F.fprintf fmt "%s:%s%c%d" module_name function_name arity_sep arity
-    | NameOnly ->
+    | FullNameOnly | NameOnly ->
         F.fprintf fmt "%s:%s" module_name function_name
 
 
@@ -506,7 +519,7 @@ module Block = struct
 
   let pp verbosity fmt (bsig : Typ.objc_block_sig) =
     match verbosity with
-    | Simple | NameOnly ->
+    | Simple | FullNameOnly | NameOnly ->
         F.pp_print_string fmt "block"
     | Non_verbose ->
         F.fprintf fmt "%s" bsig.name
@@ -542,13 +555,13 @@ module Hack = struct
       match verbosity with
       | Verbose -> (
         match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
-      | Non_verbose | Simple | NameOnly ->
+      | Non_verbose | Simple | FullNameOnly | NameOnly ->
           ()
     in
     match verbosity with
     | NameOnly ->
         F.fprintf fmt "%s" t.function_name
-    | Simple | Non_verbose | Verbose -> (
+    | FullNameOnly | Simple | Non_verbose | Verbose -> (
       match t.class_name with
       | Some class_name ->
           F.fprintf fmt "%a.%s%t" HackClassName.pp class_name t.function_name (pp_arity verbosity)
@@ -600,13 +613,13 @@ module Python = struct
       match verbosity with
       | Verbose -> (
         match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
-      | Non_verbose | Simple | NameOnly ->
+      | Non_verbose | Simple | FullNameOnly | NameOnly ->
           ()
     in
     match verbosity with
     | NameOnly ->
         F.fprintf fmt "%s" t.function_name
-    | Simple | Non_verbose | Verbose -> (
+    | FullNameOnly | Simple | Non_verbose | Verbose -> (
       match t.class_name with
       | Some class_name ->
           F.fprintf fmt "%a.%s%t" PythonClassName.pp class_name t.function_name (pp_arity verbosity)
@@ -1089,6 +1102,25 @@ let to_string ?(verbosity = Non_verbose) proc_name =
   F.asprintf "%a" (pp_with_verbosity verbosity) proc_name
 
 
+let pp_fullname_only fmt = function
+  | Java j ->
+      Java.pp FullNameOnly fmt j
+  | CSharp cs ->
+      CSharp.pp FullNameOnly fmt cs
+  | C osig ->
+      C.pp FullNameOnly fmt osig
+  | Erlang e ->
+      Erlang.pp FullNameOnly fmt e
+  | Hack h ->
+      Hack.pp FullNameOnly fmt h
+  | ObjC_Cpp osig ->
+      ObjC_Cpp.pp FullNameOnly fmt osig
+  | Block bsig ->
+      Block.pp FullNameOnly fmt bsig
+  | Python h ->
+      Python.pp FullNameOnly fmt h
+
+
 let pp_name_only fmt = function
   | Java j ->
       Java.pp NameOnly fmt j
@@ -1303,6 +1335,8 @@ let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; functi
 let make_hack ~class_name ~function_name ~arity = Hack {class_name; function_name; arity}
 
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
+
+let make_objc_copy name = ObjC_Cpp (ObjC_Cpp.make_copy name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
 

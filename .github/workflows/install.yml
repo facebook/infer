@@ -103,7 +103,7 @@ jobs:
 
       - name: Attempt to get clang from the cache
         id: cache-clang
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: facebook-clang-plugins/clang/install
           key: clang-${{ runner.os }}-${{ steps.clang-hash.outputs.value }}

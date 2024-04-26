@@ -9,7 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 open PulseBasicInterface
-module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module Memory = PulseBaseMemory
 open IOption.Let_syntax
@@ -32,14 +31,16 @@ let pp_value = AbstractValue.pp
 (* When printing types below, use only this function, to make sure it's done always in the same way. *)
 let pp_type f type_ = F.fprintf f "%s" (Typ.to_string type_)
 
+(* When printing Procname.t below for matching purposes, use only this function. *)
+let pp_procname f procname = Procname.pp_fullname_only f procname
+
 let pp_value_and_type f (value, type_) = F.fprintf f "@[%a:@ %a@]" pp_value value pp_type type_
 
 let pp_event f = function
   | ArrayWrite {aw_array; aw_index} ->
       F.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
   | Call {return; arguments; procname} ->
-      let procname = Procname.hashable_name procname (* as in [static_match] *) in
-      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option pp_value_and_type) return procname
+      F.fprintf f "@[call@ %a=%a(%a)@]" (Pp.option pp_value_and_type) return pp_procname procname
         (pp_comma_seq pp_value_and_type) arguments
 
 
@@ -78,11 +79,6 @@ type pulse_state =
   ; pulse_pre: BaseDomain.t
   ; path_condition: Formula.t
   ; get_reachable: unit -> AbstractValue.Set.t }
-
-let get_dynamic_type {pulse_post} value =
-  BaseAddressAttributes.get_dynamic_type pulse_post.attrs value
-  |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
-
 
 module Constraint : sig
   type predicate
@@ -318,7 +314,6 @@ end = struct
       in
       (* Handle path predicates. *)
       let* _path_condition, heap, out_constr =
-        let get_dynamic_type = get_dynamic_type pulse_state in
         let f (path_condition, heap, out_constr) ((op : Binop.t), l, r) =
           let l, r = (rep path_condition l, rep path_condition r) in
           let is_implied_by_pathcondition () =
@@ -348,7 +343,7 @@ end = struct
             let* path_condition, new_eqs_a =
               Formula.prune_binop ~negated:false op l r path_condition
             in
-            let* path_condition, new_eqs_b = Formula.normalize ~get_dynamic_type path_condition in
+            let* path_condition, new_eqs_b = Formula.normalize path_condition in
             let new_eqs =
               let new_eqs = RevList.empty in
               let new_eqs =
@@ -657,12 +652,12 @@ let static_match_array_write arr index label : tcontext option =
 
 let static_match_call return arguments procname label : tcontext option =
   let is_match re text =
-    Option.for_all re ~f:(fun re -> Re.Str.string_match (Re.Str.regexp re) text 0)
+    Option.for_all re ~f:(fun re -> Re.Str.string_match re.ToplAst.re text 0)
   in
   let match_name () : bool =
     match label.ToplAst.pattern with
     | CallPattern {procedure_name_regex; type_regexes} -> (
-        is_match (Some procedure_name_regex) (Procname.hashable_name procname)
+        is_match (Some procedure_name_regex) (Fmt.to_to_string pp_procname procname)
         &&
         match type_regexes with
         | None ->
@@ -751,7 +746,7 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
           static_match_call return arguments procname label
     in
     let tcontext_opt = Option.value_map ~default:(Some []) ~f transition.ToplAutomaton.label in
-    L.d_printfln "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
+    L.d_printfln_escaped "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
       (ToplAutomaton.pp_transition (Topl.automaton ()))
       transition pp_event event (Pp.option pp_tcontext) tcontext_opt ;
     Option.map
@@ -996,7 +991,7 @@ let filter_for_summary pulse_state state = drop_infeasible pulse_state state
 let description_of_step_data step_data =
   ( match step_data with
   | SmallStep (Call {procname}) | LargeStep {procname} ->
-      F.fprintf F.str_formatter "@[call to %a@]" Procname.pp procname
+      F.fprintf F.str_formatter "@[call to %a@]" Procname.pp_verbose procname
   | SmallStep (ArrayWrite _) ->
       F.fprintf F.str_formatter "@[write to array@]" ) ;
   F.flush_str_formatter ()

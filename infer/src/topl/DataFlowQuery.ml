@@ -299,12 +299,11 @@ module Topl = struct
     IContainer.forto_right arity ~init:["Ret"] ~f
 
 
-  let mk_pattern (language : Language.t) pattern arity =
+  let mk_pattern (language : Language.t) pattern =
     match language with
     | Erlang ->
         (* for erlang, we assume [pattern] looks like "module:function" *)
-        let procedure_name_regex = Printf.sprintf "%s/%d" pattern arity in
-        ToplAst.CallPattern {procedure_name_regex; type_regexes= None}
+        ToplAst.CallPattern {procedure_name_regex= ToplAst.mk_regex pattern; type_regexes= None}
     | Clang | CIL | Hack | Python | Java ->
         L.die InternalError "Unsupported language for data flow queries"
 
@@ -381,7 +380,7 @@ module Topl = struct
       (* [mk_transitions "tracking" "leaked"] makes t1&t4*)
       (* [mk_transitions "leaked" "tracking"] makes t3&t2*)
       let arguments = mk_arguments arity in
-      let pattern = mk_pattern language pattern arity in
+      let pattern = mk_pattern language pattern in
       let condition = mk_side_condition language arguments condition in
       let action = mk_save arguments position in
       let label = Some {ToplAst.arguments= Some arguments; condition; action; pattern} in

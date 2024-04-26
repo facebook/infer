@@ -151,7 +151,7 @@ codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Co
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop1_constant():int, 1206,  OnUIThread:false, []
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop2_linear(int):int, 5 + 12 ⋅ k,  OnUIThread:false, [{k},Loop]
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop3_constant(int):int, 222,  OnUIThread:false, []
-codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop_on_unknown_global_linear():void, 4 + 5 ⋅ codetoanalyze.java.performance.Cost_test.global + 4 ⋅ (1+max(0, codetoanalyze.java.performance.Cost_test.global)),  OnUIThread:false, [{1+max(0, codetoanalyze.java.performance.Cost_test.global)},Loop,{codetoanalyze.java.performance.Cost_test.global},Loop]
+codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.loop_on_unknown_global_linear():void, 4 + 5 ⋅ performance.Cost_test.global + 4 ⋅ (1+max(0, performance.Cost_test.global)),  OnUIThread:false, [{1+max(0, performance.Cost_test.global)},Loop,{performance.Cost_test.global},Loop]
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.main_constant():int, 243,  OnUIThread:false, []
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.mult_symbols_quadratic(int,int):void, 5 + 6 ⋅ y × x,  OnUIThread:false, [{x},Loop,{y},Loop]
 codetoanalyze/java/performance/Cost_test.java, codetoanalyze.java.performance.Cost_test.quadratic(int):void, 5 + 6 ⋅ x²,  OnUIThread:false, [{x},Loop,{x},Loop]

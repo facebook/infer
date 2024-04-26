@@ -38,7 +38,16 @@ let objc_getter tenv proc_desc location self_with_typ (fieldname, field_typ, _) 
   load_self_instr :: store_instrs
 
 
-let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ, _) =
+let is_copy_property (annotations : Annot.Item.t) =
+  List.exists annotations ~f:(fun (ann : Annot.t) ->
+      String.equal ann.class_name Config.property_attributes
+      && List.exists
+           ~f:(fun Annot.{value} ->
+             Annot.has_matching_str_value value ~pred:(fun att -> String.equal Config.copy att) )
+           ann.parameters )
+
+
+let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ, field_annot) =
   let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
   let store_instrs =
     match field_typ with
@@ -47,10 +56,26 @@ let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ
     | _ ->
         let id_field = Ident.create_fresh Ident.knormal in
         let load_var_instr = Sil.Load {id= id_field; e= Lvar var; typ= var_typ; loc= location} in
-        let store_exp =
-          Sil.Store {e1= field_exp; typ= field_typ; e2= Exp.Var id_field; loc= location}
-        in
-        [load_var_instr; store_exp]
+        if is_copy_property field_annot then
+          let class_name = Typ.Name.Objc.from_string "NSObject" in
+          let ret_id = Ident.create_fresh Ident.knormal in
+          let copy_call_instr =
+            Sil.Call
+              ( (ret_id, field_typ)
+              , Const (Cfun (Procname.make_objc_copy class_name))
+              , [(Exp.Var id_field, var_typ)]
+              , location
+              , CallFlags.default )
+          in
+          let store_exp =
+            Sil.Store {e1= field_exp; typ= field_typ; e2= Exp.Var ret_id; loc= location}
+          in
+          [load_var_instr; copy_call_instr; store_exp]
+        else
+          let store_exp =
+            Sil.Store {e1= field_exp; typ= field_typ; e2= Exp.Var id_field; loc= location}
+          in
+          [load_var_instr; store_exp]
   in
   load_self_instr :: store_instrs
 

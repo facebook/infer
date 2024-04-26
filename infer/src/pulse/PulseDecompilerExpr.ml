@@ -50,6 +50,8 @@ let rec pp_access_expr fmt access_expr =
     F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep Fieldname.pp field
   in
   match access_expr with
+  | ProgramVar pvar when Language.curr_language_is Language.Clang ->
+      Pvar.pp_value_non_verbose fmt pvar
   | ProgramVar pvar ->
       Pvar.pp_value fmt pvar
   | ProgramBlock block ->

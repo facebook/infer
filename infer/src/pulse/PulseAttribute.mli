@@ -99,8 +99,6 @@ module UninitializedTyp : sig
   val pp : F.formatter -> t -> unit
 end
 
-type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option} [@@deriving compare, equal]
-
 module ConstKeys : sig
   type t
 
@@ -124,7 +122,6 @@ type t =
       (** the dictionary contains only constant keys (note: only string constant is supported for
           now) *)
   | DictReadConstKeys of ConstKeys.t  (** constant string keys that are read from the dictionary *)
-  | DynamicType of dynamic_type_data
   | EndOfCollection
   | InReportedRetainCycle
   | Initialized
@@ -196,8 +193,6 @@ module Attributes : sig
   val is_dict_contain_const_keys : t -> bool
 
   val get_dict_read_const_keys : t -> ConstKeys.t option
-
-  val get_dynamic_type : t -> dynamic_type_data option
 
   val get_static_type : t -> Typ.Name.t option
 

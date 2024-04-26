@@ -100,7 +100,13 @@ val is_lifetime_extended : Var.t -> t -> bool
 
 val remember_dropped_elements : TransitiveInfo.t -> t -> t
 
-val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> t -> summary -> t
+val apply_summary :
+     callee_pname:Procname.t
+  -> call_loc:Location.t
+  -> skip_transitive_accesses:bool
+  -> t
+  -> summary
+  -> t
 
 val bind : 'a list * t -> f:('a -> t -> 'b list * t) -> 'b list * t
 (** {[

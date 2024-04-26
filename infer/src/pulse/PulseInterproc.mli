@@ -45,7 +45,8 @@ val merge_contradictions : contradiction option -> contradiction option -> contr
     a single one, using this [merge_contradictions] function. *)
 
 val apply_summary :
-     PathContext.t
+     Tenv.t
+  -> PathContext.t
   -> Procname.t
   -> Location.t
   -> callee_summary:AbductiveDomain.Summary.t

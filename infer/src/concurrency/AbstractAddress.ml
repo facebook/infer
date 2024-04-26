@@ -39,6 +39,8 @@ let normalise_access_list (accesses : access_list) =
         []
     | TakeAddress :: Dereference :: rest ->
         normalise_access_list_inner rest
+    | (TakeAddress as _addr) :: (FieldAccess _ as field) :: rest ->
+        field :: normalise_access_list_inner rest
     | TakeAddress :: _ :: _ ->
         (* an address can only be dereferenced *)
         raise NormalisationFailure

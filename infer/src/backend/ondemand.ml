@@ -304,11 +304,20 @@ let error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary 
       ()
 
 
+let is_in_block_list =
+  let matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true Config.qualified_cpp_name_block_list
+  in
+  fun pname ->
+    Option.exists (Procname.get_class_type_name pname) ~f:(fun name ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) )
+
+
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
     ?(from_file_analysis = false) callee_pname =
   let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
   register_callee ~cycle_detected ?caller_summary callee_pname ;
-  if cycle_detected then None
+  if cycle_detected || is_in_block_list callee_pname then None
   else
     let analyze_callee_aux ~specialization =
       error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;

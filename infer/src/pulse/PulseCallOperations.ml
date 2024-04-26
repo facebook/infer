@@ -266,7 +266,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           actuals
     in
     let sat_unsat, contradiction =
-      PulseInterproc.apply_summary path callee_pname call_loc ~callee_summary ~captured_formals
+      PulseInterproc.apply_summary tenv path callee_pname call_loc ~callee_summary ~captured_formals
         ~captured_actuals ~formals
         ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
         astate
@@ -431,8 +431,10 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
   (* we propagate transitive accesses from callee to caller using *)
+  let skip_transitive_accesses = PulseTransitiveAccessChecker.should_skip_call tenv callee_pname in
   let non_disj =
-    NonDisjDomain.apply_summary ~callee_pname ~call_loc non_disj_caller non_disj_callee
+    NonDisjDomain.apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses non_disj_caller
+      non_disj_callee
   in
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   let posts, contradiction =
@@ -548,8 +550,8 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
           Option.value_map opt ~f
             ~default:(dyntypes_map, AbstractValue.Set.add addr need_specialization_from_caller)
         in
-        let** dynamic_type_data = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
-        let** dynamic_type_name = Typ.name dynamic_type_data.Attribute.typ in
+        let** dynamic_type_data = PulseArithmetic.get_dynamic_type addr astate in
+        let** dynamic_type_name = Typ.name dynamic_type_data.Formula.typ in
         let dyntypes_map =
           if Specialization.HeapPath.Map.mem heap_path already_specialized then dyntypes_map
           else Specialization.HeapPath.Map.add heap_path dynamic_type_name dyntypes_map

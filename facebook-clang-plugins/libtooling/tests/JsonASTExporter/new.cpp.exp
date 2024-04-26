@@ -6309,12 +6309,20 @@
           "type_ptr" : 30
         }
       ]],
-      ["PointerType" , [
+      ["LValueReferenceType" , [
         {
           "pointer" : 276
         },
         {
-          "type_ptr" : 277
+          "type_ptr" : 8
+        }
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 277
+        },
+        {
+          "type_ptr" : 278
         }
       ]],
       ["PointerType" , [
@@ -6378,26 +6386,18 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 278
+          "pointer" : 279
         }
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 279
+          "pointer" : 280
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 280,
-          "desugared_type" : 279
-        }
-      ]],
-      ["PointerType" , [
-        {
-          "pointer" : 281
-        },
-        {
-          "type_ptr" : 278
+          "pointer" : 281,
+          "desugared_type" : 280
         }
       ]],
       ["PointerType" , [
@@ -6405,7 +6405,15 @@
           "pointer" : 282
         },
         {
-          "type_ptr" : 280
+          "type_ptr" : 279
+        }
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 283
+        },
+        {
+          "type_ptr" : 281
         }
       ]],
       ["AutoType" , [
@@ -6424,7 +6432,7 @@
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 283
+          "pointer" : 284
         },
         {
           "element_type" : {
@@ -6436,40 +6444,40 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 284
+          "pointer" : 285
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 285,
-          "desugared_type" : 284
+          "pointer" : 286,
+          "desugared_type" : 285
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 286
+          "pointer" : 287
         },
         {
-          "type_ptr" : 285
+          "type_ptr" : 286
         }
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 287
+          "pointer" : 288
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 288,
-          "desugared_type" : 287
+          "pointer" : 289,
+          "desugared_type" : 288
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 289
+          "pointer" : 290
         },
         {
-          "type_ptr" : 288
+          "type_ptr" : 289
         }
       ]],
       ["AutoType" , [
@@ -6488,7 +6496,7 @@
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 290
+          "pointer" : 291
         },
         {
           "element_type" : {
@@ -6512,15 +6520,15 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 291
+          "pointer" : 292
         },
         {
-          "type_ptr" : 290
+          "type_ptr" : 291
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 292
+          "pointer" : 293
         },
         {
           "type_ptr" : 81
@@ -6528,7 +6536,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 293
+          "pointer" : 294
         },
         {
           "return_type" : {
@@ -6540,21 +6548,21 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 294
+          "pointer" : 295
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 295,
-          "desugared_type" : 294
+          "pointer" : 296,
+          "desugared_type" : 295
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 296
+          "pointer" : 297
         },
         {
-          "type_ptr" : 295
+          "type_ptr" : 296
         }
       ]],
       ["ElaboratedType" , [
@@ -6573,7 +6581,7 @@
       ]],
       ["LValueReferenceType" , [
         {
-          "pointer" : 297
+          "pointer" : 298
         },
         {
           "type_ptr" : 25,
@@ -6591,7 +6599,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 298
+          "pointer" : 299
         },
         {
           "return_type" : {
@@ -6601,7 +6609,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 297
+              "type_ptr" : 298
             }
           ]
         }
@@ -6625,7 +6633,7 @@
       ]],
       ["RValueReferenceType" , [
         {
-          "pointer" : 299
+          "pointer" : 300
         },
         {
           "type_ptr" : 25
@@ -6641,7 +6649,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 300
+          "pointer" : 301
         },
         {
           "return_type" : {
@@ -6651,7 +6659,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 299
+              "type_ptr" : 300
             }
           ]
         }
@@ -6673,23 +6681,31 @@
           ]
         }
       ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 302
+        },
+        {
+          "type_ptr" : 25
+        }
+      ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 301
+          "pointer" : 303
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 302,
-          "desugared_type" : 301
+          "pointer" : 304,
+          "desugared_type" : 303
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 303
+          "pointer" : 305
         },
         {
-          "type_ptr" : 302
+          "type_ptr" : 304
         }
       ]],
       ["AutoType" , [
@@ -6708,7 +6724,7 @@
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 304
+          "pointer" : 306
         },
         {
           "element_type" : {
@@ -6732,15 +6748,15 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 305
+          "pointer" : 307
         },
         {
-          "type_ptr" : 304
+          "type_ptr" : 306
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 306
+          "pointer" : 308
         },
         {
           "type_ptr" : 97
@@ -6748,7 +6764,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 307
+          "pointer" : 309
         },
         {
           "return_type" : {
@@ -6760,21 +6776,21 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 308
+          "pointer" : 310
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 309,
-          "desugared_type" : 308
+          "pointer" : 311,
+          "desugared_type" : 310
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 310
+          "pointer" : 312
         },
         {
-          "type_ptr" : 309
+          "type_ptr" : 311
         }
       ]],
       ["ConstantArrayType" , [
@@ -6791,45 +6807,45 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 311
+          "pointer" : 313
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 312,
-          "desugared_type" : 311
+          "pointer" : 314,
+          "desugared_type" : 313
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 313
+          "pointer" : 315
         },
         {
-          "type_ptr" : 312
+          "type_ptr" : 314
         }
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 314
+          "pointer" : 316
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 315,
-          "desugared_type" : 314
+          "pointer" : 317,
+          "desugared_type" : 316
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 316
+          "pointer" : 318
         },
         {
-          "type_ptr" : 315
+          "type_ptr" : 317
         }
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 317
+          "pointer" : 319
         },
         {
           "element_type" : {
@@ -6853,26 +6869,26 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 318
+          "pointer" : 320
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 319,
-          "desugared_type" : 318
+          "pointer" : 321,
+          "desugared_type" : 320
         }
       ]],
       ["PointerType" , [
         {
-          "pointer" : 320
+          "pointer" : 322
         },
         {
-          "type_ptr" : 319
+          "type_ptr" : 321
         }
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 321
+          "pointer" : 323
         },
         {
           "return_type" : {
@@ -6918,7 +6934,7 @@
       ]],
       ["LValueReferenceType" , [
         {
-          "pointer" : 322
+          "pointer" : 324
         },
         {
           "type_ptr" : 11
@@ -6926,7 +6942,7 @@
       ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 323
+          "pointer" : 325
         },
         {
           "return_type" : {
@@ -6949,32 +6965,16 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 324
+          "pointer" : 326
         }
       ]],
       ["AutoType" , [
         {
-          "pointer" : 325,
-          "desugared_type" : 324
+          "pointer" : 327,
+          "desugared_type" : 326
         }
       ]],
       ["PointerType" , [
-        {
-          "pointer" : 326
-        },
-        {
-          "type_ptr" : 325
-        }
-      ]],
-      ["ObjCObjectType" , [
-        {
-          "pointer" : 327
-        },
-        {
-          "base_type" : 255
-        }
-      ]],
-      ["ObjCObjectPointerType" , [
         {
           "pointer" : 328
         },
@@ -6982,26 +6982,42 @@
           "type_ptr" : 327
         }
       ]],
+      ["ObjCObjectType" , [
+        {
+          "pointer" : 329
+        },
+        {
+          "base_type" : 255
+        }
+      ]],
+      ["ObjCObjectPointerType" , [
+        {
+          "pointer" : 330
+        },
+        {
+          "type_ptr" : 329
+        }
+      ]],
       ["TypedefType" , [
         {
-          "pointer" : 329,
-          "desugared_type" : 328
+          "pointer" : 331,
+          "desugared_type" : 330
         },
         {
           "child_type" : {
-            "type_ptr" : 328
+            "type_ptr" : 330
           },
-          "decl_ptr" : 330
+          "decl_ptr" : 332
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 201,
-          "desugared_type" : 328
+          "desugared_type" : 330
         },
         {
           "child_type" : {
-            "type_ptr" : 329
+            "type_ptr" : 331
           },
           "decl_ptr" : 200
         }

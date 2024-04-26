@@ -8,7 +8,7 @@
 
 @interface Listener : NSObject
 
-@property(nonatomic, copy) void (^didFinishLoad)();
+@property(nonatomic, strong) void (^didFinishLoad)();
 
 @end
 

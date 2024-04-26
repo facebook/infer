@@ -111,4 +111,79 @@ class CustomAnnotations {
   void sourceWithLambda4Ok() {
     caller(() -> safeMethod());
   }
+
+  void sourceDefinedInConfigOk() {
+    safeMethod();
+  }
+
+  void sinkDefinedInConfig() {}
+
+  void sourceDefinedInConfigBad() {
+    sinkDefinedInConfig();
+  }
+
+  void sanitizerDefinedInConfig() {
+    sink1();
+  }
+
+  @UserDefinedSource1
+  void sourceWithSanitizerDefinedInConfigOk() {
+    sanitizerDefinedInConfig();
+  }
+
+  abstract class Base {
+    @UserDefinedSource1
+    abstract void sourceBad();
+
+    @UserDefinedSink1
+    abstract void sink();
+
+    void safe() {}
+
+    abstract void sourceDefinedInConfigBad();
+
+    abstract void sinkDefinedInConfig();
+  }
+
+  class Derived extends Base {
+    // Inherits source annotation from base class, should be reported
+    @Override
+    void sourceBad() {
+      sink();
+    }
+
+    // Inherits sink annotation from base class
+    @Override
+    void sink() {}
+
+    void sourceOk() {
+      safe();
+    }
+
+    // Inherits source (defined in config) from base class, should be reported
+    @Override
+    void sourceDefinedInConfigBad() {
+      sinkDefinedInConfig();
+    }
+
+    // Inherits sink (defined in config) from base class
+    @Override
+    void sinkDefinedInConfig() {}
+  }
+
+  void sourceDefinedInConfig_1_WithRegexBad() {
+    sinkDefinedInConfig_1_WithRegex();
+  }
+
+  void sourceDefinedInConfig_2_WithRegexBad() {
+    sinkDefinedInConfig_2_WithRegex();
+  }
+
+  void sourceDefinedInConfig_3_WithRegexOk() {
+    safeMethod();
+  }
+
+  void sinkDefinedInConfig_1_WithRegex() {}
+
+  void sinkDefinedInConfig_2_WithRegex() {}
 }

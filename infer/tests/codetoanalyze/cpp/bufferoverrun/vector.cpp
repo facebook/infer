@@ -23,14 +23,24 @@ void simple_size_Bad() {
   v[v.size()] = 2;
 }
 
-void constructor_Good() {
+void constructor_overload1_Good() {
   std::vector<int> v(1);
   v[0] = 2;
 }
 
-void constructor_Bad() {
+void constructor_overload1_Bad() {
   std::vector<int> v(1);
   v[3] = 2;
+}
+
+void constructor_overload2_Good() {
+  std::vector<int> v = {1};
+  v[0] = 2;
+}
+
+void constructor_overload2_Bad() {
+  std::vector<int> v = {1, 2, 3};
+  v[v[2]] = 2;
 }
 
 void push_back_Good() {
@@ -55,6 +65,42 @@ void emplace_back_Bad() {
   std::vector<int> v;
   v.emplace_back(1);
   v[1] = 2;
+}
+
+void insert_overload1_Good() {
+  std::vector<int> v;
+  v.insert(v.begin(), 1);
+  v[0] = 2;
+}
+
+void insert_overload1_Bad() {
+  std::vector<int> v;
+  v.insert(v.begin(), 1);
+  v[1] = 2;
+}
+
+void insert_overload2_Good() {
+  std::vector<int> v;
+  v.insert(v.begin(), 10, 1);
+  v[9] = 2;
+}
+
+void insert_overload2_Bad() {
+  std::vector<int> v;
+  v.insert(v.begin(), 10, 1);
+  v[10] = 2;
+}
+
+void insert_overload3_Good() {
+  std::vector<int> v;
+  v.insert(v.begin(), {0, 1, 2});
+  v[v[0]] = 2;
+}
+
+void insert_overload3_Bad() {
+  std::vector<int> v;
+  v.insert(v.begin(), {1, 2, 3});
+  v[v[2]] = 2;
 }
 
 void reserve_Good() {

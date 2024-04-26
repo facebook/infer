@@ -26,5 +26,22 @@
       "sources": ["AnyThread", "MainThread", "UiThread"],
       "sinks": ["WorkerThread"]
     }
-  ]
+  ],
+  "annotation-reachability-custom-models":
+  {
+    "UserDefinedSource1": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigOk",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfigBad",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sourceDefinedInConfigBad",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sourceDefinedInConfig.*WithRegex.*"
+    ],
+    "UserDefinedSink1": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\$Base\\.sinkDefinedInConfig",
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sinkDefinedInConfig.*WithRegex"
+    ],
+    "UserDefinedSanitizer": [
+      "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sanitizerDefinedInConfig"
+    ]
+  }
 }

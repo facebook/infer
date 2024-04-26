@@ -119,6 +119,27 @@ val and_equal_instanceof :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
+val and_dynamic_type_is :
+     AbstractValue.t
+  -> Typ.t
+  -> ?source_file:SourceFile.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
+val get_dynamic_type : AbstractValue.t -> AbductiveDomain.t -> Formula.dynamic_type_data option
+
+val copy_type_constraints :
+  AbstractValue.t -> AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t
+
+(* version that dies on failure *)
+val and_dynamic_type_is_unsafe :
+     AbstractValue.t
+  -> Typ.t
+  -> ?source_file:SourceFile.t
+  -> Location.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t
+
 val absval_of_int : AbductiveDomain.t -> IntLit.t -> AbductiveDomain.t * AbstractValue.t
 
 val absval_of_string : AbductiveDomain.t -> string -> AbductiveDomain.t * AbstractValue.t

@@ -1,5 +1,5 @@
 This issue is raised when
-- iterating over a HashMap with `ketSet()` iterator
+- iterating over a HashMap with `keySet()` iterator
 - looking up the key each time
 
 Example:

@@ -5,7 +5,7 @@ as an argument. Therefore it is only a warning. For example:
 
 ```objectivec
   -(int) foo:(A* a) {
-      B b* = [a foo]; // sending a message with receiver nil returns nil
+      B *b = [a foo]; // sending a message with receiver nil returns nil
       return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
   }
 ```

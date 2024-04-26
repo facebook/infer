@@ -94,11 +94,11 @@ let make properties =
   let vindex = vindex "vertex" in
   let transitions : transition array =
     let f pindex p =
-      let prefix_pname pname =
-        if String.equal ".*" pname then pname
+      let prefix_pname ({ToplAst.re_text} as old_regex) =
+        if String.equal ".*" re_text then old_regex
         else
           let ps = List.map ~f:(fun p -> "\\|" ^ p ^ ".") p.ToplAst.prefixes in
-          "^\\(" ^ String.concat ps ^ "\\)" ^ pname ^ "\\((\\|$\\)"
+          ToplAst.mk_regex ("^\\(" ^ String.concat ps ^ "\\)" ^ re_text ^ "\\((\\|$\\)")
       in
       let prefix_pattern (label_pattern : ToplAst.label_pattern) =
         match label_pattern with

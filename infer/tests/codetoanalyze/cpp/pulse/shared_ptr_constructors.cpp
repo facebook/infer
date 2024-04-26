@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <functional>
 #include <memory>
 #include <stdexcept>
 
@@ -145,5 +146,19 @@ void aliasing_member_null_bad_FN() {
   // q is known here so we should report null deref
   // Also we should not report dangling pointer because q is still alive
   q->baz();
+}
+
+class LambdaParam {
+ public:
+  LambdaParam(std::function<void()> f) : n(42) {}
+  int n;
+};
+
+int make_shared_lambda_ok() {
+  std::shared_ptr<LambdaParam> p = std::make_shared<LambdaParam>([]() {});
+  if (p->n != 42) {
+    int* p = NULL;
+    *p = 0;
+  }
 }
 } // namespace shared_ptr_constructors

@@ -17,6 +17,8 @@ module Config : sig
 
   val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
+  val procname_must_be_skipped : Tenv.t -> Procname.t -> bool
+
   type context_metadata = {description: string; tag: string}
 
   val find_matching_context : Tenv.t -> Procname.t -> context_metadata option
@@ -25,7 +27,7 @@ end = struct
 
   let regexp_type_of_yojson json = Str.regexp (string_of_yojson json)
 
-  type procname_to_monitor =
+  type procname_match_spec =
     { class_names: string list option [@yojson.option]
     ; method_names: string list option [@yojson.option]
     ; class_name_regex: regexp_type option [@yojson.option]
@@ -43,11 +45,14 @@ end = struct
 
   type t =
     { fieldnames_to_monitor: string list
-    ; procnames_to_monitor: procname_to_monitor list
+    ; procnames_to_skip: procname_match_spec list option [@yojson.option]
+    ; procnames_to_monitor: procname_match_spec list
     ; contexts: context list }
   [@@deriving of_yojson]
 
-  let empty = {fieldnames_to_monitor= []; procnames_to_monitor= []; contexts= []}
+  let empty =
+    {fieldnames_to_monitor= []; procnames_to_monitor= []; procnames_to_skip= None; contexts= []}
+
 
   let get, set =
     let current = ref (None : t option) in
@@ -70,7 +75,7 @@ end = struct
     List.exists annotations ~f:match_one_annotation
 
 
-  let procname_must_be_monitored tenv procname =
+  let procname_is_matched specs tenv procname =
     let class_name = Procname.get_class_type_name procname in
     let method_name = Procname.get_method procname in
     let match_class_name names =
@@ -103,11 +108,24 @@ end = struct
           && map_or_true class_name_regex ~f:match_class_name_regex
           && map_or_true annotations ~f:(procname_has_annotation procname)
     in
+    List.exists specs ~f:check_one_procname_spec
+
+
+  let procname_must_be_monitored tenv procname =
     match get () with
     | None ->
         false
     | Some {procnames_to_monitor} ->
-        List.exists procnames_to_monitor ~f:check_one_procname_spec
+        procname_is_matched procnames_to_monitor tenv procname
+
+
+  let procname_must_be_skipped tenv procname =
+    match get () with
+    | None ->
+        false
+    | Some {procnames_to_skip} ->
+        Option.exists procnames_to_skip ~f:(fun procnames_to_skip ->
+            procname_is_matched procnames_to_skip tenv procname )
 
 
   let is_matching_context tenv procname context =
@@ -196,10 +214,14 @@ end = struct
                     merged_config.fieldnames_to_monitor
               ; procnames_to_monitor=
                   List.rev_append new_config.procnames_to_monitor merged_config.procnames_to_monitor
+              ; procnames_to_skip=
+                  Option.merge new_config.procnames_to_skip merged_config.procnames_to_skip
+                    ~f:List.rev_append
               ; contexts= List.rev_append new_config.contexts merged_config.contexts } )
         in
         { fieldnames_to_monitor= List.rev rev_config.fieldnames_to_monitor
         ; procnames_to_monitor= List.rev rev_config.procnames_to_monitor
+        ; procnames_to_skip= Option.map ~f:List.rev rev_config.procnames_to_skip
         ; contexts= List.rev rev_config.contexts }
         |> set
 end
@@ -221,6 +243,8 @@ let record_call tenv procname location astate =
     AbductiveDomain.record_transitive_access location astate
   else astate
 
+
+let should_skip_call procname = Config.procname_must_be_skipped procname
 
 let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} =
   let procname = Procdesc.get_proc_name proc_desc in

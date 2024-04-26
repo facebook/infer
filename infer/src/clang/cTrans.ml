@@ -419,7 +419,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let nbytes = match size with `SizeOfWithSize nbytes -> Some nbytes | _ -> None in
         let sizeof_data = {Exp.typ; nbytes; dynamic_length= None; subtype= Subtype.exact} in
         mk_trans_result (Exp.Sizeof sizeof_data, typ) empty_control
-    | `AlignOf | `OpenMPRequiredSimdAlign | `PreferredAlignOf | `VecStep ->
+    | `AlignOf | `OpenMPRequiredSimdAlign | `PreferredAlignOf | `VecStep | `VectorElements ->
         let nondet = (Exp.Var (Ident.create_fresh Ident.knormal), typ) in
         mk_trans_result nondet empty_control
 
@@ -1068,6 +1068,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
         |> mk_trans_result res_trans_e1.return
+    | [s1; s2], _, `Comma ->
+        let ({control= {instrs}} as res_trans) =
+          CTrans_utils.PriorityNode.force_sequential sil_loc node_name trans_state stmt_info
+            ~mk_first_opt:(fun trans_state _ -> Some (instruction trans_state s1))
+            ~mk_second:(fun trans_state _ -> instruction trans_state s2)
+            ~mk_return:(fun ~fst:_ ~snd -> snd.return)
+        in
+        (* HACK: With the empty instruction, the control is not correctly connected to the parent in
+           some cases, e.g. the comma binary operator is used on the top-level.  See
+           [CTrans_utils.PriorityNode.compute_controls_to_parent]; the condition [create_node] is
+           true only when the instruction is non-empty. *)
+        if List.is_empty instrs then
+          {res_trans with control= {res_trans.control with instrs= [Metadata Skip]}}
+        else res_trans
     | [s1; s2], _, _ ->
         let {control= control1; return= (exp1, typ1) as exp_typ1} = instruction trans_state' s1 in
         let {control= control2; return= exp_typ2} =
@@ -1168,7 +1182,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__opencl_atomic_fetch_or
     | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_xor
-    | `AO__opencl_atomic_fetch_and ->
+    | `AO__opencl_atomic_fetch_and
+    | `AO__scoped_atomic_add_fetch
+    | `AO__scoped_atomic_and_fetch
+    | `AO__scoped_atomic_fetch_add
+    | `AO__scoped_atomic_fetch_and
+    | `AO__scoped_atomic_fetch_or
+    | `AO__scoped_atomic_fetch_sub
+    | `AO__scoped_atomic_fetch_xor
+    | `AO__scoped_atomic_or_fetch
+    | `AO__scoped_atomic_sub_fetch
+    | `AO__scoped_atomic_xor_fetch ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let s1, s2, mem_controls =
@@ -1198,7 +1222,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_control
         |> mk_trans_result (exp_op, ret_typ)
-    | `AO__atomic_load_n | `AO__c11_atomic_load | `AO__opencl_atomic_load ->
+    | `AO__atomic_load_n
+    | `AO__c11_atomic_load
+    | `AO__opencl_atomic_load
+    | `AO__scoped_atomic_load_n ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let ptr, mem_controls =
@@ -1222,7 +1249,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_control
         |> mk_trans_result (Exp.Var id, ret_typ)
-    | `AO__atomic_load ->
+    | `AO__atomic_load | `AO__scoped_atomic_load ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let ptr, ret, mem_controls =
@@ -1252,6 +1279,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__atomic_store_n
     | `AO__c11_atomic_store
     | `AO__opencl_atomic_store
+    | `AO__scoped_atomic_store_n
     | `AO__c11_atomic_init
     | `AO__opencl_atomic_init ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1282,7 +1310,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_control
         |> mk_trans_result (mk_fresh_void_exp_typ ())
-    | `AO__atomic_store ->
+    | `AO__atomic_store | `AO__scoped_atomic_store ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let ptr, value, mem_controls =
@@ -1310,7 +1338,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_control
         |> mk_trans_result (mk_fresh_void_exp_typ ())
-    | `AO__atomic_exchange_n | `AO__c11_atomic_exchange | `AO__opencl_atomic_exchange ->
+    | `AO__atomic_exchange_n
+    | `AO__c11_atomic_exchange
+    | `AO__opencl_atomic_exchange
+    | `AO__scoped_atomic_exchange_n ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let ptr, value, mem_controls =
@@ -1341,7 +1372,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_control
         |> mk_trans_result (Exp.Var id, ret_typ)
-    | `AO__atomic_exchange ->
+    | `AO__atomic_exchange | `AO__scoped_atomic_exchange ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
         let ptr, value, ret, mem_controls =
@@ -1380,7 +1411,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__c11_atomic_compare_exchange_strong
     | `AO__c11_atomic_compare_exchange_weak
     | `AO__opencl_atomic_compare_exchange_strong
-    | `AO__opencl_atomic_compare_exchange_weak ->
+    | `AO__opencl_atomic_compare_exchange_weak
+    | `AO__scoped_atomic_compare_exchange
+    | `AO__scoped_atomic_compare_exchange_n ->
         let trans_state = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' = {trans_state with succ_nodes= []; var_exp_typ= None} in
         let ptr, expected, desired, mem_controls =
@@ -1507,17 +1540,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           control.leaf_nodes ;
         mk_trans_result return
           {control with instrs; initd_exps= [exp_to_init]; leaf_nodes= [join_node]}
-    | `AO__atomic_fetch_max ->
+    | `AO__atomic_fetch_max | `AO__scoped_atomic_fetch_max ->
         handle_unimplemented BuiltinDecl.__atomic_fetch_max
-    | `AO__atomic_fetch_min ->
+    | `AO__atomic_fetch_min | `AO__scoped_atomic_fetch_min ->
         handle_unimplemented BuiltinDecl.__atomic_fetch_min
-    | `AO__atomic_fetch_nand ->
+    | `AO__atomic_fetch_nand | `AO__scoped_atomic_fetch_nand ->
         handle_unimplemented BuiltinDecl.__atomic_fetch_nand
-    | `AO__atomic_max_fetch ->
+    | `AO__atomic_max_fetch | `AO__scoped_atomic_max_fetch ->
         handle_unimplemented BuiltinDecl.__atomic_max_fetch
-    | `AO__atomic_min_fetch ->
+    | `AO__atomic_min_fetch | `AO__scoped_atomic_min_fetch ->
         handle_unimplemented BuiltinDecl.__atomic_min_fetch
-    | `AO__atomic_nand_fetch ->
+    | `AO__atomic_nand_fetch | `AO__scoped_atomic_nand_fetch ->
         handle_unimplemented BuiltinDecl.__atomic_nand_fetch
     | `AO__c11_atomic_fetch_max ->
         handle_unimplemented BuiltinDecl.__c11_atomic_fetch_max
@@ -5193,6 +5226,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPParallelMasterTaskLoopSimdDirective _
     | OMPParallelSectionsDirective _
     | OMPScanDirective _
+    | OMPScopeDirective _
     | OMPSectionDirective _
     | OMPSectionsDirective _
     | OMPSimdDirective _
