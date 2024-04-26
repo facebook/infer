@@ -42,7 +42,12 @@
     { "class_names": ["Shapes::ShapeLogger"], "method_names": ["logMixed"] },
     { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] },
     { "class_names": ["Propagators::Sink"], "procedure_regex": ".*", "kinds": ["Propagators"] },
-    { "class_names": ["Exclusions::Sink"], "procedure_regex": ".*", "kinds": ["Exclusions"] }
+    { "class_names": ["Exclusions::Sink"], "procedure_regex": ".*", "kinds": ["Exclusions"] },
+    { "class_names": ["Exclusions::SinkWithExcludedFunction"],
+      "procedure_regex": ".*",
+      "exclude_from_regex_names": ["excluded"],
+      "kinds": ["Exclusions"]
+    }
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -68,7 +73,7 @@
       "taint_flows": [
         { "source_kinds": ["Exclusions"], "sink_kinds": ["Exclusions"] }
       ],
-      "exclude_in": ["exclusions"]
+      "exclude_in": ["exclude_in_file"]
     },
     {
       "short_description": "Flow with catch-all sink and multiple traces",

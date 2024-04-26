@@ -723,7 +723,9 @@ let pulse_models_to_treat_as_unknown_for_taint =
       { class_names= ["java.lang.StringBuilder"]
       ; method_names= ["append"; "delete"; "replace"; "setLength"] }
   ; ProcedureNameRegex
-      {name_regex= Str.regexp "std::basic_string<.*>::basic_string"; exclude_in= None} ]
+      { name_regex= Str.regexp "std::basic_string<.*>::basic_string"
+      ; exclude_in= None
+      ; exclude_names= None } ]
   |> List.map ~f:dummy_matcher_of_procedure_matcher
 
 

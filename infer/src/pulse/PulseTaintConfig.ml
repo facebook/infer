@@ -142,13 +142,21 @@ end
 module Unit = struct
   type procedure_matcher =
     | ProcedureName of {name: string}
-    | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
-    | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | ProcedureNameRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
+    | ClassNameRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameAndMethodRegex of
-        {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
+        { class_names: string list
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassRegexAndMethodRegex of
-        {class_name_regex: Str.regexp; method_name_regex: Str.regexp; exclude_in: string list option}
+        { class_name_regex: Str.regexp
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
@@ -157,7 +165,8 @@ module Unit = struct
         ; annotation_values: string list option
         ; class_name_regex: Str.regexp
         ; method_name_regex: Str.regexp
-        ; exclude_in: string list option }
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
@@ -208,7 +217,8 @@ module Unit = struct
 
 
   type field_matcher =
-    | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | FieldRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
     | FieldWithAnnotation of {annotation: string; annotation_values: string list option}
 
@@ -364,7 +374,9 @@ module Unit = struct
         ; block_passed_to= None
         ; allocation= None } ->
           ProcedureNameRegex
-            {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
+            { name_regex= Str.regexp name_regex
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= Some name_regex
@@ -377,7 +389,9 @@ module Unit = struct
         ; block_passed_to= None
         ; allocation= None } ->
           ClassNameRegex
-            {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
+            { name_regex= Str.regexp name_regex
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= None
@@ -405,7 +419,8 @@ module Unit = struct
           ClassNameAndMethodRegex
             { class_names
             ; method_name_regex= Str.regexp method_name_regex
-            ; exclude_in= matcher.exclude_from_regex_in }
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
         ; procedure_regex= Some method_name_regex
         ; class_name_regex= Some class_name_regex
@@ -421,7 +436,8 @@ module Unit = struct
           ClassRegexAndMethodRegex
             { class_name_regex= Str.regexp class_name_regex
             ; method_name_regex= Str.regexp method_name_regex
-            ; exclude_in= matcher.exclude_from_regex_in }
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= None
@@ -464,7 +480,8 @@ module Unit = struct
             ; annotation_values
             ; class_name_regex= Str.regexp class_name_regex
             ; method_name_regex= Str.regexp method_name_regex
-            ; exclude_in= matcher.exclude_from_regex_in }
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
         ; procedure_regex= None
         ; class_names= None
@@ -555,7 +572,10 @@ module Unit = struct
         ; field_names= None
         ; field_with_annotation= None
         ; annotation_values= None } ->
-          FieldRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
+          FieldRegex
+            { name_regex= Str.regexp name_regex
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
       | { field_regex= None
         ; class_names= Some class_names
         ; field_names= Some field_names

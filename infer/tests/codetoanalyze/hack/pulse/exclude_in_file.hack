@@ -15,7 +15,7 @@ class Sink {
   public static function consume(mixed $arg): void {}
 }
 
-class Flows {
+class FlowsExcludeInFile {
   public static function excludedFlowOk(): void {
     Sink::consume(Source::get());
   }

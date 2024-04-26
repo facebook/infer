@@ -34,13 +34,21 @@ end
 module Unit : sig
   type procedure_matcher =
     | ProcedureName of {name: string}
-    | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
-    | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | ProcedureNameRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
+    | ClassNameRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameAndMethodRegex of
-        {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
+        { class_names: string list
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassRegexAndMethodRegex of
-        {class_name_regex: Str.regexp; method_name_regex: Str.regexp; exclude_in: string list option}
+        { class_name_regex: Str.regexp
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
@@ -49,7 +57,8 @@ module Unit : sig
         ; annotation_values: string list option
         ; class_name_regex: Str.regexp
         ; method_name_regex: Str.regexp
-        ; exclude_in: string list option }
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
@@ -57,7 +66,8 @@ module Unit : sig
     | Allocation of {class_name: string}
 
   type field_matcher =
-    | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | FieldRegex of
+        {name_regex: Str.regexp; exclude_in: string list option; exclude_names: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
     | FieldWithAnnotation of {annotation: string; annotation_values: string list option}
 

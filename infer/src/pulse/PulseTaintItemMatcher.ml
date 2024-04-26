@@ -57,7 +57,7 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
       false
 
 
-let check_regex name_regex elem ?source_file exclude_in =
+let check_regex name_regex elem ?source_file exclude_in exclude_names =
   let should_exclude_location =
     match (source_file, exclude_in) with
     | Some source_file, Some exclude_in ->
@@ -71,7 +71,14 @@ let check_regex name_regex elem ?source_file exclude_in =
     | _ ->
         false
   in
-  if should_exclude_location then false
+  let should_exclude_name () =
+    match exclude_names with
+    | Some exclude_names ->
+        List.exists exclude_names ~f:(fun value -> String.is_substring ~substring:value elem)
+    | None ->
+        false
+  in
+  if should_exclude_location || should_exclude_name () then false
   else
     match Str.search_forward name_regex elem 0 with
     | _ ->
@@ -106,7 +113,7 @@ let match_annotation_with_values annot_item annotation annotation_values =
               false )
 
 
-let check_regex_class tenv class_name_opt name_regex exclude_in proc_attributes =
+let check_regex_class tenv class_name_opt name_regex exclude_in exclude_names proc_attributes =
   let check_regex_class_aux class_name class_struct_opt =
     let class_name_s = Typ.Name.name class_name in
     let source_file =
@@ -118,7 +125,7 @@ let check_regex_class tenv class_name_opt name_regex exclude_in proc_attributes 
       if Option.is_some source_file then source_file
       else Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
     in
-    check_regex ?source_file name_regex class_name_s exclude_in
+    check_regex ?source_file name_regex class_name_s exclude_in exclude_names
   in
   match class_name_opt with
   | Some class_name ->
@@ -148,7 +155,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
             String.is_substring ~substring:name (get_proc_name_s proc_name)
-        | ProcedureNameRegex {name_regex; exclude_in} ->
+        | ProcedureNameRegex {name_regex; exclude_in; exclude_names} ->
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in
@@ -157,18 +164,20 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
                 match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
               else proc_name_s
             in
-            check_regex name_regex proc_name_s ?source_file exclude_in
-        | ClassNameRegex {name_regex; exclude_in} ->
-            check_regex_class tenv class_name name_regex exclude_in proc_attributes
+            check_regex name_regex proc_name_s ?source_file exclude_in exclude_names
+        | ClassNameRegex {name_regex; exclude_in; exclude_names} ->
+            check_regex_class tenv class_name name_regex exclude_in exclude_names proc_attributes
         | ClassAndMethodNames {class_names; method_names} ->
             class_names_match tenv class_names class_name
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
-        | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in} ->
+        | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in; exclude_names} ->
             class_names_match tenv class_names class_name
-            && check_regex method_name_regex proc_name_s exclude_in
-        | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in} ->
-            check_regex_class tenv class_name class_name_regex exclude_in proc_attributes
-            && check_regex method_name_regex proc_name_s exclude_in
+            && check_regex method_name_regex proc_name_s exclude_in exclude_names
+        | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in; exclude_names}
+          ->
+            check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+              proc_attributes
+            && check_regex method_name_regex proc_name_s exclude_in exclude_names
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
             let procedure_return_type_match method_return_type_names =
               Option.exists proc_attributes ~f:(fun attrs ->
@@ -179,10 +188,16 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
         | ClassWithAnnotation {annotation; annotation_values} ->
             check_class_annotation tenv class_name annotation annotation_values
         | ClassWithAnnotationAndRegexAndMethodRegex
-            {annotation; annotation_values; class_name_regex; method_name_regex; exclude_in} ->
+            { annotation
+            ; annotation_values
+            ; class_name_regex
+            ; method_name_regex
+            ; exclude_in
+            ; exclude_names } ->
             check_class_annotation tenv class_name annotation annotation_values
-            && check_regex_class tenv class_name class_name_regex exclude_in proc_attributes
-            && check_regex method_name_regex proc_name_s exclude_in
+            && check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+                 proc_attributes
+            && check_regex method_name_regex proc_name_s exclude_in exclude_names
         | OverridesOfClassWithAnnotation {annotation} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
                 let method_name = Procname.get_method proc_name in
@@ -212,7 +227,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in
-            check_regex name_regex ?source_file proc_name_s exclude_in
+            check_regex name_regex ?source_file proc_name_s exclude_in None
         | _ ->
             false
       in
@@ -263,7 +278,7 @@ let field_matches tenv loc matchers field_name =
       if sanitized_in_loc loc.Location.file matcher.sanitized_in then None
       else
         match matcher.field_matcher with
-        | FieldRegex {name_regex; exclude_in} ->
+        | FieldRegex {name_regex; exclude_in; exclude_names} ->
             let field_name_s = Fieldname.get_field_name field_name in
             let class_name = Fieldname.get_class_name field_name in
             let source_file =
@@ -273,7 +288,8 @@ let field_matches tenv loc matchers field_name =
                     class_struct.Struct.source_file )
               else None
             in
-            if check_regex ?source_file name_regex field_name_s exclude_in then Some matcher
+            if check_regex ?source_file name_regex field_name_s exclude_in exclude_names then
+              Some matcher
             else None
         | ClassAndFieldNames {class_names; field_names} ->
             let class_name = Fieldname.get_class_name field_name in
