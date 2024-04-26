@@ -61,7 +61,7 @@
     },
     {
       "short_description": "Taint flow with a propagator and any method sink",
-      "taint_flows": [{"source_kinds": ["Propagators"], "sink_kinds": ["BuiltinCatchAll"]}]
+      "taint_flows": [{"source_kinds": ["Propagators"], "sink_kinds": ["Propagators"]}]
     },
     {
       "short_description": "Check that exclude_in works",

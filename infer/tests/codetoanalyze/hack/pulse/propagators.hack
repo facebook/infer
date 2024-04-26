@@ -43,7 +43,7 @@ class Flows {
     Sink::process($t1);
   }
 
-  public static function onlyPropWithSinkOk(): void {
+  public static function propWithSinkBad(): void {
     $t = Source::getTainted();
     $t1 = Prop::propWithSink($t);
   }

@@ -772,13 +772,8 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t)
           in
           let astate, propagator_matches = match_call propagator_matchers astate in
           let+ astate =
-            (* This is a bit of a hack to achieve the following: be able to specify taint policies
-               where the sink is 'any procedure except <these>'. <these> need to be marked as
-               propagators. *)
-            if List.is_empty propagator_matches then
-              let astate, tainted = match_call sink_procedure_matchers astate in
-              taint_sinks path location tainted astate
-            else Ok astate
+            let astate, tainted = match_call sink_procedure_matchers astate in
+            taint_sinks path location tainted astate
           in
           let astate, should_propagate_for_unknown =
             let new_state =
