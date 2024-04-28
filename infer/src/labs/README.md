@@ -20,8 +20,6 @@ Using Docker is the fastest way: you do not need to clone the Infer repository a
 
 ```shell
 cd /infer
-git branch --unset-upstream
-git pull
 git branch --set-upstream-to=origin/main master
 git pull
 cp -av /infer/. /infer-host
@@ -104,7 +102,7 @@ Let's stick with just an integer domain to keep things simple until (5).
 
 (a) Run your checker on [LeaksBranch.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksBranch.java). Uh oh, it crashed! Fix it by implementing `join` for your domain.
 
-(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen`. Hmm... There's a termination bug in the abstract domain–do you see it?
+(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen` and `leq`. Hmm... There's a termination bug in the abstract domain–do you see it?
 
 (c) Time for a richer domain! A classic solution to this problem in abstract interpretation is to add a `Top` value that is larger than any integer.
 
@@ -135,22 +133,21 @@ Augment the summary type with state to indicate whether the current procedure re
 
 This improvement should allow your analysis to pass the tests in [LeaksInterprocedural.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksInterprocedural.java).
 
-Hint: What do return values look like in infer? They are assignments to a special variable, detected by `Var.is_return`. You may also want to match only return variables of some specific object type. Use this code to look at the classname of the type of the return value:
+Hint: What do return values look like in infer? They are assignments to a special variable, detected by `Pvar.is_return`. You may also want to match only return variables of some specific object type. Use this code to look at the classname of the type of the return value:
 
 ```OCaml
-    | Assign
-        (Base (ret, {Typ.desc= Typ.Tptr ({Typ.desc= Typ.Tstruct ret_typename}, _)}), _rhs_exp, _loc)
-      when Var.is_return ret ->
+     | Store {e1= Lvar ret_var; e2= _rhs; typ= {desc= Tptr ({desc= Tstruct ret_typename}, _)}; loc= _loc}
+      when Pvar.is_return ret_var ->
 ```
 
-Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true), of type `ret_typename` (really `ret_typename*` in infer's intermediate representation).
+Then `ret_var` is the return variable (if `Pvar.is_return ret_var` returns true), of type `ret_typename` (really `ret_typename*` in infer's intermediate representation).
 
 
 ## (5) Access paths
 
 (a) Change the simple counting domain to a domain that overapproximates the set of storage locations that hold a resource. As a concrete goal, the new domain should allow you to print the name of the resource(s) that leak in the error message (rather than just the number of resources). The new domain should also allow your analysis to get the correct answer on your false negative and false positive tests from 2(d) and 2(e). Think about the following questions when designing your new domain:
 
-- How should we abstract storage locations? Is abstracting the stack program variables (`Var.t`) enough, or do we need an abstraction of the heap as well?
+- How should we abstract storage locations? Is abstracting the stack program variables (`Pvar.t`) enough, or do we need an abstraction of the heap as well?
 
 - How will we handle aliasing (storage locations that store the same address)? More precisely, how to handle assignement? We will need to make some simplifying assumptions and cut some corners here. Developing a full memory model that accounts for aliasing perfectly is out of the scope of this lab (check out how the Pulse analysis does it!).
 
@@ -160,7 +157,7 @@ Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true),
 
 - It's okay for the domain to diverge in certain cases for the purpose of this lab. Can you write a method that would make your checker diverge?
 
-(b) Write some tests that demonstrate the limitations of your new domain: both false positives (names prefixed with `FP_` and false negatives (prefixed with `FN_`). Add them to [LeaksAccessPaths.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPath.java).
+(b) Write some tests that demonstrate the limitations of your new domain: both false positives (names prefixed with `FP_`) and false negatives (prefixed with `FN_`). Add them to [LeaksAccessPaths.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPaths.java).
 
 (c) Augment the summary type with state to indicate formals that are closed by the current function. This should allow your analysis to pass the tests in [LeaksAccessPathsInterprocedural.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPathsInterprocedural.java).
 
@@ -173,6 +170,6 @@ Hint: You will find the `FormalMap` module useful for this. This module lets you
 
 (b) Try running on real code! The instructions [here](http://fm.csl.sri.com/SSFT17/infer-instr.html) have several suggestions for open-source Android apps to point your analysis at. Try `./gradlew assembleDebug -x test` first to make sure everything builds correctly without Infer (if not, you are probably missing some dependencies--the error messages should guide you). Once that's working, try
 `./gradlew clean; infer run --resource-leak-lab-only -- ./gradlew assembleDebug -x test`.
-- Found a real bug? Bonus points! Send a pull request to fix it! Very frequently, the best fix is to use try-with-resources.
+- Found a real bug? Bonus points! Send a pull request to fix it! Very frequently, the best fix is to use `try-with-resources`.
 - Found a false positive in your analysis? Try re-running Infer with `--debug` and see if you can narrow down the root cause/fix it.
 - How does your analysis compare to Infer's production resource leak analysis? Run with `infer -- <gradle command>` to see if your analysis finds bugs that Infer misses, or vice versa.
