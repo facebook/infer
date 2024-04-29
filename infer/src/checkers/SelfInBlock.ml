@@ -562,7 +562,7 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
     Option.value_map
       ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
         passed_as_noescape_block )
-      ~default:false attributes.ProcAttributes.block_as_arg_attributes
+      ~default:true attributes.ProcAttributes.block_as_arg_attributes
   in
   if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref) then (
     let reported_cxx_ref = Pvar.Set.add cxx_ref.pvar reported_cxx_ref in

@@ -135,4 +135,13 @@ void foo(Attachments* attachments);
   return 1;
 }
 
+- (int)ref_captured_in_local_block_good:(int&)y and:(int*)ptr {
+  MyHandler block = ^{
+    int a = y;
+    int i = *ptr;
+  };
+  block();
+  return 1;
+}
+
 @end
