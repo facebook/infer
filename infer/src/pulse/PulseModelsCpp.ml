@@ -916,6 +916,11 @@ module Pair = struct
       astate
 end
 
+let folly_co_yield_co_error : model =
+  let open PulseModelsDSL.Syntax in
+  start_model @@ throw
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
@@ -1097,8 +1102,13 @@ let map_matchers =
       &++> Basic.unknown_call "folly::ConcurrentHashMap" ]
     |> List.map ~f:with_non_disj
   in
+  let folly_coro =
+    [ -"folly" &:: "coro" &:: "detail" &:: "TaskPromise" &:: "yield_value" $ any_arg
+      $+ any_arg_of_typ (-"folly" &:: "coro" &:: "co_error")
+      $+ any_arg $--> folly_co_yield_co_error ]
+  in
   basic_string_matchers @ folly_matchers @ folly_iterator_matchers
-  @ folly_concurrent_hash_map_matchers
+  @ folly_concurrent_hash_map_matchers @ folly_coro
 
 
 let simple_matchers =
