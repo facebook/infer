@@ -260,10 +260,28 @@ module Syntax = struct
     PulseOperations.add_dict_contain_const_keys addr |> exec_command
 
 
+  let is_dict_non_alias formals addr {AbductiveDomain.decompiler} =
+    match PulseDecompiler.find addr decompiler with
+    | SourceExpr ((PVar pvar, ([] | [Dereference])), _) ->
+        List.exists formals ~f:(fun (formal, typ) ->
+            Pvar.equal pvar formal
+            && Option.exists
+                 (Typ.name (Typ.strip_ptr typ))
+                 ~f:(Typ.Name.equal TextualSil.hack_dict_type_name) )
+    | _ ->
+        false
+
+
   let add_dict_read_const_key (addr, history) key : unit model_monad =
-    let* {path= {timestamp}; location} = get_data in
-    PulseOperations.add_dict_read_const_key timestamp (Immediate {location; history}) addr key
-    >> sat |> exec_partial_command
+    let* {analysis_data= {proc_desc}; path= {timestamp}; location} = get_data in
+    let* is_dict_non_alias =
+      let formals = Procdesc.get_pvar_formals proc_desc in
+      is_dict_non_alias formals addr |> exec_pure_operation
+    in
+    if is_dict_non_alias then
+      PulseOperations.add_dict_read_const_key timestamp (Immediate {location; history}) addr key
+      >> sat |> exec_partial_command
+    else ret ()
 
 
   let remove_dict_contain_const_keys (addr, _) : unit model_monad =

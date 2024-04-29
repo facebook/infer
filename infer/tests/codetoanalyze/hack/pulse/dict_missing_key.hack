@@ -10,17 +10,17 @@ function simple_ok(): int {
   return $d['hi'];
 }
 
-function simple_bad(): int {
+function simple_bad_FN(): int {
   $d = dict['hi' => 42, 'hello' => 52];
   return $d['bye'];
 }
 
-function simple_empty_bad(): int {
+function simple_empty_bad_FN(): int {
   $d = dict[];
   return $d['bye'];
 }
 
-function simple_assign_bad(): int {
+function simple_assign_bad_FN(): int {
   $d = dict[];
   $d['hi'] = 42;
   $d['hello'] = 52;
@@ -51,7 +51,7 @@ function generates_add_elem_c_constant_ok(): int {
   return $d['0'];
 }
 
-function generates_add_elem_c_constant_bad(): int {
+function generates_add_elem_c_constant_bad_FN(): int {
   $key0 = '0';
   $key1 = '1';
   $d = dict[$key0 => 0, $key1 => 1];
@@ -68,7 +68,7 @@ function caller_generates_add_elem_c_callee_ok(): int {
   return generates_add_elem_c_callee('0');
 }
 
-function FN_caller_generates_add_elem_c_callee_bad(): int {
+function caller_generates_add_elem_c_callee_bad_FN(): int {
   return generates_add_elem_c_callee('2');
 }
 
@@ -83,7 +83,7 @@ function shape_param(MyShapeT $x): int {
   return 0;
 }
 
-function call_shape_param_ok_FP(): int {
+function call_shape_param_ok(): int {
   return shape_param(shape());
 }
 
@@ -94,7 +94,7 @@ function shape_param2(MyShapeT $x): int {
   return 0;
 }
 
-function call_shape_param2_ok_FP(): int {
+function call_shape_param2_ok(): int {
   return shape_param2(shape());
 }
 
@@ -114,7 +114,7 @@ function return_shape2(bool $b): shape(?'hi' => int) {
   return shape();
 }
 
-function call_return_shape2_ok_FP(bool $b): int {
+function call_return_shape2_ok(bool $b): int {
   $x = return_shape2($b);
   if (Shapes::keyExists($x, 'hi')) {
     return $x['hi'];
@@ -130,7 +130,7 @@ class ShapeField {
     return $this->f['bye'];
   }
 
-  public function call_read_shape_ok_FP(): int {
+  public function call_read_shape_ok(): int {
     $this->f = shape();
     return $this->read_shape();
   }
