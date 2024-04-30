@@ -143,6 +143,6 @@ function container_param(dict<string, int> $p): int {
   return 42;
 }
 
-function call_container_param_ok_FP(): int {
+function call_container_param_ok(): int {
   return container_param(dict[]);
 }

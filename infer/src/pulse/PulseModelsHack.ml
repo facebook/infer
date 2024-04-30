@@ -553,6 +553,30 @@ module Dict = struct
     assign_ret dict
 
 
+  let contains_key dict key : model =
+    let open DSL.Syntax in
+    start_model
+    @@
+    let* field = field_of_string_value key in
+    match field with
+    | None ->
+        ret ()
+    | Some field ->
+        let no_key : unit DSL.model_monad =
+          let* ret_val = make_hack_bool false in
+          assign_ret ret_val
+        in
+        let has_key : unit DSL.model_monad =
+          let* _v =
+            (* This makes the abstract value of `dict` to have `field`. *)
+            eval_deref_access NoAccess dict (FieldAccess field)
+          in
+          let* ret_val = make_hack_bool true in
+          assign_ret ret_val
+        in
+        disjuncts [no_key; has_key]
+
+
   (* TODO: handle the situation where we have mix of dict and vec *)
   let hack_array_cow_set_dsl dict args : unit DSL.model_monad =
     let open DSL.Syntax in
@@ -1430,6 +1454,8 @@ let matchers : matcher list =
     $+ capt_arg_payload $--> hack_set_static_prop
   ; -"$builtins" &:: "hhbc_is_type_struct_c" <>$ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $+ capt_arg_payload $--> hhbc_is_type_struct_c
+  ; -"$root" &:: "FlibSL::C::contains_key" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> Dict.contains_key
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
