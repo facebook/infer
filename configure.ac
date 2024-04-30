@@ -36,6 +36,11 @@ AC_CHECK_FILE([.facebook], [is_facebook_tree=yes], [is_facebook_tree=no])
 IS_FACEBOOK_TREE=$is_facebook_tree
 AC_SUBST([IS_FACEBOOK_TREE])
 
+# are we in git repo
+AC_CHECK_FILE([.git], [is_git_repo=yes], [is_git_repo=no])
+IS_GIT_REPO=$is_git_repo
+AC_SUBST([IS_GIT_REPO])
+
 AC_ARG_ENABLE(opam-pin-ocamlformat,
   AS_HELP_STRING([--disable-opam-pin-ocamlformat],
     [do not pin ocamlformat to the right version using opam and use the already-installed ocamlformat instead]),
