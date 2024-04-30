@@ -137,8 +137,10 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as ana
         ("@" ^ snk_annot)
     in
     let issue_type =
-      if String.equal src_annot Annotations.performance_critical then
-        IssueType.checkers_calls_expensive_method
+      if
+        Config.annotation_reachability_expensive
+        && String.equal src_annot Annotations.performance_critical
+      then IssueType.checkers_calls_expensive_method
       else IssueType.checkers_annotation_reachability_error
     in
     Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
