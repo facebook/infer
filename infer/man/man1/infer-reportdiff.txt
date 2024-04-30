@@ -54,6 +54,9 @@ OPTIONS
            Debug level for the capture. See --debug-level for accepted
            values.
 
+       --debug-level-report int
+           Debug level for the report. See --debug-level for accepted values.
+
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
            and/or reporting. (Conversely: --deduplicate)

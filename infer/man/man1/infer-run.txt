@@ -62,6 +62,9 @@ OPTIONS
            Debug level for the capture. See --debug-level for accepted
            values.
 
+       --debug-level-report int
+           Debug level for the report. See --debug-level for accepted values.
+
        --fail-on-issue
            Activates: Exit with error code 2 if Infer found something to
            report (Conversely: --no-fail-on-issue)

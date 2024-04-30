@@ -804,6 +804,7 @@ and ( biabduction_write_dotty
     , debug_exceptions
     , debug_level_analysis
     , debug_level_capture
+    , debug_level_report
     , debug_level_test_determinator
     , deduplicate
     , developer_mode
@@ -847,6 +848,9 @@ and ( biabduction_write_dotty
   and debug_level_capture =
     CLOpt.mk_int ~long:"debug-level-capture" ~default:0 ~in_help:all_generic_manuals
       "Debug level for the capture. See $(b,--debug-level) for accepted values."
+  and debug_level_report =
+    CLOpt.mk_int ~long:"debug-level-report" ~default:0 ~in_help:all_generic_manuals
+      "Debug level for the report. See $(b,--debug-level) for accepted values."
   and debug_level_test_determinator =
     CLOpt.mk_int ~long:"debug-level-test-determinator" ~default:0
       "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
@@ -891,6 +895,7 @@ and ( biabduction_write_dotty
     bo_debug := level ;
     debug_level_analysis := level ;
     debug_level_capture := level ;
+    debug_level_report := level ;
     debug_level_test_determinator := level
   in
   let debug =
@@ -943,6 +948,7 @@ and ( biabduction_write_dotty
   , debug_exceptions
   , debug_level_analysis
   , debug_level_capture
+  , debug_level_report
   , debug_level_test_determinator
   , deduplicate
   , developer_mode
@@ -4076,6 +4082,8 @@ and debug_exceptions = !debug_exceptions
 and debug_level_analysis = !debug_level_analysis
 
 and debug_level_capture = !debug_level_capture
+
+and debug_level_report = !debug_level_report
 
 and debug_level_test_determinator = !debug_level_test_determinator
 

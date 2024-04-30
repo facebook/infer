@@ -345,6 +345,8 @@ val debug_level_analysis : int
 
 val debug_level_capture : int
 
+val debug_level_report : int
+
 val debug_level_test_determinator : int
 
 val debug_mode : bool

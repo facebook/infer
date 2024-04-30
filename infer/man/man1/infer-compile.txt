@@ -32,6 +32,9 @@ OPTIONS
            Debug level for the capture. See --debug-level for accepted
            values.
 
+       --debug-level-report int
+           Debug level for the report. See --debug-level for accepted values.
+
        --force-delete-results-dir
            Activates: Do not refuse to delete the results directory if it
            doesn't look like an infer results directory. (Conversely:

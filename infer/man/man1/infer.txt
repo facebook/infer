@@ -545,6 +545,11 @@ OPTIONS
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
            infer-report(1), infer-reportdiff(1), and infer-run(1).
 
+       --debug-level-report int
+           Debug level for the report. See --debug-level for accepted values.
+           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
+
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
            and/or reporting. (Conversely: --deduplicate)
