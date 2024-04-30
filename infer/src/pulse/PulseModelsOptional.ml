@@ -203,20 +203,20 @@ let get_pointer optional ~desc : model_no_non_disj =
   SatUnsat.to_list astate_value_addr @ SatUnsat.to_list astate_null
 
 
-let value_or optional default ~desc : model_no_non_disj =
- fun {path; location; ret= ret_id, _} astate ->
+let value_or_common ~assign_ret optional default ~desc : model_no_non_disj =
+ fun {path; location} astate ->
   let optional = ValueOrigin.addr_hist optional in
   let default = ValueOrigin.addr_hist default in
   let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
   let astate_non_empty =
-    let++ astate_non_empty, value =
+    let** astate_non_empty, value =
       PulseArithmetic.prune_positive (fst value_addr) astate
       >>|= PulseOperations.eval_access path Read location value_addr Dereference
     in
     let value_update_hist =
       (fst value, Hist.add_call path location desc ~more:"non-empty case" (snd value))
     in
-    PulseOperations.write_id ret_id value_update_hist astate_non_empty |> Basic.continue
+    assign_ret value_update_hist astate_non_empty >>|| Basic.continue
   in
   let astate_default =
     let=* astate, (default_val, default_hist) =
@@ -226,10 +226,32 @@ let value_or optional default ~desc : model_no_non_disj =
       (default_val, Hist.add_call path location desc ~more:"empty case" default_hist)
     in
     PulseArithmetic.prune_eq_zero (fst value_addr) astate
-    >>|| PulseOperations.write_id ret_id default_value_hist
-    >>|| ExecutionDomain.continue
+    >>== assign_ret default_value_hist >>|| Basic.continue
   in
   SatUnsat.to_list astate_non_empty @ SatUnsat.to_list astate_default
+
+
+let value_or optional default ~desc : model_no_non_disj =
+ fun ({ret= ret_id, _} as model_data) astate ->
+  value_or_common
+    ~assign_ret:(fun value_hist astate ->
+      Sat (Ok (PulseOperations.write_id ret_id value_hist astate)) )
+    optional default ~desc model_data astate
+
+
+let value_or_obj optional default return_param ~desc : model_no_non_disj =
+ fun ({analysis_data= {tenv}; path; callee_procname; location; ret} as model_data) astate ->
+  value_or_common
+    ~assign_ret:(fun _value_hist astate ->
+      let {ProcnameDispatcher.Call.FuncArg.typ; arg_payload} = return_param in
+      let addr_hist = ValueOrigin.addr_hist arg_payload in
+      (* note: It is ideal to find and run a copy constructor like we do in
+         [assign_precise_value]. *)
+      PulseCallOperations.unknown_call tenv path location (Call callee_procname)
+        (Some callee_procname) ~ret
+        ~actuals:[(addr_hist, typ)]
+        ~formals_opt:None astate )
+    optional default ~desc model_data astate
 
 
 let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
@@ -404,7 +426,10 @@ let matchers : matcher list =
     $+...$--> value ~desc:"std::optional::operator->()"
     |> with_non_disj
   ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
-    $+...$--> value_or ~desc:"std::optional::value_or()"
+    $--> value_or ~desc:"std::optional::value_or()"
+    |> with_non_disj
+  ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload $+ capt_arg
+    $--> value_or_obj ~desc:"std::optional::value_or()"
     |> with_non_disj
   ; -"std" &:: "optional" &:: "~optional" $ capt_arg
     $--> destruct ~desc:"std::optional::~optional()" ]
