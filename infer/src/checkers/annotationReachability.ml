@@ -72,7 +72,7 @@ let method_overrides is_annotated tenv pname =
 
 
 let check_modeled_annotation models annot pname =
-  let method_name = Procname.to_string ~verbosity:Verbose pname in
+  let method_name = Procname.to_string ~verbosity:FullNameOnly pname in
   Option.exists (String.Map.find models annot.Annot.class_name) ~f:(fun methods ->
       List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
 
