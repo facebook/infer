@@ -24,7 +24,8 @@ struct WeakHolder {
   return self;
 }
 
-- (instancetype)aFnBad {
+// we only report retain cycles between ObjC objects and blocks
+- (instancetype)aFnGood2 {
   _weakHolder = new WeakHolder();
   _weakHolder->ref = self;
   return self;

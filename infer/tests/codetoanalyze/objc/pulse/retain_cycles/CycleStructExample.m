@@ -31,7 +31,7 @@ struct Person {
 
 @end
 
-void test_no_retain_cycle_good_FP() {
+void test_no_retain_cycle_good() {
   struct Person* person = (struct Person*)malloc(sizeof(struct Person));
   BridgingDelegate* responderBridgingDelegate =
       [BridgingDelegate newWithPerson:person];
