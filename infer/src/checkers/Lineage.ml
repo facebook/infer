@@ -198,461 +198,458 @@ module G = struct
         false (* TODO T154077173: investigate if more precision is worthwile *)
     | DynamicCallFunction | DynamicCallModule ->
         false (* TODO T154077173: model as a call? *)
+end
 
+module Out = struct
+  module Json = struct
+    type location_id = int64 [@@deriving yojson_of]
 
-  module Out = struct
-    module Json = struct
-      type location_id = int64 [@@deriving yojson_of]
+    type node_id = int64 [@@deriving yojson_of]
 
-      type node_id = int64 [@@deriving yojson_of]
+    type state_id = int64 [@@deriving yojson_of]
 
-      type state_id = int64 [@@deriving yojson_of]
+    (* These correspond to CFG nodes in Infer. *)
+    type _location =
+      { id: location_id
+      ; function_: string [@key "function"]
+      ; file: string
+      ; line: int option (* might be unknown for some locations *) }
+    [@@deriving yojson_of, yojson_fields]
 
-      (* These correspond to CFG nodes in Infer. *)
-      type _location =
-        { id: location_id
-        ; function_: string [@key "function"]
-        ; file: string
-        ; line: int option (* might be unknown for some locations *) }
-      [@@deriving yojson_of, yojson_fields]
+    type location = {location: _location} [@@deriving yojson_of]
 
-      type location = {location: _location} [@@deriving yojson_of]
+    (* These correspond to abstract states in AbsInt. *)
+    type _state = {id: state_id; location: location_id} [@@deriving yojson_of]
 
-      (* These correspond to abstract states in AbsInt. *)
-      type _state = {id: state_id; location: location_id} [@@deriving yojson_of]
+    type state = {state: _state} [@@deriving yojson_of]
 
-      type state = {state: _state} [@@deriving yojson_of]
-
-      module TermType = struct
-        type t =
-          | UserVariable
-          | TemporaryVariable
-          | ConstantAtom
-          | ConstantInt
-          | ConstantString
-          | Argument
-          | Return
-          | Function
-        [@@deriving variants]
-      end
-
-      type term_type = TermType.t
-
-      let rank_of_term_type = TermType.Variants.to_rank
-
-      let yojson_of_term_type (typ : term_type) =
-        match typ with
-        | UserVariable ->
-            `String "UserVariable"
-        | TemporaryVariable ->
-            `String "Temporary" (* T106560112 *)
-        | ConstantAtom ->
-            `String "ConstantAtom"
-        | ConstantInt ->
-            `String "ConstantInt"
-        | ConstantString ->
-            `String "ConstantString"
-        | Argument ->
-            `String "Argument"
-        | Return ->
-            `String "Return"
-        | Function ->
-            `String "Function"
-
-
-      type term =
-        { term_name: string [@key "name" (* T106560112 *)]
-        ; term_type: term_type [@key "variable_type" (* T106560112 *)] }
-      [@@deriving yojson_of]
-
-      type _node = {id: node_id; state: state_id; term: term [@key "variable" (* T106560112 *)]}
-      [@@deriving yojson_of]
-
-      type node = {node: _node} [@@deriving yojson_of]
-
-      type edge_type =
-        | Call
-        | Capture
-        | Copy
-        | Derive
-        | DynamicCallFunction
-        | DynamicCallModule
+    module TermType = struct
+      type t =
+        | UserVariable
+        | TemporaryVariable
+        | ConstantAtom
+        | ConstantInt
+        | ConstantString
+        | Argument
         | Return
-
-      type edge_metadata =
-        { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
-        ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
-      [@@deriving yojson_of]
-
-      (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
-      let metadata_nonempty ~project ~inject =
-        match (project, inject) with [], [] -> None | _ -> Some {inject; project}
-
-
-      (** Returns Some injection metadata if the field path is non empty *)
-      let metadata_nonempty_inject field_path = metadata_nonempty ~project:[] ~inject:field_path
-
-      (** Returns Some injection metadata if the field path is non empty *)
-      let metadata_nonempty_project field_path = metadata_nonempty ~inject:[] ~project:field_path
-
-      let yojson_of_edge_type typ =
-        match typ with
-        | Capture ->
-            `String "Capture"
-        | Call ->
-            `String "Call"
-        | Copy ->
-            `String "Copy"
-        | Derive ->
-            `String "Derive"
-        | DynamicCallFunction ->
-            `String "DynamicCallFunction"
-        | DynamicCallModule ->
-            `String "DynamicCallModule"
-        | Return ->
-            `String "Return"
-
-
-      type _edge =
-        { source: node_id
-        ; target: node_id
-        ; edge_type: edge_type
-        ; edge_metadata: edge_metadata option [@yojson.option]
-        ; location: location_id }
-      [@@deriving yojson_of]
-
-      type edge = {edge: _edge} [@@deriving yojson_of]
-
-      type _function = {name: string; has_unsupported_features: bool} [@@deriving yojson_of]
-
-      type function_ = {function_: _function [@key "function"]} [@@deriving yojson_of]
-
-      type entity_type = Edge | Function | Location | Node | State
-      [@@deriving compare, equal, hash, sexp]
+        | Function
+      [@@deriving variants]
     end
 
-    let channel_ref = ref None
+    type term_type = TermType.t
 
-    let channel () =
-      (* We keep the old simple-lineage output dir for historical reasons and should change it to
-         lineage once no external infra code depends on it anymore *)
-      let output_dir = Filename.concat Config.results_dir "simple-lineage" in
-      Unix.mkdir_p output_dir ;
-      match !channel_ref with
-      | None ->
-          let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
-          let channel = Filename.concat output_dir filename |> Out_channel.create in
-          let close_channel () =
-            Option.iter !channel_ref ~f:Out_channel.close_no_err ;
-            channel_ref := None
-          in
-          Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
-          channel_ref := Some channel ;
-          channel
-      | Some channel ->
-          channel
+    let rank_of_term_type = TermType.Variants.to_rank
 
-
-    type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
-
-    (** Like [G.vertex], but :
-
-        - Without the ability to refer to other procedures, which makes it "local".
-        - With some information lost/summarised, such as fields of procedure arguments/return
-          (although the Derive edges will be generated taking fields into account, we only output
-          one node for each argument in the Json graph to denote function calls). *)
-    type local_vertex = Argument of int | Captured of int | Return | Normal of Local.t | Function
-
-    module Id = struct
-      (** Internal representation of an Id. *)
-      type t = Z.t
-
-      (** Largest prime that fits in 63 bits. *)
-      let modulo_i64 = Int64.of_string "9223372036854775783"
-
-      let modulo_z = Z.of_int64 modulo_i64
-
-      let zero : t = Z.zero
-
-      let one : t = Z.one
-
-      let two : t = Z.of_int 2
-
-      let coefficients =
-        let open Sequence.Generator in
-        let rec gen prng =
-          yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
-        in
-        Sequence.memoize (run (gen (Random.State.make [|Config.lineage_seed|])))
+    let yojson_of_term_type (typ : term_type) =
+      match typ with
+      | UserVariable ->
+          `String "UserVariable"
+      | TemporaryVariable ->
+          `String "Temporary" (* T106560112 *)
+      | ConstantAtom ->
+          `String "ConstantAtom"
+      | ConstantInt ->
+          `String "ConstantInt"
+      | ConstantString ->
+          `String "ConstantString"
+      | Argument ->
+          `String "Argument"
+      | Return ->
+          `String "Return"
+      | Function ->
+          `String "Function"
 
 
-      let of_sequence ids =
-        let hash_add old_hash (a, b) =
-          let open Z in
-          (old_hash + (a * b)) mod modulo_z
-        in
-        Sequence.fold ~init:zero ~f:hash_add (Sequence.zip ids coefficients)
+    type term =
+      { term_name: string [@key "name" (* T106560112 *)]
+      ; term_type: term_type [@key "variable_type" (* T106560112 *)] }
+    [@@deriving yojson_of]
+
+    type _node = {id: node_id; state: state_id; term: term [@key "variable" (* T106560112 *)]}
+    [@@deriving yojson_of]
+
+    type node = {node: _node} [@@deriving yojson_of]
+
+    type edge_type =
+      | Call
+      | Capture
+      | Copy
+      | Derive
+      | DynamicCallFunction
+      | DynamicCallModule
+      | Return
+
+    type edge_metadata =
+      { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
+      ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
+    [@@deriving yojson_of]
+
+    (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
+    let metadata_nonempty ~project ~inject =
+      match (project, inject) with [], [] -> None | _ -> Some {inject; project}
 
 
-      let of_list ids = of_sequence (Sequence.of_list ids)
+    (** Returns Some injection metadata if the field path is non empty *)
+    let metadata_nonempty_inject field_path = metadata_nonempty ~project:[] ~inject:field_path
 
-      let of_state_local (state : state_local) : t =
-        match state with
-        | Start _ ->
-            of_list [zero]
-        | Exit _ ->
-            of_list [one]
-        | Normal n ->
-            of_list [two; Z.of_int (PPNode.hash n)]
+    (** Returns Some injection metadata if the field path is non empty *)
+    let metadata_nonempty_project field_path = metadata_nonempty ~inject:[] ~project:field_path
 
-
-      (** Workaround: [String.hash] leads to many collisions. *)
-      let of_string s =
-        of_sequence
-          (Sequence.map
-             ~f:(fun c -> Z.of_int (int_of_char c))
-             (Sequence.of_seq (Caml.String.to_seq s)) )
-
-
-      let of_procname procname : t = of_string (Procname.hashable_name procname)
-
-      let of_term_type (term_type : Json.term_type) = Z.of_int (Json.rank_of_term_type term_type)
-
-      let of_term {Json.term_name; term_type} : t =
-        of_list [of_string term_name; of_term_type term_type]
+    let yojson_of_edge_type typ =
+      match typ with
+      | Capture ->
+          `String "Capture"
+      | Call ->
+          `String "Call"
+      | Copy ->
+          `String "Copy"
+      | Derive ->
+          `String "Derive"
+      | DynamicCallFunction ->
+          `String "DynamicCallFunction"
+      | DynamicCallModule ->
+          `String "DynamicCallModule"
+      | Return ->
+          `String "Return"
 
 
-      let of_kind (kind : Edge.kind) : t = Z.of_int (Edge.Kind.to_rank kind)
+    type _edge =
+      { source: node_id
+      ; target: node_id
+      ; edge_type: edge_type
+      ; edge_metadata: edge_metadata option [@yojson.option]
+      ; location: location_id }
+    [@@deriving yojson_of]
 
-      let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
+    type edge = {edge: _edge} [@@deriving yojson_of]
 
-      let of_edge_metadata ({inject; project} : Json.edge_metadata) =
-        of_list [of_field_path inject; of_field_path project]
+    type _function = {name: string; has_unsupported_features: bool} [@@deriving yojson_of]
 
+    type function_ = {function_: _function [@key "function"]} [@@deriving yojson_of]
 
-      let of_option of_elt option =
-        match option with None -> of_list [] | Some elt -> of_list [of_elt elt]
-
-
-      (** Converts the internal representation to an [int64], as used by the [Out] module. *)
-      let out id : int64 =
-        try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
-    end
-
-    let term_of_vertex (vertex : local_vertex) : Json.term =
-      let term_name =
-        match vertex with
-        | Argument index ->
-            Format.asprintf "$arg%d" index
-        | Captured index ->
-            Format.asprintf "$cap%d" index
-        | Return ->
-            "$ret"
-        | Normal (Cell cell) ->
-            Format.asprintf "%a" Cell.pp cell
-        | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
-            x
-        | Function ->
-            "$fun"
-      in
-      let term_type : Json.term_type =
-        match vertex with
-        | Argument _ | Captured _ ->
-            Argument
-        | Return ->
-            Return
-        | Normal (Cell cell) ->
-            if Cell.var_appears_in_source_code cell then UserVariable else TemporaryVariable
-        | Normal (ConstantAtom _) ->
-            ConstantAtom
-        | Normal (ConstantInt _) ->
-            ConstantInt
-        | Normal (ConstantString _) ->
-            ConstantString
-        | Function ->
-            Function
-      in
-      {Json.term_name; term_type}
-
-
-    module JsonCacheKey = struct
-      module T = struct
-        type t = Json.entity_type * Int64.t [@@deriving compare, equal, hash, sexp]
-      end
-
-      include T
-      include Hashable.Make (T)
-    end
-
-    let write_json_cache = JsonCacheKey.Hash_set.create ()
-
-    let write_json =
-      let really_write_json json =
-        Yojson.Safe.to_channel (channel ()) json ;
-        Out_channel.newline (channel ())
-      in
-      if Config.lineage_dedup then ( fun category id json ->
-        let key = (category, Id.out id) in
-        if not (Hash_set.mem write_json_cache key) then (
-          Hash_set.add write_json_cache key ;
-          really_write_json json ) )
-      else fun _category _id json -> really_write_json json
-
-
-    let save_location ~write procname (state_local : state_local) : Id.t =
-      let procname_id = Id.of_procname procname in
-      let state_local_id = Id.of_state_local state_local in
-      let location_id = Id.of_list [procname_id; state_local_id] in
-      ( if write then
-          let location =
-            match state_local with
-            | Start location | Exit location ->
-                location
-            | Normal node ->
-                PPNode.loc node
-          in
-          let function_ = Procname.hashable_name procname in
-          let file =
-            if Location.equal Location.dummy location then "unknown"
-            else SourceFile.to_rel_path location.Location.file
-          in
-          let line = if location.Location.line < 0 then None else Some location.Location.line in
-          write_json Location location_id
-            (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
-      location_id
-
-
-    let save_state ~write procname (state : state_local) : Id.t =
-      let location_id = save_location ~write procname state in
-      if write then
-        write_json State location_id
-          (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
-      location_id
-
-
-    let save_vertex proc_desc (vertex : V.t) =
-      let save ?(write = true) procname state_local local_vertex =
-        let state_id = save_state ~write procname state_local in
-        let term = term_of_vertex local_vertex in
-        let node_id = Id.of_list [state_id; Id.of_term term] in
-        if write then
-          write_json Node node_id
-            (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
-        node_id
-      in
-      let procname = Procdesc.get_proc_name proc_desc in
-      let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
-      let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
-      match vertex with
-      | Local (var, node) ->
-          save procname (Normal node) (Normal var)
-      | Argument (index, _field_path) ->
-          (* We don't distinguish the fields of arguments when generating Argument nodes. See
-             {!type:data_local}. *)
-          save procname start (Argument index)
-      | ArgumentOf (callee_procname, index) ->
-          save callee_procname (Start Location.dummy) (Argument index)
-      | Captured index ->
-          save procname start (Captured index)
-      | CapturedBy (lambda_procname, index) ->
-          save ~write:false lambda_procname (Start Location.dummy) (Captured index)
-      | Return _field_path ->
-          (* We don't distinguish the fields of the returned value when generating Return nodes. See
-             {!type:data_local}. *)
-          save procname exit Return
-      | ReturnOf callee_procname ->
-          save callee_procname (Exit Location.dummy) Return
-      | Self ->
-          save procname start Function
-      | Function procname ->
-          save ~write:false procname (Start Location.dummy) Function
-
-
-    let save_edge proc_desc ((src, {kind; node}, dst) : edge) =
-      let src_id = save_vertex proc_desc src in
-      let dst_id = save_vertex proc_desc dst in
-      let kind_id = Id.of_kind kind in
-      let location_id =
-        let procname = Procdesc.get_proc_name proc_desc in
-        save_location ~write:true procname (Normal node)
-      in
-      let edge_type =
-        match kind with
-        | Call _ ->
-            Json.Call
-        | Capture ->
-            Json.Capture
-        | Direct ->
-            Json.Copy
-        | Builtin ->
-            Json.Copy
-        | Summary _ ->
-            Json.Derive
-        | DynamicCallFunction ->
-            Json.DynamicCallFunction
-        | DynamicCallModule ->
-            Json.DynamicCallModule
-        | Return _ ->
-            Json.Return
-      in
-      let edge_metadata =
-        match kind with
-        | Builtin | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
-            None
-        | Call field_path ->
-            Json.metadata_nonempty_inject field_path
-        | Return field_path ->
-            Json.metadata_nonempty_project field_path
-        | Direct -> (
-          (* As the [Return ret_path] nodes will all be merged in a single [Return], we add the
-             [Injection ret_path] metadata to their incoming Copy edges to encode the information
-             that they're flowing into a specific field path of the returned value.
-
-             We similarly generate projection metadata from [Argument (index, path)] nodes, that will
-             be merged into a summarising [Argument index] one. *)
-          match (src, dst) with
-          | Argument (_index, arg_path), Return ret_path ->
-              (* $arg -> $ret edges may happen in infer-generated procedures (that only get
-                 non-source-occurring variables by definition) *)
-              Json.metadata_nonempty ~project:arg_path ~inject:ret_path
-          | Argument (_index, arg_path), _ (* Not Return *) ->
-              Json.metadata_nonempty_project arg_path
-          | _ (* Not Argument *), Return ret_path ->
-              Json.metadata_nonempty_inject ret_path
-          | _ ->
-              None )
-      in
-      let metadata_id =
-        (* Contrary to other ids which are computed from the source components, this one must be
-           computed on the generated metadata since it doesn't exist as-is in the source. *)
-        Id.of_option Id.of_edge_metadata edge_metadata
-      in
-      let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
-      write_json Edge edge_id
-        (Json.yojson_of_edge
-           { edge=
-               { source= Id.out src_id
-               ; target= Id.out dst_id
-               ; edge_type
-               ; edge_metadata
-               ; location= Id.out location_id } } ) ;
-      edge_id
-
-
-    let report_summary graph has_unsupported_features proc_desc =
-      let procname = Procdesc.get_proc_name proc_desc in
-      let fun_id = Id.of_procname procname in
-      write_json Function fun_id
-        (Json.yojson_of_function_
-           {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
-      let _fun_id = save_vertex proc_desc Self in
-      let record_edge edge = ignore (save_edge proc_desc edge) in
-      iter_edges_e record_edge graph ;
-      Out_channel.flush (channel ()) ;
-      Hash_set.clear write_json_cache
+    type entity_type = Edge | Function | Location | Node | State
+    [@@deriving compare, equal, hash, sexp]
   end
 
-  let report = Out.report_summary
+  let channel_ref = ref None
+
+  let channel () =
+    (* We keep the old simple-lineage output dir for historical reasons and should change it to
+       lineage once no external infra code depends on it anymore *)
+    let output_dir = Filename.concat Config.results_dir "simple-lineage" in
+    Unix.mkdir_p output_dir ;
+    match !channel_ref with
+    | None ->
+        let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
+        let channel = Filename.concat output_dir filename |> Out_channel.create in
+        let close_channel () =
+          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
+          channel_ref := None
+        in
+        Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
+        channel_ref := Some channel ;
+        channel
+    | Some channel ->
+        channel
+
+
+  type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
+
+  (** Like [G.vertex], but :
+
+      - Without the ability to refer to other procedures, which makes it "local".
+      - With some information lost/summarised, such as fields of procedure arguments/return
+        (although the Derive edges will be generated taking fields into account, we only output one
+        node for each argument in the Json graph to denote function calls). *)
+  type local_vertex = Argument of int | Captured of int | Return | Normal of Local.t | Function
+
+  module Id = struct
+    (** Internal representation of an Id. *)
+    type t = Z.t
+
+    (** Largest prime that fits in 63 bits. *)
+    let modulo_i64 = Int64.of_string "9223372036854775783"
+
+    let modulo_z = Z.of_int64 modulo_i64
+
+    let zero : t = Z.zero
+
+    let one : t = Z.one
+
+    let two : t = Z.of_int 2
+
+    let coefficients =
+      let open Sequence.Generator in
+      let rec gen prng =
+        yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
+      in
+      Sequence.memoize (run (gen (Random.State.make [|Config.lineage_seed|])))
+
+
+    let of_sequence ids =
+      let hash_add old_hash (a, b) =
+        let open Z in
+        (old_hash + (a * b)) mod modulo_z
+      in
+      Sequence.fold ~init:zero ~f:hash_add (Sequence.zip ids coefficients)
+
+
+    let of_list ids = of_sequence (Sequence.of_list ids)
+
+    let of_state_local (state : state_local) : t =
+      match state with
+      | Start _ ->
+          of_list [zero]
+      | Exit _ ->
+          of_list [one]
+      | Normal n ->
+          of_list [two; Z.of_int (PPNode.hash n)]
+
+
+    (** Workaround: [String.hash] leads to many collisions. *)
+    let of_string s =
+      of_sequence
+        (Sequence.map
+           ~f:(fun c -> Z.of_int (int_of_char c))
+           (Sequence.of_seq (Caml.String.to_seq s)) )
+
+
+    let of_procname procname : t = of_string (Procname.hashable_name procname)
+
+    let of_term_type (term_type : Json.term_type) = Z.of_int (Json.rank_of_term_type term_type)
+
+    let of_term {Json.term_name; term_type} : t =
+      of_list [of_string term_name; of_term_type term_type]
+
+
+    let of_kind (kind : Edge.kind) : t = Z.of_int (Edge.Kind.to_rank kind)
+
+    let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
+
+    let of_edge_metadata ({inject; project} : Json.edge_metadata) =
+      of_list [of_field_path inject; of_field_path project]
+
+
+    let of_option of_elt option =
+      match option with None -> of_list [] | Some elt -> of_list [of_elt elt]
+
+
+    (** Converts the internal representation to an [int64], as used by the [Out] module. *)
+    let out id : int64 =
+      try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
+  end
+
+  let term_of_vertex (vertex : local_vertex) : Json.term =
+    let term_name =
+      match vertex with
+      | Argument index ->
+          Format.asprintf "$arg%d" index
+      | Captured index ->
+          Format.asprintf "$cap%d" index
+      | Return ->
+          "$ret"
+      | Normal (Cell cell) ->
+          Format.asprintf "%a" Cell.pp cell
+      | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
+          x
+      | Function ->
+          "$fun"
+    in
+    let term_type : Json.term_type =
+      match vertex with
+      | Argument _ | Captured _ ->
+          Argument
+      | Return ->
+          Return
+      | Normal (Cell cell) ->
+          if Cell.var_appears_in_source_code cell then UserVariable else TemporaryVariable
+      | Normal (ConstantAtom _) ->
+          ConstantAtom
+      | Normal (ConstantInt _) ->
+          ConstantInt
+      | Normal (ConstantString _) ->
+          ConstantString
+      | Function ->
+          Function
+    in
+    {Json.term_name; term_type}
+
+
+  module JsonCacheKey = struct
+    module T = struct
+      type t = Json.entity_type * Int64.t [@@deriving compare, equal, hash, sexp]
+    end
+
+    include T
+    include Hashable.Make (T)
+  end
+
+  let write_json_cache = JsonCacheKey.Hash_set.create ()
+
+  let write_json =
+    let really_write_json json =
+      Yojson.Safe.to_channel (channel ()) json ;
+      Out_channel.newline (channel ())
+    in
+    if Config.lineage_dedup then ( fun category id json ->
+      let key = (category, Id.out id) in
+      if not (Hash_set.mem write_json_cache key) then (
+        Hash_set.add write_json_cache key ;
+        really_write_json json ) )
+    else fun _category _id json -> really_write_json json
+
+
+  let save_location ~write procname (state_local : state_local) : Id.t =
+    let procname_id = Id.of_procname procname in
+    let state_local_id = Id.of_state_local state_local in
+    let location_id = Id.of_list [procname_id; state_local_id] in
+    ( if write then
+        let location =
+          match state_local with
+          | Start location | Exit location ->
+              location
+          | Normal node ->
+              PPNode.loc node
+        in
+        let function_ = Procname.hashable_name procname in
+        let file =
+          if Location.equal Location.dummy location then "unknown"
+          else SourceFile.to_rel_path location.Location.file
+        in
+        let line = if location.Location.line < 0 then None else Some location.Location.line in
+        write_json Location location_id
+          (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
+    location_id
+
+
+  let save_state ~write procname (state : state_local) : Id.t =
+    let location_id = save_location ~write procname state in
+    if write then
+      write_json State location_id
+        (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
+    location_id
+
+
+  let save_vertex proc_desc (vertex : Vertex.t) =
+    let save ?(write = true) procname state_local local_vertex =
+      let state_id = save_state ~write procname state_local in
+      let term = term_of_vertex local_vertex in
+      let node_id = Id.of_list [state_id; Id.of_term term] in
+      if write then
+        write_json Node node_id
+          (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
+      node_id
+    in
+    let procname = Procdesc.get_proc_name proc_desc in
+    let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
+    let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
+    match vertex with
+    | Local (var, node) ->
+        save procname (Normal node) (Normal var)
+    | Argument (index, _field_path) ->
+        (* We don't distinguish the fields of arguments when generating Argument nodes. See
+           {!type:data_local}. *)
+        save procname start (Argument index)
+    | ArgumentOf (callee_procname, index) ->
+        save callee_procname (Start Location.dummy) (Argument index)
+    | Captured index ->
+        save procname start (Captured index)
+    | CapturedBy (lambda_procname, index) ->
+        save ~write:false lambda_procname (Start Location.dummy) (Captured index)
+    | Return _field_path ->
+        (* We don't distinguish the fields of the returned value when generating Return nodes. See
+           {!type:data_local}. *)
+        save procname exit Return
+    | ReturnOf callee_procname ->
+        save callee_procname (Exit Location.dummy) Return
+    | Self ->
+        save procname start Function
+    | Function procname ->
+        save ~write:false procname (Start Location.dummy) Function
+
+
+  let save_edge proc_desc ((src, {kind; node}, dst) : G.edge) =
+    let src_id = save_vertex proc_desc src in
+    let dst_id = save_vertex proc_desc dst in
+    let kind_id = Id.of_kind kind in
+    let location_id =
+      let procname = Procdesc.get_proc_name proc_desc in
+      save_location ~write:true procname (Normal node)
+    in
+    let edge_type =
+      match kind with
+      | Call _ ->
+          Json.Call
+      | Capture ->
+          Json.Capture
+      | Direct ->
+          Json.Copy
+      | Builtin ->
+          Json.Copy
+      | Summary _ ->
+          Json.Derive
+      | DynamicCallFunction ->
+          Json.DynamicCallFunction
+      | DynamicCallModule ->
+          Json.DynamicCallModule
+      | Return _ ->
+          Json.Return
+    in
+    let edge_metadata =
+      match kind with
+      | Builtin | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
+          None
+      | Call field_path ->
+          Json.metadata_nonempty_inject field_path
+      | Return field_path ->
+          Json.metadata_nonempty_project field_path
+      | Direct -> (
+        (* As the [Return ret_path] nodes will all be merged in a single [Return], we add the
+           [Injection ret_path] metadata to their incoming Copy edges to encode the information
+           that they're flowing into a specific field path of the returned value.
+
+           We similarly generate projection metadata from [Argument (index, path)] nodes, that will
+           be merged into a summarising [Argument index] one. *)
+        match (src, dst) with
+        | Argument (_index, arg_path), Return ret_path ->
+            (* $arg -> $ret edges may happen in infer-generated procedures (that only get
+               non-source-occurring variables by definition) *)
+            Json.metadata_nonempty ~project:arg_path ~inject:ret_path
+        | Argument (_index, arg_path), _ (* Not Return *) ->
+            Json.metadata_nonempty_project arg_path
+        | _ (* Not Argument *), Return ret_path ->
+            Json.metadata_nonempty_inject ret_path
+        | _ ->
+            None )
+    in
+    let metadata_id =
+      (* Contrary to other ids which are computed from the source components, this one must be
+         computed on the generated metadata since it doesn't exist as-is in the source. *)
+      Id.of_option Id.of_edge_metadata edge_metadata
+    in
+    let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
+    write_json Edge edge_id
+      (Json.yojson_of_edge
+         { edge=
+             { source= Id.out src_id
+             ; target= Id.out dst_id
+             ; edge_type
+             ; edge_metadata
+             ; location= Id.out location_id } } ) ;
+    edge_id
+
+
+  let report_summary graph has_unsupported_features proc_desc =
+    let procname = Procdesc.get_proc_name proc_desc in
+    let fun_id = Id.of_procname procname in
+    write_json Function fun_id
+      (Json.yojson_of_function_
+         {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
+    let _fun_id = save_vertex proc_desc Self in
+    let record_edge edge = ignore (save_edge proc_desc edge) in
+    G.iter_edges_e record_edge graph ;
+    Out_channel.flush (channel ()) ;
+    Hash_set.clear write_json_cache
 end
 
 (** Helper function. *)
@@ -1083,7 +1080,7 @@ module Summary = struct
 
 
   let report {graph; has_unsupported_features} proc_desc =
-    G.report graph has_unsupported_features proc_desc
+    Out.report_summary graph has_unsupported_features proc_desc
 end
 
 (** A summary is computed by taking the union of all partial graphs present in the final invariant
