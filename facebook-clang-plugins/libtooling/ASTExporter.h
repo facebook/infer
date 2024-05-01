@@ -833,6 +833,8 @@ void ASTExporter<ATDWriter>::dumpAccessSpecifier(AccessSpecifier AS) {
   case AS_none:
     OF.emitSimpleVariant("None");
     break;
+  default:
+    llvm_unreachable("Unknown access_specifier is given!");
   }
 }
 
@@ -931,6 +933,8 @@ void ASTExporter<ATDWriter>::dumpDeclarationName(const DeclarationName &Name) {
   case DeclarationName::CXXDeductionGuideName:
     OF.emitSimpleVariant("CXXDeductionGuideName");
     break;
+  default:
+    llvm_unreachable("Unknown declaration_name is given!");
   }
   OF.emitTag("name");
   OF.emitString(Name.getAsString());
@@ -989,6 +993,8 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
     case NestedNameSpecifier::Super:
       OF.emitSimpleVariant("Super");
       break;
+    default:
+      llvm_unreachable("Unknown specifier_kind is given!");
     }
   }
 }
@@ -1227,6 +1233,8 @@ void ASTExporter<ATDWriter>::VisitTagDecl(const TagDecl *D) {
   case TagTypeKind::Enum:
     OF.emitSimpleVariant("TTK_Enum");
     break;
+  default:
+    llvm_unreachable("Unknown tag_kind is given!");
   }
 }
 
@@ -1316,6 +1324,8 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   case Language::HLSL:
     OF.emitSimpleVariant("IK_HLSL");
     break;
+  default:
+    llvm_unreachable("Unknown input_kind is given!");
   }
 }
 //@atd type integer_type_widths = {
@@ -1865,6 +1875,8 @@ void ASTExporter<ATDWriter>::dumpClassLambdaCapture(const LambdaCapture *C) {
   case LCK_StarThis:
     OF.emitSimpleVariant("LCK_StarThis");
     break;
+  default:
+    llvm_unreachable("Unknown lambda_capture_kind is given!");
   };
   OF.emitFlag("capture_this", CapturesThis);
   OF.emitFlag("capture_variable", CapturesVariable);
@@ -2040,6 +2052,8 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
     }
     break;
   }
+  default:
+    llvm_unreachable("Unknown template_instantiation_arg_info is given!");
   }
 }
 
@@ -2231,6 +2245,8 @@ void ASTExporter<ATDWriter>::VisitClassTemplateDecl(
       case TSK_ExplicitInstantiationDefinition:
         // these specializations will be dumped elsewhere
         break;
+      default:
+        llvm_unreachable("Unknown template_specialization_kind is given!");
       }
     }
   }
@@ -2268,6 +2284,8 @@ void ASTExporter<ATDWriter>::VisitFunctionTemplateDecl(
       case TSK_ExplicitSpecialization:
         // these specializations will be dumped when they are defined
         break;
+      default:
+        llvm_unreachable("Unknown template_specialization_kind is given!");
       }
     }
   }
@@ -2344,6 +2362,8 @@ void ASTExporter<ATDWriter>::VisitObjCIvarDecl(const ObjCIvarDecl *D) {
     case ObjCIvarDecl::None:
       llvm_unreachable("unreachable");
       break;
+    default:
+      llvm_unreachable("Unknown obj_c_access_control is given!");
     }
   }
 }
@@ -2808,6 +2828,8 @@ void ASTExporter<ATDWriter>::VisitObjCPropertyImplDecl(
   case ObjCPropertyImplDecl::Dynamic:
     OF.emitSimpleVariant("Dynamic");
     break;
+  default:
+    llvm_unreachable("Unknown property_implementation is given!");
   }
   if (PD) {
     OF.emitTag("property_decl");
@@ -3227,6 +3249,8 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
     case VK_PRValue:
       llvm_unreachable("unreachable");
       break;
+    default:
+      llvm_unreachable("Unknown value_kind is given!");
     }
   }
   if (HasNonDefaultObjectKind) {
@@ -3250,6 +3274,8 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
     case OK_Ordinary:
       llvm_unreachable("unreachable");
       break;
+    default:
+      llvm_unreachable("Unknown object_kind is given!");
     }
   }
 }
@@ -3354,6 +3380,8 @@ void ASTExporter<ATDWriter>::VisitObjCBridgedCastExpr(
   case OBC_BridgeTransfer:
     OF.emitSimpleVariant("OBC_BridgeTransfer");
     break;
+  default:
+    llvm_unreachable("Unknown object_c_bridge_cast_kind is given!");
   }
 }
 
@@ -3511,6 +3539,8 @@ void ASTExporter<ATDWriter>::VisitPredefinedExpr(const PredefinedExpr *Node) {
   case PredefinedIdentKind::PrettyFunctionNoVirtual:
     OF.emitSimpleVariant("PrettyFunctionNoVirtual");
     break;
+  default:
+    llvm_unreachable("Unknown predefined_expr_type is given!");
   }
 }
 
@@ -3656,6 +3686,8 @@ void ASTExporter<ATDWriter>::VisitUnaryOperator(const UnaryOperator *Node) {
     OF.emitSimpleVariant(#NAME);        \
     break;
 #include <clang/AST/OperationKinds.def>
+  default:
+    llvm_unreachable("Unknown unary_operator_kind is given!");
   }
   OF.emitFlag("is_postfix", IsPostfix);
 }
@@ -3713,6 +3745,8 @@ void ASTExporter<ATDWriter>::VisitUnaryExprOrTypeTraitExpr(
   case UETT_VectorElements:
     OF.emitSimpleVariant("VectorElements");
     break;
+  default:
+    llvm_unreachable("Unknown unary_expr_or_type_trait_kind is given!");
   }
 
   OF.emitTag("qual_type");
@@ -3785,6 +3819,8 @@ void ASTExporter<ATDWriter>::VisitBinaryOperator(const BinaryOperator *Node) {
     OF.emitSimpleVariant(#NAME);         \
     break;
 #include <clang/AST/OperationKinds.def>
+  default:
+    llvm_unreachable("Unknown binary_operator_kind is given!");
   }
 }
 
@@ -3833,6 +3869,8 @@ void ASTExporter<ATDWriter>::VisitAtomicExpr(const AtomicExpr *Node) {
     OF.emitSimpleVariant("AO" #ID);     \
     break;
 #include <clang/Basic/Builtins.def>
+  default:
+    llvm_unreachable("Unknown atomic_expr_kind is given!");
   }
 }
 
@@ -4291,6 +4329,8 @@ void ASTExporter<ATDWriter>::VisitObjCMessageExpr(const ObjCMessageExpr *Node) {
     case ObjCMessageExpr::Instance:
       llvm_unreachable("unreachable");
       break;
+    default:
+      llvm_unreachable("Unknown receiver_kind is given!");
     }
   }
 }
@@ -4923,6 +4963,8 @@ void ASTExporter<ATDWriter>::dumpObjCLifetimeQual(
   case Qualifiers::ObjCLifetime::OCL_Autoreleasing:
     OF.emitSimpleVariant("OCL_Autoreleasing");
     break;
+  default:
+    llvm_unreachable("Unknown objc_lifetime_attr is given!");
   }
 }
 
@@ -5028,6 +5070,8 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
 #include <clang/Basic/WebAssemblyReferenceTypes.def>
     llvm_unreachable("Unsupported types");
     break;
+  default:
+    llvm_unreachable("Unknown builtin_type_kind is given!");
   }
   OF.emitSimpleVariant(type_name);
 }
@@ -5239,6 +5283,8 @@ void ASTExporter<ATDWriter>::dumpAttr(const Attr *A) {
     tag = #NAME "Attr";  \
     break;
 #include <clang/Basic/AttrList.inc>
+  default:
+    llvm_unreachable("Unknown attr_kind is given!");
   }
   VariantScope Scope(OF, tag);
   {
@@ -5377,6 +5423,8 @@ void ASTExporter<ATDWriter>::VisitVisibilityAttr(const VisibilityAttr *A) {
   case VisibilityAttr::Protected:
     OF.emitSimpleVariant("ProtectedVisibility");
     break;
+  default:
+    llvm_unreachable("Unknown visibility_attr is given!");
   }
 }
 
