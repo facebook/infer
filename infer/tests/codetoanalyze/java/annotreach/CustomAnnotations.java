@@ -12,23 +12,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSource1 {}
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSource2 {}
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSink1 {}
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSink2 {}
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
 @interface UserDefinedSanitizer {}
 
@@ -186,4 +186,28 @@ class CustomAnnotations {
   void sinkDefinedInConfig_1_WithRegex() {}
 
   void sinkDefinedInConfig_2_WithRegex() {}
+
+  @UserDefinedSink1
+  interface SinkInterface {
+    void interfaceSink();
+  }
+
+  @UserDefinedSource1
+  class SourceClass implements SinkInterface {
+    public void interfaceSink() {}
+
+    void source1Bad() {
+      interfaceSink();
+    }
+
+    void notSink() {}
+
+    // Currently annotation reachability treats 'notSink' as if it was annotated because
+    // SourceClass implements SinkInterface which is annotated. Marking as false positive
+    // because we would like to have an option where only overridden methods are treated
+    // as annotated.
+    void source2Ok_FP() {
+      notSink();
+    }
+  }
 }
