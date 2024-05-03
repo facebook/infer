@@ -484,22 +484,20 @@ module Out = struct
     include Hashable.Make (T)
   end
 
-  let write_json_cache = JsonCacheKey.Hash_set.create ()
-
-  let write_json channel =
+  let write_json (json_dedup_cache : JsonCacheKey.Hash_set.t) channel =
     let really_write_json json =
       Yojson.Safe.to_channel channel json ;
       Out_channel.newline channel
     in
     if Config.lineage_dedup then ( fun category id json ->
       let key = (category, Id.out id) in
-      if not (Hash_set.mem write_json_cache key) then (
-        Hash_set.add write_json_cache key ;
+      if not (Hash_set.mem json_dedup_cache key) then (
+        Hash_set.add json_dedup_cache key ;
         really_write_json json ) )
     else fun _category _id json -> really_write_json json
 
 
-  let save_location channel ~write procname (state_local : state_local) : Id.t =
+  let save_location json_dedup_cache channel ~write procname (state_local : state_local) : Id.t =
     let procname_id = Id.of_procname procname in
     let state_local_id = Id.of_state_local state_local in
     let location_id = Id.of_list [procname_id; state_local_id] in
@@ -517,26 +515,26 @@ module Out = struct
           else SourceFile.to_rel_path location.Location.file
         in
         let line = if location.Location.line < 0 then None else Some location.Location.line in
-        write_json channel Location location_id
+        write_json json_dedup_cache channel Location location_id
           (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
     location_id
 
 
-  let save_state channel ~write procname (state : state_local) : Id.t =
-    let location_id = save_location channel ~write procname state in
+  let save_state json_dedup_cache channel ~write procname (state : state_local) : Id.t =
+    let location_id = save_location json_dedup_cache channel ~write procname state in
     if write then
-      write_json channel State location_id
+      write_json json_dedup_cache channel State location_id
         (Json.yojson_of_state {state= {id= Id.out location_id; location= Id.out location_id}}) ;
     location_id
 
 
-  let save_vertex channel proc_desc (vertex : Vertex.t) =
+  let save_vertex json_dedup_cache channel proc_desc (vertex : Vertex.t) =
     let save ?(write = true) procname state_local local_vertex =
-      let state_id = save_state channel ~write procname state_local in
+      let state_id = save_state json_dedup_cache channel ~write procname state_local in
       let term = term_of_vertex local_vertex in
       let node_id = Id.of_list [state_id; Id.of_term term] in
       if write then
-        write_json channel Node node_id
+        write_json json_dedup_cache channel Node node_id
           (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
       node_id
     in
@@ -568,13 +566,13 @@ module Out = struct
         save ~write:false procname (Start Location.dummy) Function
 
 
-  let save_edge channel proc_desc ((src, {kind; node}, dst) : G.edge) =
-    let src_id = save_vertex channel proc_desc src in
-    let dst_id = save_vertex channel proc_desc dst in
+  let save_edge json_dedup_cache channel proc_desc ((src, {kind; node}, dst) : G.edge) =
+    let src_id = save_vertex json_dedup_cache channel proc_desc src in
+    let dst_id = save_vertex json_dedup_cache channel proc_desc dst in
     let kind_id = Id.of_kind kind in
     let location_id =
       let procname = Procdesc.get_proc_name proc_desc in
-      save_location channel ~write:true procname (Normal node)
+      save_location json_dedup_cache channel ~write:true procname (Normal node)
     in
     let edge_type =
       match kind with
@@ -628,7 +626,7 @@ module Out = struct
       Id.of_option Id.of_edge_metadata edge_metadata
     in
     let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
-    write_json channel Edge edge_id
+    write_json json_dedup_cache channel Edge edge_id
       (Json.yojson_of_edge
          { edge=
              { source= Id.out src_id
@@ -639,17 +637,16 @@ module Out = struct
     edge_id
 
 
-  let report_summary channel graph has_unsupported_features proc_desc =
+  let report_summary json_dedup_cache channel graph has_unsupported_features proc_desc =
     let procname = Procdesc.get_proc_name proc_desc in
     let fun_id = Id.of_procname procname in
-    write_json channel Function fun_id
+    write_json json_dedup_cache channel Function fun_id
       (Json.yojson_of_function_
          {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
-    let _fun_id = save_vertex channel proc_desc Self in
-    let record_edge edge = ignore (save_edge channel proc_desc edge) in
+    let _fun_id = save_vertex json_dedup_cache channel proc_desc Self in
+    let record_edge edge = ignore (save_edge json_dedup_cache channel proc_desc edge) in
     G.iter_edges_e record_edge graph ;
-    Out_channel.flush channel ;
-    Hash_set.clear write_json_cache
+    Out_channel.flush channel
 end
 
 (** Helper function. *)
@@ -1080,7 +1077,9 @@ module Summary = struct
 
 
   let report {graph; has_unsupported_features} proc_desc =
-    Out.report_summary (Out.get_pid_channel ()) graph has_unsupported_features proc_desc
+    let channel = Out.get_pid_channel () in
+    let json_dedup_cache = Out.JsonCacheKey.Hash_set.create () in
+    Out.report_summary json_dedup_cache channel graph has_unsupported_features proc_desc
 end
 
 (** A summary is computed by taking the union of all partial graphs present in the final invariant
