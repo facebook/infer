@@ -147,7 +147,7 @@ val new_or_alloc_trans :
      trans_state
   -> Location.t
   -> Clang_ast_t.stmt_info
-  -> Clang_ast_t.qual_type
+  -> Typ.t
   -> Typ.Name.t option
   -> string
   -> trans_result

@@ -1797,7 +1797,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             CMethod_trans.get_class_name_method_call_from_clang context.CContext.tenv
               obj_c_message_expr_info
           in
-          Some (new_or_alloc_trans trans_state_pri sil_loc si qual_type class_opt selector)
+          let tenv = trans_state.context.CContext.tenv in
+          let function_type = CType_decl.qual_type_to_sil_type tenv qual_type in
+          Some (new_or_alloc_trans trans_state_pri sil_loc si function_type class_opt selector)
+      | `SuperClass ->
+          let class_name =
+            CMethod_trans.get_class_name_method_call_from_receiver_kind context
+              obj_c_message_expr_info act_params
+          in
+          let function_type = Typ.mk (Typ.Tstruct class_name) in
+          Some
+            (new_or_alloc_trans trans_state_pri sil_loc si function_type (Some class_name) selector)
       | _ ->
           None
     else None

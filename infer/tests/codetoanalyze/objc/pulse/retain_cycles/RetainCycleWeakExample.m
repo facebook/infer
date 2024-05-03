@@ -36,7 +36,7 @@
   SpecialDelegate* _delegate;
 };
 
-+ (void)test_no_retain_cycle_good_FP {
++ (void)test_no_retain_cycle_good {
   InternalComponent* c = [super new];
   SpecialDelegate* delegate = [SpecialDelegate newWithComponent:c];
   c->_delegate = delegate;
