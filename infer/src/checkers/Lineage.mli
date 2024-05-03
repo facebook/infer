@@ -14,7 +14,7 @@ module Summary : sig
 end
 
 module Out : sig
-  val report_summary : Summary.t -> Procdesc.t -> unit
+  val report_summary : Procdesc.t -> Summary.t -> unit
 end
 
 val checker :

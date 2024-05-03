@@ -13,7 +13,7 @@ let report {Summary.payloads= {lineage}; proc_name} =
   | None ->
       L.debug Report Verbose "No summary for %a@\n" Procname.pp proc_name
   | Some lineage_summary ->
-      Procdesc.load_exn proc_name |> Lineage.Out.report_summary lineage_summary
+      Lineage.Out.report_summary (Procdesc.load_exn proc_name) lineage_summary
 
 
 let worker source_file =
