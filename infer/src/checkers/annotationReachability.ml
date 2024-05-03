@@ -62,9 +62,14 @@ let parse_custom_models () =
 
 
 let check_attributes check tenv pname =
-  Config.annotation_reachability_apply_class_annotations
-  && PatternMatch.Java.check_class_attributes check tenv pname
-  || Annotations.pname_has_return_annot pname check
+  let proc_has_attribute = Annotations.pname_has_return_annot pname check in
+  let class_has_attribute =
+    ( if Config.annotation_reachability_apply_superclass_annotations then
+        PatternMatch.Java.check_class_attributes
+      else PatternMatch.Java.check_current_class_attributes )
+      check tenv pname
+  in
+  class_has_attribute || proc_has_attribute
 
 
 let method_overrides is_annotated tenv pname =

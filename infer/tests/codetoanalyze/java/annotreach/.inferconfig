@@ -44,5 +44,5 @@
       "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sanitizerDefinedInConfig"
     ]
   },
-  "annotation-reachability-apply-class-annotations": true
+  "annotation-reachability-apply-superclass-annotations": true
 }

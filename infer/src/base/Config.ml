@@ -603,10 +603,20 @@ and analysis_schedule_file =
     ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
 
 
-and annotation_reachability_apply_class_annotations =
-  CLOpt.mk_bool ~long:"annotation-reachability-apply-class-annotations"
+and _annotation_reachability_apply_class_annotations =
+  CLOpt.mk_bool ~long:""
+    ~deprecated:["-annotation-reachability-apply-class-annotations"]
+    ~deprecated_no:["-no-annotation-reachability-apply-class-annotations"]
     ~in_help:InferCommand.[(Analyze, manual_java)]
     "Applies annotations of a class/interface to all its methods" ~default:true
+
+
+and annotation_reachability_apply_superclass_annotations =
+  CLOpt.mk_bool ~long:"annotation-reachability-apply-superclass-annotations"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "Applies annotations from superclasses and interfaces also on methods that are not overridden \
+     from the superclass or interface."
+    ~default:true
 
 
 and annotation_reachability_custom_models =
@@ -3826,8 +3836,8 @@ and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
 and analysis_schedule_file = !analysis_schedule_file
 
-and annotation_reachability_apply_class_annotations =
-  !annotation_reachability_apply_class_annotations
+and annotation_reachability_apply_superclass_annotations =
+  !annotation_reachability_apply_superclass_annotations
 
 
 and annotation_reachability_custom_models = !annotation_reachability_custom_models

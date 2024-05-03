@@ -70,10 +70,11 @@ OPTIONS
            --no-annotation-reachability)
            See also infer-analyze(1).
 
-       --no-annotation-reachability-apply-class-annotations
-           Deactivates: Applies annotations of a class/interface to all its
-           methods (Conversely:
-           --annotation-reachability-apply-class-annotations)
+       --no-annotation-reachability-apply-superclass-annotations
+           Deactivates: Applies annotations from superclasses and interfaces
+           also on methods that are not overridden from the superclass or
+           interface. (Conversely:
+           --annotation-reachability-apply-superclass-annotations)
            See also infer-analyze(1).
 
        --annotation-reachability-custom-models json
