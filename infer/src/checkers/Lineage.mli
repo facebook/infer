@@ -11,8 +11,10 @@ module Summary : sig
   type t
 
   val pp : Format.formatter -> t -> unit
+end
 
-  val report : t -> Procdesc.t -> unit
+module Out : sig
+  val report_summary : Summary.t -> Procdesc.t -> unit
 end
 
 val checker :

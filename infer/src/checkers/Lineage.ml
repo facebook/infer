@@ -200,6 +200,433 @@ module G = struct
         false (* TODO T154077173: model as a call? *)
 end
 
+(** Helper function. *)
+let get_formals proc_desc : Var.t list =
+  let f (pvar, _typ) = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_pvar_formals proc_desc)
+
+
+(** Helper function. *)
+let get_captured proc_desc : Var.t list =
+  let f {CapturedVar.pvar} = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_captured proc_desc)
+
+
+module Tito : sig
+  (** TITO stands for "taint-in taint-out". In this context a tito flow is a data path from an
+      argument field to a field of the return node, without going through call edges; more
+      precisely, [i#foo#bar] is a tito path to [ret#baz] if there is a path from
+      [Argument (i, [foo, bar])] to [Return baz] not going through [ArgumentOf _] nodes.
+
+      As the abstraction mandates, fields are to be considered in a prefix sense: a path from
+      [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar].
+
+      A path from [i#foo] to [ret#bar] can be marked as "shape-preserving", meaning that the
+      argument field and the return field have the same shape AND that the data flows induced by the
+      function call will go from each field of the argument into the same field of the return. This
+      allows for more precise analysis of functions such as `id(X) -> X` when called on structured
+      concrete arguments.
+
+      Note: shape preservation indicates direct copying, thus a return field cannot be
+      "shape-preserved" from more than one parameter field. The implementation will try to detect
+      this and raise, but that should be considered a programming error. *)
+
+  (** Sets of tito flows *)
+  type t
+
+  val pp : t Fmt.t
+
+  val empty : t
+  (** Empty tito: no argument field can flow into any return field *)
+
+  val full : arity:int -> t
+  (** A full tito has paths from every argument field to every return field. Due to the prefix
+      abstraction, it is equivalent to having a path from every [Argument (i, [])] to [Return []].*)
+
+  val add :
+       arg_index:int
+    -> arg_field_path:FieldPath.t
+    -> ret_field_path:FieldPath.t
+    -> shape_is_preserved:bool
+    -> t
+    -> t
+
+  val fold :
+       t
+    -> init:'accum
+    -> f:
+         (   arg_index:int
+          -> arg_field_path:FieldPath.t
+          -> ret_field_path:FieldPath.t
+          -> shape_is_preserved:bool
+          -> 'accum
+          -> 'accum )
+    -> 'accum
+end = struct
+  (* Utility pretty printers *)
+
+  let pp_arg_index = Fmt.fmt "$arg%d"
+
+  let pp_ret = Fmt.any "$ret"
+
+  module ArgPathSet = struct
+    module FieldPathSet = struct
+      (* Sets of field paths, that shall be associated to an argument index *)
+
+      module M = Set.Make_tree (FieldPath)
+      include M
+
+      let pp ~arg_index =
+        (* Prints: $argN#foo#bar $argN#other#field *)
+        let pp_field_path = Fmt.(const pp_arg_index arg_index ++ FieldPath.pp) in
+        IFmt.Labelled.iter ~sep:Fmt.sp M.iter pp_field_path
+    end
+
+    (* Marshallable maps from integer indices. Note: using an array instead of Map could improve the
+       performance (arguments indices are small and contiguous). *)
+    module IntMap = Map.Make_tree (Int)
+
+    (* An ArgPathSet is a set of field paths for each argument index *)
+    type t = FieldPathSet.t IntMap.t
+
+    let pp : t Fmt.t =
+      (* Prints: $arg1#arg#field $arg1#other $arg2#foo#bar $arg3 *)
+      let pp_binding fmt (arg_index, path_set) = FieldPathSet.pp ~arg_index fmt path_set in
+      IFmt.Labelled.iter_bindings ~sep:Fmt.sp IntMap.iteri pp_binding
+
+
+    let singleton ~arg_index ~arg_field_path =
+      IntMap.singleton arg_index (FieldPathSet.singleton arg_field_path)
+
+
+    let full ~arity =
+      IntMap.of_sequence_exn
+      @@ Sequence.init arity ~f:(fun arg_index -> (arg_index, FieldPathSet.singleton []))
+
+
+    let add t ~arg_index ~arg_field_path =
+      IntMap.update t arg_index ~f:(function
+        | None ->
+            FieldPathSet.singleton arg_field_path
+        | Some field_path_set ->
+            FieldPathSet.add field_path_set arg_field_path )
+
+
+    let fold t ~f ~init =
+      IntMap.fold
+        ~f:(fun ~key:arg_index ~data:field_path_set acc ->
+          FieldPathSet.fold
+            ~f:(fun acc arg_field_path -> f ~arg_index ~arg_field_path acc)
+            ~init:acc field_path_set )
+        ~init t
+  end
+
+  module Sources = struct
+    (** Data flow sources to be associated with return fields. *)
+
+    (** A source is either a single shape-preserved argument index, or a "shape mixed" set of those.
+
+        Remark: a shape-mixed set can be a singleton (eg. for unknown/recursive one-parameter
+        functions -- such as [mix(X) -> mix(X).]). Empty "shape-mixed" sets pose no theoretical
+        issue -- but we just don't generate them. *)
+    type t =
+      | Shape_preserved of {arg_index: int; arg_field_path: FieldPath.t}
+      | Shape_mixed of ArgPathSet.t
+
+    let pp fmt source =
+      match source with
+      | Shape_preserved {arg_index; arg_field_path} ->
+          Fmt.pf fmt "=%a%a" pp_arg_index arg_index FieldPath.pp arg_field_path
+      | Shape_mixed arg_path_set ->
+          Fmt.pf fmt "{%a}" ArgPathSet.pp arg_path_set
+
+
+    let singleton ~arg_index ~arg_field_path ~shape_is_preserved =
+      if shape_is_preserved then Shape_preserved {arg_index; arg_field_path}
+      else Shape_mixed (ArgPathSet.singleton ~arg_index ~arg_field_path)
+
+
+    let full ~arity = Shape_mixed (ArgPathSet.full ~arity)
+
+    let add source ~arg_index ~arg_field_path ~shape_is_preserved =
+      match source with
+      | Shape_mixed arg_path_set when not shape_is_preserved ->
+          Shape_mixed (ArgPathSet.add arg_path_set ~arg_index ~arg_field_path)
+      | Shape_mixed _ | Shape_preserved _ ->
+          L.die InternalError
+            "Lineage invariant broken: formal return shape cannot be preserved from several \
+             sources."
+
+
+    let fold source ~init ~f =
+      match source with
+      | Shape_preserved {arg_index; arg_field_path} ->
+          f ~arg_index ~arg_field_path ~shape_is_preserved:true init
+      | Shape_mixed arg_path_set ->
+          ArgPathSet.fold
+            ~f:(fun ~arg_index ~arg_field_path acc ->
+              f ~arg_index ~arg_field_path ~shape_is_preserved:false acc )
+            ~init arg_path_set
+  end
+
+  (* Marshallable maps from formal return field paths *)
+  module RetPathMap = Map.Make_tree (FieldPath)
+
+  (** A [Tito.t] is a collection, for every return field path, of its TITO sources. Note: for any
+      [fields] path, if [i#fields] is a Tito source for [ret#fields'], then every [i#fields#foo]
+      subfield of it should be considered as also being one (even if not explicitly present in the
+      map value). *)
+  type t = Sources.t RetPathMap.t
+
+  let pp =
+    (* Prints: ($ret#field: $arg0#foo) ($ret#other:$arg2 $arg3#bar) *)
+    IFmt.Labelled.iter_bindings ~sep:Fmt.comma RetPathMap.iteri
+      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(pp_ret ++ FieldPath.pp) Sources.pp)
+
+
+  let empty = RetPathMap.empty
+
+  let add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved tito =
+    RetPathMap.update tito ret_field_path ~f:(function
+      | None ->
+          (* No TITO arg for this ret field yet. We create one. *)
+          Sources.singleton ~arg_index ~arg_field_path ~shape_is_preserved
+      | Some source ->
+          Sources.add source ~arg_index ~arg_field_path ~shape_is_preserved )
+
+
+  let fold tito ~init ~f =
+    RetPathMap.fold tito ~init ~f:(fun ~key:ret_field_path ~data:arg_path_set acc ->
+        Sources.fold
+          ~f:(fun ~arg_index ~arg_field_path ~shape_is_preserved acc ->
+            f ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc )
+          ~init:acc arg_path_set )
+
+
+  let full ~arity = RetPathMap.singleton [] (Sources.full ~arity)
+end
+
+module Summary = struct
+  type tito_arguments = Tito.t
+
+  type t = {graph: G.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
+
+  let pp_tito_arguments fmt arguments =
+    Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
+
+
+  let pp fmt {graph; tito_arguments} =
+    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments G.pp
+      graph
+
+
+  let extract_tito shapes proc_desc (graph : G.t) =
+    (* - Construct an adjacency list representation of the reversed graph.
+       - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
+         being targets of edges that have this effect. *)
+    let shape_mixing_nodes =
+      let add_dst_if_shape_mixing ((_, _, dst) as edge) set =
+        if G.preserves_shape edge then set else Set.add set dst
+      in
+      G.fold_edges_e add_dst_if_shape_mixing graph Vertex.Set.empty
+    in
+    (* Do a DFS, to see which arguments are reachable from a return field path. *)
+    let rec dfs (shape_is_preserved, seen) node =
+      if not (G.mem_vertex graph node) then (
+        L.internal_error "Mysteriously missing node from lineage." ;
+        (shape_is_preserved, seen) )
+      else if Set.mem seen node then (shape_is_preserved, seen)
+      else
+        let seen = Set.add seen node in
+        let incoming = G.pred_e graph node in
+        let parents =
+          List.filter_map
+            ~f:(fun (src, {Edge.kind; _}, _) ->
+              match kind with Call _ | Return _ -> None | _ -> Some src )
+            incoming
+        in
+        let shape_is_preserved =
+          (* That return field path is shape-preserved if it is only reachable by a direct path
+             through shape-preserving one-source nodes. *)
+          shape_is_preserved
+          && (not (Set.mem shape_mixing_nodes node))
+          &&
+          match parents with
+          | [] | [_] ->
+              true
+          | _ ->
+              (* TODO T154077173: `ite(true, X, Y) -> X`: X and Y are shape-preserved, but support of
+                 ite(_, {a, b}, 42) may be not trivial due to not-same-shaped parallel writes. *)
+              false
+        in
+        List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
+    in
+    let collect_reachable return_field_path =
+      dfs (true, Vertex.Set.empty) (Vertex.Return return_field_path)
+    in
+    (* Collect reachable arguments from a Return field path. *)
+    let collect_tito tito ret_field_path =
+      let shape_is_preserved, reachable = collect_reachable ret_field_path in
+      Set.fold reachable ~init:tito ~f:(fun acc (node : G.vertex) ->
+          match node with
+          | Argument (arg_index, arg_field_path) ->
+              Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
+          | _ ->
+              acc )
+    in
+    let ret_var_path = VarPath.pvar (Procdesc.get_ret_var proc_desc) in
+    let return_field_paths =
+      Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell ->
+          Cell.field_path cell :: acc )
+    in
+    List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
+
+
+  (** Reduces the size of the graph by possibly some vertices and some edges. Consider the following
+      pattern: A -1-> B -2-> C. (Here, A, B and C are vertices; 1 and 2 are edges.) The basic trick
+      is to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
+      "uninteresting". Vertex is uninteresting when it corresponds to a temporary variable
+      introduced by the frontend; Edges are uninteresting when they are of kind [Direct].
+
+      The basic trick is slightly generalized below: B may have 1 edge on one side, but 0..oo on the
+      other side. This allows considerably more reduction in size.
+
+      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting vertex
+      is removed from the graph (but this happens only for vertex that is not connected in lineage
+      to other interesting vertex); and (b) it is possible that the number of vertices is reduced
+      more than the number of edges (otherwise, each transform step would reduce both the number of
+      vertices and the number of edges by exactly 1, so the reduction would be equal to the number
+      of transform steps applied).
+
+      Note1: The implementation assumes no loops; otherwise, it may not terminate. (This is easy to
+      change, but there should be no loops in lineage anyway.)
+
+      Note2: The algorithm guarantees that the number of edges does not increase, and that the
+      number of vertices does not increase. *)
+  let remove_temporaries proc_desc graph =
+    (* A check for vertex interestingness, used in the graph simplification that follows. *)
+    let special_variables =
+      let formals = get_formals proc_desc in
+      let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+      Var.Set.of_list (ret_var :: formals)
+    in
+    let is_interesting_vertex (vertex : G.vertex) =
+      match vertex with
+      | Local (Cell cell, _node) ->
+          Cell.var_appears_in_source_code cell
+          && not (Var.Set.mem (Cell.var cell) special_variables)
+      | Argument _ | Captured _ | Return _ | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
+          true
+      | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
+          true
+      | Function _ | Self ->
+          true
+    in
+    let is_interesting_edge ((src, {kind; _}, dst) : G.edge) =
+      match kind with
+      | Direct -> (
+        match (src, dst) with
+        | Argument (_, _ :: _), _ | _, Return (_ :: _) ->
+            (* The edge will have non-empty injection/projection metadata. *)
+            true
+        | _ ->
+            false )
+      | Builtin ->
+          (* Suppressed builtins are considered as direct edges for being simplification
+             candidates. *)
+          false
+      | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
+          true
+    in
+    let merge_edges (src_ab, {Edge.kind= kind_ab; node= node_ab}, _)
+        (_, {Edge.kind= kind_bc; node= node_bc}, dst_bc) : G.edge =
+      (* Merge both edges together, keeping source of the first one, the target of the second one,
+         and the kind of node of the most interesting one. The interesting order is Direct < Builtin
+         < anything. *)
+      let kind, node =
+        (* Both nodes should map to the same location, so we could just use the first one, but we
+           keep the one corresponding to the kind for good measure and least surprise. *)
+        match (kind_ab, kind_bc) with
+        | Direct, _ ->
+            (kind_bc, node_bc)
+        | _, Direct ->
+            (kind_ab, node_ab)
+        | Builtin, _ (* not Direct *) ->
+            (kind_bc, node_bc)
+        | _ (* not Direct *), Builtin ->
+            (kind_ab, node_ab)
+        | _ ->
+            L.die InternalError "I can't merge two interesting edges together"
+      in
+      (src_ab, {Edge.kind; node}, dst_bc)
+    in
+    (* The set [todo] contains vertices considered for removal. We initialize this set with all
+     * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
+     * some deterministic but unspecified order) and checks if it meets a condition for removal.
+     * If so, it removes it from the graph, and puts its former uninteresting neighbours back in
+     * [todo], so that their condition for removal will be re-examined. (A note on termination:
+     * Let m be the number of edges between uninteresting nodes; let n be the number of
+     * uninteresting nodes. There are at most m+n insertions into the set [todo]: n when [todo]
+     * is initialized, and at most m while in the main loop. And each iteration of the main loop
+     * does one deletion from the set [todo].) *)
+    let todo =
+      (* Initialise todo with the set of non interesting vertices *)
+      G.fold_vertex
+        (fun vertex set -> if is_interesting_vertex vertex then set else Set.add set vertex)
+        graph Vertex.Set.empty
+    in
+    let rec simplify todo graph =
+      match Set.choose todo with
+      | None ->
+          graph
+      | Some vertex ->
+          if is_interesting_vertex vertex then L.die InternalError "Shouldn't happen" ;
+          let todo = Set.remove todo vertex in
+          let before = G.pred_e graph vertex in
+          let after = G.succ_e graph vertex in
+          let before_interesting = List.exists ~f:is_interesting_edge before in
+          let after_interesting = List.exists ~f:is_interesting_edge after in
+          let short list = match list with [] | [_] -> true | _ -> false in
+          let before_short = short before in
+          let after_short = short after in
+          if (before_short || after_short) && not (before_interesting && after_interesting) then
+            let pairs = List.cartesian_product before after in
+            (* (A) remove old edges *)
+            let graph = G.remove_vertex graph vertex in
+            let do_pair (todo, graph) ((edge_ab : G.edge), (edge_bc : G.edge)) =
+              let ((keep_src, _, keep_dst) as keep_edge) = merge_edges edge_ab edge_bc in
+              if Vertex.equal keep_src keep_dst then
+                L.die InternalError "OOPS: I don't work with loops." ;
+              (* (B) add new edges *)
+              let graph = G.add_edge_e graph keep_edge in
+              (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
+               * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
+               * the earlier claim that at most m insertions happen in the main loop. However,
+               * this claim is invalidated if one of the [edge_ab]/[edge_bc] edges gets re-added
+               * to the graph in step (B) above, which may happen if there is an (isolated) loop
+               * in the graph. *)
+              let todo = if is_interesting_vertex keep_src then todo else Set.add todo keep_src in
+              let todo = if is_interesting_vertex keep_dst then todo else Set.add todo keep_dst in
+              (todo, graph)
+            in
+            let todo, graph = List.fold ~init:(todo, graph) ~f:do_pair pairs in
+            simplify todo graph
+          else simplify todo graph
+    in
+    simplify todo graph
+
+
+  (** Given a graph, computes tito_arguments, and makes a summary. *)
+  let make shapes proc_desc has_unsupported_features graph =
+    (* We need to compute the Tito arguments before reducing the graph to make use of information
+       hold by temporary nodes (eg. if they're abstract or not). *)
+    let tito_arguments = extract_tito shapes proc_desc graph in
+    let graph =
+      if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
+    in
+    {graph; tito_arguments; has_unsupported_features}
+end
+
 module Out = struct
   module Json = struct
     type location_id = int64 [@@deriving yojson_of]
@@ -637,7 +1064,7 @@ module Out = struct
     edge_id
 
 
-  let report_summary json_dedup_cache channel graph has_unsupported_features proc_desc =
+  let report_summary_fields json_dedup_cache channel graph has_unsupported_features proc_desc =
     let procname = Procdesc.get_proc_name proc_desc in
     let fun_id = Id.of_procname procname in
     write_json json_dedup_cache channel Function fun_id
@@ -647,439 +1074,12 @@ module Out = struct
     let record_edge edge = ignore (save_edge json_dedup_cache channel proc_desc edge) in
     G.iter_edges_e record_edge graph ;
     Out_channel.flush channel
-end
 
-(** Helper function. *)
-let get_formals proc_desc : Var.t list =
-  let f (pvar, _typ) = Var.of_pvar pvar in
-  List.map ~f (Procdesc.get_pvar_formals proc_desc)
 
-
-(** Helper function. *)
-let get_captured proc_desc : Var.t list =
-  let f {CapturedVar.pvar} = Var.of_pvar pvar in
-  List.map ~f (Procdesc.get_captured proc_desc)
-
-
-module Tito : sig
-  (** TITO stands for "taint-in taint-out". In this context a tito flow is a data path from an
-      argument field to a field of the return node, without going through call edges; more
-      precisely, [i#foo#bar] is a tito path to [ret#baz] if there is a path from
-      [Argument (i, [foo, bar])] to [Return baz] not going through [ArgumentOf _] nodes.
-
-      As the abstraction mandates, fields are to be considered in a prefix sense: a path from
-      [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar].
-
-      A path from [i#foo] to [ret#bar] can be marked as "shape-preserving", meaning that the
-      argument field and the return field have the same shape AND that the data flows induced by the
-      function call will go from each field of the argument into the same field of the return. This
-      allows for more precise analysis of functions such as `id(X) -> X` when called on structured
-      concrete arguments.
-
-      Note: shape preservation indicates direct copying, thus a return field cannot be
-      "shape-preserved" from more than one parameter field. The implementation will try to detect
-      this and raise, but that should be considered a programming error. *)
-
-  (** Sets of tito flows *)
-  type t
-
-  val pp : t Fmt.t
-
-  val empty : t
-  (** Empty tito: no argument field can flow into any return field *)
-
-  val full : arity:int -> t
-  (** A full tito has paths from every argument field to every return field. Due to the prefix
-      abstraction, it is equivalent to having a path from every [Argument (i, [])] to [Return []].*)
-
-  val add :
-       arg_index:int
-    -> arg_field_path:FieldPath.t
-    -> ret_field_path:FieldPath.t
-    -> shape_is_preserved:bool
-    -> t
-    -> t
-
-  val fold :
-       t
-    -> init:'accum
-    -> f:
-         (   arg_index:int
-          -> arg_field_path:FieldPath.t
-          -> ret_field_path:FieldPath.t
-          -> shape_is_preserved:bool
-          -> 'accum
-          -> 'accum )
-    -> 'accum
-end = struct
-  (* Utility pretty printers *)
-
-  let pp_arg_index = Fmt.fmt "$arg%d"
-
-  let pp_ret = Fmt.any "$ret"
-
-  module ArgPathSet = struct
-    module FieldPathSet = struct
-      (* Sets of field paths, that shall be associated to an argument index *)
-
-      module M = Set.Make_tree (FieldPath)
-      include M
-
-      let pp ~arg_index =
-        (* Prints: $argN#foo#bar $argN#other#field *)
-        let pp_field_path = Fmt.(const pp_arg_index arg_index ++ FieldPath.pp) in
-        IFmt.Labelled.iter ~sep:Fmt.sp M.iter pp_field_path
-    end
-
-    (* Marshallable maps from integer indices. Note: using an array instead of Map could improve the
-       performance (arguments indices are small and contiguous). *)
-    module IntMap = Map.Make_tree (Int)
-
-    (* An ArgPathSet is a set of field paths for each argument index *)
-    type t = FieldPathSet.t IntMap.t
-
-    let pp : t Fmt.t =
-      (* Prints: $arg1#arg#field $arg1#other $arg2#foo#bar $arg3 *)
-      let pp_binding fmt (arg_index, path_set) = FieldPathSet.pp ~arg_index fmt path_set in
-      IFmt.Labelled.iter_bindings ~sep:Fmt.sp IntMap.iteri pp_binding
-
-
-    let singleton ~arg_index ~arg_field_path =
-      IntMap.singleton arg_index (FieldPathSet.singleton arg_field_path)
-
-
-    let full ~arity =
-      IntMap.of_sequence_exn
-      @@ Sequence.init arity ~f:(fun arg_index -> (arg_index, FieldPathSet.singleton []))
-
-
-    let add t ~arg_index ~arg_field_path =
-      IntMap.update t arg_index ~f:(function
-        | None ->
-            FieldPathSet.singleton arg_field_path
-        | Some field_path_set ->
-            FieldPathSet.add field_path_set arg_field_path )
-
-
-    let fold t ~f ~init =
-      IntMap.fold
-        ~f:(fun ~key:arg_index ~data:field_path_set acc ->
-          FieldPathSet.fold
-            ~f:(fun acc arg_field_path -> f ~arg_index ~arg_field_path acc)
-            ~init:acc field_path_set )
-        ~init t
-  end
-
-  module Sources = struct
-    (** Data flow sources to be associated with return fields. *)
-
-    (** A source is either a single shape-preserved argument index, or a "shape mixed" set of those.
-
-        Remark: a shape-mixed set can be a singleton (eg. for unknown/recursive one-parameter
-        functions -- such as [mix(X) -> mix(X).]). Empty "shape-mixed" sets pose no theoretical
-        issue -- but we just don't generate them. *)
-    type t =
-      | Shape_preserved of {arg_index: int; arg_field_path: FieldPath.t}
-      | Shape_mixed of ArgPathSet.t
-
-    let pp fmt source =
-      match source with
-      | Shape_preserved {arg_index; arg_field_path} ->
-          Fmt.pf fmt "=%a%a" pp_arg_index arg_index FieldPath.pp arg_field_path
-      | Shape_mixed arg_path_set ->
-          Fmt.pf fmt "{%a}" ArgPathSet.pp arg_path_set
-
-
-    let singleton ~arg_index ~arg_field_path ~shape_is_preserved =
-      if shape_is_preserved then Shape_preserved {arg_index; arg_field_path}
-      else Shape_mixed (ArgPathSet.singleton ~arg_index ~arg_field_path)
-
-
-    let full ~arity = Shape_mixed (ArgPathSet.full ~arity)
-
-    let add source ~arg_index ~arg_field_path ~shape_is_preserved =
-      match source with
-      | Shape_mixed arg_path_set when not shape_is_preserved ->
-          Shape_mixed (ArgPathSet.add arg_path_set ~arg_index ~arg_field_path)
-      | Shape_mixed _ | Shape_preserved _ ->
-          L.die InternalError
-            "Lineage invariant broken: formal return shape cannot be preserved from several \
-             sources."
-
-
-    let fold source ~init ~f =
-      match source with
-      | Shape_preserved {arg_index; arg_field_path} ->
-          f ~arg_index ~arg_field_path ~shape_is_preserved:true init
-      | Shape_mixed arg_path_set ->
-          ArgPathSet.fold
-            ~f:(fun ~arg_index ~arg_field_path acc ->
-              f ~arg_index ~arg_field_path ~shape_is_preserved:false acc )
-            ~init arg_path_set
-  end
-
-  (* Marshallable maps from formal return field paths *)
-  module RetPathMap = Map.Make_tree (FieldPath)
-
-  (** A [Tito.t] is a collection, for every return field path, of its TITO sources. Note: for any
-      [fields] path, if [i#fields] is a Tito source for [ret#fields'], then every [i#fields#foo]
-      subfield of it should be considered as also being one (even if not explicitly present in the
-      map value). *)
-  type t = Sources.t RetPathMap.t
-
-  let pp =
-    (* Prints: ($ret#field: $arg0#foo) ($ret#other:$arg2 $arg3#bar) *)
-    IFmt.Labelled.iter_bindings ~sep:Fmt.comma RetPathMap.iteri
-      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(pp_ret ++ FieldPath.pp) Sources.pp)
-
-
-  let empty = RetPathMap.empty
-
-  let add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved tito =
-    RetPathMap.update tito ret_field_path ~f:(function
-      | None ->
-          (* No TITO arg for this ret field yet. We create one. *)
-          Sources.singleton ~arg_index ~arg_field_path ~shape_is_preserved
-      | Some source ->
-          Sources.add source ~arg_index ~arg_field_path ~shape_is_preserved )
-
-
-  let fold tito ~init ~f =
-    RetPathMap.fold tito ~init ~f:(fun ~key:ret_field_path ~data:arg_path_set acc ->
-        Sources.fold
-          ~f:(fun ~arg_index ~arg_field_path ~shape_is_preserved acc ->
-            f ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc )
-          ~init:acc arg_path_set )
-
-
-  let full ~arity = RetPathMap.singleton [] (Sources.full ~arity)
-end
-
-module Summary = struct
-  type tito_arguments = Tito.t
-
-  type t = {graph: G.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
-
-  let pp_tito_arguments fmt arguments =
-    Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
-
-
-  let pp fmt {graph; tito_arguments} =
-    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments G.pp
-      graph
-
-
-  let extract_tito shapes proc_desc (graph : G.t) =
-    (* - Construct an adjacency list representation of the reversed graph.
-       - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
-         being targets of edges that have this effect. *)
-    let shape_mixing_nodes =
-      let add_dst_if_shape_mixing ((_, _, dst) as edge) set =
-        if G.preserves_shape edge then set else Set.add set dst
-      in
-      G.fold_edges_e add_dst_if_shape_mixing graph Vertex.Set.empty
-    in
-    (* Do a DFS, to see which arguments are reachable from a return field path. *)
-    let rec dfs (shape_is_preserved, seen) node =
-      if not (G.mem_vertex graph node) then (
-        L.internal_error "Mysteriously missing node from lineage." ;
-        (shape_is_preserved, seen) )
-      else if Set.mem seen node then (shape_is_preserved, seen)
-      else
-        let seen = Set.add seen node in
-        let incoming = G.pred_e graph node in
-        let parents =
-          List.filter_map
-            ~f:(fun (src, {Edge.kind; _}, _) ->
-              match kind with Call _ | Return _ -> None | _ -> Some src )
-            incoming
-        in
-        let shape_is_preserved =
-          (* That return field path is shape-preserved if it is only reachable by a direct path
-             through shape-preserving one-source nodes. *)
-          shape_is_preserved
-          && (not (Set.mem shape_mixing_nodes node))
-          &&
-          match parents with
-          | [] | [_] ->
-              true
-          | _ ->
-              (* TODO T154077173: `ite(true, X, Y) -> X`: X and Y are shape-preserved, but support of
-                 ite(_, {a, b}, 42) may be not trivial due to not-same-shaped parallel writes. *)
-              false
-        in
-        List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
-    in
-    let collect_reachable return_field_path =
-      dfs (true, Vertex.Set.empty) (Vertex.Return return_field_path)
-    in
-    (* Collect reachable arguments from a Return field path. *)
-    let collect_tito tito ret_field_path =
-      let shape_is_preserved, reachable = collect_reachable ret_field_path in
-      Set.fold reachable ~init:tito ~f:(fun acc (node : G.vertex) ->
-          match node with
-          | Argument (arg_index, arg_field_path) ->
-              Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
-          | _ ->
-              acc )
-    in
-    let ret_var_path = VarPath.pvar (Procdesc.get_ret_var proc_desc) in
-    let return_field_paths =
-      Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell ->
-          Cell.field_path cell :: acc )
-    in
-    List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
-
-
-  (** Reduces the size of the graph by possibly some vertices and some edges. Consider the following
-      pattern: A -1-> B -2-> C. (Here, A, B and C are vertices; 1 and 2 are edges.) The basic trick
-      is to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
-      "uninteresting". Vertex is uninteresting when it corresponds to a temporary variable
-      introduced by the frontend; Edges are uninteresting when they are of kind [Direct].
-
-      The basic trick is slightly generalized below: B may have 1 edge on one side, but 0..oo on the
-      other side. This allows considerably more reduction in size.
-
-      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting vertex
-      is removed from the graph (but this happens only for vertex that is not connected in lineage
-      to other interesting vertex); and (b) it is possible that the number of vertices is reduced
-      more than the number of edges (otherwise, each transform step would reduce both the number of
-      vertices and the number of edges by exactly 1, so the reduction would be equal to the number
-      of transform steps applied).
-
-      Note1: The implementation assumes no loops; otherwise, it may not terminate. (This is easy to
-      change, but there should be no loops in lineage anyway.)
-
-      Note2: The algorithm guarantees that the number of edges does not increase, and that the
-      number of vertices does not increase. *)
-  let remove_temporaries proc_desc graph =
-    (* A check for vertex interestingness, used in the graph simplification that follows. *)
-    let special_variables =
-      let formals = get_formals proc_desc in
-      let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
-      Var.Set.of_list (ret_var :: formals)
-    in
-    let is_interesting_vertex (vertex : G.vertex) =
-      match vertex with
-      | Local (Cell cell, _node) ->
-          Cell.var_appears_in_source_code cell
-          && not (Var.Set.mem (Cell.var cell) special_variables)
-      | Argument _ | Captured _ | Return _ | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
-          true
-      | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
-          true
-      | Function _ | Self ->
-          true
-    in
-    let is_interesting_edge ((src, {kind; _}, dst) : G.edge) =
-      match kind with
-      | Direct -> (
-        match (src, dst) with
-        | Argument (_, _ :: _), _ | _, Return (_ :: _) ->
-            (* The edge will have non-empty injection/projection metadata. *)
-            true
-        | _ ->
-            false )
-      | Builtin ->
-          (* Suppressed builtins are considered as direct edges for being simplification
-             candidates. *)
-          false
-      | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
-          true
-    in
-    let merge_edges (src_ab, {Edge.kind= kind_ab; node= node_ab}, _)
-        (_, {Edge.kind= kind_bc; node= node_bc}, dst_bc) : G.edge =
-      (* Merge both edges together, keeping source of the first one, the target of the second one,
-         and the kind of node of the most interesting one. The interesting order is Direct < Builtin
-         < anything. *)
-      let kind, node =
-        (* Both nodes should map to the same location, so we could just use the first one, but we
-           keep the one corresponding to the kind for good measure and least surprise. *)
-        match (kind_ab, kind_bc) with
-        | Direct, _ ->
-            (kind_bc, node_bc)
-        | _, Direct ->
-            (kind_ab, node_ab)
-        | Builtin, _ (* not Direct *) ->
-            (kind_bc, node_bc)
-        | _ (* not Direct *), Builtin ->
-            (kind_ab, node_ab)
-        | _ ->
-            L.die InternalError "I can't merge two interesting edges together"
-      in
-      (src_ab, {Edge.kind; node}, dst_bc)
-    in
-    (* The set [todo] contains vertices considered for removal. We initialize this set with all
-     * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
-     * some deterministic but unspecified order) and checks if it meets a condition for removal.
-     * If so, it removes it from the graph, and puts its former uninteresting neighbours back in
-     * [todo], so that their condition for removal will be re-examined. (A note on termination:
-     * Let m be the number of edges between uninteresting nodes; let n be the number of
-     * uninteresting nodes. There are at most m+n insertions into the set [todo]: n when [todo]
-     * is initialized, and at most m while in the main loop. And each iteration of the main loop
-     * does one deletion from the set [todo].) *)
-    let todo =
-      (* Initialise todo with the set of non interesting vertices *)
-      G.fold_vertex
-        (fun vertex set -> if is_interesting_vertex vertex then set else Set.add set vertex)
-        graph Vertex.Set.empty
-    in
-    let rec simplify todo graph =
-      match Set.choose todo with
-      | None ->
-          graph
-      | Some vertex ->
-          if is_interesting_vertex vertex then L.die InternalError "Shouldn't happen" ;
-          let todo = Set.remove todo vertex in
-          let before = G.pred_e graph vertex in
-          let after = G.succ_e graph vertex in
-          let before_interesting = List.exists ~f:is_interesting_edge before in
-          let after_interesting = List.exists ~f:is_interesting_edge after in
-          let short list = match list with [] | [_] -> true | _ -> false in
-          let before_short = short before in
-          let after_short = short after in
-          if (before_short || after_short) && not (before_interesting && after_interesting) then
-            let pairs = List.cartesian_product before after in
-            (* (A) remove old edges *)
-            let graph = G.remove_vertex graph vertex in
-            let do_pair (todo, graph) ((edge_ab : G.edge), (edge_bc : G.edge)) =
-              let ((keep_src, _, keep_dst) as keep_edge) = merge_edges edge_ab edge_bc in
-              if Vertex.equal keep_src keep_dst then
-                L.die InternalError "OOPS: I don't work with loops." ;
-              (* (B) add new edges *)
-              let graph = G.add_edge_e graph keep_edge in
-              (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
-               * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
-               * the earlier claim that at most m insertions happen in the main loop. However,
-               * this claim is invalidated if one of the [edge_ab]/[edge_bc] edges gets re-added
-               * to the graph in step (B) above, which may happen if there is an (isolated) loop
-               * in the graph. *)
-              let todo = if is_interesting_vertex keep_src then todo else Set.add todo keep_src in
-              let todo = if is_interesting_vertex keep_dst then todo else Set.add todo keep_dst in
-              (todo, graph)
-            in
-            let todo, graph = List.fold ~init:(todo, graph) ~f:do_pair pairs in
-            simplify todo graph
-          else simplify todo graph
-    in
-    simplify todo graph
-
-
-  (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let make shapes proc_desc has_unsupported_features graph =
-    (* We need to compute the Tito arguments before reducing the graph to make use of information
-       hold by temporary nodes (eg. if they're abstract or not). *)
-    let tito_arguments = extract_tito shapes proc_desc graph in
-    let graph =
-      if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
-    in
-    {graph; tito_arguments; has_unsupported_features}
-
-
-  let report {graph; has_unsupported_features} proc_desc =
-    let channel = Out.get_pid_channel () in
-    let json_dedup_cache = Out.JsonCacheKey.Hash_set.create () in
-    Out.report_summary json_dedup_cache channel graph has_unsupported_features proc_desc
+  let report_summary {Summary.graph; has_unsupported_features} proc_desc =
+    let channel = get_pid_channel () in
+    let json_dedup_cache = JsonCacheKey.Hash_set.create () in
+    report_summary_fields json_dedup_cache channel graph has_unsupported_features proc_desc
 end
 
 (** A summary is computed by taking the union of all partial graphs present in the final invariant
@@ -2031,7 +2031,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make shapes proc_desc exit_has_unsupported_features graph in
-  if Config.lineage_json_report then Summary.report summary proc_desc ;
+  if Config.lineage_json_report then Out.report_summary summary proc_desc ;
   L.debug Analysis Verbose "@[Lineage summary for %a:@;@[%a@]@]@;" Procname.pp
     (Procdesc.get_proc_name proc_desc)
     Summary.pp summary ;
