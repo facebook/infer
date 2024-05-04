@@ -301,6 +301,8 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
+val pulse_cannot_instantiate_abstract_class : t [@@warning "-unused-value-declaration"]
+
 val pulse_dict_missing_key : t
 
 val pulse_transitive_access : t

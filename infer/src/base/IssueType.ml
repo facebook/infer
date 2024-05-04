@@ -816,6 +816,12 @@ let premature_nil_termination =
     ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
+let pulse_cannot_instantiate_abstract_class =
+  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS"
+    Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS.md"]
+
+
 let pulse_dict_missing_key =
   register ~category:No_category ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_DICT_MISSING_KEY.md"]
