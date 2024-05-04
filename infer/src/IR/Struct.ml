@@ -13,7 +13,7 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal, hash
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}, normalize]
 
-type hack_class_kind = Class | Interface | Trait
+type hack_class_kind = Class | AbstractClass | Interface | Trait
 [@@deriving equal, hash, show {with_path= false}, normalize]
 
 module ClassInfo = struct
@@ -402,7 +402,15 @@ let is_not_java_interface = function
 
 
 let is_hack_class {class_info} =
-  match (class_info : ClassInfo.t) with HackClassInfo Class -> true | _ -> false
+  match (class_info : ClassInfo.t) with
+  | HackClassInfo Class | HackClassInfo AbstractClass ->
+      true
+  | _ ->
+      false
+
+
+let is_hack_abstract_class {class_info} =
+  match (class_info : ClassInfo.t) with HackClassInfo AbstractClass -> true | _ -> false
 
 
 let is_hack_interface {class_info} =

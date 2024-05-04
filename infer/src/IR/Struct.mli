@@ -13,7 +13,7 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
-type hack_class_kind = Class | Interface | Trait
+type hack_class_kind = Class | AbstractClass | Interface | Trait
 
 module ClassInfo : sig
   type t =
@@ -94,6 +94,8 @@ val is_not_java_interface : t -> bool
 val get_source_file : t -> SourceFile.t option
 
 val is_hack_class : t -> bool
+
+val is_hack_abstract_class : t -> bool [@@warning "-unused-value-declaration"]
 
 val is_hack_interface : t -> bool
 

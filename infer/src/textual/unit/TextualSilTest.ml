@@ -130,6 +130,43 @@ let%expect_test "final annotation" =
       source_file: dummy.sil |}]
 
 
+let%expect_test "abstract class" =
+  let source =
+    {|
+          .source_language = "hack"
+          type Foo .abstract {}
+          type Bar {}
+          |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  F.printf "%a@\n" Tenv.pp tenv ;
+  [%expect
+    {|
+      hack Foo
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      class_info: {HackClassInfo (AbstractClass)}
+      dummy: false
+      source_file: dummy.sil
+      hack Bar
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      class_info: {HackClassInfo (Class)}
+      dummy: false
+      source_file: dummy.sil |}]
+
+
 let%expect_test "unknown formal calls" =
   let source =
     {|

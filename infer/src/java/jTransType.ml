@@ -311,7 +311,7 @@ and get_class_struct_typ =
                   let super_classname = typename_of_classname super_cn in
                   super_classname :: interface_list
             in
-            let java_class_kind =
+            let java_class_kind : Struct.java_class_kind =
               if jclass.Javalib.c_abstract then Struct.AbstractClass else Struct.NormalClass
             in
             make_struct program tenv node supers ~fields ~statics annots ~java_class_kind name )

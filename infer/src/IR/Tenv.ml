@@ -358,7 +358,7 @@ module MethodInfo = struct
        This function is to compute the correct arity offset we should apply. *)
     let get_kind ~last_class_visited class_name (kind : Struct.hack_class_kind) =
       match kind with
-      | Class | Interface ->
+      | Class | AbstractClass | Interface ->
           IsClass
       | Trait -> (
         match last_class_visited with
