@@ -82,6 +82,25 @@ class CustomAnnotations {
     sink1();
   }
 
+  @UserDefinedSink1
+  @UserDefinedSanitizer
+  void sinkAndSanitizer1() {}
+
+  // Order of annotations should not matter
+  @UserDefinedSanitizer
+  @UserDefinedSink1
+  void sinkAndSanitizer2() {}
+
+  @UserDefinedSource1
+  void sourceWithSinkAndSanitizer1Ok() {
+    sinkAndSanitizer1();
+  }
+
+  @UserDefinedSource1
+  void sourceWithSinkAndSanitizer2Ok() {
+    sinkAndSanitizer2();
+  }
+
   interface Callback {
     public void call();
   }
