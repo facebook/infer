@@ -228,14 +228,11 @@ class CustomAnnotations {
       interfaceSink();
     }
 
-    void notSink() {}
+    // Inheriting annotation from interface is not disabled so this is a sink
+    void sinkBecauseOfTheInterface() {}
 
-    // Currently annotation reachability treats 'notSink' as if it was annotated because
-    // SourceClass implements SinkInterface which is annotated. Marking as false positive
-    // because we would like to have an option where only overridden methods are treated
-    // as annotated.
-    void source2Ok_FP() {
-      notSink();
+    void source2Bad() {
+      sinkBecauseOfTheInterface();
     }
   }
 }

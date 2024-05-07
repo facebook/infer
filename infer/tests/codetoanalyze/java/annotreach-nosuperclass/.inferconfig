@@ -1,0 +1,13 @@
+{
+  "force-delete-results-dir": true,
+  "annotation-reachability-expensive": false,
+  "annotation-reachability-no-allocation": false,
+
+  "annotation-reachability-custom-pairs": [
+    {
+      "sources": ["UserDefinedSource"],
+      "sinks": ["UserDefinedSink"]
+    }
+  ],
+  "annotation-reachability-apply-superclass-annotations": false
+}

@@ -1,0 +1,1 @@
+codetoanalyze/java/annotreach-nosuperclass/NoSuperClass.java, codetoanalyze.java.checkers.NoSuperClass$SourceClass.source1Bad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []

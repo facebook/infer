@@ -236,6 +236,7 @@ endif
 
 DIRECT_TESTS += \
   java_annotreach \
+  java_annotreach-nosuperclass \
   java_biabduction \
   java_bufferoverrun \
   java_checkers \
