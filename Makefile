@@ -14,7 +14,6 @@ MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   annotation-reachability-sources-override \
-  assembly \
   backtrack_level \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
@@ -48,15 +47,16 @@ BUILD_SYSTEMS_TESTS += \
   incremental_analysis_invalidate_only \
   incremental_analysis_remove_file \
 
+ifeq ($(BUILD_CPU),x86_64)
+BUILD_SYSTEM_TESTS += assembly
+endif
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
 BUILD_SYSTEMS_TESTS += export_changed_functions
 endif
 
 DIRECT_TESTS += \
-  c_biabduction \
   c_bufferoverrun \
-  c_frontend \
   c_performance \
   c_pulse \
   c_purity \
@@ -82,6 +82,13 @@ DIRECT_TESTS += \
   cpp_racerd \
   cpp_siof \
   cpp_starvation \
+
+ifeq ($(BUILD_CPU),x86_64)
+DIRECT_TESTS += \
+  c_biabduction \
+  c_frontend \
+
+endif
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \

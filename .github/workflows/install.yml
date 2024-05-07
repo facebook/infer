@@ -77,7 +77,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '11'
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -124,9 +124,6 @@ jobs:
       - if: runner.os == 'macOS'
         run: ./build-infer.sh --yes --user-opam-switch -- --disable-python-analyzers
 
-      - run: make install BUILD_MODE=opt
-        if: runner.os == 'macOS'
-
       - name: Install ocamlformat
         run: |
           opam install --deps-only --locked opam/ocamlformat.opam.locked
@@ -139,8 +136,7 @@ jobs:
       - run: |
           sudo make install BUILD_MODE=opt
           # restore permissions after root build
-          sudo chown $USER: -R .
-        if: runner.os == 'Linux'
+          sudo chown -R $USER: .
 
       - name: Build release tarball
         id: build-release
