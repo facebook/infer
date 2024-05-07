@@ -82,6 +82,15 @@ class CustomAnnotations {
     sink1();
   }
 
+  void callsSink() {
+    sink1();
+  }
+
+  @UserDefinedSource1
+  void sourceTransitiveCallBad() {
+    callsSink();
+  }
+
   @UserDefinedSink1
   @UserDefinedSanitizer
   void sinkAndSanitizer1() {}
