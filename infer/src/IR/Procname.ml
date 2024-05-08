@@ -1366,6 +1366,10 @@ module Hashable = struct
   let sexp_of_t t = Sexp.of_string (to_string t)
 end
 
+include Comparable.Make (struct
+  type nonrec t = t [@@deriving compare, sexp]
+end)
+
 module Hash = Hashtbl.Make (Hashable)
 module LRUHash = LRUHashtbl.Make (Hashable)
 module HashQueue = Hash_queue.Make (Hashable)

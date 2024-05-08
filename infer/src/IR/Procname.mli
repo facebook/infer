@@ -218,8 +218,6 @@ type t =
   | Python of Python.t
 [@@deriving compare, yojson_of, sexp, hash, normalize]
 
-val equal : t -> t -> bool
-
 val compare_name : t -> t -> int
 (** Similar to compare, but compares only names, except parameter types and template arguments. *)
 
@@ -273,6 +271,8 @@ val is_std_move : t -> bool
 
 val is_shared_ptr_observer : t -> bool
 (** Check if it is C++ shared pointer observer, e.g. [std::shared_ptr::operator*] *)
+
+include Comparable.S with type t := t
 
 (** Hash tables with proc names as keys. *)
 module Hash : Caml.Hashtbl.S with type key = t

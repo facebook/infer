@@ -484,6 +484,10 @@ val keep_going : bool
 
 val kotlin_capture : bool
 
+val lineage_source : string option
+
+val lineage_sink : string option
+
 val lineage_dedup : bool
 
 val lineage_field_depth : int

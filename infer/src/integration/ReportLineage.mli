@@ -7,4 +7,6 @@
 
 open! IStd
 
-val report : unit -> unit
+val report_json : unit -> unit
+
+val report_taint : lineage_source:string -> lineage_sink:string -> unit

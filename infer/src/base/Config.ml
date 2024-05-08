@@ -2007,6 +2007,18 @@ and kotlin_capture =
     "Enable Kotlin capture (experimental, do not use)."
 
 
+and lineage_source =
+  CLOpt.mk_string_opt ~long:"lineage-source"
+    "[EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding, format \
+     [module:]function/arity${ret,argN}"
+
+
+and lineage_sink =
+  CLOpt.mk_string_opt ~long:"lineage-sink"
+    "[EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding, format \
+     [module:]function/arity${ret,argN}"
+
+
 and lineage_dedup =
   CLOpt.mk_bool ~deprecated:["-simple-lineage-dedup"] ~long:"lineage-dedup" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
@@ -4249,6 +4261,10 @@ and jobs = Option.value !jobs ~default:(min !max_jobs Utils.cpus)
 and keep_going = !keep_going
 
 and kotlin_capture = !kotlin_capture
+
+and lineage_source = !lineage_source
+
+and lineage_sink = !lineage_sink
 
 and lineage_dedup = !lineage_dedup
 

@@ -1,0 +1,73 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name Backend_test)
+ (inline_tests)
+ (flags
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   OpenSource
+   -open
+   ATDGenerated
+   -open
+   IBase
+   -open
+   IR
+   -open
+   Textuallib
+   -open
+   Absint
+   -open
+   Biabduction
+   -open
+   BO
+   -open
+   Pulselib
+   -open
+   Checkers
+   -open
+   Costlib
+   -open
+   Quandary
+   -open
+   Topllib
+   -open
+   Concurrency
+   -open
+   Labs
+   -open
+   Datalog
+   -open
+   Backend))
+ (libraries
+  fmt
+  core
+  memtrace
+  ocamlgraph
+  IStdlib
+  ATDGenerated
+  IBase
+  IR
+  Absint
+  Backend
+  Biabduction
+  BO
+  Checkers
+  Costlib
+  Quandary
+  Topllib
+  Concurrency
+  Labs
+  Datalog
+  Textuallib)
+ (preprocess
+  (pps ppx_expect)))

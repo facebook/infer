@@ -2867,6 +2867,20 @@ INTERNAL OPTIONS
            NOTE: This is used internally by other checkers and shouldn't
            need to be activated directly. (Conversely: --no-lineage-shape)
 
+       --lineage-sink string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
+           format [module:]function/arity${ret,argN}
+
+       --lineage-sink-reset
+           Cancel the effect of --lineage-sink.
+
+       --lineage-source string
+           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
+           format [module:]function/arity${ret,argN}
+
+       --lineage-source-reset
+           Cancel the effect of --lineage-source.
+
        --liveness-block-list-var-regex-reset
            Cancel the effect of --liveness-block-list-var-regex.
 

@@ -6,14 +6,44 @@
  *)
 
 open! IStd
+open LineageShape.StdModules
+
+module PPNode : sig
+  type t
+end
+
+module Local : sig
+  type t
+end
+
+module Vertex : sig
+  type t =
+    | Local of (Local.t * PPNode.t)
+    | Argument of int * FieldPath.t
+    | ArgumentOf of Procname.t * int
+    | Captured of int
+    | CapturedBy of Procname.t * int
+    | Return of FieldPath.t
+    | ReturnOf of Procname.t
+    | Self
+    | Function of Procname.t
+
+  val pp : t Fmt.t [@@warning "-unused-value-declaration"]
+end
+
+module G : Graph.Sig.P with type V.t = Vertex.t
 
 module Summary : sig
   type t
 
   val pp : Format.formatter -> t -> unit
+
+  val graph : t -> G.t
 end
 
 module Out : sig
+  val report_graph : Out_channel.t -> Procdesc.t -> G.t -> unit
+
   val report_summary : Procdesc.t -> Summary.t -> unit
 end
 

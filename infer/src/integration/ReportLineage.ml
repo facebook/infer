@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-let report {Summary.payloads= {lineage}; proc_name} =
+let report_proc_json {Summary.payloads= {lineage}; proc_name} =
   match Lazy.force lineage with
   | None ->
       L.debug Report Verbose "No summary for %a@\n" Procname.pp proc_name
@@ -24,15 +24,18 @@ let worker source_file =
   List.iter
     ~f:(fun proc_name ->
       let summary = Summary.OnDisk.get ~lazy_payloads:true proc_name in
-      Option.iter summary ~f:report )
+      Option.iter summary ~f:report_proc_json )
     proc_names ;
   None
 
 
-let report () =
+let report_json () =
   let tasks () =
     ProcessPool.TaskGenerator.of_list (SourceFiles.get_all ~filter:(fun _ -> true) ())
   in
   Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:worker ~child_epilogue:ignore
     tasks
   |> Tasks.Runner.run |> ignore
+
+
+let report_taint ~lineage_source ~lineage_sink = LineageTaint.report ~lineage_source ~lineage_sink

@@ -410,6 +410,7 @@ module Summary = struct
   type tito_arguments = Tito.t
 
   type t = {graph: G.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
+  [@@deriving fields]
 
   let pp_tito_arguments fmt arguments =
     Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
@@ -1084,6 +1085,8 @@ module Out = struct
     write_graph json_dedup_cache outchan proc_desc graph ;
     Out_channel.flush outchan
 
+
+  let report_graph outchan proc_desc graph = with_dedup_cache write_graph outchan proc_desc graph
 
   let report_summary proc_desc summary =
     let outchan = get_pid_channel () in
