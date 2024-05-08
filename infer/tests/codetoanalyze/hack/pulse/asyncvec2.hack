@@ -41,9 +41,7 @@ async function loopyVecOk(): Awaitable<void> {
   }
 }
 
-// this is currently a false negative but I think we should be able to flag it
-// TODO: investigate translation of foreach and see what's happening here
-async function loopyVecBadFN(): Awaitable<void> {
+async function loopyVecBad(): Awaitable<void> {
   $v = vec[genInt2(), genInt2(), genInt2()];
   foreach ($v as $index => $elt) {
     if ($index === 2) {

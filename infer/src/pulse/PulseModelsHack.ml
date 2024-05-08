@@ -1215,7 +1215,7 @@ let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
        ~default:(fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
 
 
-let hhbc_iter_next iter keyaddr eltaddr : model =
+let hhbc_iter_next iter keyaddr eltaddr _base : model =
   let open DSL.Syntax in
   start_model
   @@ dynamic_dispatch iter
@@ -1466,5 +1466,5 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-    $--> hhbc_iter_next ]
+    $+ capt_arg_payload $--> hhbc_iter_next ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
