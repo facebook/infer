@@ -110,7 +110,7 @@ let collect_reachable caller_table procname node =
             ~init:init_reachable_subgraph
         in
         let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
-        let todo' = interproc_todo @ todo_next in
+        let todo' = List.rev_append interproc_todo todo_next in
         aux todo' acc_reachable_graphs'
   in
   aux [(procname, node)] (Map.empty (module Procname))
@@ -190,7 +190,7 @@ let collect_coreachable caller_table procname node reachable_graphs =
             collect_coreachable_in_procedure ~init:init_coreachable_subgraph caller_table procname
               reachable_graph node
           in
-          let todo' = interproc_todo @ todo_next in
+          let todo' = List.rev_append interproc_todo todo_next in
           aux todo' (Map.set acc_graphs ~key:procname ~data:coreachable_subgraph) )
   in
   aux [(procname, node)] (Map.empty (module Procname))
