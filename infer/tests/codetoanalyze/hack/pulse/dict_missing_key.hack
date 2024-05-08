@@ -146,3 +146,39 @@ function container_param(dict<string, int> $p): int {
 function call_container_param_ok(): int {
   return container_param(dict[]);
 }
+
+class DictField {
+  public dict<string, int> $f = dict[];
+
+  public function read_dict_hi(): int {
+    return $this->f['hi'];
+  }
+
+  public function call_read_dict_hi_ok(): int {
+    $this->f = dict['hi' => 42];
+    return $this->read_dict_hi();
+  }
+
+  public function call_read_dict_hi2_ok(): int {
+    $this->f['hi'] = 42;
+    return $this->read_dict_hi();
+  }
+
+  public function call_read_dict_hi_bad(): int {
+    $this->f = dict['bye' => 42];
+    return $this->read_dict_hi();
+  }
+}
+
+class NestedDictField {
+  public function __construct(public DictField $g) {}
+
+  public function read_dict_hi(): int {
+    return $this->g->f['hi'];
+  }
+
+  public function call_read_dict_hi_bad(): int {
+    $this->g->f = dict['bye' => 42];
+    return $this->read_dict_hi();
+  }
+}
