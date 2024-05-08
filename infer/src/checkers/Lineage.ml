@@ -174,8 +174,11 @@ module G = struct
   include Impl
 
   let pp fmt graph =
-    Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (nb_edges graph)
-      (nb_vertex graph) (Fmt.iter iter_edges_e Edge.pp_e) graph
+    Format.fprintf fmt
+      "@[<v 2>LineageGraph:@ @[<hov2>%d vertices@ @[%a@]@]@;@[<v2>%d edges@ @[%a@]@]@]@;"
+      (nb_vertex graph)
+      (Fmt.iter ~sep:Fmt.sp iter_vertex Vertex.pp)
+      graph (nb_edges graph) (Fmt.iter iter_edges_e Edge.pp_e) graph
 
 
   let preserves_shape ((src, {kind; _}, dst) : E.t) =
