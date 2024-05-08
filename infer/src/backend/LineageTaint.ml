@@ -10,7 +10,8 @@ module L = Logging
 
 let pp_caller_table =
   IFmt.Labelled.iter_bindings ~sep:Fmt.semi Hashtbl.iteri
-    (Fmt.pair ~sep:IFmt.colon_sp Procname.pp (Fmt.brackets @@ Fmt.list ~sep:Fmt.sp Procname.pp))
+    (Fmt.pair ~sep:IFmt.colon_sp Procname.pp_verbose
+       (Fmt.brackets @@ Fmt.list ~sep:Fmt.sp Procname.pp_verbose) )
 
 
 (** Returns a hash table associating its callers to each known procname. *)
@@ -83,34 +84,34 @@ let collect_reachable caller_table procname node =
     match todo with
     | [] ->
         acc_graphs
-    | (procname, node) :: todo_next -> (
-      (* TODO if node is a return from a function with no summary, it will not be found. Then all
-         ReturnOf in callers should be added. Same issue for args of unknown functions. *)
-      match Summary.OnDisk.get ~lazy_payloads:false procname with
-      | None ->
-          L.debug Report Verbose "@[No summary found for %a@]@;" Procname.pp procname ;
-          aux todo_next acc_graphs
-      | Some summary -> (
-        match Lazy.force summary.payloads.lineage with
-        | None ->
-            L.debug Report Verbose "Summary has no lineage for %a" Procname.pp procname ;
-            aux todo_next acc_graphs
-        | Some lineage ->
-            let lineage_graph = Lineage.Summary.graph lineage in
-            let init_reachable_subgraph =
-              match Map.find acc_graphs procname with
-              | None ->
-                  Lineage.G.add_vertex Lineage.G.empty node
-              | Some g ->
-                  g
-            in
-            let reachable_subgraph, interproc_todo =
-              collect_reachable_in_procedure caller_table procname lineage_graph node
-                ~init:init_reachable_subgraph
-            in
-            let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
-            let todo' = interproc_todo @ todo_next in
-            aux todo' acc_reachable_graphs' ) )
+    | (procname, node) :: todo_next ->
+        let lineage_graph =
+          match Summary.OnDisk.get ~lazy_payloads:false procname with
+          | None ->
+              L.debug Report Verbose "@[No summary found for %a@]@;" Procname.pp_verbose procname ;
+              Lineage.G.add_vertex Lineage.G.empty node
+          | Some summary -> (
+            match Lazy.force summary.payloads.lineage with
+            | None ->
+                L.debug Report Verbose "Summary has no lineage for %a" Procname.pp_verbose procname ;
+                Lineage.G.add_vertex Lineage.G.empty node
+            | Some lineage ->
+                Lineage.Summary.graph lineage )
+        in
+        let init_reachable_subgraph =
+          match Map.find acc_graphs procname with
+          | None ->
+              Lineage.G.add_vertex Lineage.G.empty node
+          | Some g ->
+              g
+        in
+        let reachable_subgraph, interproc_todo =
+          collect_reachable_in_procedure caller_table procname lineage_graph node
+            ~init:init_reachable_subgraph
+        in
+        let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
+        let todo' = interproc_todo @ todo_next in
+        aux todo' acc_reachable_graphs'
   in
   aux [(procname, node)] (Map.empty (module Procname))
 
@@ -122,8 +123,19 @@ let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph 
     | [] ->
         (acc_subgraph, interproc_todo)
     | vertex :: next ->
+        let fold_pred_e_if_mem_vertex f graph vertex acc =
+          (* The interprocedural todo list may have requested to continue the exploration from
+             ArgumentOf vertices from which the sink may be reached but not reachable from the
+             source. In that case, they won't be present in the reachable subgraph.
+
+             This typically happens when a procedure `h/1` is in a source->sink path when called by
+             `f`, but not when called by `g`. Then the co-reachability analysis of `h` will put
+             `({f,g}, h$arg0)` on the todo stack, but only `(f, h$arg0)` will exist as a node. *)
+          if Lineage.G.mem_vertex graph vertex then Lineage.G.fold_pred_e f graph vertex acc
+          else acc
+        in
         let acc_subgraph', todo' =
-          Lineage.G.fold_pred_e
+          fold_pred_e_if_mem_vertex
             (fun edge (acc, todo) ->
               if Lineage.G.mem_edge_e acc edge then (acc, todo)
               else (Lineage.G.add_edge_e acc edge, Lineage.G.E.src edge :: todo) )
@@ -155,25 +167,31 @@ let collect_coreachable caller_table procname node reachable_graphs =
     match todo with
     | [] ->
         acc_graphs
-    | (procname, node) :: todo_next ->
-        let reachable_graph =
-          (* TODO This will raise the same exception if that procname is completely unknown or if
-             there was no reachable flow into that procname. Fix that UI. *)
-          Map.find_exn reachable_graphs procname
-        in
-        let init_coreachable_subgraph =
-          match Map.find acc_graphs procname with
-          | None ->
-              Lineage.G.empty
-          | Some subgraph ->
-              subgraph
-        in
-        let coreachable_subgraph, interproc_todo =
-          collect_coreachable_in_procedure ~init:init_coreachable_subgraph caller_table procname
-            reachable_graph node
-        in
-        let todo' = interproc_todo @ todo_next in
-        aux todo' (Map.set acc_graphs ~key:procname ~data:coreachable_subgraph)
+    | (procname, node) :: todo_next -> (
+      match Map.find reachable_graphs procname with
+      | None ->
+          (* That node has been added as a caller of some co-reachable function, but it wasn't
+             reachable. Skip it.
+
+             TODO: if that function is completely unknown (eg. there is a typo) then the final taint
+             graph might be empty, leading the user to falsely believe there is no flow. Check that
+             we can efficiently retrieve that information (including on functions with no summary,
+             eg. `binary_to_atom`). *)
+          aux todo_next acc_graphs
+      | Some reachable_graph ->
+          let init_coreachable_subgraph =
+            match Map.find acc_graphs procname with
+            | None ->
+                Lineage.G.empty
+            | Some subgraph ->
+                subgraph
+          in
+          let coreachable_subgraph, interproc_todo =
+            collect_coreachable_in_procedure ~init:init_coreachable_subgraph caller_table procname
+              reachable_graph node
+          in
+          let todo' = interproc_todo @ todo_next in
+          aux todo' (Map.set acc_graphs ~key:procname ~data:coreachable_subgraph) )
   in
   aux [(procname, node)] (Map.empty (module Procname))
 
@@ -217,7 +235,18 @@ let report_graph_map filename_parts graphs =
   Out_channel.with_file filename ~f:(fun outchan ->
       Map.iteri
         ~f:(fun ~key:procname ~data:subgraph ->
-          Lineage.Out.report_graph outchan (Procdesc.load_exn procname) subgraph )
+          match Procdesc.load procname with
+          | None ->
+              (* We can't report a graph if we don't have a procdesc. This should only happen when
+                 the graph contains only an argument or the return of a function without summary,
+                 typically used as a source or sink. In that case the corresponding node will anyway
+                 still be reported as ArgumentOf/ReturnOf within another callee procedure. *)
+              if Lineage.G.nb_edges subgraph <> 0 then
+                L.die InternalError
+                  "Unexpected non-singleton taint graph for procname %a without description"
+                  Procname.pp procname
+          | Some proc_desc ->
+              Lineage.Out.report_graph outchan proc_desc subgraph )
         graphs )
 
 
