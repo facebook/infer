@@ -6,7 +6,14 @@
  */
 class A {}
 
+// TypeFilter.topl says this is bad, as is everything that extends it.
 class B {}
+
+class C extends B {}
+
+class D extends C {}
+
+class E extends A {}
 
 class LongBadName {}
 
@@ -21,11 +28,23 @@ public class TypeFilter {
     f(x);
   }
 
-  static void cBad(LongBadName x) {
+  static void cBad(C x) {
     f(x);
   }
 
-  static void dBad() {
+  static void dBad(D x) {
+    f(x);
+  }
+
+  static void eOk(E x) {
+    f(x);
+  }
+
+  static void longArgBad(LongBadName x) {
+    f(x);
+  }
+
+  static void longLocalBad() {
     f(new B());
   }
 }

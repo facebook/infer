@@ -228,7 +228,7 @@ module PulseTransferFunctions = struct
         Sat (Ok exec_state)
 
 
-  let topl_small_step loc procname arguments (return, return_type) exec_state_res =
+  let topl_small_step tenv loc procname arguments (return, return_type) exec_state_res =
     let arguments =
       List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
           (ValueOrigin.value arg_payload, typ) )
@@ -239,7 +239,7 @@ module PulseTransferFunctions = struct
         Option.map ~f:(fun (value, _history) -> (value, return_type)) (Stack.find_opt return astate)
       in
       let topl_event = PulseTopl.Call {return; arguments; procname} in
-      AbductiveDomain.Topl.small_step loc topl_event astate
+      AbductiveDomain.Topl.small_step tenv loc topl_event astate
     in
     let do_one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t =
       match exec_state with
@@ -255,13 +255,13 @@ module PulseTransferFunctions = struct
     List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
 
 
-  let topl_store_step path loc ~lhs ~rhs:_ astate =
+  let topl_store_step tenv path loc ~lhs ~rhs:_ astate =
     match (lhs : Exp.t) with
     | Lindex (arr, index) ->
         (let** _astate, (aw_array, _history) = PulseOperations.eval path Read loc arr astate in
          let++ _astate, (aw_index, _history) = PulseOperations.eval path Read loc index astate in
          let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
-         AbductiveDomain.Topl.small_step loc topl_event astate )
+         AbductiveDomain.Topl.small_step tenv loc topl_event astate )
         |> PulseOperationResult.sat_ok
         |> (* don't emit Topl event if evals fail *)
         Option.value ~default:astate
@@ -953,7 +953,7 @@ module PulseTransferFunctions = struct
       if Topl.is_active () then
         match callee_pname with
         | Some callee_pname ->
-            topl_small_step call_loc callee_pname func_args ret exec_states_res
+            topl_small_step tenv call_loc callee_pname func_args ret exec_states_res
         | None ->
             (* skip, as above for non-topl *) exec_states_res
       else exec_states_res
@@ -1378,7 +1378,8 @@ module PulseTransferFunctions = struct
                 astate
             in
             let astate =
-              if Topl.is_active () then topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              if Topl.is_active () then
+                topl_store_step tenv path loc ~lhs:lhs_exp ~rhs:rhs_exp astate
               else astate
             in
             match lhs_exp with

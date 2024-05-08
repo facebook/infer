@@ -650,9 +650,27 @@ let static_match_array_write arr index label : tcontext option =
       None
 
 
-let static_match_call return arguments procname label : tcontext option =
+let typ_void = Typ.{desc= Tvoid; quals= mk_type_quals ()}
+
+let static_match_call tenv return arguments procname label : tcontext option =
   let is_match re text =
     Option.for_all re ~f:(fun re -> Re.Str.string_match re.ToplAst.re text 0)
+  in
+  let is_match_type_base re typ = is_match re (Fmt.to_to_string pp_type typ) in
+  let is_match_type_name mk_typ re name _struct = is_match_type_base re (mk_typ name) in
+  (* NOTE: If B has supertype A, and we get type B**, then regex is matched against A** and B**.
+     In other words, [Tptr] and [Tarray] are treated as covariant. *)
+  let rec is_match_type (map : Typ.t -> Typ.t) re (typ : Typ.t) =
+    match typ with
+    | {desc= Tptr (typ, kind); quals} ->
+        is_match_type (fun t -> map {Typ.desc= Tptr (t, kind); quals}) re typ
+    | {desc= Tarray arr; quals} ->
+        is_match_type (fun t -> map {Typ.desc= Tarray {arr with elt= t}; quals}) re arr.elt
+    | {desc= Tstruct name; quals} ->
+        Tenv.mem_supers tenv name
+          ~f:(is_match_type_name (fun n -> map {Typ.desc= Tstruct n; quals}) re)
+    | _ ->
+        is_match_type_base re (map typ)
   in
   let match_name () : bool =
     match label.ToplAst.pattern with
@@ -663,12 +681,12 @@ let static_match_call return arguments procname label : tcontext option =
         | None ->
             true
         | Some regexes -> (
-            let type_names =
-              let pt (_name, typ) = F.asprintf "%a" pp_type typ in
-              List.map ~f:pt arguments @ [Option.value_map ~default:"void" ~f:pt return]
+            let types =
+              let argument_types = List.map ~f:snd arguments in
+              let return_type = Option.value_map ~default:typ_void ~f:snd return in
+              argument_types @ [return_type]
             in
-            let f ok regex name = ok && is_match regex name in
-            match List.fold2 regexes type_names ~init:true ~f with
+            match List.for_all2 regexes types ~f:(is_match_type Fn.id) with
             | Ok ok ->
                 ok
             | Unequal_lengths ->
@@ -736,14 +754,14 @@ end
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match
     produces a tcontext (transition context), which matches transition-local variables to abstract
     values. *)
-let static_match event : (ToplAutomaton.transition * tcontext) list =
+let static_match tenv event : (ToplAutomaton.transition * tcontext) list =
   let match_one index transition =
     let f label =
       match event with
       | ArrayWrite {aw_array; aw_index} ->
           static_match_array_write aw_array aw_index label
       | Call {return; arguments; procname} ->
-          static_match_call return arguments procname label
+          static_match_call tenv return arguments procname label
     in
     let tcontext_opt = Option.value_map ~default:(Some []) ~f transition.ToplAutomaton.label in
     L.d_printfln_escaped "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
@@ -869,8 +887,8 @@ let apply_limits pulse_state state =
   state |> maybe needs_shrinking expensive_simplification |> maybe needs_shrinking drop_disjuncts
 
 
-let small_step loc pulse_state event simple_states =
-  let tmatches = static_match event in
+let small_step tenv loc pulse_state event simple_states =
+  let tmatches = static_match tenv event in
   let evolve_transition (old : simple_state) (transition, tcontext) : state =
     let mk ?(memory = old.post.memory) ?(pruned = Constraint.true_) significant =
       let last_step =
@@ -1086,8 +1104,8 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
 
 (* {1 Fast path} *)
 
-let small_step location pulse_state event state =
-  match state with [] -> state | _ -> small_step location pulse_state event state
+let small_step tenv location pulse_state event state =
+  match state with [] -> state | _ -> small_step tenv location pulse_state event state
 
 
 let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary

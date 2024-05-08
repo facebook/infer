@@ -2008,8 +2008,8 @@ module Summary = struct
 end
 
 module Topl = struct
-  let small_step loc event astate =
-    {astate with topl= PulseTopl.small_step loc (topl_view astate) event astate.topl}
+  let small_step tenv loc event astate =
+    {astate with topl= PulseTopl.small_step tenv loc (topl_view astate) event astate.topl}
 
 
   let large_step ~call_location ~callee_proc_name ~substitution ~callee_summary ~callee_is_manifest

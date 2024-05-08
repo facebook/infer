@@ -397,7 +397,7 @@ end
 val transfer_transitive_info_to_caller : Procname.t -> Location.t -> Summary.t -> t -> t
 
 module Topl : sig
-  val small_step : Location.t -> PulseTopl.event -> t -> t
+  val small_step : Tenv.t -> Location.t -> PulseTopl.event -> t -> t
 
   val large_step :
        call_location:Location.t

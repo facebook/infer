@@ -2,4 +2,6 @@ property CallWithB
   prefix "TypeFilter"
   start -> start: *
   start -> error: f(Arg: B, Ret)
-  start -> error: f(Arg: ".*Bad.*", Ret)
+  start -> error: f(Arg: ".*Bad.*", Ret: void) // should match the return type
+  start -> error: f(Arg: "A$", Ret) // should not match because types will actually be A* (because it's Java)
+  start -> error: f(Arg, Ret: NonVoid) // should not match the return type

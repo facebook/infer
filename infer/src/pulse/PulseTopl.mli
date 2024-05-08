@@ -37,7 +37,7 @@ type pulse_state =
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)
 
-val small_step : Location.t -> pulse_state -> event -> state -> state
+val small_step : Tenv.t -> Location.t -> pulse_state -> event -> state -> state
 
 val large_step :
      call_location:Location.t
