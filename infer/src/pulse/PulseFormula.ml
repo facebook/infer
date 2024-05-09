@@ -536,7 +536,7 @@ module Term = struct
     | BitShiftRight of t * t
     | BitXor of t * t
     | StringConcat of t * t
-    | IsInstanceOf of Var.t * Typ.t
+    | IsInstanceOf of {var: Var.t; typ: Typ.t; nullable: bool}
     | IsInt of t
   [@@deriving compare, equal, yojson_of]
 
@@ -646,8 +646,9 @@ module Term = struct
         F.fprintf fmt "%a=%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
-    | IsInstanceOf (v, t) ->
-        F.fprintf fmt "%a instanceof %a" pp_var v (Typ.pp_full Pp.text) t
+    | IsInstanceOf {var; typ; nullable} ->
+        F.fprintf fmt "%a instanceof %a nullable=%a" pp_var var (Typ.pp_full Pp.text) typ
+          Format.pp_print_bool nullable
     | IsInt t ->
         F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
 
@@ -911,12 +912,12 @@ module Term = struct
         let acc, op = f_subst init v in
         let t' = match op with VarSubst v' when Var.equal v v' -> t | _ -> of_subst_target op in
         f_post ~prev:t acc t'
-    | IsInstanceOf (v, typ) ->
+    | IsInstanceOf {var= v; typ; nullable} ->
         let acc, op = f_subst init v in
         let t' =
           match op with
           | (VarSubst v' | ConstantSubst (_, Some v')) when not (Var.equal v v') ->
-              IsInstanceOf (v', typ)
+              IsInstanceOf {var= v'; typ; nullable}
           | QSubst q when Q.is_zero q ->
               zero
           | QSubst _ | ConstantSubst _ | VarSubst _ | LinSubst _ | NonLinearTermSubst _ ->
@@ -1283,7 +1284,9 @@ module Term = struct
         t
 
 
-  let get_as_isinstanceof t = match t with IsInstanceOf (var, typ) -> Some (var, typ) | _ -> None
+  let get_as_isinstanceof t =
+    match t with IsInstanceOf {var; typ; nullable} -> Some (var, typ, nullable) | _ -> None
+
 
   let get_as_var = function
     | Var x ->
@@ -3286,7 +3289,8 @@ module Formula = struct
                              variable. *)
                           let* phi =
                             match Term.get_as_isinstanceof t with
-                            | Some (var, typ) ->
+                            (* TODO: exploit nullable in line with plan document *)
+                            | Some (var, typ, _nullable) ->
                                 if is_neq_zero phi tx then (
                                   Debug.p "prop in term_eq adding below\n" ;
                                   add_below var typ phi )
@@ -3475,7 +3479,8 @@ module Formula = struct
                       Debug.p "range or both\n" ;
                       let* phi =
                         match Term.get_as_isinstanceof t with
-                        | Some (var, typ) ->
+                        (* TODO: exploit nullable *)
+                        | Some (var, typ, _nullable) ->
                             add_below var typ phi
                         | None ->
                             Sat phi
@@ -3887,7 +3892,7 @@ module DynamicTypes = struct
   let really_simplify formula =
     let simplify_term (t : Term.t) =
       match t with
-      | IsInstanceOf (v, typ) -> (
+      | IsInstanceOf {var= v; typ} -> (
         match evaluate_instanceof formula v typ with None -> t | Some t' -> t' )
       | t ->
           t
@@ -3989,7 +3994,7 @@ let copy_type_constraints v_src v_target {conditions; phi} =
   {conditions; phi= Formula.copy_type_constraints v_src v_target phi}
 
 
-let and_equal_instanceof v1 v2 t formula =
+let and_equal_instanceof v1 v2 t ~nullable formula =
   let* formula, new_eqs =
     match DynamicTypes.evaluate_instanceof formula v2 t with
     | None ->
@@ -3997,7 +4002,9 @@ let and_equal_instanceof v1 v2 t formula =
     | Some bool_term ->
         and_atom (Atom.equal (Var v1) bool_term) formula
   in
-  let* formula, new_eqs' = and_atom (Atom.equal (Var v1) (IsInstanceOf (v2, t))) formula in
+  let* formula, new_eqs' =
+    and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
+  in
   Sat (formula, RevList.append new_eqs new_eqs')
 
 

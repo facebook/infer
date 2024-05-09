@@ -51,7 +51,7 @@ let of_binop bop f1 f2 phi =
 [@@@warning "-unused-value-declaration"]
 
 let instanceof typ x_var y_var phi =
-  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ phi in
+  let+ phi, _new_eqs = and_equal_instanceof y_var x_var typ ~nullable:false phi in
   phi
 
 

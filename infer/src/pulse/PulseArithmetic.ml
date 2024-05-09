@@ -125,8 +125,8 @@ let is_manifest summary =
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
-let and_equal_instanceof v1 v2 t astate =
-  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
+let and_equal_instanceof v1 v2 t ?(nullable = false) astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t ~nullable phi)
 
 
 let and_dynamic_type_is v t ?source_file astate =

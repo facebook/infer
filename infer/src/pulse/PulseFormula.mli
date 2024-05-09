@@ -62,7 +62,7 @@ val and_equal_vars : Var.t -> Var.t -> t -> (t * new_eqs) SatUnsat.t
 
 val and_not_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
+val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> nullable:bool -> t -> (t * new_eqs) SatUnsat.t
 
 type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option}
 
