@@ -96,4 +96,46 @@ class Wrapper {
     }
     return;
   }
+
+  public async function nullIsNonnullOK(): Awaitable<void> {
+    $x = null;
+    if ($x is D) {
+      $_ = $this->fail(); // never happens
+    }
+    return;
+  }
+
+  public async function nullIsNonnullBad(): Awaitable<void> {
+    $x = null;
+    if ($x is D) {
+      return; // never happens
+    }
+    $_ = $this->fail();
+  }
+
+  // this one shows up that we don't treat nullables properly
+  public async function nullIsNullableFN(): Awaitable<void> {
+    $x = null;
+    if ($x is ?D) {
+      $_ = $this->fail(); // always happens
+    }
+    return;
+  }
+
+  // this one also shows up that we don't treat nullables properly
+  public async function nullIsNullableFP(): Awaitable<void> {
+    $x = null;
+    if ($x is ?D) {
+      return; // always happens
+    }
+    $_ = $this->fail();
+  }
+
+  public async function objectIsNullableOK(): Awaitable<void> {
+    $x = new D();
+    if ($x is ?D) {
+      return; // always happens
+    }
+    $_ = $this->fail();
+  }
 }
