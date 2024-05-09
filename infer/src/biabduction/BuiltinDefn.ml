@@ -73,7 +73,11 @@ let add_array_to_prop ({InterproceduralAnalysis.tenv; _} as analysis_data) prop_
              let hpred =
                Prop.mk_ptsto tenv n_lexp s
                  (Exp.Sizeof
-                    {typ= arr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} )
+                    { typ= arr_typ
+                    ; nbytes= None
+                    ; dynamic_length= None
+                    ; subtype= Subtype.exact
+                    ; nullable= false } )
              in
              let sigma = prop.Prop.sigma in
              let sigma_fp = prop.Prop.sigma_fp in
@@ -168,7 +172,12 @@ let create_type tenv n_lexp typ prop =
           | Typ.Tptr (typ', _) ->
               let sexp = Predicates.Estruct ([], Predicates.inst_none) in
               let texp =
-                Exp.Sizeof {typ= typ'; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+                Exp.Sizeof
+                  { typ= typ'
+                  ; nbytes= None
+                  ; dynamic_length= None
+                  ; subtype= Subtype.subtypes
+                  ; nullable= false }
               in
               let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
               Some hpred
@@ -176,7 +185,12 @@ let create_type tenv n_lexp typ prop =
               let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
               let sexp = mk_empty_array len in
               let texp =
-                Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+                Exp.Sizeof
+                  { typ
+                  ; nbytes= None
+                  ; dynamic_length= None
+                  ; subtype= Subtype.subtypes
+                  ; nullable= false }
               in
               let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
               Some hpred
@@ -565,7 +579,8 @@ let execute_alloc mk can_return_null
       { typ= Typ.mk_array (Typ.mk (Tint Typ.IChar)) ~stride:(IntLit.of_int 1)
       ; nbytes= None
       ; dynamic_length= Some size_exp'
-      ; subtype= Subtype.exact }
+      ; subtype= Subtype.exact
+      ; nullable= false }
   in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in
@@ -776,7 +791,9 @@ let execute_objc_alloc_no_fail symb_state typ alloc_fun_opt {Builtin.analysis_da
     =
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.__objc_alloc_no_fail) in
   let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
-  let sizeof_typ = Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
+  let sizeof_typ =
+    Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
+  in
   let alloc_fun_exp =
     match alloc_fun_opt with
     | Some pname ->

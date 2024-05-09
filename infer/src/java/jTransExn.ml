@@ -89,7 +89,11 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
               let args =
                 [ (Exp.Var id_exn_val, Typ.mk (Tptr (exn_type, Typ.Pk_pointer)))
                 ; ( Exp.Sizeof
-                      {typ= exn_type; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+                      { typ= exn_type
+                      ; nbytes= None
+                      ; dynamic_length= None
+                      ; subtype= Subtype.exact
+                      ; nullable= false }
                   , StdTyp.void ) ]
               in
               Sil.Call

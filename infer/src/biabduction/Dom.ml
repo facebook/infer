@@ -1082,15 +1082,17 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = exp_partial_join e1' e2' in
       Exp.Lindex (e1'', e2'')
-  | ( Exp.Sizeof {typ= t1; nbytes= nbytes1; dynamic_length= len1; subtype= st1}
-    , Exp.Sizeof {typ= t2; nbytes= nbytes2; dynamic_length= len2; subtype= st2} ) ->
+  | ( Exp.Sizeof {typ= t1; nbytes= nbytes1; dynamic_length= len1; subtype= st1; nullable= null1}
+    , Exp.Sizeof {typ= t2; nbytes= nbytes2; dynamic_length= len2; subtype= st2; nullable= null2} )
+    ->
       (* forget the static sizes if they differ *)
       let nbytes_join i1 i2 = if Int.equal i1 i2 then Some i1 else None in
       Exp.Sizeof
         { typ= typ_partial_join t1 t2
         ; nbytes= option_partial_join nbytes_join nbytes1 nbytes2
         ; dynamic_length= dynamic_length_partial_join len1 len2
-        ; subtype= Subtype.join st1 st2 }
+        ; subtype= Subtype.join st1 st2
+        ; nullable= null1 || null2 }
   | _ ->
       L.d_str "exp_partial_join no match " ;
       Exp.d_exp e1 ;

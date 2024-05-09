@@ -423,7 +423,12 @@ let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_
           None
     in
     let sizeof_exp_ =
-      Exp.Sizeof {typ= function_type_np; nbytes; dynamic_length= None; subtype= Subtype.exact}
+      Exp.Sizeof
+        { typ= function_type_np
+        ; nbytes
+        ; dynamic_length= None
+        ; subtype= Subtype.exact
+        ; nullable= false }
     in
     let sizeof_exp =
       match size_exp with

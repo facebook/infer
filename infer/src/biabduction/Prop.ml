@@ -1473,13 +1473,17 @@ module Normalize = struct
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal t elt ->
             let dynamic_length = Some x in
-            let sizeof_data = {Exp.typ= arr; nbytes= None; dynamic_length; subtype= st1} in
+            let sizeof_data =
+              {Exp.typ= arr; nbytes= None; dynamic_length; subtype= st1; nullable= false}
+            in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
         | ( Earray (BinOp (Mult _, x, Sizeof {typ; dynamic_length= None; subtype}), esel, inst)
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
-            let sizeof_data = {Exp.typ= arr; nbytes= None; dynamic_length= Some x; subtype} in
+            let sizeof_data =
+              {Exp.typ= arr; nbytes= None; dynamic_length= Some x; subtype; nullable= false}
+            in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
         | ( Earray
@@ -1489,7 +1493,11 @@ module Normalize = struct
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (omult, x, len)); subtype}
+              { Exp.typ= arr
+              ; nbytes= None
+              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
+              ; subtype
+              ; nullable= false }
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)
@@ -1500,7 +1508,11 @@ module Normalize = struct
           , Sizeof {typ= {desc= Tarray {elt}} as arr} )
           when Typ.equal typ elt ->
             let sizeof_data =
-              {Exp.typ= arr; nbytes= None; dynamic_length= Some (Exp.BinOp (omult, x, len)); subtype}
+              { Exp.typ= arr
+              ; nbytes= None
+              ; dynamic_length= Some (Exp.BinOp (omult, x, len))
+              ; subtype
+              ; nullable= false }
             in
             let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
             replace_hpred (replace_array_contents hpred' esel)

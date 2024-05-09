@@ -26,7 +26,8 @@ type closure =
     over-allocated.
 
     If [typ] is a struct type, the [dynamic_length] is that of the final extensible array, if any.*)
-and sizeof_data = {typ: Typ.t; nbytes: int option; dynamic_length: t option; subtype: Subtype.t}
+and sizeof_data =
+  {typ: Typ.t; nbytes: int option; dynamic_length: t option; subtype: Subtype.t; nullable: bool}
 
 (** Program expressions. *)
 and t =

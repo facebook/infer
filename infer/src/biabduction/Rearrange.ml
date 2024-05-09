@@ -438,7 +438,11 @@ let strexp_extend_values analysis_data pname tenv orig_prop footprint_part kind 
     | Exp.Sizeof sizeof_data ->
         sizeof_data
     | _ ->
-        {Exp.typ= StdTyp.void; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        { Exp.typ= StdTyp.void
+        ; nbytes= None
+        ; dynamic_length= None
+        ; subtype= Subtype.exact
+        ; nullable= false }
   in
   List.map
     ~f:(fun (atoms', se', typ') ->
@@ -492,23 +496,23 @@ let mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) max_st
         ( []
         , Prop.mk_ptsto tenv root
             (Predicates.Eexp (fun_exp, inst))
-            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype}) )
+            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype; nullable= false}) )
     | _, [], Typ.Tfun ->
         let atoms, se, typ =
           create_struct_values analysis_data pname tenv orig_prop footprint_part Ident.kfootprint
             max_stamp typ off0 inst
         in
         ( atoms
-        , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
-        )
+        , Prop.mk_ptsto tenv root se
+            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype; nullable= false}) )
     | _ ->
         let atoms, se, typ =
           create_struct_values analysis_data pname tenv orig_prop footprint_part Ident.kfootprint
             max_stamp typ off0 inst
         in
         ( atoms
-        , Prop.mk_ptsto tenv root se (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype})
-        )
+        , Prop.mk_ptsto tenv root se
+            (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype; nullable= false}) )
   in
   let atoms, ptsto_foot = create_ptsto true off_foot in
   let sub = Predicates.subst_of_list eqs in

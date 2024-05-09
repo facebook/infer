@@ -779,7 +779,8 @@ let add_strexp_to_footprint tenv strexp abduced_pv typ prop =
   let abduced_lvar = Exp.Lvar abduced_pv in
   let lvar_pt_fpvar =
     let sizeof_exp =
-      Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+      Exp.Sizeof
+        {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes; nullable= false}
     in
     Prop.mk_ptsto tenv abduced_lvar strexp sizeof_exp
   in
@@ -1041,7 +1042,10 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
   let sigma_locals_and_ret =
     let mk_ptsto pvar typ =
       let ptsto =
-        (pvar, Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}, None)
+        ( pvar
+        , Exp.Sizeof
+            {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
+        , None )
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_initial ptsto
     in

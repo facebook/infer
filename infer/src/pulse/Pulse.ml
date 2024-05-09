@@ -621,7 +621,11 @@ module PulseTransferFunctions = struct
     in
     let size =
       Exp.Sizeof
-        {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        { typ= Typ.mk_struct type_name
+        ; nbytes= None
+        ; dynamic_length= None
+        ; subtype= Subtype.exact
+        ; nullable= false }
     in
     (* Since the constructor is implicit, we first have to allocate a value of the correct type. *)
     match

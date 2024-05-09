@@ -306,11 +306,18 @@ and parse_exp (json : Safe.t) =
     let dl = try Some (parse_exp (member "dynamic_length" json)) with Type_error _ -> None in
     match s with
     | "exact" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.exact}
+        Exp.Sizeof
+          {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.exact; nullable= false}
     | "instof" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_instof}
+        Exp.Sizeof
+          { typ= t
+          ; nbytes= None
+          ; dynamic_length= dl
+          ; subtype= Subtype.subtypes_instof
+          ; nullable= false }
     | "cast" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_cast}
+        Exp.Sizeof
+          {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_cast; nullable= false}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind

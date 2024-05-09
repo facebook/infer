@@ -467,6 +467,7 @@ module Syntax = struct
     let* new_obj = lift_to_monad_and_get_result (internal_new_ type_name_exp) in
     match type_name_exp with
     | Exp.Sizeof {typ} ->
+        (* TODO: pass a nullable parameter to and_dynamic_type_is *)
         let* () = and_dynamic_type_is new_obj typ in
         ret new_obj
     | _ ->
@@ -476,7 +477,11 @@ module Syntax = struct
   let constructor type_name fields : aval model_monad =
     let exp =
       Exp.Sizeof
-        {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        { typ= Typ.mk_struct type_name
+        ; nbytes= None
+        ; dynamic_length= None
+        ; subtype= Subtype.exact
+        ; nullable= false }
     in
     let* new_obj = new_ exp in
     let* () =

@@ -625,9 +625,11 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
       let texp =
         match !Language.curr_language with
         | Clang ->
-            Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+            Exp.Sizeof
+              {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= true}
         | Java | CIL ->
-            Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+            Exp.Sizeof
+              {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes; nullable= true}
         | Erlang ->
             L.die InternalError "Erlang not supported"
         | Hack ->

@@ -169,7 +169,8 @@ let has_type_instr (env : (_, _) t) ~result ~value (name : ErlangTypeName.t) : S
           { typ= typ_of_name name
           ; nbytes= None
           ; dynamic_length= None
-          ; subtype= Subtype.subtypes_instof }
+          ; subtype= Subtype.subtypes_instof
+          ; nullable= false }
       , any_typ ) ]
   in
   Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)

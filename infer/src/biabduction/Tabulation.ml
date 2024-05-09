@@ -916,7 +916,9 @@ let mk_actual_precondition tenv prop actual_params formal_params =
   let mk_instantiation (formal_var, (actual_e, actual_t)) =
     Prop.mk_ptsto tenv (Exp.Lvar formal_var)
       (Eexp (actual_e, Predicates.inst_actual_precondition))
-      (Exp.Sizeof {typ= actual_t; nbytes= None; dynamic_length= None; subtype= Subtype.exact})
+      (Exp.Sizeof
+         {typ= actual_t; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
+      )
   in
   let instantiated_formals = List.map ~f:mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in

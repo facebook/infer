@@ -1767,8 +1767,11 @@ let expand_hpred_pointer =
                     (* type of struct at adr_base is known *)
                     Some
                       (Exp.Sizeof
-                         {typ= adr_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-                      )
+                         { typ= adr_typ
+                         ; nbytes= None
+                         ; dynamic_length= None
+                         ; subtype= Subtype.exact
+                         ; nullable= false } )
                 | None ->
                     None )
               | _ ->
@@ -1943,7 +1946,12 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
           if (not (Typ.equal t1 t2)) && SubtypingCheck.check_subtype tenv t1 t2 then
             let pos_type_opt, _ =
               SubtypingCheck.subtype_case_analysis tenv
-                (Exp.Sizeof {typ= t1; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes})
+                (Exp.Sizeof
+                   { typ= t1
+                   ; nbytes= None
+                   ; dynamic_length= None
+                   ; subtype= Subtype.subtypes
+                   ; nullable= false } )
                 (Exp.Sizeof sizeof_data2)
             in
             match pos_type_opt with
@@ -2262,14 +2270,16 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             { typ= Typ.mk_array (Typ.mk (Tint Typ.IChar)) ~length:len ~stride:(IntLit.of_int 1)
             ; nbytes= None
             ; dynamic_length= None
-            ; subtype= Subtype.exact }
+            ; subtype= Subtype.exact
+            ; nullable= false }
       | Java ->
           let object_type = StdTyp.Name.Java.java_lang_string in
           Exp.Sizeof
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
             ; dynamic_length= None
-            ; subtype= Subtype.exact }
+            ; subtype= Subtype.exact
+            ; nullable= false }
       | CIL ->
           (* cil todo *)
           (* Logging.die Logging.InternalError "No string constant support for CIL yet." *)
@@ -2278,7 +2288,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
             { typ= Typ.mk (Tstruct object_type)
             ; nbytes= None
             ; dynamic_length= None
-            ; subtype= Subtype.exact }
+            ; subtype= Subtype.exact
+            ; nullable= false }
       | Erlang ->
           L.die InternalError "Erlang not supported"
       | Hack ->
@@ -2304,7 +2315,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
         { typ= Typ.mk (Tstruct class_type)
         ; nbytes= None
         ; dynamic_length= None
-        ; subtype= Subtype.exact }
+        ; subtype= Subtype.exact
+        ; nullable= false }
     in
     Predicates.Hpointsto (root, sexp, class_texp)
   in
