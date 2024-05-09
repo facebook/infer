@@ -603,14 +603,6 @@ and analysis_schedule_file =
     ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
 
 
-and _annotation_reachability_apply_class_annotations =
-  CLOpt.mk_bool ~long:""
-    ~deprecated:["-annotation-reachability-apply-class-annotations"]
-    ~deprecated_no:["-no-annotation-reachability-apply-class-annotations"]
-    ~in_help:InferCommand.[(Analyze, manual_java)]
-    "Applies annotations of a class/interface to all its methods" ~default:true
-
-
 and annotation_reachability_apply_superclass_annotations =
   CLOpt.mk_bool ~long:"annotation-reachability-apply-superclass-annotations"
     ~in_help:InferCommand.[(Analyze, manual_java)]
