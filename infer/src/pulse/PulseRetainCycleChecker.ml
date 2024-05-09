@@ -209,12 +209,12 @@ let check_retain_cycles_call path tenv location func_args ret_opt astate =
         addr_hist )
   in
   let addresses = Option.value_map ~default:actuals ~f:(fun ret -> ret :: actuals) ret_opt in
-  if Language.curr_language_is Language.Clang then
+  if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
     check_retain_cycles path tenv location addresses astate
   else Ok astate
 
 
 let check_retain_cycles_store path tenv location addr astate =
-  if Language.curr_language_is Language.Clang then
+  if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
     check_retain_cycles path tenv location [addr] astate
   else Ok astate
