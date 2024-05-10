@@ -95,22 +95,29 @@ let create_values astate cycle =
 
 
 let should_report_cycle astate cycle =
+  let is_objc_or_block (addr, _, access) =
+    match access with
+    | MemoryAccess.FieldAccess _ ->
+        is_ref_counted_or_block astate addr
+    | _ ->
+        false
+  in
   let addr_in_retain_cycle (addr, _, access) =
     let not_previously_reported = not (AddressAttributes.is_in_reported_retain_cycle addr astate) in
     let path_condition = astate.AbductiveDomain.path_condition in
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
     let value = Decompiler.find addr astate in
     let is_known = not (DecompilerExpr.is_unknown value) in
-    let is_objc_or_block =
+    let is_objc_or_block_if_field_access =
       match access with
       | MemoryAccess.FieldAccess _ ->
           is_ref_counted_or_block astate addr
       | _ ->
           true
     in
-    not_previously_reported && is_not_null && is_known && is_objc_or_block
+    not_previously_reported && is_not_null && is_known && is_objc_or_block_if_field_access
   in
-  List.for_all ~f:addr_in_retain_cycle cycle
+  List.exists ~f:is_objc_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
 
 
 (* A retain cycle is a memory path from an address to itself, following only
