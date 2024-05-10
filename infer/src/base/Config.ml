@@ -675,6 +675,12 @@ and annotation_reachability_no_allocation =
      checker)"
 
 
+and annotation_reachability_report_source_and_sink =
+  CLOpt.mk_bool ~long:"annotation-reachability-report-source-and-sink"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "Reports methods that are marked as both a source and a sink at the same time." ~default:false
+
+
 and append_buck_flavors =
   CLOpt.mk_string_list ~long:"append-buck-flavors"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -3855,6 +3861,8 @@ and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 and annotation_reachability_expensive = !annotation_reachability_expensive
 
 and annotation_reachability_no_allocation = !annotation_reachability_no_allocation
+
+and annotation_reachability_report_source_and_sink = !annotation_reachability_report_source_and_sink
 
 and append_buck_flavors = RevList.to_list !append_buck_flavors
 

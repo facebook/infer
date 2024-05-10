@@ -141,6 +141,12 @@ OPTIONS
            checkers (Conversely: --no-annotation-reachability-only)
            See also infer-analyze(1).
 
+       --annotation-reachability-report-source-and-sink
+           Activates: Reports methods that are marked as both a source and a
+           sink at the same time. (Conversely:
+           --no-annotation-reachability-report-source-and-sink)
+           See also infer-analyze(1).
+
        --append-buck-flavors +string
            Additional Buck flavors to append to targets discovered by the
            --buck-compilation-database option.

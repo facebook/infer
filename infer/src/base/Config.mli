@@ -144,6 +144,8 @@ val annotation_reachability_expensive : bool
 
 val annotation_reachability_no_allocation : bool
 
+val annotation_reachability_report_source_and_sink : bool
+
 val append_buck_flavors : string list
 
 val biabduction_abs_struct : int

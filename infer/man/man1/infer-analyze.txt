@@ -664,6 +664,11 @@ JAVA OPTIONS
            allocate (with annotation reachability checker) (Conversely:
            --no-annotation-reachability-no-allocation)
 
+       --annotation-reachability-report-source-and-sink
+           Activates: Reports methods that are marked as both a source and a
+           sink at the same time. (Conversely:
+           --no-annotation-reachability-report-source-and-sink)
+
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable

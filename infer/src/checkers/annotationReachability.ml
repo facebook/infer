@@ -127,6 +127,14 @@ let report_allocation_stack {InterproceduralAnalysis.proc_desc; err_log} src_ann
     IssueType.checkers_allocates_memory description
 
 
+let get_issue_type src_annot =
+  if
+    Config.annotation_reachability_expensive
+    && String.equal src_annot Annotations.performance_critical
+  then IssueType.checkers_calls_expensive_method
+  else IssueType.checkers_annotation_reachability_error
+
+
 let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data)
     src_annot snk_annot loc trace snk_pname call_loc =
   let src_pname = Procdesc.get_proc_name proc_desc in
@@ -141,13 +149,7 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as ana
         MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced exp_pname_str MF.pp_monospaced
         ("@" ^ snk_annot)
     in
-    let issue_type =
-      if
-        Config.annotation_reachability_expensive
-        && String.equal src_annot Annotations.performance_critical
-      then IssueType.checkers_calls_expensive_method
-      else IssueType.checkers_annotation_reachability_error
-    in
+    let issue_type = get_issue_type src_annot in
     Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
       description
 
@@ -188,25 +190,40 @@ let report_call_stack end_of_stack lookup_next_calls report call_site sink_map =
     sink_map
 
 
-let report_src_snk_path ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) sink_map
-    snk_annot models src_annot =
+let report_src_snk_path ({InterproceduralAnalysis.proc_desc; tenv; err_log} as analysis_data)
+    sink_map snk_annot models src_annot =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
-  if method_overrides_annot src_annot models tenv proc_name then
-    let f_report =
-      report_annotation_stack analysis_data src_annot.Annot.class_name snk_annot.Annot.class_name
-    in
-    report_call_stack
-      (method_overrides_annot snk_annot models tenv)
-      (lookup_annotation_calls analysis_data snk_annot)
-      f_report (CallSite.make proc_name loc) sink_map
+  if method_overrides_annot src_annot models tenv proc_name then (
+    Option.iter sink_map ~f:(fun sink_map ->
+        let f_report =
+          report_annotation_stack analysis_data src_annot.Annot.class_name
+            snk_annot.Annot.class_name
+        in
+        report_call_stack
+          (method_overrides_annot snk_annot models tenv)
+          (lookup_annotation_calls analysis_data snk_annot)
+          f_report (CallSite.make proc_name loc) sink_map ) ;
+    if
+      Config.annotation_reachability_report_source_and_sink
+      && method_overrides_annot snk_annot models tenv proc_name
+    then
+      let issue_type = get_issue_type src_annot.Annot.class_name in
+      let description =
+        Format.asprintf "Method %a is annotated with both %a and %a" MF.pp_monospaced
+          (Procname.to_simplified_string proc_name)
+          MF.pp_monospaced
+          ("@" ^ src_annot.Annot.class_name)
+          MF.pp_monospaced
+          ("@" ^ snk_annot.Annot.class_name)
+      in
+      Reporting.log_issue proc_desc err_log ~loc ~ltr:[] AnnotationReachability issue_type
+        description )
 
 
 let report_src_snk_paths proc_data annot_map src_annot_list snk_annot models =
-  try
-    let sink_map = Domain.find snk_annot annot_map in
-    List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot models) src_annot_list
-  with Caml.Not_found -> ()
+  let sink_map = Domain.find_opt snk_annot annot_map in
+  List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot models) src_annot_list
 
 
 let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}

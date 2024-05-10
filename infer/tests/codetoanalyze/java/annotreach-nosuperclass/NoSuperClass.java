@@ -42,4 +42,8 @@ class NoSuperClass {
       notSink();
     }
   }
+
+  @UserDefinedSink
+  @UserDefinedSource
+  void sourceAndSinkBad() {}
 }

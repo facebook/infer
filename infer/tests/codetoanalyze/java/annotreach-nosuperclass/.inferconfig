@@ -9,5 +9,6 @@
       "sinks": ["UserDefinedSink"]
     }
   ],
-  "annotation-reachability-apply-superclass-annotations": false
+  "annotation-reachability-apply-superclass-annotations": false,
+  "annotation-reachability-report-source-and-sink": true
 }
