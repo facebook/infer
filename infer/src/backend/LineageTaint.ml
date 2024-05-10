@@ -43,12 +43,16 @@ let find_callers caller_table procname =
 
 
 (** Collects the reachable subgraph from a given source node in the lineage graph of one procedures.
-    Returns this subgraph and a list of nodes from other procedures to explore. *)
-let collect_reachable_in_procedure caller_table ~init:subgraph procname graph node =
-  let rec dfs todo acc_subgraph interproc_todo =
+    Returns this subgraph and two lists of nodes from other procedures to explore, the first one
+    being reached through Return edges and the second one though Calls.
+
+    If [follow_return] is false then the Return list will be empty (ie. [Return] edges will be
+    ignored). *)
+let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph procname graph node =
+  let rec dfs todo acc_subgraph return_todo call_todo =
     match todo with
     | [] ->
-        (acc_subgraph, interproc_todo)
+        (acc_subgraph, return_todo, call_todo)
     | vertex :: next ->
         let acc_subgraph', todo' =
           Lineage.G.fold_succ_e
@@ -57,34 +61,48 @@ let collect_reachable_in_procedure caller_table ~init:subgraph procname graph no
               else (Lineage.G.add_edge_e acc edge, Lineage.G.E.dst edge :: todo) )
             graph vertex (acc_subgraph, next)
         in
-        let interproc_todo' =
-          let callers = find_callers caller_table procname in
-          match vertex with
-          | Lineage.Vertex.Return [] ->
-              List.fold callers ~init:interproc_todo ~f:(fun acc caller ->
-                  (caller, Lineage.Vertex.ReturnOf procname) :: acc )
-          | Lineage.Vertex.Return (_ :: _) ->
-              L.die UserError
-                "Structures as returned values aren't supported yet. Re-run the lineage analysis \
-                 with --lineage-field-depth=0."
-          | Lineage.Vertex.ArgumentOf (callee, index) ->
-              (callee, Lineage.Vertex.Argument (index, [])) :: interproc_todo
-          | _ ->
-              interproc_todo
+        let return_todo' =
+          if follow_return then
+            let callers = find_callers caller_table procname in
+            match vertex with
+            | Lineage.Vertex.Return [] ->
+                List.fold callers ~init:return_todo ~f:(fun acc caller ->
+                    (caller, Lineage.Vertex.ReturnOf procname) :: acc )
+            | Lineage.Vertex.Return (_ :: _) ->
+                L.die UserError
+                  "Structures as returned values aren't supported yet. Re-run the lineage analysis \
+                   with --lineage-field-depth=0."
+            | _ ->
+                return_todo
+          else return_todo
         in
-        dfs todo' acc_subgraph' interproc_todo'
+        let call_todo' =
+          match vertex with
+          | Lineage.Vertex.ArgumentOf (callee, index) ->
+              (callee, Lineage.Vertex.Argument (index, [])) :: call_todo
+          | _ ->
+              call_todo
+        in
+        dfs todo' acc_subgraph' return_todo' call_todo'
   in
-  dfs [node] subgraph []
+  dfs [node] subgraph [] []
 
 
 (** Collect the reachable lineage subgraphs from a node over all program procedures. Returns it as a
-    map from each procname to its subgraph. *)
+    map from each procname to its subgraph.
+
+    The result will not traverse paths that include a Call edge followed (even not immediately) by a
+    Return edge (but will include the corresponding Summary edges). It works by first collecting all
+    the nodes reachable by traversing Return edges, then from this set the ones reachable through
+    Call edges but not Return. *)
 let collect_reachable caller_table procname node =
-  let rec aux todo acc_graphs =
-    match todo with
-    | [] ->
+  let rec aux ~follow_return todo todo_later acc_graphs =
+    match (todo, todo_later) with
+    | [], [] ->
         acc_graphs
-    | (procname, node) :: todo_next ->
+    | [], _ :: _ ->
+        aux ~follow_return:false todo_later [] acc_graphs
+    | (procname, node) :: todo_next, _ ->
         let lineage_graph =
           match Summary.OnDisk.get ~lazy_payloads:false procname with
           | None ->
@@ -105,15 +123,16 @@ let collect_reachable caller_table procname node =
           | Some g ->
               g
         in
-        let reachable_subgraph, interproc_todo =
-          collect_reachable_in_procedure caller_table procname lineage_graph node
+        let reachable_subgraph, return_todo, call_todo =
+          collect_reachable_in_procedure ~follow_return caller_table procname lineage_graph node
             ~init:init_reachable_subgraph
         in
         let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
-        let todo' = List.rev_append interproc_todo todo_next in
-        aux todo' acc_reachable_graphs'
+        let todo' = List.rev_append return_todo todo_next in
+        let todo_later' = List.rev_append call_todo todo_later in
+        aux ~follow_return todo' todo_later' acc_reachable_graphs'
   in
-  aux [(procname, node)] (Map.empty (module Procname))
+  aux ~follow_return:true [(procname, node)] [] (Map.empty (module Procname))
 
 
 (** Similar to collect_reachable for a subgraph from which you can reach a given node. *)
