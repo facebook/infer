@@ -762,6 +762,8 @@ val replay_ondemand_should_error : bool
 
 val report : bool
 
+val report_block_list_spec : Report_block_list_spec_t.report_block_list_specs
+
 val report_block_list_files_containing : string list
 
 val report_console_limit : int option

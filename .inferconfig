@@ -7,5 +7,19 @@
     {
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
+  ],
+  "report-block-list-spec": [
+    {
+      "bug_type" : "RETAIN_CYCLE",
+      "file" : "pulse/retain_cycles/RetainCycleBlocks.m",
+      "procedure_name" : "retain_a_in_block_cycle_bad",
+      "comment": "This is not really a FP, just testing."
+    },
+    {
+      "bug_type" : "RETAIN_CYCLE",
+      "file" : "pulse/retain_cycles/RetainCycleBlocks.m",
+      "class_name" : "RCBlock",
+      "procedure_name" : "retain_self_in_block_retain_cycle_bad"
+    }
   ]
 }

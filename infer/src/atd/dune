@@ -158,3 +158,17 @@
  (deps pulse_config.atd)
  (action
   (run atdgen -t %{deps})))
+
+; ATD for report_block_list_spec
+
+(rule
+ (targets report_block_list_spec_j.ml report_block_list_spec_j.mli)
+ (deps report_block_list_spec.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets report_block_list_spec_t.ml report_block_list_spec_t.mli)
+ (deps report_block_list_spec.atd)
+ (action
+  (run atdgen -t %{deps})))

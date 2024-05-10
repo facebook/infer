@@ -193,6 +193,35 @@ let is_in_clang_header source_file =
     ~substring:"/facebook-clang-plugins/clang/install/include/"
 
 
+let issue_in_report_block_list_specs ~file ~issue ~proc =
+  let is_in_report_block_list_spec ~file ~issue ~proc report_block_list_spec =
+    let filter_class =
+      match
+        (Procname.get_class_name proc, report_block_list_spec.Report_block_list_spec_t.class_name)
+      with
+      | Some class_name, Some fp_class_name ->
+          String.is_substring ~substring:fp_class_name class_name
+      | _ ->
+          true
+    in
+    let filter_proc =
+      let proc_name = Procname.get_method proc in
+      String.is_substring ~substring:report_block_list_spec.Report_block_list_spec_t.procedure_name
+        proc_name
+    in
+    let filter_file =
+      String.is_substring ~substring:report_block_list_spec.Report_block_list_spec_t.file
+        (SourceFile.to_rel_path file)
+    in
+    let filter_error =
+      String.equal issue.IssueType.unique_id
+        report_block_list_spec.Report_block_list_spec_t.bug_type
+    in
+    filter_class && filter_proc && filter_file && filter_error
+  in
+  List.exists ~f:(is_in_report_block_list_spec ~file ~issue ~proc) Config.report_block_list_spec
+
+
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
@@ -215,7 +244,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       error_filter source_file err_key.issue_type
       && should_report_proc_name
       && should_report proc_name err_key.issue_type err_key.err_desc
-      && not (is_in_clang_header source_file)
+      && (not (is_in_clang_header source_file))
+      && should_report proc_name err_key.issue_type err_key.err_desc
+      && not
+           (issue_in_report_block_list_specs ~file:source_file ~issue:err_key.issue_type
+              ~proc:proc_name )
     then
       let severity = IssueType.string_of_severity err_key.severity in
       let category = IssueType.string_of_category err_key.issue_type.category in

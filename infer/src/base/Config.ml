@@ -3118,6 +3118,26 @@ and ( report_block_list_files_containing
       ~meta:"error_name" () )
 
 
+and report_block_list_spec =
+  CLOpt.mk_json ~long:"report-block-list-spec"
+    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
+    {|Do not report the issues in this list.
+       Example format:
+        "report-block-list-spec": [
+            { "bug_type": "CXX_REF_CAPTURED_IN_BLOCK",
+              "procedure_name": "foo",
+              "file": "path/to/File.m"
+              "comment": "This is a fp because..."
+            },
+            { "bug_type": "RETAIN_CYCLE",
+              "class_name": "MyClass",
+              "procedure_name": "my_method"
+              "file": "path/to/File.m"
+            }
+        ]
+    |}
+
+
 and report_console_limit =
   CLOpt.mk_int_opt ~long:"report-console-limit" ~default:5
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -4644,6 +4664,11 @@ and replay_analysis_schedule = !replay_analysis_schedule
 and replay_ondemand_should_error = !replay_ondemand_should_error
 
 and report = !report
+
+and report_block_list_spec =
+  Report_block_list_spec_j.report_block_list_specs_of_string
+    (Yojson.Safe.to_string !report_block_list_spec)
+
 
 and report_block_list_files_containing = RevList.to_list !report_block_list_files_containing
 

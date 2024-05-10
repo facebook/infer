@@ -1,0 +1,16 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+type report_block_list_spec = {
+  bug_type : string;
+  ?class_name: string option;
+  procedure_name: string;
+  file : string;
+  ?comment: string option
+}
+
+type report_block_list_specs = report_block_list_spec list

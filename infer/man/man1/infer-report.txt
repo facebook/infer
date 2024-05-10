@@ -369,6 +369,23 @@ OPTIONS
            specified OCaml regex, even if they match the allow list specified
            by --report-allow-list-path-regex
 
+       --report-block-list-spec json
+           Do not report the issues in this list.
+                  Example format:
+                   "report-block-list-spec": [
+                       { "bug_type": "CXX_REF_CAPTURED_IN_BLOCK",
+                         "procedure_name": "foo",
+                         "file": "path/to/File.m"
+                         "comment": "This is a fp because..."
+                       },
+                       { "bug_type": "RETAIN_CYCLE",
+                         "class_name": "MyClass",
+                         "procedure_name": "my_method"
+                         "file": "path/to/File.m"
+                       }
+                   ]
+               
+
        --report-console-limit int
            Maximum number of issues to display on standard output. Unset with
            --report-console-limit-reset to show all.
