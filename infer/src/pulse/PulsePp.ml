@@ -323,7 +323,7 @@ module Printer = struct
     in
     let pp_value fmt (value, hist) = pp_value_hist_opt fmt (value, Some hist) in
     let pp_value_no_hist fmt value = pp_value_hist_opt fmt (value, None) in
-    let rec pp_value_accesses fmt (value, hist_opt) =
+    let rec pp_value_accesses ~is_prev_deref fmt (value, hist_opt) =
       let dereference, field_accesses, array_accesses =
         Memory.fold_edges ~pre_or_post value astate ~init:(None, [], [])
           ~f:(fun (dereference, field_accesses, array_accesses) (access, value_hist) ->
@@ -346,7 +346,8 @@ module Printer = struct
       in
       if
         match (dereference, field_accesses, array_accesses) with None, [], [] -> true | _ -> false
-      then F.fprintf fmt "=%a" pp_value_hist_opt (value, hist_opt) ;
+      then
+        F.fprintf fmt "%s%a" (if is_prev_deref then "" else "=") pp_value_hist_opt (value, hist_opt) ;
       if has_mixed_accesses then F.fprintf fmt "%t@[" (pp_mixed_access_begin pp_kind) ;
       Option.iter dereference ~f:(fun element ->
           decorator.f (value, hist_opt) (pp_deref_symbol pp_kind) fmt () ;
@@ -381,7 +382,7 @@ module Printer = struct
           add_delayed_value (value, Some hist) ;
           F.fprintf fmt "%s%a" (if is_prev_deref then "" else "=") pp_value (value, hist)
       | Unique _ ->
-          pp_value_accesses fmt (value, Some hist)
+          pp_value_accesses ~is_prev_deref fmt (value, Some hist)
       | Term (t, _) ->
           F.fprintf fmt "%s%a"
             (if is_prev_deref then "" else "=")
@@ -396,7 +397,7 @@ module Printer = struct
             if should_print_and_record value && has_edges pre_or_post value astate then (
               F.fprintf fmt "@;* " ;
               pp_value_hist_opt fmt (value, hist) ;
-              pp_value_accesses fmt (value, hist) ) ;
+              pp_value_accesses ~is_prev_deref:false fmt (value, hist) ) ;
             empty_delayed fmt ) )
     in
     let need_sep = ref false in
@@ -419,7 +420,10 @@ module Printer = struct
               if Var.is_pvar var then
                 match get_only_pointer_edge pre_or_post value astate with
                 | None ->
-                    ((fun fmt (v, hist) -> pp_value_accesses fmt (v, Some hist)), value_hist, true)
+                    ( (fun fmt (v, hist) ->
+                        pp_value_accesses ~is_prev_deref:false fmt (v, Some hist) )
+                    , value_hist
+                    , true )
                 | Some (var_address_deref_value, hist) ->
                     let pp fmt (v, hist) =
                       match AbstractValue.Map.find var_address_deref_value explainer with
@@ -429,10 +433,13 @@ module Printer = struct
                       | Term _ ->
                           F.fprintf fmt "=%a" pp_value (v, hist)
                       | Unique _ ->
-                          pp_value_accesses fmt (v, Some hist)
+                          pp_value_accesses ~is_prev_deref:false fmt (v, Some hist)
                     in
                     (pp, (var_address_deref_value, hist), false)
-              else ((fun fmt (v, hist) -> pp_value_accesses fmt (v, Some hist)), value_hist, false)
+              else
+                ( (fun fmt (v, hist) -> pp_value_accesses ~is_prev_deref:false fmt (v, Some hist))
+                , value_hist
+                , false )
             in
             match AbstractValue.Map.find (fst var_value_hist) explainer with
             | Aliases {print_as= Some var'} when Var.equal var var' ->
