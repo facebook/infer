@@ -53,33 +53,49 @@ let leq ~lhs ~rhs =
       false
 
 
-let pp_ pp_abductive_domain_t fmt = function
-  | AbortProgram astate ->
-      F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.Summary.pp astate
-  | ContinueProgram astate ->
-      pp_abductive_domain_t fmt astate
-  | ExceptionRaised astate ->
-      F.fprintf fmt "{ExceptionRaised %a}" pp_abductive_domain_t astate
-  | ExitProgram astate ->
-      F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.Summary.pp astate
-  | LatentAbortProgram {astate; latent_issue} ->
+let to_astate = function
+  | AbortProgram summary
+  | ExitProgram summary
+  | LatentAbortProgram {astate= summary}
+  | LatentInvalidAccess {astate= summary} ->
+      (summary :> AbductiveDomain.t)
+  | ExceptionRaised astate | ContinueProgram astate ->
+      astate
+
+
+let pp_header kind fmt = function
+  | AbortProgram _ ->
+      Pp.with_color kind Red F.pp_print_string fmt "AbortProgram"
+  | ContinueProgram _ ->
+      ()
+  | ExceptionRaised _ ->
+      Pp.with_color kind Orange F.pp_print_string fmt "ExceptionRaised"
+  | ExitProgram _ ->
+      Pp.with_color kind Orange F.pp_print_string fmt "ExitProgram"
+  | LatentAbortProgram {latent_issue} ->
+      Pp.with_color kind Orange F.pp_print_string fmt "LatentAbortProgram" ;
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message, _suggestion = Diagnostic.get_message_and_suggestion diagnostic in
       let location = Diagnostic.get_location diagnostic in
-      F.fprintf fmt "{LatentAbortProgram(%a: %s)@ %a@ %a}" Location.pp location message
-        LatentIssue.pp latent_issue AbductiveDomain.Summary.pp astate
-  | LatentInvalidAccess {astate; address; must_be_valid= _} ->
-      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" DecompilerExpr.pp address
-        AbductiveDomain.Summary.pp astate
+      F.fprintf fmt "(%a: %s)@ %a" Location.pp location message LatentIssue.pp latent_issue
+  | LatentInvalidAccess {address; must_be_valid= _} ->
+      Pp.with_color kind Orange F.pp_print_string fmt "LatentInvalidAccess" ;
+      F.fprintf fmt "(%a)" DecompilerExpr.pp address
 
 
-let pp_with_kind kind fmt exec_state = pp_ (PulsePp.pp kind) fmt exec_state
+let pp_with_kind kind path_opt fmt exec_state =
+  F.fprintf fmt "%a%a" (pp_header kind) exec_state (PulsePp.pp kind path_opt) (to_astate exec_state)
 
-let pp = pp_with_kind TEXT
+
+let pp fmt exec_state =
+  F.fprintf fmt "%a%a" (pp_header TEXT) exec_state AbductiveDomain.pp (to_astate exec_state)
+
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 
-let pp_summary fmt exec_summary = pp_ AbductiveDomain.Summary.pp fmt exec_summary
+let pp_summary fmt (exec_summary : summary) =
+  pp_with_kind TEXT None fmt (exec_summary :> AbductiveDomain.t base_t)
+
 
 let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2

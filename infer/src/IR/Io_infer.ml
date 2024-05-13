@@ -79,7 +79,7 @@ h1 { font-size:14pt }
 .num { background-color:#eee; color:#444; font-size: smaller; padding-right:2ex; text-align:right; width:2.5em; }
 .dangling { background-color:white; color: gray; }
 .visited { background-color:LemonChiffon; color: darkmagenta; }
-.tooltip { display: none; background-color:#FFF0F0; border: 2px solid #F00; font-weight: normal; left:10em; padding: 2px; position: absolute; top: -1em; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; z-index: 1}
+.tooltip { display: none; background-color:#FFF0F0; border: 2px solid #F00; font-weight: normal; left:3em; padding: 2px; position: absolute; top: -1em; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; z-index: 1}
 .with_tooltip { position: relative; }
 .with_tooltip:hover .tooltip, .visited:hover .tooltip { display: block; }
 #node_listing { margin-top: 5pt; margin-bottom: 5pt; }

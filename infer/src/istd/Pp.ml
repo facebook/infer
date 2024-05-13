@@ -97,7 +97,13 @@ let color_string = function
 
 
 let html_with_color color pp f x =
-  F.fprintf f "<span class='%s'>%a</span>" (color_string color) pp x
+  let before = Printf.sprintf "<span class='%s'>" (color_string color) in
+  let after = "</span>" in
+  F.fprintf f "@<0>%s%a@<0>%s" before pp x after
+
+
+let with_color kind color pp fmt x =
+  match kind with HTML -> html_with_color color pp fmt x | TEXT -> pp fmt x
 
 
 let escape_xml pp pp_kind fmt x =
@@ -112,12 +118,16 @@ let escape_xml pp pp_kind fmt x =
       F.pp_print_as fmt (String.length original) escaped
 
 
-let html_collapsible_block ~name pp f x =
-  let before =
-    Printf.sprintf "<details class='state'><summary>%s</summary><p>" (Escape.escape_xml name)
-  in
-  let after = "</p></details>" in
-  F.fprintf f "@<0>%s%a@<0>%s" before pp x after
+let html_collapsible_block ~name pp_kind pp f x =
+  match pp_kind with
+  | TEXT ->
+      F.fprintf f "@[<hv2>%s: %a@]" name pp x
+  | HTML ->
+      let before =
+        Printf.sprintf "<details class='state'><summary>%s</summary><p>" (Escape.escape_xml name)
+      in
+      let after = "</p></details>" in
+      F.fprintf f "@<0>%s%a@<0>%s" before pp x after
 
 
 let color_wrapper pe ppf x ~f =
@@ -221,7 +231,7 @@ let in_backticks pp fmt x = F.fprintf fmt "`%a`" pp x
 
 let collection :
        fold:('t, 'item, _) Container.fold
-    -> sep:string
+    -> sep:(unit, F.formatter, unit) format
     -> ?filter:('item -> bool)
     -> (F.formatter -> 'item -> unit)
     -> F.formatter
@@ -230,7 +240,9 @@ let collection :
  fun ~fold ~sep ?(filter = fun _ -> true) pp_item fmt coll ->
   let pp_coll_aux print_sep item =
     if filter item then (
-      F.fprintf fmt "@[<h>%s%a@]" (if print_sep then sep else "") pp_item item ;
+      F.fprintf fmt "@[<h>" ;
+      if print_sep then F.fprintf fmt sep ;
+      F.fprintf fmt "%a@]" pp_item item ;
       true )
     else print_sep
   in

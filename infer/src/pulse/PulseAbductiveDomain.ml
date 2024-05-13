@@ -1751,7 +1751,7 @@ let filter_for_summary proc_name astate0 =
   L.d_printfln "%a" pp astate0 ;
   L.d_printfln "Canonicalizing..." ;
   let* astate_before_filter = canonicalize astate0 in
-  let pp_state = Pp.html_collapsible_block ~name:"Show/hide canonicalized state" pp in
+  let pp_state = Pp.html_collapsible_block ~name:"Show/hide canonicalized state" HTML pp in
   L.d_printfln "%a" pp_state astate_before_filter ;
   (* Remove the stack from the post as it's not used: the values of formals are the same as in the
      pre. Moreover, formals can be treated as local variables inside the function's body so we need

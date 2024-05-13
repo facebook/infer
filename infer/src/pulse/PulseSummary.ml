@@ -161,7 +161,7 @@ let of_posts tenv proc_desc err_log location posts non_disj =
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i exec_state ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i
-          (ExecutionDomain.pp_with_kind HTML)
+          (ExecutionDomain.pp_with_kind HTML None)
           exec_state ;
         exec_summary_of_post_common tenv proc_desc err_log location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)

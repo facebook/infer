@@ -305,7 +305,7 @@ let pp_call_state fmt
     pp_aliases aliases
 
 
-let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
+let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" HTML pp_call_state
 
 let to_callee_addr call_state x = AddressMap.find_opt x call_state.rev_subst
 
@@ -1296,7 +1296,7 @@ let apply_summary tenv path callee_proc_name call_location ~callee_summary ~capt
   in
   let pp_formals = Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f (Var.of_pvar var)) in
   let pp_summary =
-    Pp.html_collapsible_block ~name:"Show/hide the summary" AbductiveDomain.Summary.pp
+    Pp.html_collapsible_block ~name:"Show/hide the summary" HTML AbductiveDomain.Summary.pp
   in
   L.with_indent ~collapsible:true "Applying pre/post for %a(%a):" Procname.pp callee_proc_name
     pp_formals formals ~f:(fun () ->

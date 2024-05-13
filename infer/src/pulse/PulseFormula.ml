@@ -203,7 +203,7 @@ end = struct
         if not (Q.is_one abs_q) then F.fprintf fmt "%a·" Q.pp_print abs_q
       in
       let pp_vs fmt vs =
-        Pp.collection ~sep:" "
+        Pp.collection ~sep:"@;"
           ~fold:(IContainer.fold_of_pervasives_map_fold VarMap.fold)
           (fun fmt (v, q) ->
             F.fprintf fmt "%a%a" pp_coeff q pp_var v ;
@@ -396,7 +396,7 @@ let pp_var_set pp_var fmt var_set =
 
 
 let pp_var_map ?filter ~arrow pp_val pp_var fmt var_map =
-  Pp.collection ~sep:" ∧ "
+  Pp.collection ~sep:"@;∧ "
     ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
     ?filter
     (fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
@@ -4617,12 +4617,7 @@ let pp_formula_explained pp_var fmt {phi} =
   let should_print_atom atom =
     match atom with Atom.Equal (IsInt _, Const _) -> false | _ -> true
   in
-  F.pp_open_hvbox fmt 0 ;
-  let pp_if should_print pp fmt x =
-    if should_print x then (
-      F.fprintf fmt "@;∧@ " ;
-      pp fmt x )
-  in
+  let pp_if should_print pp fmt x = if should_print x then F.fprintf fmt "@;∧ %a" pp x in
   pp_if is_map_non_empty (InstanceOf.pp_with_pp_var pp_var) fmt type_constraints ;
   pp_if
     (Var.Map.exists (fun _ linear -> should_print_linear linear))
@@ -4638,10 +4633,9 @@ let pp_formula_explained pp_var fmt {phi} =
   pp_if
     (fun atoms -> Atom.Set.exists should_print_atom atoms)
     (Atom.Set.pp_with_pp_var ~filter:should_print_atom pp_var)
-    fmt atoms ;
-  F.pp_close_box fmt ()
+    fmt atoms
 
 
 let pp_conditions_explained pp_var fmt {conditions} =
   if not (Atom.Set.is_empty conditions) then
-    F.fprintf fmt "@;∧@ %a" (Atom.Set.pp_with_pp_var pp_var) conditions
+    F.fprintf fmt "@;∧ %a" (Atom.Set.pp_with_pp_var pp_var) conditions

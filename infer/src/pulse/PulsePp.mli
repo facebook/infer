@@ -8,4 +8,4 @@
 open! IStd
 module F = Format
 
-val pp : Pp.print_kind -> F.formatter -> PulseAbductiveDomain.t -> unit
+val pp : Pp.print_kind -> PulsePathContext.t option -> F.formatter -> PulseAbductiveDomain.t -> unit

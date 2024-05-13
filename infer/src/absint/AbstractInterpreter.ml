@@ -334,8 +334,9 @@ struct
         List.iteri (List.rev disjuncts) ~f:(fun i disjunct ->
             F.fprintf f "#%d: @[%a@]@;" i (T.pp_disjunct pp_kind) disjunct )
       in
-      F.fprintf f "@[<v>%d disjuncts:@;%a@;@[<hv 2>Non-disj state:@ %a@]@]" (List.length disjuncts)
-        pp_disjuncts disjuncts T.NonDisjDomain.pp non_disj
+      F.fprintf f "@[<v>%d disjuncts:@;%a%a@]" (List.length disjuncts) pp_disjuncts disjuncts
+        (Pp.html_collapsible_block ~name:"Non-disjunctive state" pp_kind T.NonDisjDomain.pp)
+        non_disj
 
 
     let pp = pp_ TEXT

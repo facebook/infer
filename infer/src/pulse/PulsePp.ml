@@ -269,6 +269,14 @@ module Printer = struct
 
   let pp_deref_symbol pp_kind fmt () = Pp.escape_xml F.pp_print_string pp_kind fmt "->"
 
+  let pp_mixed_access_begin pp_kind fmt =
+    Pp.with_color pp_kind Blue (Pp.escape_xml F.pp_print_string pp_kind) fmt "<<"
+
+
+  let pp_mixed_access_end pp_kind fmt =
+    Pp.with_color pp_kind Blue (Pp.escape_xml F.pp_print_string pp_kind) fmt ">>"
+
+
   let has_edges pre_or_post v astate = Memory.exists_edge v astate ~pre_or_post ~f:(fun _ -> true)
 
   (** the pointee of the value provided, if that's the one and only access edge from that value,
@@ -339,11 +347,12 @@ module Printer = struct
       if
         match (dereference, field_accesses, array_accesses) with None, [], [] -> true | _ -> false
       then F.fprintf fmt "=%a" pp_value_hist_opt (value, hist_opt) ;
-      if has_mixed_accesses then F.fprintf fmt "<@[<v>" ;
+      if has_mixed_accesses then F.fprintf fmt "%t@[" (pp_mixed_access_begin pp_kind) ;
       Option.iter dereference ~f:(fun element ->
           decorator.f (value, hist_opt) (pp_deref_symbol pp_kind) fmt () ;
           pp_from_value ~is_prev_deref:true fmt element ) ;
       if not (List.is_empty field_accesses) then (
+        if has_mixed_accesses then F.fprintf fmt ", @," ;
         F.pp_print_string fmt "." ;
         let is_single_access = match field_accesses with [_] -> true | _ -> false in
         if not is_single_access then F.fprintf fmt "{@[<hv>" ;
@@ -358,7 +367,7 @@ module Printer = struct
           pp_array_access fmt access_info ;
           false )
       |> ignore ;
-      if has_mixed_accesses then F.fprintf fmt "%@]>" ;
+      if has_mixed_accesses then F.fprintf fmt "@]%t" (pp_mixed_access_end pp_kind) ;
       ()
     and pp_field_access (root_val, root_hist_opt) fmt (field, value_hist) =
       decorator.f (root_val, root_hist_opt) Fieldname.pp fmt field ;
@@ -519,7 +528,7 @@ module Printer = struct
       fmt astate
 end
 
-let pp (pp_kind : Pp.print_kind) fmt astate =
+let pp (pp_kind : Pp.print_kind) path_opt fmt astate =
   let pp_ pre_post =
     let explainer = Explainer.make pre_post astate in
     let decorator = HTMLDecorator.make pp_kind pre_post astate in
@@ -539,8 +548,10 @@ let pp (pp_kind : Pp.print_kind) fmt astate =
   pp_ `Post ;
   pp_ `Pre ;
   F.pp_print_newline fmt () ;
-  match pp_kind with
-  | TEXT ->
-      F.fprintf fmt "@[<hv2>Raw state: %a@]" AbductiveDomain.pp astate
-  | HTML ->
-      Pp.html_collapsible_block ~name:"raw state" AbductiveDomain.pp fmt astate
+  let pp_raw_state fmt () =
+    let pp_path_opt fmt path_opt =
+      Option.iter path_opt ~f:(fun path -> F.fprintf fmt "@\n%a" PulsePathContext.pp path)
+    in
+    F.fprintf fmt "%a%a" AbductiveDomain.pp astate pp_path_opt path_opt
+  in
+  Pp.html_collapsible_block ~name:"Raw state" pp_kind pp_raw_state fmt ()
