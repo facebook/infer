@@ -411,7 +411,8 @@ struct
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
             (post_astate, pre_disjunct :: dropped, n_disjuncts) )
           else
-            L.with_indent "Executing instruction from disjunct #%d" i ~f:(fun () ->
+            L.with_indent ~escape_result:false "Executing instruction from disjunct #%d" i
+              ~f:(fun () ->
                 (* check timeout once per disjunct to execute instead of once for all disjuncts *)
                 Timer.check_timeout () ;
                 let disjuncts', non_disj' =

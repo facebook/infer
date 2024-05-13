@@ -1519,7 +1519,8 @@ module PulseTransferFunctions = struct
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 
-  let pp_disjunct _kind fmt astate = DisjDomain.pp fmt astate
+  let pp_disjunct kind fmt (exec_astate, path) =
+    F.fprintf fmt "%a@\n%a" (ExecutionDomain.pp_with_kind kind) exec_astate PathContext.pp path
 end
 
 let summary_count_channel =

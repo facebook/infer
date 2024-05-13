@@ -145,3 +145,13 @@ val absval_of_int : t -> IntLit.t -> t * Var.t
     return the same abstract variable. *)
 
 val absval_of_string : t -> string -> t * Var.t
+
+type term
+
+val explain_as_term : t -> Var.t -> term option
+
+val pp_term : (F.formatter -> Var.t -> unit) -> F.formatter -> term -> unit
+
+val pp_conditions_explained : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
+
+val pp_formula_explained : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit

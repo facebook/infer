@@ -694,7 +694,9 @@ let check_address_escape escape_location proc_desc address history astate =
                    Ok () ) )
   in
   let check_address_of_stack_variable () =
-    IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_map_fold Stack.fold) astate
+    IContainer.iter_result
+      ~fold:(IContainer.fold_of_pervasives_map_fold (Stack.fold ~pre_or_post:`Post))
+      astate
       ~f:(fun (variable, (var_address, _)) ->
         if
           AbstractValue.equal var_address address

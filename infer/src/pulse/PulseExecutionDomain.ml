@@ -73,7 +73,9 @@ let pp_ pp_abductive_domain_t fmt = function
         AbductiveDomain.Summary.pp astate
 
 
-let pp fmt exec_state = pp_ AbductiveDomain.pp fmt exec_state
+let pp_with_kind kind fmt exec_state = pp_ (PulsePp.pp kind) fmt exec_state
+
+let pp = pp_with_kind TEXT
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 

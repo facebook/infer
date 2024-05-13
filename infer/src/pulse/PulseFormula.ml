@@ -44,7 +44,8 @@ let pp_function_symbol fmt = function
   | Unknown v ->
       Var.pp fmt v
   | Procname proc_name ->
-      Procname.pp fmt proc_name
+      (* templates mess up HTML debug output and are too much info most of the time *)
+      Procname.pp_without_templates fmt proc_name
 
 
 type operand =
@@ -394,9 +395,10 @@ let pp_var_set pp_var fmt var_set =
     pp_var fmt var_set
 
 
-let pp_var_map ~arrow pp_val pp_var fmt var_map =
+let pp_var_map ?filter ~arrow pp_val pp_var fmt var_map =
   Pp.collection ~sep:" ∧ "
     ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+    ?filter
     (fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
     fmt var_map
 
@@ -595,7 +597,8 @@ module Term = struct
     | String s ->
         F.fprintf fmt "\"%s\"" s
     | Procname proc_name ->
-        Procname.pp fmt proc_name
+        (* templates mess up HTML debug output and are too much info most of the time *)
+        Procname.pp_without_templates fmt proc_name
     | FunctionApplication {f; actuals} ->
         F.fprintf fmt "%a(%a)" (pp_paren pp_var ~needs_paren) f
           (Pp.seq ~sep:"," (pp_paren pp_var ~needs_paren))
@@ -1875,13 +1878,12 @@ module Atom = struct
       type nonrec t = t [@@deriving compare]
     end)
 
-    let pp_with_pp_var pp_var fmt atoms =
-      if is_empty atoms then F.pp_print_string fmt "(empty)"
-      else
-        Pp.collection ~sep:"∧"
-          ~fold:(IContainer.fold_of_pervasives_set_fold fold)
-          (fun fmt atom -> F.fprintf fmt "{%a}" (pp_with_pp_var pp_var) atom)
-          fmt atoms
+    let pp_with_pp_var ?filter pp_var fmt atoms =
+      Pp.collection ~sep:"∧"
+        ~fold:(IContainer.fold_of_pervasives_set_fold fold)
+        ?filter
+        (fun fmt atom -> F.fprintf fmt "{%a}" (pp_with_pp_var pp_var) atom)
+        fmt atoms
 
 
     let yojson_of_t atoms = `List (List.map (elements atoms) ~f:yojson_of_t)
@@ -1981,7 +1983,7 @@ module TermMapOccurrences = MakeOccurrences (TermDomainOrRange)
 module AtomMapOccurrences = MakeOccurrences (struct
   include Atom
 
-  let pp_set = Atom.Set.pp_with_pp_var
+  let pp_set fmt atoms = Atom.Set.pp_with_pp_var fmt atoms
 end)
 
 module InstanceOf = struct
@@ -2142,6 +2144,13 @@ module Formula = struct
     val fold_term_eqs_vars : t -> init:'acc -> f:('acc -> Var.t -> 'acc) -> 'acc
 
     val subst_term_eqs : Var.t Var.Map.t -> t -> Term.VarMap.t_
+
+    val pp_term_eqs_with_pp_var :
+         ?filter:(Term.t -> Var.t -> bool)
+      -> (F.formatter -> Var.t -> unit)
+      -> F.formatter
+      -> t
+      -> unit
 
     (* {2 mutations} *)
 
@@ -2317,7 +2326,7 @@ module Formula = struct
         phi Term.VarMap.empty
 
 
-    let pp_term_eqs_with_pp_var pp_var fmt phi =
+    let pp_term_eqs_with_pp_var ?(filter = fun _ _ -> true) pp_var fmt phi =
       (* Change this to get the raw data in the map, otherwise by default print what clients would
          get out of the map. The only difference is in the range of the map: whether variables get
          through [get_repr] or not before being printed. *)
@@ -2329,10 +2338,11 @@ module Formula = struct
         F.pp_open_hvbox fmt 0 ;
         term_eqs_iter
           (fun term var ->
-            F.pp_open_hbox fmt () ;
-            if not !is_first then F.pp_print_string fmt "∧" ;
-            is_first := false ;
-            F.fprintf fmt "%a=%a@]" (Term.pp pp_var) term pp_var var )
+            if filter term var then (
+              F.pp_open_hbox fmt () ;
+              if not !is_first then F.pp_print_string fmt "∧" ;
+              is_first := false ;
+              F.fprintf fmt "%a=%a@]" (Term.pp pp_var) term pp_var var ) )
           phi ;
         F.pp_close_box fmt ()
 
@@ -3689,7 +3699,11 @@ type t =
 let ttrue = {conditions= Atom.Set.empty; phi= Formula.ttrue}
 
 let pp_with_pp_var pp_var fmt {conditions; phi} =
-  F.fprintf fmt "@[<hv>conditions: %a@;phi: %a@]" (Atom.Set.pp_with_pp_var pp_var) conditions
+  let pp_conditions fmt conditions =
+    if Atom.Set.is_empty conditions then F.pp_print_string fmt "(empty)"
+    else Atom.Set.pp_with_pp_var pp_var fmt conditions
+  in
+  F.fprintf fmt "@[<hv>conditions: %a@;phi: %a@]" pp_conditions conditions
     (Formula.pp_with_pp_var pp_var) phi
 
 
@@ -4568,3 +4582,66 @@ let absval_of_string formula s =
         and_equal (AbstractValueOperand v) (ConstOperand (Cstr s)) formula |> assert_sat |> fst
       in
       (formula, v)
+
+
+type term = Term.t
+
+let explain_as_term formula x =
+  Option.first_some
+    (as_constant_q formula x |> Option.map ~f:(fun q -> Term.Const q))
+    (as_constant_string formula x |> Option.map ~f:(fun s -> Term.String s))
+
+
+let pp_term = Term.pp
+
+let pp_formula_explained pp_var fmt {phi} =
+  let ({ Formula.var_eqs= _
+       ; const_eqs= _
+       ; type_constraints
+       ; linear_eqs
+       ; term_eqs= _ (* still get printed but the API doesn't use [term_eqs] directly *)
+       ; tableau
+       ; intervals= _
+       ; atoms
+       ; linear_eqs_occurrences= _
+       ; tableau_occurrences= _
+       ; term_eqs_occurrences= _
+       ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) =
+    phi
+  in
+  let is_map_non_empty m = not (Var.Map.is_empty m) in
+  let should_print_linear linear = Option.is_none @@ LinArith.get_as_const linear in
+  let should_print_term_eq term _ =
+    match Term.linearize term with Term.Linear _ -> false | _ -> true
+  in
+  let should_print_atom atom =
+    match atom with Atom.Equal (IsInt _, Const _) -> false | _ -> true
+  in
+  F.pp_open_hvbox fmt 0 ;
+  let pp_if should_print pp fmt x =
+    if should_print x then (
+      F.fprintf fmt "@;∧@ " ;
+      pp fmt x )
+  in
+  pp_if is_map_non_empty (InstanceOf.pp_with_pp_var pp_var) fmt type_constraints ;
+  pp_if
+    (Var.Map.exists (fun _ linear -> should_print_linear linear))
+    (pp_var_map
+       ~filter:(fun (_, linear) -> should_print_linear linear)
+       ~arrow:" = " (LinArith.pp pp_var) pp_var )
+    fmt linear_eqs ;
+  pp_if is_map_non_empty (Tableau.pp pp_var) fmt tableau ;
+  pp_if
+    (Formula.term_eqs_exists should_print_term_eq)
+    (Formula.pp_term_eqs_with_pp_var ~filter:should_print_term_eq pp_var)
+    fmt phi ;
+  pp_if
+    (fun atoms -> Atom.Set.exists should_print_atom atoms)
+    (Atom.Set.pp_with_pp_var ~filter:should_print_atom pp_var)
+    fmt atoms ;
+  F.pp_close_box fmt ()
+
+
+let pp_conditions_explained pp_var fmt {conditions} =
+  if not (Atom.Set.is_empty conditions) then
+    F.fprintf fmt "@;∧@ %a" (Atom.Set.pp_with_pp_var pp_var) conditions

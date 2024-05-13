@@ -113,10 +113,11 @@ let escape_xml pp pp_kind fmt x =
 
 
 let html_collapsible_block ~name pp f x =
-  let name = Escape.escape_xml name in
-  let result_pp_escaped f x = F.fprintf f "%s" (F.asprintf "%a" pp x |> Escape.escape_xml) in
-  F.fprintf f "<DETAILS class='state'><SUMMARY>%s</SUMMARY><P>%a</P></DETAILS>" name
-    result_pp_escaped x
+  let before =
+    Printf.sprintf "<details class='state'><summary>%s</summary><p>" (Escape.escape_xml name)
+  in
+  let after = "</p></details>" in
+  F.fprintf f "@<0>%s%a@<0>%s" before pp x after
 
 
 let color_wrapper pe ppf x ~f =

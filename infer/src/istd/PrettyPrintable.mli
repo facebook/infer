@@ -198,6 +198,8 @@ module type PPUniqRankSet = sig
 
   val for_all : f:(elt -> bool) -> t -> bool
 
+  val exists : f:(elt -> bool) -> t -> bool
+
   val is_empty : t -> bool
 
   val is_singleton : t -> bool

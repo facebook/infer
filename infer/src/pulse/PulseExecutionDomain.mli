@@ -33,6 +33,8 @@ type t = AbductiveDomain.t base_t
 
 include AbstractDomain.Disjunct with type t := t
 
+val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
+
 val continue : AbductiveDomain.t -> t
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
