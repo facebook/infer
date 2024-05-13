@@ -525,9 +525,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   (** extract the precondition of node [n] from [inv_map] *)
   let extract_pre node_id inv_map = extract_state node_id inv_map |> Option.map ~f:State.pre
 
-  let pp_domain_html =
-    Pp.html_collapsible_block ~name:"Show/hide the state" (TransferFunctions.pp_domain HTML)
-
+  let pp_domain_html = TransferFunctions.pp_domain HTML
 
   let debug_absint_operation op =
     let pp_op fmt op =
