@@ -1518,6 +1518,8 @@ module PulseTransferFunctions = struct
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
+
+  let pp_disjunct _kind fmt astate = DisjDomain.pp fmt astate
 end
 
 let summary_count_channel =

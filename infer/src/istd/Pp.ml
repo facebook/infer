@@ -100,6 +100,18 @@ let html_with_color color pp f x =
   F.fprintf f "<span class='%s'>%a</span>" (color_string color) pp x
 
 
+let escape_xml pp pp_kind fmt x =
+  match pp_kind with
+  | TEXT ->
+      pp fmt x
+  | HTML ->
+      let original = F.asprintf "%a" pp x in
+      let escaped = Escape.escape_xml original in
+      (* use [pp_print_as] so as not to mess up formatting: the display length of [escaped] is the
+         length of [original] *)
+      F.pp_print_as fmt (String.length original) escaped
+
+
 let html_collapsible_block ~name pp f x =
   let name = Escape.escape_xml name in
   let result_pp_escaped f x = F.fprintf f "%s" (F.asprintf "%a" pp x |> Escape.escape_xml) in

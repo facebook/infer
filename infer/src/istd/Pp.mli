@@ -62,6 +62,9 @@ val html : color -> env
 val color_string : color -> string
 (** string representation of colors *)
 
+val escape_xml : (F.formatter -> 'a -> unit) -> print_kind -> F.formatter -> 'a -> unit
+(** escapes the output of the pretty printer parameter using HTML codes *)
+
 val html_with_color : color -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
 
 val html_collapsible_block : name:string -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit

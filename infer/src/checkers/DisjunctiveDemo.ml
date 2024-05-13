@@ -69,6 +69,8 @@ module DisjunctiveAnalyzerTransferFunctions = struct
   let remember_dropped_disjuncts _ non_disj = non_disj
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Disjunctive Domain demo"
+
+  let pp_disjunct _pp_kind = DisjDomain.pp
 end
 
 module DisjunctiveAnalyzer =
