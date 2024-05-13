@@ -7,7 +7,7 @@ digraph cfg {
 "objc_block_static.m:18_3d670dc7.0f7d852dffb202b3_2" [label="2: Exit objc_block_static.m:18 \n  " color=yellow style=filled]
 	
 
-"objc_block_static.m:18_3d670dc7.0f7d852dffb202b3_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 19, column 23]\n  n$2=_fun_NSObject.init(n$1:A*) virtual [line 19, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test.sharedInstance:objc_object*=n$2 [line 19, column 5]\n " shape="box"]
+"objc_block_static.m:18_3d670dc7.0f7d852dffb202b3_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A;nullable=false):unsigned long) [line 19, column 23]\n  n$2=_fun_NSObject.init(n$1:A*) virtual [line 19, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test.sharedInstance:objc_object*=n$2 [line 19, column 5]\n " shape="box"]
 	
 
 	 "objc_block_static.m:18_3d670dc7.0f7d852dffb202b3_3" -> "objc_block_static.m:18_3d670dc7.0f7d852dffb202b3_2" ;
@@ -18,7 +18,7 @@ digraph cfg {
 "objc_block_static.m:28_0cf69131.cc5edcc8a362de0b_2" [label="2: Exit objc_block_static.m:28 \n  " color=yellow style=filled]
 	
 
-"objc_block_static.m:28_0cf69131.cc5edcc8a362de0b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 29, column 23]\n  n$5=_fun_NSObject.init(n$4:A*) virtual [line 29, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test_leak.sharedInstance:objc_object*=n$5 [line 29, column 5]\n " shape="box"]
+"objc_block_static.m:28_0cf69131.cc5edcc8a362de0b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=A;nullable=false):unsigned long) [line 29, column 23]\n  n$5=_fun_NSObject.init(n$4:A*) virtual [line 29, column 22]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test_leak.sharedInstance:objc_object*=n$5 [line 29, column 5]\n " shape="box"]
 	
 
 	 "objc_block_static.m:28_0cf69131.cc5edcc8a362de0b_3" -> "objc_block_static.m:28_0cf69131.cc5edcc8a362de0b_2" ;
@@ -93,7 +93,7 @@ digraph cfg {
 	
 
 	 "test2#A#[class].16025f2311d9515e_5" -> "test2#A#[class].16025f2311d9515e_3" ;
-"test2#A#[class].16025f2311d9515e_6" [label="6:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 36, column 21]\n  n$11=_fun_NSObject.init(n$10:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object*=n$11 [line 36, column 3]\n " shape="box"]
+"test2#A#[class].16025f2311d9515e_6" [label="6:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=A;nullable=false):unsigned long) [line 36, column 21]\n  n$11=_fun_NSObject.init(n$10:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object*=n$11 [line 36, column 3]\n " shape="box"]
 	
 
 	 "test2#A#[class].16025f2311d9515e_6" -> "test2#A#[class].16025f2311d9515e_5" ;

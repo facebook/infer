@@ -222,16 +222,16 @@ let rec pp_ pe pp_t f e =
       F.fprintf f "%a.%a" pp_exp e Fieldname.pp fld
   | Lindex (e1, e2) ->
       F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
-  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
+  | Sizeof {typ; nbytes; dynamic_length; subtype; nullable} ->
       let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" pp_exp) l in
       let pp_size f size = Option.iter ~f:(Int.pp f) size in
       let pp_if b pp label f v = if b then F.fprintf f ";%s=%a" label pp v in
       let pp_if_some pp_opt label f opt = pp_if (Option.is_some opt) pp_opt label f opt in
       let subt_s = F.asprintf "%a" Subtype.pp subtype in
-      F.fprintf f "sizeof(t=%a%a%a%a)" pp_t typ (pp_if_some pp_size "nbytes") nbytes
+      F.fprintf f "sizeof(t=%a%a%a%a;nullable=%b)" pp_t typ (pp_if_some pp_size "nbytes") nbytes
         (pp_if_some pp_len "len") dynamic_length
         (pp_if (not (String.equal "" subt_s)) Subtype.pp "sub_t")
-        subtype
+        subtype nullable
 
 
 and pp_captured_var pe pp_t f (exp, var, typ, mode) =

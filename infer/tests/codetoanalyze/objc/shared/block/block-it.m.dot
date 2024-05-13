@@ -67,7 +67,7 @@ digraph cfg {
 	
 
 	 "array#MyBlock#[instance].452aa168203e40bd_3" -> "array#MyBlock#[instance].452aa168203e40bd_2" ;
-"array#MyBlock#[instance].452aa168203e40bd_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray.init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n " shape="box"]
+"array#MyBlock#[instance].452aa168203e40bd_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray;nullable=false):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray.init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n " shape="box"]
 	
 
 	 "array#MyBlock#[instance].452aa168203e40bd_4" -> "array#MyBlock#[instance].452aa168203e40bd_3" ;
@@ -136,7 +136,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_16" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_5" ;
-"array_trans#MyBlock#[instance].92a91a5a6c07d842_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(stop:_Bool*); [line 45, column 3]\n  n$30=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$30 [line 45, column 3]\n " shape="box"]
+"array_trans#MyBlock#[instance].92a91a5a6c07d842_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(stop:_Bool*); [line 45, column 3]\n  n$30=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1;nullable=false):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$30 [line 45, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_17" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_16" ;
@@ -148,7 +148,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_19" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_18" ;
-"array_trans#MyBlock#[instance].92a91a5a6c07d842_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 32, column 3]\n  n$37=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 32, column 17]\n  n$38=_fun_NSArray.init(n$37:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$38 [line 32, column 3]\n " shape="box"]
+"array_trans#MyBlock#[instance].92a91a5a6c07d842_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 32, column 3]\n  n$37=_fun___objc_alloc_no_fail(sizeof(t=NSArray;nullable=false):unsigned long) [line 32, column 17]\n  n$38=_fun_NSArray.init(n$37:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$38 [line 32, column 3]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_20" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_19" ;

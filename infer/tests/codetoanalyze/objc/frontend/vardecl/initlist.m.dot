@@ -41,11 +41,11 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373_3" -> "test.098f6bcd4621d373_2" ;
-"test.098f6bcd4621d373_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c2:C*); [line 22, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 22, column 11]\n  *&c2:C*=n$4 [line 22, column 3]\n " shape="box"]
+"test.098f6bcd4621d373_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(c2:C*); [line 22, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=C;nullable=false):unsigned long) [line 22, column 11]\n  *&c2:C*=n$4 [line 22, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373_4" -> "test.098f6bcd4621d373_3" ;
-"test.098f6bcd4621d373_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(c1:C*); [line 21, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=C):unsigned long) [line 21, column 11]\n  *&c1:C*=n$5 [line 21, column 3]\n " shape="box"]
+"test.098f6bcd4621d373_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(c1:C*); [line 21, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=C;nullable=false):unsigned long) [line 21, column 11]\n  *&c1:C*=n$5 [line 21, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373_5" -> "test.098f6bcd4621d373_4" ;

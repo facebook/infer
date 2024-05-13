@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_6" ;
 	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_7" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class;nullable=false), true); [line 104, column 7]\n " shape="invhouse"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb32_6" -> "class_method_in_conditional.2a19b0bd8eafdb32_8" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class;nullable=false), false); [line 104, column 7]\n " shape="invhouse"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb32_7" -> "class_method_in_conditional.2a19b0bd8eafdb32_4" ;
@@ -43,7 +43,7 @@ digraph cfg {
 "call_alloc_class#A#[class].ad5ad169bfefdaf6_2" [label="2: Exit A.call_alloc_class \n  " color=yellow style=filled]
 	
 
-"call_alloc_class#A#[class].ad5ad169bfefdaf6_3" [label="3:  Call alloc \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 57, column 3]\n " shape="box"]
+"call_alloc_class#A#[class].ad5ad169bfefdaf6_3" [label="3:  Call alloc \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=A;nullable=false):unsigned long) [line 57, column 3]\n " shape="box"]
 	
 
 	 "call_alloc_class#A#[class].ad5ad169bfefdaf6_3" -> "call_alloc_class#A#[class].ad5ad169bfefdaf6_2" ;
@@ -117,7 +117,7 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_12" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_3" ;
-"class_method_fst_arg_of_class_met.9ddf691765febed7_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$32=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$30=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$31=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$33=_fun_NSBundle.pathForResource:ofType:(n$32:NSBundle*,n$30:NSString*,n$31:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$33 [line 116, column 3]\n " shape="box"]
+"class_method_fst_arg_of_class_met.9ddf691765febed7_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$32=_fun_NSBundle.bundleForClass:(sizeof(t=B;nullable=false):unsigned long) [line 117, column 8]\n  n$30=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$31=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$33=_fun_NSBundle.pathForResource:ofType:(n$32:NSBundle*,n$30:NSString*,n$31:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$33 [line 116, column 3]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_met.9ddf691765febed7_13" -> "class_method_fst_arg_of_class_met.9ddf691765febed7_10" ;
@@ -143,7 +143,7 @@ digraph cfg {
 	
 
 	 "used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_4" -> "used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_2" ;
-"used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_5" [label="5:  BinaryOperatorStmt: NE \n   n$20=*sizeof(t=A):objc_class* [line 94, column 7]\n  n$21=*&c:objc_class* [line 94, column 15]\n " shape="box"]
+"used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_5" [label="5:  BinaryOperatorStmt: NE \n   n$20=*sizeof(t=A;nullable=false):objc_class* [line 94, column 7]\n  n$21=*&c:objc_class* [line 94, column 15]\n " shape="box"]
 	
 
 	 "used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_5" -> "used_in_binary_op:#A(struct objc_.f6bebf72c8be64fe_6" ;
@@ -171,7 +171,7 @@ digraph cfg {
 "call_alloc_instance#A#[instance].38797791774ded3f_2" [label="2: Exit A.call_alloc_instance \n  " color=yellow style=filled]
 	
 
-"call_alloc_instance#A#[instance].38797791774ded3f_3" [label="3:  Call alloc \n   n$6=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 61, column 3]\n " shape="box"]
+"call_alloc_instance#A#[instance].38797791774ded3f_3" [label="3:  Call alloc \n   n$6=_fun___objc_alloc_no_fail(sizeof(t=A;nullable=false):unsigned long) [line 61, column 3]\n " shape="box"]
 	
 
 	 "call_alloc_instance#A#[instance].38797791774ded3f_3" -> "call_alloc_instance#A#[instance].38797791774ded3f_2" ;
@@ -215,7 +215,7 @@ digraph cfg {
 "class_method_fst_arg_of_class_met.e3acd68e7d97ea4a_2" [label="2: Exit A.class_method_fst_arg_of_class_method \n  " color=yellow style=filled]
 	
 
-"class_method_fst_arg_of_class_met.e3acd68e7d97ea4a_3" [label="3:  Return Stmt \n   n$23=_fun_NSBundle.bundleForClass:(sizeof(t=A):unsigned long) [line 111, column 10]\n " shape="box"]
+"class_method_fst_arg_of_class_met.e3acd68e7d97ea4a_3" [label="3:  Return Stmt \n   n$23=_fun_NSBundle.bundleForClass:(sizeof(t=A;nullable=false):unsigned long) [line 111, column 10]\n " shape="box"]
 	
 
 	 "class_method_fst_arg_of_class_met.e3acd68e7d97ea4a_3" -> "class_method_fst_arg_of_class_met.e3acd68e7d97ea4a_4" ;
@@ -265,7 +265,7 @@ digraph cfg {
 "loggerName#A#[instance].0134c8e794cdf775_2" [label="2: Exit A.loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$18=*&self:A* [line 90, column 29]\n  n$19=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n " shape="box"]
+"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$18=*&self:A* [line 90, column 29]\n  n$19=_fun_NSStringFromClass(sizeof(t=A;nullable=false):unsigned long) [line 90, column 10]\n " shape="box"]
 	
 
 	 "loggerName#A#[instance].0134c8e794cdf775_3" -> "loggerName#A#[instance].0134c8e794cdf775_4" ;
@@ -284,7 +284,7 @@ digraph cfg {
 	
 
 	 "t#A#[instance].6db0b99001faa91a_3" -> "t#A#[instance].6db0b99001faa91a_2" ;
-"t#A#[instance].6db0b99001faa91a_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:B*); [line 73, column 3]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 73, column 10]\n  n$11=_fun_NSObject.init(n$10:B*) virtual [line 73, column 10]\n  *&b:B*=n$11 [line 73, column 3]\n " shape="box"]
+"t#A#[instance].6db0b99001faa91a_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(b:B*); [line 73, column 3]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=B;nullable=false):unsigned long) [line 73, column 10]\n  n$11=_fun_NSObject.init(n$10:B*) virtual [line 73, column 10]\n  *&b:B*=n$11 [line 73, column 3]\n " shape="box"]
 	
 
 	 "t#A#[instance].6db0b99001faa91a_4" -> "t#A#[instance].6db0b99001faa91a_3" ;
@@ -302,7 +302,7 @@ digraph cfg {
 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_2" [label="2: Exit A.use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$12=*&self:A* [line 78, column 23]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n " shape="box"]
+"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$12=*&self:A* [line 78, column 23]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A;nullable=false):unsigned long) virtual [line 78, column 10]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" -> "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_4" ;

@@ -7,7 +7,7 @@ digraph cfg {
 "aClassMethod#MyClass#[class].98e196a75388ff79_2" [label="2: Exit MyClass.aClassMethod \n  " color=yellow style=filled]
 	
 
-"aClassMethod#MyClass#[class].98e196a75388ff79_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(myClass:MyClass*); [line 19, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 19, column 22]\n  *&myClass:MyClass*=n$0 [line 19, column 3]\n " shape="box"]
+"aClassMethod#MyClass#[class].98e196a75388ff79_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(myClass:MyClass*); [line 19, column 3]\n  n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass;nullable=false):unsigned long) [line 19, column 22]\n  *&myClass:MyClass*=n$0 [line 19, column 3]\n " shape="box"]
 	
 
 	 "aClassMethod#MyClass#[class].98e196a75388ff79_3" -> "aClassMethod#MyClass#[class].98e196a75388ff79_2" ;

@@ -372,11 +372,11 @@ let%expect_test "instanceof translation" =
           n$0=_fun_foo() [line 7, column 9];
 
         #n5:
-          n$1=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 10, column 9];
+          n$1=_fun___instanceof(n$0:void*,sizeof(t=HackBool*;nullable=false):void) [line 10, column 9];
           *&return:int=n$1 [line 11, column 9];
 
         #n6:
-          n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 13, column 9];
+          n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*;nullable=false):void) [line 13, column 9];
           *&return:int=n$2 [line 13, column 9];
 
         #n2: |}]

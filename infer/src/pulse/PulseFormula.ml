@@ -919,7 +919,9 @@ module Term = struct
           | (VarSubst v' | ConstantSubst (_, Some v')) when not (Var.equal v v') ->
               IsInstanceOf {var= v'; typ; nullable}
           | QSubst q when Q.is_zero q ->
-              zero
+              (* TODO: I still think this maybe isn't quite right, since we lose the instanceof fact which we previously
+                 tried to keep in order to get the right latency info, but worry about that later *)
+              if nullable then one else zero
           | QSubst _ | ConstantSubst _ | VarSubst _ | LinSubst _ | NonLinearTermSubst _ ->
               t
         in
@@ -2821,23 +2823,28 @@ module Formula = struct
     let normalize_restricted phi l = normalize_linear_ phi phi.tableau l
 
     let normalize_var_const phi t =
-      Term.subst_variables t ~f:(fun v ->
-          let v_canon = (get_repr phi v :> Var.t) in
-          match Var.Map.find_opt v_canon phi.linear_eqs with
-          | None -> (
-            match Var.Map.find_opt v_canon phi.const_eqs with
-            | None ->
-                VarSubst v_canon
-            | Some c ->
-                ConstantSubst (c, Some v_canon) )
-          | Some l -> (
-            match LinArith.get_as_const l with
-            | None ->
-                (* OPTIM: don't make the term bigger *) VarSubst v_canon
-            | Some q ->
-                (* replace vars by constants when available to possibly trigger further
-                   simplifications in atoms. This is not actually needed for [term_eqs]. *)
-                QSubst q ) )
+      L.d_printfln "normalize_var_const initial term is %a" (Term.pp Var.pp) t ;
+      let t' =
+        Term.subst_variables t ~f:(fun v ->
+            let v_canon = (get_repr phi v :> Var.t) in
+            match Var.Map.find_opt v_canon phi.linear_eqs with
+            | None -> (
+              match Var.Map.find_opt v_canon phi.const_eqs with
+              | None ->
+                  VarSubst v_canon
+              | Some c ->
+                  ConstantSubst (c, Some v_canon) )
+            | Some l -> (
+              match LinArith.get_as_const l with
+              | None ->
+                  (* OPTIM: don't make the term bigger *) VarSubst v_canon
+              | Some q ->
+                  (* replace vars by constants when available to possibly trigger further
+                     simplifications in atoms. This is not actually needed for [term_eqs]. *)
+                  QSubst q ) )
+      in
+      L.d_printfln "normalized term is %a" (Term.pp Var.pp) t' ;
+      t'
 
 
     let add_lin_eq_to_new_eqs v l new_eqs =
@@ -3286,14 +3293,20 @@ module Formula = struct
                           let* phi, new_eqs = phi_new_eqs_sat in
                           (* If t is an IsInstanceOf formula, and we've just found its truth value, propagate
                              the information into the below/notbelow type constraints on the relevant
-                             variable. *)
-                          let* phi =
+                             variable, and also add >0 facts where appropriate *)
+                          let* phi, atoms_opt1 =
                             match Term.get_as_isinstanceof t with
-                            (* TODO: exploit nullable in line with plan document *)
-                            | Some (var, typ, _nullable) ->
+                            | Some (var, typ, nullable) ->
                                 if is_neq_zero phi tx then (
                                   Debug.p "prop in term_eq adding below\n" ;
-                                  add_below var typ phi )
+                                  let* phi = add_below var typ phi in
+                                  let* atoms_opt1 =
+                                    if not nullable then
+                                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
+                                        (LessThan (Const Q.zero, Var var))
+                                    else Sat None
+                                  in
+                                  Sat (phi, atoms_opt1) )
                                 else if
                                   match tx with
                                   | Linear l ->
@@ -3304,19 +3317,27 @@ module Formula = struct
                                       false
                                 then (
                                   Debug.p "prop in term_eq adding notbelow\n" ;
-                                  add_notbelow var typ phi )
+                                  let* phi = add_notbelow var typ phi in
+                                  let* atoms_opt1 =
+                                    if nullable then
+                                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
+                                        (LessThan (Const Q.zero, Var var))
+                                    else Sat None
+                                  in
+                                  Sat (phi, atoms_opt1) )
                                 else (
                                   Debug.p "%a is neither zero nor non-zero, leaving phi alone\n"
                                     (Term.pp Var.pp) tx ;
-                                  Sat phi )
+                                  Sat (phi, None) )
                             | None ->
-                                Sat phi
+                                Sat (phi, None)
                           in
                           (* Now check if the new equality on [x] introduced contradictions in [t=x] or new atoms *)
-                          let* atoms_opt =
+                          let* atoms_opt2 =
                             Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                               (Equal (t, Term.simplify_linear tx))
                           in
+                          let atoms_opt = Option.merge atoms_opt1 atoms_opt2 ~f:List.append in
                           match atoms_opt with
                           | None ->
                               (* need to add back that [x] occurs in [term_eqs(t)] since we removed [x] from
@@ -3477,18 +3498,25 @@ module Formula = struct
                       phi_new_eqs_sat
                   | Range | DomainAndRange -> (
                       Debug.p "range or both\n" ;
-                      let* phi =
+                      let* phi, atoms_opt1 =
                         match Term.get_as_isinstanceof t with
-                        (* TODO: exploit nullable *)
-                        | Some (var, typ, _nullable) ->
-                            add_below var typ phi
+                        | Some (var, typ, nullable) ->
+                            let* phi = add_below var typ phi in
+                            let* atoms_opt1 =
+                              if not nullable then
+                                Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
+                                  (LessThan (Var v, Const Q.zero))
+                              else Sat None
+                            in
+                            Sat (phi, atoms_opt1)
                         | None ->
-                            Sat phi
+                            Sat (phi, None)
                       in
-                      let* atoms_opt =
+                      let* atoms_opt2 =
                         Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                           (Equal (t, Var v))
                       in
+                      let atoms_opt = Option.merge atoms_opt1 atoms_opt2 ~f:List.append in
                       match atoms_opt with
                       | None ->
                           Sat (phi, new_eqs)
@@ -3546,6 +3574,7 @@ module Formula = struct
        or is [normalize_atom] already just as strong? *)
     and normalize_atom phi (atom : Atom.t) =
       let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
+      Debug.p "Normalizer.mormalize_atom atom'=%a" (Atom.pp_with_pp_var Var.pp) atom' ;
       Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
 
 
@@ -3878,7 +3907,8 @@ module DynamicTypes = struct
         None
 
 
-  let evaluate_instanceof formula v typ =
+  let evaluate_instanceof formula v typ _nullable =
+    (* TODO: exploit nullable here *)
     match Var.Map.find_opt v formula.phi.type_constraints with
     | None ->
         None
@@ -3902,8 +3932,8 @@ module DynamicTypes = struct
   let really_simplify formula =
     let simplify_term (t : Term.t) =
       match t with
-      | IsInstanceOf {var= v; typ} -> (
-        match evaluate_instanceof formula v typ with None -> t | Some t' -> t' )
+      | IsInstanceOf {var= v; typ; nullable} -> (
+        match evaluate_instanceof formula v typ nullable with None -> t | Some t' -> t' )
       | t ->
           t
     in
@@ -4006,15 +4036,18 @@ let copy_type_constraints v_src v_target {conditions; phi} =
 
 let and_equal_instanceof v1 v2 t ~nullable formula =
   let* formula, new_eqs =
-    match DynamicTypes.evaluate_instanceof formula v2 t with
+    match DynamicTypes.evaluate_instanceof formula v2 t nullable with
     | None ->
+        Debug.p "evaluate instanceof returned none" ;
         Sat (formula, RevList.empty)
     | Some bool_term ->
+        Debug.p "evaluate instanceof returned %a" (Term.pp Var.pp) bool_term ;
         and_atom (Atom.equal (Var v1) bool_term) formula
   in
   let* formula, new_eqs' =
     and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
   in
+  Debug.p "formula is %a" pp formula ;
   Sat (formula, RevList.append new_eqs new_eqs')
 
 

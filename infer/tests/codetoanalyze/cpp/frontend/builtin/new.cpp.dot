@@ -26,11 +26,11 @@ digraph cfg {
 	
 
 	 "test#18241244337164948030.afc14f193ad97442_3" -> "test#18241244337164948030.afc14f193ad97442_2" ;
-"test#18241244337164948030.afc14f193ad97442_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 11, column 3]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=int;nbytes=4;nullable=false):unsigned long) [line 11, column 3]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442_4" -> "test#18241244337164948030.afc14f193ad97442_3" ;
-"test#18241244337164948030.afc14f193ad97442_5" [label="5:  CXXNewExpr \n   n$3=_fun___new(sizeof(t=int;nbytes=4):unsigned long) [line 10, column 12]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442_5" [label="5:  CXXNewExpr \n   n$3=_fun___new(sizeof(t=int;nbytes=4;nullable=false):unsigned long) [line 10, column 12]\n " shape="box"]
 	
 
 	 "test#18241244337164948030.afc14f193ad97442_5" -> "test#18241244337164948030.afc14f193ad97442_7" ;
@@ -53,7 +53,7 @@ digraph cfg {
 "test_placement#758902924052037761.7f92d4e10c030674_2" [label="2: Exit test_placement \n  " color=yellow style=filled]
 	
 
-"test_placement#758902924052037761.7f92d4e10c030674_3" [label="3:  CXXNewExpr \n   n$2=*&ptr:void* [line 24, column 60]\n  n$0=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 24, column 65]\n  n$1=*&ptr2:int* [line 24, column 65]\n  n$3=_fun___placement_new(sizeof(t=A):unsigned long,n$2:void*,n$1:void*) [line 24, column 55]\n " shape="box"]
+"test_placement#758902924052037761.7f92d4e10c030674_3" [label="3:  CXXNewExpr \n   n$2=*&ptr:void* [line 24, column 60]\n  n$0=*&ptr2:int* [line 24, column 65]\n  *&ptr2:int*=(n$0 + 1) [line 24, column 65]\n  n$1=*&ptr2:int* [line 24, column 65]\n  n$3=_fun___placement_new(sizeof(t=A;nullable=false):unsigned long,n$2:void*,n$1:void*) [line 24, column 55]\n " shape="box"]
 	
 
 	 "test_placement#758902924052037761.7f92d4e10c030674_3" -> "test_placement#758902924052037761.7f92d4e10c030674_4" ;

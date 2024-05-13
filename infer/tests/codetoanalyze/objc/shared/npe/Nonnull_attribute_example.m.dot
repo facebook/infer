@@ -42,7 +42,7 @@ digraph cfg {
 "getA#NonnullA#[instance].bed6ee7d34a08b22_2" [label="2: Exit NonnullA.getA \n  " color=yellow style=filled]
 	
 
-"getA#NonnullA#[instance].bed6ee7d34a08b22_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=NonnullA):unsigned long) [line 24, column 10]\n  n$1=_fun_NSObject.init(n$0:NonnullA*) virtual [line 24, column 10]\n " shape="box"]
+"getA#NonnullA#[instance].bed6ee7d34a08b22_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=NonnullA;nullable=false):unsigned long) [line 24, column 10]\n  n$1=_fun_NSObject.init(n$0:NonnullA*) virtual [line 24, column 10]\n " shape="box"]
 	
 
 	 "getA#NonnullA#[instance].bed6ee7d34a08b22_3" -> "getA#NonnullA#[instance].bed6ee7d34a08b22_4" ;

@@ -39,7 +39,7 @@ digraph cfg {
 	
 
 	 "getS#ArcA#[instance].d8dec537eb5599fb_4" -> "getS#ArcA#[instance].d8dec537eb5599fb_2" ;
-"getS#ArcA#[instance].d8dec537eb5599fb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n " shape="box"]
+"getS#ArcA#[instance].d8dec537eb5599fb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString;nullable=false):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n " shape="box"]
 	
 
 	 "getS#ArcA#[instance].d8dec537eb5599fb_5" -> "getS#ArcA#[instance].d8dec537eb5599fb_3" ;
@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "newS#ArcA#[instance].fea20ee6147f321a_4" -> "newS#ArcA#[instance].fea20ee6147f321a_2" ;
-"newS#ArcA#[instance].fea20ee6147f321a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 27, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$3 [line 27, column 3]\n " shape="box"]
+"newS#ArcA#[instance].fea20ee6147f321a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 27, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString;nullable=false):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$3 [line 27, column 3]\n " shape="box"]
 	
 
 	 "newS#ArcA#[instance].fea20ee6147f321a_5" -> "newS#ArcA#[instance].fea20ee6147f321a_3" ;

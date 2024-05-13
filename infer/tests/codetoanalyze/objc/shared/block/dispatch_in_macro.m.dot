@@ -7,7 +7,7 @@ digraph cfg {
 "objc_block_dispatch_in_macro.m:21.0b0d43498e241961_2" [label="2: Exit objc_block_dispatch_in_macro.m:21 \n  " color=yellow style=filled]
 	
 
-"objc_block_dispatch_in_macro.m:21.0b0d43498e241961_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject.init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n " shape="box"]
+"objc_block_dispatch_in_macro.m:21.0b0d43498e241961_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject;nullable=false):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject.init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n " shape="box"]
 	
 
 	 "objc_block_dispatch_in_macro.m:21.0b0d43498e241961_3" -> "objc_block_dispatch_in_macro.m:21.0b0d43498e241961_2" ;

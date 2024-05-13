@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "npe_property_nullable.ba4461b16b55481a_5" -> "npe_property_nullable.ba4461b16b55481a_3" ;
-"npe_property_nullable.ba4461b16b55481a_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(person:Person*); [line 54, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=Person):unsigned long) [line 54, column 20]\n  n$10=_fun_NSObject.init(n$9:Person*) virtual [line 54, column 20]\n  *&person:Person*=n$10 [line 54, column 3]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481a_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(person:Person*); [line 54, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=Person;nullable=false):unsigned long) [line 54, column 20]\n  n$10=_fun_NSObject.init(n$9:Person*) virtual [line 54, column 20]\n  *&person:Person*=n$10 [line 54, column 3]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481a_6" -> "npe_property_nullable.ba4461b16b55481a_5" ;

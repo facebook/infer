@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0_5" -> "should_have_div0.f0a0c4e0ab301ca0_3" ;
-"should_have_div0.f0a0c4e0ab301ca0_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:GetterExample*); [line 13, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=GetterExample):unsigned long) [line 13, column 23]\n  n$5=_fun_NSObject.init(n$4:GetterExample*) virtual [line 13, column 22]\n  *&a:GetterExample*=n$5 [line 13, column 3]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:GetterExample*); [line 13, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=GetterExample;nullable=false):unsigned long) [line 13, column 23]\n  n$5=_fun_NSObject.init(n$4:GetterExample*) virtual [line 13, column 22]\n  *&a:GetterExample*=n$5 [line 13, column 3]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0_6" -> "should_have_div0.f0a0c4e0ab301ca0_5" ;

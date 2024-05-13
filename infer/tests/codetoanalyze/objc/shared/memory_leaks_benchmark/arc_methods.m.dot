@@ -42,7 +42,7 @@ digraph cfg {
 	
 
 	 "newA#ArcMethodsA#[class].fb9d75ecabb01fc4_4" -> "newA#ArcMethodsA#[class].fb9d75ecabb01fc4_2" ;
-"newA#ArcMethodsA#[class].fb9d75ecabb01fc4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject.init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
+"newA#ArcMethodsA#[class].fb9d75ecabb01fc4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA;nullable=false):unsigned long) [line 21, column 21]\n  n$2=_fun_NSObject.init(n$1:ArcMethodsA*) virtual [line 21, column 20]\n  *&a:ArcMethodsA*=n$2 [line 21, column 3]\n " shape="box"]
 	
 
 	 "newA#ArcMethodsA#[class].fb9d75ecabb01fc4_5" -> "newA#ArcMethodsA#[class].fb9d75ecabb01fc4_3" ;
@@ -61,7 +61,7 @@ digraph cfg {
 	
 
 	 "someA#ArcMethodsA#[class].24f9a9dd871664ba_4" -> "someA#ArcMethodsA#[class].24f9a9dd871664ba_2" ;
-"someA#ArcMethodsA#[class].24f9a9dd871664ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 26, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 26, column 21]\n  n$5=_fun_NSObject.init(n$4:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$5 [line 26, column 3]\n " shape="box"]
+"someA#ArcMethodsA#[class].24f9a9dd871664ba_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:ArcMethodsA*); [line 26, column 3]\n  n$4=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA;nullable=false):unsigned long) [line 26, column 21]\n  n$5=_fun_NSObject.init(n$4:ArcMethodsA*) virtual [line 26, column 20]\n  *&a:ArcMethodsA*=n$5 [line 26, column 3]\n " shape="box"]
 	
 
 	 "someA#ArcMethodsA#[class].24f9a9dd871664ba_5" -> "someA#ArcMethodsA#[class].24f9a9dd871664ba_3" ;

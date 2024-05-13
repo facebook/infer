@@ -31,7 +31,7 @@ digraph cfg {
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_8" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_7" ;
-"call_static_methods#2229162425019.6b8ed680875ca5e1_9" [label="9:  CXXNewExpr \n   n$18=_fun___new(sizeof(t=Sub):unsigned long) [line 22, column 13]\n " shape="box"]
+"call_static_methods#2229162425019.6b8ed680875ca5e1_9" [label="9:  CXXNewExpr \n   n$18=_fun___new(sizeof(t=Sub;nullable=false):unsigned long) [line 22, column 13]\n " shape="box"]
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_9" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_10" ;
@@ -47,7 +47,7 @@ digraph cfg {
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_12" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_8" ;
-"call_static_methods#2229162425019.6b8ed680875ca5e1_13" [label="13:  CXXNewExpr \n   n$20=_fun___new(sizeof(t=Sub):unsigned long) [line 21, column 14]\n " shape="box"]
+"call_static_methods#2229162425019.6b8ed680875ca5e1_13" [label="13:  CXXNewExpr \n   n$20=_fun___new(sizeof(t=Sub;nullable=false):unsigned long) [line 21, column 14]\n " shape="box"]
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_13" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_14" ;
@@ -63,7 +63,7 @@ digraph cfg {
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_16" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_11" ;
-"call_static_methods#2229162425019.6b8ed680875ca5e1_17" [label="17:  CXXNewExpr \n   n$22=_fun___new(sizeof(t=Base):unsigned long) [line 20, column 13]\n " shape="box"]
+"call_static_methods#2229162425019.6b8ed680875ca5e1_17" [label="17:  CXXNewExpr \n   n$22=_fun___new(sizeof(t=Base;nullable=false):unsigned long) [line 20, column 13]\n " shape="box"]
 	
 
 	 "call_static_methods#2229162425019.6b8ed680875ca5e1_17" -> "call_static_methods#2229162425019.6b8ed680875ca5e1_18" ;

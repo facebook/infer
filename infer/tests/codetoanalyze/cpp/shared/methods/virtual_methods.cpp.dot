@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "call_virtual_destructor#684739711.d267757a410b72ca_3" -> "call_virtual_destructor#684739711.d267757a410b72ca_2" ;
-"call_virtual_destructor#684739711.d267757a410b72ca_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=Triangle):unsigned long) [line 69, column 19]\n " shape="box"]
+"call_virtual_destructor#684739711.d267757a410b72ca_4" [label="4:  CXXNewExpr \n   n$2=_fun___new(sizeof(t=Triangle;nullable=false):unsigned long) [line 69, column 19]\n " shape="box"]
 	
 
 	 "call_virtual_destructor#684739711.d267757a410b72ca_4" -> "call_virtual_destructor#684739711.d267757a410b72ca_5" ;

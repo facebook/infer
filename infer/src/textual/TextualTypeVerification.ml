@@ -615,6 +615,11 @@ and typeof_instanceof_builtin (proc : QualifiedProcName.t) args =
   | [exp1; (Exp.Typ _ as exp2)] ->
       let+ exp1, _ = typeof_exp exp1 in
       (Exp.Call {proc; args= [exp1; exp2]; kind= Exp.NonVirtual}, Typ.Int)
+  (* hack to temporarily let instanceof take 2 or 3 arguments last should be int by the way *)
+  | [exp1; (Exp.Typ _ as exp2); exp3] ->
+      let* exp1, _ = typeof_exp exp1 in
+      let+ exp3, _ = typeof_exp exp3 in
+      (Exp.Call {proc; args= [exp1; exp2; exp3]; kind= Exp.NonVirtual}, Typ.Int)
   | [_; exp] ->
       let* loc = get_location in
       let* _, typ = typeof_exp exp in

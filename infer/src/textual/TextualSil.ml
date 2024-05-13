@@ -717,17 +717,21 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args= [target; Typ typ]}; loc}
+    | Let {id; exp= Call {proc; args= target :: Typ typ :: rest}; loc}
       when ProcDecl.is_instanceof_builtin proc ->
         let typ = TypBridge.to_sil lang typ in
-        (* TODO: We just take nullable=false for now, though later want to distinguish "is C" and "is ?C" *)
+        let nullable =
+          match rest with
+          | [] ->
+              false
+          | [Const (Int n)] ->
+              Z.equal n Z.one
+          | _ ->
+              L.die InternalError "non-matching args to instanceof"
+        in
         let sizeof =
           SilExp.Sizeof
-            { typ
-            ; nbytes= None
-            ; dynamic_length= None
-            ; subtype= Subtype.subtypes_instof
-            ; nullable= false }
+            {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof; nullable}
         in
         let target = ExpBridge.to_sil lang decls_env procname target in
         let args = [(target, StdTyp.void_star); (sizeof, StdTyp.void)] in
@@ -792,7 +796,10 @@ module InstrBridge = struct
                 ; attributes= [] } )
           | None ->
               let msg =
-                lazy (F.asprintf "the expression in %a should start with a regular call" pp i)
+                lazy
+                  (F.asprintf
+                     "no procdecl for %a the expression in %a should start with a regular call"
+                     ProcSig.pp procsig pp i )
               in
               raise (TextualTransformError [{loc; msg}])
         in
