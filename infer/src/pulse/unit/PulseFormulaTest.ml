@@ -100,6 +100,12 @@ let ( = ) f1 f2 phi =
   and_equal op1 op2 phi >>| fst
 
 
+let ( =. ) f1 f2 phi =
+  let* phi, op1 = f1 phi in
+  let* phi, op2 = f2 phi in
+  prune_binop ~negated:false Binop.Eq op1 op2 phi >>| fst
+
+
 let ( <> ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
@@ -603,6 +609,19 @@ let%test_module "inequalities" =
                && term_eqs: 0=a2∧1=a1∧32=x∧64=y
                && intervals: a2=0 ∧ x=32 ∧ y=64
         Result: same|}]
+
+
+    let%expect_test "(negated) inequality followed by pruned equality" =
+      normalize (lt x (i 2) = i 0 && x =. i 2) ;
+      [%expect
+        {|
+         Formula:
+           conditions: {x = 2}
+           phi: var_eqs: a1=v6
+                && linear_eqs: a1 = 0 ∧ x = 2
+                && term_eqs: 0=a1∧2=x
+                && intervals: a1=0 ∧ x=2
+         Result: same |}]
   end )
 
 
@@ -671,7 +690,7 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a1=x=v6=v7=v8=v9=v10 && linear_eqs: a1 = 0 && term_eqs: 0=a1 && intervals: a1=0
+            phi: var_eqs: x=v6=v7=v8=v9=v10 && linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0
           Result: same |}]
 
 
@@ -689,9 +708,9 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a4=a2=x ∧ a3=a1 ∧ v6=v7
-                 && linear_eqs: a3 = a4 -1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a4 -1]=a3
+            phi: var_eqs: v6=v7
+                 && linear_eqs: x = a1 +1 ∧ v6 = 1
+                 && term_eqs: 1=v6∧[a1 +1]=x∧(0<x)=v6∧(0≤x)=v6
                  && intervals: v8≠0
                  && atoms: {v8 ≠ 0}
           Result: same|}]

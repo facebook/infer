@@ -2910,7 +2910,7 @@ module Formula = struct
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; don't use directly
         as it doesn't do any checks on what else should be done about [t = v] *)
     and add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t v phi =
-      Debug.p "add_term_eq_and_merge_new_eq_opt %a->%a@\n" (Term.pp Var.pp) t Var.pp v ;
+      Debug.p "add_term_eq_and_solve_new_eq_opt %a->%a@\n" (Term.pp Var.pp) t Var.pp v ;
       let phi, new_eq_opt = add_term_eq t v phi in
       discharge_new_eq_opt ~fuel new_eqs v new_eq_opt phi
 
@@ -3521,8 +3521,18 @@ module Formula = struct
     and solve_lin_ineq new_eqs l1 l2 phi =
       (* [l1 ≤ l2] becomes [(l2-l1) ≥ 0], encoded as [l = w] with [w] a fresh restricted variable *)
       let l = LinArith.subtract l2 l1 |> normalize_linear phi |> normalize_restricted phi in
-      let w = Var.mk_fresh_restricted () in
-      with_base_fuel (solve_tableau_eq new_eqs w l phi)
+      let l_c_sign = Q.sign (LinArith.get_constant_part l) in
+      let l_restricted = LinArith.is_restricted l in
+      match LinArith.classify_minimized_maximized l with
+      | (`Minimized | `Constant) when l_restricted && l_c_sign >= 0 ->
+          Debug.p "Skip adding %a≥0: known@\n" (LinArith.pp Var.pp) l ;
+          Sat (phi, new_eqs) (* already trivially known: don't add to formula to avoid divergence *)
+      | (`Maximized | `Constant) when l_restricted && l_c_sign < 0 ->
+          Debug.p "Skip adding %a≥0: unsat@\n" (LinArith.pp Var.pp) l ;
+          Unsat
+      | _ ->
+          let w = Var.mk_fresh_restricted () in
+          with_base_fuel (solve_tableau_eq new_eqs w l phi)
 
 
     and solve_lin_eq new_eqs t1 t2 phi =

@@ -1,3 +1,5 @@
+codetoanalyze/erlang/pulse/crashes/stack_overflow.erl, f_Ok/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
+codetoanalyze/erlang/pulse/crashes/stack_overflow.erl, f_Ok/1, 1, NO_MATCHING_CASE_CLAUSE_LATENT, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_add1_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_add2_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_sub1_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
