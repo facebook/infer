@@ -1168,45 +1168,53 @@ module Domain : sig
   module Src : sig
     (** Constructors for source nodes of edges in the flow graph.
 
-        Each function corresponds to a collection of {!G.vertex}. *)
+        Each function corresponds to a collection of {!G.vertex} and a slot for each vertex that can
+        be used to branch on specific destinations and/or edge kinds. *)
 
-    type t
+    type +'slot t
 
-    val function_ : Procname.t -> t
+    val function_ : Procname.t -> unit t
 
-    val argument : int -> FieldPath.t -> t
+    val argument : Procdesc.t -> int -> FieldPath.t t
 
-    val captured : int -> t
+    val captured : int -> unit t
 
-    val return_of : Procname.t -> t
+    val return_of : Procname.t -> unit t
 
-    val atom : string -> t
+    val atom : string -> unit t
 
-    val local_set : Local.Set.t -> t
+    val local_set : Local.Set.t -> unit t
 
-    val var_path : VarPath.t -> t
+    val var_path : VarPath.t -> FieldPath.t t
 
-    val pvar : Pvar.t -> t
+    val pvar : Pvar.t -> FieldPath.t t
+
+    val oblivious : _ t -> unit t
+    (** Ignore the slots *)
   end
 
   module Dst : sig
     (** Constructors for destination nodes of edges in the flow graph.
 
-        Each function corresponds to a collection of {!G.vertex}. *)
+        Each function corresponds to a collection of {!G.vertex}. It requires a slot (obtained from
+        the source) to build this collection. *)
 
-    type t
+    type -'slot t
 
-    val captured_by : Procname.t -> int -> t
+    val captured_by : Procname.t -> int -> unit t
 
-    val argument_of : Procname.t -> int -> t
+    val argument_of : Procname.t -> int -> unit t
 
-    val return : FieldPath.t -> t
+    val return : FieldPath.t t
 
-    val var_path : VarPath.t -> t
+    val var_path : VarPath.t -> FieldPath.t t
 
-    val var : Var.t -> t
+    val var : Var.t -> FieldPath.t t
 
-    val ident : Ident.t -> t
+    val ident : Ident.t -> FieldPath.t t
+
+    val all_fields : FieldPath.t t -> unit t
+    (** Will write into the "root" (ie. empty field path) of a destination that expect field paths. *)
   end
 
   val partial_graph : t -> PartialGraph.t
@@ -1226,8 +1234,8 @@ module Domain : sig
   (** {2 Record data flow} *)
 
   val add_flow :
-    shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:Src.t -> dst:Dst.t -> t -> t
-  (** Record flow from all nodes under the source into all nodes under the destination. *)
+    shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:'a Src.t -> dst:'a Dst.t -> t -> t
+  (** Record flow from nodes under the source into nodes with matching slot under the destination. *)
 
   (** {3 Specific flow from/to variable paths} *)
 
@@ -1247,7 +1255,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> Edge.kind)
     -> src:VarPath.t
-    -> dst_f:(FieldPath.t -> Dst.t)
+    -> dst_f:(FieldPath.t -> unit Dst.t)
     -> t
     -> t
 
@@ -1255,7 +1263,7 @@ module Domain : sig
        shapes:shapes
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> Edge.kind)
-    -> src_f:(FieldPath.t -> Src.t)
+    -> src_f:(FieldPath.t -> unit Src.t)
     -> dst:VarPath.t
     -> t
     -> t
@@ -1319,72 +1327,92 @@ end = struct
   end
 
   module Src = struct
-    (** A source is a sequence of vertices that can be built from shapes at a procedure current
-        node. *)
-    type t = shapes -> PPNode.t -> Vertex.t Fold.t
+    (** A source is a sequence of vertices and slots that can be built from shapes at a procedure
+        current node. *)
+    type 'slot t = shapes -> PPNode.t -> (Vertex.t * 'slot) Fold.t
 
-    let single_vertex (vertex : Vertex.t) : t = fun _shapes _node -> Fold.singleton vertex
+    let single_vertex (vertex : Vertex.t) : unit t = fun _shapes _node -> Fold.singleton (vertex, ())
 
-    let function_ procname : t = single_vertex (Function procname)
+    let function_ procname : unit t = single_vertex (Function procname)
 
-    let argument i field_path : t = single_vertex (Argument (i, field_path))
+    let argument proc_desc index : FieldPath.t t =
+     fun shapes _node f astate ->
+      Shapes.fold_argument
+        ~f:(fun accum arg_path -> f accum (Argument (index, arg_path), arg_path))
+        ~init:astate shapes proc_desc index
 
-    let captured i : t = single_vertex (Captured i)
 
-    let return_of procname : t = single_vertex (ReturnOf procname)
+    let captured i : unit t = single_vertex (Captured i)
 
-    let local (local : Local.t) : t =
+    let return_of procname : unit t = single_vertex (ReturnOf procname)
+
+    let fold_cell_last_writes ~(slot : 'slot) cell : (G.vertex * 'slot) Fold.t =
+     (* Fold over the last_writes sources of the cell and an explicit unique slot. *)
+     fun f astate ->
+      LastWrites.find_fold
+        (fun lw_node acc -> f acc (Vertex.cell_local lw_node cell, slot))
+        cell (last_writes astate) astate
+
+
+    let local (local : Local.t) : unit t =
      fun _shapes node f astate ->
       match local with
       | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-          f astate (Vertex.Local (local, node))
+          f astate (Vertex.Local (local, node), ())
       | Cell cell ->
-          (* Fold over the last_writes sources of the cell *)
-          LastWrites.find_fold
-            (fun lw_node acc -> f acc (Vertex.Local (local, lw_node)))
-            cell (last_writes astate) astate
+          fold_cell_last_writes ~slot:() cell f astate
 
 
-    let local_set local_set : t =
+    let local_set local_set : unit t =
      fun shapes node f astate ->
       Set.fold ~f:(fun acc one_local -> local one_local shapes node f acc) ~init:astate local_set
 
 
-    let atom atom_name : t = local (ConstantAtom atom_name)
+    let atom atom_name : unit t = local (ConstantAtom atom_name)
 
-    let var_path var_path : t =
-     fun shapes node f astate ->
+    let var_path var_path : FieldPath.t t =
+     fun shapes _node f astate ->
       Shapes.fold_cells
-        ~f:(fun acc cell -> local (Cell cell) shapes node f acc)
+        ~f:(fun acc cell ->
+          fold_cell_last_writes ~slot:(Cell.path_from_origin ~origin:var_path cell) cell f acc )
         ~init:astate shapes var_path
 
 
-    let pvar pvar : t = var_path (VarPath.pvar pvar)
+    let pvar pvar : FieldPath.t t = var_path (VarPath.pvar pvar)
+
+    let oblivious (src : _ t) : unit t =
+     fun shapes node f astate ->
+      src shapes node (fun acc (vertex, _slot) -> f acc (vertex, ())) astate
   end
 
   module Dst = struct
-    (** A source is a sequence of vertices that can be built from shapes at a procedure current
-        node. *)
-    type t = shapes -> PPNode.t -> Vertex.t Fold.t
+    (** A source is a sequence of vertices, built from a slot, that can use shapes and procedure
+        current node information. *)
+    type 'slot t = shapes -> PPNode.t -> 'slot -> Vertex.t Fold.t
 
-    let single_vertex (vertex : Vertex.t) : t = fun _shapes _node -> Fold.singleton vertex
+    let single_vertex (vertex : Vertex.t) : unit t = fun _shapes _node () -> Fold.singleton vertex
 
-    let captured_by i proc_name : t = single_vertex (CapturedBy (i, proc_name))
+    let captured_by i proc_name : unit t = single_vertex (CapturedBy (i, proc_name))
 
-    let argument_of callee_pname index : t = single_vertex (ArgumentOf (callee_pname, index))
+    let argument_of callee_pname index : unit t = single_vertex (ArgumentOf (callee_pname, index))
 
-    let return field_path : t = single_vertex (Return field_path)
+    let return : FieldPath.t t =
+     fun _shapes _node field_path -> Fold.singleton (Vertex.Return field_path)
 
-    let var_path var_path : t =
-     fun shapes node f astate ->
+
+    let var_path var_path : FieldPath.t t =
+     fun shapes node sub_path f astate ->
       Shapes.fold_cells
         ~f:(fun acc dst_cell -> f acc (Vertex.cell_local node dst_cell))
-        ~init:astate shapes var_path
+        ~init:astate shapes
+        (VarPath.sub_path var_path sub_path)
 
 
-    let var var : t = var_path (VarPath.var var)
+    let var var : FieldPath.t t = var_path (VarPath.var var)
 
-    let ident ident : t = var_path (VarPath.ident ident)
+    let ident ident : FieldPath.t t = var_path (VarPath.ident ident)
+
+    let all_fields (dst : FieldPath.t t) : unit t = fun shapes node () -> dst shapes node []
 
     module Private = struct
       let cell node cell = single_vertex (Vertex.cell_local node cell)
@@ -1404,10 +1432,10 @@ end = struct
     ((last_writes, has_unsupported_features), partial_graph)
 
 
-  let add_flow ~shapes ~node ~kind ~(src : Src.t) ~(dst : Dst.t) astate : t =
+  let add_flow ~shapes ~node ~kind ~(src : 'a Src.t) ~(dst : 'a Dst.t) astate : t =
     src shapes node
-      (fun accum src_vertex ->
-        dst shapes node
+      (fun accum (src_vertex, slot) ->
+        dst shapes node slot
           (fun accum dst_vertex -> add_flow_edge ~node ~kind ~src:src_vertex ~dst:dst_vertex accum)
           accum )
       astate
@@ -1594,7 +1622,8 @@ module TransferFunctions = struct
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index astate (_exp, pvar, _typ, _mode) =
-        Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.pvar pvar)
+        Domain.add_flow ~shapes ~node ~kind:Direct
+          ~src:(Src.oblivious @@ Src.pvar pvar)
           ~dst:(Dst.captured_by name index) astate
       in
       List.foldi ~init:astate ~f:one_var captured_vars
@@ -1648,7 +1677,8 @@ module TransferFunctions = struct
 
   let add_lambda_edges shapes node written_var_path lambdas astate =
     let add_one_lambda one_lambda astate =
-      Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.var_path written_var_path)
+      Domain.add_flow ~shapes ~node ~kind:Direct
+        ~dst:(Dst.all_fields @@ Dst.var_path written_var_path)
         ~src:(Src.function_ one_lambda) astate
     in
     Procname.Set.fold add_one_lambda lambdas astate
@@ -1666,9 +1696,11 @@ module TransferFunctions = struct
            under) the destination, and also process the potential captured indices and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
-        |> Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.var_path dst_path)
+        |> Domain.add_flow ~shapes ~node ~kind:Direct
+             ~dst:(Dst.all_fields @@ Dst.var_path dst_path)
              ~src:(Src.local_set free_locals)
-        |> Domain.add_flow ~shapes ~node ~kind:Capture ~dst:(Dst.var_path dst_path)
+        |> Domain.add_flow ~shapes ~node ~kind:Capture
+             ~dst:(Dst.all_fields @@ Dst.var_path dst_path)
              ~src:(Src.local_set captured_locals)
         |> add_lambda_edges shapes node dst_path lambdas
 
@@ -1684,13 +1716,18 @@ module TransferFunctions = struct
       | None ->
           warn_on_complex_arg arg_expr ;
           let kind = kind_f ~shape_is_preserved:false in
-          Domain.add_flow ~shapes ~node ~kind ~dst:(Dst.var_path ret_path)
+          Domain.add_flow ~shapes ~node ~kind
+            ~dst:(Dst.all_fields @@ Dst.var_path ret_path)
             ~src:(Src.local_set @@ free_locals_of_exp shapes arg_expr)
             astate
       | Some arg_path ->
           let add_write ~src ~dst eta_args =
             if shape_is_preserved then Domain.add_parallel_var_path_flow ~src ~dst eta_args
-            else Domain.add_flow ~src:(Src.var_path src) ~dst:(Dst.var_path dst) eta_args
+            else
+              Domain.add_flow
+                ~src:(Src.oblivious @@ Src.var_path src)
+                ~dst:(Dst.all_fields @@ Dst.var_path dst)
+                eta_args
           in
           let kind = kind_f ~shape_is_preserved in
           add_write ~shapes ~node ~kind ~dst:ret_path
@@ -1738,7 +1775,8 @@ module TransferFunctions = struct
       | fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction ~dst:(Dst.ident ret_id)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction
+               ~dst:(Dst.all_fields @@ Dst.ident ret_id)
                ~src:(Src.local_set @@ free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
@@ -1749,9 +1787,11 @@ module TransferFunctions = struct
       | module_ :: fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction ~dst:(Dst.ident ret_id)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallFunction
+               ~dst:(Dst.all_fields @@ Dst.ident ret_id)
                ~src:(Src.local_set @@ free_locals_of_exp shapes fun_)
-          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallModule ~dst:(Dst.ident ret_id)
+          |> Domain.add_flow ~shapes ~node ~kind:DynamicCallModule
+               ~dst:(Dst.all_fields @@ Dst.ident ret_id)
                ~src:(Src.local_set @@ free_locals_of_exp shapes module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
@@ -1765,8 +1805,9 @@ module TransferFunctions = struct
         | _ ->
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
-      Domain.add_flow ~shapes ~node ~kind:Direct ~dst:(Dst.ident ret_id) ~src:(Src.atom atom_name)
-        astate
+      Domain.add_flow ~shapes ~node ~kind:Direct
+        ~dst:(Dst.all_fields @@ Dst.ident ret_id)
+        ~src:(Src.atom atom_name) astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
@@ -1794,8 +1835,9 @@ module TransferFunctions = struct
             ~src:(VarPath.sub_label map_path field_label)
             ~dst:dst_path astate_acc )
         ~fallback:
-          (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path map_path)
-             ~dst:(Dst.var_path dst_path) )
+          (Domain.add_flow ~shapes ~node ~kind:Direct
+             ~src:(Src.oblivious @@ Src.var_path map_path)
+             ~dst:(Dst.all_fields @@ Dst.var_path dst_path) )
         ~init:astate shapes key_path
 
 
@@ -1829,10 +1871,11 @@ module TransferFunctions = struct
           astate
           (* key is present => {ok, Value} *)
           |> Domain.add_flow ~shapes ~node ~kind:Direct ~src:atom_ok
-               ~dst:(Dst.var_path @@ dst_tuple_path 0)
+               ~dst:(Dst.all_fields @@ Dst.var_path @@ dst_tuple_path 0)
           |> maps_get shapes node (dst_tuple_path 1) ~key_exp ~map_exp
           (* key is absent => error *)
-          |> Domain.add_flow ~shapes ~node ~kind:Direct ~src:atom_error ~dst:(Dst.ident ret_id)
+          |> Domain.add_flow ~shapes ~node ~kind:Direct ~src:atom_error
+               ~dst:(Dst.all_fields @@ Dst.ident ret_id)
       | _ ->
           L.die InternalError "`maps:find` expects three arguments"
 
@@ -1885,8 +1928,9 @@ module TransferFunctions = struct
                 ~dst:(VarPath.sub_label ret_path field_label)
                 astate_acc )
             ~fallback:
-              (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path value_path)
-                 ~dst:(Dst.var_path ret_path) )
+              (Domain.add_flow ~shapes ~node ~kind:Direct
+                 ~src:(Src.oblivious @@ Src.var_path value_path)
+                 ~dst:(Dst.all_fields @@ Dst.var_path ret_path) )
             ~init:astate shapes key_path
       | _ ->
           L.die InternalError "`maps:put` expects three arguments"
@@ -1906,8 +1950,9 @@ module TransferFunctions = struct
                 ~dst:(VarPath.sub_label ret_path field_label)
                 astate_acc )
             ~fallback:
-              (Domain.add_flow ~shapes ~node ~kind:Direct ~src:(Src.var_path value_path)
-                 ~dst:(Dst.var_path ret_path) )
+              (Domain.add_flow ~shapes ~node ~kind:Direct
+                 ~src:(Src.oblivious @@ Src.var_path value_path)
+                 ~dst:(Dst.all_fields @@ Dst.var_path ret_path) )
             ~init:acc_astate shapes key_path )
         ~init:astate args
 
@@ -2005,11 +2050,12 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
     let captured = get_captured proc_desc in
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
-      Domain.add_flow_to_var_path ~shapes ~node:start_node ~kind_f:(Fn.const Edge.Kind.Direct)
-        ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i) astate
+      Domain.add_flow ~shapes ~node:start_node ~kind:Direct ~src:(Domain.Src.argument proc_desc i)
+        ~dst:(Domain.Dst.var arg_var) astate
     in
     let add_cap_flow i astate var =
-      Domain.add_flow ~shapes ~node:start_node ~kind:Direct ~dst:(Domain.Dst.var var)
+      Domain.add_flow ~shapes ~node:start_node ~kind:Direct
+        ~dst:(Domain.Dst.all_fields @@ Domain.Dst.var var)
         ~src:(Domain.Src.captured i) astate
     in
     let astate = Domain.bottom in
@@ -2030,8 +2076,9 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
         post
   in
   let final_astate =
-    Domain.add_flow_from_var_path ~shapes ~node:exit_node ~kind_f:(Fn.const Edge.Kind.Direct)
-      ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
+    Domain.add_flow ~shapes ~node:exit_node ~kind:Direct
+      ~src:(Domain.Src.var_path ret_var_path)
+      ~dst:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
   let graph =

@@ -321,6 +321,10 @@ module Env : sig
       t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
+    val fold_argument :
+      t option -> Procdesc.t -> int -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+    (* Doc in .mli *)
+
     val introduce :
       formals:Var.t list -> return:Var.t -> t -> State.t -> State.shape list * State.shape
     (** Generates fresh shapes into a state environment for the formal parameters and the formal
@@ -1203,6 +1207,13 @@ end = struct
           fold_cells_actual summary (var, path) ~init ~f
       | None ->
           f init (Cell.var_abstract var)
+
+
+    let fold_argument summary_option proc_desc index ~init ~f =
+      (* TODO if we stored argument shapes in the summary, this wouldn't need to use proc_desc. *)
+      let arg_var, _typ = List.nth_exn (Procdesc.get_pvar_formals proc_desc) index in
+      fold_cells summary_option (VarPath.pvar arg_var) ~init ~f:(fun accum arg_cell ->
+          f accum (Cell.field_path arg_cell) )
 
 
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =

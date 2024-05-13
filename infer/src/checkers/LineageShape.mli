@@ -149,6 +149,10 @@ module Summary : sig
       itself.
 
       If the summary is [None], [f] will be called once with a var-only abstract cell. *)
+
+  val fold_argument :
+    t option -> Procdesc.t -> int -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+  (** Folds over the terminal field paths of the argument at the given index. See {!fold_cells}. *)
 end
 
 module StdModules : sig
