@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 
 let pp_array pp_item fmt arr =
-  F.fprintf fmt "[|@[%a@]|]" (Pp.collection ~fold:Array.fold ~sep:"; " ~pp_item) arr
+  F.fprintf fmt "[|@[%a@]|]" (Pp.collection ~fold:Array.fold ~sep:"; " pp_item) arr
 
 
 module Error = struct

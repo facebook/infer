@@ -204,7 +204,7 @@ end = struct
       let pp_vs fmt vs =
         Pp.collection ~sep:" "
           ~fold:(IContainer.fold_of_pervasives_map_fold VarMap.fold)
-          ~pp_item:(fun fmt (v, q) ->
+          (fun fmt (v, q) ->
             F.fprintf fmt "%a%a" pp_coeff q pp_var v ;
             is_first := false )
           fmt vs
@@ -391,13 +391,13 @@ end
 let pp_var_set pp_var fmt var_set =
   Pp.collection ~sep:","
     ~fold:(IContainer.fold_of_pervasives_set_fold Var.Set.fold)
-    ~pp_item:pp_var fmt var_set
+    pp_var fmt var_set
 
 
 let pp_var_map ~arrow pp_val pp_var fmt var_map =
   Pp.collection ~sep:" ∧ "
     ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
-    ~pp_item:(fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
+    (fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
     fmt var_map
 
 
@@ -1450,7 +1450,7 @@ module Term = struct
     let pp_with_pp_var pp_var fmt m =
       Pp.collection ~sep:"∧"
         ~fold:(IContainer.fold_of_pervasives_map_fold fold)
-        ~pp_item:(fun fmt (term, var) -> F.fprintf fmt "%a=%a" (pp pp_var) term pp_var var)
+        (fun fmt (term, var) -> F.fprintf fmt "%a=%a" (pp pp_var) term pp_var var)
         fmt m
 
 
@@ -1880,7 +1880,7 @@ module Atom = struct
       else
         Pp.collection ~sep:"∧"
           ~fold:(IContainer.fold_of_pervasives_set_fold fold)
-          ~pp_item:(fun fmt atom -> F.fprintf fmt "{%a}" (pp_with_pp_var pp_var) atom)
+          (fun fmt atom -> F.fprintf fmt "{%a}" (pp_with_pp_var pp_var) atom)
           fmt atoms
 
 
@@ -1964,7 +1964,7 @@ module TermDomainOrRange = struct
     else
       Pp.collection ~sep:","
         ~fold:(IContainer.fold_of_pervasives_set_fold Set.fold)
-        ~pp_item:(fun fmt (term, domain_or_range) ->
+        (fun fmt (term, domain_or_range) ->
           ( match domain_or_range with
           | Domain ->
               F.pp_print_char fmt 'd'
@@ -2010,7 +2010,7 @@ module InstanceOf = struct
   let pp_with_pp_var pp_var fmt m =
     Pp.collection ~sep:"∧"
       ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
-      ~pp_item:(fun fmt (var, inf) -> F.fprintf fmt "%a:%a" pp_var var pp_instance_fact inf)
+      (fun fmt (var, inf) -> F.fprintf fmt "%a:%a" pp_var var pp_instance_fact inf)
       fmt m
 
 

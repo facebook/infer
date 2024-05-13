@@ -119,12 +119,13 @@ struct
       else
         Pp.collection ~sep:"="
           ~fold:(IContainer.fold_of_pervasives_set_fold XSet.fold)
-          ~pp_item fmt ts
+          pp_item fmt ts
     in
     let pp_aux fmt uf =
-      Pp.collection ~sep:" ∧ " ~fold:fold_congruences fmt uf
-        ~pp_item:(fun fmt ((repr : repr), ts) ->
+      Pp.collection ~sep:" ∧ " ~fold:fold_congruences
+        (fun fmt ((repr : repr), ts) ->
           F.fprintf fmt "%a=%a" pp_item (repr :> X.t) (pp_ts_or_repr (repr :> X.t)) ts )
+        fmt uf
     in
     F.fprintf fmt "@[<hv>%a@]" pp_aux uf
 

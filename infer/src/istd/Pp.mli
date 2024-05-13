@@ -117,7 +117,8 @@ val in_backticks : (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
 val collection :
      fold:('t, 'item, bool) Container.fold
   -> sep:string
-  -> pp_item:(F.formatter -> 'item -> unit)
+  -> ?filter:('item -> bool)
+  -> (F.formatter -> 'item -> unit)
   -> F.formatter
   -> 't
   -> unit

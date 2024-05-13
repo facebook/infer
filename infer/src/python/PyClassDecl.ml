@@ -55,7 +55,7 @@ module Cell = struct
     | Atom a ->
         F.pp_print_string fmt a
     | List (_, lst) ->
-        F.fprintf fmt "[@[%a@]]" (Pp.collection ~fold:List.fold ~sep:", " ~pp_item:pp) lst
+        F.fprintf fmt "[@[%a@]]" (Pp.collection ~fold:List.fold ~sep:", " pp) lst
     | Map _map ->
         F.pp_print_string fmt "<Map>"
     | Call (f, args) ->

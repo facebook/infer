@@ -221,13 +221,16 @@ let in_backticks pp fmt x = F.fprintf fmt "`%a`" pp x
 let collection :
        fold:('t, 'item, _) Container.fold
     -> sep:string
-    -> pp_item:(F.formatter -> 'item -> unit)
+    -> ?filter:('item -> bool)
+    -> (F.formatter -> 'item -> unit)
     -> F.formatter
     -> 't
     -> unit =
- fun ~fold ~sep ~pp_item fmt coll ->
-  let pp_coll_aux is_first item =
-    F.fprintf fmt "@[<h>%s%a@]" (if is_first then "" else sep) pp_item item ;
-    (* [is_first] not true anymore *) false
+ fun ~fold ~sep ?(filter = fun _ -> true) pp_item fmt coll ->
+  let pp_coll_aux print_sep item =
+    if filter item then (
+      F.fprintf fmt "@[<h>%s%a@]" (if print_sep then sep else "") pp_item item ;
+      true )
+    else print_sep
   in
-  F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:true ~f:pp_coll_aux |> ignore)
+  F.fprintf fmt "@[<hv>%t@]" (fun _fmt -> fold coll ~init:false ~f:pp_coll_aux |> ignore)
