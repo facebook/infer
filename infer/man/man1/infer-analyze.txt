@@ -125,6 +125,9 @@ OPTIONS
            --parameter-not-null-checked, --pulse, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)
 
+       --dict-missing-key-var-block-list +string
+           Skip analyzing the variables in the dict-missing-key checker.
+
        --files-to-analyze-index file
            File containing a list of source files where analysis should start
            from. When used, the set of files given to this argument must be a

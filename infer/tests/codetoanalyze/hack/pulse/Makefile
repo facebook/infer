@@ -9,7 +9,8 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-specialization-partial \
   --pulse-monitor-transitive-callees --pulse-monitor-transitive-missed-captures \
   --pulse-max-disjuncts 8 --log-pulse-unreachable-nodes \
   --pulse-transitive-access-config transitive-access-config.json \
-  --pulse-transitive-access-config transitive-access-config-extra.json
+  --pulse-transitive-access-config transitive-access-config-extra.json \
+  --dict-missing-key-var-block-list '\$$args'
 INFERPRINT_OPTIONS = --issues-tests
 
 HH_SOURCES = $(sort $(wildcard hh/*.hack))

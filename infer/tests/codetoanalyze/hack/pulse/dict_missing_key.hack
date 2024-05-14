@@ -182,3 +182,11 @@ class NestedDictField {
     return $this->read_dict_hi();
   }
 }
+
+function suppress_args_param(dict<string, int> $args): int {
+  return $args['bye'];
+}
+
+function call_suppress_args_param_ok(): int {
+  return suppress_args_param(dict['hi' => 42]);
+}

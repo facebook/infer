@@ -1539,6 +1539,12 @@ and dependencies =
      translated. No sources needed."
 
 
+and dict_missing_key_var_block_list =
+  CLOpt.mk_string_list ~long:"dict-missing-key-var-block-list" ~meta:"string"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Skip analyzing the variables in the dict-missing-key checker."
+
+
 and differential_filter_files =
   CLOpt.mk_string_opt ~long:"differential-filter-files"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -3854,9 +3860,12 @@ let post_parsing_initialization command_opt =
   Option.value ~default:InferCommand.Run command_opt
 
 
-let join_patterns ~pattern_opt ~pattern_list =
-  let patterns = Option.to_list !pattern_opt @ RevList.to_list !pattern_list in
+let join_patterns_list patterns =
   if List.is_empty patterns then None else Some (String.concat ~sep:"\\|" patterns |> Str.regexp)
+
+
+let join_patterns ~pattern_opt ~pattern_list =
+  join_patterns_list (Option.to_list !pattern_opt @ RevList.to_list !pattern_list)
 
 
 let command =
@@ -4142,6 +4151,10 @@ and debug_mode = !debug
 and deduplicate = !deduplicate
 
 and dependency_mode = !dependencies
+
+and dict_missing_key_var_block_list =
+  join_patterns_list (RevList.to_list !dict_missing_key_var_block_list)
+
 
 and developer_mode = !developer_mode
 

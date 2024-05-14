@@ -269,13 +269,20 @@ module Syntax = struct
     (fun {decompiler} -> PulseDecompiler.find addr decompiler) |> exec_pure_operation
 
 
+  let is_block_list pvar =
+    Option.exists Config.dict_missing_key_var_block_list ~f:(fun regexp ->
+        Str.string_match regexp (Pvar.to_string pvar) 0 )
+
+
   let get_pvar_deref_typ formals pvar : Typ.name option model_monad =
-    match List.Assoc.find formals ~equal:Pvar.equal pvar with
-    | Some typ ->
-        ret (Typ.name (Typ.strip_ptr typ))
-    | None ->
-        let* addr, _ = eval_deref (Lvar pvar) in
-        AddressAttributes.get_static_type addr |> exec_pure_operation
+    if is_block_list pvar then ret None
+    else
+      match List.Assoc.find formals ~equal:Pvar.equal pvar with
+      | Some typ ->
+          ret (Typ.name (Typ.strip_ptr typ))
+      | None ->
+          let* addr, _ = eval_deref (Lvar pvar) in
+          AddressAttributes.get_static_type addr |> exec_pure_operation
 
 
   let resolve_field_info typ fld : Struct.field_info option model_monad =

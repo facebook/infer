@@ -359,6 +359,8 @@ val dependency_mode : bool
 
 val developer_mode : bool
 
+val dict_missing_key_var_block_list : Str.regexp option
+
 val differential_filter_files : string option
 
 val differential_filter_set : [`Introduced | `Fixed | `Preexisting] list

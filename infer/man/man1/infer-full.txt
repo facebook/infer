@@ -576,6 +576,10 @@ OPTIONS
            needed. (Conversely: --no-dependencies)
            See also infer-capture(1).
 
+       --dict-missing-key-var-block-list +string
+           Skip analyzing the variables in the dict-missing-key checker.
+           See also infer-analyze(1).
+
        --differential-filter-files string
            Specify the file containing the list of source files for which a
            differential report is desired. Source files should be specified
@@ -2698,6 +2702,9 @@ INTERNAL OPTIONS
        --developer-mode
            Activates: Show internal exceptions (Conversely:
            --no-developer-mode)
+
+       --dict-missing-key-var-block-list-reset
+           Set --dict-missing-key-var-block-list to the empty list.
 
        --differential-filter-files-reset
            Cancel the effect of --differential-filter-files.
