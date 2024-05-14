@@ -4087,15 +4087,15 @@ and compaction_minimum_interval_s = !compaction_minimum_interval_s
 and complete_capture_from = !complete_capture_from
 
 and config_impact_config_field_patterns =
-  RevList.rev_map !config_impact_config_field_patterns ~f:Re.Str.regexp
+  RevList.rev_map !config_impact_config_field_patterns ~f:Str.regexp
 
 
 and config_impact_config_function_patterns =
-  RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
+  RevList.rev_map !config_impact_config_function_patterns ~f:Str.regexp
 
 
 and config_impact_config_param_patterns =
-  RevList.rev_map !config_impact_config_param_patterns ~f:Re.Str.regexp
+  RevList.rev_map !config_impact_config_param_patterns ~f:Str.regexp
 
 
 and config_impact_current = !config_impact_current
@@ -4749,13 +4749,7 @@ and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = RevList.to_list !siof_safe_methods
 
-and skip_analysis_in_path =
-  match RevList.to_list !skip_analysis_in_path with
-  | [] ->
-      None
-  | regexps ->
-      Some (Str.regexp (String.concat ~sep:"\\|" regexps))
-
+and skip_analysis_in_path = join_patterns_list (RevList.to_list !skip_analysis_in_path)
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 

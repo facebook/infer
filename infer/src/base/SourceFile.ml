@@ -49,11 +49,11 @@ let workspace_rel_root_opt =
 let sanitise_buck_out_gen_hashed_path =
   let hash_pattern = List.init 8 ~f:(fun _ -> "[a-f0-9]") |> String.concat in
   let prefix_pattern = "^" ^ Config.buck_out_gen ^/ hash_pattern ^/ "" in
-  let regex = Re.Str.regexp prefix_pattern in
+  let regex = Str.regexp prefix_pattern in
   fun path ->
     if not Config.buck_cache_mode then None
     else
-      let path_without_hashed_prefix = Re.Str.replace_first regex "" path in
+      let path_without_hashed_prefix = Str.replace_first regex "" path in
       if String.equal path path_without_hashed_prefix then None else Some path_without_hashed_prefix
 
 

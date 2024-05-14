@@ -653,9 +653,7 @@ let static_match_array_write arr index label : tcontext option =
 let typ_void = Typ.{desc= Tvoid; quals= mk_type_quals ()}
 
 let static_match_call tenv return arguments procname label : tcontext option =
-  let is_match re text =
-    Option.for_all re ~f:(fun re -> Re.Str.string_match re.ToplAst.re text 0)
-  in
+  let is_match re text = Option.for_all re ~f:(fun re -> Str.string_match re.ToplAst.re text 0) in
   let is_match_type_base re typ = is_match re (Fmt.to_to_string pp_type typ) in
   let is_match_type_name mk_typ re name _struct = is_match_type_base re (mk_typ name) in
   (* NOTE: If B has supertype A, and we get type B**, then regex is matched against A** and B**.

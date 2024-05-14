@@ -7,7 +7,7 @@
  (name checkCopyright)
  (modes byte_complete exe)
  (flags (:standard))
- (libraries core str)
+ (libraries core)
  (preprocess
   (pps ppx_compare)))
 

@@ -140,7 +140,7 @@ let to_full_string fld =
 
 let patterns_match patterns fld =
   let s = to_simplified_string fld in
-  List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
+  List.exists patterns ~f:(fun pattern -> Str.string_match pattern s 0)
 
 
 let is_java_outer_instance ({field_name} as field) =

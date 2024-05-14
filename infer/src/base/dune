@@ -32,7 +32,6 @@
   mtime.clock.os
   parmap
   ppx_show.runtime
-  re
   sqlite3
   tdigest
   zip

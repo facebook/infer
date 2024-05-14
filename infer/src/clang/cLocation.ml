@@ -27,8 +27,8 @@ let matches_skip_translation_headers =
   | [] ->
       fun _ -> false
   | reg_list ->
-      let regex = Re.Str.regexp (String.concat ~sep:"\\|" reg_list) in
-      fun file -> Re.Str.string_match regex file 0
+      let regex = Str.regexp (String.concat ~sep:"\\|" reg_list) in
+      fun file -> Str.string_match regex file 0
 
 
 let source_file_in_project source_file =

@@ -1097,7 +1097,7 @@ module TransferFunctions = struct
   let get_kotlin_lazy_method =
     let regexp =
       (* NOTE: Found two cases so far, `getFoo` and `getFoo$<full class path>`. *)
-      Re.Str.regexp "^get\\([a-zA-Z0-9_]*\\)"
+      Str.regexp "^get\\([a-zA-Z0-9_]*\\)"
     in
     fun ~caller ~callee ->
       if
@@ -1105,8 +1105,8 @@ module TransferFunctions = struct
       then
         let getter = Procname.get_method caller in
         match Procname.get_class_type_name caller with
-        | Some class_name when Re.Str.string_match regexp getter 0 ->
-            let original_method = String.uncapitalize (Re.Str.matched_group 1 getter) in
+        | Some class_name when Str.string_match regexp getter 0 ->
+            let original_method = String.uncapitalize (Str.matched_group 1 getter) in
             let invoke_class_name =
               Typ.Name.Java.from_string (Typ.Name.name class_name ^ "$" ^ original_method ^ "$2")
             in

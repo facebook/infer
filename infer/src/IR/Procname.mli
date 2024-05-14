@@ -473,7 +473,7 @@ val is_lambda : t -> bool
 
 val is_lambda_or_block : t -> bool
 
-val patterns_match : Re.Str.regexp list -> t -> bool
+val patterns_match : Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)
 
 val is_erlang_unsupported : t -> bool

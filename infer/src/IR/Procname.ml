@@ -1142,7 +1142,7 @@ let pp_name_only fmt = function
 
 let patterns_match patterns proc_name =
   let s = F.asprintf "%a" pp_name_only proc_name in
-  List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
+  List.exists patterns ~f:(fun pattern -> Str.string_match pattern s 0)
 
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)

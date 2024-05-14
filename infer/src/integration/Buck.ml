@@ -444,7 +444,8 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
     if List.is_empty Config.buck_targets_block_list then None
     else
       Some
-        (Str.regexp ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_block_list ^ "\\)"))
+        (Str.regexp
+           ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_block_list ^ "\\)") )
   in
   let rec parse_cmd_args parsed_args = function
     | [] ->
