@@ -1,0 +1,4 @@
+{
+  "force-delete-results-dir": true,
+  "lock-model": [{"lock": ["pthread_mutex_lock1"]}]
+}
