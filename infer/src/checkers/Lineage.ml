@@ -1268,13 +1268,17 @@ module Domain : sig
     -> t
     -> t
 
-  val add_parallel_var_path_flow :
+  val add_var_path_flow :
+    shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:VarPath.t -> dst:VarPath.t -> t -> t
+  (** A variable path specific version of {!add_flow} that will also check for shape equality. *)
+
+  val add_filtered_var_path_flow :
        shapes:shapes
     -> node:PPNode.t
     -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
-    -> ?exclude:(src_sub_path:FieldPath.t -> dst_sub_path:FieldPath.t -> bool)
+    -> exclude:(src_sub_path:FieldPath.t -> dst_sub_path:FieldPath.t -> bool)
     -> t
     -> t
   (** Add flow from every cell under the source variable path to the cell with the same field path
@@ -1459,8 +1463,12 @@ end = struct
       ~init:astate shapes dst
 
 
-  let add_parallel_var_path_flow ~shapes ~node ~kind ~src ~dst
-      ?(exclude = fun ~src_sub_path:_ ~dst_sub_path:_ -> false) astate =
+  let add_var_path_flow ~shapes ~node ~kind ~src ~dst astate =
+    Shapes.assert_equal_shapes shapes src dst ;
+    add_flow ~shapes ~node ~kind ~src:(Src.var_path src) ~dst:(Dst.var_path dst) astate
+
+
+  let add_filtered_var_path_flow ~shapes ~node ~kind ~src ~dst ~exclude astate =
     Shapes.assert_equal_shapes shapes src dst ;
     Shapes.fold_cells shapes src ~init:astate ~f:(fun acc src_cell ->
         let src_sub_path = Cell.path_from_origin ~origin:src src_cell in
@@ -1689,8 +1697,7 @@ module TransferFunctions = struct
     | Some src_path ->
         (* Simple assignment of the form [dst := src_path]: we copy the fields of [src_path] into
            the corresponding fields of [dst]. *)
-        Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path
-          astate
+        Domain.add_var_path_flow ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path astate
     | None ->
         (* Complex assignment of any other form: we copy every cell under the source to (every cell
            under) the destination, and also process the potential captured indices and lambdas. *)
@@ -1722,7 +1729,7 @@ module TransferFunctions = struct
             astate
       | Some arg_path ->
           let add_write ~src ~dst eta_args =
-            if shape_is_preserved then Domain.add_parallel_var_path_flow ~src ~dst eta_args
+            if shape_is_preserved then Domain.add_var_path_flow ~src ~dst eta_args
             else
               Domain.add_flow
                 ~src:(Src.oblivious @@ Src.var_path src)
@@ -1831,7 +1838,7 @@ module TransferFunctions = struct
       let map_path = exp_as_single_var_path_exn map_exp in
       Shapes.fold_field_labels
         ~f:(fun astate_acc field_label ->
-          Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct
+          Domain.add_var_path_flow ~shapes ~node ~kind:Direct
             ~src:(VarPath.sub_label map_path field_label)
             ~dst:dst_path astate_acc )
         ~fallback:
@@ -1918,13 +1925,13 @@ module TransferFunctions = struct
                 false
           in
           let astate =
-            Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
+            Domain.add_filtered_var_path_flow ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
               ~exclude:exclude_new_key astate
           in
           (* Then have the put value flow into the put-key-indexed cells. *)
           Shapes.fold_field_labels
             ~f:(fun astate_acc field_label ->
-              Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
+              Domain.add_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
                 ~dst:(VarPath.sub_label ret_path field_label)
                 astate_acc )
             ~fallback:
@@ -1946,7 +1953,7 @@ module TransferFunctions = struct
           let value_path = exp_as_single_var_path_exn value_exp in
           Shapes.fold_field_labels
             ~f:(fun astate_acc field_label ->
-              Domain.add_parallel_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
+              Domain.add_var_path_flow ~shapes ~node ~kind:Direct ~src:value_path
                 ~dst:(VarPath.sub_label ret_path field_label)
                 astate_acc )
             ~fallback:
