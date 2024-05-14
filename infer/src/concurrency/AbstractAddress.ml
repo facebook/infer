@@ -101,6 +101,40 @@ let pp_with_base pp_base fmt (base, accesses) =
   pp_rev_accesses fmt (List.rev accesses)
 
 
+(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparision
+ * as we cannot add that ignore there due to issues with Siof 
+ * similar hack to D51588007 *)
+module SVar = struct
+  include Var
+
+  let compare x y =
+    match (x, y) with
+    | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
+        [%compare: Mangled.t * Typ.template_spec_info]
+          (Pvar.get_name x, Pvar.get_template_args x)
+          (Pvar.get_name y, Pvar.get_template_args y)
+    | ProgramVar x, _ when Pvar.is_global x ->
+        -1
+    | _, ProgramVar x when Pvar.is_global x ->
+        1
+    | _ ->
+        Var.compare x y
+
+
+  let equal x y =
+    match (x, y) with
+    | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
+        [%equal: Mangled.t * Typ.template_spec_info]
+          (Pvar.get_name x, Pvar.get_template_args x)
+          (Pvar.get_name y, Pvar.get_template_args y)
+    | ProgramVar x, _ when Pvar.is_global x ->
+        false
+    | _, ProgramVar x when Pvar.is_global x ->
+        false
+    | _ ->
+        Var.equal x y
+end
+
 (** var type used only for printing, not comparisons *)
 module IgnoreVar = struct
   type t = Var.t
@@ -110,7 +144,7 @@ module IgnoreVar = struct
   let equal _x _y = true
 end
 
-type raw_path = (Var.t * Typ.t) * access_list [@@deriving compare, equal]
+type raw_path = (SVar.t * Typ.t) * access_list [@@deriving compare, equal]
 
 (** path-like type using [MemoryAccess] steps instead of [AccessPath.access]. It does not ignore the
     root variable type (like the original [AccessPath.t]) but instead ignores the root variable for

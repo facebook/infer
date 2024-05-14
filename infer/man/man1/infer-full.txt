@@ -2211,6 +2211,14 @@ OPTIONS
            (Conversely: --no-store-analysis-schedule)
            See also infer-analyze(1).
 
+       --struct-as-cpp-class
+           Activates: Translate C structs as C++ classes. This can be useful
+           when analyzing C/C++ code to make sure struct global variables
+           shared between C and C++ source files are treated as same
+           variables
+                (Conversely: --no-struct-as-cpp-class)
+           See also infer-capture(1).
+
        --tenv-json file
            Path to TEnv json file
            See also infer-capture(1).

@@ -8,7 +8,7 @@ TESTS_DIR = ../../..
 ANALYZER = checkers
 CLANG_OPTIONS = -c
 
-INFER_OPTIONS = --starvation-only --starvation-whole-program --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --starvation-only --starvation-whole-program --debug-exceptions --project-root $(TESTS_DIR) --struct-as-cpp-class
 
 INFERPRINT_OPTIONS = --issues-tests
 

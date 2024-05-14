@@ -868,6 +868,8 @@ val stats_dir_current : string option
 
 val stats_dir_previous : string option
 
+val struct_as_cpp_class : bool
+
 val store_analysis_schedule : bool
 
 val subtype_multirange : bool

@@ -588,7 +588,11 @@ module Name = struct
 
 
   module C = struct
-    let from_qual_name qual_name = CStruct qual_name
+    let from_qual_name qual_name =
+      if Config.struct_as_cpp_class then
+        CppClass {name= qual_name; template_spec_info= NoTemplate; is_union= false}
+      else CStruct qual_name
+
 
     let from_string name_str = QualifiedCppName.of_qual_string name_str |> from_qual_name
 

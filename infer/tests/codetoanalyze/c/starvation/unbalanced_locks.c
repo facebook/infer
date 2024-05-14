@@ -5,15 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-struct FakeMut {
+struct AMutex {
   int blah;
 };
-void pthread_mutex_lock(struct FakeMut*);
-void pthread_mutex_lock1(struct FakeMut*);
-void pthread_mutex_unlock(struct FakeMut*);
+void pthread_mutex_lock(struct AMutex*);
+void pthread_mutex_lock1(struct AMutex*);
+void pthread_mutex_unlock(struct AMutex*);
 
-struct FakeMut m1;
-struct FakeMut m2;
+struct AMutex m1;
+struct AMutex m2;
 
 void lock_m1_wrap() { pthread_mutex_lock(&m1); }
 void unlock_m1_wrap() { pthread_mutex_unlock(&m1); }

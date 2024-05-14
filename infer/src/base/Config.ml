@@ -3489,6 +3489,14 @@ and stats_dir_previous =
     "The infer-out/stats from a previous run. See $(b,--stats-dir-current)."
 
 
+and struct_as_cpp_class =
+  CLOpt.mk_bool ~long:"struct-as-cpp-class" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    "Translate C structs as C++ classes. This can be useful when analyzing C/C++ code to make sure \
+     struct global variables shared between C and C++ source files are treated as same variables\n\
+    \    "
+
+
 and store_analysis_schedule =
   CLOpt.mk_bool ~long:"store-analysis-schedule"
     ~in_help:InferCommand.[(Analyze, manual_scheduler)]
@@ -4787,6 +4795,8 @@ and starvation_whole_program = !starvation_whole_program
 and stats_dir_current = !stats_dir_current
 
 and stats_dir_previous = !stats_dir_previous
+
+and struct_as_cpp_class = !struct_as_cpp_class
 
 and store_analysis_schedule = !store_analysis_schedule
 
