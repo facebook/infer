@@ -1175,12 +1175,17 @@ let summary_of_astate : Procdesc.t -> t -> summary =
     AttributeDomain.find_opt return_var_exp astate.attributes
     |> Option.value ~default:Attribute.Nothing
   in
+  (* Interprocedural handling of guards is not implemented, so we remove guarded locks from
+     summary *)
+  let astate_without_guard =
+    GuardToLockMap.fold (fun guard _lock acc -> unlock_guard acc guard) astate.guard_map astate
+  in
   { critical_pairs=
       NullLocsCriticalPairs.to_critical_pairs astate.lock_state astate.lazily_initalized
         astate.critical_pairs
   ; thread= astate.thread
   ; scheduled_work= astate.scheduled_work
-  ; lock_state= astate.lock_state
+  ; lock_state= astate_without_guard.lock_state
   ; attributes
   ; return_attribute }
 
