@@ -3515,7 +3515,7 @@ module Formula = struct
                             let* atoms_opt1 =
                               if not nullable then
                                 Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                  (LessThan (Var v, Const Q.zero))
+                                  (LessThan (Const Q.zero, Var v))
                               else Sat None
                             in
                             Sat (phi, atoms_opt1)
