@@ -60,7 +60,11 @@ module Closures = struct
     let add_edge edges (capture_mode, typ, addr, trace, captured_as) =
       (* it's ok to use [UnsafeMemory] here because we are building edges *)
       let var_name = Pvar.get_name captured_as in
-      let captured_data = {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ} in
+      let captured_data =
+        { Fieldname.capture_mode
+        ; is_weak= Typ.is_weak_pointer typ
+        ; is_function_pointer= Typ.is_pointer_to_function typ }
+      in
       let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
       UnsafeMemory.Edges.add (FieldAccess field_name) (addr, trace) edges
     in
@@ -202,7 +206,11 @@ and record_closure astate (path : PathContext.t) loc procname
   in
   let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
   let store_captured_var result (exp, var, typ, capture_mode) =
-    let captured_data = {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ} in
+    let captured_data =
+      { Fieldname.capture_mode
+      ; is_weak= Typ.is_weak_pointer typ
+      ; is_function_pointer= Typ.is_pointer_to_function typ }
+    in
     let field_name = Fieldname.mk_capture_field_in_closure (Pvar.get_name var) captured_data in
     let** astate = result in
     let** astate, rhs_value_origin = eval_to_value_origin path NoAccess loc exp astate in
@@ -792,7 +800,11 @@ let get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
       ~f:(fun (id, astate, captured) (pvar, capture_mode, typ) ->
         let var_name = Pvar.get_name pvar in
-        let captured_data = {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ} in
+        let captured_data =
+          { Fieldname.capture_mode
+          ; is_weak= Typ.is_weak_pointer typ
+          ; is_function_pointer= Typ.is_pointer_to_function typ }
+        in
         let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
         let+ astate, captured_actual =
           if is_lambda_or_block then

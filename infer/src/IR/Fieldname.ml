@@ -8,7 +8,8 @@
 open! IStd
 module F = Format
 
-type captured_data = {capture_mode: CapturedVar.capture_mode; is_weak: bool}
+type captured_data =
+  {capture_mode: CapturedVar.capture_mode; is_weak: bool; is_function_pointer: bool}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 type t = {class_name: Typ.Name.t; field_name: string; captured_data: captured_data option}
@@ -72,6 +73,10 @@ let is_weak_capture_field_in_closure {captured_data} =
 
 let is_capture_field_in_closure_by_ref {captured_data} =
   Option.exists captured_data ~f:(fun {capture_mode} -> CapturedVar.is_captured_by_ref capture_mode)
+
+
+let is_capture_field_function_pointer {captured_data} =
+  Option.exists captured_data ~f:(fun {is_function_pointer} -> is_function_pointer)
 
 
 let get_class_name {class_name} = class_name

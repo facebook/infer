@@ -20,6 +20,14 @@ let is_ref_counted_or_block astate addr =
       false
 
 
+let is_captured_function_pointer_or_block access =
+  match access with
+  | MemoryAccess.FieldAccess fieldname ->
+      Fieldname.is_capture_field_function_pointer fieldname
+  | _ ->
+      false
+
+
 let rec crop_seen_to_cycle seen_list addr =
   match seen_list with
   | [] ->
@@ -183,7 +191,10 @@ let check_retain_cycles path tenv location addresses orig_astate =
               | Recoverable _ | FatalError _ ->
                   acc
               | Ok astate ->
-                  if PulseRefCounting.is_strong_access tenv access then
+                  if
+                    PulseRefCounting.is_strong_access tenv access
+                    && not (is_captured_function_pointer_or_block access)
+                  then
                     (* This is needed to update the decompiler and be able to get good values when printing the path (above).
                         We don't want to return those changes in the decompiler to the rest of the analysis though, that was
                        changing some tests. So this checker only returns errors, but not the changes to the state. *)
