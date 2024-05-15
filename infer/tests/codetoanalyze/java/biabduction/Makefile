@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --biabduction-only --debug-exceptions
+INFER_OPTIONS = --biabduction-only --debug-exceptions --biabduction-seconds-per-iteration 200
 INFERPRINT_OPTIONS = --issues-tests
 TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 SOURCES = $(wildcard *.java)
