@@ -29,8 +29,6 @@ let alloc = "alloc"
 
 let allocWithZone = "allocWithZone:"
 
-let anon_field = "__anon_field"
-
 let arrayWithObjects_count = "arrayWithObjects:count:"
 
 let dictionaryWithObjects_forKeys_count = "dictionaryWithObjects:forKeys:count:"

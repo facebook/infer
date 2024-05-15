@@ -367,7 +367,7 @@ let rec get_struct_fields tenv ?cxx_record_decl_info decl =
     | FieldDecl (_, {ni_name}, qt, _) ->
         let typ = qual_type_to_sil_type tenv qt in
         let annotation_items = CAst_utils.sil_annot_of_type qt in
-        let name = CGeneral_utils.mk_class_field_name ?cxx_record_decl_info class_tname ni_name in
+        let name = CGeneral_utils.mk_class_field_name class_tname ni_name in
         [(name, typ, annotation_items)]
     | _ ->
         []

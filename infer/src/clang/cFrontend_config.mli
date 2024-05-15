@@ -31,8 +31,6 @@ val alloc : string
 
 val allocWithZone : string
 
-val anon_field : string
-
 val arrayWithObjects_count : string
 
 val dictionaryWithObjects_forKeys_count : string
