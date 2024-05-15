@@ -114,7 +114,7 @@ class Wrapper {
   }
 
   // this one shows up that we don't treat nullables properly
-  public async function nullIsNullableFN(): Awaitable<void> {
+  public async function nullIsNullableBad(): Awaitable<void> {
     $x = null;
     if ($x is ?D) {
       $_ = $this->fail(); // always happens
@@ -123,7 +123,7 @@ class Wrapper {
   }
 
   // this one also shows up that we don't treat nullables properly
-  public async function nullIsNullableFP(): Awaitable<void> {
+  public async function nullIsNullableOK(): Awaitable<void> {
     $x = null;
     if ($x is ?D) {
       return; // always happens
