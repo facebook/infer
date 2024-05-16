@@ -304,6 +304,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
+  | LatentSpecializedTypeIssue {astate}
   | LatentInvalidAccess {astate} ->
       map_call_result astate ~f:(fun _return_val_opt (subst, hist_map) astate_post_call ->
           let** astate_summary =
@@ -344,6 +345,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) ) )
+          | LatentSpecializedTypeIssue {specialized_type; calling_context} ->
+              let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
+              (* The decision to report or further propagate the issue is done
+                 at summary creation time based on the current specialization *)
+              Sat
+                (Ok
+                   (LatentSpecializedTypeIssue
+                      {astate= astate_summary; specialized_type; calling_context} ) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -531,7 +540,10 @@ let add_need_dynamic_type_specialization needs execution_states =
             LatentAbortProgram {latent_abort_program with astate}
         | LatentInvalidAccess latent_invalid_access ->
             let astate = update_summary latent_invalid_access.astate in
-            LatentInvalidAccess {latent_invalid_access with astate} ) )
+            LatentInvalidAccess {latent_invalid_access with astate}
+        | LatentSpecializedTypeIssue latent_specialized_type_issue ->
+            let astate = update_summary latent_specialized_type_issue.astate in
+            LatentSpecializedTypeIssue {latent_specialized_type_issue with astate} ) )
 
 
 let maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate =

@@ -344,7 +344,8 @@ module Basic = struct
             | ExitProgram _
             | AbortProgram _
             | LatentAbortProgram _
-            | LatentInvalidAccess _ ->
+            | LatentInvalidAccess _
+            | LatentSpecializedTypeIssue _ ->
                 [Ok exec_state] )
       , non_disj )
     in

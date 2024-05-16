@@ -28,6 +28,10 @@ type 'abductive_domain_t base_t =
       ; address: DecompilerExpr.t
       ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
+  | LatentSpecializedTypeIssue of
+      { astate: AbductiveDomain.Summary.t
+      ; specialized_type: Typ.Name.t
+      ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
 [@@deriving equal, compare, yojson_of, variants]
 
 type t = AbductiveDomain.t base_t
@@ -57,7 +61,8 @@ let to_astate = function
   | AbortProgram summary
   | ExitProgram summary
   | LatentAbortProgram {astate= summary}
-  | LatentInvalidAccess {astate= summary} ->
+  | LatentInvalidAccess {astate= summary}
+  | LatentSpecializedTypeIssue {astate= summary} ->
       (summary :> AbductiveDomain.t)
   | ExceptionRaised astate | ContinueProgram astate ->
       astate
@@ -81,6 +86,9 @@ let pp_header kind fmt = function
   | LatentInvalidAccess {address; must_be_valid= _} ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentInvalidAccess" ;
       F.fprintf fmt "(%a)" DecompilerExpr.pp address
+  | LatentSpecializedTypeIssue {specialized_type} ->
+      Pp.with_color kind Orange F.pp_print_string fmt "LatentSpecializedTypeIssue" ;
+      F.fprintf fmt "(%a)" Typ.Name.pp specialized_type
 
 
 let pp_with_kind kind path_opt fmt exec_state =

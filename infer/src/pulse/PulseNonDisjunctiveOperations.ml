@@ -218,7 +218,8 @@ let continue_bind exec_state ~f =
   | AbortProgram _
   | ExitProgram _
   | LatentAbortProgram _
-  | LatentInvalidAccess _ ->
+  | LatentInvalidAccess _
+  | LatentSpecializedTypeIssue _ ->
       None
 
 

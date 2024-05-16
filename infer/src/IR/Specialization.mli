@@ -50,6 +50,8 @@ module Pulse : sig
   module Set : PrettyPrintable.PPSet with type elt = t
 
   val is_pulse_specialization_limit_not_reached : 'a Map.t -> bool
+
+  val has_type_in_specialization : t -> Typ.name -> bool
 end
 
 (** Summary specialization is a technique that permits to increase the precision of summary by

@@ -80,7 +80,8 @@ let realloc_common allocator pointer size : model =
          | ExitProgram _
          | AbortProgram _
          | LatentAbortProgram _
-         | LatentInvalidAccess _ ->
+         | LatentInvalidAccess _
+         | LatentSpecializedTypeIssue _ ->
              ([Ok exec_state], non_disj) )
 
 

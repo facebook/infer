@@ -20,6 +20,7 @@ val of_posts :
      Tenv.t
   -> Procdesc.t
   -> Errlog.t
+  -> Specialization.Pulse.t option
   -> Location.t
   -> ExecutionDomain.t list
   -> NonDisjDomain.t

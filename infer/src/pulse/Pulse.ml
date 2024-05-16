@@ -224,7 +224,11 @@ module PulseTransferFunctions = struct
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         |> ExecutionDomain.continue
-    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _
+    | ExitProgram _
+    | LatentAbortProgram _
+    | LatentInvalidAccess _
+    | LatentSpecializedTypeIssue _ ->
         Sat (Ok exec_state)
 
 
@@ -249,7 +253,8 @@ module PulseTransferFunctions = struct
       | LatentAbortProgram _
       | ExitProgram _
       | ExceptionRaised _
-      | LatentInvalidAccess _ ->
+      | LatentInvalidAccess _
+      | LatentSpecializedTypeIssue _ ->
           exec_state
     in
     List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
@@ -948,7 +953,8 @@ module PulseTransferFunctions = struct
           | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
-          | LatentInvalidAccess _ ) as exec_state ->
+          | LatentInvalidAccess _
+          | LatentSpecializedTypeIssue _ ) as exec_state ->
             Ok exec_state
       in
       List.map exec_states_res ~f:one_state
@@ -1062,7 +1068,8 @@ module PulseTransferFunctions = struct
               | ExceptionRaised _
               | ExitProgram _
               | LatentAbortProgram _
-              | LatentInvalidAccess _ ->
+              | LatentInvalidAccess _
+              | LatentSpecializedTypeIssue _ ->
                   ([astate], non_disj)
               | ContinueProgram astate as default_astate ->
                   (let open IOption.Let_syntax in
@@ -1118,7 +1125,8 @@ module PulseTransferFunctions = struct
           | ExceptionRaised _
           | ExitProgram _
           | LatentAbortProgram _
-          | LatentInvalidAccess _ ->
+          | LatentInvalidAccess _
+          | LatentSpecializedTypeIssue _ ->
               ([astate], non_disj)
           | ContinueProgram astate ->
               let execs, non_disj =
@@ -1144,7 +1152,11 @@ module PulseTransferFunctions = struct
   let remove_vars vars location astates =
     List.filter_map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
-        | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+        | AbortProgram _
+        | ExitProgram _
+        | LatentAbortProgram _
+        | LatentInvalidAccess _
+        | LatentSpecializedTypeIssue _ ->
             Some exec_state
         | ContinueProgram astate -> (
           match PulseOperations.remove_vars vars location astate with
@@ -1281,7 +1293,8 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _
+      ->
         ([astate], path, astate_n)
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
@@ -1616,7 +1629,8 @@ let exit_function analysis_data location posts non_disj_astate =
         | ExitProgram _
         | ExceptionRaised _
         | LatentAbortProgram _
-        | LatentInvalidAccess _ ->
+        | LatentInvalidAccess _
+        | LatentSpecializedTypeIssue _ ->
             (exec_state :: acc_astates, astate_n)
         | ContinueProgram astate ->
             let vars =
@@ -1726,7 +1740,9 @@ let analyze specialization
                 match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
           else posts
         in
-        let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts non_disj_astate in
+        let summary =
+          PulseSummary.of_posts tenv proc_desc err_log specialization node_loc posts non_disj_astate
+        in
         let is_exit_node =
           Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
         in

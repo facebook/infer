@@ -63,8 +63,9 @@ let join summary1 summary2 =
   {pre_post_list; non_disj}
 
 
-let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
-    (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
+let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log
+    specialization location (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t
+    =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
       ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
@@ -149,21 +150,28 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
       Sat (LatentAbortProgram {astate; latent_issue})
   | LatentInvalidAccess {astate; address; must_be_valid; calling_context} ->
       Sat (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
+  | LatentSpecializedTypeIssue {astate; specialized_type; calling_context} -> (
+    match specialization with
+    | Some specialization
+      when Specialization.Pulse.has_type_in_specialization specialization specialized_type ->
+        Sat (LatentSpecializedTypeIssue {astate; specialized_type; calling_context})
+    | _ ->
+        Sat (AbortProgram astate) )
 
 
 let force_exit_program tenv proc_desc err_log post =
-  exec_summary_of_post_common tenv proc_desc err_log post
+  exec_summary_of_post_common tenv proc_desc err_log None post
     ~continue_program:(fun astate -> ExitProgram astate)
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts tenv proc_desc err_log location posts non_disj =
+let of_posts tenv proc_desc err_log specialization location posts non_disj =
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i exec_state ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i
           (ExecutionDomain.pp_with_kind HTML None)
           exec_state ;
-        exec_summary_of_post_common tenv proc_desc err_log location exec_state
+        exec_summary_of_post_common tenv proc_desc err_log specialization location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )

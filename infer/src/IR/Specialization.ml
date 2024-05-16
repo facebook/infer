@@ -89,6 +89,10 @@ module Pulse = struct
 
   let is_pulse_specialization_limit_not_reached map =
     Map.cardinal map < Config.pulse_specialization_limit
+
+
+  let has_type_in_specialization {dynamic_types} specialized_type =
+    HeapPath.Map.exists (fun _ typ -> Typ.Name.equal typ specialized_type) dynamic_types
 end
 
 type t = Pulse of Pulse.t
