@@ -333,7 +333,8 @@ module Printer = struct
             | ArrayAccess (_, index) ->
                 (dereference, field_accesses, (index, value_hist) :: array_accesses)
             | TakeAddress ->
-                assert false
+                (* TODO: something else *)
+                (dereference, field_accesses, array_accesses)
             | Dereference ->
                 (Some value_hist, field_accesses, array_accesses) )
       in
@@ -501,7 +502,8 @@ module Printer = struct
     | ArrayAccess (_, index) ->
         F.fprintf fmt "[%a]" (Pp.escape_xml (pp_resolve_value pp_kind explainer) pp_kind) index
     | TakeAddress ->
-        assert false
+        (* TODO: something else *)
+        ()
     | Dereference ->
         pp_deref_symbol pp_kind fmt ()
 
