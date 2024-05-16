@@ -92,7 +92,18 @@ module Pulse = struct
 
 
   let has_type_in_specialization {dynamic_types} specialized_type =
-    HeapPath.Map.exists (fun _ typ -> Typ.Name.equal typ specialized_type) dynamic_types
+    (* for Hack we don't care if type is Foo or Foo$static *)
+    let get_hack_static_companion_origin typ =
+      if Typ.Name.is_hack_class typ && Typ.Name.Hack.is_static_companion typ then
+        Typ.Name.Hack.static_companion_origin typ
+      else typ
+    in
+    HeapPath.Map.exists
+      (fun _ typ ->
+        let typ = get_hack_static_companion_origin typ in
+        let specialized_type = get_hack_static_companion_origin specialized_type in
+        Typ.Name.equal typ specialized_type )
+      dynamic_types
 end
 
 type t = Pulse of Pulse.t

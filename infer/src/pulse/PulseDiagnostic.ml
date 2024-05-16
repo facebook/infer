@@ -141,6 +141,8 @@ type t =
       ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | HackCannotInstantiateAbstractClass of
+      {type_name: Typ.Name.t; calling_context: calling_context; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
@@ -200,6 +202,10 @@ let pp fmt diagnostic =
         (fun fmt ->
           if Typ.Name.Set.is_empty transitive_missed_captures then ()
           else Typ.Name.Set.pp fmt transitive_missed_captures )
+  | HackCannotInstantiateAbstractClass {type_name; calling_context; location} ->
+      F.fprintf fmt
+        "HackCannotInstantiateAbstractClass {@[type_name:%a;@;location:%a;@calling_context:%a@]}"
+        Typ.Name.pp type_name pp_calling_context calling_context Location.pp location
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -291,6 +297,7 @@ let get_location = function
   | ConstRefableParameter {location}
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
+  | HackCannotInstantiateAbstractClass {location}
   | HackUnawaitedAwaitable {location}
   | MemoryLeak {location}
   | ReadonlySharedPtrParameter {location}
@@ -339,6 +346,7 @@ let aborts_execution = function
   | CSharpResourceLeak _
   | JavaResourceLeak _
   | TransitiveAccess _
+  | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadonlySharedPtrParameter _
@@ -639,6 +647,10 @@ let get_message_and_suggestion diagnostic =
               location
       in
       F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
+  | HackCannotInstantiateAbstractClass {type_name; calling_context= _; location} ->
+      F.asprintf "%a is an abstract class and is being initialized at %a" Typ.Name.pp type_name
+        Location.pp location
+      |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -1026,6 +1038,11 @@ let get_trace = function
       Trace.add_to_errlog ~nesting:1
         ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
         call_trace []
+  | HackCannotInstantiateAbstractClass {type_name; calling_context; location} ->
+      get_trace_calling_context calling_context
+      @@ [ Errlog.make_trace_element 0 location
+             (F.asprintf "%a initialized here" Typ.Name.pp type_name)
+             [] ]
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
@@ -1119,6 +1136,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_const_refable
   | CSharpResourceLeak _, false | JavaResourceLeak _, false ->
       IssueType.pulse_resource_leak
+  | HackCannotInstantiateAbstractClass _, false ->
+      IssueType.pulse_cannot_instantiate_abstract_class
   | HackUnawaitedAwaitable _, false ->
       IssueType.pulse_unawaited_awaitable
   | ErlangError (Badarg _), _ ->
@@ -1200,6 +1219,7 @@ let get_issue_type ~latent issue_type =
       | CSharpResourceLeak _
       | JavaResourceLeak _
       | TransitiveAccess _
+      | HackCannotInstantiateAbstractClass _
       | HackUnawaitedAwaitable _
       | MemoryLeak _
       | ReadonlySharedPtrParameter _

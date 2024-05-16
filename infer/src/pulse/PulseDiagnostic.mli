@@ -88,6 +88,8 @@ type t =
       ; transitive_missed_captures: Typ.Name.Set.t }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | HackCannotInstantiateAbstractClass of
+      {type_name: Typ.Name.t; calling_context: calling_context; location: Location.t}
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ReadonlySharedPtrParameter of

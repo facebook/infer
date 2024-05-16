@@ -190,6 +190,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ErlangError _
   | TransitiveAccess _
   | JavaResourceLeak _
+  | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadonlySharedPtrParameter _

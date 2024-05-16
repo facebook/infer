@@ -1009,6 +1009,13 @@ let is_hack_sinit = function
       false
 
 
+let is_hack_construct = function
+  | Hack {function_name} ->
+      String.equal function_name "__construct"
+  | _ ->
+      false
+
+
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
 let get_global_name_of_initializer t =

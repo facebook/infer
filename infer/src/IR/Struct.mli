@@ -95,7 +95,7 @@ val get_source_file : t -> SourceFile.t option
 
 val is_hack_class : t -> bool
 
-val is_hack_abstract_class : t -> bool [@@warning "-unused-value-declaration"]
+val is_hack_abstract_class : t -> bool
 
 val is_hack_interface : t -> bool
 

@@ -99,6 +99,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | CSharpResourceLeak _
   | JavaResourceLeak _
   | TransitiveAccess _
+  | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadUninitialized _

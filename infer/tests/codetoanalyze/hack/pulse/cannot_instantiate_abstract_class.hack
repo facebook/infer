@@ -28,7 +28,7 @@ class ConcreteClass2 extends AbstractClass2 {}
 
 class Tests {
 
-  public function FN_initAbstractClassViaGenericFunBad(): void {
+  public function initAbstractClassViaGenericFunBad(): void {
     Main::makeGeneric(AbstractClass1::class);
   }
 
@@ -36,7 +36,7 @@ class Tests {
     Main::makeGeneric(ConcreteClass1::class);
   }
 
-  public function FN_initAbstractClassViaStaticBad(): void {
+  public function initAbstractClassViaStaticBad(): void {
     AbstractClass2::makeStatic();
   }
 

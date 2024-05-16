@@ -156,6 +156,11 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
       when Specialization.Pulse.has_type_in_specialization specialization specialized_type ->
         Sat (LatentSpecializedTypeIssue {astate; specialized_type; calling_context})
     | _ ->
+        let diagnostic =
+          Diagnostic.HackCannotInstantiateAbstractClass
+            {type_name= specialized_type; calling_context; location}
+        in
+        PulseReport.report tenv ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ;
         Sat (AbortProgram astate) )
 
 

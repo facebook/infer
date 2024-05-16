@@ -465,7 +465,10 @@ module PulseTransferFunctions = struct
     else proc_name_opt
 
 
-  type model_search_result = OCamlModel of (PulseModelsImport.model * Procname.t) | NoModel
+  type model_search_result =
+    | OCamlModel of PulseModelsImport.model * Procname.t
+    | InvalidSpecializedCall of Typ.Name.t
+    | NoModel
 
   (* When Hack traits are involved, we need to compute and pass an additional argument that is a
      token to find the right class name for [self].
@@ -512,6 +515,24 @@ module PulseTransferFunctions = struct
     | [] ->
         None )
     |> Option.value ~default:(astate, func_args)
+
+
+  let is_hack_abstract_class_being_initialized tenv astate callee_pname func_args =
+    let open IOption.Let_syntax in
+    let get_receiver_type tenv astate func_args =
+      match func_args with
+      | {ProcnameDispatcher.Call.FuncArg.arg_payload= value} :: _ ->
+          let addr, _ = ValueOrigin.addr_hist value in
+          let* dynamic_type_name, _ = get_dynamic_type_name astate addr in
+          let* tstruct = Tenv.lookup tenv dynamic_type_name in
+          Some (tstruct, dynamic_type_name)
+      | [] ->
+          None
+    in
+    if Language.curr_language_is Hack && Procname.is_hack_construct callee_pname then
+      let* tstruct, type_name = get_receiver_type tenv astate func_args in
+      if Struct.is_hack_abstract_class tstruct then Some type_name else None
+    else None
 
 
   let is_closure_call opt_procname =
@@ -845,18 +866,23 @@ module PulseTransferFunctions = struct
           | _ ->
               acc )
     in
-    let model =
+    let model_search_result =
       match callee_pname with
-      | Some callee_pname ->
-          PulseModels.dispatch tenv callee_pname func_args
-          |> Option.value_map ~default:NoModel ~f:(fun model -> OCamlModel (model, callee_pname))
+      | Some callee_pname -> (
+        match is_hack_abstract_class_being_initialized tenv astate callee_pname func_args with
+        | Some specialized_type ->
+            InvalidSpecializedCall specialized_type
+        | None ->
+            PulseModels.dispatch tenv callee_pname func_args
+            |> Option.value_map ~default:NoModel ~f:(fun model -> OCamlModel (model, callee_pname))
+        )
       | None ->
           (* unresolved function pointer, etc.: skip *)
           NoModel
     in
     (* do interprocedural call then destroy objects going out of scope *)
     let exec_states_res, non_disj, call_was_unknown =
-      match model with
+      match model_search_result with
       | OCamlModel (model, callee_procname) ->
           L.d_printfln "Found ocaml model for call@\n" ;
           let astate =
@@ -881,6 +907,11 @@ module PulseTransferFunctions = struct
               Location.pp_file_pos call_loc Procname.pp callee_procname
               (List.length astates - 1) ;
           (astates, non_disj, `KnownCall)
+      | InvalidSpecializedCall specialized_type ->
+          let result =
+            FatalError (PotentialInvalidSpecializedCall {astate; specialized_type}, [])
+          in
+          ([result], non_disj, `UnknownCall)
       | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
