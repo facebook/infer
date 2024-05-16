@@ -261,7 +261,9 @@ let summary_error_of_error proc_desc location (error : AccessResult.error) : _ S
   match error with
   | WithSummary (error, summary) ->
       Sat (error, summary)
-  | PotentialInvalidAccess {astate} | ReportableError {astate} ->
+  | PotentialInvalidAccess {astate}
+  | PotentialInvalidSpecializedCall {astate}
+  | ReportableError {astate} ->
       summary_of_error_post proc_desc location (fun summary -> (error, summary)) astate
 
 
@@ -291,6 +293,8 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
              ; access_trace
              ; must_be_valid_reason= snd must_be_valid } ) ;
       Some (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
+  | PotentialInvalidSpecializedCall {specialized_type} ->
+      Some (LatentSpecializedTypeIssue {astate= summary; specialized_type; calling_context= []})
   | ReportableError {diagnostic} -> (
       let is_nullptr_dereference =
         match diagnostic with AccessToInvalidAddress _ -> true | _ -> false

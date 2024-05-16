@@ -17,6 +17,7 @@ type error =
       { astate: AbductiveDomain.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+  | PotentialInvalidSpecializedCall of {astate: AbductiveDomain.t; specialized_type: Typ.Name.t}
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
   | WithSummary of error * AbductiveDomain.Summary.t
 
@@ -25,7 +26,7 @@ let with_summary result =
 
 
 let rec is_fatal = function
-  | PotentialInvalidAccess _ ->
+  | PotentialInvalidAccess _ | PotentialInvalidSpecializedCall _ ->
       true
   | ReportableError {diagnostic} ->
       Diagnostic.aborts_execution diagnostic
@@ -34,7 +35,9 @@ let rec is_fatal = function
 
 
 let rec astate_of_error = function
-  | PotentialInvalidAccess {astate} | ReportableError {astate} ->
+  | PotentialInvalidAccess {astate}
+  | PotentialInvalidSpecializedCall {astate}
+  | ReportableError {astate} ->
       astate
   | WithSummary (error, _) ->
       astate_of_error error

@@ -16,6 +16,7 @@ type error =
       { astate: AbductiveDomain.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+  | PotentialInvalidSpecializedCall of {astate: AbductiveDomain.t; specialized_type: Typ.Name.t}
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
   | WithSummary of error * AbductiveDomain.Summary.t
       (** An error for which the summary corresponding to the abstract state has already been
