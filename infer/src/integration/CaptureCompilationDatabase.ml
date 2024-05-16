@@ -69,57 +69,59 @@ let run_compilation_database compilation_database should_capture_file =
 
 
 (** Computes the compilation database files. *)
-let get_compilation_database_files_buck db_deps ~prog ~args =
-  match
-    BuckFlavors.add_flavors_to_buck_arguments (ClangCompilationDB db_deps)
-      ~extra_flavors:Config.append_buck_flavors args
-  with
-  | {targets} when List.is_empty targets ->
-      L.external_warning "WARNING: found no buck targets to analyze.@." ;
-      []
-  | {command= "build" as command; rev_not_targets; targets} ->
-      let targets_args = Buck.store_args_in_file ~identifier:"compdb_build_args" targets in
-      let build_args =
-        (command :: List.rev_append rev_not_targets Config.buck_build_args_no_inline)
-        @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
-        "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
-        :: "--config" :: "*//cxx.modules=False" :: targets_args
-      in
-      Logging.debug Capture Quiet "Processed buck command is: 'buck %a'@\n"
-        (Pp.seq F.pp_print_string) build_args ;
-      Buck.wrap_buck_call ~label:"compdb_build" V1 (prog :: build_args) |> ignore ;
-      let buck_targets_shell =
-        prog :: "targets"
-        :: List.rev_append
-             (Buck.filter_compatible `Targets rev_not_targets)
-             Config.buck_build_args_no_inline
-        @ ("--show-output" :: targets_args)
-      in
-      let on_target_lines = function
-        | [] ->
-            L.(die ExternalError) "There are no files to process, exiting"
-        | lines ->
-            L.(debug Capture Quiet)
-              "Reading compilation database from:@\n%a@\n"
-              (Pp.seq ~sep:"\n" F.pp_print_string)
-              lines ;
-            (* this assumes that flavors do not contain spaces *)
-            let split_regex = Str.regexp "#[^ ]* " in
-            let scan_output compilation_database_files line =
-              match Str.bounded_split split_regex line 2 with
-              | [_; filename] ->
-                  `Raw filename :: compilation_database_files
-              | _ ->
-                  L.internal_error
-                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line ;
-                  compilation_database_files
-            in
-            List.fold ~f:scan_output ~init:[] lines
-      in
-      Buck.wrap_buck_call ~label:"compdb_targets" V1 buck_targets_shell |> on_target_lines
-  | _ ->
-      Process.print_error_and_exit "Incorrect buck command: %s %a. Please use buck build <targets>"
-        prog (Pp.seq F.pp_print_string) args
+let get_compilation_database_files_buck =
+  let split_regex = Str.regexp "#[^ ]* " in
+  fun db_deps ~prog ~args ->
+    match
+      BuckFlavors.add_flavors_to_buck_arguments (ClangCompilationDB db_deps)
+        ~extra_flavors:Config.append_buck_flavors args
+    with
+    | {targets} when List.is_empty targets ->
+        L.external_warning "WARNING: found no buck targets to analyze.@." ;
+        []
+    | {command= "build" as command; rev_not_targets; targets} ->
+        let targets_args = Buck.store_args_in_file ~identifier:"compdb_build_args" targets in
+        let build_args =
+          (command :: List.rev_append rev_not_targets Config.buck_build_args_no_inline)
+          @ (* Infer doesn't support C++ modules nor precompiled headers yet (T35656509) *)
+          "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
+          :: "--config" :: "*//cxx.modules=False" :: targets_args
+        in
+        Logging.debug Capture Quiet "Processed buck command is: 'buck %a'@\n"
+          (Pp.seq F.pp_print_string) build_args ;
+        Buck.wrap_buck_call ~label:"compdb_build" V1 (prog :: build_args) |> ignore ;
+        let buck_targets_shell =
+          prog :: "targets"
+          :: List.rev_append
+               (Buck.filter_compatible `Targets rev_not_targets)
+               Config.buck_build_args_no_inline
+          @ ("--show-output" :: targets_args)
+        in
+        let on_target_lines = function
+          | [] ->
+              L.(die ExternalError) "There are no files to process, exiting"
+          | lines ->
+              L.(debug Capture Quiet)
+                "Reading compilation database from:@\n%a@\n"
+                (Pp.seq ~sep:"\n" F.pp_print_string)
+                lines ;
+              (* this assumes that flavors do not contain spaces *)
+              let scan_output compilation_database_files line =
+                match Str.bounded_split split_regex line 2 with
+                | [_; filename] ->
+                    `Raw filename :: compilation_database_files
+                | _ ->
+                    L.internal_error
+                      "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line ;
+                    compilation_database_files
+              in
+              List.fold ~f:scan_output ~init:[] lines
+        in
+        Buck.wrap_buck_call ~label:"compdb_targets" V1 buck_targets_shell |> on_target_lines
+    | _ ->
+        Process.print_error_and_exit
+          "Incorrect buck command: %s %a. Please use buck build <targets>" prog
+          (Pp.seq F.pp_print_string) args
 
 
 (** Compute the compilation database files. *)

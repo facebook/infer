@@ -76,6 +76,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let filter_global_accesses initialized =
     let initialized_matcher =
+      (* Note: [QualifiedCppName.Match.of_fuzzy_qual_names] may be expensive since it includes
+         [Str.regexp]. *)
       Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
     in
     Staged.stage (fun (* gvar \notin initialized, up to some fuzzing *)
@@ -128,6 +130,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
+  let init_f =
+    List.map models ~f:(fun {qual_name; initialized_globals} ->
+        let regexp = lazy (QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]) in
+        fun callee_pname ->
+          if
+            Lazy.force regexp
+            |> Fn.flip QualifiedCppName.Match.match_qualifiers
+                 (Procname.get_qualifiers callee_pname)
+          then Some initialized_globals
+          else None )
+
+
   let exec_instr astate
       ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _ _
       (instr : Sil.instr) =
@@ -151,15 +165,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_allow_listed callee_pname ->
         at_least_nonbottom astate
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->
-        let init =
-          List.find_map_exn models ~f:(fun {qual_name; initialized_globals} ->
-              if
-                QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
-                |> Fn.flip QualifiedCppName.Match.match_qualifiers
-                     (Procname.get_qualifiers callee_pname)
-              then Some initialized_globals
-              else None )
-        in
+        let init = List.find_map_exn init_f ~f:(fun f -> f callee_pname) in
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun callee_pname), actuals, loc, _)
       when Attributes.load callee_pname

@@ -958,11 +958,9 @@ let is_constructor t =
 
 
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
-let is_infer_undefined pn =
-  match pn with
+let is_infer_undefined = function
   | Java j ->
-      let regexp = Str.regexp_string "com.facebook.infer.builtins.InferUndefined" in
-      Str.string_match regexp (Java.get_class_name j) 0
+      String.equal "com.facebook.infer.builtins.InferUndefined" (Java.get_class_name j)
   | _ ->
       (* TODO: add cases for obj-c, c, c++ *)
       false

@@ -437,9 +437,7 @@ let split_buck_command buck_cmd =
         accepted_buck_commands
 
 
-let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) original_buck_args =
-  let expanded_buck_args = Utils.inline_argument_files original_buck_args in
-  let command, args = split_buck_command expanded_buck_args in
+let parse_command_and_targets =
   let buck_targets_block_list_regexp =
     if List.is_empty Config.buck_targets_block_list then None
     else
@@ -447,45 +445,48 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
         (Str.regexp
            ("\\(" ^ String.concat ~sep:"\\)\\|\\(" Config.buck_targets_block_list ^ "\\)") )
   in
-  let rec parse_cmd_args parsed_args = function
-    | [] ->
-        parsed_args
-    | param :: arg :: args when List.mem ~equal:String.equal parameters_with_argument param ->
-        parse_cmd_args
-          {parsed_args with rev_not_targets'= arg :: param :: parsed_args.rev_not_targets'}
-          args
-    | target :: args ->
-        let parsed_args =
-          match parse_target_string target with
-          | `NotATarget s ->
-              {parsed_args with rev_not_targets'= s :: parsed_args.rev_not_targets'}
-          | `NormalTarget t ->
-              {parsed_args with normal_targets= t :: parsed_args.normal_targets}
-          | `AliasTarget a ->
-              {parsed_args with alias_targets= a :: parsed_args.alias_targets}
-          | `PatternTarget p ->
-              {parsed_args with pattern_targets= p :: parsed_args.pattern_targets}
-        in
-        parse_cmd_args parsed_args args
-  in
-  let parsed_args = parse_cmd_args empty_parsed_args args in
-  let targets =
-    match (buck_mode, version, parsed_args) with
-    | Clang, V1, {pattern_targets= []; alias_targets= []; normal_targets} ->
-        normal_targets
-    | Clang, V2, {pattern_targets; alias_targets; normal_targets} when Config.buck2_use_bxl ->
-        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-    | _, _, {pattern_targets; alias_targets; normal_targets} ->
-        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-        |> resolve_pattern_targets buck_mode version
-  in
-  let targets =
-    Option.value_map ~default:targets
-      ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
-      buck_targets_block_list_regexp
-  in
-  ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
-  (command, parsed_args.rev_not_targets', targets)
+  fun (buck_mode : BuckMode.t) (version : version) original_buck_args ->
+    let expanded_buck_args = Utils.inline_argument_files original_buck_args in
+    let command, args = split_buck_command expanded_buck_args in
+    let rec parse_cmd_args parsed_args = function
+      | [] ->
+          parsed_args
+      | param :: arg :: args when List.mem ~equal:String.equal parameters_with_argument param ->
+          parse_cmd_args
+            {parsed_args with rev_not_targets'= arg :: param :: parsed_args.rev_not_targets'}
+            args
+      | target :: args ->
+          let parsed_args =
+            match parse_target_string target with
+            | `NotATarget s ->
+                {parsed_args with rev_not_targets'= s :: parsed_args.rev_not_targets'}
+            | `NormalTarget t ->
+                {parsed_args with normal_targets= t :: parsed_args.normal_targets}
+            | `AliasTarget a ->
+                {parsed_args with alias_targets= a :: parsed_args.alias_targets}
+            | `PatternTarget p ->
+                {parsed_args with pattern_targets= p :: parsed_args.pattern_targets}
+          in
+          parse_cmd_args parsed_args args
+    in
+    let parsed_args = parse_cmd_args empty_parsed_args args in
+    let targets =
+      match (buck_mode, version, parsed_args) with
+      | Clang, V1, {pattern_targets= []; alias_targets= []; normal_targets} ->
+          normal_targets
+      | Clang, V2, {pattern_targets; alias_targets; normal_targets} when Config.buck2_use_bxl ->
+          pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
+      | _, _, {pattern_targets; alias_targets; normal_targets} ->
+          pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
+          |> resolve_pattern_targets buck_mode version
+    in
+    let targets =
+      Option.value_map ~default:targets
+        ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
+        buck_targets_block_list_regexp
+    in
+    ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
+    (command, parsed_args.rev_not_targets', targets)
 
 
 let filter_compatible subcommand args =

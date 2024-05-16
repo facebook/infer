@@ -38,18 +38,19 @@ let parse_list_parameters (eleparse : Safe.t -> 'a) (json : Safe.t) =
   List.map ~f:eleparse (to_list json) |> List.map ~f:parse_parameter
 
 
-let parse_cil_type_name (str : string) : Typ.t =
+let parse_cil_type_name =
   let r = Str.regexp "\\." in
-  try
-    let n = Str.search_backward r str (String.length str) in
-    let _namespace = Str.string_before str n in
-    let _name = Str.string_after str (n + 1) in
-    Typ.(
-      mk_ptr
-        (mk_struct
-           (CSharpClass (CSharpClassName.make ~namespace:(Some _namespace) ~classname:_name)) ) )
-  with _ ->
-    Typ.(mk_ptr (mk_struct (CSharpClass (CSharpClassName.make ~namespace:None ~classname:str))))
+  fun (str : string) : Typ.t ->
+    try
+      let n = Str.search_backward r str (String.length str) in
+      let _namespace = Str.string_before str n in
+      let _name = Str.string_after str (n + 1) in
+      Typ.(
+        mk_ptr
+          (mk_struct
+             (CSharpClass (CSharpClassName.make ~namespace:(Some _namespace) ~classname:_name)) ) )
+    with _ ->
+      Typ.(mk_ptr (mk_struct (CSharpClass (CSharpClassName.make ~namespace:None ~classname:str))))
 
 
 let parse_cil_procname (json : Safe.t) : Procname.t =

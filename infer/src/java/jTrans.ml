@@ -80,9 +80,11 @@ let get_exit_location source_file bytecode =
   {Location.line= last_line_number; col= -1; file= source_file; macro_file_opt= None; macro_line= -1}
 
 
-let retrieve_fieldname fieldname =
-  let subs = Str.split (Str.regexp (Str.quote ".")) (Fieldname.to_string fieldname) in
-  List.last_exn subs
+let retrieve_fieldname =
+  let dot_regexp = Str.regexp (Str.quote ".") in
+  fun fieldname ->
+    let subs = Str.split dot_regexp (Fieldname.to_string fieldname) in
+    List.last_exn subs
 
 
 let get_field_name program static tenv cn fs =

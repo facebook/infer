@@ -18,30 +18,32 @@ type log_t =
   -> unit
 
 module Suppression = struct
-  let does_annotation_suppress_issue (kind : IssueType.t) (annot : Annot.t) =
-    let normalize str =
-      String.lowercase str |> String.filter ~f:(function ' ' | '_' | '-' -> false | _ -> true)
-    in
-    let is_parameter_suppressed () =
-      let normalized_equal annot_param =
-        let pred s =
-          normalize s
-          |> fun s ->
-          String.equal s (normalize kind.IssueType.hum)
-          || String.equal s (normalize kind.IssueType.unique_id)
-        in
-        Annot.(has_matching_str_value annot_param.value ~pred)
+  let does_annotation_suppress_issue =
+    let prefix_regexp = Str.regexp "^[A-Za-z]+_" in
+    fun (kind : IssueType.t) (annot : Annot.t) ->
+      let normalize str =
+        String.lowercase str |> String.filter ~f:(function ' ' | '_' | '-' -> false | _ -> true)
       in
-      String.is_suffix annot.class_name ~suffix:Annotations.suppress_lint
-      && List.exists ~f:normalized_equal annot.parameters
-    in
-    let drop_prefix str = Str.replace_first (Str.regexp "^[A-Za-z]+_") "" str in
-    let is_annotation_suppressed () =
-      String.is_suffix
-        ~suffix:(normalize (drop_prefix kind.IssueType.unique_id))
-        (normalize annot.class_name)
-    in
-    is_parameter_suppressed () || is_annotation_suppressed ()
+      let is_parameter_suppressed () =
+        let normalized_equal annot_param =
+          let pred s =
+            normalize s
+            |> fun s ->
+            String.equal s (normalize kind.IssueType.hum)
+            || String.equal s (normalize kind.IssueType.unique_id)
+          in
+          Annot.(has_matching_str_value annot_param.value ~pred)
+        in
+        String.is_suffix annot.class_name ~suffix:Annotations.suppress_lint
+        && List.exists ~f:normalized_equal annot.parameters
+      in
+      let drop_prefix str = Str.replace_first prefix_regexp "" str in
+      let is_annotation_suppressed () =
+        String.is_suffix
+          ~suffix:(normalize (drop_prefix kind.IssueType.unique_id))
+          (normalize annot.class_name)
+      in
+      is_parameter_suppressed () || is_annotation_suppressed ()
 
 
   let is_method_suppressed proc_attributes kind =

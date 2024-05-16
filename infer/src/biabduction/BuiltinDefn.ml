@@ -721,6 +721,7 @@ let execute___split_get_nth
       | Exp.Const (Const.Cstr str1), Exp.Const (Const.Cstr str2), Exp.Const (Const.Cint n_sil) -> (
           let n = IntLit.to_int_exn n_sil in
           try
+            (* NOTE: [Str.regexp_string] may be expensive. *)
             let parts = Str.split (Str.regexp_string str2) str1 in
             let n_part = List.nth_exn parts n in
             let res = Exp.Const (Const.Cstr n_part) in

@@ -816,13 +816,15 @@ let filter_useless_spec_dollar_box (nodes : dotty_node list) (links : link list)
   (!tmp_nodes, !tmp_links)
 
 
+let anonymous_block_prefix_regexp = lazy (Str.regexp_string Config.anonymous_block_prefix)
+
 (* print a struct node *)
 let rec print_struct f pe e te l coo c =
   let print_type =
     match te with
     | Exp.Sizeof {typ} -> (
         let str_t = Typ.to_string typ in
-        match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) str_t with
+        match Str.split_delim (Lazy.force anonymous_block_prefix_regexp) str_t with
         | [_; _] ->
             "BLOCK object"
         | _ ->

@@ -872,17 +872,18 @@ module GenericMapCollection = struct
        write_deref ~ref:it ~obj:pair
 end
 
-let get_cpp_matchers config ~model =
-  let open ProcnameDispatcher.Call in
+let get_cpp_matchers =
   let cpp_separator_regex = Str.regexp_string "::" in
-  List.filter_map
-    ~f:(fun m ->
-      match Str.split cpp_separator_regex m with
-      | [] ->
-          None
-      | first :: rest ->
-          Some (List.fold rest ~f:( &:: ) ~init:(-first) &--> model m) )
-    config
+  fun config ~model ->
+    let open ProcnameDispatcher.Call in
+    List.filter_map
+      ~f:(fun m ->
+        match Str.split cpp_separator_regex m with
+        | [] ->
+            None
+        | first :: rest ->
+            Some (List.fold rest ~f:( &:: ) ~init:(-first) &--> model m) )
+      config
 
 
 let abort_matchers : matcher list =

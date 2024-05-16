@@ -18,12 +18,13 @@ let filter_compilation_data database ~f =
   SourceFile.Map.filter (fun s _ -> f s) database |> SourceFile.Map.bindings
 
 
-let parse_command_and_arguments command_and_arguments =
+let parse_command_and_arguments =
   let regexp = Str.regexp "[^\\][ ]" in
-  let index = Str.search_forward regexp command_and_arguments 0 in
-  let command = Str.string_before command_and_arguments (index + 1) in
-  let arguments = Str.string_after command_and_arguments (index + 1) in
-  (command, [arguments])
+  fun command_and_arguments ->
+    let index = Str.search_forward regexp command_and_arguments 0 in
+    let command = Str.string_before command_and_arguments (index + 1) in
+    let arguments = Str.string_after command_and_arguments (index + 1) in
+    (command, [arguments])
 
 
 (** Parse the compilation database json file into the compilationDatabase map. The json file

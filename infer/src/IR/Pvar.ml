@@ -356,17 +356,11 @@ let get_template_args pvar =
 
 let is_objc_static_local_of_proc_name pname pvar =
   (* local static name is of the form procname_varname *)
-  let var_name = Mangled.to_string (get_name pvar) in
-  match Str.split_delim (Str.regexp_string pname) var_name with [_; _] -> true | _ -> false
+  String.is_prefix (Mangled.to_string (get_name pvar)) ~prefix:pname
 
 
-let is_block_pvar =
-  let regexp = Str.regexp_string Config.anonymous_block_prefix in
-  fun pvar ->
-    let has_block_prefix s =
-      match Str.split_delim regexp s with _ :: _ :: _ -> true | _ -> false
-    in
-    has_block_prefix (Mangled.to_string (get_name pvar))
+let is_block_pvar pvar =
+  String.is_prefix (Mangled.to_string (get_name pvar)) ~prefix:Config.anonymous_block_prefix
 
 
 module Set = PrettyPrintable.MakePPSet (struct

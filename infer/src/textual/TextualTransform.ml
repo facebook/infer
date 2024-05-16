@@ -43,9 +43,9 @@ let module_fold_procs ~init ~f (module_ : Module.t) =
 
 
 module FixClosureAppExpr = struct
-  let is_ident string =
+  let is_ident =
     let regexp = Str.regexp "n[0-9]+" in
-    Str.string_match regexp string 0
+    fun string -> Str.string_match regexp string 0
 
 
   let of_procdesc globals pdesc =

@@ -637,11 +637,12 @@ let call_constructor_url_update_args =
       ~parameters:[StdTyp.Java.pointer_to_java_lang_string]
       ~kind:Procname.Java.Non_Static
   in
+  let parts_delim = lazy (Str.regexp_string "://") in
   fun pname actual_params ->
     if Procname.equal url_pname pname then
       match actual_params with
       | [this; (Exp.Const (Const.Cstr s), atype)] -> (
-          let parts = Str.split (Str.regexp_string "://") s in
+          let parts = Str.split (Lazy.force parts_delim) s in
           match parts with
           | frst :: _ ->
               if

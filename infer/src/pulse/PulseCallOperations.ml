@@ -52,6 +52,14 @@ let is_const_version_available tenv pname =
                 List.exists ~f:(is_const_version pname_method) methods ) )
 
 
+let matches_iter =
+  QualifiedCppName.Match.of_fuzzy_qual_names
+    [ "std::__detail::_Node_iterator"
+    ; "std::__wrap_iter"
+    ; "std::_Rb_tree_iterator"
+    ; "__gnu_cxx::__normal_iterator" ]
+
+
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
     callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
@@ -67,13 +75,6 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
      same value for the same inputs *)
   let is_functional = ref true in
   let should_havoc actual_typ formal_typ_opt =
-    let matches_iter =
-      QualifiedCppName.Match.of_fuzzy_qual_names
-        [ "std::__detail::_Node_iterator"
-        ; "std::__wrap_iter"
-        ; "std::_Rb_tree_iterator"
-        ; "__gnu_cxx::__normal_iterator" ]
-    in
     match actual_typ.Typ.desc with
     | _ when not Config.pulse_havoc_arguments ->
         `DoNotHavoc

@@ -85,10 +85,11 @@ let format_arguments (printf : printf_signature) (args : (Exp.t * Typ.t) list) :
   (format_string, varargs_nvar)
 
 
+let fmt_re = Str.regexp "%[0-9]*\\.?[0-9]*[A-mo-z]"
+
 (* Extract type names from format string *)
 let rec format_string_type_names (fmt_string : string) (start : int) : string list =
   try
-    let fmt_re = Str.regexp "%[0-9]*\\.?[0-9]*[A-mo-z]" in
     (* matches '%2.1d' etc. *)
     ignore (Str.search_forward fmt_re fmt_string start) ;
     let fmt_match = Str.matched_string fmt_string in
