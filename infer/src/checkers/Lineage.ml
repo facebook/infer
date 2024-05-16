@@ -1262,23 +1262,18 @@ module Domain : sig
       [kind_f] can use the source and destination signals to record edges with specific kinds. *)
 
   val add_var_path_flow :
-    shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:VarPath.t -> dst:VarPath.t -> t -> t
-  (** A variable path specific version of {!add_flow} that will also check for shape equality. *)
-
-  val add_filtered_var_path_flow :
        shapes:shapes
     -> node:PPNode.t
     -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
-    -> exclude:(src_sub_path:FieldPath.t -> dst_sub_path:FieldPath.t -> bool)
+    -> ?exclude:FieldLabel.t
     -> t
     -> t
-  (** Add flow from every cell under the source variable path to the cell with the same field path
-      under the destination variable path.
+  (** A variable path specific version of {!add_flow} that will also check for shape equality.
 
-      If the [exclude] predicate is set, flows for which the predicates holds (on the flow source
-      and destination paths) won't be added. *)
+      If the [exclude] field label is set, flows whose source or destination starts with this field
+      label won't be added. *)
 end = struct
   module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
   module HasUnsupportedFeatures = AbstractDomain.BooleanOr
@@ -1321,6 +1316,9 @@ end = struct
     type 'a t = (domain -> 'a -> domain) -> domain -> domain
 
     let singleton (elt : 'a) : 'a t = fun f init -> f init elt
+
+    let filter ~f (x : 'a t) : 'a t =
+     fun g init -> x (fun accum elt -> if f elt then g accum elt else accum) init
   end
 
   module Src = struct
@@ -1379,6 +1377,13 @@ end = struct
 
     let pvar pvar : FieldPath.t t = var_path (VarPath.pvar pvar)
 
+    let exclude_field field_label (src : FieldPath.t t) : FieldPath.t t =
+     fun shapes node f astate ->
+      Fold.filter
+        ~f:(fun (_vertex, signal) -> not (FieldPath.first_field_is field_label signal))
+        (src shapes node) f astate
+
+
     let silence (src : _ t) : unit t =
      fun shapes node f astate ->
       src shapes node (fun acc (vertex, _slot) -> f acc (vertex, ())) astate
@@ -1421,13 +1426,15 @@ end = struct
      fun shapes node () -> dst shapes node []
 
 
+    let exclude_field field_label (dst : ('a, FieldPath.t) t) : ('a, FieldPath.t) t =
+     fun shapes node slot f astate ->
+      Fold.filter
+        ~f:(fun (_vertex, signal) -> not (FieldPath.first_field_is field_label signal))
+        (dst shapes node slot) f astate
+
+
     let oblivious (dst : (unit, 'signal) t) : (FieldPath.t, 'signal) t =
      fun shapes node _signal -> dst shapes node ()
-
-
-    module Private = struct
-      let cell node cell = single_vertex (Vertex.cell_local node cell)
-    end
   end
 
   let add_flow_edge ~node ~kind ~(src : Vertex.t) ~(dst : Vertex.t)
@@ -1458,22 +1465,20 @@ end = struct
     add_flow_f ~shapes ~node ~kind_f:(fun _ _ -> kind) ~src ~dst
 
 
-  let add_var_path_flow ~shapes ~node ~kind ~src ~dst astate =
+  let add_var_path_flow ~shapes ~node ~kind ~src ~dst ?exclude astate =
     Shapes.assert_equal_shapes shapes src dst ;
-    add_flow ~shapes ~node ~kind ~src:(Src.var_path src) ~dst:(Dst.var_path dst) astate
-
-
-  let add_filtered_var_path_flow ~shapes ~node ~kind ~src ~dst ~exclude astate =
-    Shapes.assert_equal_shapes shapes src dst ;
-    Shapes.fold_cells shapes src ~init:astate ~f:(fun acc src_cell ->
-        let src_sub_path = Cell.path_from_origin ~origin:src src_cell in
-        let dst_matching_path = VarPath.sub_path dst src_sub_path in
-        Shapes.fold_cells shapes dst_matching_path ~init:acc ~f:(fun acc_astate dst_cell ->
-            if exclude ~src_sub_path ~dst_sub_path:(Cell.path_from_origin ~origin:dst dst_cell) then
-              acc_astate
-            else
-              add_flow ~shapes ~node ~kind ~src:(Src.local (Cell src_cell))
-                ~dst:(Dst.Private.cell node dst_cell) acc_astate ) )
+    let src = Src.var_path src in
+    let dst = Dst.var_path dst in
+    let src, dst =
+      match exclude with
+      | None ->
+          (src, dst)
+      | Some field_label ->
+          (* Since abstraction may truncate either the source path or the destination one, we
+             exclude from both. *)
+          (Src.exclude_field field_label src, Dst.exclude_field field_label dst)
+    in
+    add_flow ~shapes ~node ~kind ~src ~dst astate
 end
 
 module TransferFunctions = struct
@@ -1902,7 +1907,7 @@ module TransferFunctions = struct
           let value_path = exp_as_single_var_path_exn value_exp in
           let map_path = exp_as_single_var_path_exn map_exp in
           (* First copy the argument map into the returned map. *)
-          let exclude_new_key ~src_sub_path ~dst_sub_path =
+          let excluded_new_key =
             (* Precision optimisation: if the newly put key is statically known to be a single label,
                then the corresponding field from the source map does not flow into the resulting
                map.
@@ -1910,18 +1915,11 @@ module TransferFunctions = struct
                Note that we need the single-label property for this optimisation to be
                correct. Eg. on [M' = put(foo|bar, val, M)], both [M#foo] and [val] may flow into
                M'#foo. *)
-            match Shapes.as_field_label_singleton shapes key_path with
-            | Some field_label ->
-                (* Since abstraction may truncate either the copied path or the returned one, we
-                   check that both are separate from the newly put key. *)
-                [%equal: FieldLabel.t option] (List.hd src_sub_path) (Some field_label)
-                || [%equal: FieldLabel.t option] (List.hd dst_sub_path) (Some field_label)
-            | None ->
-                false
+            Shapes.as_field_label_singleton shapes key_path
           in
           let astate =
-            Domain.add_filtered_var_path_flow ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
-              ~exclude:exclude_new_key astate
+            Domain.add_var_path_flow ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
+              ?exclude:excluded_new_key astate
           in
           (* Then have the put value flow into the put-key-indexed cells. *)
           Shapes.fold_field_labels

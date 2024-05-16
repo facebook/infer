@@ -26,6 +26,9 @@ module FieldPath : sig
   include Comparable.S with type t := t
 
   val pp : t Fmt.t
+
+  val first_field_is : FieldLabel.t -> t -> bool
+  (** Returns [true] iff the field path is not empty and its head is equal to the field label. *)
 end
 
 module VarPath : sig

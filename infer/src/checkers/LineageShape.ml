@@ -97,6 +97,13 @@ module FieldPath = struct
   include Comparable.Make (T)
 
   let pp = Fmt.(list ~sep:nop FieldLabel.pp_subscript)
+
+  let first_field_is field_label field_path =
+    match field_path with
+    | [] ->
+        false
+    | field_label' :: _ ->
+        [%equal: FieldLabel.t] field_label field_label'
 end
 
 module VarPath = struct
