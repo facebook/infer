@@ -19,8 +19,8 @@
       { lcp with pos_lnum = lcp.pos_lnum + m ; pos_bol = lcp.pos_cnum - n } ;
     (INDENT n)
 
-  let quoted = Re.Str.regexp "\\\\\\(.\\)"
-  let unquote x = Re.Str.global_replace quoted "\\1" x
+  let quoted = Str.regexp "\\\\\\(.\\)"
+  let unquote x = Str.global_replace quoted "\\1" x
 
   (* We open Caml, because ocamllex generates code that uses Array.make,
   which is not available in Core. Ideally, this should go away. *)
