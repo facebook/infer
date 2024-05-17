@@ -29,6 +29,26 @@ module FieldPath : sig
 
   val first_field_is : FieldLabel.t -> t -> bool
   (** Returns [true] iff the field path is not empty and its head is equal to the field label. *)
+
+  val extract_from : origin_path:FieldLabel.t list -> FieldLabel.t list -> FieldLabel.t list
+  (** Assuming a variable path [p] represents a component of the origin variable path, returns the
+      sub-path subscriptable from this origin path to reach [p].
+
+      If [p] is larger than the origin path (eg. because the origin path is longer than the limit
+      and the corresponding cell groups it with other paths), returns an empty path. The rationale
+      is that the result of this function can be seen as the subpath which, when extracted from the
+      origin, will cover all the components of that origin stored in a cell. If the cell is larger
+      than the origin then all the components of the origin are in the cell.
+
+      Raises if the path [] and the origin path are incompatible (ie. they differ on a subfield).
+
+      Examples assuming a depth limit of 3:
+
+      - origin: #a ; path: #a#b#c ; result : #b#c
+      - origin: #a#b#c ; path: #a#b#c ; result : empty
+      - origin: #a#b#c ; path: #a#b#d ; result : raises
+      - origin: #a#b#c ; path: #a#b#d ; result : raises
+      - origin: #a#b#c#d ; path: #a#b#c ; result : empty *)
 end
 
 module VarPath : sig
@@ -97,21 +117,10 @@ module Cell : sig
   (** Assuming the cell represents a component of the origin variable path, returns the sub-path
       subscriptable from this origin path to reach the cell component.
 
-      If the cell is larger than the origin path (eg. because the origin path is longer than the
-      limit and the cells groups it with other paths), returns an empty path. The rationale is that
-      the result of this function can be seen as the subpath which, when extracted from the origin,
-      will cover all the components of that origin stored in the cell. If the cell is larger than
-      the origin then all the components of the origin are in the cell.
+      Raises if the cell and the origin path are incompatible (eg. their variables are different or
+      the cell path and the origin path are incomatible).
 
-      Raises if the cell and the origin path are incompatible (eg. their variables are different).
-
-      Examples assuming a depth limit of 3:
-
-      - origin: X#a ; cell: X#a#b#c ; result : #b#c
-      - origin: X#a#b#c ; cell : X#a#b#c ; result : empty
-      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
-      - origin: X#a#b#c ; cell : X#a#b#d ; result : raises
-      - origin: X#a#b#c#d ; cell : X#a#b#c ; result : empty *)
+      See {!VariablePath.extract_from_origin}. *)
 end
 
 module Summary : sig
@@ -153,9 +162,15 @@ module Summary : sig
 
       If the summary is [None], [f] will be called once with a var-only abstract cell. *)
 
-  val fold_argument :
-    t option -> Procdesc.t -> int -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
-  (** Folds over the terminal field paths of the argument at the given index. See {!fold_cells}. *)
+  val fold_argument_path :
+    t option -> int -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+  (** Folds over the terminal field paths of the given field of the argument at the given index. See
+      {!fold_cells}. *)
+
+  val fold_return_path :
+    t option -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+  (** Folds over the terminal field paths of the given field of the formal return. See
+      {!fold_cells}. *)
 end
 
 module StdModules : sig

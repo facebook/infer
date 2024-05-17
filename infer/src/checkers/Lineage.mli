@@ -20,11 +20,11 @@ module Vertex : sig
   type t =
     | Local of (Local.t * PPNode.t)
     | Argument of int * FieldPath.t
-    | ArgumentOf of Procname.t * int
+    | ArgumentOf of Procname.t * int * FieldPath.t
     | Captured of int
     | CapturedBy of Procname.t * int
     | Return of FieldPath.t
-    | ReturnOf of Procname.t
+    | ReturnOf of Procname.t * FieldPath.t
     | Self
     | Function of Procname.t
 

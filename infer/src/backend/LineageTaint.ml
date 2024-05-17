@@ -64,23 +64,41 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
         let return_todo' =
           if follow_return then
             let callers = find_callers caller_table procname in
-            match vertex with
-            | Lineage.Vertex.Return [] ->
+            match (vertex : Lineage.Vertex.t) with
+            | Return [] ->
                 List.fold callers ~init:return_todo ~f:(fun acc caller ->
-                    (caller, Lineage.Vertex.ReturnOf procname) :: acc )
-            | Lineage.Vertex.Return (_ :: _) ->
+                    (caller, Lineage.Vertex.ReturnOf (procname, [])) :: acc )
+            | Return (_ :: _) ->
                 L.die UserError
                   "Structures as returned values aren't supported yet. Re-run the lineage analysis \
                    with --lineage-field-depth=0."
-            | _ ->
+            | Local _
+            | Argument (_, _)
+            | ArgumentOf (_, _, _)
+            | Captured _
+            | CapturedBy (_, _)
+            | ReturnOf (_, _)
+            | Self
+            | Function _ ->
                 return_todo
           else return_todo
         in
         let call_todo' =
-          match vertex with
-          | Lineage.Vertex.ArgumentOf (callee, index) ->
+          match (vertex : Lineage.Vertex.t) with
+          | ArgumentOf (callee, index, []) ->
               (callee, Lineage.Vertex.Argument (index, [])) :: call_todo
-          | _ ->
+          | ArgumentOf (_, _, _ :: _) ->
+              L.die UserError
+                "Structures in argument aren't supported yet. Re-run the lineage analysis with \
+                 --lineage-field-depth=0."
+          | Local _
+          | Argument (_, _)
+          | Captured _
+          | CapturedBy (_, _)
+          | Return _
+          | ReturnOf (_, _)
+          | Self
+          | Function _ ->
               call_todo
         in
         dfs todo' acc_subgraph' return_todo' call_todo'
@@ -162,17 +180,27 @@ let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph 
         in
         let interproc_todo' =
           let callers = find_callers caller_table procname in
-          match vertex with
-          | Lineage.Vertex.Argument (index, []) ->
+          match (vertex : Lineage.Vertex.t) with
+          | Argument (index, []) ->
               List.fold callers ~init:interproc_todo ~f:(fun acc caller ->
-                  (caller, Lineage.Vertex.ArgumentOf (procname, index)) :: acc )
-          | Lineage.Vertex.Argument (_, _ :: _) ->
+                  (caller, Lineage.Vertex.ArgumentOf (procname, index, [])) :: acc )
+          | Argument (_, _ :: _) ->
               L.die UserError
                 "Structures in argument aren't supported yet. Re-run the lineage analysis with \
                  --lineage-field-depth=0."
-          | Lineage.Vertex.ReturnOf callee ->
+          | ReturnOf (callee, []) ->
               (callee, Lineage.Vertex.Return []) :: interproc_todo
-          | _ ->
+          | ReturnOf (_, _ :: _) ->
+              L.die UserError
+                "Structures as returned values aren't supported yet. Re-run the lineage analysis \
+                 with --lineage-field-depth=0."
+          | Local _
+          | ArgumentOf (_, _, _)
+          | Captured _
+          | CapturedBy (_, _)
+          | Return _
+          | Self
+          | Function _ ->
               interproc_todo
         in
         codfs todo' acc_subgraph' interproc_todo'

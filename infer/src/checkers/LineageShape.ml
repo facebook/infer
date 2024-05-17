@@ -104,6 +104,18 @@ module FieldPath = struct
         false
     | field_label' :: _ ->
         [%equal: FieldLabel.t] field_label field_label'
+
+
+  let rec extract_from ~origin_path field_path =
+    match (origin_path, field_path) with
+    | [], _ ->
+        field_path
+    | _ :: _, [] ->
+        []
+    | origin_field :: origin_tail, field :: tail ->
+        if not ([%equal: FieldLabel.t] origin_field field) then
+          L.die InternalError "incompatible var paths" ;
+        extract_from ~origin_path:origin_tail tail
 end
 
 module VarPath = struct
@@ -168,19 +180,8 @@ end = struct
   let var_appears_in_source_code x = Var.appears_in_source_code (var x)
 
   let path_from_origin ~origin:(origin_var, origin_path) {var; field_path; _} =
-    if not ([%equal: Var.t] origin_var var) then L.internal_error "incompatible var paths" ;
-    let rec aux origin_path cell_path =
-      match (origin_path, cell_path) with
-      | [], _ ->
-          cell_path
-      | _ :: _, [] ->
-          []
-      | origin_field :: origin_tail, cell_field :: cell_tail ->
-          if not ([%equal: FieldLabel.t] origin_field cell_field) then
-            L.internal_error "incompatible var paths" ;
-          aux origin_tail cell_tail
-    in
-    aux origin_path field_path
+    if not ([%equal: Var.t] origin_var var) then L.die InternalError "incompatible var paths" ;
+    FieldPath.extract_from ~origin_path field_path
 end
 
 module StdModules = struct
@@ -264,8 +265,9 @@ module Env : sig
           integers). *)
     end
 
-    val create : unit -> t
-    (** Create a fresh environment with no known variable nor shape. *)
+    val create : Procdesc.t -> t
+    (** Create a fresh environment with no known variable nor shape. Registers the formals and
+        return variables but does not add them to the shape environment. *)
 
     val shape_var : t -> Var.t -> shape
     (** Returns the shape of a variable. If the variable is unknown in the environment, a fresh
@@ -328,8 +330,12 @@ module Env : sig
       t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
-    val fold_argument :
-      t option -> Procdesc.t -> int -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+    val fold_argument_path :
+      t option -> int -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+    (* Doc in .mli *)
+
+    val fold_return_path :
+      t option -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
     val introduce :
@@ -563,12 +569,22 @@ end = struct
       end
 
       (** An environment associates to each variable its equivalence class, and to each shape
-          equivalence class representative its structure. *)
-      type t =
-        {var_shapes: (Var.t, shape) Hashtbl.t; shape_structures: (Shape_id.t, Structure.t) Hashtbl.t}
+          equivalence class representative its structure.
 
-      let pp fmt {var_shapes; shape_structures} =
-        Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
+          It also registers the formal and returned variables, to allow querying for their shapes
+          using only the environment. *)
+      type t =
+        { formals: Var.t array
+        ; ret_var: Var.t
+        ; var_shapes: (Var.t, shape) Hashtbl.t
+        ; shape_structures: (Shape_id.t, Structure.t) Hashtbl.t }
+
+      let pp fmt {formals; ret_var; var_shapes; shape_structures} =
+        Format.fprintf fmt
+          "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
+           @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
+          (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
+          formals Var.pp ret_var
           (pp_hashtbl_sorted ~compare:Var.compare ~bind:pp_arrow Var.pp pp_shape)
           var_shapes
           (pp_hashtbl_sorted ~compare:Shape_id.compare ~bind:pp_arrow Shape_id.pp Structure.pp)
@@ -590,8 +606,14 @@ end = struct
 
     include Types.Make (Shape_class) ()
 
-    let create () =
-      {var_shapes= Hashtbl.create (module Var); shape_structures= Hashtbl.create (module Shape_id)}
+    let create proc_desc =
+      { formals=
+          Procdesc.get_pvar_formals proc_desc
+          |> List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar)
+          |> List.to_array
+      ; ret_var= Var.of_pvar @@ Procdesc.get_ret_var proc_desc
+      ; var_shapes= Hashtbl.create (module Var)
+      ; shape_structures= Hashtbl.create (module Shape_id) }
 
 
     module Shape = struct
@@ -944,35 +966,96 @@ end = struct
 
 
     let find_field_table shape_structures shape =
-      match Hashtbl.find shape_structures shape with
-      | Some (Structure.Vector {fields; _}) ->
-          fields
-      | other ->
-          L.die InternalError "No field table found for shape %a = %a" Shape_id.pp shape
-            (Fmt.option Structure.pp) other
+      match (Hashtbl.find shape_structures shape : Structure.t option) with
+      | Some (Vector {fields; _}) ->
+          Some fields
+      | Some LocalAbstract ->
+          None
+      | Some Bottom | None ->
+          L.internal_error
+            "Shape id %a absent from the environment. Reading from an uninitialised variable?"
+            Shape_id.pp shape ;
+          None
+      | Some (Variant _) as other ->
+          L.internal_error
+            "Variant shape %a = %a cannot have a field table. Lookind for a boxing field?"
+            Shape_id.pp shape (Fmt.option Structure.pp) other ;
+          None
+
+
+    let find_field_table_exn shape_structures shape =
+      Option.value_exn @@ find_field_table shape_structures shape
 
 
     let find_next_field_shape shape_structures shape field =
-      let field_table = find_field_table shape_structures shape in
+      let open IOption.Let_syntax in
+      let* field_table = find_field_table shape_structures shape in
       match Map.find field_table field with
       | Some value_shape ->
-          value_shape
+          Some value_shape
       | None ->
-          L.die InternalError "Field %a unknown for shape %a.@ Known fields are:@ @[{%a}@]"
-            FieldLabel.pp field Shape_id.pp shape
+          (* TODO
+
+             This case happens on shapes having a non-empty field table, but that does not hold the
+             reauired field. A known example is calling a function that expects a map with an
+             argument that has additional fields.
+
+             For instance:
+             ```
+             f(#{foo := Foo} = X) ->
+               other:function(X),
+               Foo.
+
+             g() -> f(#{foo=foo,bar=bar}).
+             ```
+
+             Then, if `other:function` does not have any knowledge of the key bar, `f:X#bar` won't be
+             set. In particular that means we won't have taint flow if bar is a source and
+             other:function is a sink -- this could be non-intuitive.
+          *)
+          L.debug Analysis Verbose
+            "Field %a unknown for non-final shape %a.@ Known fields are:@ @[{%a}@]" FieldLabel.pp
+            field Shape_id.pp shape
             (pp_map ~bind:IFmt.colon_sp FieldLabel.pp Shape_id.pp)
-            field_table
+            field_table ;
+          None
 
 
-    let find_var_path_shape {var_shapes; shape_structures} (var, field_path) =
+    (** If the variable path can be fully traversed in the shape environment, return its final shape
+        in [Ok].
+
+        Otherwise returns the maximal prefix of that variable path that can be traversed in [Error]. *)
+    let find_var_path_shape {var_shapes; shape_structures; _} (var, field_path) :
+        (Shape_id.t, VarPath.t) result =
       let var_shape = find_var_shape var_shapes var in
-      List.fold
-        ~f:(fun shape field -> find_next_field_shape shape_structures shape field)
-        ~init:var_shape field_path
+      let rec aux shape rev_root_path sub_path =
+        match sub_path with
+        | [] ->
+            (* Got to the end of the original var path: return the reached shape. *)
+            Ok shape
+        | field :: sub_fields -> (
+          match find_next_field_shape shape_structures shape field with
+          | None ->
+              (* Reached a non-traversable field: return the path traversed so far. *)
+              Error (VarPath.make var @@ List.rev rev_root_path)
+          | Some shape' ->
+              (* Traverse the field and continue. *)
+              aux shape' (field :: rev_root_path) sub_fields )
+      in
+      aux var_shape [] field_path
 
 
-    let find_var_path_structure {var_shapes; shape_structures} var_path =
-      let shape_id = find_var_path_shape {var_shapes; shape_structures} var_path in
+    let find_var_path_shape_exn summary var_path =
+      match find_var_path_shape summary var_path with
+      | Ok shape ->
+          shape
+      | Error stopped_at_path ->
+          L.die InternalError "Traversal of variable path %a stopped at %a" VarPath.pp var_path
+            VarPath.pp stopped_at_path
+
+
+    let find_var_path_structure ({shape_structures; _} as summary) var_path =
+      let shape_id = find_var_path_shape_exn summary var_path in
       match Hashtbl.find shape_structures shape_id with
       | None ->
           Structure.bottom
@@ -980,7 +1063,7 @@ end = struct
           structure
 
 
-    let make {State.var_shapes; shape_structures} =
+    let make {State.var_shapes; shape_structures; ret_var; formals} =
       (* Making a summary from a state essentially amounts to freezing State shape classes into State
          ids and converting those State ids into Summary ids. We keep an id translation table that
          maps state ids into summary ids and generate a fresh summary id whenever we encounter a new
@@ -1010,7 +1093,7 @@ end = struct
                (translate_shape_id shape, translate_structure structure) )
         |> hashtbl_of_iter_exn (module Shape_id)
       in
-      {var_shapes; shape_structures}
+      {var_shapes; shape_structures; ret_var; formals}
 
 
     (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
@@ -1066,7 +1149,7 @@ end = struct
         fields
 
 
-    let introduce_var ~var id_translation_tbl {var_shapes; shape_structures}
+    let introduce_var ~var id_translation_tbl {var_shapes; shape_structures; _}
         {State.shape_structures= state_shape_structures; _} =
       introduce_shape id_translation_tbl (Hashtbl.find_exn var_shapes var) shape_structures
         state_shape_structures
@@ -1091,9 +1174,9 @@ end = struct
       match summary_option with
       | None ->
           ()
-      | Some {var_shapes; shape_structures} ->
-          let var_path_shape_1 = find_var_path_shape {var_shapes; shape_structures} var_path_1 in
-          let var_path_shape_2 = find_var_path_shape {var_shapes; shape_structures} var_path_2 in
+      | Some ({shape_structures; _} as summary) ->
+          let var_path_shape_1 = find_var_path_shape_exn summary var_path_1 in
+          let var_path_shape_2 = find_var_path_shape_exn summary var_path_2 in
           if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
             L.die InternalError
               "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
@@ -1103,7 +1186,7 @@ end = struct
               (Hashtbl.find shape_structures var_path_shape_2)
 
 
-    let finalise {var_shapes; shape_structures} (var, field_path) =
+    let finalise {var_shapes; shape_structures; _} (var, field_path) =
       let rec aux remaining_depth traversed_shape_set shape (field_path : FieldPath.t) :
           FieldPath.t * bool =
         match field_path with
@@ -1125,7 +1208,7 @@ end = struct
         | BoxedValue :: _ ->
             L.die InternalError "LineageShape: unexpected boxing field in non tail position."
         | field :: fields ->
-            let field_table = find_field_table shape_structures shape in
+            let field_table = find_field_table_exn shape_structures shape in
             if
               remaining_depth <= 0
               || Map.length field_table > ShapeConfig.field_width
@@ -1176,7 +1259,8 @@ end = struct
         already exceeds width limit. Note that finalise also processes fields to eg. remove
         {!BoxedValue} and computes [is_abstract] booleans, thus that logic would need to be moved
         here too. *)
-    let fold_candidate_final_sub_paths {var_shapes; shape_structures} (var, field_path) ~init ~f =
+    let fold_candidate_final_sub_paths ({shape_structures; _} as summary) (var, field_path) ~init ~f
+        =
       let rec fold_candidate_sub_paths_of_shape shape depth traversed sub_path_acc ~init =
         if
           depth >= ShapeConfig.field_depth || (ShapeConfig.prevent_cycles && Set.mem traversed shape)
@@ -1198,14 +1282,23 @@ end = struct
                       (fieldname :: sub_path_acc) ~init:acc )
                   fields ~init
       in
-      let shape = find_var_path_shape {var_shapes; shape_structures} (var, field_path) in
       let depth = List.length field_path in
-      fold_candidate_sub_paths_of_shape shape depth (Set.empty (module Shape_id)) [] ~init
+      match find_var_path_shape summary (var, field_path) with
+      | Ok shape ->
+          Ok (fold_candidate_sub_paths_of_shape shape depth (Set.empty (module Shape_id)) [] ~init)
+      | Error stopped_at_path ->
+          Error stopped_at_path
 
 
     let fold_cells_actual summary var_path ~init ~f =
-      fold_candidate_final_sub_paths summary var_path ~init ~f:(fun acc sub_path ->
-          f acc (finalise summary (VarPath.sub_path var_path sub_path)) )
+      match
+        fold_candidate_final_sub_paths summary var_path ~init ~f:(fun acc sub_path ->
+            f acc (finalise summary (VarPath.sub_path var_path sub_path)) )
+      with
+      | Ok result ->
+          result
+      | Error stopped_at_path ->
+          f init (finalise summary stopped_at_path)
 
 
     let fold_cells summary_option (var, path) ~init ~f =
@@ -1216,11 +1309,25 @@ end = struct
           f init (Cell.var_abstract var)
 
 
-    let fold_argument summary_option proc_desc index ~init ~f =
-      (* TODO if we stored argument shapes in the summary, this wouldn't need to use proc_desc. *)
-      let arg_var, _typ = List.nth_exn (Procdesc.get_pvar_formals proc_desc) index in
-      fold_cells summary_option (VarPath.pvar arg_var) ~init ~f:(fun accum arg_cell ->
-          f accum (Cell.field_path arg_cell) )
+    let fold_argument_path summary_option index field_path ~init ~f =
+      match summary_option with
+      | Some {formals; _} ->
+          let arg_var = formals.(index) in
+          let arg_var_path = VarPath.make arg_var field_path in
+          fold_cells summary_option arg_var_path ~init ~f:(fun accum arg_cell ->
+              f accum (Cell.field_path arg_cell) )
+      | None ->
+          f init []
+
+
+    let fold_return_path summary_option field_path ~init ~f =
+      match summary_option with
+      | Some {ret_var; _} ->
+          let ret_var_path = VarPath.make ret_var field_path in
+          fold_cells summary_option ret_var_path ~init ~f:(fun accum arg_cell ->
+              f accum (Cell.field_path arg_cell) )
+      | None ->
+          f init []
 
 
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =
@@ -1273,14 +1380,11 @@ module Report = struct
     L.debug Analysis Verbose "@[<v>@ @[<v2>" ;
     L.debug Analysis Verbose "@[<v>Result for procedure : %a@]@ " Procname.pp procname ;
     L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]@ @ " Env.Summary.pp summary ;
-    L.debug Analysis Verbose "@[<v2>FIELDS OF RETURN:@ (%a)@]"
+    L.debug Analysis Verbose "@[<2>FIELDS OF RETURN:@ (%a)@]"
       (Fmt.iter
          (fun f summary ->
-           Env.Summary.fold_cells summary
-             (Var.of_pvar (Procdesc.get_ret_var proc_desc), [])
-             ~f:(fun () fields -> f fields)
-             ~init:() )
-         ~sep:Fmt.comma Cell.pp )
+           Env.Summary.fold_return_path summary [] ~f:(fun () fields -> f fields) ~init:() )
+         ~sep:Fmt.comma FieldPath.pp )
       (Some summary) ;
     L.debug Analysis Verbose "@]@ @]"
 end
@@ -1562,26 +1666,20 @@ struct
   let pp_session_name _node fmt = Format.pp_print_string fmt "LineageShape"
 end
 
-(** A generative module that creates a fresh environment and passes it to the {!TransferFunctions}
-    functor to build an analysis engine. *)
-module Analyzer () = struct
-  module State = struct
-    let state = Env.State.create ()
-  end
-
-  include AbstractInterpreter.MakeWTO (TransferFunctions (State))
-end
-
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let module Analyzer = Analyzer () in
+  (* Create a fresh State module with a mutable state inside for the Analyzer functor. *)
+  let module State = struct
+    let state = Env.State.create proc_desc
+  end in
+  let module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions (State)) in
   (* Shape captured vars *)
   let shape_captured_var {CapturedVar.pvar} =
-    ignore (Env.State.shape_var Analyzer.State.state (Var.of_pvar pvar) : Env.State.shape)
+    ignore (Env.State.shape_var State.state (Var.of_pvar pvar) : Env.State.shape)
   in
   List.iter ~f:shape_captured_var (Procdesc.get_captured proc_desc) ;
   (* Analyze the procedure's code  *)
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
-  let summary = Env.Summary.make Analyzer.State.state in
+  let summary = Env.Summary.make State.state in
   Report.debug proc_desc summary ;
   Some summary
 
