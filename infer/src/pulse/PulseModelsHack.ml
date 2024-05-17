@@ -26,11 +26,14 @@ let mixed_type_name = TextualSil.hack_mixed_type_name
 
 let hack_string_type_name = TextualSil.hack_string_type_name
 
+let string_val_field = Fieldname.make hack_string_type_name "val"
+
 let read_string_value address astate = PulseArithmetic.as_constant_string astate address
 
 let read_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in
-  let operation astate = (read_string_value (fst aval) astate, astate) in
+  let* inner_val = eval_deref_access Read aval (FieldAccess string_val_field) in
+  let operation astate = (read_string_value (fst inner_val) astate, astate) in
   let* opt_string = exec_operation operation in
   ret opt_string
 
@@ -266,9 +269,8 @@ let int_to_hack_int n : DSL.aval DSL.model_monad =
 
 let hack_string_dsl str_val : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* () = and_dynamic_type_is str_val (Typ.mk_struct hack_string_type_name) in
-  let* () = and_positive str_val in
-  ret str_val
+  let* ret_val = constructor hack_string_type_name [("val", str_val)] in
+  ret ret_val
 
 
 let hack_string str_val : model =
@@ -942,13 +944,13 @@ let hhbc_cmp_same x y : model =
                value_equality_test x_val y_val )
              else if Typ.Name.equal x_typ_name hack_string_type_name then (
                L.d_printfln "hhbc_cmp_same: both are strings" ;
-               let* opt_str_x = read_string_value_dsl x in
-               let* opt_str_y = read_string_value_dsl y in
-               match Option.both opt_str_x opt_str_y with
-               | Some (str_x, str_y) ->
-                   String.equal str_x str_y |> make_hack_bool
-               | None ->
-                   make_hack_random_bool )
+               let* x_val = eval_deref_access Read x (FieldAccess string_val_field) in
+               let* y_val = eval_deref_access Read y (FieldAccess string_val_field) in
+               disjuncts
+                 [ (let* () = prune_eq x_val y_val in
+                    make_hack_bool true )
+                 ; (let* () = prune_ne x_val y_val in
+                    make_hack_bool false ) ] )
              else (
                L.d_printfln "hhbc_cmp_same: not a known primitive type" ;
                (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
@@ -1398,9 +1400,12 @@ let hhbc_cast_string arg : model =
 let hhbc_concat arg1 arg2 : model =
   let open DSL.Syntax in
   start_model
-  @@ let* res = eval_string_concat arg1 arg2 in
-     let* res = hack_string_dsl res in
-     assign_ret res
+  @@
+  let* arg1_val = eval_deref_access Read arg1 (FieldAccess string_val_field) in
+  let* arg2_val = eval_deref_access Read arg2 (FieldAccess string_val_field) in
+  let* res = eval_string_concat arg1_val arg2_val in
+  let* res = hack_string_dsl res in
+  assign_ret res
 
 
 let matchers : matcher list =

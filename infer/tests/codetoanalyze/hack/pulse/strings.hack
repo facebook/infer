@@ -83,7 +83,7 @@ class Tests {
     }
   }
 
-  public static function FP_concat_ok(): void {
+  public static function concat_ok(): void {
     if (Main::concat_test("hello", "world") == "hello world") {
       \Level1\taintSink(\Level1\taintSource());
     }
@@ -123,7 +123,7 @@ class Tests {
     }
   }
 
-  public static function FP_call_string_eq_ok(): void {
+  public static function call_string_eq_ok(): void {
     $arg1 = self::get_foo_string();
     $arg2 = "bar";
     if (self::string_eq($arg1, $arg2)) {
