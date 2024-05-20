@@ -12,7 +12,6 @@ module AbstractValue = PulseAbstractValue
 type ('fieldname, 'array_index) access_ =
   | FieldAccess of 'fieldname
   | ArrayAccess of (Typ.t[@ignore]) * 'array_index
-  | TakeAddress
   | Dereference
 [@@deriving compare, equal, yojson_of]
 
@@ -26,8 +25,6 @@ let pp pp_array_index fmt = function
       Fieldname.pp fmt field_name
   | ArrayAccess (_, index) ->
       F.fprintf fmt "[%a]" pp_array_index index
-  | TakeAddress ->
-      F.pp_print_string fmt "&"
   | Dereference ->
       F.pp_print_string fmt "*"
 
@@ -58,7 +55,7 @@ module T = struct
     | ArrayAccess (typ, addr) ->
         let addr' = get_var_repr addr in
         if AbstractValue.equal addr addr' then access else ArrayAccess (typ, addr')
-    | FieldAccess _ | TakeAddress | Dereference ->
+    | FieldAccess _ | Dereference ->
         access
 end
 

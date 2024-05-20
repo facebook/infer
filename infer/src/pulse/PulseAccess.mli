@@ -17,7 +17,6 @@ module AbstractValue = PulseAbstractValue
 type ('fieldname, 'array_index) access_ =
   | FieldAccess of 'fieldname
   | ArrayAccess of Typ.t * 'array_index
-  | TakeAddress
   | Dereference
 
 type 'array_index access = (Fieldname.t, 'array_index) access_

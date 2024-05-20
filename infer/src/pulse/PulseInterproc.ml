@@ -522,7 +522,7 @@ let translate_access_to_caller astate subst (access_callee : Access.t) : _ * Acc
         subst_find_or_new astate subst val_callee ~default_hist_caller:ValueHistory.epoch
       in
       (subst, ArrayAccess (typ, val_caller))
-  | FieldAccess _ | TakeAddress | Dereference ->
+  | FieldAccess _ | Dereference ->
       (subst, access_callee)
 
 
@@ -605,7 +605,7 @@ let rec materialize_pre_from_address callee call_location ~pre ~addr_pre cell_id
                         array_indices_to_visit=
                           {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
                           :: call_state.array_indices_to_visit }
-                | FieldAccess _ | TakeAddress | Dereference ->
+                | FieldAccess _ | Dereference ->
                     (* only array accessess depend on abstract values and need translation *)
                     let access_caller = access_callee in
                     let astate, addr_hist_dest_caller =

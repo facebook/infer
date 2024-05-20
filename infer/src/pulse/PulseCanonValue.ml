@@ -149,8 +149,6 @@ end) : S with type astate = AbductiveDomain.astate = struct
     (* ocaml insists we copy the other definitions for typing purposes *)
     | FieldAccess f ->
         FieldAccess f
-    | TakeAddress ->
-        TakeAddress
     | Dereference ->
         Dereference
 end

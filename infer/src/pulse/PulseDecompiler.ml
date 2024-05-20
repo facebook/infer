@@ -94,8 +94,6 @@ let access_of_memory_access decompiler (access : Access.t) : DecompilerExpr.acce
       ArrayAccess index_expr
   | FieldAccess field ->
       access_of_field_access field
-  | TakeAddress ->
-      TakeAddress
   | Dereference ->
       Dereference
 

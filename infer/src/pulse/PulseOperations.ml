@@ -545,7 +545,7 @@ let add_dict_read_const_key timestamp trace address key astate =
         match access with
         | FieldAccess fld ->
             Fieldname.equal key fld
-        | ArrayAccess _ | TakeAddress | Dereference ->
+        | ArrayAccess _ | Dereference ->
             false )
   in
   if has_key then Ok astate

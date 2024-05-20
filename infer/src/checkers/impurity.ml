@@ -37,8 +37,6 @@ let ignore_array_index (access : Access.t) : unit MemoryAccess.t =
       FieldAccess fname
   | Dereference ->
       Dereference
-  | TakeAddress ->
-      TakeAddress
 
 
 let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =

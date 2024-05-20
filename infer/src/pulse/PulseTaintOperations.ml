@@ -278,7 +278,7 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
         true
     | FieldAccess _ ->
         Language.curr_language_is Hack || Language.curr_language_is Python
-    | TakeAddress | Dereference ->
+    | Dereference ->
         false
   in
   let acc, sanitizers = f init Attribute.TaintSanitizedSet.empty addr_hist0 in

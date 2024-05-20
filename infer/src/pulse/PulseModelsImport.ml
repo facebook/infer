@@ -314,8 +314,7 @@ module Basic = struct
     let astates_alloc, non_disj =
       let addrs_to_invalidate =
         AbductiveDomain.reachable_addresses_from
-          ~edge_filter:(function
-            | FieldAccess _ | ArrayAccess _ -> true | TakeAddress | Dereference -> false )
+          ~edge_filter:(function FieldAccess _ | ArrayAccess _ -> true | Dereference -> false)
           (Seq.return deleted_addr) astate `Post
       in
       let ( let<**> ) x f = bind_sat_result non_disj x f in

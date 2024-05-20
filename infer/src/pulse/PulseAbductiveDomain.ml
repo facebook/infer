@@ -830,9 +830,7 @@ module Internal = struct
                     (* inlined aggregate value: just an offset, not the actual value yet; recurse *)
                     SafeMemory.map_post_heap astate ~f:(fun post_heap ->
                         BaseMemory.add_edge addr access (downcast_fst addr_hist_dest) post_heap )
-                    |> restore_pre_var_value visited ~is_value_visible_outside addr_dest
-                | TakeAddress ->
-                    assert false )
+                    |> restore_pre_var_value visited ~is_value_visible_outside addr_dest )
     in
     let restore_pre_var x addr_hist astate =
       (* the address of a variable never changes *)
@@ -1306,7 +1304,7 @@ module Internal = struct
       match access with
       | ArrayAccess (_, addr) ->
           visit_address ~edge_filter addr ~f ~f_revisit [] astate heap visited_accum
-      | FieldAccess _ | TakeAddress | Dereference ->
+      | FieldAccess _ | Dereference ->
           Continue visited_accum
 
 
@@ -1983,7 +1981,7 @@ module Summary = struct
       | Dereference :: rev_accesses ->
           let+ heap_path = mk_heap_path var rev_accesses in
           Specialization.HeapPath.Dereference heap_path
-      | (TakeAddress | ArrayAccess _) :: _ ->
+      | ArrayAccess _ :: _ ->
           None
     in
     (* safe because this is a summary so these addresses are actually canon values *)
