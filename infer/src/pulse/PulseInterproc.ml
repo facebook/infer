@@ -32,7 +32,7 @@ module LazyHeapPath : sig
 
   val unsupported : t
 
-  val push : AbstractValue.t MemoryAccess.t -> t -> t
+  val push : Access.t -> t -> t
 
   val force : t -> HeapPath.t option
   (** returns None if the stored path contains unsupported memory accesses *)
@@ -44,8 +44,7 @@ end = struct
         F.pp_print_string fmt "unsupported"
     | Supported {stack; pvar} ->
         Pvar.pp Pp.text fmt pvar ;
-        List.iter stack ~f:(fun access ->
-            F.fprintf fmt " -> %a" (MemoryAccess.pp AbstractValue.pp) access )
+        List.iter stack ~f:(fun access -> F.fprintf fmt " -> %a" Access.pp access)
 
 
   let from_pvar pvar = Supported {stack= []; pvar}
@@ -67,9 +66,9 @@ end = struct
         List.fold_left stack ~init:(Some (HeapPath.Pvar pvar)) ~f:(fun opt_path access ->
             Option.bind opt_path ~f:(fun path ->
                 match access with
-                | MemoryAccess.FieldAccess fieldname ->
+                | Access.FieldAccess fieldname ->
                     Some (HeapPath.FieldAccess (fieldname, path))
-                | MemoryAccess.Dereference ->
+                | Access.Dereference ->
                     Some (HeapPath.Dereference path)
                 | _ ->
                     None ) )

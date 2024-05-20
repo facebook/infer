@@ -12,7 +12,7 @@ open PulseModelsImport
 
 let value = Fieldname.make PulseOperations.pulse_model_type "__infer_mutex"
 
-let value_access = MemoryAccess.FieldAccess value
+let value_access = Access.FieldAccess value
 
 let to_internal_value path mode location value astate =
   PulseOperations.eval_access path mode location value value_access astate

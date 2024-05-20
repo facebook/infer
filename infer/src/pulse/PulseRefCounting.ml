@@ -20,7 +20,7 @@ let is_ref_counted v astate =
       false
 
 
-let is_strong_access tenv (access : _ MemoryAccess.t) =
+let is_strong_access tenv (access : Access.t) =
   let has_weak_or_unretained_or_assign annotations =
     List.exists annotations ~f:(fun (ann : Annot.t) ->
         ( String.equal ann.class_name Config.property_attributes

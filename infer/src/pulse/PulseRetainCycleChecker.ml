@@ -22,7 +22,7 @@ let is_ref_counted_or_block astate addr =
 
 let is_captured_function_pointer_or_block access =
   match access with
-  | MemoryAccess.FieldAccess fieldname ->
+  | Access.FieldAccess fieldname ->
       Fieldname.is_capture_field_function_pointer fieldname
   | _ ->
       false
@@ -81,11 +81,7 @@ let create_values astate cycle =
 
 let should_report_cycle astate cycle =
   let is_objc_or_block (addr, _, access) =
-    match access with
-    | MemoryAccess.FieldAccess _ ->
-        is_ref_counted_or_block astate addr
-    | _ ->
-        false
+    match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> false
   in
   let addr_in_retain_cycle (addr, _, access) =
     let not_previously_reported = not (AddressAttributes.is_in_reported_retain_cycle addr astate) in
@@ -94,11 +90,7 @@ let should_report_cycle astate cycle =
     let value = Decompiler.find addr astate in
     let is_known = not (DecompilerExpr.is_unknown value) in
     let is_objc_or_block_if_field_access =
-      match access with
-      | MemoryAccess.FieldAccess _ ->
-          is_ref_counted_or_block astate addr
-      | _ ->
-          true
+      match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
     not_previously_reported && is_not_null && is_known && is_objc_or_block_if_field_access
   in

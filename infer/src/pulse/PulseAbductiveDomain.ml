@@ -424,7 +424,7 @@ module Internal = struct
                     ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
                   in
                   let heap =
-                    BaseMemory.add_edge addr (MemoryAccess.FieldAccess field)
+                    BaseMemory.add_edge addr (FieldAccess field)
                       (downcast field_addr, history)
                       (acc :> base_domain).heap
                   in

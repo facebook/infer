@@ -465,10 +465,10 @@ let taint_sinks path location tainted astate =
               visited := AbstractValue.Set.add v !visited ;
               let sink_value_tuple =
                 match access with
-                | Some (MemoryAccess.FieldAccess fieldname) ->
+                | Some (Access.FieldAccess fieldname) ->
                     TaintItem.FieldOf
                       {name= Fieldname.get_field_name fieldname; value_tuple= sink.value_tuple}
-                | Some MemoryAccess.Dereference ->
+                | Some Access.Dereference ->
                     TaintItem.PointedToBy {value_tuple= sink.value_tuple}
                 | _ ->
                     sink.value_tuple
@@ -484,7 +484,7 @@ let taint_sinks path location tainted astate =
               AbductiveDomain.Memory.fold_edges v astate ~init:(astate, policy_violations_to_report)
                 ~f:(fun ((astate, policy_violations_to_report) as res) (access, (v, hist)) ->
                   match access with
-                  | MemoryAccess.FieldAccess fieldname
+                  | Access.FieldAccess fieldname
                     when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
                          || Fieldname.equal fieldname
                               PulseOperations.ModeledField.internal_ref_count ->

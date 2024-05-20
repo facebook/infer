@@ -21,7 +21,7 @@ val eval :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
-val access : _ MemoryAccess.t
+val access : Access.t
 
 val field : Fieldname.t
 

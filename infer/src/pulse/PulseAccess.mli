@@ -6,17 +6,33 @@
  *)
 
 open! IStd
+module AbstractValue = PulseAbstractValue
+
+(** {1 Memory Accesses}
+
+    The various kind of possible ways to access memory addresses and values. Can be used for edges
+    in a memory graph representation or to represent values as access paths. *)
+
+(** for internal use only, prefer using [access] *)
+type ('fieldname, 'array_index) access_ =
+  | FieldAccess of 'fieldname
+  | ArrayAccess of Typ.t * 'array_index
+  | TakeAddress
+  | Dereference
+
+type 'array_index access = (Fieldname.t, 'array_index) access_
+[@@deriving compare, equal, yojson_of]
 
 module type S = sig
   type key
 
-  include PrettyPrintable.PrintableEquatableOrderedType with type t = key MemoryAccess.t
+  include PrettyPrintable.PrintableEquatableOrderedType with type t = key access
 
-  val canonicalize : get_var_repr:(PulseAbstractValue.t -> PulseAbstractValue.t) -> t -> t
+  val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
 
   val yojson_of_t : t -> Yojson.Safe.t
 
   module Set : Caml.Set.S with type elt = t
 end
 
-include S with type key := PulseAbstractValue.t
+include S with type key := AbstractValue.t

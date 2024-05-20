@@ -662,7 +662,7 @@ end
 module GenericMapCollection = struct
   let pair_field = Fieldname.make PulseOperations.pulse_model_type "__infer_map_pair"
 
-  let pair_access = MemoryAccess.FieldAccess pair_field
+  let pair_access = Access.FieldAccess pair_field
 
   let pair_type key_t value_t =
     Typ.CppClass
@@ -674,11 +674,11 @@ module GenericMapCollection = struct
 
   let pair_first_field key_t value_t = Fieldname.make (pair_type key_t value_t) "first"
 
-  let pair_first_access key_t value_t = MemoryAccess.FieldAccess (pair_first_field key_t value_t)
+  let pair_first_access key_t value_t = Access.FieldAccess (pair_first_field key_t value_t)
 
   let pair_second_field key_t value_t = Fieldname.make (pair_type key_t value_t) "second"
 
-  let pair_second_access key_t value_t = MemoryAccess.FieldAccess (pair_second_field key_t value_t)
+  let pair_second_access key_t value_t = Access.FieldAccess (pair_second_field key_t value_t)
 
   let extract_key_and_value_types {FuncArg.typ= map_typ} =
     let rec extract_helper {Typ.desc} =

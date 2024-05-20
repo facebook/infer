@@ -11,7 +11,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
-let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
+let string_length_access = Access.FieldAccess PulseOperations.ModeledField.string_length
 
 let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->

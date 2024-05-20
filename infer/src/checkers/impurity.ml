@@ -146,7 +146,7 @@ let get_modified_globals pname (summary : AbductiveDomain.Summary.t) pre_heap po
            globals. *)
         add_to_modified pname
           ~pvar:(Option.value_exn (Var.get_pvar var))
-          ~access:MemoryAccess.Dereference ~addr pre_heap post modified_globals
+          ~access:Access.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
     (summary :> AbductiveDomain.t)
     ImpurityDomain.ModifiedVarMap.bottom

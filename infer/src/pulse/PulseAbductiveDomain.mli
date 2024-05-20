@@ -286,18 +286,8 @@ val fold_all :
      ?var_filter:(Var.t -> bool)
   -> init:'accum
   -> finish:('accum -> 'final)
-  -> f:
-       (   Var.t
-        -> 'accum
-        -> AbstractValue.t
-        -> (Fieldname.t, AbstractValue.t) MemoryAccess.t_ list
-        -> ('accum, 'final) Continue_or_stop.t )
-  -> ?f_revisit:
-       (   Var.t
-        -> 'accum
-        -> AbstractValue.t
-        -> (Fieldname.t, AbstractValue.t) MemoryAccess.t_ list
-        -> 'accum )
+  -> f:(Var.t -> 'accum -> AbstractValue.t -> Access.t list -> ('accum, 'final) Continue_or_stop.t)
+  -> ?f_revisit:(Var.t -> 'accum -> AbstractValue.t -> Access.t list -> 'accum)
   -> t
   -> [`Post | `Pre]
   -> 'final

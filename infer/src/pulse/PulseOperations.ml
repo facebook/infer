@@ -48,7 +48,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
 
 
 module Closures = struct
-  let is_captured_by_ref_access (access : _ MemoryAccess.t) =
+  let is_captured_by_ref_access (access : Access.t) =
     match access with
     | FieldAccess fieldname ->
         Fieldname.is_capture_field_in_closure_by_ref fieldname

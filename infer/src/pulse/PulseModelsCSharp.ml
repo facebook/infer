@@ -482,7 +482,7 @@ module Resource = struct
     PulseOperations.csharp_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
 
-let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
+let string_length_access = Access.FieldAccess PulseOperations.ModeledField.string_length
 
 let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->

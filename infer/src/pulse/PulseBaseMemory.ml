@@ -74,7 +74,7 @@ let find_edge_opt ?get_var_repr addr access memory =
       res
   | None -> (
     match (access, get_var_repr) with
-    | MemoryAccess.ArrayAccess _, Some get_var_repr ->
+    | Access.ArrayAccess _, Some get_var_repr ->
         let access = Access.canonicalize ~get_var_repr access in
         let edges = Edges.canonicalize ~get_var_repr edges in
         Edges.find_opt access edges

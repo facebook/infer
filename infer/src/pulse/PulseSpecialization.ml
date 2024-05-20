@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseDomainInterface
 
 let prune_eq_list_values astate values =
@@ -25,11 +26,11 @@ let rec initialize_heap_path heap_path astate =
   match (heap_path : Specialization.HeapPath.t) with
   | Pvar pvar ->
       let opt_addr = Stack.find_opt (Var.of_pvar pvar) astate in
-      let default () = (PulseAbstractValue.mk_fresh (), PulseValueHistory.epoch) in
+      let default () = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
       (astate, Option.value_or_thunk opt_addr ~default)
   | FieldAccess (fieldname, heap_path) ->
       let astate, src_addr = initialize_heap_path heap_path astate in
-      let access = MemoryAccess.FieldAccess fieldname in
+      let access = Access.FieldAccess fieldname in
       Memory.eval_edge src_addr access astate
   | Dereference heap_path ->
       let astate, src_addr = initialize_heap_path heap_path astate in
