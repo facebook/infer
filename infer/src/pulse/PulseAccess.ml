@@ -20,7 +20,7 @@ type 'array_index access = (Fieldname.t, 'array_index) access_
 
 let loose_compare compare_array_index = compare_access_ Fieldname.compare_name compare_array_index
 
-let pp pp_array_index fmt = function
+let pp_access pp_array_index fmt = function
   | FieldAccess field_name ->
       Fieldname.pp fmt field_name
   | ArrayAccess (_, index) ->
@@ -48,7 +48,7 @@ module T = struct
 
   let equal = [%compare.equal: t]
 
-  let pp = pp AbstractValue.pp
+  let pp = pp_access AbstractValue.pp
 
   let canonicalize ~get_var_repr (access : t) =
     match access with

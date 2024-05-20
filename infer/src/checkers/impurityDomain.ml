@@ -7,10 +7,9 @@
 
 open! IStd
 module F = Format
-module SkippedCalls = PulseSkippedCalls
+open PulseBasicInterface
 
-type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
-[@@deriving compare]
+type trace = WrittenTo of Trace.t | Invalid of Invalidation.t * Trace.t [@@deriving compare]
 
 module PVar = struct
   type t = Pvar.t [@@deriving compare]
@@ -19,12 +18,12 @@ module PVar = struct
 end
 
 module ModifiedAccess = struct
-  type t = {ordered_access_list: unit MemoryAccess.t list; trace: trace [@compare.ignore]}
+  type t = {ordered_access_list: unit Access.access list; trace: trace [@compare.ignore]}
   [@@deriving compare]
 
   let pp fmt {ordered_access_list} =
     let pp_sep fmt () = F.fprintf fmt "" in
-    (F.pp_print_list ~pp_sep (MemoryAccess.pp (fun _ _ -> ()))) fmt ordered_access_list
+    (F.pp_print_list ~pp_sep (Access.pp_access (fun _ _ -> ()))) fmt ordered_access_list
 end
 
 module ModifiedVarMap = AbstractDomain.FiniteMultiMap (PVar) (ModifiedAccess)
@@ -62,7 +61,7 @@ let filter_modifies_immutable tenv ~f =
   ModifiedVarMap.filter (fun _pvar ModifiedAccess.{ordered_access_list} ->
       List.exists ordered_access_list ~f:(fun access ->
           match access with
-          | MemoryAccess.FieldAccess fname ->
+          | Access.FieldAccess fname ->
               let class_name = Fieldname.get_class_name fname in
               implements_immutable_map tenv class_name
               || Tenv.lookup tenv class_name
@@ -122,9 +121,9 @@ let add_to_errlog ~nesting param_source pvar (ModifiedAccess.{trace} as access) 
     | WrittenTo access_trace ->
         ("modified", access_trace)
     | Invalid (invalidation, invalidation_trace) ->
-        (F.asprintf "%a" PulseInvalidation.describe invalidation, invalidation_trace)
+        (F.asprintf "%a" Invalidation.describe invalidation, invalidation_trace)
   in
-  PulseTrace.add_to_errlog ~include_value_history:false ~nesting
+  Trace.add_to_errlog ~include_value_history:false ~nesting
     ~pp_immediate:(fun fmt ->
       F.fprintf fmt "%a `%a.%a` %s here" pp_param_source param_source PVar.pp pvar ModifiedAccess.pp
         access desc )

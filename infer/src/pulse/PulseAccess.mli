@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module AbstractValue = PulseAbstractValue
 
 (** {1 Memory Accesses}
@@ -21,6 +22,8 @@ type ('fieldname, 'array_index) access_ =
 
 type 'array_index access = (Fieldname.t, 'array_index) access_
 [@@deriving compare, equal, yojson_of]
+
+val pp_access : (F.formatter -> 'array_index -> unit) -> F.formatter -> 'array_index access -> unit
 
 module type S = sig
   type key

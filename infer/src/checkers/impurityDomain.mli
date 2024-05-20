@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+open PulseBasicInterface
 
-type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * PulseTrace.t)
+type trace = WrittenTo of Trace.t | Invalid of Invalidation.t * Trace.t
 
 module ModifiedAccess : sig
   type t =
-    { ordered_access_list: unit MemoryAccess.t list
+    { ordered_access_list: unit Access.access list
           (** list of ordered accesses that are oblivious to modified array indices *)
     ; trace: trace }
 end
@@ -30,7 +31,7 @@ module Exited = AbstractDomain.BooleanOr
 type t =
   { modified_params: ModifiedVarMap.t
   ; modified_globals: ModifiedVarMap.t
-  ; skipped_calls: PulseSkippedCalls.t
+  ; skipped_calls: SkippedCalls.t
   ; exited: Exited.t }
 
 val pure : t

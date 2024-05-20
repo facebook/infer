@@ -29,7 +29,7 @@ let get_matching_dest_addr_opt ~edges_pre ~edges_post : (Access.t * AbstractValu
       x
 
 
-let ignore_array_index (access : Access.t) : unit MemoryAccess.t =
+let ignore_array_index (access : Access.t) : unit Access.access =
   match access with
   | ArrayAccess (typ, _) ->
       ArrayAccess (typ, ())
@@ -48,8 +48,8 @@ let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
     match Attributes.get_invalid attrs with
     | None | Some (Invalidation.ConstantDereference _, _) ->
         modified
-    | Some invalid ->
-        ImpurityDomain.Invalid invalid :: modified
+    | Some (invalidation, trace) ->
+        ImpurityDomain.Invalid (invalidation, trace) :: modified
   in
   if check_empty && List.is_empty invalid_and_modified then
     L.(die InternalError) "Address is modified without being written to or invalidated."
