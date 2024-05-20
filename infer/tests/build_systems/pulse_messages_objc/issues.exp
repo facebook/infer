@@ -25,7 +25,7 @@ build_systems/pulse_messages_objc/retain_cycle.mm, retain_a_in_block_cycle_bad, 
   2) b->_a_handler, assigned on line 87
   3) a captured by block defined in retain_cycle.mm:87., 
 codetoanalyze/objc/pulse/retain_cycles/IvarInheritanceRetainCycle.m, field_superclass_main, 30, 3, ERROR, RETAIN_CYCLE, Retain cycle found at line 30, column 3 between the following objects: 
-  1) &b
+  1) b, assigned on line 29
   2) b->a, assigned on line 30., 
 codetoanalyze/objc/pulse/retain_cycles/RetainCycleBlockAsParameter.m, FBSomeDataManager.fetchNewData_bad, 46, 14, ERROR, RETAIN_CYCLE, Retain cycle found at line 46, column 14 between the following objects: 
   1) self->_fetcher, assigned on line 46

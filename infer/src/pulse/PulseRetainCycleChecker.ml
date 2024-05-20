@@ -42,33 +42,10 @@ let has_static_dynamic_type astate v =
 
 
 let remove_non_objc_objects cycle astate =
-  List.filter ~f:(fun v -> not (has_static_dynamic_type astate v)) cycle
-
-
-let add_missing_objects path loc cycle astate =
-  let add_missing_object (astate, cycle) (addr, hist, _) =
-    if has_static_dynamic_type astate addr then
-      match
-        PulseOperations.eval_access path NoAccess loc (addr, hist) MemoryAccess.TakeAddress astate
-      with
-      | Ok (astate, (value, hist)) | Recoverable ((astate, (value, hist)), _) ->
-          if
-            not
-              (List.exists cycle ~f:(fun (value1, _, _) ->
-                   let expr1 = Decompiler.find value1 astate in
-                   let expr = Decompiler.find value astate in
-                   AbstractValue.equal value1 value
-                   || DecompilerExpr.decomp_source_expr_equal expr1 expr ) )
-          then (astate, (value, hist, MemoryAccess.Dereference) :: cycle)
-          else (astate, cycle)
-      | _ ->
-          (astate, cycle)
-    else (astate, cycle)
-  in
-  (* We aim to add the missing objects only on cycles of length 1 where this will help make the message clearer.
-     Here we write 2 because it's before we remove non objects (the values that have the dynamic type attribute) *)
-  if Int.equal (List.length cycle) 2 then List.fold ~f:add_missing_object cycle ~init:(astate, cycle)
-  else (astate, cycle)
+  (* do not remove the object if this will make the cycle length < 2 and make the message unclear *)
+  if List.length cycle > 2 then
+    List.filter ~f:(fun v -> not (has_static_dynamic_type astate v)) cycle
+  else cycle
 
 
 let get_assignment_trace astate addr =
@@ -145,7 +122,7 @@ let should_report_cycle astate cycle =
    When reporting a retain cycle, we want to give the location of its
    creation, therefore we need to remember location of the latest assignement
    in the cycle *)
-let check_retain_cycles path tenv location addresses orig_astate =
+let check_retain_cycles tenv location addresses orig_astate =
   (* remember explored adresses to avoid reexploring path without retain cycles *)
   let checked = ref AbstractValue.Set.empty in
   let is_seen l addr = List.exists ~f:(fun (value, _, _) -> AbstractValue.equal value addr) l in
@@ -156,7 +133,6 @@ let check_retain_cycles path tenv location addresses orig_astate =
         let seen = List.rev rev_seen in
         let cycle = crop_seen_to_cycle seen addr in
         if should_report_cycle astate cycle then (
-          let astate, cycle = add_missing_objects path location cycle astate in
           Logging.d_printfln "Found cycle %a"
             (Pp.seq ~sep:"->" AbstractValue.pp)
             (List.map ~f:(fun (addr, _, _) -> addr) cycle) ;
@@ -220,7 +196,7 @@ let check_retain_cycles path tenv location addresses orig_astate =
       match acc with Recoverable _ | FatalError _ -> acc | Ok _ -> check_retain_cycle (addr, hist) )
 
 
-let check_retain_cycles_call path tenv location func_args ret_opt astate =
+let check_retain_cycles_call tenv location func_args ret_opt astate =
   let actuals =
     let func_args = ValueOrigin.addr_hist_args func_args in
     List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist} ->
@@ -228,11 +204,11 @@ let check_retain_cycles_call path tenv location func_args ret_opt astate =
   in
   let addresses = Option.value_map ~default:actuals ~f:(fun ret -> ret :: actuals) ret_opt in
   if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
-    check_retain_cycles path tenv location addresses astate
+    check_retain_cycles tenv location addresses astate
   else Ok astate
 
 
-let check_retain_cycles_store path tenv location addr astate =
+let check_retain_cycles_store tenv location addr astate =
   if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
-    check_retain_cycles path tenv location [addr] astate
+    check_retain_cycles tenv location [addr] astate
   else Ok astate

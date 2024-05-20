@@ -973,8 +973,8 @@ module PulseTransferFunctions = struct
                     astate
               in
               let* astate =
-                PulseRetainCycleChecker.check_retain_cycles_call path tenv call_loc func_args
-                  ret_opt astate_after_call
+                PulseRetainCycleChecker.check_retain_cycles_call tenv call_loc func_args ret_opt
+                  astate_after_call
               in
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate
@@ -1422,8 +1422,7 @@ module PulseTransferFunctions = struct
               PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate
             in
             let* astate =
-              PulseRetainCycleChecker.check_retain_cycles_store path tenv loc (rhs_addr, hist)
-                astate
+              PulseRetainCycleChecker.check_retain_cycles_store tenv loc (rhs_addr, hist) astate
             in
             let astate =
               if Topl.is_active () then
