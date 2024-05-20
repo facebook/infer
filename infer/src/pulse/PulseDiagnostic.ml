@@ -1041,7 +1041,7 @@ let get_trace = function
   | HackCannotInstantiateAbstractClass {type_name; calling_context; location} ->
       get_trace_calling_context calling_context
       @@ [ Errlog.make_trace_element 0 location
-             (F.asprintf "%a initialized here" Typ.Name.pp type_name)
+             (F.asprintf "abstract class %s initialized here" (Typ.Name.name type_name))
              [] ]
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
