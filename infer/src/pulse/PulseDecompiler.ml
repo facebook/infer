@@ -106,7 +106,7 @@ let add_access_source v (access : Access.t) ~src decompiler =
   | Unknown _ -> (
     match (Map.find v decompiler, access) with
     | SourceExpr ((base, [Dereference]), _), Dereference ->
-        Map.add src (base, [TakeAddress]) decompiler
+        Map.add src (base, []) decompiler
     | _ ->
         decompiler )
   | SourceExpr ((base, accesses), _) ->
@@ -124,10 +124,21 @@ let replace_getter_call_with_property_access procname v call actuals decompiler 
     | Unknown _ ->
         Map.add v (ReturnValue call, []) decompiler
     | SourceExpr ((base, accesses), _) ->
+        let accesses =
+          match accesses with
+          | Dereference :: accesses ->
+              (* HACK: obj-c uses [.] for field accesses even though objects are pointers, so eg
+                 [obj.f] really means [obj->f] in C but obj-c writes it [obj.f]. To get the same
+                 behaviour, let's ignore the latest [Dereference] before a field access so it looks
+                 like a (C) [.f] access to the decompiler instead of a [->f] one *)
+              accesses
+          | _ ->
+              accesses
+        in
         Map.add v
           ( base
           , access_of_memory_access decompiler (FieldAccess (Fieldname.make typ_name procname_str))
-            :: TakeAddress :: Dereference :: accesses )
+            :: accesses )
           decompiler
 
 
