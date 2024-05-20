@@ -454,7 +454,7 @@ let checkers_expensive_overrides_unexpensive =
 
 
 let checkers_fragment_retain_view =
-  register ~category:No_category ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
+  register ~category:Resource_leak ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
     Warning FragmentRetainsView
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
