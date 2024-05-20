@@ -24,7 +24,7 @@ type ('fieldname, 'array_index) t_ =
 type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, equal, yojson_of]
 
 val loose_compare : ('array_index -> 'array_index -> int) -> 'array_index t -> 'array_index t -> int
-(** compares field names using [Fieldname.compare_name] insteado of [Fieldname.compare] *)
+(** compares field names using [Fieldname.compare_name] instead of [Fieldname.compare] *)
 
 val pp : (F.formatter -> 'array_index -> unit) -> F.formatter -> 'array_index t -> unit
 
