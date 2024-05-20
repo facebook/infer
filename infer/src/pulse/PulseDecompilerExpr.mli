@@ -17,7 +17,6 @@ type access =
   | CaptureFieldAccess of string
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
-  | TakeAddress
   | Dereference
 
 and source_expr = base * access list [@@deriving compare, equal]

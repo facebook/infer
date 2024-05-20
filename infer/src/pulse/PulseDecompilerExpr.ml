@@ -17,7 +17,6 @@ type access =
   | CaptureFieldAccess of string
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
-  | TakeAddress
   | Dereference
 
 (* TODO: could add more kinds of operations too to show "x + y" or "x + 4", or even "x +
@@ -28,6 +27,7 @@ and source_expr = base * access list [@@deriving compare, equal]
 (** intermediate representation of [source_expr] used for pretty-printing only *)
 type access_expr =
   | ProgramVar of Pvar.t
+  | ProgramVarAddress of Pvar.t
   | ProgramBlock of string
   | Call of CallEvent.t
   | Capture of access_expr * string
@@ -35,7 +35,6 @@ type access_expr =
   | ArrowField of access_expr * Fieldname.t
   | DotField of access_expr * Fieldname.t
   | Array of access_expr * access_expr option
-  | AddressOf of access_expr
   | Parens of access_expr
 
 let rec pp_access_expr fmt access_expr =
@@ -54,6 +53,8 @@ let rec pp_access_expr fmt access_expr =
       Pvar.pp_value_non_verbose fmt pvar
   | ProgramVar pvar ->
       Pvar.pp_value fmt pvar
+  | ProgramVarAddress pvar ->
+      Pvar.pp Pp.text fmt pvar
   | ProgramBlock block ->
       let block =
         String.chop_prefix ~prefix:Config.anonymous_block_prefix block
@@ -91,8 +92,6 @@ let rec pp_access_expr fmt access_expr =
             pp_access_expr fmt index_expr
       in
       F.fprintf fmt "%a[%a]" pp_access_expr access_expr pp_index index
-  | AddressOf access_expr ->
-      F.fprintf fmt "&%a" pp_access_expr access_expr
   | Deref access_expr ->
       F.fprintf fmt "*%a" pp_access_expr access_expr
   | Parens access_expr ->
@@ -104,7 +103,7 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
   let base_expr, prev_is_deref, accesses =
     match (base, accesses) with
     | PVar pvar, [] ->
-        (AddressOf (ProgramVar pvar), false, [])
+        (ProgramVarAddress pvar, false, [])
     | PVar pvar, Dereference :: accesses' ->
         (ProgramVar pvar, true, accesses')
     | PVar pvar, _ ->
@@ -118,30 +117,27 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
     if b then
       match access_expr with
       | ProgramVar _ | Deref _ | ArrowField _ | DotField _ ->
-          Deref access_expr
-      | _ ->
-          Deref (Parens access_expr)
-    else access_expr
+          (Deref access_expr, true)
+      | ProgramVarAddress pvar ->
+          (ProgramVar pvar, true)
+      | ((ProgramBlock _ | Call _ | Capture _ | Array _) as access_expr) | Parens access_expr ->
+          (Deref (Parens access_expr), true)
+    else (access_expr, true)
   in
   let rec aux ~prev_is_deref ~prev_is_capture access_expr accesses =
     match (accesses, base) with
     | [], _ ->
         access_expr
-    | Dereference :: TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:false access_expr accesses'
     | Dereference :: accesses', _ ->
-        aux ~prev_is_deref:true ~prev_is_capture:false
-          (deref_if prev_is_deref access_expr)
-          accesses'
-    | TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:false (AddressOf access_expr) accesses'
+        let access_expr, prev_is_deref = deref_if prev_is_deref access_expr in
+        aux ~prev_is_deref ~prev_is_capture:false access_expr accesses'
     | CaptureFieldAccess captured_var :: accesses', _ ->
         aux ~prev_is_deref:false ~prev_is_capture:true
           (Capture (access_expr, captured_var))
           accesses'
     | FieldAccess field :: accesses', _ ->
         let access_expr' =
-          let needs_parens = match access_expr with Deref _ | AddressOf _ -> true | _ -> false in
+          let needs_parens = match access_expr with Deref _ -> true | _ -> false in
           let access_expr = if needs_parens then Parens access_expr else access_expr in
           if prev_is_deref || prev_is_capture then ArrowField (access_expr, field)
           else DotField (access_expr, field)
@@ -178,9 +174,7 @@ let access_expr_exists ~f = function
 
 let includes_captured_variable = access_expr_exists ~f:(function Capture _ -> true | _ -> false)
 
-let includes_block =
-  access_expr_exists ~f:(function ProgramBlock _ | AddressOf (ProgramBlock _) -> true | _ -> false)
-
+let includes_block = access_expr_exists ~f:(function ProgramBlock _ -> true | _ -> false)
 
 let pp_with_abstract_value fmt decompiled =
   F.fprintf fmt "%a:%a" (Pp.option AbstractValue.pp)
