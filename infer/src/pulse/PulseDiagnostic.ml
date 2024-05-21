@@ -569,7 +569,7 @@ let get_message_and_suggestion diagnostic =
           let suggestion = Invalidation.suggest invalidation in
           (message, suggestion) )
   | ConfigUsage {pname; config; branch_location} ->
-      F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
+      F.asprintf "Function %a used config %a at %a." Procname.describe pname ConfigName.pp config
         Location.pp branch_location
       |> no_suggestion
   | ConstRefableParameter {param} ->
@@ -805,10 +805,10 @@ let get_message_and_suggestion diagnostic =
       let open PulseAttribute in
       ( F.asprintf
           "the return value `%a` is not modified after it is copied in the callee `%a` at `%a:%d`. "
-          CopiedInto.pp copied_into Procname.pp callee SourceFile.pp file line
+          CopiedInto.pp copied_into Procname.describe callee SourceFile.pp file line
       , Some
           (F.asprintf "Either change the return type of `%a` or revise the function body."
-             Procname.pp callee ) )
+             Procname.describe callee ) )
   | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from}
     -> (
       let open PulseAttribute in

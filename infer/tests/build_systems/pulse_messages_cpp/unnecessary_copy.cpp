@@ -121,3 +121,23 @@ class ConstTest {
     test_field = std::move(my_a);
   }
 };
+
+template <typename X>
+class MyValueOr2 {
+  bool b;
+  X& value;
+
+ public:
+  X value_or(const X& default_value) const {
+    if (b) {
+      return value;
+    } else {
+      return default_value;
+    }
+  }
+};
+
+void call_value_or2_bad(const MyValueOr2<A>& c) {
+  const static A f{};
+  A g = c.value_or(f);
+}
