@@ -348,22 +348,22 @@ let assert_failure = register_hidden ~id:"Assert_failure" Error Biabduction
 let bad_footprint = register_hidden ~id:"Bad_footprint" Error Biabduction
 
 let bad_arg =
-  register_with_latent ~category:No_category ~id:"BAD_ARG" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"BAD_ARG" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_ARG.md"]
 
 
 let bad_key =
-  register_with_latent ~category:No_category ~id:"BAD_KEY" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_KEY.md"]
 
 
 let bad_map =
-  register_with_latent ~category:No_category ~id:"BAD_MAP" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"BAD_MAP" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_MAP.md"]
 
 
 let bad_record =
-  register_with_latent ~category:No_category ~id:"BAD_RECORD" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_RECORD.md"]
 
 
@@ -756,27 +756,27 @@ let nil_messaging_to_non_pod =
 
 
 let no_match_of_rhs =
-  register_with_latent ~category:No_category ~id:"NO_MATCH_OF_RHS" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NO_MATCH_OF_RHS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCH_OF_RHS.md"]
 
 
 let no_matching_case_clause =
-  register_with_latent ~category:No_category ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
 let no_matching_function_clause =
-  register_with_latent ~category:No_category ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
 
 
 let no_true_branch_in_if =
-  register_with_latent ~category:No_category ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let no_matching_branch_in_try =
-  register_with_latent ~category:No_category ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
+  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
