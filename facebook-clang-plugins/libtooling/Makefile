@@ -59,6 +59,9 @@ test: build/FacebookClangPlugin.dylib
 	     TEST=$${EXPFILE%.exp};                                                     \
 	     EXTRA_FLAGS="";                                                            \
 	     case "$(SRCFILE_FORMULA)" in                                               \
+	     *.c )                                                                      \
+	       EXTRA_FLAGS="-target x86_64-unknown-linux";                              \
+	       ;;                                                                       \
 	     *.m )                                                                      \
 	       if [ "$(HAS_OBJC)" = "no" ]; then                                        \
 	         printf "[~] %s skipped (no Objective-C support)\n"                     \
@@ -68,7 +71,7 @@ test: build/FacebookClangPlugin.dylib
 	       EXTRA_FLAGS="-ObjC -fblocks $(IOSFLAGS)";                                \
 	       ;;                                                                       \
 	     *.cpp )                                                                    \
-	       EXTRA_FLAGS="--std=c++14";                                               \
+	       EXTRA_FLAGS="--std=c++14 -target x86_64-unknown-linux";                  \
 	       ;;                                                                       \
 	     *.mm )                                                                     \
 	       EXTRA_FLAGS="--std=c++14 -ObjC++ -fblocks $(IOSFLAGS)";                  \

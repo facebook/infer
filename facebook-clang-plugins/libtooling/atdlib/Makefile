@@ -21,8 +21,8 @@ build/binioutest: tests/binioutest.cpp ATDWriter.h
 test: build/jsontest build/binioutest extract_atd_from_cpp.py normalize_names_in_atd.py
 	@$(RUNTEST) tests/jsontest build/jsontest
 	@! hash bdump 2>/dev/null || $(RUNTEST) tests/binioutest tests/binioutest.sh
-	@$(RUNTEST) tests/extract_test.cpp extract_atd_from_cpp.py tests/extract_test.cpp
-	@$(RUNTEST) tests/normalize_test.atd normalize_names_in_atd.py tests/normalize_test.atd
+	@$(RUNTEST) tests/extract_test.cpp ./extract_atd_from_cpp.py tests/extract_test.cpp
+	@$(RUNTEST) tests/normalize_test.atd ./normalize_names_in_atd.py tests/normalize_test.atd
 	@if [ ! $$KEEP_TEST_OUTPUTS ]; then rm -f tests/*.out; fi
 
 record-test-outputs:
