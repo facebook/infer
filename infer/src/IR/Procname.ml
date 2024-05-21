@@ -387,8 +387,10 @@ module ObjC_Cpp = struct
         F.pp_print_string fmt "[instance]"
 
 
+  let get_sep osig = if is_objc_method osig then "." else "::"
+
   let pp verbosity fmt osig =
-    let sep = if is_objc_method osig then "." else "::" in
+    let sep = get_sep osig in
     match verbosity with
     | Simple ->
         F.pp_print_string fmt osig.method_name
@@ -402,8 +404,9 @@ module ObjC_Cpp = struct
 
 
   let pp_without_templates fmt osig =
-    F.fprintf fmt "%s::%s"
+    F.fprintf fmt "%s%s%s"
       (Typ.Name.name_without_templates osig.class_name)
+      (get_sep osig)
       (remove_templates osig.method_name)
 
 
@@ -1094,7 +1097,7 @@ let pp = pp_with_verbosity Non_verbose
 let pp_verbose = pp_with_verbosity Verbose
 
 let pp_without_templates fmt = function
-  | ObjC_Cpp osig when not (ObjC_Cpp.is_objc_method osig) ->
+  | ObjC_Cpp osig ->
       ObjC_Cpp.pp_without_templates fmt osig
   | C csig ->
       C.pp_without_templates fmt csig
@@ -1319,12 +1322,11 @@ let parameter_of_name procname class_name =
 
 
 let describe f pn =
-  let name = hashable_name pn in
-  match String.lsplit2 ~on:'<' name with
-  | Some (name_without_template, _template_part) ->
-      F.pp_print_string f name_without_template
-  | None ->
-      F.pp_print_string f name
+  match pn with
+  | Block _ | C _ | Erlang _ | Hack _ | Python _ | ObjC_Cpp _ ->
+      F.fprintf f "%a()" pp_without_templates pn
+  | CSharp _ | Java _ ->
+      F.pp_print_string f (hashable_name pn)
 
 
 let make_java ~class_name ~return_type ~method_name ~parameters ~kind =
