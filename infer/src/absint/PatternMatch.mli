@@ -174,6 +174,12 @@ val override_exists :
 (** Return true if applying the given predicate to an override of [procname] (including [procname]
     itself when [check_current_type] is true, which it is by default) returns true. *)
 
+val override_find :
+  ?check_current_type:bool -> (Procname.t -> bool) -> Tenv.t -> Procname.t -> Procname.t option
+(** Check if the given predicate to an override of [procname] (including [procname] itself when
+    [check_current_type] is true, which it is by default) returns true. If yes, return the name of
+    the override. *)
+
 val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
     works for Java *)
