@@ -47,7 +47,7 @@
   }
 }
 
-- (instancetype)init_bad {
+- (instancetype)init_bad_FN {
   if (self = [super init]) {
     _listAdapter.dataSourceStrong = self;
   }
@@ -64,7 +64,7 @@ int retain_cycle_weak_good() {
   return 0;
 }
 
-int retain_cycle_weak_bad() {
+int retain_cycle_weak_bad_FN() {
   TimeSpent* ts = [[TimeSpent alloc] init];
   AnalyticsTimeSpent* ats =
       [[AnalyticsTimeSpent alloc] initWithStrongDelegate:ts];

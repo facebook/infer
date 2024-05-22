@@ -7,7 +7,7 @@
 #import "ViewController.h"
 #import <Foundation/NSObject.h>
 
-int main() {
+int retain_cycle_weak_good() {
   ViewController* controller = [ViewController new];
   return 0;
 }

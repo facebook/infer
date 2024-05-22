@@ -9,7 +9,7 @@ CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles_weak
 
 SOURCES = $(CODETOANALYZE_DIR)/TimeSpent.m $(CODETOANALYZE_DIR)/AnalyticsTimeSpent.m $(CODETOANALYZE_DIR)/ListAdapter.m
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 
