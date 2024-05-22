@@ -9,6 +9,8 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
+type cycle_data = {addr: AbstractValue.t; hist: ValueHistory.t; access: Access.t}
+
 let is_ref_counted_or_block astate addr =
   AddressAttributes.get_static_type addr astate
   |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
@@ -28,12 +30,12 @@ let is_captured_function_pointer_or_block access =
       false
 
 
-let rec crop_seen_to_cycle seen_list addr =
+let rec crop_seen_to_cycle seen_list other_addr =
   match seen_list with
   | [] ->
       []
-  | (value, _, _) :: rest ->
-      if AbstractValue.equal value addr then seen_list else crop_seen_to_cycle rest addr
+  | {addr} :: rest ->
+      if AbstractValue.equal addr other_addr then seen_list else crop_seen_to_cycle rest addr
 
 
 let has_static_dynamic_type astate v =
@@ -44,7 +46,7 @@ let has_static_dynamic_type astate v =
 let remove_non_objc_objects cycle astate =
   (* do not remove the object if this will make the cycle length < 2 and make the message unclear *)
   if List.length cycle > 2 then
-    List.filter ~f:(fun v -> not (has_static_dynamic_type astate v)) cycle
+    List.filter ~f:(fun {addr} -> not (has_static_dynamic_type astate addr)) cycle
   else cycle
 
 
@@ -55,9 +57,9 @@ let get_assignment_trace astate addr =
 let create_values astate cycle =
   let values =
     List.map
-      ~f:(fun v ->
-        let value = Decompiler.find v astate in
-        let trace = get_assignment_trace astate v in
+      ~f:(fun {addr} ->
+        let value = Decompiler.find addr astate in
+        let trace = get_assignment_trace astate addr in
         let location = Option.map ~f:Trace.get_outer_location trace in
         {Diagnostic.expr= value; location; trace} )
       cycle
@@ -80,10 +82,10 @@ let create_values astate cycle =
 
 
 let should_report_cycle astate cycle =
-  let is_objc_or_block (addr, _, access) =
+  let is_objc_or_block {addr; access} =
     match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> false
   in
-  let addr_in_retain_cycle (addr, _, access) =
+  let addr_in_retain_cycle {addr; access} =
     let not_previously_reported = not (AddressAttributes.is_in_reported_retain_cycle addr astate) in
     let path_condition = astate.AbductiveDomain.path_condition in
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
@@ -117,9 +119,9 @@ let should_report_cycle astate cycle =
 let check_retain_cycles tenv location addresses orig_astate =
   (* remember explored adresses to avoid reexploring path without retain cycles *)
   let checked = ref AbstractValue.Set.empty in
-  let is_seen l addr = List.exists ~f:(fun (value, _, _) -> AbstractValue.equal value addr) l in
+  let is_seen l other_addr = List.exists ~f:(fun {addr} -> AbstractValue.equal addr other_addr) l in
   let check_retain_cycle src_addr =
-    let rec contains_cycle ~rev_seen (addr, hist) astate =
+    let rec contains_cycle ~(rev_seen : cycle_data list) (addr, hist) astate =
       if AbstractValue.Set.mem addr !checked then Ok astate
       else if is_seen rev_seen addr then
         let seen = List.rev rev_seen in
@@ -127,8 +129,7 @@ let check_retain_cycles tenv location addresses orig_astate =
         if should_report_cycle astate cycle then (
           Logging.d_printfln "Found cycle %a"
             (Pp.seq ~sep:"->" AbstractValue.pp)
-            (List.map ~f:(fun (addr, _, _) -> addr) cycle) ;
-          let cycle = List.map ~f:(fun (addr, _, _) -> addr) cycle in
+            (List.map ~f:(fun {addr} -> addr) cycle) ;
           let cycle = remove_non_objc_objects cycle astate in
           let values = create_values astate cycle in
           if List.exists ~f:(fun {Diagnostic.trace} -> Option.is_some trace) values then
@@ -136,8 +137,7 @@ let check_retain_cycles tenv location addresses orig_astate =
             | {Diagnostic.trace} :: _ ->
                 let astate =
                   List.fold ~init:astate
-                    ~f:(fun astate (addr, _, _) ->
-                      AddressAttributes.in_reported_retain_cycle addr astate )
+                    ~f:(fun astate {addr} -> AddressAttributes.in_reported_retain_cycle addr astate)
                     seen
                 in
                 let location =
@@ -172,7 +172,7 @@ let check_retain_cycles tenv location addresses orig_astate =
                         Memory.eval_edge (addr, hist) access astate |> fst
                       else astate
                     in
-                    let rev_seen = (addr, hist, access) :: rev_seen in
+                    let rev_seen = {addr; hist; access} :: rev_seen in
                     contains_cycle ~rev_seen (accessed_addr, accessed_hist) astate
                   else Ok astate )
         in
