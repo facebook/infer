@@ -225,8 +225,6 @@ val buck2_query_deps : bool
 
 val buck2_root : string
 
-val buck2_use_bxl : bool
-
 val buck_block_list : string list
 
 val buck_build_args : string list

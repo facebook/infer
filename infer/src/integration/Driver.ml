@@ -15,7 +15,6 @@ module F = Format
 type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
-  | Buck2Clang of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -54,8 +53,6 @@ let pp_mode fmt = function
       F.fprintf fmt "Analyze driver mode"
   | Ant {prog; args} ->
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Buck2Clang {build_cmd} ->
-      F.fprintf fmt "Buck2/Clang driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
@@ -155,9 +152,6 @@ let capture ~changed_files mode =
       | Ant {prog; args} ->
           L.progress "Capturing in ant mode...@." ;
           Ant.capture ~prog ~args
-      | Buck2Clang {build_cmd} ->
-          L.progress "Capturing in buck2/clang mode...@." ;
-          Buck2Clang.capture build_cmd
       | BuckClangFlavor {build_cmd} ->
           L.progress "Capturing in buck mode...@." ;
           BuckFlavors.capture build_cmd
@@ -236,7 +230,7 @@ let capture ~changed_files mode =
           CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
   let should_merge =
     match mode with
-    | Buck2Clang _ | BuckClangFlavor _ | BuckJavaFlavor _ | BxlClang _ | BxlJava _ | Gradle _ ->
+    | BuckClangFlavor _ | BuckJavaFlavor _ | BxlClang _ | BxlJava _ | Gradle _ ->
         true
     | _ ->
         not (List.is_empty Config.merge_capture)
@@ -244,11 +238,7 @@ let capture ~changed_files mode =
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     let root =
-      match mode with
-      | Buck2Clang _ | BxlClang _ | BxlJava _ ->
-          Config.buck2_root
-      | _ ->
-          Config.project_root
+      match mode with BxlClang _ | BxlJava _ -> Config.buck2_root | _ -> Config.project_root
     in
     MergeCapture.merge_captured_targets ~root )
 
@@ -523,13 +513,11 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
         match buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some Clang when Config.buck2_use_bxl ->
-            BxlClang {build_cmd}
         | Some Clang ->
-            Buck2Clang {build_cmd}
+            BxlClang {build_cmd}
         | Some Erlang ->
             BuckErlang {prog; args}
-        | Some Java when Config.buck2_use_bxl ->
+        | Some Java ->
             BxlJava {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )

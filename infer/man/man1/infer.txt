@@ -325,11 +325,6 @@ OPTIONS
            Specify the parent directory of buck-out (used only for buck2).
            See also infer-capture(1) and infer-run(1).
 
-       --buck2-use-bxl
-           Activates: Use BXL script when capturing with buck2. (Conversely:
-           --no-buck2-use-bxl)
-           See also infer-capture(1).
-
        --bufferoverrun
            Activates: bufferoverrun checker: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)

@@ -1085,10 +1085,10 @@ and buck2_root =
     "Specify the parent directory of $(b, buck-out) (used only for $(b, buck2))."
 
 
-and buck2_use_bxl =
-  CLOpt.mk_bool ~long:"buck2-use-bxl" ~default:false
+and _buck2_use_bxl =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-buck2-use-bxl"] ~deprecated_no:["-no-buck2-use-bxl"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Use BXL script when capturing with buck2."
+    ~default:false "[DOES NOTHING] Use BXL script when capturing with buck2."
 
 
 and buck_block_list =
@@ -3978,8 +3978,6 @@ and buck2_isolation_dir = !buck2_isolation_dir
 and buck2_query_deps = !buck2_query_deps
 
 and buck2_root = match !buck2_root with Some root -> root | None -> !project_root
-
-and buck2_use_bxl = !buck2_use_bxl
 
 and buck_block_list = RevList.to_list !buck_block_list
 
