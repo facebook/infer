@@ -44,6 +44,8 @@ abstract class AbstractClass2 {
 
 class ConcreteClass2 extends AbstractClass2 {}
 
+abstract class AbstractClass3 extends AbstractClass2 {}
+
 class Tests {
 
   public function initAbstractClassViaGenericFunBad(): void {
@@ -56,6 +58,10 @@ class Tests {
 
   public function initAbstractClassViaStaticBad(): void {
     AbstractClass2::makeStatic();
+  }
+
+  public function initChildAbstractClassViaStaticBad(): void {
+    AbstractClass3::makeStatic();
   }
 
   public function initConcreteClassViaStaticOk(): void {
