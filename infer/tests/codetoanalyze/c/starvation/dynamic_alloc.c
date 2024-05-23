@@ -22,6 +22,7 @@ struct MutexWrapper {
 struct Wrapper {
   struct FakeMut* m1;
   struct MutexWrapper m2;
+  void (*fn1)(struct Wrapper*);
 };
 
 struct SomethingElse {
@@ -42,7 +43,8 @@ void wrap_locking_m2(struct Wrapper* str) { mutex_wrapper_lock(str->m2); }
 
 int m1_then_m2(struct Wrapper* s) {
   wrap_lock_direct(s->m1);
-  wrap_locking_m2(s);
+  struct Wrapper s1 = *s;
+  (*s1.fn1)(s);
   struct SomethingElse* other = malloc(100);
   lock_m2_and_do_soemthing_else(other);
   pthread_mutex_unlock(&global_m1);

@@ -1,4 +1,5 @@
 {
   "force-delete-results-dir": true,
+  "starvation-c-function-pointer-models": {"s1.fn1": "wrap_locking_m2", "LOCK_M2_INDIRECTLY": "lock_m2_fptr_indirectly"},
   "lock-model": [{"lock": ["pthread_mutex_lock1"]}]
 }

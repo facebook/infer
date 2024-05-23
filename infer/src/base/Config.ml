@@ -3466,6 +3466,15 @@ and sqlite_page_size =
 
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
+and starvation_c_function_pointer_models =
+  CLOpt.mk_json ~long:"starvation-c-function-pointer-models"
+    "Specify target function for function pointers in C. For example\n\
+    \    given C code like this:\n\n\
+    \      void (*LOCK_M2_INDIRECTLY)(void) =  &lock_m2_indirectly;\n\n\
+    \    you could model it as `{'LOCK_M2_INDIRECTLY': 'lock_m2_indirectly'}`\n\
+    \    "
+
+
 and starvation_skip_analysis =
   CLOpt.mk_json ~long:"starvation-skip-analysis"
     "Specify combinations of class/method list that should be skipped during starvation analysis"
@@ -4790,6 +4799,8 @@ and sqlite_mmap_size = !sqlite_mmap_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_vfs = !sqlite_vfs
+
+and starvation_c_function_pointer_models = !starvation_c_function_pointer_models
 
 and starvation_skip_analysis = !starvation_skip_analysis
 
