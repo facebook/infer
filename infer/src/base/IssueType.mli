@@ -305,6 +305,8 @@ val pulse_cannot_instantiate_abstract_class : t
 
 val pulse_dict_missing_key : t
 
+val pulse_dynamic_type_mismatch : t
+
 val pulse_transitive_access : t
 
 val pulse_memory_leak_c : t

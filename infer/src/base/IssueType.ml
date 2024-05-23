@@ -827,6 +827,11 @@ let pulse_dict_missing_key =
     ~user_documentation:[%blob "./documentation/issues/PULSE_DICT_MISSING_KEY.md"]
 
 
+let pulse_dynamic_type_mismatch =
+  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_DYNAMIC_TYPE_MISMATCH" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_DYNAMIC_TYPE_MISMATCH.md"]
+
+
 let pulse_transitive_access =
   register ~enabled:true ~category:Incorrect_program_semantics ~id:"PULSE_TRANSITIVE_ACCESS" Error
     Pulse ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]

@@ -40,6 +40,11 @@ module Syntax = struct
 
   let unreachable : 'a model_monad = fun _ _ _ -> ([], NonDisjDomain.bottom)
 
+  let report diagnostic : unit model_monad =
+   fun _data astate non_disj ->
+    ([Recoverable (ContinueProgram ((), astate), [ReportableError {astate; diagnostic}])], non_disj)
+
+
   let bind (x : 'a model_monad) (f : 'a -> 'b model_monad) : 'b model_monad =
    fun data astate non_disj ->
     x data astate non_disj

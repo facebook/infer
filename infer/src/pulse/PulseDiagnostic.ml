@@ -132,6 +132,7 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | TransitiveAccess of
       { tag: string
@@ -187,6 +188,8 @@ let pp fmt diagnostic =
   | CSharpResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         CSharpClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | DynamicTypeMismatch {location} ->
+      F.fprintf fmt "DynamicTypeMismatch {@[location:%a@]}" Location.pp location
   | ErlangError erlang_error ->
       ErlangError.pp fmt erlang_error
   | JavaResourceLeak {class_name; allocation_trace; location} ->
@@ -272,6 +275,7 @@ let get_location = function
   | ReadUninitialized {calling_context= []; trace= access_trace}
   | TransitiveAccess {call_trace= access_trace} ->
       Trace.get_outer_location access_trace
+  | DynamicTypeMismatch {location}
   | ErlangError (Badarg {location; calling_context= []})
   | ErlangError (Badkey {location; calling_context= []})
   | ErlangError (Badmap {location; calling_context= []})
@@ -344,6 +348,7 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
+  | DynamicTypeMismatch _
   | ConfigUsage _
   | ConstRefableParameter _
   | CSharpResourceLeak _
@@ -601,6 +606,8 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
+  | DynamicTypeMismatch {location} ->
+      F.asprintf "bad dynamic type at %a" Location.pp location |> no_suggestion
   | ErlangError (Badarg {calling_context= _; location}) ->
       F.asprintf "bad arg at %a" Location.pp location |> no_suggestion
   | ErlangError (Badkey {calling_context= _; location}) ->
@@ -997,6 +1004,9 @@ let get_trace = function
              F.fprintf fmt "allocated by constructor %a() here" CSharpClassName.pp class_name )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | DynamicTypeMismatch {location} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location "" []]
   | ErlangError (Badarg {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad arg here" []]
@@ -1143,6 +1153,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_cannot_instantiate_abstract_class
   | HackUnawaitedAwaitable _, false ->
       IssueType.pulse_unawaited_awaitable
+  | DynamicTypeMismatch _, false ->
+      IssueType.pulse_dynamic_type_mismatch
   | ErlangError (Badarg _), _ ->
       IssueType.bad_arg ~latent
   | ErlangError (Badkey _), _ ->
@@ -1220,6 +1232,7 @@ let get_issue_type ~latent issue_type =
   | ( ( ConfigUsage _
       | ConstRefableParameter _
       | CSharpResourceLeak _
+      | DynamicTypeMismatch _
       | JavaResourceLeak _
       | TransitiveAccess _
       | HackCannotInstantiateAbstractClass _

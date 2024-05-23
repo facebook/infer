@@ -187,6 +187,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ConfigUsage _
   | ConstRefableParameter _
   | CSharpResourceLeak _
+  | DynamicTypeMismatch _
   | ErlangError _
   | TransitiveAccess _
   | JavaResourceLeak _

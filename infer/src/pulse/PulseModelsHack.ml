@@ -204,6 +204,16 @@ module Vec = struct
 
   let hack_array_get_one_dim vec key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
+    let* key_type = get_dynamic_type ~ask_specialization:false key in
+    let* () =
+      option_iter key_type ~f:(fun {Formula.typ} ->
+          match typ with
+          | {desc= Tstruct type_name} when not (Typ.Name.equal type_name hack_int_type_name) ->
+              let* {location} = get_data in
+              report (Diagnostic.DynamicTypeMismatch {location})
+          | _ ->
+              ret () )
+    in
     let field = Fieldname.make hack_int_type_name "val" in
     let* index = eval_deref_access Read key (FieldAccess field) in
     get_vec_dsl vec index

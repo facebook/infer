@@ -79,6 +79,7 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | TransitiveAccess of
       { tag: string

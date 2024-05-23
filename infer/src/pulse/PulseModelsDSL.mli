@@ -29,6 +29,8 @@ module Syntax : sig
 
   val unreachable : 'a model_monad
 
+  val report : Diagnostic.t -> unit model_monad
+
   val list_fold :
     'a list -> init:'accum -> f:('accum -> 'a -> 'accum model_monad) -> 'accum model_monad
 
