@@ -150,15 +150,15 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
       Sat (LatentAbortProgram {astate; latent_issue})
   | LatentInvalidAccess {astate; address; must_be_valid; calling_context} ->
       Sat (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
-  | LatentSpecializedTypeIssue {astate; specialized_type; calling_context} -> (
+  | LatentSpecializedTypeIssue {astate; specialized_type; trace} -> (
     match specialization with
     | Some specialization
       when Specialization.Pulse.has_type_in_specialization specialization specialized_type ->
-        Sat (LatentSpecializedTypeIssue {astate; specialized_type; calling_context})
+        Sat (LatentSpecializedTypeIssue {astate; specialized_type; trace})
     | _ ->
         let diagnostic =
           Diagnostic.HackCannotInstantiateAbstractClass
-            {type_name= specialized_type; calling_context; location}
+            {type_name= specialized_type; trace; location}
         in
         PulseReport.report tenv ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ;
         Sat (AbortProgram astate) )

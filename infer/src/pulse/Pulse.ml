@@ -908,8 +908,9 @@ module PulseTransferFunctions = struct
               (List.length astates - 1) ;
           (astates, non_disj, `KnownCall)
       | InvalidSpecializedCall specialized_type ->
+          let trace = Trace.Immediate {location= call_loc; history= ValueHistory.epoch} in
           let result =
-            FatalError (PotentialInvalidSpecializedCall {astate; specialized_type}, [])
+            FatalError (PotentialInvalidSpecializedCall {astate; specialized_type; trace}, [])
           in
           ([result], non_disj, `UnknownCall)
       | NoModel ->

@@ -346,14 +346,17 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) ) )
-          | LatentSpecializedTypeIssue {specialized_type; calling_context} ->
-              let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
+          | LatentSpecializedTypeIssue {specialized_type; trace} ->
+              let trace =
+                Trace.ViaCall
+                  { f= Call callee_pname
+                  ; location= call_loc
+                  ; history= ValueHistory.epoch
+                  ; in_call= trace }
+              in
               (* The decision to report or further propagate the issue is done
                  at summary creation time based on the current specialization *)
-              Sat
-                (Ok
-                   (LatentSpecializedTypeIssue
-                      {astate= astate_summary; specialized_type; calling_context} ) )
+              Sat (Ok (LatentSpecializedTypeIssue {astate= astate_summary; specialized_type; trace}))
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason

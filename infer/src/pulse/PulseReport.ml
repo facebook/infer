@@ -295,8 +295,8 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
              ; access_trace
              ; must_be_valid_reason= snd must_be_valid } ) ;
       Some (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
-  | PotentialInvalidSpecializedCall {specialized_type} ->
-      Some (LatentSpecializedTypeIssue {astate= summary; specialized_type; calling_context= []})
+  | PotentialInvalidSpecializedCall {specialized_type; trace} ->
+      Some (LatentSpecializedTypeIssue {astate= summary; specialized_type; trace})
   | ReportableError {diagnostic} -> (
       let is_nullptr_dereference =
         match diagnostic with AccessToInvalidAddress _ -> true | _ -> false

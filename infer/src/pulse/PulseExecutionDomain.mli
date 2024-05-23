@@ -29,9 +29,7 @@ type 'abductive_domain_t base_t =
       (** if [address] is ever observed to be invalid then there is an invalid access because it
           [must_be_valid] *)
   | LatentSpecializedTypeIssue of
-      { astate: AbductiveDomain.Summary.t
-      ; specialized_type: Typ.Name.t
-      ; calling_context: (CallEvent.t * Location.t) list }
+      {astate: AbductiveDomain.Summary.t; specialized_type: Typ.Name.t; trace: Trace.t}
       (** this path leads to an error but we need to know where type specialization happened to
           report it *)
 

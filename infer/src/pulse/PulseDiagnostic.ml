@@ -143,7 +143,7 @@ type t =
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackCannotInstantiateAbstractClass of
-      {type_name: Typ.Name.t; calling_context: calling_context; location: Location.t}
+      {type_name: Typ.Name.t; trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
@@ -205,10 +205,9 @@ let pp fmt diagnostic =
         (fun fmt ->
           if Typ.Name.Set.is_empty transitive_missed_captures then ()
           else Typ.Name.Set.pp fmt transitive_missed_captures )
-  | HackCannotInstantiateAbstractClass {type_name; calling_context; location} ->
-      F.fprintf fmt
-        "HackCannotInstantiateAbstractClass {@[type_name:%a;@;location:%a;@calling_context:%a@]}"
-        Typ.Name.pp type_name pp_calling_context calling_context Location.pp location
+  | HackCannotInstantiateAbstractClass {type_name; trace; location} ->
+      F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@@;location:%a@]"
+        Typ.Name.pp type_name (Trace.pp ~pp_immediate) trace Location.pp location
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -657,9 +656,17 @@ let get_message_and_suggestion diagnostic =
               location
       in
       F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
-  | HackCannotInstantiateAbstractClass {type_name; calling_context= _; location} ->
-      F.asprintf "%a is an abstract class and is being initialized at %a" Typ.Name.pp type_name
-        Location.pp location
+  | HackCannotInstantiateAbstractClass {type_name; trace} ->
+      let pp_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate {location} ->
+            F.fprintf fmt "on %a" Location.pp_line location
+        | ViaCall {f; location; _} ->
+            F.fprintf fmt "indirectly via call to %a on %a" CallEvent.describe f Location.pp_line
+              location
+      in
+      F.asprintf "Abstract class %s is being instantiated %a" (Typ.Name.name type_name) pp_trace
+        trace
       |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
@@ -1051,11 +1058,11 @@ let get_trace = function
       Trace.add_to_errlog ~nesting:1
         ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
         call_trace []
-  | HackCannotInstantiateAbstractClass {type_name; calling_context; location} ->
-      get_trace_calling_context calling_context
-      @@ [ Errlog.make_trace_element 0 location
-             (F.asprintf "abstract class %s initialized here" (Typ.Name.name type_name))
-             [] ]
+  | HackCannotInstantiateAbstractClass {type_name; trace} ->
+      Trace.add_to_errlog ~nesting:0
+        ~pp_immediate:(fun fmt ->
+          F.fprintf fmt "abstract class %s is instantiated here" (Typ.Name.name type_name) )
+        trace []
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in

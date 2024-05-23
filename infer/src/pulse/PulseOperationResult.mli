@@ -102,16 +102,15 @@ module Import : sig
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
     | LatentSpecializedTypeIssue of
-        { astate: AbductiveDomain.Summary.t
-        ; specialized_type: Typ.Name.t
-        ; calling_context: (CallEvent.t * Location.t) list }
+        {astate: AbductiveDomain.Summary.t; specialized_type: Typ.Name.t; trace: Trace.t}
 
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of
         { astate: AbductiveDomain.t
         ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | PotentialInvalidSpecializedCall of {astate: AbductiveDomain.t; specialized_type: Typ.Name.t}
+    | PotentialInvalidSpecializedCall of
+        {astate: AbductiveDomain.t; specialized_type: Typ.Name.t; trace: Trace.t}
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
     | WithSummary of base_error * AbductiveDomain.Summary.t
 end
