@@ -919,7 +919,8 @@ let hhbc_cmp_same x y : model =
   in
   let* res =
     disjuncts
-      [ (let* () = prune_eq x y in
+      [ (let* () = prune_eq_zero x in
+         let* () = prune_eq_zero y in
          make_hack_bool true )
       ; (let* () = prune_eq_zero x in
          let* () = prune_ne_zero y in
@@ -927,8 +928,7 @@ let hhbc_cmp_same x y : model =
       ; (let* () = prune_ne_zero x in
          let* () = prune_eq_zero y in
          make_hack_bool false )
-      ; (let* () = prune_ne x y in
-         let* () = prune_ne_zero x in
+      ; (let* () = prune_ne_zero x in
          let* () = prune_ne_zero y in
          let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
          let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
@@ -963,11 +963,18 @@ let hhbc_cmp_same x y : model =
                     make_hack_bool false ) ] )
              else (
                L.d_printfln "hhbc_cmp_same: not a known primitive type" ;
-               (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
-                  shape, taking into account the difference between == and ===. *)
-               (* TODO(dpichardie) cover the specificities of == that compare objects properties
-                  (structural equality). *)
-               make_hack_random_bool )
+               disjuncts
+                 [ (let* () = prune_eq x y in
+                    (* CAUTION: Note that the pruning on a pointer may result in incorrect semantics
+                       if the pointer is given as a parameter. In that case, the pruning may work as
+                       a value assignment to the pointer. *)
+                    make_hack_bool true )
+                 ; (let* () = prune_ne x y in
+                    (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
+                       shape, taking into account the difference between == and ===. *)
+                    (* TODO(dpichardie) cover the specificities of == that compare objects properties
+                       (structural equality). *)
+                    make_hack_random_bool ) ] )
          | Some {Formula.typ= x_typ}, Some {Formula.typ= y_typ} when not (Typ.equal x_typ y_typ) ->
              L.d_printfln "hhbc_cmp_same: known different dynamic types: false result" ;
              make_hack_bool false
