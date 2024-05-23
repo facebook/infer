@@ -9,8 +9,12 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
+type access_type = Strong | Weak | Unknown [@@deriving compare, equal]
+
 val count_references : Tenv.t -> AbductiveDomain.t -> int AbstractValue.Map.t
 
 val removable_vars : Tenv.t -> AbductiveDomain.t -> Var.t list -> Var.t list
 
-val is_strong_access : Tenv.t -> Access.t -> bool
+val get_access_type : Tenv.t -> Access.t -> access_type
+
+val pp_access_type : Format.formatter -> access_type -> unit

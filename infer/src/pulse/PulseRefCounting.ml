@@ -20,7 +20,14 @@ let is_ref_counted v astate =
       false
 
 
-let is_strong_access tenv (access : Access.t) =
+type access_type = Strong | Weak | Unknown [@@deriving compare, equal]
+
+let pp_access_type fmt access_type =
+  let s = match access_type with Strong -> "Strong" | Weak -> "Weak" | Unknown -> "Unknown" in
+  String.pp fmt s
+
+
+let get_access_type tenv (access : Access.t) : access_type =
   let has_weak_or_unretained_or_assign annotations =
     List.exists annotations ~f:(fun (ann : Annot.t) ->
         ( String.equal ann.class_name Config.property_attributes
@@ -34,35 +41,30 @@ let is_strong_access tenv (access : Access.t) =
   in
   match access with
   | FieldAccess fieldname -> (
-      let classname = Fieldname.get_class_name fieldname in
-      let is_capture_field_strong fieldname =
-        (* a strongly referencing capture field is a capture field that is not weak *)
-        Fieldname.is_capture_field_in_closure fieldname
-        && not (Fieldname.is_weak_capture_field_in_closure fieldname)
-      in
-      match Tenv.lookup tenv classname with
-      | None when is_capture_field_strong fieldname ->
-          (* Strongly referencing captures *)
-          true
-      | None ->
-          (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
-             assume weak reference by default *)
-          false
-      | Some {fields} -> (
-        match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+      if Fieldname.is_capture_field_in_closure fieldname then
+        if Fieldname.is_weak_capture_field_in_closure fieldname then Weak else Strong
+      else
+        let classname = Fieldname.get_class_name fieldname in
+        match Tenv.lookup tenv classname with
         | None ->
-            (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
-               assume weak reference by default *)
-            false
-        | Some (_, typ, anns) -> (
-          match typ.Typ.desc with
-          | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
-              false
-          | _ ->
-              not (has_weak_or_unretained_or_assign anns) ) ) )
+            (* Can't tell if we have a strong reference. *)
+            Unknown
+        | Some {fields} -> (
+          match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+          | None ->
+              (* Can't tell if we have a strong reference. *)
+              Unknown
+          | Some (_, typ, anns) -> (
+            match typ.Typ.desc with
+            | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
+                Weak
+            | _ ->
+                if has_weak_or_unretained_or_assign anns then Weak else Strong ) ) )
   | _ ->
-      true
+      Strong
 
+
+let is_strong_access tenv access = equal_access_type (get_access_type tenv access) Strong
 
 (* Starting from each variable in the stack, count all unique strong
    references to each RefCounted object. If a RefCounted object lives in the

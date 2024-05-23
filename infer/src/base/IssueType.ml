@@ -913,6 +913,11 @@ let retain_cycle =
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
+let retain_cycle_no_weak_info =
+  register ~enabled:false ~category:Memory_leak ~id:"RETAIN_CYCLE_NO_WEAK_INFO" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
+
+
 let scope_leakage =
   register ~category:Privacy_violation ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
     ~user_documentation:[%blob "./documentation/issues/SCOPE_LEAKAGE.md"]

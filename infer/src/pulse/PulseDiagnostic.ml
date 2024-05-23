@@ -149,7 +149,7 @@ type t =
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
-  | RetainCycle of {values: retain_cycle_data list; location: Location.t}
+  | RetainCycle of {values: retain_cycle_data list; location: Location.t; unknown_access_type: bool}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
@@ -221,15 +221,18 @@ let pp fmt diagnostic =
         used_locations
   | ReadUninitialized read_uninitialized ->
       F.fprintf fmt "ReadUninitialized %a" ReadUninitialized.pp read_uninitialized
-  | RetainCycle {values; location} ->
+  | RetainCycle {values; location; unknown_access_type} ->
       let values_loc = List.map ~f:(fun {expr; location; _} -> (expr, location)) values in
       let assignment_traces = List.map ~f:(fun {trace; _} -> trace) values in
-      F.fprintf fmt "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;values=%a;@;location=%a@]}"
+      F.fprintf fmt
+        "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;\
+         values=%a;@;\
+         location=%a; unknown_access_type:%b@]}"
         (Pp.seq ~sep:";@;" (Pp.option (Trace.pp ~pp_immediate)))
         assignment_traces
         (Pp.comma_seq
            (Pp.pair ~fst:DecompilerExpr.pp_with_abstract_value ~snd:(Pp.option Location.pp)) )
-        values_loc Location.pp location
+        values_loc Location.pp location unknown_access_type
   | StackVariableAddressEscape {variable; history; location} ->
       F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
         variable ValueHistory.pp history Location.pp location
@@ -1180,8 +1183,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_uninitialized_const
   | ReadUninitialized {typ= DictMissingKey _}, _ ->
       IssueType.pulse_dict_missing_key
-  | RetainCycle _, false ->
-      IssueType.retain_cycle
+  | RetainCycle {unknown_access_type}, false ->
+      if unknown_access_type then IssueType.retain_cycle_no_weak_info else IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
   | TaintFlow {flow_kind= TaintedFlow}, _ ->

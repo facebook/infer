@@ -8,8 +8,18 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+module F = Format
 
-type cycle_data = {addr: AbstractValue.t; hist: ValueHistory.t; access: Access.t}
+type cycle_data =
+  { addr: AbstractValue.t
+  ; hist: ValueHistory.t
+  ; access: Access.t
+  ; access_type: PulseRefCounting.access_type }
+
+let pp_cycle_data fmt cycle_data =
+  F.fprintf fmt "addr= %a, access= %a, access_type= %a" AbstractValue.pp cycle_data.addr Access.pp
+    cycle_data.access PulseRefCounting.pp_access_type cycle_data.access_type
+
 
 let is_ref_counted_or_block astate addr =
   AddressAttributes.get_static_type addr astate
@@ -99,6 +109,10 @@ let should_report_cycle astate cycle =
   List.exists ~f:is_objc_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
 
 
+let cycle_include_unknown_weak cycle =
+  List.exists ~f:(fun {access_type} -> PulseRefCounting.equal_access_type access_type Unknown) cycle
+
+
 (* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
@@ -127,9 +141,8 @@ let check_retain_cycles tenv location addresses orig_astate =
         let seen = List.rev rev_seen in
         let cycle = crop_seen_to_cycle seen addr in
         if should_report_cycle astate cycle then (
-          Logging.d_printfln "Found cycle %a"
-            (Pp.seq ~sep:"->" AbstractValue.pp)
-            (List.map ~f:(fun {addr} -> addr) cycle) ;
+          Logging.d_printfln "Found cycle:\n \t%a" (Pp.seq ~sep:" -> \n\t" pp_cycle_data) cycle ;
+          let unknown_access_type = cycle_include_unknown_weak cycle in
           let cycle = remove_non_objc_objects cycle astate in
           let values = create_values astate cycle in
           if List.exists ~f:(fun {Diagnostic.trace} -> Option.is_some trace) values then
@@ -145,7 +158,7 @@ let check_retain_cycles tenv location addresses orig_astate =
                     ~f:(fun trace -> Trace.get_outer_location trace)
                     ~default:location
                 in
-                let diagnostic = Diagnostic.RetainCycle {values; location} in
+                let diagnostic = Diagnostic.RetainCycle {values; location; unknown_access_type} in
                 Recoverable (astate, [ReportableError {astate; diagnostic}])
             | [] ->
                 Ok astate
@@ -159,8 +172,9 @@ let check_retain_cycles tenv location addresses orig_astate =
               | Recoverable _ | FatalError _ ->
                   acc
               | Ok astate ->
+                  let access_type = PulseRefCounting.get_access_type tenv access in
                   if
-                    PulseRefCounting.is_strong_access tenv access
+                    (not (PulseRefCounting.equal_access_type access_type PulseRefCounting.Weak))
                     && not (is_captured_function_pointer_or_block access)
                   then
                     (* This is needed to update the decompiler and be able to get good values when printing the path (above).
@@ -172,7 +186,7 @@ let check_retain_cycles tenv location addresses orig_astate =
                         Memory.eval_edge (addr, hist) access astate |> fst
                       else astate
                     in
-                    let rev_seen = {addr; hist; access} :: rev_seen in
+                    let rev_seen = {addr; hist; access; access_type} :: rev_seen in
                     contains_cycle ~rev_seen (accessed_addr, accessed_hist) astate
                   else Ok astate )
         in

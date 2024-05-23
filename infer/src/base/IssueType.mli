@@ -329,6 +329,8 @@ val resource_leak : t
 
 val retain_cycle : t
 
+val retain_cycle_no_weak_info : t
+
 val scope_leakage : t
 
 val sensitive_data_flow : t
