@@ -123,12 +123,9 @@ let record_transitive_access location astate =
   {astate with transitive_info}
 
 
-let record_call_resolution ~caller_name ~caller_loc ~callsite_loc call_kind resolution astate =
+let record_call_resolution ~caller callsite_loc call_kind resolution astate =
   let {TransitiveInfo.callees} = astate.transitive_info in
-  let callees =
-    TransitiveInfo.Callees.record ~caller_name ~caller_loc ~callsite_loc call_kind resolution
-      callees
-  in
+  let callees = TransitiveInfo.Callees.record ~caller callsite_loc call_kind resolution callees in
   let transitive_info = {astate.transitive_info with callees} in
   {astate with transitive_info}
 

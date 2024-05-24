@@ -316,9 +316,8 @@ val set_path_condition : Formula.t -> t -> t
 val record_transitive_access : Location.t -> t -> t
 
 val record_call_resolution :
-     caller_name:string
-  -> caller_loc:Location.t
-  -> callsite_loc:Location.t
+     caller:Procdesc.t
+  -> Location.t
   -> TransitiveInfo.Callees.call_kind
   -> TransitiveInfo.Callees.resolution
   -> t

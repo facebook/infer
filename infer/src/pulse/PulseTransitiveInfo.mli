@@ -14,6 +14,7 @@ module Callees : sig
 
   val pp : Format.formatter -> t -> unit
 
+  (** NOTE: only [Closure] is recorded for now *)
   type call_kind = Static | Virtual | Closure
 
   type resolution =
@@ -23,14 +24,7 @@ module Callees : sig
         (** the worst resolution because we don't have enough type information or the capture was
             incomplete *)
 
-  val record :
-       caller_name:string
-    -> caller_loc:Location.t
-    -> callsite_loc:Location.t
-    -> call_kind
-    -> resolution
-    -> t
-    -> t
+  val record : caller:Procdesc.t -> Location.t -> call_kind -> resolution -> t -> t
 
   val to_jsonbug_transitive_callees : t -> Jsonbug_t.transitive_callee list
 end

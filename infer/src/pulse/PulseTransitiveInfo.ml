@@ -17,7 +17,7 @@ module Callees = struct
   module CallSite = struct
     type t =
       { callsite_loc: Location.t
-      ; caller_name: (string[@compare.ignore])
+      ; caller_name: (Procname.t[@compare.ignore])
       ; caller_loc: (Location.t[@compare.ignore]) }
     [@@deriving compare]
 
@@ -63,8 +63,12 @@ module Callees = struct
 
   module Map = AbstractDomain.Map (CallSite) (Status)
 
-  let record ~caller_name ~caller_loc ~callsite_loc kind resolution history =
-    let callsite = {CallSite.caller_name; caller_loc; callsite_loc} in
+  let record ~caller callsite_loc kind resolution history =
+    let callsite =
+      { CallSite.caller_name= Procdesc.get_proc_name caller
+      ; caller_loc= Procdesc.get_loc caller
+      ; callsite_loc }
+    in
     Map.add callsite {kind; resolution} history
 
 
@@ -88,7 +92,7 @@ module Callees = struct
         let callsite_relative_position_in_caller = callsite_loc.line - caller_loc.line in
         { callsite_filename
         ; callsite_absolute_position_in_file
-        ; caller_name
+        ; caller_name= Procname.get_method caller_name
         ; callsite_relative_position_in_caller
         ; kind= to_jsonbug_kind kind
         ; resolution= to_jsonbug_resolution resolution }
