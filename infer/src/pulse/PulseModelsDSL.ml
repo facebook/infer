@@ -274,13 +274,13 @@ module Syntax = struct
     (fun {decompiler} -> PulseDecompiler.find addr decompiler) |> exec_pure_operation
 
 
-  let is_block_list pvar =
+  let is_dict_missing_key_var_block_list s =
     Option.exists Config.dict_missing_key_var_block_list ~f:(fun regexp ->
-        Str.string_match regexp (Pvar.to_string pvar) 0 )
+        Str.string_match regexp s 0 )
 
 
   let get_pvar_deref_typ formals pvar : Typ.name option model_monad =
-    if is_block_list pvar then ret None
+    if is_dict_missing_key_var_block_list (Pvar.to_string pvar) then ret None
     else
       match List.Assoc.find formals ~equal:Pvar.equal pvar with
       | Some typ ->
@@ -291,8 +291,10 @@ module Syntax = struct
 
 
   let resolve_field_info typ fld : Struct.field_info option model_monad =
-    let* {analysis_data= {tenv}} = get_data in
-    Tenv.resolve_field_info tenv typ fld |> ret
+    if is_dict_missing_key_var_block_list (Fieldname.get_field_name fld) then ret None
+    else
+      let* {analysis_data= {tenv}} = get_data in
+      Tenv.resolve_field_info tenv typ fld |> ret
 
 
   let is_dict_non_alias formals addr : bool model_monad =

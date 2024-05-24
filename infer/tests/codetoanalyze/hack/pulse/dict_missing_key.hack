@@ -190,3 +190,16 @@ function suppress_args_param(dict<string, int> $args): int {
 function call_suppress_args_param_ok(): int {
   return suppress_args_param(dict['hi' => 42]);
 }
+
+class BlockListedField {
+  public dict<string, int> $block_listed_field = dict[];
+
+  public function read_dict_hi(): int {
+    return $this->block_listed_field['hi'];
+  }
+
+  public function call_read_dict_hi_ok(): int {
+    $this->block_listed_field = dict['bye' => 42];
+    return $this->read_dict_hi();
+  }
+}
