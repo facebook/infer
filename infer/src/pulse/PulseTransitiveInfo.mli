@@ -32,14 +32,7 @@ module Callees : sig
     -> t
     -> t
 
-  type item =
-    { callsite_loc: Location.t
-    ; caller_name: string
-    ; caller_loc: Location.t
-    ; kind: call_kind
-    ; resolution: resolution }
-
-  val report_as_extra_info : t -> item list
+  val to_jsonbug_transitive_callees : t -> Jsonbug_t.transitive_callee list
 end
 
 type t =

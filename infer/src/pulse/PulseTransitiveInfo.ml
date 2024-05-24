@@ -61,29 +61,46 @@ module Callees = struct
     let widen ~prev ~next ~num_iters:_ = join prev next
   end
 
-  include AbstractDomain.Map (CallSite) (Status)
-
-  let compare = compare Status.compare
-
-  let equal = equal Status.equal
+  module Map = AbstractDomain.Map (CallSite) (Status)
 
   let record ~caller_name ~caller_loc ~callsite_loc kind resolution history =
     let callsite = {CallSite.caller_name; caller_loc; callsite_loc} in
-    add callsite {kind; resolution} history
+    Map.add callsite {kind; resolution} history
 
 
-  type item =
-    { callsite_loc: Location.t
-    ; caller_name: string
-    ; caller_loc: Location.t
-    ; kind: call_kind
-    ; resolution: resolution }
+  let to_jsonbug_kind = function Static -> `Static | Virtual -> `Virtual | Closure -> `Closure
 
-  let report_as_extra_info history =
-    fold
-      (fun {callsite_loc; caller_name; caller_loc} ({kind; resolution} : Status.t) acc : item list ->
-        {callsite_loc; caller_name; caller_loc; kind; resolution} :: acc )
+  let to_jsonbug_resolution = function
+    | ResolvedUsingDynamicType ->
+        `ResolvedUsingDynamicType
+    | ResolvedUsingStaticType ->
+        `ResolvedUsingStaticType
+    | Unresolved ->
+        `Unresolved
+
+
+  let to_jsonbug_transitive_callees history =
+    Map.fold
+      (fun {callsite_loc; caller_name; caller_loc} ({kind; resolution} : Status.t) acc :
+           Jsonbug_t.transitive_callee list ->
+        let callsite_filename = SourceFile.to_abs_path callsite_loc.file in
+        let callsite_absolute_position_in_file = callsite_loc.line in
+        let callsite_relative_position_in_caller = callsite_loc.line - caller_loc.line in
+        { callsite_filename
+        ; callsite_absolute_position_in_file
+        ; caller_name
+        ; callsite_relative_position_in_caller
+        ; kind= to_jsonbug_kind kind
+        ; resolution= to_jsonbug_resolution resolution }
+        :: acc )
       history []
+
+
+  include Map
+
+  let compare = Map.compare Status.compare
+
+  let equal = Map.equal Status.equal
 end
 
 module Accesses = AbstractDomain.FiniteSetOfPPSet (PulseTrace.Set)
