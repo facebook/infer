@@ -7,7 +7,9 @@
 #import "AnalyticsTimeSpent.h"
 #import "TimeSpent.h"
 
-@implementation AnalyticsTimeSpent
+@implementation AnalyticsTimeSpent {
+  id _record;
+}
 
 @synthesize delegate;
 
@@ -18,6 +20,11 @@
 
 - (instancetype)initWithStrongDelegate:(id)delegateObject {
   _strong_delegate = delegateObject;
+  return self;
+}
+
+- (instancetype)initWithRecord:(id)record {
+  _record = record;
   return self;
 }
 

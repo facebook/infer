@@ -16,4 +16,6 @@
 
 - (instancetype)initWithStrongDelegate:(id)delegateObject;
 
+- (instancetype)initWithRecord:(id)record;
+
 @end
