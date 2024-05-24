@@ -689,8 +689,6 @@ module Name = struct
     let protocol_from_qual_name qual_name = ObjcProtocol qual_name
 
     let is_class = function ObjcClass _ -> true | _ -> false
-
-    let remodel_class = Option.map Config.remodel_class ~f:from_string
   end
 
   module Set = PrettyPrintable.MakePPSet (struct

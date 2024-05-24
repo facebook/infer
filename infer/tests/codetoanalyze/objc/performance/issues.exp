@@ -7,3 +7,4 @@ codetoanalyze/objc/performance/exit.m, exit_unreachable, 0, EXECUTION_TIME_UNREA
 codetoanalyze/objc/performance/exit.m, compute_exit_unreachable, 0, EXECUTION_TIME_UNREACHABLE_AT_EXIT, no_bucket, ERROR, [Unreachable node]
 codetoanalyze/objc/performance/exit.m, call_exit_unreachable, 0, EXECUTION_TIME_UNREACHABLE_AT_EXIT, no_bucket, ERROR, [Unreachable node]
 codetoanalyze/objc/performance/exit.m, call_unreachable, 0, EXECUTION_TIME_UNREACHABLE_AT_EXIT, no_bucket, ERROR, [Call to exit_unreachable,Unreachable node]
+codetoanalyze/objc/performance/property_test.m, getter_property_linear, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]

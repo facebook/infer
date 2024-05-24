@@ -157,11 +157,6 @@ let get_parent tenv name =
   find_map_supers tenv ~f name
 
 
-let implements_remodel_class tenv name =
-  Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
-      mem_supers tenv name ~f:(fun name _ -> Typ.Name.equal name remodel_class) )
-
-
 let get_fields_trans =
   let module Fields = Caml.Set.Make (struct
     type t = Struct.field

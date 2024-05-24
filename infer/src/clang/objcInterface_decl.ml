@@ -50,12 +50,6 @@ let append_no_duplicates_typ_name =
   Staged.unstage (IList.append_no_duplicates ~cmp:Typ.Name.compare)
 
 
-let implements_remodel_class tenv class_tname supers =
-  Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
-      Typ.Name.equal class_tname remodel_class
-      || List.exists supers ~f:(Tenv.implements_remodel_class tenv) )
-
-
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info decl_list
     ~super ~protocols ~is_impl =
@@ -77,11 +71,7 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
   in
   (* We don't need to add the methods of the superclass *)
   let new_supers = get_supers super in
-  let implements_remodel_class = implements_remodel_class tenv interface_name new_supers in
-  let decl_fields =
-    CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv interface_name
-      decl_list
-  in
+  let decl_fields = CField_decl.get_fields qual_type_to_sil_type tenv interface_name decl_list in
   let sc_fields = CField_decl.fields_superclass tenv super in
   let modelled_fields = CField_decl.modelled_field name_info in
   let new_fields =

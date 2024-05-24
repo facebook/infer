@@ -754,8 +754,6 @@ val reanalyze : bool
 
 val relative_path_backtrack : int
 
-val remodel_class : string option
-
 val replay_analysis_schedule : bool
 
 val replay_ondemand_should_error : bool

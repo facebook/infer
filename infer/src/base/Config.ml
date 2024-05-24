@@ -3062,8 +3062,8 @@ and relative_path_backtrack =
      convert /my/source/File.java with project root /my/root into ../source/File.java"
 
 
-and remodel_class =
-  CLOpt.mk_string_opt ~long:"remodel-class"
+and _remodel_class =
+  CLOpt.mk_string_opt ~long:"remodel-class" ~deprecated:["remodel-class"]
     "Specify a Remodel class name. For sub-classes of the Remodel class in ObjC, setters and \
      getters for properties are auto-generated and they store/load values into/from field names of \
      \"_<property name>\"."
@@ -4684,8 +4684,6 @@ and reactive_mode = !reactive
 and reanalyze = !reanalyze
 
 and relative_path_backtrack = !relative_path_backtrack
-
-and remodel_class = !remodel_class
 
 and replay_analysis_schedule = !replay_analysis_schedule
 

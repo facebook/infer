@@ -72,3 +72,5 @@ val patterns_match : Str.regexp list -> t -> bool
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)
+
+val add_underscore : t -> t

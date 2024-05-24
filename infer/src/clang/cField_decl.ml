@@ -54,7 +54,7 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
     | _ ->
         []
   in
-  let fname = CGeneral_utils.mk_class_field_name class_tname ni_name in
+  let fname = Fieldname.make class_tname ni_name in
   let typ = qual_type_to_sil_type tenv qual_type in
   let item_annotations =
     match prop_atts with
@@ -68,7 +68,7 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
 
 
 (* Given a list of declarations in an interface returns a list of fields  *)
-let get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tname decl_list =
+let get_fields qual_type_to_sil_type tenv class_tname decl_list =
   let open Clang_ast_t in
   let get_sil_field ni_name (qt : qual_type) property_attributes =
     build_sil_field qual_type_to_sil_type tenv class_tname ni_name qt property_attributes
@@ -81,7 +81,7 @@ let get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tname 
           | Some (ObjCIvarDecl (_, {ni_name}, qual_type, _, _)) ->
               (ni_name, qual_type)
           | _ ->
-              let ni_name = if implements_remodel_class then "_" ^ ni_name else ni_name in
+              let ni_name = "_" ^ ni_name in
               (ni_name, opdi_qual_type)
         in
         let field = get_sil_field ni_name qual_type opdi_property_attributes in

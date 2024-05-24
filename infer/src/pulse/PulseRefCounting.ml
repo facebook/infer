@@ -27,6 +27,15 @@ let pp_access_type fmt access_type =
   String.pp fmt s
 
 
+let find_field_in_tenv fields fieldname =
+  match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+  | None ->
+      let aprox_field = Fieldname.add_underscore fieldname in
+      List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name aprox_field)
+  | Some field ->
+      Some field
+
+
 let get_access_type tenv (access : Access.t) : access_type =
   let has_weak_or_unretained_or_assign annotations =
     List.exists annotations ~f:(fun (ann : Annot.t) ->
@@ -50,7 +59,7 @@ let get_access_type tenv (access : Access.t) : access_type =
             (* Can't tell if we have a strong reference. *)
             Unknown
         | Some {fields} -> (
-          match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+          match find_field_in_tenv fields fieldname with
           | None ->
               (* Can't tell if we have a strong reference. *)
               Unknown

@@ -80,9 +80,6 @@ val find_map_supers :
   -> f:(Typ.Name.t -> Struct.t option -> 'a option)
   -> 'a option
 
-val implements_remodel_class : t -> Typ.Name.t -> bool
-(** Check if a class implements the Remodel class *)
-
 val get_fields_trans : t -> Typ.Name.t -> Struct.field list
 (** Get all fields from the super classes transitively *)
 

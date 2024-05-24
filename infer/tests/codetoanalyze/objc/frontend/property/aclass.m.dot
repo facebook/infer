@@ -7,7 +7,7 @@ digraph cfg {
 "dealloc#AClass#[instance].12f0e42f3ef799db_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#AClass#[instance].12f0e42f3ef799db_3" [label="3:  Call dealloc \n   n$0=*&self:AClass* [line 18, column 1]\n  n$1=*n$0.aDynValue:NSObject* [line 18, column 1]\n  n$2=_fun_NSObject.dealloc(n$1:NSObject*) [line 18, column 1]\n " shape="box"]
+"dealloc#AClass#[instance].12f0e42f3ef799db_3" [label="3:  Call dealloc \n   n$0=*&self:AClass* [line 18, column 1]\n  n$1=*n$0._aDynValue:NSObject* [line 18, column 1]\n  n$2=_fun_NSObject.dealloc(n$1:NSObject*) [line 18, column 1]\n " shape="box"]
 	
 
 	 "dealloc#AClass#[instance].12f0e42f3ef799db_3" -> "dealloc#AClass#[instance].12f0e42f3ef799db_2" ;

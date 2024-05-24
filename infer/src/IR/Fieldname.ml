@@ -155,3 +155,6 @@ let is_java_outer_instance ({field_name} as field) =
   let last_char = field_name.[String.length field_name - 1] in
   Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
+
+
+let add_underscore fieldname = {fieldname with field_name= "_" ^ fieldname.field_name}

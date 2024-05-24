@@ -12,8 +12,7 @@ open! IStd
 type field_type = Fieldname.t * Typ.t * Annot.Item.t
 
 val get_fields :
-     implements_remodel_class:bool
-  -> CAst_utils.qual_type_to_sil_type
+     CAst_utils.qual_type_to_sil_type
   -> Tenv.t
   -> Typ.Name.t
   -> Clang_ast_t.decl list
