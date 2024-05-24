@@ -11,12 +11,7 @@ module F = Format
 module Callees = struct
   type call_kind = Static | Virtual | Closure [@@deriving equal, compare]
 
-  type resolution =
-    | ResolvedUsingDynamicType (* the most precise resolution *)
-    | ResolvedUsingStaticType (* may not be exact *)
-    | Unresolved
-      (* the worst resolution because we don't have enough type
-         information or the capture was incomplete *)
+  type resolution = ResolvedUsingDynamicType | ResolvedUsingStaticType | Unresolved
   [@@deriving equal, compare]
 
   module CallSite = struct

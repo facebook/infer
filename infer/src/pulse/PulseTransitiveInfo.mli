@@ -16,7 +16,12 @@ module Callees : sig
 
   type call_kind = Static | Virtual | Closure
 
-  type resolution = ResolvedUsingDynamicType | ResolvedUsingStaticType | Unresolved
+  type resolution =
+    | ResolvedUsingDynamicType  (** the most precise resolution *)
+    | ResolvedUsingStaticType  (** may not be exact *)
+    | Unresolved
+        (** the worst resolution because we don't have enough type information or the capture was
+            incomplete *)
 
   val record :
        caller_name:string
