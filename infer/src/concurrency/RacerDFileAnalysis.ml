@@ -645,7 +645,7 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; analyze_file_depende
   List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
       Procname.get_class_type_name procname
       |> Option.bind ~f:(fun classname ->
-             analyze_file_dependency procname
+             analyze_file_dependency procname |> AnalysisResult.to_option
              |> Option.map ~f:(fun summary ->
                     Typ.Name.Map.update classname
                       (fun summaries_opt ->
@@ -677,7 +677,7 @@ let get_synchronized_container_fields_of analyze tenv classname =
            Procname.Java.(is_class_initializer j || is_constructor j)
        | _ ->
            false )
-  |> List.rev_filter_map ~f:analyze
+  |> List.rev_filter_map ~f:(fun proc_name -> analyze proc_name |> AnalysisResult.to_option)
   |> List.rev_map ~f:(fun (summary : summary) -> summary.attributes)
   |> List.fold ~init:Fieldname.Set.empty ~f:(fun acc attributes ->
          AttributeMapDomain.fold add_synchronized_container_field attributes acc )

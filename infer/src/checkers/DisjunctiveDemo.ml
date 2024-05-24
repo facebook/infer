@@ -54,9 +54,9 @@ module DisjunctiveAnalyzerTransferFunctions = struct
           [string_of_int !node_id :: astate]
       | Call (_, Const (Cfun proc_name), _, _, _) -> (
         match analysis_data.InterproceduralAnalysis.analyze_dependency proc_name with
-        | None ->
+        | Error _ ->
             [astate]
-        | Some (callee_summary, _) ->
+        | Ok (callee_summary, _) ->
             incr node_id ;
             List.map callee_summary ~f:(fun xs ->
                 xs @ (F.asprintf "%a%d" Procname.pp proc_name !node_id :: astate) ) )

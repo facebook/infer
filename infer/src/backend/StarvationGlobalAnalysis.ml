@@ -78,6 +78,7 @@ let report exe_env work_set =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
                  Ondemand.analyze_proc_name exe_env ~caller_summary:summary pname
+                 |> AnalysisResult.to_option
                  |> Option.bind ~f:(fun summary -> Lazy.force summary.Summary.payloads.starvation) )
                tenv pattrs pair acc
            in

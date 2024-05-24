@@ -50,7 +50,7 @@ let in_mutual_recursion_cycle ~caller_summary ~callee =
       is_active callee
 
 
-let procedure_should_be_analyzed proc_name =
+let procedure_is_defined proc_name =
   Attributes.load proc_name
   |> Option.exists ~f:(fun proc_attributes -> proc_attributes.ProcAttributes.is_defined)
 
@@ -314,10 +314,12 @@ let is_in_block_list =
 
 
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
-    ?(from_file_analysis = false) callee_pname =
+    ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
   let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
+  let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed in
   register_callee ~cycle_detected ?caller_summary callee_pname ;
-  if cycle_detected || is_in_block_list callee_pname then None
+  if cycle_detected then Error MutualRecursionCycle
+  else if is_in_block_list callee_pname then Error InBlockList
   else
     let analyze_callee_aux ~specialization =
       error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
@@ -344,21 +346,23 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
             ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
     in
     match (Summary.OnDisk.get ~lazy_payloads callee_pname, specialization) with
-    | (Some _ as summ_opt), None ->
-        summ_opt
+    | Some summary, None ->
+        Ok summary
     | None, Some _ ->
         L.die InternalError "specialization should always happend after regular analysis"
-    | (Some summary as summ_opt), Some specialization
-      when Callbacks.is_specialized_for specialization summary ->
-        (* the current summary is specialized enough for this request *)
-        summ_opt
-    | Some summary, Some specialization when procedure_should_be_analyzed callee_pname ->
-        (* the current summary is not suitable for this specialization request *)
-        analyze_callee_aux ~specialization:(Some (summary, specialization))
-    | None, None when procedure_should_be_analyzed callee_pname ->
-        analyze_callee_aux ~specialization:None
-    | _, _ ->
-        None
+    | Some summary, Some specialization ->
+        if Callbacks.is_specialized_for specialization summary then
+          (* the current summary is specialized enough for this request *)
+          Ok summary
+        else if procedure_is_defined callee_pname then
+          (* the current summary is not suitable for this specialization request *)
+          analyze_callee_aux ~specialization:(Some (summary, specialization))
+          |> analysis_result_of_option
+        else (* can we even get there? *) Error UnknownProcedure
+    | None, None ->
+        if procedure_is_defined callee_pname then
+          analyze_callee_aux ~specialization:None |> analysis_result_of_option
+        else Error UnknownProcedure
 
 
 let analyze_proc_name exe_env ?specialization ~caller_summary callee_pname =
@@ -376,7 +380,7 @@ let analyze_proc_name_for_file_analysis exe_env callee_pname =
 let analyze_file_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
   let analyze_proc_name_call pname =
-    ignore (analyze_proc_name_for_file_analysis exe_env pname : Summary.t option)
+    ignore (analyze_proc_name_for_file_analysis exe_env pname : Summary.t AnalysisResult.t)
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->

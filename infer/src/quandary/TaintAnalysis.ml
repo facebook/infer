@@ -123,9 +123,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           TaintDomain.bottom
         else
           match analyze_dependency pname with
-          | Some summary ->
+          | Ok summary ->
               TaintSpecification.of_summary_access_tree summary
-          | None ->
+          | Error _ ->
               TaintDomain.bottom
       in
       let get_caller_string caller_site =
@@ -636,9 +636,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       let astate_with_summary =
         match analyze_dependency callee_pname with
-        | None ->
+        | Error _ ->
             handle_unknown_call callee_pname astate_with_direct_sources
-        | Some summary -> (
+        | Ok summary -> (
             let ret_typ = snd ret_ap in
             let access_tree = TaintSpecification.of_summary_access_tree summary in
             match TaintSpecification.get_model callee_pname ret_typ actuals tenv access_tree with

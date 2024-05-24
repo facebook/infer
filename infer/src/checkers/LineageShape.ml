@@ -1610,9 +1610,9 @@ struct
           model ret_var args
       | None -> (
         match analyze_dependency procname with
-        | Some summary ->
+        | Ok summary ->
             standard_model procname summary ret_var args
-        | None ->
+        | Error _ ->
             unknown_procname procname ret_var args )
   end
 

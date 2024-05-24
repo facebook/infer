@@ -814,9 +814,9 @@ let type_based_summary attributes tenv procname =
    type-based summary otherwise. *)
 let get_or_make_summary attributes tenv procname analyze_dependency =
   match analyze_dependency procname with
-  | Some summary ->
+  | Ok summary ->
       summary
-  | None ->
+  | Error _ ->
       type_based_summary attributes tenv procname
 
 

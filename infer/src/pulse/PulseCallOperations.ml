@@ -592,9 +592,10 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
 
 
 let call tenv path ~caller_proc_desc
-    ~(analyze_dependency : ?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
-    call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
-    ?call_flags non_disj_caller =
+    ~(analyze_dependency :
+       ?specialization:Specialization.t -> Procname.t -> PulseSummary.t AnalysisResult.t ) call_loc
+    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags
+    non_disj_caller =
   let has_continue_program results =
     let f one_result =
       match one_result with
@@ -641,7 +642,12 @@ let call tenv path ~caller_proc_desc
     in
     let request_specialization specialization =
       let specialized_summary : PulseSummary.t =
-        analyze_dependency ~specialization:(Pulse specialization) callee_pname |> Option.value_exn
+        match analyze_dependency ~specialization:(Pulse specialization) callee_pname with
+        | Ok summary ->
+            summary
+        | Error no_summary ->
+            L.die InternalError "No summary found by specialization: %a"
+              AnalysisResult.pp_no_summary no_summary
       in
       let is_limit_not_reached =
         Specialization.Pulse.is_pulse_specialization_limit_not_reached
@@ -738,8 +744,8 @@ let call tenv path ~caller_proc_desc
               ~is_pulse_specialization_limit_not_reached ~specialization already_given
               specialized_pre_post_lists )
   in
-  match (analyze_dependency callee_pname : PulseSummary.t option) with
-  | Some summary ->
+  match analyze_dependency callee_pname with
+  | Ok summary ->
       let is_pulse_specialization_limit_not_reached =
         Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized
       in
@@ -762,9 +768,10 @@ let call tenv path ~caller_proc_desc
         else (res, non_disj)
       in
       (res, non_disj, contradiction, resolution_status)
-  | None ->
+  | Error no_summary ->
       (* no spec found for some reason (unknown function, ...) *)
-      L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
+      L.d_printfln_escaped "No spec found for %a: %a@\n" Procname.pp callee_pname
+        AnalysisResult.pp_no_summary no_summary ;
       let res, (non_disj, contradiction) =
         call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
           ~formals_opt ~call_kind astate ?call_flags non_disj_caller

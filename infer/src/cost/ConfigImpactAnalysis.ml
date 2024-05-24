@@ -939,10 +939,10 @@ module Dom = struct
     in
     let astate =
       if ConfigChecks.is_top config_checks then
-        let (callee_summary : Summary.t option) = analyze_dependency callee in
+        let callee_summary = analyze_dependency callee in
         let expensiveness_model = get_expensiveness_model tenv callee args in
         let has_expensive_callee =
-          Option.exists callee_summary ~f:Summary.has_known_expensive_callee
+          callee_summary |> Result.ok |> Option.exists ~f:Summary.has_known_expensive_callee
         in
         (* We apply a heuristic to ignore Kotlin's getter as cheap. *)
         let is_cheap_call = is_kotlin_getter callee args in
@@ -953,7 +953,7 @@ module Dom = struct
             | _, Some KnownCheap ->
                 (* If callee is known cheap call, ignore it. *)
                 astate
-            | ( Some
+            | ( Ok
                   { Summary.unchecked_callees= callee_summary
                   ; unchecked_callees_cond= callee_summary_cond
                   ; has_call_stmt }
@@ -961,13 +961,13 @@ module Dom = struct
               when has_call_stmt ->
                 (* If callee's summary is not leaf, use it. *)
                 join_callee_summary callee_summary callee_summary_cond
-            | Some {Summary.has_call_stmt; ret}, _
+            | Ok {Summary.has_call_stmt; ret}, _
               when (not has_call_stmt)
                    && ( is_config_setter_typ ~is_static ret_typ args
                       || (is_config_getter_typ ~is_static ret_typ args && Val.is_field ret) ) ->
                 (* If callee seems to be a setter/getter, ignore it. *)
                 astate
-            | None, None when is_config_setter_getter ~is_static ret_typ callee args ->
+            | Error _, None when is_config_setter_getter ~is_static ret_typ callee args ->
                 (* If callee is unknown setter/getter, ignore it. *)
                 astate
             | _, _ ->
@@ -986,7 +986,7 @@ module Dom = struct
               add_callee_name ~is_known_expensive:true
           | None -> (
             match callee_summary with
-            | Some
+            | Ok
                 { Summary.unchecked_callees= callee_summary
                 ; unchecked_callees_cond= callee_summary_cond
                 ; has_call_stmt }
@@ -1002,7 +1002,7 @@ module Dom = struct
                 in
                 (* If callee's summary is not leaf, use it. *)
                 join_callee_summary callee_summary callee_summary_cond
-            | None when Procname.is_objc_init callee ->
+            | Error _ when Procname.is_objc_init callee ->
                 (* If callee is unknown ObjC initializer, ignore it. *)
                 astate
             | _ ->
@@ -1088,9 +1088,9 @@ module TransferFunctions = struct
 
   let add_ret analyze_dependency id callee astate =
     match analyze_dependency callee with
-    | Some {Summary.ret= ret_val} ->
+    | Ok {Summary.ret= ret_val} ->
         Dom.add_mem (Loc.of_id id) ret_val astate
-    | None ->
+    | Error _ ->
         astate
 
 

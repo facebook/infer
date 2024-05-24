@@ -74,11 +74,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let process_call_summary analyze_dependency tenv formals ret_access_exp callee_pname actuals loc
       astate =
     match analyze_dependency callee_pname with
-    | Some summary ->
+    | Ok summary ->
         let callee_proc_attrs = Attributes.load_exn callee_pname in
         Domain.integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_pname
           actuals loc astate
-    | None ->
+    | Error _ ->
         process_call_without_summary tenv ret_access_exp callee_pname actuals astate
 
 

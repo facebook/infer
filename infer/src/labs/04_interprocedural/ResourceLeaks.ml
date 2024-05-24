@@ -56,10 +56,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else
           match analyze_dependency callee_proc_name with
           (* interprocedural analysis produced a summary: use it *)
-          | Some callee_summary ->
+          | Ok callee_summary ->
               ResourceLeakDomain.apply_summary ~summary:callee_summary astate
           (* No summary for [callee_proc_name]; it's native code or missing for some reason *)
-          | None ->
+          | Error _ ->
               astate )
     (* store into the special ret variable [*(&ret) = rhs:typ]: return a resource *)
     | Store {e1= Lvar ret; e2= _rhs; typ= {desc= Tptr ({desc= Tstruct ret_typename}, _)}; loc= _loc}

@@ -12,15 +12,15 @@ module L = Logging
    crash) *)
 let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session}
 
+let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed
+
 let mk_interprocedural_t ~f_analyze_dep ~get_payload
     {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
     ?(tenv = Exe_env.get_proc_tenv exe_env proc_name) () =
   let analyze_dependency ?specialization proc_name =
-    let open IOption.Let_syntax in
-    let* {Summary.payloads} =
-      Ondemand.analyze_proc_name exe_env ?specialization ~caller_summary proc_name
-    in
-    f_analyze_dep (get_payload payloads)
+    Ondemand.analyze_proc_name exe_env ?specialization ~caller_summary proc_name
+    |> Result.bind ~f:(fun {Summary.payloads} ->
+           f_analyze_dep (get_payload payloads) |> analysis_result_of_option )
   in
   let stats = ref stats in
   let update_stats ?add_symops ?failure_kind () =
@@ -84,7 +84,8 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
   let analyze_file_dependency proc_name =
     Ondemand.analyze_proc_name_for_file_analysis exe_env proc_name
-    |> Option.bind ~f:(fun {Summary.payloads; _} -> Field.get payload_field payloads |> Lazy.force)
+    |> Result.bind ~f:(fun {Summary.payloads; _} ->
+           Field.get payload_field payloads |> Lazy.force |> analysis_result_of_option )
   in
   checker
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}

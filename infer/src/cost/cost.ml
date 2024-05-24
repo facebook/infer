@@ -318,7 +318,7 @@ let compute_bound_map tenv proc_desc node_cfg inferbo_invariant_map analyze_depe
   in
   let loop_inv_map =
     let get_callee_purity callee_pname =
-      match analyze_dependency callee_pname with Some (_, _, purity) -> purity | _ -> None
+      match analyze_dependency callee_pname with Ok (_, _, purity) -> purity | Error _ -> None
     in
     LoopInvariant.get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map
       loop_head_to_loop_nodes
@@ -360,7 +360,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency; te
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
-      (InterproceduralAnalysis.bind_payload ~f:snd3 analysis_data)
+      (InterproceduralAnalysis.bind_payload_opt ~f:snd3 analysis_data)
   in
   let node_cfg = NodeCFG.from_pdesc proc_desc in
   (* given the semantics computes the upper bound on the number of times a node could be executed *)
@@ -373,11 +373,15 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency; te
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
     let get_summary callee_pname =
-      let* cost_summary, _inferbo_summary, _ = analyze_dependency callee_pname in
+      let* cost_summary, _inferbo_summary, _ =
+        analyze_dependency callee_pname |> AnalysisResult.to_option
+      in
       cost_summary
     in
     let inferbo_get_summary callee_pname =
-      let* _cost_summary, inferbo_summary, _ = analyze_dependency callee_pname in
+      let* _cost_summary, inferbo_summary, _ =
+        analyze_dependency callee_pname |> AnalysisResult.to_option
+      in
       inferbo_summary
     in
     let get_formals callee_pname =

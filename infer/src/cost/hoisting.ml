@@ -126,7 +126,9 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log; analyze_dependency; te
       CostInstantiate.get_cost_if_expensive analysis_data
     else fun _ -> None
   in
-  let get_callee_purity callee_pname = Option.bind ~f:snd3 (analyze_dependency callee_pname) in
+  let get_callee_purity callee_pname =
+    analyze_dependency callee_pname |> AnalysisResult.to_option |> Option.bind ~f:snd3
+  in
   report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map
     loop_head_to_source_nodes extract_cost_if_expensive ;
   ()

@@ -302,7 +302,7 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions)
 let init_analysis_data ({InterproceduralAnalysis.analyze_dependency} as interproc) =
   let get_proc_summary_and_formals callee_pname =
     let open IOption.Let_syntax in
-    let* callee_summary = analyze_dependency callee_pname in
+    let* callee_summary = analyze_dependency callee_pname |> AnalysisResult.to_option in
     let+ callee_attrs = Attributes.load callee_pname in
     (callee_summary, ProcAttributes.get_pvar_formals callee_attrs)
   in

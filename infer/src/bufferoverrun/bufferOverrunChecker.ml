@@ -449,7 +449,7 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let+ inv_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
-      (InterproceduralAnalysis.bind_payload analysis_data ~f:snd)
+      (InterproceduralAnalysis.bind_payload_opt analysis_data ~f:snd)
   in
   let underlying_exit_node = Procdesc.get_exit_node proc_desc in
   let pp_name f = F.pp_print_string f "bufferoverrun check" in
@@ -457,8 +457,12 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
         let open IOption.Let_syntax in
-        let get_checks_summary callee_pname = analyze_dependency callee_pname >>= fst in
-        let get_summary callee_pname = analyze_dependency callee_pname >>= snd in
+        let get_checks_summary callee_pname =
+          analyze_dependency callee_pname |> AnalysisResult.to_option >>= fst
+        in
+        let get_summary callee_pname =
+          analyze_dependency callee_pname |> AnalysisResult.to_option >>= snd
+        in
         let get_formals callee_pname =
           Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
         in

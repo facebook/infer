@@ -80,16 +80,20 @@ let prepare_call_args
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
-      (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
+      (InterproceduralAnalysis.bind_payload_opt ~f:fst3 analysis_data)
   in
   let get_callee_cost_summary_and_formals callee_pname =
-    let* _inferbo, _, callee_costs_summary = analyze_dependency callee_pname in
+    let* _inferbo, _, callee_costs_summary =
+      analyze_dependency callee_pname |> AnalysisResult.to_option
+    in
     let* callee_attrs = Attributes.load callee_pname in
     let+ callee_costs_summary in
     (callee_costs_summary, ProcAttributes.get_pvar_formals callee_attrs)
   in
   let inferbo_get_summary callee_pname =
-    let* inferbo, _purity, _callee_costs_summary = analyze_dependency callee_pname in
+    let* inferbo, _purity, _callee_costs_summary =
+      analyze_dependency callee_pname |> AnalysisResult.to_option
+    in
     inferbo
   in
   { tenv

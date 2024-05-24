@@ -207,7 +207,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (make_ret_attr (Looper ForUIThread))
       else None
     in
-    let get_callee_summary () = analyze_dependency callee in
+    let get_callee_summary () = analyze_dependency callee |> AnalysisResult.to_option in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
         match actuals_acc_exps with
@@ -942,7 +942,10 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
   else
     let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair ~analyze_ondemand:analyze_file_dependency tenv pattrs)
+        (report_on_pair
+           ~analyze_ondemand:(fun proc_name ->
+             analyze_file_dependency proc_name |> AnalysisResult.to_option )
+           tenv pattrs )
         payload report_map
     in
     let report_procedure report_map procname =
@@ -950,7 +953,7 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
       | None ->
           report_map
       | Some attributes ->
-          analyze_file_dependency procname
+          analyze_file_dependency procname |> AnalysisResult.to_option
           |> Option.value_map ~default:report_map ~f:(fun summary ->
                  let tenv = Exe_env.get_proc_tenv file_exe_env procname in
                  if should_report attributes then report_on_proc tenv attributes report_map summary

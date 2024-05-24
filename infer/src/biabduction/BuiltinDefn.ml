@@ -657,10 +657,10 @@ let execute_pthread_create
       | Some pname -> (
           L.d_printfln "pthread_create: calling function %a" Procname.pp pname ;
           match analyze_dependency pname with
-          | None ->
+          | Error _ ->
               (* no precondition to check, skip *)
               [(prop_, path)]
-          | Some callee_summary ->
+          | Ok callee_summary ->
               SymExec.proc_call pname callee_summary
                 {builtin_args with args= [(routine_arg, snd arg)]} ) )
   | _ ->

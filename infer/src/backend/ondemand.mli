@@ -14,12 +14,12 @@ val analyze_proc_name :
   -> ?specialization:Specialization.t
   -> caller_summary:Summary.t
   -> Procname.t
-  -> Summary.t option
+  -> Summary.t AnalysisResult.t
 (** [analyze_proc_name exe_env ~caller_summary callee_pname] performs an on-demand analysis of
     [callee_pname] triggered during the analysis of [caller_summary] If [specialization] is given,
     the callee is requesting a specialization. *)
 
-val analyze_proc_name_for_file_analysis : Exe_env.t -> Procname.t -> Summary.t option
+val analyze_proc_name_for_file_analysis : Exe_env.t -> Procname.t -> Summary.t AnalysisResult.t
 (** [analyze_proc_name_for_file_analysis exe_env callee_pname] performs an on-demand analysis of
     [callee_pname] as triggered by a file-level checker. This must not be used in any other context,
     as this will break incremental analysis. *)

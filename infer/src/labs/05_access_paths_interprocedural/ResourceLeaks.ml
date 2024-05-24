@@ -57,10 +57,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (return, Const (Cfun callee_proc_name), actuals, _loc, _) -> (
       match analyze_dependency callee_proc_name with
       (* interprocedural analysis produced a summary: use it *)
-      | Some callee_summary ->
+      | Ok callee_summary ->
           ResourceLeakDomain.Summary.apply ~callee:callee_summary ~return ~actuals astate
       (* No summary for [callee_proc_name]; it's native code or missing for some reason *)
-      | None ->
+      | Error _ ->
           astate )
     (* load of an address [_lhs:_lhs_typ = *_rhs] *)
     | Load {id= lhs; e= rhs; typ= lhs_typ; loc= _loc} ->

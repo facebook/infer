@@ -13,7 +13,8 @@ val call :
      Tenv.t
   -> PathContext.t
   -> caller_proc_desc:Procdesc.t
-  -> analyze_dependency:(?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
+  -> analyze_dependency:
+       (?specialization:Specialization.t -> Procname.t -> PulseSummary.t AnalysisResult.t)
   -> Location.t
   -> Procname.t
   -> ret:Ident.t * Typ.t
