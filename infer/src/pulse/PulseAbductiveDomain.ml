@@ -2069,13 +2069,10 @@ let add_skipped_calls new_skipped_calls astate =
   if phys_equal skipped_calls astate.skipped_calls then astate else {astate with skipped_calls}
 
 
-let transfer_transitive_info_to_caller callee_proc_name call_loc summary caller_astate =
+let transfer_transitive_info_to_caller callee_pname call_loc summary caller_astate =
   let caller = caller_astate.transitive_info in
-  let callee_summary = summary.transitive_info in
-  let transitive_info =
-    TransitiveInfo.transfer_transitive_info_to_caller ~caller callee_proc_name call_loc
-      ~callee_summary
-  in
+  let summary = summary.transitive_info in
+  let transitive_info = TransitiveInfo.apply_summary ~callee_pname ~call_loc ~summary caller in
   {caller_astate with transitive_info}
 
 

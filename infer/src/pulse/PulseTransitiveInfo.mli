@@ -50,6 +50,3 @@ include AbstractDomain.WithBottom with type t := t
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> summary:t -> t -> t
 
 val remember_dropped_elements : dropped:t -> t -> t
-
-val transfer_transitive_info_to_caller :
-  caller:t -> Procname.t -> Location.t -> callee_summary:t -> t

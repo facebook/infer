@@ -117,19 +117,9 @@ let remember_dropped_elements ~dropped {accesses; callees; missed_captures} =
 
 let apply_summary ~callee_pname ~call_loc ~summary {accesses; callees; missed_captures} =
   let accesses =
-    PulseTrace.Set.map_callee (PulseCallEvent.Call callee_pname) call_loc summary.accesses
+    PulseTrace.Set.map_callee (Call callee_pname) call_loc summary.accesses
     |> PulseTrace.Set.union accesses
   in
   let callees = Callees.join callees summary.callees in
   let missed_captures = MissedCaptures.join missed_captures summary.missed_captures in
-  {accesses; callees; missed_captures}
-
-
-let transfer_transitive_info_to_caller ~caller callee_proc_name call_loc ~callee_summary =
-  let accesses =
-    PulseTrace.Set.map_callee (Call callee_proc_name) call_loc callee_summary.accesses
-    |> PulseTrace.Set.union caller.accesses
-  in
-  let callees = Callees.join caller.callees callee_summary.callees in
-  let missed_captures = Typ.Name.Set.union caller.missed_captures callee_summary.missed_captures in
   {accesses; callees; missed_captures}
