@@ -9,8 +9,11 @@ open! IStd
 module F = Format
 module IRAttributes = Attributes
 open PulseBasicInterface
+module AbductiveDomain = PulseAbductiveDomain
 module BaseMemory = PulseBaseMemory
 module DecompilerExpr = PulseDecompilerExpr
+module ExecutionDomain = PulseExecutionDomain
+module PathContext = PulsePathContext
 
 (** Unnecessary copies are tracked in two places:
 
@@ -718,7 +721,16 @@ let set_passed_to loc timestamp call_exp actuals =
 
 let is_lifetime_extended var {intra} = IntraDom.is_lifetime_extended var intra
 
-let remember_dropped_elements dropped = map_inter (InterDom.remember_dropped_elements dropped)
+let remember_dropped_disjuncts disjuncts non_disj =
+  List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, _) ->
+      match exec with
+      | ExecutionDomain.ContinueProgram astate ->
+          map_inter
+            (InterDom.remember_dropped_elements astate.AbductiveDomain.transitive_info)
+            non_disj
+      | _ ->
+          non_disj )
+
 
 let bind (execs, non_disj) ~f =
   List.rev execs

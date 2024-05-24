@@ -7,8 +7,10 @@
 
 open! IStd
 open PulseBasicInterface
-module DecompilerExpr = PulseDecompilerExpr
 module BaseMemory = PulseBaseMemory
+module DecompilerExpr = PulseDecompilerExpr
+module ExecutionDomain = PulseExecutionDomain
+module PathContext = PulsePathContext
 
 type copy_spec_t =
   | Copied of
@@ -98,7 +100,7 @@ val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -
 
 val is_lifetime_extended : Var.t -> t -> bool
 
-val remember_dropped_elements : TransitiveInfo.t -> t -> t
+val remember_dropped_disjuncts : (ExecutionDomain.t * PathContext.t) list -> t -> t
 
 val apply_summary :
      callee_pname:Procname.t
