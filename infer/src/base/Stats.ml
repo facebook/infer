@@ -166,6 +166,7 @@ type t =
   ; mutable pulse_disjuncts_dropped: IntCounter.t
   ; mutable pulse_interrupted_loops: IntCounter.t
   ; mutable pulse_summaries_contradictions: IntCounter.t
+  ; mutable pulse_summaries_with_some_unreachable_nodes: IntCounter.t
   ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
   ; mutable topl_reachable_calls: IntCounter.t
   ; mutable timeouts: IntCounter.t
@@ -199,6 +200,7 @@ let log_to_file
     ; pulse_disjuncts_dropped
     ; pulse_interrupted_loops
     ; pulse_summaries_contradictions
+    ; pulse_summaries_with_some_unreachable_nodes
     ; pulse_summaries_count } =
   let filename = Filename.concat Config.results_dir "stats/stats.txt" in
   let out_channel = Out_channel.create filename in
@@ -211,6 +213,8 @@ let log_to_file
   F.fprintf fmt "pulse_disjuncts_dropped: %d@\n" pulse_disjuncts_dropped ;
   F.fprintf fmt "pulse_interrupted_loops: %d@\n" pulse_interrupted_loops ;
   F.fprintf fmt "pulse_summaries_contradictions: %d@\n" pulse_summaries_contradictions ;
+  F.fprintf fmt "pulse_summaries_with_some_unreachable_nodes: %d@\n"
+    pulse_summaries_with_some_unreachable_nodes ;
   F.fprintf fmt "pulse_summaries_count: %a@\n" PulseSummaryCountMap.pp pulse_summaries_count ;
   Out_channel.close out_channel
 
@@ -280,6 +284,10 @@ let add_pulse_disjuncts_dropped n = add Fields.pulse_disjuncts_dropped n
 let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 
 let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contradictions
+
+let incr_pulse_summaries_with_some_unreachable_nodes () =
+  incr Fields.pulse_summaries_with_some_unreachable_nodes
+
 
 let add_pulse_summaries_count n =
   update_with Fields.pulse_summaries_count ~f:(fun counters ->

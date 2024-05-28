@@ -1691,7 +1691,6 @@ let log_summary_count proc_name summary =
 
 let log_number_of_unreachable_nodes proc_desc invariant_map =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let nodes = Procdesc.get_nodes proc_desc in
   let nodes_reachable_from_entry =
     let open Procdesc in
     let rec visit seen node =
@@ -1701,9 +1700,6 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
         Node.get_succs node |> List.fold ~init:seen ~f:visit
     in
     get_start_node proc_desc |> visit NodeSet.empty
-  in
-  let nb_nodes_reachable_from_entry =
-    Procdesc.NodeSet.cardinal nodes_reachable_from_entry |> float_of_int
   in
   let has_node_0_disjunct node =
     let id = Procdesc.Node.get_id node in
@@ -1715,13 +1711,16 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
       in
       List.is_empty disjs
   in
-  let nb_nodes_without_disjuncts = List.count nodes ~f:has_node_0_disjunct |> float_of_int in
-  let unreachable_ratio = nb_nodes_without_disjuncts /. nb_nodes_reachable_from_entry in
-  if Float.(unreachable_ratio > 0.10) then
-    L.debug Analysis Quiet
-      "[Unreachability warning] At %a, function %a, %.2f%% of CFG nodes are unreachable\n"
-      Location.pp_file_pos (Procdesc.get_loc proc_desc) Procname.pp proc_name
-      (100. *. unreachable_ratio)
+  let nodes = Procdesc.get_nodes proc_desc in
+  if Config.log_pulse_unreachable_nodes then
+    List.iter nodes ~f:(fun node ->
+        if has_node_0_disjunct node then
+          L.debug Analysis Quiet
+            "[Unreachability warning] At %a, function %a, the node %a is unreachable\n"
+            Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name Procdesc.Node.pp
+            node ) ;
+  if List.exists nodes ~f:has_node_0_disjunct then
+    Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
 
 
 let analyze specialization
@@ -1743,7 +1742,7 @@ let analyze specialization
         (initial_disjuncts, initial_non_disj) )
   in
   let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
-  if Config.log_pulse_unreachable_nodes then log_number_of_unreachable_nodes proc_desc invariant_map ;
+  log_number_of_unreachable_nodes proc_desc invariant_map ;
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->

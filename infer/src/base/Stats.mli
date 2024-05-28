@@ -42,6 +42,8 @@ val add_pulse_interrupted_loops : int -> unit
 
 val incr_pulse_summaries_contradictions : unit -> unit
 
+val incr_pulse_summaries_with_some_unreachable_nodes : unit -> unit
+
 val add_pulse_summaries_count : int -> unit
 
 val add_proc_duration_us : string -> string -> int -> unit
