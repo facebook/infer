@@ -167,6 +167,7 @@ type t =
   ; mutable pulse_interrupted_loops: IntCounter.t
   ; mutable pulse_summaries_contradictions: IntCounter.t
   ; mutable pulse_summaries_with_some_unreachable_nodes: IntCounter.t
+  ; mutable pulse_summaries_with_some_unreachable_returns: IntCounter.t
   ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
   ; mutable topl_reachable_calls: IntCounter.t
   ; mutable timeouts: IntCounter.t
@@ -201,6 +202,7 @@ let log_to_file
     ; pulse_interrupted_loops
     ; pulse_summaries_contradictions
     ; pulse_summaries_with_some_unreachable_nodes
+    ; pulse_summaries_with_some_unreachable_returns
     ; pulse_summaries_count } =
   let filename = Filename.concat Config.results_dir "stats/stats.txt" in
   let out_channel = Out_channel.create filename in
@@ -215,6 +217,8 @@ let log_to_file
   F.fprintf fmt "pulse_summaries_contradictions: %d@\n" pulse_summaries_contradictions ;
   F.fprintf fmt "pulse_summaries_with_some_unreachable_nodes: %d@\n"
     pulse_summaries_with_some_unreachable_nodes ;
+  F.fprintf fmt "pulse_summaries_with_some_unreachable_returns: %d@\n"
+    pulse_summaries_with_some_unreachable_returns ;
   F.fprintf fmt "pulse_summaries_count: %a@\n" PulseSummaryCountMap.pp pulse_summaries_count ;
   Out_channel.close out_channel
 
@@ -287,6 +291,10 @@ let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contrad
 
 let incr_pulse_summaries_with_some_unreachable_nodes () =
   incr Fields.pulse_summaries_with_some_unreachable_nodes
+
+
+let incr_pulse_summaries_with_some_unreachable_returns () =
+  incr Fields.pulse_summaries_with_some_unreachable_returns
 
 
 let add_pulse_summaries_count n =
