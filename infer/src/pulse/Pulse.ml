@@ -1710,10 +1710,14 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
     if not (mem node) then false
     else if not (DisjunctiveAnalyzer.InvariantMap.mem id invariant_map) then true
     else
-      let {AbstractInterpreter.State.pre= disjs, _} =
+      let significant_node node =
+        Procdesc.Node.get_instrs node
+        |> Instrs.exists ~f:(function Store _ | Call _ -> true | _ -> false)
+      in
+      let {AbstractInterpreter.State.post= disjs, _} =
         DisjunctiveAnalyzer.InvariantMap.find id invariant_map
       in
-      List.is_empty disjs
+      List.is_empty disjs && significant_node node
   in
   let nodes = Procdesc.get_nodes proc_desc in
   if Config.log_pulse_unreachable_nodes then
