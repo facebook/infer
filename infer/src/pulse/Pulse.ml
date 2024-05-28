@@ -1715,8 +1715,7 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
   if Config.log_pulse_unreachable_nodes then
     List.iter nodes ~f:(fun node ->
         if has_node_0_disjunct node then
-          L.debug Analysis Quiet
-            "[Unreachability warning] At %a, function %a, the node %a is unreachable\n"
+          L.debug Analysis Quiet "[pulse-info]At %a, function %a, the node %a is unreachable@\n"
             Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name Procdesc.Node.pp
             node ) ;
   if List.exists nodes ~f:has_node_0_disjunct then
