@@ -3211,15 +3211,6 @@ INTERNAL OPTIONS
            --incremental-analysis and --continue-analysis. (Conversely:
            --no-reanalyze)
 
-       --remodel-class string
-           Specify a Remodel class name. For sub-classes of the Remodel class
-           in ObjC, setters and getters for properties are auto-generated and
-           they store/load values into/from field names of "_<property
-           name>".
-
-       --remodel-class-reset
-           Cancel the effect of --remodel-class.
-
        --report-allow-list-path-regex-reset
            Set --report-allow-list-path-regex to the empty list.
 

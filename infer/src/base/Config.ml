@@ -3063,7 +3063,7 @@ and relative_path_backtrack =
 
 
 and _remodel_class =
-  CLOpt.mk_string_opt ~long:"remodel-class" ~deprecated:["remodel-class"]
+  CLOpt.mk_string_opt ~long:"" ~deprecated:["-remodel-class"]
     "Specify a Remodel class name. For sub-classes of the Remodel class in ObjC, setters and \
      getters for properties are auto-generated and they store/load values into/from field names of \
      \"_<property name>\"."
