@@ -1841,6 +1841,12 @@ let analyze specialization
         (Procdesc.get_proc_name proc_desc) ;
     let summary_count = List.length summary.PulseSummary.pre_post_list in
     Stats.add_pulse_summaries_count summary_count ;
+    let has_0_continue_program results =
+      let f one_result = match one_result with ContinueProgram _astate -> false | _ -> true in
+      List.for_all results ~f
+    in
+    if has_0_continue_program summary.PulseSummary.pre_post_list then
+      Stats.incr_pulse_summaries_count_0_continue_program () ;
     if Config.pulse_log_summary_count then
       log_summary_count proc_name summary.PulseSummary.pre_post_list ;
     (* needed to record the stats corresponding to the metadata *)
