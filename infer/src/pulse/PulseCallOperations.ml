@@ -60,6 +60,26 @@ let matches_iter =
     ; "__gnu_cxx::__normal_iterator" ]
 
 
+module GlobalForStats = struct
+  type t = {node_is_not_stuck: bool; one_call_is_stuck: bool}
+
+  let empty = {node_is_not_stuck= false; one_call_is_stuck= false}
+
+  let global = ref empty
+
+  let () = AnalysisGlobalState.register_ref ~init:(fun () -> empty) global
+
+  let init_before_call () = global := {!global with node_is_not_stuck= false}
+
+  let is_node_not_stuck () = !global.node_is_not_stuck
+
+  let node_is_not_stuck () = global := {!global with node_is_not_stuck= true}
+
+  let is_one_call_stuck () = !global.one_call_is_stuck
+
+  let one_call_is_stuck () = global := {!global with one_call_is_stuck= true}
+end
+
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
     callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
@@ -755,8 +775,10 @@ let call tenv path ~caller_proc_desc
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
           already_given summary.main
       in
+      let has_continue_program = has_continue_program res in
+      if has_continue_program then GlobalForStats.node_is_not_stuck () ;
       let res, non_disj =
-        if Config.pulse_force_continue && not (has_continue_program res) then (
+        if Config.pulse_force_continue && not has_continue_program then (
           (* When a function call does not have a post of type ContinueProgram, we may want to treat
              the call as unknown to make the analysis continue. This may introduce false positives but
              could uncover additional true positives too. *)

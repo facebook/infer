@@ -2171,14 +2171,14 @@ and _log_events =
 
 and log_pulse_disjunct_increase_after_model_call =
   CLOpt.mk_bool ~long:"log-pulse-disjunct-increase-after-model-call" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Log which model did increase the current number of Pulse disjuncts."
 
 
-and log_pulse_unreachable_nodes =
-  CLOpt.mk_bool ~long:"log-pulse-unreachable-nodes" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Log for each function and each summary, the ratio of unreached nodes."
+and log_pulse_coverage =
+  CLOpt.mk_bool ~long:"log-pulse-coverage" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Log precisely where coverage stops, at the end of file stats/stats.txt."
 
 
 and log_missing_deps =
@@ -4354,7 +4354,7 @@ and lock_model = !lock_model
 
 and log_pulse_disjunct_increase_after_model_call = !log_pulse_disjunct_increase_after_model_call
 
-and log_pulse_unreachable_nodes = !log_pulse_unreachable_nodes
+and log_pulse_coverage = !log_pulse_coverage
 
 and log_missing_deps = !log_missing_deps
 

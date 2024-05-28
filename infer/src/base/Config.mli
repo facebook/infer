@@ -528,7 +528,7 @@ val lock_model : Yojson.Safe.t
 
 val log_pulse_disjunct_increase_after_model_call : bool
 
-val log_pulse_unreachable_nodes : bool
+val log_pulse_coverage : bool
 
 val log_missing_deps : bool
 

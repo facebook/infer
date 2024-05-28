@@ -233,15 +233,6 @@ OPTIONS
            Activates: Log analysis dependencies that cannot be found.
            (Conversely: --no-log-missing-deps)
 
-       --log-pulse-disjunct-increase-after-model-call
-           Activates: Log which model did increase the current number of
-           Pulse disjuncts. (Conversely:
-           --no-log-pulse-disjunct-increase-after-model-call)
-
-       --log-pulse-unreachable-nodes
-           Activates: Log for each function and each summary, the ratio of
-           unreached nodes. (Conversely: --no-log-pulse-unreachable-nodes)
-
        --loop-hoisting
            Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for
@@ -741,6 +732,15 @@ LINEAGE OPTIONS
            set.
 
 PULSE CHECKER OPTIONS
+       --log-pulse-coverage
+           Activates: Log precisely where coverage stops, at the end of file
+           stats/stats.txt. (Conversely: --no-log-pulse-coverage)
+
+       --log-pulse-disjunct-increase-after-model-call
+           Activates: Log which model did increase the current number of
+           Pulse disjuncts. (Conversely:
+           --no-log-pulse-disjunct-increase-after-model-call)
+
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can
            be used on pathologically large procedures to prevent too-big

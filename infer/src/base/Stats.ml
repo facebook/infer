@@ -166,6 +166,7 @@ type t =
   ; mutable pulse_disjuncts_dropped: IntCounter.t
   ; mutable pulse_interrupted_loops: IntCounter.t
   ; mutable pulse_summaries_contradictions: IntCounter.t
+  ; mutable pulse_summaries_unsat_for_caller: IntCounter.t
   ; mutable pulse_summaries_with_some_unreachable_nodes: IntCounter.t
   ; mutable pulse_summaries_with_some_unreachable_returns: IntCounter.t
   ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
@@ -201,6 +202,7 @@ let log_to_file
     ; pulse_disjuncts_dropped
     ; pulse_interrupted_loops
     ; pulse_summaries_contradictions
+    ; pulse_summaries_unsat_for_caller
     ; pulse_summaries_with_some_unreachable_nodes
     ; pulse_summaries_with_some_unreachable_returns
     ; pulse_summaries_count } =
@@ -215,6 +217,7 @@ let log_to_file
   F.fprintf fmt "pulse_disjuncts_dropped: %d@\n" pulse_disjuncts_dropped ;
   F.fprintf fmt "pulse_interrupted_loops: %d@\n" pulse_interrupted_loops ;
   F.fprintf fmt "pulse_summaries_contradictions: %d@\n" pulse_summaries_contradictions ;
+  F.fprintf fmt "pulse_summaries_unsat_for_caller: %d@\n" pulse_summaries_unsat_for_caller ;
   F.fprintf fmt "pulse_summaries_with_some_unreachable_nodes: %d@\n"
     pulse_summaries_with_some_unreachable_nodes ;
   F.fprintf fmt "pulse_summaries_with_some_unreachable_returns: %d@\n"
@@ -288,6 +291,8 @@ let add_pulse_disjuncts_dropped n = add Fields.pulse_disjuncts_dropped n
 let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 
 let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contradictions
+
+let incr_pulse_summaries_unsat_for_caller () = incr Fields.pulse_summaries_unsat_for_caller
 
 let incr_pulse_summaries_with_some_unreachable_nodes () =
   incr Fields.pulse_summaries_with_some_unreachable_nodes

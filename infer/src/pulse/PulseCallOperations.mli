@@ -9,6 +9,18 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
+module GlobalForStats : sig
+  val init_before_call : unit -> unit
+
+  val is_node_not_stuck : unit -> bool
+
+  val node_is_not_stuck : unit -> unit
+
+  val is_one_call_stuck : unit -> bool
+
+  val one_call_is_stuck : unit -> unit
+end
+
 val call :
      Tenv.t
   -> PathContext.t

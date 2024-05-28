@@ -1210,15 +1210,15 @@ OPTIONS
            (Conversely: --no-log-missing-deps)
            See also infer-analyze(1).
 
+       --log-pulse-coverage
+           Activates: Log precisely where coverage stops, at the end of file
+           stats/stats.txt. (Conversely: --no-log-pulse-coverage)
+           See also infer-analyze(1).
+
        --log-pulse-disjunct-increase-after-model-call
            Activates: Log which model did increase the current number of
            Pulse disjuncts. (Conversely:
            --no-log-pulse-disjunct-increase-after-model-call)
-           See also infer-analyze(1).
-
-       --log-pulse-unreachable-nodes
-           Activates: Log for each function and each summary, the ratio of
-           unreached nodes. (Conversely: --no-log-pulse-unreachable-nodes)
            See also infer-analyze(1).
 
        --loop-hoisting

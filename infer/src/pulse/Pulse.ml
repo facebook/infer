@@ -12,6 +12,7 @@ module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+module CallGlobalForStats = PulseCallOperations.GlobalForStats
 
 (** raised when we detect that pulse is using too much memory to stop the analysis of the current
     procedure *)
@@ -876,6 +877,13 @@ module PulseTransferFunctions = struct
           (* unresolved function pointer, etc.: skip *)
           NoModel
     in
+    let has_continue_program astates =
+      List.exists astates ~f:(function
+        | Ok (ContinueProgram _astate) | Recoverable (ContinueProgram _astate, _) ->
+            true
+        | _ ->
+            false )
+    in
     (* do interprocedural call then destroy objects going out of scope *)
     let exec_states_res, non_disj, call_was_unknown =
       match model_search_result with
@@ -902,6 +910,7 @@ module PulseTransferFunctions = struct
             L.debug Analysis Quiet "[disjunct-increase] from %a, model %a has added %d disjuncts\n"
               Location.pp_file_pos call_loc Procname.pp callee_procname
               (List.length astates - 1) ;
+          if has_continue_program astates then CallGlobalForStats.node_is_not_stuck () ;
           (astates, non_disj, `KnownCall)
       | InvalidSpecializedCall specialized_type ->
           let trace = Trace.Immediate {location= call_loc; history= ValueHistory.epoch} in
@@ -1316,6 +1325,14 @@ module PulseTransferFunctions = struct
         ([astate], non_disj)
 
 
+  let add_verbose_never_return_info proc_desc instr loc =
+    let caller_name = Procdesc.get_proc_name proc_desc in
+    L.debug Analysis Quiet "[pulse-info]At %a, function %a, the call %a never returns@\n"
+      Location.pp_file_pos loc Procname.pp caller_name
+      (Sil.pp_instr ~print_types:false Pp.text)
+      instr
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) _cfg_node
@@ -1443,6 +1460,7 @@ module PulseTransferFunctions = struct
                     set_global_astates path analysis_data exp typ loc astate astate_n ) )
           in
           (* [astates_before] are the states after we evaluate args but before we apply the callee. This is needed for PulseNonDisjunctiveOperations to determine whether we are copying from something pointed to by [this].  *)
+          CallGlobalForStats.init_before_call () ;
           let astates, astate_n, astates_before =
             let astates_before = ref [] in
             let res, astate_n =
@@ -1463,6 +1481,9 @@ module PulseTransferFunctions = struct
             , astate_n
             , astates_before )
           in
+          if not (CallGlobalForStats.is_node_not_stuck ()) then (
+            if Config.log_pulse_coverage then add_verbose_never_return_info proc_desc instr loc ;
+            CallGlobalForStats.one_call_is_stuck () ) ;
           let astate_n, astates =
             let pname = Procdesc.get_proc_name proc_desc in
             let integer_type_widths = Exe_env.get_integer_type_widths exe_env pname in
@@ -1736,7 +1757,7 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
       ~f:(fun acc node ->
         if has_node_0_disjunct node then
           let node_is_a_return = node_is_a_return node in
-          if Config.log_pulse_unreachable_nodes then (
+          if Config.log_pulse_coverage then (
             L.debug Analysis Quiet "[pulse-info]At %a, function %a, the %snode %a is unreachable@\n"
               Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name
               (if node_is_a_return then "exit " else "")
@@ -1773,6 +1794,7 @@ let analyze specialization
   in
   let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
   log_number_of_unreachable_nodes proc_desc invariant_map ;
+  if CallGlobalForStats.is_one_call_stuck () then Stats.incr_pulse_summaries_unsat_for_caller () ;
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->
