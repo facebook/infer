@@ -1731,28 +1731,26 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
       (not (has_continue_program disjs)) && significant_node node
   in
   let nodes = Procdesc.get_nodes proc_desc in
-  let exists_a_return_node_with_0_disjunct = ref false in
-  let exists_a_node_with_0_disjunct = ref false in
-  if Config.log_pulse_unreachable_nodes then
-    List.iter nodes ~f:(fun node ->
-        if has_node_0_disjunct node then (
-          exists_a_node_with_0_disjunct := true ;
+  let exists_a_return_node_with_0_disjunct, exists_a_node_with_0_disjunct =
+    List.fold_until nodes ~init:(false, false)
+      ~f:(fun acc node ->
+        if has_node_0_disjunct node then
           let node_is_a_return = node_is_a_return node in
-          if node_is_a_return then exists_a_return_node_with_0_disjunct := true ;
-          L.debug Analysis Quiet "[pulse-info]At %a, function %a, the %snode %a is unreachable@\n"
-            Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name
-            (if node_is_a_return then "exit " else "")
-            Procdesc.Node.pp node ) )
-  else
-    exists_a_return_node_with_0_disjunct :=
-      List.exists nodes ~f:(fun node ->
-          if has_node_0_disjunct node then (
-            exists_a_node_with_0_disjunct := true ;
-            node_is_a_return node )
-          else false ) ;
-  if !exists_a_return_node_with_0_disjunct then
+          if Config.log_pulse_unreachable_nodes then (
+            L.debug Analysis Quiet "[pulse-info]At %a, function %a, the %snode %a is unreachable@\n"
+              Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name
+              (if node_is_a_return then "exit " else "")
+              Procdesc.Node.pp node ;
+            Continue (node_is_a_return || fst acc, true) )
+          else if node_is_a_return then Stop (true, true)
+          else (* [fst acc] has to be false, other we would have stop before *)
+            Continue (false, true)
+        else Continue acc )
+      ~finish:Fn.id
+  in
+  if exists_a_return_node_with_0_disjunct then
     Stats.incr_pulse_summaries_with_some_unreachable_returns () ;
-  if !exists_a_node_with_0_disjunct then Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
+  if exists_a_node_with_0_disjunct then Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
 
 
 let analyze specialization
