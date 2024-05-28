@@ -95,6 +95,14 @@ module PulseSummaryCountMap = struct
               ~value:count ) )
     in
     LogEntry.mk_count ~label:"backend_stats.pulse_summaries_total" ~value:total :: counts
+
+
+  let pp fmt map =
+    let bindings = bindings map in
+    (* already sorted because we use Caml.Map *)
+    let pp_binding fmt (key, value) = F.fprintf fmt "%d: %d" key value in
+    let pp_sep fmt () = F.pp_print_string fmt ", " in
+    F.fprintf fmt "{ %a }" (F.pp_print_list ~pp_sep pp_binding) bindings
 end
 
 module DurationItem = struct
@@ -183,13 +191,38 @@ let log_to_scuba stats =
   Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
 
 
+let log_to_file
+    { ondemand_procs_analyzed
+    ; pulse_aliasing_contradictions
+    ; pulse_args_length_contradictions
+    ; pulse_captured_vars_length_contradictions
+    ; pulse_disjuncts_dropped
+    ; pulse_interrupted_loops
+    ; pulse_summaries_contradictions
+    ; pulse_summaries_count } =
+  let filename = Filename.concat Config.results_dir "stats/stats.txt" in
+  let out_channel = Out_channel.create filename in
+  let fmt = Format.formatter_of_out_channel out_channel in
+  F.fprintf fmt "ondemand_procs_analyzed: %d@\n" ondemand_procs_analyzed ;
+  F.fprintf fmt "pulse_aliasing_contradictions: %d@\n" pulse_aliasing_contradictions ;
+  F.fprintf fmt "pulse_args_length_contradictions: %d@\n" pulse_args_length_contradictions ;
+  F.fprintf fmt "pulse_captured_vars_length_contradictions: %d@\n"
+    pulse_captured_vars_length_contradictions ;
+  F.fprintf fmt "pulse_disjuncts_dropped: %d@\n" pulse_disjuncts_dropped ;
+  F.fprintf fmt "pulse_interrupted_loops: %d@\n" pulse_interrupted_loops ;
+  F.fprintf fmt "pulse_summaries_contradictions: %d@\n" pulse_summaries_contradictions ;
+  F.fprintf fmt "pulse_summaries_count: %a@\n" PulseSummaryCountMap.pp pulse_summaries_count ;
+  Out_channel.close out_channel
+
+
 let log_aggregate stats_list =
   match stats_list with
   | [] ->
       L.internal_error "Empty list of backend stats to aggregate, weird!@\n"
   | one :: rest ->
       let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
-      log_to_scuba stats
+      log_to_scuba stats ;
+      log_to_file stats
 
 
 let get () = {global_stats with timings= TimingsStat.serialize global_stats.timings}
