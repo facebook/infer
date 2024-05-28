@@ -536,79 +536,37 @@ end = struct
     r
 
 
-  module Types = struct
-    (** Type definitions, common to procedure analysis environments and summaries *)
-
-    module type Shape_class = sig
-      (** Shape classes are equivalence classes of shape identifiers, that is, sets of shape
-          identifiers that share a common set of fields. *)
-
-      type 'id t
-
-      val pp : 'id Fmt.t -> 'id t Fmt.t
-    end
-
-    module Make (Shape_class : Shape_class) () = struct
-      (** A functor that defines the common types and fundamental functions of shape environments.
-
-          Takes as parameter the (module) type of shape classes and is generative because it will
-          generate a fresh Id module. *)
-
-      (** A shape id is what links variables to defined fields. It is a unique identifier to which a
-          structure (eg. set of fields) is associated, and that will be indirectly assigned to every
-          variable.
-
-          Shape ids do not make sense by themselves and are only valid within the full context of
-          the corresponding environment for which they have been generated. *)
-      module Shape_id =
-      Id ()
-
-      (** A shape is an equivalence class of shape identifiers. *)
-      type shape = Shape_id.t Shape_class.t
-
-      let pp_shape = Shape_class.pp Shape_id.pp
-
-      type structure = shape Structure.t
-
-      let pp_structure = Structure.pp pp_shape
-
-      (** An environment associates to each variable its equivalence class, and to each shape
-          equivalence class representative its structure.
-
-          It also registers the formal and returned variables, to allow querying for their shapes
-          using only the environment. *)
-      type t =
-        { formals: Var.t array
-        ; ret_var: Var.t
-        ; var_shapes: (Var.t, shape) Hashtbl.t
-        ; shape_structures: (Shape_id.t, structure) Hashtbl.t }
-
-      let pp fmt {formals; ret_var; var_shapes; shape_structures} =
-        Format.fprintf fmt
-          "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
-           @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
-          (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
-          formals Var.pp ret_var
-          (Pp.hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
-          var_shapes
-          (Pp.hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
-          shape_structures
-    end
-  end
-
   module State = struct
     (** Environments for the in-progress analysis of a procedure. *)
 
-    module Shape_class = struct
-      (** Equivalence classes are stored in a Union-find data structures. That allows cheap merging
-          of shapes that are inferred to be equivalent during the procedure analysis. *)
+    (** Equivalence classes are stored in a Union-find data structures. That allows cheap merging of
+        shapes that are inferred to be equivalent during the procedure analysis. *)
+    module Shape_class = Union_find
 
-      type 'id t = 'id Union_find.t
+    (** A shape id is what links variables to defined fields. It is a unique identifier to which a
+        structure (eg. set of fields) is associated, and that will be indirectly assigned to every
+        variable.
 
-      let pp pp_id = Fmt.using Union_find.get pp_id
-    end
+        Shape ids do not make sense by themselves and are only valid within the full context of the
+        corresponding environment for which they have been generated. *)
+    module Shape_id =
+    Id ()
 
-    include Types.Make (Shape_class) ()
+    (** A shape is an equivalence class of shape identifiers. *)
+    type shape = Shape_id.t Shape_class.t
+
+    type structure = shape Structure.t
+
+    (** An environment associates to each variable its equivalence class, and to each shape
+        equivalence class representative its structure.
+
+        It also registers the formal and returned variables, to allow querying for their shapes
+        using only the environment. *)
+    type t =
+      { formals: Var.t array
+      ; ret_var: Var.t
+      ; var_shapes: (Var.t, shape) Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Hashtbl.t }
 
     let create proc_desc =
       { formals=
@@ -934,17 +892,48 @@ end = struct
     (* A summary is similar to the (final) typing state environment of a function. The difference is
        that it "freezes" the union-find classes into some fixed and marshallable values. *)
 
-    module Shape_class = struct
-      (** Once the analysis is done, each class can be frozen into its representative. Therefore
-          summary classes are simply shape ids, which trades off the now-uneeded mergeability for
-          marshallability. *)
+    (** A shape id is what links variables to defined fields. It is a unique identifier to which a
+        structure (eg. set of fields) is associated, and that will be indirectly assigned to every
+        variable.
 
-      type 'id t = 'id
+        Shape ids do not make sense by themselves and are only valid within the full context of the
+        corresponding environment for which they have been generated. *)
+    module Shape_id =
+    Id ()
 
-      let pp pp_id = pp_id
-    end
+    (** Once the analysis is done, each class can be frozen into its representative. Therefore
+        summary classes are simply shape ids, which trades off the now-uneeded mergeability for
+        marshallability. *)
+    type shape = Shape_id.t
 
-    include Types.Make (Shape_class) ()
+    let pp_shape = Shape_id.pp
+
+    type structure = shape Structure.t
+
+    let pp_structure = Structure.pp pp_shape
+
+    (** An environment associates to each variable its equivalence class, and to each shape
+        equivalence class representative its structure.
+
+        It also registers the formal and returned variables, to allow querying for their shapes
+        using only the environment. *)
+    type t =
+      { formals: Var.t array
+      ; ret_var: Var.t
+      ; var_shapes: (Var.t, shape) Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Hashtbl.t }
+
+    let pp fmt {formals; ret_var; var_shapes; shape_structures} =
+      Format.fprintf fmt
+        "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
+         @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
+        (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
+        formals Var.pp ret_var
+        (Pp.hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
+        var_shapes
+        (Pp.hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
+        shape_structures
+
 
     let find_var_shape var_shapes var =
       match Hashtbl.find var_shapes var with
