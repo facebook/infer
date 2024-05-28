@@ -1705,6 +1705,10 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
       Procdesc.Node.get_succs node |> List.iter ~f:visit )
   in
   Procdesc.get_start_node proc_desc |> visit ;
+  let has_continue_program results =
+    let f one_result = match one_result with ContinueProgram _astate, _ -> true | _ -> false in
+    List.exists results ~f
+  in
   let has_node_0_disjunct node =
     let id = Procdesc.Node.get_id node in
     if not (mem node) then false
@@ -1717,7 +1721,7 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
       let {AbstractInterpreter.State.post= disjs, _} =
         DisjunctiveAnalyzer.InvariantMap.find id invariant_map
       in
-      List.is_empty disjs && significant_node node
+      (not (has_continue_program disjs)) && significant_node node
   in
   let nodes = Procdesc.get_nodes proc_desc in
   if Config.log_pulse_unreachable_nodes then
