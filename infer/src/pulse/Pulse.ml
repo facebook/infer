@@ -1693,9 +1693,9 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let add, mem =
     let open Procdesc in
-    let hashtbl = NodeHash.create 17 in
-    let add node = NodeHash.replace hashtbl node () in
-    let mem node = NodeHash.mem hashtbl node in
+    let set = NodeHashSet.create 17 in
+    let add node = NodeHashSet.add node set in
+    let mem node = NodeHashSet.mem set node in
     (add, mem)
   in
   let rec visit node =

@@ -490,6 +490,9 @@ module NodeMap = Caml.Map.Make (Node)
 (** Hash table with nodes as keys. *)
 module NodeHash = Hashtbl.Make (Node)
 
+(** Hash set with nodes as keys. *)
+module NodeHashSet = HashSet.Make (Node)
+
 (** Set of nodes. *)
 module NodeSet = Node.NodeSet
 

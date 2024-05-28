@@ -203,6 +203,9 @@ module IdMap : PrettyPrintable.PPMap with type key = Node.id
 (** Hash table with nodes as keys. *)
 module NodeHash : Caml.Hashtbl.S with type key = Node.t
 
+(** Hash set with nodes as keys. *)
+module NodeHashSet : HashSet.S with type elt = Node.t
+
 (** Map over nodes. *)
 module NodeMap : Caml.Map.S with type key = Node.t
 
