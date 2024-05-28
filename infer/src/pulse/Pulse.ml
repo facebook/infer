@@ -1691,20 +1691,24 @@ let log_summary_count proc_name summary =
 
 let log_number_of_unreachable_nodes proc_desc invariant_map =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let nodes_reachable_from_entry =
+  let add, mem =
     let open Procdesc in
-    let rec visit seen node =
-      if NodeSet.mem node seen then seen
-      else
-        let seen = NodeSet.add node seen in
-        Node.get_succs node |> List.fold ~init:seen ~f:visit
-    in
-    get_start_node proc_desc |> visit NodeSet.empty
+    let hashtbl = NodeHash.create 17 in
+    let add node = NodeHash.replace hashtbl node () in
+    let mem node = NodeHash.mem hashtbl node in
+    (add, mem)
   in
+  let rec visit node =
+    if mem node then ()
+    else (
+      add node ;
+      Procdesc.Node.get_succs node |> List.iter ~f:visit )
+  in
+  Procdesc.get_start_node proc_desc |> visit ;
   let has_node_0_disjunct node =
     let id = Procdesc.Node.get_id node in
-    if Procdesc.NodeSet.mem node nodes_reachable_from_entry |> not then false
-    else if DisjunctiveAnalyzer.InvariantMap.mem id invariant_map |> not then true
+    if not (mem node) then false
+    else if not (DisjunctiveAnalyzer.InvariantMap.mem id invariant_map) then true
     else
       let {AbstractInterpreter.State.pre= disjs, _} =
         DisjunctiveAnalyzer.InvariantMap.find id invariant_map
