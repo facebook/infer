@@ -417,7 +417,7 @@ end
 module Function = struct
   let operator_call FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
    fun { path
-       ; analysis_data= {analyze_dependency; tenv; proc_desc}
+       ; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}
        ; location
        ; ret= (ret_id, _) as ret } astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
@@ -443,7 +443,7 @@ module Function = struct
           :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
         in
         let astate, non_disj, _, _ =
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+          PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
             location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
             astate non_disj
         in

@@ -611,7 +611,7 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
       `UseCurrentSummary
 
 
-let call tenv path ~caller_proc_desc
+let call tenv err_log path ~caller_proc_desc
     ~(analyze_dependency :
        ?specialization:Specialization.t -> Procname.t -> PulseSummary.t AnalysisResult.t ) call_loc
     callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags
@@ -797,7 +797,13 @@ let call tenv path ~caller_proc_desc
       let astate =
         match no_summary with
         | MutualRecursionCycle ->
-            AbductiveDomain.record_recursive_call path call_loc callee_pname astate
+            let astate, trace =
+              AbductiveDomain.record_recursive_call path call_loc callee_pname astate
+            in
+            if Procname.equal callee_pname (Procdesc.get_proc_name caller_proc_desc) then
+              PulseReport.report tenv ~is_suppressed:false ~latent:false caller_proc_desc err_log
+                (MutualRecursionCycle {cycle= trace; location= call_loc}) ;
+            astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in

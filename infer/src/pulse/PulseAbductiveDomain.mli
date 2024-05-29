@@ -324,7 +324,7 @@ val record_call_resolution :
   -> t
   -> t
 
-val record_recursive_call : PathContext.t -> Location.t -> Procname.t -> t -> t
+val record_recursive_call : PathContext.t -> Location.t -> Procname.t -> t -> t * Trace.t
 
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 

@@ -138,7 +138,7 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
 let record_recursive_call path location callee astate =
   let trace = PulseMutualRecursion.mk path location callee in
   let recursive_calls = Trace.Set.add trace astate.recursive_calls in
-  {astate with recursive_calls}
+  ({astate with recursive_calls}, trace)
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}

@@ -739,6 +739,11 @@ let multiple_weakself =
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
+let mutual_recursion_cycle =
+  register ~enabled:false ~category:Runtime_exception ~id:"MUTUAL_RECURSION_CYCLE" Warning Pulse
+    ~user_documentation:[%blob "./documentation/issues/MUTUAL_RECURSION_CYCLE.md"]
+
+
 let nil_block_call =
   register_with_latent ~category:Null_pointer_dereference ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NIL_BLOCK_CALL.md"]

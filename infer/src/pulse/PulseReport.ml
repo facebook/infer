@@ -168,6 +168,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
+  | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
   | ReadUninitialized _
   | RetainCycle _

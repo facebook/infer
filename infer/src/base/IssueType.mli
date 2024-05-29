@@ -269,6 +269,8 @@ val modifies_immutable : t
 
 val multiple_weakself : t
 
+val mutual_recursion_cycle : t
+
 val nil_block_call : latent:bool -> t
 
 val nil_insertion_into_collection : latent:bool -> t

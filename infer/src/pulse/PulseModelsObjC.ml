@@ -24,7 +24,8 @@ end
 let call args : model =
  (* [call \[args...; Closure _\]] models a call to the closure. It is similar to a
     dispatch function. *)
- fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate non_disj ->
+ fun {path; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}; location; ret} astate
+     non_disj ->
   match List.last args with
   | Some {ProcnameDispatcher.Call.FuncArg.exp= Closure c} when Procname.is_objc_block c.name ->
       (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
@@ -38,8 +39,8 @@ let call args : model =
       let formals_opt = get_pvar_formals c.name in
       let call_kind = `Closure c.captured_vars in
       let r, non_disj, _contradiction, _ =
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          c.name ~ret ~actuals ~formals_opt ~call_kind astate non_disj
+        PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
+          location c.name ~ret ~actuals ~formals_opt ~call_kind astate non_disj
       in
       PerfEvent.(log (fun logger -> log_end_event logger ())) ;
       (r, non_disj)
@@ -253,8 +254,10 @@ let check_arg_not_nil (value, value_hist) ~desc : model_no_non_disj =
 
 
 let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
- fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret= (ret_id, _) as ret}
-     astate non_disj ->
+ fun { path
+     ; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}
+     ; location
+     ; ret= (ret_id, _) as ret } astate non_disj ->
   let block = fst block_ptr_hist in
   let callee_proc_name_opt =
     match PulseArithmetic.get_dynamic_type block astate with
@@ -270,8 +273,9 @@ let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
         :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
       in
       let astate, non_disj, _, _ =
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
+          location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+          astate
           ~call_flags:{CallFlags.default with cf_is_objc_block= true}
           non_disj
       in

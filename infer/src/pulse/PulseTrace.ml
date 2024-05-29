@@ -21,6 +21,13 @@ let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -
 
 let get_cell_ids trace = ValueHistory.get_cell_ids (get_outer_history trace)
 
+let rec get_immediate = function
+  | Immediate {location; history} ->
+      (location, history)
+  | ViaCall {in_call} ->
+      get_immediate in_call
+
+
 let get_start_location trace =
   match ValueHistory.get_first_main_event (get_outer_history trace) with
   | Some event ->

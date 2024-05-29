@@ -92,8 +92,10 @@ let custom_realloc pointer size data astate =
 
 
 let call_c_function_ptr FuncArg.{arg_payload= function_ptr_hist; typ} actuals : model =
- fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret= (ret_id, _) as ret}
-     astate non_disj ->
+ fun { path
+     ; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}
+     ; location
+     ; ret= (ret_id, _) as ret } astate non_disj ->
   let block = fst function_ptr_hist in
   let callee_proc_name_opt =
     match PulseArithmetic.get_dynamic_type block astate with
@@ -109,8 +111,9 @@ let call_c_function_ptr FuncArg.{arg_payload= function_ptr_hist; typ} actuals : 
         :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
       in
       let astate, non_disj, _, _ =
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
+          location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+          astate
           ~call_flags:{CallFlags.default with cf_is_c_function_ptr= true}
           non_disj
       in

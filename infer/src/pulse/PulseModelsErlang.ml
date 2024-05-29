@@ -1592,8 +1592,8 @@ module GenServer = struct
   let start_link module_atom args _ : model =
    (* gen_server:start_link(Module, _, _) -> {ok, Pid}
       where Pid is `GenServerPid of Module` *)
-   fun ({path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} as data) astate
-       non_disj ->
+   fun ({path; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}; location; ret} as data)
+       astate non_disj ->
     let module_name_opt =
       match get_erlang_type_or_any (fst module_atom) astate with
       | Atom ->
@@ -1614,9 +1614,9 @@ module GenServer = struct
             [(args, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst args) astate)))]
           in
           let res_list, non_disj, _, _ =
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
-              location procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-              non_disj
+            PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc
+              ~analyze_dependency location procname ~ret ~actuals ~formals_opt:None
+              ~call_kind:`ResolvedProcname astate non_disj
           in
           (res_list, non_disj)
     in
@@ -1690,7 +1690,8 @@ module GenServer = struct
 
 
   let handle_request req_type server_ref request
-      {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate non_disj =
+      {path; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}; location; ret} astate
+      non_disj =
     let astate = AbductiveDomain.add_need_dynamic_type_specialization (fst server_ref) astate in
     let module_name_opt =
       (* Cf. https://www.erlang.org/doc/man/gen_server.html#type-server_ref :
@@ -1759,7 +1760,7 @@ module GenServer = struct
               , [arg_req; arg_nondet ()] )
         in
         let execs, non_disj, _, _ =
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+          PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
             location procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
             non_disj
         in

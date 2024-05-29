@@ -23,6 +23,7 @@ end
 
 val call :
      Tenv.t
+  -> Errlog.t
   -> PathContext.t
   -> caller_proc_desc:Procdesc.t
   -> analyze_dependency:

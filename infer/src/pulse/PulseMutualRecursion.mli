@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 open PulseBasicInterface
 module PathContext = PulsePathContext
 
@@ -16,3 +17,8 @@ type t = Trace.t
 
 val mk : PathContext.t -> Location.t -> Procname.t -> t
 (** a trace of length 1 *)
+
+val get_inner_call : t -> Procname.t
+(** the "initial", innermost call in the cycle *)
+
+val pp : F.formatter -> t -> unit

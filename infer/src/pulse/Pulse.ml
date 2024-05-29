@@ -153,8 +153,8 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} path ret
-      callee_pname call_exp func_args call_loc astate non_disj =
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; err_log; proc_desc}
+      path ret callee_pname call_exp func_args call_loc astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
@@ -171,8 +171,8 @@ module PulseTransferFunctions = struct
     let eval_args_and_call callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
-      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency call_loc
-        callee_pname ~ret ~actuals ~formals_opt ~call_kind astate non_disj
+      PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
+        call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
