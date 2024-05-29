@@ -98,10 +98,7 @@ function loggingSensitiveViaCBad(SensitiveClass $sc, mixed $carrier): void {
   }
 }
 
-function FP_notLoggingSensitiveViaDOk(
-  SensitiveClass $sc,
-  mixed $carrier,
-): void {
+function notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void {
   if ($carrier is D) {
     $carrier->data = $sc;
     logWhenC($carrier);

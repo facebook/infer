@@ -2024,6 +2024,45 @@ module InstanceOf = struct
         PatternMatch.is_subtype tenv n1 n2
     | _, _ ->
         Typ.equal t1 t2
+
+
+  let is_final t =
+    let tenv = PulseContext.tenv_exn () in
+    match Typ.name t with
+    | None ->
+        false
+    | Some (ErlangType _) ->
+        true
+        (* TODO: Actually wrong for Any, if we ever get that, and maybe there are subtypes of bool?? *)
+    | Some tn -> (
+      match Tenv.lookup tenv tn with None -> false | Some {annots} -> Annot.Item.is_final annots )
+
+
+  (* The following are a bit conservative, as they currently only return true for Hack types
+     TODO: check soundness of reasoning for other languages and extend the logic
+  *)
+  let is_concrete_or_abstract t =
+    let tenv = PulseContext.tenv_exn () in
+    match Typ.name t with
+    | None ->
+        false
+    | Some (ErlangType _) ->
+        true
+    | Some (JavaClass _ as tn) -> (
+      match Tenv.lookup tenv tn with None -> false | Some str -> Struct.is_not_java_interface str )
+    | Some (HackClass _ as tn) -> (
+      match Tenv.lookup tenv tn with None -> false | Some str -> Struct.is_hack_class str )
+    | _ ->
+        false
+
+
+  let is_abstract t =
+    let tenv = PulseContext.tenv_exn () in
+    match Typ.name t with
+    | None ->
+        false
+    | Some tn -> (
+      match Tenv.lookup tenv tn with None -> false | Some str -> Struct.is_hack_abstract_class str )
 end
 
 module Formula = struct
@@ -2160,11 +2199,11 @@ module Formula = struct
 
     val remove_const_eq : Var.t -> t -> t
 
-    val add_dynamic_type : Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> t SatUnsat.t
+    val add_dynamic_type : Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> t * bool
 
-    val add_below : Var.t -> Typ.t -> t -> t SatUnsat.t
+    val add_below : Var.t -> Typ.t -> t -> t * bool
 
-    val add_notbelow : Var.t -> Typ.t -> t -> t SatUnsat.t
+    val add_notbelow : Var.t -> Typ.t -> t -> t * bool
 
     val copy_type_constraints : Var.t -> Var.t -> t -> t
 
@@ -2424,84 +2463,113 @@ module Formula = struct
       {phi with const_eqs= Var.Map.remove v phi.const_eqs}
 
 
+    (** We're now tracking nullability more precisely. If the language includes nulls and we have
+        apparently contradictory type information then, instead of immediately returning [Unsat], we
+        want to add an assertion that the value must be null (which inhabits all (nullable) types).
+        But at this low level in the solver stack (the [Unsafe] module), we can't yet decide if the
+        resulting state is [Unsat]. So we return an extra boolean that indicates whether or not a
+        higher-level wrapper should add, and compute the consequences of, that assertion. See
+        [and_dynamic_type] further down (in the [Normalizer] module) for such a wrapper around
+        [add_dynamic_type] *)
     let add_dynamic_type v t ?source_file phi =
       match Var.Map.find_opt v phi.type_constraints with
       | None ->
-          Sat
-            { phi with
+          ( { phi with
               type_constraints=
                 Var.Map.add v (InstanceOf.Known {typ= t; source_file}) phi.type_constraints }
+          , false )
       | Some (InstanceOf.Known {typ= t'}) ->
-          if Typ.equal t t' then Sat phi else Unsat
+          if Typ.equal t t' then (phi, false) else (phi, true)
       | Some (InstanceOf.Unknown {below; notbelow}) ->
-          if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t t' |> not) then Unsat
-          else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then Unsat
+          if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t t' |> not) then (phi, true)
+          else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then (phi, true)
           else
-            Sat
-              { phi with
+            ( { phi with
                 type_constraints=
                   Var.Map.add v (InstanceOf.Known {typ= t; source_file= None}) phi.type_constraints
               }
+            , false )
 
 
     let add_below v t phi =
       Debug.p "add_below %a %a@\n" Var.pp v (Typ.pp_full Pp.text) t ;
-      match Var.Map.find_opt v phi.type_constraints with
-      | None ->
-          (* TODO: case where t is final -> add_dynamic_type v t instead *)
-          Debug.p "not found so adding below constraint\n" ;
-          let phi =
-            { phi with
-              type_constraints=
-                Var.Map.add v (InstanceOf.Unknown {below= [t]; notbelow= []}) phi.type_constraints
-            }
-          in
-          Debug.p "new phi is %a@\n" (pp_with_pp_var Var.pp) phi ;
-          Sat phi
-      | Some (InstanceOf.Known {typ= t'}) ->
-          if InstanceOf.is_subtype t' t then Sat phi else Unsat
-      | Some (InstanceOf.Unknown {below; notbelow}) ->
-          (* new below constraint is redundant with an existing one *)
-          if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' t) then Sat phi
-            (* new below constraint is incompatible with a notbelow one *)
-          else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then Unsat
-            (* TODO: We omit rest of interesting logic for now *)
-          else
-            Sat
+      if InstanceOf.is_final t then
+        if InstanceOf.is_abstract t then (
+          (* Not sure this ever actually happens *)
+          Debug.p "type is abstract and final so v=0" ;
+          (phi, true) )
+        else (
+          Debug.p "type is final so adding as known dynamic type" ;
+          add_dynamic_type v t phi )
+      else
+        match Var.Map.find_opt v phi.type_constraints with
+        | None ->
+            Debug.p "not found so adding below constraint\n" ;
+            let phi =
               { phi with
                 type_constraints=
-                  Var.Map.add v
-                    (InstanceOf.Unknown {below= t :: below; notbelow})
-                    phi.type_constraints }
+                  Var.Map.add v (InstanceOf.Unknown {below= [t]; notbelow= []}) phi.type_constraints
+              }
+            in
+            Debug.p "new phi is %a@\n" (pp_with_pp_var Var.pp) phi ;
+            (phi, false)
+        | Some (InstanceOf.Known {typ= t'}) ->
+            if InstanceOf.is_subtype t' t then (phi, false) else (phi, true)
+        | Some (InstanceOf.Unknown {below; notbelow}) ->
+            (* new below constraint is redundant with an existing one *)
+            if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' t) then (phi, false)
+              (* New below constraint is incompatible with a notbelow one.
+                 Note that once we know the value is zero, we shouldn't care
+                 any more what type_constraints says about it, so we don't
+                 bother to update, or do any further checks
+              *)
+            else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then (phi, true)
+            else if
+              InstanceOf.is_concrete_or_abstract t
+              && List.exists below ~f:(fun t' ->
+                     InstanceOf.is_concrete_or_abstract t'
+                     && (not (InstanceOf.is_subtype t t'))
+                     && not (InstanceOf.is_subtype t' t) )
+            then (
+              Debug.p "inconsistent concrete upper bounds %a and <something>, zeroing"
+                (Typ.pp Pp.text) t ;
+              (phi, true) )
+            else
+              ( { phi with
+                  type_constraints=
+                    Var.Map.add v
+                      (InstanceOf.Unknown {below= t :: below; notbelow})
+                      phi.type_constraints }
+              , false )
 
 
     let add_notbelow v t phi =
       match Var.Map.find_opt v phi.type_constraints with
       | None ->
           Debug.p "couldn't find %a in type constraints, writing singleton notbelow" Var.pp v ;
-          Sat
-            { phi with
+          ( { phi with
               type_constraints=
                 Var.Map.add v (InstanceOf.Unknown {below= []; notbelow= [t]}) phi.type_constraints
             }
+          , false )
       | Some (InstanceOf.Known {typ= t'}) ->
-          if InstanceOf.is_subtype t' t then Unsat else Sat phi
+          if InstanceOf.is_subtype t' t then (phi, true) else (phi, false)
       | Some (InstanceOf.Unknown {below; notbelow}) ->
           (* new notbelow constraint is redundant with an existing one *)
           if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then (
             Debug.p "adding %a to notbelow is redundant" (Typ.pp_full Pp.text) t ;
-            Sat phi (* new notbelow constraint is incompatible with a below one *) )
+            (phi, false) )
           else if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' t) then (
             Debug.p "adding %a to notbelow is inconsistent" (Typ.pp_full Pp.text) t ;
-            Unsat (* TODO: We omit rest of interesting logic for now *) )
+            (phi, true) )
           else (
             Debug.p "actually going ahead and adding %a to notbelow" (Typ.pp_full Pp.text) t ;
-            Sat
-              { phi with
+            ( { phi with
                 type_constraints=
                   Var.Map.add v
                     (InstanceOf.Unknown {below; notbelow= t :: notbelow})
-                    phi.type_constraints } )
+                    phi.type_constraints }
+            , false ) )
 
 
     let copy_type_constraints v_src v_target phi =
@@ -2783,6 +2851,13 @@ module Formula = struct
     (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
     val and_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
+    val and_dynamic_type :
+      Var.t -> Typ.t -> ?source_file:SourceFile.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
+    val and_below : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
+    val and_notbelow : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
     val propagate_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
     (** [and_atom atom (phi, new_eqs)] is
@@ -3304,19 +3379,19 @@ module Formula = struct
                           (* If t is an IsInstanceOf formula, and we've just found its truth value, propagate
                              the information into the below/notbelow type constraints on the relevant
                              variable, and also add >0 facts where appropriate *)
-                          let* phi, atoms_opt1 =
+                          let* phi, atoms_opt1, new_eqs =
                             match Term.get_as_isinstanceof t with
                             | Some (var, typ, nullable) ->
                                 if is_neq_zero phi tx then (
                                   Debug.p "prop in term_eq adding below\n" ;
-                                  let* phi = add_below var typ phi in
+                                  let* phi, new_eqs = and_below var typ (phi, new_eqs) in
                                   let* atoms_opt1 =
                                     if not nullable then
                                       Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                                         (LessThan (Const Q.zero, Var var))
                                     else Sat None
                                   in
-                                  Sat (phi, atoms_opt1) )
+                                  Sat (phi, atoms_opt1, new_eqs) )
                                 else if
                                   match tx with
                                   | Linear l ->
@@ -3327,20 +3402,20 @@ module Formula = struct
                                       false
                                 then (
                                   Debug.p "prop in term_eq adding notbelow\n" ;
-                                  let* phi = add_notbelow var typ phi in
+                                  let* phi, new_eqs = and_notbelow var typ (phi, new_eqs) in
                                   let* atoms_opt1 =
                                     if nullable then
                                       Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                                         (LessThan (Const Q.zero, Var var))
                                     else Sat None
                                   in
-                                  Sat (phi, atoms_opt1) )
+                                  Sat (phi, atoms_opt1, new_eqs) )
                                 else (
                                   Debug.p "%a is neither zero nor non-zero, leaving phi alone\n"
                                     (Term.pp Var.pp) tx ;
-                                  Sat (phi, None) )
+                                  Sat (phi, None, new_eqs) )
                             | None ->
-                                Sat (phi, None)
+                                Sat (phi, None, new_eqs)
                           in
                           (* Now check if the new equality on [x] introduced contradictions in [t=x] or new atoms *)
                           let* atoms_opt2 =
@@ -3508,19 +3583,20 @@ module Formula = struct
                       phi_new_eqs_sat
                   | Range | DomainAndRange -> (
                       Debug.p "range or both\n" ;
-                      let* phi, atoms_opt1 =
+                      let* phi, atoms_opt1, new_eqs =
                         match Term.get_as_isinstanceof t with
                         | Some (var, typ, nullable) ->
-                            let* phi = add_below var typ phi in
+                            Debug.p "prop in term_eq adding below\n" ;
+                            let* phi, new_eqs = and_below var typ (phi, new_eqs) in
                             let* atoms_opt1 =
                               if not nullable then
                                 Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                  (LessThan (Const Q.zero, Var v))
+                                  (LessThan (Const Q.zero, Var var))
                               else Sat None
                             in
-                            Sat (phi, atoms_opt1)
+                            Sat (phi, atoms_opt1, new_eqs)
                         | None ->
-                            Sat (phi, None)
+                            Sat (phi, None, new_eqs)
                       in
                       let* atoms_opt2 =
                         Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
@@ -3634,6 +3710,41 @@ module Formula = struct
 
     and and_atom atom (phi, new_eqs) =
       normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs)
+
+
+    and and_below v t (phi, new_eqs) =
+      let phi, should_zero = add_below v t phi in
+      if should_zero then
+        if Language.curr_language_is Erlang then Unsat
+        else
+          let* _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
+          Sat phi_neweqs
+      else Sat (phi, new_eqs)
+
+
+    and and_notbelow v t (phi, new_eqs) =
+      let phi, should_zero = add_notbelow v t phi in
+      if should_zero then
+        if Language.curr_language_is Erlang then Unsat
+        else
+          let* _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
+          Sat phi_neweqs
+      else Sat (phi, new_eqs)
+
+
+    (* [and_dynamic_type] wraps [add_dynamic_type]. In particular, if the call to the former
+        returns [(phi, true)], then [and_dynamic_type] also adds and propagates the assertion that
+        the value to which we added the type must actually be null.
+    *)
+    let and_dynamic_type v t ?source_file (phi, new_eqs) =
+      let phi, should_zero = add_dynamic_type v t ?source_file phi in
+      if should_zero then
+        if Language.curr_language_is Erlang then Unsat
+        else
+          (* Should use one of the other operations here? and_var_linarith, perhaps? *)
+          let+ _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
+          phi_neweqs
+      else Sat (phi, new_eqs)
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
@@ -4006,18 +4117,14 @@ module DynamicTypes = struct
   let and_callee_type_constraints v type_constraints_foreign (phi, new_eqs) =
     match type_constraints_foreign with
     | InstanceOf.Known {typ= t; source_file} ->
-        let+ phi = Formula.add_dynamic_type v t ?source_file phi in
-        (phi, new_eqs)
+        Formula.Normalizer.and_dynamic_type v t ?source_file (phi, new_eqs)
     | InstanceOf.Unknown {below; notbelow} ->
-        let* phi =
-          PulseSatUnsat.list_fold below ~init:phi ~f:(fun phi upper_bound ->
-              Formula.add_below v upper_bound phi )
+        let* phi, new_eqs =
+          PulseSatUnsat.list_fold below ~init:(phi, new_eqs) ~f:(fun (phi, new_eqs) upper_bound ->
+              Formula.Normalizer.and_below v upper_bound (phi, new_eqs) )
         in
-        let* phi =
-          PulseSatUnsat.list_fold notbelow ~init:phi ~f:(fun phi not_upper ->
-              Formula.add_notbelow v not_upper phi )
-        in
-        Sat (phi, new_eqs)
+        PulseSatUnsat.list_fold notbelow ~init:(phi, new_eqs) ~f:(fun (phi, new_eqs) not_upper ->
+            Formula.Normalizer.and_notbelow v not_upper (phi, new_eqs) )
 end
 
 type dynamic_type_data = InstanceOf.dynamic_type_data =
@@ -4026,22 +4133,21 @@ type dynamic_type_data = InstanceOf.dynamic_type_data =
 let get_dynamic_type = DynamicTypes.get_dynamic_type
 
 let add_dynamic_type_unsafe v t ?source_file location {conditions; phi} =
-  match Formula.add_dynamic_type v t ?source_file phi with
-  | Sat phi ->
-      {conditions; phi}
-  | _ ->
-      (* It seems this "can't happen" case does, in fact, sometimes happen
-         Just return original phi and log to html and scuba
-      *)
-      let prev_fact = Var.Map.find_opt v phi.type_constraints in
-      L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
-        (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
-        (Pp.option InstanceOf.pp_instance_fact)
-        prev_fact ;
-      ScubaLogging.log_message_with_location ~label:"add_dynamic_type_unsafe"
-        ~loc:(F.asprintf "%a" Location.pp_file_pos location)
-        ~message:"Failed to add inconsistent dynamic type." ;
-      {conditions; phi}
+  let phi, should_zero = Formula.add_dynamic_type v t ?source_file phi in
+  if not should_zero then (
+    (* This situation corresponds (roughly) to the ones in which we'd previously have
+       returned Unsat (which was not supposed to happen in calls to the unsafe version)
+       For now we keep the logging and default behaviour
+       TODO: revisit this *)
+    let prev_fact = Var.Map.find_opt v phi.type_constraints in
+    L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
+      (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
+      (Pp.option InstanceOf.pp_instance_fact)
+      prev_fact ;
+    ScubaLogging.log_message_with_location ~label:"add_dynamic_type_unsafe"
+      ~loc:(F.asprintf "%a" Location.pp_file_pos location)
+      ~message:"Failed to add inconsistent dynamic type." ) ;
+  {conditions; phi}
 
 
 let copy_type_constraints v_src v_target {conditions; phi} =
@@ -4049,20 +4155,11 @@ let copy_type_constraints v_src v_target {conditions; phi} =
 
 
 let and_equal_instanceof v1 v2 t ~nullable formula =
-  let* formula, new_eqs =
-    match DynamicTypes.evaluate_instanceof formula v2 t nullable with
-    | None ->
-        Debug.p "evaluate instanceof returned none" ;
-        Sat (formula, RevList.empty)
-    | Some bool_term ->
-        Debug.p "evaluate instanceof returned %a" (Term.pp Var.pp) bool_term ;
-        and_atom (Atom.equal (Var v1) bool_term) formula
-  in
-  let* formula, new_eqs' =
+  let+ formula, new_eqs' =
     and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
   in
   Debug.p "formula is %a" pp formula ;
-  Sat (formula, RevList.append new_eqs new_eqs')
+  (formula, new_eqs')
 
 
 let normalize ?location formula =
@@ -4072,9 +4169,11 @@ let normalize ?location formula =
   DynamicTypes.simplify ?location formula
 
 
-let and_dynamic_type_is v t ?source_file formula =
-  let+ phi = Formula.add_dynamic_type v t ?source_file formula.phi in
-  ({formula with phi}, RevList.empty)
+let and_dynamic_type v t ?source_file formula =
+  let+ phi, new_eqns =
+    Formula.Normalizer.and_dynamic_type v t ?source_file (formula.phi, RevList.empty)
+  in
+  ({formula with phi}, new_eqns)
 
 
 (** translate each variable in [formula_foreign] according to [f] then incorporate each fact into

@@ -7,7 +7,7 @@
 
 -export([
     test_combinations2_Latent/2,
-    fpl_test_combinations1_Ok/2,
+    test_combinations1_Ok/2,
     test_overload4_Latent/2,
     test_overload3_Latent/2,
     test_overload2_Latent/2,
@@ -33,11 +33,11 @@ test_overload3_Latent(X, []) when is_atom(X) -> ok.
     (map(), nil()) -> any().
 test_overload4_Latent(X, []) when is_map(X) -> ok.
 
--spec fpl_test_combinations1_Ok
+-spec test_combinations1_Ok
     (atom(), atom()) -> any();
     (nil(), nil()) -> any().
-fpl_test_combinations1_Ok([], []) -> ok;
-fpl_test_combinations1_Ok(X, Y) when is_atom(X), is_atom(Y) -> ok.
+test_combinations1_Ok([], []) -> ok;
+test_combinations1_Ok(X, Y) when is_atom(X), is_atom(Y) -> ok.
 
 % This is to make sure we have a disjunction (overloads) of conjunctions (arguments)
 % and not the other way around
