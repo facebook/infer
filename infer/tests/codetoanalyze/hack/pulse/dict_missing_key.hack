@@ -203,3 +203,35 @@ class BlockListedField {
     return $this->read_dict_hi();
   }
 }
+
+abstract final class ConstKey {
+  const string HI = 'hi';
+
+  const string BYE = 'bye';
+}
+
+class DictFieldUsingConstKey {
+  public dict<string, int> $f = dict[ConstKey::HI => 42];
+
+  public static function read_dict_hi_ok(): int {
+    $o = new DictFieldUsingConstKey();
+    return $o->f[ConstKey::HI];
+  }
+
+  public function read_dict_hi_bad_FN(): int {
+    $o = new DictFieldUsingConstKey();
+    return $o->f[ConstKey::BYE];
+  }
+}
+
+abstract final class StaticDictField {
+  const dict<string, int> f = dict['hi' => 42];
+
+  public static function call_read_dict_hi_ok(): int {
+    return self::f['hi'];
+  }
+
+  public static function call_read_dict_hi_bad_FN(): int {
+    return self::f['bye'];
+  }
+}
