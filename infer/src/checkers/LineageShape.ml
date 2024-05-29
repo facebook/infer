@@ -200,11 +200,12 @@ module Pp = struct
     Format.fprintf fmt "@[%a%a%a@]" pp_key key bind () pp_value value
 
 
-  let hashtbl_sorted ~compare ?(sep = Fmt.semi) ~bind pp_key pp_value fmt hashtbl =
+  let caml_hashtbl_sorted ~compare ?(sep = Fmt.semi) ~bind pp_key pp_value fmt hashtbl =
     let pp_binding = binding ~bind pp_key pp_value in
     Format.fprintf fmt "@[(%a)@]"
       (IFmt.Labelled.iter ~sep List.iter pp_binding)
-      (Hashtbl.to_alist hashtbl |> List.sort ~compare:(fun (k, _) (k', _) -> compare k k'))
+      ( Caml.Hashtbl.to_seq hashtbl |> Caml.List.of_seq
+      |> List.sort ~compare:(fun (k, _) (k', _) -> compare k k') )
 
 
   let map ?(sep = Fmt.semi) ~bind pp_key pp_value fmt map =
@@ -530,9 +531,9 @@ end = struct
 
   let iter_hashtbl htbl f = Hashtbl.iteri ~f:(fun ~key ~data -> f (key, data)) htbl
 
-  let hashtbl_of_iter_exn key_module iter =
-    let r = Hashtbl.create key_module in
-    iter (fun (key, data) -> Hashtbl.add_exn r ~key ~data) ;
+  let caml_hashtbl_of_iter_exn iter =
+    let r = Caml.Hashtbl.create 42 in
+    iter (fun (key, data) -> Caml.Hashtbl.add r key data) ;
     r
 
 
@@ -920,8 +921,8 @@ end = struct
     type t =
       { formals: Var.t array
       ; ret_var: Var.t
-      ; var_shapes: (Var.t, shape) Hashtbl.t
-      ; shape_structures: (Shape_id.t, structure) Hashtbl.t }
+      ; var_shapes: (Var.t, shape) Caml.Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Caml.Hashtbl.t }
 
     let pp fmt {formals; ret_var; var_shapes; shape_structures} =
       Format.fprintf fmt
@@ -929,14 +930,14 @@ end = struct
          @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
         (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
         formals Var.pp ret_var
-        (Pp.hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
+        (Pp.caml_hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
         var_shapes
-        (Pp.hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
+        (Pp.caml_hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
         shape_structures
 
 
     let find_var_shape var_shapes var =
-      match Hashtbl.find var_shapes var with
+      match Caml.Hashtbl.find_opt var_shapes var with
       | Some shape ->
           shape
       | None ->
@@ -946,7 +947,7 @@ end = struct
     (** Returns true iff the corresponding shape would be represented by several cells in a fully
         precise abstraction, ie. has known sub-fields. *)
     let has_sub_cells shape_structures shape =
-      match (Hashtbl.find shape_structures shape : structure option) with
+      match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
       | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
           false
       | Some (Vector {all_map_value= Some _; _}) ->
@@ -959,7 +960,7 @@ end = struct
 
 
     let find_field_table shape_structures shape =
-      match (Hashtbl.find shape_structures shape : structure option) with
+      match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
       | Some (Vector {fields; _}) ->
           Some fields
       | Some LocalAbstract ->
@@ -1049,7 +1050,7 @@ end = struct
 
     let find_var_path_structure ({shape_structures; _} as summary) var_path =
       let shape_id = find_var_path_shape_exn summary var_path in
-      match Hashtbl.find shape_structures shape_id with
+      match Caml.Hashtbl.find_opt shape_structures shape_id with
       | None ->
           Structure.bottom
       | Some structure ->
@@ -1079,12 +1080,16 @@ end = struct
             let all_map_value = Option.map ~f:translate_shape all_map_value in
             Structure.vector ~is_fully_abstract ?all_map_value (Map.map ~f:translate_shape fields)
       in
-      let var_shapes = Hashtbl.map ~f:translate_shape var_shapes in
+      let var_shapes =
+        iter_hashtbl var_shapes
+        |> Iter.map2 (fun var shape -> (var, translate_shape shape))
+        |> caml_hashtbl_of_iter_exn
+      in
       let shape_structures =
         iter_hashtbl shape_structures
         |> Iter.map2 (fun shape structure ->
                (translate_shape_id shape, translate_structure structure) )
-        |> hashtbl_of_iter_exn (module Shape_id)
+        |> caml_hashtbl_of_iter_exn
       in
       {var_shapes; shape_structures; ret_var; formals}
 
@@ -1106,7 +1111,7 @@ end = struct
              recursively introducing its fields. *)
           let state_shape = State.Shape.Private.create () in
           Hashtbl.set id_translation_tbl ~key:shape_id ~data:state_shape ;
-          ( match (Hashtbl.find shape_structures shape_id : structure option) with
+          ( match (Caml.Hashtbl.find_opt shape_structures shape_id : structure option) with
           | None
           | Some Bottom
           | Some LocalAbstract
@@ -1144,11 +1149,12 @@ end = struct
 
     let introduce_var ~var id_translation_tbl {var_shapes; shape_structures; _}
         {State.shape_structures= state_shape_structures; _} =
-      introduce_shape id_translation_tbl (Hashtbl.find_exn var_shapes var) shape_structures
-        state_shape_structures
+      introduce_shape id_translation_tbl
+        (Caml.Hashtbl.find var_shapes var)
+        shape_structures state_shape_structures
 
 
-    let introduce ~formals ~return summary state =
+    let introduce ~formals ~return (summary : t) (state : State.t) =
       (* [id_translation_tbl] maps Ids from the summary to their translation as Ids in the state
          environment of the caller function. *)
       let id_translation_tbl = Hashtbl.create (module Shape_id) in
@@ -1175,9 +1181,9 @@ end = struct
               "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
               VarPath.pp var_path_1 Shape_id.pp var_path_shape_1
               (Fmt.option @@ Structure.pp pp_shape)
-              (Hashtbl.find shape_structures var_path_shape_1)
+              (Caml.Hashtbl.find_opt shape_structures var_path_shape_1)
               VarPath.pp var_path_2 Shape_id.pp var_path_shape_2 (Fmt.option pp_structure)
-              (Hashtbl.find shape_structures var_path_shape_2)
+              (Caml.Hashtbl.find_opt shape_structures var_path_shape_2)
 
 
     let finalise {var_shapes; shape_structures; _} (var, field_path) =
@@ -1260,7 +1266,7 @@ end = struct
           depth >= ShapeConfig.field_depth || (ShapeConfig.prevent_cycles && Set.mem traversed shape)
         then f init (List.rev sub_path_acc)
         else
-          match (Hashtbl.find shape_structures shape : structure option) with
+          match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
           | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
               (* No more fields. *)
               f init (List.rev sub_path_acc)
