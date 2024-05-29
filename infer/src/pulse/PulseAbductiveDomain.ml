@@ -70,6 +70,8 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig_ = PostDomain
 
+module RecursiveCalls = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
+
 (* see documentation in this file's .mli *)
 type t =
   { post: PostDomain.t
@@ -79,18 +81,20 @@ type t =
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
+  ; recursive_calls: (RecursiveCalls.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
 let pp_ ~is_summary f
-    { post
-    ; pre
-    ; path_condition
-    ; decompiler
-    ; need_dynamic_type_specialization
-    ; transitive_info
-    ; topl
-    ; skipped_calls } =
+    ({ post
+     ; pre
+     ; path_condition
+     ; decompiler
+     ; need_dynamic_type_specialization
+     ; transitive_info
+     ; topl
+     ; recursive_calls
+     ; skipped_calls } [@warning "+missing-record-field-pattern"] ) =
   let pp_decompiler f =
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
   in
@@ -105,11 +109,12 @@ let pp_ ~is_summary f
      %t@;\
      %tneed_dynamic_type_specialization=%a@;\
      transitive_info=%a@;\
+     recursive_calls=%a@;\
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
-    need_dynamic_type_specialization TransitiveInfo.pp transitive_info SkippedCalls.pp skipped_calls
-    PulseTopl.pp_state topl
+    need_dynamic_type_specialization TransitiveInfo.pp transitive_info RecursiveCalls.pp
+    recursive_calls SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
@@ -128,6 +133,12 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
   let callees = TransitiveInfo.Callees.record ~caller callsite_loc call_kind resolution callees in
   let transitive_info = {astate.transitive_info with callees} in
   {astate with transitive_info}
+
+
+let record_recursive_call path location callee astate =
+  let trace = PulseMutualRecursion.mk path location callee in
+  let recursive_calls = Trace.Set.add trace astate.recursive_calls in
+  {astate with recursive_calls}
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
@@ -1476,6 +1487,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
     ; transitive_info= TransitiveInfo.bottom
+    ; recursive_calls= RecursiveCalls.empty
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =

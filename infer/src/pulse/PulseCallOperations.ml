@@ -794,6 +794,13 @@ let call tenv path ~caller_proc_desc
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a: %a@\n" Procname.pp callee_pname
         AnalysisResult.pp_no_summary no_summary ;
+      let astate =
+        match no_summary with
+        | MutualRecursionCycle ->
+            AbductiveDomain.record_recursive_call path call_loc callee_pname astate
+        | AnalysisFailed | InBlockList | UnknownProcedure ->
+            astate
+      in
       let res, (non_disj, contradiction) =
         call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
           ~formals_opt ~call_kind astate ?call_flags non_disj_caller

@@ -68,6 +68,7 @@ type t = private
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
   ; transitive_info: TransitiveInfo.t  (** record transitive information inter-procedurally *)
+  ; recursive_calls: Trace.Set.t
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -322,6 +323,8 @@ val record_call_resolution :
   -> TransitiveInfo.Callees.resolution
   -> t
   -> t
+
+val record_recursive_call : PathContext.t -> Location.t -> Procname.t -> t -> t
 
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
