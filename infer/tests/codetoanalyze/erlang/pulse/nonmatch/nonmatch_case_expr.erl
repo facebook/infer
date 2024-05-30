@@ -4,7 +4,6 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(nonmatch_case_expr).
--include("../../common.hrl").
 
 -export([
     test_case_simple1_Ok/0,
