@@ -401,6 +401,10 @@ features_matchexpr:test_match2_Bad/0: badmatch
 features_matchexpr:test_match3_Ok/0: ok
 features_matchexpr:test_match4_Bad/0: badmatch
 
+----- features_maybe -----
+features_maybe:test_maybe_simple_Bad/0: expected_crash
+features_maybe:test_maybe_simple_Ok/0: ok
+
 ----- features_receive -----
 features_receive:test_receive1_Ok/0: ok
 features_receive:test_receive2_Bad/0: badmatch

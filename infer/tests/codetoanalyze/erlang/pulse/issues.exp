@@ -208,6 +208,7 @@ codetoanalyze/erlang/pulse/features/features_maps.erl, test_key_not_checked_Late
 codetoanalyze/erlang/pulse/features/features_maps.erl, test_update_exact2_Bad/0, 2, BAD_KEY, no_bucket, ERROR, [bad key here]
 codetoanalyze/erlang/pulse/features/features_matchexpr.erl, test_match2_Bad/0, 1, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_matchexpr.erl, test_match4_Bad/0, 1, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_maybe.erl, test_maybe_simple_Bad/0, 7, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive2_Bad/0, 7, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive4_Bad/0, 6, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive5_Bad/0, 6, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]

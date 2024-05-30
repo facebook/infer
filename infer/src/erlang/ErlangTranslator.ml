@@ -630,6 +630,10 @@ and translate_expression env {Ast.location; simple_expression} =
         translate_expression_map_update env ret_var map updates
     | Match {pattern; body} ->
         translate_expression_match env ret_var pattern body
+    | Maybe body ->
+        (* Currently we just translate 'maybe' as a block. When we add support for
+           the ?= operator, we might need a different translation (jumping to end). *)
+        translate_body env body
     | Nil ->
         translate_expression_nil env ret_var
     | Receive {cases; timeout} ->

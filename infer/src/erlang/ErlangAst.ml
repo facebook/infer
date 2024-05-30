@@ -94,6 +94,7 @@ and simple_expression =
   | Map of {map: expression option; updates: association list}
   | MapComprehension of {expression: association; qualifiers: qualifier list}
   | Match of {pattern: expression; body: (* body is a pattern within patterns *) expression}
+  | Maybe of body
   | Nil
   | Receive of {cases: case_clause list; timeout: timeout option}
   | RecordAccess of {record: expression; name: record_name; field: string}

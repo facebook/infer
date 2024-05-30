@@ -97,6 +97,13 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
   | Match {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
+  | Maybe body ->
+      (* Variables bound in a maybe block should not be used outside, so we push
+         a new scope (with same procname) and then forget it by popping. *)
+      let scopes = push_scope scopes (top_scope scopes).procname in
+      let scopes = annotate_expression_list env lambda_cntr scopes body in
+      let _, scopes = pop_scope scopes in
+      scopes
   | Receive {cases; timeout} ->
       (* Process clauses and timeout independently and then merge as
          if the timeout was also just one of the clauses. *)

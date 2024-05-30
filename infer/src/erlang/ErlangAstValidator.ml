@@ -200,7 +200,7 @@ let rec validate_expr env (expr : Ast.expression) =
   | BitstringConstructor elems ->
       let validate_elem (e : Ast.bin_element) = validate_expr env e.expression in
       List.for_all ~f:validate_elem elems
-  | Block body ->
+  | Block body | Maybe body ->
       validate_body env body
   | Call {module_; function_; args} ->
       validate_expr_opt env module_ && validate_expr env function_
