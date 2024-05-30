@@ -24,6 +24,7 @@ Tenv types with source: { hack A,
                           hack TypeInUnit2$static }.
 Tenv types without source: { hack $builtins,
                              hack $root,
+                             hack HH::classname,
                              hack HackArray,
                              hack HackBool,
                              hack HackInt,
