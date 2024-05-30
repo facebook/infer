@@ -217,4 +217,47 @@ class Wrapper {
     }
     $_ = $this->fail();
   }
+
+  // E subtype of D
+  public async function assumeParameterTypeOK_FP(E $x): Awaitable<void> {
+    if ($x is D) {
+      return; // always happens
+    }
+    $_ = $this->fail();
+  }
+
+  public async function assumeParameterTypeGuardedOK_FP(E $x): Awaitable<void> {
+    if ($x is null) {
+      return;
+    }
+    if ($x is D) {
+      return; // always happens
+    }
+    $_ = $this->fail();
+  }
+
+  public async function assumeNullableParameterTypeBad(?E $x): Awaitable<void> {
+    if ($x is D) {
+      return; // often happens
+    }
+    $_ = $this->fail(); // can happen if $x is null
+  }
+
+  public async function assumeNullableParameterTypeOK_FP(
+    ?E $x,
+  ): Awaitable<void> {
+    if ($x is ?D) {
+      return; // always
+    }
+    $_ = $this->fail();
+  }
+
+  // C incompatible with E
+  public async function assumeParameterTypeOK2_FP(E $x): Awaitable<void> {
+    if ($x is C) {
+      $_ = $this->fail(); // never happens
+    }
+    return;
+  }
+
 }
