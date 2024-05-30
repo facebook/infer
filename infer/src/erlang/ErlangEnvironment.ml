@@ -84,7 +84,8 @@ let initialize_environment module_ otp_modules =
           | `Ok imports ->
               imports
           | `Duplicate ->
-              L.die InternalError "repeated import: %s/%d" key.name key.arity
+              L.debug Capture Verbose "repeated import: %s/%d" key.name key.arity ;
+              imports
         in
         let imports = List.fold ~init:env.imports ~f functions in
         {env with imports}
