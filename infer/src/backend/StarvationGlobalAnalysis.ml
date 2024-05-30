@@ -69,7 +69,14 @@ end
 
 let report exe_env work_set =
   let open Domain in
+  let task_bar = TaskBar.create ~jobs:1 in
+  let to_do_items = ref (WorkHashSet.length work_set) in
+  TaskBar.set_tasks_total task_bar !to_do_items ;
   let wrap_report (procname, (pair : CriticalPair.t)) init =
+    to_do_items := !to_do_items - 1 ;
+    TaskBar.set_remaining_tasks task_bar !to_do_items ;
+    TaskBar.update_status task_bar ~slot:0 (Mtime_clock.now ()) (Procname.to_string procname) ;
+    TaskBar.refresh task_bar ;
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
            let pattrs = Attributes.load_exn procname in
@@ -94,7 +101,8 @@ let report exe_env work_set =
                     work_set acc ) )
   in
   WorkHashSet.fold wrap_report work_set Starvation.ReportMap.empty
-  |> Starvation.ReportMap.store_multi_file
+  |> Starvation.ReportMap.store_multi_file ;
+  TaskBar.finish task_bar
 
 
 let whole_program_analysis () =
@@ -103,6 +111,7 @@ let whole_program_analysis () =
   let exe_env = Exe_env.mk () in
   L.progress "Processing on-disk summaries...@." ;
   Summary.OnDisk.iter_specs ~f:(iter_summary exe_env ~f:(WorkHashSet.add_pair work_set)) ;
-  L.progress "Loaded %d pairs@." (WorkHashSet.length work_set) ;
+  let num_pairs = WorkHashSet.length work_set in
+  L.progress "Loaded %d pairs@." num_pairs ;
   L.progress "Reporting on processed summaries...@." ;
   report exe_env work_set
