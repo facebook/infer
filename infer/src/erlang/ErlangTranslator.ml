@@ -631,9 +631,11 @@ and translate_expression env {Ast.location; simple_expression} =
     | Match {pattern; body} ->
         translate_expression_match env ret_var pattern body
     | Maybe body ->
-        (* Currently we just translate 'maybe' as a block. When we add support for
-           the ?= operator, we might need a different translation (jumping to end). *)
-        translate_body env body
+        translate_expression_maybe env body ret_var
+    | MaybeMatch _ ->
+        (* MaybeMatch can only be on the top level of a Maybe expression and is
+           handled separately when processing the Maybe. *)
+        L.die InternalError "Trying to process maybe_match expression outside maybe"
     | Nil ->
         translate_expression_nil env ret_var
     | Receive {cases; timeout} ->
@@ -1164,6 +1166,38 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
      an extra construction step and doesn't seem to align with compiler: T136864730 *)
   let store_return_block = translate_expression_to_id env ret_var pattern in
   Block.all env [body_block; pattern_block; store_return_block]
+
+
+and translate_expression_maybe (env : (_, _) Env.t) body ret_var : Block.t =
+  let rev_blocks, last_expr_result =
+    let f (rev_blocks, _) (one_expr : Ast.expression) =
+      match one_expr.simple_expression with
+      | MaybeMatch {body; pattern} ->
+          (* MaybeMatch can only appear on the top level of a Maybe and is treated in
+             a special way: if the pattern does not match, we store the result of the
+             body in the return value before we go to exit_failure. *)
+          let body_id, body_block = translate_expression_to_fresh_id env body in
+          let pattern_block = translate_pattern env body_id pattern in
+          let store_ret = Node.make_load env ret_var (Var body_id) any_typ in
+          pattern_block.exit_failure |~~> [store_ret] ;
+          let pattern_block = {pattern_block with exit_failure= store_ret} in
+          (pattern_block :: body_block :: rev_blocks, body_id)
+      | _ ->
+          (* All other expressions are treated simply as if we were in a block. *)
+          let id, block = translate_expression_to_fresh_id env one_expr in
+          (block :: rev_blocks, id)
+    in
+    List.fold body ~init:([], mk_fresh_id ()) ~f
+  in
+  let store_last_expr = Block.make_load env ret_var (Var last_expr_result) any_typ in
+  let maybe_block = Block.all env (List.rev (store_last_expr :: rev_blocks)) in
+  (* Since we don't support else clauses yet, we redirect both success and
+     failure exits to a new, dummy exit_success. But later, failure should
+     go to the else clauses. *)
+  let exit_node = Node.make_nop env in
+  maybe_block.exit_success |~~> [exit_node] ;
+  maybe_block.exit_failure |~~> [exit_node] ;
+  {maybe_block with exit_success= exit_node; exit_failure= Node.make_nop env}
 
 
 and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =

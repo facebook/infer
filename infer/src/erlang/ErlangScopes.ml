@@ -95,7 +95,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       let scopes = annotate_expression env lambda_cntr scopes expression.key in
       let scopes = annotate_expression env lambda_cntr scopes expression.value in
       List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
-  | Match {pattern; body} ->
+  | Match {pattern; body} | MaybeMatch {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
   | Maybe body ->
       (* Variables bound in a maybe block should not be used outside, so we push

@@ -321,6 +321,11 @@ let rec to_expression (gen_uniq : unit -> int) json : Ast.expression option =
       let* loc = get_loc_from_anno anno in
       let* body = to_body gen_uniq body in
       expr loc (Maybe body)
+  | `List [`String "maybe_match"; anno; pattern; body] ->
+      let* loc = get_loc_from_anno anno in
+      let* pattern = to_expression gen_uniq pattern in
+      let* body = to_expression gen_uniq body in
+      expr loc (MaybeMatch {pattern; body})
   | `List [`String "mc"; anno; association; qualifiers] ->
       let* loc = get_loc_from_anno anno in
       let* expression = to_association gen_uniq association in
