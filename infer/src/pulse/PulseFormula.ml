@@ -4132,21 +4132,18 @@ type dynamic_type_data = InstanceOf.dynamic_type_data =
 
 let get_dynamic_type = DynamicTypes.get_dynamic_type
 
-let add_dynamic_type_unsafe v t ?source_file location {conditions; phi} =
+let add_dynamic_type_unsafe v t ?source_file _location {conditions; phi} =
   let phi, should_zero = Formula.add_dynamic_type v t ?source_file phi in
-  if not should_zero then (
-    (* This situation corresponds (roughly) to the ones in which we'd previously have
-       returned Unsat (which was not supposed to happen in calls to the unsafe version)
-       For now we keep the logging and default behaviour
-       TODO: revisit this *)
-    let prev_fact = Var.Map.find_opt v phi.type_constraints in
-    L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
-      (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
-      (Pp.option InstanceOf.pp_instance_fact)
-      prev_fact ;
-    ScubaLogging.log_message_with_location ~label:"add_dynamic_type_unsafe"
-      ~loc:(F.asprintf "%a" Location.pp_file_pos location)
-      ~message:"Failed to add inconsistent dynamic type." ) ;
+  ( if not should_zero then
+      (* This situation corresponds (roughly) to the ones in which we'd previously have
+         returned Unsat (which was not supposed to happen in calls to the unsafe version)
+         For now we keep the logging and default behaviour
+         TODO: revisit this *)
+      let prev_fact = Var.Map.find_opt v phi.type_constraints in
+      L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
+        (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
+        (Pp.option InstanceOf.pp_instance_fact)
+        prev_fact ) ;
   {conditions; phi}
 
 
