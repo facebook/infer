@@ -2200,6 +2200,14 @@ module Formula = struct
     val remove_const_eq : Var.t -> t -> t
 
     val add_dynamic_type : Var.t -> Typ.t -> ?source_file:SourceFile.t -> t -> t * bool
+    (** We're now tracking nullability more precisely. If the language includes nulls and we have
+        apparently contradictory type information then, instead of immediately returning [Unsat], we
+        want to add an assertion that the value must be null (which inhabits all (nullable) types).
+        But at this low level in the solver stack (the [Unsafe] module), we can't yet decide if the
+        resulting state is [Unsat]. So we return an extra boolean that indicates whether or not a
+        higher-level wrapper should add, and compute the consequences of, that assertion. See
+        [and_dynamic_type] further down (in the [Normalizer] module) for such a wrapper around
+        [add_dynamic_type] *)
 
     val add_below : Var.t -> Typ.t -> t -> t * bool
 
@@ -2463,14 +2471,6 @@ module Formula = struct
       {phi with const_eqs= Var.Map.remove v phi.const_eqs}
 
 
-    (** We're now tracking nullability more precisely. If the language includes nulls and we have
-        apparently contradictory type information then, instead of immediately returning [Unsat], we
-        want to add an assertion that the value must be null (which inhabits all (nullable) types).
-        But at this low level in the solver stack (the [Unsafe] module), we can't yet decide if the
-        resulting state is [Unsat]. So we return an extra boolean that indicates whether or not a
-        higher-level wrapper should add, and compute the consequences of, that assertion. See
-        [and_dynamic_type] further down (in the [Normalizer] module) for such a wrapper around
-        [add_dynamic_type] *)
     let add_dynamic_type v t ?source_file phi =
       match Var.Map.find_opt v phi.type_constraints with
       | None ->
@@ -2514,16 +2514,16 @@ module Formula = struct
             Debug.p "new phi is %a@\n" (pp_with_pp_var Var.pp) phi ;
             (phi, false)
         | Some (InstanceOf.Known {typ= t'}) ->
-            if InstanceOf.is_subtype t' t then (phi, false) else (phi, true)
+            (phi, not (InstanceOf.is_subtype t' t))
         | Some (InstanceOf.Unknown {below; notbelow}) ->
-            (* new below constraint is redundant with an existing one *)
-            if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' t) then (phi, false)
+            if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' t) then
+              (* new below constraint is redundant with an existing one *) (phi, false)
+            else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then
               (* New below constraint is incompatible with a notbelow one.
                  Note that once we know the value is zero, we shouldn't care
                  any more what type_constraints says about it, so we don't
                  bother to update, or do any further checks
-              *)
-            else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t t') then (phi, true)
+              *) (phi, true)
             else if
               InstanceOf.is_concrete_or_abstract t
               && List.exists below ~f:(fun t' ->
@@ -3712,24 +3712,19 @@ module Formula = struct
       normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs)
 
 
+    and and_var_is_zero v (phi, neweqs) =
+      if Language.curr_language_is Erlang then (* No null pointers in Erlang *) Unsat
+      else solve_lin_eq neweqs (LinArith.of_var v) (LinArith.of_q Q.zero) phi
+
+
     and and_below v t (phi, new_eqs) =
       let phi, should_zero = add_below v t phi in
-      if should_zero then
-        if Language.curr_language_is Erlang then Unsat
-        else
-          let* _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
-          Sat phi_neweqs
-      else Sat (phi, new_eqs)
+      if should_zero then and_var_is_zero v (phi, new_eqs) else Sat (phi, new_eqs)
 
 
     and and_notbelow v t (phi, new_eqs) =
       let phi, should_zero = add_notbelow v t phi in
-      if should_zero then
-        if Language.curr_language_is Erlang then Unsat
-        else
-          let* _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
-          Sat phi_neweqs
-      else Sat (phi, new_eqs)
+      if should_zero then and_var_is_zero v (phi, new_eqs) else Sat (phi, new_eqs)
 
 
     (* [and_dynamic_type] wraps [add_dynamic_type]. In particular, if the call to the former
@@ -3738,13 +3733,7 @@ module Formula = struct
     *)
     let and_dynamic_type v t ?source_file (phi, new_eqs) =
       let phi, should_zero = add_dynamic_type v t ?source_file phi in
-      if should_zero then
-        if Language.curr_language_is Erlang then Unsat
-        else
-          (* Should use one of the other operations here? and_var_linarith, perhaps? *)
-          let+ _, phi_neweqs = and_atom (Atom.Equal (Var v, Term.zero)) (phi, new_eqs) in
-          phi_neweqs
-      else Sat (phi, new_eqs)
+      if should_zero then and_var_is_zero v (phi, new_eqs) else Sat (phi, new_eqs)
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
@@ -4134,7 +4123,7 @@ let get_dynamic_type = DynamicTypes.get_dynamic_type
 
 let add_dynamic_type_unsafe v t ?source_file _location {conditions; phi} =
   let phi, should_zero = Formula.add_dynamic_type v t ?source_file phi in
-  ( if not should_zero then
+  ( if should_zero then
       (* This situation corresponds (roughly) to the ones in which we'd previously have
          returned Unsat (which was not supposed to happen in calls to the unsafe version)
          For now we keep the logging and default behaviour

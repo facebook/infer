@@ -90,7 +90,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
                build system tests (or test reporting), so we only use true at the moment (which introduces a FP in a pulse test)
                TODO: come back and fix this
             *)
-            let instr_call_instanceof nullable =
+            let instr_call_instanceof ~is_nullable =
               let instanceof_builtin = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
               let args =
                 [ (Exp.Var id_exn_val, Typ.mk (Tptr (exn_type, Typ.Pk_pointer)))
@@ -99,7 +99,7 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
                       ; nbytes= None
                       ; dynamic_length= None
                       ; subtype= Subtype.exact
-                      ; nullable }
+                      ; nullable= is_nullable }
                   , StdTyp.void ) ]
               in
               Sil.Call
@@ -129,13 +129,13 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
             in
             let node_true =
               let instrs_true =
-                [instr_call_instanceof true; instr_prune_true; instr_set_catch_var]
+                [instr_call_instanceof ~is_nullable:true; instr_prune_true; instr_set_catch_var]
               in
               create_node loc node_kind_true instrs_true
             in
             let node_false =
               let instrs_false =
-                [instr_call_instanceof true; instr_prune_false]
+                [instr_call_instanceof ~is_nullable:true; instr_prune_false]
                 @ if rethrow_exception then [instr_rethrow_exn] else []
               in
               create_node loc node_kind_false instrs_false
