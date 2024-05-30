@@ -87,22 +87,13 @@ let pp_html source fmt ({err_log; payloads; stats} as summary) =
 
 
 module ReportSummary = struct
-  type t =
-    { loc: Location.t
-    ; cost_opt: CostDomain.summary option
-    ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
-    ; err_log: Errlog.t }
+  type t = {loc: Location.t; err_log: Errlog.t}
 
-  let of_full_summary ({proc_name; payloads; err_log} : full_summary) : t =
-    { loc= (Attributes.load_exn proc_name).loc
-    ; cost_opt= Lazy.force payloads.Payloads.cost
-    ; config_impact_opt= Lazy.force payloads.Payloads.config_impact_analysis
-    ; err_log }
+  let of_full_summary ({proc_name; err_log} : full_summary) : t =
+    {loc= (Attributes.load_exn proc_name).loc; err_log}
 
 
-  let empty () =
-    {loc= Location.dummy; cost_opt= None; config_impact_opt= None; err_log= Errlog.empty ()}
-
+  let empty () = {loc= Location.dummy; err_log= Errlog.empty ()}
 
   let merge ~into x = Errlog.merge ~into:into.err_log x.err_log
 
@@ -327,13 +318,21 @@ module OnDisk = struct
     let db = Database.get_database AnalysisDatabase in
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
-    Sqlite3.prepare db "SELECT proc_name, report_summary FROM specs ORDER BY proc_uid ASC"
+    Printf.sprintf "SELECT proc_name, report_summary, %s, %s FROM specs ORDER BY proc_uid ASC"
+      PayloadId.Variants.cost.Variant.name PayloadId.Variants.configimpactanalysis.Variant.name
+    |> Sqlite3.prepare db
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let ({loc; cost_opt; config_impact_opt; err_log} : ReportSummary.t) =
+             let {ReportSummary.loc; err_log} =
                Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize
+             in
+             let cost_opt : CostDomain.summary option =
+               Sqlite3.column stmt 2 |> Payloads.SQLite.deserialize_payload_opt |> Lazy.force
+             in
+             let config_impact_opt : ConfigImpactAnalysis.Summary.t option =
+               Sqlite3.column stmt 3 |> Payloads.SQLite.deserialize_payload_opt |> Lazy.force
              in
              f proc_name loc cost_opt config_impact_opt err_log )
 
