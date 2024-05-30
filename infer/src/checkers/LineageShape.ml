@@ -208,9 +208,9 @@ module Pp = struct
       |> List.sort ~compare:(fun (k, _) (k', _) -> compare k k') )
 
 
-  let map ?(sep = Fmt.semi) ~bind pp_key pp_value fmt map =
+  let map ?(sep = Fmt.semi) ~iteri ~bind pp_key pp_value fmt map =
     let pp_binding = binding ~bind pp_key pp_value in
-    Format.fprintf fmt "@[(%a)@]" (IFmt.Labelled.iter_bindings ~sep Map.iteri pp_binding) map
+    Format.fprintf fmt "@[(%a)@]" (IFmt.Labelled.iter_bindings ~sep iteri pp_binding) map
 end
 
 module Id () : sig
@@ -234,6 +234,9 @@ end
     returns some field [foo] of [X]: we want to know that we should create the Lineage node
     [$argN#foo] at the same time as the node [$argN]. *)
 
+module StringSet = Set.Make_tree (String)
+module FieldLabelMap = Map.Make_tree (FieldLabel)
+
 module Structure : sig
   (** Private type: the constructor functions may do some checks before building structures, but we
       want to allow pattern matching. *)
@@ -242,7 +245,7 @@ module Structure : sig
         (** The shape of values that have had not been set anywhere yet. This should happen only
             upon assigning a new variable or variable path. Encountering bottom shapes elsewhere
             should raise exceptions. *)
-    | Variant of String.Set.t
+    | Variant of StringSet.t
         (** The shape of values that are statically known to only have as possible values a set of
             atoms. Invariant: the set should not be empty (or unspecified behaviours may trigger). *)
     | LocalAbstract
@@ -299,7 +302,7 @@ module Structure : sig
                   That doesn't concern fieldname keys: if a vector-shaped variable can be either a
                   map or a record, then even if the map has complex keys, accessing them won't be
                   related to the fieldnames of the record case. *)
-        ; fields: 'shape FieldLabel.Map.t }
+        ; fields: 'shape FieldLabelMap.t }
         (** The shape of values that can have values other than statically known atoms.
 
             Remark 1: integers (and possibly other constants) will currently be represented as
@@ -314,15 +317,14 @@ module Structure : sig
 
   val bottom : _ t
 
-  val variant : String.Set.t -> _ t
+  val variant : StringSet.t -> _ t
   (** If the set is too big (see {!ShapeConfig}), will build a {!scalar} structure instead. *)
 
   val variant_of_list : string list -> _ t
 
   val local_abstract : _ t
 
-  val vector :
-    is_fully_abstract:bool -> ?all_map_value:'shape -> 'shape FieldLabel.Map.t -> 'shape t
+  val vector : is_fully_abstract:bool -> ?all_map_value:'shape -> 'shape FieldLabelMap.t -> 'shape t
 
   val vector_fully_abstract : _ t
 
@@ -336,10 +338,10 @@ module Structure : sig
 end = struct
   type 'shape t =
     | Bottom
-    | Variant of String.Set.t
+    | Variant of StringSet.t
     | LocalAbstract
     | Vector of
-        {is_fully_abstract: bool; all_map_value: 'shape option; fields: 'shape FieldLabel.Map.t}
+        {is_fully_abstract: bool; all_map_value: 'shape option; fields: 'shape FieldLabelMap.t}
 
   let pp pp_shape fmt x =
     match x with
@@ -349,13 +351,13 @@ end = struct
         Fmt.pf fmt "?"
     | Variant constructors ->
         Fmt.pf fmt "[@[%a@]]"
-          (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") Set.iter Fmt.string)
+          (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") StringSet.iter Fmt.string)
           constructors
     | Vector {is_fully_abstract; fields; all_map_value} ->
         (* Example: ('foo' : <1>, 'bar' : <1>, baz : <2>) {* : <1>} *)
         Fmt.pf fmt "@[%t%a%a@]"
           (if is_fully_abstract then Fmt.fmt "T " else Fmt.fmt "")
-          (Pp.map ~bind:IFmt.colon_sp FieldLabel.pp pp_shape)
+          (Pp.map ~iteri:FieldLabelMap.iteri ~bind:IFmt.colon_sp FieldLabel.pp pp_shape)
           fields
           Fmt.(option ~none:nop (any "@ {* :@ " ++ pp_shape ++ any "}"))
           all_map_value
@@ -367,14 +369,14 @@ end = struct
     Vector {is_fully_abstract; all_map_value; fields}
 
 
-  let vector_fully_abstract = vector ~is_fully_abstract:true FieldLabel.Map.empty
+  let vector_fully_abstract = vector ~is_fully_abstract:true FieldLabelMap.empty
 
   let vector_of_alist field_alist =
-    vector ~is_fully_abstract:false (FieldLabel.Map.of_alist_exn field_alist)
+    vector ~is_fully_abstract:false (FieldLabelMap.of_alist_exn field_alist)
 
 
   let complex_map ~all_map_value =
-    vector ~is_fully_abstract:false ~all_map_value FieldLabel.Map.empty
+    vector ~is_fully_abstract:false ~all_map_value FieldLabelMap.empty
 
 
   let scalar =
@@ -386,10 +388,11 @@ end = struct
   let local_abstract = LocalAbstract
 
   let variant constructors =
-    if Set.length constructors <= ShapeConfig.variant_width then Variant constructors else scalar
+    if StringSet.length constructors <= ShapeConfig.variant_width then Variant constructors
+    else scalar
 
 
-  let variant_of_list constructor_list = variant (String.Set.of_list constructor_list)
+  let variant_of_list constructor_list = variant (StringSet.of_list constructor_list)
 end
 
 module Env : sig
@@ -639,7 +642,7 @@ end = struct
         let id = Union_find.get shape in
         match Hashtbl.find shape_structures id with
         | Some (Variant constructors) ->
-            Some (String.Set.to_list constructors)
+            Some (StringSet.to_list constructors)
         | _ ->
             None
 
@@ -651,7 +654,7 @@ end = struct
         let id = Union_find.get shape in
         match Hashtbl.find shape_structures id with
         | Some (Vector {fields; is_fully_abstract; _}) ->
-            Map.find fields field_label |> Result.of_option ~error:is_fully_abstract
+            FieldLabelMap.find fields field_label |> Result.of_option ~error:is_fully_abstract
         | Some Bottom | Some (Variant _) | Some LocalAbstract | None ->
             Error false
 
@@ -673,7 +676,7 @@ end = struct
       | Bottom, other | other, Bottom ->
           other
       | Variant constructors, Variant constructors' ->
-          Structure.variant (Set.union constructors constructors')
+          Structure.variant (StringSet.union constructors constructors')
       | Variant _, other | other, Variant _ ->
           other
       | LocalAbstract, LocalAbstract ->
@@ -694,7 +697,7 @@ end = struct
              shapes will be completed).
           *)
           let fields =
-            Map.merge_skewed
+            FieldLabelMap.merge_skewed
               ~combine:(fun ~key:_fieldname shape_1 shape_2 ->
                 todo_unify shape_1 shape_2 ;
                 shape_1 )
@@ -716,7 +719,7 @@ end = struct
             | None ->
                 ()
             | Some all_map_value_shape ->
-                Map.iteri
+                FieldLabelMap.iteri
                   ~f:(fun ~key ~data ->
                     match (key : FieldLabel.t) with
                     | MapKey _ ->
@@ -956,7 +959,7 @@ end = struct
           (* 1-sized vectors are considered to have sub-cells. This is sometimes an approximation but
              avoids recursing on that lone field to check if it itself has more than one
              sub-cells. *)
-          not (Map.is_empty fields)
+          not (FieldLabelMap.is_empty fields)
 
 
     let find_field_table shape_structures shape =
@@ -984,7 +987,7 @@ end = struct
     let find_next_field_shape shape_structures shape field =
       let open IOption.Let_syntax in
       let* field_table = find_field_table shape_structures shape in
-      match Map.find field_table field with
+      match FieldLabelMap.find field_table field with
       | Some value_shape ->
           Some value_shape
       | None ->
@@ -1010,7 +1013,7 @@ end = struct
           L.debug Analysis Verbose
             "Field %a unknown for non-final shape %a.@ Known fields are:@ @[{%a}@]" FieldLabel.pp
             field Shape_id.pp shape
-            (Pp.map ~bind:IFmt.colon_sp FieldLabel.pp Shape_id.pp)
+            (Pp.map ~iteri:FieldLabelMap.iteri ~bind:IFmt.colon_sp FieldLabel.pp Shape_id.pp)
             field_table ;
           None
 
@@ -1078,7 +1081,8 @@ end = struct
             Structure.variant constructors
         | Vector {is_fully_abstract; all_map_value; fields} ->
             let all_map_value = Option.map ~f:translate_shape all_map_value in
-            Structure.vector ~is_fully_abstract ?all_map_value (Map.map ~f:translate_shape fields)
+            Structure.vector ~is_fully_abstract ?all_map_value
+              (FieldLabelMap.map ~f:translate_shape fields)
       in
       let var_shapes =
         iter_hashtbl var_shapes
@@ -1141,7 +1145,7 @@ end = struct
 
 
     and introduce_fields id_translation_tbl fields shape_structures state_shape_structures =
-      Map.map
+      FieldLabelMap.map
         ~f:(fun shape_id ->
           introduce_shape id_translation_tbl shape_id shape_structures state_shape_structures )
         fields
@@ -1211,14 +1215,15 @@ end = struct
             let field_table = find_field_table_exn shape_structures shape in
             if
               remaining_depth <= 0
-              || Map.length field_table > ShapeConfig.field_width
+              || FieldLabelMap.length field_table > ShapeConfig.field_width
               || (ShapeConfig.prevent_cycles && Set.mem traversed_shape_set shape)
             then ([], true)
             else
               let final_sub_path, is_abstract =
                 aux (remaining_depth - 1)
                   (Set.add traversed_shape_set shape)
-                  (Map.find_exn field_table field) fields
+                  (FieldLabelMap.find_exn field_table field)
+                  fields
               in
               (field :: final_sub_path, is_abstract)
       in
@@ -1271,12 +1276,12 @@ end = struct
               (* No more fields. *)
               f init (List.rev sub_path_acc)
           | Some (Vector {fields; _}) ->
-              let len = Map.length fields in
+              let len = FieldLabelMap.length fields in
               if Int.O.(len = 0) || len > ShapeConfig.field_width then
                 f init (List.rev sub_path_acc)
               else
                 let traversed = Set.add traversed shape in
-                Map.fold
+                FieldLabelMap.fold
                   ~f:(fun ~key:fieldname ~data:fieldshape acc ->
                     fold_candidate_sub_paths_of_shape fieldshape (depth + 1) traversed
                       (fieldname :: sub_path_acc) ~init:acc )
@@ -1333,7 +1338,7 @@ end = struct
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =
       match find_var_path_structure summary (var, field_path) with
       | Variant set ->
-          String.Set.fold ~init
+          StringSet.fold ~init
             ~f:(fun acc constructor -> f acc (FieldLabel.map_key constructor))
             set
       | _ ->
@@ -1353,8 +1358,8 @@ end = struct
       let* summary = summary_option in
       match find_var_path_structure summary var_path with
       | Variant set ->
-          if Int.O.(Set.length set = 1) then
-            let+ constructor = Set.choose set in
+          if Int.O.(StringSet.length set = 1) then
+            let+ constructor = StringSet.choose set in
             FieldLabel.map_key constructor
           else None
       | _ ->
