@@ -1243,6 +1243,25 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
+## MUTUAL_RECURSION_CYCLE
+
+Reported as "Mutual Recursion Cycle" by [pulse](/docs/next/checker-pulse).
+
+A recursive call or mutually recursive call has been detected. This does *not* mean that the program won't terminate, just that the code is recursive. You should double-check if the recursion is intended and if it can lead to non-termination or a stack overflow.
+
+Example of recursive function:
+
+
+```C
+int factorial(int x) {
+  if (x > 0) {
+    return x * factorial(x-1);
+  } else {
+    return 1;
+  }
+}
+```
+
 ## NIL_BLOCK_CALL
 
 Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
@@ -1770,6 +1789,48 @@ An example of such variadic methods is
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+## PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS
+
+Reported as "Cannot Instantiate Abstract Class" by [pulse](/docs/next/checker-pulse).
+
+Instantiating an abstract class will lead to `Cannot instantiate abstract class` error.
+
+```hack
+abstract class AbstractClass1 {}
+
+class ConcreteClass1 extends AbstractClass1 {}
+
+public static function makeGeneric<T>(classname<T> $cls): void {
+    new $cls();
+}
+
+<<__ConsistentConstruct>>
+abstract class AbstractClass2 {
+
+  public static function makeStatic(): void {
+    new static();
+  }
+}
+
+class ConcreteClass2 extends AbstractClass2 {}
+
+public function badViaGeneric(): void {
+    Main::makeGeneric(AbstractClass1::class); // ERROR!
+}
+
+public function goodViaGeneric(): void {
+  Main::makeGeneric(ConcreteClass1::class);
+}
+
+public function badViaStatic(): void {
+  AbstractClass2::makeStatic(); // ERROR!
+}
+
+public function goodViaStatic(): void {
+  ConcreteClass2::makeStatic();
+}
+```
+
 ## PULSE_CONST_REFABLE
 
 Reported as "Const Refable Parameter" by [pulse](/docs/next/checker-pulse).
@@ -1805,6 +1866,16 @@ function simple_bad() : int {
   return $d['bye'];
 }
 ```
+
+## PULSE_DYNAMIC_TYPE_MISMATCH
+
+Reported as "Dynamic Type Mismatch" by [pulse](/docs/next/checker-pulse).
+
+This error is reported in Hack. It fires when we detect an operation that is incompatible
+with the dynamic type of its arguments.
+
+For example, reading `$x['key']` when `$x` is a vector.
+
 
 ## PULSE_READONLY_SHARED_PTR_PARAM
 
@@ -2454,6 +2525,41 @@ useful, but you cannot use it blindly when you see a resource-allocation site.
 ## RETAIN_CYCLE
 
 Reported as "Retain Cycle" by [pulse](/docs/next/checker-pulse).
+
+A retain cycle is a situation when object A retains object B, and object B
+retains object A at the same time. Here is an example:
+
+```objectivec
+@class Child;
+@interface Parent : NSObject {
+    Child *child; // Instance variables are implicitly __strong
+}
+@end
+@interface Child : NSObject {
+    Parent *parent;
+}
+@end
+```
+
+You can fix a retain cycle in ARC by using \_\_weak variables or weak properties
+for your "back links", i.e. links to direct or indirect parents in an object
+hierarchy:
+
+```objectivec
+@class Child;
+@interface Parent : NSObject {
+    Child *child;
+}
+@end
+@interface Child : NSObject {
+    __weak Parent *parent;
+}
+@end
+```
+
+## RETAIN_CYCLE_NO_WEAK_INFO
+
+Reported as "Retain Cycle No Weak Info" by [pulse](/docs/next/checker-pulse).
 
 A retain cycle is a situation when object A retains object B, and object B
 retains object A at the same time. Here is an example:

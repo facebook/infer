@@ -143,12 +143,13 @@ flags starting with &lsquo;--annotation-reachability&lsquo;.
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
 
---no-annotation-reachability-apply-class-annotations</b></p>
+--no-annotation-reachability-apply-superclass-annotations</b></p>
 
 <p style="margin-left:17%;">Deactivates: Applies
-annotations of a class/interface to all its methods
+annotations from superclasses and interfaces also on methods
+that are not overridden from the superclass or interface.
 (Conversely:
-<b>--annotation-reachability-apply-class-annotations</b>)</p>
+<b>--annotation-reachability-apply-superclass-annotations</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -243,6 +244,15 @@ reachability checker) (Conversely:
 <i>annotation-reachability</i> and disable all other
 checkers (Conversely:
 <b>--no-annotation-reachability-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-report-source-and-sink</b></p>
+
+<p style="margin-left:17%;">Activates: Reports methods that
+are marked as both a source and a sink at the same time.
+(Conversely:
+<b>--no-annotation-reachability-report-source-and-sink</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -517,14 +527,6 @@ run capture on given targets) (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
---buck2-use-bxl</b></p>
-
-<p style="margin-left:17%;">Activates: Use BXL script when
-capturing with buck2. (Conversely:
-<b>--no-buck2-use-bxl</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --bufferoverrun</b></p>
 
 <p style="margin-left:17%;">Activates: <i>bufferoverrun</i>
@@ -866,6 +868,16 @@ See <b>--debug-level</b> for accepted values.</p>
 <b>infer-compile</b>(1), <b><br>
 infer-report</b>(1), <b>infer-reportdiff</b>(1), and
 <b>infer-run</b>(1). <b><br>
+--debug-level-report</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --no-deduplicate</b></p>
 
 <p style="margin-left:17%;">Deactivates: Apply
@@ -896,6 +908,13 @@ jar file will be translated. No sources needed. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--dict-missing-key-var-block-list</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Skip analyzing the variables in
+the dict-missing-key checker.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --differential-filter-files</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Specify the file containing the
@@ -1023,6 +1042,7 @@ MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
 MODIFIES_IMMUTABLE (enabled by default), <br>
 MULTIPLE_WEAKSELF (enabled by default), <br>
+MUTUAL_RECURSION_CYCLE (disabled by default), <br>
 Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_BLOCK_CALL_LATENT (disabled by default), <br>
@@ -1058,8 +1078,11 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
+PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS (disabled by
+default), <br>
 PULSE_CONST_REFABLE (enabled by default), <br>
 PULSE_DICT_MISSING_KEY (disabled by default), <br>
+PULSE_DYNAMIC_TYPE_MISMATCH (disabled by default), <br>
 PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_REFERENCE_STABILITY (disabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
@@ -1087,6 +1110,7 @@ QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (enabled by default), <br>
+RETAIN_CYCLE_NO_WEAK_INFO (disabled by default), <br>
 SCOPE_LEAKAGE (enabled by default), <br>
 SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
@@ -1779,19 +1803,19 @@ dependencies that cannot be found. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--log-pulse-coverage</b></p>
+
+<p style="margin-left:17%;">Activates: Log precisely where
+coverage stops, at the end of file stats/stats.txt.
+(Conversely: <b>--no-log-pulse-coverage</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --log-pulse-disjunct-increase-after-model-call</b></p>
 
 <p style="margin-left:17%;">Activates: Log which model did
 increase the current number of Pulse disjuncts. (Conversely:
 <b>--no-log-pulse-disjunct-increase-after-model-call</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---log-pulse-unreachable-nodes</b></p>
-
-<p style="margin-left:17%;">Activates: Log for each
-function and each summary, the ratio of unreached nodes.
-(Conversely: <b>--no-log-pulse-unreachable-nodes</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2291,6 +2315,13 @@ modelled as &quot;skip&quot; in Pulse</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-model-skip-pattern-list</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as &quot;skip&quot; in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-model-transfer-ownership</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Methods that should be modelled
@@ -2685,6 +2716,13 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--qualified-cpp-name-block-list</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Skip analyzing the procedures
+under the qualified cpp type name.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --quandary</b></p>
 
 <p style="margin-left:17%;">Activates: <i>quandary</i>
@@ -2849,6 +2887,28 @@ even if they match the allow list specified by
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
 and <b>infer-run</b>(1). <b><br>
+--report-block-list-spec</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Do not report the issues in
+this list.</p>
+
+<p style="margin-left:11%;">Example format: <br>
+&quot;report-block-list-spec&quot;: [ <br>
+{ &quot;bug_type&quot;:
+&quot;CXX_REF_CAPTURED_IN_BLOCK&quot;, <br>
+&quot;procedure_name&quot;: &quot;foo&quot;, <br>
+&quot;file&quot;: &quot;path/to/File.m&quot; <br>
+&quot;comment&quot;: &quot;This is a fp because...&quot;
+<br>
+}, <br>
+{ &quot;bug_type&quot;: &quot;RETAIN_CYCLE&quot;, <br>
+&quot;class_name&quot;: &quot;MyClass&quot;, <br>
+&quot;procedure_name&quot;: &quot;my_method&quot; <br>
+&quot;file&quot;: &quot;path/to/File.m&quot; <br>
+} <br>
+] <br>
+See also <b>infer-report</b>(1) and <b>infer-run</b>(1).
+<b><br>
 --report-console-limit</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Maximum number of issues to
@@ -3250,6 +3310,16 @@ successfully as fewer datatypes are involved. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--struct-as-cpp-class</b></p>
+
+<p style="margin-left:17%;">Activates: Translate C structs
+as C++ classes. This can be useful when analyzing C/C++ code
+to make sure struct global variables shared between C and
+C++ source files are treated as same variables</p>
+
+<p style="margin-left:11%;">(Conversely:
+<b>--no-struct-as-cpp-class</b>) <br>
+See also <b>infer-capture</b>(1). <b><br>
 --tenv-json</b> <i>file</i></p>
 
 <p style="margin-left:17%;">Path to TEnv json file</p>

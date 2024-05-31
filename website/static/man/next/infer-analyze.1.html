@@ -229,6 +229,12 @@ See <b>--debug-level</b> for accepted values.</p>
 <p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
+<p style="margin-left:11%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
 <p style="margin-left:11%;"><b>--no-deduplicate</b></p>
 
 <p style="margin-left:17%;">Deactivates: Apply
@@ -245,6 +251,13 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <b>--racerd</b>, <b>--siof</b>, <b>--self-in-block</b>,
 <b>--starvation</b> (Conversely:
 <b>--default-checkers</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--dict-missing-key-var-block-list</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Skip analyzing the variables in
+the dict-missing-key checker.</p>
 
 
 <p style="margin-left:11%;"><b>--files-to-analyze-index</b>
@@ -411,20 +424,6 @@ ignored by liveness analysis</p>
 dependencies that cannot be found. (Conversely:
 <b>--no-log-missing-deps</b>)</p>
 
-
-<p style="margin-left:11%;"><b>--log-pulse-disjunct-increase-after-model-call</b></p>
-
-<p style="margin-left:17%;">Activates: Log which model did
-increase the current number of Pulse disjuncts. (Conversely:
-<b>--no-log-pulse-disjunct-increase-after-model-call</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--log-pulse-unreachable-nodes</b></p>
-
-<p style="margin-left:17%;">Activates: Log for each
-function and each summary, the ratio of unreached nodes.
-(Conversely: <b>--no-log-pulse-unreachable-nodes</b>)</p>
-
 <p style="margin-left:11%;"><b>--loop-hoisting</b></p>
 
 <p style="margin-left:17%;">Activates: <i>loop-hoisting</i>
@@ -560,6 +559,13 @@ different implementation of &quot;impurity&quot;.
 <p style="margin-left:17%;">Activates: Enable <i>purity</i>
 and disable all other checkers (Conversely:
 <b>--no-purity-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--qualified-cpp-name-block-list</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Skip analyzing the procedures
+under the qualified cpp type name.</p>
 
 <p style="margin-left:11%;"><b>--quandary</b></p>
 
@@ -1064,12 +1070,13 @@ time, it models Erlang exceptions (builtin or OTP ones).
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--no-annotation-reachability-apply-class-annotations</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-annotation-reachability-apply-superclass-annotations</b></p>
 
 <p style="margin-left:17%;">Deactivates: Applies
-annotations of a class/interface to all its methods
+annotations from superclasses and interfaces also on methods
+that are not overridden from the superclass or interface.
 (Conversely:
-<b>--annotation-reachability-apply-class-annotations</b>)</p>
+<b>--annotation-reachability-apply-superclass-annotations</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--annotation-reachability-custom-models</b>
@@ -1110,6 +1117,14 @@ reachability checker) (Conversely:
 annotated with @NoAllocation can allocate (with annotation
 reachability checker) (Conversely:
 <b>--no-annotation-reachability-no-allocation</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--annotation-reachability-report-source-and-sink</b></p>
+
+<p style="margin-left:17%;">Activates: Reports methods that
+are marked as both a source and a sink at the same time.
+(Conversely:
+<b>--no-annotation-reachability-report-source-and-sink</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--external-java-packages</b>
@@ -1229,7 +1244,21 @@ The width of the type is the cardinal of that atom set.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--pulse-cut-to-one-path-procedures-pattern</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--log-pulse-coverage</b></p>
+
+<p style="margin-left:17%;">Activates: Log precisely where
+coverage stops, at the end of file stats/stats.txt.
+(Conversely: <b>--no-log-pulse-coverage</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--log-pulse-disjunct-increase-after-model-call</b></p>
+
+<p style="margin-left:17%;">Activates: Log which model did
+increase the current number of Pulse disjuncts. (Conversely:
+<b>--no-log-pulse-disjunct-increase-after-model-call</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-cut-to-one-path-procedures-pattern</b>
 <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods for which
@@ -1376,6 +1405,13 @@ modelled as creating copies in Pulse</p>
 
 <p style="margin-left:11%;"><b>--pulse-model-skip-pattern</b>
 <i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as &quot;skip&quot; in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-skip-pattern-list</b>
+<i>+string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
 modelled as &quot;skip&quot; in Pulse</p>

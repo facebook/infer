@@ -146,6 +146,12 @@ See <b>--debug-level</b> for accepted values.</p>
 <p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
+<p style="margin-left:11%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
 
 <p style="margin-left:11%;"><b>--force-delete-results-dir</b></p>
 
@@ -472,12 +478,6 @@ run capture on given targets) (Conversely:
 <p style="margin-left:17%;">Specify the parent directory of
 <b>buck-out</b> (used only for <b>buck2</b>).</p>
 
-<p style="margin-left:11%;"><b>--buck2-use-bxl</b></p>
-
-<p style="margin-left:17%;">Activates: Use BXL script when
-capturing with buck2. (Conversely:
-<b>--no-buck2-use-bxl</b>)</p>
-
 <p style="margin-left:11%;"><b>--Xbuck</b>
 <i>+string</i></p>
 
@@ -609,8 +609,17 @@ that Infer doesn't use to capture data (Conversely:
 whose path matches the given OCaml regex from the start of
 the string during capture.</p>
 
-<p style="margin-left:11%;"><b>--Xclang</b>
-<i>+string</i></p>
+
+<p style="margin-left:11%;"><b>--struct-as-cpp-class</b></p>
+
+<p style="margin-left:17%;">Activates: Translate C structs
+as C++ classes. This can be useful when analyzing C/C++ code
+to make sure struct global variables shared between C and
+C++ source files are treated as same variables</p>
+
+<p style="margin-left:11%;">(Conversely:
+<b>--no-struct-as-cpp-class</b>) <b><br>
+--Xclang</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
 arguments to invocations of clang</p>
