@@ -27,6 +27,8 @@ type 'payload t =
   ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit
         (** update the [Summary.Stats.t] of the summary of the current procedure *) }
 
+val for_procedure : Procdesc.t -> Errlog.t -> 'a t -> 'a t
+
 (** Analysis data for the analysis of a source file. *)
 type 'payload file_t =
   { source_file: SourceFile.t  (** the source file under analysis *)

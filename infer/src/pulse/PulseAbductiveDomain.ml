@@ -1879,6 +1879,8 @@ module Summary = struct
 
   let get_topl {topl} = topl
 
+  let get_recursive_calls {recursive_calls} = recursive_calls
+
   let get_skipped_calls {skipped_calls} = skipped_calls
 
   let is_heap_allocated = is_heap_allocated
@@ -2058,6 +2060,10 @@ let add_recursive_call location callee astate =
   let trace = PulseMutualRecursion.mk location callee in
   let recursive_calls = PulseMutualRecursion.Set.add trace astate.recursive_calls in
   ({astate with recursive_calls}, trace)
+
+
+let add_recursive_calls traces astate =
+  {astate with recursive_calls= PulseMutualRecursion.Set.union astate.recursive_calls traces}
 
 
 let add_skipped_call pname trace astate =

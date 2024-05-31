@@ -228,9 +228,9 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   |> add_skipped_proc
 
 
-let apply_callee {InterproceduralAnalysis.tenv; proc_desc} ({PathContext.timestamp} as path)
-    callee_proc_name call_loc callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals
-    ~actuals ?call_flags astate =
+let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
+    ({PathContext.timestamp} as path) callee_proc_name call_loc callee_exec_state ~ret
+    ~captured_formals ~captured_actuals ~formals ~actuals ?call_flags astate =
   let open ExecutionDomain in
   let copy_to_caller_return_variable astate return_val_opt =
     (* Copies the return value of the callee into the return register of the caller.
@@ -287,7 +287,7 @@ let apply_callee {InterproceduralAnalysis.tenv; proc_desc} ({PathContext.timesta
           actuals
     in
     let sat_unsat, contradiction =
-      PulseInterproc.apply_summary tenv path ~callee_proc_name call_loc ~callee_summary
+      PulseInterproc.apply_summary analysis_data path ~callee_proc_name call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals
         ~actuals:(trim_actuals_if_var_arg (Some callee_proc_name) ~actuals ~formals)
         astate

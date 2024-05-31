@@ -16,6 +16,16 @@ type t [@@deriving equal]
 val mk : Location.t -> Procname.t -> t
 (** a trace of length 1 *)
 
+val get_inner_call : t -> Procname.t
+(** the "initial", innermost call in the cycle *)
+
+val get_outer_location : t -> Location.t
+(** the location of the first call in the cycle *)
+
+val add_call : Procname.t -> Location.t -> t -> t
+
+val iter_rotations : t -> f:(t -> unit) -> unit
+
 val pp : F.formatter -> t -> unit
 
 val get_error_message : t -> string

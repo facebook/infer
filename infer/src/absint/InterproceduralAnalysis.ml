@@ -16,6 +16,8 @@ type 'payload t =
   ; add_errlog: Procname.t -> Errlog.t -> unit
   ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit }
 
+let for_procedure proc_desc err_log data = {data with proc_desc; err_log}
+
 type 'payload file_t =
   { source_file: SourceFile.t
   ; procedures: Procname.t list

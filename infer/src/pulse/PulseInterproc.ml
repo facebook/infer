@@ -936,6 +936,54 @@ let apply_post_from_callee_post path callee_proc_name call_location callee_summa
     (AbductiveDomain.Summary.get_post callee_summary).heap (Ok call_state)
 
 
+let report_mutual_recursion_cycle
+    ({InterproceduralAnalysis.add_errlog; proc_desc; err_log} as analysis_data) cycle =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  PulseMutualRecursion.iter_rotations cycle ~f:(fun cycle ->
+      let inner_call = PulseMutualRecursion.get_inner_call cycle in
+      let location = PulseMutualRecursion.get_outer_location cycle in
+      match Procdesc.load inner_call with
+      | None ->
+          (* cannot happen but also if the procedure is undefined then we shouldn't report
+             anyway *)
+          ()
+      | Some inner_proc_desc ->
+          let is_foreign_procedure = not (Procname.equal inner_call proc_name) in
+          let report_analysis_data, err_log =
+            if is_foreign_procedure then
+              let err_log = Errlog.empty () in
+              (InterproceduralAnalysis.for_procedure inner_proc_desc err_log analysis_data, err_log)
+            else (analysis_data, err_log)
+          in
+          L.d_printfln "reporting on procedure %a (foreign=%b) at %a" Procname.pp inner_call
+            is_foreign_procedure Location.pp_file_pos location ;
+          PulseReport.report report_analysis_data ~is_suppressed:false ~latent:false
+            (MutualRecursionCycle {cycle; location}) ;
+          if is_foreign_procedure then add_errlog inner_call err_log )
+
+
+let report_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) cycles =
+  PulseMutualRecursion.Set.iter
+    (fun cycle ->
+      if
+        Procname.equal
+          (PulseMutualRecursion.get_inner_call cycle)
+          (Procdesc.get_proc_name proc_desc)
+      then report_mutual_recursion_cycle analysis_data cycle )
+    cycles
+
+
+let record_recursive_calls analysis_data callee_proc_name call_loc callee_summary call_state =
+  let callee_recursive_calls =
+    PulseMutualRecursion.Set.map
+      (PulseMutualRecursion.add_call callee_proc_name call_loc)
+      (AbductiveDomain.Summary.get_recursive_calls callee_summary)
+  in
+  report_recursive_calls analysis_data callee_recursive_calls ;
+  let astate = AbductiveDomain.add_recursive_calls callee_recursive_calls call_state.astate in
+  {call_state with astate}
+
+
 let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
   let callee_skipped_calls =
     SkippedCalls.map
@@ -949,7 +997,8 @@ let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
   {call_state with astate}
 
 
-let record_transitive_info tenv callee_proc_name call_location callee_summary call_state =
+let record_transitive_info {InterproceduralAnalysis.tenv} callee_proc_name call_location
+    callee_summary call_state =
   if PulseTransitiveAccessChecker.should_skip_call tenv callee_proc_name then call_state
   else
     let astate =
@@ -1042,7 +1091,7 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
         ) )
 
 
-let apply_post tenv path callee_proc_name call_location callee_summary call_state =
+let apply_post analysis_data path callee_proc_name call_location callee_summary call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     call_state
@@ -1051,8 +1100,9 @@ let apply_post tenv path callee_proc_name call_location callee_summary call_stat
     >>= apply_post_from_callee_post path callee_proc_name call_location callee_summary
     >>| add_attributes `Post path callee_proc_name call_location
           (AbductiveDomain.Summary.get_post callee_summary).attrs
+    >>| record_recursive_calls analysis_data callee_proc_name call_location callee_summary
     >>| record_skipped_calls callee_proc_name call_location callee_summary
-    >>| record_transitive_info tenv callee_proc_name call_location callee_summary
+    >>| record_transitive_info analysis_data callee_proc_name call_location callee_summary
     >>| read_return_value path callee_proc_name call_location callee_summary
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
@@ -1165,8 +1215,8 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
    - for each actual, write the post for that actual
 
    - if aliasing is introduced at any time then give up *)
-let apply_summary tenv path ~callee_proc_name call_location ~callee_summary ~captured_formals
-    ~captured_actuals ~formals ~actuals astate =
+let apply_summary analysis_data path ~callee_proc_name call_location ~callee_summary
+    ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let aux () =
     let empty_call_state =
       { astate
@@ -1235,7 +1285,7 @@ let apply_summary tenv path ~callee_proc_name call_location ~callee_summary ~cap
           let call_state = {call_state with astate; visited= AddressSet.empty} in
           (* apply the postcondition *)
           let* call_state, return_caller =
-            apply_post tenv path callee_proc_name call_location callee_summary call_state
+            apply_post analysis_data path callee_proc_name call_location callee_summary call_state
           in
           let astate =
             if Topl.is_active () then

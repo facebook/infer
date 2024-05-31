@@ -308,6 +308,8 @@ val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
 val add_recursive_call : Location.t -> Procname.t -> t -> t * PulseMutualRecursion.t
 
+val add_recursive_calls : PulseMutualRecursion.Set.t -> t -> t
+
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
@@ -393,6 +395,8 @@ module Summary : sig
 
   val heap_paths_that_need_dynamic_type_specialization :
     summary -> AbstractValue.t Specialization.HeapPath.Map.t
+
+  val get_recursive_calls : summary -> PulseMutualRecursion.Set.t
 
   val get_skipped_calls : summary -> SkippedCalls.t
 

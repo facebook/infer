@@ -19,14 +19,14 @@ int factorial_bad(int x) {
   }
 }
 
-void FN_mutual1_bad();
+void mutual1_bad();
 
-void FN_mutual3_bad() { FN_mutual1_bad(); }
+void mutual3_bad() { mutual1_bad(); }
 
-void FN_mutual2_bad() { FN_mutual3_bad(); }
+void mutual2_bad() { mutual3_bad(); }
 
-void FN_mutual1_bad() { FN_mutual2_bad(); }
+void mutual1_bad() { mutual2_bad(); }
 
 #include "recursion2.h"
 
-void FN_across_file_1() { FN_across_file_2(); }
+void across_file_1() { across_file_2(); }

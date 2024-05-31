@@ -15,6 +15,14 @@ type t = {chain: call list; innermost: call} [@@deriving compare, equal]
 
 let mk location proc_name = {chain= []; innermost= {proc_name; location}}
 
+let get_inner_call cycle = cycle.innermost.proc_name
+
+let get_outer_location cycle =
+  match cycle.chain with [] -> cycle.innermost.location | {location} :: _ -> location
+
+
+let add_call proc_name location cycle = {cycle with chain= {proc_name; location} :: cycle.chain}
+
 let pp fmt cycle =
   let rec pp_chain fmt = function
     | [] ->
@@ -32,11 +40,25 @@ let get_error_message cycle =
     | [] ->
         F.fprintf fmt "recursive call to %a" pp cycle
     | _ :: _ ->
-        F.fprintf fmt "mutual recursion cycle: %a" pp cycle
+        F.fprintf fmt "mutual recursion cycle: %a -> %a" CallEvent.pp
+          (CallEvent.Call cycle.innermost.proc_name) pp cycle
   in
   F.asprintf
     "%a; make sure this is intentional and cannot lead to non-termination or stack overflow"
     pp_cycle cycle
+
+
+let iter_rotations cycle ~f =
+  let rotation = ref cycle in
+  for _ = 0 to List.length cycle.chain do
+    f !rotation ;
+    rotation :=
+      match !rotation.chain with
+      | [] ->
+          (* length is invariant and >0 *) assert false
+      | last_call :: chain ->
+          {innermost= last_call; chain= chain @ [!rotation.innermost]}
+  done
 
 
 let to_errlog cycle =

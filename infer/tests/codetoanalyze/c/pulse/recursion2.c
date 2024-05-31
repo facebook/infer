@@ -7,4 +7,4 @@
 
 void FN_across_file_1();
 
-void FN_across_file_2() { FN_across_file_1(); }
+void across_file_2() { FN_across_file_1(); }
