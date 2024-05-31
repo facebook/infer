@@ -89,9 +89,9 @@ let pp_html source fmt ({err_log; payloads; stats} as summary) =
 module ReportSummary = struct
   type t = {loc: Location.t; err_log: Errlog.t}
 
-  let of_full_summary ({proc_name; err_log} : full_summary) : t =
-    {loc= (Attributes.load_exn proc_name).loc; err_log}
+  let of_err_log proc_name err_log = {loc= (Attributes.load_exn proc_name).loc; err_log}
 
+  let of_full_summary {proc_name; err_log} = of_err_log proc_name err_log
 
   let empty () = {loc= Location.dummy; err_log= Errlog.empty ()}
 
@@ -356,4 +356,16 @@ module OnDisk = struct
     Sqlite3.prepare db "SELECT count(1) FROM specs"
     |> SqliteUtils.result_single_column_option db ~log:"count specs"
     |> function Some count -> Sqlite3.Data.to_int_exn count | _ -> 0
+
+
+  let add_errlog proc_name err_log =
+    (* Make sure the summary in memory gets the updated err_log *)
+    Procname.Hash.find_opt cache proc_name
+    |> Option.iter ~f:(fun summary ->
+           (* side-effects galore! no need to do anything except run [Errlog.merge] to update all
+              existing copies of this summary's error log *)
+           Errlog.merge ~into:summary.err_log err_log |> ignore ) ;
+    let report_summary = ReportSummary.of_err_log proc_name err_log in
+    DBWriter.update_report_summary ~proc_uid:(Procname.to_unique_id proc_name)
+      ~merge_report_summary:(ReportSummary.SQLite.serialize report_summary)
 end

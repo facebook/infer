@@ -21,6 +21,9 @@ type 'payload t =
         (** On-demand analysis of callees or other dependencies of the analysis of the current
             procedure. Uses [Ondemand.analyze_procedure]. If [specialization] is provided, the
             summary will be improved with a specialized version. *)
+  ; add_errlog: Procname.t -> Errlog.t -> unit
+        (** {!Summary.OnDisk.add_errlog}: add to the issue log of a foreign procedure (otherwise
+            just use [err_log] above) *)
   ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit
         (** update the [Summary.Stats.t] of the summary of the current procedure *) }
 

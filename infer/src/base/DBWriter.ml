@@ -380,6 +380,20 @@ module Implementation = struct
     IntHash.create 10
 
 
+  let select_report_summary =
+    let select_statement =
+      Database.register_statement AnalysisDatabase
+        "SELECT report_summary FROM specs WHERE proc_uid = :proc_uid"
+    in
+    fun ~proc_uid ->
+      Database.with_registered_statement select_statement ~f:(fun db select_stmt ->
+          Sqlite3.bind_name select_stmt ":proc_uid" (TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"select report summary proc_uid" ;
+          SqliteUtils.result_option ~finalize:false ~log:"select report summary"
+            ~read_row:(fun stmt -> Sqlite3.column stmt 0)
+            db select_stmt )
+
+
   let select_pulse_spec =
     let select_statement =
       Database.register_statement AnalysisDatabase
@@ -449,6 +463,26 @@ module Implementation = struct
     let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
     ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
     L.debug Analysis Quiet "Detected %d spec overwrites.@\n" overwrites
+
+
+  let update_report_summary =
+    let store_statement =
+      Database.register_statement AnalysisDatabase
+        "UPDATE specs SET report_summary = :report_summary WHERE proc_uid = :proc_uid"
+    in
+    fun ~proc_uid ~merge_report_summary ->
+      let now = ExecutionDuration.counter () in
+      let f () =
+        let old_report_summary = select_report_summary ~proc_uid in
+        let report_summary = merge_report_summary ~old_report_summary in
+        Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
+            Sqlite3.bind_values store_stmt [report_summary; Sqlite3.Data.TEXT proc_uid]
+            |> SqliteUtils.check_result_code db ~log:"store report summary bind_values" ;
+            SqliteUtils.result_unit ~finalize:false ~log:"store report summary" db store_stmt )
+      in
+      if use_daemon () then f ()
+      else SqliteUtils.transaction ~immediate:true (Database.get_database AnalysisDatabase) ~f ;
+      store_sql_time := ExecutionDuration.add_duration_since !store_sql_time now
 end
 
 module Command = struct
@@ -467,6 +501,12 @@ module Command = struct
     | MarkAllSourceFilesStale
     | MergeCaptures of {root: string; infer_deps_file: string}
     | MergeSummaries of {infer_outs: string list}
+    | ReplaceAttributes of
+        { proc_uid: string
+        ; proc_attributes: Sqlite3.Data.t
+        ; cfg: Sqlite3.Data.t
+        ; callees: Sqlite3.Data.t
+        ; analysis: bool }
     | ShrinkAnalysisDB
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
@@ -475,13 +515,10 @@ module Command = struct
         ; merge_pulse_payload: old_pulse_payload:Sqlite3.Data.t option -> Sqlite3.Data.t list
         ; merge_report_summary: old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t
         ; merge_summary_metadata: old_summary_metadata:Sqlite3.Data.t option -> Sqlite3.Data.t }
-    | ReplaceAttributes of
-        { proc_uid: string
-        ; proc_attributes: Sqlite3.Data.t
-        ; cfg: Sqlite3.Data.t
-        ; callees: Sqlite3.Data.t
-        ; analysis: bool }
     | Terminate
+    | UpdateReportSummary of
+        { proc_uid: string
+        ; merge_report_summary: old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t }
 
   let to_string = function
     | AddSourceFile _ ->
@@ -514,6 +551,8 @@ module Command = struct
         "StoreSpec"
     | Terminate ->
         "Terminate"
+    | UpdateReportSummary _ ->
+        "UpdateReportSummary"
 
 
   let[@warning "-unused-value-declaration"] pp fmt cmd = F.pp_print_string fmt (to_string cmd)
@@ -539,6 +578,8 @@ module Command = struct
         Implementation.merge_captures ~root ~infer_deps_file
     | MergeSummaries {infer_outs} ->
         Implementation.merge_summaries infer_outs
+    | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
+        Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
     | ShrinkAnalysisDB ->
         Implementation.shrink_analysis_db ()
     | StoreIssueLog {checker; source_file; issue_log} ->
@@ -547,10 +588,10 @@ module Command = struct
         {proc_uid; proc_name; merge_pulse_payload; merge_report_summary; merge_summary_metadata} ->
         Implementation.store_spec ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
           ~merge_summary_metadata
-    | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
-        Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
     | Terminate ->
         Implementation.terminate ()
+    | UpdateReportSummary {proc_uid; merge_report_summary} ->
+        Implementation.update_report_summary ~proc_uid ~merge_report_summary
 end
 
 type response = Ack | Error of (exn * Caml.Printexc.raw_backtrace)
@@ -692,6 +733,10 @@ let start =
 
 let store_issue_log ~checker ~source_file ~issue_log =
   perform (StoreIssueLog {checker; source_file; issue_log})
+
+
+let update_report_summary ~proc_uid ~merge_report_summary =
+  perform (UpdateReportSummary {proc_uid; merge_report_summary})
 
 
 let store_spec ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary

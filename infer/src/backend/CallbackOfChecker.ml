@@ -26,7 +26,13 @@ let mk_interprocedural_t ~f_analyze_dep ~get_payload
   let update_stats ?add_symops ?failure_kind () =
     stats := Summary.Stats.update ?add_symops ?failure_kind !stats
   in
-  ( {InterproceduralAnalysis.proc_desc; tenv; err_log; exe_env; analyze_dependency; update_stats}
+  ( { InterproceduralAnalysis.proc_desc
+    ; tenv
+    ; err_log
+    ; exe_env
+    ; analyze_dependency
+    ; update_stats
+    ; add_errlog= Summary.OnDisk.add_errlog }
   , stats )
 
 

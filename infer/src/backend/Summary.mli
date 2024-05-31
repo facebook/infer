@@ -57,6 +57,11 @@ module OnDisk : sig
   (** Save summary for the procedure into the spec database and return it. If the operation fails,
       store an empty summary and return that instead. *)
 
+  val add_errlog : Procname.t -> Errlog.t -> unit
+  (** save additional errors in the summary of the given proc name; only use this if you need to
+      report errors in a proc name that is *not* the current proc name (in which case just append to
+      its own errlog), and if you cannot use a file-level analysis to do this either *)
+
   val delete_all : procedures:Procname.t list -> unit
   (** Similar to [delete], but delete all summaries for a list of [procedures] *)
 

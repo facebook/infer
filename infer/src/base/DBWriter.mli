@@ -58,3 +58,8 @@ val store_spec :
   -> merge_report_summary:(old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t)
   -> merge_summary_metadata:(old_summary_metadata:Sqlite3.Data.t option -> Sqlite3.Data.t)
   -> unit
+
+val update_report_summary :
+     proc_uid:string
+  -> merge_report_summary:(old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t)
+  -> unit

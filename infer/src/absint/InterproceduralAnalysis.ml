@@ -13,6 +13,7 @@ type 'payload t =
   ; err_log: Errlog.t
   ; exe_env: Exe_env.t
   ; analyze_dependency: ?specialization:Specialization.t -> Procname.t -> 'payload AnalysisResult.t
+  ; add_errlog: Procname.t -> Errlog.t -> unit
   ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit }
 
 type 'payload file_t =
