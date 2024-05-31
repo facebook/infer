@@ -1169,18 +1169,19 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
 
 
 and translate_expression_maybe (env : (_, _) Env.t) body ret_var : Block.t =
+  let short_circuit_result = mk_fresh_id () in
   let rev_blocks, last_expr_result =
     let f (rev_blocks, _) (one_expr : Ast.expression) =
       match one_expr.simple_expression with
       | MaybeMatch {body; pattern} ->
           (* MaybeMatch can only appear on the top level of a Maybe and is treated in
              a special way: if the pattern does not match, we store the result of the
-             body in the return value before we go to exit_failure. *)
+             body in a special variable before we go to exit_failure. *)
           let body_id, body_block = translate_expression_to_fresh_id env body in
           let pattern_block = translate_pattern env body_id pattern in
-          let store_ret = Node.make_load env ret_var (Var body_id) any_typ in
-          pattern_block.exit_failure |~~> [store_ret] ;
-          let pattern_block = {pattern_block with exit_failure= store_ret} in
+          let store_result = Node.make_load env short_circuit_result (Var body_id) any_typ in
+          pattern_block.exit_failure |~~> [store_result] ;
+          let pattern_block = {pattern_block with exit_failure= store_result} in
           (pattern_block :: body_block :: rev_blocks, body_id)
       | _ ->
           (* All other expressions are treated simply as if we were in a block. *)
@@ -1189,14 +1190,17 @@ and translate_expression_maybe (env : (_, _) Env.t) body ret_var : Block.t =
     in
     List.fold body ~init:([], mk_fresh_id ()) ~f
   in
-  let store_last_expr = Block.make_load env ret_var (Var last_expr_result) any_typ in
-  let maybe_block = Block.all env (List.rev (store_last_expr :: rev_blocks)) in
-  (* Since we don't support else clauses yet, we redirect both success and
-     failure exits to a new, dummy exit_success. But later, failure should
-     go to the else clauses. *)
+  let maybe_block = Block.all env (List.rev rev_blocks) in
+  (* Since we don't support else clauses yet, we either store the last expression or the
+     short circuit in the return value and go to exit_success in both cases. But later,
+     if we have else clauses, exit_failure should go to there.*)
+  let store_last_expr = Node.make_load env ret_var (Var last_expr_result) any_typ in
+  let store_short_circuit = Node.make_load env ret_var (Var short_circuit_result) any_typ in
   let exit_node = Node.make_nop env in
-  maybe_block.exit_success |~~> [exit_node] ;
-  maybe_block.exit_failure |~~> [exit_node] ;
+  maybe_block.exit_success |~~> [store_last_expr] ;
+  maybe_block.exit_failure |~~> [store_short_circuit] ;
+  store_last_expr |~~> [exit_node] ;
+  store_short_circuit |~~> [exit_node] ;
   {maybe_block with exit_success= exit_node; exit_failure= Node.make_nop env}
 
 
