@@ -104,4 +104,11 @@ class Tests {
       AbstractClass1::class,
     );
   }
+
+  public function initAbstractClassInTheSameFunctionBad(): AbstractClass2 {
+    $class = AbstractClass2::class;
+    $object = new $class();
+
+    return $object;
+  }
 }

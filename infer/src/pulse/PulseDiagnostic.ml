@@ -142,8 +142,7 @@ type t =
       ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
-  | HackCannotInstantiateAbstractClass of
-      {type_name: Typ.Name.t; trace: Trace.t; location: Location.t}
+  | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
@@ -206,9 +205,9 @@ let pp fmt diagnostic =
         (fun fmt ->
           if Typ.Name.Set.is_empty transitive_missed_captures then ()
           else Typ.Name.Set.pp fmt transitive_missed_captures )
-  | HackCannotInstantiateAbstractClass {type_name; trace; location} ->
-      F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@@;location:%a@]"
-        Typ.Name.pp type_name (Trace.pp ~pp_immediate) trace Location.pp location
+  | HackCannotInstantiateAbstractClass {type_name; trace} ->
+      F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
+        type_name (Trace.pp ~pp_immediate) trace
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -275,6 +274,7 @@ let pp fmt diagnostic =
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}
+  | HackCannotInstantiateAbstractClass {trace= access_trace}
   | ReadUninitialized {calling_context= []; trace= access_trace}
   | TransitiveAccess {call_trace= access_trace} ->
       Trace.get_outer_location access_trace
@@ -307,7 +307,6 @@ let get_location = function
   | ConstRefableParameter {location}
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
-  | HackCannotInstantiateAbstractClass {location}
   | HackUnawaitedAwaitable {location}
   | MemoryLeak {location}
   | MutualRecursionCycle {location}
