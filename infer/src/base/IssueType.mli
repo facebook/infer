@@ -281,6 +281,8 @@ val no_match_of_rhs : latent:bool -> t
 
 val no_matching_case_clause : latent:bool -> t
 
+val no_matching_else_clause : latent:bool -> t
+
 val no_matching_function_clause : latent:bool -> t
 
 val no_true_branch_in_if : latent:bool -> t

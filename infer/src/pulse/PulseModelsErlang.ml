@@ -189,6 +189,8 @@ module type ERRORS = sig
 
   val case_clause : model_no_non_disj
 
+  val else_clause : model_no_non_disj
+
   val function_clause : model_no_non_disj
 
   val if_clause : model_no_non_disj
@@ -227,6 +229,10 @@ module ErrorsReport : ERRORS = struct
    fun {location} astate -> error (Case_clause {calling_context= []; location}) astate
 
 
+  let else_clause : model_no_non_disj =
+   fun {location} astate -> error (Else_clause {calling_context= []; location}) astate
+
+
   let function_clause : model_no_non_disj =
    fun {location} astate -> error (Function_clause {calling_context= []; location}) astate
 
@@ -255,6 +261,8 @@ module ErrorsSilent : ERRORS = struct
   let badreturn = stuck
 
   let case_clause = stuck
+
+  let else_clause = stuck
 
   let function_clause = stuck
 
@@ -1869,6 +1877,8 @@ let matchers : matcher list =
         <>--> Errors.badreturn |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_case_clause)
         <>--> Errors.case_clause |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_else_clause)
+        <>--> Errors.else_clause |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_function_clause)
         <>--> Errors.function_clause |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_if_clause)

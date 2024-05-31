@@ -67,6 +67,7 @@ module ErlangError = struct
     | Badrecord of {calling_context: calling_context; location: Location.t}
     | Badreturn of {calling_context: calling_context; location: Location.t}
     | Case_clause of {calling_context: calling_context; location: Location.t}
+    | Else_clause of {calling_context: calling_context; location: Location.t}
     | Function_clause of {calling_context: calling_context; location: Location.t}
     | If_clause of {calling_context: calling_context; location: Location.t}
     | Try_clause of {calling_context: calling_context; location: Location.t}
@@ -84,6 +85,7 @@ module ErlangError = struct
                                                   | Badrecord {calling_context; location}
                                                   | Badreturn {calling_context; location}
                                                   | Case_clause {calling_context; location}
+                                                  | Else_clause {calling_context; location}
                                                   | Function_clause {calling_context; location}
                                                   | If_clause {calling_context; location}
                                                   | Try_clause {calling_context; location} ) =
@@ -286,6 +288,7 @@ let get_location = function
   | ErlangError (Badrecord {location; calling_context= []})
   | ErlangError (Badreturn {location; calling_context= []})
   | ErlangError (Case_clause {location; calling_context= []})
+  | ErlangError (Else_clause {location; calling_context= []})
   | ErlangError (Function_clause {location; calling_context= []})
   | ErlangError (If_clause {location; calling_context= []})
   | ErlangError (Try_clause {location; calling_context= []}) ->
@@ -298,6 +301,7 @@ let get_location = function
   | ErlangError (Badrecord {calling_context= (_, location) :: _})
   | ErlangError (Badreturn {calling_context= (_, location) :: _})
   | ErlangError (Case_clause {calling_context= (_, location) :: _})
+  | ErlangError (Else_clause {calling_context= (_, location) :: _})
   | ErlangError (Function_clause {calling_context= (_, location) :: _})
   | ErlangError (If_clause {calling_context= (_, location) :: _})
   | ErlangError (Try_clause {calling_context= (_, location) :: _})
@@ -344,6 +348,7 @@ let aborts_execution = function
       | Badrecord _
       | Badreturn _
       | Case_clause _
+      | Else_clause _
       | Function_clause _
       | If_clause _
       | Try_clause _ ) ->
@@ -627,6 +632,8 @@ let get_message_and_suggestion diagnostic =
       |> no_suggestion
   | ErlangError (Case_clause {calling_context= _; location}) ->
       F.asprintf "no matching case clause at %a" Location.pp location |> no_suggestion
+  | ErlangError (Else_clause {calling_context= _; location}) ->
+      F.asprintf "no matching else clause at %a" Location.pp location |> no_suggestion
   | ErlangError (Function_clause {calling_context= _; location}) ->
       F.asprintf "no matching function clause at %a" Location.pp location |> no_suggestion
   | ErlangError (If_clause {calling_context= _; location}) ->
@@ -1042,6 +1049,9 @@ let get_trace = function
   | ErlangError (Case_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching case clause here" []]
+  | ErlangError (Else_clause {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "no matching else clause here" []]
   | ErlangError (Function_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching function clause here" []]
@@ -1185,6 +1195,8 @@ let get_issue_type ~latent issue_type =
       IssueType.bad_return ~latent
   | ErlangError (Case_clause _), _ ->
       IssueType.no_matching_case_clause ~latent
+  | ErlangError (Else_clause _), _ ->
+      IssueType.no_matching_else_clause ~latent
   | ErlangError (Function_clause _), _ ->
       IssueType.no_matching_function_clause ~latent
   | ErlangError (If_clause _), _ ->

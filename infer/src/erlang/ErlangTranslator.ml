@@ -630,8 +630,8 @@ and translate_expression env {Ast.location; simple_expression} =
         translate_expression_map_update env ret_var map updates
     | Match {pattern; body} ->
         translate_expression_match env ret_var pattern body
-    | Maybe body ->
-        translate_expression_maybe env body ret_var
+    | Maybe {body; else_cases} ->
+        translate_expression_maybe env body else_cases ret_var
     | MaybeMatch _ ->
         (* MaybeMatch can only be on the top level of a Maybe expression and is
            handled separately when processing the Maybe. *)
@@ -1168,7 +1168,7 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
   Block.all env [body_block; pattern_block; store_return_block]
 
 
-and translate_expression_maybe (env : (_, _) Env.t) body ret_var : Block.t =
+and translate_expression_maybe (env : (_, _) Env.t) body else_cases ret_var : Block.t =
   let short_circuit_result = mk_fresh_id () in
   let rev_blocks, last_expr_result =
     let f (rev_blocks, _) (one_expr : Ast.expression) =
@@ -1191,16 +1191,27 @@ and translate_expression_maybe (env : (_, _) Env.t) body ret_var : Block.t =
     List.fold body ~init:([], mk_fresh_id ()) ~f
   in
   let maybe_block = Block.all env (List.rev rev_blocks) in
-  (* Since we don't support else clauses yet, we either store the last expression or the
-     short circuit in the return value and go to exit_success in both cases. But later,
-     if we have else clauses, exit_failure should go to there.*)
   let store_last_expr = Node.make_load env ret_var (Var last_expr_result) any_typ in
-  let store_short_circuit = Node.make_load env ret_var (Var short_circuit_result) any_typ in
+  let else_blocks =
+    match else_cases with
+    | [] ->
+        (* If there are no else clauses, just return short circuit result *)
+        Block.make_load env ret_var (Var short_circuit_result) any_typ
+    | _ ->
+        let cases =
+          Block.any env (List.map ~f:(translate_case_clause env [short_circuit_result]) else_cases)
+        in
+        let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_else_clause in
+        cases.exit_failure |~~> [crash_node] ;
+        {cases with exit_failure= crash_node}
+  in
   let exit_node = Node.make_nop env in
+  (* In case of success, simply return last expression *)
   maybe_block.exit_success |~~> [store_last_expr] ;
-  maybe_block.exit_failure |~~> [store_short_circuit] ;
+  (* In case of short circuit, go to else clauses *)
+  maybe_block.exit_failure |~~> [else_blocks.start] ;
   store_last_expr |~~> [exit_node] ;
-  store_short_circuit |~~> [exit_node] ;
+  else_blocks.exit_success |~~> [exit_node] ;
   {maybe_block with exit_success= exit_node; exit_failure= Node.make_nop env}
 
 

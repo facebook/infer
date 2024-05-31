@@ -42,6 +42,8 @@ val __erlang_error_badreturn : Procname.t
 
 val __erlang_error_case_clause : Procname.t
 
+val __erlang_error_else_clause : Procname.t
+
 val __erlang_error_function_clause : Procname.t
 
 val __erlang_error_if_clause : Procname.t

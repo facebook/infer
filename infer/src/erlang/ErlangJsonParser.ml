@@ -320,7 +320,12 @@ let rec to_expression (gen_uniq : unit -> int) json : Ast.expression option =
   | `List [`String "maybe"; anno; body] ->
       let* loc = get_loc_from_anno anno in
       let* body = to_body gen_uniq body in
-      expr loc (Maybe body)
+      expr loc (Maybe {body; else_cases= []})
+  | `List [`String "maybe"; anno; body; `List [`String "else"; _anno; else_cases]] ->
+      let* loc = get_loc_from_anno anno in
+      let* body = to_body gen_uniq body in
+      let* else_cases = to_list ~f:(to_case_clause gen_uniq) else_cases in
+      expr loc (Maybe {body; else_cases})
   | `List [`String "maybe_match"; anno; pattern; body] ->
       let* loc = get_loc_from_anno anno in
       let* pattern = to_expression gen_uniq pattern in

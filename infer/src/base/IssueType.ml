@@ -770,6 +770,11 @@ let no_matching_case_clause =
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
+let no_matching_else_clause =
+  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_ELSE_CLAUSE" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_ELSE_CLAUSE.md"]
+
+
 let no_matching_function_clause =
   register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]

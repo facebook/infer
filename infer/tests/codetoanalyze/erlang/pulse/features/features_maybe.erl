@@ -14,7 +14,11 @@
     test_maybe_short_circuit1_Ok/0,
     test_maybe_short_circuit2_Bad/0,
     test_maybe_short_circuit3_Ok/0,
-    test_maybe_short_circuit4_Bad/0
+    test_maybe_short_circuit4_Bad/0,
+    test_maybe_with_else1_Ok/0,
+    test_maybe_with_else2_Bad/0,
+    test_maybe_with_else3_Ok/0,
+    test_maybe_with_else4_Bad/0
 ]).
 
 test_maybe_simple_Ok() ->
@@ -70,3 +74,47 @@ test_maybe_short_circuit4_Bad() ->
             3
         end,
     ?CRASH_IF_EQUAL(2, M).
+
+test_maybe_with_else1_Ok() ->
+    M =
+        maybe
+            X ?= 1,
+            X
+        else
+            _ -> 2
+        end,
+    ?ASSERT_EQUAL(1, M).
+
+test_maybe_with_else2_Bad() ->
+    M =
+        maybe
+            X ?= 1,
+            X
+        else
+            _ -> 2
+        end,
+    ?CRASH_IF_EQUAL(1, M).
+
+test_maybe_with_else3_Ok() ->
+    M =
+        maybe
+            X = 1,
+            2 ?= X,
+            3
+        else
+            1 -> 4;
+            _ -> 5
+        end,
+    ?ASSERT_EQUAL(4, M).
+
+test_maybe_with_else4_Bad() ->
+    M =
+        maybe
+            X = 1,
+            2 ?= X,
+            3
+        else
+            1 -> 4;
+            _ -> 5
+        end,
+    ?CRASH_IF_EQUAL(4, M).

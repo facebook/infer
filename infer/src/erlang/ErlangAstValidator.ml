@@ -200,7 +200,7 @@ let rec validate_expr env (expr : Ast.expression) =
   | BitstringConstructor elems ->
       let validate_elem (e : Ast.bin_element) = validate_expr env e.expression in
       List.for_all ~f:validate_elem elems
-  | Block body | Maybe body ->
+  | Block body ->
       validate_body env body
   | Call {module_; function_; args} ->
       validate_expr_opt env module_ && validate_expr env function_
@@ -251,6 +251,8 @@ let rec validate_expr env (expr : Ast.expression) =
   | Match {pattern; body} | MaybeMatch {pattern; body} ->
       (* TOOD: MaybeMatch must have Maybe as parent *)
       validate_pattern env pattern && validate_expr env body
+  | Maybe {body; else_cases} ->
+      validate_body env body && List.for_all ~f:(validate_case_clause env) else_cases
   | Nil ->
       true
   | Receive {cases; timeout} -> (

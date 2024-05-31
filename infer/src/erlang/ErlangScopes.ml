@@ -97,13 +97,16 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
   | Match {pattern; body} | MaybeMatch {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
-  | Maybe body ->
-      (* Variables bound in a maybe block should not be used outside, so we push
-         a new scope (with same procname) and then forget it by popping. *)
-      let scopes = push_scope scopes (top_scope scopes).procname in
-      let scopes = annotate_expression_list env lambda_cntr scopes body in
-      let _, scopes = pop_scope scopes in
-      scopes
+  | Maybe {body; else_cases} ->
+      (* Variables bound in the body can't be seen in the else clauses.
+         Variables bound in body / else clauses can't be seen outside. *)
+      let maybe_scopes = annotate_expression_list env lambda_cntr scopes body in
+      let else_scopes = annotate_clauses env lambda_cntr scopes else_cases in
+      (* Only take captured variables into our final result. *)
+      let hd, tl = pop_scope scopes in
+      let captured = Pvar.Set.union hd.captured (top_scope maybe_scopes).captured in
+      let captured = Pvar.Set.union captured (top_scope else_scopes).captured in
+      {hd with captured} :: tl
   | Receive {cases; timeout} ->
       (* Process clauses and timeout independently and then merge as
          if the timeout was also just one of the clauses. *)

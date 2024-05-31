@@ -114,6 +114,8 @@ let __erlang_error_badreturn = create_procname "__erlang_error_badreturn"
 
 let __erlang_error_case_clause = create_procname "__erlang_error_case_clause"
 
+let __erlang_error_else_clause = create_procname "__erlang_error_else_clause"
+
 let __erlang_error_function_clause = create_procname "__erlang_error_function_clause"
 
 let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"

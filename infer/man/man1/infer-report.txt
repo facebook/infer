@@ -206,6 +206,8 @@ OPTIONS
              NO_MATCHING_BRANCH_IN_TRY_LATENT (disabled by default),
              NO_MATCHING_CASE_CLAUSE (enabled by default),
              NO_MATCHING_CASE_CLAUSE_LATENT (disabled by default),
+             NO_MATCHING_ELSE_CLAUSE (enabled by default),
+             NO_MATCHING_ELSE_CLAUSE_LATENT (disabled by default),
              NO_MATCHING_FUNCTION_CLAUSE (enabled by default),
              NO_MATCHING_FUNCTION_CLAUSE_LATENT (disabled by default),
              NO_MATCH_OF_RHS (enabled by default),

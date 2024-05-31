@@ -44,6 +44,7 @@ module ErlangError : sig
     | Badrecord of {calling_context: calling_context; location: Location.t}
     | Badreturn of {calling_context: calling_context; location: Location.t}
     | Case_clause of {calling_context: calling_context; location: Location.t}
+    | Else_clause of {calling_context: calling_context; location: Location.t}
     | Function_clause of {calling_context: calling_context; location: Location.t}
     | If_clause of {calling_context: calling_context; location: Location.t}
     | Try_clause of {calling_context: calling_context; location: Location.t}

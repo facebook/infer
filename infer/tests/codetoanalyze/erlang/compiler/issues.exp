@@ -408,6 +408,10 @@ features_maybe:test_maybe_short_circuit3_Ok/0: ok
 features_maybe:test_maybe_short_circuit4_Bad/0: expected_crash
 features_maybe:test_maybe_simple_Bad/0: expected_crash
 features_maybe:test_maybe_simple_Ok/0: ok
+features_maybe:test_maybe_with_else1_Ok/0: ok
+features_maybe:test_maybe_with_else2_Bad/0: expected_crash
+features_maybe:test_maybe_with_else3_Ok/0: ok
+features_maybe:test_maybe_with_else4_Bad/0: expected_crash
 
 ----- features_receive -----
 features_receive:test_receive1_Ok/0: ok
@@ -644,6 +648,12 @@ nonmatch_match_expr:test_match_in_pattern_f_Bad/0: case_clause
 nonmatch_match_expr:test_match_nested1_Ok/0: ok
 nonmatch_match_expr:test_match_nested2_Bad/0: badmatch
 nonmatch_match_expr:test_match_nested3_Bad/0: badmatch
+
+----- nonmatch_maybe -----
+nonmatch_maybe:test_maybe1_Ok/0: ok
+nonmatch_maybe:test_maybe2_Ok/0: ok
+nonmatch_maybe:test_maybe3_Ok/0: ok
+nonmatch_maybe:test_maybe4_Bad/0: else_clause
 
 ----- nonmatch_records -----
 nonmatch_records:test_bad_record_access_Bad/0: badrecord
