@@ -17,9 +17,7 @@ type summary = {pre_post_list: pre_post_list; non_disj: NonDisjDomain.Summary.t}
 type t = {main: summary; specialized: summary Specialization.Pulse.Map.t} [@@deriving yojson_of]
 
 val of_posts :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     t InterproceduralAnalysis.t
   -> Specialization.Pulse.t option
   -> Location.t
   -> ExecutionDomain.t list
@@ -33,9 +31,7 @@ val empty : summary
 val join : summary -> summary -> summary
 
 val force_exit_program :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     t InterproceduralAnalysis.t
   -> Location.t
   -> ExecutionDomain.t
   -> _ ExecutionDomain.base_t SatUnsat.t

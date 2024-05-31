@@ -11,37 +11,29 @@ open PulseDomainInterface
 [@@@warning "-unused-value-declaration"]
 
 val report :
-  Tenv.t -> is_suppressed:bool -> latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
+  _ InterproceduralAnalysis.t -> is_suppressed:bool -> latent:bool -> Diagnostic.t -> unit
 
 val report_summary_error :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     _ InterproceduralAnalysis.t
   -> AccessResult.error * AbductiveDomain.Summary.t
   -> _ ExecutionDomain.base_t option
 (** [None] means that the execution can continue but we could not compute the continuation state
     (because this only takes a [AccessResult.error], which doesn't have the ok state) *)
 
 val report_result :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     _ InterproceduralAnalysis.t
   -> Location.t
   -> AbductiveDomain.t AccessResult.t
   -> ExecutionDomain.t list
 
 val report_results :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     _ InterproceduralAnalysis.t
   -> Location.t
   -> AbductiveDomain.t AccessResult.t list
   -> ExecutionDomain.t list
 
 val report_exec_results :
-     Tenv.t
-  -> Procdesc.t
-  -> Errlog.t
+     _ InterproceduralAnalysis.t
   -> Location.t
   -> ExecutionDomain.t AccessResult.t list
   -> ExecutionDomain.t list

@@ -14,4 +14,4 @@ val record_load : Exp.t -> Location.t -> PulseExecutionDomain.t list -> PulseExe
 val record_call :
   Tenv.t -> Procname.t option -> Location.t -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t
 
-val report_errors : Tenv.t -> Procdesc.t -> Errlog.t -> PulseSummary.summary -> unit
+val report_errors : _ InterproceduralAnalysis.t -> PulseSummary.summary -> unit

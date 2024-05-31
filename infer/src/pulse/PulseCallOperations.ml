@@ -228,9 +228,9 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   |> add_skipped_proc
 
 
-let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
-    callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals ?call_flags astate
-    =
+let apply_callee {InterproceduralAnalysis.tenv; proc_desc} ({PathContext.timestamp} as path)
+    callee_proc_name call_loc callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals
+    ~actuals ?call_flags astate =
   let open ExecutionDomain in
   let copy_to_caller_return_variable astate return_val_opt =
     (* Copies the return value of the callee into the return register of the caller.
@@ -239,7 +239,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         we simply return the original abstract state unchanged. *)
     match return_val_opt with
     | Some return_val_hist ->
-        let caller_return_var : Pvar.t = Procdesc.get_ret_var caller_proc_desc in
+        let caller_return_var : Pvar.t = Procdesc.get_ret_var proc_desc in
         let (astate, caller_return_val_hist) : AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)
             =
           PulseOperations.eval_var path call_loc caller_return_var astate
@@ -267,7 +267,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
     let callee_summary =
       if Config.pulse_taint_short_traces then
         let kinds =
-          PulseTaintItemMatcher.procedure_matching_kinds tenv callee_pname None
+          PulseTaintItemMatcher.procedure_matching_kinds tenv callee_proc_name None
             TaintConfig.sink_procedure_matchers
         in
         let calee_summary =
@@ -287,9 +287,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           actuals
     in
     let sat_unsat, contradiction =
-      PulseInterproc.apply_summary tenv path callee_pname call_loc ~callee_summary ~captured_formals
-        ~captured_actuals ~formals
-        ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
+      PulseInterproc.apply_summary tenv path ~callee_proc_name call_loc ~callee_summary
+        ~captured_formals ~captured_actuals ~formals
+        ~actuals:(trim_actuals_if_var_arg (Some callee_proc_name) ~actuals ~formals)
         astate
     in
     let sat_unsat =
@@ -302,7 +302,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
             PulseOperations.havoc_id (fst ret)
               (ValueHistory.singleton
                  (Call
-                    { f= Call callee_pname
+                    { f= Call callee_proc_name
                     ; location= call_loc
                     ; in_call= ValueHistory.epoch
                     ; timestamp } ) )
@@ -331,8 +331,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post
-              (Procdesc.get_proc_name caller_proc_desc)
-              (Procdesc.get_attributes caller_proc_desc)
+              (Procdesc.get_proc_name proc_desc)
+              (Procdesc.get_attributes proc_desc)
               call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
             >>| AccessResult.with_summary
@@ -348,7 +348,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           | LatentAbortProgram {latent_issue} -> (
               let open SatUnsat.Import in
               let latent_issue =
-                LatentIssue.add_call (Call callee_pname, call_loc) (subst, hist_map)
+                LatentIssue.add_call (Call callee_proc_name, call_loc) (subst, hist_map)
                   astate_post_call latent_issue
               in
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
@@ -369,7 +369,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           | LatentSpecializedTypeIssue {specialized_type; trace} ->
               let trace =
                 Trace.ViaCall
-                  { f= Call callee_pname
+                  { f= Call callee_proc_name
                   ; location= call_loc
                   ; history= ValueHistory.epoch
                   ; in_call= trace }
@@ -394,10 +394,12 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 Unsat
             | Some (invalid_address, default_caller_history) -> (
                 let access_trace =
-                  Trace.add_call (Call callee_pname) call_loc hist_map ~default_caller_history
+                  Trace.add_call (Call callee_proc_name) call_loc hist_map ~default_caller_history
                     callee_access_trace
                 in
-                let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
+                let calling_context =
+                  (CallEvent.Call callee_proc_name, call_loc) :: calling_context
+                in
                 match
                   AbductiveDomain.find_post_cell_opt invalid_address astate_post_call
                   |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
@@ -439,8 +441,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                          , [] ) ) ) ) )
 
 
-let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-    (callee_proc_attrs : ProcAttributes.t) exec_states_callee non_disj_callee
+let call_aux ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc callee_pname ret
+    actuals call_kind (callee_proc_attrs : ProcAttributes.t) exec_states_callee non_disj_callee
     (astate_caller : AbductiveDomain.t) ?call_flags non_disj_caller =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
@@ -479,7 +481,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
               *)
           Timer.check_timeout () ;
           match
-            apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
+            apply_callee analysis_data path callee_pname call_loc callee_exec_state
               ~captured_formals ~captured_actuals ~formals ~actuals ~ret ?call_flags astate
           with
           | Unsat, new_contradiction ->
@@ -491,8 +493,8 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
   (posts, (non_disj, contradiction))
 
 
-let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
-    ~call_kind (astate : AbductiveDomain.t) ?call_flags non_disj_caller =
+let call_aux_unknown ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc callee_pname
+    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags non_disj_caller =
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate_unknown =
@@ -523,9 +525,8 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
         |> Option.value_map
              ~default:([], (NonDisjDomain.bottom, None))
              ~f:(fun nil_summary ->
-               call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-                 proc_attrs [nil_summary] NonDisjDomain.Summary.bottom astate ?call_flags
-                 non_disj_caller )
+               call_aux analysis_data path call_loc callee_pname ret actuals call_kind proc_attrs
+                 [nil_summary] NonDisjDomain.Summary.bottom astate ?call_flags non_disj_caller )
       in
       ( result_unknown @ result_unknown_nil
       , (NonDisjDomain.join non_disj non_disj_nil, contradiction) )
@@ -611,9 +612,7 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
       `UseCurrentSummary
 
 
-let call tenv err_log path ~caller_proc_desc
-    ~(analyze_dependency :
-       ?specialization:Specialization.t -> Procname.t -> PulseSummary.t AnalysisResult.t ) call_loc
+let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_data) path call_loc
     callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags
     non_disj_caller =
   let has_continue_program results =
@@ -628,7 +627,7 @@ let call tenv err_log path ~caller_proc_desc
   in
   let call_as_unknown () =
     let results, (non_disj, contradiction) =
-      call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
+      call_aux_unknown analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
         ~call_kind astate ?call_flags non_disj_caller
     in
     if Option.is_some contradiction then (
@@ -642,7 +641,7 @@ let call tenv err_log path ~caller_proc_desc
   in
   let call_aux {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} =
     let results, (non_disj, contradiction) =
-      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+      call_aux analysis_data path call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
         exec_states non_disj_callee astate ?call_flags non_disj_caller
     in
@@ -767,13 +766,14 @@ let call tenv err_log path ~caller_proc_desc
   match analyze_dependency callee_pname with
   | Ok summary ->
       let is_pulse_specialization_limit_not_reached =
-        Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized
+        Specialization.Pulse.is_pulse_specialization_limit_not_reached
+          summary.PulseSummary.specialized
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
       let already_given = Specialization.Pulse.Set.empty in
       let res, non_disj, contradiction, resolution_status =
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
-          already_given summary.main
+          already_given summary.PulseSummary.main
       in
       let has_continue_program = has_continue_program res in
       if has_continue_program then GlobalForStats.node_is_not_stuck () ;
@@ -798,15 +798,15 @@ let call tenv err_log path ~caller_proc_desc
         match no_summary with
         | MutualRecursionCycle ->
             let astate, cycle = AbductiveDomain.add_recursive_call call_loc callee_pname astate in
-            if Procname.equal callee_pname (Procdesc.get_proc_name caller_proc_desc) then
-              PulseReport.report tenv ~is_suppressed:false ~latent:false caller_proc_desc err_log
+            if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then
+              PulseReport.report analysis_data ~is_suppressed:false ~latent:false
                 (MutualRecursionCycle {cycle; location= call_loc}) ;
             astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in
       let res, (non_disj, contradiction) =
-        call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
-          ~formals_opt ~call_kind astate ?call_flags non_disj_caller
+        call_aux_unknown analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
+          ~call_kind astate ?call_flags non_disj_caller
       in
       (res, non_disj, contradiction, `UnknownCall)

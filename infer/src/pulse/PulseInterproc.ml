@@ -1165,7 +1165,7 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
    - for each actual, write the post for that actual
 
    - if aliasing is introduced at any time then give up *)
-let apply_summary tenv path callee_proc_name call_location ~callee_summary ~captured_formals
+let apply_summary tenv path ~callee_proc_name call_location ~callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals astate =
   let aux () =
     let empty_call_state =

@@ -416,10 +416,7 @@ end
 
 module Function = struct
   let operator_call FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
-   fun { path
-       ; analysis_data= {analyze_dependency; tenv; err_log; proc_desc}
-       ; location
-       ; ret= (ret_id, _) as ret } astate non_disj ->
+   fun {path; analysis_data; location; ret= (ret_id, _) as ret} astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
@@ -428,7 +425,7 @@ module Function = struct
     let callee_proc_name_opt =
       match PulseArithmetic.get_dynamic_type lambda astate with
       | Some {typ= {desc= Typ.Tstruct name}} -> (
-        match Tenv.lookup tenv name with
+        match Tenv.lookup analysis_data.tenv name with
         | Some tstruct ->
             List.find ~f:(fun m -> Procname.is_cpp_lambda m) tstruct.Struct.methods
         | None ->
@@ -443,9 +440,8 @@ module Function = struct
           :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
         in
         let astate, non_disj, _, _ =
-          PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
-            location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
-            astate non_disj
+          PulseCallOperations.call analysis_data path location callee_proc_name ~ret ~actuals
+            ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
         in
         (astate, non_disj)
     | _ ->

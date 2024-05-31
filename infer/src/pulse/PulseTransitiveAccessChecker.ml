@@ -246,15 +246,16 @@ let record_call tenv procname location astate =
 
 let should_skip_call procname = Config.procname_must_be_skipped procname
 
-let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} =
+let report_errors ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
+    {PulseSummary.pre_post_list; non_disj} =
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
       let nothing_reported = ref true in
       let report transitive_callees transitive_missed_captures call_trace =
         nothing_reported := false ;
-        PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-          (Diagnostic.TransitiveAccess
+        PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+          (TransitiveAccess
              {tag; description; call_trace; transitive_callees; transitive_missed_captures} )
       in
       List.iter pre_post_list ~f:(function
@@ -274,8 +275,8 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
                in
                let transitive_callees = callees in
                let transitive_missed_captures = missed_captures in
-               PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-                 (Diagnostic.TransitiveAccess
+               PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+                 (TransitiveAccess
                     { tag= "NO ACCESS FOUND"
                     ; description= ""
                     ; call_trace

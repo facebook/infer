@@ -47,7 +47,7 @@ val merge_contradictions : contradiction option -> contradiction option -> contr
 val apply_summary :
      Tenv.t
   -> PathContext.t
-  -> Procname.t
+  -> callee_proc_name:Procname.t
   -> Location.t
   -> callee_summary:AbductiveDomain.Summary.t
   -> captured_formals:(Pvar.t * Typ.t) list

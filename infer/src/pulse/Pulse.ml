@@ -18,7 +18,7 @@ module CallGlobalForStats = PulseCallOperations.GlobalForStats
     procedure *)
 exception AboutToOOM
 
-let report_topl_errors proc_desc err_log summary =
+let report_topl_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
   let f = function
     | ContinueProgram astate ->
         let pulse_is_manifest = PulseArithmetic.is_manifest astate in
@@ -91,7 +91,8 @@ let is_copy_cted_into_var from copied_into =
       false
 
 
-let report_unnecessary_copies tenv proc_desc err_log non_disj_astate =
+let report_unnecessary_copies ({InterproceduralAnalysis.proc_desc} as analysis_data) non_disj_astate
+    =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_copied
@@ -117,10 +118,11 @@ let report_unnecessary_copies tenv proc_desc err_log non_disj_astate =
              || Option.value_map ~default:true
                   ~f:(fun typ -> Typ.is_const_reference_on_source typ |> not)
                   source_typ
-           then PulseReport.report tenv ~is_suppressed ~latent:false proc_desc err_log diagnostic )
+           then PulseReport.report analysis_data ~is_suppressed ~latent:false diagnostic )
 
 
-let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
+let report_unnecessary_parameter_copies ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data)
+    non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
@@ -136,8 +138,7 @@ let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
                else Some (Diagnostic.ConstRefableParameter {param; typ; location})
              in
              Option.iter diagnostic ~f:(fun diagnostic ->
-                 PulseReport.report tenv ~is_suppressed:false ~latent:false proc_desc err_log
-                   diagnostic ) )
+                 PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ) )
 
 
 let heap_size () = (Gc.quick_stat ()).heap_words
@@ -153,8 +154,8 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; err_log; proc_desc}
-      path ret callee_pname call_exp func_args call_loc astate non_disj =
+  let interprocedural_call ({InterproceduralAnalysis.tenv} as analysis_data) path ret callee_pname
+      call_exp func_args call_loc astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
@@ -171,8 +172,8 @@ module PulseTransferFunctions = struct
     let eval_args_and_call callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
-      PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
-        call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind astate non_disj
+      PulseCallOperations.call analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
+        ~call_kind astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
@@ -787,9 +788,8 @@ module PulseTransferFunctions = struct
     |> Option.value ~default:(astate, callee_procname, func_args)
 
 
-  let rec dispatch_call_eval_args
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
-      actuals func_args call_loc flags astate non_disj callee_pname =
+  let rec dispatch_call_eval_args ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path
+      ret call_exp actuals func_args call_loc flags astate non_disj callee_pname =
     let method_info, ret, actuals, func_args, astate =
       let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
       if flags.CallFlags.cf_virtual then
@@ -1017,8 +1017,7 @@ module PulseTransferFunctions = struct
     ( ( if Option.exists callee_pname ~f:IRAttributes.is_no_return then
           List.filter_map exec_states_res ~f:(fun exec_state_res ->
               (let+ exec_state = exec_state_res in
-               PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
-               |> SatUnsat.sat )
+               PulseSummary.force_exit_program analysis_data call_loc exec_state |> SatUnsat.sat )
               |> PulseResult.of_some )
         else exec_states_res )
     , non_disj )
@@ -1086,8 +1085,8 @@ module PulseTransferFunctions = struct
      object in memory and set that count to their respective
      __infer_mode_reference_count field by calling the __objc_set_ref_count
      builtin *)
-  let set_ref_counts astate non_disj location path
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+  let set_ref_counts astate non_disj location path ({InterproceduralAnalysis.tenv} as analysis_data)
+      =
     let find_var_opt astate addr =
       Stack.fold
         (fun var (var_addr, _) var_opt ->
@@ -1129,8 +1128,7 @@ module PulseTransferFunctions = struct
                      dispatch_call analysis_data path ret call_exp actuals location call_flags
                        astate non_disj
                    in
-                   (PulseReport.report_exec_results tenv proc_desc err_log location execs, non_disj)
-                  )
+                   (PulseReport.report_exec_results analysis_data location execs, non_disj) )
                   |> Option.value ~default:([default_astate], non_disj) )
         in
         (astates, non_disj, !ret_vars) )
@@ -1142,9 +1140,7 @@ module PulseTransferFunctions = struct
      add and execute calls to dealloc. The main advantage of adding this calls
      is that some memory could be freed in dealloc, and we would be reporting a leak on it if we
      didn't call it. *)
-  let execute_injected_dealloc_calls
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path vars astate
-      non_disj location =
+  let execute_injected_dealloc_calls analysis_data path vars astate non_disj location =
     let used_ids = Stack.keys astate |> List.filter_map ~f:(fun var -> Var.get_ident var) in
     Ident.update_name_generator used_ids ;
     let call_dealloc (astate_list, non_disj) (ret_id, id, typ, dealloc) =
@@ -1170,7 +1166,7 @@ module PulseTransferFunctions = struct
                 dispatch_call analysis_data path ret call_exp actuals location call_flags astate
                   non_disj
               in
-              (PulseReport.report_exec_results tenv proc_desc err_log location execs, non_disj) )
+              (PulseReport.report_exec_results analysis_data location execs, non_disj) )
     in
     let dynamic_types_unreachable =
       PulseOperations.get_dynamic_type_unreachable_values vars astate
@@ -1335,7 +1331,7 @@ module PulseTransferFunctions = struct
 
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) _cfg_node
+      ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _
@@ -1368,7 +1364,7 @@ module PulseTransferFunctions = struct
              >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
             |> SatUnsat.to_list
-            |> PulseReport.report_results tenv proc_desc err_log loc
+            |> PulseReport.report_results analysis_data loc
           in
           let astates, astate_n =
             (* call the initializer for certain globals to populate their values, unless we already
@@ -1393,7 +1389,7 @@ module PulseTransferFunctions = struct
                       [ PulseTaintOperations.load procname tenv path loc ~lhs:(lhs_id, typ)
                           ~rhs:rhs_exp astate ]
                     in
-                    PulseReport.report_results tenv proc_desc err_log loc astates
+                    PulseReport.report_results analysis_data loc astates
                 | _ ->
                     [astate] )
           in
@@ -1451,7 +1447,7 @@ module PulseTransferFunctions = struct
           in
           let astate_n = NonDisjDomain.set_captured_variables rhs_exp astate_n in
           let results = SatUnsat.to_list result in
-          (PulseReport.report_results tenv proc_desc err_log loc results, path, astate_n)
+          (PulseReport.report_results analysis_data loc results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astate_n = check_modified_before_destructor actuals call_exp astate astate_n in
           let astates, astate_n =
@@ -1477,9 +1473,7 @@ module PulseTransferFunctions = struct
                     call_flags astate astate_n callee_pname )
             in
             let astates_before = !astates_before in
-            ( PulseReport.report_exec_results tenv proc_desc err_log loc res
-            , astate_n
-            , astates_before )
+            (PulseReport.report_exec_results analysis_data loc res, astate_n, astates_before)
           in
           if not (CallGlobalForStats.is_node_not_stuck ()) then (
             if Config.log_pulse_coverage then add_verbose_never_return_info proc_desc instr loc ;
@@ -1519,7 +1513,7 @@ module PulseTransferFunctions = struct
             let<++> astate, _ = prune_result in
             astate
           in
-          (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
+          (PulseReport.report_exec_results analysis_data loc results, path, astate_n)
       | Metadata EndBranches ->
           (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]
              instruction terminates the most recently seen terminated conditional. The empty case
@@ -1774,8 +1768,7 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
   if exists_a_node_with_0_disjunct then Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
 
 
-let analyze specialization
-    ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
+let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_attrs = Procdesc.get_attributes proc_desc in
   let location = Procdesc.get_loc proc_desc in
@@ -1812,7 +1805,7 @@ let analyze specialization
           else posts
         in
         let summary =
-          PulseSummary.of_posts tenv proc_desc err_log specialization node_loc posts non_disj_astate
+          PulseSummary.of_posts analysis_data specialization node_loc posts non_disj_astate
         in
         let is_exit_node =
           Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
@@ -1825,10 +1818,10 @@ let analyze specialization
           else summary
         in
         if Config.pulse_transitive_access_enabled then
-          PulseTransitiveAccessChecker.report_errors tenv proc_desc err_log summary ;
-        report_topl_errors proc_desc err_log summary.pre_post_list ;
-        report_unnecessary_copies tenv proc_desc err_log non_disj_astate ;
-        report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
+          PulseTransitiveAccessChecker.report_errors analysis_data summary ;
+        report_topl_errors analysis_data summary.pre_post_list ;
+        report_unnecessary_copies analysis_data non_disj_astate ;
+        report_unnecessary_parameter_copies analysis_data non_disj_astate ;
         summary
     | None ->
         PulseSummary.empty

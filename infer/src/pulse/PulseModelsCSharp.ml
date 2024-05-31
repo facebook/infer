@@ -418,20 +418,15 @@ module Resource = struct
 
   (* I think this function needs to match all the cases *)
 
-  let model_with_analysis args
-      { analysis_data= {analyze_dependency; tenv; err_log; proc_desc}
-      ; path
-      ; callee_procname
-      ; location
-      ; ret } astate non_disj =
+  let model_with_analysis args {analysis_data; path; callee_procname; location; ret} astate non_disj
+      =
     let actuals =
       List.map args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (arg_payload, typ) )
     in
     let res, non_disj, _, is_known_call =
-      PulseCallOperations.call tenv err_log path ~caller_proc_desc:proc_desc ~analyze_dependency
-        location callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-        non_disj
+      PulseCallOperations.call analysis_data path location callee_procname ~ret ~actuals
+        ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
     in
     match is_known_call with
     | `KnownCall ->

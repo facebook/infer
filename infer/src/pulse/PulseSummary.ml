@@ -63,9 +63,9 @@ let join summary1 summary2 =
   {pre_post_list; non_disj}
 
 
-let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log
-    specialization location (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t
-    =
+let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis_data)
+    ~continue_program ~exception_raised specialization location (exec_astate : ExecutionDomain.t) :
+    _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
       ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
@@ -80,12 +80,12 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
     | Ok summary ->
         exec_domain_of_summary summary
     | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
+        PulseReport.report_summary_error analysis_data
           ( ReportableError {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`JavaResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
+        PulseReport.report_summary_error analysis_data
           ( ReportableError
               {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}}
           , summary )
@@ -97,13 +97,13 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
           L.d_printfln "Suppressing Unawaited Awaitable report because exception thown" ;
           exec_domain_of_summary summary )
         else
-          PulseReport.report_summary_error tenv proc_desc err_log
+          PulseReport.report_summary_error analysis_data
             ( ReportableError
                 {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
             , summary )
           |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
+        PulseReport.report_summary_error analysis_data
           ( ReportableError
               {astate; diagnostic= CSharpResourceLeak {class_name; allocation_trace; location}}
           , summary )
@@ -122,7 +122,7 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
           (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
              contain the reason for invalidation and thus we will filter out the report. TODO:
              figure out if that's a problem. *)
-          PulseReport.report_summary_error tenv proc_desc err_log
+          PulseReport.report_summary_error analysis_data
             ( ReportableError
                 { diagnostic=
                     AccessToInvalidAddress
@@ -159,23 +159,23 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
         let diagnostic =
           Diagnostic.HackCannotInstantiateAbstractClass {type_name= specialized_type; trace}
         in
-        PulseReport.report tenv ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ;
+        PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ;
         Sat (AbortProgram astate) )
 
 
-let force_exit_program tenv proc_desc err_log post =
-  exec_summary_of_post_common tenv proc_desc err_log None post
+let force_exit_program analysis_data post =
+  exec_summary_of_post_common analysis_data None post
     ~continue_program:(fun astate -> ExitProgram astate)
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts tenv proc_desc err_log specialization location posts non_disj =
+let of_posts analysis_data specialization location posts non_disj =
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i exec_state ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i
           (ExecutionDomain.pp_with_kind HTML None)
           exec_state ;
-        exec_summary_of_post_common tenv proc_desc err_log specialization location exec_state
+        exec_summary_of_post_common analysis_data specialization location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )
