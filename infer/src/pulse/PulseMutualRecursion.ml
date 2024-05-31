@@ -7,35 +7,58 @@
 
 open! IStd
 module F = Format
-module L = Logging
 open PulseBasicInterface
-module PathContext = PulsePathContext
 
-type t = Trace.t
+type call = {proc_name: Procname.t; location: Location.t} [@@deriving compare, equal]
 
-let mk {PathContext.timestamp} location call =
-  Trace.Immediate
-    { location
-    ; history=
-        ValueHistory.singleton
-          (Call {f= Call call; location; timestamp; in_call= ValueHistory.epoch}) }
+type t = {chain: call list; innermost: call} [@@deriving compare, equal]
 
+let mk location proc_name = {chain= []; innermost= {proc_name; location}}
 
-let get_inner_call trace =
-  match Trace.get_immediate trace with
-  | _loc, Sequence (Call {f= Call orig_proc_name}, Epoch) ->
-      orig_proc_name
-  | _ ->
-      L.die InternalError "unexpected trace in recursive call detection: %a"
-        (Trace.pp ~pp_immediate:(fun _ -> ()))
-        trace
+let pp fmt cycle =
+  let rec pp_chain fmt = function
+    | [] ->
+        CallEvent.pp fmt (Call cycle.innermost.proc_name)
+    | {proc_name} :: chain ->
+        F.fprintf fmt "%a -> " CallEvent.pp (CallEvent.Call proc_name) ;
+        pp_chain fmt chain
+  in
+  pp_chain fmt cycle.chain
 
 
-let rec pp fmt (trace : Trace.t) =
-  match trace with
-  | Immediate _ ->
-      let proc_name = get_inner_call trace in
-      CallEvent.pp fmt (Call proc_name)
-  | ViaCall {f; in_call} ->
-      F.fprintf fmt "%a -> " CallEvent.pp f ;
-      pp fmt in_call
+let get_error_message cycle =
+  let pp_cycle fmt cycle =
+    match cycle.chain with
+    | [] ->
+        F.fprintf fmt "recursive call to %a" pp cycle
+    | _ :: _ ->
+        F.fprintf fmt "mutual recursion cycle: %a" pp cycle
+  in
+  F.asprintf
+    "%a; make sure this is intentional and cannot lead to non-termination or stack overflow"
+    pp_cycle cycle
+
+
+let to_errlog cycle =
+  let rec chain_to_errlog prev_call = function
+    | [] ->
+        Errlog.make_trace_element 0 cycle.innermost.location
+          (F.asprintf "%a makes a recursive call to %a" CallEvent.pp (CallEvent.Call prev_call)
+             CallEvent.pp (CallEvent.Call cycle.innermost.proc_name) )
+          []
+        :: []
+    | call :: chain ->
+        Errlog.make_trace_element 0 call.location
+          (F.asprintf "%a calls %a" CallEvent.pp (CallEvent.Call prev_call) CallEvent.pp
+             (CallEvent.Call call.proc_name) )
+          []
+        :: chain_to_errlog call.proc_name chain
+  in
+  chain_to_errlog cycle.innermost.proc_name cycle.chain
+
+
+module Set = PrettyPrintable.MakePPSet (struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp = pp
+end)

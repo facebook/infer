@@ -146,7 +146,7 @@ type t =
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
-  | MutualRecursionCycle of {cycle: Trace.t; location: Location.t}
+  | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
@@ -216,7 +216,7 @@ let pp fmt diagnostic =
         Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
         location
   | MutualRecursionCycle {cycle; location} ->
-      F.fprintf fmt "MutualRecursionCycle {@[cycle=%a;@;location=%a@]}" (Trace.pp ~pp_immediate)
+      F.fprintf fmt "MutualRecursionCycle {@[cycle=%a;@;location=%a@]}" PulseMutualRecursion.pp
         cycle Location.pp location
   | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
       F.fprintf fmt
@@ -707,17 +707,7 @@ let get_message_and_suggestion diagnostic =
         pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
   | MutualRecursionCycle {cycle} ->
-      let advice =
-        "Make sure this is intentional and cannot lead to non-termination or stack overflow."
-      in
-      let pp_cycle fmt (cycle : PulseMutualRecursion.t) =
-        match cycle with
-        | Immediate _ ->
-            F.fprintf fmt "recursive call to %a. " PulseMutualRecursion.pp cycle
-        | ViaCall _ ->
-            F.fprintf fmt "mutual recursion cycle: %a@\n" PulseMutualRecursion.pp cycle
-      in
-      F.asprintf "%a%s" pp_cycle cycle advice |> no_suggestion
+      PulseMutualRecursion.get_error_message cycle |> no_suggestion
   | ReadonlySharedPtrParameter {param; location; used_locations} ->
       let pp_used_locations f =
         match used_locations with
@@ -1099,12 +1089,7 @@ let get_trace = function
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | MutualRecursionCycle {cycle} ->
-      let inner_call = PulseMutualRecursion.get_inner_call cycle in
-      Trace.add_to_errlog ~nesting:0
-        ~pp_immediate:(fun fmt ->
-          F.fprintf fmt "recursive call to %a here" CallEvent.pp (CallEvent.Call inner_call) )
-        cycle
-      @@ []
+      PulseMutualRecursion.to_errlog cycle
   | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
       let nesting = 0 in
       Errlog.make_trace_element nesting location (get_param_typ param typ) []

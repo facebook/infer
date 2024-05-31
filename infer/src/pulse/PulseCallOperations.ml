@@ -797,12 +797,10 @@ let call tenv err_log path ~caller_proc_desc
       let astate =
         match no_summary with
         | MutualRecursionCycle ->
-            let astate, trace =
-              AbductiveDomain.record_recursive_call path call_loc callee_pname astate
-            in
+            let astate, cycle = AbductiveDomain.add_recursive_call call_loc callee_pname astate in
             if Procname.equal callee_pname (Procdesc.get_proc_name caller_proc_desc) then
               PulseReport.report tenv ~is_suppressed:false ~latent:false caller_proc_desc err_log
-                (MutualRecursionCycle {cycle= trace; location= call_loc}) ;
+                (MutualRecursionCycle {cycle; location= call_loc}) ;
             astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate

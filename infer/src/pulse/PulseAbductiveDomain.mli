@@ -68,7 +68,7 @@ type t = private
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
   ; transitive_info: TransitiveInfo.t  (** record transitive information inter-procedurally *)
-  ; recursive_calls: Trace.Set.t
+  ; recursive_calls: PulseMutualRecursion.Set.t
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -306,6 +306,8 @@ val get_unreachable_attributes : t -> AbstractValue.t list
 
 val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
+val add_recursive_call : Location.t -> Procname.t -> t -> t * PulseMutualRecursion.t
+
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
@@ -323,8 +325,6 @@ val record_call_resolution :
   -> TransitiveInfo.Callees.resolution
   -> t
   -> t
-
-val record_recursive_call : PathContext.t -> Location.t -> Procname.t -> t -> t * Trace.t
 
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 

@@ -34,9 +34,6 @@ val get_outer_location : t -> Location.t
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)
 
-val get_immediate : t -> Location.t * ValueHistory.t
-(** the (innermost and unique) [Immediate] of a trace *)
-
 val add_call :
      CallEvent.t
   -> Location.t

@@ -70,8 +70,6 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig_ = PostDomain
 
-module RecursiveCalls = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
-
 (* see documentation in this file's .mli *)
 type t =
   { post: PostDomain.t
@@ -81,7 +79,7 @@ type t =
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
-  ; recursive_calls: (RecursiveCalls.t[@yojson.opaque])
+  ; recursive_calls: (PulseMutualRecursion.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -113,7 +111,7 @@ let pp_ ~is_summary f
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
-    need_dynamic_type_specialization TransitiveInfo.pp transitive_info RecursiveCalls.pp
+    need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
     recursive_calls SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
@@ -133,12 +131,6 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
   let callees = TransitiveInfo.Callees.record ~caller callsite_loc call_kind resolution callees in
   let transitive_info = {astate.transitive_info with callees} in
   {astate with transitive_info}
-
-
-let record_recursive_call path location callee astate =
-  let trace = PulseMutualRecursion.mk path location callee in
-  let recursive_calls = Trace.Set.add trace astate.recursive_calls in
-  ({astate with recursive_calls}, trace)
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
@@ -1487,7 +1479,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
     ; transitive_info= TransitiveInfo.bottom
-    ; recursive_calls= RecursiveCalls.empty
+    ; recursive_calls= PulseMutualRecursion.Set.empty
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
@@ -2060,6 +2052,12 @@ let add_missed_captures missed_captures ({transitive_info} as astate) =
     let transitive_info = {transitive_info with TransitiveInfo.missed_captures} in
     {astate with transitive_info}
   else astate
+
+
+let add_recursive_call location callee astate =
+  let trace = PulseMutualRecursion.mk location callee in
+  let recursive_calls = PulseMutualRecursion.Set.add trace astate.recursive_calls in
+  ({astate with recursive_calls}, trace)
 
 
 let add_skipped_call pname trace astate =
