@@ -23,7 +23,10 @@ let make_fresh_id_generator () =
 
 
 let unknown name json =
-  L.debug Capture Verbose "ErlangAst.Parse: unknown %s: %s@." name (Yojson.Safe.show json) ;
+  L.debug Capture Verbose
+    "ErlangJsonParser: parsing not supported for %s, likely causing the entire tree to be skipped: \
+     %s@."
+    name (Yojson.Safe.show json) ;
   None
 
 
