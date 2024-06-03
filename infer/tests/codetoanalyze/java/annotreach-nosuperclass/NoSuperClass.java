@@ -43,6 +43,21 @@ class NoSuperClass {
     }
   }
 
+  class DerivedClass extends SourceClass {
+    // This inherits source annotation from superclass because the method overrides the
+    // method from the superclass
+    @Override
+    void source1Bad() {
+      interfaceSink();
+    }
+
+    // This does not inherit source annotation from superclass because
+    // it does not come from the superclass
+    void notSource() {
+      interfaceSink();
+    }
+  }
+
   @UserDefinedSink
   @UserDefinedSource
   void sourceAndSinkBad() {}
