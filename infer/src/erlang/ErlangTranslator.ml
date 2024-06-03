@@ -981,75 +981,71 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
    generators and filters. *)
 and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Block.t =
   (* Surround expression with filters *)
-  let extract_filter (qual : Ast.qualifier) =
-    match qual with Filter expr -> Some expr | _ -> None
+  let apply_one_filter (qual : Ast.qualifier) (acc : Block.t) : Block.t =
+    match qual with
+    | Filter expr ->
+        (* Check expression, execute inner block (accumulator) only if true *)
+        let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
+        let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
+        let true_node = Node.make_if env true unboxed in
+        let false_node = Node.make_if env false unboxed in
+        let fail_node = Node.make_nop env in
+        let succ_node = Node.make_nop env in
+        let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
+        filter_expr_block.exit_success |~~> [true_node; false_node] ;
+        filter_expr_block.exit_failure |~~> [fail_node] ;
+        true_node |~~> [acc.start] ;
+        false_node |~~> [succ_node] ;
+        acc.exit_success |~~> [succ_node] ;
+        acc.exit_failure |~~> [fail_node] ;
+        {start= filter_expr_block.start; exit_success= succ_node; exit_failure= fail_node}
+    | _ ->
+        (* Ignore generators *)
+        acc
   in
-  let filters = List.filter_map ~f:extract_filter qualifiers in
-  let apply_one_filter expr (acc : Block.t) : Block.t =
-    (* Check expression, execute inner block (accumulator) only if true *)
-    let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
-    let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
-    let true_node = Node.make_if env true unboxed in
-    let false_node = Node.make_if env false unboxed in
-    let fail_node = Node.make_nop env in
-    let succ_node = Node.make_nop env in
-    let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
-    filter_expr_block.exit_success |~~> [true_node; false_node] ;
-    filter_expr_block.exit_failure |~~> [fail_node] ;
-    true_node |~~> [acc.start] ;
-    false_node |~~> [succ_node] ;
-    acc.exit_success |~~> [succ_node] ;
-    acc.exit_failure |~~> [fail_node] ;
-    {start= filter_expr_block.start; exit_success= succ_node; exit_failure= fail_node}
-  in
-  let loop_body_with_filters = List.fold_right filters ~f:apply_one_filter ~init:loop_body in
-  (* Translate generators *)
-  let extract_generator (qual : Ast.qualifier) =
+  let loop_body_with_filters = List.fold_right qualifiers ~f:apply_one_filter ~init:loop_body in
+  (* Wrap filtered expression with loops for generators*)
+  let apply_one_gen (qual : Ast.qualifier) (acc : Block.t) : Block.t =
     match qual with
     | Generator {pattern; expression} ->
-        Some (pattern, expression)
+        (* Initialize generator *)
+        let gen_var, init_block = translate_expression_to_fresh_id env expression in
+        (* Check if there are still elements in the generator *)
+        let join_node = Node.make_join env in
+        let is_cons_id = mk_fresh_id () in
+        let check_cons_node =
+          Node.make_stmt env [Env.has_type_instr env ~result:is_cons_id ~value:(Var gen_var) Cons]
+        in
+        let is_cons_node = Node.make_if env true (Var is_cons_id) in
+        let no_cons_node = Node.make_if env false (Var is_cons_id) in
+        (* Load head, overwrite list with tail for next iteration *)
+        let head_var = mk_fresh_id () in
+        let head_load = load_field_from_id env head_var gen_var ErlangTypeName.cons_head Cons in
+        let tail_load = load_field_from_id env gen_var gen_var ErlangTypeName.cons_tail Cons in
+        let unpack_node = Node.make_stmt env [head_load; tail_load] in
+        (* Match head and evaluate expression *)
+        let head_matcher = translate_pattern env head_var pattern in
+        let fail_node = Node.make_nop env in
+        init_block.exit_success |~~> [join_node] ;
+        init_block.exit_failure |~~> [fail_node] ;
+        join_node |~~> [check_cons_node] ;
+        check_cons_node |~~> [is_cons_node; no_cons_node] ;
+        is_cons_node |~~> [unpack_node] ;
+        unpack_node |~~> [head_matcher.start] ;
+        head_matcher.exit_success |~~> [acc.start] ;
+        head_matcher.exit_failure |~~> [join_node] ;
+        acc.exit_success |~~> [join_node] ;
+        acc.exit_failure |~~> [fail_node] ;
+        {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
     | MapGenerator _ ->
         (* TODO: add support for map generators: T163176600 *)
         L.debug Capture Verbose
           "@[todo ErlangTranslator.translate_expression map generator instance(s)." ;
-        None
+        acc
     | _ ->
-        None
+        acc
   in
-  let generators = List.filter_map ~f:extract_generator qualifiers in
-  (* Wrap filtered expression with loops for generators*)
-  let apply_one_gen (pat, expr) (acc : Block.t) : Block.t =
-    (* Initialize generator *)
-    let gen_var, init_block = translate_expression_to_fresh_id env expr in
-    (* Check if there are still elements in the generator *)
-    let join_node = Node.make_join env in
-    let is_cons_id = mk_fresh_id () in
-    let check_cons_node =
-      Node.make_stmt env [Env.has_type_instr env ~result:is_cons_id ~value:(Var gen_var) Cons]
-    in
-    let is_cons_node = Node.make_if env true (Var is_cons_id) in
-    let no_cons_node = Node.make_if env false (Var is_cons_id) in
-    (* Load head, overwrite list with tail for next iteration *)
-    let head_var = mk_fresh_id () in
-    let head_load = load_field_from_id env head_var gen_var ErlangTypeName.cons_head Cons in
-    let tail_load = load_field_from_id env gen_var gen_var ErlangTypeName.cons_tail Cons in
-    let unpack_node = Node.make_stmt env [head_load; tail_load] in
-    (* Match head and evaluate expression *)
-    let head_matcher = translate_pattern env head_var pat in
-    let fail_node = Node.make_nop env in
-    init_block.exit_success |~~> [join_node] ;
-    init_block.exit_failure |~~> [fail_node] ;
-    join_node |~~> [check_cons_node] ;
-    check_cons_node |~~> [is_cons_node; no_cons_node] ;
-    is_cons_node |~~> [unpack_node] ;
-    unpack_node |~~> [head_matcher.start] ;
-    head_matcher.exit_success |~~> [acc.start] ;
-    head_matcher.exit_failure |~~> [join_node] ;
-    acc.exit_success |~~> [join_node] ;
-    acc.exit_failure |~~> [fail_node] ;
-    {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
-  in
-  List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters
+  List.fold_right qualifiers ~f:apply_one_gen ~init:loop_body_with_filters
 
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
