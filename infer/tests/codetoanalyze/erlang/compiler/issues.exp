@@ -376,7 +376,6 @@ features_logic:test_xor11_Bad/0: if_clause
 ----- features_maps -----
 features_maps:fn_test_get_badkey3_Bad/0: badkey
 features_maps:fn_test_update_exact3_Bad/0: badkey
-features_maps:fp_test_mapcomp_Ok/0: ok
 features_maps:fp_test_mapgen_Ok/0: ok
 features_maps:test_get_Bad/0: expected_crash
 features_maps:test_get_Ok/0: ok
@@ -387,6 +386,7 @@ features_maps:test_is_key_Bad/0: expected_crash
 features_maps:test_is_key_Ok/0: ok
 features_maps:test_is_key_badmap_Bad/0: badmap
 features_maps:test_mapcomp_Bad/0: expected_crash
+features_maps:test_mapcomp_Ok/0: ok
 features_maps:test_mapgen_Bad/0: expected_crash
 features_maps:test_new_Bad/0: expected_crash
 features_maps:test_new_Ok/0: ok

@@ -628,6 +628,8 @@ and translate_expression env {Ast.location; simple_expression} =
         translate_expression_map_create env ret_var updates
     | Map {map= Some map; updates} ->
         translate_expression_map_update env ret_var map updates
+    | MapComprehension {expression; qualifiers} ->
+        translate_expression_mapcomprehension env ret_var expression qualifiers
     | Match {pattern; body} ->
         translate_expression_match env ret_var pattern body
     | Maybe {body; else_cases} ->
@@ -975,21 +977,9 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
   Block.all env [capture_block; Block.make_load env ret_var closure any_typ]
 
 
-and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
-    Block.t =
-  let list_var = mk_fresh_id () in
-  (* Start with en empty list L := Nil *)
-  let init_block = translate_expression_nil env list_var in
-  (* Compute one iteration of the expression and add to list: L := Cons(Expr, L) *)
-  let loop_body =
-    (* Compute result of the expression *)
-    let expr_id, expr_block = translate_expression_to_fresh_id env expression in
-    (* Prepend to list *)
-    let call_instr =
-      builtin_call_2 env list_var BuiltinDecl.__erlang_make_cons (Var expr_id) (Var list_var)
-    in
-    Block.all env [expr_block; Block.make_instruction env [call_instr]]
-  in
+(* Helper function for the main loop of translating list/map comprehensions, taking care of
+   generators and filters. *)
+and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Block.t =
   (* Surround expression with filters *)
   let extract_filter (qual : Ast.qualifier) =
     match qual with Filter expr -> Some expr | _ -> None
@@ -1059,7 +1049,28 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
     acc.exit_failure |~~> [fail_node] ;
     {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
   in
-  let loop_block = List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters in
+  List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters
+
+
+and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
+    Block.t =
+  let list_var = mk_fresh_id () in
+  (* Start with en empty list L := Nil *)
+  let init_block = translate_expression_nil env list_var in
+  (* Loop with generators/filters *)
+  let loop_block =
+    (* Compute one iteration of the expression and add to list: L := Cons(Expr, L) *)
+    let loop_body =
+      (* Compute result of the expression *)
+      let expr_id, expr_block = translate_expression_to_fresh_id env expression in
+      (* Prepend to list *)
+      let call_instr =
+        builtin_call_2 env list_var BuiltinDecl.__erlang_make_cons (Var expr_id) (Var list_var)
+      in
+      Block.all env [expr_block; Block.make_instruction env [call_instr]]
+    in
+    translate_comprehension_loop env loop_body qualifiers
+  in
   (* Store lists:reverse(L) in return variable *)
   let store_return_block =
     let fun_exp = Exp.Const (Cfun lists_reverse) in
@@ -1152,6 +1163,34 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
   (* TODO: what should be the order of updates? *)
   let update_blocks = List.map ~f:translate_update updates in
   Block.all env ([map_block; check_map_type_block] @ update_blocks)
+
+
+and translate_expression_mapcomprehension (env : (_, _) Env.t) ret_var
+    (expression : Ast.association) qualifiers : Block.t =
+  let map_var = mk_fresh_id () in
+  (* Start with an empty map M := {} *)
+  let init_block = translate_expression_map_create env map_var [] in
+  (* Loop with generators/filters *)
+  let loop_block =
+    let loop_body =
+      (* Compute the result of the association's expressions *)
+      let key_id, key_block = translate_expression_to_fresh_id env expression.key in
+      let val_id, val_block = translate_expression_to_fresh_id env expression.value in
+      (* Add to map *)
+      let update_fun_exp = Exp.Const (Cfun maps_put) in
+      let update_args =
+        [(Exp.Var key_id, any_typ); (Exp.Var val_id, any_typ); (Exp.Var map_var, any_typ)]
+      in
+      let update_instr =
+        Sil.Call ((map_var, any_typ), update_fun_exp, update_args, env.location, CallFlags.default)
+      in
+      Block.all env [key_block; val_block; Block.make_instruction env [update_instr]]
+    in
+    translate_comprehension_loop env loop_body qualifiers
+  in
+  (* Simply store map M in return variable *)
+  let store_return_block = Block.make_load env ret_var (Var map_var) any_typ in
+  Block.all env [init_block; loop_block; store_return_block]
 
 
 and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block.t =

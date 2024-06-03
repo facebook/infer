@@ -29,7 +29,7 @@
     test_update_exact1_Ok/0,
     test_update_exact2_Bad/0,
     fn_test_update_exact3_Bad/0,
-    fp_test_mapcomp_Ok/0,
+    test_mapcomp_Ok/0,
     test_mapcomp_Bad/0,
     fp_test_mapgen_Ok/0,
     test_mapgen_Bad/0
@@ -139,7 +139,7 @@ fn_test_update_exact3_Bad() ->
     M = #{1 => 2},
     M#{2 := 3}.
 
-fp_test_mapcomp_Ok() ->
+test_mapcomp_Ok() ->
     M = #{I => I+1 || I <- [1]},
     ?ASSERT_EQUAL(2, maps:get(1, M)).
 
