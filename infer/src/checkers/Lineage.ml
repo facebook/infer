@@ -73,16 +73,14 @@ module Vertex = struct
       | Local of ((Local.t * PPNode.t)[@sexp.opaque])
       | Argument of int * FieldPath.t
       | ArgumentOf of (Procname.t[@sexp.opaque]) * int * FieldPath.t
-          (** Invariant: the field path is known by the corresponding procedure, ie. if
-              [ArgumentOf (callee, index, path)] exists in any caller graph, then
-              [Argument (index, path)] exists in the graph of [callee]. *)
+          (** For lack of reliable information, the fieldpath contains the path of the argument as
+              it is set by the current procedure. It may correspond to differently-pathed nodes in
+              the Lineage graph of the corresponding callee. *)
       | Captured of int
       | CapturedBy of (Procname.t[@sexp.opaque]) * int
       | Return of FieldPath.t
       | ReturnOf of (Procname.t[@sexp.opaque]) * FieldPath.t
-          (** Invariant: the field path is known by the corresponding procedure, ie. if
-              [ReturnOf (callee, path)] exists in any caller graph, then [Return path] exists in the
-              graph of [callee]. *)
+          (** FieldPath component: see ArgumentOf. *)
       | Self
       | Function of (Procname.t[@sexp.opaque])
     [@@deriving compare, equal, sexp, hash]
@@ -125,8 +123,8 @@ module Edge = struct
           - INV2: There is no loop, because they don't mean anything. *)
       type t =
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
-        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
+        | Call  (** Target is ArgumentOf *)
+        | Return  (** Source is ReturnOf *)
         | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
         | Builtin  (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
         | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
@@ -146,10 +144,10 @@ module Edge = struct
           Format.fprintf fmt "Capture"
       | Direct ->
           Format.fprintf fmt "Direct"
-      | Call field_path ->
-          Format.fprintf fmt "Call%a" FieldPath.pp field_path
-      | Return field_path ->
-          Format.fprintf fmt "Return%a" FieldPath.pp field_path
+      | Call ->
+          Format.fprintf fmt "Call"
+      | Return ->
+          Format.fprintf fmt "Return"
       | Builtin ->
           Format.fprintf fmt "Builtin"
       | Summary {shape_is_preserved} ->
@@ -195,10 +193,10 @@ module G = struct
         (* Builtins are considered as unknown functions for shape preservation purposes.
            TODO T154077173: does this introduce undesirable imprecision? *)
         false
-    | Call _ ->
+    | Call ->
         (* Target is ArgumentOf *)
         Fn.non Vertex.is_abstract_cell src
-    | Return _ ->
+    | Return ->
         (* Source is ReturnOf *)
         Fn.non Vertex.is_abstract_cell dst
     | Summary {shape_is_preserved} ->
@@ -452,7 +450,7 @@ module Summary = struct
         let parents =
           List.filter_map
             ~f:(fun (src, {Edge.kind; _}, _) ->
-              match kind with Call _ | Return _ -> None | _ -> Some src )
+              match kind with Call | Return -> None | _ -> Some src )
             incoming
         in
         let shape_is_preserved =
@@ -545,7 +543,7 @@ module Summary = struct
           (* Suppressed builtins are considered as direct edges for being simplification
              candidates. *)
           false
-      | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
+      | Call | Return | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
           true
     in
     let merge_edges (src_ab, {Edge.kind= kind_ab; node= node_ab}, _)
@@ -726,12 +724,6 @@ module Out = struct
       match (project, inject) with [], [] -> None | _ -> Some {inject; project}
 
 
-    (** Returns Some injection metadata if the field path is non empty *)
-    let metadata_nonempty_inject field_path = metadata_nonempty ~project:[] ~inject:field_path
-
-    (** Returns Some injection metadata if the field path is non empty *)
-    let metadata_nonempty_project field_path = metadata_nonempty ~inject:[] ~project:field_path
-
     let yojson_of_edge_type typ =
       match typ with
       | Capture ->
@@ -792,13 +784,13 @@ module Out = struct
 
   type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-  (** Like [G.vertex], but without the ability to refer to other procedures, which makes it "local". *)
-  type local_vertex =
-    | Argument of int * FieldPath.t
-    | Captured of int
-    | Return of FieldPath.t
-    | Normal of Local.t
-    | Function
+  (** Like [G.vertex], but :
+
+      - Without the ability to refer to other procedures, which makes it "local".
+      - With some information lost/summarised, such as fields of procedure arguments/return
+        (although the Derive edges will be generated taking fields into account, we only output one
+        node for each argument in the Json graph to denote function calls). *)
+  type local_vertex = Argument of int | Captured of int | Return | Normal of Local.t | Function
 
   module Id = struct
     (** Internal representation of an Id. *)
@@ -879,12 +871,12 @@ module Out = struct
   let term_of_vertex (vertex : local_vertex) : Json.term =
     let term_name =
       match vertex with
-      | Argument (index, field_path) ->
-          Format.asprintf "$arg%d%a" index FieldPath.pp field_path
+      | Argument index ->
+          Format.asprintf "$arg%d" index
       | Captured index ->
           Format.asprintf "$cap%d" index
-      | Return field_path ->
-          Format.asprintf "$ret%a" FieldPath.pp field_path
+      | Return ->
+          Format.asprintf "$ret"
       | Normal (Cell cell) ->
           Format.asprintf "%a" Cell.pp cell
       | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
@@ -896,7 +888,7 @@ module Out = struct
       match vertex with
       | Argument _ | Captured _ ->
           Argument
-      | Return _ ->
+      | Return ->
           Return
       | Normal (Cell cell) ->
           if Cell.var_appears_in_source_code cell then UserVariable else TemporaryVariable
@@ -986,18 +978,18 @@ module Out = struct
     match vertex with
     | Local (var, node) ->
         save procname (Normal node) (Normal var)
-    | Argument (index, field_path) ->
-        save procname start (Argument (index, field_path))
-    | ArgumentOf (callee_procname, index, field_path) ->
-        save callee_procname (Start Location.dummy) (Argument (index, field_path))
+    | Argument (index, _field_path) ->
+        save procname start (Argument index)
+    | ArgumentOf (callee_procname, index, _field_path) ->
+        save callee_procname (Start Location.dummy) (Argument index)
     | Captured index ->
         save procname start (Captured index)
     | CapturedBy (lambda_procname, index) ->
         save ~write:false lambda_procname (Start Location.dummy) (Captured index)
-    | Return field_path ->
-        save procname exit (Return field_path)
-    | ReturnOf (callee_procname, field_path) ->
-        save callee_procname (Exit Location.dummy) (Return field_path)
+    | Return _ ->
+        save procname exit Return
+    | ReturnOf (callee_procname, _field_path) ->
+        save callee_procname (Exit Location.dummy) Return
     | Self ->
         save procname start Function
     | Function procname ->
@@ -1014,7 +1006,7 @@ module Out = struct
     in
     let edge_type =
       match kind with
-      | Call _ ->
+      | Call ->
           Json.Call
       | Capture ->
           Json.Capture
@@ -1028,18 +1020,19 @@ module Out = struct
           Json.DynamicCallFunction
       | DynamicCallModule ->
           Json.DynamicCallModule
-      | Return _ ->
+      | Return ->
           Json.Return
     in
-    let edge_metadata =
-      match kind with
-      | Direct | Builtin | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
-          None
-      | Call field_path ->
-          Json.metadata_nonempty_inject field_path
-      | Return field_path ->
-          Json.metadata_nonempty_project field_path
-    in
+    (* As the [Return ret_path] nodes will all be merged in a single [Return], we add the [Injection
+        ret_path] metadata to their incoming Copy edges to encode the information that they're
+        flowing into a specific field path of the returned value.
+
+       We similarly generate projection metadata from [Argument (index, path)] nodes, that will be
+       merged into a summarising [Argument index] one; and from [ReturnOf] and [ArgumentOf]
+       interprocedural nodes. *)
+    let inject = match dst with ArgumentOf (_, _, path) | Return path -> path | _ -> [] in
+    let project = match src with ReturnOf (_, path) | Argument (_, path) -> path | _ -> [] in
+    let edge_metadata = Json.metadata_nonempty ~inject ~project in
     let metadata_id =
       (* Contrary to other ids which are computed from the source components, this one must be
          computed on the generated metadata since it doesn't exist as-is in the source. *)
@@ -1120,13 +1113,13 @@ end = struct
         partial_graph (* skip Summary loops*)
     | _, true, _, _ ->
         L.die InternalError "There shall be no fancy (%a) loops!" Edge.Kind.pp kind
-    | Call _, _, ArgumentOf _, _ ->
+    | Call, _, ArgumentOf _, _ ->
         added
-    | Call _, _, _, _ ->
+    | Call, _, _, _ ->
         L.die InternalError "Call edges shall return ArgumentOf!"
-    | Return _, _, _, ReturnOf _ ->
+    | Return, _, _, ReturnOf _ ->
         added
-    | Return _, _, _, _ ->
+    | Return, _, _, _ ->
         L.die InternalError "Return edges shall come form ReturnOf!"
     | _ ->
         added
@@ -1163,8 +1156,11 @@ module Domain : sig
 
     val captured : int -> unit t
 
-    val return_of : Procname.t -> shapes -> FieldPath.t t
-    (** The [shapes] argument must be the shape summary for the callee procname. *)
+    val return_of : Ident.t -> Procname.t -> FieldPath.t t
+    (** Expects the [Ident.t] that will store the returned value to derive the fields. Remark: this
+        is an awkwardness that is currently required because the flow recording goes from sources to
+        dests. It would look nicer if [Src] and [Dst] were unified in a single module (with an
+        arrow-like structure). *)
 
     val atom : string -> unit t
 
@@ -1190,17 +1186,9 @@ module Domain : sig
 
     val captured_by : Procname.t -> int -> (unit, unit) t
 
-    val argument_of : Procname.t -> int -> shapes -> (FieldPath.t, FieldPath.t) t
-    (** The [shapes] argument must be the shape summary for the callee procname.
-
-        The slot is the sub-path of the argument that is being written. When the known argument
-        field is coarser, will signal the sub-path that is not known.
-
-        For instance, [f$arg0] has the only field [#foo] in the shapes of [f], then
-        [argument_of(f, 0, slot=#foo#bar)] will return [#bar] as the signal for the vertex
-        [ArgumentOf (f, 0, #foo)].
-
-        Remark: this signal is in the opposite direction of the field extraction in {!var_path}. *)
+    val argument_of : Procname.t -> int -> (FieldPath.t, unit) t
+    (** The slot is the sub-path of the argument that is being written, as known by the caller
+        procedure. *)
 
     val return : (FieldPath.t, unit) t
 
@@ -1241,17 +1229,6 @@ module Domain : sig
     shapes:shapes -> node:PPNode.t -> kind:Edge.kind -> src:'a Src.t -> dst:('a, _) Dst.t -> t -> t
   (** Record flow from nodes under the source into nodes with matching slot under the destination.
       Note: this function ignores the destination signals. *)
-
-  val add_flow_f :
-       shapes:shapes
-    -> node:PPNode.t
-    -> kind_f:('b -> Edge.kind)
-    -> src:'a Src.t
-    -> dst:('a, 'b) Dst.t
-    -> t
-    -> t
-  (** Record flow from nodes under the source into nodes with matching slot under the destination.
-      [kind_f] can use the destination signal to record edges with specific kinds. *)
 
   val add_var_path_flow :
        shapes:shapes
@@ -1331,11 +1308,13 @@ end = struct
 
     let captured i : unit t = single_vertex (Captured i)
 
-    let return_of proc_name callee_shapes : FieldPath.t t =
-     fun _shapes _node f astate ->
-      Shapes.fold_return_path
-        ~f:(fun acc field_path -> f acc (ReturnOf (proc_name, field_path), field_path))
-        ~init:astate callee_shapes []
+    let return_of ret_id proc_name : FieldPath.t t =
+     fun shapes _node f astate ->
+      Shapes.fold_cells
+        ~f:(fun accum ret_cell ->
+          let ret_path = Cell.field_path ret_cell in
+          f accum (ReturnOf (proc_name, ret_path), ret_path) )
+        ~init:astate shapes (VarPath.ident ret_id)
 
 
     let fold_cell_last_writes ~(slot : 'slot) cell : (G.vertex * 'slot) Fold.t =
@@ -1397,13 +1376,9 @@ end = struct
 
     let captured_by i proc_name : (unit, unit) t = single_vertex (CapturedBy (i, proc_name))
 
-    let argument_of proc_name index callee_shapes : (FieldPath.t, FieldPath.t) t =
-     fun _shapes _node arg_path f astate ->
-      Shapes.fold_argument_path
-        ~f:(fun acc final_path ->
-          let injection_path = FieldPath.extract_from ~origin_path:final_path arg_path in
-          f acc (ArgumentOf (proc_name, index, final_path), injection_path) )
-        ~init:astate callee_shapes index arg_path
+    let argument_of proc_name index : (FieldPath.t, unit) t =
+     fun _shapes _node arg_path ->
+      Fold.singleton (Vertex.ArgumentOf (proc_name, index, arg_path), ())
 
 
     let return : (FieldPath.t, unit) t =
@@ -1455,18 +1430,30 @@ end = struct
     ((last_writes, has_unsupported_features), partial_graph)
 
 
+  (** Record flow from nodes under the source into nodes with matching slot under the destination.
+      [kind_f] can use the destination signal to record edges with specific kinds. *)
   let add_flow_f ~shapes ~node ~kind_f ~(src : 'a Src.t) ~(dst : ('a, _) Dst.t) astate : t =
+    (* Note: we keep this one for historical reasons, but if [add_flow] below keeps being the only
+       use, we can inline it away.
+
+       Since this is the reason for destination signals to exist, they could then also be removed.
+
+       Non-exhaustive reasons why we may want to use this again:
+       - Generate shape-preserving information depending on cell sources/destinations
+       - Generate interprocedural projection/injection field information on call/returns
+    *)
     src shapes node
       (fun accum (src_vertex, src_signal) ->
         dst shapes node src_signal
           (fun accum (dst_vertex, dst_signal) ->
-            add_flow_edge ~node ~kind:(kind_f dst_signal) ~src:src_vertex ~dst:dst_vertex accum )
+            add_flow_edge ~node ~kind:(kind_f src_signal dst_signal) ~src:src_vertex ~dst:dst_vertex
+              accum )
           accum )
       astate
 
 
   let add_flow ~shapes ~node ~kind ~src ~dst =
-    add_flow_f ~shapes ~node ~kind_f:(fun _ -> kind) ~src ~dst
+    add_flow_f ~shapes ~node ~kind_f:(fun _ _ -> kind) ~src ~dst
 
 
   let add_var_path_flow ~shapes ~node ~kind ~src ~dst ?exclude astate =
@@ -1651,8 +1638,8 @@ module TransferFunctions = struct
 
 
   (* Add Call flow from the concrete arguments to the special ArgumentOf nodes *)
-  let add_arg_flows shapes (call_node : PPNode.t) (callee_shapes : shapes)
-      (callee_pname : Procname.t) (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
+  let add_arg_flows shapes (call_node : PPNode.t) (callee_pname : Procname.t)
+      (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
     let add_one_arg_flows index astate actual_arg =
       match exp_as_single_var actual_arg with
       | None ->
@@ -1662,27 +1649,24 @@ module TransferFunctions = struct
              nested fields) *)
           warn_on_complex_arg actual_arg ;
           let read_set = free_locals_of_exp shapes actual_arg in
-          Domain.add_flow ~shapes ~node:call_node ~kind:(Call []) ~src:(Src.local_set read_set)
-            ~dst:(Dst.all_fields @@ Dst.argument_of callee_pname index callee_shapes)
+          Domain.add_flow ~shapes ~node:call_node ~kind:Call ~src:(Src.local_set read_set)
+            ~dst:(Dst.all_fields @@ Dst.argument_of callee_pname index)
             astate
       | Some actual_arg_var ->
           (* The concrete argument is a single var: we collect all its cells and have
              them flow onto the corresponding field path of the formal parameter. *)
-          Domain.add_flow_f ~shapes ~node:call_node
-            ~kind_f:(fun injection_path -> Call injection_path)
-            ~src:(Src.var actual_arg_var)
-            ~dst:(Dst.argument_of callee_pname index callee_shapes)
+          Domain.add_flow ~shapes ~node:call_node ~kind:Call ~src:(Src.var actual_arg_var)
+            ~dst:(Dst.argument_of callee_pname index)
             astate
     in
     List.foldi argument_list ~init:astate ~f:add_one_arg_flows
 
 
   (* Add Return flow from the special ReturnOf nodes to the destination variable of a call *)
-  let add_ret_flows shapes node (callee_shapes : shapes) (callee_pname : Procname.t)
-      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
-    Domain.add_flow_f ~shapes ~node
-      ~kind_f:(fun projection_path -> Return projection_path)
-      ~src:(Src.return_of callee_pname callee_shapes)
+  let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
+      Domain.t =
+    Domain.add_flow ~shapes ~node ~kind:Return
+      ~src:(Src.return_of ret_id callee_pname)
       ~dst:(Dst.ident ret_id) astate
 
 
@@ -1773,10 +1757,10 @@ module TransferFunctions = struct
     let kind_f ~shape_is_preserved : Edge.kind =
       if rm_builtin then Builtin else Summary {shape_is_preserved}
     in
-    let callee_summary, callee_shapes = join_payload (analyze_dependency procname) in
+    let callee_summary, _callee_shapes = join_payload (analyze_dependency procname) in
     astate |> Domain.record_supported procname
-    |> if_not_builtin (add_arg_flows shapes node callee_shapes procname args)
-    |> if_not_builtin (add_ret_flows shapes node callee_shapes procname ret_id)
+    |> if_not_builtin (add_arg_flows shapes node procname args)
+    |> if_not_builtin (add_ret_flows shapes node procname ret_id)
     |> add_summary_flows shapes node kind_f callee_summary args ret_id
 
 

@@ -930,7 +930,7 @@ end = struct
     let pp fmt {formals; ret_var; var_shapes; shape_structures} =
       Format.fprintf fmt
         "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
-         @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
+         @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@ @]@ "
         (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
         formals Var.pp ret_var
         (Pp.caml_hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)

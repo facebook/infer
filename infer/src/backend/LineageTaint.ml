@@ -8,6 +8,8 @@
 open! IStd
 module L = Logging
 
+let assert_empty x = assert (List.is_empty x)
+
 let pp_caller_table =
   IFmt.Labelled.iter_bindings ~sep:Fmt.semi Hashtbl.iteri
     (Fmt.pair ~sep:IFmt.colon_sp Procname.pp_verbose
@@ -65,19 +67,16 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
           if follow_return then
             let callers = find_callers caller_table procname in
             match (vertex : Lineage.Vertex.t) with
-            | Return [] ->
+            | Return field_path ->
+                assert_empty field_path ;
                 List.fold callers ~init:return_todo ~f:(fun acc caller ->
                     (caller, Lineage.Vertex.ReturnOf (procname, [])) :: acc )
-            | Return (_ :: _) ->
-                L.die UserError
-                  "Structures as returned values aren't supported yet. Re-run the lineage analysis \
-                   with --lineage-field-depth=0."
             | Local _
             | Argument (_, _)
             | ArgumentOf (_, _, _)
             | Captured _
             | CapturedBy (_, _)
-            | ReturnOf (_, _)
+            | ReturnOf _
             | Self
             | Function _ ->
                 return_todo
@@ -85,18 +84,15 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
         in
         let call_todo' =
           match (vertex : Lineage.Vertex.t) with
-          | ArgumentOf (callee, index, []) ->
+          | ArgumentOf (callee, index, field_path) ->
+              assert_empty field_path ;
               (callee, Lineage.Vertex.Argument (index, [])) :: call_todo
-          | ArgumentOf (_, _, _ :: _) ->
-              L.die UserError
-                "Structures in argument aren't supported yet. Re-run the lineage analysis with \
-                 --lineage-field-depth=0."
           | Local _
           | Argument (_, _)
           | Captured _
           | CapturedBy (_, _)
           | Return _
-          | ReturnOf (_, _)
+          | ReturnOf _
           | Self
           | Function _ ->
               call_todo
@@ -181,19 +177,13 @@ let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph 
         let interproc_todo' =
           let callers = find_callers caller_table procname in
           match (vertex : Lineage.Vertex.t) with
-          | Argument (index, []) ->
+          | Argument (index, field_path) ->
+              assert_empty field_path ;
               List.fold callers ~init:interproc_todo ~f:(fun acc caller ->
                   (caller, Lineage.Vertex.ArgumentOf (procname, index, [])) :: acc )
-          | Argument (_, _ :: _) ->
-              L.die UserError
-                "Structures in argument aren't supported yet. Re-run the lineage analysis with \
-                 --lineage-field-depth=0."
-          | ReturnOf (callee, []) ->
+          | ReturnOf (callee, field_path) ->
+              assert_empty field_path ;
               (callee, Lineage.Vertex.Return []) :: interproc_todo
-          | ReturnOf (_, _ :: _) ->
-              L.die UserError
-                "Structures as returned values aren't supported yet. Re-run the lineage analysis \
-                 with --lineage-field-depth=0."
           | Local _
           | ArgumentOf (_, _, _)
           | Captured _
