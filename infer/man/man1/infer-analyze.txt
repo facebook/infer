@@ -351,6 +351,13 @@ OPTIONS
            captured since the infer command started (Conversely:
            --no-reactive | -R)
 
+       --reactive-capture
+           Activates: Reactive capture: capture and analysis are interleaved.
+           Currently this flag will only make the analysis generate a list of
+           type names that were not found in the global tenv. The feature is
+           only available for the Hack frontend for now. (Conversely:
+           --no-reactive-capture)
+
        --no-report
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)

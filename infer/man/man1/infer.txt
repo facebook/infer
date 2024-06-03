@@ -1898,6 +1898,14 @@ OPTIONS
            --no-reactive | -R)
            See also infer-analyze(1).
 
+       --reactive-capture
+           Activates: Reactive capture: capture and analysis are interleaved.
+           Currently this flag will only make the analysis generate a list of
+           type names that were not found in the global tenv. The feature is
+           only available for the Hack frontend for now. (Conversely:
+           --no-reactive-capture)
+           See also infer-analyze(1).
+
        --replay-analysis-schedule
            Activates: Replay the analysis schedule stored in
            --replay-analysis-schedule-file, which should analyze the

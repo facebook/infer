@@ -53,3 +53,5 @@ val mk_objc_nil_messaging_summary : Tenv.t -> ProcAttributes.t -> ExecutionDomai
 
 val merge : t -> t -> t
 (** Merge specialized summaries. *)
+
+val get_missed_captures : get_summary:(Procname.t -> t option) -> Procname.t list -> Typ.Name.Set.t

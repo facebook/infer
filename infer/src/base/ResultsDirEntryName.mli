@@ -40,6 +40,7 @@ type id =
   | ProcnamesLocks
       (** directory of per-{!IR.Procname.t} file locks, used by the analysis scheduler in certain
           modes *)
+  | ReactiveCaptureMissingTypes  (** file containing missed types (reactive capture mode) *)
   | ReportConfigImpactJson  (** reports of the config impact analysis *)
   | ReportCostsJson  (** reports of the costs analysis *)
   | ReportHtml  (** directory of the HTML report *)

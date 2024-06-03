@@ -37,6 +37,7 @@ type id =
   | MissingProcedures
   | PerfEvents
   | ProcnamesLocks
+  | ReactiveCaptureMissingTypes
   | ReportConfigImpactJson
   | ReportCostsJson
   | ReportHtml
@@ -216,6 +217,12 @@ let of_id = function
   | ProcnamesLocks ->
       { rel_path= "procnames_locks"
       ; kind= Directory
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete
+      ; before_new_capture= Delete }
+  | ReactiveCaptureMissingTypes ->
+      { rel_path= "reactive_capture_missed_types.txt"
+      ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }

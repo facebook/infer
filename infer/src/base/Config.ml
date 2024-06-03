@@ -3049,6 +3049,14 @@ and reactive =
      started"
 
 
+and reactive_capture =
+  CLOpt.mk_bool ~long:"reactive-capture"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Reactive capture: capture and analysis are interleaved. Currently this flag will only make \
+     the analysis generate a list of type names that were not found in the global tenv. The \
+     feature is only available for the Hack frontend for now."
+
+
 and reanalyze =
   CLOpt.mk_bool ~long:"reanalyze"
     "Rerun the analysis. Not compatible with $(b,--incremental-analysis) and \
@@ -4680,6 +4688,8 @@ and racerd_guardedby = !racerd_guardedby
 and racerd_ignore_classes = RevList.to_list !racerd_ignore_classes |> String.Set.of_list
 
 and reactive_mode = !reactive
+
+and reactive_capture = !reactive_capture
 
 and reanalyze = !reanalyze
 

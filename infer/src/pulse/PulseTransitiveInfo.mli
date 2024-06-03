@@ -42,3 +42,5 @@ include AbstractDomain.WithBottom with type t := t
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> summary:t -> t -> t
 
 val remember_dropped_elements : dropped:t -> t -> t
+
+module MissedCaptures : AbstractDomain.FiniteSetS with type t = Typ.Name.Set.t

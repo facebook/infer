@@ -750,6 +750,8 @@ val racerd_ignore_classes : String.Set.t
 
 val reactive_mode : bool
 
+val reactive_capture : bool
+
 val reanalyze : bool
 
 val relative_path_backtrack : int

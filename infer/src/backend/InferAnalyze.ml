@@ -319,6 +319,10 @@ let main ~changed_files =
   let analysis_duration = ExecutionDuration.since start in
   L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp
     (ExecutionDuration.wall_time analysis_duration) ;
+  if Config.reactive_capture then
+    ReactiveCapture.store_missed_captures
+      ~source_files_filter:(source_file_should_be_analyzed ~changed_files)
+      () ;
   ExecutionDuration.log ~prefix:"backend_stats.scheduler_process_analysis_time" Analysis
     analysis_duration ;
   (* delete any previous analysis schedule once the new analysis has finished to avoid keeping a
