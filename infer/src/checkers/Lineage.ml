@@ -1481,9 +1481,9 @@ module TransferFunctions = struct
   (** The payload returned by the interprocedural analysis of dependency procedures *)
   type payload = Summary.t option * shapes
 
-  (** Un-nest options from a payload option *)
-  let join_payload (payload_opt : payload option) : payload =
-    match payload_opt with None -> (None, None) | Some payload -> payload
+  (** Un-nest options from a payload result *)
+  let join_payload (payload_result : payload AnalysisResult.t) : payload =
+    match payload_result with Error _ -> (None, None) | Ok payload -> payload
 
 
   type analysis_data = shapes * payload InterproceduralAnalysis.t
@@ -2019,9 +2019,7 @@ module TransferFunctions = struct
         L.debug Analysis Verbose "Lineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
         astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
-        exec_call shapes node
-          (fun proc_name -> analyze_dependency proc_name |> AnalysisResult.to_option)
-          ret_id name args astate
+        exec_call shapes node analyze_dependency ret_id name args astate
     | Sil.Prune (_, _, _, _) | Sil.Metadata _ ->
         astate
 
