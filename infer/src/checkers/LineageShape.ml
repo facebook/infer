@@ -448,7 +448,7 @@ module Env : sig
           integers). *)
     end
 
-    val create : Procdesc.t -> t
+    val create : unit -> t
     (** Create a fresh environment with no known variable nor shape. Registers the formals and
         return variables but does not add them to the shape environment. *)
 
@@ -491,7 +491,7 @@ module Env : sig
     (** Puts some effort into printing easier-to-understand summaries. Does not try to be
         performance efficient. *)
 
-    val make : State.t -> t
+    val make : Procdesc.t -> State.t -> t
     (** Makes a summary from a state environment. Further updates to the state will have no effect
         on the summary. *)
 
@@ -567,19 +567,10 @@ end = struct
         It also registers the formal and returned variables, to allow querying for their shapes
         using only the environment. *)
     type t =
-      { formals: Var.t array
-      ; ret_var: Var.t
-      ; var_shapes: (Var.t, shape) Hashtbl.t
-      ; shape_structures: (Shape_id.t, structure) Hashtbl.t }
+      {var_shapes: (Var.t, shape) Hashtbl.t; shape_structures: (Shape_id.t, structure) Hashtbl.t}
 
-    let create proc_desc =
-      { formals=
-          Procdesc.get_pvar_formals proc_desc
-          |> List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar)
-          |> List.to_array
-      ; ret_var= Var.of_pvar @@ Procdesc.get_ret_var proc_desc
-      ; var_shapes= Hashtbl.create (module Var)
-      ; shape_structures= Hashtbl.create (module Shape_id) }
+    let create () =
+      {var_shapes= Hashtbl.create (module Var); shape_structures= Hashtbl.create (module Shape_id)}
 
 
     module Shape = struct
@@ -922,24 +913,24 @@ end = struct
         It also registers the formal and returned variables, to allow querying for their shapes
         using only the environment. *)
     type t =
-      { formals: Var.t array
-      ; ret_var: Var.t
+      { formals: shape array
+      ; return: shape
       ; var_shapes: (Var.t, shape) Caml.Hashtbl.t
       ; shape_structures: (Shape_id.t, structure) Caml.Hashtbl.t }
 
-    let pp fmt {formals; ret_var; var_shapes; shape_structures} =
+    let pp fmt {formals; return; var_shapes; shape_structures} =
       Format.fprintf fmt
         "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
          @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@ @]@ "
-        (Fmt.parens @@ Fmt.array ~sep:Fmt.comma Var.pp)
-        formals Var.pp ret_var
+        (Fmt.parens @@ Fmt.array ~sep:Fmt.comma pp_shape)
+        formals pp_shape return
         (Pp.caml_hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
         var_shapes
         (Pp.caml_hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
         shape_structures
 
 
-    let find_var_shape var_shapes var =
+    let find_var_shape {var_shapes; _} var =
       match Caml.Hashtbl.find_opt var_shapes var with
       | Some shape ->
           shape
@@ -949,7 +940,7 @@ end = struct
 
     (** Returns true iff the corresponding shape would be represented by several cells in a fully
         precise abstraction, ie. has known sub-fields. *)
-    let has_sub_cells shape_structures shape =
+    let has_sub_cells {shape_structures; _} shape =
       match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
       | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
           false
@@ -962,7 +953,7 @@ end = struct
           not (FieldLabelMap.is_empty fields)
 
 
-    let find_field_table shape_structures shape =
+    let find_field_table {shape_structures; _} shape =
       match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
       | Some (Vector {fields; _}) ->
           Some fields
@@ -984,9 +975,9 @@ end = struct
       Option.value_exn @@ find_field_table shape_structures shape
 
 
-    let find_next_field_shape shape_structures shape field =
+    let find_next_field_shape summary shape field =
       let open IOption.Let_syntax in
-      let* field_table = find_field_table shape_structures shape in
+      let* field_table = find_field_table summary shape in
       match FieldLabelMap.find field_table field with
       | Some value_shape ->
           Some value_shape
@@ -1018,28 +1009,32 @@ end = struct
           None
 
 
-    (** If the variable path can be fully traversed in the shape environment, return its final shape
-        in [Ok].
+    (** If the path can be fully traversed from the shape in the shape environment, return its final
+        shape in [Ok].
 
-        Otherwise returns the maximal prefix of that variable path that can be traversed in [Error]. *)
-    let find_var_path_shape {var_shapes; shape_structures; _} (var, field_path) :
-        (Shape_id.t, VarPath.t) result =
-      let var_shape = find_var_shape var_shapes var in
+        Otherwise returns the maximal prefix of that path that can be traversed in [Error]. *)
+    let find_path_shape summary root_shape field_path : (Shape_id.t, FieldPath.t) result =
       let rec aux shape rev_root_path sub_path =
         match sub_path with
         | [] ->
             (* Got to the end of the original var path: return the reached shape. *)
             Ok shape
         | field :: sub_fields -> (
-          match find_next_field_shape shape_structures shape field with
+          match find_next_field_shape summary shape field with
           | None ->
               (* Reached a non-traversable field: return the path traversed so far. *)
-              Error (VarPath.make var @@ List.rev rev_root_path)
+              Error (List.rev rev_root_path)
           | Some shape' ->
               (* Traverse the field and continue. *)
               aux shape' (field :: rev_root_path) sub_fields )
       in
-      aux var_shape [] field_path
+      aux root_shape [] field_path
+
+
+    let find_var_path_shape summary (var, field_path) =
+      let var_shape = find_var_shape summary var in
+      find_path_shape summary var_shape field_path
+      |> Result.map_error ~f:(fun early_path -> VarPath.make var early_path)
 
 
     let find_var_path_shape_exn summary var_path =
@@ -1051,16 +1046,20 @@ end = struct
             VarPath.pp stopped_at_path
 
 
-    let find_var_path_structure ({shape_structures; _} as summary) var_path =
-      let shape_id = find_var_path_shape_exn summary var_path in
-      match Caml.Hashtbl.find_opt shape_structures shape_id with
+    let find_shape_structure {shape_structures; _} shape =
+      Caml.Hashtbl.find_opt shape_structures shape
+
+
+    let find_var_path_structure summary var_path =
+      let shape = find_var_path_shape_exn summary var_path in
+      match find_shape_structure summary shape with
       | None ->
           Structure.bottom
       | Some structure ->
           structure
 
 
-    let make {State.var_shapes; shape_structures; ret_var; formals} =
+    let make proc_desc {State.var_shapes; shape_structures} =
       (* Making a summary from a state essentially amounts to freezing State shape classes into State
          ids and converting those State ids into Summary ids. We keep an id translation table that
          maps state ids into summary ids and generate a fresh summary id whenever we encounter a new
@@ -1095,7 +1094,14 @@ end = struct
                (translate_shape_id shape, translate_structure structure) )
         |> caml_hashtbl_of_iter_exn
       in
-      {var_shapes; shape_structures; ret_var; formals}
+      let formals =
+        Procdesc.get_pvar_formals proc_desc
+        |> List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar)
+        |> List.map ~f:(fun var -> Caml.Hashtbl.find var_shapes var)
+        |> List.to_array
+      in
+      let return = Caml.Hashtbl.find var_shapes @@ Var.of_pvar @@ Procdesc.get_ret_var proc_desc in
+      {var_shapes; shape_structures; return; formals}
 
 
     (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
@@ -1190,7 +1196,7 @@ end = struct
               (Caml.Hashtbl.find_opt shape_structures var_path_shape_2)
 
 
-    let finalise {var_shapes; shape_structures; _} (var, field_path) =
+    let finalise summary var_shape field_path =
       let rec aux remaining_depth traversed_shape_set shape (field_path : FieldPath.t) :
           FieldPath.t * bool =
         match field_path with
@@ -1206,13 +1212,13 @@ end = struct
            one of the aforementioned limits.
         *)
         | [] ->
-            ([], has_sub_cells shape_structures shape)
+            ([], has_sub_cells summary shape)
         | [BoxedValue] ->
             ([], false)
         | BoxedValue :: _ ->
             L.die InternalError "LineageShape: unexpected boxing field in non tail position."
         | field :: fields ->
-            let field_table = find_field_table_exn shape_structures shape in
+            let field_table = find_field_table_exn summary shape in
             if
               remaining_depth <= 0
               || FieldLabelMap.length field_table > ShapeConfig.field_width
@@ -1227,10 +1233,17 @@ end = struct
               in
               (field :: final_sub_path, is_abstract)
       in
-      let var_shape = find_var_shape var_shapes var in
-      let field_path, is_abstract =
-        aux ShapeConfig.field_depth (Set.empty (module Shape_id)) var_shape field_path
-      in
+      aux ShapeConfig.field_depth (Set.empty (module Shape_id)) var_shape field_path
+
+
+    let finalise_path summary shape field_path =
+      let final_path, _is_abstract = finalise summary shape field_path in
+      final_path
+
+
+    let finalise_cell summary (var, field_path) =
+      let var_shape = find_var_shape summary var in
+      let field_path, is_abstract = finalise summary var_shape field_path in
       Cell.create ~var ~field_path ~is_abstract
 
 
@@ -1264,14 +1277,13 @@ end = struct
         already exceeds width limit. Note that finalise also processes fields to eg. remove
         {!BoxedValue} and computes [is_abstract] booleans, thus that logic would need to be moved
         here too. *)
-    let fold_candidate_final_sub_paths ({shape_structures; _} as summary) (var, field_path) ~init ~f
-        =
+    let fold_candidate_final_sub_paths summary root_shape field_path ~init ~f =
       let rec fold_candidate_sub_paths_of_shape shape depth traversed sub_path_acc ~init =
         if
           depth >= ShapeConfig.field_depth || (ShapeConfig.prevent_cycles && Set.mem traversed shape)
         then f init (List.rev sub_path_acc)
         else
-          match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
+          match find_shape_structure summary shape with
           | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
               (* No more fields. *)
               f init (List.rev sub_path_acc)
@@ -1288,22 +1300,28 @@ end = struct
                   fields ~init
       in
       let depth = List.length field_path in
-      match find_var_path_shape summary (var, field_path) with
+      match find_path_shape summary root_shape field_path with
       | Ok shape ->
           Ok (fold_candidate_sub_paths_of_shape shape depth (Set.empty (module Shape_id)) [] ~init)
       | Error stopped_at_path ->
           Error stopped_at_path
 
 
-    let fold_cells_actual summary var_path ~init ~f =
+    let rec fold_final finalise summary root_shape field_path ~init ~f =
       match
-        fold_candidate_final_sub_paths summary var_path ~init ~f:(fun acc sub_path ->
-            f acc (finalise summary (VarPath.sub_path var_path sub_path)) )
+        fold_candidate_final_sub_paths summary root_shape field_path ~init ~f:(fun acc sub_path ->
+            f acc (finalise (field_path @ sub_path)) )
       with
       | Ok result ->
           result
       | Error stopped_at_path ->
-          f init (finalise summary stopped_at_path)
+          fold_final finalise summary root_shape stopped_at_path ~init ~f
+
+
+    let fold_cells_actual summary (var, field_path) ~init ~f =
+      let var_shape = find_var_shape summary var in
+      let finalise path = finalise_cell summary (var, path) in
+      fold_final finalise summary var_shape field_path ~init ~f
 
 
     let fold_cells summary_option (var, path) ~init ~f =
@@ -1314,23 +1332,24 @@ end = struct
           f init (Cell.var_abstract var)
 
 
+    let fold_final_paths summary root_shape field_path ~init ~f =
+      let finalise path = finalise_path summary root_shape path in
+      fold_final finalise summary root_shape field_path ~init ~f
+
+
     let fold_argument_path summary_option index field_path ~init ~f =
       match summary_option with
-      | Some {formals; _} ->
-          let arg_var = formals.(index) in
-          let arg_var_path = VarPath.make arg_var field_path in
-          fold_cells summary_option arg_var_path ~init ~f:(fun accum arg_cell ->
-              f accum (Cell.field_path arg_cell) )
+      | Some ({formals; _} as summary) ->
+          let arg_shape = formals.(index) in
+          fold_final_paths summary arg_shape field_path ~init ~f
       | None ->
           f init []
 
 
     let fold_return_path summary_option field_path ~init ~f =
       match summary_option with
-      | Some {ret_var; _} ->
-          let ret_var_path = VarPath.make ret_var field_path in
-          fold_cells summary_option ret_var_path ~init ~f:(fun accum arg_cell ->
-              f accum (Cell.field_path arg_cell) )
+      | Some ({return; _} as summary) ->
+          fold_final_paths summary return field_path ~init ~f
       | None ->
           f init []
 
@@ -1674,7 +1693,7 @@ end
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   (* Create a fresh State module with a mutable state inside for the Analyzer functor. *)
   let module State = struct
-    let state = Env.State.create proc_desc
+    let state = Env.State.create ()
   end in
   let module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions (State)) in
   (* Shape captured vars *)
@@ -1684,7 +1703,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   List.iter ~f:shape_captured_var (Procdesc.get_captured proc_desc) ;
   (* Analyze the procedure's code  *)
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
-  let summary = Env.Summary.make State.state in
+  let summary = Env.Summary.make proc_desc State.state in
   Report.debug proc_desc summary ;
   Some summary
 
