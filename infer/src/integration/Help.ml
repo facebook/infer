@@ -140,7 +140,7 @@ let all_issues_website ~website_root =
 let list_issue_types () =
   L.progress
     "@[Format:@\n\
-     Issue type unique identifier:Human-readable version:Visibility:Default \
+     Issue type unique identifier:Human-readable version:Visibility:Category:Default \
      severity:Enabled:Checker@\n\
      @\n\
      @]%!" ;
