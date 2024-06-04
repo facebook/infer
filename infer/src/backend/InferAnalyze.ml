@@ -78,9 +78,11 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
   let analyze_source_file exe_env source_file =
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
-        run_and_interpret_result ~f:(fun () ->
-            Ondemand.analyze_file exe_env source_file ;
-            if Config.write_html then Printer.write_all_html_files source_file ) )
+        let result =
+          run_and_interpret_result ~f:(fun () -> Ondemand.analyze_file exe_env source_file)
+        in
+        if Config.write_html then Printer.write_all_html_files source_file ;
+        result )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
