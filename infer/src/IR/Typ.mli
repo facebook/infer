@@ -235,6 +235,9 @@ module Name : sig
     val is_class : t -> bool
     (** [is_class name] holds if [name] names a Java class *)
 
+    val get_java_class_name_opt : t -> JavaClassName.t option
+    (** Return underlying JavaClassName if [name] is java class *)
+
     val get_java_class_name_exn : t -> JavaClassName.t
     (** Ensure [name] is a java class name and return underlying JavaClassName *)
 

@@ -154,6 +154,25 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; tenv; err_log} 
       if Procname.equal origin_pname pname then ""
       else Format.asprintf ", inherited from %a" MF.pp_monospaced (string_of_pname origin_pname)
     in
+    (* Check if the annotation is inherited from a base class/interface. *)
+    let get_class_details annot pname =
+      let has_annot ia = Annotations.ia_ends_with ia annot in
+      let pname = get_original_pname annot pname in
+      match Procname.get_class_type_name pname with
+      | Some typ -> (
+        match PatternMatch.Java.find_superclasses_with_attributes has_annot tenv typ with
+        | [] ->
+            ""
+        | types ->
+            let typ_to_str t =
+              Option.map
+                ~f:(fun name -> Format.asprintf "%a" MF.pp_monospaced (JavaClassName.classname name))
+                (Typ.Name.Java.get_java_class_name_opt t)
+            in
+            ", defined on " ^ String.concat ~sep:", " (List.filter_map ~f:typ_to_str types) )
+      | None ->
+          ""
+    in
     (* Check if the annotation is there directly or is modeled. *)
     let get_kind annot pname =
       let pname = get_original_pname annot pname in
@@ -162,12 +181,14 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; tenv; err_log} 
     in
     let final_trace = List.rev (update_trace call_loc trace) in
     let description =
-      Format.asprintf "Method %a (%s %a%s) calls %a (%s %a%s)" MF.pp_monospaced
+      Format.asprintf "Method %a (%s %a%s%s) calls %a (%s %a%s%s)" MF.pp_monospaced
         (Procname.to_simplified_string src_pname)
         (get_kind src_annot src_pname) MF.pp_monospaced ("@" ^ src_annot)
-        (get_details src_annot src_pname) MF.pp_monospaced (string_of_pname snk_pname)
-        (get_kind snk_annot snk_pname) MF.pp_monospaced ("@" ^ snk_annot)
-        (get_details snk_annot snk_pname)
+        (get_details src_annot src_pname)
+        (get_class_details src_annot src_pname)
+        MF.pp_monospaced (string_of_pname snk_pname) (get_kind snk_annot snk_pname) MF.pp_monospaced
+        ("@" ^ snk_annot) (get_details snk_annot snk_pname)
+        (get_class_details snk_annot snk_pname)
     in
     let issue_type = get_issue_type src_annot in
     Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
