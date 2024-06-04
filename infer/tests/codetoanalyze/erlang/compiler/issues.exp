@@ -260,6 +260,7 @@ features_lambdas:test_scopes4_Ok/0: ok
 
 ----- features_lc -----
 features_lc:fn_test_simple4_Bad/0: function_clause
+features_lc:test_bad_gen_Bad/0: bad_generator
 features_lc:test_empty_Bad/0: function_clause
 features_lc:test_empty_Ok/0: ok
 features_lc:test_filtered1_Bad/0: function_clause

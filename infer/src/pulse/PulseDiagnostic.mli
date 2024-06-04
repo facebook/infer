@@ -38,6 +38,7 @@ type access_to_invalid_address =
 module ErlangError : sig
   type t =
     | Badarg of {calling_context: calling_context; location: Location.t}
+    | Badgenerator of {calling_context: calling_context; location: Location.t}
     | Badkey of {calling_context: calling_context; location: Location.t}
     | Badmap of {calling_context: calling_context; location: Location.t}
     | Badmatch of {calling_context: calling_context; location: Location.t}

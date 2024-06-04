@@ -599,6 +599,8 @@ OPTIONS
              Assert_failure (enabled by default),
              BAD_ARG (enabled by default),
              BAD_ARG_LATENT (disabled by default),
+             BAD_GENERATOR (enabled by default),
+             BAD_GENERATOR_LATENT (disabled by default),
              BAD_KEY (enabled by default),
              BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),

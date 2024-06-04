@@ -29,6 +29,8 @@ val __erlang_greater : Procname.t
 
 val __erlang_greater_or_equal : Procname.t
 
+val __erlang_error_badgenerator : Procname.t
+
 val __erlang_error_badkey : Procname.t
 
 val __erlang_error_badmatch : Procname.t

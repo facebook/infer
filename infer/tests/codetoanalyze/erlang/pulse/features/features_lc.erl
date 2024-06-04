@@ -26,7 +26,8 @@
     test_two_gen1_Ok/0,
     test_two_gen1_Bad/0,
     test_two_gen2_Ok/0,
-    test_two_gen2_Bad/0
+    test_two_gen2_Bad/0,
+    test_bad_gen_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -178,3 +179,6 @@ test_two_gen2_Bad() ->
         [2, 3] -> warn(1);
         _ -> ok
     end.
+
+test_bad_gen_Bad() ->
+    [X || X <- #{}].

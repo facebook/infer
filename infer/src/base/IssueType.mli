@@ -100,6 +100,8 @@ val bad_footprint : t
 
 val bad_arg : latent:bool -> t
 
+val bad_generator : latent:bool -> t
+
 val bad_key : latent:bool -> t
 
 val bad_map : latent:bool -> t

@@ -61,6 +61,7 @@ let pp_access_to_invalid_address fmt
 module ErlangError = struct
   type t =
     | Badarg of {calling_context: calling_context; location: Location.t}
+    | Badgenerator of {calling_context: calling_context; location: Location.t}
     | Badkey of {calling_context: calling_context; location: Location.t}
     | Badmap of {calling_context: calling_context; location: Location.t}
     | Badmatch of {calling_context: calling_context; location: Location.t}
@@ -79,6 +80,7 @@ module ErlangError = struct
     (* this is for debug purposes so if you add another field please remove this warning but make sure
        to pretty print it too *)
     let[@warning "+missing-record-field-pattern"] ( Badarg {calling_context; location}
+                                                  | Badgenerator {calling_context; location}
                                                   | Badkey {calling_context; location}
                                                   | Badmap {calling_context; location}
                                                   | Badmatch {calling_context; location}
@@ -282,6 +284,7 @@ let get_location = function
       Trace.get_outer_location access_trace
   | DynamicTypeMismatch {location}
   | ErlangError (Badarg {location; calling_context= []})
+  | ErlangError (Badgenerator {location; calling_context= []})
   | ErlangError (Badkey {location; calling_context= []})
   | ErlangError (Badmap {location; calling_context= []})
   | ErlangError (Badmatch {location; calling_context= []})
@@ -295,6 +298,7 @@ let get_location = function
       location
   | AccessToInvalidAddress {calling_context= (_, location) :: _}
   | ErlangError (Badarg {calling_context= (_, location) :: _})
+  | ErlangError (Badgenerator {calling_context= (_, location) :: _})
   | ErlangError (Badkey {calling_context= (_, location) :: _})
   | ErlangError (Badmap {calling_context= (_, location) :: _})
   | ErlangError (Badmatch {calling_context= (_, location) :: _})
@@ -342,6 +346,7 @@ let aborts_execution = function
   | AccessToInvalidAddress _
   | ErlangError
       ( Badarg _
+      | Badgenerator _
       | Badkey _
       | Badmap _
       | Badmatch _
@@ -619,6 +624,8 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "bad dynamic type at %a" Location.pp location |> no_suggestion
   | ErlangError (Badarg {calling_context= _; location}) ->
       F.asprintf "bad arg at %a" Location.pp location |> no_suggestion
+  | ErlangError (Badgenerator {calling_context= _; location}) ->
+      F.asprintf "bad generator at %a" Location.pp location |> no_suggestion
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "bad key at %a" Location.pp location |> no_suggestion
   | ErlangError (Badmap {calling_context= _; location}) ->
@@ -1031,6 +1038,9 @@ let get_trace = function
   | ErlangError (Badarg {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad arg here" []]
+  | ErlangError (Badgenerator {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad generator here" []]
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -1183,6 +1193,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_dynamic_type_mismatch
   | ErlangError (Badarg _), _ ->
       IssueType.bad_arg ~latent
+  | ErlangError (Badgenerator _), _ ->
+      IssueType.bad_generator ~latent
   | ErlangError (Badkey _), _ ->
       IssueType.bad_key ~latent
   | ErlangError (Badmap _), _ ->

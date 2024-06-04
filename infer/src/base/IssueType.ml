@@ -352,6 +352,11 @@ let bad_arg =
     ~user_documentation:[%blob "./documentation/issues/BAD_ARG.md"]
 
 
+let bad_generator =
+  register_with_latent ~category:Runtime_exception ~id:"BAD_GENERATOR" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/BAD_GENERATOR.md"]
+
+
 let bad_key =
   register_with_latent ~category:Runtime_exception ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_KEY.md"]

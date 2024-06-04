@@ -177,6 +177,8 @@ let get_module_attribute tenv ~tag =
 module type ERRORS = sig
   val badarg : model_no_non_disj
 
+  val badgenerator : model_no_non_disj
+
   val badkey : model_no_non_disj
 
   val badmap : model_no_non_disj
@@ -203,6 +205,10 @@ module ErrorsReport : ERRORS = struct
 
   let badarg : model_no_non_disj =
    fun {location} astate -> error (Badarg {calling_context= []; location}) astate
+
+
+  let badgenerator : model_no_non_disj =
+   fun {location} astate -> error (Badgenerator {calling_context= []; location}) astate
 
 
   let badkey : model_no_non_disj =
@@ -249,6 +255,8 @@ module ErrorsSilent : ERRORS = struct
   let stuck : model_no_non_disj = fun _data _astate -> []
 
   let badarg = stuck
+
+  let badgenerator = stuck
 
   let badkey = stuck
 
@@ -1896,7 +1904,9 @@ let matchers : matcher list =
   Custom.matchers ()
   @ List.map
       ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
-      [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey |> with_non_disj
+      [ +BuiltinDecl.(match_builtin __erlang_error_badgenerator)
+        <>--> Errors.badgenerator |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_error_badrecord)

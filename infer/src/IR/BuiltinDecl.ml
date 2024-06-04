@@ -102,6 +102,8 @@ let __erlang_greater = create_procname "__erlang_greater"
 
 let __erlang_greater_or_equal = create_procname "__erlang_greater_or_equal"
 
+let __erlang_error_badgenerator = create_procname "__erlang_error_badgenerator"
+
 let __erlang_error_badkey = create_procname "__erlang_error_badkey"
 
 let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"

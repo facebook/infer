@@ -1039,9 +1039,16 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
       acc.exit_failure |~~> [fail_node] ;
       {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
     in
+    let make_gen_checker id types =
+      let check_blocks = List.map ~f:(fun typ -> check_type env id typ) types in
+      let fail_block = Block.make_fail env BuiltinDecl.__erlang_error_badgenerator in
+      Block.any env (check_blocks @ [fail_block])
+    in
     match qual with
     | Generator {pattern; expression} ->
         let gen_var, init_block = translate_expression_to_fresh_id env expression in
+        let check_block = make_gen_checker gen_var [Nil; Cons] in
+        let init_block = Block.all env [init_block; check_block] in
         let mk_matcher head_var = translate_pattern env head_var pattern in
         make_gen gen_var init_block mk_matcher
     | MapGenerator {pattern; expression} ->
@@ -1057,7 +1064,8 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
               , env.location
               , CallFlags.default )
           in
-          Block.all env [gen_var_block; Block.make_instruction env [to_list]]
+          let check_block = make_gen_checker gen_var_map [Map] in
+          Block.all env [gen_var_block; check_block; Block.make_instruction env [to_list]]
         in
         let mk_matcher head_var =
           (* The head is a {key, val} tuple, so we extract the fields and match on both *)
