@@ -32,50 +32,16 @@ let of_queue content : ('a, string) ProcessPool.TaskGenerator.t =
   {remaining_tasks; is_empty; finished; next}
 
 
-let get_callees =
-  let stmt =
-    Database.register_statement CaptureDatabase "SELECT callees FROM procedures WHERE proc_uid = :k"
-  in
-  fun procname ->
-    Database.with_registered_statement stmt ~f:(fun db stmt ->
-        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id procname))
-        |> SqliteUtils.check_result_code db ~log:"get callees bind" ;
-        SqliteUtils.result_single_column_option db ~finalize:false ~log:"get static callees" stmt
-        |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
-
-
-let is_defined =
-  let stmt =
-    Database.register_statement CaptureDatabase
-      "SELECT 1 FROM procedures WHERE proc_uid = :k AND cfg is not NULL"
-  in
-  fun proc_uid ->
-    Database.with_registered_statement stmt ~f:(fun db stmt ->
-        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT proc_uid)
-        |> SqliteUtils.check_result_code db ~log:"is defined bind" ;
-        SqliteUtils.result_single_column_option db ~finalize:false ~log:"get static callees" stmt
-        |> Option.is_some )
-
-
 let make sources =
   let target_count = ref 0 in
   let cons_proc_uid_work acc procname =
+    incr target_count ;
     let proc_uid = Procname.to_unique_id procname in
-    if is_defined proc_uid then (
-      incr target_count ;
-      {work= TaskSchedulerTypes.ProcUID proc_uid; dependency_filename_opt= None} :: acc )
-    else acc
+    {work= TaskSchedulerTypes.ProcUID proc_uid; dependency_filename_opt= None} :: acc
   in
-  let add_static_uid_work init procname =
-    get_callees procname |> List.fold ~init ~f:cons_proc_uid_work
-  in
-  let pname_targets, static_targets =
-    List.fold sources ~init:([], []) ~f:(fun init source ->
-        SourceFiles.proc_names_of_source source
-        |> List.fold ~init ~f:(fun (pnames, statics) pname ->
-               let pnames' = cons_proc_uid_work pnames pname in
-               let statics' = add_static_uid_work statics pname in
-               (pnames', statics') ) )
+  let pname_targets =
+    List.fold sources ~init:[] ~f:(fun init source ->
+        SourceFiles.proc_names_of_source source |> List.fold ~init ~f:cons_proc_uid_work )
   in
   let make_file_work file =
     incr target_count ;
@@ -88,7 +54,6 @@ let make sources =
     |> List.iter ~f:(Queue.enqueue queue)
   in
   permute_and_enqueue pname_targets ;
-  permute_and_enqueue static_targets ;
   permute_and_enqueue file_targets ;
   of_queue queue
 
