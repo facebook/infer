@@ -229,10 +229,14 @@ let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.res
 
 let get_lang : Lang.t option monad = fun state -> (Value (TextualDecls.lang state.decls), state)
 
-let fold (l : 'a list) ~(init : 'acc monad) ~(f : 'acc -> 'a -> 'acc monad) : 'acc monad =
-  List.fold l ~init ~f:(fun monad a ->
-      let* acc = monad in
-      f acc a )
+let rec fold (l : 'a list) ~(init : 'acc monad) ~(f : 'acc -> 'a -> 'acc monad) : 'acc monad =
+  match l with
+  | [] ->
+      init
+  | x :: xs ->
+      let* acc = init in
+      let init = f acc x in
+      (fold [@tailcall]) xs ~init ~f
 
 
 let iter (l : 'a list) ~(f : 'a -> unit monad) : unit monad =
