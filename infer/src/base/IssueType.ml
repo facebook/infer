@@ -833,7 +833,7 @@ let pulse_cannot_instantiate_abstract_class =
 
 
 let pulse_dict_missing_key =
-  register ~category:No_category ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
+  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_DICT_MISSING_KEY.md"]
 
 
