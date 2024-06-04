@@ -178,7 +178,7 @@ module Name : sig
   (** name of the c++ typename without qualifier *)
 
   val name : t -> string
-  (** name of the typename without qualifier *)
+  (** name of the typename *)
 
   val qual_name : t -> QualifiedCppName.t
   (** qualified name of the type, may return nonsense for Java classes *)
