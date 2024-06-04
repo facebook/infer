@@ -8,7 +8,9 @@ open! IStd
 
 val setup : unit -> unit
 
-val make : SourceFile.t list -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t
+val make :
+     SourceFile.t list
+  -> (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t
 
 val with_lock : f:(unit -> 'a) -> Procname.t -> 'a
 (** Run [f] after having taken a lock on the given [Procname.t] and unlock after. If the lock is

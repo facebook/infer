@@ -11,6 +11,7 @@
 open! IStd
 module F = Format
 module L = Logging
+open TaskSchedulerTypes
 
 (** do a compaction only if a sufficient amount of time has passed since last compaction *)
 let compaction_minimum_interval_ns =
@@ -63,19 +64,23 @@ let proc_name_of_uid uid =
 
 let useful_time = ref ExecutionDuration.zero
 
-let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
+let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) Tasks.doer =
+  let run_and_interpret_result ~f =
+    try
+      f () ;
+      Some Ok
+    with
+    | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
+        Some (RaceOn {dependency_filename})
+    | MissingDependencyException.MissingDependencyException ->
+        Some Ok
+  in
   let analyze_source_file exe_env source_file =
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
-        try
-          Ondemand.analyze_file exe_env source_file ;
-          if Config.write_html then Printer.write_all_html_files source_file ;
-          None
-        with
-        | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
-            Some dependency_filename
-        | MissingDependencyException.MissingDependencyException ->
-            None )
+        run_and_interpret_result ~f:(fun () ->
+            Ondemand.analyze_file exe_env source_file ;
+            if Config.write_html then Printer.write_all_html_files source_file ) )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
@@ -88,14 +93,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
       L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
         Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
-    try
-      Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
-      None
-    with
-    | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
-        Some dependency_filename
-    | MissingDependencyException.MissingDependencyException ->
-        None
+    run_and_interpret_result ~f:(fun () -> Ondemand.analyze_proc_name_toplevel exe_env proc_name)
   in
   fun target ->
     let start = ExecutionDuration.counter () in

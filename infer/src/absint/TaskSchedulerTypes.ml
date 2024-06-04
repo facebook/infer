@@ -11,3 +11,9 @@ type target =
   | File of SourceFile.t
   | ProcUID of string
       (** matches primary key of [procedures] and [specs] tables; see [Database.ml] *)
+
+type analysis_result =
+  | Ok  (** Analysis finished normally. *)
+  | RaceOn of {dependency_filename: string}
+      (** Analysis stopped when trying to access the summary of a callee and that callee is being
+          analyzed by another worker. [dependency_filename] is the path to the callee's lock file. *)

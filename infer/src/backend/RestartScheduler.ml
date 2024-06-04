@@ -6,19 +6,20 @@
  *)
 open! IStd
 module L = Logging
+open TaskSchedulerTypes
 
 type work_with_dependency = {work: TaskSchedulerTypes.target; dependency_filename_opt: string option}
 
-let of_queue content : ('a, string) ProcessPool.TaskGenerator.t =
+let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
   let remaining = ref (Queue.length content) in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
   let finished ~result work =
     match result with
-    | None ->
+    | None | Some Ok ->
         decr remaining
-    | Some _ as dependency_filename_opt ->
-        Queue.enqueue content {work; dependency_filename_opt}
+    | Some (RaceOn {dependency_filename}) ->
+        Queue.enqueue content {work; dependency_filename_opt= Some dependency_filename}
   in
   let work_if_dependency_allows w =
     match w.dependency_filename_opt with
