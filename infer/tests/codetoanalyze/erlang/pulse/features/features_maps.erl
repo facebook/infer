@@ -31,8 +31,11 @@
     fn_test_update_exact3_Bad/0,
     test_mapcomp_Ok/0,
     test_mapcomp_Bad/0,
-    fp_test_mapgen_Ok/0,
-    test_mapgen_Bad/0
+    test_mapgen_empty_Ok/0,
+    test_mapgen_empty_Bad/0,
+    test_mapgen_nonempty_Ok/0,
+    test_mapgen_nonempty_Bad/0,
+    test_mapgen_badmap_Bad/0
 ]).
 
 test_is_key_Ok() ->
@@ -147,12 +150,26 @@ test_mapcomp_Bad() ->
     M = #{I => I+1 || I <- [1]},
     ?CRASH_IF_EQUAL(2, maps:get(1, M)).
 
-fp_test_mapgen_Ok() ->
+test_mapgen_empty_Ok() ->
+    M = #{},
+    L = [{K, V} || K := V <- M],
+    ?ASSERT_EQUAL([], L).
+
+test_mapgen_empty_Bad() ->
+    M = #{},
+    L = [{K, V} || K := V <- M],
+    ?CRASH_IF_EQUAL([], L).
+
+test_mapgen_nonempty_Ok() ->
     M = #{1 => 2},
     L = [{K, V} || K := V <- M],
     ?ASSERT_EQUAL([{1, 2}], L).
 
-test_mapgen_Bad() ->
+test_mapgen_nonempty_Bad() ->
     M = #{1 => 2},
     L = [{K, V} || K := V <- M],
     ?CRASH_IF_EQUAL([{1, 2}], L).
+
+test_mapgen_badmap_Bad() ->
+    M = [],
+    [{K, V} || K := V <- M].
