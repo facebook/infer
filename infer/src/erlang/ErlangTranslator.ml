@@ -18,6 +18,8 @@ let maps_put = Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~ar
 
 let maps_get = Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2
 
+let maps_to_list = Procname.make_erlang ~module_name:"maps" ~function_name:"to_list" ~arity:1
+
 let lists_append2 = Procname.make_erlang ~module_name:"lists" ~function_name:"append" ~arity:2
 
 let lists_subtract = Procname.make_erlang ~module_name:"lists" ~function_name:"subtract" ~arity:2
@@ -1006,42 +1008,75 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
   let loop_body_with_filters = List.fold_right qualifiers ~f:apply_one_filter ~init:loop_body in
   (* Wrap filtered expression with loops for generators*)
   let apply_one_gen (qual : Ast.qualifier) (acc : Block.t) : Block.t =
+    (* Helper function for the common parts of list/map generators, namely taking elements from
+       the list one-by-one in a loop (maps are also converted to lists). *)
+    let make_gen gen_var (init_block : Block.t) mk_matcher : Block.t =
+      (* Check if there are still elements in the generator *)
+      let is_cons_id = mk_fresh_id () in
+      let check_cons_node =
+        Node.make_stmt env [Env.has_type_instr env ~result:is_cons_id ~value:(Var gen_var) Cons]
+      in
+      let is_cons_node = Node.make_if env true (Var is_cons_id) in
+      let no_cons_node = Node.make_if env false (Var is_cons_id) in
+      (* Load head, overwrite list with tail for next iteration *)
+      let head_var = mk_fresh_id () in
+      let head_load = load_field_from_id env head_var gen_var ErlangTypeName.cons_head Cons in
+      let tail_load = load_field_from_id env gen_var gen_var ErlangTypeName.cons_tail Cons in
+      let unpack_node = Node.make_stmt env [head_load; tail_load] in
+      (* Match head and evaluate expression *)
+      let head_matcher : Block.t = mk_matcher head_var in
+      let fail_node = Node.make_nop env in
+      let join_node = Node.make_join env in
+      init_block.exit_success |~~> [join_node] ;
+      init_block.exit_failure |~~> [fail_node] ;
+      join_node |~~> [check_cons_node] ;
+      check_cons_node |~~> [is_cons_node; no_cons_node] ;
+      is_cons_node |~~> [unpack_node] ;
+      unpack_node |~~> [head_matcher.start] ;
+      head_matcher.exit_success |~~> [acc.start] ;
+      head_matcher.exit_failure |~~> [join_node] ;
+      acc.exit_success |~~> [join_node] ;
+      acc.exit_failure |~~> [fail_node] ;
+      {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
+    in
     match qual with
     | Generator {pattern; expression} ->
-        (* Initialize generator *)
         let gen_var, init_block = translate_expression_to_fresh_id env expression in
-        (* Check if there are still elements in the generator *)
-        let join_node = Node.make_join env in
-        let is_cons_id = mk_fresh_id () in
-        let check_cons_node =
-          Node.make_stmt env [Env.has_type_instr env ~result:is_cons_id ~value:(Var gen_var) Cons]
+        let mk_matcher head_var = translate_pattern env head_var pattern in
+        make_gen gen_var init_block mk_matcher
+    | MapGenerator {pattern; expression} ->
+        let gen_var = mk_fresh_id () in
+        let init_block =
+          (* Turn the generator map into a list of {key, val} pairs *)
+          let gen_var_map, gen_var_block = translate_expression_to_fresh_id env expression in
+          let to_list =
+            Sil.Call
+              ( (gen_var, any_typ)
+              , Exp.Const (Cfun maps_to_list)
+              , [(Exp.Var gen_var_map, any_typ)]
+              , env.location
+              , CallFlags.default )
+          in
+          Block.all env [gen_var_block; Block.make_instruction env [to_list]]
         in
-        let is_cons_node = Node.make_if env true (Var is_cons_id) in
-        let no_cons_node = Node.make_if env false (Var is_cons_id) in
-        (* Load head, overwrite list with tail for next iteration *)
-        let head_var = mk_fresh_id () in
-        let head_load = load_field_from_id env head_var gen_var ErlangTypeName.cons_head Cons in
-        let tail_load = load_field_from_id env gen_var gen_var ErlangTypeName.cons_tail Cons in
-        let unpack_node = Node.make_stmt env [head_load; tail_load] in
-        (* Match head and evaluate expression *)
-        let head_matcher = translate_pattern env head_var pattern in
-        let fail_node = Node.make_nop env in
-        init_block.exit_success |~~> [join_node] ;
-        init_block.exit_failure |~~> [fail_node] ;
-        join_node |~~> [check_cons_node] ;
-        check_cons_node |~~> [is_cons_node; no_cons_node] ;
-        is_cons_node |~~> [unpack_node] ;
-        unpack_node |~~> [head_matcher.start] ;
-        head_matcher.exit_success |~~> [acc.start] ;
-        head_matcher.exit_failure |~~> [join_node] ;
-        acc.exit_success |~~> [join_node] ;
-        acc.exit_failure |~~> [fail_node] ;
-        {start= init_block.start; exit_success= no_cons_node; exit_failure= fail_node}
-    | MapGenerator _ ->
-        (* TODO: add support for map generators: T163176600 *)
-        L.debug Capture Verbose
-          "@[todo ErlangTranslator.translate_expression map generator instance(s)." ;
-        acc
+        let mk_matcher head_var =
+          (* The head is a {key, val} tuple, so we extract the fields and match on both *)
+          let key_var = mk_fresh_id () in
+          let val_var = mk_fresh_id () in
+          let key_load =
+            load_field_from_id env key_var head_var (ErlangTypeName.tuple_elem 1) (Tuple 2)
+          in
+          let val_load =
+            load_field_from_id env val_var head_var (ErlangTypeName.tuple_elem 2) (Tuple 2)
+          in
+          let key_val_load = Node.make_stmt env [key_load; val_load] in
+          let key_matcher = translate_pattern env key_var pattern.key in
+          let val_matcher = translate_pattern env val_var pattern.value in
+          let matcher = Block.all env [key_matcher; val_matcher] in
+          key_val_load |~~> [matcher.start] ;
+          {matcher with start= key_val_load}
+        in
+        make_gen gen_var init_block mk_matcher
     | _ ->
         acc
   in
