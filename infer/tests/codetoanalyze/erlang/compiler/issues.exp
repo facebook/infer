@@ -415,8 +415,15 @@ features_maybe:test_maybe_with_else3_Ok/0: ok
 features_maybe:test_maybe_with_else4_Bad/0: expected_crash
 
 ----- features_mc -----
+features_mc:fn_test_mapcomp2_Bad/0: expected_crash
+features_mc:fn_test_mapgen_nonempty2_Bad/0: expected_crash
+features_mc:fp_test_mapgen_nonempty2_Ok/0: ok
+features_mc:test_mapcomp2_Ok/0: ok
 features_mc:test_mapcomp_Bad/0: expected_crash
 features_mc:test_mapcomp_Ok/0: ok
+features_mc:test_mapcomp_with_mapgen_Bad/0: expected_crash
+features_mc:test_mapcomp_with_mapgen_Ok/0: ok
+features_mc:test_mapgen_badmap2_Bad/0: bad_generator
 features_mc:test_mapgen_badmap_Bad/0: bad_generator
 features_mc:test_mapgen_empty_Bad/0: expected_crash
 features_mc:test_mapgen_empty_Ok/0: ok
