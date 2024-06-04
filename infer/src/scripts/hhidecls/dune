@@ -1,0 +1,14 @@
+(executable
+ (public_name hhidecls)
+ (name hhidecls)
+ (modes byte_complete exe)
+ (flags (:standard))
+ (libraries core yojson))
+
+(rule
+ (action
+  (copy hhidecls.exe hhidecls))
+ (mode
+  (promote
+   (until-clean)
+   (into ../../../bin))))

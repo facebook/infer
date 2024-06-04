@@ -13,6 +13,8 @@ class F extends E {}
 interface I {}
 interface J {}
 
+class H implements I, J {}
+
 class Wrapper {
   public async function fail(): Awaitable<int> {
     return 99;
@@ -260,4 +262,22 @@ class Wrapper {
     return;
   }
 
+  // check that we've correctly imported OutOfBoundsException extends Exception
+  public async function hhiDeclsImportedBad(): Awaitable<void> {
+    $e = new \OutOfBoundsException();
+    try {
+      throw $e;
+    } catch (\Exception $e) {
+      $_ = $this->fail();
+    }
+  }
+
+  public async function hhiDeclsImportedOK(): Awaitable<void> {
+    $e = new \OutOfBoundsException();
+    try {
+      throw $e;
+    } catch (\DivisionByZeroException $e) {
+      $_ = $this->fail();
+    }
+  }
 }
