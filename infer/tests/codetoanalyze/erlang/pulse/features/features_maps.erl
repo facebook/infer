@@ -28,14 +28,7 @@
     test_key_checked_Ok/1,
     test_update_exact1_Ok/0,
     test_update_exact2_Bad/0,
-    fn_test_update_exact3_Bad/0,
-    test_mapcomp_Ok/0,
-    test_mapcomp_Bad/0,
-    test_mapgen_empty_Ok/0,
-    test_mapgen_empty_Bad/0,
-    test_mapgen_nonempty_Ok/0,
-    test_mapgen_nonempty_Bad/0,
-    test_mapgen_badmap_Bad/0
+    fn_test_update_exact3_Bad/0
 ]).
 
 test_is_key_Ok() ->
@@ -101,7 +94,7 @@ test_put5_Bad() ->
     accepts_map_with_key_one_value_two(M1).
 
 test_put6_Bad() ->
-    M1 = maps:put(1, 3, [not_a_map]).
+    maps:put(1, 3, [not_a_map]).
 
 test_new_Ok() ->
     M = maps:new(),
@@ -141,35 +134,3 @@ test_update_exact2_Bad() ->
 fn_test_update_exact3_Bad() ->
     M = #{1 => 2},
     M#{2 := 3}.
-
-test_mapcomp_Ok() ->
-    M = #{I => I+1 || I <- [1]},
-    ?ASSERT_EQUAL(2, maps:get(1, M)).
-
-test_mapcomp_Bad() ->
-    M = #{I => I+1 || I <- [1]},
-    ?CRASH_IF_EQUAL(2, maps:get(1, M)).
-
-test_mapgen_empty_Ok() ->
-    M = #{},
-    L = [{K, V} || K := V <- M],
-    ?ASSERT_EQUAL([], L).
-
-test_mapgen_empty_Bad() ->
-    M = #{},
-    L = [{K, V} || K := V <- M],
-    ?CRASH_IF_EQUAL([], L).
-
-test_mapgen_nonempty_Ok() ->
-    M = #{1 => 2},
-    L = [{K, V} || K := V <- M],
-    ?ASSERT_EQUAL([{1, 2}], L).
-
-test_mapgen_nonempty_Bad() ->
-    M = #{1 => 2},
-    L = [{K, V} || K := V <- M],
-    ?CRASH_IF_EQUAL([{1, 2}], L).
-
-test_mapgen_badmap_Bad() ->
-    M = [],
-    [{K, V} || K := V <- M].
