@@ -8,27 +8,25 @@
 open! IStd
 module L = Logging
 
-(**
+(** entries are of the form
 
-   entries are of the form
-
-
+    {v
   {
-  "int": {
-    "is_main_process": 1,
-    "pid": 1234,
-    "time": 420844200,
-    "value": 123456
-  },
-  "normal": {
-    "command": "run",
-    "event": "time.dbwriter.useful_time_user",
-    "hostname": "darkstar",
-    "infer_commit": "deadbeef"
-  },
-  "tags": {}
+   "int": {
+     "is_main_process": 1,
+     "pid": 1234,
+     "time": 420844200,
+     "value": 123456
+   },
+   "normal": {
+     "command": "run",
+     "event": "time.dbwriter.useful_time_user",
+     "hostname": "darkstar",
+     "infer_commit": "deadbeef"
+   },
+   "tags": {}
   }
- *)
+    v} *)
 
 let error ~expected json =
   L.die InternalError "when parsing json: expected %s but got '%a'" expected Yojson.Safe.pp json
