@@ -761,7 +761,7 @@ let nil_insertion_into_collection =
 
 
 let nil_messaging_to_non_pod =
-  register_with_latent ~category:No_category ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+  register_with_latent ~category:Memory_error ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
