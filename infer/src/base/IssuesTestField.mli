@@ -23,7 +23,6 @@ type t =
   | Hash
   | LineOffset
   | QualifierContainsPotentialExceptionNote
-  | NullsafeExtra
   | TaintExtra
   | TransitiveCalleesExtra
 [@@deriving equal]

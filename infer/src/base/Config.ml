@@ -1930,7 +1930,6 @@ and issues_tests_fields =
         ; Bucket
         ; Severity
         ; BugTrace
-        ; NullsafeExtra
         ; TaintExtra
         ; TransitiveCalleesExtra ]
     ~symbols:IssuesTestField.all_symbols ~eq:IssuesTestField.equal

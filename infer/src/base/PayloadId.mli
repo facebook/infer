@@ -27,7 +27,6 @@ type t =
   | Lineage
   | LineageShape
   | Starvation
-  | Nullsafe
   | Uninit
 [@@deriving variants]
 

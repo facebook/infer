@@ -93,15 +93,13 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
         | _ ->
             None
       in
-      Jsonbug_t.
-        { cost_polynomial= None
-        ; cost_degree= None
-        ; nullsafe_extra= None
-        ; copy_type
-        ; config_usage_extra
-        ; taint_extra
-        ; transitive_callees
-        ; transitive_missed_captures }
+      { Jsonbug_t.cost_polynomial= None
+      ; cost_degree= None
+      ; copy_type
+      ; config_usage_extra
+      ; taint_extra
+      ; transitive_callees
+      ; transitive_missed_captures }
     in
     (* [Diagnostic.get_issue_type] wrapper to report different type of issue for
        nullptr dereferences in Java classes annotated with @Nullsafe if requested *)
