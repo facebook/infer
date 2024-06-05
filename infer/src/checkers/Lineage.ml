@@ -185,6 +185,8 @@ module G = struct
       graph (nb_edges graph) (Fmt.iter iter_edges_e Edge.pp_e) graph
 
 
+  let of_vertices vertices = List.fold ~init:empty ~f:add_vertex vertices
+
   let preserves_shape ((src, {kind; _}, dst) : E.t) =
     match kind with
     | Direct ->
@@ -441,7 +443,7 @@ module Summary = struct
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
       if not (G.mem_vertex graph node) then (
-        L.internal_error "Mysteriously missing node from lineage." ;
+        L.debug Analysis Verbose "Mysteriously missing node from lineage." ;
         (shape_is_preserved, seen) )
       else if Set.mem seen node then (shape_is_preserved, seen)
       else
@@ -1301,7 +1303,7 @@ end = struct
 
     let argument index : FieldPath.t t =
      fun shapes _node f astate ->
-      Shapes.fold_argument_path
+      Shapes.fold_argument
         ~f:(fun accum arg_path -> f accum (Argument (index, arg_path), arg_path))
         ~init:astate shapes index []
 
@@ -1387,7 +1389,7 @@ end = struct
         here. Indeed every [field_path] slot should exactly correspond to one [Return field_path]
         vertex. We still proceed with [fold_return] for good measure and future-proofing. *)
      fun shapes _node field_path f astate ->
-      Shapes.fold_return_path shapes field_path
+      Shapes.fold_return shapes field_path
         ~f:(fun acc final_path -> f acc (Return final_path, ()))
         ~init:astate
 

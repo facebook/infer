@@ -31,7 +31,13 @@ module Vertex : sig
   val pp : t Fmt.t [@@warning "-unused-value-declaration"]
 end
 
-module G : Graph.Sig.P with type V.t = Vertex.t
+module G : sig
+  include Graph.Sig.P with type V.t = Vertex.t
+
+  val pp : t Fmt.t [@@warning "-unused-value-declaration"]
+
+  val of_vertices : vertex list -> t
+end
 
 module Summary : sig
   type t

@@ -28,6 +28,8 @@ module type S = sig
 
   val seq : t -> elt Seq.t
 
+  val of_seq : elt Seq.t -> t
+
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
   val length : t -> int

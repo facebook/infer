@@ -156,15 +156,26 @@ module Summary : sig
 
       If the summary is [None], [f] will be called once with a var-only abstract cell. *)
 
-  val fold_argument_path :
+  val fold_argument :
     t option -> int -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
   (** Folds over the terminal field paths of the given field of the argument at the given index. See
       {!fold_cells}. *)
 
-  val fold_return_path :
+  val fold_return :
     t option -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
   (** Folds over the terminal field paths of the given field of the formal return. See
       {!fold_cells}. *)
+
+  (** Special instances of [fold_...] functions when one wants to build a list. *)
+
+  val map_argument : t option -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+
+  val map_return : t option -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+
+  val map_argument_of :
+    t option -> Procname.t -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+
+  val map_return_of : t option -> Procname.t -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
 end
 
 module StdModules : sig

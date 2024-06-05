@@ -113,9 +113,8 @@ module FieldPath = struct
     | _ :: _, [] ->
         []
     | origin_field :: origin_tail, field :: tail ->
-        if not ([%equal: FieldLabel.t] origin_field field) then
-          L.die InternalError "incompatible var paths" ;
-        extract_from ~origin_path:origin_tail tail
+        if not ([%equal: FieldLabel.t] origin_field field) then []
+        else extract_from ~origin_path:origin_tail tail
 end
 
 module VarPath = struct
@@ -180,7 +179,9 @@ end = struct
   let var_appears_in_source_code x = Var.appears_in_source_code (var x)
 
   let path_from_origin ~origin:(origin_var, origin_path) {var; field_path; _} =
-    if not ([%equal: Var.t] origin_var var) then L.die InternalError "incompatible var paths" ;
+    if not ([%equal: Var.t] origin_var var) then
+      L.die InternalError "incompatible variable paths %a and %a" VarPath.pp
+        (origin_var, origin_path) VarPath.pp (var, field_path) ;
     FieldPath.extract_from ~origin_path field_path
 end
 
@@ -478,6 +479,10 @@ module Env : sig
         the result). *)
 
     val unify_var : t -> Var.t -> shape -> unit
+
+    val add_return_of : t -> Procname.t -> shape -> unit
+
+    val add_arguments_of : t -> Procname.t -> shape list -> unit
   end
 
   module Summary : sig
@@ -513,12 +518,25 @@ module Env : sig
       t option -> VarPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
-    val fold_argument_path :
+    val fold_argument :
       t option -> int -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
-    val fold_return_path :
+    val fold_return :
       t option -> FieldPath.t -> init:'accum -> f:('accum -> FieldPath.t -> 'accum) -> 'accum
+    (* Doc in .mli *)
+
+    val map_argument : t option -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+    (* Doc in .mli *)
+
+    val map_return : t option -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+    (* Doc in .mli *)
+
+    val map_argument_of :
+      t option -> Procname.t -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
+    (* Doc in .mli *)
+
+    val map_return_of : t option -> Procname.t -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
     (* Doc in .mli *)
 
     val introduce :
@@ -567,10 +585,16 @@ end = struct
         It also registers the formal and returned variables, to allow querying for their shapes
         using only the environment. *)
     type t =
-      {var_shapes: (Var.t, shape) Hashtbl.t; shape_structures: (Shape_id.t, structure) Hashtbl.t}
+      { var_shapes: (Var.t, shape) Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Hashtbl.t
+      ; argument_of: (Procname.t, shape list array) Hashtbl.t
+      ; return_of: (Procname.t, shape list) Hashtbl.t }
 
     let create () =
-      {var_shapes= Hashtbl.create (module Var); shape_structures= Hashtbl.create (module Shape_id)}
+      { var_shapes= Hashtbl.create (module Var)
+      ; shape_structures= Hashtbl.create (module Shape_id)
+      ; argument_of= Hashtbl.create (module Procname)
+      ; return_of= Hashtbl.create (module Procname) }
 
 
     module Shape = struct
@@ -881,6 +905,30 @@ end = struct
       | None ->
           (* Key isn't variant-shaped: we potentially access every map values from the map. *)
           shape_all_map_value state map_shape
+
+
+    let add_return_of {return_of; _} procname ret_shape =
+      Hashtbl.update return_of procname ~f:(function
+        | None ->
+            [ret_shape]
+        | Some shapes ->
+            ret_shape :: shapes )
+
+
+    let add_arguments_of {argument_of; _} procname arg_shapes =
+      let arg_shapes = Array.of_list arg_shapes in
+      let known_shapes = Hashtbl.find argument_of procname |> Option.value ~default:[||] in
+      let new_shapes =
+        Array.init
+          (max (Array.length known_shapes) (Array.length arg_shapes))
+          ~f:(fun index ->
+            if index < Array.length known_shapes && index < Array.length arg_shapes then
+              arg_shapes.(index) :: known_shapes.(index)
+            else if index < Array.length known_shapes then known_shapes.(index)
+            else if index < Array.length arg_shapes then [arg_shapes.(index)]
+            else assert false )
+      in
+      Hashtbl.set argument_of ~key:procname ~data:new_shapes
   end
 
   module Summary = struct
@@ -899,9 +947,23 @@ end = struct
     (** Once the analysis is done, each class can be frozen into its representative. Therefore
         summary classes are simply shape ids, which trades off the now-uneeded mergeability for
         marshallability. *)
-    type shape = Shape_id.t
+    module Shape = struct
+      type t = Shape_id.t [@@deriving hash, compare, equal]
 
-    let pp_shape = Shape_id.pp
+      let pp = Shape_id.pp
+
+      module HashSet = struct
+        include HashSet.Make (Shape_id)
+
+        let of_list li = of_seq (Caml.List.to_seq li)
+
+        let pp = Fmt.iter ~sep:Fmt.comma (Fn.flip iter) pp
+      end
+    end
+
+    type shape = Shape.t
+
+    let pp_shape = Shape.pp
 
     type structure = shape Structure.t
 
@@ -913,19 +975,25 @@ end = struct
         It also registers the formal and returned variables, to allow querying for their shapes
         using only the environment. *)
     type t =
-      { formals: shape array
+      { var_shapes: (Var.t, shape) Caml.Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Caml.Hashtbl.t
+      ; formals: shape array
       ; return: shape
-      ; var_shapes: (Var.t, shape) Caml.Hashtbl.t
-      ; shape_structures: (Shape_id.t, structure) Caml.Hashtbl.t }
+      ; argument_of: (Procname.t, Shape.HashSet.t array) Caml.Hashtbl.t
+      ; return_of: (Procname.t, Shape.HashSet.t) Caml.Hashtbl.t }
 
-    let pp fmt {formals; return; var_shapes; shape_structures} =
+    let pp fmt {var_shapes; shape_structures; formals; return; return_of} =
+      (* TODO argument_of *)
       Format.fprintf fmt
         "@[<v>@[<v4>FORMALS@ @[%a@]@]@ @[<v4>RET_VAR@ @[%a@]@]@ @[<v4>VAR_SHAPES@ @[%a@]@]@ \
-         @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@ @]@ "
+         @[<v4>RETURN OF@ @[%a@]@]@ @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@ @]@ "
         (Fmt.parens @@ Fmt.array ~sep:Fmt.comma pp_shape)
         formals pp_shape return
         (Pp.caml_hashtbl_sorted ~compare:Var.compare ~bind:Pp.arrow Var.pp pp_shape)
         var_shapes
+        (Pp.caml_hashtbl_sorted ~compare:Procname.compare ~bind:Pp.arrow Procname.pp
+           Shape.HashSet.pp )
+        return_of
         (Pp.caml_hashtbl_sorted ~compare:Shape_id.compare ~bind:Pp.arrow Shape_id.pp pp_structure)
         shape_structures
 
@@ -960,12 +1028,12 @@ end = struct
       | Some LocalAbstract ->
           None
       | Some Bottom | None ->
-          L.internal_error
+          L.debug Analysis Verbose
             "Shape id %a absent from the environment. Reading from an uninitialised variable?"
             Shape_id.pp shape ;
           None
       | Some (Variant _) as other ->
-          L.internal_error
+          L.debug Analysis Verbose
             "Variant shape %a = %a cannot have a field table. Lookind for a boxing field?"
             Shape_id.pp shape (Fmt.option pp_structure) other ;
           None
@@ -1059,7 +1127,7 @@ end = struct
           structure
 
 
-    let make proc_desc {State.var_shapes; shape_structures} =
+    let make proc_desc {State.var_shapes; shape_structures; argument_of; return_of} =
       (* Making a summary from a state essentially amounts to freezing State shape classes into State
          ids and converting those State ids into Summary ids. We keep an id translation table that
          maps state ids into summary ids and generate a fresh summary id whenever we encounter a new
@@ -1083,9 +1151,10 @@ end = struct
             Structure.vector ~is_fully_abstract ?all_map_value
               (FieldLabelMap.map ~f:translate_shape fields)
       in
+      let iter_map_data f = Iter.map2 (fun key data -> (key, f data)) in
       let var_shapes =
         iter_hashtbl var_shapes
-        |> Iter.map2 (fun var shape -> (var, translate_shape shape))
+        |> iter_map_data (fun shape -> translate_shape shape)
         |> caml_hashtbl_of_iter_exn
       in
       let shape_structures =
@@ -1101,7 +1170,20 @@ end = struct
         |> List.to_array
       in
       let return = Caml.Hashtbl.find var_shapes @@ Var.of_pvar @@ Procdesc.get_ret_var proc_desc in
-      {var_shapes; shape_structures; return; formals}
+      let translate_shape_list shapes =
+        List.map ~f:translate_shape shapes |> Shape.HashSet.of_list
+      in
+      let argument_of =
+        iter_hashtbl argument_of
+        |> iter_map_data (fun arg_shapes -> Array.map ~f:translate_shape_list arg_shapes)
+        |> caml_hashtbl_of_iter_exn
+      in
+      let return_of =
+        iter_hashtbl return_of
+        |> iter_map_data (fun shapes -> translate_shape_list shapes)
+        |> caml_hashtbl_of_iter_exn
+      in
+      {var_shapes; shape_structures; return; formals; argument_of; return_of}
 
 
     (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
@@ -1337,7 +1419,7 @@ end = struct
       fold_final finalise summary root_shape field_path ~init ~f
 
 
-    let fold_argument_path summary_option index field_path ~init ~f =
+    let fold_argument summary_option index field_path ~init ~f =
       match summary_option with
       | Some ({formals; _} as summary) ->
           let arg_shape = formals.(index) in
@@ -1346,10 +1428,39 @@ end = struct
           f init []
 
 
-    let fold_return_path summary_option field_path ~init ~f =
+    let fold_return summary_option field_path ~init ~f =
       match summary_option with
       | Some ({return; _} as summary) ->
           fold_final_paths summary return field_path ~init ~f
+      | None ->
+          f init []
+
+
+    let fold_shape_hset summary shapes field_path ~init ~f =
+      Shape.HashSet.fold
+        (fun shape (acc, seen_paths) ->
+          fold_final_paths summary shape field_path ~init:(acc, seen_paths)
+            ~f:(fun (acc, seen_paths) final_path ->
+              if Set.mem seen_paths final_path then (acc, seen_paths)
+              else (f acc final_path, Set.add seen_paths final_path) ) )
+        shapes (init, FieldPath.Set.empty)
+      |> fst
+
+
+    let fold_argument_of summary_option procname index field_path ~init ~f =
+      match summary_option with
+      | Some ({argument_of; _} as summary) ->
+          let shape_hset = (Caml.Hashtbl.find argument_of procname).(index) in
+          fold_shape_hset summary shape_hset field_path ~init ~f
+      | None ->
+          f init []
+
+
+    let fold_return_of summary_option procname field_path ~init ~f =
+      match summary_option with
+      | Some ({return_of; _} as summary) ->
+          let shape_hset = Caml.Hashtbl.find return_of procname in
+          fold_shape_hset summary shape_hset field_path ~init ~f
       | None ->
           f init []
 
@@ -1383,6 +1494,23 @@ end = struct
           else None
       | _ ->
           None
+
+
+    let map_return shapes field_path ~f =
+      fold_return shapes field_path ~init:[] ~f:(fun acc path -> f path :: acc)
+
+
+    let map_return_of shapes procname field_path ~f =
+      fold_return_of shapes procname field_path ~init:[] ~f:(fun acc path -> f path :: acc)
+
+
+    let map_argument shapes arg_index field_path ~f =
+      fold_argument shapes arg_index field_path ~init:[] ~f:(fun acc path -> f path :: acc)
+
+
+    let map_argument_of shapes procname arg_index field_path ~f =
+      fold_argument_of shapes procname arg_index field_path ~init:[] ~f:(fun acc path ->
+          f path :: acc )
   end
 end
 
@@ -1407,7 +1535,7 @@ module Report = struct
     L.debug Analysis Verbose "@[<2>FIELDS OF RETURN:@ (%a)@]"
       (Fmt.iter
          (fun f summary ->
-           Env.Summary.fold_return_path summary [] ~f:(fun () fields -> f fields) ~init:() )
+           Env.Summary.fold_return summary [] ~f:(fun () fields -> f fields) ~init:() )
          ~sep:Fmt.comma FieldPath.pp )
       (Some summary) ;
     L.debug Analysis Verbose "@]@ @]"
@@ -1603,6 +1731,10 @@ struct
 
 
     let unknown_procname procname ret_var args =
+      let returned_shape = Env.State.shape_var state ret_var in
+      let arg_shapes = List.map ~f:shape_expr args in
+      Env.State.add_return_of state procname returned_shape ;
+      Env.State.add_arguments_of state procname arg_shapes ;
       unknown_model
         ~pp_callee:Fmt.(any "procname" ++ quote ~mark:"`" Procname.pp)
         ~callee:procname ret_var args
@@ -1625,7 +1757,9 @@ struct
       in
       let formal_shapes, returned_shape = Env.Summary.introduce ~return ~formals summary state in
       List.iter2_exn ~f:(fun s1 s2 -> Env.State.unify state s1 s2) actual_args_shapes formal_shapes ;
-      Env.State.unify_var state ret_var returned_shape
+      Env.State.unify_var state ret_var returned_shape ;
+      Env.State.add_return_of state procname returned_shape ;
+      Env.State.add_arguments_of state procname formal_shapes
 
 
     let exec analyze_dependency procname ret_var args =

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open! LineageShape.StdModules
 
 val report : lineage_source:string -> lineage_sink:string -> unit
 
@@ -14,9 +15,19 @@ include sig
 
   [@@@warning "-unused-module"]
 
+  [@@@warning "-unused-type-declaration"]
+
   [@@@warning "-unused-value-declaration"]
 
   module Private : sig
-    val parse_node : string -> (Procname.t * Lineage.Vertex.t) option
+    module Todo : sig
+      type node
+
+      val pp_node : node Fmt.t
+
+      type t = {procname: Procname.t; node: node}
+    end
+
+    val parse_node : string -> Todo.t option
   end
 end

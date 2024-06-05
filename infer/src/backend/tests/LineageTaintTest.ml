@@ -23,8 +23,8 @@ let%expect_test "parse_node" =
     match LineageTaint.Private.parse_node item with
     | None ->
         Fmt.pf fmt "INVALID(%s)" item
-    | Some (procname, vertex) ->
-        Fmt.pf fmt "(%a, %a)" Procname.pp_verbose procname Lineage.Vertex.pp vertex
+    | Some {procname; node} ->
+        Fmt.pf fmt "(%a, %a)" Procname.pp_verbose procname LineageTaint.Private.Todo.pp_node node
   in
   Fmt.pr "%a" (Fmt.list ~sep:(Fmt.any " ") pp_item) items ;
   [%expect

@@ -7,6 +7,7 @@
 
 open! IStd
 module Hashtbl = Caml.Hashtbl
+module Seq = Caml.Seq
 
 module type S = sig
   type elt
@@ -26,6 +27,8 @@ module type S = sig
   val iter : t -> elt Iter.t
 
   val seq : t -> elt Seq.t
+
+  val of_seq : elt Seq.t -> t
 
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
@@ -62,6 +65,8 @@ module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
   let iter xs f = iter (fun x _ -> f x) xs
 
   let seq xs = to_seq_keys xs
+
+  let of_seq xs = of_seq (Seq.map (fun elt -> (elt, ())) xs)
 
   let remove_all it xs = Iter.iter (fun y -> remove y xs) it
 
