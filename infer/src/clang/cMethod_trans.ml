@@ -172,7 +172,7 @@ let get_objc_property_accessor tenv ms =
           match Tenv.lookup tenv class_tname with
           | Some {fields} -> (
               let field_opt =
-                List.find ~f:(fun (name, _, _) -> Fieldname.equal name field_name) fields
+                List.find ~f:(fun {Struct.name} -> Fieldname.equal name field_name) fields
               in
               match field_opt with
               | Some field when CMethodSignature.is_getter ms ->

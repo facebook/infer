@@ -115,7 +115,8 @@ module Exec = struct
 
   let init_c_array_fields {pname; caller_pname; node_hash; tenv; integer_type_widths} path typ locs
       ?dyn_length mem =
-    let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
+    let rec init_field path locs dimension ?dyn_length (mem, inst_num)
+        {Struct.name= field_name; typ= field_typ} =
       let field_path =
         Option.map path ~f:(fun path -> Symb.SymbolPath.append_field path field_name)
       in
@@ -165,7 +166,7 @@ module Exec = struct
     | Tstruct typename -> (
       match Tenv.lookup tenv typename with
       | Some {fields} when not (List.is_empty fields) -> (
-          let field_name, field_typ, _ = List.last_exn fields in
+          let {Struct.name= field_name; typ= field_typ} = List.last_exn fields in
           let field_loc = PowLoc.append_field locs ~fn:field_name in
           match field_typ.Typ.desc with
           | Tarray {length= Some length} ->

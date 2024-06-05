@@ -522,7 +522,7 @@ let texp_star tenv texp1 texp2 =
         true
     | _, [] ->
         false
-    | (f1, _, _) :: ftal1', (f2, _, _) :: ftal2' -> (
+    | {Struct.name= f1} :: ftal1', {Struct.name= f2} :: ftal2' -> (
       match Fieldname.compare f1 f2 with
       | n when n < 0 ->
           false
@@ -1003,7 +1003,8 @@ let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre 
 
 let missing_sigma_need_adding_to_tenv tenv hpreds =
   let field_is_missing struc (field, _) =
-    not (List.exists struc.Struct.fields ~f:(fun (fname, _, _) -> Fieldname.equal fname field))
+    not
+      (List.exists struc.Struct.fields ~f:(fun {Struct.name= fname} -> Fieldname.equal fname field))
   in
   let missing_hpred_need_adding_to_tenv hpred =
     match hpred with

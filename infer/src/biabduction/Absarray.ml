@@ -88,7 +88,8 @@ end = struct
       match Tenv.lookup tenv name with
       | Some {fields} ->
           let se' = snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
-          let t' = snd3 (List.find_exn ~f:(fun (f', _, _) -> Fieldname.equal f' fld) fields) in
+          let field' = List.find_exn ~f:(fun {Struct.name= f'} -> Fieldname.equal f' fld) fields in
+          let t' = field'.typ in
           get_strexp_at_syn_offsets tenv se' t' syn_offs'
       | None ->
           fail () )
@@ -109,8 +110,8 @@ end = struct
       | Some {fields} ->
           let se' = snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
           let t' =
-            (fun (_, y, _) -> y)
-              (List.find_exn ~f:(fun (f', _, _) -> Fieldname.equal f' fld) fields)
+            let f' = List.find_exn ~f:(fun {Struct.name= f'} -> Fieldname.equal f' fld) fields in
+            f'.typ
           in
           let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
           let fsel' =
@@ -196,8 +197,8 @@ end = struct
       | [] ->
           ()
       | (f, se) :: fsel' ->
-          ( match List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) ftal with
-          | Some (_, t, _) ->
+          ( match List.find ~f:(fun {Struct.name= f'} -> Fieldname.equal f' f) ftal with
+          | Some ({Struct.typ= t} : Struct.field) ->
               find_offset_sexp sigma_other hpred root (Field (f, typ) :: offs) se t
           | None ->
               L.d_printfln "Can't find field %a in StrexpMatch.find" Fieldname.pp f ) ;

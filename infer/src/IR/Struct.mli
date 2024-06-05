@@ -9,7 +9,8 @@
 open! IStd
 module F = Format
 
-type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
+type field = {name: Fieldname.t; typ: Typ.t; annot: Annot.Item.t}
+[@@deriving compare, equal, hash, normalize]
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 

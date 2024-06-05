@@ -155,7 +155,7 @@ let rec get_fixed_size integer_widths tenv name =
   match Tenv.lookup tenv name with
   | Some {fields; dummy= false} ->
       let open IOption.Let_syntax in
-      List.fold fields ~init:(Some 0) ~f:(fun acc (_, {Typ.desc}, _) ->
+      List.fold fields ~init:(Some 0) ~f:(fun acc ({Struct.typ= {Typ.desc}} : Struct.field) ->
           let* acc in
           let+ size =
             match desc with

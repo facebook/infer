@@ -470,7 +470,7 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ : Typ.t) len inst
       | Fld_init, Some {fields} ->
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
              field, but always return None so that only the last field receives len *)
-          let f (fld, t, _) (flds, len) =
+          let f {Struct.name= fld; typ= t} (flds, len) =
             ( ( fld
               , create_strexp_of_type ~path:((name, fld) :: path) tenv struct_init_mode t len inst
               )

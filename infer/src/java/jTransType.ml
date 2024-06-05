@@ -145,7 +145,7 @@ let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
     | Javalib.NotFinal ->
         real_annotations
   in
-  (field_name, field_type, annotation)
+  {Struct.name= field_name; typ= field_type; annot= annotation}
 
 
 (** Collect static field if static is true, otherwise non-static ones. *)
@@ -161,12 +161,14 @@ let collect_interface_field cn inf l =
   let field_type = get_named_type (JBasics.fs_type fs) in
   let field_name = create_fieldname cn fs in
   let annotation = JAnnotation.translate_item inf.Javalib.if_annotations in
-  (field_name, field_type, annotation) :: l
+  {Struct.name= field_name; typ= field_type; annot= annotation} :: l
 
 
 let collect_models_class_fields classpath_field_map cn cf fields =
   let static, nonstatic = fields in
-  let field_name, field_type, annotation = create_sil_class_field cn cf in
+  let {Struct.name= field_name; typ= field_type; annot= annotation} =
+    create_sil_class_field cn cf
+  in
   match Fieldname.Map.find_opt field_name classpath_field_map with
   | Some classpath_ft when Typ.equal classpath_ft field_type ->
       fields
@@ -177,16 +179,16 @@ let collect_models_class_fields classpath_field_map cn cf fields =
         field_type ;
       fields
   | None when Javalib.is_static_field (Javalib.ClassField cf) ->
-      ((field_name, field_type, annotation) :: static, nonstatic)
+      ({Struct.name= field_name; typ= field_type; annot= annotation} :: static, nonstatic)
   | None ->
-      (static, (field_name, field_type, annotation) :: nonstatic)
+      (static, {Struct.name= field_name; typ= field_type; annot= annotation} :: nonstatic)
 
 
 let add_model_fields classpath_fields cn =
   let statics, nonstatics = classpath_fields in
   let classpath_field_map =
     let collect_fields map =
-      List.fold ~f:(fun map (fn, ft, _) -> Fieldname.Map.add fn ft map) ~init:map
+      List.fold ~f:(fun map {Struct.name= fn; typ= ft} -> Fieldname.Map.add fn ft map) ~init:map
     in
     collect_fields (collect_fields Fieldname.Map.empty statics) nonstatics
   in

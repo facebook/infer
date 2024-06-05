@@ -414,7 +414,8 @@ module Internal = struct
         | Some {fields} ->
             let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
             let init = PostDomain.update ~stack post in
-            List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
+            List.fold fields ~init
+              ~f:(fun (acc : PostDomain.t) {Struct.name= field; typ= field_typ} ->
                 if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
                   acc
                 else

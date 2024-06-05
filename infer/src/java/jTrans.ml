@@ -91,10 +91,11 @@ let get_field_name program static tenv cn fs =
   let {Struct.fields; statics} = JTransType.get_class_struct_typ program tenv cn in
   match
     List.find
-      ~f:(fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
+      ~f:(fun {Struct.name= fieldname} ->
+        String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs) )
       (if static then statics else fields)
   with
-  | Some (fieldname, _, _) ->
+  | Some {Struct.name= fieldname} ->
       fieldname
   | None ->
       (* TODO (T28155039): understand why fields cannot be found here *)

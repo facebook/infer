@@ -1681,9 +1681,9 @@ let add_module_info_field (env : (_, _) Env.t) tenv =
   let typ = Typ.ErlangType ModuleInfo in
   Tenv.mk_struct tenv typ |> ignore ;
   let field =
-    ( Fieldname.make typ ErlangTypeName.module_info_field_name
-    , Typ.mk_struct typ
-    , Map.data env.module_info )
+    { Struct.name= Fieldname.make typ ErlangTypeName.module_info_field_name
+    ; typ= Typ.mk_struct typ
+    ; annot= Map.data env.module_info }
   in
   Tenv.add_field tenv typ field
 

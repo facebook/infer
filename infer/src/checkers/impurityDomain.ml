@@ -67,7 +67,7 @@ let filter_modifies_immutable tenv ~f =
               || Tenv.lookup tenv class_name
                  |> Option.exists ~f:(fun mstruct ->
                         f mstruct
-                        |> List.exists ~f:(fun (fieldname, _typ, annot) ->
+                        |> List.exists ~f:(fun {Struct.name= fieldname; typ= _typ; annot} ->
                                String.equal
                                  (Fieldname.get_field_name fieldname)
                                  (Fieldname.get_field_name fname)

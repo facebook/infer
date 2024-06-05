@@ -77,7 +77,9 @@ let edge_is_strong tenv obj_edge =
     | Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          List.find ~f:(fun (fn, _, _) -> Fieldname.equal obj_edge.rc_field.rc_field_name fn) fields
+          List.find
+            ~f:(fun {Struct.name= fn} -> Fieldname.equal obj_edge.rc_field.rc_field_name fn)
+            fields
       | None ->
           None )
     | _ ->
@@ -88,7 +90,7 @@ let edge_is_strong tenv obj_edge =
       has_weak_type obj_edge.rc_from.rc_node_typ
     (* Weak edge - by annotation of from-node/field *)
     || ( match rc_field with
-       | Some (_, _, ia) ->
+       | Some {Struct.annot= ia} ->
            List.exists
              ~f:(fun (ann : Annot.t) ->
                ( String.equal ann.class_name Config.property_attributes
@@ -100,7 +102,7 @@ let edge_is_strong tenv obj_edge =
            true )
     ||
     (* Weak edge - by type of from-node/field *)
-    match rc_field with Some (_, typ, _) -> has_weak_type typ | None -> false )
+    match rc_field with Some {Struct.typ} -> has_weak_type typ | None -> false )
 
 
 exception Max_retain_cycles of RetainCyclesType.Set.t

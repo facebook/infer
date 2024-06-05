@@ -519,8 +519,10 @@ let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
                 | Exp.Sizeof {typ= {Typ.desc= Tstruct name}} -> (
                   match Tenv.lookup tenv name with
                   | Some {fields} ->
-                      List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) fields
-                      |> Option.map ~f:snd3
+                      let field =
+                        List.find ~f:(fun {Struct.name= f'} -> Fieldname.equal f' f) fields
+                      in
+                      Option.map ~f:(fun ({Struct.typ} : Struct.field) -> typ) field
                   | _ ->
                       None )
                 | _ ->

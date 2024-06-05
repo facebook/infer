@@ -306,8 +306,8 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
       Fieldname.get_class_name field_name
       |> Tenv.lookup tenv
       |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.fields @ tstruct.statics)
-      |> Option.bind ~f:(List.find ~f:(fun (fld, _, _) -> Fieldname.equal fld field_name))
-      |> Option.bind ~f:(fun (_, _, annot) ->
+      |> Option.bind ~f:(List.find ~f:(fun {Struct.name= fld} -> Fieldname.equal fld field_name))
+      |> Option.bind ~f:(fun {Struct.annot} ->
              if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
              else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
              else None )

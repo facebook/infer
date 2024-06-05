@@ -820,7 +820,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let field_exp_typs =
                   match Tenv.lookup tenv tn with
                   | Some {fields} ->
-                      List.map fields ~f:(fun (fieldname, fieldtype, _) ->
+                      List.map fields ~f:(fun {Struct.name= fieldname; typ= fieldtype} ->
                           (Exp.Lfield (exp, fieldname, typ), fieldtype) )
                   | None ->
                       assert false
@@ -2913,7 +2913,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let field_exps, supers =
       match Tenv.lookup tenv tname with
       | Some {fields; supers} ->
-          ( List.map fields ~f:(fun (fieldname, fieldtype, _) ->
+          ( List.map fields ~f:(fun {Struct.name= fieldname; typ= fieldtype} ->
                 (Exp.Lfield (var_exp, fieldname, init_expr_typ), fieldtype) )
           , supers )
       | None ->

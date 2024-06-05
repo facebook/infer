@@ -16,7 +16,7 @@ module F = Format
 let rec fldlist_assoc fld = function
   | [] ->
       raise Caml.Not_found
-  | (fld', x, _) :: l ->
+  | {Struct.name= fld'; typ= x} :: l ->
       if Fieldname.equal fld fld' then x else fldlist_assoc fld l
 
 
@@ -116,8 +116,9 @@ let rec apply_offlist analysis_data tenv p fp_root nullify_struct (root_lexp, st
             in
             let replace_fse fse = if Fieldname.equal fld (fst fse) then (fld, res_se') else fse in
             let res_se = Predicates.Estruct (List.map ~f:replace_fse fsel, inst') in
-            let replace_fta (f, t, a) =
-              if Fieldname.equal fld f then (fld, res_t', a) else (f, t, a)
+            let replace_fta {Struct.name= f; typ= t; annot= a} =
+              if Fieldname.equal fld f then {Struct.name= fld; typ= res_t'; annot= a}
+              else {Struct.name= f; typ= t; annot= a}
             in
             let fields' = List.map ~f:replace_fta fields in
             ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;

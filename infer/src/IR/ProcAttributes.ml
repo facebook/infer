@@ -33,14 +33,12 @@ let kind_of_objc_accessor_type accessor =
 
 
 let pp_objc_accessor_type fmt objc_accessor_type =
-  let fieldname, typ, annots =
-    match objc_accessor_type with Objc_getter field | Objc_setter field -> field
-  in
+  let field = match objc_accessor_type with Objc_getter field | Objc_setter field -> field in
   F.fprintf fmt "%s<%a:%a@,[%a]>"
     (kind_of_objc_accessor_type objc_accessor_type)
-    Fieldname.pp fieldname (Typ.pp Pp.text) typ
+    Fieldname.pp field.name (Typ.pp Pp.text) field.typ
     (Pp.semicolon_seq ~print_env:Pp.text_break Annot.pp)
-    annots
+    field.annot
 
 
 type var_data =

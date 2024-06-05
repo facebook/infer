@@ -60,7 +60,7 @@ let lookup tenv name : Struct.t option =
   result
 
 
-let compare_fields (name1, _, _) (name2, _, _) = Fieldname.compare name1 name2
+let compare_fields {Struct.name= name1} {Struct.name= name2} = Fieldname.compare name1 name2
 
 let equal_fields f1 f2 = Int.equal (compare_fields f1 f2) 0
 
@@ -135,7 +135,7 @@ let resolve_field_info tenv name fieldname =
 
 
 let resolve_fieldname tenv name fieldname_str =
-  let is_fld (fieldname, _, _) = String.equal (Fieldname.get_field_name fieldname) fieldname_str in
+  let is_fld {Struct.name} = String.equal (Fieldname.get_field_name name) fieldname_str in
   find_map_supers ~ignore_require_extends:true tenv name ~f:(fun name str_opt ->
       Option.bind str_opt ~f:(fun {Struct.fields} ->
           if List.exists fields ~f:is_fld then Some name else None ) )
@@ -161,15 +161,15 @@ let get_fields_trans =
   let module Fields = Caml.Set.Make (struct
     type t = Struct.field
 
-    let compare (x, _, _) (y, _, _) =
+    let compare {Struct.name= x} {Struct.name= y} =
       String.compare (Fieldname.get_field_name x) (Fieldname.get_field_name y)
   end) in
   fun tenv name ->
     fold_supers tenv name ~init:Fields.empty ~f:(fun _ struct_opt acc ->
         Option.fold struct_opt ~init:acc ~f:(fun acc {Struct.fields} ->
-            List.fold fields ~init:acc ~f:(fun acc (fieldname, typ, annot) ->
+            List.fold fields ~init:acc ~f:(fun acc {Struct.name= fieldname; typ; annot} ->
                 let fieldname = Fieldname.make name (Fieldname.get_field_name fieldname) in
-                Fields.add (fieldname, typ, annot) acc ) ) )
+                Fields.add {name= fieldname; typ; annot} acc ) ) )
     |> Fields.elements
 
 

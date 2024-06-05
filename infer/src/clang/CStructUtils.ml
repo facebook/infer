@@ -10,7 +10,7 @@ open! IStd
 let struct_copy tenv loc e1 e2 ~typ ~struct_name =
   let rec struct_copy_helper e1 e2 typ struct_name rev_acc =
     let {Struct.fields} = Option.value_exn (Tenv.lookup tenv struct_name) in
-    List.fold fields ~init:rev_acc ~f:(fun rev_acc (field_name, field_typ, _) ->
+    List.fold fields ~init:rev_acc ~f:(fun rev_acc {Struct.name= field_name; typ= field_typ} ->
         let mk_field e = Exp.Lfield (e, field_name, typ) in
         let e1 = mk_field e1 in
         let e2 = mk_field e2 in

@@ -11,8 +11,6 @@ open! IStd
 
 module L = Logging
 
-type field_type = Fieldname.t * Typ.t * Annot.Item.t
-
 let rec get_fields_super_classes tenv super_class =
   L.(debug Capture Verbose)
     "   ... Getting fields of superclass '%s'@\n" (Typ.Name.to_string super_class) ;
@@ -64,7 +62,7 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
         {Annot.class_name= Config.property_attributes; parameters= prop_atts}
   in
   let item_annotations = item_annotations :: CAst_utils.sil_annot_of_type qual_type in
-  (fname, typ, item_annotations)
+  {Struct.name= fname; typ; annot= item_annotations}
 
 
 (* Given a list of declarations in an interface returns a list of fields  *)
@@ -109,7 +107,7 @@ let modelled_field class_name_info =
     if String.equal class_name class_name_info.Clang_ast_t.ni_name then
       let class_tname = Typ.Name.Objc.from_string class_name in
       let name = Fieldname.make class_tname field_name in
-      (name, typ, Annot.Item.empty) :: res
+      {Struct.name; typ; annot= Annot.Item.empty} :: res
     else res
   in
   List.fold ~f:modelled_field_in_class ~init:[] modelled_fields_in_classes

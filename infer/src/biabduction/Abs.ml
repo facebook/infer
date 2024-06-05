@@ -469,7 +469,7 @@ let mk_rules_for_dll tenv (para : Predicates.hpara_dll) : rule list =
 (******************  End of DLL abstraction rules  ******************)
 (******************  Start of Predicate Discovery  ******************)
 let typ_get_recursive_flds tenv typ_exp =
-  let filter typ (_, (t : Typ.t), _) =
+  let filter typ ({Struct.typ= t} : Struct.field) =
     match t.desc with
     | Tstruct _ | Tint _ | Tfloat _ | Tvoid | Tfun | TVar _ ->
         false
@@ -484,7 +484,8 @@ let typ_get_recursive_flds tenv typ_exp =
     | Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some {fields} ->
-          List.map ~f:fst3 (List.filter ~f:(filter typ) fields)
+          let fields = List.filter ~f:(filter typ) fields in
+          List.map ~f:(fun {Struct.name} -> name) fields
       | None ->
           L.(debug Analysis Verbose)
             "@\ntyp_get_recursive_flds: unexpected %a unknown struct type: %a@\n" Exp.pp typ_exp

@@ -337,7 +337,7 @@ let move_taint_to_field tenv path location potential_taint_value taint_match fie
     let* astate, value_origin, typ_name = get_val_and_typ_name astate value_origin typ in
     let+ field_typ =
       let* {Struct.fields} = Tenv.lookup tenv typ_name in
-      List.find_map fields ~f:(fun (field, typ, _) ->
+      List.find_map fields ~f:(fun {Struct.name= field; typ} ->
           if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
     in
     (astate, value_origin, typ_name, field_typ)

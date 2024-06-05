@@ -63,7 +63,7 @@ let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv
         false
   in
   (* is [fldname] a View type declared by [class_typename]? *)
-  let is_declared_view_typ class_typename (fldname, fld_typ, _) =
+  let is_declared_view_typ class_typename {Struct.name= fldname; typ= fld_typ} =
     let fld_classname = Fieldname.get_class_name fldname in
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ
   in
@@ -75,7 +75,7 @@ let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv
         let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
         (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
         List.iter
-          ~f:(fun (fname, fld_typ, ia) ->
+          ~f:(fun {Struct.name= fname; typ= fld_typ; annot= ia} ->
             if
               not
                 ( Annotations.ia_ends_with ia Annotations.auto_cleanup

@@ -144,7 +144,9 @@ let pname_has_return_annot pname predicate =
 let attrs_return_annot_ends_with attrs annot = ia_ends_with attrs.ProcAttributes.ret_annots annot
 
 let field_has_annot fieldname (struct_typ : Struct.t) predicate =
-  let fld_has_taint_annot (fname, _, annot) = Fieldname.equal fieldname fname && predicate annot in
+  let fld_has_taint_annot {Struct.name= fname; annot} =
+    Fieldname.equal fieldname fname && predicate annot
+  in
   List.exists ~f:fld_has_taint_annot struct_typ.fields
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
 

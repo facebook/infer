@@ -46,7 +46,7 @@ let get_required_props typename tenv =
   match Tenv.lookup tenv typename with
   | Some {fields} ->
       List.filter_map
-        ~f:(fun (fieldname, _, annot) ->
+        ~f:(fun {Struct.name= fieldname; annot} ->
           if is_required annot then
             let prop = Fieldname.get_field_name fieldname in
             let var_prop_opt = get_var_args annot in

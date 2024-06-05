@@ -7,7 +7,8 @@
 
 open! IStd
 
-let get_dealloc_call_field (self_var, self_typ) location instrs (fieldname, field_typ, _) =
+let get_dealloc_call_field (self_var, self_typ) location instrs
+    {Struct.name= fieldname; typ= field_typ} =
   match field_typ.Typ.desc with
   | Typ.Tptr (({desc= Tstruct name} as cls), Pk_pointer) when Typ.is_objc_class cls ->
       let field_class_dealloc_name = Procname.make_objc_dealloc name in

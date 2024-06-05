@@ -1786,7 +1786,7 @@ let expand_hpred_pointer =
                      type of contents is known, so construct struct type for single fld:cnt_typ *)
                   let name = Typ.Name.C.from_string ("counterfeit" ^ string_of_int !count) in
                   incr count ;
-                  let fields = [(fld, cnt_typ, Annot.Item.empty)] in
+                  let fields = [{Struct.name= fld; typ= cnt_typ; annot= Annot.Item.empty}] in
                   ignore (Tenv.mk_struct tenv ~fields name) ;
                   Exp.Sizeof {sizeof_data with typ= Typ.mk (Tstruct name)}
               | _ ->

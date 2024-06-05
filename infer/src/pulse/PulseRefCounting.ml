@@ -28,10 +28,10 @@ let pp_access_type fmt access_type =
 
 
 let find_field_in_tenv fields fieldname =
-  match List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name fieldname) with
+  match List.find fields ~f:(fun {Struct.name} -> Fieldname.equal name fieldname) with
   | None ->
       let aprox_field = Fieldname.add_underscore fieldname in
-      List.find fields ~f:(fun (name, _, _) -> Fieldname.equal name aprox_field)
+      List.find fields ~f:(fun {Struct.name} -> Fieldname.equal name aprox_field)
   | Some field ->
       Some field
 
@@ -63,12 +63,12 @@ let get_access_type tenv (access : Access.t) : access_type =
           | None ->
               (* Can't tell if we have a strong reference. *)
               Unknown
-          | Some (_, typ, anns) -> (
+          | Some {Struct.typ; annot} -> (
             match typ.Typ.desc with
             | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
                 Weak
             | _ ->
-                if has_weak_or_unretained_or_assign anns then Weak else Strong ) ) )
+                if has_weak_or_unretained_or_assign annot then Weak else Strong ) ) )
   | _ ->
       Strong
 

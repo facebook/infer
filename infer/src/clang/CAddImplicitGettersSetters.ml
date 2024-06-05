@@ -15,7 +15,7 @@ let get_load_self_instr location (self, self_typ) fieldname =
   (field_exp, load_self_instr)
 
 
-let objc_getter tenv proc_desc location self_with_typ (fieldname, field_typ, _) =
+let objc_getter tenv proc_desc location self_with_typ {Struct.name= fieldname; typ= field_typ} =
   let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
   let id_field = Ident.create_fresh Ident.knormal in
   let store_instrs =
@@ -47,7 +47,8 @@ let is_copy_property (annotations : Annot.Item.t) =
            ann.parameters )
 
 
-let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ, field_annot) =
+let objc_setter tenv location self_with_typ (var, var_typ)
+    {Struct.name= fieldname; typ= field_typ; annot= field_annot} =
   let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
   let store_instrs =
     match field_typ with

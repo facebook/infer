@@ -79,9 +79,9 @@ let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string op
   | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields} -> (
-      match List.find ~f:(function fn, _, _ -> Fieldname.equal fn fieldname) fields with
-      | Some (_, ft, _) ->
-          Some (get_type_name ft)
+      match List.find ~f:(function {Struct.name= fn} -> Fieldname.equal fn fieldname) fields with
+      | Some {typ} ->
+          Some (get_type_name typ)
       | None ->
           None )
     | None ->
