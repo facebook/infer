@@ -2907,6 +2907,13 @@ INTERNAL OPTIONS
        --lineage-field-width-reset
            Cancel the effect of --lineage-field-width.
 
+       --lineage-limit int
+           [EXPERIMENTAL; UNSTABLE API] Lineage pathfinding internal limit.
+           Behaviour unspecified, but lower values should skip more paths.
+
+       --lineage-limit-reset
+           Cancel the effect of --lineage-limit.
+
        --lineage-max-cfg-size-reset
            Cancel the effect of --lineage-max-cfg-size.
 

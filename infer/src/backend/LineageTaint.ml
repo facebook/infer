@@ -108,12 +108,13 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
     | [] ->
         (acc_subgraph, return_todo, call_todo)
     | vertex :: next ->
-        let acc_subgraph', todo' =
+        let acc_subgraph', todo', _ =
           G.fold_succ_e
-            (fun edge (acc, todo) ->
-              if G.mem_edge_e acc edge then (acc, todo)
-              else (G.add_edge_e acc edge, G.E.dst edge :: todo) )
-            graph vertex (acc_subgraph, next)
+            (fun edge (acc, todo, n) ->
+              if n <= 0 || G.mem_edge_e acc edge then (acc, todo, n)
+              else (G.add_edge_e acc edge, G.E.dst edge :: todo, n - 1) )
+            graph vertex
+            (acc_subgraph, next, Option.value ~default:Int.max_value Config.lineage_limit)
         in
         let return_todo' =
           if follow_return then

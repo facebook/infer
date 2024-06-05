@@ -2023,6 +2023,12 @@ and lineage_sink =
      [module:]function/arity${ret,argN}"
 
 
+and lineage_limit =
+  CLOpt.mk_int_opt ~long:"lineage-limit"
+    "[EXPERIMENTAL; UNSTABLE API] Lineage pathfinding internal limit. Behaviour unspecified, but \
+     lower values should skip more paths."
+
+
 and lineage_dedup =
   CLOpt.mk_bool ~deprecated:["-simple-lineage-dedup"] ~long:"lineage-dedup" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
@@ -4321,6 +4327,8 @@ and kotlin_capture = !kotlin_capture
 and lineage_source = !lineage_source
 
 and lineage_sink = !lineage_sink
+
+and lineage_limit = !lineage_limit
 
 and lineage_dedup = !lineage_dedup
 

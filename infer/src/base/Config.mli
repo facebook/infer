@@ -490,6 +490,8 @@ val lineage_source : string option
 
 val lineage_sink : string option
 
+val lineage_limit : int option
+
 val lineage_dedup : bool
 
 val lineage_field_depth : int
