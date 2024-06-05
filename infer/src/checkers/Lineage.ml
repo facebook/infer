@@ -127,7 +127,8 @@ module Edge = struct
         | Return  (** Source is ReturnOf *)
         | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
         | Builtin  (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
-        | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
+        | Summary of {callee: Procname.t; shape_is_preserved: bool}
+            (** Summarizes the effect of a procedure call *)
         | DynamicCallFunction
         | DynamicCallModule
       [@@deriving compare, equal, sexp, variants]
@@ -150,8 +151,8 @@ module Edge = struct
           Format.fprintf fmt "Return"
       | Builtin ->
           Format.fprintf fmt "Builtin"
-      | Summary {shape_is_preserved} ->
-          Format.fprintf fmt "Summary" ;
+      | Summary {shape_is_preserved; callee} ->
+          Format.fprintf fmt "Summary(%a)" Procname.pp callee ;
           if not shape_is_preserved then Format.fprintf fmt "#"
       | DynamicCallFunction ->
           Format.fprintf fmt "DynamicCallFunction"
@@ -161,7 +162,7 @@ module Edge = struct
 
   type kind = Kind.t [@@deriving compare, equal, sexp]
 
-  type t = {kind: kind; node: (PPNode.t[@sexp.opaque])} [@@deriving compare, equal, sexp]
+  type t = {kind: kind; node: (PPNode.t[@sexp.opaque])} [@@deriving compare, equal, sexp, fields]
 
   let default = {kind= Direct; node= PPNode.dummy ()}
 
@@ -1757,7 +1758,7 @@ module TransferFunctions = struct
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
     let kind_f ~shape_is_preserved : Edge.kind =
-      if rm_builtin then Builtin else Summary {shape_is_preserved}
+      if rm_builtin then Builtin else Summary {callee= procname; shape_is_preserved}
     in
     let callee_summary, _callee_shapes = join_payload (analyze_dependency procname) in
     astate |> Domain.record_supported procname

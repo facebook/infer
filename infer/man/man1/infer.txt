@@ -1104,6 +1104,11 @@ OPTIONS
            (Conversely: --no-lineage-prevent-cycles)
            See also infer-analyze(1).
 
+       --lineage-sanitizers +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sanitizers, comma-separated
+           m:f/a
+           See also infer-report(1).
+
        --lineage-seed int
            Set the random seed used for hashing. (Various entities that get
            reported need unique identifiers. To generate these unique
@@ -1111,6 +1116,16 @@ OPTIONS
            hashing. If you are unlucky and get collisions, you can try a
            different seed.
            See also infer-analyze(1).
+
+       --lineage-sink string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
+           format [module:]function/arity${ret,argN}
+           See also infer-report(1).
+
+       --lineage-source string
+           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
+           format [module:]function/arity${ret,argN}
+           See also infer-report(1).
 
        --lineage-variant-width int
            Maximal width of variant types for lineage analysis. A variant

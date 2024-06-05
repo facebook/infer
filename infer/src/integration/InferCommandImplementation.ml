@@ -265,15 +265,16 @@ let report () =
     , Config.lineage_json_report
     , Config.lineage_source
     , Config.lineage_sink
+    , Config.lineage_sanitizers
     , Config.merge_report
     , Config.merge_summaries
     , Config.pulse_report_flows_from_taint_source
     , Config.pulse_report_flows_to_taint_sink )
   with
-  | None, None, None, false, None, None, [], _, None, None ->
+  | None, None, None, false, None, None, [], [], _, None, None ->
       if not (List.is_empty Config.merge_summaries) then merge_summaries () ;
       Driver.report ()
-  | _, _, _, _, _, _, [], _, Some _, Some _ ->
+  | _, _, _, _, _, _, _, [], _, Some _, Some _ ->
       L.die UserError
         "Only one of '--pulse-report-flows-from-taint-source' and \
          '--pulse-report-flows-to-taint-sink' can be used.@\n"
@@ -283,6 +284,7 @@ let report () =
     , report_lineage_json
     , lineage_source
     , lineage_sink
+    , lineage_sanitizers
     , []
     , []
     , taint_source
@@ -291,19 +293,19 @@ let report () =
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
       if report_lineage_json then ReportLineage.report_json () ;
-      ( match (lineage_source, lineage_sink) with
-      | None, None ->
+      ( match (lineage_source, lineage_sink, lineage_sanitizers) with
+      | None, None, [] ->
           ()
-      | Some lineage_source, Some lineage_sink ->
-          ReportLineage.report_taint ~lineage_source ~lineage_sink
-      | Some _, None | None, Some _ ->
+      | Some lineage_source, Some lineage_sink, _ ->
+          ReportLineage.report_taint ~lineage_source ~lineage_sink ~lineage_sanitizers
+      | Some _, None, _ | None, Some _, _ | None, None, _ :: _ ->
           L.die UserError "Lineage: source and taint should be both present or both absent." ) ;
       Option.iter taint_source
         ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
       Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
-  | None, None, None, false, None, None, _ :: _, [], None, None ->
+  | None, None, None, false, None, None, [], _ :: _, [], None, None ->
       merge_reports ()
-  | _, _, _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _, _, _ :: _, _, _ ->
+  | _, _, _, _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _, _, _, _ :: _, _, _ ->
       L.die UserError
         "Options '--merge-report' or '--merge-summaries' or '--merge-report-sumamries' cannot be \
          used with '--issues-tests', '--cost-issues-tests', '--config-impact-issues-tests', \

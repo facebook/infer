@@ -11,6 +11,7 @@ open LineageShape.StdModules
 module Shapes = LineageShape.Summary
 open IOption.Let_syntax
 module V = Lineage.Vertex
+module E = Lineage.Edge
 module G = Lineage.G
 
 let pp_caller_table =
@@ -95,14 +96,22 @@ end
 
 type todo = Todo.t
 
+let is_sanitizing_e sanitizers edge =
+  match E.kind @@ G.E.label edge with
+  | Summary {callee; _} ->
+      Set.mem sanitizers callee
+  | Direct | Call | Return | Capture | Builtin | DynamicCallFunction | DynamicCallModule ->
+      false
+
+
 (** Collects the reachable subgraph from a given source node in the lineage graph of one procedures.
     Returns this subgraph and two lists of nodes from other procedures to explore, the first one
     being reached through Return edges and the second one though Calls.
 
     If [follow_return] is false then the Return list will be empty (ie. [Return] edges will be
     ignored). *)
-let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph procname graph
-    vertices =
+let collect_reachable_in_procedure ~sanitizers ~follow_return caller_table ~init:subgraph procname
+    graph vertices =
   let rec dfs todo acc_subgraph (return_todo : todo list) (call_todo : todo list) =
     match todo with
     | [] ->
@@ -111,7 +120,8 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
         let acc_subgraph', todo', _ =
           G.fold_succ_e
             (fun edge (acc, todo, n) ->
-              if n <= 0 || G.mem_edge_e acc edge then (acc, todo, n)
+              if n <= 0 || G.mem_edge_e acc edge || is_sanitizing_e sanitizers edge then
+                (acc, todo, n)
               else (G.add_edge_e acc edge, G.E.dst edge :: todo, n - 1) )
             graph vertex
             (acc_subgraph, next, Option.value ~default:Int.max_value Config.lineage_limit)
@@ -160,7 +170,7 @@ let collect_reachable_in_procedure ~follow_return caller_table ~init:subgraph pr
     Return edge (but will include the corresponding Summary edges). It works by first collecting all
     the nodes reachable by traversing Return edges, then from this set the ones reachable through
     Call edges but not Return. *)
-let collect_reachable caller_table sources =
+let collect_reachable caller_table ~sanitizers sources =
   let rec aux ~follow_return (todo : todo list) (todo_later : todo list) acc_graphs =
     match (todo, todo_later) with
     | [], [] ->
@@ -168,34 +178,36 @@ let collect_reachable caller_table sources =
     | [], _ :: _ ->
         aux ~follow_return:false todo_later [] acc_graphs
     | {procname; node} :: todo_next, _ ->
-        let summary = Summary.OnDisk.get ~lazy_payloads:true procname in
-        let shapes =
-          let* summary in
-          Lazy.force summary.Summary.payloads.lineage_shape
-        in
-        let vertices = Todo.to_vertices shapes node in
-        let lineage =
-          let* summary in
-          Lazy.force summary.Summary.payloads.lineage
-        in
-        let lineage_graph =
-          match lineage with
-          | None ->
-              G.of_vertices vertices
-          | Some lineage ->
-              Lineage.Summary.graph lineage
-        in
-        let init_reachable_subgraph =
-          match Map.find acc_graphs procname with None -> G.of_vertices vertices | Some g -> g
-        in
-        let reachable_subgraph, return_todo, call_todo =
-          collect_reachable_in_procedure ~follow_return caller_table procname lineage_graph vertices
-            ~init:init_reachable_subgraph
-        in
-        let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
-        let todo' = List.rev_append return_todo todo_next in
-        let todo_later' = List.rev_append call_todo todo_later in
-        aux ~follow_return todo' todo_later' acc_reachable_graphs'
+        if Set.mem sanitizers procname then aux ~follow_return todo_next todo_later acc_graphs
+        else
+          let summary = Summary.OnDisk.get ~lazy_payloads:true procname in
+          let shapes =
+            let* summary in
+            Lazy.force summary.Summary.payloads.lineage_shape
+          in
+          let vertices = Todo.to_vertices shapes node in
+          let lineage =
+            let* summary in
+            Lazy.force summary.Summary.payloads.lineage
+          in
+          let lineage_graph =
+            match lineage with
+            | None ->
+                G.of_vertices vertices
+            | Some lineage ->
+                Lineage.Summary.graph lineage
+          in
+          let init_reachable_subgraph =
+            match Map.find acc_graphs procname with None -> G.of_vertices vertices | Some g -> g
+          in
+          let reachable_subgraph, return_todo, call_todo =
+            collect_reachable_in_procedure ~sanitizers ~follow_return caller_table procname
+              lineage_graph vertices ~init:init_reachable_subgraph
+          in
+          let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
+          let todo' = List.rev_append return_todo todo_next in
+          let todo_later' = List.rev_append call_todo todo_later in
+          aux ~follow_return todo' todo_later' acc_reachable_graphs'
   in
   aux ~follow_return:true sources [] (Map.empty (module Procname))
 
@@ -279,9 +291,7 @@ let collect_coreachable caller_table sinks reachable_graphs =
   aux sinks (Map.empty (module Procname))
 
 
-(** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding lineage procname
-    and vertex. *)
-let parse_node string =
+let parse_mfa string =
   let module_name, string =
     match String.lsplit2 ~on:':' string with
     | None ->
@@ -289,13 +299,23 @@ let parse_node string =
     | Some (module_name, rest) ->
         (module_name, rest)
   in
-  let* function_name, string = String.lsplit2 ~on:'/' string in
-  let* arity, string = String.lsplit2 ~on:'$' string in
-  let* arity = int_of_string_opt arity in
-  let procname = Procname.make_erlang ~module_name ~function_name ~arity in
-  if [%equal: string] string "ret" then Some (Todo.return procname)
+  let* function_name, arity = String.lsplit2 ~on:'/' string in
+  let+ arity = int_of_string_opt arity in
+  Procname.make_erlang ~module_name ~function_name ~arity
+
+
+let parse_mfa_exn s =
+  match parse_mfa s with Some mfa -> mfa | None -> L.die InternalError "`%s`" s
+
+
+(** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding procname and todo
+    node. *)
+let parse_node string =
+  let* mfa, node = String.lsplit2 ~on:'$' string in
+  let* procname = parse_mfa mfa in
+  if [%equal: string] node "ret" then Some (Todo.return procname)
   else
-    let* arg_index = String.chop_prefix ~prefix:"arg" string in
+    let* arg_index = String.chop_prefix ~prefix:"arg" node in
     let* arg_index = int_of_string_opt arg_index in
     Some (Todo.argument procname arg_index)
 
@@ -330,11 +350,12 @@ let report_graph_map filename_parts graphs =
         graphs )
 
 
-let report ~lineage_source ~lineage_sink =
+let report ~lineage_source ~lineage_sink ~lineage_sanitizers =
   let source = parse_node_exn "lineage-source" lineage_source in
   let sink = parse_node_exn "lineage-sink" lineage_sink in
+  let sanitizers = Set.of_list (module Procname) (List.map ~f:parse_mfa_exn lineage_sanitizers) in
   let caller_table = create_caller_table () in
-  let reachable_graphs = collect_reachable caller_table [source] in
+  let reachable_graphs = collect_reachable caller_table ~sanitizers [source] in
   if Config.debug_mode then
     report_graph_map ["lineage-taint-debug"; "lineage-reachable.json"] reachable_graphs ;
   let coreachable_graphs = collect_coreachable caller_table [sink] reachable_graphs in

@@ -8,7 +8,7 @@
 open! IStd
 open! LineageShape.StdModules
 
-val report : lineage_source:string -> lineage_sink:string -> unit
+val report : lineage_source:string -> lineage_sink:string -> lineage_sanitizers:string list -> unit
 
 include sig
   (** Used for tests*)

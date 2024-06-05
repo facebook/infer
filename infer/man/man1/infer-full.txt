@@ -1104,6 +1104,11 @@ OPTIONS
            (Conversely: --no-lineage-prevent-cycles)
            See also infer-analyze(1).
 
+       --lineage-sanitizers +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sanitizers, comma-separated
+           m:f/a
+           See also infer-report(1).
+
        --lineage-seed int
            Set the random seed used for hashing. (Various entities that get
            reported need unique identifiers. To generate these unique
@@ -1111,6 +1116,16 @@ OPTIONS
            hashing. If you are unlucky and get collisions, you can try a
            different seed.
            See also infer-analyze(1).
+
+       --lineage-sink string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
+           format [module:]function/arity${ret,argN}
+           See also infer-report(1).
+
+       --lineage-source string
+           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
+           format [module:]function/arity${ret,argN}
+           See also infer-report(1).
 
        --lineage-variant-width int
            Maximal width of variant types for lineage analysis. A variant
@@ -2886,22 +2901,17 @@ INTERNAL OPTIONS
        --lineage-max-cfg-size-reset
            Cancel the effect of --lineage-max-cfg-size.
 
+       --lineage-sanitizers-reset
+           Set --lineage-sanitizers to the empty list.
+
        --lineage-shape
            Activates: lineage-shape checker: Computes shape informations to
            be used in the Lineage analysis
            NOTE: This is used internally by other checkers and shouldn't
            need to be activated directly. (Conversely: --no-lineage-shape)
 
-       --lineage-sink string
-           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
-           format [module:]function/arity${ret,argN}
-
        --lineage-sink-reset
            Cancel the effect of --lineage-sink.
-
-       --lineage-source string
-           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
-           format [module:]function/arity${ret,argN}
 
        --lineage-source-reset
            Cancel the effect of --lineage-source.

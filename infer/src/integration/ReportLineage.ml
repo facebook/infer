@@ -38,4 +38,5 @@ let report_json () =
   |> Tasks.Runner.run |> ignore
 
 
-let report_taint ~lineage_source ~lineage_sink = LineageTaint.report ~lineage_source ~lineage_sink
+let report_taint ~lineage_source ~lineage_sink ~lineage_sanitizers =
+  LineageTaint.report ~lineage_source ~lineage_sink ~lineage_sanitizers

@@ -1980,14 +1980,22 @@ and kotlin_capture =
 
 and lineage_source =
   CLOpt.mk_string_opt ~long:"lineage-source"
+    ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding, format \
      [module:]function/arity${ret,argN}"
 
 
 and lineage_sink =
   CLOpt.mk_string_opt ~long:"lineage-sink"
+    ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding, format \
      [module:]function/arity${ret,argN}"
+
+
+and lineage_sanitizers =
+  CLOpt.mk_string_list ~long:"lineage-sanitizers"
+    ~in_help:InferCommand.[(Report, manual_lineage)]
+    "[EXPERIMENTAL; UNSTABLE API] Lineage sanitizers, comma-separated m:f/a"
 
 
 and lineage_limit =
@@ -4290,6 +4298,10 @@ and kotlin_capture = !kotlin_capture
 and lineage_source = !lineage_source
 
 and lineage_sink = !lineage_sink
+
+and lineage_sanitizers =
+  RevList.to_list !lineage_sanitizers |> List.concat_map ~f:(String.split ~on:',')
+
 
 and lineage_limit = !lineage_limit
 

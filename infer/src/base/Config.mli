@@ -486,6 +486,8 @@ val lineage_source : string option
 
 val lineage_sink : string option
 
+val lineage_sanitizers : string list
+
 val lineage_limit : int option
 
 val lineage_dedup : bool

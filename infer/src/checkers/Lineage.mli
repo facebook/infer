@@ -31,8 +31,29 @@ module Vertex : sig
   val pp : t Fmt.t [@@warning "-unused-value-declaration"]
 end
 
+module Edge : sig
+  module Kind : sig
+    type t =
+      | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
+      | Call  (** Target is ArgumentOf *)
+      | Return  (** Source is ReturnOf *)
+      | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
+      | Builtin  (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
+      | Summary of {callee: Procname.t; shape_is_preserved: bool}
+          (** Summarizes the effect of a procedure call *)
+      | DynamicCallFunction
+      | DynamicCallModule
+  end
+
+  type kind = Kind.t
+
+  type t
+
+  val kind : t -> kind
+end
+
 module G : sig
-  include Graph.Sig.P with type V.t = Vertex.t
+  include Graph.Sig.P with type V.t = Vertex.t and type E.label = Edge.t
 
   val pp : t Fmt.t [@@warning "-unused-value-declaration"]
 
