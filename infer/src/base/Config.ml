@@ -626,39 +626,6 @@ Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1,
 { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"], "sanitizers": ["Sanitizer1"] }|}
 
 
-and annotation_reachability_cxx =
-  CLOpt.mk_json ~long:"annotation-reachability-cxx"
-    ~in_help:InferCommand.[(Analyze, manual_clang)]
-    ( "Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is \
-       a JSON object whose key is the issue name. \"sources\" and \"sinks\" can be specified \
-       either by symbol (including regexps) or path prefix.  \"sinks\" optionally can specify \
-       \"overrides\" (by symbol or path prefix) that block the reachability analysis when hit.  \
-       Example:\n"
-    ^ {|{
-    "ISOLATED_REACHING_CONNECT": {
-      "sources": {
-        "desc": "Code that should not call connect [optional]",
-        "paths": [ "isolated/" ]
-      },
-      "sinks": {
-        "symbols": [ "connect" ],
-        "overrides": { "symbol_regexps": [ ".*::Trusted::.*" ] }
-      }
-    }
-  }
-|}
-    ^ "\n\
-       This will cause us to create a new ISOLATED_REACHING_CONNECT issue for every function whose \
-       source path starts with \"isolated/\" that may reach the function named \"connect\", \
-       ignoring paths that go through a symbol matching the OCaml regexp \".*::Trusted::.*\"." )
-
-
-and annotation_reachability_cxx_sources =
-  CLOpt.mk_json ~long:"annotation-reachability-cxx-sources"
-    ~in_help:InferCommand.[(Analyze, manual_clang)]
-    {|Override sources in all cxx annotation reachability specs with the given sources spec|}
-
-
 and annotation_reachability_expensive =
   CLOpt.mk_bool ~long:"annotation-reachability-expensive"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -3913,10 +3880,6 @@ and annotation_reachability_apply_superclass_annotations =
 and annotation_reachability_custom_models = !annotation_reachability_custom_models
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
-
-and annotation_reachability_cxx = !annotation_reachability_cxx
-
-and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_expensive = !annotation_reachability_expensive
 

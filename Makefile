@@ -13,7 +13,6 @@ MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
-  annotation-reachability-sources-override \
   backtrack_level \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
@@ -62,7 +61,6 @@ DIRECT_TESTS += \
   c_purity \
   c_starvation \
   c_topl \
-  cpp_annotation-reachability \
   cpp_biabduction \
   cpp_bufferoverrun \
   cpp_conflicts \

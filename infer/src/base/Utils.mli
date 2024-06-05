@@ -125,29 +125,6 @@ val strip_balanced_once : drop:(char -> bool) -> string -> string
     string; for instance,
     [strip_balanced ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"] returns "aaba" *)
 
-val assoc_of_yojson : Yojson.Safe.t -> src:string -> (string, Yojson.Safe.t) List.Assoc.t
-(** Verify we have a json object (or empty list) and return the corresponding assoc list. Otherwise
-    die with a message including src. *)
-
-val string_of_yojson : Yojson.Safe.t -> src:string -> string
-(** Verify we have a json string and return the corresponding ocaml string. Otherwise die with a
-    message including src. *)
-
-val string_list_of_yojson : Yojson.Safe.t -> src:string -> string list
-(** Verify we have a json list of strings and return the corresponding ocaml string list. Otherwise
-    die with a message including src. *)
-
-val yojson_lookup :
-     (string, Yojson.Safe.t) List.Assoc.t
-  -> string
-  -> src:string
-  -> f:(Yojson.Safe.t -> src:string -> 'a)
-  -> default:'a
-  -> 'a
-(** Lookup a json value on an assoc list. If not present, returns default. Otherwise returns (f
-    json_value ~src) where src has element name appended. f is typically one of the above _of_yojson
-    functions. *)
-
 val timeit : f:(unit -> 'a) -> 'a * Mtime.Span.t
 (** Returns the execution time of [f] together with its result *)
 

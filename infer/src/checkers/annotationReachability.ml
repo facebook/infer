@@ -9,7 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 module MF = MarkupFormatter
-module U = Utils
 
 let dummy_constructor_annot = "__infer_is_constructor"
 
@@ -298,167 +297,6 @@ module StandardAnnotationSpec = struct
           report_src_snk_paths proc_data annot_map src_annots snk_annot models ) }
 end
 
-module CxxAnnotationSpecs = struct
-  let src_path_of pname =
-    match Attributes.load pname with
-    | Some proc_attrs ->
-        let loc = ProcAttributes.get_loc proc_attrs in
-        SourceFile.to_string loc.file
-    | None ->
-        ""
-
-
-  (* Does <str_or_prefix> equal <str> or a delimited prefix of <prefix>? *)
-  let prefix_match ~delim str str_or_prefix =
-    String.equal str str_or_prefix
-    || (String.is_prefix ~prefix:str_or_prefix str && String.is_suffix ~suffix:delim str_or_prefix)
-
-
-  let symbol_match = prefix_match ~delim:"::"
-
-  let path_match = prefix_match ~delim:"/"
-
-  let option_name = "--annotation-reachability-cxx"
-
-  let src_option_name = "--annotation-reachability-cxx-sources"
-
-  let cxx_string_of_pname pname =
-    let chop_prefix s =
-      String.chop_prefix s ~prefix:Config.clang_inner_destructor_prefix |> Option.value ~default:s
-    in
-    let pname_str = Procname.to_string pname in
-    let i = Option.value (String.rindex pname_str ':') ~default:(-1) + 1 in
-    let slen = String.length pname_str in
-    String.sub pname_str ~pos:0 ~len:i
-    ^ chop_prefix (String.sub pname_str ~pos:i ~len:(slen - i))
-    ^ "()"
-
-
-  let debug_pred ~spec_name ~desc pred pname =
-    L.d_printf "%s: Checking if `%a` is a %s... " spec_name Procname.pp pname desc ;
-    let r = pred pname in
-    L.d_printf "%b %s.@." r desc ;
-    r
-
-
-  let at_least_one_nonempty ~src symbols symbol_regexps paths =
-    if List.is_empty symbols && Option.is_none symbol_regexps && List.is_empty paths then
-      L.die UserError "Must specify at least one of `paths`, `symbols`, or `symbols_regexps` in %s"
-        src
-
-
-  let spec_from_config spec_name spec_cfg source_overrides =
-    let src = option_name ^ " -> " ^ spec_name in
-    let make_pname_pred entry ~src : Procname.t -> bool =
-      let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
-      let symbol_regexps =
-        U.yojson_lookup entry "symbol_regexps" ~src ~default:None ~f:(fun json ~src ->
-            U.string_list_of_yojson json ~src |> String.concat ~sep:"\\|" |> Str.regexp
-            |> Option.some )
-      in
-      let paths = U.yojson_lookup entry "paths" ~src ~f:U.string_list_of_yojson ~default:[] in
-      at_least_one_nonempty ~src symbols symbol_regexps paths ;
-      let sym_pred pname_string = List.exists ~f:(symbol_match pname_string) symbols in
-      let sym_regexp_pred pname_string =
-        match symbol_regexps with
-        | None ->
-            false
-        | Some regexp ->
-            Str.string_match regexp pname_string 0
-      in
-      let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
-      fun pname ->
-        let pname_string = Procname.to_string pname in
-        sym_pred pname_string || sym_regexp_pred pname_string || path_pred pname
-    in
-    let sources, sources_src =
-      if List.length source_overrides > 0 then (source_overrides, src_option_name)
-      else
-        ( U.yojson_lookup spec_cfg "sources" ~src ~f:U.assoc_of_yojson ~default:[]
-        , src ^ " -> sources" )
-    in
-    let src_name = spec_name ^ "-source" in
-    let src_desc =
-      U.yojson_lookup sources "desc" ~src:sources_src ~f:U.string_of_yojson ~default:src_name
-    in
-    let src_pred pname =
-      make_pname_pred sources ~src:sources_src pname
-      &&
-      match pname with
-      | Procname.ObjC_Cpp cname ->
-          not (Procname.ObjC_Cpp.is_inner_destructor cname)
-      | _ ->
-          true
-    in
-    let src_pred = debug_pred ~spec_name ~desc:"source" src_pred in
-    let sinks = U.yojson_lookup spec_cfg "sinks" ~src ~f:U.assoc_of_yojson ~default:[] in
-    let sinks_src = src ^ " -> sinks" in
-    let snk_name = spec_name ^ "-sink" in
-    let snk_desc =
-      U.yojson_lookup sinks "desc" ~src:sinks_src ~f:U.string_of_yojson ~default:snk_name
-    in
-    let snk_pred = make_pname_pred sinks ~src:sinks_src in
-    let snk_pred = debug_pred ~spec_name ~desc:"sink" snk_pred in
-    let overrides =
-      U.yojson_lookup sinks "overrides" ~src:sinks_src ~f:U.assoc_of_yojson ~default:[]
-    in
-    let sanitizer_pred =
-      if List.is_empty overrides then fun _ -> false
-      else make_pname_pred overrides ~src:(sinks_src ^ " -> overrides")
-    in
-    let sanitizer_pred = debug_pred ~spec_name ~desc:"sanitizer" sanitizer_pred in
-    let call_str = "\n    -> " in
-    let report_cxx_annotation_stack {InterproceduralAnalysis.proc_desc; err_log} loc trace snk_pname
-        call_loc =
-      let src_pname = Procdesc.get_proc_name proc_desc in
-      let final_trace = List.rev (update_trace call_loc trace) in
-      let snk_pname_str = cxx_string_of_pname snk_pname in
-      let src_pname_str = cxx_string_of_pname src_pname in
-      let description =
-        Format.asprintf "%s can reach %s:\n    %s%s%s\n" src_desc snk_desc src_pname_str call_str
-          snk_pname_str
-      in
-      let issue_type = IssueType.register_dynamic ~id:spec_name Error AnnotationReachability in
-      Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
-        description
-    in
-    let snk_annot = annotation_of_str snk_name in
-    let report ({InterproceduralAnalysis.proc_desc} as analysis_data) annot_map =
-      let proc_name = Procdesc.get_proc_name proc_desc in
-      if src_pred proc_name then
-        let loc = Procdesc.get_loc proc_desc in
-        try
-          let sink_map = Domain.find snk_annot annot_map in
-          report_call_stack snk_pred
-            (lookup_annotation_calls analysis_data snk_annot)
-            (report_cxx_annotation_stack analysis_data)
-            (CallSite.make proc_name loc) sink_map
-        with Caml.Not_found -> ()
-    in
-    { AnnotationSpec.description= Printf.sprintf "CxxAnnotationSpecs %s from config" spec_name
-    ; sink_predicate= (fun _ pname -> snk_pred pname)
-    ; sanitizer_predicate= (fun _ pname -> sanitizer_pred pname)
-    ; sink_annotation= snk_annot
-    ; report }
-
-
-  let annotation_reachability_cxx =
-    U.assoc_of_yojson Config.annotation_reachability_cxx ~src:option_name
-
-
-  let annotation_reachability_cxx_sources =
-    U.assoc_of_yojson Config.annotation_reachability_cxx_sources ~src:src_option_name
-
-
-  let from_config () : 'AnnotationSpec list =
-    List.map
-      ~f:(fun (spec_name, spec_cfg) ->
-        let src = option_name ^ " -> " ^ spec_name in
-        spec_from_config spec_name (U.assoc_of_yojson spec_cfg ~src)
-          annotation_reachability_cxx_sources )
-      annotation_reachability_cxx
-end
-
 module NoAllocationAnnotationSpec = struct
   let no_allocation_annot = annotation_of_str Annotations.no_allocation
 
@@ -542,8 +380,7 @@ let annot_specs =
     List.map specs ~f:make_standard_spec_from_user_spec
   in
   let user_defined_specs = List.concat user_defined_specs in
-  [ (Language.Clang, CxxAnnotationSpecs.from_config ())
-  ; ( Language.Java
+  [ ( Language.Java
     , (if Config.annotation_reachability_expensive then [ExpensiveAnnotationSpec.spec] else [])
       @ ( if Config.annotation_reachability_no_allocation then [NoAllocationAnnotationSpec.spec]
           else [] )

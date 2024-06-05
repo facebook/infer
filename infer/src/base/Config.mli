@@ -136,10 +136,6 @@ val annotation_reachability_custom_models : Yojson.Safe.t
 
 val annotation_reachability_custom_pairs : Yojson.Safe.t
 
-val annotation_reachability_cxx : Yojson.Safe.t
-
-val annotation_reachability_cxx_sources : Yojson.Safe.t
-
 val annotation_reachability_expensive : bool
 
 val annotation_reachability_no_allocation : bool
