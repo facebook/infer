@@ -674,7 +674,7 @@ let invariant_call =
 
 
 let ipc_on_ui_thread =
-  register ~category:No_category Warning ~id:"IPC_ON_UI_THREAD" Starvation
+  register ~category:Perf_regression Warning ~id:"IPC_ON_UI_THREAD" Starvation
     ~user_documentation:"A blocking `Binder` IPC call occurs on the UI thread."
 
 
@@ -918,7 +918,7 @@ let datalog_fact =
 
 
 let regex_op_on_ui_thread =
-  register ~category:No_category Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
+  register ~category:Perf_regression Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:
       "A potentially costly operation on a regular expression occurs on the UI thread."
 
@@ -981,7 +981,7 @@ let static_initialization_order_fiasco =
 
 
 let strict_mode_violation =
-  register ~category:No_category ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error
+  register ~category:Perf_regression ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error
     Starvation ~user_documentation:[%blob "./documentation/issues/STRICT_MODE_VIOLATION.md"]
 
 
