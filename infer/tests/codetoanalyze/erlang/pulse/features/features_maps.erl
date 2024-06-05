@@ -28,7 +28,13 @@
     test_key_checked_Ok/1,
     test_update_exact1_Ok/0,
     test_update_exact2_Bad/0,
-    fn_test_update_exact3_Bad/0
+    fn_test_update_exact3_Bad/0,
+    test_to_list1_Ok/0,
+    test_to_list2_Bad/0,
+    test_to_list3_Ok/0,
+    test_to_list4_Bad/0,
+    fp_test_to_list5_Ok/0,
+    fn_test_to_list6_Bad/0
 ]).
 
 test_is_key_Ok() ->
@@ -134,3 +140,23 @@ test_update_exact2_Bad() ->
 fn_test_update_exact3_Bad() ->
     M = #{1 => 2},
     M#{2 := 3}.
+
+test_to_list1_Ok() ->
+    ?ASSERT_EQUAL([], maps:to_list(#{})).
+
+test_to_list2_Bad() ->
+    ?CRASH_IF_EQUAL([], maps:to_list(#{})).
+
+test_to_list3_Ok() ->
+    ?ASSERT_EQUAL([{1, 2}], maps:to_list(#{1 => 2})).
+
+test_to_list4_Bad() ->
+    ?CRASH_IF_EQUAL([{1, 2}], maps:to_list(#{1 => 2})).
+
+% Known limitation due to recency abstraction
+fp_test_to_list5_Ok() ->
+    ?ASSERT_EQUAL([{1, 2}, {3, 4}], maps:to_list(#{1 => 2, 3 => 4})).
+
+% Known limitation due to recency abstraction
+fn_test_to_list6_Bad() ->
+    ?CRASH_IF_EQUAL([{1, 2}, {3, 4}], maps:to_list(#{1 => 2, 3 => 4})).
