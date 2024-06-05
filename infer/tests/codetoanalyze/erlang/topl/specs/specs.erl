@@ -4,7 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 -module(specs).
 -export([
-    test_arg1_Bad/1,
+    fnl_test_arg1_Bad/1,
     test_arg2_Ok/1,
     test_arg3_Ok/1,
     test_ret1_Bad/0,
@@ -18,8 +18,8 @@
 
 -type dirty() :: atom().
 
--spec test_arg1_Bad(dirty()) -> any().
-test_arg1_Bad(X) ->
+-spec fnl_test_arg1_Bad(dirty()) -> any().
+fnl_test_arg1_Bad(X) ->
     sink(X).
 
 -spec test_arg2_Ok(integer()) -> any().
