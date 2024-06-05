@@ -359,39 +359,6 @@ module ExpensiveAnnotationSpec = struct
             String.Map.empty ) }
 end
 
-type user_defined_spec =
-  {sources: string list; sinks: string list; sanitizers: string list [@yojson.default []]}
-[@@deriving of_yojson]
-
-type user_defined_specs = user_defined_spec list [@@deriving of_yojson]
-
-let annot_specs =
-  let models = parse_custom_models () in
-  let make_standard_spec_from_user_spec {sources; sinks; sanitizers} =
-    List.map
-      ~f:(fun sink -> StandardAnnotationSpec.from_annotations sources sink sanitizers models)
-      sinks
-  in
-  let user_defined_specs =
-    let specs =
-      try user_defined_specs_of_yojson Config.annotation_reachability_custom_pairs
-      with _ -> L.die ExternalError "Could not parse annotation reachability custom pairs@."
-    in
-    List.map specs ~f:make_standard_spec_from_user_spec
-  in
-  let user_defined_specs = List.concat user_defined_specs in
-  [ ( Language.Java
-    , (if Config.annotation_reachability_expensive then [ExpensiveAnnotationSpec.spec] else [])
-      @ ( if Config.annotation_reachability_no_allocation then [NoAllocationAnnotationSpec.spec]
-          else [] )
-      @ user_defined_specs ) ]
-
-
-let get_annot_specs pname =
-  let language = Procname.get_language pname in
-  List.Assoc.find_exn ~equal:Language.equal annot_specs language
-
-
 module MakeTransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Domain
@@ -458,10 +425,39 @@ end
 module TransferFunctions = MakeTransferFunctions (ProcCfg.Exceptional)
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
+type custom_spec =
+  {sources: string list; sinks: string list; sanitizers: string list [@yojson.default []]}
+[@@deriving of_yojson]
+
+type custom_specs = custom_spec list [@@deriving of_yojson]
+
+let parse_custom_specs () =
+  let models = parse_custom_models () in
+  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers} =
+    List.map
+      ~f:(fun sink -> StandardAnnotationSpec.from_annotations sources sink sanitizers models)
+      sinks
+  in
+  let custom_specs =
+    let specs =
+      try custom_specs_of_yojson Config.annotation_reachability_custom_pairs
+      with _ -> L.die ExternalError "Could not parse annotation reachability custom pairs@."
+    in
+    List.map specs ~f:make_standard_spec_from_custom_spec
+  in
+  List.concat custom_specs
+
+
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t option =
-  let proc_name = Procdesc.get_proc_name proc_desc in
   let initial = Domain.empty in
-  let specs = get_annot_specs proc_name in
+  let custom_specs = parse_custom_specs () in
+  let expensive_specs =
+    if Config.annotation_reachability_expensive then [ExpensiveAnnotationSpec.spec] else []
+  in
+  let no_alloc_specs =
+    if Config.annotation_reachability_no_allocation then [NoAllocationAnnotationSpec.spec] else []
+  in
+  let specs = expensive_specs @ no_alloc_specs @ custom_specs in
   let proc_data = {TransferFunctions.analysis_data; specs} in
   let post = Analyzer.compute_post proc_data ~initial proc_desc in
   Option.iter post ~f:(fun annot_map ->
