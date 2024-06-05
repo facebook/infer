@@ -1153,12 +1153,12 @@ let untrusted_variable_length_array =
 
 
 let vector_invalidation =
-  register_with_latent ~category:No_category ~id:"VECTOR_INVALIDATION" Error Pulse
+  register_with_latent ~category:Memory_error ~id:"VECTOR_INVALIDATION" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/VECTOR_INVALIDATION.md"]
 
 
 let pulse_reference_stability =
-  register ~category:No_category ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
+  register ~category:Memory_error ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_REFERENCE_STABILITY.md"]
 
 
