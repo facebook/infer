@@ -18,8 +18,6 @@ let maps_put = Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~ar
 
 let maps_get = Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2
 
-let maps_to_list = Procname.make_erlang ~module_name:"maps" ~function_name:"to_list" ~arity:1
-
 let lists_append2 = Procname.make_erlang ~module_name:"lists" ~function_name:"append" ~arity:2
 
 let lists_subtract = Procname.make_erlang ~module_name:"lists" ~function_name:"subtract" ~arity:2
@@ -1057,12 +1055,7 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
           (* Turn the generator map into a list of {key, val} pairs *)
           let gen_var_map, gen_var_block = translate_expression_to_fresh_id env expression in
           let to_list =
-            Sil.Call
-              ( (gen_var, any_typ)
-              , Exp.Const (Cfun maps_to_list)
-              , [(Exp.Var gen_var_map, any_typ)]
-              , env.location
-              , CallFlags.default )
+            builtin_call_1 env gen_var BuiltinDecl.__erlang_map_to_list (Exp.Var gen_var_map)
           in
           let check_block = make_gen_checker gen_var_map [Map] in
           Block.all env [gen_var_block; check_block; Block.make_instruction env [to_list]]

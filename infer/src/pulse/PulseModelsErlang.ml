@@ -1032,9 +1032,9 @@ module Maps = struct
     List.map ~f:Basic.map_continue astate_ok @ astate_badmap
 
 
-  let to_list map : model_no_non_disj =
+  let to_list ?(check_badmap = true) map : model_no_non_disj =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    let astate_badmap = make_astate_badmap map data astate in
+    let astate_badmap = if check_badmap then make_astate_badmap map data astate else [] in
     let astate_empty =
       let> astate = make_astate_goodmap path location map astate in
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
@@ -1954,10 +1954,12 @@ let matchers : matcher list =
       ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach |> with_non_disj
       ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse |> with_non_disj
       ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make |> with_non_disj
+      ; +BuiltinDecl.(match_builtin __erlang_map_to_list)
+        <>$ arg $--> Maps.to_list ~check_badmap:false |> with_non_disj
       ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key |> with_non_disj
       ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get |> with_non_disj
       ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put |> with_non_disj
-      ; -"maps" &:: "to_list" <>$ arg $--> Maps.to_list |> with_non_disj
+      ; -"maps" &:: "to_list" <>$ arg $--> Maps.to_list ~check_badmap:true |> with_non_disj
       ; -"maps" &:: "new" <>$$--> Maps.new_ |> with_non_disj
       ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
       ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2

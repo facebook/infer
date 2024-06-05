@@ -68,6 +68,10 @@ val __erlang_make_str_const : Procname.t
 
 val __erlang_make_bitstring : Procname.t
 
+val __erlang_map_to_list : Procname.t
+(** This is an internal function we use for map generators, not to be confused with maps:to_list/1
+    from OTP library. *)
+
 val __erlang_receive : Procname.t
 
 val __erlang_str_equal : Procname.t
