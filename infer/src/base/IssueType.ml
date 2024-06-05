@@ -1005,7 +1005,7 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 
 let topl_error =
-  register_with_latent ~category:No_category ~id:"TOPL_ERROR" Error Topl
+  register_with_latent ~category:Privacy_violation ~id:"TOPL_ERROR" Error Topl
     ~user_documentation:[%blob "./documentation/issues/TOPL_ERROR.md"]
 
 
