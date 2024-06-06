@@ -15,6 +15,9 @@ interface J {}
 
 class H implements I, J {}
 
+class K<T> {}
+class L<T> extends K<T> {}
+
 class Wrapper {
   public async function fail(): Awaitable<int> {
     return 99;
@@ -31,6 +34,23 @@ class Wrapper {
   public async function checkExtendsOK(): Awaitable<void> {
     $v = new C();
     if ($v is D) {
+      return;
+    }
+    $_ = $this->fail();
+  }
+
+  public async function checkExtendsGenericOK(): Awaitable<void> {
+    $v = new L<int>();
+    if ($v is K<_>) {
+      return;
+    }
+    $_ = $this->fail();
+  }
+
+  public async function checkExtendsGenericParamTestOK(
+    L<int> $v,
+  ): Awaitable<void> {
+    if ($v is K<_>) {
       return;
     }
     $_ = $this->fail();

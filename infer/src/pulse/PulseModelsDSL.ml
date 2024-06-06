@@ -197,6 +197,12 @@ module Syntax = struct
     ret n
 
 
+  let as_constant_bool v : bool option model_monad =
+    let* n_opt = as_constant_int v in
+    let b_opt = Option.map n_opt ~f:(fun (n : int) -> not Int.(n = 0)) in
+    ret b_opt
+
+
   let as_constant_string (v, _) : string option model_monad =
    fun data astate ->
     let phi = astate.path_condition in
@@ -370,8 +376,8 @@ module Syntax = struct
     |> exec_partial_command
 
 
-  let and_equal_instanceof (res, _) (obj, _) ty : unit model_monad =
-    PulseArithmetic.and_equal_instanceof res obj ty |> exec_partial_command
+  let and_equal_instanceof (res, _) (obj, _) ty ~nullable : unit model_monad =
+    PulseArithmetic.and_equal_instanceof res obj ty ~nullable |> exec_partial_command
 
 
   let and_positive (addr, _) : unit model_monad =

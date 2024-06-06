@@ -174,13 +174,15 @@ module Syntax : sig
 
   val and_eq : aval -> aval -> unit model_monad
 
-  val and_equal_instanceof : aval -> aval -> Typ.t -> unit model_monad
+  val and_equal_instanceof : aval -> aval -> Typ.t -> nullable:bool -> unit model_monad
 
   val and_positive : aval -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val as_constant_q : aval -> Q.t option model_monad
 
   val as_constant_int : aval -> int option model_monad
+
+  val as_constant_bool : aval -> bool option model_monad
 
   val as_constant_string : aval -> string option model_monad
 

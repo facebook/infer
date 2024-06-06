@@ -30,6 +30,8 @@ let string_val_field = Fieldname.make hack_string_type_name "val"
 
 let read_string_value address astate = PulseArithmetic.as_constant_string astate address
 
+let replace_backslash_with_colon s = String.tr s ~target:'\\' ~replacement:':'
+
 let read_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in
   let* inner_val = eval_deref_access Read aval (FieldAccess string_val_field) in
@@ -463,7 +465,7 @@ let hhbc_class_get_c value : model =
             match opt_string with
             | Some string ->
                 (* namespace\\classname becomes namespace::classname *)
-                let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
+                let string = replace_backslash_with_colon string in
                 let typ_name = Typ.HackClass (HackClassName.make string) in
                 let* class_object =
                   get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name
@@ -1078,7 +1080,7 @@ let hack_set_static_prop this prop obj : model =
      let* opt_prop = read_string_value_dsl prop in
      match (opt_this, opt_prop) with
      | Some this, Some prop ->
-         let this = String.substr_replace_all ~pattern:"\\" ~with_:":" this in
+         let this = replace_backslash_with_colon this in
          let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
          let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
          write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
@@ -1283,7 +1285,7 @@ let build_vec_for_variadic_callee data args astate =
 
 
 (* Map the kind tag values used in type structure dictionaries to their corresponding Pulse dynamic type names
-   This only works for primitive types at the moment
+   This only decodes primitive types
    See https://github.com/facebook/hhvm/blob/master/hphp/runtime/base/type-structure-kinds.h
 *)
 let type_struct_prim_tag_to_classname n =
@@ -1308,6 +1310,26 @@ let type_struct_prim_tag_to_classname n =
       None
 
 
+let read_nullable_field_from_ts tdict =
+  let open DSL.Syntax in
+  let nullable_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "nullable" in
+  let* nullable_boxed_bool = eval_deref_access Read tdict (FieldAccess nullable_field) in
+  let* nullable_bool_val =
+    eval_deref_access Read nullable_boxed_bool (FieldAccess bool_val_field)
+  in
+  as_constant_bool nullable_bool_val
+
+
+let read_classname_field_from_ts tdict =
+  let open DSL.Syntax in
+  let classname_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "classname" in
+  let* classname_boxed_string = eval_deref_access Read tdict (FieldAccess classname_field) in
+  let* classname_string_val =
+    eval_deref_access Read classname_boxed_string (FieldAccess string_val_field)
+  in
+  as_constant_string classname_string_val
+
+
 (* returns a fresh value equated to the SIL result of the comparison *)
 let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
@@ -1326,18 +1348,33 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
       ret one
   | Some k -> (
       let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
-      match type_struct_prim_tag_to_classname k with
+      let* nullable_bool_opt = read_nullable_field_from_ts tdict in
+      let nullable = Option.value nullable_bool_opt ~default:false in
+      let* classname =
+        match type_struct_prim_tag_to_classname k with
+        | Some name ->
+            ret (Some name)
+        | None ->
+            (* 101 is the magic number for "Unresolved type" in type structures.
+               See https://github.com/facebook/hhvm/blob/master/hphp/runtime/base/type-structure-kinds.h *)
+            if Int.(k = 101) then
+              let* classname_string_opt = read_classname_field_from_ts tdict in
+              ret
+                (Option.map classname_string_opt ~f:(fun s ->
+                     Typ.HackClass (HackClassName.make (replace_backslash_with_colon s)) ) )
+            else ret None
+      in
+      match classname with
       | Some name ->
+          L.d_printfln "type structure test against type name %a" Typ.Name.pp name ;
           let typ = Typ.mk (Typ.Tstruct name) in
-          let* () = and_equal_instanceof inner_val v typ in
+          let* () = and_equal_instanceof inner_val v typ ~nullable in
           ret inner_val
       | None ->
-          (* previous version always returned true, this is just unconstrained to prevent
-             pruning feasible paths *)
           ret inner_val )
 
 
-(* for now ignores resolve and enforce options, and just for primitive types *)
+(* for now ignores resolve and enforce options *)
 let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
   let open DSL.Syntax in
   start_model
@@ -1363,7 +1400,7 @@ let hhbc_is_type_prim typname v : model =
   let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
   let* inner_val = mk_fresh ~model_desc () in
   let* rv = aval_to_hack_bool inner_val in
-  let* () = and_equal_instanceof inner_val v typ in
+  let* () = and_equal_instanceof inner_val v typ ~nullable:false in
   assign_ret rv
 
 

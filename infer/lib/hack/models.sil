@@ -8,7 +8,7 @@
 // These functions have OCaml models
 declare $builtins.nondet() : int
 
-type HackDict .final {}
+type HackDict extends HH::AnyArray = .final {}
 
 type HackInt = .final { val: int }
 
@@ -95,7 +95,7 @@ define $builtins.hhbc_check_this(o: *HackMixed): *HackMixed {
     ret null
 }
 
-type HackVec = .final {
+type HackVec extends HH::AnyArray = .final {
   __infer_model_backing_vec_fst: *HackMixed;
   __infer_model_backing_vec_snd: *HackMixed;
   __infer_model_backing_vec_size: int;
@@ -173,15 +173,15 @@ type HH::AsyncFunctionWaitHandle extends HH::ResumableWaitHandle  = .kind="class
 type HH::AsyncGenerator extends HH::AsyncKeyedIterator  = .kind="class" .final {}
 type HH::AsyncGeneratorWaitHandle extends HH::ResumableWaitHandle  = .kind="class" .final {}
 type HH::AwaitAllWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
-type HH::Awaitable = .kind="class" .abstract {}
+// *** type HH::Awaitable = .kind="class" .abstract {}
 type HH::ConcurrentWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
 type HH::ConditionWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
 type HH::ExternalThreadEventWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
 type HH::RescheduleWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
 type HH::ResumableWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .abstract {}
 type HH::SleepWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final {}
-type HH::StaticWaitHandle extends HH::Awaitable  = .kind="class" .final {}
-type HH::WaitableWaitHandle extends HH::Awaitable  = .kind="class" .abstract {}
+// *** type HH::StaticWaitHandle extends HH::Awaitable  = .kind="class" .final {}
+// *** type HH::WaitableWaitHandle extends HH::Awaitable  = .kind="class" .abstract {}
 type stdClass = .kind="class" .final {}
 // decls from ./classname.hhi
 // ALIAS: type HH::classname should be defined manually above
@@ -362,9 +362,9 @@ type SodiumException extends Exception  = .kind="class" .final {}
 // decls from ./get_proxygen_headers.hhi
 // decls from ./hackarray.hhi
 type HH::AnyArray extends HH::KeyedContainer, XHPChild  = .kind="class" .abstract {}
-type HH::dict extends HH::AnyArray  = .kind="class" .abstract .final {}
-type HH::keyset extends HH::AnyArray  = .kind="class" .abstract .final {}
-type HH::vec extends HH::AnyArray  = .kind="class" .abstract .final {}
+// *** type HH::dict extends HH::AnyArray  = .kind="class" .abstract .final {}
+// *** type HH::keyset extends HH::AnyArray  = .kind="class" .abstract .final {}
+// *** type HH::vec extends HH::AnyArray  = .kind="class" .abstract .final {}
 // decls from ./hsl/ext_hsl_io_private.hhi
 // decls from ./hsl/ext_hsl_locale.hhi
 type HH::Lib::Locale::InvalidLocaleException extends Exception  = .kind="class" .final {}
