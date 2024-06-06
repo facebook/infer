@@ -26,7 +26,6 @@ type t =
   | Lineage
   | LineageShape
   | Starvation
-  | Uninit
 [@@deriving variants]
 
 let database_fields = List.map ~f:fst Variants.descriptions

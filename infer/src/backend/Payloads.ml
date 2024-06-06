@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module F = Format
 
 type t =
@@ -31,6 +32,11 @@ type t =
 
 let yojson_of_t {pulse} =
   [%yojson_of: (string * PulseSummary.t option) list] [(Checker.get_id Pulse, Lazy.force pulse)]
+
+
+let () =
+  if not (Int.equal (List.length Fields.names) (List.length PayloadId.database_fields)) then
+    L.die InternalError "Payloads.t and PayloadId.t do not match."
 
 
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit

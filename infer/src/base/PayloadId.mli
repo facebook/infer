@@ -27,7 +27,6 @@ type t =
   | Lineage
   | LineageShape
   | Starvation
-  | Uninit
 [@@deriving variants]
 
 val database_fields : string list
