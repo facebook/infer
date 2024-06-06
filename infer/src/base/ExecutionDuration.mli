@@ -9,6 +9,8 @@ open! IStd
 
 type t
 
+val pp : prefix:string -> Format.formatter -> t -> unit
+
 type counter
 
 type 'a evaluation_result = {result: 'a; execution_duration: t}

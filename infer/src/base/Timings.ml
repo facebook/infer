@@ -24,6 +24,35 @@ let percentiles =
   [0.1; 0.2; 0.3; 0.4; 0.5; 0.6; 0.7; 0.8; 0.9; 0.95; 0.96; 0.97; 0.98; 0.99; 0.999; 0.9999]
 
 
+let pp_percentiles fmt p_values =
+  let rec aux = function
+    | [], [] ->
+        ()
+    | [], _ :: _ | _ :: _, [] ->
+        assert false
+    | p :: ps, Some p_value :: p_values ->
+        F.fprintf fmt "p%g: %fs@;" (100. *. p) p_value ;
+        aux (ps, p_values)
+    | _p :: ps, None :: p_values ->
+        aux (ps, p_values)
+  in
+  aux (percentiles, p_values)
+
+
+let pp fmt timings =
+  Timeable.Map.iter
+    (fun timeable digest ->
+      (* don't bother if the digest is empty *)
+      if (Tdigest.info digest).count > 0 then
+        (* we won't use the timings anymore after that because it's only ever called when the
+           analysis is completely over, so no point in binding the results which
+           [Tdigest.percentiles] returns as the first element of the pair *)
+        let _updated_digest, percentiles = Tdigest.percentiles digest percentiles in
+        F.fprintf fmt "timings for %a:@\n  @[%a@]@\n" Timeable.pp timeable pp_percentiles
+          percentiles )
+    timings
+
+
 let add timeable time timings =
   let previous = Timeable.Map.find timeable timings in
   let updated = Tdigest.add ~data:time previous in

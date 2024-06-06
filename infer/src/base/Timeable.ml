@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 type checker = Checker.t [@@deriving enumerate]
 
@@ -16,6 +17,8 @@ let compare_checker checker1 checker2 =
 type t = Checker of checker | Preanalysis [@@deriving compare, enumerate]
 
 let to_string = function Checker checker -> Checker.get_id checker | Preanalysis -> "preanalysis"
+
+let pp fmt timeable = F.pp_print_string fmt @@ to_string timeable
 
 module Map = Caml.Map.Make (struct
   type nonrec t = t [@@deriving compare]

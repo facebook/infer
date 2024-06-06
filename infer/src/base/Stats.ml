@@ -111,6 +111,8 @@ module DurationItem = struct
   let dummy = {duration_us= 0; file= ""; pname= ""}
 
   let compare {duration_us= dr1} {duration_us= dr2} = Int.compare dr1 dr2
+
+  let pp f {pname; file; duration_us} = F.fprintf f "%5dus: %s: %s" duration_us file pname
 end
 
 module LongestProcDurationHeap = struct
@@ -129,6 +131,11 @@ module LongestProcDurationHeap = struct
   let merge heap1 heap2 =
     Heap.iter (fun elt -> update elt heap1) heap2 ;
     heap1
+
+
+  let pp_sorted f heap =
+    let heap = to_list heap |> List.sort ~compare:(fun x y -> DurationItem.compare y x) in
+    F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f "@;") DurationItem.pp) heap
 
 
   let to_log_entries ~field_name:_ heap =
@@ -199,6 +206,78 @@ let log_to_scuba stats =
   Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
 
 
+(** human-readable pretty-printing of all fields *)
+let pp fmt stats =
+  let pp_field pp_value fmt field =
+    F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Field.get field stats)
+  in
+  let pp_serialized_field deserializer pp_value fmt field =
+    pp_field (fun fmt v -> pp_value fmt (deserializer v)) fmt field
+  in
+  let pp_hit_percent hit miss fmt =
+    let total = hit + miss in
+    if Int.equal total 0 then F.pp_print_string fmt "N/A%%"
+    else F.fprintf fmt "%d%%" (hit * 100 / total)
+  in
+  let pp_int_field fmt field = pp_field F.pp_print_int fmt field in
+  let pp_percent_field fmt field =
+    pp_field (fun fmt p -> F.fprintf fmt "%.1f%%" (float_of_int p /. 10.)) fmt field
+  in
+  let pp_time_counter_field fmt field =
+    let field_value = Field.get field stats in
+    let field_name = Field.name field in
+    F.fprintf fmt "%a@;" (TimeCounter.pp ~prefix:field_name) field_value
+  in
+  let pp_cache_hits stats cache_misses fmt cache_hits_field =
+    let cache_hits = Field.get cache_hits_field stats in
+    F.fprintf fmt "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
+      (pp_hit_percent cache_hits cache_misses)
+  in
+  let pp_longest_proc_duration_heap fmt field =
+    let heap : LongestProcDurationHeap.t = Field.get field stats in
+    F.fprintf fmt "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted
+      heap
+  in
+  let pp_pulse_summaries_count fmt field =
+    let sumcounters : int PulseSummaryCountMap.t = Field.get field stats in
+    let pp_binding fmt (n, count) = Format.fprintf fmt "%d -> %d" n count in
+    F.fprintf fmt "%s= [%a]@;" (Field.name field)
+      (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt ", ") pp_binding)
+      (PulseSummaryCountMap.bindings sumcounters) ;
+    let total =
+      PulseSummaryCountMap.bindings sumcounters
+      |> List.fold ~init:0 ~f:(fun total (n, count) -> total + (n * count))
+    in
+    F.fprintf fmt "pulse_summaries_total_disjuncts= %d@;" total
+  in
+  Fields.iter ~summary_file_try_load:(pp_int_field fmt) ~useful_times:(pp_time_counter_field fmt)
+    ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
+    ~summary_read_from_disk:(pp_int_field fmt)
+    ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses fmt)
+    ~summary_cache_misses:(pp_int_field fmt) ~ondemand_procs_analyzed:(pp_int_field fmt)
+    ~proc_locker_lock_time:(pp_time_counter_field fmt)
+    ~proc_locker_unlock_time:(pp_time_counter_field fmt) ~process_times:(pp_time_counter_field fmt)
+    ~pulse_aliasing_contradictions:(pp_int_field fmt)
+    ~pulse_args_length_contradictions:(pp_int_field fmt)
+    ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
+    ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
+    ~pulse_summaries_contradictions:(pp_int_field fmt)
+    ~pulse_summaries_count:(pp_pulse_summaries_count fmt)
+    ~pulse_summaries_count_0_continue_program:(pp_int_field fmt)
+    ~pulse_summaries_count_0_percent:(pp_int_field fmt)
+    ~pulse_summaries_unsat_for_caller:(pp_int_field fmt)
+    ~pulse_summaries_unsat_for_caller_percent:(pp_int_field fmt)
+    ~pulse_summaries_with_some_unreachable_nodes:(pp_int_field fmt)
+    ~pulse_summaries_with_some_unreachable_nodes_percent:(pp_int_field fmt)
+    ~pulse_summaries_with_some_unreachable_returns:(pp_int_field fmt)
+    ~pulse_summaries_with_some_unreachable_returns_percent:(pp_percent_field fmt)
+    ~timeouts:(pp_int_field fmt) ~restart_scheduler_useful_time:(pp_time_counter_field fmt)
+    ~restart_scheduler_total_time:(pp_time_counter_field fmt)
+    ~spec_store_times:(pp_time_counter_field fmt) ~topl_reachable_calls:(pp_int_field fmt)
+    ~timings:(pp_serialized_field TimingsStat.deserialize Timings.pp fmt)
+
+
+(** machine-readable printing of selected fields, for tests *)
 let log_to_file
     { ondemand_procs_analyzed
     ; pulse_aliasing_contradictions
@@ -278,6 +357,7 @@ let log_aggregate stats_list =
           ; pulse_summaries_count_0_percent }
         else stats
       in
+      L.debug Analysis Quiet "@[Backend stats:@\n@[<v2>  %a@]@]@\n" pp stats ;
       log_to_scuba stats ;
       log_to_file stats
 

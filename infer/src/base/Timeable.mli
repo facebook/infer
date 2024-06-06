@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** types of everything we might possibly want to time *)
 type t =
@@ -13,6 +14,8 @@ type t =
   | Preanalysis  (** the "pre-analysis" phase of a procedure, before we run the checkers *)
 
 val to_string : t -> string
+
+val pp : F.formatter -> t -> unit
 
 module Map : Caml.Map.S with type key = t
 
