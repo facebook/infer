@@ -684,7 +684,7 @@ let get_message_and_suggestion diagnostic =
             F.fprintf fmt "indirectly via call to %a on %a" CallEvent.describe f Location.pp_line
               location
       in
-      F.asprintf "Abstract class %s is being instantiated %a" (Typ.Name.name type_name) pp_trace
+      F.asprintf "Abstract class `%s` is being instantiated %a" (Typ.Name.name type_name) pp_trace
         trace
       |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
