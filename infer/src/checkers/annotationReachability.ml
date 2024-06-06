@@ -115,10 +115,11 @@ let string_of_pname = Procname.to_simplified_string ~withclass:true
 let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}
 
 let get_issue_type src_annot snk_annot =
-  if String.equal snk_annot dummy_constructor_annot then IssueType.checkers_allocates_memory
+  if String.equal snk_annot.Annot.class_name dummy_constructor_annot then
+    IssueType.checkers_allocates_memory
   else if
     Config.annotation_reachability_expensive
-    && String.equal src_annot Annotations.performance_critical
+    && String.equal src_annot.Annot.class_name Annotations.performance_critical
   then IssueType.checkers_calls_expensive_method
   else IssueType.checkers_annotation_reachability_error
 
@@ -126,8 +127,7 @@ let get_issue_type src_annot snk_annot =
 let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} models src_annot
     snk_annot loc trace snk_pname call_loc =
   let get_original_pname annot pname =
-    find_override_with_annot (annotation_of_str annot) models tenv pname
-    |> Option.value ~default:pname
+    find_override_with_annot annot models tenv pname |> Option.value ~default:pname
   in
   (* Check if the annotation is inherited from a base class method. *)
   let get_details annot pname =
@@ -137,7 +137,7 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} mo
   in
   (* Check if the annotation is inherited from a base class/interface. *)
   let get_class_details annot pname =
-    let has_annot ia = Annotations.ia_ends_with ia annot in
+    let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
     let pname = get_original_pname annot pname in
     match Procname.get_class_type_name pname with
     | Some typ -> (
@@ -157,25 +157,26 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} mo
   (* Check if the annotation is there directly or is modeled. *)
   let get_kind annot pname =
     let pname = get_original_pname annot pname in
-    if check_modeled_annotation models (annotation_of_str annot) pname then "modeled as"
-    else "annotated with"
+    if check_modeled_annotation models annot pname then "modeled as" else "annotated with"
   in
   let src_pname = Procdesc.get_proc_name proc_desc in
+  let snk_annot_str = snk_annot.Annot.class_name in
+  let src_annot_str = src_annot.Annot.class_name in
   let description =
-    if String.equal snk_annot dummy_constructor_annot then
+    if String.equal snk_annot_str dummy_constructor_annot then
       let constr_str = string_of_pname snk_pname in
       Format.asprintf "Method %a annotated with %a allocates %a via %a" MF.pp_monospaced
         (Procname.to_simplified_string src_pname)
-        MF.pp_monospaced ("@" ^ src_annot) MF.pp_monospaced constr_str MF.pp_monospaced
+        MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str MF.pp_monospaced
         ("new " ^ constr_str)
     else
       Format.asprintf "Method %a (%s %a%s%s) calls %a (%s %a%s%s)" MF.pp_monospaced
         (Procname.to_simplified_string src_pname)
-        (get_kind src_annot src_pname) MF.pp_monospaced ("@" ^ src_annot)
+        (get_kind src_annot src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
         (get_details src_annot src_pname)
         (get_class_details src_annot src_pname)
         MF.pp_monospaced (string_of_pname snk_pname) (get_kind snk_annot snk_pname) MF.pp_monospaced
-        ("@" ^ snk_annot) (get_details snk_annot snk_pname)
+        ("@" ^ snk_annot_str) (get_details snk_annot snk_pname)
         (get_class_details snk_annot snk_pname)
   in
   let issue_type = get_issue_type src_annot snk_annot in
@@ -189,8 +190,8 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
   let rec loop fst_call_loc visited_pnames trace (callee_pname, call_loc) =
     let is_end_of_stack proc_name = method_overrides_annot snk_annot models tenv proc_name in
     if is_end_of_stack callee_pname then
-      report_src_to_snk_path analysis_data models src_annot.Annot.class_name
-        snk_annot.Annot.class_name fst_call_loc trace callee_pname call_loc
+      report_src_to_snk_path analysis_data models src_annot snk_annot fst_call_loc trace
+        callee_pname call_loc
     else
       let callee_def_loc =
         Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
@@ -228,7 +229,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
 let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} snk_annot src_annot =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
-  let issue_type = get_issue_type src_annot.Annot.class_name snk_annot.Annot.class_name in
+  let issue_type = get_issue_type src_annot snk_annot in
   let description =
     Format.asprintf "Method %a is annotated with both %a and %a" MF.pp_monospaced
       (Procname.to_simplified_string proc_name)
