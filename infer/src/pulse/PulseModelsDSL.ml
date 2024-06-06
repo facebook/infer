@@ -535,12 +535,12 @@ module Syntax = struct
     ret (addr_res, hist)
 
 
-  let prune_binop ~negated binop operand1 operand2 =
-    PulseArithmetic.prune_binop ~negated binop operand1 operand2 |> exec_partial_command
+  let prune_binop binop operand1 operand2 =
+    PulseArithmetic.prune_binop ~negated:false binop operand1 operand2 |> exec_partial_command
 
 
   let prune_eq_int arg i : unit model_monad =
-    prune_binop ~negated:false Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+    prune_binop Eq (aval_operand arg) (ConstOperand (Cint i))
 
 
   let prune_eq_string (v, _) s : unit model_monad =
@@ -562,40 +562,32 @@ module Syntax = struct
 
 
   let prune_ne_int arg i : unit model_monad =
-    prune_binop ~negated:true Binop.Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+    prune_binop Ne (aval_operand arg) (ConstOperand (Cint i))
 
 
   let prune_ne_zero (addr, _) : unit model_monad =
     PulseArithmetic.prune_ne_zero addr |> exec_partial_command
 
 
-  let prune_lt arg1 arg2 : unit model_monad =
-    prune_binop ~negated:false Binop.Lt (aval_operand arg1) (aval_operand arg2)
-
+  let prune_lt arg1 arg2 : unit model_monad = prune_binop Lt (aval_operand arg1) (aval_operand arg2)
 
   let prune_lt_int arg1 i : unit model_monad =
-    prune_binop ~negated:false Binop.Lt (aval_operand arg1) (PulseArithmetic.ConstOperand (Cint i))
+    prune_binop Lt (aval_operand arg1) (ConstOperand (Cint i))
 
 
-  let prune_ge arg1 arg2 : unit model_monad =
-    prune_binop ~negated:true Binop.Lt (aval_operand arg1) (aval_operand arg2)
-
+  let prune_ge arg1 arg2 : unit model_monad = prune_binop Ge (aval_operand arg1) (aval_operand arg2)
 
   let prune_ge_int arg1 i : unit model_monad =
-    prune_binop ~negated:true Binop.Lt (aval_operand arg1) (PulseArithmetic.ConstOperand (Cint i))
+    prune_binop Ge (aval_operand arg1) (ConstOperand (Cint i))
 
 
   let prune_gt arg1 arg2 = prune_lt arg2 arg1
 
   let prune_le arg1 arg2 = prune_ge arg2 arg1
 
-  let prune_eq arg1 arg2 : unit model_monad =
-    prune_binop ~negated:false Binop.Eq (aval_operand arg1) (aval_operand arg2)
+  let prune_eq arg1 arg2 : unit model_monad = prune_binop Eq (aval_operand arg1) (aval_operand arg2)
 
-
-  let prune_ne arg1 arg2 : unit model_monad =
-    prune_binop ~negated:true Binop.Eq (aval_operand arg1) (aval_operand arg2)
-
+  let prune_ne arg1 arg2 : unit model_monad = prune_binop Ne (aval_operand arg1) (aval_operand arg2)
 
   let invalidate_access cause ref_addr_hist access : unit model_monad =
     let* {path; location} = get_data in
