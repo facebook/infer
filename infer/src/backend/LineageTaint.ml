@@ -96,6 +96,62 @@ end
 
 type todo = Todo.t
 
+module TaintConfig = struct
+  type t = {source: todo; sink: todo; sanitizers: Procname.Comparable.Set.t; limit: int option}
+
+  let parse_mfa string =
+    let module_name, string =
+      match String.lsplit2 ~on:':' string with
+      | None ->
+          ("", string)
+      | Some (module_name, rest) ->
+          (module_name, rest)
+    in
+    let* function_name, arity = String.lsplit2 ~on:'/' string in
+    let+ arity = int_of_string_opt arity in
+    Procname.make_erlang ~module_name ~function_name ~arity
+
+
+  let parse_mfa_exn s =
+    match parse_mfa s with Some mfa -> mfa | None -> L.die InternalError "`%s`" s
+
+
+  (** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding procname and todo
+      node. *)
+  let parse_node string =
+    let* mfa, node = String.lsplit2 ~on:'$' string in
+    let* procname = parse_mfa mfa in
+    if [%equal: string] node "ret" then Some (Todo.return procname)
+    else
+      let* arg_index = String.chop_prefix ~prefix:"arg" node in
+      let* arg_index = int_of_string_opt arg_index in
+      Some (Todo.argument procname arg_index)
+
+
+  let parse_node_exn name string =
+    match parse_node string with
+    | Some node ->
+        node
+    | None ->
+        L.die UserError "%s: invalid format. Expected `mod:fun/arity${ret,argN}, got `%s`." name
+          string
+
+
+  let parse ~lineage_source ~lineage_sink ~lineage_sanitizers ~lineage_limit =
+    match (lineage_source, lineage_sink) with
+    | None, None ->
+        None
+    | None, Some _ | Some _, None ->
+        L.die UserError "Lineage: source and taint should be both present or both absent."
+    | Some lineage_source, Some lineage_sink ->
+        Some
+          { source= parse_node_exn "lineage-source" lineage_source
+          ; sink= parse_node_exn "lineage-sink" lineage_sink
+          ; sanitizers=
+              Set.of_list (module Procname) @@ List.map ~f:parse_mfa_exn lineage_sanitizers
+          ; limit= lineage_limit }
+end
+
 let is_sanitizing_e sanitizers edge =
   match E.kind @@ G.E.label edge with
   | Summary {callee; _} ->
@@ -110,8 +166,8 @@ let is_sanitizing_e sanitizers edge =
 
     If [follow_return] is false then the Return list will be empty (ie. [Return] edges will be
     ignored). *)
-let collect_reachable_in_procedure ~sanitizers ~follow_return caller_table ~init:subgraph procname
-    graph vertices =
+let collect_reachable_in_procedure {TaintConfig.sanitizers; limit; _} ~follow_return caller_table
+    ~init:subgraph procname graph vertices =
   let rec dfs todo acc_subgraph (return_todo : todo list) (call_todo : todo list) =
     match todo with
     | [] ->
@@ -124,7 +180,7 @@ let collect_reachable_in_procedure ~sanitizers ~follow_return caller_table ~init
                 (acc, todo, n)
               else (G.add_edge_e acc edge, G.E.dst edge :: todo, n - 1) )
             graph vertex
-            (acc_subgraph, next, Option.value ~default:Int.max_value Config.lineage_limit)
+            (acc_subgraph, next, Option.value ~default:Int.max_value limit)
         in
         let return_todo' =
           if follow_return then
@@ -170,7 +226,7 @@ let collect_reachable_in_procedure ~sanitizers ~follow_return caller_table ~init
     Return edge (but will include the corresponding Summary edges). It works by first collecting all
     the nodes reachable by traversing Return edges, then from this set the ones reachable through
     Call edges but not Return. *)
-let collect_reachable caller_table ~sanitizers sources =
+let collect_reachable ({sanitizers; source; _} as taint_config : TaintConfig.t) caller_table =
   let rec aux ~follow_return (todo : todo list) (todo_later : todo list) acc_graphs =
     match (todo, todo_later) with
     | [], [] ->
@@ -201,7 +257,7 @@ let collect_reachable caller_table ~sanitizers sources =
             match Map.find acc_graphs procname with None -> G.of_vertices vertices | Some g -> g
           in
           let reachable_subgraph, return_todo, call_todo =
-            collect_reachable_in_procedure ~sanitizers ~follow_return caller_table procname
+            collect_reachable_in_procedure taint_config ~follow_return caller_table procname
               lineage_graph vertices ~init:init_reachable_subgraph
           in
           let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
@@ -209,7 +265,7 @@ let collect_reachable caller_table ~sanitizers sources =
           let todo_later' = List.rev_append call_todo todo_later in
           aux ~follow_return todo' todo_later' acc_reachable_graphs'
   in
-  aux ~follow_return:true sources [] (Map.empty (module Procname))
+  aux ~follow_return:true [source] [] (Map.empty (module Procname))
 
 
 (** Similar to collect_reachable for a subgraph from which you can reach a given node. *)
@@ -259,7 +315,7 @@ let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph 
 
 
 (** See collect_reachable and collect_coreachable_in_procedure. *)
-let collect_coreachable caller_table sinks reachable_graphs =
+let collect_coreachable {TaintConfig.sink; _} caller_table reachable_graphs =
   let rec aux (todo : todo list) acc_graphs =
     match todo with
     | [] ->
@@ -288,45 +344,7 @@ let collect_coreachable caller_table sinks reachable_graphs =
           let todo' = List.rev_append interproc_todo todo_next in
           aux todo' (Map.set acc_graphs ~key:procname ~data:coreachable_subgraph) )
   in
-  aux sinks (Map.empty (module Procname))
-
-
-let parse_mfa string =
-  let module_name, string =
-    match String.lsplit2 ~on:':' string with
-    | None ->
-        ("", string)
-    | Some (module_name, rest) ->
-        (module_name, rest)
-  in
-  let* function_name, arity = String.lsplit2 ~on:'/' string in
-  let+ arity = int_of_string_opt arity in
-  Procname.make_erlang ~module_name ~function_name ~arity
-
-
-let parse_mfa_exn s =
-  match parse_mfa s with Some mfa -> mfa | None -> L.die InternalError "`%s`" s
-
-
-(** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding procname and todo
-    node. *)
-let parse_node string =
-  let* mfa, node = String.lsplit2 ~on:'$' string in
-  let* procname = parse_mfa mfa in
-  if [%equal: string] node "ret" then Some (Todo.return procname)
-  else
-    let* arg_index = String.chop_prefix ~prefix:"arg" node in
-    let* arg_index = int_of_string_opt arg_index in
-    Some (Todo.argument procname arg_index)
-
-
-let parse_node_exn name string =
-  match parse_node string with
-  | Some node ->
-      node
-  | None ->
-      L.die UserError "%s: invalid format. Expected `mod:fun/arity${ret,argN}, got `%s`." name
-        string
+  aux [sink] (Map.empty (module Procname))
 
 
 let report_graph_map filename_parts graphs =
@@ -350,20 +368,16 @@ let report_graph_map filename_parts graphs =
         graphs )
 
 
-let report ~lineage_source ~lineage_sink ~lineage_sanitizers =
-  let source = parse_node_exn "lineage-source" lineage_source in
-  let sink = parse_node_exn "lineage-sink" lineage_sink in
-  let sanitizers = Set.of_list (module Procname) (List.map ~f:parse_mfa_exn lineage_sanitizers) in
+let report taint_config =
   let caller_table = create_caller_table () in
-  let reachable_graphs = collect_reachable caller_table ~sanitizers [source] in
+  let reachable_graphs = collect_reachable taint_config caller_table in
   if Config.debug_mode then
     report_graph_map ["lineage-taint-debug"; "lineage-reachable.json"] reachable_graphs ;
-  let coreachable_graphs = collect_coreachable caller_table [sink] reachable_graphs in
+  let coreachable_graphs = collect_coreachable taint_config caller_table reachable_graphs in
   report_graph_map ["lineage-taint"; "lineage-taint.json"] coreachable_graphs
 
 
 module Private = struct
   module Todo = Todo
-
-  let parse_node = parse_node
+  module TaintConfig = TaintConfig
 end

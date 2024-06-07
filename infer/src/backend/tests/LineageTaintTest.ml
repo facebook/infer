@@ -20,7 +20,7 @@ let%expect_test "parse_node" =
     ; "noargindex$arg" ]
   in
   let pp_item fmt item =
-    match LineageTaint.Private.parse_node item with
+    match LineageTaint.Private.TaintConfig.parse_node item with
     | None ->
         Fmt.pf fmt "INVALID(%s)" item
     | Some {procname; node} ->

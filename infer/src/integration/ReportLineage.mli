@@ -9,5 +9,4 @@ open! IStd
 
 val report_json : unit -> unit
 
-val report_taint :
-  lineage_source:string -> lineage_sink:string -> lineage_sanitizers:string list -> unit
+val report_taint : LineageTaint.TaintConfig.t -> unit

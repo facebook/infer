@@ -272,7 +272,11 @@ val is_std_move : t -> bool
 val is_shared_ptr_observer : t -> bool
 (** Check if it is C++ shared pointer observer, e.g. [std::shared_ptr::operator*] *)
 
-include Comparable.S with type t := t
+module Comparable : Comparable.S with type t := t
+
+include module type of struct
+  include Comparable
+end
 
 (** Hash tables with proc names as keys. *)
 module Hash : Caml.Hashtbl.S with type key = t

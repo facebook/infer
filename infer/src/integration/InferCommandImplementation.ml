@@ -259,23 +259,25 @@ let report () =
     ConfigImpactIssuesTest.write_from_json ~json_path:Config.from_json_config_impact_report
       ~out_path
   in
+  let lineage_taint_config =
+    let open Config in
+    LineageTaint.TaintConfig.parse ~lineage_source ~lineage_sink ~lineage_sanitizers ~lineage_limit
+  in
   match
     ( Config.issues_tests
     , Config.cost_issues_tests
     , Config.config_impact_issues_tests
     , Config.lineage_json_report
-    , Config.lineage_source
-    , Config.lineage_sink
-    , Config.lineage_sanitizers
+    , lineage_taint_config
     , Config.merge_report
     , Config.merge_summaries
     , Config.pulse_report_flows_from_taint_source
     , Config.pulse_report_flows_to_taint_sink )
   with
-  | None, None, None, false, None, None, [], [], _, None, None ->
+  | None, None, None, false, None, [], _, None, None ->
       if not (List.is_empty Config.merge_summaries) then merge_summaries () ;
       Driver.report ()
-  | _, _, _, _, _, _, _, [], _, Some _, Some _ ->
+  | _, _, _, _, _, _, _, Some _, Some _ ->
       L.die UserError
         "Only one of '--pulse-report-flows-from-taint-source' and \
          '--pulse-report-flows-to-taint-sink' can be used.@\n"
@@ -283,9 +285,7 @@ let report () =
     , cost_out_path
     , config_impact_out_path
     , report_lineage_json
-    , lineage_source
-    , lineage_sink
-    , lineage_sanitizers
+    , lineage_taint_config
     , []
     , []
     , taint_source
@@ -294,19 +294,13 @@ let report () =
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
       if report_lineage_json then ReportLineage.report_json () ;
-      ( match (lineage_source, lineage_sink, lineage_sanitizers) with
-      | None, None, [] ->
-          ()
-      | Some lineage_source, Some lineage_sink, _ ->
-          ReportLineage.report_taint ~lineage_source ~lineage_sink ~lineage_sanitizers
-      | Some _, None, _ | None, Some _, _ | None, None, _ :: _ ->
-          L.die UserError "Lineage: source and taint should be both present or both absent." ) ;
+      Option.iter lineage_taint_config ~f:ReportLineage.report_taint ;
       Option.iter taint_source
         ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
       Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
-  | None, None, None, false, None, None, [], _ :: _, [], None, None ->
+  | None, None, None, false, None, _ :: _, [], None, None ->
       merge_reports ()
-  | _, _, _, _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _, _, _, _ :: _, _, _ ->
+  | _, _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _, _ :: _, _, _ ->
       L.die UserError
         "Options '--merge-report' or '--merge-summaries' or '--merge-report-sumamries' cannot be \
          used with '--issues-tests', '--cost-issues-tests', '--config-impact-issues-tests', \

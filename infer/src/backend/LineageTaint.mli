@@ -8,7 +8,18 @@
 open! IStd
 open! LineageShape.StdModules
 
-val report : lineage_source:string -> lineage_sink:string -> lineage_sanitizers:string list -> unit
+module TaintConfig : sig
+  type t
+
+  val parse :
+       lineage_source:string option
+    -> lineage_sink:string option
+    -> lineage_sanitizers:string list
+    -> lineage_limit:int option
+    -> t option
+end
+
+val report : TaintConfig.t -> unit
 
 include sig
   (** Used for tests*)
@@ -28,6 +39,8 @@ include sig
       type t = {procname: Procname.t; node: node}
     end
 
-    val parse_node : string -> Todo.t option
+    module TaintConfig : sig
+      val parse_node : string -> Todo.t option
+    end
   end
 end
