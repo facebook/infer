@@ -113,7 +113,7 @@ let update_trace loc trace =
   else Errlog.make_trace_element 0 loc "" [] :: trace
 
 
-let string_of_pname = Procname.to_simplified_string ~withclass:true
+let str_of_pname ?(withclass = false) = Procname.to_simplified_string ~withclass
 
 let get_issue_type ~src ~snk =
   if is_dummy_constructor snk then IssueType.checkers_allocates_memory
@@ -133,7 +133,9 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
   let get_details annot pname =
     let origin_pname = get_original_pname annot pname in
     if Procname.equal origin_pname pname then ""
-    else Format.asprintf ", inherited from %a" MF.pp_monospaced (string_of_pname origin_pname)
+    else
+      Format.asprintf ", inherited from %a" MF.pp_monospaced
+        (str_of_pname ~withclass:true origin_pname)
   in
   (* Check if the annotation is inherited from a base class/interface. *)
   let get_class_details annot pname =
@@ -164,16 +166,15 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
   let src_annot_str = src.Annot.class_name in
   let description =
     if is_dummy_constructor snk then
-      let constr_str = string_of_pname snk_pname in
+      let constr_str = str_of_pname ~withclass:true snk_pname in
       Format.asprintf "Method %a annotated with %a allocates %a via %a" MF.pp_monospaced
-        (Procname.to_simplified_string src_pname)
-        MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str MF.pp_monospaced
-        ("new " ^ constr_str)
+        (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str
+        MF.pp_monospaced ("new " ^ constr_str)
     else
       Format.asprintf "Method %a (%s %a%s%s) calls %a (%s %a%s%s)" MF.pp_monospaced
-        (Procname.to_simplified_string src_pname)
-        (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str) (get_details src src_pname)
-        (get_class_details src src_pname) MF.pp_monospaced (string_of_pname snk_pname)
+        (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
+        (get_details src src_pname) (get_class_details src src_pname) MF.pp_monospaced
+        (str_of_pname ~withclass:true snk_pname)
         (get_kind snk snk_pname) MF.pp_monospaced ("@" ^ snk_annot_str) (get_details snk snk_pname)
         (get_class_details snk snk_pname)
   in
@@ -229,8 +230,8 @@ let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} ~src ~snk =
   let issue_type = get_issue_type ~src ~snk in
   let description =
     Format.asprintf "Method %a is annotated with both %a and %a" MF.pp_monospaced
-      (Procname.to_simplified_string proc_name)
-      MF.pp_monospaced ("@" ^ src.Annot.class_name) MF.pp_monospaced ("@" ^ snk.Annot.class_name)
+      (str_of_pname proc_name) MF.pp_monospaced ("@" ^ src.Annot.class_name) MF.pp_monospaced
+      ("@" ^ snk.Annot.class_name)
   in
   Reporting.log_issue proc_desc err_log ~loc ~ltr:[] AnnotationReachability issue_type description
 
