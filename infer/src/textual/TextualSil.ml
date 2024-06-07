@@ -479,9 +479,9 @@ module StructBridge = struct
     in
     let fields =
       List.map fields ~f:(fun (fdecl : FieldDecl.t) ->
-          { SilStruct.name= FieldDeclBridge.to_sil lang fdecl
-          ; typ= TypBridge.to_sil lang ~attrs:fdecl.attributes fdecl.typ
-          ; annot= Annot.Item.empty } )
+          SilStruct.mk_field
+            (FieldDeclBridge.to_sil lang fdecl)
+            (TypBridge.to_sil lang ~attrs:fdecl.attributes fdecl.typ) )
     in
     let annots =
       List.filter_map attributes ~f:(fun attr ->

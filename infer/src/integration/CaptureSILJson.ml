@@ -328,7 +328,7 @@ and parse_struct_field (json : Safe.t) =
   let fi = parse_fieldident json in
   let t = parse_sil_type_name (member "type" json) in
   let annot = parse_item_annotation (member "annotation" json) in
-  {Struct.name= fi; typ= t; annot}
+  Struct.mk_field fi t ~annot
 
 
 and parse_sil_type_name (json : Safe.t) : Typ.t =

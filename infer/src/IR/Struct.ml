@@ -11,6 +11,8 @@ module F = Format
 type field = {name: Fieldname.t; typ: Typ.t; annot: Annot.Item.t}
 [@@deriving compare, equal, hash, normalize]
 
+let mk_field ?(annot = Annot.Item.empty) name typ = {name; typ; annot}
+
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}, normalize]
 

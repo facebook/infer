@@ -1673,11 +1673,10 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
 let add_module_info_field (env : (_, _) Env.t) tenv =
   let typ = Typ.ErlangType ModuleInfo in
   Tenv.mk_struct tenv typ |> ignore ;
-  let field =
-    { Struct.name= Fieldname.make typ ErlangTypeName.module_info_field_name
-    ; typ= Typ.mk_struct typ
-    ; annot= Map.data env.module_info }
-  in
+  let name = Fieldname.make typ ErlangTypeName.module_info_field_name in
+  let field_typ = Typ.mk_struct typ in
+  let annot = Map.data env.module_info in
+  let field = Struct.mk_field name field_typ ~annot in
   Tenv.add_field tenv typ field
 
 

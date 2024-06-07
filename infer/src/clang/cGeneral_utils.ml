@@ -34,7 +34,8 @@ let add_no_duplicates_fields field_tuple l =
         let ret_list, ret_found = replace_field field_tuple rest found in
         if Fieldname.equal field old_field && Typ.equal typ old_typ then
           let annotations = append_no_duplicates_annotations annot old_annot in
-          ({Struct.name= field; typ; annot= annotations} :: ret_list, true)
+          let field = Struct.mk_field field typ ~annot:annotations in
+          (field :: ret_list, true)
         else (old_field_tuple :: ret_list, ret_found)
     | _, [] ->
         ([], found)

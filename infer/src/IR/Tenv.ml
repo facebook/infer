@@ -169,7 +169,8 @@ let get_fields_trans =
         Option.fold struct_opt ~init:acc ~f:(fun acc {Struct.fields} ->
             List.fold fields ~init:acc ~f:(fun acc {Struct.name= fieldname; typ; annot} ->
                 let fieldname = Fieldname.make name (Fieldname.get_field_name fieldname) in
-                Fields.add {name= fieldname; typ; annot} acc ) ) )
+                let field = Struct.mk_field fieldname typ ~annot in
+                Fields.add field acc ) ) )
     |> Fields.elements
 
 

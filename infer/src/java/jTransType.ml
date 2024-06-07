@@ -145,7 +145,7 @@ let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
     | Javalib.NotFinal ->
         real_annotations
   in
-  {Struct.name= field_name; typ= field_type; annot= annotation}
+  Struct.mk_field field_name field_type ~annot:annotation
 
 
 (** Collect static field if static is true, otherwise non-static ones. *)
@@ -161,7 +161,8 @@ let collect_interface_field cn inf l =
   let field_type = get_named_type (JBasics.fs_type fs) in
   let field_name = create_fieldname cn fs in
   let annotation = JAnnotation.translate_item inf.Javalib.if_annotations in
-  {Struct.name= field_name; typ= field_type; annot= annotation} :: l
+  let field = Struct.mk_field field_name field_type ~annot:annotation in
+  field :: l
 
 
 let collect_models_class_fields classpath_field_map cn cf fields =
@@ -179,9 +180,11 @@ let collect_models_class_fields classpath_field_map cn cf fields =
         field_type ;
       fields
   | None when Javalib.is_static_field (Javalib.ClassField cf) ->
-      ({Struct.name= field_name; typ= field_type; annot= annotation} :: static, nonstatic)
+      let field = Struct.mk_field field_name field_type ~annot:annotation in
+      (field :: static, nonstatic)
   | None ->
-      (static, {Struct.name= field_name; typ= field_type; annot= annotation} :: nonstatic)
+      let field = Struct.mk_field field_name field_type ~annot:annotation in
+      (static, field :: nonstatic)
 
 
 let add_model_fields classpath_fields cn =

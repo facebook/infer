@@ -117,8 +117,8 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
             in
             let se = Predicates.Estruct ([(f, se')], inst) in
             let replace_typ_of_f {Struct.name= f'; typ= t'; annot= a'} =
-              if Fieldname.equal f f' then {Struct.name= f; typ= res_t'; annot= a'}
-              else {Struct.name= f'; typ= t'; annot= a'}
+              if Fieldname.equal f f' then Struct.mk_field f res_t' ~annot:a'
+              else Struct.mk_field f' t' ~annot:a'
             in
             let fields' =
               List.sort ~compare:Struct.compare_field (List.map ~f:replace_typ_of_f fields)
@@ -233,7 +233,7 @@ let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part 
                   (List.map ~f:replace_fse fsel)
               in
               let replace_fta ({Struct.name= f1; annot= a1} as fta1) =
-                if Fieldname.equal f f1 then {Struct.name= f1; typ= res_typ'; annot= a1} else fta1
+                if Fieldname.equal f f1 then Struct.mk_field f1 res_typ' ~annot:a1 else fta1
               in
               let fields' =
                 List.sort ~compare:Struct.compare_field (List.map ~f:replace_fta fields)
@@ -251,8 +251,8 @@ let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part 
               List.sort ~compare:[%compare: Fieldname.t * Predicates.strexp] ((f, se') :: fsel)
             in
             let replace_fta {Struct.name= f'; typ= t'; annot= a'} =
-              if Fieldname.equal f' f then {Struct.name= f; typ= res_typ'; annot= a'}
-              else {Struct.name= f'; typ= t'; annot= a'}
+              if Fieldname.equal f' f then Struct.mk_field f res_typ' ~annot:a'
+              else Struct.mk_field f' t' ~annot:a'
             in
             let fields' =
               List.sort ~compare:Struct.compare_field (List.map ~f:replace_fta fields)

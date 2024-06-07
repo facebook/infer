@@ -12,6 +12,8 @@ module F = Format
 type field = {name: Fieldname.t; typ: Typ.t; annot: Annot.Item.t}
 [@@deriving compare, equal, hash, normalize]
 
+val mk_field : ?annot:Annot.Item.t -> Fieldname.t -> Typ.t -> field
+
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
 type hack_class_kind = Class | AbstractClass | Interface | Trait
