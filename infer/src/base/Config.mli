@@ -512,6 +512,8 @@ val lineage_seed : int
 
 val lineage_variant_width : int
 
+val list_categories : bool
+
 val list_checkers : bool
 
 val list_issue_types : bool

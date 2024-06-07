@@ -42,32 +42,31 @@ let string_of_severity = function
       "WARNING"
 
 
-let string_of_category category =
-  match category with
-  | Deadlock ->
-      "Deadlock"
+let string_of_category = function
   | Data_corruption ->
       "Data corruption"
   | Data_race ->
       "Data race"
+  | Deadlock ->
+      "Deadlock"
   | Incorrect_program_semantics ->
       "Incorrect program semantics"
-  | Memory_leak ->
-      "Memory leak"
   | Memory_error ->
       "Memory error"
+  | Memory_leak ->
+      "Memory leak"
   | No_category ->
       "No_category"
   | Null_pointer_dereference ->
       "Null pointer dereference"
-  | Resource_leak ->
-      "Resource leak"
-  | Runtime_exception ->
-      "Runtime exception"
   | Perf_regression ->
       "Perf regression"
   | Privacy_violation ->
       "Privacy violation"
+  | Resource_leak ->
+      "Resource leak"
+  | Runtime_exception ->
+      "Runtime exception"
   | Ungated_code ->
       "Ungated code"
 

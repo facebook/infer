@@ -167,6 +167,21 @@ let list_issue_types () =
   L.result "@]%!"
 
 
+let list_categories () =
+  L.result "@[<v>" ;
+  IssueType.all_of_category
+  |> List.iter ~f:(fun category ->
+         L.result "%s:" (IssueType.string_of_category category) ;
+         let is_first = ref true in
+         List.iter (Lazy.force all_issues) ~f:(fun {IssueType.unique_id; category= category'} ->
+             if IssueType.equal_category category category' then (
+               if not !is_first then L.result "," ;
+               is_first := false ;
+               L.result "%s" unique_id ) ) ;
+         L.result "@;" ) ;
+  L.result "@]%!"
+
+
 let pp_checker f checker =
   let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}
       [@warning "+missing-record-field-pattern"] ) =

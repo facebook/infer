@@ -124,11 +124,12 @@ let explore () =
 let help () =
   if
     Config.(
-      list_checkers || list_issue_types || Option.is_some write_website
+      list_checkers || list_categories || list_issue_types || Option.is_some write_website
       || (not (List.is_empty help_checker))
       || not (List.is_empty help_issue_type) )
   then (
     if Config.list_checkers then Help.list_checkers () ;
+    if Config.list_categories then Help.list_categories () ;
     if Config.list_issue_types then Help.list_issue_types () ;
     if not (List.is_empty Config.help_checker) then Help.show_checkers Config.help_checker ;
     if not (List.is_empty Config.help_issue_type) then Help.show_issue_types Config.help_issue_type ;

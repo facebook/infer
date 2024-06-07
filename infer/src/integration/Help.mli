@@ -10,6 +10,9 @@ open! IStd
 val list_checkers : unit -> unit
 (** print the list of all checkers *)
 
+val list_categories : unit -> unit
+(** print the list of all known issue categories *)
+
 val list_issue_types : unit -> unit
 (** print the list of all known issue types *)
 

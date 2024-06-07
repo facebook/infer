@@ -1134,6 +1134,11 @@ OPTIONS
            set.
            See also infer-analyze(1).
 
+       --list-categories
+           Activates: Show the list of all categories of issue types that
+           infer might report. (Conversely: --no-list-categories)
+           See also infer-help(1).
+
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
            --no-list-checkers)

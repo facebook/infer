@@ -2095,6 +2095,12 @@ and _linters =
     "[DOES NOTHING] this used to de-activate ASTLanguage (AL) linters"
 
 
+and list_categories =
+  CLOpt.mk_bool ~long:"list-categories"
+    ~in_help:InferCommand.[(Help, manual_generic)]
+    "Show the list of all categories of issue types that infer might report."
+
+
 and list_checkers =
   CLOpt.mk_bool ~long:"list-checkers"
     ~in_help:InferCommand.[(Help, manual_generic)]
@@ -4325,6 +4331,8 @@ and lineage_prevent_cycles = !lineage_prevent_cycles
 and lineage_seed = !lineage_seed
 
 and lineage_variant_width = !lineage_variant_width
+
+and list_categories = !list_categories
 
 and list_checkers = !list_checkers
 

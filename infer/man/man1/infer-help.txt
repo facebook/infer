@@ -45,6 +45,10 @@ OPTIONS
            NULL_DEREFERENCE. To see the list of all issue types, see
            --list-issue-types.
 
+       --list-categories
+           Activates: Show the list of all categories of issue types that
+           infer might report. (Conversely: --no-list-categories)
+
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
            --no-list-checkers)
