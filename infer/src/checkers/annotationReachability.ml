@@ -9,10 +9,15 @@ open! IStd
 module F = Format
 module L = Logging
 module MF = MarkupFormatter
-
-let dummy_constructor_annot = "__infer_is_constructor"
-
 module Domain = AnnotationReachabilityDomain
+
+let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}
+
+let dummy_constructor_annot = annotation_of_str "__infer_is_constructor"
+
+let is_dummy_constructor annot =
+  String.equal annot.Annot.class_name dummy_constructor_annot.class_name
+
 
 let is_modeled_expensive tenv = function
   | Procname.Java proc_name_java as proc_name ->
@@ -79,10 +84,8 @@ let check_modeled_annotation models annot pname =
 
 let method_has_annot annot models tenv pname =
   let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
-  if
-    Config.annotation_reachability_no_allocation
-    && Annotations.annot_ends_with annot dummy_constructor_annot
-  then is_allocator tenv pname
+  if Config.annotation_reachability_no_allocation && is_dummy_constructor annot then
+    is_allocator tenv pname
   else if
     Config.annotation_reachability_expensive
     && Annotations.annot_ends_with annot Annotations.expensive
@@ -112,11 +115,8 @@ let update_trace loc trace =
 
 let string_of_pname = Procname.to_simplified_string ~withclass:true
 
-let annotation_of_str annot_str = {Annot.class_name= annot_str; parameters= []}
-
 let get_issue_type ~src ~snk =
-  if String.equal snk.Annot.class_name dummy_constructor_annot then
-    IssueType.checkers_allocates_memory
+  if is_dummy_constructor snk then IssueType.checkers_allocates_memory
   else if
     Config.annotation_reachability_expensive
     && String.equal src.Annot.class_name Annotations.performance_critical
@@ -163,7 +163,7 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
   let snk_annot_str = snk.Annot.class_name in
   let src_annot_str = src.Annot.class_name in
   let description =
-    if String.equal snk_annot_str dummy_constructor_annot then
+    if is_dummy_constructor snk then
       let constr_str = string_of_pname snk_pname in
       Format.asprintf "Method %a annotated with %a allocates %a via %a" MF.pp_monospaced
         (Procname.to_simplified_string src_pname)
@@ -287,18 +287,16 @@ end
 module NoAllocationAnnotationSpec = struct
   let no_allocation_annot = annotation_of_str Annotations.no_allocation
 
-  let constructor_annot = annotation_of_str dummy_constructor_annot
-
   let spec =
     let open AnnotationSpec in
     { description= "NoAllocationAnnotationSpec"
     ; sink_predicate= (fun tenv pname -> is_allocator tenv pname)
     ; sanitizer_predicate=
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
-    ; sink_annotation= constructor_annot
+    ; sink_annotation= dummy_constructor_annot
     ; report=
         (fun proc_data annot_map ->
-          check_srcs_and_find_snk proc_data [no_allocation_annot] constructor_annot annot_map
+          check_srcs_and_find_snk proc_data [no_allocation_annot] dummy_constructor_annot annot_map
             String.Map.empty ) }
 end
 
