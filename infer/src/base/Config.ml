@@ -2012,7 +2012,7 @@ and lineage_dedup =
 
 
 and lineage_field_depth =
-  CLOpt.mk_int ~deprecated:["-simple-lineage-field-depth"] ~long:"lineage-field-depth" ~default:0
+  CLOpt.mk_int ~deprecated:["-simple-lineage-field-depth"] ~long:"lineage-field-depth" ~default:5
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "[EXPERIMENTAL] Maximal field depth sensitivity for lineage analysis. 0 will make the analysis \
      field insensitive."
@@ -2025,11 +2025,11 @@ and lineage_field_max_cfg_size =
 
 
 and lineage_field_width =
-  CLOpt.mk_int_opt ~deprecated:["-simple-lineage-field-width"] ~long:"lineage-field-width"
+  CLOpt.mk_int ~deprecated:["-simple-lineage-field-width"] ~long:"lineage-field-width" ~default:5
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "[EXPERIMENTAL] Maximal width of structures for field sensitive lineage analysis. Structure \
      that have a higher number of fields will be smashed into a single element. 0 will make the \
-     analysis field insensitive. If not set, field width will be unlimited."
+     analysis field insensitive."
 
 
 and lineage_include_builtins =
@@ -2066,9 +2066,9 @@ and lineage_max_cfg_size =
 and lineage_prevent_cycles =
   CLOpt.mk_bool
     ~deprecated:["-simple-lineage-prevent-cycles"]
-    ~long:"lineage-prevent-cycles" ~default:false
+    ~long:"lineage-prevent-cycles" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
-    "[EXPERIMENTAL] If set, Lineage will stop distinguishing the fields of a variable when it \
+    "[EXPERIMENTAL] If given, Lineage will not stop traversing the fields of a variable when it \
      notices recursive types (that is, a sub-field having the same type as one of its \
      \"ancestors\")."
 

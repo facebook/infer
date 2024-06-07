@@ -14,7 +14,7 @@ module ShapeConfig = struct
 
   let field_depth = Config.lineage_field_depth
 
-  let field_width = Option.value ~default:Int.max_value Config.lineage_field_width
+  let field_width = Config.lineage_field_width
 
   let variant_width = Config.lineage_variant_width
 

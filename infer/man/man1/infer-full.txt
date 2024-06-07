@@ -1066,7 +1066,7 @@ OPTIONS
            [EXPERIMENTAL] Maximal width of structures for field sensitive
            lineage analysis. Structure that have a higher number of fields
            will be smashed into a single element. 0 will make the analysis
-           field insensitive. If not set, field width will be unlimited.
+           field insensitive.
            See also infer-analyze(1).
 
        --lineage-include-builtins
@@ -1097,11 +1097,11 @@ OPTIONS
            (Conversely: --no-lineage-only)
            See also infer-analyze(1).
 
-       --lineage-prevent-cycles
-           Activates: [EXPERIMENTAL] If set, Lineage will stop distinguishing
-           the fields of a variable when it notices recursive types (that is,
-           a sub-field having the same type as one of its "ancestors").
-           (Conversely: --no-lineage-prevent-cycles)
+       --no-lineage-prevent-cycles
+           Deactivates: [EXPERIMENTAL] If given, Lineage will not stop
+           traversing the fields of a variable when it notices recursive
+           types (that is, a sub-field having the same type as one of its
+           "ancestors"). (Conversely: --lineage-prevent-cycles)
            See also infer-analyze(1).
 
        --lineage-sanitizers +string
@@ -2892,9 +2892,6 @@ INTERNAL OPTIONS
 
        --lineage-field-max-cfg-size-reset
            Cancel the effect of --lineage-field-max-cfg-size.
-
-       --lineage-field-width-reset
-           Cancel the effect of --lineage-field-width.
 
        --lineage-limit int
            [EXPERIMENTAL; UNSTABLE API] Lineage pathfinding internal limit.

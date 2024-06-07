@@ -496,7 +496,7 @@ val lineage_field_depth : int
 
 val lineage_field_max_cfg_size : int option
 
-val lineage_field_width : int option
+val lineage_field_width : int
 
 val lineage_include_builtins : bool
 
