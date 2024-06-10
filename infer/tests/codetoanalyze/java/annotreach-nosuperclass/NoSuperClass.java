@@ -62,3 +62,24 @@ class NoSuperClass {
   @UserDefinedSource
   void sourceAndSinkBad() {}
 }
+
+class Minimize {
+  @UserDefinedSink
+  void finalSink() {}
+
+  @UserDefinedSink
+  void sinkCallingSink() {
+    finalSink();
+  }
+
+  @UserDefinedSource
+  void sourceCallingSinkBad() {
+    sinkCallingSink();
+  }
+
+  // This is not reported due to minimization
+  @UserDefinedSource
+  void sourceCallingSourceOk() {
+    sourceCallingSinkBad();
+  }
+}

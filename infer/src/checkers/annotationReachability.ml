@@ -190,6 +190,11 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     let is_end_of_stack proc_name = method_overrides_annot snk models tenv proc_name in
     if is_end_of_stack callee_pname then
       report_src_to_snk_path analysis_data ~src ~snk models fst_call_loc trace callee_pname call_loc
+    else if
+      Config.annotation_reachability_minimize_sources
+      && method_overrides_annot src models tenv callee_pname
+    then (* Found a source in the middle, this path is not minimal *)
+      ()
     else
       let callee_def_loc =
         Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy

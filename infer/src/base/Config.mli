@@ -138,6 +138,8 @@ val annotation_reachability_custom_pairs : Yojson.Safe.t
 
 val annotation_reachability_expensive : bool
 
+val annotation_reachability_minimize_sources : bool
+
 val annotation_reachability_no_allocation : bool
 
 val annotation_reachability_report_source_and_sink : bool

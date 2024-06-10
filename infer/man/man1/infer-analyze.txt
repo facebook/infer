@@ -631,6 +631,12 @@ JAVA OPTIONS
            annotation reachability checker) (Conversely:
            --no-annotation-reachability-expensive)
 
+       --annotation-reachability-minimize-sources
+           Activates: do not report paths where a suffix is also a source to
+           sink path. For example if there is a source1() -> source2() ->
+           sink() path then only source2() -> sink() will be reported.
+           (Conversely: --no-annotation-reachability-minimize-sources)
+
        --annotation-reachability-no-allocation
            Activates: check if methods annotated with @NoAllocation can
            allocate (with annotation reachability checker) (Conversely:

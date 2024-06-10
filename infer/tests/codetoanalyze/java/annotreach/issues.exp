@@ -4,6 +4,8 @@ codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checker
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.source12Bad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.source21Bad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.source22Bad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.sourceCallsSourceBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.sourceCallsSinkThatCallsSinkBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.sourceTransitiveCallBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations.sourceDefinedInConfigBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
 codetoanalyze/java/annotreach/CustomAnnotations.java, codetoanalyze.java.checkers.CustomAnnotations$Derived.sourceBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []

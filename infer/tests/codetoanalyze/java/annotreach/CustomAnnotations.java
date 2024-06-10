@@ -54,11 +54,28 @@ class CustomAnnotations {
     sink2();
   }
 
+  // This is reported even though it is a superset of an other trace
+  @UserDefinedSource2
+  void sourceCallsSourceBad() {
+    source22Bad();
+  }
+
   @UserDefinedSink1
   void sink1() {}
 
   @UserDefinedSink2
   void sink2() {}
+
+  @UserDefinedSink1
+  void sinkCallsSink() {
+    sink1();
+  }
+
+  // This is only reported once even though this method ends up calling two sinks
+  @UserDefinedSource1
+  void sourceCallsSinkThatCallsSinkBad() {
+    sinkCallsSink();
+  }
 
   @UserDefinedSource1
   void source1Ok() {

@@ -99,6 +99,13 @@ OPTIONS
            --no-annotation-reachability-expensive)
            See also infer-analyze(1).
 
+       --annotation-reachability-minimize-sources
+           Activates: do not report paths where a suffix is also a source to
+           sink path. For example if there is a source1() -> source2() ->
+           sink() path then only source2() -> sink() will be reported.
+           (Conversely: --no-annotation-reachability-minimize-sources)
+           See also infer-analyze(1).
+
        --annotation-reachability-no-allocation
            Activates: check if methods annotated with @NoAllocation can
            allocate (with annotation reachability checker) (Conversely:
