@@ -69,7 +69,7 @@ let markdown_one_issue f (issue_type : IssueType.t) =
           (IssueType.string_of_category category)
           (abs_url_of_category category)
   in
-  F.fprintf f "%aReported as \"%s\" by [%s](/%s/next/%s).@\n@\n" pp_category_link
+  F.fprintf f "*%aReported as \"%s\" by [%s](/%s/next/%s).*@\n@\n" pp_category_link
     issue_type.category issue_type.hum checker_config.id docs_dir
     (basename_of_checker checker_config) ;
   match issue_type.user_documentation with

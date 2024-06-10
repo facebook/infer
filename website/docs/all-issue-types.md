@@ -6,7 +6,7 @@ Here is an overview of the issue types currently reported by Infer.
 
 ## ARBITRARY_CODE_EXECUTION_UNDER_LOCK
 
-Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).
+*Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).*
 
 A call that may execute arbitrary code (such as registered, or chained, callbacks) is made while holding a lock.
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
@@ -36,7 +36,7 @@ Example:
 
 ## BAD_ARG
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).*
 
 Bad arg in Erlang: Reports an error when the type of an argument is wrong or the argument is badly formed. Corresponds to the `badarg` error in the Erlang runtime.
 
@@ -55,12 +55,12 @@ g() ->
 
 ## BAD_ARG_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_ARG](#bad_arg). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_GENERATOR
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Generator" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Generator" by [pulse](/docs/next/checker-pulse).*
 
 Bad generator in Erlang: Reports an error when a wrong type is used in a generator. Corresponds to the `bad_generator` error in the Erlang runtime.
 
@@ -73,12 +73,12 @@ list_instead_of_map() ->
 
 ## BAD_GENERATOR_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Generator Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Generator Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_GENERATOR](#bad_generator). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_KEY
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).*
 
 Bad key in Erlang: Reports an error when trying to access or update a non-existing key in a map. Corresponds to the `{badkey,K}` error in the Erlang runtime.
 
@@ -94,12 +94,12 @@ Therefore, if a map is non-empty and we try to access a key other than the one w
 
 ## BAD_KEY_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Key Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Key Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_KEY](#bad_key). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_MAP
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).*
 
 Bad map in Erlang: Reports an error when trying to access or update a key for a term that is not a map. Corresponds to the `{badmap,...}` error in the Erlang runtime.
 
@@ -112,12 +112,12 @@ f() ->
 
 ## BAD_MAP_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_MAP](#bad_map). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_RECORD
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).*
 
 Bad record in Erlang: Reports an error when trying to access or update a record with the wrong name. Corresponds to the `{badrecord,Name}` error in the Erlang runtime.
 
@@ -133,12 +133,12 @@ f() ->
 
 ## BAD_RECORD_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_RECORD](#bad_record). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_RETURN
 
-Reported as "Bad Return" by [pulse](/docs/next/checker-pulse).
+*Reported as "Bad Return" by [pulse](/docs/next/checker-pulse).*
 
 Bad return in Erlang: The dynamic type of a returned value disagrees with the static type given in the spec.
 
@@ -152,22 +152,22 @@ Note that this will *not* lead to a runtime error when running the Erlang progra
 
 ## BAD_RETURN_LATENT
 
-Reported as "Bad Return Latent" by [pulse](/docs/next/checker-pulse).
+*Reported as "Bad Return Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [BAD_RETURN](#bad_return). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BIABDUCTION_MEMORY_LEAK
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).*
 
 See [MEMORY_LEAK](#memory_leak).
 ## BIABDUCTION_RETAIN_CYCLE
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).*
 
 See [RETAIN_CYCLE](#retain_cycle).
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
 
-Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).
+*Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).*
 
 This error type is reported only in Objective-C/Objective-C++. It happens when a method has a block as a parameter,
 and the block is executed in the method's body without checking it for `nil` first. If a `nil` block is passed to
@@ -192,7 +192,7 @@ system), that the argument won't be `nil`. This will silence the warning.
 
 ## BUFFER_OVERRUN_L1
 
-Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 This is reported when outside of buffer bound is accessed.  It can corrupt memory and may introduce
 security issues in C/C++.
@@ -225,37 +225,37 @@ report.  The higher the number, the more likely it is to be a false positive.
 
 ## BUFFER_OVERRUN_L2
 
-Reported as "Buffer Overrun L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L3
 
-Reported as "Buffer Overrun L3" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun L3" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L4
 
-Reported as "Buffer Overrun L4" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun L4" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L5
 
-Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_S2
 
-Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_U5
 
-Reported as "Buffer Overrun U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Buffer Overrun U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## CAPTURED_STRONG_SELF
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Captured strongSelf" by [self-in-block](/docs/next/checker-self-in-block).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Captured strongSelf" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This check is about when a strong pointer to `self` is captured in a block.
 This could lead to retain cycles or unexpected behavior since to avoid retain
@@ -342,7 +342,7 @@ Another solution could be to copy the instance variable that one needs to access
 
 ## CHECKERS_ALLOCATES_MEMORY
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Allocates Memory" by [annotation-reachability](/docs/next/checker-annotation-reachability).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Allocates Memory" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with `@NoAllocation` transitively calls `new`.
 
@@ -359,13 +359,13 @@ class C implements I {
 
 ## CHECKERS_ANNOTATION_REACHABILITY_ERROR
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/next/checker-annotation-reachability).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with an annotation `@A` transitively calls a method annotated `@B` where the combination of annotations is forbidden (for example, `@UiThread` calling `@WorkerThread`).
 
 ## CHECKERS_CALLS_EXPENSIVE_METHOD
 
-Reported as "Expensive Method Called" by [annotation-reachability](/docs/next/checker-annotation-reachability).
+*Reported as "Expensive Method Called" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with `@PerformanceCritical` transitively calls a method annotated `@Expensive`.
 
@@ -385,7 +385,7 @@ class C {
 
 ## CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED
 
-Reported as "Expensive Overrides Unannotated" by [annotation-reachability](/docs/next/checker-annotation-reachability).
+*Reported as "Expensive Overrides Unannotated" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with `@Expensive` overrides an un-annotated method.
 
@@ -404,7 +404,7 @@ class A implements I {
 
 ## CHECKERS_FRAGMENT_RETAINS_VIEW
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Fragment Retains View" by [fragment-retains-view](/docs/next/checker-fragment-retains-view).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Fragment Retains View" by [fragment-retains-view](/docs/next/checker-fragment-retains-view).*
 
 This error type is Android-specific. It fires when a `Fragment` type fails to
 nullify one or more of its declared `View` fields in `onDestroyView`. In
@@ -418,7 +418,7 @@ Action: Nullify the `View` in question in `onDestroyView`.
 
 ## CHECKERS_PRINTF_ARGS
 
-Reported as "Printf Args" by [printf-args](/docs/next/checker-printf-args).
+*Reported as "Printf Args" by [printf-args](/docs/next/checker-printf-args).*
 
 This error is reported when the argument types to a `printf` method do not match the format string.
 
@@ -432,7 +432,7 @@ Action: fix the mismatch between format string and argument types.
 
 ## CONFIG_IMPACT
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).*
 
 Infer reports this issue when an *expensive* function is called without a *config check*.  The
 *config* is usually a boolean value that enables experimental new features and it is defined per
@@ -490,14 +490,14 @@ cost.  If you are not sure, gate it with a new or pre-existing config.
 
 ## CONFIG_IMPACT_STRICT
 
-Category: [Ungated code](/docs/next/all-categories#ungated-code). Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+*Category: [Ungated code](/docs/next/all-categories#ungated-code). Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).*
 
 This is similar to [`CONFIG_IMPACT` issue](#config_impact) but the analysis reports **all** ungated
 codes irrespective of whether they are expensive or not.
 
 ## CONFIG_USAGE
 
-Reported as "Config Usage" by [pulse](/docs/next/checker-pulse).
+*Reported as "Config Usage" by [pulse](/docs/next/checker-pulse).*
 
 Infer reports this issue when a *config* value is used as branch condition in a function.  The
 *config* is usually a boolean value that enables experimental new features and it is defined per
@@ -519,7 +519,7 @@ reporting actual problem.
 
 ## CONSTANT_ADDRESS_DEREFERENCE
 
-Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
+*Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).*
 
 This is reported when an address at an absolute location, e.g. 1234,
 is dereferenced. It is a more general version of the
@@ -532,22 +532,22 @@ For more information see the [`NULLPTR_DEREFERENCE`](#nullptr_dereference) issue
 
 ## CONSTANT_ADDRESS_DEREFERENCE_LATENT
 
-Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).
+*Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## CREATE_INTENT_FROM_URI
 
-Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).
+*Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).*
 
 Create an intent/start a component using a (possibly user-controlled) URI. may or may not be an issue depending on where the URI comes from.
 ## CROSS_SITE_SCRIPTING
 
-Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).
+*Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data flows into HTML; XSS risk.
 ## CXX_REF_CAPTURED_IN_BLOCK
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This check flags when a C++ reference is captured in an escaping block.
 This means that the block will be leaving the current scope, i.e. it is
@@ -571,22 +571,22 @@ dereferences it later.
 
 ## DANGLING_POINTER_DEREFERENCE
 
-Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
+*Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).*
 
 
 ## DATALOG_FACT
 
-Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).
+*Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).*
 
 Datalog fact used as input for a datalog solver.
 ## DATA_FLOW_TO_SINK
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).*
 
 A flow of data was detected to a sink.
 ## DEADLOCK
 
-Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Deadlock" by [starvation](/docs/next/checker-starvation).
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Deadlock" by [starvation](/docs/next/checker-starvation).*
 
 This error is currently reported in Java. A deadlock occurs when two distinct
 threads try to acquire two locks in reverse orders. The following code
@@ -651,19 +651,19 @@ To suppress reports of deadlocks in a method `m()` use the
 
 ## DEAD_STORE
 
-Category: [Logic error](/docs/next/all-categories#logic-error). Reported as "Dead Store" by [liveness](/docs/next/checker-liveness).
+*Category: [Logic error](/docs/next/all-categories#logic-error). Reported as "Dead Store" by [liveness](/docs/next/checker-liveness).*
 
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
 
 ## DIVIDE_BY_ZERO
 
-Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).
+*Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).*
 
 
 ## EMPTY_VECTOR_ACCESS
 
-Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).
+*Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).*
 
 This error type is reported only in C++, in versions >= C++11.
 
@@ -680,7 +680,7 @@ int foo(){
 
 ## EXECUTION_TIME_COMPLEXITY_INCREASE
 
-Reported as "Execution Time Complexity Increase" by [cost](/docs/next/checker-cost).
+*Reported as "Execution Time Complexity Increase" by [cost](/docs/next/checker-cost).*
 
 Infer reports this issue when the execution time complexity of a
 program increases in degree: e.g. from constant to linear or from
@@ -692,7 +692,7 @@ two runs of infer on a file. Check out examples in [here](/docs/next/checker-cos
 
 ## EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD
 
-Reported as "Execution Time Complexity Increase Ui Thread" by [cost](/docs/next/checker-cost).
+*Reported as "Execution Time Complexity Increase Ui Thread" by [cost](/docs/next/checker-cost).*
 
 Infer reports this issue when the execution time complexity of the procedure increases in degree **and** the procedure runs on the UI (main) thread.
 
@@ -708,7 +708,7 @@ Infer considers a method as running on the UI thread whenever:
 
 ## EXECUTION_TIME_UNREACHABLE_AT_EXIT
 
-Reported as "Execution Time Unreachable At Exit" by [cost](/docs/next/checker-cost).
+*Reported as "Execution Time Unreachable At Exit" by [cost](/docs/next/checker-cost).*
 
 This issue type indicates that the program's execution doesn't reach
 the exit node (where our analysis computes the final cost of the
@@ -728,7 +728,7 @@ void infeasible_path_unreachable() {
 
 ## EXPENSIVE_EXECUTION_TIME
 
-Reported as "Expensive Execution Time" by [cost](/docs/next/checker-cost).
+*Reported as "Expensive Execution Time" by [cost](/docs/next/checker-cost).*
 
 \[EXPERIMENTAL\] This warning indicates that the procedure has non-constant and non-top execution cost. By default, this issue type is disabled. To enable it, set `enabled=true` in [costKind.ml](https://github.com/facebook/infer/blob/main/infer/src/base/costKind.ml#L55).
 
@@ -745,7 +745,7 @@ int sum_linear(ArrayList<Integer> list){
 
 ## EXPENSIVE_LOOP_INVARIANT_CALL
 
-Reported as "Expensive Loop Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).
+*Reported as "Expensive Loop Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).*
 
 We report this issue type when a function is [loop-invariant](/docs/next/all-issue-types#invariant_call) and also expensive (i.e. at least has linear complexity as determined by the [cost](/docs/next/checker-cost) analysis).
 
@@ -772,12 +772,12 @@ void symbolic_expensive_hoist(int size) {
 
 ## EXPOSED_INSECURE_INTENT_HANDLING
 
-Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).
+*Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).*
 
 Undocumented.
 ## GUARDEDBY_VIOLATION
 
-Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "GuardedBy Violation" by [racerd](/docs/next/checker-racerd).
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "GuardedBy Violation" by [racerd](/docs/next/checker-racerd).*
 
 A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
 
@@ -798,7 +798,7 @@ Action: Protect the offending access by acquiring the lock indicated by the `@Gu
 
 ## IMPURE_FUNCTION
 
-Reported as "Impure Function" by [impurity](/docs/next/checker-impurity).
+*Reported as "Impure Function" by [impurity](/docs/next/checker-impurity).*
 
 This issue type indicates impure functions. For instance, below functions would be marked as impure:
 ```java
@@ -813,7 +813,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 
 ## INEFFICIENT_KEYSET_ITERATOR
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/next/checker-inefficient-keyset-iterator).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/next/checker-inefficient-keyset-iterator).*
 
 This issue is raised when
 - iterating over a HashMap with `keySet()` iterator
@@ -846,42 +846,42 @@ void efficient_loop_ok(HashMap<String, Integer> testMap) {
 
 ## INFERBO_ALLOC_IS_BIG
 
-Reported as "Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 `malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or make sure it is really needed.
 ## INFERBO_ALLOC_IS_NEGATIVE
 
-Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 `malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_IS_ZERO
 
-Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 `malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_MAY_BE_BIG
 
-Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 `malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { malloc(n); }`.
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
-Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 `malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`.
 ## INFINITE_EXECUTION_TIME
 
-Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).
+*Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).*
 
 This warning indicates that Infer was not able to determine a static
 upper bound on the execution cost of the procedure. By default, this
@@ -927,12 +927,12 @@ void call_top_cost_FP() {
 
 ## INSECURE_INTENT_HANDLING
 
-Reported as "Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).
+*Reported as "Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).*
 
 Undocumented.
 ## INTEGER_OVERFLOW_L1
 
-Reported as "Integer Overflow L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Integer Overflow L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 This is reported when integer overflow occurred by integer operations such as addition, subtraction,
 and multiplication. For example, `int n = INT_MAX; int m = n + 3;` generates a INTEGER_OVERFLOW_L1
@@ -955,22 +955,22 @@ report. The higher the number, the more likely it is to be a false positive.
 
 ## INTEGER_OVERFLOW_L2
 
-Reported as "Integer Overflow L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Integer Overflow L2" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_L5
 
-Reported as "Integer Overflow L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Integer Overflow L5" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_U5
 
-Reported as "Integer Overflow U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+*Reported as "Integer Overflow U5" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTERFACE_NOT_THREAD_SAFE
 
-Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Interface Not Thread Safe" by [racerd](/docs/next/checker-racerd).
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Interface Not Thread Safe" by [racerd](/docs/next/checker-racerd).*
 
 This error indicates that you have invoked an interface method not annotated
 with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is
@@ -981,14 +981,14 @@ are needed, see the detailed explanation
 
 ## INVALID_SIL
 
-Reported as "Invalid Sil" by [sil-validation](/docs/next/checker-sil-validation).
+*Reported as "Invalid Sil" by [sil-validation](/docs/next/checker-sil-validation).*
 
 The SIL instruction does not conform to the expected subset of instructions
 expected for the front-end of the language for the analyzed code.
 
 ## INVARIANT_CALL
 
-Reported as "Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).
+*Reported as "Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).*
 
 We report this issue type when a function call is loop-invariant and hoistable, i.e.
 - the function has no side side effects (pure)
@@ -1012,22 +1012,22 @@ void invariant_hoist(int size) {
 
 ## IPC_ON_UI_THREAD
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).*
 
 A blocking `Binder` IPC call occurs on the UI thread.
 ## JAVASCRIPT_INJECTION
 
-Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).
+*Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data flows into JavaScript.
 ## LAB_RESOURCE_LEAK
 
-Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).
+*Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).*
 
 Toy issue.
 ## LOCKLESS_VIOLATION
 
-Reported as "Lockless Violation" by [starvation](/docs/next/checker-starvation).
+*Reported as "Lockless Violation" by [starvation](/docs/next/checker-starvation).*
 
 A method implements an interface signature annotated with `@Lockless` but which transitively acquires a lock.
 
@@ -1050,7 +1050,7 @@ class C implements I {
 
 ## LOCK_CONSISTENCY_VIOLATION
 
-Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Lock Consistency Violation" by [racerd](/docs/next/checker-racerd).
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Lock Consistency Violation" by [racerd](/docs/next/checker-racerd).*
 
 This is an error reported on C++ and Objective C classes whenever:
 
@@ -1074,12 +1074,12 @@ container (an array, a vector, etc).
 
 ## LOGGING_PRIVATE_DATA
 
-Reported as "Logging Private Data" by [quandary](/docs/next/checker-quandary).
+*Reported as "Logging Private Data" by [quandary](/docs/next/checker-quandary).*
 
 Undocumented.
 ## MEMORY_LEAK_C
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).*
 
 ### Memory leak in C
 
@@ -1108,12 +1108,12 @@ objects from Core Foundation or Core Graphics don't get released.
 
 ## MEMORY_LEAK_CPP
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).*
 
 See [MEMORY_LEAK_C](#memory_leak_c)
 ## MISSING_REQUIRED_PROP
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).*
 
 This issues is reported when a required `@Prop` is missing.
 
@@ -1179,7 +1179,7 @@ class MyComponentSpec {
 ```
 ## MIXED_SELF_WEAKSELF
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Mixed Self WeakSelf" by [self-in-block](/docs/next/checker-self-in-block).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Mixed Self WeakSelf" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This check reports an issue when an Objective-C block captures both `self` and `weakSelf`, a weak pointer to `self`.
 Possibly the developer meant to capture only `weakSelf` to avoid a retain cycle, but made a typo and used `self`
@@ -1206,7 +1206,7 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 
 ## MODIFIES_IMMUTABLE
 
-Reported as "Modifies Immutable" by [impurity](/docs/next/checker-impurity).
+*Reported as "Modifies Immutable" by [impurity](/docs/next/checker-impurity).*
 
 This issue type indicates modifications to fields marked as @Immutable. For instance, below function `mutateArray` would be marked as modifying immutable field `testArray`:
 ```java
@@ -1224,7 +1224,7 @@ This issue type indicates modifications to fields marked as @Immutable. For inst
 
 ## MULTIPLE_WEAKSELF
 
-Reported as "Multiple WeakSelf Use" by [self-in-block](/docs/next/checker-self-in-block).
+*Reported as "Multiple WeakSelf Use" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This check reports when an Objective-C block uses `weakSelf` (a weak pointer to `self`) more than once.
 This could lead to unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could be nil
@@ -1263,7 +1263,7 @@ a local strong pointer that has been assigned `weakSelf`.
 
 ## MUTUAL_RECURSION_CYCLE
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Mutual Recursion Cycle" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Mutual Recursion Cycle" by [pulse](/docs/next/checker-pulse).*
 
 A recursive call or mutually recursive call has been detected. This does *not* mean that the program won't terminate, just that the code is recursive. You should double-check if the recursion is intended and if it can lead to non-termination or a stack overflow.
 
@@ -1282,7 +1282,7 @@ int factorial(int x) {
 
 ## NIL_BLOCK_CALL
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).*
 
 This check reports when one tries to call an Objective-C block that is `nil`.
 This causes a crash.
@@ -1305,12 +1305,12 @@ Adding a check for `nil` before calling the block, or making sure never to call 
 
 ## NIL_BLOCK_CALL_LATENT
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NIL_BLOCK_CALL](#nil_block_call). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NIL_INSERTION_INTO_COLLECTION
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).*
 
 This checks reports when `nil` is passed to collections in Objective-C such as arrays and dictionaries. This causes a crash.
 
@@ -1355,12 +1355,12 @@ that the object passed will never be `nil`, or adding a check for `nil` before c
 
 ## NIL_INSERTION_INTO_COLLECTION_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NIL_MESSAGING_TO_NON_POD
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).*
 
 In Objective-C, calling a method on `nil` (or in Objective-C terms, sending a message to `nil`) does not crash,
 it simply returns a falsy value (nil/0/false). However, sending a message that returns
@@ -1389,12 +1389,12 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 
 ## NIL_MESSAGING_TO_NON_POD_LATENT
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Nil Messaging To Non Pod Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Nil Messaging To Non Pod Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NIL_MESSAGING_TO_NON_POD](#nil_messaging_to_non_pod). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCHING_BRANCH_IN_TRY
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).*
 
 No matching branch is found when evaluating the `of` section of a `try` expression. Corresponds to the `{try_clause,V}` error in the Erlang runtime.
 
@@ -1410,12 +1410,12 @@ tail(X) ->
 
 ## NO_MATCHING_BRANCH_IN_TRY_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Branch In Try Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Branch In Try Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_MATCHING_BRANCH_IN_TRY](#no_matching_branch_in_try). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCHING_CASE_CLAUSE
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).*
 
 No matching case clause in Erlang: Reports an error when none of the clauses of a `case` match the expression. Corresponds to the `{case_clause,V}` error in the Erlang runtime.
 
@@ -1431,12 +1431,12 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 ## NO_MATCHING_CASE_CLAUSE_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCHING_ELSE_CLAUSE
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Else Clause" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Else Clause" by [pulse](/docs/next/checker-pulse).*
 
 No matching else clause in Erlang: Reports an error when none of the clauses of an `else` match the short-circuit result from `maybe` body. Corresponds to the `{else_clause,V}` error in the Erlang runtime.
 
@@ -1454,12 +1454,12 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 ## NO_MATCHING_ELSE_CLAUSE_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Else Clause Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Else Clause Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_MATCHING_ELSE_CLAUSE](#no_matching_else_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCHING_FUNCTION_CLAUSE
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).*
 
 No matching function clause in Erlang: Reports an error when none of the clauses of a function match the arguments of a call. Corresponds to the `function_clause` error in the Erlang runtime.
 
@@ -1472,12 +1472,12 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 ## NO_MATCHING_FUNCTION_CLAUSE_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Function Clause Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Matching Function Clause Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_MATCHING_FUNCTION_CLAUSE](#no_matching_function_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCH_OF_RHS
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).*
 
 No match of right hand side value in Erlang: Reports an error when the right hand side value of a `match` expression does not match the pattern on the left hand side. Corresponds to the `{badmatch,V}` error in the Erlang runtime.
 
@@ -1485,12 +1485,12 @@ For example, `[H|T] = []` gives the error because the left hand side pattern req
 
 ## NO_MATCH_OF_RHS_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Match Of Rhs Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No Match Of Rhs Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_MATCH_OF_RHS](#no_match_of_rhs). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_TRUE_BRANCH_IN_IF
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).*
 
 No true branch when evaluating an if expression in Erlang: Reports an error when none of the branches of an `if` expression evaluate to true. Corresponds to the `if_clause` error in the Erlang runtime.
 
@@ -1505,12 +1505,12 @@ sign(X) ->
 
 ## NO_TRUE_BRANCH_IN_IF_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULLPTR_DEREFERENCE
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).*
 
 Infer reports null dereference bugs in Java, C, C++, and Objective-C
 when it is possible that the null pointer is dereferenced, leading to
@@ -1611,7 +1611,7 @@ also have a dedicated issue type for this case:
 
 ## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).*
 
 Infer reports null dereference bugs in Java, C, C++, and Objective-C
 when it is possible that the null pointer is dereferenced, leading to
@@ -1712,17 +1712,17 @@ also have a dedicated issue type for this case:
 
 ## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](#nullptr_dereference_in_nullsafe_class). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULLPTR_DEREFERENCE_LATENT
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NULLPTR_DEREFERENCE](#nullptr_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULL_ARGUMENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Null Argument" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Null Argument" by [pulse](/docs/next/checker-pulse).*
 
 ```objc
 This issue type indicates `nil` being passed as argument where a non-nil value expected.
@@ -1741,17 +1741,17 @@ NSString* stringNotNil(NSString* str) {
 
 ## NULL_ARGUMENT_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Null Argument Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Null Argument Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NULL_ARGUMENT](#null_argument). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULL_DEREFERENCE
 
-Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).*
 
 See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## OPTIONAL_EMPTY_ACCESS
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Optional Empty Access" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Optional Empty Access" by [pulse](/docs/next/checker-pulse).*
 
 Optional Empty Access warnings are reported when we try to retrieve the value of a [`folly::Optional`](https://github.com/facebook/folly/blob/master/folly/Optional.h) when it is empty (i.e. `folly::none`).
 
@@ -1807,12 +1807,12 @@ int value_no_check() {
 
 ## OPTIONAL_EMPTY_ACCESS_LATENT
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [OPTIONAL_EMPTY_ACCESS](#optional_empty_access). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## PREMATURE_NIL_TERMINATION_ARGUMENT
 
-Reported as "Premature Nil Termination Argument" by [biabduction](/docs/next/checker-biabduction).
+*Reported as "Premature Nil Termination Argument" by [biabduction](/docs/next/checker-biabduction).*
 
 This error type is reported in C and Objective-C. In many variadic methods,
 `nil` is used to signify the end of the list of input objects. This is similar
@@ -1832,7 +1832,7 @@ created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
 ## PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Cannot Instantiate Abstract Class" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Cannot Instantiate Abstract Class" by [pulse](/docs/next/checker-pulse).*
 
 Instantiating an abstract class will lead to `Cannot instantiate abstract class` error.
 
@@ -1874,7 +1874,7 @@ public function goodViaStatic(): void {
 
 ## PULSE_CONST_REFABLE
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Const Refable Parameter" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Const Refable Parameter" by [pulse](/docs/next/checker-pulse).*
 
 This issue is reported when a function parameter is a) passed by value and b) is not modified inside the function. Instead, parameter can be passed by const reference, i.e. converted to a `const&` so that no unnecessary copy is created at the callsite of the function.
 
@@ -1892,7 +1892,7 @@ void const_refable(std::vector<int> vec) {
 
 ## PULSE_DICT_MISSING_KEY
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Dict Missing Key" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Dict Missing Key" by [pulse](/docs/next/checker-pulse).*
 
 This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to warn
 reading a missing key of dictionary in Hack.
@@ -1910,7 +1910,7 @@ function simple_bad() : int {
 
 ## PULSE_DYNAMIC_TYPE_MISMATCH
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Dynamic Type Mismatch" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Dynamic Type Mismatch" by [pulse](/docs/next/checker-pulse).*
 
 This error is reported in Hack. It fires when we detect an operation that is incompatible
 with the dynamic type of its arguments.
@@ -1920,7 +1920,7 @@ For example, reading `$x['key']` when `$x` is a vector.
 
 ## PULSE_READONLY_SHARED_PTR_PARAM
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Read-only Shared Parameter" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Read-only Shared Parameter" by [pulse](/docs/next/checker-pulse).*
 
 This issue is reported when a shared pointer parameter is a) passed by value and b) is used only for reading, rather than lifetime extension. At the callsite, this might cause a potentially expensive unnecessary copy of the shared pointer, especially when many number of threads are sharing it. To avoid this, consider 1) passing the raw pointer instead and 2) use `std::shared_ptr::get` at callsites.
 
@@ -1950,7 +1950,7 @@ void caller() {
 
 ## PULSE_REFERENCE_STABILITY
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Reference Stability" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Reference Stability" by [pulse](/docs/next/checker-pulse).*
 
 The family of maps `folly::F14ValueMap`, `folly::F14VectorMap`, and by extension
 `folly::F14FastMap` differs slightly from `std::unordered_map` as it does not
@@ -1987,12 +1987,12 @@ void unsafe_expressions_bad(folly::F14FastMap<int, int>& map) {
 
 ## PULSE_RESOURCE_LEAK
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Resource Leak" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Resource Leak" by [pulse](/docs/next/checker-pulse).*
 
 See [RESOURCE_LEAK](#resource_leak)
 ## PULSE_TRANSITIVE_ACCESS
 
-Category: [Logic error](/docs/next/all-categories#logic-error). Reported as "Transitive Access" by [pulse](/docs/next/checker-pulse).
+*Category: [Logic error](/docs/next/all-categories#logic-error). Reported as "Transitive Access" by [pulse](/docs/next/checker-pulse).*
 
 This issue tracks spurious accesses that are reachable from specific entry functions.
 
@@ -2004,7 +2004,7 @@ class and should not extend a list of specific classes.
 
 ## PULSE_UNAWAITED_AWAITABLE
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Unawaited Awaitable" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Unawaited Awaitable" by [pulse](/docs/next/checker-pulse).*
 
 `Awaitable` values created by calls to asynchronous methods should eventually be `await`ed along all codepaths (even if their value is unused). Hence the following is *not* OK
 
@@ -2025,7 +2025,7 @@ Failure to `await` an `Awaitable` can lead to non-deterministic amount of the as
 
 ## PULSE_UNINITIALIZED_CONST
 
-Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).*
 
 This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
 
@@ -2058,7 +2058,7 @@ function call_get_field_ok(): string {
 
 ## PULSE_UNINITIALIZED_VALUE
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).*
 
 The code uses a variable that has not been initialized, leading to unpredictable or unintended results.
 
@@ -2088,7 +2088,7 @@ void foo() {
 
 ## PULSE_UNNECESSARY_COPY
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).*
 
 This is reported when Infer detects an unnecessary copy of an object via copy constructor where neither the source nor the copied variable are modified before the variable goes out of scope. Rather than the copy, a reference to the source object could be used to save memory.
 
@@ -2111,22 +2111,22 @@ int use_reference_instead(A& x){
 ```
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).*
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment from Const" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment from Const" by [pulse](/docs/next/checker-pulse).*
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).*
 
 See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).*
 
 This is reported when Infer detects an unnecessary temporary copy of an intermediate object where copy is created to be passed down to a function unnecessarily. Instead, the intermediate object should either be moved into the callee or the type of the callee's parameter should be made `const &`.
 
@@ -2155,12 +2155,12 @@ The analysis is careful about suggesting moves blindly though: if the argument `
 PS: We check for other conditions on the argument here: e.g. it should be local to the procedure, as moving a non-local member might cause other memory correctness issues like use-after-move later on.
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Intermediate from Const" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Intermediate from Const" by [pulse](/docs/next/checker-pulse).*
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_MOVABLE
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).*
 
 This is reported when Infer detects an unnecessary copy into a field where
 - the source is an rvalue-reference
@@ -2191,7 +2191,7 @@ class Test {
 ```
 ## PULSE_UNNECESSARY_COPY_OPTIONAL
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy to Optional" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy to Optional" by [pulse](/docs/next/checker-pulse).*
 
 This is reported when Infer detects an unnecessary copy of an object via `optional` value
 construction where the source is not modified before it goes out of scope.  To avoid the copy, we
@@ -2211,12 +2211,12 @@ void pass_non_optional_value(A x) {
 
 ## PULSE_UNNECESSARY_COPY_OPTIONAL_CONST
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy to Optional from Const" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy to Optional from Const" by [pulse](/docs/next/checker-pulse).*
 
 See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional).
 ## PULSE_UNNECESSARY_COPY_RETURN
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Return" by [pulse](/docs/next/checker-pulse).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Return" by [pulse](/docs/next/checker-pulse).*
 
 This is similar to [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy), but reported when a callee returns a copied value and it is not modified in its caller.  We may be able to return const-ref typed value or try `std::move` to avoid the copy.
 
@@ -2239,7 +2239,7 @@ void caller(MyClass obj) {
 
 ## PURE_FUNCTION
 
-Reported as "Pure Function" by [purity](/docs/next/checker-purity).
+*Reported as "Pure Function" by [purity](/docs/next/checker-purity).*
 
 This issue type indicates pure functions. For instance, below functions would be marked as pure:
 
@@ -2277,17 +2277,17 @@ void set_impure(int x, int y) {
 
 ## QUANDARY_TAINT_ERROR
 
-Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).
+*Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).*
 
 Generic taint error when nothing else fits.
 ## REGEX_OP_ON_UI_THREAD
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Regex Op On Ui Thread" by [starvation](/docs/next/checker-starvation).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Regex Op On Ui Thread" by [starvation](/docs/next/checker-starvation).*
 
 A potentially costly operation on a regular expression occurs on the UI thread.
 ## RESOURCE_LEAK
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Resource Leak" by [biabduction](/docs/next/checker-biabduction).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Resource Leak" by [biabduction](/docs/next/checker-biabduction).*
 
 Infer reports resource leaks in C, Objective-C and Java. In general, resources
 are entities such as files, sockets, connections, etc, that need to be closed
@@ -2565,7 +2565,7 @@ useful, but you cannot use it blindly when you see a resource-allocation site.
 
 ## RETAIN_CYCLE
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle" by [pulse](/docs/next/checker-pulse).*
 
 A retain cycle is a situation when object A retains object B, and object B
 retains object A at the same time. Here is an example:
@@ -2600,7 +2600,7 @@ hierarchy:
 
 ## RETAIN_CYCLE_NO_WEAK_INFO
 
-Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle No Weak Info" by [pulse](/docs/next/checker-pulse).
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle No Weak Info" by [pulse](/docs/next/checker-pulse).*
 
 A retain cycle is a situation when object A retains object B, and object B
 retains object A at the same time. Here is an example:
@@ -2635,7 +2635,7 @@ hierarchy:
 
 ## SCOPE_LEAKAGE
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Scope Leakage" by [scope-leakage](/docs/next/checker-scope-leakage).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Scope Leakage" by [scope-leakage](/docs/next/checker-scope-leakage).*
 
 This issue type indicates that a class with scope annotation A stores a field
 with whose (dynamic) type (or one of its super types) is annotated with scope
@@ -2679,32 +2679,32 @@ given scope.
 
 ## SENSITIVE_DATA_FLOW
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).*
 
 A flow of sensitive data was detected from a source.
 ## SHELL_INJECTION
 
-Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).
+*Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).*
 
 Environment variable or file data flowing to shell.
 ## SHELL_INJECTION_RISK
 
-Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).*
 
 Code injection if the caller of the endpoint doesn't sanitize on its end.
 ## SQL_INJECTION
 
-Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).
+*Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted and unescaped data flows to SQL.
 ## SQL_INJECTION_RISK
 
-Reported as "Sql Injection Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Sql Injection Risk" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted and unescaped data flows to SQL.
 ## STACK_VARIABLE_ADDRESS_ESCAPE
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Stack Variable Address Escape" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Stack Variable Address Escape" by [pulse](/docs/next/checker-pulse).*
 
 Reported when an address pointing into the stack of the current
 function will escape to its calling context. Such addresses will
@@ -2722,7 +2722,7 @@ int* foo() {
 
 ## STARVATION
 
-Reported as "UI Thread Starvation" by [starvation](/docs/next/checker-starvation).
+*Reported as "UI Thread Starvation" by [starvation](/docs/next/checker-starvation).*
 
 This error is reported in Java, and specifically on Android. These reports are
 triggered when a method that runs on the UI thread may block, thus potentially
@@ -2782,7 +2782,7 @@ include the JAR files in `infer/annotations` for this annotation to work.
 
 ## STATIC_INITIALIZATION_ORDER_FIASCO
 
-Reported as "Static Initialization Order Fiasco" by [siof](/docs/next/checker-siof).
+*Reported as "Static Initialization Order Fiasco" by [siof](/docs/next/checker-siof).*
 
 This error is reported in C++. It fires when the initialization of a static
 variable `A`, accesses a static variable `B` from another translation unit
@@ -2794,7 +2794,7 @@ For more technical definition and techniques to avoid/remediate, see the
 
 ## STRICT_MODE_VIOLATION
 
-Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Strict Mode Violation" by [starvation](/docs/next/checker-starvation).
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Strict Mode Violation" by [starvation](/docs/next/checker-starvation).*
 
 Android has a feature called
 [strict mode](https://developer.android.com/reference/android/os/StrictMode),
@@ -2808,7 +2808,7 @@ To suppress this warning, it's enough to annotate the offending method with
 
 ## STRONG_SELF_NOT_CHECKED
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "StrongSelf Not Checked" by [self-in-block](/docs/next/checker-self-in-block).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "StrongSelf Not Checked" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This checks reports a potential issue when a block captures `weakSelf` (a weak pointer to `self`),
 then one assigns this pointer to a local variable `strongSelf` inside the block and uses this variable
@@ -2846,12 +2846,12 @@ a local strong pointer that has been assigned `weakSelf`.
 
 ## TAINT_ERROR
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Taint Error" by [pulse](/docs/next/checker-pulse).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Taint Error" by [pulse](/docs/next/checker-pulse).*
 
 A taint flow was detected from a source to a sink
 ## THREAD_SAFETY_VIOLATION
 
-Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Thread Safety Violation" by [racerd](/docs/next/checker-racerd).
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Thread Safety Violation" by [racerd](/docs/next/checker-racerd).*
 
 This warning indicates a potential data race in Java. The analyser is called
 RacerD and this section gives brief but a mostly complete description of its
@@ -2947,7 +2947,7 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 
 ## TOPL_ERROR
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error" by [topl](/docs/next/checker-topl).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error" by [topl](/docs/next/checker-topl).*
 
 A violation of a Topl property (user-specified).
 There is an execution path in the code that drives a Topl property from a start state to an error state.
@@ -2958,89 +2958,89 @@ See [Topl](/docs/next/checker-topl##what-is-it) for an example
 
 ## TOPL_ERROR_LATENT
 
-Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).*
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## UNTRUSTED_BUFFER_ACCESS
 
-Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data of any kind flowing to buffer.
 ## UNTRUSTED_DESERIALIZATION
 
-Reported as "Untrusted Deserialization" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Deserialization" by [quandary](/docs/next/checker-quandary).*
 
 User-controlled deserialization.
 ## UNTRUSTED_DESERIALIZATION_RISK
 
-Reported as "Untrusted Deserialization Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Deserialization Risk" by [quandary](/docs/next/checker-quandary).*
 
 User-controlled deserialization
 ## UNTRUSTED_ENVIRONMENT_CHANGE_RISK
 
-Reported as "Untrusted Environment Change Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Environment Change Risk" by [quandary](/docs/next/checker-quandary).*
 
 User-controlled environment mutation.
 ## UNTRUSTED_FILE
 
-Reported as "Untrusted File" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted File" by [quandary](/docs/next/checker-quandary).*
 
 User-controlled file creation; may be vulnerable to path traversal and more.
 ## UNTRUSTED_FILE_RISK
 
-Reported as "Untrusted File Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted File Risk" by [quandary](/docs/next/checker-quandary).*
 
 User-controlled file creation; may be vulnerable to path traversal and more.
 ## UNTRUSTED_HEAP_ALLOCATION
 
-Reported as "Untrusted Heap Allocation" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Heap Allocation" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS.
 ## UNTRUSTED_INTENT_CREATION
 
-Reported as "Untrusted Intent Creation" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Intent Creation" by [quandary](/docs/next/checker-quandary).*
 
 Creating an Intent from user-controlled data.
 ## UNTRUSTED_URL_RISK
 
-Reported as "Untrusted Url Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Url Risk" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted flag, environment variable, or file data flowing to URL.
 ## UNTRUSTED_VARIABLE_LENGTH_ARRAY
 
-Reported as "Untrusted Variable Length Array" by [quandary](/docs/next/checker-quandary).
+*Reported as "Untrusted Variable Length Array" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack buffer that's too large will cause a stack overflow.
 ## USER_CONTROLLED_SQL_RISK
 
-Reported as "User Controlled Sql Risk" by [quandary](/docs/next/checker-quandary).
+*Reported as "User Controlled Sql Risk" by [quandary](/docs/next/checker-quandary).*
 
 Untrusted data flows to SQL (no injection risk).
 ## USE_AFTER_DELETE
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Delete" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Delete" by [pulse](/docs/next/checker-pulse).*
 
 An address that was invalidated by a call to `delete` in C++ is dereferenced.
 
 ## USE_AFTER_DELETE_LATENT
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Delete Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Delete Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [USE_AFTER_DELETE](#use_after_delete). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## USE_AFTER_FREE
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Free" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Free" by [pulse](/docs/next/checker-pulse).*
 
 An address that was invalidated by a call to `free` in C is dereferenced.
 
 ## USE_AFTER_FREE_LATENT
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Free Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Free Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [USE_AFTER_FREE](#use_after_free). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## USE_AFTER_LIFETIME
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Lifetime" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Lifetime" by [pulse](/docs/next/checker-pulse).*
 
 The lifetime of an object has ended but that object is being
 accessed. For example, the address of a variable holding a C++ object
@@ -3059,12 +3059,12 @@ void foo() {
 
 ## USE_AFTER_LIFETIME_LATENT
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Lifetime Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Lifetime Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [USE_AFTER_LIFETIME](#use_after_lifetime). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## VECTOR_INVALIDATION
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).*
 
 An address pointing into a C++ `std::vector` might have become
 invalid. This can happen when an address is taken into a vector, then
@@ -3088,12 +3088,12 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
 
 ## VECTOR_INVALIDATION_LATENT
 
-Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Vector Invalidation Latent" by [pulse](/docs/next/checker-pulse).
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Vector Invalidation Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [VECTOR_INVALIDATION](#vector_invalidation). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## WEAK_SELF_IN_NO_ESCAPE_BLOCK
 
-Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/next/checker-self-in-block).
+*Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/next/checker-self-in-block).*
 
 This check reports when `weakSelf` (a weak pointer to `self`) is used in
 a block, and this block is passed to a "no escaping" method. This means that
