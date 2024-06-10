@@ -39,6 +39,8 @@ val string_of_severity : severity -> string
 
 val string_of_category : category -> string
 
+val category_documentation : category -> string
+
 type t = private
   { unique_id: string
   ; checker: Checker.t

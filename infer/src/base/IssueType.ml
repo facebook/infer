@@ -71,6 +71,40 @@ let string_of_category = function
       "Ungated code"
 
 
+let category_documentation = function
+  | Data_corruption ->
+      "Incorrect handling of resources potentially leading to data corruption."
+  | Data_race ->
+      "Concurrency issues where conflicting accesses to the same resource are made in parallel."
+  | Deadlock ->
+      "Concurrency issues where progress cannot be made."
+  | Incorrect_program_semantics ->
+      "Something that does not make sense and the sign of a potential programming error."
+  | Memory_leak ->
+      "Memory has been manually allocated but not released, possibly creating memory pressure over \
+       time."
+  | Memory_error ->
+      "Incorrect handling of pointers that isn't a null pointer dereference, but can still result \
+       in undefined behaviour and crashes."
+  | No_category ->
+      ""
+  | Null_pointer_dereference ->
+      "A potential null dereference, causing a program crash."
+  | Resource_leak ->
+      "A resource that isn't just memory (for example a file descriptor) has been manually \
+       allocated but not released, possibly creating memory pressure over time or even incorrect \
+       results."
+  | Runtime_exception ->
+      "A runtime exception can occur and potentially crash the program."
+  | Perf_regression ->
+      "Unnecessary (or blocking) computation is performed, potentially causing a performance or \
+       responsiveness regression."
+  | Privacy_violation ->
+      "Sensitive data is flowing where it shouldn't."
+  | Ungated_code ->
+      "Code must be under a gating mechanism but isn't."
+
+
 (* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
      we want to keep track of the list of all the issues ever declared. *)
 module Unsafe : sig
