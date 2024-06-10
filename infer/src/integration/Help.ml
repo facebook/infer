@@ -35,6 +35,13 @@ let abs_url_of_issue_type unique_id =
   Printf.sprintf "/%s/next/%s#%s" docs_dir all_issues_basename (String.lowercase unique_id)
 
 
+let abs_url_of_category category =
+  Printf.sprintf "/%s/next/%s#%s" docs_dir all_categories_basename
+    ( String.tr ~target:' ' ~replacement:'-'
+    @@ String.lowercase
+    @@ IssueType.string_of_category category )
+
+
 let get_checker_web_documentation (checker : Checker.config) =
   match checker.kind with
   | UserFacing {title; markdown_body} ->
@@ -53,8 +60,17 @@ let markdown_one_issue f (issue_type : IssueType.t) =
       "Checker %s can report user-facing issue %s but is not of type UserFacing in \
        src/base/Checker.ml. Please fix!"
       checker_config.id issue_type.unique_id ;
-  F.fprintf f "Reported as \"%s\" by [%s](/%s/next/%s).@\n@\n" issue_type.hum checker_config.id
-    docs_dir
+  let pp_category_link f category =
+    match category with
+    | IssueType.NoCategory ->
+        ()
+    | _ ->
+        F.fprintf f "Category: [%s](%s). "
+          (IssueType.string_of_category category)
+          (abs_url_of_category category)
+  in
+  F.fprintf f "%aReported as \"%s\" by [%s](/%s/next/%s).@\n@\n" pp_category_link
+    issue_type.category issue_type.hum checker_config.id docs_dir
     (basename_of_checker checker_config) ;
   match issue_type.user_documentation with
   | None ->
