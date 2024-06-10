@@ -72,6 +72,7 @@ module Todo = struct
         Fmt.pf fmt "%a.ret%a" Procname.pp callee FieldPath.pp path
     | ArgumentOf (callee, index, path) ->
         Fmt.pf fmt "%a.arg%d%a" Procname.pp callee index FieldPath.pp path
+  [@@warning "-unused-value-declaration"]
 
 
   type t = {procname: Procname.t; node: node}
@@ -97,7 +98,42 @@ end
 type todo = Todo.t
 
 module TaintConfig = struct
-  type t = {source: todo; sink: todo; sanitizers: Procname.Comparable.Set.t; limit: int option}
+  module Endpoint = struct
+    type node = Argument of int | Return
+
+    let pp_node fmt node =
+      match node with Return -> Fmt.pf fmt "ret" | Argument index -> Fmt.pf fmt "arg%d" index
+
+
+    type t = {procname: Procname.t; node: node}
+
+    let argument procname index = {procname; node= Argument index}
+
+    let return procname = {procname; node= Return}
+
+    let todo {procname; node} =
+      match node with
+      | Argument index ->
+          Todo.argument procname index
+      | Return ->
+          Todo.return procname
+
+
+    let matches {procname= endpoint_procname; node= endpoint_node} procname (vertex : V.t) =
+      let node_matches =
+        match (endpoint_node, vertex) with
+        | Argument index, Argument (index', _) ->
+            [%equal: int] index index'
+        | Return, Return _ ->
+            true
+        | (Argument _ | Return), _ ->
+            false
+      in
+      node_matches && [%equal: Procname.t] endpoint_procname procname
+  end
+
+  type t =
+    {source: Endpoint.t; sink: Endpoint.t; sanitizers: Procname.Comparable.Set.t; limit: int option}
 
   let parse_mfa string =
     let module_name, string =
@@ -118,18 +154,18 @@ module TaintConfig = struct
 
   (** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding procname and todo
       node. *)
-  let parse_node string =
+  let parse_endpoint string =
     let* mfa, node = String.lsplit2 ~on:'$' string in
     let* procname = parse_mfa mfa in
-    if [%equal: string] node "ret" then Some (Todo.return procname)
+    if [%equal: string] node "ret" then Some (Endpoint.return procname)
     else
       let* arg_index = String.chop_prefix ~prefix:"arg" node in
       let* arg_index = int_of_string_opt arg_index in
-      Some (Todo.argument procname arg_index)
+      Some (Endpoint.argument procname arg_index)
 
 
-  let parse_node_exn name string =
-    match parse_node string with
+  let parse_endpoint_exn name string =
+    match parse_endpoint string with
     | Some node ->
         node
     | None ->
@@ -145,20 +181,33 @@ module TaintConfig = struct
         L.die UserError "Lineage: source and taint should be both present or both absent."
     | Some lineage_source, Some lineage_sink ->
         Some
-          { source= parse_node_exn "lineage-source" lineage_source
-          ; sink= parse_node_exn "lineage-sink" lineage_sink
+          { source= parse_endpoint_exn "lineage-source" lineage_source
+          ; sink= parse_endpoint_exn "lineage-sink" lineage_sink
           ; sanitizers=
               Set.of_list (module Procname) @@ List.map ~f:parse_mfa_exn lineage_sanitizers
           ; limit= lineage_limit }
+
+
+  let todo_source {source; _} = Endpoint.todo source
+
+  let todo_sink {sink; _} = Endpoint.todo sink
+
+  let is_source {source; _} procname vertex = Endpoint.matches source procname vertex
+
+  let is_sink {sink; _} procname vertex = Endpoint.matches sink procname vertex
+
+  let is_sanitizer {sanitizers; _} procname = Set.mem sanitizers procname
+
+  let is_sanitizing_e (config : t) edge =
+    match E.kind @@ G.E.label edge with
+    | Summary {callee; _} ->
+        is_sanitizer config callee
+    | Direct | Call | Return | Capture | Builtin | DynamicCallFunction | DynamicCallModule ->
+        false
+
+
+  let limit_or_max_int {limit; _} = match limit with None -> Int.max_value | Some limit -> limit
 end
-
-let is_sanitizing_e sanitizers edge =
-  match E.kind @@ G.E.label edge with
-  | Summary {callee; _} ->
-      Set.mem sanitizers callee
-  | Direct | Call | Return | Capture | Builtin | DynamicCallFunction | DynamicCallModule ->
-      false
-
 
 (** Collects the reachable subgraph from a given source node in the lineage graph of one procedures.
     Returns this subgraph and two lists of nodes from other procedures to explore, the first one
@@ -166,21 +215,24 @@ let is_sanitizing_e sanitizers edge =
 
     If [follow_return] is false then the Return list will be empty (ie. [Return] edges will be
     ignored). *)
-let collect_reachable_in_procedure {TaintConfig.sanitizers; limit; _} ~follow_return caller_table
+let collect_reachable_in_procedure (config : TaintConfig.t) ~follow_return caller_table
     ~init:subgraph procname graph vertices =
+  let limit = TaintConfig.limit_or_max_int config in
   let rec dfs todo acc_subgraph (return_todo : todo list) (call_todo : todo list) =
     match todo with
     | [] ->
         (acc_subgraph, return_todo, call_todo)
+    | vertex :: next when TaintConfig.is_sink config procname vertex ->
+        (* Stop propagation at the first sink *)
+        dfs next acc_subgraph return_todo call_todo
     | vertex :: next ->
         let acc_subgraph', todo', _ =
           G.fold_succ_e
             (fun edge (acc, todo, n) ->
-              if n <= 0 || G.mem_edge_e acc edge || is_sanitizing_e sanitizers edge then
+              if n <= 0 || G.mem_edge_e acc edge || TaintConfig.is_sanitizing_e config edge then
                 (acc, todo, n)
               else (G.add_edge_e acc edge, G.E.dst edge :: todo, n - 1) )
-            graph vertex
-            (acc_subgraph, next, Option.value ~default:Int.max_value limit)
+            graph vertex (acc_subgraph, next, limit)
         in
         let return_todo' =
           if follow_return then
@@ -226,7 +278,7 @@ let collect_reachable_in_procedure {TaintConfig.sanitizers; limit; _} ~follow_re
     Return edge (but will include the corresponding Summary edges). It works by first collecting all
     the nodes reachable by traversing Return edges, then from this set the ones reachable through
     Call edges but not Return. *)
-let collect_reachable ({sanitizers; source; _} as taint_config : TaintConfig.t) caller_table =
+let collect_reachable (config : TaintConfig.t) caller_table =
   let rec aux ~follow_return (todo : todo list) (todo_later : todo list) acc_graphs =
     match (todo, todo_later) with
     | [], [] ->
@@ -234,7 +286,8 @@ let collect_reachable ({sanitizers; source; _} as taint_config : TaintConfig.t) 
     | [], _ :: _ ->
         aux ~follow_return:false todo_later [] acc_graphs
     | {procname; node} :: todo_next, _ ->
-        if Set.mem sanitizers procname then aux ~follow_return todo_next todo_later acc_graphs
+        if TaintConfig.is_sanitizer config procname then
+          aux ~follow_return todo_next todo_later acc_graphs
         else
           let summary = Summary.OnDisk.get ~lazy_payloads:true procname in
           let shapes =
@@ -257,23 +310,27 @@ let collect_reachable ({sanitizers; source; _} as taint_config : TaintConfig.t) 
             match Map.find acc_graphs procname with None -> G.of_vertices vertices | Some g -> g
           in
           let reachable_subgraph, return_todo, call_todo =
-            collect_reachable_in_procedure taint_config ~follow_return caller_table procname
-              lineage_graph vertices ~init:init_reachable_subgraph
+            collect_reachable_in_procedure config ~follow_return caller_table procname lineage_graph
+              vertices ~init:init_reachable_subgraph
           in
           let acc_reachable_graphs' = Map.set acc_graphs ~key:procname ~data:reachable_subgraph in
           let todo' = List.rev_append return_todo todo_next in
           let todo_later' = List.rev_append call_todo todo_later in
           aux ~follow_return todo' todo_later' acc_reachable_graphs'
   in
-  aux ~follow_return:true [source] [] (Map.empty (module Procname))
+  aux ~follow_return:true [TaintConfig.todo_source config] [] (Map.empty (module Procname))
 
 
 (** Similar to collect_reachable for a subgraph from which you can reach a given node. *)
-let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph vertices =
+let collect_coreachable_in_procedure (config : TaintConfig.t) ~init:subgraph caller_table procname
+    graph vertices =
   let rec codfs todo acc_subgraph interproc_todo =
     match todo with
     | [] ->
         (acc_subgraph, interproc_todo)
+    | vertex :: next when TaintConfig.is_source config procname vertex ->
+        (* Stop copropagation from the first source *)
+        codfs next acc_subgraph interproc_todo
     | vertex :: next ->
         let fold_pred_e_if_mem_vertex f graph vertex acc =
           (* The interprocedural todo list may have requested to continue the exploration from
@@ -315,7 +372,7 @@ let collect_coreachable_in_procedure ~init:subgraph caller_table procname graph 
 
 
 (** See collect_reachable and collect_coreachable_in_procedure. *)
-let collect_coreachable {TaintConfig.sink; _} caller_table reachable_graphs =
+let collect_coreachable (config : TaintConfig.t) caller_table reachable_graphs =
   let rec aux (todo : todo list) acc_graphs =
     match todo with
     | [] ->
@@ -338,13 +395,13 @@ let collect_coreachable {TaintConfig.sink; _} caller_table reachable_graphs =
           let shapes = fetch_shapes procname in
           let vertices = Todo.to_vertices shapes node in
           let coreachable_subgraph, interproc_todo =
-            collect_coreachable_in_procedure ~init:init_coreachable_subgraph caller_table procname
-              reachable_graph vertices
+            collect_coreachable_in_procedure config ~init:init_coreachable_subgraph caller_table
+              procname reachable_graph vertices
           in
           let todo' = List.rev_append interproc_todo todo_next in
           aux todo' (Map.set acc_graphs ~key:procname ~data:coreachable_subgraph) )
   in
-  aux [sink] (Map.empty (module Procname))
+  aux [TaintConfig.todo_sink config] (Map.empty (module Procname))
 
 
 let report_graph_map filename_parts graphs =
@@ -378,6 +435,5 @@ let report taint_config =
 
 
 module Private = struct
-  module Todo = Todo
   module TaintConfig = TaintConfig
 end

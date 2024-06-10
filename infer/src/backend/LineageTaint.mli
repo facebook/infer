@@ -31,16 +31,16 @@ include sig
   [@@@warning "-unused-value-declaration"]
 
   module Private : sig
-    module Todo : sig
-      type node
-
-      val pp_node : node Fmt.t
-
-      type t = {procname: Procname.t; node: node}
-    end
-
     module TaintConfig : sig
-      val parse_node : string -> Todo.t option
+      module Endpoint : sig
+        type node
+
+        val pp_node : node Fmt.t
+
+        type t = {procname: Procname.t; node: node}
+      end
+
+      val parse_endpoint : string -> Endpoint.t option
     end
   end
 end
