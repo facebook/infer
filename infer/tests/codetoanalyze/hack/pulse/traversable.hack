@@ -23,22 +23,21 @@ class Main {
     self::use_traversable_bad(vec['a']);
   }
 
-  public function filter1_bad(): void {
+  public function filter1(KeyedContainer<arraykey, string> $arg): void {
     self::my_filter(
-      vec[vec['x']],
+      vec[$arg],
       $item ==> {
-        return $item['a'] === 'b'; //does not trigger typechecker error
+        return $item['key'] === 'b'; //does not trigger typechecker error
       },
     );
   }
 
-  public function filter1_ok(): void {
-    self::my_filter(
-      vec[vec['x']],
-      $item ==> {
-        return $item[0] === 'b';
-      },
-    );
+  public function call_filter1_bad(): void {
+    $this->filter1(vec['x']);
+  }
+
+  public function call_filter1_ok(): void {
+    $this->filter1(dict['key' => 'x']);
   }
 
   private static function my_filter<T>(
@@ -49,22 +48,21 @@ class Main {
   }
 
   // we need to model \Vec\filter here
-  public function FN_filter2_bad(): void {
+  public function filter2(KeyedContainer<arraykey, string> $arg): void {
     Vec\filter(
-      vec[vec['x']],
+      vec[$arg],
       $item ==> {
         return $item['a'] === 'b'; //does not trigger typechecker error
       },
     );
   }
 
-  public function filter2_ok(): void {
-    Vec\filter(
-      vec[vec['x']],
-      $item ==> {
-        return $item[0] === 'b';
-      },
-    );
+  public function FN_call_filter2_bad(): void {
+    $this->filter2(vec['x']);
+  }
+
+  public function call_filter2_ok(): void {
+    $this->filter2(dict['a' => 'x']);
   }
 
 }
