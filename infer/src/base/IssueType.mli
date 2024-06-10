@@ -20,19 +20,16 @@ val string_of_visibility : visibility -> string
 type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 type category =
-  | Data_corruption
-  | Data_race
-  | Deadlock
-  | Incorrect_program_semantics
-  | Memory_error
-  | Memory_leak
-  | No_category
-  | Null_pointer_dereference
-  | Perf_regression
-  | Privacy_violation
-  | Resource_leak
-  | Runtime_exception
-  | Ungated_code
+  | Concurrency
+  | LogicError
+  | MemoryError
+  | NoCategory
+  | NullPointerDereference
+  | PerfRegression
+  | ResourceLeak
+  | RuntimeException
+  | SensitiveDataFlow
+  | UngatedCode
 [@@deriving compare, equal, enumerate]
 
 val string_of_severity : severity -> string

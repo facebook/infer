@@ -4,31 +4,18 @@ title: List of all categories of issue types
 
 Here are all the categories that issue types might belong to in Infer. Some issue types have no associated category at the moment. This usually indicates that the issue type is not yet mature enough to be used.
 
-## Data corruption
+## Concurrency
 
-Incorrect handling of resources potentially leading to data corruption.
-
-Issue types in this category:
-- [PULSE_UNAWAITED_AWAITABLE](/docs/next/all-issue-types#pulse_unawaited_awaitable)
-
-## Data race
-
-Concurrency issues where conflicting accesses to the same resource are made in parallel.
+Concurrent accesses to the same resource conflict in a way that can give incorrect results, block progress, or result in undefined behaviour.
 
 Issue types in this category:
+- [DEADLOCK](/docs/next/all-issue-types#deadlock)
 - [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
 - [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
 - [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)
 - [THREAD_SAFETY_VIOLATION](/docs/next/all-issue-types#thread_safety_violation)
 
-## Deadlock
-
-Concurrency issues where progress cannot be made.
-
-Issue types in this category:
-- [DEADLOCK](/docs/next/all-issue-types#deadlock)
-
-## Incorrect program semantics
+## Logic error
 
 Something that does not make sense and the sign of a potential programming error.
 
@@ -57,23 +44,9 @@ Issue types in this category:
 - [VECTOR_INVALIDATION](/docs/next/all-issue-types#vector_invalidation)
 - [VECTOR_INVALIDATION_LATENT](/docs/next/all-issue-types#vector_invalidation_latent)
 
-## Memory leak
-
-Memory has been manually allocated but not released, possibly creating memory pressure over time.
-
-Issue types in this category:
-- [BIABDUCTION_MEMORY_LEAK](/docs/next/all-issue-types#biabduction_memory_leak)
-- [BIABDUCTION_RETAIN_CYCLE](/docs/next/all-issue-types#biabduction_retain_cycle)
-- [CAPTURED_STRONG_SELF](/docs/next/all-issue-types#captured_strong_self)
-- [MEMORY_LEAK_C](/docs/next/all-issue-types#memory_leak_c)
-- [MEMORY_LEAK_CPP](/docs/next/all-issue-types#memory_leak_cpp)
-- [MIXED_SELF_WEAKSELF](/docs/next/all-issue-types#mixed_self_weakself)
-- [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
-- [RETAIN_CYCLE_NO_WEAK_INFO](/docs/next/all-issue-types#retain_cycle_no_weak_info)
-
 ## Null pointer dereference
 
-A potential null dereference, causing a program crash.
+The null pointer is used where a valid pointer is required, causing a memory fault and a crash. For example, it is dereferenced.
 
 Issue types in this category:
 - [NIL_BLOCK_CALL](/docs/next/all-issue-types#nil_block_call)
@@ -109,26 +82,23 @@ Issue types in this category:
 - [REGEX_OP_ON_UI_THREAD](/docs/next/all-issue-types#regex_op_on_ui_thread)
 - [STRICT_MODE_VIOLATION](/docs/next/all-issue-types#strict_mode_violation)
 
-## Privacy violation
-
-Sensitive data is flowing where it shouldn't.
-
-Issue types in this category:
-- [DATA_FLOW_TO_SINK](/docs/next/all-issue-types#data_flow_to_sink)
-- [SCOPE_LEAKAGE](/docs/next/all-issue-types#scope_leakage)
-- [SENSITIVE_DATA_FLOW](/docs/next/all-issue-types#sensitive_data_flow)
-- [TAINT_ERROR](/docs/next/all-issue-types#taint_error)
-- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
-- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)
-
 ## Resource leak
 
-A resource that isn't just memory (for example a file descriptor) has been manually allocated but not released, possibly creating memory pressure over time or even incorrect results.
+A resource (for example memory, or a file descriptor) has been manually allocated but not released, possibly creating memory pressure over time or even incorrect results.
 
 Issue types in this category:
+- [BIABDUCTION_MEMORY_LEAK](/docs/next/all-issue-types#biabduction_memory_leak)
+- [BIABDUCTION_RETAIN_CYCLE](/docs/next/all-issue-types#biabduction_retain_cycle)
+- [CAPTURED_STRONG_SELF](/docs/next/all-issue-types#captured_strong_self)
 - [CHECKERS_FRAGMENT_RETAINS_VIEW](/docs/next/all-issue-types#checkers_fragment_retains_view)
+- [MEMORY_LEAK_C](/docs/next/all-issue-types#memory_leak_c)
+- [MEMORY_LEAK_CPP](/docs/next/all-issue-types#memory_leak_cpp)
+- [MIXED_SELF_WEAKSELF](/docs/next/all-issue-types#mixed_self_weakself)
 - [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
+- [PULSE_UNAWAITED_AWAITABLE](/docs/next/all-issue-types#pulse_unawaited_awaitable)
 - [RESOURCE_LEAK](/docs/next/all-issue-types#resource_leak)
+- [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
+- [RETAIN_CYCLE_NO_WEAK_INFO](/docs/next/all-issue-types#retain_cycle_no_weak_info)
 
 ## Runtime exception
 
@@ -169,6 +139,18 @@ Issue types in this category:
 - [PULSE_DICT_MISSING_KEY](/docs/next/all-issue-types#pulse_dict_missing_key)
 - [PULSE_DYNAMIC_TYPE_MISMATCH](/docs/next/all-issue-types#pulse_dynamic_type_mismatch)
 - [PULSE_UNINITIALIZED_CONST](/docs/next/all-issue-types#pulse_uninitialized_const)
+
+## Sensitive data flow
+
+Sensitive data is flowing where it shouldn't.
+
+Issue types in this category:
+- [DATA_FLOW_TO_SINK](/docs/next/all-issue-types#data_flow_to_sink)
+- [SCOPE_LEAKAGE](/docs/next/all-issue-types#scope_leakage)
+- [SENSITIVE_DATA_FLOW](/docs/next/all-issue-types#sensitive_data_flow)
+- [TAINT_ERROR](/docs/next/all-issue-types#taint_error)
+- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
+- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)
 
 ## Ungated code
 

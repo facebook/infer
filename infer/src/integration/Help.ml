@@ -208,7 +208,7 @@ let markdown_one_category fmt category =
 let all_categories_website ~website_root =
   let categories_to_document =
     IssueType.all_of_category
-    |> List.filter ~f:(fun category -> not (IssueType.equal_category category No_category))
+    |> List.filter ~f:(fun category -> not (IssueType.equal_category category NoCategory))
   in
   pp_markdown_docs_path ~website_root ~basename:all_categories_basename ~pp:(fun f ->
       F.fprintf f "%s@\n@\n%a@\n" all_categories_header

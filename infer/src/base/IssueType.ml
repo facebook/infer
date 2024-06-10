@@ -16,19 +16,16 @@ let string_of_visibility = function User -> "User" | Developer -> "Developer" | 
 type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 type category =
-  | Data_corruption
-  | Data_race
-  | Deadlock
-  | Incorrect_program_semantics
-  | Memory_error
-  | Memory_leak
-  | No_category
-  | Null_pointer_dereference
-  | Perf_regression
-  | Privacy_violation
-  | Resource_leak
-  | Runtime_exception
-  | Ungated_code
+  | Concurrency
+  | LogicError
+  | MemoryError
+  | NoCategory
+  | NullPointerDereference
+  | PerfRegression
+  | ResourceLeak
+  | RuntimeException
+  | SensitiveDataFlow
+  | UngatedCode
 [@@deriving compare, equal, enumerate]
 
 let string_of_severity = function
@@ -43,65 +40,53 @@ let string_of_severity = function
 
 
 let string_of_category = function
-  | Data_corruption ->
-      "Data corruption"
-  | Data_race ->
-      "Data race"
-  | Deadlock ->
-      "Deadlock"
-  | Incorrect_program_semantics ->
-      "Incorrect program semantics"
-  | Memory_error ->
+  | Concurrency ->
+      "Concurrency"
+  | LogicError ->
+      "Logic error"
+  | MemoryError ->
       "Memory error"
-  | Memory_leak ->
-      "Memory leak"
-  | No_category ->
+  | NoCategory ->
       "No_category"
-  | Null_pointer_dereference ->
+  | NullPointerDereference ->
       "Null pointer dereference"
-  | Perf_regression ->
+  | PerfRegression ->
       "Perf regression"
-  | Privacy_violation ->
-      "Privacy violation"
-  | Resource_leak ->
+  | SensitiveDataFlow ->
+      "Sensitive data flow"
+  | ResourceLeak ->
       "Resource leak"
-  | Runtime_exception ->
+  | RuntimeException ->
       "Runtime exception"
-  | Ungated_code ->
+  | UngatedCode ->
       "Ungated code"
 
 
 let category_documentation = function
-  | Data_corruption ->
-      "Incorrect handling of resources potentially leading to data corruption."
-  | Data_race ->
-      "Concurrency issues where conflicting accesses to the same resource are made in parallel."
-  | Deadlock ->
-      "Concurrency issues where progress cannot be made."
-  | Incorrect_program_semantics ->
+  | Concurrency ->
+      "Concurrent accesses to the same resource conflict in a way that can give incorrect results, \
+       block progress, or result in undefined behaviour."
+  | LogicError ->
       "Something that does not make sense and the sign of a potential programming error."
-  | Memory_leak ->
-      "Memory has been manually allocated but not released, possibly creating memory pressure over \
-       time."
-  | Memory_error ->
+  | MemoryError ->
       "Incorrect handling of pointers that isn't a null pointer dereference, but can still result \
        in undefined behaviour and crashes."
-  | No_category ->
+  | NoCategory ->
       ""
-  | Null_pointer_dereference ->
-      "A potential null dereference, causing a program crash."
-  | Resource_leak ->
-      "A resource that isn't just memory (for example a file descriptor) has been manually \
-       allocated but not released, possibly creating memory pressure over time or even incorrect \
-       results."
-  | Runtime_exception ->
-      "A runtime exception can occur and potentially crash the program."
-  | Perf_regression ->
+  | NullPointerDereference ->
+      "The null pointer is used where a valid pointer is required, causing a memory fault and a \
+       crash. For example, it is dereferenced."
+  | PerfRegression ->
       "Unnecessary (or blocking) computation is performed, potentially causing a performance or \
        responsiveness regression."
-  | Privacy_violation ->
+  | ResourceLeak ->
+      "A resource (for example memory, or a file descriptor) has been manually allocated but not \
+       released, possibly creating memory pressure over time or even incorrect results."
+  | RuntimeException ->
+      "A runtime exception can occur and potentially crash the program."
+  | SensitiveDataFlow ->
       "Sensitive data is flowing where it shouldn't."
-  | Ungated_code ->
+  | UngatedCode ->
       "Code must be under a gating mechanism but isn't."
 
 
@@ -290,13 +275,13 @@ end = struct
 
   let register_hidden ?(is_silent = false) ?enabled ?hum ~id ?user_documentation default_severity
       checker =
-    register_static_or_dynamic ~category:No_category ?enabled ~is_cost_issue:false ?hum ~id
+    register_static_or_dynamic ~category:NoCategory ?enabled ~is_cost_issue:false ?hum ~id
       ~visibility:(if is_silent then Silent else Developer)
       ~user_documentation default_severity checker
 
 
   let register_dynamic ?enabled ?hum ~id ?user_documentation default_severity checker =
-    register_static_or_dynamic ?enabled ~category:No_category ~is_cost_issue:false ?hum ~id
+    register_static_or_dynamic ?enabled ~category:NoCategory ~is_cost_issue:false ?hum ~id
       ~visibility:User ~user_documentation default_severity checker
 
 
@@ -323,7 +308,7 @@ end = struct
           L.die InternalError
             "Unexpected cost issue %s: either the issue is not enabled or unknown." issue_type
     in
-    register_static_or_dynamic ~category:No_category ~is_cost_issue:true ~enabled ~id:issue_type
+    register_static_or_dynamic ~category:NoCategory ~is_cost_issue:true ~enabled ~id:issue_type
       ~visibility:User Error Cost ~user_documentation:(Some user_documentation)
 
 
@@ -357,7 +342,7 @@ let abduction_case_not_implemented =
 
 
 let arbitrary_code_execution_under_lock =
-  register ~category:No_category ~id:"ARBITRARY_CODE_EXECUTION_UNDER_LOCK"
+  register ~category:NoCategory ~id:"ARBITRARY_CODE_EXECUTION_UNDER_LOCK"
     ~hum:"Arbitrary Code Execution Under lock" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/ARBITRARY_CODE_EXECUTION_UNDER_LOCK.md"]
 
@@ -381,37 +366,37 @@ let assert_failure = register_hidden ~id:"Assert_failure" Error Biabduction
 let bad_footprint = register_hidden ~id:"Bad_footprint" Error Biabduction
 
 let bad_arg =
-  register_with_latent ~category:Runtime_exception ~id:"BAD_ARG" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"BAD_ARG" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_ARG.md"]
 
 
 let bad_generator =
-  register_with_latent ~category:Runtime_exception ~id:"BAD_GENERATOR" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"BAD_GENERATOR" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_GENERATOR.md"]
 
 
 let bad_key =
-  register_with_latent ~category:Runtime_exception ~id:"BAD_KEY" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_KEY.md"]
 
 
 let bad_map =
-  register_with_latent ~category:Runtime_exception ~id:"BAD_MAP" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"BAD_MAP" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_MAP.md"]
 
 
 let bad_record =
-  register_with_latent ~category:Runtime_exception ~id:"BAD_RECORD" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_RECORD.md"]
 
 
 let bad_return =
-  register_with_latent ~category:No_category ~id:"BAD_RETURN" Error Pulse
+  register_with_latent ~category:NoCategory ~id:"BAD_RETURN" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/BAD_RETURN.md"]
 
 
 let block_parameter_not_null_checked =
-  register ~category:No_category ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning
+  register ~category:NoCategory ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning
     ParameterNotNullChecked
     ~user_documentation:[%blob "./documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
 
@@ -421,84 +406,84 @@ let biabduction_analysis_stops =
 
 
 let biabduction_retain_cycle =
-  register ~enabled:true ~category:Memory_leak ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
+  register ~enabled:true ~category:ResourceLeak ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
     ~user_documentation:"See [RETAIN_CYCLE](#retain_cycle)."
 
 
 let buffer_overrun_l1 =
-  register ~category:No_category ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "./documentation/issues/BUFFER_OVERRUN.md"]
 
 
 let buffer_overrun_l2 =
-  register ~category:No_category ~id:"BUFFER_OVERRUN_L2" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"BUFFER_OVERRUN_L2" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_l3 =
-  register ~category:No_category ~id:"BUFFER_OVERRUN_L3" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"BUFFER_OVERRUN_L3" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_l4 =
-  register ~category:No_category ~enabled:false ~id:"BUFFER_OVERRUN_L4" Error BufferOverrunChecker
+  register ~category:NoCategory ~enabled:false ~id:"BUFFER_OVERRUN_L4" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_l5 =
-  register ~category:No_category ~enabled:false ~id:"BUFFER_OVERRUN_L5" Error BufferOverrunChecker
+  register ~category:NoCategory ~enabled:false ~id:"BUFFER_OVERRUN_L5" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_s2 =
-  register ~category:No_category ~id:"BUFFER_OVERRUN_S2" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"BUFFER_OVERRUN_S2" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let buffer_overrun_u5 =
-  register ~category:No_category ~enabled:false ~id:"BUFFER_OVERRUN_U5" Error BufferOverrunChecker
+  register ~category:NoCategory ~enabled:false ~id:"BUFFER_OVERRUN_U5" Error BufferOverrunChecker
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
 let cannot_star = register_hidden ~id:"Cannot_star" Error Biabduction
 
 let captured_strong_self =
-  register ~category:Memory_leak ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error
+  register ~category:ResourceLeak ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/CAPTURED_STRONG_SELF.md"]
 
 
 let checkers_allocates_memory =
-  register ~category:Perf_regression ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error
+  register ~category:PerfRegression ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error
     AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_ALLOCATES_MEMORY.md"]
 
 
 let checkers_annotation_reachability_error =
-  register ~category:Perf_regression ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+  register ~category:PerfRegression ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
     ~hum:"Annotation Reachability Error" Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
 
 
 let checkers_calls_expensive_method =
-  register ~category:No_category ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD"
-    ~hum:"Expensive Method Called" Error AnnotationReachability
+  register ~category:NoCategory ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called"
+    Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_CALLS_EXPENSIVE_METHOD.md"]
 
 
 let checkers_expensive_overrides_unexpensive =
-  register ~category:No_category ~id:"CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
+  register ~category:NoCategory ~id:"CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
     ~hum:"Expensive Overrides Unannotated" Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED.md"]
 
 
 let checkers_fragment_retain_view =
-  register ~category:Resource_leak ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
+  register ~category:ResourceLeak ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
     Warning FragmentRetainsView
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
 
 let checkers_printf_args =
-  register ~category:No_category ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
+  register ~category:NoCategory ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_PRINTF_ARGS.md"]
 
 
@@ -515,53 +500,53 @@ let condition_always_true =
 
 
 let config_impact_analysis =
-  register ~enabled:false ~category:Perf_regression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
+  register ~enabled:false ~category:PerfRegression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
 
 
 let config_impact_analysis_strict =
-  register ~enabled:false ~category:Ungated_code ~id:"CONFIG_IMPACT_STRICT" Advice
+  register ~enabled:false ~category:UngatedCode ~id:"CONFIG_IMPACT_STRICT" Advice
     ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
 let pulse_config_usage =
-  register ~category:No_category ~enabled:false ~id:"CONFIG_USAGE" Info Pulse
+  register ~category:NoCategory ~enabled:false ~id:"CONFIG_USAGE" Info Pulse
     ~user_documentation:[%blob "./documentation/issues/CONFIG_USAGE.md"]
 
 
 let pulse_const_refable =
-  register ~category:Perf_regression ~id:"PULSE_CONST_REFABLE" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_CONST_REFABLE" Error Pulse
     ~hum:"Const Refable Parameter"
     ~user_documentation:[%blob "./documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
 let constant_address_dereference =
-  register_with_latent ~category:No_category ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE"
+  register_with_latent ~category:NoCategory ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE"
     Warning Pulse
     ~user_documentation:[%blob "./documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
 let cxx_ref_captured_in_block =
-  register ~category:Memory_error ~id:"CXX_REF_CAPTURED_IN_BLOCK"
+  register ~category:MemoryError ~id:"CXX_REF_CAPTURED_IN_BLOCK"
     ~hum:"C++ Reference Captured in Block" Error SelfInBlock
     ~user_documentation:[%blob "./documentation/issues/CXX_REF_CAPTURED_IN_BLOCK.md"]
 
 
 let create_intent_from_uri =
-  register ~category:No_category ~id:"CREATE_INTENT_FROM_URI" Error Quandary
+  register ~category:NoCategory ~id:"CREATE_INTENT_FROM_URI" Error Quandary
     ~user_documentation:
       "Create an intent/start a component using a (possibly user-controlled) URI. may or may not \
        be an issue depending on where the URI comes from."
 
 
 let cross_site_scripting =
-  register ~category:No_category ~id:"CROSS_SITE_SCRIPTING" Error Quandary
+  register ~category:NoCategory ~id:"CROSS_SITE_SCRIPTING" Error Quandary
     ~user_documentation:"Untrusted data flows into HTML; XSS risk."
 
 
 let dangling_pointer_dereference =
-  register ~category:No_category ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error
+  register ~category:NoCategory ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error
     Biabduction (* TODO *)
     ~user_documentation:""
 
@@ -571,29 +556,29 @@ let dangling_pointer_dereference_maybe =
 
 
 let dead_store =
-  register ~id:"DEAD_STORE" ~category:Incorrect_program_semantics Error Liveness
+  register ~id:"DEAD_STORE" ~category:LogicError Error Liveness
     ~user_documentation:[%blob "./documentation/issues/DEAD_STORE.md"]
 
 
 let deadlock =
-  register ~category:Deadlock ~id:"DEADLOCK" Error Starvation
+  register ~category:Concurrency ~id:"DEADLOCK" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/DEADLOCK.md"]
 
 
 let divide_by_zero =
-  register ~category:No_category ~enabled:false ~id:"DIVIDE_BY_ZERO" Error Biabduction (* TODO *)
+  register ~category:NoCategory ~enabled:false ~id:"DIVIDE_BY_ZERO" Error Biabduction (* TODO *)
     ~user_documentation:""
 
 
 let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error Quandary
 
 let empty_vector_access =
-  register ~category:No_category ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
+  register ~category:NoCategory ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
     ~user_documentation:[%blob "./documentation/issues/EMPTY_VECTOR_ACCESS.md"]
 
 
 let exposed_insecure_intent_handling =
-  register ~category:No_category ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary
+  register ~category:NoCategory ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary
     ~user_documentation:"Undocumented."
 
 
@@ -602,23 +587,23 @@ let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kin
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 
 let guardedby_violation =
-  register Warning ~id:"GUARDEDBY_VIOLATION" ~category:Data_race ~hum:"GuardedBy Violation" RacerD
+  register Warning ~id:"GUARDEDBY_VIOLATION" ~category:Concurrency ~hum:"GuardedBy Violation" RacerD
     ~user_documentation:[%blob "./documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
 let impure_function =
-  register ~category:No_category ~id:"IMPURE_FUNCTION" Error Impurity
+  register ~category:NoCategory ~id:"IMPURE_FUNCTION" Error Impurity
     ~user_documentation:[%blob "./documentation/issues/IMPURE_FUNCTION.md"]
 
 
 let inefficient_keyset_iterator =
-  register ~category:Perf_regression ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning
+  register ~category:PerfRegression ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning
     InefficientKeysetIterator
     ~user_documentation:[%blob "./documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
 let inferbo_alloc_is_big =
-  register ~category:No_category ~id:"INFERBO_ALLOC_IS_BIG" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INFERBO_ALLOC_IS_BIG" Error BufferOverrunChecker
     ~user_documentation:
       "`malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; \
        malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.\n\n\
@@ -626,7 +611,7 @@ let inferbo_alloc_is_big =
 
 
 let inferbo_alloc_is_negative =
-  register ~category:No_category ~id:"INFERBO_ALLOC_IS_NEGATIVE" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INFERBO_ALLOC_IS_NEGATIVE" Error BufferOverrunChecker
     ~user_documentation:
       "`malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates \
        `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.\n\n\
@@ -634,7 +619,7 @@ let inferbo_alloc_is_negative =
 
 
 let inferbo_alloc_is_zero =
-  register ~category:No_category ~id:"INFERBO_ALLOC_IS_ZERO" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INFERBO_ALLOC_IS_ZERO" Error BufferOverrunChecker
     ~user_documentation:
       "`malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates \
        `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.\n\n\
@@ -642,7 +627,7 @@ let inferbo_alloc_is_zero =
 
 
 let inferbo_alloc_may_be_big =
-  register ~category:No_category ~id:"INFERBO_ALLOC_MAY_BE_BIG" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INFERBO_ALLOC_MAY_BE_BIG" Error BufferOverrunChecker
     ~user_documentation:
       "`malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; \
        malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.\n\n\
@@ -651,7 +636,7 @@ let inferbo_alloc_may_be_big =
 
 
 let inferbo_alloc_may_be_negative =
-  register ~category:No_category ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" Error BufferOverrunChecker
     ~user_documentation:
       "`malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; \
        malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.\n\n\
@@ -665,59 +650,59 @@ let inherently_dangerous_function =
 
 
 let insecure_intent_handling =
-  register ~category:No_category ~id:"INSECURE_INTENT_HANDLING" Error Quandary
+  register ~category:NoCategory ~id:"INSECURE_INTENT_HANDLING" Error Quandary
     ~user_documentation:"Undocumented."
 
 
 let integer_overflow_l1 =
-  register ~category:No_category ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "./documentation/issues/INTEGER_OVERFLOW.md"]
 
 
 let integer_overflow_l2 =
-  register ~category:No_category ~id:"INTEGER_OVERFLOW_L2" Error BufferOverrunChecker
+  register ~category:NoCategory ~id:"INTEGER_OVERFLOW_L2" Error BufferOverrunChecker
     ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 
 let integer_overflow_l5 =
-  register ~category:No_category ~enabled:false ~id:"INTEGER_OVERFLOW_L5" Error BufferOverrunChecker
+  register ~category:NoCategory ~enabled:false ~id:"INTEGER_OVERFLOW_L5" Error BufferOverrunChecker
     ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 
 let integer_overflow_u5 =
-  register ~category:No_category ~enabled:false ~id:"INTEGER_OVERFLOW_U5" Error BufferOverrunChecker
+  register ~category:NoCategory ~enabled:false ~id:"INTEGER_OVERFLOW_U5" Error BufferOverrunChecker
     ~user_documentation:"See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)"
 
 
 let interface_not_thread_safe =
-  register Warning ~category:Data_race ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
+  register Warning ~category:Concurrency ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
     ~user_documentation:[%blob "./documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
 
 
 let internal_error = register_hidden ~id:"Internal_error" Error Biabduction
 
 let invalid_sil =
-  register ~category:No_category ~enabled:true ~id:"INVALID_SIL" Error SILValidation
+  register ~category:NoCategory ~enabled:true ~id:"INVALID_SIL" Error SILValidation
     ~user_documentation:[%blob "./documentation/issues/INVALID_SIL.md"]
 
 
 let invariant_call =
-  register ~category:No_category ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
+  register ~category:NoCategory ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
     ~user_documentation:[%blob "./documentation/issues/INVARIANT_CALL.md"]
 
 
 let ipc_on_ui_thread =
-  register ~category:Perf_regression Warning ~id:"IPC_ON_UI_THREAD" Starvation
+  register ~category:PerfRegression Warning ~id:"IPC_ON_UI_THREAD" Starvation
     ~user_documentation:"A blocking `Binder` IPC call occurs on the UI thread."
 
 
 let javascript_injection =
-  register ~category:No_category ~id:"JAVASCRIPT_INJECTION" Error Quandary
+  register ~category:NoCategory ~id:"JAVASCRIPT_INJECTION" Error Quandary
     ~user_documentation:"Untrusted data flows into JavaScript."
 
 
 let lab_resource_leak =
-  register ~category:No_category ~id:"LAB_RESOURCE_LEAK" Error ResourceLeakLabExercise
+  register ~category:NoCategory ~id:"LAB_RESOURCE_LEAK" Error ResourceLeakLabExercise
     ~user_documentation:"Toy issue."
 
 
@@ -730,128 +715,127 @@ let leak_in_footprint = register_hidden ~id:"Leak_in_footprint" Error Biabductio
 let leak_unknown_origin = register_hidden ~enabled:false ~id:"Leak_unknown_origin" Error Biabduction
 
 let lock_consistency_violation =
-  register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" ~category:Data_race RacerD
+  register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" ~category:Concurrency RacerD
     ~user_documentation:[%blob "./documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
 let lockless_violation =
-  register ~category:No_category ~id:"LOCKLESS_VIOLATION" Error Starvation
+  register ~category:NoCategory ~id:"LOCKLESS_VIOLATION" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/LOCKLESS_VIOLATION.md"]
 
 
 let logging_private_data =
-  register ~category:No_category ~id:"LOGGING_PRIVATE_DATA" Error Quandary
+  register ~category:NoCategory ~id:"LOGGING_PRIVATE_DATA" Error Quandary
     ~user_documentation:"Undocumented."
 
 
 let expensive_loop_invariant_call =
-  register ~category:No_category ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
+  register ~category:NoCategory ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
     ~user_documentation:[%blob "./documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
 
 
 let memory_leak =
-  register ~enabled:false ~category:Memory_leak ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak"
+  register ~enabled:false ~category:ResourceLeak ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak"
     Error Biabduction ~user_documentation:"See [MEMORY_LEAK](#memory_leak)."
 
 
 let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error Biabduction
 
 let missing_required_prop =
-  register ~category:Runtime_exception ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop"
-    Error LithoRequiredProps
-    ~user_documentation:[%blob "./documentation/issues/MISSING_REQUIRED_PROP.md"]
+  register ~category:RuntimeException ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error
+    LithoRequiredProps ~user_documentation:[%blob "./documentation/issues/MISSING_REQUIRED_PROP.md"]
 
 
 let mixed_self_weakself =
-  register ~category:Memory_leak ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error
+  register ~category:ResourceLeak ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
 let modifies_immutable =
-  register ~category:No_category ~id:"MODIFIES_IMMUTABLE" Error Impurity
+  register ~category:NoCategory ~id:"MODIFIES_IMMUTABLE" Error Impurity
     ~user_documentation:[%blob "./documentation/issues/MODIFIES_IMMUTABLE.md"]
 
 
 let multiple_weakself =
-  register ~category:No_category ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error
+  register ~category:NoCategory ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
 let mutual_recursion_cycle =
-  register ~enabled:false ~category:Runtime_exception ~id:"MUTUAL_RECURSION_CYCLE" Warning Pulse
+  register ~enabled:false ~category:RuntimeException ~id:"MUTUAL_RECURSION_CYCLE" Warning Pulse
     ~user_documentation:[%blob "./documentation/issues/MUTUAL_RECURSION_CYCLE.md"]
 
 
 let nil_block_call =
-  register_with_latent ~category:Null_pointer_dereference ~id:"NIL_BLOCK_CALL" Error Pulse
+  register_with_latent ~category:NullPointerDereference ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NIL_BLOCK_CALL.md"]
 
 
 let nil_insertion_into_collection =
-  register_with_latent ~category:Runtime_exception ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~hum:"Nil Insertion Into Collection"
     ~user_documentation:[%blob "./documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 
 let nil_messaging_to_non_pod =
-  register_with_latent ~category:Memory_error ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+  register_with_latent ~category:MemoryError ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
 let no_match_of_rhs =
-  register_with_latent ~category:Runtime_exception ~id:"NO_MATCH_OF_RHS" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_MATCH_OF_RHS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCH_OF_RHS.md"]
 
 
 let no_matching_case_clause =
-  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
 let no_matching_else_clause =
-  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_ELSE_CLAUSE" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_MATCHING_ELSE_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_ELSE_CLAUSE.md"]
 
 
 let no_matching_function_clause =
-  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
 
 
 let no_true_branch_in_if =
-  register_with_latent ~category:Runtime_exception ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let no_matching_branch_in_try =
-  register_with_latent ~category:Runtime_exception ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
 let null_argument =
-  register_with_latent ~category:Runtime_exception ~id:"NULL_ARGUMENT" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"NULL_ARGUMENT" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULL_ARGUMENT.md"]
 
 
 let null_dereference =
-  register ~category:Null_pointer_dereference ~id:"NULL_DEREFERENCE" Error Biabduction
+  register ~category:NullPointerDereference ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
 
 
 let nullptr_dereference =
-  register_with_latent ~category:Null_pointer_dereference ~id:"NULLPTR_DEREFERENCE"
+  register_with_latent ~category:NullPointerDereference ~id:"NULLPTR_DEREFERENCE"
     ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let nullptr_dereference_in_nullsafe_class =
-  register_with_latent ~category:Null_pointer_dereference
-    ~id:"NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS" ~hum:"Null Dereference" Error Pulse
+  register_with_latent ~category:NullPointerDereference ~id:"NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS"
+    ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
-  register_with_latent ~category:Runtime_exception ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register_with_latent ~category:RuntimeException ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
@@ -860,166 +844,166 @@ let precondition_not_found = register_hidden ~id:"PRECONDITION_NOT_FOUND" Error 
 let precondition_not_met = register_hidden ~id:"PRECONDITION_NOT_MET" Warning Biabduction
 
 let premature_nil_termination =
-  register ~category:No_category ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
+  register ~category:NoCategory ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
     ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
 let pulse_cannot_instantiate_abstract_class =
-  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS"
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS"
     Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS.md"]
 
 
 let pulse_dict_missing_key =
-  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_DICT_MISSING_KEY" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_DICT_MISSING_KEY.md"]
 
 
 let pulse_dynamic_type_mismatch =
-  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_DYNAMIC_TYPE_MISMATCH" Error Pulse
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_DYNAMIC_TYPE_MISMATCH" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_DYNAMIC_TYPE_MISMATCH.md"]
 
 
 let pulse_transitive_access =
-  register ~enabled:true ~category:Incorrect_program_semantics ~id:"PULSE_TRANSITIVE_ACCESS" Error
-    Pulse ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]
+  register ~enabled:true ~category:LogicError ~id:"PULSE_TRANSITIVE_ACCESS" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]
 
 
 let pulse_memory_leak_c =
-  register ~category:Memory_leak ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
+  register ~category:ResourceLeak ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/MEMORY_LEAK_C.md"]
 
 
 let pulse_memory_leak_cpp =
-  register ~category:Memory_leak ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error Pulse
-    ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)"
+  register ~category:ResourceLeak ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error
+    Pulse ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)"
 
 
 let pulse_resource_leak =
-  register ~enabled:true ~category:Resource_leak ~id:"PULSE_RESOURCE_LEAK" Error Pulse
+  register ~enabled:true ~category:ResourceLeak ~id:"PULSE_RESOURCE_LEAK" Error Pulse
     ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
 
 
 let pulse_unawaited_awaitable =
-  register ~enabled:true ~category:Data_corruption ~id:"PULSE_UNAWAITED_AWAITABLE" Error Pulse
+  register ~enabled:true ~category:ResourceLeak ~id:"PULSE_UNAWAITED_AWAITABLE" Error Pulse
     ~hum:"Unawaited Awaitable"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNAWAITED_AWAITABLE.md"]
 
 
 let pulse_uninitialized_const =
-  register ~category:Runtime_exception ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse
     ~hum:"Uninitialized Const"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_CONST.md"]
 
 
 let pure_function =
-  register ~category:No_category ~id:"PURE_FUNCTION" Error PurityChecker
+  register ~category:NoCategory ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]
 
 
 let quandary_taint_error =
-  register ~category:No_category ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
+  register ~category:NoCategory ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
     ~user_documentation:"Generic taint error when nothing else fits."
 
 
 let readonly_shared_ptr_param =
-  register ~category:Perf_regression ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
     ~hum:"Read-only Shared Parameter"
     ~user_documentation:[%blob "./documentation/issues/PULSE_READONLY_SHARED_PTR_PARAM.md"]
 
 
 let taint_error =
-  register ~hum:"Taint Error" ~category:Privacy_violation ~id:"TAINT_ERROR" Error Pulse
+  register ~hum:"Taint Error" ~category:SensitiveDataFlow ~id:"TAINT_ERROR" Error Pulse
     ~user_documentation:"A taint flow was detected from a source to a sink"
 
 
 let sensitive_data_flow =
-  register ~enabled:false ~hum:"Sensitive Data Flow" ~category:Privacy_violation
+  register ~enabled:false ~hum:"Sensitive Data Flow" ~category:SensitiveDataFlow
     ~id:"SENSITIVE_DATA_FLOW" Advice Pulse
     ~user_documentation:"A flow of sensitive data was detected from a source."
 
 
 let data_flow_to_sink =
-  register ~enabled:false ~hum:"Data Flow to Sink" ~category:Privacy_violation
+  register ~enabled:false ~hum:"Data Flow to Sink" ~category:SensitiveDataFlow
     ~id:"DATA_FLOW_TO_SINK" Advice Pulse
     ~user_documentation:"A flow of data was detected to a sink."
 
 
 let datalog_fact =
-  register ~category:No_category ~id:"DATALOG_FACT" Info Datalog
+  register ~category:NoCategory ~id:"DATALOG_FACT" Info Datalog
     ~user_documentation:"Datalog fact used as input for a datalog solver."
 
 
 let regex_op_on_ui_thread =
-  register ~category:Perf_regression Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
+  register ~category:PerfRegression Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:
       "A potentially costly operation on a regular expression occurs on the UI thread."
 
 
 let resource_leak =
-  register ~category:Resource_leak ~id:"RESOURCE_LEAK" Error Biabduction
+  register ~category:ResourceLeak ~id:"RESOURCE_LEAK" Error Biabduction
     ~user_documentation:[%blob "./documentation/issues/RESOURCE_LEAK.md"]
 
 
 let retain_cycle =
-  register ~enabled:true ~category:Memory_leak ~id:"RETAIN_CYCLE" Error Pulse
+  register ~enabled:true ~category:ResourceLeak ~id:"RETAIN_CYCLE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
 let retain_cycle_no_weak_info =
-  register ~enabled:false ~category:Memory_leak ~id:"RETAIN_CYCLE_NO_WEAK_INFO" Error Pulse
+  register ~enabled:false ~category:ResourceLeak ~id:"RETAIN_CYCLE_NO_WEAK_INFO" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
 let scope_leakage =
-  register ~category:Privacy_violation ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
+  register ~category:SensitiveDataFlow ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
     ~user_documentation:[%blob "./documentation/issues/SCOPE_LEAKAGE.md"]
 
 
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
 
 let shell_injection =
-  register ~category:No_category ~id:"SHELL_INJECTION" Error Quandary
+  register ~category:NoCategory ~id:"SHELL_INJECTION" Error Quandary
     ~user_documentation:"Environment variable or file data flowing to shell."
 
 
 let shell_injection_risk =
-  register ~category:No_category ~id:"SHELL_INJECTION_RISK" Error Quandary
+  register ~category:NoCategory ~id:"SHELL_INJECTION_RISK" Error Quandary
     ~user_documentation:"Code injection if the caller of the endpoint doesn't sanitize on its end."
 
 
 let sql_injection =
-  register ~category:No_category ~id:"SQL_INJECTION" Error Quandary
+  register ~category:NoCategory ~id:"SQL_INJECTION" Error Quandary
     ~user_documentation:"Untrusted and unescaped data flows to SQL."
 
 
 let sql_injection_risk =
-  register ~category:No_category ~id:"SQL_INJECTION_RISK" Error Quandary
+  register ~category:NoCategory ~id:"SQL_INJECTION_RISK" Error Quandary
     ~user_documentation:"Untrusted and unescaped data flows to SQL."
 
 
 let stack_variable_address_escape =
-  register ~category:Memory_error ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
+  register ~category:MemoryError ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
 let starvation =
-  register ~category:No_category ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
+  register ~category:NoCategory ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/STARVATION.md"]
 
 
 let static_initialization_order_fiasco =
-  register ~category:No_category ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
+  register ~category:NoCategory ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
     ~user_documentation:[%blob "./documentation/issues/STATIC_INITIALIZATION_ORDER_FIASCO.md"]
 
 
 let strict_mode_violation =
-  register ~category:Perf_regression ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error
+  register ~category:PerfRegression ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error
     Starvation ~user_documentation:[%blob "./documentation/issues/STRICT_MODE_VIOLATION.md"]
 
 
 let strong_self_not_checked =
-  register ~category:Memory_error ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error
+  register ~category:MemoryError ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
 
 
@@ -1029,7 +1013,7 @@ let symexec_memory_error =
 
 
 let thread_safety_violation =
-  register Warning ~category:Data_race ~id:"THREAD_SAFETY_VIOLATION" RacerD
+  register Warning ~category:Concurrency ~id:"THREAD_SAFETY_VIOLATION" RacerD
     ~user_documentation:[%blob "./documentation/issues/THREAD_SAFETY_VIOLATION.md"]
 
 
@@ -1038,72 +1022,71 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 
 let topl_error =
-  register_with_latent ~category:Privacy_violation ~id:"TOPL_ERROR" Error Topl
+  register_with_latent ~category:SensitiveDataFlow ~id:"TOPL_ERROR" Error Topl
     ~user_documentation:[%blob "./documentation/issues/TOPL_ERROR.md"]
 
 
 let uninitialized_value_pulse =
-  register ~category:Memory_error ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse
+  register ~category:MemoryError ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse
     ~hum:"Uninitialized Value"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_VALUE.md"]
 
 
 let unnecessary_copy_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY" Error Pulse
-    ~hum:"Unnecessary Copy"
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
 let unnecessary_copy_assignment_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
     ~hum:"Unnecessary Copy Assignment"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_assignment_const_pulse =
-  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST"
+  register ~enabled:false ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST"
     Error Pulse ~hum:"Unnecessary Copy Assignment from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_assignment_movable_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Assignment Movable"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable)."
 
 
 let unnecessary_copy_intermediate_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
     ~hum:"Unnecessary Copy Intermediate"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_INTERMEDIATE.md"]
 
 
 let unnecessary_copy_intermediate_const_pulse =
-  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST"
+  register ~enabled:false ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST"
     Error Pulse ~hum:"Unnecessary Copy Intermediate from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unnecessary_copy_movable_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Movable"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
 
 
 let unnecessary_copy_optional_pulse =
-  register ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse
     ~hum:"Unnecessary Copy to Optional"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_OPTIONAL.md"]
 
 
 let unnecessary_copy_optional_const_pulse =
-  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL_CONST"
-    Error Pulse ~hum:"Unnecessary Copy to Optional from Const"
+  register ~enabled:false ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL_CONST" Error
+    Pulse ~hum:"Unnecessary Copy to Optional from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional)."
 
 
 let unnecessary_copy_return_pulse =
-  register ~enabled:false ~category:Perf_regression ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
+  register ~enabled:false ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
     ~hum:"Unnecessary Copy Return"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_RETURN.md"]
 
@@ -1111,92 +1094,92 @@ let unnecessary_copy_return_pulse =
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =
-  register_with_latent ~category:Memory_error ~id:"USE_AFTER_DELETE" Error Pulse
+  register_with_latent ~category:MemoryError ~id:"USE_AFTER_DELETE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_DELETE.md"]
 
 
 let use_after_free =
-  register_with_latent ~category:Memory_error ~id:"USE_AFTER_FREE" Error Pulse
+  register_with_latent ~category:MemoryError ~id:"USE_AFTER_FREE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_FREE.md"]
 
 
 let use_after_lifetime =
-  register_with_latent ~category:Memory_error ~id:"USE_AFTER_LIFETIME" Error Pulse
+  register_with_latent ~category:MemoryError ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
 let user_controlled_sql_risk =
-  register ~category:No_category ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
+  register ~category:NoCategory ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
     ~user_documentation:"Untrusted data flows to SQL (no injection risk)."
 
 
 let untrusted_buffer_access =
-  register ~category:No_category ~enabled:false ~id:"UNTRUSTED_BUFFER_ACCESS" Error Quandary
+  register ~category:NoCategory ~enabled:false ~id:"UNTRUSTED_BUFFER_ACCESS" Error Quandary
     ~user_documentation:"Untrusted data of any kind flowing to buffer."
 
 
 let untrusted_deserialization =
-  register ~category:No_category ~id:"UNTRUSTED_DESERIALIZATION" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_DESERIALIZATION" Error Quandary
     ~user_documentation:"User-controlled deserialization."
 
 
 let untrusted_deserialization_risk =
-  register ~category:No_category ~id:"UNTRUSTED_DESERIALIZATION_RISK" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_DESERIALIZATION_RISK" Error Quandary
     ~user_documentation:"User-controlled deserialization"
 
 
 let untrusted_environment_change_risk =
-  register ~category:No_category ~id:"UNTRUSTED_ENVIRONMENT_CHANGE_RISK" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_ENVIRONMENT_CHANGE_RISK" Error Quandary
     ~user_documentation:"User-controlled environment mutation."
 
 
 let untrusted_file =
-  register ~category:No_category ~id:"UNTRUSTED_FILE" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_FILE" Error Quandary
     ~user_documentation:
       "User-controlled file creation; may be vulnerable to path traversal and more."
 
 
 let untrusted_file_risk =
-  register ~category:No_category ~id:"UNTRUSTED_FILE_RISK" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_FILE_RISK" Error Quandary
     ~user_documentation:
       "User-controlled file creation; may be vulnerable to path traversal and more."
 
 
 let untrusted_heap_allocation =
-  register ~category:No_category ~enabled:false ~id:"UNTRUSTED_HEAP_ALLOCATION" Error Quandary
+  register ~category:NoCategory ~enabled:false ~id:"UNTRUSTED_HEAP_ALLOCATION" Error Quandary
     ~user_documentation:
       "Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS."
 
 
 let untrusted_intent_creation =
-  register ~category:No_category ~id:"UNTRUSTED_INTENT_CREATION" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_INTENT_CREATION" Error Quandary
     ~user_documentation:"Creating an Intent from user-controlled data."
 
 
 let untrusted_url_risk =
-  register ~category:No_category ~id:"UNTRUSTED_URL_RISK" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_URL_RISK" Error Quandary
     ~user_documentation:"Untrusted flag, environment variable, or file data flowing to URL."
 
 
 let untrusted_variable_length_array =
-  register ~category:No_category ~id:"UNTRUSTED_VARIABLE_LENGTH_ARRAY" Error Quandary
+  register ~category:NoCategory ~id:"UNTRUSTED_VARIABLE_LENGTH_ARRAY" Error Quandary
     ~user_documentation:
       "Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack \
        buffer that's too large will cause a stack overflow."
 
 
 let vector_invalidation =
-  register_with_latent ~category:Memory_error ~id:"VECTOR_INVALIDATION" Error Pulse
+  register_with_latent ~category:MemoryError ~id:"VECTOR_INVALIDATION" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/VECTOR_INVALIDATION.md"]
 
 
 let pulse_reference_stability =
-  register ~category:Memory_error ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
+  register ~category:MemoryError ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_REFERENCE_STABILITY.md"]
 
 
 let weak_self_in_noescape_block =
-  register ~category:No_category ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock
+  register ~category:NoCategory ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock
     ~user_documentation:[%blob "./documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
 
 
