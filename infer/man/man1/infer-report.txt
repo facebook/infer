@@ -424,11 +424,11 @@ LINEAGE OPTIONS
 
        --lineage-sink string
            [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
-           format [module:]function/arity${ret,argN}
+           format [module:]function/arity.{ret,argN}
 
        --lineage-source string
            [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
-           format [module:]function/arity${ret,argN}
+           format [module:]function/arity.{ret,argN}
 
 PULSE CHECKER OPTIONS
        --pulse-report-flows-from-taint-source procname

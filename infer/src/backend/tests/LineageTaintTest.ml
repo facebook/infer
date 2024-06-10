@@ -10,14 +10,14 @@ module L = Logging
 
 let%expect_test "parse_node" =
   let items =
-    [ "module_name:function_name/42$arg14"
-    ; "mod:fun/2$ret"
-    ; "fun_name/3$arg0"
-    ; "fun/10$ret"
-    ; "noarity$ret"
+    [ "module_name:function_name/42.arg14"
+    ; "mod:fun/2.ret"
+    ; "fun_name/3.arg0"
+    ; "fun/10.ret"
+    ; "noarity.ret"
     ; "onlyname"
     ; "mod:funonly"
-    ; "noargindex$arg" ]
+    ; "noargindex.arg" ]
   in
   let pp_item fmt item =
     match LineageTaint.Private.TaintConfig.parse_endpoint item with
@@ -29,5 +29,6 @@ let%expect_test "parse_node" =
   in
   Fmt.pr "%a" (Fmt.list ~sep:(Fmt.any " ") pp_item) items ;
   [%expect
-    "(module_name:function_name/42, arg14) (mod:fun/2, ret) (:fun_name/3, arg0) (:fun/10, ret) \
-     INVALID(noarity$ret) INVALID(onlyname) INVALID(mod:funonly) INVALID(noargindex$arg)"]
+    "(module_name:function_name/42, arg14) (mod:fun/2, ret) (erlang:fun_name/3, arg0) \
+     (erlang:fun/10, ret) INVALID(noarity.ret) INVALID(onlyname) INVALID(mod:funonly) \
+     INVALID(noargindex.arg)"]

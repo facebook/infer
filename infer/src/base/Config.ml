@@ -1989,14 +1989,14 @@ and lineage_source =
   CLOpt.mk_string_opt ~long:"lineage-source"
     ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding, format \
-     [module:]function/arity${ret,argN}"
+     [module:]function/arity.{ret,argN}"
 
 
 and lineage_sink =
   CLOpt.mk_string_opt ~long:"lineage-sink"
     ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding, format \
-     [module:]function/arity${ret,argN}"
+     [module:]function/arity.{ret,argN}"
 
 
 and lineage_sanitizers =

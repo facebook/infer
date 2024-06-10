@@ -139,7 +139,7 @@ module TaintConfig = struct
     let module_name, string =
       match String.lsplit2 ~on:':' string with
       | None ->
-          ("", string)
+          (ErlangTypeName.erlang_namespace, string)
       | Some (module_name, rest) ->
           (module_name, rest)
     in
@@ -152,10 +152,10 @@ module TaintConfig = struct
     match parse_mfa s with Some mfa -> mfa | None -> L.die InternalError "`%s`" s
 
 
-  (** Expects ["[module:]function/arity${ret,argN}"] and returns the corresponding procname and todo
+  (** Expects ["[module:]function/arity.{ret,argN}"] and returns the corresponding procname and todo
       node. *)
   let parse_endpoint string =
-    let* mfa, node = String.lsplit2 ~on:'$' string in
+    let* mfa, node = String.lsplit2 ~on:'.' string in
     let* procname = parse_mfa mfa in
     if [%equal: string] node "ret" then Some (Endpoint.return procname)
     else
