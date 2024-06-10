@@ -13,9 +13,9 @@
   <span><span><a href="#type-contradiction">contradiction</a> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="#type-contradiction">contradiction</a> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="#type-contradiction">contradiction</a> option</span></span></code></div><div class="spec-doc"><p>applying a summary in the caller context may lead to a contradiction; if the summary is a non-trivial list of disjuncts, we will merge all possible contradictions, in each disjunct, into a single one, using this <code>merge_contradictions</code> function.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-apply_summary"><a href="#val-apply_summary" class="anchor"></a><code><span><span class="keyword">val</span> apply_summary : 
-  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
-  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">callee_proc_name</span>:<a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">callee_summary</span>:<a href="../PulseAbductiveDomain/Summary/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.Summary.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">captured_formals</span>:<span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>

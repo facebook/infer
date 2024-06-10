@@ -137,6 +137,8 @@ class Registry {
 The following issue types are reported by this checker:
 - [BAD_ARG](/docs/next/all-issue-types#bad_arg)
 - [BAD_ARG_LATENT](/docs/next/all-issue-types#bad_arg_latent)
+- [BAD_GENERATOR](/docs/next/all-issue-types#bad_generator)
+- [BAD_GENERATOR_LATENT](/docs/next/all-issue-types#bad_generator_latent)
 - [BAD_KEY](/docs/next/all-issue-types#bad_key)
 - [BAD_KEY_LATENT](/docs/next/all-issue-types#bad_key_latent)
 - [BAD_MAP](/docs/next/all-issue-types#bad_map)
@@ -162,6 +164,8 @@ The following issue types are reported by this checker:
 - [NO_MATCHING_BRANCH_IN_TRY_LATENT](/docs/next/all-issue-types#no_matching_branch_in_try_latent)
 - [NO_MATCHING_CASE_CLAUSE](/docs/next/all-issue-types#no_matching_case_clause)
 - [NO_MATCHING_CASE_CLAUSE_LATENT](/docs/next/all-issue-types#no_matching_case_clause_latent)
+- [NO_MATCHING_ELSE_CLAUSE](/docs/next/all-issue-types#no_matching_else_clause)
+- [NO_MATCHING_ELSE_CLAUSE_LATENT](/docs/next/all-issue-types#no_matching_else_clause_latent)
 - [NO_MATCHING_FUNCTION_CLAUSE](/docs/next/all-issue-types#no_matching_function_clause)
 - [NO_MATCHING_FUNCTION_CLAUSE_LATENT](/docs/next/all-issue-types#no_matching_function_clause_latent)
 - [NO_MATCH_OF_RHS](/docs/next/all-issue-types#no_match_of_rhs)

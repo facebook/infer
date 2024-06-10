@@ -8,7 +8,7 @@ Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker wil
 Activate with `--annotation-reachability`.
 
 Supported languages:
-- C/C++/ObjC: Yes
+- C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
 - Hack: No

@@ -58,6 +58,24 @@ g() ->
 Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_ARG](#bad_arg). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## BAD_GENERATOR
+
+Reported as "Bad Generator" by [pulse](/docs/next/checker-pulse).
+
+Bad generator in Erlang: Reports an error when a wrong type is used in a generator. Corresponds to the `bad_generator` error in the Erlang runtime.
+
+For example:
+```erlang
+list_instead_of_map() ->
+    M = [],
+    [{K, V} || K := V <- M]
+```
+
+## BAD_GENERATOR_LATENT
+
+Reported as "Bad Generator Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [BAD_GENERATOR](#bad_generator). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_KEY
 
 Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
@@ -1416,6 +1434,29 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## NO_MATCHING_ELSE_CLAUSE
+
+Reported as "No Matching Else Clause" by [pulse](/docs/next/checker-pulse).
+
+No matching else clause in Erlang: Reports an error when none of the clauses of an `else` match the short-circuit result from `maybe` body. Corresponds to the `{else_clause,V}` error in the Erlang runtime.
+
+For example, here the `1 ?= 2` expression does not match and short-circuits to `2`, which does not match the single clause under `else`:
+```erlang
+else_clause_error() ->
+    maybe
+        1 ?= 2
+    else
+        1 -> ok
+    end.
+```
+
+This error is reported if either the pattern(s) or the guard(s) prevent matching any of the clauses.
+
+## NO_MATCHING_ELSE_CLAUSE_LATENT
+
+Reported as "No Matching Else Clause Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [NO_MATCHING_ELSE_CLAUSE](#no_matching_else_clause). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NO_MATCHING_FUNCTION_CLAUSE
 
 Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
