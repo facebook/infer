@@ -188,6 +188,25 @@ module TaintConfig = struct
           ; limit= lineage_limit }
 
 
+  let check caller_table {source; sink; sanitizers; _} =
+    let check_procname name procname =
+      (* Check that this procname exists in the graph. A procname exists if either:
+         - It is called by something (eg. stdlib functions with no summary)
+         - It has a summary (eg. toplevel analysed function)
+      *)
+      let exists =
+        Hashtbl.mem caller_table procname
+        || (Option.is_some @@ Summary.OnDisk.get ~lazy_payloads:true procname)
+      in
+      if not exists then
+        L.user_warning "@[LineageTaint: %s `%a` not found. Did you make a typo?@]@ " name
+          Procname.pp_verbose procname
+    in
+    check_procname "source" source.procname ;
+    check_procname "sink" sink.procname ;
+    Set.iter ~f:(check_procname "sanitizer") sanitizers
+
+
   let todo_source {source; _} = Endpoint.todo source
 
   let todo_sink {sink; _} = Endpoint.todo sink
@@ -427,6 +446,7 @@ let report_graph_map filename_parts graphs =
 
 let report taint_config =
   let caller_table = create_caller_table () in
+  TaintConfig.check caller_table taint_config ;
   let reachable_graphs = collect_reachable taint_config caller_table in
   if Config.debug_mode then
     report_graph_map ["lineage-taint-debug"; "lineage-reachable.json"] reachable_graphs ;
