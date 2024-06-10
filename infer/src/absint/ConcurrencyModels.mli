@@ -47,6 +47,8 @@ val find_override_or_superclass_annotated :
 
 val annotated_as_worker_thread : Tenv.t -> Procname.t -> bool
 
+val annotated_as_named_thread : Procname.t -> string option
+
 val runs_on_ui_thread : Tenv.t -> Procname.t -> bool
 (** is method not transitively annotated [@WorkerThread] and is modeled or annotated [@UIThread] or
     equivalent? *)

@@ -520,7 +520,9 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
         if ConcurrencyModels.annotated_as_worker_thread tenv procname then
           Domain.ThreadDomain.BGThread
         else if ConcurrencyModels.runs_on_ui_thread tenv procname then Domain.ThreadDomain.UIThread
-        else astate.thread
+        else
+          ConcurrencyModels.annotated_as_named_thread procname
+          |> Option.value_map ~f:(fun n -> Domain.ThreadDomain.NamedThread n) ~default:astate.thread
       in
       {astate with thread}
     in

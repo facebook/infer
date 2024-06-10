@@ -12,7 +12,7 @@ module MF = MarkupFormatter
 let describe_pname = MF.wrap_monospaced Procname.pp
 
 module ThreadDomain = struct
-  type t = UnknownThread | UIThread | BGThread | AnyThread
+  type t = UnknownThread | UIThread | BGThread | AnyThread | NamedThread of string
   [@@deriving compare, equal, show {with_path= false}]
 
   let bottom = UnknownThread
@@ -25,6 +25,8 @@ module ThreadDomain = struct
         other
     | UIThread, UIThread | BGThread, BGThread ->
         lhs
+    | NamedThread l, NamedThread r when String.equal l r ->
+        lhs
     | _, _ ->
         AnyThread
 
@@ -34,11 +36,17 @@ module ThreadDomain = struct
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
-  (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. In
-      addition, this is monotonic wrt the lattice (increasing either argument cannot transition from
-      true to false). *)
+  (** Can two thread statuses occur in parallel? [UIThread, UIThread] and [NamedThread] of the same
+      name are forbidden. In addition, this is monotonic wrt the lattice (increasing either argument
+      cannot transition from true to false). *)
   let can_run_in_parallel st1 st2 =
-    match (st1, st2) with UIThread, UIThread -> false | _, _ -> true
+    match (st1, st2) with
+    | UIThread, UIThread ->
+        false
+    | NamedThread l, NamedThread r ->
+        not (String.equal l r)
+    | _, _ ->
+        true
 
 
   let is_uithread = function UIThread -> true | _ -> false
@@ -61,9 +69,16 @@ module ThreadDomain = struct
     | AnyThread, _ ->
         (* callee pair is UI / BG / Any and caller has abstracted away info so use callee's knowledge *)
         Some callee
-    | UIThread, BGThread | BGThread, UIThread ->
-        (* annotations or assertions are incorrectly used in code, or callee is path-sensitive on
-           thread-identity, just drop the callee pair *)
+    (* annotations or assertions are incorrectly used in code, or callee is path-sensitive on
+       thread-identity, just drop the callee pair *)
+    | UIThread, BGThread
+    | BGThread, UIThread
+    | UIThread, NamedThread _
+    | BGThread, NamedThread _
+    | NamedThread _, UIThread
+    | NamedThread _, BGThread ->
+        None
+    | NamedThread l, NamedThread r when not (String.equal l r) ->
         None
     | _, _ ->
         (* caller is UI or BG and callee does not disagree, so use that *)

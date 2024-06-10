@@ -18,7 +18,7 @@ module F = Format
       method.
     - Bottom is UnknownThread, and used as initial state. *)
 module ThreadDomain : sig
-  type t = UnknownThread | UIThread | BGThread | AnyThread
+  type t = UnknownThread | UIThread | BGThread | AnyThread | NamedThread of string
 
   include AbstractDomain.WithBottom with type t := t
 end

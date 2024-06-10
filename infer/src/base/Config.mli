@@ -864,6 +864,8 @@ val sqlite_vfs : string option
 
 val starvation_c_function_pointer_models : Yojson.Safe.t
 
+val starvation_c_named_threads_annot : Yojson.Safe.t
+
 val starvation_skip_analysis : Yojson.Safe.t
 
 val starvation_strict_mode : bool

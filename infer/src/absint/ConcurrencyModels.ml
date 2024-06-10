@@ -411,6 +411,21 @@ let annotated_as predicate tenv pname =
 
 let annotated_as_worker_thread tenv pname = annotated_as Annotations.ia_is_worker_thread tenv pname
 
+let annotated_as_named_thread pname =
+  match Config.starvation_c_named_threads_annot with
+  | `Assoc names ->
+      let function_name = Procname.to_string pname in
+      List.find_map
+        ~f:(function
+          | fun_name, `String thread_name when String.equal fun_name function_name ->
+              Some thread_name
+          | _ ->
+              None )
+        names
+  | _ ->
+      None
+
+
 let annotated_as_uithread_equivalent tenv pname =
   annotated_as Annotations.ia_is_uithread_equivalent tenv pname
 

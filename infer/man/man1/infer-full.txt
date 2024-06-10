@@ -3355,6 +3355,12 @@ INTERNAL OPTIONS
            'lock_m2_indirectly'}`
                
 
+       --starvation-c-named-threads json
+           Associate functions to threads. If two functions are associated to
+           the same thread they cannot run together. For example {'foo':
+           'some_thread', 'bar': 'some_thread'} would indicate that foo and
+           bar cannot run in parallel.
+
        --starvation-skip-analysis json
            Specify combinations of class/method list that should be skipped
            during starvation analysis

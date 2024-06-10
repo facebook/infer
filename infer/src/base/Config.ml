@@ -3477,6 +3477,13 @@ and starvation_c_function_pointer_models =
     \    "
 
 
+and starvation_c_named_threads_annot =
+  CLOpt.mk_json ~long:"starvation-c-named-threads"
+    "Associate functions to threads. If two functions are associated to the same thread they \
+     cannot run together. For example {'foo': 'some_thread', 'bar': 'some_thread'} would indicate \
+     that foo and bar cannot run in parallel."
+
+
 and starvation_skip_analysis =
   CLOpt.mk_json ~long:"starvation-skip-analysis"
     "Specify combinations of class/method list that should be skipped during starvation analysis"
@@ -4809,6 +4816,8 @@ and sqlite_page_size = !sqlite_page_size
 and sqlite_vfs = !sqlite_vfs
 
 and starvation_c_function_pointer_models = !starvation_c_function_pointer_models
+
+and starvation_c_named_threads_annot = !starvation_c_named_threads_annot
 
 and starvation_skip_analysis = !starvation_skip_analysis
 
