@@ -19,6 +19,33 @@ let is_dummy_constructor annot =
   String.equal annot.Annot.class_name dummy_constructor_annot.class_name
 
 
+let dummy_field_method_prefix = "__infer_field_"
+
+let is_dummy_field_pname pname =
+  String.is_prefix ~prefix:dummy_field_method_prefix (Procname.get_method pname)
+
+
+let dummy_pname_for_field fieldname typ =
+  let class_name = Option.value_exn (Typ.name typ) in
+  Procname.make_java ~class_name ~return_type:None
+    ~method_name:(dummy_field_method_prefix ^ Fieldname.get_field_name fieldname)
+    ~parameters:[] ~kind:Non_Static
+
+
+let classname_from_dummy_pname pname = Option.value_exn (Procname.get_class_type_name pname)
+
+let fieldname_from_dummy_pname pname =
+  let classname = classname_from_dummy_pname pname in
+  let field_name =
+    String.chop_prefix_if_exists ~prefix:dummy_field_method_prefix (Procname.get_method pname)
+  in
+  Fieldname.make classname field_name
+
+
+let struct_from_dummy_pname tenv pname =
+  Option.value_exn (Tenv.lookup tenv (classname_from_dummy_pname pname))
+
+
 let is_modeled_expensive tenv = function
   | Procname.Java proc_name_java as proc_name ->
       (not (BuiltinDecl.is_declared proc_name))
@@ -94,8 +121,15 @@ let method_has_annot annot models tenv pname =
 
 
 let find_override_with_annot annot models tenv pname =
-  let is_annotated = method_has_annot annot models in
-  PatternMatch.override_find (fun pn -> is_annotated tenv pn) tenv pname
+  if is_dummy_field_pname pname then
+    (* Get back the original field from the fake call *)
+    let struct_typ = struct_from_dummy_pname tenv pname in
+    let fieldname = fieldname_from_dummy_pname pname in
+    let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
+    if Annotations.field_has_annot fieldname struct_typ has_annot then Some pname else None
+  else
+    let is_annotated = method_has_annot annot models in
+    PatternMatch.override_find (fun pn -> is_annotated tenv pn) tenv pname
 
 
 let method_overrides_annot annot models tenv pname =
@@ -113,7 +147,14 @@ let update_trace loc trace =
   else Errlog.make_trace_element 0 loc "" [] :: trace
 
 
-let str_of_pname ?(withclass = false) = Procname.to_simplified_string ~withclass
+let str_of_pname ?(withclass = false) pname =
+  if is_dummy_field_pname pname then
+    (* Get back the original field from the fake call *)
+    let fieldname = fieldname_from_dummy_pname pname in
+    if withclass then Fieldname.to_simplified_string fieldname
+    else Fieldname.get_field_name fieldname
+  else Procname.to_simplified_string ~withclass pname
+
 
 let get_issue_type ~src ~snk =
   if is_dummy_constructor snk then IssueType.checkers_allocates_memory
@@ -164,6 +205,7 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
   let src_pname = Procdesc.get_proc_name proc_desc in
   let snk_annot_str = snk.Annot.class_name in
   let src_annot_str = src.Annot.class_name in
+  let access_or_call = if is_dummy_field_pname snk_pname then "accesses" else "calls" in
   let description =
     if is_dummy_constructor snk then
       let constr_str = str_of_pname ~withclass:true snk_pname in
@@ -171,9 +213,10 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
         (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str
         MF.pp_monospaced ("new " ^ constr_str)
     else
-      Format.asprintf "Method %a (%s %a%s%s) calls %a (%s %a%s%s)" MF.pp_monospaced
+      Format.asprintf "Method %a (%s %a%s%s) %s %a (%s %a%s%s)" MF.pp_monospaced
         (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
-        (get_details src src_pname) (get_class_details src src_pname) MF.pp_monospaced
+        (get_details src src_pname) (get_class_details src src_pname) access_or_call
+        MF.pp_monospaced
         (str_of_pname ~withclass:true snk_pname)
         (get_kind snk snk_pname) MF.pp_monospaced ("@" ^ snk_annot_str) (get_details snk snk_pname)
         (get_class_details snk snk_pname)
@@ -404,6 +447,13 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name proc_desc in
         let call_site = CallSite.make callee_pname call_loc in
+        check_call tenv ~callee_pname ~caller_pname call_site astate specs
+        |> merge_callee_map analysis_data call_site ~callee_pname
+    | Sil.Load {e= Exp.Lfield (_, fieldname, typ); loc} ->
+        (* Pretend that field access is a call to a fake method (containing the name of the field) *)
+        let caller_pname = Procdesc.get_proc_name proc_desc in
+        let callee_pname = dummy_pname_for_field fieldname typ in
+        let call_site = CallSite.make callee_pname loc in
         check_call tenv ~callee_pname ~caller_pname call_site astate specs
         |> merge_callee_map analysis_data call_site ~callee_pname
     | _ ->

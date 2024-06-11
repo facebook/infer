@@ -25,6 +25,10 @@
     {
       "sources": ["AnyThread", "MainThread", "UiThread"],
       "sinks": ["WorkerThread"]
+    },
+    {
+      "sources": ["AnySource"],
+      "sinks": ["Deprecated"]
     }
   ],
   "annotation-reachability-custom-models":
@@ -42,6 +46,9 @@
     ],
     "UserDefinedSanitizer": [
       "codetoanalyze\\.java\\.checkers\\.CustomAnnotations\\.sanitizerDefinedInConfig"
+    ],
+    "AnySource" : [
+      ".*"
     ]
   },
   "annotation-reachability-apply-superclass-annotations": true

@@ -252,4 +252,17 @@ class CustomAnnotations {
       sinkBecauseOfTheInterface();
     }
   }
+
+  @Deprecated int deprecatedField = 0;
+
+  @Deprecated
+  void deprecatedMethod() {}
+
+  public int accessesDeprecatedFieldBad() {
+    return deprecatedField;
+  }
+
+  public void callsDeprecatedMethodBad() {
+    deprecatedMethod();
+  }
 }
