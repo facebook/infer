@@ -199,7 +199,7 @@ module TaintConfig = struct
         || (Option.is_some @@ Summary.OnDisk.get ~lazy_payloads:true procname)
       in
       if not exists then
-        L.user_warning "@[LineageTaint: %s `%a` not found. Did you make a typo?@]@ " name
+        L.user_warning "@[LineageTaint: %s `%a` not found. Did you make a typo?@]@." name
           Procname.pp_verbose procname
     in
     check_procname "source" source.procname ;
@@ -423,8 +423,9 @@ let collect_coreachable (config : TaintConfig.t) caller_table reachable_graphs =
   aux [TaintConfig.todo_sink config] (Map.empty (module Procname))
 
 
-let report_graph_map filename_parts graphs =
+let report_graph_map name filename_parts graphs =
   let filename = Filename.of_parts (Config.results_dir :: filename_parts) in
+  let file_is_empty = ref true in
   Unix.mkdir_p (Filename.dirname filename) ;
   Out_channel.with_file filename ~f:(fun outchan ->
       Map.iteri
@@ -440,8 +441,12 @@ let report_graph_map filename_parts graphs =
                   "Unexpected non-singleton taint graph for procname %a without description"
                   Procname.pp procname
           | Some proc_desc ->
+              file_is_empty := !file_is_empty && G.is_empty subgraph ;
               Lineage.Out.report_graph outchan proc_desc subgraph )
-        graphs )
+        graphs ) ;
+  L.result "@[%s exported as %s%a@]@;" name filename
+    (IFmt.if' !file_is_empty Fmt.string)
+    " (but it seems empty)"
 
 
 let report taint_config =
@@ -449,9 +454,11 @@ let report taint_config =
   TaintConfig.check caller_table taint_config ;
   let reachable_graphs = collect_reachable taint_config caller_table in
   if Config.debug_mode then
-    report_graph_map ["lineage-taint-debug"; "lineage-reachable.json"] reachable_graphs ;
+    report_graph_map "Reachability graph"
+      ["lineage-taint-debug"; "lineage-reachable.json"]
+      reachable_graphs ;
   let coreachable_graphs = collect_coreachable taint_config caller_table reachable_graphs in
-  report_graph_map ["lineage-taint"; "lineage-taint.json"] coreachable_graphs
+  report_graph_map "Lineage taint graph" ["lineage-taint"; "lineage-taint.json"] coreachable_graphs
 
 
 module Private = struct

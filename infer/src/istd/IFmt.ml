@@ -12,6 +12,8 @@ let colon_sp ppf _ =
   Fmt.sp ppf ()
 
 
+let if' bool pp = if bool then pp else Fmt.nop
+
 module Labelled = struct
   let iter ?sep iter pp_elt = Fmt.iter ?sep (fun f x -> iter x ~f) pp_elt
 
