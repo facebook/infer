@@ -53,7 +53,6 @@ SOURCES_BUCKET_ALL = \
   warnings/ParameterNotNullableExample.m \
 
 SOURCES_ARC = \
-  retain_cycles/*.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \

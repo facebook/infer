@@ -37,32 +37,53 @@ let fields_superclass tenv otdi_super =
       []
 
 
+let get_objc_property_attribute att =
+  match att with
+  | `Readonly ->
+      None
+  | `Assign ->
+      Some Struct.Weak
+  | `Readwrite ->
+      None
+  | `Retain ->
+      Some Struct.Strong
+  | `Copy ->
+      Some Struct.Copy
+  | `Nonatomic | `Atomic ->
+      None
+  | `Weak ->
+      Some Struct.Weak
+  | `Strong ->
+      Some Struct.Strong
+  | `Unsafe_unretained ->
+      Some Struct.Weak
+  | `ExplicitGetter | `ExplicitSetter ->
+      None
+
+
 let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type prop_attributes =
-  let prop_atts =
-    List.map
-      ~f:(fun att -> Annot.{name= None; value= Str (Clang_ast_j.string_of_property_attribute att)})
-      prop_attributes
-  in
-  let annotation_from_type t =
+  let prop_atts = List.filter_map ~f:(fun att -> get_objc_property_attribute att) prop_attributes in
+  let attribute_from_type t =
     match t.Typ.desc with
     | Typ.Tptr (_, Typ.Pk_objc_weak) ->
-        [Annot.{name= None; value= Str Config.weak}]
+        Some Struct.Weak
     | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-        [Annot.{name= None; value= Str Config.unsafe_unret}]
+        Some Struct.Weak
     | _ ->
-        []
+        None
   in
   let fname = Fieldname.make class_tname ni_name in
   let typ = qual_type_to_sil_type tenv qual_type in
-  let item_annotations =
-    match prop_atts with
-    | [] ->
-        {Annot.class_name= Config.ivar_attributes; parameters= annotation_from_type typ}
-    | _ ->
-        {Annot.class_name= Config.property_attributes; parameters= prop_atts}
+  let objc_property_attributes =
+    match attribute_from_type typ with
+    | Some attr ->
+        if List.mem prop_atts ~equal:Struct.equal_objc_property_attribute attr then prop_atts
+        else attr :: prop_atts
+    | None ->
+        prop_atts
   in
-  let item_annotations = item_annotations :: CAst_utils.sil_annot_of_type qual_type in
-  Struct.mk_field fname typ ~annot:item_annotations
+  let item_annotations = CAst_utils.sil_annot_of_type qual_type in
+  Struct.mk_field fname typ ~annot:item_annotations ~objc_property_attributes
 
 
 (* Given a list of declarations in an interface returns a list of fields  *)

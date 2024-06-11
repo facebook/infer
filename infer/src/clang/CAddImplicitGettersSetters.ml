@@ -38,17 +38,13 @@ let objc_getter tenv proc_desc location self_with_typ {Struct.name= fieldname; t
   load_self_instr :: store_instrs
 
 
-let is_copy_property (annotations : Annot.Item.t) =
-  List.exists annotations ~f:(fun (ann : Annot.t) ->
-      String.equal ann.class_name Config.property_attributes
-      && List.exists
-           ~f:(fun Annot.{value} ->
-             Annot.has_matching_str_value value ~pred:(fun att -> String.equal Config.copy att) )
-           ann.parameters )
+let is_copy_property objc_property_attributes =
+  List.exists objc_property_attributes ~f:(fun attr ->
+      Struct.equal_objc_property_attribute attr Struct.Copy )
 
 
 let objc_setter tenv location self_with_typ (var, var_typ)
-    {Struct.name= fieldname; typ= field_typ; annot= field_annot} =
+    {Struct.name= fieldname; typ= field_typ; objc_property_attributes} =
   let field_exp, load_self_instr = get_load_self_instr location self_with_typ fieldname in
   let store_instrs =
     match field_typ with
@@ -57,7 +53,7 @@ let objc_setter tenv location self_with_typ (var, var_typ)
     | _ ->
         let id_field = Ident.create_fresh Ident.knormal in
         let load_var_instr = Sil.Load {id= id_field; e= Lvar var; typ= var_typ; loc= location} in
-        if is_copy_property field_annot then
+        if is_copy_property objc_property_attributes then
           let class_name = Typ.Name.Objc.from_string "NSObject" in
           let ret_id = Ident.create_fresh Ident.knormal in
           let copy_call_instr =

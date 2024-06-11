@@ -120,8 +120,6 @@ let progress_bar_style_symbols = [("auto", `Auto); ("plain", `Plain); ("multilin
 
 let anonymous_block_prefix = "objc_block_"
 
-let assign = "<\"Assign\">"
-
 (** If true, a procedure call succeeds even when there is a bound error this mimics what happens
     with a direct array access where an error is produced and the analysis continues *)
 let bound_error_allowed_in_procedure_call = true
@@ -146,8 +144,6 @@ let fail_on_issue_exit_code = 2
 
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
-
-let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix_generated_by_javalib = "$Lambda$"
 
@@ -202,8 +198,6 @@ let meet_level = 1
 
 let nsnotification_center_checker_backend = false
 
-let property_attributes = "property_attributes"
-
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
@@ -218,12 +212,6 @@ let kotlin_source_extension = ".kt"
 
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
-
-let unsafe_unret = "<\"Unsafe_unretained\">"
-
-let weak = "<\"Weak\">"
-
-let copy = "<\"Copy\">"
 
 (* Allow lists for C++ library functions *)
 

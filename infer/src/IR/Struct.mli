@@ -9,10 +9,23 @@
 open! IStd
 module F = Format
 
-type field = {name: Fieldname.t; typ: Typ.t; annot: Annot.Item.t}
+type objc_property_attribute = Copy | Strong | Weak [@@deriving compare, equal, hash, normalize]
+
+type field =
+  { name: Fieldname.t
+  ; typ: Typ.t
+  ; annot: Annot.Item.t
+  ; objc_property_attributes: objc_property_attribute list }
 [@@deriving compare, equal, hash, normalize]
 
-val mk_field : ?annot:Annot.Item.t -> Fieldname.t -> Typ.t -> field
+val mk_field :
+     ?annot:Annot.Item.t
+  -> ?objc_property_attributes:objc_property_attribute list
+  -> Fieldname.t
+  -> Typ.t
+  -> field
+
+val field_has_weak : field -> bool
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 

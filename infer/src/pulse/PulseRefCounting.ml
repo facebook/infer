@@ -37,17 +37,6 @@ let find_field_in_tenv fields fieldname =
 
 
 let get_access_type tenv (access : Access.t) : access_type =
-  let has_weak_or_unretained_or_assign annotations =
-    List.exists annotations ~f:(fun (ann : Annot.t) ->
-        ( String.equal ann.class_name Config.property_attributes
-        || String.equal ann.class_name Config.ivar_attributes )
-        && List.exists
-             ~f:(fun Annot.{value} ->
-               Annot.has_matching_str_value value ~pred:(fun att ->
-                   String.equal Config.unsafe_unret att
-                   || String.equal Config.weak att || String.equal Config.assign att ) )
-             ann.parameters )
-  in
   match access with
   | FieldAccess fieldname -> (
       if Fieldname.is_capture_field_in_closure fieldname then
@@ -63,12 +52,12 @@ let get_access_type tenv (access : Access.t) : access_type =
           | None ->
               (* Can't tell if we have a strong reference. *)
               Unknown
-          | Some {Struct.typ; annot} -> (
-            match typ.Typ.desc with
+          | Some field -> (
+            match field.typ.Typ.desc with
             | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
                 Weak
             | _ ->
-                if has_weak_or_unretained_or_assign annot then Weak else Strong ) ) )
+                if Struct.field_has_weak field then Weak else Strong ) ) )
   | _ ->
       Strong
 

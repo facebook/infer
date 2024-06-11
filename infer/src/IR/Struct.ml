@@ -8,10 +8,23 @@
 open! IStd
 module F = Format
 
-type field = {name: Fieldname.t; typ: Typ.t; annot: Annot.Item.t}
+type objc_property_attribute = Copy | Strong | Weak [@@deriving compare, equal, hash, normalize]
+
+type field =
+  { name: Fieldname.t
+  ; typ: Typ.t
+  ; annot: Annot.Item.t
+  ; objc_property_attributes: objc_property_attribute list }
 [@@deriving compare, equal, hash, normalize]
 
-let mk_field ?(annot = Annot.Item.empty) name typ = {name; typ; annot}
+let mk_field ?(annot = Annot.Item.empty) ?(objc_property_attributes = []) name typ =
+  {name; typ; annot; objc_property_attributes}
+
+
+let field_has_weak field =
+  List.exists field.objc_property_attributes ~f:(fun attr ->
+      equal_objc_property_attribute attr Weak )
+
 
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}, normalize]
@@ -48,8 +61,19 @@ type t =
 
 type lookup = Typ.Name.t -> t option
 
-let pp_field pe f {name= field_name; typ; annot} =
-  F.fprintf f "@\n\t\t%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp annot
+let pp_objc_property_attribute f attributes =
+  let s = match attributes with Copy -> "copy" | Strong -> "strong" | Weak -> "weak" in
+  F.fprintf f "%s" s
+
+
+let pp_objc_property_attributes f attrs =
+  if List.is_empty attrs then ()
+  else F.fprintf f "(%a)" (Pp.comma_seq pp_objc_property_attribute) attrs
+
+
+let pp_field pe f {name= field_name; typ; annot; objc_property_attributes} =
+  F.fprintf f "@\n\t\t%a %a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp annot
+    pp_objc_property_attributes objc_property_attributes
 
 
 let pp pe name f
@@ -63,8 +87,9 @@ let pp pe name f
      ; class_info
      ; dummy
      ; source_file } [@warning "+missing-record-field-pattern"] ) =
-  let pp_field pe f {name; typ; annot} =
-    F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp name Annot.Item.pp annot
+  let pp_field pe f {name; typ; annot; objc_property_attributes} =
+    F.fprintf f "@;<0 2>%a %a %a %a" (Typ.pp_full pe) typ Fieldname.pp name Annot.Item.pp annot
+      pp_objc_property_attributes objc_property_attributes
   in
   let seq pp fmt = function
     | [] ->
