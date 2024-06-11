@@ -229,6 +229,10 @@ module Attr = struct
 
   let is_abstract {name; values} = String.equal name "abstract" && List.is_empty values
 
+  let is_alias {name; values} =
+    String.equal name "kind" && List.equal String.equal values ["typedef"]
+
+
   let is_const {name; values} = String.equal name "constant" && List.is_empty values
 
   let is_curry {name; values} = String.equal name "curry" && List.is_empty values

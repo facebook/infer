@@ -1989,6 +1989,7 @@ end)
 module InstanceOf = struct
   (** Domain for tracking dynamic type of variables via positive and negative instanceof constraints *)
 
+  (* *Intended* invariant is that these all be normalised wrt alias expansion *)
   type dynamic_type_data = {typ: Typ.t; source_file: (SourceFile.t[@yojson.opaque]) option}
   [@@deriving compare, equal, yojson_of]
 
@@ -4122,6 +4123,8 @@ type dynamic_type_data = InstanceOf.dynamic_type_data =
 let get_dynamic_type = DynamicTypes.get_dynamic_type
 
 let add_dynamic_type_unsafe v t ?source_file _location {conditions; phi} =
+  let tenv = PulseContext.tenv_exn () in
+  let t = Tenv.expand_hack_alias_in_typ tenv t in
   let phi, should_zero = Formula.add_dynamic_type v t ?source_file phi in
   ( if should_zero then
       (* This situation corresponds (roughly) to the ones in which we'd previously have
@@ -4141,6 +4144,8 @@ let copy_type_constraints v_src v_target {conditions; phi} =
 
 
 let and_equal_instanceof v1 v2 t ~nullable formula =
+  let tenv = PulseContext.tenv_exn () in
+  let t = Tenv.expand_hack_alias_in_typ tenv t in
   let+ formula, new_eqs' =
     and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
   in
@@ -4156,6 +4161,8 @@ let normalize ?location formula =
 
 
 let and_dynamic_type v t ?source_file formula =
+  let tenv = PulseContext.tenv_exn () in
+  let t = Tenv.expand_hack_alias_in_typ tenv t in
   let+ phi, new_eqns =
     Formula.Normalizer.and_dynamic_type v t ?source_file (formula.phi, RevList.empty)
   in

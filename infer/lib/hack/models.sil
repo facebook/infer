@@ -102,6 +102,9 @@ type HackVec extends HH::AnyArray = .final {
   __infer_model_backing_last_read: int
 }
 
+type HH::int equals HackInt
+type HH::vec equals HackVec
+
 declare $builtins.hhbc_new_vec(...): *HackMixed
 declare $builtins.hhbc_await(*HackMixed): *HackMixed
 

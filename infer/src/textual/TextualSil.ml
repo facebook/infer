@@ -450,6 +450,7 @@ module StructBridge = struct
              if has ~f:Textual.Attr.is_interface then SilStruct.Interface
              else if has ~f:Textual.Attr.is_trait then SilStruct.Trait
              else if has ~f:Textual.Attr.is_abstract then SilStruct.AbstractClass
+             else if has ~f:Textual.Attr.is_alias then SilStruct.Alias
              else SilStruct.Class
            in
            SilStruct.ClassInfo.HackClassInfo kind )

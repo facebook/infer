@@ -354,7 +354,7 @@ module MethodInfo = struct
        This function is to compute the correct arity offset we should apply. *)
     let get_kind ~last_class_visited class_name (kind : Struct.hack_class_kind) =
       match kind with
-      | Class | AbstractClass | Interface ->
+      | Class | AbstractClass | Interface | Alias ->
           IsClass
       | Trait -> (
         match last_class_visited with
@@ -513,3 +513,50 @@ let get_hack_direct_used_traits tenv class_name =
               if Struct.is_hack_trait str then name :: acc else acc
           | _, _ ->
               acc ) )
+
+
+let alias_expansion_limit = 100
+
+(* recursively expand type alias, this returns None if not in Tenv at all, which may be wrong
+   TODO: track when an alias is nullable, propagate that disjunctively as we unfold definitions
+   and return that as part of the result of expansion
+*)
+let expand_hack_alias tenv tname =
+  let rec _expand_hack_alias tname n =
+    if Int.(n = 0) then (
+      L.internal_error "exceeded alias expansion limit (cycle?), not expanding" ;
+      None )
+    else
+      match lookup tenv tname with
+      | None ->
+          None
+      | Some {class_info= HackClassInfo Alias; supers= [definition_name]} ->
+          _expand_hack_alias definition_name (n - 1)
+      | Some {class_info= HackClassInfo Alias; supers= ss} -> (
+        match ss with
+        | [] ->
+            L.internal_error "empty type alias \"supers\", not expanding" ;
+            None
+        | x :: _xs ->
+            L.internal_error "alias type defined as union, taking first element" ;
+            Some x )
+      | _ ->
+          Some tname
+  in
+  _expand_hack_alias tname alias_expansion_limit
+
+
+(* This one works on Typ.t rather than Typ.name and by default leaves input alone
+   It also just preserves the quals 'cos I assume there's no reason to try to be
+   more clever with them
+*)
+let expand_hack_alias_in_typ tenv typ =
+  match typ with
+  | {Typ.desc= Tstruct (HackClass hcn); quals} -> (
+    match expand_hack_alias tenv (HackClass hcn) with
+    | None ->
+        typ (* leave it alone here ? *)
+    | Some tname ->
+        {Typ.desc= Tstruct tname; quals} )
+  | _ ->
+      typ

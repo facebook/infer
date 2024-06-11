@@ -32,6 +32,7 @@ let textual_keywords =
     ; ("define", DEFINE)
     ; ("else", ELSE)
     ; ("extends", EXTENDS)
+    ; ("equals", EQUALS)
     ; ("false", FALSE)
     ; ("float", FLOAT)
     ; ("global", GLOBAL)

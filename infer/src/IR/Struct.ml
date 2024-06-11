@@ -29,7 +29,7 @@ let field_has_weak field =
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}, normalize]
 
-type hack_class_kind = Class | AbstractClass | Interface | Trait
+type hack_class_kind = Class | AbstractClass | Interface | Trait | Alias
 [@@deriving equal, hash, show {with_path= false}, normalize]
 
 module ClassInfo = struct
@@ -444,6 +444,10 @@ let is_hack_abstract_class {class_info} =
 
 let is_hack_interface {class_info} =
   match (class_info : ClassInfo.t) with HackClassInfo Interface -> true | _ -> false
+
+
+let is_hack_alias {class_info} =
+  match (class_info : ClassInfo.t) with HackClassInfo Alias -> true | _ -> false
 
 
 let is_hack_trait {class_info} =

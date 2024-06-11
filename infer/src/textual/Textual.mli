@@ -106,6 +106,8 @@ module Attr : sig
 
   val is_abstract : t -> bool
 
+  val is_alias : t -> bool
+
   val is_hack_wrapper : t -> bool
 
   val is_final : t -> bool

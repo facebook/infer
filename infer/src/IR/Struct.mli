@@ -29,7 +29,7 @@ val field_has_weak : field -> bool
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
-type hack_class_kind = Class | AbstractClass | Interface | Trait
+type hack_class_kind = Class | AbstractClass | Interface | Trait | Alias
 
 module ClassInfo : sig
   type t =
@@ -112,6 +112,8 @@ val get_source_file : t -> SourceFile.t option
 val is_hack_class : t -> bool
 
 val is_hack_abstract_class : t -> bool
+
+val is_hack_alias : t -> bool [@@warning "-unused-value-declaration"]
 
 val is_hack_interface : t -> bool
 

@@ -142,6 +142,10 @@ val is_trivially_copyable : t -> Typ.t -> bool
 
 val get_hack_direct_used_traits : t -> Typ.Name.t -> HackClassName.t list
 
+val expand_hack_alias : t -> Typ.name -> Typ.name option [@@warning "-unused-value-declaration"]
+
+val expand_hack_alias_in_typ : t -> Typ.t -> Typ.t
+
 module SQLite : SqliteUtils.Data with type t = per_file
 
 val normalize : per_file -> per_file
