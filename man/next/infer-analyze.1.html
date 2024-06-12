@@ -1068,6 +1068,15 @@ reachability checker) (Conversely:
 <b>--no-annotation-reachability-expensive</b>)</p>
 
 
+<p style="margin-left:9%;"><b>--annotation-reachability-minimize-sources</b></p>
+
+<p style="margin-left:14%;">Activates: do not report paths
+where a suffix is also a source to sink path. For example if
+there is a source1() -&gt; source2() -&gt; sink() path then
+only source2() -&gt; sink() will be reported. (Conversely:
+<b>--no-annotation-reachability-minimize-sources</b>)</p>
+
+
 <p style="margin-left:9%;"><b>--annotation-reachability-no-allocation</b></p>
 
 <p style="margin-left:14%;">Activates: check if methods
@@ -1132,8 +1141,8 @@ disabled on larger CFGs.</p>
 <p style="margin-left:14%;">[EXPERIMENTAL] Maximal width of
 structures for field sensitive lineage analysis. Structure
 that have a higher number of fields will be smashed into a
-single element. 0 will make the analysis field insensitive.
-If not set, field width will be unlimited.</p>
+single element. 0 will make the analysis field
+insensitive.</p>
 
 
 <p style="margin-left:9%;"><b>--lineage-include-builtins</b></p>
@@ -1167,14 +1176,14 @@ then the lineage graph produced corresponds to Infer's IR.
 skipped.</p>
 
 
-<p style="margin-left:9%;"><b>--lineage-prevent-cycles</b></p>
+<p style="margin-left:9%;"><b>--no-lineage-prevent-cycles</b></p>
 
-<p style="margin-left:14%;">Activates: [EXPERIMENTAL] If
-set, Lineage will stop distinguishing the fields of a
+<p style="margin-left:14%;">Deactivates: [EXPERIMENTAL] If
+given, Lineage will not stop traversing the fields of a
 variable when it notices recursive types (that is, a
 sub-field having the same type as one of its
 &quot;ancestors&quot;). (Conversely:
-<b>--no-lineage-prevent-cycles</b>)</p>
+<b>--lineage-prevent-cycles</b>)</p>
 
 <p style="margin-left:9%;"><b>--lineage-seed</b>
 <i>int</i></p>

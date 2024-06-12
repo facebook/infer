@@ -187,6 +187,16 @@ reachability checker) (Conversely:
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-minimize-sources</b></p>
+
+<p style="margin-left:14%;">Activates: do not report paths
+where a suffix is also a source to sink path. For example if
+there is a source1() -&gt; source2() -&gt; sink() path then
+only source2() -&gt; sink() will be reported. (Conversely:
+<b>--no-annotation-reachability-minimize-sources</b>)</p>
+
+<p style="margin-left:9%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-no-allocation</b></p>
 
 <p style="margin-left:14%;">Activates: check if methods
@@ -937,7 +947,7 @@ CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
-CONFIG_IMPACT (disabled by default), <br>
+CONFIG_IMPACT (enabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONFIG_USAGE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
@@ -1046,7 +1056,7 @@ PULSE_CONST_REFABLE (enabled by default), <br>
 PULSE_DICT_MISSING_KEY (disabled by default), <br>
 PULSE_DYNAMIC_TYPE_MISMATCH (disabled by default), <br>
 PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
-PULSE_REFERENCE_STABILITY (disabled by default), <br>
+PULSE_REFERENCE_STABILITY (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_TRANSITIVE_ACCESS (enabled by default), <br>
 PULSE_UNAWAITED_AWAITABLE (enabled by default), <br>
@@ -1054,7 +1064,7 @@ PULSE_UNINITIALIZED_CONST (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNNECESSARY_COPY (enabled by default), <br>
 PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default), <br>
-PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (enabled by
 default), <br>
 PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (enabled by
 default), <br>
@@ -1535,11 +1545,10 @@ analysis or capture encounter a failure (Conversely:
 
 <p style="margin-left:9%;">See also <b>infer-analyze</b>(1)
 and <b>infer-capture</b>(1). <b><br>
---kotlin-capture</b></p>
+--no-kotlin-capture</b></p>
 
-<p style="margin-left:14%;">Activates: Enable Kotlin
-capture (experimental, do not use). (Conversely:
-<b>--no-kotlin-capture</b>)</p>
+<p style="margin-left:14%;">Deactivates: Enable Kotlin
+capture. (Conversely: <b>--kotlin-capture</b>)</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -1582,8 +1591,8 @@ disabled on larger CFGs.</p>
 <p style="margin-left:14%;">[EXPERIMENTAL] Maximal width of
 structures for field sensitive lineage analysis. Structure
 that have a higher number of fields will be smashed into a
-single element. 0 will make the analysis field insensitive.
-If not set, field width will be unlimited.</p>
+single element. 0 will make the analysis field
+insensitive.</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1630,14 +1639,14 @@ skipped.</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
---lineage-prevent-cycles</b></p>
+--no-lineage-prevent-cycles</b></p>
 
-<p style="margin-left:14%;">Activates: [EXPERIMENTAL] If
-set, Lineage will stop distinguishing the fields of a
+<p style="margin-left:14%;">Deactivates: [EXPERIMENTAL] If
+given, Lineage will not stop traversing the fields of a
 variable when it notices recursive types (that is, a
 sub-field having the same type as one of its
 &quot;ancestors&quot;). (Conversely:
-<b>--no-lineage-prevent-cycles</b>)</p>
+<b>--lineage-prevent-cycles</b>)</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1663,7 +1672,7 @@ seed.</p>
 
 <p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage sink for taint finding, format
-[module:]function/arity{ret,argN}</p>
+[module:]function/arity.{ret,argN}</p>
 
 <p style="margin-left:9%;">See also <b>infer-report</b>(1).
 <b><br>
@@ -1671,7 +1680,7 @@ Lineage sink for taint finding, format
 
 <p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage source for taint finding, format
-[module:]function/arity{ret,argN}</p>
+[module:]function/arity.{ret,argN}</p>
 
 <p style="margin-left:9%;">See also <b>infer-report</b>(1).
 <b><br>
