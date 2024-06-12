@@ -63,6 +63,12 @@ Check for inefficient uses of iterators that iterate on keys then lookup their v
 
 [Visit here for more information.](/docs/next/checker-inefficient-keyset-iterator)
 
+## Lineage
+
+Computes a dataflow graph
+
+[Visit here for more information.](/docs/next/checker-lineage)
+
 ## Litho "Required Props"
 
 Checks that all non-optional `@Prop`s have been specified when constructing Litho components.
@@ -127,11 +133,11 @@ Toy checker for the "resource leak" write-your-own-checker exercise.
 
 [Visit here for more information.](/docs/next/checker-resource-leak-lab)
 
-## Scope Leakage
+## SIL validation
 
-The Java/Kotlin checker takes into account a set of "scope" annotations and a must-not-hold relation over the scopes. The checker raises an alarm if there exists a field access path from object A to object B, with respective scopes SA and SB, such that must-not-hold(SA, SB).
+This checker validates that all SIL instructions in all procedure bodies conform to a (front-end specific) subset of SIL.
 
-[Visit here for more information.](/docs/next/checker-scope-leakage)
+[Visit here for more information.](/docs/next/checker-sil-validation)
 
 ## Static Initialization Order Fiasco
 
@@ -139,17 +145,11 @@ Catches Static Initialization Order Fiascos in C++, that can lead to subtle, com
 
 [Visit here for more information.](/docs/next/checker-siof)
 
-## SIL validation
+## Scope Leakage
 
-This checker validates that all SIL instructions in all procedure bodies conform to a (front-end specific) subset of SIL.
+The Java/Kotlin checker takes into account a set of "scope" annotations and a must-not-hold relation over the scopes. The checker raises an alarm if there exists a field access path from object A to object B, with respective scopes SA and SB, such that must-not-hold(SA, SB).
 
-[Visit here for more information.](/docs/next/checker-sil-validation)
-
-## Lineage
-
-Computes a dataflow graph
-
-[Visit here for more information.](/docs/next/checker-lineage)
+[Visit here for more information.](/docs/next/checker-scope-leakage)
 
 ## Self in Block
 

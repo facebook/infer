@@ -20,6 +20,8 @@ type t =
   | FragmentRetainsView
   | Impurity
   | InefficientKeysetIterator
+  | Lineage
+  | LineageShape
   | LithoRequiredProps
   | Liveness
   | LoopHoisting
@@ -31,11 +33,9 @@ type t =
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
-  | ScopeLeakage
-  | SIOF
   | SILValidation
-  | Lineage
-  | LineageShape
+  | SIOF
+  | ScopeLeakage
   | SelfInBlock
   | Starvation
   | Topl

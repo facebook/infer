@@ -6,12 +6,11 @@
     "checker-bufferoverrun", "checker-config-impact-analysis",
     "checker-cost", "checker-datalog", "checker-fragment-retains-view",
     "checker-impurity", "checker-inefficient-keyset-iterator",
-    "checker-litho-required-props", "checker-liveness",
+    "checker-lineage", "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-parameter-not-null-checked",
     "checker-printf-args", "checker-pulse", "checker-purity",
     "checker-quandary", "checker-racerd", "checker-resource-leak-lab",
-    "checker-scope-leakage", "checker-siof", "checker-sil-validation",
-    "checker-lineage", "checker-self-in-block", "checker-starvation",
-    "checker-topl"
+    "checker-sil-validation", "checker-siof", "checker-scope-leakage",
+    "checker-self-in-block", "checker-starvation", "checker-topl"
   ]
 }

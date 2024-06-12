@@ -187,6 +187,16 @@ reachability checker) (Conversely:
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-minimize-sources</b></p>
+
+<p style="margin-left:14%;">Activates: do not report paths
+where a suffix is also a source to sink path. For example if
+there is a source1() -&gt; source2() -&gt; sink() path then
+only source2() -&gt; sink() will be reported. (Conversely:
+<b>--no-annotation-reachability-minimize-sources</b>)</p>
+
+<p style="margin-left:9%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-no-allocation</b></p>
 
 <p style="margin-left:14%;">Activates: check if methods
@@ -1582,8 +1592,8 @@ disabled on larger CFGs.</p>
 <p style="margin-left:14%;">[EXPERIMENTAL] Maximal width of
 structures for field sensitive lineage analysis. Structure
 that have a higher number of fields will be smashed into a
-single element. 0 will make the analysis field insensitive.
-If not set, field width will be unlimited.</p>
+single element. 0 will make the analysis field
+insensitive.</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1630,14 +1640,14 @@ skipped.</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
---lineage-prevent-cycles</b></p>
+--no-lineage-prevent-cycles</b></p>
 
-<p style="margin-left:14%;">Activates: [EXPERIMENTAL] If
-set, Lineage will stop distinguishing the fields of a
+<p style="margin-left:14%;">Deactivates: [EXPERIMENTAL] If
+given, Lineage will not stop traversing the fields of a
 variable when it notices recursive types (that is, a
 sub-field having the same type as one of its
 &quot;ancestors&quot;). (Conversely:
-<b>--no-lineage-prevent-cycles</b>)</p>
+<b>--lineage-prevent-cycles</b>)</p>
 
 <p style="margin-left:9%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1663,7 +1673,7 @@ seed.</p>
 
 <p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage sink for taint finding, format
-[module:]function/arity{ret,argN}</p>
+[module:]function/arity.{ret,argN}</p>
 
 <p style="margin-left:9%;">See also <b>infer-report</b>(1).
 <b><br>
@@ -1671,7 +1681,7 @@ Lineage sink for taint finding, format
 
 <p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage source for taint finding, format
-[module:]function/arity{ret,argN}</p>
+[module:]function/arity.{ret,argN}</p>
 
 <p style="margin-left:9%;">See also <b>infer-report</b>(1).
 <b><br>
