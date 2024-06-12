@@ -388,9 +388,8 @@ JAVA OPTIONS
            The version of Java being used. Set it to your Java version if mvn
            is failing.
 
-       --kotlin-capture
-           Activates: Enable Kotlin capture (experimental, do not use).
-           (Conversely: --no-kotlin-capture)
+       --no-kotlin-capture
+           Deactivates: Enable Kotlin capture. (Conversely: --kotlin-capture)
 
        --no-mask-sawja-exceptions
            Deactivates: Mask exceptions thrown by Sawja/Javalib during Java

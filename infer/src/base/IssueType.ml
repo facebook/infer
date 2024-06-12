@@ -500,7 +500,7 @@ let condition_always_true =
 
 
 let config_impact_analysis =
-  register ~enabled:false ~category:PerfRegression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
+  register ~enabled:true ~category:PerfRegression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
 
 
@@ -1044,7 +1044,7 @@ let unnecessary_copy_assignment_pulse =
 
 
 let unnecessary_copy_assignment_const_pulse =
-  register ~enabled:false ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST"
+  register ~enabled:true ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST"
     Error Pulse ~hum:"Unnecessary Copy Assignment from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
@@ -1174,7 +1174,7 @@ let vector_invalidation =
 
 
 let pulse_reference_stability =
-  register ~category:MemoryError ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
+  register ~category:MemoryError ~id:"PULSE_REFERENCE_STABILITY" ~enabled:true Error Pulse
     ~user_documentation:[%blob "./documentation/issues/PULSE_REFERENCE_STABILITY.md"]
 
 

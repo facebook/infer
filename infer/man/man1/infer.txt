@@ -607,7 +607,7 @@ OPTIONS
              CLASS_CAST_EXCEPTION (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
-             CONFIG_IMPACT (disabled by default),
+             CONFIG_IMPACT (enabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
              CONFIG_USAGE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
@@ -705,7 +705,7 @@ OPTIONS
              PULSE_DICT_MISSING_KEY (disabled by default),
              PULSE_DYNAMIC_TYPE_MISMATCH (disabled by default),
              PULSE_READONLY_SHARED_PTR_PARAM (enabled by default),
-             PULSE_REFERENCE_STABILITY (disabled by default),
+             PULSE_REFERENCE_STABILITY (enabled by default),
              PULSE_RESOURCE_LEAK (enabled by default),
              PULSE_TRANSITIVE_ACCESS (enabled by default),
              PULSE_UNAWAITED_AWAITABLE (enabled by default),
@@ -713,7 +713,7 @@ OPTIONS
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNNECESSARY_COPY (enabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default),
-             PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by default),
+             PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (enabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (enabled by default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE (enabled by default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by
@@ -1042,9 +1042,8 @@ OPTIONS
            failure (Conversely: --no-keep-going)
            See also infer-analyze(1) and infer-capture(1).
 
-       --kotlin-capture
-           Activates: Enable Kotlin capture (experimental, do not use).
-           (Conversely: --no-kotlin-capture)
+       --no-kotlin-capture
+           Deactivates: Enable Kotlin capture. (Conversely: --kotlin-capture)
            See also infer-capture(1).
 
        --lineage

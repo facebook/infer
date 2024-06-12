@@ -1968,9 +1968,9 @@ and jobs =
 
 
 and kotlin_capture =
-  CLOpt.mk_bool ~long:"kotlin-capture" ~default:false
+  CLOpt.mk_bool ~long:"kotlin-capture" ~default:true
     ~in_help:InferCommand.[(Capture, manual_java)]
-    "Enable Kotlin capture (experimental, do not use)."
+    "Enable Kotlin capture."
 
 
 and lineage_source =
@@ -2467,8 +2467,7 @@ and pulse_force_continue =
      option, we force the analysis to continue, treating the callee as an unknown function. (Note \
      that if the callee had latent issues, those keep being surfaced, as appropriate.) Activating \
      this option will increase the coverage of code that is analyzed, but may introduce false \
-     positives. It is intended to be used for debugging, to quickly assess if a false negative may \
-     be caused by lack of coverage."
+     positives."
 
 
 and pulse_havoc_arguments =
