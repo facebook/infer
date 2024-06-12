@@ -1,10 +1,61 @@
 ## Next version
 
+## Version 1.2.0
+
+A lot has happened in the years since 1.1.0 so these are just the highlights.
+
 ### Checkers
 
-- The linter framework ASTLanguage (AL) has been removed. Other linter frameworks, for example clang-based ones, can be used instead.
+- [Pulse](https://fbinfer.com/docs/checker-pulse) is now enabled by default and replaces [Biabduction](https://fbinfer.com/docs/checker-biabduction) as the default memory and value analysis engine for Infer. Pulse powers a lot of issue types historically reported by other checkers, such as null dereferences, memory/resource leaks, reads of uninitialised values, as well as a range of new issue types such as ([user-configurable](https://fbinfer.com/docs/next/man-infer-analyze#PULSE%20CHECKER%20OPTIONS)) [tainted data flows](https://fbinfer.com/docs/next/all-issue-types#taint_error) and C++ [unnecessary object copies](https://fbinfer.com/docs/next/all-issue-types#pulse_unnecessary_copy).
 
-- [Eradicate](https://fbinfer.com/docs/checker-eradicate) is now deprecated and will be removed in the future.
+- The [Resource Leak checker for .NET](https://fbinfer.com/docs/checker-dotnet-resource-leak) and [Uninitialized Value](https://fbinfer.com/docs/checker-uninit) checkers have been removed and their functionality moved to Pulse for improved precision.
+
+- The linter framework [ASTLanguage (AL)](https://fbinfer.com/docs/checker-linters) has been removed (previously deprecated). Other clang-based linter frameworks such as [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) can be used instead.
+
+- [Eradicate](https://fbinfer.com/docs/1.0.0/checker-eradicate) has been removed (previously deprecated).
+
+- Two other checkers have been deleted: [Config Checks between Markers](https://fbinfer.com/docs/checker-config-checks-between-markers) (previously experimental) and [Immutable Cast](https://fbinfer.com/docs/checker-immutable-cast) (previously deprecated).
+
+- [Biabduction](https://fbinfer.com/docs/checker-biabduction) is now deprecated in favour of [Pulse](https://fbinfer.com/docs/checker-pulse).
+
+- [Quandary](https://fbinfer.com/docs/checker-biabduction) is now deprecated in favour of [Pulse](https://fbinfer.com/docs/checker-pulse)'s taint analysis.
+
+- New checker: [Lineage](https://fbinfer.com/docs/next/checker-lineage) produces inter-procedural data flow graphs for Erlang code and provides commands to query taint paths in it.
+
+- New checker: [Parameter Not Null Checked](https://fbinfer.com/docs/next/checker-parameter-not-null-checked) for Objective-C, replacing the [PARAMETER_NOT_NULL_CHECKED](https://fbinfer.com/docs/all-issue-types#parameter_not_null_checked) bug type reported by biabduction.
+
+- New checker: [Scope Leakage](https://fbinfer.com/docs/next/checker-scope-leakage) for Java and Kotlin, verifying that certain classes can never retain others in a configurable way.
+
+- [Annotation Reachability](https://fbinfer.com/docs/next/checker-annotation-reachability): support for C++ was dropped and Java support was improved to support using regexps to model annotated functions, and having field accesses as sinks.
+
+
+### Languages
+
+- New **Erlang** frontend. You can analyse Erlang code compiling with `erlc`, `rebar3` or `buck2`.
+
+- New **Hack** frontend, based on [`hackc`](https://github.com/facebook/hhvm/tree/master/hphp/hack/src/hackc).
+
+- New "Textual" intermediate frontend. Textual is a new input format that frontend writers may use to emit SIL, either in text form or from OCaml directly. It is currently used by the Hack frontend. Textual can also be used to write analysis models, i.e. stubs for certain functions that will be used during the analysis as if they were these functions' implementations.
+
+
+### Build System Integrations
+
+- Clang upgraded to version 18.
+
+- [buck2](https://buck2.build/) support.
+
+
+### Backend
+
+- Incremental mode much improved, see the new `--incremental-analysis` flag in the updated [workflow for CI](https://fbinfer.com/docs/next/steps-for-ci/#differential-workflow) document.
+
+
+### Command Line Interface
+
+- `infer report` now generates the report files (eg infer-out/report.json) afresh from the stored analysis summaries on disk. The command doesn't dump the summaries to the console anymore, you can use `infer debug --procedures --procedures-summary` to do so.
+
+- New option to dump a SARIF report of the issues found by infer: `--sarif`.
+
 
 ## Version 1.1.0
 
