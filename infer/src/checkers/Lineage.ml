@@ -720,15 +720,35 @@ module Out = struct
     module EdgeMetadata = struct
       type t =
         { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
-        ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
-      [@@deriving yojson_of]
+        ; project: FieldPath.t [@default []] [@yojson_drop_default.equal]
+        ; derives: Procname.t option [@yojson.option] }
+      [@@deriving yojson_of, fields]
 
-      (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
-      let field_operation ~project ~inject =
-        match (project, inject) with [], [] -> None | _ -> Some {inject; project}
+      let empty = {inject= []; project= []; derives= None}
+
+      let is_empty = function {inject= []; project= []; derives= None} -> true | _ -> false
+
+      let with_inject ~(dst : Vertex.t) t =
+        let inject = match dst with ArgumentOf (_, _, path) | Return path -> path | _ -> [] in
+        {t with inject}
+
+
+      let with_project ~(src : Vertex.t) t =
+        let project = match src with ReturnOf (_, path) | Argument (_, path) -> path | _ -> [] in
+        {t with project}
+
+
+      let with_derives ~(kind : Edge.kind) t =
+        match kind with
+        (* Dummy function for this commit only to make testing easier *)
+        (* Summary {callee; _} -> {t with derives= Some callee} *)
+        | _ ->
+            t
+
+
+      let map_fields ~inject ~project ~derives t =
+        [inject t.inject; project t.project; derives t.derives]
     end
-
-    type edge_metadata = EdgeMetadata.t
 
     let yojson_of_edge_type typ =
       match typ with
@@ -752,7 +772,7 @@ module Out = struct
       { source: node_id
       ; target: node_id
       ; edge_type: edge_type
-      ; edge_metadata: EdgeMetadata.t option [@yojson.option]
+      ; edge_metadata: EdgeMetadata.t [@yojson_drop_if EdgeMetadata.is_empty]
       ; location: location_id }
     [@@deriving yojson_of]
 
@@ -861,12 +881,14 @@ module Out = struct
 
     let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
 
-    let of_edge_metadata ({inject; project} : Json.edge_metadata) =
-      of_list [of_field_path inject; of_field_path project]
-
-
     let of_option of_elt option =
       match option with None -> of_list [] | Some elt -> of_list [of_elt elt]
+
+
+    let of_edge_metadata edge_metadata =
+      of_list
+      @@ Json.EdgeMetadata.map_fields edge_metadata ~inject:of_field_path ~project:of_field_path
+           ~derives:(of_option of_procname)
 
 
     (** Converts the internal representation to an [int64], as used by the [Out] module. *)
@@ -1036,13 +1058,13 @@ module Out = struct
        We similarly generate projection metadata from [Argument (index, path)] nodes, that will be
        merged into a summarising [Argument index] one; and from [ReturnOf] and [ArgumentOf]
        interprocedural nodes. *)
-    let inject = match dst with ArgumentOf (_, _, path) | Return path -> path | _ -> [] in
-    let project = match src with ReturnOf (_, path) | Argument (_, path) -> path | _ -> [] in
-    let edge_metadata = Json.EdgeMetadata.field_operation ~inject ~project in
+    let edge_metadata =
+      Json.EdgeMetadata.(empty |> with_inject ~dst |> with_project ~src |> with_derives ~kind)
+    in
     let metadata_id =
       (* Contrary to other ids which are computed from the source components, this one must be
          computed on the generated metadata since it doesn't exist as-is in the source. *)
-      Id.of_option Id.of_edge_metadata edge_metadata
+      Id.of_edge_metadata edge_metadata
     in
     let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
     write_json json_dedup_cache outchan Edge edge_id
