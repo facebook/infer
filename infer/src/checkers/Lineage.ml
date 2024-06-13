@@ -717,15 +717,18 @@ module Out = struct
       | DynamicCallModule
       | Return
 
-    type edge_metadata =
-      { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
-      ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
-    [@@deriving yojson_of]
+    module EdgeMetadata = struct
+      type t =
+        { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
+        ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
+      [@@deriving yojson_of]
 
-    (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
-    let metadata_nonempty ~project ~inject =
-      match (project, inject) with [], [] -> None | _ -> Some {inject; project}
+      (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
+      let field_operation ~project ~inject =
+        match (project, inject) with [], [] -> None | _ -> Some {inject; project}
+    end
 
+    type edge_metadata = EdgeMetadata.t
 
     let yojson_of_edge_type typ =
       match typ with
@@ -749,7 +752,7 @@ module Out = struct
       { source: node_id
       ; target: node_id
       ; edge_type: edge_type
-      ; edge_metadata: edge_metadata option [@yojson.option]
+      ; edge_metadata: EdgeMetadata.t option [@yojson.option]
       ; location: location_id }
     [@@deriving yojson_of]
 
@@ -1035,7 +1038,7 @@ module Out = struct
        interprocedural nodes. *)
     let inject = match dst with ArgumentOf (_, _, path) | Return path -> path | _ -> [] in
     let project = match src with ReturnOf (_, path) | Argument (_, path) -> path | _ -> [] in
-    let edge_metadata = Json.metadata_nonempty ~inject ~project in
+    let edge_metadata = Json.EdgeMetadata.field_operation ~inject ~project in
     let metadata_id =
       (* Contrary to other ids which are computed from the source components, this one must be
          computed on the generated metadata since it doesn't exist as-is in the source. *)
