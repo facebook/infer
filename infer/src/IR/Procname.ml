@@ -1110,6 +1110,8 @@ let to_string ?(verbosity = Non_verbose) proc_name =
   F.asprintf "%a" (pp_with_verbosity verbosity) proc_name
 
 
+let to_string_verbose proc_name = to_string ~verbosity:Verbose proc_name
+
 let pp_fullname_only fmt = function
   | Java j ->
       Java.pp FullNameOnly fmt j

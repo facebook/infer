@@ -410,6 +410,9 @@ val pp_verbose : Format.formatter -> t -> unit
 val to_string : ?verbosity:detail_level -> t -> string
 (** Convert a proc name into a string for the user to see. *)
 
+val to_string_verbose : t -> string
+(** Convert a proc name into a string for the user to see with verbosity parameter. *)
+
 val describe : Format.formatter -> t -> unit
 (** to use in user messages *)
 

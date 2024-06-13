@@ -718,10 +718,16 @@ module Out = struct
       | Return
 
     module EdgeMetadata = struct
+      type procname_with_simple_json = Procname.t
+
+      let yojson_of_procname_with_simple_json procname =
+        `String (Procname.to_string_verbose procname)
+
+
       type t =
         { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
         ; project: FieldPath.t [@default []] [@yojson_drop_default.equal]
-        ; derives: Procname.t option [@yojson.option] }
+        ; derives: procname_with_simple_json option [@yojson.option] }
       [@@deriving yojson_of, fields]
 
       let empty = {inject= []; project= []; derives= None}
@@ -739,11 +745,7 @@ module Out = struct
 
 
       let with_derives ~(kind : Edge.kind) t =
-        match kind with
-        (* Dummy function for this commit only to make testing easier *)
-        (* Summary {callee; _} -> {t with derives= Some callee} *)
-        | _ ->
-            t
+        match kind with Summary {callee; _} -> {t with derives= Some callee} | _ -> t
 
 
       let map_fields ~inject ~project ~derives t =
