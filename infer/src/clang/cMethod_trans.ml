@@ -168,11 +168,13 @@ let get_objc_property_accessor tenv ms =
               (QualifiedCppName.from_field_qualified_name
                  (QualifiedCppName.of_rev_list name_decl_info.ni_qual_name) )
           in
-          let field_name = CGeneral_utils.mk_class_field_name class_tname name_decl_info.ni_name in
           match Tenv.lookup tenv class_tname with
           | Some {fields} -> (
               let field_opt =
-                List.find ~f:(fun {Struct.name} -> Fieldname.equal name field_name) fields
+                List.find
+                  ~f:(fun {Struct.name} ->
+                    String.equal (Fieldname.get_field_name name) name_decl_info.ni_name )
+                  fields
               in
               match field_opt with
               | Some field when CMethodSignature.is_getter ms ->

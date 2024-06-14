@@ -69,8 +69,6 @@ let list_range i j =
   aux j []
 
 
-let mk_class_field_name class_tname ni_name = Fieldname.make class_tname ni_name
-
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in
   CFrontend_config.equal_clang_lang lang CFrontend_config.CPP

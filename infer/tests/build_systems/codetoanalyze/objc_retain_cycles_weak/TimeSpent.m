@@ -72,7 +72,7 @@ int retain_cycle_weak_bad() {
   return 0;
 }
 
-int retain_cycle_field_in_impl_bad_FN(TimeSpent* ts) {
+int retain_cycle_field_in_impl_bad(TimeSpent* ts) {
   AnalyticsTimeSpent* ats = [[AnalyticsTimeSpent alloc] initWithRecord:ts];
   [ts setAnalyticsTimeSpent:ats];
   return 0;

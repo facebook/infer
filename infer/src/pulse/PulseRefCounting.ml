@@ -27,37 +27,14 @@ let pp_access_type fmt access_type =
   String.pp fmt s
 
 
-let find_field_in_tenv fields fieldname =
-  match List.find fields ~f:(fun {Struct.name} -> Fieldname.equal name fieldname) with
-  | None ->
-      let aprox_field = Fieldname.add_underscore fieldname in
-      List.find fields ~f:(fun {Struct.name} -> Fieldname.equal name aprox_field)
-  | Some field ->
-      Some field
-
-
-let get_access_type tenv (access : Access.t) : access_type =
+let get_access_type _tenv (access : Access.t) : access_type =
   match access with
   | FieldAccess fieldname -> (
-      if Fieldname.is_capture_field_in_closure fieldname then
-        if Fieldname.is_weak_capture_field_in_closure fieldname then Weak else Strong
-      else
-        let classname = Fieldname.get_class_name fieldname in
-        match Tenv.lookup tenv classname with
-        | None ->
-            (* Can't tell if we have a strong reference. *)
-            Unknown
-        | Some {fields} -> (
-          match find_field_in_tenv fields fieldname with
-          | None ->
-              (* Can't tell if we have a strong reference. *)
-              Unknown
-          | Some field -> (
-            match field.typ.Typ.desc with
-            | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
-                Weak
-            | _ ->
-                if Struct.field_has_weak field then Weak else Strong ) ) )
+    match Fieldname.is_weak fieldname with
+    | Some is_weak ->
+        if is_weak then Weak else Strong
+    | None ->
+        Unknown )
   | _ ->
       Strong
 

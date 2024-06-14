@@ -8,11 +8,14 @@
 open! IStd
 module F = Format
 
-type captured_data =
-  {capture_mode: CapturedVar.capture_mode; is_weak: bool; is_function_pointer: bool}
+type captured_data = {capture_mode: CapturedVar.capture_mode; is_function_pointer: bool}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-type t = {class_name: Typ.Name.t; field_name: string; captured_data: captured_data option}
+type t =
+  { class_name: Typ.Name.t
+  ; field_name: string
+  ; captured_data: captured_data option
+  ; is_weak: bool option [@ignore] }
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let string_of_capture_mode = function
@@ -23,17 +26,23 @@ let string_of_capture_mode = function
 
 
 let pp_captured_data f (captured_data : captured_data) =
-  F.fprintf f "captured_%s_%s"
-    (string_of_capture_mode captured_data.capture_mode)
-    (if captured_data.is_weak then "_weak" else "")
+  F.fprintf f " (captured_%s)" (string_of_capture_mode captured_data.capture_mode)
 
 
 let pp f fld =
-  match fld.captured_data with
-  | Some captured_data ->
-      F.fprintf f "%s_%a" fld.field_name pp_captured_data captured_data
-  | None ->
-      F.pp_print_string f fld.field_name
+  let weak_string =
+    if Config.developer_mode then
+      match fld.is_weak with Some is_weak -> if is_weak then " (weak)" else "" | None -> ""
+    else ""
+  in
+  let captured_string =
+    match fld.captured_data with
+    | Some captured_data ->
+        F.asprintf "%a" pp_captured_data captured_data
+    | None ->
+        ""
+  in
+  F.fprintf f "%s%s%s" fld.field_name captured_string weak_string
 
 
 type name_ = Typ.name
@@ -53,23 +62,23 @@ let compare_name f f' =
     (f'.class_name, f'.field_name, f'.captured_data)
 
 
-let make ?captured_data class_name field_name = {class_name; field_name; captured_data}
+let make ?captured_data ?is_weak class_name field_name =
+  {class_name; field_name; captured_data; is_weak}
 
-let mk_capture_field_in_closure var_name captured_data =
+
+let mk_capture_field_in_closure var_name captured_data ~is_weak =
   (* We use this type as before rather than the lambda struct name because
      when we want to create the same names in Pulse we don't have easy access
      to that lambda struct name. The struct name as part of the field name is
      there just to help with inheritance anyway and is not used otherwise. *)
   let class_tname = Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]) in
   let name = Printf.sprintf "%s" (Mangled.to_string var_name) in
-  make ~captured_data class_tname name
+  make ~captured_data ~is_weak class_tname name
 
 
 let is_capture_field_in_closure {captured_data} = Option.is_some captured_data
 
-let is_weak_capture_field_in_closure {captured_data} =
-  Option.exists captured_data ~f:(fun {is_weak} -> is_weak)
-
+let is_weak fld = fld.is_weak
 
 let is_capture_field_in_closure_by_ref {captured_data} =
   Option.exists captured_data ~f:(fun {capture_mode} -> CapturedVar.is_captured_by_ref capture_mode)
@@ -155,6 +164,3 @@ let is_java_outer_instance ({field_name} as field) =
   let last_char = field_name.[String.length field_name - 1] in
   Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
-
-
-let add_underscore fieldname = {fieldname with field_name= "_" ^ fieldname.field_name}

@@ -515,7 +515,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (Pp.option (Pp.of_string ~f:Clang_ast_j.string_of_decl))
             decl
     in
-    let field_name = CGeneral_utils.mk_class_field_name class_tname field_string in
+    let field_name =
+      let fieldname_no_weak_info = Fieldname.make class_tname field_string in
+      if Typ.Name.is_objc_class class_tname then
+        match Tenv.lookup trans_state.context.tenv class_tname with
+        | Some {fields} ->
+            let fieldname_opt =
+              List.find_map
+                ~f:(fun {Struct.name} ->
+                  if String.equal (Fieldname.get_field_name name) field_string then Some name
+                  else None )
+                fields
+            in
+            Option.value ~default:fieldname_no_weak_info fieldname_opt
+        | None ->
+            fieldname_no_weak_info
+      else fieldname_no_weak_info
+    in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
@@ -1985,7 +2001,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 | _ ->
                     assert false
               in
-              let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
+              let field_name = Fieldname.make class_tname ni_name in
               let field_exp = Exp.Lfield (obj_sil, field_name, this_qual_type) in
               let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
               let this_res_trans_destruct = mk_trans_result (field_exp, field_typ) empty_control in
@@ -4370,7 +4386,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:false
         (QualifiedCppName.of_list ["std"; "type_info"])
     in
-    let field_name = CGeneral_utils.mk_class_field_name class_tname "__type_name" in
+    let field_name = Fieldname.make class_tname "__type_name" in
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args =

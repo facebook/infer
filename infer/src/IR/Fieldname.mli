@@ -8,8 +8,7 @@
 open! IStd
 module F = Format
 
-type captured_data =
-  {capture_mode: CapturedVar.capture_mode; is_weak: bool; is_function_pointer: bool}
+type captured_data = {capture_mode: CapturedVar.capture_mode; is_function_pointer: bool}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 (** Names for fields of class/struct/union *)
@@ -18,18 +17,18 @@ type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 val compare_name : t -> t -> int
 (** Similar to compare, but compares only names, except template arguments. *)
 
-val make : ?captured_data:captured_data -> Typ.Name.t -> string -> t
+val make : ?captured_data:captured_data -> ?is_weak:bool -> Typ.Name.t -> string -> t
 (** create a field of the given class and fieldname *)
 
 val get_class_name : t -> Typ.Name.t
 
 val get_field_name : t -> string
 
-val mk_capture_field_in_closure : Mangled.t -> captured_data -> t
+val mk_capture_field_in_closure : Mangled.t -> captured_data -> is_weak:bool -> t
 
 val is_capture_field_in_closure : t -> bool
 
-val is_weak_capture_field_in_closure : t -> bool
+val is_weak : t -> bool option
 
 val is_capture_field_in_closure_by_ref : t -> bool
 
@@ -72,5 +71,3 @@ val patterns_match : Str.regexp list -> t -> bool
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)
-
-val add_underscore : t -> t

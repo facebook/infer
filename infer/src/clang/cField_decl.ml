@@ -72,7 +72,6 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
     | _ ->
         None
   in
-  let fname = Fieldname.make class_tname ni_name in
   let typ = qual_type_to_sil_type tenv qual_type in
   let objc_property_attributes =
     match attribute_from_type typ with
@@ -83,6 +82,11 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
         prop_atts
   in
   let item_annotations = CAst_utils.sil_annot_of_type qual_type in
+  let is_weak =
+    List.exists objc_property_attributes ~f:(fun attr ->
+        Struct.equal_objc_property_attribute attr Weak )
+  in
+  let fname = Fieldname.make class_tname ni_name ~is_weak in
   Struct.mk_field fname typ ~annot:item_annotations ~objc_property_attributes
 
 
@@ -127,7 +131,8 @@ let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =
     if String.equal class_name class_name_info.Clang_ast_t.ni_name then
       let class_tname = Typ.Name.Objc.from_string class_name in
-      let name = Fieldname.make class_tname field_name in
+      let is_weak = Typ.is_weak_pointer typ in
+      let name = Fieldname.make class_tname field_name ~is_weak in
       let field = Struct.mk_field name typ in
       field :: res
     else res
