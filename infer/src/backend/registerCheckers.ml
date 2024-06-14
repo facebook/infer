@@ -236,6 +236,9 @@ let get_active_checkers () =
 
 let register checkers =
   let register_one {checker; callbacks} =
+    Logging.debug Analysis Verbose "Register checker %s that depends on %a.@."
+      (Checker.get_id checker) Checker.Set.pp
+      (Checker.get_dependencies checker) ;
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb ->

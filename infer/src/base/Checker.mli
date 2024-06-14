@@ -88,3 +88,7 @@ val from_id : string -> t option
 
 val pp_manual : F.formatter -> t -> unit
 (** prints a short explanation of the checker; used for the man pages *)
+
+module Set : PrettyPrintable.PPSet with type elt = t
+
+val get_dependencies : t -> Set.t

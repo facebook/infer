@@ -40,7 +40,7 @@ type t =
   | SelfInBlock
   | Starvation
   | Topl
-[@@deriving equal, enumerate]
+[@@deriving compare, equal, enumerate]
 
 type support = NoSupport | ExperimentalSupport | Support
 
@@ -478,3 +478,34 @@ let pp_manual fmt checker =
         F.fprintf fmt "\n$(i,ACTIVATES): %a" (Pp.seq ~sep:"," pp_checker) activates
   in
   F.fprintf fmt "%s%a%a" short_documentation pp_activates activates pp_kind kind
+
+
+module Key = struct
+  type nonrec t = t [@@deriving compare]
+
+  let pp f checker = F.pp_print_string f (get_id checker)
+end
+
+module Set = PrettyPrintable.MakePPSet (Key)
+module DependencyMap = PrettyPrintable.MakePPMonoMap (Key) (Set)
+
+let dependency_map =
+  let rec init_dep checker map =
+    match DependencyMap.find_opt checker map with
+    | Some checkers ->
+        (checkers, map)
+    | None ->
+        let {activates} = config_unsafe checker in
+        let dependencies, map =
+          List.fold activates
+            ~init:(Set.singleton checker, map)
+            ~f:(fun (acc_dependencies, map) checker ->
+              let new_dependencies, map = init_dep checker map in
+              (Set.union acc_dependencies new_dependencies, map) )
+        in
+        (dependencies, DependencyMap.add checker dependencies map)
+  in
+  List.fold all ~init:DependencyMap.empty ~f:(fun map checker -> init_dep checker map |> snd)
+
+
+let get_dependencies checker = DependencyMap.find checker dependency_map
