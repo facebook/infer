@@ -11,7 +11,7 @@ let payload_fold ~init ~f =
   let acc = ref init in
   Summary.OnDisk.iter_specs ~f:(fun summary ->
       Payloads.config_impact_analysis summary.payloads
-      |> Lazy.force
+      |> ILazy.force_option
       |> Option.iter ~f:(fun summary -> acc := f summary !acc) ) ;
   !acc
 

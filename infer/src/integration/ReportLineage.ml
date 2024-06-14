@@ -9,7 +9,7 @@ open! IStd
 module L = Logging
 
 let report_proc_json {Summary.payloads= {lineage}; proc_name} =
-  match Lazy.force lineage with
+  match ILazy.force_option lineage with
   | None ->
       L.debug Report Verbose "No summary for %a@\n" Procname.pp proc_name
   | Some lineage_summary ->

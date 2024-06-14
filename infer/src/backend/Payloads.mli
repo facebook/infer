@@ -19,24 +19,24 @@ include sig
 
       This type has to be in sync with PayloadId.t *)
   type t =
-    { annot_map: AnnotationReachabilityDomain.t option Lazy.t
-    ; biabduction: BiabductionSummary.t option Lazy.t
-    ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option Lazy.t
-    ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option Lazy.t
-    ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option Lazy.t
-    ; cost: CostDomain.summary option Lazy.t
-    ; disjunctive_demo: DisjunctiveDemo.domain option Lazy.t
-    ; lab_resource_leaks: ResourceLeakDomain.summary option Lazy.t
-    ; litho_required_props: LithoDomain.summary option Lazy.t
-    ; pulse: PulseSummary.t option Lazy.t
-    ; purity: PurityDomain.summary option Lazy.t
-    ; quandary: QuandarySummary.t option Lazy.t
-    ; racerd: RacerDDomain.summary option Lazy.t
-    ; scope_leakage: ScopeLeakage.Summary.t option Lazy.t
-    ; siof: SiofDomain.Summary.t option Lazy.t
-    ; lineage: Lineage.Summary.t option Lazy.t
-    ; lineage_shape: LineageShape.Summary.t option Lazy.t
-    ; starvation: StarvationDomain.summary option Lazy.t }
+    { annot_map: AnnotationReachabilityDomain.t Lazy.t option
+    ; biabduction: BiabductionSummary.t Lazy.t option
+    ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t Lazy.t option
+    ; buffer_overrun_checker: BufferOverrunCheckerSummary.t Lazy.t option
+    ; config_impact_analysis: ConfigImpactAnalysis.Summary.t Lazy.t option
+    ; cost: CostDomain.summary Lazy.t option
+    ; disjunctive_demo: DisjunctiveDemo.domain Lazy.t option
+    ; lab_resource_leaks: ResourceLeakDomain.summary Lazy.t option
+    ; litho_required_props: LithoDomain.summary Lazy.t option
+    ; pulse: PulseSummary.t Lazy.t option
+    ; purity: PurityDomain.summary Lazy.t option
+    ; quandary: QuandarySummary.t Lazy.t option
+    ; racerd: RacerDDomain.summary Lazy.t option
+    ; scope_leakage: ScopeLeakage.Summary.t Lazy.t option
+    ; siof: SiofDomain.Summary.t Lazy.t option
+    ; lineage: Lineage.Summary.t Lazy.t option
+    ; lineage_shape: LineageShape.Summary.t Lazy.t option
+    ; starvation: StarvationDomain.summary Lazy.t option }
   [@@deriving fields, yojson_of]
 end
 
@@ -54,7 +54,7 @@ module SQLite : sig
   val eager_load : Sqlite3.stmt -> first_column:int -> t
   (** load all payload columns from the statement starting at [first_column] *)
 
-  val deserialize_payload_opt : Sqlite3.Data.t -> 'a option Lazy.t
+  val deserialize_payload_opt : Sqlite3.Data.t -> 'a Lazy.t option
   (** use to deserialize the data from one column for a particular payload id; callers are
       responsible for casting the result to the appropriate [payload option Lazy.t] type *)
 end

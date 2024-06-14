@@ -50,7 +50,7 @@ let find_callers caller_table procname =
 
 let fetch_shapes procname =
   let* summary = Summary.OnDisk.get ~lazy_payloads:true procname in
-  Lazy.force summary.Summary.payloads.lineage_shape
+  ILazy.force_option summary.Summary.payloads.lineage_shape
 
 
 module Todo = struct
@@ -311,12 +311,12 @@ let collect_reachable (config : TaintConfig.t) caller_table =
           let summary = Summary.OnDisk.get ~lazy_payloads:true procname in
           let shapes =
             let* summary in
-            Lazy.force summary.Summary.payloads.lineage_shape
+            ILazy.force_option summary.Summary.payloads.lineage_shape
           in
           let vertices = Todo.to_vertices shapes node in
           let lineage =
             let* summary in
-            Lazy.force summary.Summary.payloads.lineage
+            ILazy.force_option summary.Summary.payloads.lineage
           in
           let lineage_graph =
             match lineage with

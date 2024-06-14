@@ -178,10 +178,10 @@ let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
     let stats = Summary.Stats.update stats ~failure_kind:kind in
     let payloads =
       let biabduction =
-        Lazy.from_val
-          (Some
+        Some
+          (Lazy.from_val
              BiabductionSummary.
-               {preposts= []; phase= payloads.biabduction |> Lazy.force |> opt_get_phase} )
+               {preposts= []; phase= payloads.biabduction |> ILazy.force_option |> opt_get_phase} )
       in
       {payloads with biabduction}
     in
