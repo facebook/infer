@@ -5,7 +5,9 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --pulse-only --pulse-taint-config conf.json --project-root $(TESTS_DIR) --erlang-check-return
+INFER_OPTIONS = \
+  --pulse-only --no-pulse-force-continue --pulse-taint-config conf.json \
+  --project-root $(TESTS_DIR) --erlang-check-return
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.erl)

@@ -8,6 +8,6 @@ TESTS_DIR = ../../..
 SOURCES = $(wildcard *.kt)
 CLEAN_EXTRA = *.class META-INF
 INFERPRINT_OPTIONS = --issues-tests
-INFER_OPTIONS = --pulse-only --debug-exceptions
+INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-force-continue
 
 include $(TESTS_DIR)/kotlinc.make

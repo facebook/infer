@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-INFER_OPTIONS = --impurity-only --debug-exceptions
+INFER_OPTIONS = --impurity-only --debug-exceptions --no-pulse-force-continue
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

@@ -6,7 +6,9 @@
 TESTS_DIR = ../..
 
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --pulse-taint-config taint_config.json
+INFER_OPTIONS = \
+  --pulse-only --debug-exceptions --no-pulse-force-continue --pulse-taint-config taint_config.json \
+  --project-root $(TESTS_DIR)
 
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 

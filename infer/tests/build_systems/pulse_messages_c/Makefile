@@ -6,7 +6,9 @@
 TESTS_DIR = ../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --pulse-taint-config .infertaintconfig
+INFER_OPTIONS = \
+  --pulse-only --debug-exceptions --no-pulse-force-continue --pulse-taint-config .infertaintconfig \
+  --project-root $(TESTS_DIR)
 
 # test that the error messages are good; sort of mimicks what gets displayed on the console
 INFERPRINT_OPTIONS = --issues-tests-fields file,procedure,line,column,severity,bug_type,qualifier,suggestion --issues-tests

@@ -9,7 +9,7 @@ CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles
 
 SOURCES = $(CODETOANALYZE_DIR)/View.m $(CODETOANALYZE_DIR)/ViewController.m $(CODETOANALYZE_DIR)/Caller.m
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-force-continue --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 

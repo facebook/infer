@@ -6,13 +6,14 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
---pulse-report-issues-for-tests \
---pulse-model-alloc-pattern "AB[IF].*Create.*" \
---pulse-model-release-pattern "ABFRelease" \
---pulse-model-transfer-ownership "abf::BridgingRelease" \
---pulse-model-transfer-ownership "ABFBridgingRelease" \
---pulse-taint-config taint_config_objcpp.json
+INFER_OPTIONS = \
+  --pulse-only --debug-exceptions --no-pulse-force-continue --project-root $(TESTS_DIR) \
+  --pulse-report-issues-for-tests \
+  --pulse-model-alloc-pattern "AB[IF].*Create.*" \
+  --pulse-model-release-pattern "ABFRelease" \
+  --pulse-model-transfer-ownership "abf::BridgingRelease" \
+  --pulse-model-transfer-ownership "ABFBridgingRelease" \
+  --pulse-taint-config taint_config_objcpp.json
 
 INFERPRINT_OPTIONS = --issues-tests
 

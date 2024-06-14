@@ -31,7 +31,9 @@ $(CLASSES_DIR):
 compile: $(SIL_FILES)
 
 %.log: %.sil $(INFER_BIN)
-	$(INFER_BIN) --pulse-only --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@ || exit 0
+	$(INFER_BIN) --pulse-only --no-pulse-force-continue --quiet --no-progress-bar \
+	  -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@ \
+	|| exit 0
 
 issues.exp.test: $(LOG_FILES)
 	cat $^ | awk '{gsub("$(realpath $(shell pwd))", "");print}' > $@

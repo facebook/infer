@@ -12,7 +12,8 @@ include $(TESTS_DIR)/base.make
 
 schedule.exp.test: $(INFER_BIN) $(SRC) $(MAKEFILE_LIST)
 	$(QUIET)$(COPY) schedule.exp $@
-	$(QUIET)$(INFER_BIN) --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
+	$(QUIET)$(INFER_BIN) --pulse-only --debug-exceptions --no-pulse-force-continue \
+	  --project-root $(TESTS_DIR) \
 	  --replay-analysis-schedule --analysis-schedule-file $@ --store-analysis-schedule \
 	  -- clang -c $(SRC)
 
