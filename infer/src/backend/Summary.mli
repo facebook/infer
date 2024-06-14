@@ -34,7 +34,8 @@ type t =
             after per-procedure analysis). This latter category of errors should NOT be written
             here, use [IssueLog] and its serialization capabilities instead. *)
   ; mutable dependencies: Dependencies.t
-        (** Dynamically discovered analysis-time dependencies used to compute this summary *) }
+        (** Dynamically discovered analysis-time dependencies used to compute this summary *)
+  ; mutable is_complete_result: bool  (** If the summary has a complete result *) }
 [@@deriving yojson_of]
 
 val pp_html : SourceFile.t -> Format.formatter -> t -> unit

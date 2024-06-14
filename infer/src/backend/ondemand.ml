@@ -114,10 +114,16 @@ let update_taskbar proc_name_opt source_file_opt =
   !ProcessPoolState.update_status t0 status
 
 
+let set_complete_result summary =
+  (* TODO: For now the field is set as true always. This will be changed in the following diff. *)
+  summary.Summary.is_complete_result <- true
+
+
 let analyze exe_env ?specialization callee_summary callee_pdesc =
   let summary =
     Callbacks.iterate_procedure_callbacks exe_env ?specialization callee_summary callee_pdesc
   in
+  set_complete_result summary ;
   Stats.incr_ondemand_procs_analyzed () ;
   summary
 
@@ -345,9 +351,18 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
                   None ) )
             ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
     in
+    let analyze_specialization_none () =
+      let res = analyze_callee_aux ~specialization:None in
+      Option.iter res ~f:set_complete_result ;
+      analysis_result_of_option res
+    in
     match (Summary.OnDisk.get ~lazy_payloads callee_pname, specialization) with
-    | Some summary, None ->
+    | Some ({is_complete_result= true} as summary), None ->
         Ok summary
+    | Some {is_complete_result= false}, None ->
+        (* TODO: For now the field is set as true always. This will be changed in the following
+           diff. *)
+        assert false
     | None, Some _ ->
         L.die InternalError "specialization should always happend after regular analysis"
     | Some summary, Some specialization ->
@@ -360,8 +375,7 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
           |> analysis_result_of_option
         else (* can we even get there? *) Error UnknownProcedure
     | None, None ->
-        if procedure_is_defined callee_pname then
-          analyze_callee_aux ~specialization:None |> analysis_result_of_option
+        if procedure_is_defined callee_pname then analyze_specialization_none ()
         else Error UnknownProcedure
 
 

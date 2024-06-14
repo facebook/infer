@@ -48,7 +48,8 @@ type t =
   ; stats: Stats.t
   ; proc_name: Procname.t
   ; err_log: Errlog.t
-  ; mutable dependencies: Dependencies.t }
+  ; mutable dependencies: Dependencies.t
+  ; mutable is_complete_result: bool }
 
 let yojson_of_t {proc_name; payloads} = [%yojson_of: Procname.t * Payloads.t] (proc_name, payloads)
 
@@ -116,28 +117,38 @@ end
 
 module SummaryMetadata = struct
   type t =
-    {sessions: int; stats: Stats.t; proc_name: Procname.t; dependencies: Dependencies.complete}
+    { sessions: int
+    ; stats: Stats.t
+    ; proc_name: Procname.t
+    ; dependencies: Dependencies.complete
+    ; is_complete_result: bool }
   [@@deriving fields]
 
-  let of_full_summary (f : full_summary) : t =
+  let of_full_summary ~is_complete_result (f : full_summary) : t =
     { sessions= f.sessions
     ; stats= f.stats
     ; proc_name= f.proc_name
-    ; dependencies= Dependencies.complete_exn f.dependencies }
+    ; dependencies= Dependencies.complete_exn f.dependencies
+    ; is_complete_result }
 
 
   let empty proc_name =
     { sessions= 0
     ; stats= Stats.empty
     ; proc_name
-    ; dependencies= Dependencies.reset proc_name |> Dependencies.freeze proc_name }
+    ; dependencies= Dependencies.reset proc_name |> Dependencies.freeze proc_name
+    ; is_complete_result= false }
 
 
   let merge x y =
-    let merged = Dependencies.merge x.dependencies y.dependencies in
-    if phys_equal merged x.dependencies then x
-    else if phys_equal merged y.dependencies then y
-    else {x with dependencies= merged}
+    let dependencies = Dependencies.merge x.dependencies y.dependencies in
+    let is_complete_result = x.is_complete_result || y.is_complete_result in
+    if phys_equal dependencies x.dependencies && Bool.equal is_complete_result x.is_complete_result
+    then x
+    else if
+      phys_equal dependencies y.dependencies && Bool.equal is_complete_result y.is_complete_result
+    then y
+    else {x with dependencies; is_complete_result}
 
 
   module SQLite = struct
@@ -161,7 +172,8 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
   ; stats= summary_metadata.stats
   ; proc_name= summary_metadata.proc_name
   ; dependencies= Dependencies.Complete summary_metadata.dependencies
-  ; err_log= report_summary.err_log }
+  ; err_log= report_summary.err_log
+  ; is_complete_result= summary_metadata.is_complete_result }
 
 
 module OnDisk = struct
@@ -254,7 +266,12 @@ module OnDisk = struct
     add proc_name summary ;
     summary.dependencies <- Dependencies.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
-    let summary_metadata = SummaryMetadata.of_full_summary summary in
+    let summary_metadata =
+      (* TODO: For now the field is set as true always. This will be changed in the following
+         diff. *)
+      let is_complete_result = true in
+      SummaryMetadata.of_full_summary ~is_complete_result summary
+    in
     try
       DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
         ~proc_name:(Procname.SQLite.serialize proc_name)
@@ -281,7 +298,8 @@ module OnDisk = struct
       ; stats= Stats.empty
       ; proc_name
       ; err_log= Errlog.empty ()
-      ; dependencies= Dependencies.reset proc_name }
+      ; dependencies= Dependencies.reset proc_name
+      ; is_complete_result= false }
     in
     Procname.Hash.replace cache proc_name summary ;
     summary
