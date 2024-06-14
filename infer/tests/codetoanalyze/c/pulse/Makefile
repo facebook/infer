@@ -9,7 +9,8 @@ CLANG_OPTIONS = -c
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
-  --pulse-taint-config .infertaintconfig
+  --pulse-taint-config .infertaintconfig \
+  --jobs 1 \
 
 INFERPRINT_OPTIONS = --issues-tests
 
