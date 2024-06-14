@@ -651,17 +651,26 @@ module InterDom = struct
         NonTop non_disj
 end
 
-type t = {intra: IntraDom.t; inter: InterDom.t} [@@deriving abstract_domain]
+type t = {intra: IntraDom.t; inter: InterDom.t; has_dropped_disjuncts: AbstractDomain.BooleanOr.t}
+[@@deriving abstract_domain]
 
-let pp fmt {intra; inter} = F.fprintf fmt "@[%a,@ %a@]" IntraDom.pp intra InterDom.pp inter
+let pp fmt ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
+  F.fprintf fmt "@[%a,@ %a%s@]" IntraDom.pp intra InterDom.pp inter
+    (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
 
-let bottom = {intra= IntraDom.bottom; inter= InterDom.bottom}
 
-let is_bottom {intra; inter} = IntraDom.is_bottom intra && InterDom.is_bottom inter
+let bottom = {intra= IntraDom.bottom; inter= InterDom.bottom; has_dropped_disjuncts= false}
 
-let top = {intra= IntraDom.top; inter= InterDom.top}
+let is_bottom ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
+  IntraDom.is_bottom intra && InterDom.is_bottom inter
+  && AbstractDomain.BooleanOr.is_bottom has_dropped_disjuncts
 
-let is_top {intra; inter} = IntraDom.is_top intra && InterDom.is_top inter
+
+let top = {intra= IntraDom.top; inter= InterDom.top; has_dropped_disjuncts= true}
+
+let is_top ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
+  IntraDom.is_top intra && InterDom.is_top inter && has_dropped_disjuncts
+
 
 (* faster? *)
 let join lhs rhs = if is_bottom lhs then rhs else if is_bottom rhs then lhs else join lhs rhs
@@ -722,6 +731,9 @@ let set_passed_to loc timestamp call_exp actuals =
 let is_lifetime_extended var {intra} = IntraDom.is_lifetime_extended var intra
 
 let remember_dropped_disjuncts disjuncts non_disj =
+  let non_disj =
+    if List.is_empty disjuncts then non_disj else {non_disj with has_dropped_disjuncts= true}
+  in
   List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, _) ->
       match exec with
       | ExecutionDomain.ContinueProgram astate ->
@@ -739,30 +751,43 @@ let bind (execs, non_disj) ~f =
          (l @ acc, join joined_non_disj new_non_disj) )
 
 
-type summary = InterDom.t [@@deriving abstract_domain]
+type summary = {transitive_info: InterDom.t; has_dropped_disjuncts: AbstractDomain.BooleanOr.t}
+[@@deriving abstract_domain]
 
-let make_summary {inter} = inter
+let make_summary ({inter= transitive_info; has_dropped_disjuncts} : t) =
+  {transitive_info; has_dropped_disjuncts}
 
-let apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses non_disj summary =
+
+let apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses (non_disj : t) summary =
+  let non_disj =
+    { non_disj with
+      has_dropped_disjuncts=
+        AbstractDomain.BooleanOr.join non_disj.has_dropped_disjuncts summary.has_dropped_disjuncts
+    }
+  in
   map_inter
-    (InterDom.apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses ~summary)
+    (InterDom.apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses
+       ~summary:summary.transitive_info )
     non_disj
 
 
 module Summary = struct
   type t = summary [@@deriving abstract_domain]
 
-  let pp fmt = function
-    | Top ->
-        AbstractDomain.TopLiftedUtils.pp_top fmt
-    | NonTop transitive_info ->
-        TransitiveInfo.pp fmt transitive_info
+  let pp fmt {transitive_info; has_dropped_disjuncts} =
+    F.fprintf fmt "%a%s" InterDom.pp transitive_info
+      (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
 
 
-  let bottom = InterDom.bottom
+  let bottom =
+    {transitive_info= InterDom.bottom; has_dropped_disjuncts= AbstractDomain.BooleanOr.bottom}
 
-  let is_bottom = InterDom.is_bottom
 
-  let get_transitive_info_if_not_top (x : t) =
-    match x with Top -> None | NonTop transitive_info -> Some transitive_info
+  let is_bottom summary =
+    InterDom.is_bottom summary.transitive_info
+    && AbstractDomain.BooleanOr.is_bottom summary.has_dropped_disjuncts
+
+
+  let get_transitive_info_if_not_top {transitive_info} =
+    match transitive_info with Top -> None | NonTop transitive_info -> Some transitive_info
 end
