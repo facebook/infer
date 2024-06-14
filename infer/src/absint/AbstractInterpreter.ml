@@ -458,21 +458,23 @@ struct
           ->
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
-          if limit <= 0 then (
-            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
-            (((post, non_disj_astate), n_disjuncts), pre_disjunct :: dropped, true) )
-          else if is_new_pre pre_disjunct then (
-            L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
-            let disjuncts', non_disj' =
-              Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
-            in
-            L.d_printfln "@]@\n" ;
-            let disj', n, new_dropped =
-              Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts'
-            in
-            ( ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n)
-            , new_dropped @ dropped
-            , need_join_non_disj ) )
+          let is_new_pre = is_new_pre pre_disjunct in
+          if is_new_pre then
+            if limit <= 0 then (
+              L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
+              (((post, non_disj_astate), n_disjuncts), pre_disjunct :: dropped, true) )
+            else (
+              L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
+              let disjuncts', non_disj' =
+                Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
+              in
+              L.d_printfln "@]@\n" ;
+              let disj', n, new_dropped =
+                Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts'
+              in
+              ( ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n)
+              , new_dropped @ dropped
+              , need_join_non_disj ) )
           else (
             L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
             (* HACK: [pre_non_disj] may have a new information, e.g. when the predecessor node

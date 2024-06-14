@@ -80,7 +80,7 @@ loop:
 #2: two_branch0.0.two_branch1.0
 #3: two_branch0.0.two_branch1.1
 Non-disjunctive state: ⊥
-CFG Metadata: dropped_disjuncts= 13; interrupted_loops= 0
+CFG Metadata: dropped_disjuncts= 11; interrupted_loops= 0
 
 
   No issues found  
@@ -140,7 +140,7 @@ loop:
 #8: two_branch0.0.two_branch1.1.two_branch4.0
 #9: two_branch0.0.two_branch1.1.two_branch4.1
 Non-disjunctive state: ⊥
-CFG Metadata: dropped_disjuncts= 19; interrupted_loops= 1
+CFG Metadata: dropped_disjuncts= 13; interrupted_loops= 1
 
 
   No issues found  
