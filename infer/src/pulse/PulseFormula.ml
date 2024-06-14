@@ -2505,7 +2505,7 @@ module Formula = struct
       else
         match Var.Map.find_opt v phi.type_constraints with
         | None ->
-            Debug.p "not found so adding below constraint\n" ;
+            Debug.p "not found so adding below constraint@\n" ;
             let phi =
               { phi with
                 type_constraints=
@@ -2909,7 +2909,7 @@ module Formula = struct
     let normalize_restricted phi l = normalize_linear_ phi phi.tableau l
 
     let normalize_var_const phi t =
-      L.d_printfln "normalize_var_const initial term is %a" (Term.pp Var.pp) t ;
+      Debug.p "normalize_var_const initial term is %a@\n" (Term.pp Var.pp) t ;
       let t' =
         Term.subst_variables t ~f:(fun v ->
             let v_canon = (get_repr phi v :> Var.t) in
@@ -2929,7 +2929,7 @@ module Formula = struct
                      simplifications in atoms. This is not actually needed for [term_eqs]. *)
                   QSubst q ) )
       in
-      L.d_printfln "normalized term is %a" (Term.pp Var.pp) t' ;
+      Debug.p "normalized term is %a@\n" (Term.pp Var.pp) t' ;
       t'
 
 
@@ -3384,7 +3384,7 @@ module Formula = struct
                             match Term.get_as_isinstanceof t with
                             | Some (var, typ, nullable) ->
                                 if is_neq_zero phi tx then (
-                                  Debug.p "prop in term_eq adding below\n" ;
+                                  Debug.p "prop in term_eq adding below@\n" ;
                                   let* phi, new_eqs = and_below var typ (phi, new_eqs) in
                                   let* atoms_opt1 =
                                     if not nullable then
@@ -3402,7 +3402,7 @@ module Formula = struct
                                   | _ ->
                                       false
                                 then (
-                                  Debug.p "prop in term_eq adding notbelow\n" ;
+                                  Debug.p "prop in term_eq adding notbelow@\n" ;
                                   let* phi, new_eqs = and_notbelow var typ (phi, new_eqs) in
                                   let* atoms_opt1 =
                                     if nullable then
@@ -3412,7 +3412,7 @@ module Formula = struct
                                   in
                                   Sat (phi, atoms_opt1, new_eqs) )
                                 else (
-                                  Debug.p "%a is neither zero nor non-zero, leaving phi alone\n"
+                                  Debug.p "%a is neither zero nor non-zero, leaving phi alone@\n"
                                     (Term.pp Var.pp) tx ;
                                   Sat (phi, None, new_eqs) )
                             | None ->
@@ -3570,24 +3570,24 @@ module Formula = struct
           Debug.p "got as var neq zero with v=%a@\n" Var.pp v ;
           match Var.Map.find_opt v (fst phi_new_eqs).term_eqs_occurrences with
           | None ->
-              Debug.p "failed to find in term_eqs\n" ;
+              Debug.p "failed to find in term_eqs@\n" ;
               Sat phi_new_eqs
           | Some in_term_eqs ->
-              Debug.p "found in term_eqs\n" ;
+              Debug.p "found in term_eqs@\n" ;
               TermDomainOrRange.Set.fold
                 (fun (t, domain_or_range) phi_new_eqs_sat ->
                   Debug.p "found var maps to %a@\n" (Term.pp Var.pp) t ;
                   let* phi, new_eqs = phi_new_eqs_sat in
                   match domain_or_range with
                   | Domain ->
-                      Debug.p "domain\n" ;
+                      Debug.p "domain@\n" ;
                       phi_new_eqs_sat
                   | Range | DomainAndRange -> (
-                      Debug.p "range or both\n" ;
+                      Debug.p "range or both@\n" ;
                       let* phi, atoms_opt1, new_eqs =
                         match Term.get_as_isinstanceof t with
                         | Some (var, typ, nullable) ->
-                            Debug.p "prop in term_eq adding below\n" ;
+                            Debug.p "prop in term_eq adding below@\n" ;
                             let* phi, new_eqs = and_below var typ (phi, new_eqs) in
                             let* atoms_opt1 =
                               if not nullable then
@@ -4132,7 +4132,7 @@ let add_dynamic_type_unsafe v t ?source_file _location {conditions; phi} =
          For now we keep the logging and default behaviour
          TODO: revisit this *)
       let prev_fact = Var.Map.find_opt v phi.type_constraints in
-      L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a\n"
+      L.d_printfln "failed to add dynamic type %a to value %a. Previous constraints were %a@\n"
         (Typ.pp_full Pp.text) t PulseAbstractValue.pp v
         (Pp.option InstanceOf.pp_instance_fact)
         prev_fact ) ;
