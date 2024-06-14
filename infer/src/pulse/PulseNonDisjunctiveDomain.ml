@@ -790,4 +790,7 @@ module Summary = struct
 
   let get_transitive_info_if_not_top {transitive_info} =
     match transitive_info with Top -> None | NonTop transitive_info -> Some transitive_info
+
+
+  let has_dropped_disjuncts {has_dropped_disjuncts} = has_dropped_disjuncts
 end

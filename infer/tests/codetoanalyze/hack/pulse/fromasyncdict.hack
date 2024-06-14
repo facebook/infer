@@ -15,10 +15,9 @@ class SuppressExceptional {
     return "bar";
   }
 
-  public static async function FP_genTestOK(): Awaitable<void> {
+  public static async function genTestOK(): Awaitable<void> {
     $a = self::genFirstThing();
-    $b = self::genSecondThing(); // treated as un unknown call because
-    // we use pulse-force-continue option
+    $b = self::genSecondThing();
     await $a;
     await $b;
   }
@@ -34,15 +33,13 @@ class CowSetKnown {
     return "bar";
   }
 
-  public static async function FP_genTestOK(): Awaitable<void> {
+  public static async function genTestOK(): Awaitable<void> {
     $d = dict[];
     $d['first'] = self::genFirstThing();
     $d['second'] = self::genSecondThing();
     // leaving the await commented out is OK because
     // we know we'll throw and suppress the error
     // await Dict\from_async($d);
-    // note: this call is treated as un unknown call because
-    // we use pulse-force-continue option
   }
 }
 
@@ -61,7 +58,7 @@ class FromARealDiff {
     return "baz";
   }
 
-  public static async function genTranslatedFP(
+  public static async function genTranslated(
     vec<string> $keys,
   ): Awaitable<dict<string, string>> {
     $translated_things = dict[];
@@ -86,6 +83,6 @@ class FromARealDiff {
   }
 
   public static async function genTest(): Awaitable<void> {
-    await self::genTranslatedFP(vec['first', 'second']);
+    await self::genTranslated(vec['first', 'second']);
   }
 }

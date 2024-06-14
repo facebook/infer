@@ -648,8 +648,8 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
     (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
-      ?(specialization = Specialization.Pulse.bottom) already_given pre_post_list =
-    let res, non_disj, contradiction = call_aux pre_post_list in
+      ?(specialization = Specialization.Pulse.bottom) already_given summary =
+    let res, non_disj, contradiction = call_aux summary in
     let needs_aliasing_specialization =
       match (res, contradiction) with
       | [], Some (Aliasing _) ->
@@ -682,6 +682,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
     in
     let case_if_specialization_is_impossible ~f =
       ( f res
+      , summary
       , non_disj
       , contradiction
       , match needs_aliasing_specialization with
@@ -733,11 +734,11 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
       in
       match more_specialization with
       | `NoMoreSpecialization ->
-          (res, non_disj, contradiction, `KnownCall)
+          (res, summary, non_disj, contradiction, `KnownCall)
       | `MoreSpecialization specialization
         when Specialization.Pulse.is_empty specialization
              && AbstractValue.Set.is_empty needs_from_caller ->
-          (res, non_disj, contradiction, `KnownCall)
+          (res, summary, non_disj, contradiction, `KnownCall)
       | `MoreSpecialization specialization ->
           let has_already_be_given = Specialization.Pulse.Set.mem specialization already_given in
           if has_already_be_given then
@@ -755,13 +756,12 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
             L.d_printfln "requesting specialized analysis using %sspecialization %a"
               (if not (AbstractValue.Set.is_empty needs_from_caller) then "partial " else "")
               Specialization.Pulse.pp specialization ;
-            let specialized_pre_post_lists, is_pulse_specialization_limit_not_reached =
+            let summary, is_pulse_specialization_limit_not_reached =
               request_specialization specialization
             in
             let already_given = Specialization.Pulse.Set.add specialization already_given in
             iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
-              ~is_pulse_specialization_limit_not_reached ~specialization already_given
-              specialized_pre_post_lists )
+              ~is_pulse_specialization_limit_not_reached ~specialization already_given summary )
   in
   match analyze_dependency callee_pname with
   | Ok summary ->
@@ -771,14 +771,19 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
       let already_given = Specialization.Pulse.Set.empty in
-      let res, non_disj, contradiction, resolution_status =
+      let res, summary_used, non_disj, contradiction, resolution_status =
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
           already_given summary.PulseSummary.main
       in
       let has_continue_program = has_continue_program res in
       if has_continue_program then GlobalForStats.node_is_not_stuck () ;
       let res, non_disj =
-        if Config.pulse_force_continue && not has_continue_program then (
+        if
+          Config.pulse_force_continue
+          && ( PulseNonDisjunctiveDomain.Summary.has_dropped_disjuncts summary_used.non_disj
+             || List.is_empty summary_used.pre_post_list )
+          && not has_continue_program
+        then (
           (* When a function call does not have a post of type ContinueProgram, we may want to treat
              the call as unknown to make the analysis continue. This may introduce false positives but
              could uncover additional true positives too. *)

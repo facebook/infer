@@ -45,6 +45,8 @@ module Summary : sig
   include AbstractDomain.WithBottom with type t = summary
 
   val get_transitive_info_if_not_top : t -> TransitiveInfo.t option
+
+  val has_dropped_disjuncts : t -> bool
 end
 
 val add_var :
