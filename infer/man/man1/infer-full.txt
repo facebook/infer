@@ -3025,15 +3025,15 @@ INTERNAL OPTIONS
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
-       --pulse-force-continue
-           Activates: The code coming after a function call is not analyzed
+       --no-pulse-force-continue
+           Deactivates: The code coming after a function call is not analyzed
            if the callee has no summary of type ContinueProgram, which may
            happen if the callee implementation was hard to analyze. With this
            option, we force the analysis to continue, treating the callee as
            an unknown function. (Note that if the callee had latent issues,
            those keep being surfaced, as appropriate.) Activating this option
            will increase the coverage of code that is analyzed, but may
-           introduce false positives. (Conversely: --no-pulse-force-continue)
+           introduce false positives. (Conversely: --pulse-force-continue)
 
        --no-pulse-havoc-arguments
            Deactivates: Heuristically havoc arguments to unknown functions.
