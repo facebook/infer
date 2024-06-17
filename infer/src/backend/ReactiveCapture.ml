@@ -14,7 +14,7 @@ let get_missed_captures source_files_filter =
   in
   let procnames = Procedures.get_all ~filter () in
   let get_summary procname =
-    Summary.OnDisk.get ~lazy_payloads:true procname
+    Summary.OnDisk.get ~lazy_payloads:true (AnalysisRequest.one Pulse) procname
     |> Option.bind ~f:(fun {Summary.payloads= {pulse}} -> ILazy.force_option pulse)
   in
   PulseSummary.get_missed_captures ~get_summary procnames

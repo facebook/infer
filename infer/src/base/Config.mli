@@ -341,6 +341,8 @@ val deduplicate : bool
 
 val dependency_mode : bool
 
+val detach_analysis_dependency : bool
+
 val developer_mode : bool
 
 val dict_missing_key_var_block_list : Str.regexp option

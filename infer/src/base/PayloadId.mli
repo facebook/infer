@@ -27,6 +27,8 @@ type t =
   | Lineage
   | LineageShape
   | Starvation
-[@@deriving variants]
+[@@deriving compare, equal, hash, show, variants]
 
 val database_fields : string list
+
+val to_checker : t -> Checker.t

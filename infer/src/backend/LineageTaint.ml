@@ -20,6 +20,8 @@ let pp_caller_table =
        (Fmt.brackets @@ Fmt.list ~sep:Fmt.sp Procname.pp_verbose) )
 
 
+let analysis_req = AnalysisRequest.one Lineage
+
 (** Returns a hash table associating its callers to each known procname. *)
 let create_caller_table () =
   let caller_table = Hashtbl.create (module Procname) in
@@ -49,7 +51,7 @@ let find_callers caller_table procname =
 
 
 let fetch_shapes procname =
-  let* summary = Summary.OnDisk.get ~lazy_payloads:true procname in
+  let* summary = Summary.OnDisk.get ~lazy_payloads:true analysis_req procname in
   ILazy.force_option summary.Summary.payloads.lineage_shape
 
 
@@ -196,7 +198,7 @@ module TaintConfig = struct
       *)
       let exists =
         Hashtbl.mem caller_table procname
-        || (Option.is_some @@ Summary.OnDisk.get ~lazy_payloads:true procname)
+        || (Option.is_some @@ Summary.OnDisk.get ~lazy_payloads:true analysis_req procname)
       in
       if not exists then
         L.user_warning "@[LineageTaint: %s `%a` not found. Did you make a typo?@]@." name
@@ -308,7 +310,7 @@ let collect_reachable (config : TaintConfig.t) caller_table =
         if TaintConfig.is_sanitizer config procname then
           aux ~follow_return todo_next todo_later acc_graphs
         else
-          let summary = Summary.OnDisk.get ~lazy_payloads:true procname in
+          let summary = Summary.OnDisk.get ~lazy_payloads:true analysis_req procname in
           let shapes =
             let* summary in
             ILazy.force_option summary.Summary.payloads.lineage_shape

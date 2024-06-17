@@ -14,11 +14,11 @@ let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePri
 
 let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed
 
-let mk_interprocedural_t ~f_analyze_dep ~get_payload
+let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
     {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
     ?(tenv = Exe_env.get_proc_tenv exe_env proc_name) () =
   let analyze_dependency ?specialization proc_name =
-    Ondemand.analyze_proc_name exe_env ?specialization ~caller_summary proc_name
+    Ondemand.analyze_proc_name exe_env analysis_req ?specialization ~caller_summary proc_name
     |> Result.bind ~f:(fun {Summary.payloads} ->
            f_analyze_dep (get_payload payloads) |> analysis_result_of_option )
   in
@@ -37,12 +37,15 @@ let mk_interprocedural_t ~f_analyze_dep ~get_payload
 
 
 let mk_interprocedural_field_t payload_field =
-  mk_interprocedural_t ~f_analyze_dep:Fn.id ~get_payload:(fun payloads ->
-      Field.get payload_field payloads |> ILazy.force_option )
+  mk_interprocedural_t (Payloads.analysis_request_of_field payload_field) ~f_analyze_dep:Fn.id
+    ~get_payload:(fun payloads -> Field.get payload_field payloads |> ILazy.force_option )
 
 
-let interprocedural ~f_analyze_dep ~get_payload ~set_payload checker ({Callbacks.summary} as args) =
-  let analysis_data, stats_ref = mk_interprocedural_t ~f_analyze_dep ~get_payload args () in
+let interprocedural analysis_req ~f_analyze_dep ~get_payload ~set_payload checker
+    ({Callbacks.summary} as args) =
+  let analysis_data, stats_ref =
+    mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload args ()
+  in
   let result = checker analysis_data |> ILazy.from_val_option in
   {summary with payloads= set_payload summary.payloads result; stats= !stats_ref}
 
@@ -81,7 +84,9 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
   let checker analysis_data =
     checker analysis_data (Field.get dep_field summary.payloads |> ILazy.force_option)
   in
-  interprocedural ~f_analyze_dep:Option.some
+  interprocedural
+    (Payloads.analysis_request_of_field payload_field)
+    ~f_analyze_dep:Option.some
     ~get_payload:(fun payloads ->
       ( Field.get payload_field payloads |> ILazy.force_option
       , Field.get dep_field payloads |> ILazy.force_option ) )
@@ -90,7 +95,9 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
 
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
   let analyze_file_dependency proc_name =
-    Ondemand.analyze_proc_name_for_file_analysis exe_env proc_name
+    Ondemand.analyze_proc_name_for_file_analysis exe_env
+      (Payloads.analysis_request_of_field payload_field)
+      proc_name
     |> Result.bind ~f:(fun {Summary.payloads; _} ->
            Field.get payload_field payloads |> ILazy.force_option |> analysis_result_of_option )
   in

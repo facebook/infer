@@ -48,13 +48,13 @@ module OnDisk : sig
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
 
-  val get : lazy_payloads:bool -> Procname.t -> t option
+  val get : lazy_payloads:bool -> AnalysisRequest.t -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
-  val reset : Procname.t -> t
+  val reset : Procname.t -> AnalysisRequest.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
-  val store : t -> t
+  val store : AnalysisRequest.t -> t -> t
   (** Save summary for the procedure into the spec database and return it. If the operation fails,
       store an empty summary and return that instead. *)
 

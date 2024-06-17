@@ -54,13 +54,31 @@ let register_file_callback checker language (callback : file_callback_t) =
   file_callbacks_rev := {checker; language; callback} :: !file_callbacks_rev
 
 
-let iterate_procedure_callbacks exe_env ?specialization ({Summary.proc_name} as summary) proc_desc =
+let iterate_procedure_callbacks exe_env analysis_req ?specialization
+    ({Summary.proc_name} as summary) proc_desc =
   let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let is_specialized = Procdesc.is_specialized proc_desc in
+  let is_requested =
+    let is_dependency_of checker =
+      let dependencies = Checker.get_dependencies checker in
+      fun dependency -> Checker.Set.mem dependency dependencies
+    in
+    match (analysis_req : AnalysisRequest.t) with
+    | All ->
+        fun _ -> true
+    | One payload_id ->
+        is_dependency_of (PayloadId.to_checker payload_id)
+    | CheckerWithoutPayload LoopHoisting ->
+        is_dependency_of LoopHoisting
+  in
   List.fold_right ~init:summary !procedure_callbacks_rev
     ~f:(fun {checker; dynamic_dispatch; language; callback} summary ->
-      if Language.equal language procedure_language && (dynamic_dispatch || not is_specialized) then (
+      if
+        Language.equal language procedure_language
+        && (dynamic_dispatch || not is_specialized)
+        && is_requested checker
+      then (
         PerfEvent.(
           log (fun logger ->
               log_begin_event logger ~name:(Checker.get_id checker) ~categories:["backend"]

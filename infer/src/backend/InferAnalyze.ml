@@ -79,7 +79,8 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         let result =
-          run_and_interpret_result ~f:(fun () -> Ondemand.analyze_file exe_env source_file)
+          run_and_interpret_result ~f:(fun () ->
+              Ondemand.analyze_file exe_env AnalysisRequest.all source_file )
         in
         if Config.write_html then Printer.write_all_html_files source_file ;
         result )
@@ -95,7 +96,8 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
       L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
         Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
-    run_and_interpret_result ~f:(fun () -> Ondemand.analyze_proc_name_toplevel exe_env proc_name)
+    run_and_interpret_result ~f:(fun () ->
+        Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all proc_name )
   in
   fun target ->
     let start = ExecutionDuration.counter () in

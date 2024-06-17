@@ -44,7 +44,9 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker =
     [payload_field1] *)
 let interprocedural2 payload_field1 payload_field2 checker =
   Procedure
-    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
+    (CallbackOfChecker.interprocedural
+       (Payloads.analysis_request_of_field payload_field1)
+       ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> ILazy.force_option
          , Field.get payload_field2 payloads |> ILazy.force_option ) )
@@ -53,9 +55,19 @@ let interprocedural2 payload_field1 payload_field2 checker =
 
 
 (** For checkers that read three separate payloads. *)
-let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload checker =
+let interprocedural3 ?checker_without_payload payload_field1 payload_field2 payload_field3
+    ~set_payload checker =
+  let analysis_req =
+    (* Use the first payload [payload_field1] as [analysis_req], similar to the other constructs,
+       unless the optional [checker_without_payload] value is explicitly given. *)
+    match checker_without_payload with
+    | None ->
+        Payloads.analysis_request_of_field payload_field1
+    | Some checker ->
+        AnalysisRequest.checker_without_payload checker
+  in
   Procedure
-    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
+    (CallbackOfChecker.interprocedural analysis_req ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> ILazy.force_option
          , Field.get payload_field2 payloads |> ILazy.force_option
@@ -117,7 +129,7 @@ let all_checkers =
   ; { checker= LoopHoisting
     ; callbacks=
         (let hoisting =
-           interprocedural3
+           interprocedural3 ~checker_without_payload:LoopHoisting
              ~set_payload:(fun payloads (_ : unit Lazy.t option) ->
                (* this analysis doesn't produce additional payloads *) payloads )
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Payloads.Fields.cost

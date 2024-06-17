@@ -59,7 +59,12 @@ val register_file_callback : Checker.t -> Language.t -> file_callback_t -> unit
     checker. *)
 
 val iterate_procedure_callbacks :
-  Exe_env.t -> ?specialization:Specialization.t -> Summary.t -> Procdesc.t -> Summary.t
+     Exe_env.t
+  -> AnalysisRequest.t
+  -> ?specialization:Specialization.t
+  -> Summary.t
+  -> Procdesc.t
+  -> Summary.t
 (** Invoke all registered procedure callbacks on the given procedure. *)
 
 val is_specialized_for : Specialization.t -> Summary.t -> bool

@@ -102,6 +102,33 @@ let empty =
   ; starvation= None }
 
 
+module PayloadIdToField =
+  PrettyPrintable.MakePPMonoMap
+    (PayloadId)
+    (struct
+      type t = field
+
+      let pp f (F {field}) = F.pp_print_string f (Field.name field)
+    end)
+
+module FieldnameToPayloadId = PrettyPrintable.MakePPMonoMap (String) (PayloadId)
+
+let payload_id_to_field, fieldname_to_payload_id =
+  List.fold all_fields ~init:(PayloadIdToField.empty, FieldnameToPayloadId.empty)
+    ~f:(fun (payload_id_to_field, field_to_payload_id) (F {field= field_t; payload_id} as field) ->
+      ( PayloadIdToField.add payload_id field payload_id_to_field
+      , FieldnameToPayloadId.add (Field.name field_t) payload_id field_to_payload_id ) )
+
+
+let has_payload payload_id payloads =
+  let (F {field}) = PayloadIdToField.find payload_id payload_id_to_field in
+  Option.is_some (Field.get field payloads)
+
+
+let analysis_request_of_field field =
+  AnalysisRequest.one (FieldnameToPayloadId.find (Field.name field) fieldname_to_payload_id)
+
+
 module SQLite = struct
   (** Each payload is stored in the DB as either [NULL] for the absence of payload, or the payload
       itself. We cannot give a good type to this function because it deserializes several payload

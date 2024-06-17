@@ -419,7 +419,7 @@ module Implementation = struct
   let store_sql_time = ref ExecutionDuration.zero
 
   let store_spec =
-    let store_statement =
+    let insert_or_replace_statement =
       Database.register_statement AnalysisDatabase
         {|
           INSERT OR REPLACE INTO specs
@@ -429,7 +429,26 @@ module Implementation = struct
            (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt ":%s" payload_name))
            PayloadId.database_fields )
     in
-    fun ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary ~merge_summary_metadata ->
+    let update_statement =
+      let stmts =
+        List.fold PayloadId.database_fields ~init:String.Map.empty ~f:(fun acc payload_id ->
+            String.Map.add_exn ~key:payload_id
+              ~data:
+                (Database.register_statement AnalysisDatabase
+                   {|
+                     UPDATE specs SET
+                       report_summary = :report_summary,
+                       summary_metadata = :summary_metadata,
+                       %s = :value
+                     WHERE proc_uid = :proc_uid
+                   |}
+                   payload_id )
+              acc )
+      in
+      fun payload_id -> String.Map.find_exn stmts (PayloadId.Variants.to_name payload_id)
+    in
+    fun analysis_req ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
+        ~merge_summary_metadata ->
       let proc_uid_hash = String.hash proc_uid in
       IntHash.find_opt specs_overwrite_counts proc_uid_hash
       |> Option.value_map ~default:0 ~f:(( + ) 1)
@@ -437,20 +456,31 @@ module Implementation = struct
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       let now = ExecutionDuration.counter () in
       let f () =
-        let old_report_summary, old_summary_metadata, old_pulse_payload =
+        let found_old, old_report_summary, old_summary_metadata, old_pulse_payload =
           match select_pulse_spec ~proc_uid with
           | Some (report_summary, summary_metadata, pulse_payload) ->
-              (Some report_summary, Some summary_metadata, Some pulse_payload)
+              (true, Some report_summary, Some summary_metadata, Some pulse_payload)
           | None ->
-              (None, None, None)
+              (false, None, None, None)
         in
         let report_summary = merge_report_summary ~old_report_summary in
         let summary_metadata = merge_summary_metadata ~old_summary_metadata in
         let payloads = merge_pulse_payload ~old_pulse_payload in
-        Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
-            Sqlite3.bind_values store_stmt
-              ( Sqlite3.Data.TEXT proc_uid :: proc_name :: report_summary :: summary_metadata
-              :: payloads )
+        let stmt, binds =
+          match (analysis_req : AnalysisRequest.t) with
+          | One payload_id when found_old ->
+              ( update_statement payload_id
+              , [ report_summary
+                ; summary_metadata
+                ; List.nth_exn payloads (PayloadId.Variants.to_rank payload_id)
+                ; Sqlite3.Data.TEXT proc_uid ] )
+          | One _ | All | CheckerWithoutPayload _ ->
+              ( insert_or_replace_statement
+              , Sqlite3.Data.TEXT proc_uid :: proc_name :: report_summary :: summary_metadata
+                :: payloads )
+        in
+        Database.with_registered_statement stmt ~f:(fun db store_stmt ->
+            Sqlite3.bind_values store_stmt binds
             |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
             SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
       in
@@ -510,7 +540,8 @@ module Command = struct
     | ShrinkAnalysisDB
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
-        { proc_uid: string
+        { analysis_req: AnalysisRequest.t
+        ; proc_uid: string
         ; proc_name: Sqlite3.Data.t
         ; merge_pulse_payload: old_pulse_payload:Sqlite3.Data.t option -> Sqlite3.Data.t list
         ; merge_report_summary: old_report_summary:Sqlite3.Data.t option -> Sqlite3.Data.t
@@ -585,9 +616,14 @@ module Command = struct
     | StoreIssueLog {checker; source_file; issue_log} ->
         Implementation.store_issue_log ~checker ~source_file ~issue_log
     | StoreSpec
-        {proc_uid; proc_name; merge_pulse_payload; merge_report_summary; merge_summary_metadata} ->
-        Implementation.store_spec ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
-          ~merge_summary_metadata
+        { analysis_req
+        ; proc_uid
+        ; proc_name
+        ; merge_pulse_payload
+        ; merge_report_summary
+        ; merge_summary_metadata } ->
+        Implementation.store_spec analysis_req ~proc_uid ~proc_name ~merge_pulse_payload
+          ~merge_report_summary ~merge_summary_metadata
     | Terminate ->
         Implementation.terminate ()
     | UpdateReportSummary {proc_uid; merge_report_summary} ->
@@ -739,13 +775,18 @@ let update_report_summary ~proc_uid ~merge_report_summary =
   perform (UpdateReportSummary {proc_uid; merge_report_summary})
 
 
-let store_spec ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
+let store_spec analysis_req ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
     ~merge_summary_metadata =
   let counter = ExecutionDuration.counter () in
   let result =
     perform
       (StoreSpec
-         {proc_uid; proc_name; merge_pulse_payload; merge_report_summary; merge_summary_metadata} )
+         { analysis_req
+         ; proc_uid
+         ; proc_name
+         ; merge_pulse_payload
+         ; merge_report_summary
+         ; merge_summary_metadata } )
   in
   Stats.incr_spec_store_times counter ;
   result

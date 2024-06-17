@@ -44,6 +44,10 @@ val pp : Pp.env -> Format.formatter -> t -> unit
 
 val empty : t
 
+val has_payload : PayloadId.t -> t -> bool
+
+val analysis_request_of_field : _ Field.t -> AnalysisRequest.t
+
 module SQLite : sig
   val serialize : t -> old_pulse_payload:Sqlite3.Data.t option -> Sqlite3.Data.t list
   (** serialize payloads, but gets an old Pulse's payload to merge, which was pre-existing in DB *)

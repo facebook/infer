@@ -66,7 +66,7 @@
   Datalog
   Textuallib)
  (preprocess
-  (pps ppx_compare ppx_fields_conv ppx_yojson_conv)))
+  (pps ppx_compare ppx_fields_conv ppx_hash ppx_yojson_conv)))
 
 (documentation
  (package infer)

@@ -8,6 +8,8 @@
 open! IStd
 module L = Logging
 
+let analysis_req = AnalysisRequest.one Lineage
+
 let report_proc_json {Summary.payloads= {lineage}; proc_name} =
   match ILazy.force_option lineage with
   | None ->
@@ -23,7 +25,7 @@ let worker source_file =
   let proc_names = SourceFiles.proc_names_of_source source_file in
   List.iter
     ~f:(fun proc_name ->
-      let summary = Summary.OnDisk.get ~lazy_payloads:true proc_name in
+      let summary = Summary.OnDisk.get ~lazy_payloads:true analysis_req proc_name in
       Option.iter summary ~f:report_proc_json )
     proc_names ;
   None

@@ -125,6 +125,14 @@ OPTIONS
            --parameter-not-null-checked, --pulse, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)
 
+       --detach-analysis-dependency
+           Activates: Detach analysis dependencies of checkers during the
+           analysis, so that each checker triggers themselves only when
+           analyzing a callee. This can save unnecessary analyses on the
+           situation that NOT all of the captured data should be analyzed,
+           e.g. --changed-files-index is given. (Conversely:
+           --no-detach-analysis-dependency)
+
        --dict-missing-key-var-block-list +string
            Skip analyzing the variables in the dict-missing-key checker.
 

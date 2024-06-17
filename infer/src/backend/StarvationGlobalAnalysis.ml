@@ -9,6 +9,8 @@ open! IStd
 module L = Logging
 module Domain = StarvationDomain
 
+let analysis_req = AnalysisRequest.one Starvation
+
 let iter_scheduled_pair (work_item : Domain.ScheduledWorkItem.t) f =
   let open Domain in
   let callsite = CallSite.make work_item.procname work_item.loc in
@@ -23,7 +25,7 @@ let iter_critical_pairs_of_summary f summary =
 
 
 let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkItem.t) =
-  Summary.OnDisk.get ~lazy_payloads:true work_item.procname
+  Summary.OnDisk.get ~lazy_payloads:true analysis_req work_item.procname
   |> Option.bind ~f:(fun (summary : Summary.t) -> ILazy.force_option summary.payloads.starvation)
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
@@ -77,14 +79,14 @@ let report exe_env work_set =
     TaskBar.set_remaining_tasks task_bar !to_do_items ;
     TaskBar.update_status task_bar ~slot:0 (Mtime_clock.now ()) (Procname.to_string procname) ;
     TaskBar.refresh task_bar ;
-    Summary.OnDisk.get ~lazy_payloads:true procname
+    Summary.OnDisk.get ~lazy_payloads:true analysis_req procname
     |> Option.fold ~init ~f:(fun acc summary ->
            let pattrs = Attributes.load_exn procname in
            let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
-                 Ondemand.analyze_proc_name exe_env ~caller_summary:summary pname
+                 Ondemand.analyze_proc_name exe_env analysis_req ~caller_summary:summary pname
                  |> AnalysisResult.to_option
                  |> Option.bind ~f:(fun summary ->
                         ILazy.force_option summary.Summary.payloads.starvation ) )

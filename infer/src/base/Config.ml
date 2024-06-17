@@ -1502,6 +1502,15 @@ and dependencies =
      translated. No sources needed."
 
 
+and detach_analysis_dependency =
+  CLOpt.mk_bool ~long:"detach-analysis-dependency"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Detach analysis dependencies of checkers during the analysis, so that each checker triggers \
+     themselves only when analyzing a callee. This can save unnecessary analyses on the situation \
+     that NOT all of the captured data should be analyzed, e.g. $(b,--changed-files-index) is \
+     given."
+
+
 and dict_missing_key_var_block_list =
   CLOpt.mk_string_list ~long:"dict-missing-key-var-block-list" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4152,6 +4161,8 @@ and debug_mode = !debug
 and deduplicate = !deduplicate
 
 and dependency_mode = !dependencies
+
+and detach_analysis_dependency = !detach_analysis_dependency
 
 and dict_missing_key_var_block_list =
   join_patterns_list (RevList.to_list !dict_missing_key_var_block_list)
