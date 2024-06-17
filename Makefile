@@ -208,6 +208,7 @@ DIRECT_TESTS += \
   hack_performance \
 
 BUILD_SYSTEMS_TESTS += \
+  differential_hack \
   pulse_messages_hack \
 
 endif

@@ -54,12 +54,14 @@ let sanitize_qualifier qualifier =
 
 let compute_hash =
   let num_regexp = Str.regexp ":[0-9]+\\(_[0-9a-f]+\\)?" in
+  let hack_closure_num_regexp = Str.regexp "[0-9]*\\.__invoke$" in
   fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
       ~(qualifier : string) ->
     let base_filename = Filename.basename file in
     let hashable_procedure_name = Procname.hashable_name proc_name in
     let location_independent_proc_name =
       Str.global_replace num_regexp "$_" hashable_procedure_name
+      |> Str.replace_first hack_closure_num_regexp ".__invoke"
     in
     let location_independent_qualifier = sanitize_qualifier qualifier in
     Utils.better_hash

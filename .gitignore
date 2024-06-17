@@ -47,6 +47,7 @@ duplicates.txt
 /infer/tests/build_systems/diff/src
 /infer/tests/build_systems/diff_*/src
 /infer/tests/build_systems/differential_*/**/*.class
+/infer/tests/build_systems/differential_*/**/Diff*.hack
 /infer/tests/build_systems/differential_*/**/Diff*.java
 /infer/tests/build_systems/differential_*/**/Diff*.m
 /infer/tests/build_systems/fb_differential_*/**/Diff*.java
