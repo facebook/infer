@@ -2767,7 +2767,7 @@ and pulse_specialization_limit =
 
 
 and pulse_specialization_partial =
-  CLOpt.mk_bool ~long:"pulse-specialization-partial" ~default:false
+  CLOpt.mk_bool ~long:"pulse-specialization-partial" ~default:true
     "A caller does not wait to have a full set of specialization information before running a \
      specialized analysis of the callee."
 
