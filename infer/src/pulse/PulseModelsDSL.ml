@@ -630,6 +630,16 @@ module Syntax = struct
       CallFlags.default astate non_disj (Some pname)
 
 
+  let register_class_object_for_value (aval, _) (class_object, _) : unit model_monad =
+    let f =
+      Formula.Procname
+        (Procname.make_hack ~class_name:None ~function_name:"hack_get_static_class" ~arity:(Some 1))
+    in
+    PulseArithmetic.and_equal (AbstractValueOperand class_object)
+      (FunctionApplicationOperand {f; actuals= [aval]})
+    |> exec_partial_command
+
+
   module Basic = struct
     (* See internal_new_. We do some crafty unboxing to make the external API nicer *)
     let alloc_not_null ?desc allocator size ~initialize : unit model_monad =

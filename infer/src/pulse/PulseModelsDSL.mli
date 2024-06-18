@@ -214,6 +214,9 @@ module Syntax : sig
 
   val exec_pure_operation : (astate -> 'a) -> 'a model_monad
 
+  val register_class_object_for_value : aval -> aval -> unit model_monad
+  (** This is used to make hack_get_static_class behave like a pure function *)
+
   module Basic : sig
     val alloc_not_null :
       ?desc:string -> Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad

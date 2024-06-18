@@ -89,3 +89,12 @@ async function genAndAwaitBad(): Awaitable<void> {
   await genDontAwaitParam($x);
   return;
 }
+
+class LikeLocaleDetector {
+  private static ?Awaitable<int> $context = null;
+
+  public async function genSetContext(): Awaitable<int> {
+    self::$context = genInt();
+    return await self::$context;
+  }
+}

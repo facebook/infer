@@ -441,9 +441,12 @@ let get_static_class aval : model =
      match opt_dynamic_type_data with
      | Some {Formula.typ= {desc= Tstruct type_name}} ->
          let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
+         let* () = register_class_object_for_value aval class_object in
          assign_ret class_object
      | _ ->
-         ret ()
+         let* unknown_class_object = mk_fresh ~model_desc:"get_static_class" () in
+         let* () = register_class_object_for_value aval unknown_class_object in
+         assign_ret unknown_class_object
 
 
 let hhbc_class_get_c value : model =
@@ -863,8 +866,9 @@ let hack_field_get this field : model =
              in
              assign_ret aval
          | _ ->
-             let* fresh = mk_fresh ~model_desc:"hack_field_get" () in
-             assign_ret fresh )
+             let field = TextualSil.wildcard_sil_fieldname Hack string_field_name in
+             let* aval = eval_deref_access Read this (FieldAccess field) in
+             assign_ret aval )
      | None ->
          L.die InternalError "hack_field_get expect a string constant as 2nd argument"
 
