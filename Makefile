@@ -967,7 +967,6 @@ endif
 .PHONY: devsetup
 devsetup:
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
-ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	$(QUIET)$(call silent_on_success,pinning ocamlformat,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
 	  $(OPAM) pin add $$(cat "$(ABSOLUTE_ROOT_DIR)"/opam/ocamlformat) --yes --no-action)
@@ -977,7 +976,6 @@ ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	$(QUIET)$(call silent_on_success,installing ocamlformat,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
 	  $(OPAM) install ocamlformat --yes)
-endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depexts user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
