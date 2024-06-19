@@ -155,6 +155,12 @@ tname:
   | id=ident
     { { TypeName.value=id; loc=location_of_pos $startpos(id) } }
 
+tname_or_void:
+  | tname=tname
+    { tname }
+  | VOID
+    { { TypeName.value="void"; loc=location_of_pos $startpos } }
+
 opt_tname:
   | tname=tname
     { tname }
@@ -200,7 +206,7 @@ extends:
   { supers }
 
 typedef:
-  | union_list=separated_nonempty_list(COMMA,tname)
+  | union_list=separated_nonempty_list(COMMA,tname_or_void)
   { union_list }
 
 declaration:
