@@ -16,6 +16,13 @@ type AliasD<T> = D<T>;
 // should it encounter a case type - we don't actually do anything sensible with them yet
 case type CT3 = string | bool;
 
+// should come out as HackArray
+type AShapeAlias = shape('success' => bool, 'count' => int);
+// should come out as HackDict
+type ADictAlias = dict<string, mixed>;
+// should come out as HackMixed
+type AFunctionAlias = (function(int): int);
+
 class HasConstant {
   const type T = int;
 }
@@ -37,19 +44,13 @@ class C {
     $_ = $this->fail();
   }
 
-  /* I think this ought to work, but hh rejects it for some reason!
-     Bug reported to Hack team
-     Fixed in D58323800
-    public async function testGenericAliasOK(): Awaitable<void> {
-      $x = new D<int>();
-      if ($x is AliasD<_>) {
-        return;
-      }
-      $_ = $this->fail();
+  public async function testGenericAliasOK(): Awaitable<void> {
+    $x = new D<int>();
+    if ($x is AliasD<_>) {
+      return;
     }
     $_ = $this->fail();
   }
-  */
 
   // This one doesn't work yet because we're not doing explicit parameter assertion/verification
   // on non-generic parameters yet (Hackc does them implicitly now)
