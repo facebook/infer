@@ -26,7 +26,7 @@ let string_of_capture_mode = function
 
 
 let pp_captured_data f (captured_data : captured_data) =
-  F.fprintf f " (captured_%s)" (string_of_capture_mode captured_data.capture_mode)
+  F.fprintf f "_captured_%s" (string_of_capture_mode captured_data.capture_mode)
 
 
 let pp f fld =
