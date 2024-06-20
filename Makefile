@@ -888,12 +888,15 @@ else    # LDD
 ifneq ($(OTOOL),no)
 ifneq ($(INSTALL_NAME_TOOL),no)
 #	this sort of assumes osx
-#	figure out where libgmp, libmpfr, and libsqlite3 are using otool
+#	figure out where libgmp and libmpfr are using otool
+#
+#	Since macOS Big Sur, libsqlite3.dylib is in the "library cache" and so there is no
+#	corresponding file in /usr/lib
 	set -e; \
 	set -x; \
 	for lib in $$($(OTOOL) -L $(INFER_BIN) \
 	              | cut -d ' ' -f 1 | tr -d '\t' \
-	              | grep -e 'lib\(gmp\|mpfr\|sqlite\)'); do \
+	              | grep -e 'lib\(gmp\|mpfr\)'); do \
 	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
 	done
 	set -x; \
