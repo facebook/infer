@@ -1,32 +1,30 @@
-## Next version
-
 ## Version 1.2.0
 
 A lot has happened in the years since 1.1.0 so these are just the highlights.
 
 ### Checkers
 
-- [Pulse](https://fbinfer.com/docs/checker-pulse) is now enabled by default and replaces [Biabduction](https://fbinfer.com/docs/checker-biabduction) as the default memory and value analysis engine for Infer. Pulse powers a lot of issue types historically reported by other checkers, such as null dereferences, memory/resource leaks, reads of uninitialised values, as well as a range of new issue types such as ([user-configurable](https://fbinfer.com/docs/next/man-infer-analyze#PULSE%20CHECKER%20OPTIONS)) [tainted data flows](https://fbinfer.com/docs/next/all-issue-types#taint_error) and C++ [unnecessary object copies](https://fbinfer.com/docs/next/all-issue-types#pulse_unnecessary_copy).
+- [Pulse](https://fbinfer.com/docs/checker-pulse) is now enabled by default and replaces [Biabduction](https://fbinfer.com/docs/checker-biabduction) as the default memory and value analysis engine for Infer. Pulse powers a lot of issue types historically reported by other checkers, such as null dereferences, memory/resource leaks, reads of uninitialised values, as well as a range of new issue types such as ([user-configurable](https://fbinfer.com/docs/man-infer-analyze#PULSE%20CHECKER%20OPTIONS)) [tainted data flows](https://fbinfer.com/docs/all-issue-types#taint_error) and C++ [unnecessary object copies](https://fbinfer.com/docs/all-issue-types#pulse_unnecessary_copy).
 
-- The [Resource Leak checker for .NET](https://fbinfer.com/docs/checker-dotnet-resource-leak) and [Uninitialized Value](https://fbinfer.com/docs/checker-uninit) checkers have been removed and their functionality moved to Pulse for improved precision.
+- The [Resource Leak checker for .NET](https://fbinfer.com/docs/1.1.0/checker-dotnet-resource-leak) and [Uninitialized Value](https://fbinfer.com/docs/1.1.0/checker-uninit) checkers have been removed and their functionality moved to Pulse for improved precision.
 
-- The linter framework [ASTLanguage (AL)](https://fbinfer.com/docs/checker-linters) has been removed (previously deprecated). Other clang-based linter frameworks such as [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) can be used instead.
+- The linter framework [ASTLanguage (AL)](https://fbinfer.com/docs/1.1.0/checker-linters) has been removed (previously deprecated). Other clang-based linter frameworks such as [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) can be used instead.
 
-- [Eradicate](https://fbinfer.com/docs/1.0.0/checker-eradicate) has been removed (previously deprecated).
+- [Eradicate](https://fbinfer.com/docs/1.1.0/checker-eradicate) has been removed (previously deprecated).
 
-- Two other checkers have been deleted: [Config Checks between Markers](https://fbinfer.com/docs/checker-config-checks-between-markers) (previously experimental) and [Immutable Cast](https://fbinfer.com/docs/checker-immutable-cast) (previously deprecated).
+- Two other checkers have been deleted: [Config Checks between Markers](https://fbinfer.com/docs/1.1.0/checker-config-checks-between-markers) (previously experimental) and [Immutable Cast](https://fbinfer.com/docs/1.1.0/checker-immutable-cast) (previously deprecated).
 
 - [Biabduction](https://fbinfer.com/docs/checker-biabduction) is now deprecated in favour of [Pulse](https://fbinfer.com/docs/checker-pulse).
 
 - [Quandary](https://fbinfer.com/docs/checker-biabduction) is now deprecated in favour of [Pulse](https://fbinfer.com/docs/checker-pulse)'s taint analysis.
 
-- New checker: [Lineage](https://fbinfer.com/docs/next/checker-lineage) produces inter-procedural data flow graphs for Erlang code and provides commands to query taint paths in it.
+- New checker: [Lineage](https://fbinfer.com/docs/checker-lineage) produces inter-procedural data flow graphs for Erlang code and provides commands to query taint paths in it.
 
-- New checker: [Parameter Not Null Checked](https://fbinfer.com/docs/next/checker-parameter-not-null-checked) for Objective-C, replacing the [PARAMETER_NOT_NULL_CHECKED](https://fbinfer.com/docs/all-issue-types#parameter_not_null_checked) bug type reported by biabduction.
+- New checker: [Parameter Not Null Checked](https://fbinfer.com/docs/checker-parameter-not-null-checked) for Objective-C, replacing the [PARAMETER_NOT_NULL_CHECKED](https://fbinfer.com/docs/1.1.0/all-issue-types#parameter_not_null_checked) bug type reported by biabduction.
 
-- New checker: [Scope Leakage](https://fbinfer.com/docs/next/checker-scope-leakage) for Java and Kotlin, verifying that certain classes can never retain others in a configurable way.
+- New checker: [Scope Leakage](https://fbinfer.com/docs/checker-scope-leakage) for Java and Kotlin, verifying that certain classes can never retain others in a configurable way.
 
-- [Annotation Reachability](https://fbinfer.com/docs/next/checker-annotation-reachability): support for C++ was dropped and Java support was improved to support using regexps to model annotated functions, and having field accesses as sinks.
+- [Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability): support for C++ was dropped and Java support was improved to support using regexps to model annotated functions, and having field accesses as sinks.
 
 
 ### Languages
@@ -47,7 +45,7 @@ A lot has happened in the years since 1.1.0 so these are just the highlights.
 
 ### Backend
 
-- Incremental mode much improved, see the new `--incremental-analysis` flag in the updated [workflow for CI](https://fbinfer.com/docs/next/steps-for-ci/#differential-workflow) document.
+- Incremental mode much improved, see the new `--incremental-analysis` flag in the updated [workflow for CI](https://fbinfer.com/docs/steps-for-ci/#differential-workflow) document.
 
 
 ### Command Line Interface
@@ -69,12 +67,12 @@ A lot has happened in the years since 1.1.0 so these are just the highlights.
 
 ### Checkers
 
-- [Liveness](https://fbinfer.com/docs/checker-liveness/): properly handle exceptional control flow
-- [Pulse](https://fbinfer.com/docs/checker-pulse/):
+- [Liveness](https://fbinfer.com/docs/1.1.0/checker-liveness/): properly handle exceptional control flow
+- [Pulse](https://fbinfer.com/docs/1.1.0/checker-pulse/):
   - Added preliminary Java support
-  - New [Uninitialized value bug type](https://fbinfer.com/docs/all-issue-types/#pulse_uninitialized_value), aiming to replace the previous [Uninit](https://fbinfer.com/docs/checker-uninit/) checker as this one is inter-procedural and more precise.
-  - [OPTIONAL_EMPTY_ACCESS](https://fbinfer.com/docs/all-issue-types/#optional_empty_access) is now enabled by default
-- **NEW checker** [Topl](https://fbinfer.com/docs/checker-topl/)(early alpha): An experimental checker framework: write your own analysis as a state machine representing a temporal property over multiple memory objects at once, eg to write a taint analysis. Topl is based on Pulse.
+  - New [Uninitialized value bug type](https://fbinfer.com/docs/1.1.0/all-issue-types/#pulse_uninitialized_value), aiming to replace the previous [Uninit](https://fbinfer.com/docs/1.1.0/checker-uninit/) checker as this one is inter-procedural and more precise.
+  - [OPTIONAL_EMPTY_ACCESS](https://fbinfer.com/docs/1.1.0/all-issue-types/#optional_empty_access) is now enabled by default
+- **NEW checker** [Topl](https://fbinfer.com/docs/1.1.0/checker-topl/)(early alpha): An experimental checker framework: write your own analysis as a state machine representing a temporal property over multiple memory objects at once, eg to write a taint analysis. Topl is based on Pulse.
 - Miscellaneous improvements to cost, inferbo, nullsafe, racerd, starvation
 
 
@@ -82,7 +80,7 @@ A lot has happened in the years since 1.1.0 so these are just the highlights.
 
 ### Checkers
 
-[AL](https://fbinfer.com/docs/checker-linters) is now deprecated and may be removed in future versions.
+[AL](https://fbinfer.com/docs/1.1.0/checker-linters) is now deprecated and may be removed in future versions.
 
 [Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability)
 - reporting format improvements (the trace is no longer included in the report text, only as metadata)
@@ -90,7 +88,7 @@ A lot has happened in the years since 1.1.0 so these are just the highlights.
 [Biabduction](https://fbinfer.com/docs/checker-biabduction)
 - disable some less-used bug types
 
-[Eradicate](https://fbinfer.com/docs/checker-eradicate)
+[Eradicate](https://fbinfer.com/docs/1.1.0/checker-eradicate)
 - remove "Field not mutable" check
 
 [RacerD](https://fbinfer.com/docs/checker-racerd)
@@ -102,7 +100,7 @@ A lot has happened in the years since 1.1.0 so these are just the highlights.
 [Starvation](https://fbinfer.com/docs/checker-starvation)
 - New experimental "global" analysis mode. Enable with `--starvation-whole-program`
 
-Miscellaneous improvements to most checkers, in particular [Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability), [Cost Analysis](https://fbinfer.com/docs/checker-cost), [Eradicate](https://fbinfer.com/docs/checker-eradicate), [Inefficient Keyset Iterator](https://fbinfer.com/docs/checker-inefficient-keyset-iterator), [InferBO](https://fbinfer.com/docs/checker-bufferoverrun), [Pulse](https://fbinfer.com/docs/checker-pulse), [RacerD](https://fbinfer.com/docs/checker-racerd), [Starvation](https://fbinfer.com/docs/checker-starvation), and [Uninitialized Value](https://fbinfer.com/docs/checker-uninit).
+Miscellaneous improvements to most checkers, in particular [Annotation Reachability](https://fbinfer.com/docs/checker-annotation-reachability), [Cost Analysis](https://fbinfer.com/docs/checker-cost), [Eradicate](https://fbinfer.com/docs/1.1.0/checker-eradicate), [Inefficient Keyset Iterator](https://fbinfer.com/docs/checker-inefficient-keyset-iterator), [InferBO](https://fbinfer.com/docs/checker-bufferoverrun), [Pulse](https://fbinfer.com/docs/checker-pulse), [RacerD](https://fbinfer.com/docs/checker-racerd), [Starvation](https://fbinfer.com/docs/checker-starvation), and [Uninitialized Value](https://fbinfer.com/docs/checker-uninit).
 
 ### Build System Integrations
 
@@ -136,7 +134,7 @@ Miscellaneous improvements to most checkers, in particular [Annotation Reachabil
 ### Internal Changes
 
 - Folded the facebook-clang-plugins sub-repo inside the infer repository; there is no more git submodule for it.
-- Improve internal documentation of [OCaml source code](https://fbinfer.com/odoc/1.0.0/infer/infer.html).
+- Improve internal documentation of [OCaml source code](https://fbinfer.com/odoc/next/infer/infer.html).
 - Build with OCaml 4.11.1 and dune 2.7.1
 - Migrated our Python 2 code to OCaml
 - Split the infer OCaml source code into individual dune libraries.
@@ -201,9 +199,9 @@ This is a fix for the 0.13.0 release, whose build broke due to changes in opam.
 
 ## Version 0.13.0
 
-- Infer now runs multiple checkers at the same time by default, including the biabduction analysis that was the previous and only default. In particular, we are pleased to introduce [RacerD](http://fbinfer.com/docs/racerd.html) for race detection in Java. The following checkers are activated by default: annotation reachability (Java), biabduction (C/C++/ObjC, Java), fragment retains view (Java), immutable cast (Java), liveness (C/C++/ObjC), printf args (Java), quandary (C/C++/ObjC, Java), RacerD (C/C++/ObjC, Java), SIOF (C/C++/ObjC). Each checker may report several issue types.
+- Infer now runs multiple checkers at the same time by default, including the biabduction analysis that was the previous and only default. In particular, we are pleased to introduce [RacerD](http://fbinfer.com/docs/checker-racerd) for race detection in Java. The following checkers are activated by default: annotation reachability (Java), biabduction (C/C++/ObjC, Java), fragment retains view (Java), immutable cast (Java), liveness (C/C++/ObjC), printf args (Java), quandary (C/C++/ObjC, Java), RacerD (C/C++/ObjC, Java), SIOF (C/C++/ObjC). Each checker may report several issue types.
 - Upgraded to clang 5.0
-- Richer DSL for writing linters ([AL](http://fbinfer.com/docs/linters.html)), and a new default linter for `const` pointers in Objective-C
+- Richer DSL for writing linters ([AL](http://fbinfer.com/docs/1.1.0/checker-linters)), and a new default linter for `const` pointers in Objective-C
 - Lots of perf improvements and bug fixes, and improved logging
 
 Please note the following breaking changes:
@@ -220,7 +218,7 @@ Hotfix release to update infer's opam dependencies to cope with upgrades of cppo
 ## Version 0.12.0
 
 - introduces *subcommands* and man pages for all subcommands
-- This release introduces **AL**, a language for writing linters against the clang AST. AL lets you check [syntactic properties](http://fbinfer.com/docs/linters-bug-types.html) of source code by traversing the AST of the program. Using the included domain-specific language (DSL), you can [write your own set of checks](http://fbinfer.com/docs/linters.html).
+- This release introduces **AL**, a language for writing linters against the clang AST. AL lets you check syntactic properties of source code by traversing the AST of the program. Using the included domain-specific language (DSL), you can [write your own set of checks](http://fbinfer.com/docs/1.1.0/checker-linters).
 
 
 ## Version 0.11.0
@@ -233,9 +231,9 @@ Hotfix release to update infer's opam dependencies to cope with upgrades of cppo
 
 - [Clang] C++ support.
 - [Clang] Improved support for cmake and Xcode compilation databases. Use with `infer --compilation-database compile_commands.json` (for cmake and Buck), or with `infer --compilation-database-escaped compile_commands.json` (for xcbuild and xcpretty).
-- [C++] New [SIOF Checker](http://fbinfer.com/docs/experimental-checkers.html).
-- [iOS] New [linter for target SDK version](http://fbinfer.com/docs/linters-bug-types.html#UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK). Use with `infer --iphoneos-target-sdk-version <min version you support> ...` or with `infer -a linters --iphoneos-target-sdk-version <min version you support> ...`.
-- [Java] New [Thread Safety Checker](http://fbinfer.com/docs/experimental-checkers.html).
+- [C++] New [SIOF Checker](http://fbinfer.com/docs/checker-siof).
+- [iOS] New linter for target SDK version. Use with `infer --iphoneos-target-sdk-version <min version you support> ...` or with `infer -a linters --iphoneos-target-sdk-version <min version you support> ...`.
+- [Java] New Thread Safety Checker.
 - [Java] Smarter analysis of dynamic dispatch.
 - [Java] Improved Maven integration.
 - [Java] `@SuppressWarnings` support removed. Use `@SuppressLint` instead. `android.annotation.SuppressLint` is only available on Android, but do let us know if that is an issue for you.
@@ -289,7 +287,7 @@ No changelog.
 
 ## Version 0.8.0
 
-- New `--reactive` mode to rapidly analyze the effects of a code change. Be sure to check out [the documentation of the new workflow](http://fbinfer.com/docs/infer-workflow.html#global-default-and-differential-workflows). As a result, the incremental mode (`--incremental`) is now deprecated.
+- New `--reactive` mode to rapidly analyze the effects of a code change. Be sure to check out [the documentation of the new workflow](https://fbinfer.com/docs/infer-workflow#global-default-and-differential-workflows). As a result, the incremental mode (`--incremental`) is now deprecated.
 - New XML output, compatible with output from other static analyzers, eg [PMD](https://pmd.github.io/). To use it, pass the `--pmd-xml` flag to Infer (see `infer --help`).
 - Use `@SuppressWarnings("infer")` in your Java projects to annotate methods or classes where Infer shouldn't report.
 - This release incorporates a number of contributions (#284 #289 #300 #301) and addresses a number of issues (#279 #281 #283 #288 #291 #294).
@@ -299,13 +297,13 @@ No changelog.
 
 - addresses a number of bugs, eg #270 #274 #275 #276
 - [all] add summary of the analysis results at the end of the console output
-- [android] new ["Fragment retains View" checker](http://fbinfer.com/docs/checkers-bug-types.html)
+- [android] new "Fragment retains View" checker
 
 
 ## Version 0.6.0
 
 - [android] fixed intermittent infinite loop
-- [iOS] new check for [capturing](http://fbinfer.com/docs/infer-bug-types.html#CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK) a C++ reference in an Objective-C block
+- [iOS] new check for [capturing](https://fbinfer.com/docs/all-issue-types/#cxx_reference_captured_in_objc_block) a C++ reference in an Objective-C block
 
 
 ## Version 0.5.0
