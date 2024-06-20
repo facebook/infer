@@ -107,7 +107,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: facebook-clang-plugins/clang/install
-          key: clang-${{ runner.os }}-${{ steps.clang-hash.outputs.value }}
+          key: clang-${{ runner.os }}-${{ runner.arch }}-${{ steps.clang-hash.outputs.value }}
 
       - name: Record that the clang cache was hit
         if: steps.cache-clang.outputs.cache-hit == 'true'
