@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Check (infer.BO.BufferOverrunUtils.Check)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">infer</a> &#x00BB; <a href="../../index.html">BO</a> &#x00BB; <a href="../index.html">BufferOverrunUtils</a> &#x00BB; Check</nav><header class="odoc-preamble"><h1>Module <code><span>BufferOverrunUtils.Check</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-array_access"><a href="#val-array_access" class="anchor"></a><code><span><span class="keyword">val</span> array_access : 
+  <span><span class="label">arr</span>:<a href="../../BufferOverrunDomain/Val/index.html#type-t">Dom.Val.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">idx</span>:<a href="../../BufferOverrunDomain/Val/index.html#type-t">Dom.Val.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">is_plus</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">last_included</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">latest_prune</span>:<a href="../../BufferOverrunDomain/LatestPrune/index.html#type-t">Dom.LatestPrune.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lindex"><a href="#val-lindex" class="anchor"></a><code><span><span class="keyword">val</span> lindex : 
+  <span><a href="../../../IR/IntegerWidths/index.html#type-t">IR.IntegerWidths.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">array_exp</span>:<a href="../../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">index_exp</span>:<a href="../../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">last_included</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunDomain/Mem/index.html#type-t">Dom.Mem.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lindex_byte"><a href="#val-lindex_byte" class="anchor"></a><code><span><span class="keyword">val</span> lindex_byte : 
+  <span><a href="../../../IR/IntegerWidths/index.html#type-t">IR.IntegerWidths.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">array_exp</span>:<a href="../../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">byte_index_exp</span>:<a href="../../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">last_included</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunDomain/Mem/index.html#type-t">Dom.Mem.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-binary_operation"><a href="#val-binary_operation" class="anchor"></a><code><span><span class="keyword">val</span> binary_operation : 
+  <span><a href="../../../IR/IntegerWidths/index.html#type-t">IR.IntegerWidths.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IR/Binop/index.html#type-t">IR.Binop.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">lhs</span>:<a href="../../BufferOverrunDomain/Val/index.html#type-t">Dom.Val.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">rhs</span>:<a href="../../BufferOverrunDomain/Val/index.html#type-t">Dom.Val.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">latest_prune</span>:<a href="../../BufferOverrunDomain/LatestPrune/index.html#type-t">Dom.LatestPrune.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../BufferOverrunProofObligations/ConditionSet/index.html#type-checked_t">PO.ConditionSet.checked_t</a></span></code></div></div></div></body></html>

@@ -1,0 +1,199 @@
+<!-- Creator     : groff version 1.23.0 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-compile</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-compile</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#EXAMPLES">EXAMPLES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">infer-compile -
+compile project from within the infer environment</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer compile
+--</b> <i>[compile command]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">Intercepts
+compilation commands similarly to <b>infer-capture</b>, but
+simply execute these compilation commands and do not perform
+any translation of the source files. This can be useful to
+configure build systems or for debugging purposes.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--debug</b>,<b>-g</b></p>
+
+<p style="margin-left:14%;">Activates: Debug mode (also
+sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
+<b>--print-buckets</b>, <b>--print-types</b>,
+<b>--reports-include-ml-loc</b>,
+<b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
+
+<p style="margin-left:9%;"><b>--debug-level</b>
+<i>level</i></p>
+
+<p style="margin-left:14%;">Debug level (sets
+<b>--bo-debug</b> <i>level</i>,
+<b>--debug-level-analysis</b> <i>level</i>,
+<b>--debug-level-capture</b> <i>level</i>):</p>
+
+<p style="margin-left:9%;">- 0: only basic debugging
+enabled <br>
+- 1: verbose debugging enabled <br>
+- 2: very verbose debugging enabled <b><br>
+--debug-level-analysis</b> <i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the analysis.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-capture</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the capture.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
+
+<p style="margin-left:9%;"><b>--force-delete-results-dir</b></p>
+
+<p style="margin-left:14%;">Activates: Do not refuse to
+delete the results directory if it doesn't look like an
+infer results directory. (Conversely:
+<b>--no-force-delete-results-dir</b>)</p>
+
+<p style="margin-left:9%;"><b>--help</b></p>
+
+<p style="margin-left:14%;">Show this manual</p>
+
+<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
+groff | pager | plain }</i></p>
+
+<p style="margin-left:14%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:9%;"><b>--help-full</b></p>
+
+<p style="margin-left:14%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:14%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:14%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>EXAMPLES
+<a name="EXAMPLES"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>cmake</b>(1)
+hardcodes the absolute paths to the compiler inside the
+Makefiles it generates, which defeats the later capture of
+compilation commands by infer. Thus, to capture a CMake
+project, one should configure the project from within the
+infer build environment, for instance:</p>
+
+<p style="margin-left:9%; margin-top: 1em">mkdir build
+&amp;&amp; cd build <br>
+infer compile -- cmake .. <br>
+infer capture -- make</p>
+
+<p style="margin-left:9%; margin-top: 1em">The same
+solution can be used for projects whose
+&quot;./configure&quot; script hardcodes the paths to the
+compilers, for instance:</p>
+
+<p style="margin-left:9%; margin-top: 1em">infer compile --
+./configure <br>
+infer capture -- make</p>
+
+<p style="margin-left:9%; margin-top: 1em">Another solution
+for CMake projects is to use CMake's compilation databases,
+for instance:</p>
+
+<p style="margin-left:9%; margin-top: 1em">mkdir build
+&amp;&amp; cd build <br>
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 .. <br>
+infer capture --compilation-database
+compile_commands.json</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer-capture</b>(1)</p>
+<hr>
+</body>
+</html>

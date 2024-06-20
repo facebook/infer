@@ -1,0 +1,763 @@
+<!-- Creator     : groff version 1.23.0 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-capture</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-capture</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
+<a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
+<a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
+<a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">infer-capture -
+capture source files for later analysis</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer capture
+--buck-java</b> <i>[options]</i> <b>-- buck</b> <i>...</i>
+<b><br>
+infer capture --buck-clang</b> <i>[options]</i> <b>--
+buck</b> <i>...</i> <b><br>
+infer capture --buck-compilation-database</b> <i>[no-]deps
+[options]</i> <b>-- buck</b> <i>...</i> <b><br>
+infer capture</b> <i>[options]</i>
+<b>--compilation-database</b> <i>file</i> <b><br>
+infer capture</b> <i>[options]</i>
+<b>--compilation-database-escaped</b> <i>file</i> <b><br>
+infer capture</b> <i>[options]</i> <b>--
+gradle</b>/<b>gradlew</b> <i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- hackc</b>
+<i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- javac</b>
+<i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>--
+make</b>/<b>clang</b>/<b>gcc</b> <i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- mvn</b>/<b>mvnw</b>
+<i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- ndk-build</b>
+<i>...</i> <b><br>
+infer capture</b> <i>[--no-xcpretty] [options]</i> <b>--
+xcodebuild</b> <i>...</i> <b><br>
+infer capture --cfg-json</b> <i>file.json</i>
+<b>--tenv-json</b> <i>file.json [options]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">Capture the
+build command, compilation database, or cfg/tenv json files
+specified on the command line: infer intercepts calls to the
+compiler to read source files, translate them into infer's
+intermediate representation, and store the result of the
+translation in the results directory.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--capture-block-list</b>
+<i>json</i></p>
+
+<p style="margin-left:14%;">Matcher or list of matchers for
+names of files that should not be captured, hence not
+analyzed either. Clang, Java, and Hack only.</p>
+
+<p style="margin-left:9%;"><b>--cfg-json</b>
+<i>file</i></p>
+
+<p style="margin-left:14%;">Path to CFG json file</p>
+
+<p style="margin-left:9%;"><b>--continue</b></p>
+
+<p style="margin-left:14%;">Activates: Continue the capture
+for the reactive analysis, increasing the changed
+files/procedures. (If a procedure was changed beforehand,
+keep the changed marking.) (Conversely:
+<b>--no-continue</b>)</p>
+
+<p style="margin-left:9%;"><b>--debug</b>,<b>-g</b></p>
+
+<p style="margin-left:14%;">Activates: Debug mode (also
+sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
+<b>--print-buckets</b>, <b>--print-types</b>,
+<b>--reports-include-ml-loc</b>,
+<b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
+
+<p style="margin-left:9%;"><b>--debug-level</b>
+<i>level</i></p>
+
+<p style="margin-left:14%;">Debug level (sets
+<b>--bo-debug</b> <i>level</i>,
+<b>--debug-level-analysis</b> <i>level</i>,
+<b>--debug-level-capture</b> <i>level</i>):</p>
+
+<p style="margin-left:9%;">- 0: only basic debugging
+enabled <br>
+- 1: verbose debugging enabled <br>
+- 2: very verbose debugging enabled <b><br>
+--debug-level-analysis</b> <i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the analysis.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-capture</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the capture.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
+
+<p style="margin-left:9%;"><b>--force-delete-results-dir</b></p>
+
+<p style="margin-left:14%;">Activates: Do not refuse to
+delete the results directory if it doesn't look like an
+infer results directory. (Conversely:
+<b>--no-force-delete-results-dir</b>)</p>
+
+<p style="margin-left:9%;"><b>--force-integration</b>
+<i>command</i></p>
+
+<p style="margin-left:14%;">Proceed as if the first
+argument after <b>--</b> was <i>command</i>. Possible
+values: <i>ant</i>, <i>buck1</i>, <i>buck</i>, <i>buck2</i>,
+<i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
+<i>kotlinc</i>, <i>cc</i>, <i>clang</i>, <i>gcc</i>,
+<i>clang++</i>, <i>c++</i>, <i>g++</i>, <i>hackc</i>,
+<i>make</i>, <i>configure</i>, <i>cmake</i>, <i>waf</i>,
+<i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>, <i>python3</i>,
+<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
+
+<p style="margin-left:9%;"><b>--help</b></p>
+
+<p style="margin-left:14%;">Show this manual</p>
+
+<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
+groff | pager | plain }</i></p>
+
+<p style="margin-left:14%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:9%;"><b>--help-full</b></p>
+
+<p style="margin-left:14%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:9%;"><b>--keep-going</b></p>
+
+<p style="margin-left:14%;">Activates: Keep going when the
+analysis or capture encounter a failure (Conversely:
+<b>--no-keep-going</b>)</p>
+
+<p style="margin-left:9%;"><b>--load-average</b>,<b>-l</b>
+<i>float</i></p>
+
+<p style="margin-left:14%;">Do not start new parallel jobs
+if the load average is greater than that specified (Buck and
+make only)</p>
+
+
+<p style="margin-left:9%;"><b>--mark-unchanged-procs</b></p>
+
+<p style="margin-left:14%;">Activates: Check structural
+identity of newly-captured procedures with
+previously-captured versions, marking the new procedure as
+unchanged if the two are equivalent. Also prevents removing
+results db during capture, so that unchanged results can be
+reused during future incremental analyses (Conversely:
+<b>--no-mark-unchanged-procs</b>)</p>
+
+<p style="margin-left:9%;"><b>--merge-capture</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Specifies an Infer results
+directory. The files and procedures captured in it will be
+merged together into the results directory specified with
+<b>-o</b>. Relative paths are interpreted as relative to
+<b>project-root/buck-out</b>.</p>
+
+<p style="margin-left:9%;"><b>--never-returning-null</b>
+<i>json</i></p>
+
+<p style="margin-left:14%;">[Java only, all analyses]
+Matcher or list of matchers for functions that never return
+<i>null</i>.</p>
+
+<p style="margin-left:9%;"><b>--print-logs</b></p>
+
+<p style="margin-left:14%;">Activates: Also log messages to
+stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
+
+<p style="margin-left:9%;"><b>--progress-bar-style</b> <i>{
+auto | plain | multiline }</i></p>
+
+<p style="margin-left:14%;">Style of the progress bar.
+<b>auto</b> selects <b>multiline</b> if connected to a tty,
+otherwise <b>plain</b>.</p>
+
+<p style="margin-left:9%;"><b>--project-root</b>,<b>-C</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Specify the root directory of
+the project</p>
+
+<p style="margin-left:9%;"><b>--results-dir</b>,<b>-o</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Write results and internal
+files in the specified directory</p>
+
+<p style="margin-left:9%;"><b>--skip-analysis-in-path</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Ignore files whose path matches
+a given regex (can be specified multiple times, but you must
+make sure each regex is properly bracketed)</p>
+
+<p style="margin-left:9%;"><b>--sqlite-cache-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">SQLite cache size in pages (if
+positive) or kB (if negative), follows formal of
+corresponding SQLite PRAGMA.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-lock-timeout</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Timeout for SQLite results
+database operations, in milliseconds.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-max-blob-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Maximum blob/string size for
+data written in SQLite.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-mmap-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Size of memory map for mmaped
+SQLite databases, zero value disables memory mapping.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-page-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">SQLite page size in bytes, must
+be a power of two between 512 and 65536.</p>
+
+<p style="margin-left:9%;"><b>--tenv-json</b>
+<i>file</i></p>
+
+<p style="margin-left:14%;">Path to TEnv json file</p>
+
+<p style="margin-left:9%;"><b>--workspace</b>
+<i>path</i></p>
+
+<p style="margin-left:14%;">Specifies the root of the
+workspace, which is a directory containing
+<b>--project-root</b>. This can be needed if the capture
+phase is expected to require several <i>different</i>
+project roots, all relative to a common workspace. Usually a
+single project root is enough, though.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="9%"></td>
+<td width="3%">
+
+
+<p><b>--</b></p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
+</table>
+
+<h2>BUCK OPTIONS
+<a name="BUCK OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--append-buck-flavors</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Additional Buck flavors to
+append to targets discovered by the
+<b>--buck-compilation-database</b> option.</p>
+
+<p style="margin-left:9%;"><b>--buck-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of files matched
+by the specified regular expression. Only the clang,
+non-compilation-database</p>
+
+<p style="margin-left:9%;">Buck integration is supported,
+not Java. <b><br>
+--buck-clang</b></p>
+
+<p style="margin-left:14%;">Activates: Buck integration for
+clang-based targets (C/C++/Objective-C/Objective-C++).
+(Conversely: <b>--no-buck-clang</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--buck-clang-use-toolchain-config</b></p>
+
+<p style="margin-left:14%;">Activates: Suppress setting
+buck config values for the infer binary and other values in
+the buck-clang-flavor integration and instead rely on buck
+toolchain configuration options. (Conversely:
+<b>--no-buck-clang-use-toolchain-config</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--buck-compilation-database</b>
+<i>{ no-deps | deps }</i></p>
+
+<p style="margin-left:14%;">Buck integration using the
+compilation database, with or without dependencies. Only
+includes clang targets, as per Buck's
+<i>#compilation-database</i> flavor.</p>
+
+
+<p style="margin-left:9%;"><b>--buck-compilation-database-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Depth of dependencies used by
+the <b>--buck-compilation-database deps</b> option. By
+default, all recursive dependencies are captured.</p>
+
+<p style="margin-left:9%;"><b>--buck-dependency-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Capture dependencies only if
+they are at most the depth provided, or all transitive
+dependencies if depth is not provided (the default). In
+particular, depth zero means capture exactly the targets
+provided and nothing else.</p>
+
+<p style="margin-left:9%;"><b>--buck-erlang</b></p>
+
+<p style="margin-left:14%;">Activates: Buck integration for
+Erlang. (Conversely: <b>--no-buck-erlang</b>)</p>
+
+<p style="margin-left:9%;"><b>--buck-java</b></p>
+
+<p style="margin-left:14%;">Activates: Buck integration for
+Java. (Conversely: <b>--no-buck-java</b>)</p>
+
+<p style="margin-left:9%;"><b>--buck-java-heap-size-gb</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Explicitly set the size of the
+Java heap of Buck processes, in gigabytes.</p>
+
+
+<p style="margin-left:9%;"><b>--buck-java-suppress-config</b></p>
+
+<p style="margin-left:14%;">Activates: Suppress setting
+buck config values for the infer binary and its version in
+the buck-java integration. (Conversely:
+<b>--no-buck-java-suppress-config</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--buck-merge-all-deps</b></p>
+
+<p style="margin-left:14%;">Activates: Find and merge all
+infer dependencies produced by buck. Use this flag if infer
+doesn't find any files to analyze after a successful
+capture. Only valid for <b>--buck-clang</b>. (Conversely:
+<b>--no-buck-merge-all-deps</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--buck-targets-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of buck targets
+matched by the specified regular expression.</p>
+
+
+<p style="margin-left:9%;"><b>--buck2-bxl-capture-file-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of files matched
+by the specified regular expression. Only the clang, Buck2
+integration is supported, not Java.</p>
+
+<p style="margin-left:9%;"><b>--buck2-bxl-target</b>
+<i>string</i></p>
+
+<p style="margin-left:14%;">Buck2 BXL script (as a buck
+target) to run when capturing with buck2/clang
+integration.</p>
+
+
+<p style="margin-left:9%;"><b>--buck2-inferconfig-target</b>
+<i>string</i></p>
+
+<p style="margin-left:14%;">Buck2 target representing the
+inferconfig file; used in BXL capture.</p>
+
+
+<p style="margin-left:9%;"><b>--buck2-infertoolchain-target</b>
+<i>string</i></p>
+
+<p style="margin-left:14%;">Buck2 target representing the
+infer toolchain; used in BXL capture.</p>
+
+<p style="margin-left:9%;"><b>--buck2-isolation-dir</b>
+<i>string</i></p>
+
+<p style="margin-left:14%;">Run buck bxl capture with the
+given isolation directory as parameter.</p>
+
+
+<p style="margin-left:9%;"><b>--no-buck2-query-deps</b></p>
+
+<p style="margin-left:14%;">Deactivates: Query deps of
+given targets and run capture on the result (alternatively
+run capture on given targets) (Conversely:
+<b>--buck2-query-deps</b>)</p>
+
+<p style="margin-left:9%;"><b>--buck2-root</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Specify the parent directory of
+<b>buck-out</b> (used only for <b>buck2</b>).</p>
+
+<p style="margin-left:9%;"><b>--Xbuck</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+Only valid for <b>--buck-clang</b>.</p>
+
+<p style="margin-left:9%;"><b>--Xbuck-no-inline</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+don't inline any args starting with '@'. Only valid for
+<b>--buck-clang</b>.</p>
+
+<p style="margin-left:9%;"><b>--Xbuck2</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+
+<p style="margin-left:9%;"><b>--Xbuck2-no-inline</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>, don't inline any args starting with '@'.
+Only valid for <b>--buck-clang</b>.</p>
+
+<p style="margin-left:9%;"><b>--xcode-developer-dir</b>
+<i>XCODE_DEVELOPER_DIR</i></p>
+
+<p style="margin-left:14%;">Specify the path to Xcode
+developer directory, to use for Buck clang targets</p>
+
+<h2>CLANG OPTIONS
+<a name="CLANG OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--clang-biniou-file</b>
+<i>file</i></p>
+
+<p style="margin-left:14%;">Specify a file containing the
+AST of the program, in biniou format. Please note you still
+need to provide a compilation command.</p>
+
+
+<p style="margin-left:9%;"><b>--clang-block-listed-flags</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Clang flags to filter out</p>
+
+
+<p style="margin-left:9%;"><b>--clang-block-listed-flags-with-arg</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Clang flags (taking args) to
+filter out</p>
+
+
+<p style="margin-left:9%;"><b>--clang-compound-literal-init-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Limit after which
+initialization of compound types (structs and arrays) is not
+done element by element but using a builtin function that
+each analysis has to model.</p>
+
+<p style="margin-left:9%;"><b>--clang-yojson-file</b>
+<i>file</i></p>
+
+<p style="margin-left:14%;">Specify a file containing the
+AST of the program, in yojson format. Please note you still
+need to provide a compilation command.</p>
+
+<p style="margin-left:9%;"><b>--compilation-database</b>
+<i>+path</i></p>
+
+<p style="margin-left:14%;">File that contain compilation
+commands (can be specified multiple times)</p>
+
+
+<p style="margin-left:9%;"><b>--compilation-database-escaped</b>
+<i>+path</i></p>
+
+<p style="margin-left:14%;">File that contain compilation
+commands where all entries are escaped for the shell, eg
+coming from Xcode (can be specified multiple times)</p>
+
+<p style="margin-left:9%;"><b>--no-cxx</b></p>
+
+<p style="margin-left:14%;">Deactivates: Analyze C++
+methods (Conversely: <b>--cxx</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--dump-duplicate-symbols</b></p>
+
+<p style="margin-left:14%;">Activates: Dump all symbols
+with the same name that are defined in more than one file.
+(Conversely: <b>--no-dump-duplicate-symbols</b>)</p>
+
+<p style="margin-left:9%;"><b>--frontend-tests</b></p>
+
+<p style="margin-left:14%;">Activates: Save
+filename.ext.test.dot with the cfg in dotty format for
+frontend tests (also sets <b>--print-types</b>) (Conversely:
+<b>--no-frontend-tests</b>)</p>
+
+<p style="margin-left:9%;"><b>--headers</b></p>
+
+<p style="margin-left:14%;">Activates: Analyze code in
+header files (Conversely: <b>--no-headers</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--skip-non-capture-clang-commands</b></p>
+
+<p style="margin-left:14%;">Activates: Skip clang commands
+that Infer doesn't use to capture data (Conversely:
+<b>--no-skip-non-capture-clang-commands</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--skip-translation-headers</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:14%;">Ignore declarations in headers
+whose path matches the given OCaml regex from the start of
+the string during capture.</p>
+
+
+<p style="margin-left:9%;"><b>--struct-as-cpp-class</b></p>
+
+<p style="margin-left:14%;">Activates: Translate C structs
+as C++ classes. This can be useful when analyzing C/C++ code
+to make sure struct global variables shared between C and
+C++ source files are treated as same variables</p>
+
+<p style="margin-left:9%;">(Conversely:
+<b>--no-struct-as-cpp-class</b>) <b><br>
+--Xclang</b> <i>+string</i></p>
+
+<p style="margin-left:14%;">Pass values as command-line
+arguments to invocations of clang</p>
+
+<p style="margin-left:9%;"><b>--xcpretty</b></p>
+
+<p style="margin-left:14%;">Activates: Infer will use
+xcpretty together with xcodebuild to analyze an iOS app.
+xcpretty just needs to be in the path, infer command is
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
+<b>--no-xcpretty</b>)</p>
+
+<h2>ERLANG OPTIONS
+<a name="ERLANG OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--erlang-ast-dir</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Also load AST from all .json
+files in the given path. These .json files usually come from
+a previous run with <b>--debug</b>.</p>
+
+
+<p style="margin-left:9%;"><b>--erlang-check-return</b></p>
+
+<p style="margin-left:14%;">Activates: Check whether the
+values returned by functions correspond to what the
+function's spec promises. This check is introduced at
+capture time. (Conversely:
+<b>--no-erlang-check-return</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--no-erlang-reliability</b></p>
+
+<p style="margin-left:14%;">Deactivates: Analyze crashing
+executions. This flag affects both capture and analysis. At
+capture time, it encodes Erlang specs; at (Pulse) analysis
+time, it models Erlang exceptions (builtin or OTP ones).
+(Conversely: <b>--erlang-reliability</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--erlang-skip-compile</b></p>
+
+<p style="margin-left:14%;">Activates: Skip running
+compiler (erlc/rebar3), to save time. The build command is
+basically ignored in this case. To be used together with
+<b>--erlang-ast-dir</b>. (Conversely:
+<b>--no-erlang-skip-compile</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--erlang-with-otp-specs</b></p>
+
+<p style="margin-left:14%;">Activates: [EXPERIMENTAL] Use
+type specs from OTP (available in the system) to generate
+more precise Pulse summaries for unknown library functions.
+(Conversely: <b>--no-erlang-with-otp-specs</b>)</p>
+
+<h2>JAVA OPTIONS
+<a name="JAVA OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--bootclasspath</b>
+<i>string</i></p>
+
+<p style="margin-left:14%;">Specify the Java
+bootclasspath</p>
+
+<p style="margin-left:9%;"><b>--dependencies</b></p>
+
+<p style="margin-left:14%;">Activates: Translate all the
+dependencies during the capture. The classes in the given
+jar file will be translated. No sources needed. (Conversely:
+<b>--no-dependencies</b>)</p>
+
+<p style="margin-left:9%;"><b>--generated-classes</b>
+<i>path</i></p>
+
+<p style="margin-left:14%;">Specify where to load the
+generated class files</p>
+
+<p style="margin-left:9%;"><b>--java-jar-compiler</b>
+<i>path</i></p>
+
+<p style="margin-left:14%;">Specify the Java compiler jar
+used to generate the bytecode</p>
+
+<p style="margin-left:9%;"><b>--java-version</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">The version of Java being used.
+Set it to your Java version if mvn is failing.</p>
+
+<p style="margin-left:9%;"><b>--no-kotlin-capture</b></p>
+
+<p style="margin-left:14%;">Deactivates: Enable Kotlin
+capture. (Conversely: <b>--kotlin-capture</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--no-mask-sawja-exceptions</b></p>
+
+<p style="margin-left:14%;">Deactivates: Mask exceptions
+thrown by Sawja/Javalib during Java capture (Conversely:
+<b>--mask-sawja-exceptions</b>)</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:14%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:14%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer-analyze</b>(1),
+<b>infer-compile</b>(1), <b>infer-run</b>(1)</p>
+<hr>
+</body>
+</html>

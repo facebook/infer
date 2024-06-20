@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>PulseReport (infer.Pulselib.PulseReport)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Pulselib</a> &#x00BB; PulseReport</nav><header class="odoc-preamble"><h1>Module <code><span>Pulselib.PulseReport</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-report"><a href="#val-report" class="anchor"></a><code><span><span class="keyword">val</span> report : 
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">is_suppressed</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">latent</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseDiagnostic/index.html#type-t">Pulselib.PulseDomainInterface.Diagnostic.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-report_summary_error"><a href="#val-report_summary_error" class="anchor"></a><code><span><span class="keyword">val</span> report_summary_error : 
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAccessResult/index.html#type-error">Pulselib.PulseDomainInterface.AccessResult.error</a>
+   * <a href="../PulseAbductiveDomain/Summary/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.Summary.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">_</span> <a href="../PulseExecutionDomain/index.html#type-base_t">Pulselib.PulseDomainInterface.ExecutionDomain.base_t</a></span> option</span></span></code></div><div class="spec-doc"><p><code>None</code> means that the execution can continue but we could not compute the continuation state (because this only takes a <code>AccessResult.error</code>, which doesn't have the ok state)</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-report_result"><a href="#val-report_result" class="anchor"></a><code><span><span class="keyword">val</span> report_result : 
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseExecutionDomain/index.html#type-t">Pulselib.PulseDomainInterface.ExecutionDomain.t</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-report_results"><a href="#val-report_results" class="anchor"></a><code><span><span class="keyword">val</span> report_results : 
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseExecutionDomain/index.html#type-t">Pulselib.PulseDomainInterface.ExecutionDomain.t</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-report_exec_results"><a href="#val-report_exec_results" class="anchor"></a><code><span><span class="keyword">val</span> report_exec_results : 
+  <span><span><span class="type-var">_</span> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><a href="../PulseExecutionDomain/index.html#type-t">Pulselib.PulseDomainInterface.ExecutionDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseExecutionDomain/index.html#type-t">Pulselib.PulseDomainInterface.ExecutionDomain.t</a> list</span></span></code></div></div></div></body></html>

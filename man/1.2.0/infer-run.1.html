@@ -1,0 +1,438 @@
+<!-- Creator     : groff version 1.23.0 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-run</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-run</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">infer-run -
+capture source files, analyze, and report</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer run</b>
+<i>[options]</i> <b><br>
+infer</b> <i>[options]</i> <b>--</b> <i>compile
+command</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">Calling
+&quot;<b>infer run</b> <i>[options]</i>&quot; is equivalent
+to performing the following sequence of commands:</p>
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer
+capture</b> <i>[options]</i> <b><br>
+infer analyze</b> <i>[options]</i></p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><i><b>--capture-block-list</b>
+json</i></p>
+
+<p style="margin-left:14%;">Matcher or list of matchers for
+names of files that should not be captured, hence not
+analyzed either. Clang, Java, and Hack only.</p>
+
+<p style="margin-left:9%;"><b>--no-censor-report</b>
+<i>+issue_type_regex</i></p>
+
+<p style="margin-left:14%;">For debugging/experimentation
+only: Specify issues not to be censored by
+<b>--censor-report</b>.</p>
+
+<p style="margin-left:9%;"><b>--censor-report</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Specify a filter for issues to
+be censored by adding a 'censored_reason' field in the json
+report. Infer will not report censored issues on the console
+output and in report.txt, but tools that post-process the
+json report can take them into account. If multiple filters
+are specified, they are applied in the order in which they
+are specified. Each filter is applied to each issue
+detected, and only issues which are accepted by all filters
+are reported. Each filter is of the form:
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+The first two components are OCaml Str regular expressions,
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
+inverted, and the filter becomes a &quot;block list&quot;
+instead of a &quot;allow list&quot;. Each filter is
+interpreted as an implication: an issue matches if it does
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
+are tested by the regex are relative to the
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+used to explain why the issue was filtered.</p>
+
+<p style="margin-left:9%;"><b>--debug</b>,<b>-g</b></p>
+
+<p style="margin-left:14%;">Activates: Debug mode (also
+sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
+<b>--print-buckets</b>, <b>--print-types</b>,
+<b>--reports-include-ml-loc</b>,
+<b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
+
+<p style="margin-left:9%;"><b>--debug-level</b>
+<i>level</i></p>
+
+<p style="margin-left:14%;">Debug level (sets
+<b>--bo-debug</b> <i>level</i>,
+<b>--debug-level-analysis</b> <i>level</i>,
+<b>--debug-level-capture</b> <i>level</i>):</p>
+
+<p style="margin-left:9%;">- 0: only basic debugging
+enabled <br>
+- 1: verbose debugging enabled <br>
+- 2: very verbose debugging enabled <b><br>
+--debug-level-analysis</b> <i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the analysis.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-capture</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the capture.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:9%;"><b>--fail-on-issue</b></p>
+
+<p style="margin-left:14%;">Activates: Exit with error code
+2 if Infer found something to report (Conversely:
+<b>--no-fail-on-issue</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--force-delete-results-dir</b></p>
+
+<p style="margin-left:14%;">Activates: Do not refuse to
+delete the results directory if it doesn't look like an
+infer results directory. (Conversely:
+<b>--no-force-delete-results-dir</b>)</p>
+
+<p style="margin-left:9%;"><b>--force-integration</b>
+<i>command</i></p>
+
+<p style="margin-left:14%;">Proceed as if the first
+argument after <b>--</b> was <i>command</i>. Possible
+values: <i>ant</i>, <i>buck1</i>, <i>buck</i>, <i>buck2</i>,
+<i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
+<i>kotlinc</i>, <i>cc</i>, <i>clang</i>, <i>gcc</i>,
+<i>clang++</i>, <i>c++</i>, <i>g++</i>, <i>hackc</i>,
+<i>make</i>, <i>configure</i>, <i>cmake</i>, <i>waf</i>,
+<i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>, <i>python3</i>,
+<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
+
+<p style="margin-left:9%;"><b>--help</b></p>
+
+<p style="margin-left:14%;">Show this manual</p>
+
+<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
+groff | pager | plain }</i></p>
+
+<p style="margin-left:14%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:9%;"><b>--help-full</b></p>
+
+<p style="margin-left:14%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:9%;"><b>--never-returning-null</b>
+<i>json</i></p>
+
+<p style="margin-left:14%;">[Java only, all analyses]
+Matcher or list of matchers for functions that never return
+<i>null</i>.</p>
+
+<p style="margin-left:9%;"><b>--pmd-xml</b></p>
+
+<p style="margin-left:14%;">Activates: Output issues in
+(PMD) XML format in infer-out/report.xml (Conversely:
+<b>--no-pmd-xml</b>)</p>
+
+<p style="margin-left:9%;"><b>--print-logs</b></p>
+
+<p style="margin-left:14%;">Activates: Also log messages to
+stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--no-progress-bar</b>,<b>-P</b></p>
+
+<p style="margin-left:14%;">Deactivates: Show a progress
+bar (Conversely: <b>--progress-bar</b> | <b>-p</b>)</p>
+
+<p style="margin-left:9%;"><b>--project-root</b>,<b>-C</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Specify the root directory of
+the project</p>
+
+<p style="margin-left:9%;"><b>--no-report</b></p>
+
+<p style="margin-left:14%;">Deactivates: Run the reporting
+phase once the analysis has completed (Conversely:
+<b>--report</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--report-allow-list-path-regex</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:14%;">Report issues only on files
+whose relative path matches the specified OCaml regex (and
+which do not match
+<b>--report-block-list-path-regex</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--report-block-list-files-containing</b>
+<i>+string</i></p>
+
+<p style="margin-left:14%;">Do not report any issues on
+files containing the specified string</p>
+
+
+<p style="margin-left:9%;"><b>--report-block-list-path-regex</b>
+<i>+path_regex</i></p>
+
+<p style="margin-left:14%;">Do not report any issues on
+files whose relative path matches the specified OCaml regex,
+even if they match the allow list specified by
+<b>--report-allow-list-path-regex</b></p>
+
+<p style="margin-left:9%;"><b>--report-block-list-spec</b>
+<i>json</i></p>
+
+<p style="margin-left:14%;">Do not report the issues in
+this list.</p>
+
+<p style="margin-left:9%;">Example format: <br>
+&quot;report-block-list-spec&quot;: [ <br>
+{ &quot;bug_type&quot;:
+&quot;CXX_REF_CAPTURED_IN_BLOCK&quot;, <br>
+&quot;procedure_name&quot;: &quot;foo&quot;, <br>
+&quot;file&quot;: &quot;path/to/File.m&quot; <br>
+&quot;comment&quot;: &quot;This is a fp because...&quot;
+<br>
+}, <br>
+{ &quot;bug_type&quot;: &quot;RETAIN_CYCLE&quot;, <br>
+&quot;class_name&quot;: &quot;MyClass&quot;, <br>
+&quot;procedure_name&quot;: &quot;my_method&quot; <br>
+&quot;file&quot;: &quot;path/to/File.m&quot; <br>
+} <br>
+] <b><br>
+--report-force-relative-path</b></p>
+
+<p style="margin-left:14%;">Activates: Force converting an
+absolute path to a relative path to the root directory
+(Conversely: <b>--no-report-force-relative-path</b>)</p>
+
+<p style="margin-left:9%;"><b>--report-suppress-errors</b>
+<i>+error_name</i></p>
+
+<p style="margin-left:14%;">do not report a type of
+errors</p>
+
+<p style="margin-left:9%;"><b>--results-dir</b>,<b>-o</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Write results and internal
+files in the specified directory</p>
+
+<p style="margin-left:9%;"><b>--sarif</b></p>
+
+<p style="margin-left:14%;">Activates: Output issues in
+SARIF (Static Analysis Results Interchange Format) in
+infer-out/report.sarif (Conversely: <b>--no-sarif</b>)</p>
+
+<p style="margin-left:9%;"><b>--skip-analysis-in-path</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Ignore files whose path matches
+a given regex (can be specified multiple times, but you must
+make sure each regex is properly bracketed)</p>
+
+<p style="margin-left:9%;"><b>--sqlite-cache-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">SQLite cache size in pages (if
+positive) or kB (if negative), follows formal of
+corresponding SQLite PRAGMA.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-lock-timeout</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Timeout for SQLite results
+database operations, in milliseconds.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-max-blob-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Maximum blob/string size for
+data written in SQLite.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-mmap-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Size of memory map for mmaped
+SQLite databases, zero value disables memory mapping.</p>
+
+<p style="margin-left:9%;"><b>--sqlite-page-size</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">SQLite page size in bytes, must
+be a power of two between 512 and 65536.</p>
+
+<p style="margin-left:9%;"><b>--timeout</b>
+<i>float</i></p>
+
+<p style="margin-left:14%;">Time after which any checker
+(except biabduction) should give up analysing the current
+function or method, in seconds</p>
+
+<p style="margin-left:9%;"><b>--version</b></p>
+
+<p style="margin-left:14%;">Print version information and
+exit</p>
+
+<p style="margin-left:9%;"><b>--version-json</b></p>
+
+<p style="margin-left:14%;">Print version information in
+json format and exit</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="9%"></td>
+<td width="3%">
+
+
+<p><b>--</b></p></td>
+<td width="2%"></td>
+<td width="86%">
+
+
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
+</table>
+
+<h2>BUCK OPTIONS
+<a name="BUCK OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--buck-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of files matched
+by the specified regular expression. Only the clang,
+non-compilation-database</p>
+
+<p style="margin-left:9%;">Buck integration is supported,
+not Java. <b><br>
+--buck-targets-block-list</b> <i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of buck targets
+matched by the specified regular expression.</p>
+
+
+<p style="margin-left:9%;"><b>--buck2-bxl-capture-file-block-list</b>
+<i>+regex</i></p>
+
+<p style="margin-left:14%;">Skip capture of files matched
+by the specified regular expression. Only the clang, Buck2
+integration is supported, not Java.</p>
+
+<p style="margin-left:9%;"><b>--buck2-root</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Specify the parent directory of
+<b>buck-out</b> (used only for <b>buck2</b>).</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:14%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:14%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer-analyze</b>(1),
+<b>infer-capture</b>(1), <b>infer-report</b>(1)</p>
+<hr>
+</body>
+</html>

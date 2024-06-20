@@ -1,0 +1,352 @@
+<!-- Creator     : groff version 1.23.0 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-debug</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-debug</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#DEBUG GLOBAL TYPE ENVIRONMENT">DEBUG GLOBAL TYPE ENVIRONMENT</a><br>
+<a href="#DEBUG PROCEDURES">DEBUG PROCEDURES</a><br>
+<a href="#DEBUG SOURCE FILES">DEBUG SOURCE FILES</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">infer-debug -
+print internal infer data structures</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer debug
+--global-tenv <br>
+infer debug --procedures</b> <i>[options]</i> <b><br>
+infer debug --source-files</b> <i>[options]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">If
+<b>--procedures</b> is passed, print information about each
+procedures captured by infer.</p>
+
+<p style="margin-left:9%; margin-top: 1em">If
+<b>--source-files</b> is passed, print information about
+captured source files.</p>
+
+<p style="margin-left:9%; margin-top: 1em">If
+<b>--global-tenv</b> is passed, print the global type
+environment (if any).</p>
+
+<p style="margin-left:9%; margin-top: 1em">At least one of
+the above options must be passed.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--help</b></p>
+
+<p style="margin-left:14%;">Show this manual</p>
+
+<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
+groff | pager | plain }</i></p>
+
+<p style="margin-left:14%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:9%;"><b>--help-full</b></p>
+
+<p style="margin-left:14%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:9%;"><b>--preanalysis-html</b></p>
+
+<p style="margin-left:14%;">Activates: Whether the HTML
+node printing for preanalysis is enabled or not. Set to
+false by default since this helps focus on debugging just
+the enabled analyses. (Conversely:
+<b>--no-preanalysis-html</b>)</p>
+
+<p style="margin-left:9%;"><b>--select</b>
+<i>(N|all)</i></p>
+
+<p style="margin-left:14%;">Select option number <i>N</i>
+or <i>all</i> of them. If omitted, prompt for input.</p>
+
+<h2>DEBUG GLOBAL TYPE ENVIRONMENT
+<a name="DEBUG GLOBAL TYPE ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--global-tenv</b></p>
+
+<p style="margin-left:14%;">Activates: Print the global
+type environment. (Conversely: <b>--no-global-tenv</b>)</p>
+
+<h2>DEBUG PROCEDURES
+<a name="DEBUG PROCEDURES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--procedures</b></p>
+
+<p style="margin-left:14%;">Activates: Print functions and
+methods discovered by infer (Conversely:
+<b>--no-procedures</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--procedures-attributes</b></p>
+
+<p style="margin-left:14%;">Activates: Print the attributes
+of each procedure in the output of <b>--procedures</b>
+(Conversely: <b>--no-procedures-attributes</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--procedures-call-graph</b></p>
+
+<p style="margin-left:14%;">Activates: Output a dotty file
+in infer-out/captured/syntactic-call-graph.dot. The graph is
+the syntactic call graph reachable from either all captured
+procedures or those determined by the option
+<b>--changed-files-index</b>. (Conversely:
+<b>--no-procedures-call-graph</b>)</p>
+
+<p style="margin-left:9%;"><b>--procedures-callees</b></p>
+
+<p style="margin-left:14%;">Activates: Print the static
+callees of each procedure in the output of
+<b>--procedures</b> (Conversely:
+<b>--no-procedures-callees</b>)</p>
+
+<p style="margin-left:9%;"><b>--procedures-cfg</b></p>
+
+<p style="margin-left:14%;">Activates: Output a dotty file
+in
+infer-out/captured/&lt;file_name&gt;/&lt;proc_name&gt;.dot
+for each procedure in the output of <b>--procedures</b>
+(Conversely: <b>--no-procedures-cfg</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--no-procedures-definedness</b></p>
+
+<p style="margin-left:14%;">Deactivates: Include procedures
+definedness in the output of <b>--procedures</b>, i.e.
+whether the procedure definition was found, or only the
+procedure declaration, or the procedure is an auto-generated
+Objective-C accessor (Conversely:
+<b>--procedures-definedness</b>)</p>
+
+<p style="margin-left:9%;"><b>--procedures-filter</b>
+<i>filter</i></p>
+
+<p style="margin-left:14%;">With <b>--procedures</b>, only
+print functions and methods (procedures) matching the
+specified <i>filter</i>. A procedure filter is of the form
+<i>path_pattern:procedure_name</i>. Patterns are interpreted
+as OCaml Str regular expressions. For instance, to keep only
+methods named &quot;foo&quot;, one can use the filter
+&quot;.*:foo&quot;, or &quot;foo&quot; for short.</p>
+
+<p style="margin-left:9%;"><b>--procedures-name</b></p>
+
+<p style="margin-left:14%;">Activates: Include procedures
+names in the output of <b>--procedures</b> (Conversely:
+<b>--no-procedures-name</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--no-procedures-source-file</b></p>
+
+<p style="margin-left:14%;">Deactivates: Include the source
+file in which the procedure definition or declaration was
+found in the output of <b>--procedures</b> (Conversely:
+<b>--procedures-source-file</b>)</p>
+
+<p style="margin-left:9%;"><b>--procedures-summary</b></p>
+
+<p style="margin-left:14%;">Activates: Print the summaries
+of each procedure in the output of <b>--procedures</b>. See
+also <b>--procedures-summary-skip-empty</b>. (Conversely:
+<b>--no-procedures-summary</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--procedures-summary-json</b></p>
+
+<p style="margin-left:14%;">Activates: Emit the summaries
+of each procedure in the output of <b>--procedures</b> as
+JSON (Conversely: <b>--no-procedures-summary-json</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--procedures-summary-skip-empty</b></p>
+
+<p style="margin-left:14%;">Activates: Completely skip
+procedures that do not have summaries. Useful when analyzing
+a small part of a big project. (To use in conjunction with
+<b>--procedures-summary</b> or
+<b>--procedures-summary-json</b>. See also
+<b>--changed-files-index</b>.) (Conversely:
+<b>--no-procedures-summary-skip-empty</b>)</p>
+
+<h2>DEBUG SOURCE FILES
+<a name="DEBUG SOURCE FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--complete-capture-from</b>
+<i>path</i></p>
+
+<p style="margin-left:14%;">Provide the path to an infer
+results directory containing a capture database. The capture
+database specified with <b>--results-dir</b>) (which must
+exist) will be completed from the input database and
+according to the <b>missing-*</b> files in the results
+directory. The exit code will be equal to the number of rows
+added to the capture database.</p>
+
+<p style="margin-left:9%;"><b>--extract-capture-from</b>
+<i>path</i></p>
+
+<p style="margin-left:14%;">Provide the path to an infer
+results directory containing a capture database. Together
+with a list of files provided through the obligatory use of
+<b>--changed-files-index</b>, create a new capture database
+containing only the artefacts related to these files (in the
+location specified with <b>--results-dir</b>).</p>
+
+<p style="margin-left:9%;"><b>--source-files</b></p>
+
+<p style="margin-left:14%;">Activates: Print source files
+discovered by infer (Conversely:
+<b>--no-source-files</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--source-files-call-graph</b></p>
+
+<p style="margin-left:14%;">Activates: Output a dotty file
+in infer-out/captured/file-call-graph.dot. The graph is the
+file-based syntactic call graph of all captured procedures
+(with known translation units). (Conversely:
+<b>--no-source-files-call-graph</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--source-files-call-graph-partition</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">The number of partitions to
+divide the set of captured source files, using static call
+graph information. The generated file lists are found under
+infer-out/captured/workerXX.idx. Not setting this option
+skips partitioning. This is used for distributed
+analysis.</p>
+
+<p style="margin-left:9%;"><b>--source-files-cfg</b></p>
+
+<p style="margin-left:14%;">Activates: Output a dotty file
+in infer-out/captured for each source file in the output of
+<b>--source-files</b> (Conversely:
+<b>--no-source-files-cfg</b>)</p>
+
+<p style="margin-left:9%;"><b>--source-files-filter</b>
+<i>filter</i></p>
+
+<p style="margin-left:14%;">With <b>--source-files</b>,
+only print source files matching the specified
+<i>filter</i>. The filter is a pattern that should match the
+file path. Patterns are interpreted as OCaml Str regular
+expressions.</p>
+
+
+<p style="margin-left:9%;"><b>--source-files-freshly-captured</b></p>
+
+<p style="margin-left:14%;">Activates: Print whether the
+source file has been captured in the most recent capture
+phase in the output of <b>--source-files</b>. (Conversely:
+<b>--no-source-files-freshly-captured</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--source-files-procedure-names</b></p>
+
+<p style="margin-left:14%;">Activates: Print the names of
+procedure of each source file in the output of
+<b>--source-files</b> (Conversely:
+<b>--no-source-files-procedure-names</b>)</p>
+
+
+<p style="margin-left:9%;"><b>--source-files-type-environment</b></p>
+
+<p style="margin-left:14%;">Activates: Print the type
+environment of each source file in the output of
+<b>--source-files</b> (Conversely:
+<b>--no-source-files-type-environment</b>)</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:14%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:14%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer-explore</b>(1),
+<b>infer-report</b>(1)</p>
+<hr>
+</body>
+</html>

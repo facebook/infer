@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>PulseModelsGenericArrayBackedCollection (infer.Pulselib.PulseModelsGenericArrayBackedCollection)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Pulselib</a> &#x00BB; PulseModelsGenericArrayBackedCollection</nav><header class="odoc-preamble"><h1>Module <code><span>Pulselib.PulseModelsGenericArrayBackedCollection</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-matchers"><a href="#val-matchers" class="anchor"></a><code><span><span class="keyword">val</span> matchers : <span><a href="../PulseModelsImport/index.html#type-matcher">PulseModelsImport.matcher</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval"><a href="#val-eval" class="anchor"></a><code><span><span class="keyword">val</span> eval : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-access"><a href="#val-access" class="anchor"></a><code><span><span class="keyword">val</span> access : <a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-field"><a href="#val-field" class="anchor"></a><code><span><span class="keyword">val</span> field : <a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-size_field"><a href="#val-size_field" class="anchor"></a><code><span><span class="keyword">val</span> size_field : <a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-element"><a href="#val-element" class="anchor"></a><code><span><span class="keyword">val</span> element : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_element"><a href="#val-eval_element" class="anchor"></a><code><span><span class="keyword">val</span> eval_element : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_pointer_to_last_element"><a href="#val-eval_pointer_to_last_element" class="anchor"></a><code><span><span class="keyword">val</span> eval_pointer_to_last_element : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-size"><a href="#val-size" class="anchor"></a><code><span><span class="keyword">val</span> size : 
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseModelsImport/index.html#type-model_no_non_disj">PulseModelsImport.model_no_non_disj</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-increase_size"><a href="#val-increase_size" class="anchor"></a><code><span><span class="keyword">val</span> increase_size : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <a href="../PulseOperationResult/index.html#type-t">PulseOperationResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-decrease_size"><a href="#val-decrease_size" class="anchor"></a><code><span><span class="keyword">val</span> decrease_size : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <a href="../PulseOperationResult/index.html#type-t">PulseOperationResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-empty"><a href="#val-empty" class="anchor"></a><code><span><span class="keyword">val</span> empty : 
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseModelsImport/index.html#type-model_no_non_disj">PulseModelsImport.model_no_non_disj</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-default_constructor"><a href="#val-default_constructor" class="anchor"></a><code><span><span class="keyword">val</span> default_constructor : 
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseModelsImport/index.html#type-model_no_non_disj">PulseModelsImport.model_no_non_disj</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_internal_size_deref"><a href="#val-to_internal_size_deref" class="anchor"></a><code><span><span class="keyword">val</span> to_internal_size_deref : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-assign_size_constant"><a href="#val-assign_size_constant" class="anchor"></a><code><span><span class="keyword">val</span> assign_size_constant : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">constant</span>:<a href="../../IR/IntLit/index.html#type-t">IR.IntLit.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">desc</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <a href="../PulseOperationResult/index.html#type-t">PulseOperationResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Iterator"><a href="#module-Iterator" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Iterator/index.html">Iterator</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div></div></body></html>
