@@ -54,6 +54,7 @@ jobs:
       matrix:
         os:
           - macOS-latest
+          - macOS-13
           - ubuntu-latest
         ocaml-compiler:
           - ocaml-variants.4.14.0+options,ocaml-option-flambda

@@ -25,9 +25,9 @@ ROOT_DIR="$SCRIPT_DIR"/..
 NCPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)"
 PLATFORM=$(uname)
 if [ "$PLATFORM" == 'Darwin' ]; then
-    RELEASE_NAME=infer-osx-"$VERSION"
+    RELEASE_NAME=infer-osx-$(uname -m)-"$VERSION"
 else
-    RELEASE_NAME=infer-linux64-"$VERSION"
+    RELEASE_NAME=infer-linux-$(uname -m)-"$VERSION"
 fi
 RELEASE_TARBALL="$RELEASE_NAME".tar.xz
 
