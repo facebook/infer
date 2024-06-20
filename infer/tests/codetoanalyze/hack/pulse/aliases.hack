@@ -23,6 +23,10 @@ type ADictAlias = dict<string, mixed>;
 // should come out as HackMixed
 type AFunctionAlias = (function(int): int);
 
+// TODO: this currently comes out as void, would rather just use null/HackNull
+// but at least the parser doesn't fall over any more
+type ANullAlias = null;
+
 class HasConstant {
   const type T = int;
 }
