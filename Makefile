@@ -884,34 +884,6 @@ endif 	# PLATFORM_ENV
 else 	# PATCHELF
 	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
 endif	# PATCHELF
-else    # LDD
-ifneq ($(OTOOL),no)
-ifneq ($(INSTALL_NAME_TOOL),no)
-#	this sort of assumes osx
-#	figure out where libgmp and libmpfr are using otool
-#
-#	Since macOS Big Sur, libsqlite3.dylib is in the "library cache" and so there is no
-#	corresponding file in /usr/lib
-	set -e; \
-	set -x; \
-	for lib in $$($(OTOOL) -L $(INFER_BIN) \
-	              | cut -d ' ' -f 1 | tr -d '\t' \
-	              | grep -e 'lib\(gmp\|mpfr\)'); do \
-	  $(INSTALL_PROGRAM) -C "$$lib" '$(DESTDIR)$(libdir)'/infer/infer/libso/; \
-	done
-	set -x; \
-	for sofile in '$(DESTDIR)$(libdir)'/infer/infer/libso/*.dylib; do \
-	  $(INSTALL_NAME_TOOL) -add_rpath "@executable_path" "$$sofile"; \
-	  scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso "$$sofile"; \
-	done
-	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-else 	# INSTALL_NAME_TOOL
-	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
-endif	# INSTALL_NAME_TOOL
-else 	# OTOOL
-	echo "ERROR: need ldd + patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
-endif	# OTOOL
 endif 	# LDD
 
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
