@@ -48,17 +48,35 @@ let get_field_exn field_name json =
       error ~expected:(Printf.sprintf "field '%s'" field_name) json
 
 
+let get_int_exn json = match json with `Int s -> s | json -> error ~expected:"int" json
+
 let get_string_exn json = match json with `String s -> s | json -> error ~expected:"string" json
 
 let get_event_exn json = json |> get_field_exn "normal" |> get_field_exn "event" |> get_string_exn
+
+type value = Int of int | String of string [@@deriving equal]
+
+let json_of_value = function Int n -> `Int n | String s -> `String s
+
+type changed_entry = {event: string; value_before: value; value_after: value}
+
+let json_of_changed_entry {event; value_before; value_after} =
+  `Assoc
+    [ ("event", `String event)
+    ; ("value_before", json_of_value value_before)
+    ; ("value_after", json_of_value value_after) ]
+
+
+let json_of_changed_entries entries = `List (List.map entries ~f:json_of_changed_entry)
 
 let get_value_exn json =
   (* some values are strings ("normal"), some are ints, none are neither *)
   match json |> get_field_exn "normal" |> get_field "message" with
   | Some value ->
-      value
+      String (get_string_exn value)
   | None ->
-      json |> get_field_exn "int" |> get_field_exn "value"
+      let n = json |> get_field_exn "int" |> get_field_exn "value" |> get_int_exn in
+      Int n
 
 
 let collate_stats_in_dir stats_dir =
@@ -77,7 +95,7 @@ let collate_stats_in_dir stats_dir =
 let diff_values entry1 entry2 =
   let v1 = get_value_exn entry1 in
   let v2 = get_value_exn entry2 in
-  if Yojson.Safe.equal v1 v2 then `Same v1 else `Diff (v1, v2)
+  if equal_value v1 v2 then `Same v1 else `Diff (v1, v2)
 
 
 let compute_diff ~before ~after =
@@ -119,28 +137,27 @@ let compute_diff ~before ~after =
   let extra_before, extra_after, unchanged, diff =
     diff_aux ~extra_before:[] ~extra_after:[] ~unchanged:[] ~diff:[] before after
   in
-  ( `List extra_before
-  , `List extra_after
-  , `List
-      (List.map unchanged ~f:(fun (event, value) ->
-           `Assoc [("event", `String event); ("value", value)] ) )
-  , `List
-      (List.map diff ~f:(fun (event, (before, after)) ->
-           `Assoc [("event", `String event); ("value_before", before); ("value_after", after)] ) )
-  )
+  ( extra_before
+  , extra_after
+  , List.map unchanged ~f:(fun (event, value) ->
+        `Assoc [("event", `String event); ("value", json_of_value value)] )
+  , List.map diff ~f:(fun (event, (value_before, value_after)) ->
+        {event; value_before; value_after} ) )
 
 
-let output_diff (extra_before, extra_after, unchanged, diff) =
+let file_output (extra_before, extra_after, unchanged, diff) =
   let out_dir = ResultsDir.get_path Differential in
   Unix.mkdir_p out_dir ;
-  Yojson.Safe.to_file (out_dir ^/ "stats_previous_only.json") extra_before ;
-  Yojson.Safe.to_file (out_dir ^/ "stats_current_only.json") extra_after ;
-  Yojson.Safe.to_file (out_dir ^/ "stats_unchanged.json") unchanged ;
-  Yojson.Safe.to_file (out_dir ^/ "stats_diff.json") diff ;
+  Yojson.Safe.to_file (out_dir ^/ "stats_previous_only.json") (`List extra_before) ;
+  Yojson.Safe.to_file (out_dir ^/ "stats_current_only.json") (`List extra_after) ;
+  Yojson.Safe.to_file (out_dir ^/ "stats_unchanged.json") (`List unchanged) ;
+  Yojson.Safe.to_file (out_dir ^/ "stats_diff.json") (json_of_changed_entries diff) ;
   ()
 
 
 let diff ~previous:stats_dir_previous ~current:stats_dir_current =
   let stats_previous = collate_stats_in_dir stats_dir_previous in
   let stats_current = collate_stats_in_dir stats_dir_current in
-  compute_diff ~before:stats_previous ~after:stats_current |> output_diff
+  let diff = compute_diff ~before:stats_previous ~after:stats_current in
+  file_output diff ;
+  ()
