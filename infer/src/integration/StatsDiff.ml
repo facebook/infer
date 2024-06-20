@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module F = Format
 
 (** entries are of the form
 
@@ -54,11 +55,19 @@ let get_string_exn json = match json with `String s -> s | json -> error ~expect
 
 let get_event_exn json = json |> get_field_exn "normal" |> get_field_exn "event" |> get_string_exn
 
-type value = Int of int | String of string [@@deriving equal]
+type value = Int of int | String of string [@@deriving compare, equal]
 
 let json_of_value = function Int n -> `Int n | String s -> `String s
 
-type changed_entry = {event: string; value_before: value; value_after: value}
+let pp_value fmt = function Int i -> Int.pp fmt i | String s -> String.pp fmt s
+
+type entry = {event: string; value: value} [@@deriving compare]
+
+let json_of_entry {event; value} = `Assoc [("event", `String event); ("value", json_of_value value)]
+
+let json_of_entries entries = `List (List.map entries ~f:json_of_entry)
+
+type changed_entry = {event: string; value_before: value; value_after: value} [@@deriving compare]
 
 let json_of_changed_entry {event; value_before; value_after} =
   `Assoc
@@ -120,11 +129,13 @@ let compute_diff ~before ~after =
           (* [event1 = event2] *)
           match diff_values entry1 entry2 with
           | `Same v ->
-              diff_aux ~extra_before ~extra_after ~unchanged:((event1, v) :: unchanged) ~diff
+              diff_aux ~extra_before ~extra_after
+                ~unchanged:({event= event1; value= v} :: unchanged)
+                ~diff before' after'
+          | `Diff (value_before, value_after) ->
+              diff_aux ~extra_before ~extra_after ~unchanged
+                ~diff:({event= event1; value_before; value_after} :: diff)
                 before' after'
-          | `Diff d ->
-              diff_aux ~extra_before ~extra_after ~unchanged ~diff:((event1, d) :: diff) before'
-                after'
         else
           let extra_before, extra_after, before'', after'' =
             if cmp < 0 then
@@ -134,15 +145,7 @@ let compute_diff ~before ~after =
           in
           diff_aux ~extra_before ~extra_after ~unchanged ~diff before'' after''
   in
-  let extra_before, extra_after, unchanged, diff =
-    diff_aux ~extra_before:[] ~extra_after:[] ~unchanged:[] ~diff:[] before after
-  in
-  ( extra_before
-  , extra_after
-  , List.map unchanged ~f:(fun (event, value) ->
-        `Assoc [("event", `String event); ("value", json_of_value value)] )
-  , List.map diff ~f:(fun (event, (value_before, value_after)) ->
-        {event; value_before; value_after} ) )
+  diff_aux ~extra_before:[] ~extra_after:[] ~unchanged:[] ~diff:[] before after
 
 
 let file_output (extra_before, extra_after, unchanged, diff) =
@@ -150,14 +153,110 @@ let file_output (extra_before, extra_after, unchanged, diff) =
   Unix.mkdir_p out_dir ;
   Yojson.Safe.to_file (out_dir ^/ "stats_previous_only.json") (`List extra_before) ;
   Yojson.Safe.to_file (out_dir ^/ "stats_current_only.json") (`List extra_after) ;
-  Yojson.Safe.to_file (out_dir ^/ "stats_unchanged.json") (`List unchanged) ;
+  Yojson.Safe.to_file (out_dir ^/ "stats_unchanged.json") (json_of_entries unchanged) ;
   Yojson.Safe.to_file (out_dir ^/ "stats_diff.json") (json_of_changed_entries diff) ;
   ()
+
+
+(** reverse-ordered floats to print stats in order of decreasing size of the change in value (taken
+    as the absolute value of the delta percentage) *)
+type float_inv_compare = float
+
+let compare_float_inv_compare f1 f2 = Float.compare f2 f1
+
+let int_width i = string_of_int i |> String.length
+
+let pp_n_times n fmt c =
+  for _ = 1 to n do
+    F.pp_print_char fmt c
+  done
+
+
+let pp_string_with_width width_ref fmt s =
+  F.pp_print_string fmt s ;
+  let length = String.length s in
+  if length > !width_ref then width_ref := length ;
+  pp_n_times (!width_ref - length) fmt ' '
+
+
+let pp_int_with_width width fmt i =
+  F.pp_print_int fmt i ;
+  pp_n_times (width - int_width i) fmt ' '
+
+
+let pp_with_width pp width fmt x =
+  let s = F.asprintf "%a" pp x in
+  pp_string_with_width width fmt s
+
+
+let text_output (extra_before, extra_after, unchanged, diff) =
+  let n_extra_before = List.length extra_before in
+  let n_extra_after = List.length extra_after in
+  let n_unchanged = List.length unchanged in
+  let n_changed = List.length diff in
+  let max_width =
+    int_width @@ max n_unchanged @@ max n_changed @@ max n_extra_before @@ n_extra_after
+  in
+  L.result "%a entries only in previous version@\n" (pp_int_with_width max_width) n_extra_before ;
+  L.result "%a unchanged entries@\n" (pp_int_with_width max_width) n_unchanged ;
+  L.result "%a entries only in new version@\n" (pp_int_with_width max_width) n_extra_after ;
+  L.result "%a entries changed values (details for numerical values below)@\n@\n"
+    (pp_int_with_width max_width) n_changed ;
+  let max_event_length = ref 0 in
+  let max_value_before_length = ref 0 in
+  let max_value_after_length = ref 0 in
+  let max_delta_length = ref 0 in
+  let changed_entries =
+    List.filter_map diff ~f:(fun ({event; value_before; value_after} as entry) ->
+        match (value_before, value_after) with
+        | Int i1, Int i2 ->
+            let delta = (float_of_int i2 -. float_of_int i1) *. 100. /. float_of_int i1 in
+            let delta_s = Printf.sprintf "%+.2f%%" delta in
+            max_event_length := max !max_event_length (String.length event) ;
+            max_value_before_length := max !max_value_before_length (int_width i1) ;
+            max_value_after_length := max !max_value_before_length (int_width i2) ;
+            max_delta_length := max !max_delta_length (String.length delta_s) ;
+            Some (Float.abs delta, delta_s, entry)
+        | _ ->
+            None )
+    |> List.sort ~compare:[%compare: float_inv_compare * string * changed_entry]
+  in
+  let header =
+    F.asprintf "| %a | %a | %a | %a |"
+      (pp_string_with_width max_event_length)
+      "event"
+      (pp_string_with_width max_value_before_length)
+      "previous value"
+      (pp_string_with_width max_value_after_length)
+      "new value"
+      (pp_string_with_width max_delta_length)
+      "delta"
+  in
+  L.result "%s@\n" header ;
+  L.result "|-%a-|-%a-|-%a-|-%a-|@\n" (pp_n_times !max_event_length) '-'
+    (pp_n_times !max_value_before_length)
+    '-'
+    (pp_n_times !max_value_after_length)
+    '-' (pp_n_times !max_delta_length) '-' ;
+  List.iter changed_entries ~f:(function _, delta, {event; value_before; value_after} ->
+      L.result "| %a | %a | %a | %a |@\n"
+        (pp_string_with_width max_event_length)
+        event
+        (pp_with_width pp_value max_value_before_length)
+        value_before
+        (pp_with_width pp_value max_value_after_length)
+        value_after
+        (pp_string_with_width max_delta_length)
+        delta ) ;
+  L.result "@\nUnchanged entries:@\n" ;
+  List.sort ~compare:[%compare: entry] unchanged
+  |> List.iter ~f:(fun {event; value} -> L.result "%s: %a@\n" event pp_value value)
 
 
 let diff ~previous:stats_dir_previous ~current:stats_dir_current =
   let stats_previous = collate_stats_in_dir stats_dir_previous in
   let stats_current = collate_stats_in_dir stats_dir_current in
   let diff = compute_diff ~before:stats_previous ~after:stats_current in
+  text_output diff ;
   file_output diff ;
   ()
