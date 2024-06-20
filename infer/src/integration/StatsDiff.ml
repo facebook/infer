@@ -29,6 +29,26 @@ module F = Format
   }
     v} *)
 
+(* keep this sorted or else... (the [ok_exn] below will fail) *)
+let stable_stat_events =
+  [| "count.analysis_scheduler_gc_stats.compactions"
+   ; "count.backend_stats.pulse_aliasing_contradictions"
+   ; "count.backend_stats.pulse_captured_vars_length_contradictions"
+   ; "count.backend_stats.pulse_summaries_count_0_percent"
+   ; "count.backend_stats.pulse_summaries_count_1"
+   ; "count.backend_stats.pulse_summaries_unsat_for_caller"
+   ; "count.backend_stats.pulse_summaries_unsat_for_caller_percent"
+   ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes"
+   ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes_percent"
+   ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns"
+   ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns_percent"
+   ; "count.backend_stats.timeouts"
+   ; "count.num_analysis_workers"
+   ; "count.source_files_to_analyze"
+   ; "msg.analyzed_file" |]
+  |> String.Set.of_sorted_array |> Or_error.ok_exn
+
+
 let error ~expected json =
   L.die InternalError "when parsing json: expected %s but got '%a'" expected Yojson.Safe.pp json
 
@@ -189,19 +209,7 @@ let pp_with_width pp width fmt x =
   pp_string_with_width width fmt s
 
 
-let text_output (extra_before, extra_after, unchanged, diff) =
-  let n_extra_before = List.length extra_before in
-  let n_extra_after = List.length extra_after in
-  let n_unchanged = List.length unchanged in
-  let n_changed = List.length diff in
-  let max_width =
-    int_width @@ max n_unchanged @@ max n_changed @@ max n_extra_before @@ n_extra_after
-  in
-  L.result "%a entries only in previous version@\n" (pp_int_with_width max_width) n_extra_before ;
-  L.result "%a unchanged entries@\n" (pp_int_with_width max_width) n_unchanged ;
-  L.result "%a entries only in new version@\n" (pp_int_with_width max_width) n_extra_after ;
-  L.result "%a entries changed values (details for numerical values below)@\n@\n"
-    (pp_int_with_width max_width) n_changed ;
+let pp_diff ~skip_delta_below fmt diff =
   let max_event_length = ref 0 in
   let max_value_before_length = ref 0 in
   let max_value_after_length = ref 0 in
@@ -211,12 +219,15 @@ let text_output (extra_before, extra_after, unchanged, diff) =
         match (value_before, value_after) with
         | Int i1, Int i2 ->
             let delta = (float_of_int i2 -. float_of_int i1) *. 100. /. float_of_int i1 in
-            let delta_s = Printf.sprintf "%+.2f%%" delta in
-            max_event_length := max !max_event_length (String.length event) ;
-            max_value_before_length := max !max_value_before_length (int_width i1) ;
-            max_value_after_length := max !max_value_before_length (int_width i2) ;
-            max_delta_length := max !max_delta_length (String.length delta_s) ;
-            Some (Float.abs delta, delta_s, entry)
+            let delta_abs = Float.abs delta in
+            if Float.(delta_abs > skip_delta_below) then (
+              let delta_s = Printf.sprintf "%+.2f%%" delta in
+              max_event_length := max !max_event_length (String.length event) ;
+              max_value_before_length := max !max_value_before_length (int_width i1) ;
+              max_value_after_length := max !max_value_before_length (int_width i2) ;
+              max_delta_length := max !max_delta_length (String.length delta_s) ;
+              Some (delta_abs, delta_s, entry) )
+            else None
         | _ ->
             None )
     |> List.sort ~compare:[%compare: float_inv_compare * string * changed_entry]
@@ -232,14 +243,14 @@ let text_output (extra_before, extra_after, unchanged, diff) =
       (pp_string_with_width max_delta_length)
       "delta"
   in
-  L.result "%s@\n" header ;
-  L.result "|-%a-|-%a-|-%a-|-%a-|@\n" (pp_n_times !max_event_length) '-'
+  F.fprintf fmt "%s@\n" header ;
+  F.fprintf fmt "|-%a-|-%a-|-%a-|-%a-|@\n" (pp_n_times !max_event_length) '-'
     (pp_n_times !max_value_before_length)
     '-'
     (pp_n_times !max_value_after_length)
     '-' (pp_n_times !max_delta_length) '-' ;
   List.iter changed_entries ~f:(function _, delta, {event; value_before; value_after} ->
-      L.result "| %a | %a | %a | %a |@\n"
+      F.fprintf fmt "| %a | %a | %a | %a |@\n"
         (pp_string_with_width max_event_length)
         event
         (pp_with_width pp_value max_value_before_length)
@@ -247,10 +258,31 @@ let text_output (extra_before, extra_after, unchanged, diff) =
         (pp_with_width pp_value max_value_after_length)
         value_after
         (pp_string_with_width max_delta_length)
-        delta ) ;
-  L.result "@\nUnchanged entries:@\n" ;
+        delta )
+
+
+let text_output (extra_before, extra_after, unchanged, diff) =
+  let n_extra_before = List.length extra_before in
+  let n_extra_after = List.length extra_after in
+  let n_unchanged = List.length unchanged in
+  let n_changed = List.length diff in
+  let max_width =
+    int_width @@ max n_unchanged @@ max n_changed @@ max n_extra_before @@ n_extra_after
+  in
+  L.progress "%a entries only in previous version@\n" (pp_int_with_width max_width) n_extra_before ;
+  L.progress "%a unchanged entries@\n" (pp_int_with_width max_width) n_unchanged ;
+  L.progress "%a entries only in new version@\n" (pp_int_with_width max_width) n_extra_after ;
+  L.progress "%a entries changed values (details for numerical values below)@\n@\n"
+    (pp_int_with_width max_width) n_changed ;
+  L.progress "%a" (pp_diff ~skip_delta_below:0.0) diff ;
+  L.progress "@\nUnchanged entries:@\n" ;
   List.sort ~compare:[%compare: entry] unchanged
-  |> List.iter ~f:(fun {event; value} -> L.result "%s: %a@\n" event pp_value value)
+  |> List.iter ~f:(fun {event; value} -> L.progress "%s: %a@\n" event pp_value value) ;
+  let diff_to_print =
+    List.filter diff ~f:(fun {event} -> String.Set.mem stable_stat_events event)
+  in
+  if not (List.is_empty diff_to_print) then
+    L.result "%a" (pp_diff ~skip_delta_below:0.5) diff_to_print
 
 
 let diff ~previous:stats_dir_previous ~current:stats_dir_current =
