@@ -13,7 +13,7 @@
     test_record2_Latent/1,
     test_record1_Ok/1,
     test_tuple_with_types5_Latent/1,
-    fnl_test_tuple_with_types4_Bad/1,
+    test_tuple_with_types4_Bad/1,
     test_tuple_with_types3_Ok/1,
     test_tuple_with_types2_Latent/1,
     test_tuple_with_types1_Ok/1,
@@ -178,8 +178,8 @@ test_tuple_with_types2_Latent({X}) when is_atom(X) -> ok.
 test_tuple_with_types3_Ok({X, Y}) when is_atom(X), is_map(Y) -> ok.
 
 % not actually sure if this should be Bad or Latent
--spec fnl_test_tuple_with_types4_Bad({atom(), map()}) -> any().
-fnl_test_tuple_with_types4_Bad({X, Y}) when is_map(X), is_atom(Y) -> ok.
+-spec test_tuple_with_types4_Bad({atom(), map()}) -> any().
+test_tuple_with_types4_Bad({X, Y}) when is_map(X), is_atom(Y) -> ok.
 
 -spec test_tuple_with_types5_Latent({any()}) -> any().
 test_tuple_with_types5_Latent({X}) when is_atom(X) -> ok.

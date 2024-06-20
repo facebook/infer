@@ -300,4 +300,51 @@ class Wrapper {
       $_ = $this->fail();
     }
   }
+
+  // two booleans should be equal here
+  public async function earlyInstanceOfOK(): Awaitable<void> {
+    $x = new F();
+    $b1 = $x is D;
+    $b2 = $x is E;
+    if ($b1 == $b2) { // always succeeds
+      return;
+    } else {
+      $_ = $this->fail();
+    }
+  }
+
+  // same but with below
+  public async function earlyInstanceOf2OK(mixed $x): Awaitable<void> {
+    if ($x is F) {
+      $b1 = $x is D;
+      $b2 = $x is E;
+      if ($b1 == $b2) { // always succeeds
+        return;
+      } else {
+        $_ = $this->fail();
+      }
+    } else {
+      return;
+    }
+  }
+
+  // this is an FP because either x is null, in which case both booleans are false
+  // or x is not null, in which case they're both true
+  // but we don't do case splitting in the solver :-(
+  // Note that we *could* do it in the model of boolean equality at the cost
+  // of some blowup
+  public async function earlyInstanceOf3_FP(mixed $x): Awaitable<void> {
+    if ($x is ?F) {
+      $b1 = $x is D;
+      $b2 = $x is E;
+      if ($b1 == $b2) { // always succeeds
+        return;
+      } else {
+        $_ = $this->fail();
+      }
+    } else {
+      return;
+    }
+  }
+
 }

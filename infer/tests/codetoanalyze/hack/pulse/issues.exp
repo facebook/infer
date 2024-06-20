@@ -238,6 +238,7 @@ subclasstest.hack, SubClassTest::Wrapper.assumeNullableParameterTypeBad, 5, PULS
 subclasstest.hack, SubClassTest::Wrapper.assumeNullableParameterTypeOK_FP, 7, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 subclasstest.hack, SubClassTest::Wrapper.assumeParameterTypeOK2_FP, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 subclasstest.hack, SubClassTest::Wrapper.hhiDeclsImportedBad, 5, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
+subclasstest.hack, SubClassTest::Wrapper.earlyInstanceOf3_FP, 12, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 traces.hack, Traces::Flows.flowBad, 1, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from `Traces::Source$static.get` with kind `Traces`,flows to this sink: value passed as argument `#0` to `Traces::Helper$static.f1` with kind `BuiltinCatchAll`], source: Traces::Source$static.get, sink: Traces::Helper$static.f1, tainted expression: Traces::Source$static.get()
 traversable.hack, Traversable::Main$static.use_traversable_bad, 3, PULSE_DYNAMIC_TYPE_MISMATCH, no_bucket, ERROR, []
 traversable.hack, Closure$Traversable::Main::filter1.__invoke, 1, PULSE_DYNAMIC_TYPE_MISMATCH, no_bucket, ERROR, []

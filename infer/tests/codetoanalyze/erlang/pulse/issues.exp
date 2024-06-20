@@ -474,7 +474,7 @@ codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_of_0_Latent/1, 0, N
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_of_1_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_of_2_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_with_types2_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
-codetoanalyze/erlang/pulse/specs/specs_basic.erl, fnl_test_tuple_with_types4_Bad/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
+codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_with_types4_Bad/1, 0, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_tuple_with_types5_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_record2_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/specs/specs_basic.erl, test_record3_Latent/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]

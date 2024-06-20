@@ -244,13 +244,9 @@ let%test_module "normalization" =
     let%expect_test _ =
       normalize_with_all_types_Nil
         (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: type_constraints: x:ErlangNil, SourceFile [None]∧y:ErlangNil, SourceFile [None]
-                                 ∧z:ErlangNil, SourceFile [None]∧w:ErlangNil, SourceFile [None]
-               && term_eqs: (x instanceof ErlangCons nullable=false)=y∧(x instanceof ErlangNil nullable=false)=y
+          unsat
         Result: same|}]
 
 

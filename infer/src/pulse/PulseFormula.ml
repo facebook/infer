@@ -3380,19 +3380,20 @@ module Formula = struct
                           (* If t is an IsInstanceOf formula, and we've just found its truth value, propagate
                              the information into the below/notbelow type constraints on the relevant
                              variable, and also add >0 facts where appropriate *)
-                          let* phi, atoms_opt1, new_eqs =
+                          let* phi, new_eqs =
                             match Term.get_as_isinstanceof t with
                             | Some (var, typ, nullable) ->
                                 if is_neq_zero phi tx then (
-                                  Debug.p "prop in term_eq adding below@\n" ;
+                                  Debug.p "prop in term_eq adding below with nullable=%b\n" nullable ;
                                   let* phi, new_eqs = and_below var typ (phi, new_eqs) in
-                                  let* atoms_opt1 =
-                                    if not nullable then
-                                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                        (LessThan (Const Q.zero, Var var))
-                                    else Sat None
-                                  in
-                                  Sat (phi, atoms_opt1, new_eqs) )
+                                  if not nullable then (
+                                    Debug.p "adding %a not equal to zero" Var.pp var ;
+                                    let* atoms =
+                                      Atom.eval ~is_neq_zero:(is_neq_zero phi)
+                                        (NotEqual (Var var, Term.zero))
+                                    in
+                                    and_normalized_atoms (phi, new_eqs) atoms >>| snd )
+                                  else Sat (phi, new_eqs) )
                                 else if
                                   match tx with
                                   | Linear l ->
@@ -3404,26 +3405,25 @@ module Formula = struct
                                 then (
                                   Debug.p "prop in term_eq adding notbelow@\n" ;
                                   let* phi, new_eqs = and_notbelow var typ (phi, new_eqs) in
-                                  let* atoms_opt1 =
-                                    if nullable then
-                                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                        (LessThan (Const Q.zero, Var var))
-                                    else Sat None
-                                  in
-                                  Sat (phi, atoms_opt1, new_eqs) )
+                                  if nullable then
+                                    let* atoms =
+                                      Atom.eval ~is_neq_zero:(is_neq_zero phi)
+                                        (NotEqual (Var var, Term.zero))
+                                    in
+                                    and_normalized_atoms (phi, new_eqs) atoms >>| snd
+                                  else Sat (phi, new_eqs) )
                                 else (
                                   Debug.p "%a is neither zero nor non-zero, leaving phi alone@\n"
                                     (Term.pp Var.pp) tx ;
-                                  Sat (phi, None, new_eqs) )
+                                  Sat (phi, new_eqs) )
                             | None ->
-                                Sat (phi, None, new_eqs)
+                                Sat (phi, new_eqs)
                           in
                           (* Now check if the new equality on [x] introduced contradictions in [t=x] or new atoms *)
-                          let* atoms_opt2 =
+                          let* atoms_opt =
                             Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                               (Equal (t, Term.simplify_linear tx))
                           in
-                          let atoms_opt = Option.merge atoms_opt1 atoms_opt2 ~f:List.append in
                           match atoms_opt with
                           | None ->
                               (* need to add back that [x] occurs in [term_eqs(t)] since we removed [x] from
@@ -3583,27 +3583,30 @@ module Formula = struct
                       Debug.p "domain@\n" ;
                       phi_new_eqs_sat
                   | Range | DomainAndRange -> (
-                      Debug.p "range or both@\n" ;
-                      let* phi, atoms_opt1, new_eqs =
+                      Debug.p "range or both\n" ;
+                      let* phi, new_eqs =
                         match Term.get_as_isinstanceof t with
                         | Some (var, typ, nullable) ->
-                            Debug.p "prop in term_eq adding below@\n" ;
-                            let* phi, new_eqs = and_below var typ (phi, new_eqs) in
-                            let* atoms_opt1 =
-                              if not nullable then
-                                Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                  (LessThan (Const Q.zero, Var var))
-                              else Sat None
+                            Debug.p "prop atom in term_eq adding below, nullable=%b\n" nullable ;
+                            let* phi, new_eqs =
+                              if not nullable then (
+                                Debug.p "also adding not equal to zero" ;
+                                let* atoms =
+                                  Atom.eval ~is_neq_zero:(is_neq_zero phi)
+                                    (NotEqual (Var var, Term.zero))
+                                in
+                                and_normalized_atoms (phi, new_eqs) atoms >>| snd )
+                              else Sat (phi, new_eqs)
                             in
-                            Sat (phi, atoms_opt1, new_eqs)
+                            and_below var typ (phi, new_eqs)
                         | None ->
-                            Sat (phi, None, new_eqs)
+                            Sat (phi, new_eqs)
                       in
-                      let* atoms_opt2 =
+                      let* atoms_opt =
+                        (* TODO: double-check eval_with_normalized_terms does the intended thing here *)
                         Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
                           (Equal (t, Var v))
                       in
-                      let atoms_opt = Option.merge atoms_opt1 atoms_opt2 ~f:List.append in
                       match atoms_opt with
                       | None ->
                           Sat (phi, new_eqs)
@@ -4011,6 +4014,12 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
   prune_atoms atoms (formula, RevList.empty) >>= Intervals.and_binop ~negated bop x y
 
 
+let is_known_zero formula v =
+  Var.Map.find_opt v formula.phi.intervals |> Option.exists ~f:CItv.is_equal_to_zero
+  || Var.Map.find_opt (VarUF.find formula.phi.var_eqs v :> Var.t) formula.phi.linear_eqs
+     |> Option.exists ~f:LinArith.is_zero
+
+
 module DynamicTypes = struct
   let get_dynamic_type v formula =
     (* TODO: canonicalize more uniformly - sticking this here is almost certainly not enough since we look things up in lots of places *)
@@ -4022,26 +4031,35 @@ module DynamicTypes = struct
         None
 
 
-  let evaluate_instanceof formula v typ _nullable =
-    (* TODO: exploit nullable here *)
-    match Var.Map.find_opt v formula.phi.type_constraints with
-    | None ->
-        None
-    | Some (InstanceOf.Known {typ= t}) ->
-        Some (InstanceOf.is_subtype t typ |> Term.of_bool)
-    | Some (InstanceOf.Unknown {below; notbelow}) ->
-        if List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' typ) then Some Term.one
-        else if List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype t' typ) then Some Term.zero
-        else if
-          (* The following is valid only if the subtype hierarchy is a tree rather than a DAG
-             That's fine for the concrete tag hierarchy but not if we also allow interfaces in there,
-             unless we also take care over the distinction between tags and interfaces (which I don't think is captured in tenv)
-             Note that under the tree assumption, we'd really only need at most a single upper bound in type_constraints
-          *)
-          List.exists below ~f:(fun t' ->
-              (not (InstanceOf.is_subtype t' typ)) && not (InstanceOf.is_subtype typ t') )
-        then Some Term.zero
-        else None
+  let evaluate_instanceof formula v typ nullable =
+    if is_known_zero formula v then Some (Term.of_bool nullable)
+    else
+      let known_non_zero = Formula.is_neq_zero formula.phi (Var v) in
+      Debug.p "known non zero of %a is %b\n" Var.pp v known_non_zero ;
+      match Var.Map.find_opt v formula.phi.type_constraints with
+      | None ->
+          None
+      | Some (InstanceOf.Known {typ= t}) ->
+          if InstanceOf.is_subtype t typ then Some Term.one
+          else if (not nullable) || known_non_zero then Some Term.zero
+          else None
+      | Some (InstanceOf.Unknown {below; notbelow}) ->
+          if
+            List.exists below ~f:(fun t' -> InstanceOf.is_subtype t' typ)
+            && (nullable || known_non_zero)
+          then Some Term.one
+          else if
+            List.exists notbelow ~f:(fun t' -> InstanceOf.is_subtype typ t')
+            && ((not nullable) || known_non_zero)
+          then Some Term.zero
+          else if
+            InstanceOf.is_concrete_or_abstract typ
+            && List.exists below ~f:(fun t' ->
+                   InstanceOf.is_concrete_or_abstract t'
+                   && (not (InstanceOf.is_subtype typ t'))
+                   && not (InstanceOf.is_subtype t' typ) )
+          then (* inconsistent *) if (not nullable) || known_non_zero then Some Term.zero else None
+          else None
 
 
   let really_simplify formula =
@@ -4123,6 +4141,7 @@ type dynamic_type_data = InstanceOf.dynamic_type_data =
 let get_dynamic_type = DynamicTypes.get_dynamic_type
 
 let add_dynamic_type_unsafe v t ?source_file _location {conditions; phi} =
+  let v = (Formula.get_repr phi v :> Var.t) in
   let tenv = PulseContext.tenv_exn () in
   let t = Tenv.expand_hack_alias_in_typ tenv t in
   let phi, should_zero = Formula.add_dynamic_type v t ?source_file phi in
@@ -4144,13 +4163,26 @@ let copy_type_constraints v_src v_target {conditions; phi} =
 
 
 let and_equal_instanceof v1 v2 t ~nullable formula =
+  let v2 = (Formula.get_repr formula.phi v2 :> Var.t) in
   let tenv = PulseContext.tenv_exn () in
   let t = Tenv.expand_hack_alias_in_typ tenv t in
-  let+ formula, new_eqs' =
+  let* formula, new_eqs' =
     and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
   in
+  let* formula, new_eqs' =
+    match DynamicTypes.evaluate_instanceof formula v2 t nullable with
+    | None ->
+        Sat (formula, new_eqs')
+    | Some value_term ->
+        let* phi, neweqs' =
+          (* It might look odd to keep the instanceof around, but removing it messes up the latency calculations
+             because there's then no dependency on v2 *)
+          Formula.Normalizer.and_atom (Atom.equal (Var v1) value_term) (formula.phi, new_eqs')
+        in
+        Sat ({formula with phi}, neweqs')
+  in
   Debug.p "formula is %a" pp formula ;
-  (formula, new_eqs')
+  Sat (formula, new_eqs')
 
 
 let normalize ?location formula =
@@ -4161,6 +4193,7 @@ let normalize ?location formula =
 
 
 let and_dynamic_type v t ?source_file formula =
+  let v = (Formula.get_repr formula.phi v :> Var.t) in
   let tenv = PulseContext.tenv_exn () in
   let t = Tenv.expand_hack_alias_in_typ tenv t in
   let+ phi, new_eqns =
@@ -4569,12 +4602,6 @@ let simplify ~precondition_vocabulary ~keep formula =
      eliminate even more variables *)
   let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
   (formula, live_vars, new_eqs)
-
-
-let is_known_zero formula v =
-  Var.Map.find_opt v formula.phi.intervals |> Option.exists ~f:CItv.is_equal_to_zero
-  || Var.Map.find_opt (VarUF.find formula.phi.var_eqs v :> Var.t) formula.phi.linear_eqs
-     |> Option.exists ~f:LinArith.is_zero
 
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
