@@ -17,4 +17,4 @@ This checker collects config checkings in some program regions determined by pai
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CONFIG_CHECKS_BETWEEN_MARKERS](/docs/all-issue-types#config_checks_between_markers)
+- [CONFIG_CHECKS_BETWEEN_MARKERS](/docs/1.1.0/all-issue-types#config_checks_between_markers)

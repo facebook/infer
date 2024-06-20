@@ -1,0 +1,152 @@
+<!-- Creator     : groff version 1.23.0 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-explore</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-explore</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#EXPLORE BUGS">EXPLORE BUGS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">infer-explore -
+explore the error traces in infer reports</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer
+explore</b> <i>[options]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:9%; margin-top: 1em">Show the list of
+bugs on the console and explore symbolic program traces
+emitted by infer to explain a report. Can also generate an
+HTML report from a JSON report.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--help</b></p>
+
+<p style="margin-left:14%;">Show this manual</p>
+
+<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
+groff | pager | plain }</i></p>
+
+<p style="margin-left:14%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:9%;"><b>--help-full</b></p>
+
+<p style="margin-left:14%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:9%;"><b>--results-dir</b>,<b>-o</b>
+<i>dir</i></p>
+
+<p style="margin-left:14%;">Write results and internal
+files in the specified directory</p>
+
+<h2>EXPLORE BUGS
+<a name="EXPLORE BUGS"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>--html</b></p>
+
+<p style="margin-left:14%;">Activates: Generate an html
+report of issues found. (Conversely: <b>--no-html</b>)</p>
+
+<p style="margin-left:9%;"><b>--max-nesting</b>
+<i>int</i></p>
+
+<p style="margin-left:14%;">Level of nested procedure calls
+to show. Trace elements beyond the maximum nesting level are
+skipped. If omitted, all levels are shown.</p>
+
+<p style="margin-left:9%;"><b>--select</b>
+<i>(N|all)</i></p>
+
+<p style="margin-left:14%;">Select option number <i>N</i>
+or <i>all</i> of them. If omitted, prompt for input.</p>
+
+<p style="margin-left:9%;"><b>--no-source-preview</b></p>
+
+<p style="margin-left:14%;">Deactivates: print code
+excerpts around trace elements (Conversely:
+<b>--source-preview</b>)</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:14%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:14%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:9%; margin-top: 1em"><b>infer-report</b>(1),
+<b>infer-run</b>(1)</p>
+<hr>
+</body>
+</html>

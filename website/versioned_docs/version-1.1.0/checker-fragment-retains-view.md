@@ -19,4 +19,4 @@ Supported languages:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CHECKERS_FRAGMENT_RETAINS_VIEW](/docs/all-issue-types#checkers_fragment_retains_view)
+- [CHECKERS_FRAGMENT_RETAINS_VIEW](/docs/1.1.0/all-issue-types#checkers_fragment_retains_view)

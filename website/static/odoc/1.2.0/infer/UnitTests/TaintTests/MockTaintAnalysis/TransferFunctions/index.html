@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>TransferFunctions (infer.UnitTests.TaintTests.MockTaintAnalysis.TransferFunctions)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../../index.html">infer</a> &#x00BB; <a href="../../../index.html">UnitTests</a> &#x00BB; <a href="../../index.html">TaintTests</a> &#x00BB; <a href="../index.html">MockTaintAnalysis</a> &#x00BB; TransferFunctions</nav><header class="odoc-preamble"><h1>Module <code><span>MockTaintAnalysis.TransferFunctions</span></code></h1></header><nav class="odoc-toc"><ul><li><a href="#parameters">Parameters</a></li><li><a href="#signature">Signature</a></li></ul></nav><div class="odoc-content"><h2 id="parameters"><a href="#parameters" class="anchor"></a>Parameters</h2><div class="odoc-spec"><div class="spec parameter anchored" id="argument-1-CFG"><a href="#argument-1-CFG" class="anchor"></a><code><span><span class="keyword">module</span> </span><span><a href="argument-1-CFG/index.html">CFG</a></span><span> : <a href="../../../../Absint/ProcCfg/module-type-S/index.html">Absint.ProcCfg.S</a></span></code></div></div><h2 id="signature"><a href="#signature" class="anchor"></a>Signature</h2><div class="odoc-spec"><div class="spec module anchored" id="module-CFG"><a href="#module-CFG" class="anchor"></a><code><span><span class="keyword">module</span> <a href="CFG/index.html">CFG</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Domain"><a href="#module-Domain" class="anchor"></a><code><span><span class="keyword">module</span> Domain</span><span> = <a href="../TaintDomain/index.html">Domain</a></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-analysis_data"><a href="#type-analysis_data" class="anchor"></a><code><span><span class="keyword">type</span> <span class="keyword">nonrec</span> analysis_data</span><span> = <a href="../index.html#type-analysis_data">analysis_data</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-access_path_get_node"><a href="#val-access_path_get_node" class="anchor"></a><code><span><span class="keyword">val</span> access_path_get_node : 
+  <span><a href="../../../../Absint/AccessPath/Abs/index.html#type-t">Absint.AccessPath.Abs.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-node">TaintDomain.node</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-access_path_get_trace"><a href="#val-access_path_get_trace" class="anchor"></a><code><span><span class="keyword">val</span> access_path_get_trace : 
+  <span><a href="../../../../Absint/AccessPath/Abs/index.html#type-t">Absint.AccessPath.Abs.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/TraceDomain/index.html#type-t">TaintDomain.TraceDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exp_get_node_"><a href="#val-exp_get_node_" class="anchor"></a><code><span><span class="keyword">val</span> exp_get_node_ : 
+  <span><span class="label">abstracted</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/AccessPath/Abs/index.html#type-raw">Absint.AccessPath.Abs.raw</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-node">TaintDomain.node</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-hil_exp_get_node"><a href="#val-hil_exp_get_node" class="anchor"></a><code><span><span class="keyword">val</span> hil_exp_get_node : 
+  <span><span class="optlabel">?abstracted</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-node">TaintDomain.node</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_return_source"><a href="#val-add_return_source" class="anchor"></a><code><span><span class="keyword">val</span> add_return_source : 
+  <span><a href="../TraceDomain/Source/index.html#type-t">TraceDomain.Source.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../../../../IR/Var/index.html#type-t">IR.Var.t</a> * <a href="../../../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_actual_source"><a href="#val-add_actual_source" class="anchor"></a><code><span><span class="keyword">val</span> add_actual_source : 
+  <span><a href="../TraceDomain/Source/index.html#type-t">TraceDomain.Source.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-is_endpoint"><a href="#val-is_endpoint" class="anchor"></a><code><span><span class="keyword">val</span> is_endpoint : <span><a href="../TraceDomain/Source/index.html#type-t">TraceDomain.Source.t</a> <span class="arrow">&#45;&gt;</span></span> bool</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-report_trace"><a href="#val-report_trace" class="anchor"></a><code><span><span class="keyword">val</span> report_trace : 
+  <span><span><a href="../../../../Quandary/QuandarySummary/AccessTree/index.html#type-t">Quandary.QuandarySummary.AccessTree.t</a> <a href="../../../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?sink_indexes</span>:<a href="../../../../IStdlib/IntSet/index.html#type-t">IStdlib.IntSet.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TraceDomain/index.html#type-t">TraceDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/CallSite/index.html#type-t">Absint.CallSite.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_sink"><a href="#val-add_sink" class="anchor"></a><code><span><span class="keyword">val</span> add_sink : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TraceDomain/Sink/index.html#type-t">TraceDomain.Sink.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/CallSite/index.html#type-t">Absint.CallSite.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-apply_summary"><a href="#val-apply_summary" class="anchor"></a><code><span><span class="keyword">val</span> apply_summary : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="../../../../IR/Var/index.html#type-t">IR.Var.t</a> * <a href="../../../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/CallSite/index.html#type-t">Absint.CallSite.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_sinks_for_access_path"><a href="#val-add_sinks_for_access_path" class="anchor"></a><code><span><span class="keyword">val</span> add_sinks_for_access_path : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilExp/AccessExpression/index.html#type-t">Absint.HilExp.AccessExpression.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_sources_for_access_path"><a href="#val-add_sources_for_access_path" class="anchor"></a><code><span><span class="keyword">val</span> add_sources_for_access_path : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilExp/index.html#type-access_expression">Absint.HilExp.access_expression</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_sources_sinks_for_exp"><a href="#val-add_sources_sinks_for_exp" class="anchor"></a><code><span><span class="keyword">val</span> add_sources_sinks_for_exp : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exec_write"><a href="#val-exec_write" class="anchor"></a><code><span><span class="keyword">val</span> exec_write : 
+  <span><a href="../../../../Absint/FormalMap/index.html#type-t">Absint.FormalMap.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">Absint__HilExp.access_expression</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-analyze_call"><a href="#val-analyze_call" class="anchor"></a><code><span><span class="keyword">val</span> analyze_call : 
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ret_ap</span>:<span>(<a href="../../../../IR/Var/index.html#type-t">IR.Var.t</a> * <a href="../../../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">callee_pname</span>:<a href="../../../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">actuals</span>:<span><a href="../../../../Absint/HilExp/index.html#type-t">Absint.HilExp.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">call_flags</span>:<a href="../../../../IR/CallFlags/index.html#type-t">IR.CallFlags.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">callee_loc</span>:<a href="../../../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TaintDomain/index.html#type-t">TaintDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">TaintDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-exec_instr"><a href="#val-exec_instr" class="anchor"></a><code><span><span class="keyword">val</span> exec_instr : 
+  <span><a href="../TaintDomain/index.html#type-t">Domain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../index.html#type-analysis_data">analysis_data</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../../Absint/HilInstr/index.html#type-t">Absint.HilInstr.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../TaintDomain/index.html#type-t">Domain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pp_session_name"><a href="#val-pp_session_name" class="anchor"></a><code><span><span class="keyword">val</span> pp_session_name : <span><a href="CFG/Node/index.html#type-t">CFG.Node.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="xref-unresolved">Quandary__TaintAnalysis</span>.F.formatter <span class="arrow">&#45;&gt;</span></span> unit</span></code></div></div></div></body></html>

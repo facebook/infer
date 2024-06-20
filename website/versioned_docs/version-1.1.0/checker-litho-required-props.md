@@ -46,7 +46,7 @@ If the required props are not called, then annotation processor throws an except
 
 ## Examples
 
-E.g. the following is caught as [MISSING_REQUIRED_PROP](/docs/all-issue-types#missing_required_prop) `prop2`.
+E.g. the following is caught as [MISSING_REQUIRED_PROP](/docs/1.1.0/all-issue-types#missing_required_prop) `prop2`.
 
 ```java
 MyComponent.create(c)
@@ -68,4 +68,4 @@ Note that, the functions `create()` and `build()` could be defined in different 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [MISSING_REQUIRED_PROP](/docs/all-issue-types#missing_required_prop)
+- [MISSING_REQUIRED_PROP](/docs/1.1.0/all-issue-types#missing_required_prop)

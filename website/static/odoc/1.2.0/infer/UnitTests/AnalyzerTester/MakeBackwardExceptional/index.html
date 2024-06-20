@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>MakeBackwardExceptional (infer.UnitTests.AnalyzerTester.MakeBackwardExceptional)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">infer</a> &#x00BB; <a href="../../index.html">UnitTests</a> &#x00BB; <a href="../index.html">AnalyzerTester</a> &#x00BB; MakeBackwardExceptional</nav><header class="odoc-preamble"><h1>Module <code><span>AnalyzerTester.MakeBackwardExceptional</span></code></h1></header><nav class="odoc-toc"><ul><li><a href="#parameters">Parameters</a></li><li><a href="#signature">Signature</a></li></ul></nav><div class="odoc-content"><h2 id="parameters"><a href="#parameters" class="anchor"></a>Parameters</h2><div class="odoc-spec"><div class="spec parameter anchored" id="argument-1-T"><a href="#argument-1-T" class="anchor"></a><code><span><span class="keyword">module</span> </span><span><a href="argument-1-T/index.html">T</a></span><span> : 
+  <a href="../../../Absint/AbstractInterpreter/module-type-TransferFunctions/index.html">Absint.AbstractInterpreter.TransferFunctions</a>
+    <span class="keyword">with</span> <span><span class="keyword">type</span> <a href="../../../Absint/AbstractInterpreter/module-type-TransferFunctions/CFG/Node/index.html#type-t">CFG.Node.t</a> = <a href="../../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a></span></span></code></div></div><h2 id="signature"><a href="#signature" class="anchor"></a>Signature</h2><div class="odoc-spec"><div class="spec module anchored" id="module-AI_RPO"><a href="#module-AI_RPO" class="anchor"></a><code><span><span class="keyword">module</span> <a href="AI_RPO/index.html">AI_RPO</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-AI_WTO"><a href="#module-AI_WTO" class="anchor"></a><code><span><span class="keyword">module</span> <a href="AI_WTO/index.html">AI_WTO</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-ai_list"><a href="#val-ai_list" class="anchor"></a><code><span><span class="keyword">val</span> ai_list : 
+  <span><span>(string
+   * <span>(<span><span><a href="../StructuredSil/index.html#type-structured_instr">StructuredSil.structured_instr</a> <span class="xref-unresolved">Base__List</span>.t</span> <span class="arrow">&#45;&gt;</span></span>
+   <span><span>(<span><span class="xref-unresolved">Backend__Summary.t</span> <span class="arrow">&#45;&gt;</span></span>
+     <a href="argument-1-T/index.html#type-analysis_data">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.analysis_data</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+   <span><span class="label">initial</span>:
+     <a href="argument-1-T/Domain/index.html#type-t">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.Domain.t</a> <span class="arrow">&#45;&gt;</span></span>
+   <span><span><span>(<span><span class="xref-unresolved">F</span>.formatter <span class="arrow">&#45;&gt;</span></span>
+     <span><a href="argument-1-T/Domain/index.html#type-t">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.Domain.t</a> <span class="arrow">&#45;&gt;</span></span>
+     unit)</span>
+     option</span> <span class="arrow">&#45;&gt;</span></span>
+   <span><span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span>
+   unit)</span>)</span>
+    list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_tests"><a href="#val-create_tests" class="anchor"></a><code><span><span class="keyword">val</span> create_tests : 
+  <span><span class="label">initial</span>:
+    <a href="argument-1-T/Domain/index.html#type-t">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.Domain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?pp_opt</span>:
+    <span>(<span><span class="xref-unresolved">F</span>.formatter <span class="arrow">&#45;&gt;</span></span>
+      <span><a href="argument-1-T/Domain/index.html#type-t">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.Domain.t</a> <span class="arrow">&#45;&gt;</span></span>
+      unit)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><span class="xref-unresolved">Backend__Summary.t</span> <span class="arrow">&#45;&gt;</span></span>
+    <a href="argument-1-T/index.html#type-analysis_data">Absint.AbstractInterpreter.MakeBackwardWTO(T).TransferFunctions.analysis_data</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(string * <span><a href="../StructuredSil/index.html#type-structured_instr">StructuredSil.structured_instr</a> <span class="xref-unresolved">Base__List</span>.t</span>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">OUnit2</span>.test list</span></span></code></div></div></div></body></html>

@@ -22,9 +22,9 @@ Detect several kinds of "starvation" problems:
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [ARBITRARY_CODE_EXECUTION_UNDER_LOCK](/docs/all-issue-types#arbitrary_code_execution_under_lock)
-- [DEADLOCK](/docs/all-issue-types#deadlock)
-- [IPC_ON_UI_THREAD](/docs/all-issue-types#ipc_on_ui_thread)
-- [LOCKLESS_VIOLATION](/docs/all-issue-types#lockless_violation)
-- [STARVATION](/docs/all-issue-types#starvation)
-- [STRICT_MODE_VIOLATION](/docs/all-issue-types#strict_mode_violation)
+- [ARBITRARY_CODE_EXECUTION_UNDER_LOCK](/docs/1.1.0/all-issue-types#arbitrary_code_execution_under_lock)
+- [DEADLOCK](/docs/1.1.0/all-issue-types#deadlock)
+- [IPC_ON_UI_THREAD](/docs/1.1.0/all-issue-types#ipc_on_ui_thread)
+- [LOCKLESS_VIOLATION](/docs/1.1.0/all-issue-types#lockless_violation)
+- [STARVATION](/docs/1.1.0/all-issue-types#starvation)
+- [STRICT_MODE_VIOLATION](/docs/1.1.0/all-issue-types#strict_mode_violation)

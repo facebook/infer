@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>PulseOperations (infer.Pulselib.PulseOperations)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Pulselib</a> &#x00BB; PulseOperations</nav><header class="odoc-preamble"><h1>Module <code><span>Pulselib.PulseOperations</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-t"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span><span> = <a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-check_addr_access"><a href="#val-check_addr_access" class="anchor"></a><code><span><span class="keyword">val</span> check_addr_access : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>Check that the <code>address</code> is not known to be invalid</p></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Closures"><a href="#module-Closures" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Closures/index.html">Closures</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pulse_model_type"><a href="#val-pulse_model_type" class="anchor"></a><code><span><span class="keyword">val</span> pulse_model_type : <a href="../../IR/Typ/index.html#type-name">IR.Typ.name</a></span></code></div><div class="spec-doc"><p>Struct type name of &quot;__infer_pulse_model&quot;</p></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-ModeledField"><a href="#module-ModeledField" class="anchor"></a><code><span><span class="keyword">module</span> <a href="ModeledField/index.html">ModeledField</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-conservatively_initialize_args"><a href="#val-conservatively_initialize_args" class="anchor"></a><code><span><span class="keyword">val</span> conservatively_initialize_args : 
+  <span><span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Set all reachable values from the given list as initialized conservatively.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval"><a href="#val-eval" class="anchor"></a><code><span><span class="keyword">val</span> eval : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseOperationResult/index.html#type-t">PulseOperationResult.t</a></span></span></code></div><div class="spec-doc"><p>Use the stack and heap to evaluate the given expression down to an abstract address representing its value.</p><p>Return an error state if it traverses some known invalid address or if the end destination is known to be invalid.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_to_value_origin"><a href="#val-eval_to_value_origin" class="anchor"></a><code><span><span class="keyword">val</span> eval_to_value_origin : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a> * <a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>)</span> <a href="../PulseOperationResult/index.html#type-t">PulseOperationResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_var"><a href="#val-eval_var" class="anchor"></a><code><span><span class="keyword">val</span> eval_var : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a>
+  * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span></span></code></div><div class="spec-doc"><p>Similar to eval but for pvar only. Always succeeds.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_ident"><a href="#val-eval_ident" class="anchor"></a><code><span><span class="keyword">val</span> eval_ident : 
+  <span><a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a>
+  * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-prune"><a href="#val-prune" class="anchor"></a><code><span><span class="keyword">val</span> prune : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">condition</span>:<a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="#type-t">t</a> * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_deref"><a href="#val-eval_deref" class="anchor"></a><code><span><span class="keyword">val</span> eval_deref : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div><div class="spec-doc"><p>Like <code>eval</code> but evaluates <code>*exp</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_deref_to_value_origin"><a href="#val-eval_deref_to_value_origin" class="anchor"></a><code><span><span class="keyword">val</span> eval_deref_to_value_origin : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="#type-t">t</a> * <a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_access"><a href="#val-eval_access" class="anchor"></a><code><span><span class="keyword">val</span> eval_access : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>Like <code>eval</code> but starts from an address instead of an expression, checks that it is valid, and if so dereferences it according to the access.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_access_to_value_origin"><a href="#val-eval_access_to_value_origin" class="anchor"></a><code><span><span class="keyword">val</span> eval_access_to_value_origin : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a> * <a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_deref_access"><a href="#val-eval_deref_access" class="anchor"></a><code><span><span class="keyword">val</span> eval_deref_access : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?must_be_valid_reason</span>:
+    <a href="../PulseInvalidation/index.html#type-must_be_valid_reason">Pulselib.PulseBasicInterface.Invalidation.must_be_valid_reason</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseOperationResult/Import/index.html#type-access_mode">PulseOperationResult.Import.access_mode</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>Like <code>eval_access</code> but does additional dereference.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eval_proc_name"><a href="#val-eval_proc_name" class="anchor"></a><code><span><span class="keyword">val</span> eval_proc_name : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="#type-t">t</a> * <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> option</span>)</span> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-hack_python_propagates_type_on_load"><a href="#val-hack_python_propagates_type_on_load" class="anchor"></a><code><span><span class="keyword">val</span> hack_python_propagates_type_on_load : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_static_type_objc_class"><a href="#val-add_static_type_objc_class" class="anchor"></a><code><span><span class="keyword">val</span> add_static_type_objc_class : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-havoc_id"><a href="#val-havoc_id" class="anchor"></a><code><span><span class="keyword">val</span> havoc_id : 
+  <span><a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-havoc_deref_field"><a href="#val-havoc_deref_field" class="anchor"></a><code><span><span class="keyword">val</span> havoc_deref_field : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>Havoc dereferenced field address.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-realloc_pvar"><a href="#val-realloc_pvar" class="anchor"></a><code><span><span class="keyword">val</span> realloc_pvar : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">set_uninitialized</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_id"><a href="#val-write_id" class="anchor"></a><code><span><span class="keyword">val</span> write_id : 
+  <span><a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-read_id"><a href="#val-read_id" class="anchor"></a><code><span><span class="keyword">val</span> read_id : 
+  <span><a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+    option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_field"><a href="#val-write_field" class="anchor"></a><code><span><span class="keyword">val</span> write_field : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ref</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">obj</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>write the edge <code>ref --.field--&gt; obj</code></p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_deref_field"><a href="#val-write_deref_field" class="anchor"></a><code><span><span class="keyword">val</span> write_deref_field : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ref</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">obj</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>write the edge <code>ref --.field--&gt; _ --*--&gt; obj</code></p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_arr_index"><a href="#val-write_arr_index" class="anchor"></a><code><span><span class="keyword">val</span> write_arr_index : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ref</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">index</span>:<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">obj</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>write the edge <code>ref[index]--&gt; obj</code></p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_deref"><a href="#val-write_deref" class="anchor"></a><code><span><span class="keyword">val</span> write_deref : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ref</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">obj</span>:
+    <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>write the edge <code>ref --*--&gt; obj</code></p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-invalidation_access"><a href="#type-invalidation_access" class="anchor"></a><code><span><span class="keyword">type</span> invalidation_access</span><span> = </span></code><ol><li id="type-invalidation_access.MemoryAccess" class="def variant constructor anchored"><a href="#type-invalidation_access.MemoryAccess" class="anchor"></a><code><span>| </span><span><span class="constructor">MemoryAccess</span> <span class="keyword">of</span> </span><span>{</span></code><ol><li id="type-invalidation_access.pointer" class="def record field anchored"><a href="#type-invalidation_access.pointer" class="anchor"></a><code><span>pointer : <a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+          * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>;</span></code></li><li id="type-invalidation_access.access" class="def record field anchored"><a href="#type-invalidation_access.access" class="anchor"></a><code><span>access : <a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a>;</span></code></li><li id="type-invalidation_access.hist_obj_default" class="def record field anchored"><a href="#type-invalidation_access.hist_obj_default" class="anchor"></a><code><span>hist_obj_default : <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>;</span></code></li></ol><code><span>}</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>the value was read from the heap following the <code>access</code> edge at address <code>pointer</code></p><span class="comment-delim">*)</span></div></li><li id="type-invalidation_access.StackAddress" class="def variant constructor anchored"><a href="#type-invalidation_access.StackAddress" class="anchor"></a><code><span>| </span><span><span class="constructor">StackAddress</span> <span class="keyword">of</span> <a href="../../IR/Var/index.html#type-t">IR.Var.t</a> * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a></span></code><div class="def-doc"><span class="comment-delim">(*</span><p>the value was read from the stack</p><span class="comment-delim">*)</span></div></li><li id="type-invalidation_access.UntraceableAccess" class="def variant constructor anchored"><a href="#type-invalidation_access.UntraceableAccess" class="anchor"></a><code><span>| </span><span><span class="constructor">UntraceableAccess</span></span></code><div class="def-doc"><span class="comment-delim">(*</span><p>we don't know where the value came from; avoid using if possible</p><span class="comment-delim">*)</span></div></li></ol></div><div class="spec-doc"><p>the way that was used to get to the invalidated address in the state; this is used to record the invalidation point in its history in addition to inside the <code>Invalid</code> attribute</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-invalidate"><a href="#val-invalidate" class="anchor"></a><code><span><span class="keyword">val</span> invalidate : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-invalidation_access">invalidation_access</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseInvalidation/index.html#type-t">Pulselib.PulseBasicInterface.Invalidation.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>record that the address is invalid</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-check_and_invalidate"><a href="#val-check_and_invalidate" class="anchor"></a><code><span><span class="keyword">val</span> check_and_invalidate : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-invalidation_access">invalidation_access</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseInvalidation/index.html#type-t">Pulselib.PulseBasicInterface.Invalidation.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>check that the address is currently valid then record that the address is now invalid</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-always_reachable"><a href="#val-always_reachable" class="anchor"></a><code><span><span class="keyword">val</span> always_reachable : <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-allocate"><a href="#val-allocate" class="anchor"></a><code><span><span class="keyword">val</span> allocate : 
+  <span><a href="../PulseAttribute/index.html#type-allocator">Pulselib.PulseBasicInterface.Attribute.allocator</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-java_resource_release"><a href="#val-java_resource_release" class="anchor"></a><code><span><span class="keyword">val</span> java_resource_release : 
+  <span><span class="label">recursive</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>releases the resource of the argument, and recursively calls itself on the delegated resource if <code>recursive==true</code></p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-csharp_resource_release"><a href="#val-csharp_resource_release" class="anchor"></a><code><span><span class="keyword">val</span> csharp_resource_release : 
+  <span><span class="label">recursive</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>releases the resource of the argument, and recursively calls itself on the delegated resource if <code>recursive==true</code></p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_dict_contain_const_keys"><a href="#val-add_dict_contain_const_keys" class="anchor"></a><code><span><span class="keyword">val</span> add_dict_contain_const_keys : 
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-remove_dict_contain_const_keys"><a href="#val-remove_dict_contain_const_keys" class="anchor"></a><code><span><span class="keyword">val</span> remove_dict_contain_const_keys : 
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-add_dict_read_const_key"><a href="#val-add_dict_read_const_key" class="anchor"></a><code><span><span class="keyword">val</span> add_dict_read_const_key : 
+  <span><a href="../PulseTimestamp/index.html#type-t">Pulselib.PulseBasicInterface.Timestamp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseTrace/index.html#type-t">Pulselib.PulseBasicInterface.Trace.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>, <a href="../PulseAccessResult/index.html#type-error">Pulselib.PulseDomainInterface.AccessResult.error</a>)</span> <a href="../PulseResult/index.html#type-t">PulseResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-remove_allocation_attr"><a href="#val-remove_allocation_attr" class="anchor"></a><code><span><span class="keyword">val</span> remove_allocation_attr : 
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-invalidate_access"><a href="#val-invalidate_access" class="anchor"></a><code><span><span class="keyword">val</span> invalidate_access : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseInvalidation/index.html#type-t">Pulselib.PulseBasicInterface.Invalidation.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>record that what the address points via the access to is invalid</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-invalidate_deref_access"><a href="#val-invalidate_deref_access" class="anchor"></a><code><span><span class="keyword">val</span> invalidate_deref_access : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseInvalidation/index.html#type-t">Pulselib.PulseBasicInterface.Invalidation.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAccess/index.html#type-t">Pulselib.PulseBasicInterface.Access.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Like <code>invalidate_access</code> but invalidates dereferenced address.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-invalidate_array_elements"><a href="#val-invalidate_array_elements" class="anchor"></a><code><span><span class="keyword">val</span> invalidate_array_elements : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseInvalidation/index.html#type-t">Pulselib.PulseBasicInterface.Invalidation.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>record that all the array elements that address points to is invalid</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-shallow_copy"><a href="#val-shallow_copy" class="anchor"></a><code><span><span class="keyword">val</span> shallow_copy : 
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>returns the address of a new cell with the same edges as the original</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-deep_copy"><a href="#val-deep_copy" class="anchor"></a><code><span><span class="keyword">val</span> deep_copy : 
+  <span><span class="optlabel">?depth_max</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="#type-t">t</a>
+   * <span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>returns the address of a new cell with the copied edges from the original. The content is deeply copied up until <code>max_depth</code> edges deep in memory. The deepest copied value is then shallow copied. If no <code>max_depth</code> is specified, then there is no shallow copy and everything is deeply copied until there is no more edge to follow</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_dynamic_type_unreachable_values"><a href="#val-get_dynamic_type_unreachable_values" class="anchor"></a><code><span><span class="keyword">val</span> get_dynamic_type_unreachable_values : 
+  <span><span><a href="../../IR/Var/index.html#type-t">IR.Var.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../../IR/Var/index.html#type-t">IR.Var.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> list</span></span></code></div><div class="spec-doc"><p>Given a list of variables, computes the unreachable values if the variables were removed from the stack, then return the dynamic types of those values if they are available</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-remove_vars"><a href="#val-remove_vars" class="anchor"></a><code><span><span class="keyword">val</span> remove_vars : 
+  <span><span><a href="../../IR/Var/index.html#type-t">IR.Var.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-check_address_escape"><a href="#val-check_address_escape" class="anchor"></a><code><span><span class="keyword">val</span> check_address_escape : 
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/index.html#type-t">IR.Procdesc.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-call_kind"><a href="#type-call_kind" class="anchor"></a><code><span><span class="keyword">type</span> call_kind</span><span> = </span><span>[ </span></code><ol><li id="type-call_kind.Closure" class="def variant constructor anchored"><a href="#type-call_kind.Closure" class="anchor"></a><code><span>| </span><span>`Closure <span class="keyword">of</span>
+  <span><span>(<a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> * <a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span></span></code></li><li id="type-call_kind.Var" class="def variant constructor anchored"><a href="#type-call_kind.Var" class="anchor"></a><code><span>| </span><span>`Var <span class="keyword">of</span> <a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a></span></code></li><li id="type-call_kind.ResolvedProcname" class="def variant constructor anchored"><a href="#type-call_kind.ResolvedProcname" class="anchor"></a><code><span>| </span><span>`ResolvedProcname</span></code></li></ol><code><span> ]</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_captured_actuals"><a href="#val-get_captured_actuals" class="anchor"></a><code><span><span class="keyword">val</span> get_captured_actuals : 
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">captured_formals</span>:<span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">call_kind</span>:<a href="#type-call_kind">call_kind</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">actuals</span>:
+    <span><span>(<span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+     * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="#type-t">t</a>
+   * <span><span>(<span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+       * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+      * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span>
+       list</span>)</span>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-check_used_as_branch_cond"><a href="#val-check_used_as_branch_cond" class="anchor"></a><code><span><span class="keyword">val</span> check_used_as_branch_cond : 
+  <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+   * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">pname_using_config</span>:<a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">branch_location</span>:<a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">location</span>:<a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseTrace/index.html#type-t">Pulselib.PulseBasicInterface.Trace.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span></span></code></div><div class="spec-doc"><p>Check and report config usage issue on the abstract value that is used as branch condition. If it is not certain that tha abstract value is a config, it adds <code>UsedAsBranchCond</code> attribute.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cleanup_attribute_store"><a href="#val-cleanup_attribute_store" class="anchor"></a><code><span><span class="keyword">val</span> cleanup_attribute_store : 
+  <span><a href="../../IR/Procdesc/index.html#type-t">IR.Procdesc.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">lhs_exp</span>:<a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">rhs_exp</span>:<a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="#type-t">t</a> <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseBasicInterface/index.html#type-sat_unsat_t">PulseBasicInterface.sat_unsat_t</a></span></span></code></div><div class="spec-doc"><p>When we find the store defer_ref = ref, where defer_ref has the cleanup attribute, we remove the allocation attribute from ref. This is because the cleanup attribute is often used to defer freeing variables, so we avoid false positives.</p></div></div></div></body></html>

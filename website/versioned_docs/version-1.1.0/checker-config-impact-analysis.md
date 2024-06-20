@@ -17,4 +17,4 @@ This checker collects functions whose execution isn't gated by certain pre-defin
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [CONFIG_IMPACT](/docs/all-issue-types#config_impact)
+- [CONFIG_IMPACT](/docs/1.1.0/all-issue-types#config_impact)

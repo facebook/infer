@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>PulseCallOperations (infer.Pulselib.PulseCallOperations)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Pulselib</a> &#x00BB; PulseCallOperations</nav><header class="odoc-preamble"><h1>Module <code><span>Pulselib.PulseCallOperations</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-call"><a href="#val-call" class="anchor"></a><code><span><span class="keyword">val</span> call : 
+  <span><span><a href="../PulseSummary/index.html#type-t">PulseSummary.t</a> <a href="../../Absint/InterproceduralAnalysis/index.html#type-t">Absint.InterproceduralAnalysis.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ret</span>:<span>(<a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">actuals</span>:
+    <span><span>(<span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+     * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">formals_opt</span>:<span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> list</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">call_kind</span>:<a href="../PulseOperations/index.html#type-call_kind">PulseOperations.call_kind</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?call_flags</span>:<a href="../../IR/CallFlags/index.html#type-t">IR.CallFlags.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseExecutionDomain/index.html#type-t">Pulselib.PulseDomainInterface.ExecutionDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    list</span>
+  * <a href="../PulseNonDisjunctiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.NonDisjDomain.t</a>
+  * <span><a href="../PulseInterproc/index.html#type-contradiction">PulseInterproc.contradiction</a> option</span>
+  * <span>[ `KnownCall <span>| `UnknownCall</span> ]</span></span></code></div><div class="spec-doc"><p>perform an interprocedural call: apply the summary for the call proc name passed as argument if it exists</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unknown_call"><a href="#val-unknown_call" class="anchor"></a><code><span><span class="keyword">val</span> unknown_call : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseCallEvent/index.html#type-t">Pulselib.PulseBasicInterface.CallEvent.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">ret</span>:<span>(<a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">actuals</span>:
+    <span><span>(<span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+     * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">formals_opt</span>:<span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> list</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a>
+    <a href="../PulseAccessResult/index.html#type-t">Pulselib.PulseDomainInterface.AccessResult.t</a></span>
+    <a href="../PulseSatUnsat/index.html#type-t">Pulselib.PulseBasicInterface.SatUnsat.t</a></span></span></code></div><div class="spec-doc"><p>performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and the return value as appropriate</p></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-GlobalForStats"><a href="#module-GlobalForStats" class="anchor"></a><code><span><span class="keyword">module</span> <a href="GlobalForStats/index.html">GlobalForStats</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div></div></body></html>

@@ -7,7 +7,7 @@ Here is an overview of the issue types currently reported by Infer.
 
 ## ARBITRARY_CODE_EXECUTION_UNDER_LOCK
 
-Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/checker-starvation).
+Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/1.1.0/checker-starvation).
 
 A call which may execute arbitrary code (such as registered, or chained, callbacks) is made while a lock is held.
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
@@ -36,7 +36,7 @@ public class NotUnderLock {
 
 ## ASSIGN_POINTER_WARNING
 
-Reported as "Assign Pointer Warning" by [linters](/docs/checker-linters).
+Reported as "Assign Pointer Warning" by [linters](/docs/1.1.0/checker-linters).
 
 This check fires when a pointer to an Obj-C object is tagged with an `assign`
 property (similar to the `-Warc-unsafe-retained-assign` compiler flag). Not
@@ -45,7 +45,7 @@ and use a dangling pointer.
 
 ## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE
 
-Reported as "Autoreleasepool Size Complexity Increase" by [cost](/docs/checker-cost).
+Reported as "Autoreleasepool Size Complexity Increase" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's size complexity of a
 program increases in degree: e.g. from constant to linear or from logarithmic to quadratic. This
@@ -54,7 +54,7 @@ two runs of infer on a file.
 
 ## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD
 
-Reported as "Autoreleasepool Size Complexity Increase Ui Thread" by [cost](/docs/checker-cost).
+Reported as "Autoreleasepool Size Complexity Increase Ui Thread" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's complexity of the
 procedure increases in degree **and** the procedure runs on the UI (main) thread.
@@ -67,14 +67,14 @@ Infer considers a method as running on the UI thread whenever:
 
 ## AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT
 
-Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/checker-cost).
+Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
 node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
 
 ## BAD_POINTER_COMPARISON
 
-Reported as "Bad Pointer Comparison" by [linters](/docs/checker-linters).
+Reported as "Bad Pointer Comparison" by [linters](/docs/1.1.0/checker-linters).
 
 Infer reports these warnings in Objective-C when a boxed primitive type such as
 `NSNumber *` is coerced to a boolean in a comparison. For example, consider the
@@ -93,12 +93,12 @@ compare `n` to `nil` or call an accessor to clarify her intention.
 
 ## BIABDUCTION_MEMORY_LEAK
 
-Reported as "Memory Leak" by [biabduction](/docs/checker-biabduction).
+Reported as "Memory Leak" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 See [MEMORY_LEAK](#memory_leak).
 ## BUFFER_OVERRUN_L1
 
-Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 Buffer overrun reports fall into several "buckets" corresponding to the expected precision of the
 report.  The higher the number, the more likely it is to be a false positive.
@@ -126,37 +126,37 @@ report.  The higher the number, the more likely it is to be a false positive.
 
 ## BUFFER_OVERRUN_L2
 
-Reported as "Buffer Overrun L2" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun L2" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L3
 
-Reported as "Buffer Overrun L3" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun L3" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L4
 
-Reported as "Buffer Overrun L4" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun L4" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_L5
 
-Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun L5" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_S2
 
-Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun S2" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## BUFFER_OVERRUN_U5
 
-Reported as "Buffer Overrun U5" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Buffer Overrun U5" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)
 ## CAPTURED_STRONG_SELF
 
-Reported as "Captured strongSelf" by [self-in-block](/docs/checker-self-in-block).
+Reported as "Captured strongSelf" by [self-in-block](/docs/1.1.0/checker-self-in-block).
 
 This will happen in one of two cases generally:
 
@@ -169,7 +169,7 @@ This will happen in one of two cases generally:
 
 ## CHECKERS_ALLOCATES_MEMORY
 
-Reported as "Allocates Memory" by [annotation-reachability](/docs/checker-annotation-reachability).
+Reported as "Allocates Memory" by [annotation-reachability](/docs/1.1.0/checker-annotation-reachability).
 
 A method annotated with `@NoAllocation` transitively calls `new`.
 
@@ -186,13 +186,13 @@ class C implements I {
 
 ## CHECKERS_ANNOTATION_REACHABILITY_ERROR
 
-Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/checker-annotation-reachability).
+Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/1.1.0/checker-annotation-reachability).
 
 A method annotated with an annotation `@A` transitively calls a method annotated `@B` where the combination of annotations is forbidden (for example, `@UiThread` calling `@WorkerThread`).
 
 ## CHECKERS_CALLS_EXPENSIVE_METHOD
 
-Reported as "Expensive Method Called" by [annotation-reachability](/docs/checker-annotation-reachability).
+Reported as "Expensive Method Called" by [annotation-reachability](/docs/1.1.0/checker-annotation-reachability).
 
 A method annotated with `@PerformanceCritical` transitively calls a method annotated `@Expensive`.
 
@@ -212,7 +212,7 @@ class C {
 
 ## CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED
 
-Reported as "Expensive Overrides Unannotated" by [annotation-reachability](/docs/checker-annotation-reachability).
+Reported as "Expensive Overrides Unannotated" by [annotation-reachability](/docs/1.1.0/checker-annotation-reachability).
 
 A method annotated with `@Expensive` overrides an un-annotated method.
 
@@ -231,7 +231,7 @@ class A implements I {
 
 ## CHECKERS_FRAGMENT_RETAINS_VIEW
 
-Reported as "Fragment Retains View" by [fragment-retains-view](/docs/checker-fragment-retains-view).
+Reported as "Fragment Retains View" by [fragment-retains-view](/docs/1.1.0/checker-fragment-retains-view).
 
 This error type is Android-specific. It fires when a `Fragment` type fails to
 nullify one or more of its declared `View` fields in `onDestroyView`. In
@@ -245,7 +245,7 @@ Action: Nullify the `View` in question in `onDestroyView`.
 
 ## CHECKERS_IMMUTABLE_CAST
 
-Reported as "Checkers Immutable Cast" by [immutable-cast](/docs/checker-immutable-cast).
+Reported as "Checkers Immutable Cast" by [immutable-cast](/docs/1.1.0/checker-immutable-cast).
 
 This error type is reported in Java. It fires when an immutable collection is
 returned from a method whose type is mutable.
@@ -265,7 +265,7 @@ collection so that it can be modified.
 
 ## CHECKERS_PRINTF_ARGS
 
-Reported as "Checkers Printf Args" by [printf-args](/docs/checker-printf-args).
+Reported as "Checkers Printf Args" by [printf-args](/docs/1.1.0/checker-printf-args).
 
 This error is reported when the argument types to a `printf` method do not match the format string.
 
@@ -279,32 +279,32 @@ Action: fix the mismatch between format string and argument types.
 
 ## COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
 
-Reported as "Component With Multiple Factory Methods" by [linters](/docs/checker-linters).
+Reported as "Component With Multiple Factory Methods" by [linters](/docs/1.1.0/checker-linters).
 
 
 ## CONDITION_ALWAYS_FALSE
 
-Reported as "Condition Always False" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Condition Always False" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 A condition expression is **always** evaluated to false.
 ## CONDITION_ALWAYS_TRUE
 
-Reported as "Condition Always True" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Condition Always True" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 A condition expression is **always** evaluated to true.
 ## CONFIG_CHECKS_BETWEEN_MARKERS
 
-Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/checker-config-checks-between-markers).
+Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/1.1.0/checker-config-checks-between-markers).
 
 A config checking is done between a marker's start and end
 ## CONFIG_IMPACT
 
-Reported as "Config Impact" by [config-impact-analysis](/docs/checker-config-impact-analysis).
+Reported as "Config Impact" by [config-impact-analysis](/docs/1.1.0/checker-config-impact-analysis).
 
 A function is called without a config check
 ## CONSTANT_ADDRESS_DEREFERENCE
 
-Reported as "Constant Address Dereference" by [pulse](/docs/checker-pulse).
+Reported as "Constant Address Dereference" by [pulse](/docs/1.1.0/checker-pulse).
 
 This is reported when an address obtained via a non-zero constant is
 dereferenced. If the address is zero then
@@ -315,17 +315,17 @@ type.
 
 ## CREATE_INTENT_FROM_URI
 
-Reported as "Create Intent From Uri" by [quandary](/docs/checker-quandary).
+Reported as "Create Intent From Uri" by [quandary](/docs/1.1.0/checker-quandary).
 
 Create an intent/start a component using a (possibly user-controlled) URI. may or may not be an issue depending on where the URI comes from.
 ## CROSS_SITE_SCRIPTING
 
-Reported as "Cross Site Scripting" by [quandary](/docs/checker-quandary).
+Reported as "Cross Site Scripting" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data flows into HTML; XSS risk.
 ## CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK
 
-Reported as "Cxx Reference Captured In Objc Block" by [linters](/docs/checker-linters).
+Reported as "Cxx Reference Captured In Objc Block" by [linters](/docs/1.1.0/checker-linters).
 
 With this check, Infer detects C++ references captured in a block. Doing this is
 almost always wrong. The reason is that C++ references are not managed pointers
@@ -344,12 +344,12 @@ const int copied_v = v;
 
 ## DANGLING_POINTER_DEREFERENCE
 
-Reported as "Dangling Pointer Dereference" by [biabduction](/docs/checker-biabduction).
+Reported as "Dangling Pointer Dereference" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 
 ## DEADLOCK
 
-Reported as "Deadlock" by [starvation](/docs/checker-starvation).
+Reported as "Deadlock" by [starvation](/docs/1.1.0/checker-starvation).
 
 This error is currently reported in Java. A deadlock occurs when two distinct
 threads try to acquire two locks in reverse orders. The following code
@@ -414,14 +414,14 @@ To suppress reports of deadlocks in a method `m()` use the
 
 ## DEAD_STORE
 
-Reported as "Dead Store" by [liveness](/docs/checker-liveness).
+Reported as "Dead Store" by [liveness](/docs/1.1.0/checker-liveness).
 
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
 
 ## DIRECT_ATOMIC_PROPERTY_ACCESS
 
-Reported as "Direct Atomic Property Access" by [linters](/docs/checker-linters).
+Reported as "Direct Atomic Property Access" by [linters](/docs/1.1.0/checker-linters).
 
 This check warns you when you are accessing an atomic property directly with an
 ivar. This makes the atomic property not atomic anymore. So potentially you may
@@ -431,7 +431,7 @@ To fix the problem you need to access properties with their getter or setter.
 
 ## DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER
 
-Reported as "Discouraged Weak Property Custom Setter" by [linters](/docs/checker-linters).
+Reported as "Discouraged Weak Property Custom Setter" by [linters](/docs/1.1.0/checker-linters).
 
 This check warns you when you have a custom setter for a weak property. When
 compiled with Automatic Reference Counting (ARC, `-fobj-arc`) ARC may set the
@@ -500,17 +500,17 @@ Note that the custom setter was only invoked once.
 
 ## DIVIDE_BY_ZERO
 
-Reported as "Divide By Zero" by [biabduction](/docs/checker-biabduction).
+Reported as "Divide By Zero" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 
 ## DOTNET_RESOURCE_LEAK
 
-Reported as "Dotnet Resource Leak" by [dotnet-resource-leak](/docs/checker-dotnet-resource-leak).
+Reported as "Dotnet Resource Leak" by [dotnet-resource-leak](/docs/1.1.0/checker-dotnet-resource-leak).
 
 Resource leak checker for .NET.
 ## EMPTY_VECTOR_ACCESS
 
-Reported as "Empty Vector Access" by [biabduction](/docs/checker-biabduction).
+Reported as "Empty Vector Access" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 This error type is reported only in C++, in versions >= C++11.
 
@@ -527,17 +527,17 @@ int foo(){
 
 ## ERADICATE_ANNOTATION_GRAPH
 
-Reported as "Annotation Graph" by [eradicate](/docs/checker-eradicate).
+Reported as "Annotation Graph" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_BAD_NESTED_CLASS_ANNOTATION
 
-Reported as "@Nullsafe annotation is inconsistent with outer class" by [eradicate](/docs/checker-eradicate).
+Reported as "@Nullsafe annotation is inconsistent with outer class" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_CONDITION_REDUNDANT
 
-Reported as "Condition Redundant" by [eradicate](/docs/checker-eradicate).
+Reported as "Condition Redundant" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 This report is inactive by default. Condition (x != null) or (x == null) when x
 cannot be null: the first condition is always true and the second is always
@@ -564,7 +564,7 @@ relevant. If the annotations are correct, you can remove the redundant case.
 
 ## ERADICATE_FIELD_NOT_INITIALIZED
 
-Reported as "Field Not Initialized" by [eradicate](/docs/checker-eradicate).
+Reported as "Field Not Initialized" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 The constructor does not initialize a field f which is not annotated with
 @Nullable
@@ -586,7 +586,7 @@ annotated with @Nullable.
 
 ## ERADICATE_FIELD_NOT_NULLABLE
 
-Reported as "Field Not Nullable" by [eradicate](/docs/checker-eradicate).
+Reported as "Field Not Nullable" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 An assignment x.f = v where v could be null and field f is not annotated with
 @Nullable.
@@ -611,12 +611,12 @@ values.
 
 ## ERADICATE_FIELD_OVER_ANNOTATED
 
-Reported as "Field Over Annotated" by [eradicate](/docs/checker-eradicate).
+Reported as "Field Over Annotated" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION
 
-Reported as "Inconsistent Subclass Parameter Annotation" by [eradicate](/docs/checker-eradicate).
+Reported as "Inconsistent Subclass Parameter Annotation" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 A parameter of the overridden method is missing a @Nullable annotation present in the superclass.
 
@@ -661,7 +661,7 @@ public class Main {
 
 ## ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION
 
-Reported as "Inconsistent Subclass Return Annotation" by [eradicate](/docs/checker-eradicate).
+Reported as "Inconsistent Subclass Return Annotation" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 The return type of the overridden method is annotated @Nullable, but the
 corresponding method in the superclass is not.
@@ -705,17 +705,17 @@ class Main {
 
 ## ERADICATE_META_CLASS_CAN_BE_NULLSAFE
 
-Reported as "Class has 0 issues and can be marked @Nullsafe" by [eradicate](/docs/checker-eradicate).
+Reported as "Class has 0 issues and can be marked @Nullsafe" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_META_CLASS_IS_NULLSAFE
 
-Reported as "Class is marked @Nullsafe and has 0 issues" by [eradicate](/docs/checker-eradicate).
+Reported as "Class is marked @Nullsafe and has 0 issues" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_META_CLASS_NEEDS_IMPROVEMENT
 
-Reported as "Class needs improvement to become @Nullsafe" by [eradicate](/docs/checker-eradicate).
+Reported as "Class needs improvement to become @Nullsafe" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 Reported when the class either:
 - has at least one nullability issue, or
@@ -723,12 +723,12 @@ Reported when the class either:
 
 ## ERADICATE_NULLABLE_DEREFERENCE
 
-Reported as "Nullable Dereference" by [eradicate](/docs/checker-eradicate).
+Reported as "Nullable Dereference" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_PARAMETER_NOT_NULLABLE
 
-Reported as "Parameter Not Nullable" by [eradicate](/docs/checker-eradicate).
+Reported as "Parameter Not Nullable" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 Method call x.m(..., v, ...) where v can be null and the corresponding parameter
 in method m is not annotated with @Nullable
@@ -755,12 +755,12 @@ of method m, as that code must now deal with null values.
 
 ## ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION
 
-Reported as "@Nullsafe annotation is redundant" by [eradicate](/docs/checker-eradicate).
+Reported as "@Nullsafe annotation is redundant" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_RETURN_NOT_NULLABLE
 
-Reported as "Return Not Nullable" by [eradicate](/docs/checker-eradicate).
+Reported as "Return Not Nullable" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 Method m can return null, but the method's return type is not annotated with
 @Nullable
@@ -783,7 +783,7 @@ deal with null values.
 
 ## ERADICATE_RETURN_OVER_ANNOTATED
 
-Reported as "Return Over Annotated" by [eradicate](/docs/checker-eradicate).
+Reported as "Return Over Annotated" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 This report is inactive by default. Method m is annotated with @Nullable but the
 method cannot return null
@@ -808,17 +808,17 @@ annotation.
 
 ## ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE
 
-Reported as "Nullsafe mode: unchecked usage of a value" by [eradicate](/docs/checker-eradicate).
+Reported as "Nullsafe mode: unchecked usage of a value" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE
 
-Reported as "Nullsafe mode: unchecked usage of unvetted third-party" by [eradicate](/docs/checker-eradicate).
+Reported as "Nullsafe mode: unchecked usage of unvetted third-party" by [eradicate](/docs/1.1.0/checker-eradicate).
 
 
 ## EXECUTION_TIME_COMPLEXITY_INCREASE
 
-Reported as "Execution Time Complexity Increase" by [cost](/docs/checker-cost).
+Reported as "Execution Time Complexity Increase" by [cost](/docs/1.1.0/checker-cost).
 
 Infer reports this issue when the execution time complexity of a
 program increases in degree: e.g. from constant to linear or from
@@ -830,7 +830,7 @@ two runs of infer on a file.
 
 ## EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD
 
-Reported as "Execution Time Complexity Increase Ui Thread" by [cost](/docs/checker-cost).
+Reported as "Execution Time Complexity Increase Ui Thread" by [cost](/docs/1.1.0/checker-cost).
 
 Infer reports this issue when the execution time complexity of the procedure increases in degree **and** the procedure runs on the UI (main) thread.
 
@@ -846,7 +846,7 @@ Infer considers a method as running on the UI thread whenever:
 
 ## EXECUTION_TIME_UNREACHABLE_AT_EXIT
 
-Reported as "Execution Time Unreachable At Exit" by [cost](/docs/checker-cost).
+Reported as "Execution Time Unreachable At Exit" by [cost](/docs/1.1.0/checker-cost).
 
 This issue type indicates that the program's execution doesn't reach
 the exit node. Hence, we cannot compute a static bound for the
@@ -867,23 +867,23 @@ void infeasible_path_unreachable() {
 
 ## EXPENSIVE_AUTORELEASEPOOL_SIZE
 
-Reported as "Expensive Autoreleasepool Size" by [cost](/docs/checker-cost).
+Reported as "Expensive Autoreleasepool Size" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] This warning indicates that non-constant and non-top ObjC autoreleasepool's size in
 the procedure.  By default, this issue type is disabled.
 
 ## EXPENSIVE_EXECUTION_TIME
 
-Reported as "Expensive Execution Time" by [cost](/docs/checker-cost).
+Reported as "Expensive Execution Time" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] This warning indicates that non-constant and non-top execution time complexity of
 the procedure.  By default, this issue type is disabled.
 
 ## EXPENSIVE_LOOP_INVARIANT_CALL
 
-Reported as "Expensive Loop Invariant Call" by [loop-hoisting](/docs/checker-loop-hoisting).
+Reported as "Expensive Loop Invariant Call" by [loop-hoisting](/docs/1.1.0/checker-loop-hoisting).
 
-We report this issue type when a function is [loop-invariant](/docs/all-issue-types#invariant_call) and also expensive (i.e. at least has linear complexity as determined by the [cost](/docs/checker-cost) analysis).
+We report this issue type when a function is [loop-invariant](/docs/1.1.0/all-issue-types#invariant_call) and also expensive (i.e. at least has linear complexity as determined by the [cost](/docs/1.1.0/checker-cost) analysis).
 
 ```java
 int incr(int x) {
@@ -908,12 +908,12 @@ void symbolic_expensive_hoist(int size) {
 
 ## EXPOSED_INSECURE_INTENT_HANDLING
 
-Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/checker-quandary).
+Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/1.1.0/checker-quandary).
 
 Undocumented.
 ## GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 
-Reported as "Global Variable Initialized With Function Or Method Call" by [linters](/docs/checker-linters).
+Reported as "Global Variable Initialized With Function Or Method Call" by [linters](/docs/1.1.0/checker-linters).
 
 This checker warns you when the initialization of global variable contain a
 method or function call. The warning wants to make you aware that some functions
@@ -922,7 +922,7 @@ these initializations can slow down the start-up time of an app.
 
 ## GUARDEDBY_VIOLATION
 
-Reported as "GuardedBy Violation" by [racerd](/docs/checker-racerd).
+Reported as "GuardedBy Violation" by [racerd](/docs/1.1.0/checker-racerd).
 
 A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
 
@@ -943,7 +943,7 @@ Action: Protect the offending access by acquiring the lock indicated by the `@Gu
 
 ## GUARDEDBY_VIOLATION_NULLSAFE
 
-Reported as "GuardedBy Violation in `@Nullsafe` Class" by [racerd](/docs/checker-racerd).
+Reported as "GuardedBy Violation in `@Nullsafe` Class" by [racerd](/docs/1.1.0/checker-racerd).
 
 A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
 
@@ -964,7 +964,7 @@ Action: Protect the offending access by acquiring the lock indicated by the `@Gu
 
 ## IMPURE_FUNCTION
 
-Reported as "Impure Function" by [impurity](/docs/checker-impurity).
+Reported as "Impure Function" by [impurity](/docs/1.1.0/checker-impurity).
 
 This issue type indicates impure functions. For instance, below functions would be marked as impure:
 ```java
@@ -979,7 +979,7 @@ void makeAllZero_impure(ArrayList<Foo> list) {
 
 ## INEFFICIENT_KEYSET_ITERATOR
 
-Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/checker-inefficient-keyset-iterator).
+Reported as "Inefficient Keyset Iterator" by [inefficient-keyset-iterator](/docs/1.1.0/checker-inefficient-keyset-iterator).
 
 This issue is raised when
 - iterating over a HashMap with `keySet()` iterator
@@ -1010,39 +1010,39 @@ void efficient_loop_ok(HashMap<String, Integer> testMap) {
 
 ## INFERBO_ALLOC_IS_BIG
 
-Reported as "Inferbo Alloc Is Big" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Inferbo Alloc Is Big" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 `malloc` is passed a large constant value.
 ## INFERBO_ALLOC_IS_NEGATIVE
 
-Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 `malloc` is called with a negative size.
 ## INFERBO_ALLOC_IS_ZERO
 
-Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 `malloc` is called with a zero size.
 ## INFERBO_ALLOC_MAY_BE_BIG
 
-Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 `malloc` *may* be called with a large value.
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
-Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 `malloc` *may* be called with a negative value.
 ## INFINITE_AUTORELEASEPOOL_SIZE
 
-Reported as "Infinite Autoreleasepool Size" by [cost](/docs/checker-cost).
+Reported as "Infinite Autoreleasepool Size" by [cost](/docs/1.1.0/checker-cost).
 
 \[EXPERIMENTAL\] This warning indicates that Infer was not able to determine a static upper bound on
 the ObjC autoreleasepool's size in the procedure. By default, this issue type is disabled.
 
 ## INFINITE_EXECUTION_TIME
 
-Reported as "Infinite Execution Time" by [cost](/docs/checker-cost).
+Reported as "Infinite Execution Time" by [cost](/docs/1.1.0/checker-cost).
 
 This warning indicates that Infer was not able to determine a static
 upper bound on the execution cost of the procedure. By default, this
@@ -1066,12 +1066,12 @@ Consequently, we report an `INFINITE_EXECUTION_TIME`, corresponding to the bigge
 
 ## INSECURE_INTENT_HANDLING
 
-Reported as "Insecure Intent Handling" by [quandary](/docs/checker-quandary).
+Reported as "Insecure Intent Handling" by [quandary](/docs/1.1.0/checker-quandary).
 
 Undocumented.
 ## INTEGER_OVERFLOW_L1
 
-Reported as "Integer Overflow L1" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Integer Overflow L1" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 Integer overflows reports fall into several "buckets" corresponding to the expected precision of the
 report. The higher the number, the more likely it is to be a false positive.
@@ -1090,33 +1090,33 @@ report. The higher the number, the more likely it is to be a false positive.
 
 ## INTEGER_OVERFLOW_L2
 
-Reported as "Integer Overflow L2" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Integer Overflow L2" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_L5
 
-Reported as "Integer Overflow L5" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Integer Overflow L5" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTEGER_OVERFLOW_U5
 
-Reported as "Integer Overflow U5" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Integer Overflow U5" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 See [INTEGER_OVERFLOW_L1](#integer_overflow_l1)
 ## INTERFACE_NOT_THREAD_SAFE
 
-Reported as "Interface Not Thread Safe" by [racerd](/docs/checker-racerd).
+Reported as "Interface Not Thread Safe" by [racerd](/docs/1.1.0/checker-racerd).
 
 This error indicates that you have invoked an interface method not annotated
 with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is
 marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the
 interface or to the interface method. For background on why these annotations
 are needed, see the detailed explanation
-[here](/docs/checker-racerd#interface-not-thread-safe).
+[here](/docs/1.1.0/checker-racerd#interface-not-thread-safe).
 
 ## INVARIANT_CALL
 
-Reported as "Invariant Call" by [loop-hoisting](/docs/checker-loop-hoisting).
+Reported as "Invariant Call" by [loop-hoisting](/docs/1.1.0/checker-loop-hoisting).
 
 We report this issue type when a function call is loop-invariant and hoistable, i.e.
 - the function has no side side effects (pure)
@@ -1140,12 +1140,12 @@ void invariant_hoist(int size) {
 
 ## IPC_ON_UI_THREAD
 
-Reported as "Ipc On Ui Thread" by [starvation](/docs/checker-starvation).
+Reported as "Ipc On Ui Thread" by [starvation](/docs/1.1.0/checker-starvation).
 
 A blocking `Binder` IPC call occurs on the UI thread.
 ## IVAR_NOT_NULL_CHECKED
 
-Reported as "Ivar Not Null Checked" by [biabduction](/docs/checker-biabduction).
+Reported as "Ivar Not Null Checked" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 This error type is only reported in Objective-C. This is similar to Null
 dereference, but Infer hasn't found a whole trace where the error can happen,
@@ -1164,17 +1164,17 @@ is not called with `nil`.
 
 ## JAVASCRIPT_INJECTION
 
-Reported as "Javascript Injection" by [quandary](/docs/checker-quandary).
+Reported as "Javascript Injection" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data flows into JavaScript.
 ## LAB_RESOURCE_LEAK
 
-Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/checker-resource-leak-lab).
+Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/1.1.0/checker-resource-leak-lab).
 
 Toy issue.
 ## LOCKLESS_VIOLATION
 
-Reported as "Lockless Violation" by [starvation](/docs/checker-starvation).
+Reported as "Lockless Violation" by [starvation](/docs/1.1.0/checker-starvation).
 
 A method implements an interface signature annotated with `@Lockless` but which transitively acquires a lock.
 
@@ -1197,7 +1197,7 @@ class C implements I {
 
 ## LOCK_CONSISTENCY_VIOLATION
 
-Reported as "Lock Consistency Violation" by [racerd](/docs/checker-racerd).
+Reported as "Lock Consistency Violation" by [racerd](/docs/1.1.0/checker-racerd).
 
 This is an error reported on C++ and Objective C classes whenever:
 
@@ -1221,12 +1221,12 @@ container (an array, a vector, etc).
 
 ## LOGGING_PRIVATE_DATA
 
-Reported as "Logging Private Data" by [quandary](/docs/checker-quandary).
+Reported as "Logging Private Data" by [quandary](/docs/1.1.0/checker-quandary).
 
 Undocumented.
 ## MEMORY_LEAK
 
-Reported as "Memory Leak" by [pulse](/docs/checker-pulse).
+Reported as "Memory Leak" by [pulse](/docs/1.1.0/checker-pulse).
 
 ### Memory leak in C
 
@@ -1255,12 +1255,12 @@ objects from Core Foundation or Core Graphics don't get released.
 
 ## MISSING_REQUIRED_PROP
 
-Reported as "Missing Required Prop" by [litho-required-props](/docs/checker-litho-required-props).
+Reported as "Missing Required Prop" by [litho-required-props](/docs/1.1.0/checker-litho-required-props).
 
 As explained by the analysis.
 ## MIXED_SELF_WEAKSELF
 
-Reported as "Mixed Self WeakSelf" by [self-in-block](/docs/checker-self-in-block).
+Reported as "Mixed Self WeakSelf" by [self-in-block](/docs/1.1.0/checker-self-in-block).
 
 This happens when an Objective-C block captures both `self` and `weakSelf`, a
 weak pointer to `self`. Possibly the developer meant to capture only `weakSelf`
@@ -1269,7 +1269,7 @@ instead of `strongSelf`. In this case, this could cause a retain cycle.
 
 ## MODIFIES_IMMUTABLE
 
-Reported as "Modifies Immutable" by [impurity](/docs/checker-impurity).
+Reported as "Modifies Immutable" by [impurity](/docs/1.1.0/checker-impurity).
 
 This issue type indicates modifications to fields marked as @Immutable. For instance, below function `mutateArray` would be marked as modifying immutable field `testArray`:
 ```java
@@ -1287,7 +1287,7 @@ This issue type indicates modifications to fields marked as @Immutable. For inst
 
 ## MULTIPLE_WEAKSELF
 
-Reported as "Multiple WeakSelf Use" by [self-in-block](/docs/checker-self-in-block).
+Reported as "Multiple WeakSelf Use" by [self-in-block](/docs/1.1.0/checker-self-in-block).
 
 An Objective-C block uses `weakSelf` more than once. This could lead to
 unexpected behaviour. Even if `weakSelf` is not nil in the first use, it could
@@ -1297,18 +1297,18 @@ in the block.
 
 ## MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
 
-Reported as "Mutable Local Variable In Component File" by [linters](/docs/checker-linters).
+Reported as "Mutable Local Variable In Component File" by [linters](/docs/1.1.0/checker-linters).
 
 [Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
 
 ## NIL_MESSAGING_TO_NON_POD
 
-Reported as "Nil Messaging To Non Pod" by [pulse](/docs/checker-pulse).
+Reported as "Nil Messaging To Non Pod" by [pulse](/docs/1.1.0/checker-pulse).
 
 See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## NULLPTR_DEREFERENCE
 
-Reported as "Nullptr Dereference" by [pulse](/docs/checker-pulse).
+Reported as "Nullptr Dereference" by [pulse](/docs/1.1.0/checker-pulse).
 
 Infer reports null dereference bugs in Java, C, C++, and Objective-C
 when it is possible that the null pointer is dereferenced, leading to
@@ -1411,12 +1411,12 @@ passed as argument. Here are some examples:
 
 ## NULL_DEREFERENCE
 
-Reported as "Null Dereference" by [biabduction](/docs/checker-biabduction).
+Reported as "Null Dereference" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## OPTIONAL_EMPTY_ACCESS
 
-Reported as "Optional Empty Access" by [pulse](/docs/checker-pulse).
+Reported as "Optional Empty Access" by [pulse](/docs/1.1.0/checker-pulse).
 
 Optional Empty Access warnings are reported when we try to retrieve the value of a [`folly::Optional`](https://github.com/facebook/folly/blob/master/folly/Optional.h) when it is empty (i.e. `folly::none`).
 
@@ -1472,7 +1472,7 @@ int value_no_check() {
 
 ## PARAMETER_NOT_NULL_CHECKED
 
-Reported as "Parameter Not Null Checked" by [biabduction](/docs/checker-biabduction).
+Reported as "Parameter Not Null Checked" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 This error type is reported only in Objective-C. It is similar to Null
 dereference, but Infer hasn't found a whole trace where the error can happen,
@@ -1501,7 +1501,7 @@ system), that the argument won't be `nil`. This will silence the warning.
 
 ## POINTER_TO_CONST_OBJC_CLASS
 
-Reported as "Pointer To Const Objc Class" by [linters](/docs/checker-linters).
+Reported as "Pointer To Const Objc Class" by [linters](/docs/1.1.0/checker-linters).
 
 In Objective-C, `const Class *` represents a mutable pointer pointing to an
 Objective-C class where the ivars cannot be changed. More useful is
@@ -1510,7 +1510,7 @@ changed.
 
 ## PREMATURE_NIL_TERMINATION_ARGUMENT
 
-Reported as "Premature Nil Termination Argument" by [biabduction](/docs/checker-biabduction).
+Reported as "Premature Nil Termination Argument" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 This error type is reported in C and Objective-C. In many variadic methods,
 `nil` is used to signify the end of the list of input objects. This is similar
@@ -1530,12 +1530,12 @@ created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
 ## PULSE_UNINITIALIZED_VALUE
 
-Reported as "Uninitialized Value" by [pulse](/docs/checker-pulse).
+Reported as "Uninitialized Value" by [pulse](/docs/1.1.0/checker-pulse).
 
 See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
 ## PURE_FUNCTION
 
-Reported as "Pure Function" by [purity](/docs/checker-purity).
+Reported as "Pure Function" by [purity](/docs/1.1.0/checker-purity).
 
 This issue type indicates pure functions. For instance, below functions would be marked as pure:
 
@@ -1573,12 +1573,12 @@ void set_impure(int x, int y) {
 
 ## QUANDARY_TAINT_ERROR
 
-Reported as "Taint Error" by [quandary](/docs/checker-quandary).
+Reported as "Taint Error" by [quandary](/docs/1.1.0/checker-quandary).
 
 Generic taint error when nothing else fits.
 ## RESOURCE_LEAK
 
-Reported as "Resource Leak" by [biabduction](/docs/checker-biabduction).
+Reported as "Resource Leak" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 Infer reports resource leaks in C, Objective-C and Java. In general, resources
 are entities such as files, sockets, connections, etc, that need to be closed
@@ -1856,7 +1856,7 @@ useful, but you cannot use it blindly when you see a resource-allocation site.
 
 ## RETAIN_CYCLE
 
-Reported as "Retain Cycle" by [biabduction](/docs/checker-biabduction).
+Reported as "Retain Cycle" by [biabduction](/docs/1.1.0/checker-biabduction).
 
 A retain cycle is a situation when object A retains object B, and object B
 retains object A at the same time. Here is an example:
@@ -1891,27 +1891,27 @@ hierarchy:
 
 ## SHELL_INJECTION
 
-Reported as "Shell Injection" by [quandary](/docs/checker-quandary).
+Reported as "Shell Injection" by [quandary](/docs/1.1.0/checker-quandary).
 
 Environment variable or file data flowing to shell.
 ## SHELL_INJECTION_RISK
 
-Reported as "Shell Injection Risk" by [quandary](/docs/checker-quandary).
+Reported as "Shell Injection Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 Code injection if the caller of the endpoint doesn't sanitize on its end.
 ## SQL_INJECTION
 
-Reported as "Sql Injection" by [quandary](/docs/checker-quandary).
+Reported as "Sql Injection" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted and unescaped data flows to SQL.
 ## SQL_INJECTION_RISK
 
-Reported as "Sql Injection Risk" by [quandary](/docs/checker-quandary).
+Reported as "Sql Injection Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted and unescaped data flows to SQL.
 ## STACK_VARIABLE_ADDRESS_ESCAPE
 
-Reported as "Stack Variable Address Escape" by [pulse](/docs/checker-pulse).
+Reported as "Stack Variable Address Escape" by [pulse](/docs/1.1.0/checker-pulse).
 
 Reported when an address pointing into the stack of the current
 function will escape to its calling context. Such addresses will
@@ -1929,7 +1929,7 @@ int* foo() {
 
 ## STARVATION
 
-Reported as "UI Thread Starvation" by [starvation](/docs/checker-starvation).
+Reported as "UI Thread Starvation" by [starvation](/docs/1.1.0/checker-starvation).
 
 This error is reported in Java, and specifically on Android. These reports are
 triggered when a method that runs on the UI thread may block, thus potentially
@@ -1989,7 +1989,7 @@ include the JAR files in `infer/annotations` for this annotation to work.
 
 ## STATIC_INITIALIZATION_ORDER_FIASCO
 
-Reported as "Static Initialization Order Fiasco" by [siof](/docs/checker-siof).
+Reported as "Static Initialization Order Fiasco" by [siof](/docs/1.1.0/checker-siof).
 
 This error is reported in C++. It fires when the initialization of a static
 variable `A`, accesses a static variable `B` from another translation unit
@@ -2001,7 +2001,7 @@ For more technical definition and techniques to avoid/remediate, see the
 
 ## STRICT_MODE_VIOLATION
 
-Reported as "Strict Mode Violation" by [starvation](/docs/checker-starvation).
+Reported as "Strict Mode Violation" by [starvation](/docs/1.1.0/checker-starvation).
 
 Android has a feature called
 [strict mode](https://developer.android.com/reference/android/os/StrictMode),
@@ -2015,7 +2015,7 @@ To suppress this warning, it's enough to annotate the offending method with
 
 ## STRONG_DELEGATE_WARNING
 
-Reported as "Strong Delegate Warning" by [linters](/docs/checker-linters).
+Reported as "Strong Delegate Warning" by [linters](/docs/1.1.0/checker-linters).
 
 This check warns you when you have a property called delegate or variations
 thereof which is declared strong. The idea is that delegates should generally be
@@ -2023,7 +2023,7 @@ weak, otherwise this may cause retain cycles.
 
 ## STRONG_SELF_NOT_CHECKED
 
-Reported as "StrongSelf Not Checked" by [self-in-block](/docs/checker-self-in-block).
+Reported as "StrongSelf Not Checked" by [self-in-block](/docs/1.1.0/checker-self-in-block).
 
 When a block captures `weakSelf` in the following pattern:
 
@@ -2040,11 +2040,11 @@ otherwise this could cause a crash because the weak pointer `weakSelf` could be
 
 ## THREAD_SAFETY_VIOLATION
 
-Reported as "Thread Safety Violation" by [racerd](/docs/checker-racerd).
+Reported as "Thread Safety Violation" by [racerd](/docs/1.1.0/checker-racerd).
 
 This warning indicates a potential data race in Java. The analyser is called
 RacerD and this section gives brief but a mostly complete description of its
-features. See the [RacerD page](/docs/checker-racerd) for more in-depth information and
+features. See the [RacerD page](/docs/1.1.0/checker-racerd) for more in-depth information and
 examples.
 
 ### Thread-safety: What is a data race
@@ -2136,17 +2136,17 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 
 ## THREAD_SAFETY_VIOLATION_NULLSAFE
 
-Reported as "Thread Safety Violation in `@Nullsafe` Class" by [racerd](/docs/checker-racerd).
+Reported as "Thread Safety Violation in `@Nullsafe` Class" by [racerd](/docs/1.1.0/checker-racerd).
 
 A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class.
 ## TOPL_ERROR
 
-Reported as "Topl Error" by [topl](/docs/checker-topl).
+Reported as "Topl Error" by [topl](/docs/1.1.0/checker-topl).
 
 A violation of a Topl property (user-specified).
 ## UNINITIALIZED_VALUE
 
-Reported as "Uninitialized Value" by [uninit](/docs/checker-uninit).
+Reported as "Uninitialized Value" by [uninit](/docs/1.1.0/checker-uninit).
 
 A value is read before it has been initialized. For example, in C:
 
@@ -2170,79 +2170,79 @@ void foo() {
 
 ## UNREACHABLE_CODE
 
-Reported as "Unreachable Code" by [bufferoverrun](/docs/checker-bufferoverrun).
+Reported as "Unreachable Code" by [bufferoverrun](/docs/1.1.0/checker-bufferoverrun).
 
 A program point is unreachable.
 ## UNTRUSTED_BUFFER_ACCESS
 
-Reported as "Untrusted Buffer Access" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Buffer Access" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data of any kind flowing to buffer.
 ## UNTRUSTED_DESERIALIZATION
 
-Reported as "Untrusted Deserialization" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Deserialization" by [quandary](/docs/1.1.0/checker-quandary).
 
 User-controlled deserialization.
 ## UNTRUSTED_DESERIALIZATION_RISK
 
-Reported as "Untrusted Deserialization Risk" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Deserialization Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 User-controlled deserialization
 ## UNTRUSTED_ENVIRONMENT_CHANGE_RISK
 
-Reported as "Untrusted Environment Change Risk" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Environment Change Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 User-controlled environment mutation.
 ## UNTRUSTED_FILE
 
-Reported as "Untrusted File" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted File" by [quandary](/docs/1.1.0/checker-quandary).
 
 User-controlled file creation; may be vulnerable to path traversal and more.
 ## UNTRUSTED_FILE_RISK
 
-Reported as "Untrusted File Risk" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted File Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 User-controlled file creation; may be vulnerable to path traversal and more.
 ## UNTRUSTED_HEAP_ALLOCATION
 
-Reported as "Untrusted Heap Allocation" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Heap Allocation" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS.
 ## UNTRUSTED_INTENT_CREATION
 
-Reported as "Untrusted Intent Creation" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Intent Creation" by [quandary](/docs/1.1.0/checker-quandary).
 
 Creating an Intent from user-controlled data.
 ## UNTRUSTED_URL_RISK
 
-Reported as "Untrusted Url Risk" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Url Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted flag, environment variable, or file data flowing to URL.
 ## UNTRUSTED_VARIABLE_LENGTH_ARRAY
 
-Reported as "Untrusted Variable Length Array" by [quandary](/docs/checker-quandary).
+Reported as "Untrusted Variable Length Array" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack buffer that's too large will cause a stack overflow.
 ## USER_CONTROLLED_SQL_RISK
 
-Reported as "User Controlled Sql Risk" by [quandary](/docs/checker-quandary).
+Reported as "User Controlled Sql Risk" by [quandary](/docs/1.1.0/checker-quandary).
 
 Untrusted data flows to SQL (no injection risk).
 ## USE_AFTER_DELETE
 
-Reported as "Use After Delete" by [pulse](/docs/checker-pulse).
+Reported as "Use After Delete" by [pulse](/docs/1.1.0/checker-pulse).
 
 An address that was invalidated by a call to `delete` in C++ is dereferenced.
 
 ## USE_AFTER_FREE
 
-Reported as "Use After Free" by [pulse](/docs/checker-pulse).
+Reported as "Use After Free" by [pulse](/docs/1.1.0/checker-pulse).
 
 An address that was invalidated by a call to `free` in C is dereferenced.
 
 ## USE_AFTER_LIFETIME
 
-Reported as "Use After Lifetime" by [pulse](/docs/checker-pulse).
+Reported as "Use After Lifetime" by [pulse](/docs/1.1.0/checker-pulse).
 
 The lifetime of an object has ended but that object is being
 accessed. For example, the address of a variable holding a C++ object
@@ -2261,7 +2261,7 @@ void foo() {
 
 ## VECTOR_INVALIDATION
 
-Reported as "Vector Invalidation" by [pulse](/docs/checker-pulse).
+Reported as "Vector Invalidation" by [pulse](/docs/1.1.0/checker-pulse).
 
 An address pointing into a C++ `std::vector` might have become
 invalid. This can happen when an address is taken into a vector, then
@@ -2285,7 +2285,7 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
 
 ## WEAK_SELF_IN_NO_ESCAPE_BLOCK
 
-Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/checker-self-in-block).
+Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/1.1.0/checker-self-in-block).
 
 In many methods that take a block as an argument, the block position is
 annotated with NS_NOESCAPE to mark that the block passed to this method won't be

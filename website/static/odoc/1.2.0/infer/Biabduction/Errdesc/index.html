@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Errdesc (infer.Biabduction.Errdesc)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Biabduction</a> &#x00BB; Errdesc</nav><header class="odoc-preamble"><h1>Module <code><span>Biabduction.Errdesc</span></code></h1><p>Create descriptions of analysis errors</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-vpath_find"><a href="#val-vpath_find" class="anchor"></a><code><span><span class="keyword">val</span> vpath_find : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../IR/DecompiledExp/index.html#type-vpath">IR.DecompiledExp.vpath</a> * <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> option</span></span></code></div><div class="spec-doc"><p>find the dexp, if any, where the given value is stored also return the type of the value if found</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-hpred_is_open_resource"><a href="#val-hpred_is_open_resource" class="anchor"></a><code><span><span class="keyword">val</span> hpred_is_open_resource : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Predicates/index.html#type-hpred">Predicates.hpred</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/PredSymb/index.html#type-resource">IR.PredSymb.resource</a> option</span></span></code></div><div class="spec-doc"><p>Check whether the hpred is a |-&gt; representing a resource in the Racquire state</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_array_access"><a href="#val-explain_array_access" class="anchor"></a><code><span><span class="keyword">val</span> explain_array_access : 
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../Absint/Localise/index.html#type-deref_str">Absint.Localise.deref_str</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>Produce a description of the array access performed in the current instruction, if any.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_class_cast_exception"><a href="#val-explain_class_cast_exception" class="anchor"></a><code><span><span class="keyword">val</span> explain_class_cast_exception : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>explain a class cast exception</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_dereference"><a href="#val-explain_dereference" class="anchor"></a><code><span><span class="keyword">val</span> explain_dereference : 
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?use_buckets</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?is_nullable</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?is_premature_nil</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../Absint/Localise/index.html#type-deref_str">Absint.Localise.deref_str</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>Produce a description of which expression is dereferenced in the current instruction, if any.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_dereference_as_caller_expression"><a href="#val-explain_dereference_as_caller_expression" class="anchor"></a><code><span><span class="keyword">val</span> explain_dereference_as_caller_expression : 
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?use_buckets</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../Absint/Localise/index.html#type-deref_str">Absint.Localise.deref_str</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'b</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>return a description explaining value <code>exp</code> in <code>prop</code> in terms of a source expression using the formal parameters of the call</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_divide_by_zero"><a href="#val-explain_divide_by_zero" class="anchor"></a><code><span><span class="keyword">val</span> explain_divide_by_zero : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>explain a division by zero</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_condition_always_true_false"><a href="#val-explain_condition_always_true_false" class="anchor"></a><code><span><span class="keyword">val</span> explain_condition_always_true_false : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/IntLit/index.html#type-t">IR.IntLit.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>explain a condition which is always true or false</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-explain_leak"><a href="#val-explain_leak" class="anchor"></a><code><span><span class="keyword">val</span> explain_leak : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Predicates/index.html#type-hpred">Predicates.hpred</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">'a</span> <a href="../Prop/index.html#type-t">Prop.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/PredSymb/index.html#type-t">IR.PredSymb.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string option</span> <span class="arrow">&#45;&gt;</span></span>
+  bool * <a href="../../Absint/Localise/index.html#type-error_desc">Absint.Localise.error_desc</a></span></code></div><div class="spec-doc"><p>Produce a description of a leak by looking at the current state. If the current instruction is a variable nullify, blame the variable. If it is an abstraction, blame any variable nullify at the current node. If there is an alloc attribute, print the function call and line number.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-warning_err"><a href="#val-warning_err" class="anchor"></a><code><span><span class="keyword">val</span> warning_err : 
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'a</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit)</span> <a href="../../IStdlib/IStd/index.html#type-format">IStdlib.IStd.format</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'a</span></span></code></div><div class="spec-doc"><p>warn at the given location</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-find_outermost_dereference"><a href="#val-find_outermost_dereference" class="anchor"></a><code><span><span class="keyword">val</span> find_outermost_dereference : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procdesc/Node/index.html#type-t">IR.Procdesc.Node.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/DecompiledExp/index.html#type-t">IR.DecompiledExp.t</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-access_opt"><a href="#val-access_opt" class="anchor"></a><code><span><span class="keyword">val</span> access_opt : 
+  <span><span class="optlabel">?is_nullable</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Predicates/index.html#type-inst">Predicates.inst</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../Absint/Localise/index.html#type-access">Absint.Localise.access</a> option</span></span></code></div></div></div></body></html>

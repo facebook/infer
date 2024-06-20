@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>TextualTypeVerification (infer.Textuallib.TextualTypeVerification)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Textuallib</a> &#x00BB; TextualTypeVerification</nav><header class="odoc-preamble"><h1>Module <code><span>Textuallib.TextualTypeVerification</span></code></h1><p>This module provides basic type verification for Textual programs.</p><p>Each function is type-checked independently, starting with the declared types of globals, parameters and locals.</p><p>The type of logical variables is infered by traversing the instructions in a suitable order (dfs). This may fail if a logical variable is assigned twice with two different types.</p></header><div class="odoc-content"><p>Subtyping is quite limiting because we do no try to understand the class hierarchy. It can be specified by the following rules</p><pre class="language-ocaml"><code>----------------------------
+       t &lt;= t
+
+----------------------------
+     t &lt;= Void
+                             ( Void acts as an escape hatch; we may make the
+----------------------------   type system stricter later on)
+      Void &lt;= t
+
+----------------------------
+    Null &lt;= *t
+
+      t1 &lt;= t2
+----------------------------
+     *t1 &lt;= *t2
+
+      t1 &lt;= t2
+---------------------------- (to please the Java type system but we may need
+    t1[] &lt;= t2[]              an othe decision when dealing with more langages)
+
+
+---------------------------- (this is where the type system becomes weak)
+Struct name1 &lt;= Struct name2</code></pre><p>See function <code>compat ~assigned ~given</code> that implements <code>given &lt;= assigned</code>.</p><p>We can compute a type for each well-typed expression, using</p><ul><li>the type of program variable (given by G)</li><li>the type of logical variables (given L, and inferred during instruction typing)</li></ul><pre class="language-ocaml"><code>------------------------------------------------
+               G, L |- Int _ : Int
+
+------------------------------------------------
+             G, L |- Float _ : Float
+
+------------------------------------------------ (this is the purpose of the type Null
+              G, L |- Null : Null                 we don't expect the programmer to write
+                                                  this type himself )
+
+------------------------------------------------
+              G, L |- Str _ : *String
+
+------------------------------------------------
+             G, L |- Var id : L[id]
+
+------------------------------------------------ ([Lvar] constructor)
+             G, L |- &amp;var : *G[id]
+
+        G, L |- exp : t t &lt;= *(Struct name)
+------------------------------------------------ (we can't  check if the field exists in
+          G, L |- exp.f : *typeof(f)               name of or of it superclass)
+
+    G, L |- exp1 : t1       t1 &lt;= *t[]
+              G, L |- exp2 : Int
+------------------------------------------------
+             G, L |- exp1[exp2] : *t
+
+     proc has type [x1:t1'; ...; xn:tn'] -&gt; t
+     G, L |- exp1 : t1          t1 &lt;= t1'
+                 ...
+     G, L |- expn : tn          tn &lt;= tn'
+------------------------------------------------ (we have special cases for builtins)
+       G, L |- proc(exp1, ..., expn) : t
+
+------------------------------------------------
+     G, L |- Typ t : the_type_of_all_types</code></pre><p>See function <code>typeof_exp</code>.</p><p>The judgement is of the form G, L1 |- instr : L2 because we compute logical variable types in a flow sensitive way.</p><pre class="language-ocaml"><code>      G, L |- exp : t'       t' &lt;= t
+            L[id] = t or undefined
+-----------------------------------------------
+      G, L |- id: t = load exp : L[id=t]
+
+     G, L |- exp1 : t1        *t &lt;= t1
+     G, L |- exp2 : t2        t2 &lt;= t
+-----------------------------------------------
+    G, L |- store exp1 &lt;- exp2: t : L
+
+             G, L |- exp : Int
+-----------------------------------------------
+         G, L |- Prune exp : L
+
+            G, L |- exp : t
+-----------------------------------------------
+       G, L |- id = exp : L[id=t]</code></pre><p>The judgement is of the form G, L, N, rt |- terminator with</p><ul><li>rt the declared result type of the current function</li><li>and N the types of each node SSA parameters (if any).</li></ul><pre class="language-ocaml"><code>         G, L |- exp : t          t &lt;= rt
+-----------------------------------------------------
+               G, L, N, rt |- Ret exp
+
+   lexp1 = exp1, ..., expk
+       G, L |- exp1 : t1           t1 &lt;= N[lab1</code></pre><p>1] ... G, L |- expk : tk tk &lt;= N<code>lab1</code><code>k</code> ... lexpn = ... ... ------------------------------------------------------ G, L, rt, N |- Jump lab1(lexp1), ..., labn(lexpn)</p><p>G, L |- exp : *t ----------------------------------------------------- G, L, N, rt |- Throw exp</p><p>----------------------------------------------------- G, L, N, rt |- Unreachable</p><div class="odoc-spec"><div class="spec type anchored" id="type-error"><a href="#type-error" class="anchor"></a><code><span><span class="keyword">type</span> error</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pp_error"><a href="#val-pp_error" class="anchor"></a><code><span><span class="keyword">val</span> pp_error : <span><a href="../Textual/SourceFile/index.html#type-t">Textual.SourceFile.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="xref-unresolved">Stdlib</span>.Format.formatter <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-error">error</a> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-run"><a href="#val-run" class="anchor"></a><code><span><span class="keyword">val</span> run : 
+  <span><a href="../Textual/Module/index.html#type-t">Textual.Module.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../TextualDecls/index.html#type-t">TextualDecls.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../Textual/Module/index.html#type-t">Textual.Module.t</a>, <span><a href="#type-error">error</a> list</span>)</span> <span class="xref-unresolved">IStdlib</span>.IStd.Result.t</span></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-type_check_result"><a href="#type-type_check_result" class="anchor"></a><code><span><span class="keyword">type</span> type_check_result</span><span> = </span></code><ol><li id="type-type_check_result.Ok" class="def variant constructor anchored"><a href="#type-type_check_result.Ok" class="anchor"></a><code><span>| </span><span><span class="constructor">Ok</span> <span class="keyword">of</span> <a href="../Textual/Module/index.html#type-t">Textual.Module.t</a></span></code></li><li id="type-type_check_result.Decl_errors" class="def variant constructor anchored"><a href="#type-type_check_result.Decl_errors" class="anchor"></a><code><span>| </span><span><span class="constructor">Decl_errors</span> <span class="keyword">of</span> <span><a href="../TextualDecls/index.html#type-error">TextualDecls.error</a> list</span></span></code></li><li id="type-type_check_result.Type_errors" class="def variant constructor anchored"><a href="#type-type_check_result.Type_errors" class="anchor"></a><code><span>| </span><span><span class="constructor">Type_errors</span> <span class="keyword">of</span> <span><a href="#type-error">error</a> list</span></span></code></li></ol></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-type_check"><a href="#val-type_check" class="anchor"></a><code><span><span class="keyword">val</span> type_check : <span><a href="../Textual/Module/index.html#type-t">Textual.Module.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-type_check_result">type_check_result</a></span></code></div></div></div></body></html>

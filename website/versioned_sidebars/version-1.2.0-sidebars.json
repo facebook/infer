@@ -1,0 +1,69 @@
+{
+  "docs": {
+    "Quick Start": [
+      "getting-started",
+      "hello-world"
+    ],
+    "User Guide": [
+      "infer-workflow",
+      "analyzing-apps-or-projects",
+      "steps-for-ci",
+      {
+        "Infer Manuals": [
+          "man-infer",
+          "man-infer-analyze",
+          "man-infer-capture",
+          "man-infer-compile",
+          "man-infer-debug",
+          "man-infer-explore",
+          "man-infer-help",
+          "man-infer-report",
+          "man-infer-reportdiff",
+          "man-infer-run"
+        ]
+      }
+    ],
+    "Analyses and Issue Types": [
+      "all-checkers",
+      "all-categories",
+      "all-issue-types",
+      "checker-annotation-reachability",
+      "checker-biabduction",
+      "checker-bufferoverrun",
+      "checker-config-impact-analysis",
+      "checker-cost",
+      "checker-datalog",
+      "checker-fragment-retains-view",
+      "checker-impurity",
+      "checker-inefficient-keyset-iterator",
+      "checker-lineage",
+      "checker-litho-required-props",
+      "checker-liveness",
+      "checker-loop-hoisting",
+      "checker-parameter-not-null-checked",
+      "checker-printf-args",
+      "checker-pulse",
+      "checker-purity",
+      "checker-quandary",
+      "checker-racerd",
+      "checker-resource-leak-lab",
+      "checker-sil-validation",
+      "checker-siof",
+      "checker-scope-leakage",
+      "checker-self-in-block",
+      "checker-starvation",
+      "checker-topl"
+    ],
+    "Foundations": [
+      "about-Infer",
+      "separation-logic-and-bi-abduction"
+    ],
+    "Contribute": [
+      "absint-framework",
+      "internal-API"
+    ],
+    "Versions": [
+      "versions"
+    ]
+  }
+}

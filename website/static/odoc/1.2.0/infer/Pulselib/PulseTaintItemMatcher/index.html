@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>PulseTaintItemMatcher (infer.Pulselib.PulseTaintItemMatcher)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">infer</a> &#x00BB; <a href="../index.html">Pulselib</a> &#x00BB; PulseTaintItemMatcher</nav><header class="odoc-preamble"><h1>Module <code><span>Pulselib.PulseTaintItemMatcher</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-taint_match"><a href="#type-taint_match" class="anchor"></a><code><span><span class="keyword">type</span> taint_match</span><span> = </span><span>{</span></code><ol><li id="type-taint_match.taint" class="def record field anchored"><a href="#type-taint_match.taint" class="anchor"></a><code><span>taint : <a href="../PulseTaintItem/index.html#type-t">Pulselib.PulseBasicInterface.TaintItem.t</a>;</span></code></li><li id="type-taint_match.value_origin" class="def record field anchored"><a href="#type-taint_match.value_origin" class="anchor"></a><code><span>value_origin : <a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>;</span></code></li><li id="type-taint_match.typ" class="def record field anchored"><a href="#type-taint_match.typ" class="anchor"></a><code><span>typ : <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>;</span></code></li><li id="type-taint_match.exp" class="def record field anchored"><a href="#type-taint_match.exp" class="anchor"></a><code><span>exp : <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> option</span>;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-procedure_matches"><a href="#val-procedure_matches" class="anchor"></a><code><span><span class="keyword">val</span> procedure_matches : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?block_passed_to</span>:<a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?proc_attributes</span>:<a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><span class="type-var">'a</span> <a href="../../Absint/ProcnameDispatcher/Call/FuncArg/index.html#type-t">Absint.ProcnameDispatcher.Call.FuncArg.t</a></span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-procedure_matches_any"><a href="#val-procedure_matches_any" class="anchor"></a><code><span><span class="keyword">val</span> procedure_matches_any : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  bool</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-procedure_matching_kinds"><a href="#val-procedure_matching_kinds" class="anchor"></a><code><span><span class="keyword">val</span> procedure_matching_kinds : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseTaintConfig/Kind/Set/index.html#type-t">Pulselib.PulseBasicInterface.TaintConfig.Kind.Set.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-match_procedure_call"><a href="#val-match_procedure_call" class="anchor"></a><code><span><span class="keyword">val</span> match_procedure_call : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">Pulselib.PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?proc_attributes</span>:<a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">has_added_return_param</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>
+    <a href="../../Absint/ProcnameDispatcher/Call/FuncArg/index.html#type-t">Absint.ProcnameDispatcher.Call.FuncArg.t</a></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<a href="../../IR/Ident/index.html#type-t">IR.Ident.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> * <span><a href="#type-taint_match">taint_match</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-match_procedure"><a href="#val-match_procedure" class="anchor"></a><code><span><span class="keyword">val</span> match_procedure : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>
+    <a href="../../Absint/ProcnameDispatcher/Call/FuncArg/index.html#type-t">Absint.ProcnameDispatcher.Call.FuncArg.t</a></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> * <span><a href="#type-taint_match">taint_match</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-match_block"><a href="#val-match_block" class="anchor"></a><code><span><span class="keyword">val</span> match_block : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?proc_attributes</span>:<a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span><a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>
+    <a href="../../Absint/ProcnameDispatcher/Call/FuncArg/index.html#type-t">Absint.ProcnameDispatcher.Call.FuncArg.t</a></span>
+    list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-procedure_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.procedure_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> * <span><a href="#type-taint_match">taint_match</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-match_field"><a href="#val-match_field" class="anchor"></a><code><span><span class="keyword">val</span> match_field : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Fieldname/index.html#type-t">IR.Fieldname.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseValueOrigin/index.html#type-t">Pulselib.PulseBasicInterface.ValueOrigin.t</a>
+    <a href="../../Absint/ProcnameDispatcher/Call/FuncArg/index.html#type-t">Absint.ProcnameDispatcher.Call.FuncArg.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../PulseTaintConfig/Unit/index.html#type-field_unit">Pulselib.PulseBasicInterface.TaintConfig.Unit.field_unit</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseAbductiveDomain/index.html#type-t">Pulselib.PulseDomainInterface.AbductiveDomain.t</a> * <span><a href="#type-taint_match">taint_match</a> list</span></span></code></div></div></div></body></html>

@@ -114,4 +114,4 @@ For several examples, see https://github.com/facebook/infer/tree/main/infer/test
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [TOPL_ERROR](/docs/all-issue-types#topl_error)
+- [TOPL_ERROR](/docs/1.1.0/all-issue-types#topl_error)
