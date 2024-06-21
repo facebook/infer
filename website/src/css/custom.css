@@ -6,7 +6,8 @@
  */
 
 :root {
-  --ifm-color-primary: #6223b0;
+  --infer-purple: #6223b0;
+  --ifm-color-primary: var(--infer-purple);
   --ifm-color-primary-dark: #58209e;
   --ifm-color-primary-darker: #4e1c8d;
   --ifm-color-primary-darkest: #45197b;
@@ -17,8 +18,17 @@
   --ifm-code-font-size: 95%;
 }
 
+[data-theme='dark'] {
+  --ifm-color-primary: var(--ifm-color-primary-lightest);
+}
+
 .large-math {
   vertical-align: text-bottom;
+}
+
+.hero {
+  --ifm-hero-text-color: var(--ifm-color-gray-0);
+  --ifm-hero-background-color: var(--infer-purple);
 }
 
 /* Announcement banner */
