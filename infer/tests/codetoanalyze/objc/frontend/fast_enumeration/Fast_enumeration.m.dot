@@ -3,27 +3,10 @@ digraph cfg {
 "dealloc#A#[instance].cb1004dc8428c0dc_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#A#[instance].cb1004dc8428c0dc_1" -> "dealloc#A#[instance].cb1004dc8428c0dc_4" ;
+	 "dealloc#A#[instance].cb1004dc8428c0dc_1" -> "dealloc#A#[instance].cb1004dc8428c0dc_2" ;
 "dealloc#A#[instance].cb1004dc8428c0dc_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#A#[instance].cb1004dc8428c0dc_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 43, column 1]\n  n$1=*n$0.reverseObjectEnumerator:NSEnumerator* [line 43, column 1]\n  n$2=_fun_NSEnumerator.dealloc(n$1:NSEnumerator*) [line 43, column 1]\n " shape="box"]
-	
-
-	 "dealloc#A#[instance].cb1004dc8428c0dc_3" -> "dealloc#A#[instance].cb1004dc8428c0dc_2" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_4" [label="4:  Call dealloc \n   n$3=*&self:A* [line 15, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:A*,(n$4 - 1):unsigned int) [line 15, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n " shape="box"]
-	
-
-	 "dealloc#A#[instance].cb1004dc8428c0dc_4" -> "dealloc#A#[instance].cb1004dc8428c0dc_5" ;
-	 "dealloc#A#[instance].cb1004dc8428c0dc_4" -> "dealloc#A#[instance].cb1004dc8428c0dc_6" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 15, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#A#[instance].cb1004dc8428c0dc_5" -> "dealloc#A#[instance].cb1004dc8428c0dc_3" ;
-"dealloc#A#[instance].cb1004dc8428c0dc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 15, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#A#[instance].cb1004dc8428c0dc_6" -> "dealloc#A#[instance].cb1004dc8428c0dc_2" ;
 "fast_loop:#A(class NSArray)#[inst.7f100ac4a3f5bf98_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* 0$?%__sil_tmp__enumerator_n$1:NSEnumerator* size:int \n  " color=yellow style=filled]
 	
 

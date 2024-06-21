@@ -26,27 +26,10 @@ digraph cfg {
 "dealloc#User#[instance].16076f2da996d0f7_1" [label="1: Start User.dealloc\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#User#[instance].16076f2da996d0f7_1" -> "dealloc#User#[instance].16076f2da996d0f7_4" ;
+	 "dealloc#User#[instance].16076f2da996d0f7_1" -> "dealloc#User#[instance].16076f2da996d0f7_2" ;
 "dealloc#User#[instance].16076f2da996d0f7_2" [label="2: Exit User.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#User#[instance].16076f2da996d0f7_3" [label="3:  Call dealloc \n   n$0=*&self:User* [line 59, column 1]\n  n$1=*n$0._name:NSString* [line 59, column 1]\n  n$2=_fun_NSString.dealloc(n$1:NSString*) [line 59, column 1]\n " shape="box"]
-	
-
-	 "dealloc#User#[instance].16076f2da996d0f7_3" -> "dealloc#User#[instance].16076f2da996d0f7_2" ;
-"dealloc#User#[instance].16076f2da996d0f7_4" [label="4:  Call dealloc \n   n$3=*&self:User* [line 27, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:User*) [line 27, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:User*,(n$4 - 1):unsigned int) [line 27, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:User*) [line 27, column 1]\n " shape="box"]
-	
-
-	 "dealloc#User#[instance].16076f2da996d0f7_4" -> "dealloc#User#[instance].16076f2da996d0f7_5" ;
-	 "dealloc#User#[instance].16076f2da996d0f7_4" -> "dealloc#User#[instance].16076f2da996d0f7_6" ;
-"dealloc#User#[instance].16076f2da996d0f7_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 27, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#User#[instance].16076f2da996d0f7_5" -> "dealloc#User#[instance].16076f2da996d0f7_3" ;
-"dealloc#User#[instance].16076f2da996d0f7_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 27, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#User#[instance].16076f2da996d0f7_6" -> "dealloc#User#[instance].16076f2da996d0f7_2" ;
 "initWithName:#User(class NSString.f98f0adce27c19e1_1" [label="1: Start User.initWithName:\nFormals:  self:User* <_Nullable> name:NSString*\nLocals: \nReturn annotations: <_Nullable> \n  " color=yellow style=filled]
 	
 

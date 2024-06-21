@@ -74,6 +74,6 @@ void memory_leak_raii_leak_bad() {
 /* a goes out of scope, this causes a->_container->_buffer to be leaked.
 However, dealloc of Arrai is called which triggers dealloc of BufferContainer1
 to be called and _buffer is freed there, so no leak. */
-void memory_leak_raii_no_leak_in_object_tree_ok() {
+void memory_leak_raii_no_leak_in_object_tree_ok_FP() {
   Araii* a = [[Araii alloc] init];
 }

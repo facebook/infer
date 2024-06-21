@@ -3,27 +3,10 @@ digraph cfg {
 "dealloc#ArcA#[instance].5f1e5f20486ad787_1" [label="1: Start ArcA.dealloc\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_1" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_4" ;
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_1" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_2" ;
 "dealloc#ArcA#[instance].5f1e5f20486ad787_2" [label="2: Exit ArcA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#ArcA#[instance].5f1e5f20486ad787_3" [label="3:  Call dealloc \n   n$0=*&self:ArcA* [line 31, column 1]\n  n$1=*n$0._son:ArcA* [line 31, column 1]\n  n$2=_fun_ArcA.dealloc(n$1:ArcA*) [line 31, column 1]\n " shape="box"]
-	
-
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_3" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_2" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787_4" [label="4:  Call dealloc \n   n$3=*&self:ArcA* [line 17, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:ArcA*,(n$4 - 1):unsigned int) [line 17, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n " shape="box"]
-	
-
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_5" ;
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_6" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 17, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_5" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_3" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 17, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787_6" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_2" ;
 "getS#ArcA#[instance].d8dec537eb5599fb_1" [label="1: Start ArcA.getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 

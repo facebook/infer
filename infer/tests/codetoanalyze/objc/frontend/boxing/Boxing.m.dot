@@ -3,27 +3,10 @@ digraph cfg {
 "dealloc#Boxing#[instance].ecddeeb128263449_1" [label="1: Start Boxing.dealloc\nFormals:  self:Boxing*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Boxing#[instance].ecddeeb128263449_1" -> "dealloc#Boxing#[instance].ecddeeb128263449_4" ;
+	 "dealloc#Boxing#[instance].ecddeeb128263449_1" -> "dealloc#Boxing#[instance].ecddeeb128263449_2" ;
 "dealloc#Boxing#[instance].ecddeeb128263449_2" [label="2: Exit Boxing.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Boxing#[instance].ecddeeb128263449_3" [label="3:  Call dealloc \n  " shape="box"]
-	
-
-	 "dealloc#Boxing#[instance].ecddeeb128263449_3" -> "dealloc#Boxing#[instance].ecddeeb128263449_2" ;
-"dealloc#Boxing#[instance].ecddeeb128263449_4" [label="4:  Call dealloc \n   n$0=*&self:Boxing* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Boxing*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n " shape="box"]
-	
-
-	 "dealloc#Boxing#[instance].ecddeeb128263449_4" -> "dealloc#Boxing#[instance].ecddeeb128263449_5" ;
-	 "dealloc#Boxing#[instance].ecddeeb128263449_4" -> "dealloc#Boxing#[instance].ecddeeb128263449_6" ;
-"dealloc#Boxing#[instance].ecddeeb128263449_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Boxing#[instance].ecddeeb128263449_5" -> "dealloc#Boxing#[instance].ecddeeb128263449_3" ;
-"dealloc#Boxing#[instance].ecddeeb128263449_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Boxing#[instance].ecddeeb128263449_6" -> "dealloc#Boxing#[instance].ecddeeb128263449_2" ;
 "getBool#Boxing#[instance].a6504cbc3d82569d_1" [label="1: Start Boxing.getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 

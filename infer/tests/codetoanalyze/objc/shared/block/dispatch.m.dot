@@ -240,27 +240,10 @@ digraph cfg {
 "dealloc#DispatchA#[instance].708db887ebf0bc31_1" [label="1: Start DispatchA.dealloc\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_1" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_4" ;
+	 "dealloc#DispatchA#[instance].708db887ebf0bc31_1" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_2" ;
 "dealloc#DispatchA#[instance].708db887ebf0bc31_2" [label="2: Exit DispatchA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#DispatchA#[instance].708db887ebf0bc31_3" [label="3:  Call dealloc \n  " shape="box"]
-	
-
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_3" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_2" ;
-"dealloc#DispatchA#[instance].708db887ebf0bc31_4" [label="4:  Call dealloc \n   n$0=*&self:DispatchA* [line 18, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:DispatchA*) [line 18, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:DispatchA*,(n$1 - 1):unsigned int) [line 18, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:DispatchA*) [line 18, column 1]\n " shape="box"]
-	
-
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_4" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_5" ;
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_4" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_6" ;
-"dealloc#DispatchA#[instance].708db887ebf0bc31_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 18, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_5" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_3" ;
-"dealloc#DispatchA#[instance].708db887ebf0bc31_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 18, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#DispatchA#[instance].708db887ebf0bc31_6" -> "dealloc#DispatchA#[instance].708db887ebf0bc31_2" ;
 "init#DispatchA#[instance].b4cccba7a4dc88f9_1" [label="1: Start DispatchA.init\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 

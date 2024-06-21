@@ -154,27 +154,10 @@ digraph cfg {
 "dealloc#Auto#[instance].c3f7b6216f9a7edb_1" [label="1: Start Auto.dealloc\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_1" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_4" ;
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_1" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_2" ;
 "dealloc#Auto#[instance].c3f7b6216f9a7edb_2" [label="2: Exit Auto.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Auto#[instance].c3f7b6216f9a7edb_3" [label="3:  Call dealloc \n   n$0=*&self:Auto* [line 25, column 1]\n  n$1=*n$0._son:Auto* [line 25, column 1]\n  n$2=_fun_Auto.dealloc(n$1:Auto*) [line 25, column 1]\n " shape="box"]
-	
-
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_3" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_2" ;
-"dealloc#Auto#[instance].c3f7b6216f9a7edb_4" [label="4:  Call dealloc \n   n$3=*&self:Auto* [line 18, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:Auto*,(n$4 - 1):unsigned int) [line 18, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n " shape="box"]
-	
-
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_4" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_5" ;
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_4" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_6" ;
-"dealloc#Auto#[instance].c3f7b6216f9a7edb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 18, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_5" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_3" ;
-"dealloc#Auto#[instance].c3f7b6216f9a7edb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 18, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Auto#[instance].c3f7b6216f9a7edb_6" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb_2" ;
 "setSon:#Auto(class Auto)#[instanc.3d71c66b9bada0f1_1" [label="1: Start Auto.setSon:\nFormals:  self:Auto* son:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 

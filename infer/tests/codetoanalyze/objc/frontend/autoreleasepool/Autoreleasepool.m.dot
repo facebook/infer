@@ -3,27 +3,10 @@ digraph cfg {
 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_1" [label="1: Start Autoreleasepool.dealloc\nFormals:  self:Autoreleasepool*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_1" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_4" ;
+	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_1" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_2" ;
 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_2" [label="2: Exit Autoreleasepool.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_3" [label="3:  Call dealloc \n  " shape="box"]
-	
-
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_3" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_2" ;
-"dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_4" [label="4:  Call dealloc \n   n$0=*&self:Autoreleasepool* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Autoreleasepool*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Autoreleasepool*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Autoreleasepool*) [line 14, column 1]\n " shape="box"]
-	
-
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_4" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_5" ;
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_4" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_6" ;
-"dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_5" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_3" ;
-"dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_6" -> "dealloc#Autoreleasepool#[instance.ed5a856d53a72eba_2" ;
 "test#Autoreleasepool#[instance].5dda95b0791185fb_1" [label="1: Start Autoreleasepool.test\nFormals:  self:Autoreleasepool*\nLocals:  i:int \n  " color=yellow style=filled]
 	
 

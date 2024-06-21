@@ -81,27 +81,10 @@ digraph cfg {
 "dealloc#PropertyA#[instance].a406af22c8aadb53_1" [label="1: Start PropertyA.dealloc\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_1" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_4" ;
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_1" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_2" ;
 "dealloc#PropertyA#[instance].a406af22c8aadb53_2" [label="2: Exit PropertyA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#PropertyA#[instance].a406af22c8aadb53_3" [label="3:  Call dealloc \n   n$0=*&self:PropertyA* [line 38, column 1]\n  n$1=*n$0._last_name:PropertyA* [line 38, column 1]\n  n$2=_fun_PropertyA.dealloc(n$1:PropertyA*) [line 38, column 1]\n  n$3=*&self:PropertyA* [line 38, column 1]\n  n$4=*n$3._name:PropertyA* [line 38, column 1]\n  n$5=_fun_PropertyA.dealloc(n$4:PropertyA*) [line 38, column 1]\n  n$6=*&self:PropertyA* [line 38, column 1]\n  n$7=*n$6._child:PropertyA* [line 38, column 1]\n  n$8=_fun_PropertyA.dealloc(n$7:PropertyA*) [line 38, column 1]\n " shape="box"]
-	
-
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_3" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_2" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53_4" [label="4:  Call dealloc \n   n$9=*&self:PropertyA* [line 22, column 1]\n  n$10=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n  n$11=_fun___objc_set_ref_count(n$9:PropertyA*,(n$10 - 1):unsigned int) [line 22, column 1]\n  n$12=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n " shape="box"]
-	
-
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_5" ;
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_6" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$12 == 0), true); [line 22, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_5" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_3" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$12 != 0), false); [line 22, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53_6" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_2" ;
 "init#PropertyA#[instance].f6d33a23a7d0df10_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 

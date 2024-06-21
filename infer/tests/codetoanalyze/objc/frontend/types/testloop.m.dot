@@ -40,25 +40,8 @@ digraph cfg {
 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_1" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" ;
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_1" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" ;
 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" [label="3:  Call dealloc \n  " shape="box"]
-	
-
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" ;
-"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" [label="4:  Call dealloc \n   n$0=*&self:FBScrollViewDelegateProxy* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:FBScrollViewDelegateProxy*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n " shape="box"]
-	
-
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" ;
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" ;
-"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" ;
-"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
-	
-
-	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" ;
 }

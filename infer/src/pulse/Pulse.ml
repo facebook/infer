@@ -1215,7 +1215,10 @@ module PulseTransferFunctions = struct
          be destroyed in the future. In that case, we would miss the opportunity
          to properly dealloc the object if it were removed from the stack,
          leading to potential FP memory leaks *)
-      let vars = PulseRefCounting.removable_vars tenv astate vars in
+      let vars =
+        if Config.objc_synthesize_dealloc then PulseRefCounting.removable_vars tenv astate vars
+        else vars
+      in
       (* Prepare objects in memory before calling any dealloc:
          - set the number of unique strong references accessible from the
           stack to each object's respective __infer_mode_reference_count
@@ -1226,7 +1229,9 @@ module PulseTransferFunctions = struct
          The return variables of the calls to __objc_set_ref_count must be
          removed *)
       let astates, non_disj, ret_vars =
-        set_ref_counts astate astate_n location path analysis_data
+        if Config.objc_synthesize_dealloc then
+          set_ref_counts astate astate_n location path analysis_data
+        else ([ContinueProgram astate], astate_n, [])
       in
       (* Here we add and execute calls to dealloc for Objective-C objects
          before removing the variables. The return variables of those calls

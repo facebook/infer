@@ -2291,6 +2291,14 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
 
 
+and objc_synthesize_dealloc =
+  CLOpt.mk_bool ~long:"objc-synthesize-dealloc"
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    ~default:false
+    "If enabled, the capture tries to synthesize code in the dealloc methods of Objective-C \
+     classes corresponding to what the compiler does."
+
+
 and oom_threshold =
   CLOpt.mk_int_opt ~long:"oom-threshold"
     "Available memory threshold (in MB) below which multi-worker scheduling throttles back work. \
@@ -4406,6 +4414,8 @@ and nullable_annotation = !nullable_annotation
 and only_cheap_debug = !only_cheap_debug
 
 and oom_threshold = !oom_threshold
+
+and objc_synthesize_dealloc = !objc_synthesize_dealloc
 
 and pmd_xml = !pmd_xml
 

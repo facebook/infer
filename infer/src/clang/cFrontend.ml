@@ -42,7 +42,7 @@ let init_global_state_capture () =
 
 
 let do_objc_preanalyses cfg tenv =
-  CAddImplicitDeallocImpl.process cfg tenv ;
+  if Config.objc_synthesize_dealloc then CAddImplicitDeallocImpl.process cfg tenv ;
   CAddImplicitGettersSetters.process cfg tenv ;
   CReplaceDynamicDispatch.process cfg ;
   CViewControllerLifecycle.process cfg tenv
