@@ -337,6 +337,8 @@ let analyze_and_report ~changed_files mode =
       ()
   | (Analyze | Run), _ when Config.invalidate_only ->
       ()
+  | (Analyze | Run), Hackc _ when Config.hack_verify_capture_only ->
+      ()
   | (Analyze | Run), _ ->
       if SourceFiles.is_empty () then error_nothing_to_analyze mode
       else (

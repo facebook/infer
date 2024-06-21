@@ -2834,6 +2834,10 @@ INTERNAL OPTIONS
        --hack-naming-table-reset
            Cancel the effect of --hack-naming-table.
 
+       --hack-verify-capture-only
+           Activates: Run capture without saving anything into capture DB
+           (Conversely: --no-hack-verify-capture-only)
+
        --hackc-binary path
            Specify hackc binary to use
 

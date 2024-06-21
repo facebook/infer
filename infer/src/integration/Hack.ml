@@ -181,7 +181,7 @@ end = struct
     let res =
       match trans with
       | Ok sil ->
-          TextualFile.capture ~use_global_tenv:true sil ;
+          if not Config.hack_verify_capture_only then TextualFile.capture ~use_global_tenv:true sil ;
           Ok sil.tenv
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(log_error sourcefile) ;
@@ -356,32 +356,34 @@ let process_output_in_parallel ic =
                L.die ExternalError "Worker %d did't return a path to its output folder" worker_num )
   in
   CaptureWorker.write_infer_deps worker_outs ;
-  MergeCapture.merge_captured_targets ~root:Config.results_dir ;
-  let tenv =
-    Tenv.load_global ()
-    |> Option.value_or_thunk ~default:(fun () ->
-           L.die InternalError "Global tenv not found after capture merge" )
-  in
-  L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
-  ( if Config.debug_level_capture > 0 then (
-      let types_with_source, types_without_source =
-        Tenv.fold tenv ~init:(Typ.Name.Set.empty, Typ.Name.Set.empty)
-          ~f:(fun name {Struct.source_file} (with_, without) ->
-            match source_file with
-            | None ->
-                (with_, Typ.Name.Set.add name without)
-            | Some _ ->
-                (Typ.Name.Set.add name with_, without) )
-      in
-      L.progress "Tenv types with source: %a.@\n" Typ.Name.Set.pp types_with_source ;
-      L.progress "Tenv types without source: %a.@\n" Typ.Name.Set.pp types_without_source )
-    else
-      let nb_types_without_source =
-        Tenv.fold tenv ~init:0 ~f:(fun _name {Struct.source_file} counter ->
-            match source_file with None -> 1 + counter | Some _ -> counter )
-      in
-      L.progress "Tenv contains %d types without source file@\n" nb_types_without_source ) ;
-  (tenv, !n_captured, !n_error)
+  if not Config.hack_verify_capture_only then (
+    MergeCapture.merge_captured_targets ~root:Config.results_dir ;
+    let tenv =
+      Tenv.load_global ()
+      |> Option.value_or_thunk ~default:(fun () ->
+             L.die InternalError "Global tenv not found after capture merge" )
+    in
+    L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
+    ( if Config.debug_level_capture > 0 then (
+        let types_with_source, types_without_source =
+          Tenv.fold tenv ~init:(Typ.Name.Set.empty, Typ.Name.Set.empty)
+            ~f:(fun name {Struct.source_file} (with_, without) ->
+              match source_file with
+              | None ->
+                  (with_, Typ.Name.Set.add name without)
+              | Some _ ->
+                  (Typ.Name.Set.add name with_, without) )
+        in
+        L.progress "Tenv types with source: %a.@\n" Typ.Name.Set.pp types_with_source ;
+        L.progress "Tenv types without source: %a.@\n" Typ.Name.Set.pp types_without_source )
+      else
+        let nb_types_without_source =
+          Tenv.fold tenv ~init:0 ~f:(fun _name {Struct.source_file} counter ->
+              match source_file with None -> 1 + counter | Some _ -> counter )
+        in
+        L.progress "Tenv contains %d types without source file@\n" nb_types_without_source ) ;
+    (tenv, !n_captured, !n_error) )
+  else (Tenv.create (), !n_captured, !n_error)
 
 
 let process_output_sequentially hackc_stdout =

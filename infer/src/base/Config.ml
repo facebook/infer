@@ -1777,6 +1777,8 @@ and global_tenv =
     ~in_help:InferCommand.[(Debug, manual_debug_global_tenv)]
 
 
+and hackc_binary = CLOpt.mk_path_opt ~long:"hackc-binary" "Specify hackc binary to use"
+
 and hack_builtin_models =
   CLOpt.mk_path ~long:"hack-builtin-models" ~default:default_hack_builtin_models
     "Specify .sil file to use as Hack builtin models (uses bundled models by default)"
@@ -1791,7 +1793,10 @@ and hack_naming_table =
   CLOpt.mk_path_opt ~long:"hack-naming-table" "Location of a Hack naming table (sqlite)"
 
 
-and hackc_binary = CLOpt.mk_path_opt ~long:"hackc-binary" "Specify hackc binary to use"
+and hack_verify_capture_only =
+  CLOpt.mk_bool ~long:"hack-verify-capture-only"
+    "Run capture without saving anything into capture DB"
+
 
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
@@ -4251,13 +4256,15 @@ and genrule_mode = !genrule_mode
 
 and global_tenv = !global_tenv
 
+and hackc_binary = !hackc_binary
+
 and hack_builtin_models = !hack_builtin_models
 
 and hack_models = RevList.to_list !hack_models
 
 and hack_naming_table = !hack_naming_table
 
-and hackc_binary = !hackc_binary
+and hack_verify_capture_only = !hack_verify_capture_only
 
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->
