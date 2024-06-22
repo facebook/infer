@@ -202,7 +202,7 @@ function Home() {
             </p>
           </div>
         </section>
-        <section className={styles.whoUses}>
+        <section className={styles.whoUses} id="who-uses-infer">
           <div className="container">
             <h2>Who Uses Infer?</h2>
             <div style={{ margin: "4rem 0" }}>

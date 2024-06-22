@@ -34,7 +34,7 @@ don't, but are feeling bold).
 Take a look at
 [liveness.ml](https://github.com/facebook/infer/blob/main/infer/src/checkers/liveness.ml).
 This code is performing a compilers-101 style liveness analysis over
-[SIL](#ir-basics-sil-cfgs-tenvs-procdescs-and-procnames), Infer's intermediate
+SIL, Infer's intermediate
 language. Since this code is fairly small and you should already understand what
 it's trying to do, it's a fairly good place to look in order to understand both
 how to use the abstract interpretation framework and what SIL is.

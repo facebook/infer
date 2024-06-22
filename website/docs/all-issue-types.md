@@ -159,7 +159,7 @@ A latent [BAD_RETURN](#bad_return). See the [documentation on Pulse latent issue
 
 *Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).*
 
-See [MEMORY_LEAK](#memory_leak).
+See [MEMORY_LEAK_C](#memory_leak_c).
 ## BIABDUCTION_RETAIN_CYCLE
 
 *Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).*
@@ -686,7 +686,7 @@ Infer reports this issue when the execution time complexity of a
 program increases in degree: e.g. from constant to linear or from
 logarithmic to quadratic. This issue type is only reported in
 differential mode: i.e when we are comparing the cost analysis results of
-two runs of infer on a file. Check out examples in [here](/docs/next/checker-cost#examples).
+two runs of infer on a file. Check out examples in [here](/docs/next/checker-cost#examples-execution-cost).
 
 
 
@@ -1894,7 +1894,7 @@ void const_refable(std::vector<int> vec) {
 
 *Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Dict Missing Key" by [pulse](/docs/next/checker-pulse).*
 
-This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to warn
+This issue is similar to [`PULSE_UNINITIALIZED_VALUE`](#pulse_uninitialized_value), but it is to warn
 reading a missing key of dictionary in Hack.
 
 For example, in the following code, the dictionary `$d` has no entry for `bye`, so reading
@@ -2027,7 +2027,7 @@ Failure to `await` an `Awaitable` can lead to non-deterministic amount of the as
 
 *Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).*
 
-This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
+This issue is similar to [`PULSE_UNINITIALIZED_VALUE`](#pulse_uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
 
 For example, in the following code, the `FIELD` can be read by the static method `get_field`.
 
@@ -2954,7 +2954,7 @@ There is an execution path in the code that drives a Topl property from a start 
 
 This indicates that the code has a user-defined undesired behavior.
 
-See [Topl](/docs/next/checker-topl##what-is-it) for an example
+See [Topl](/docs/next/checker-topl#what-is-it) for an example
 
 ## TOPL_ERROR_LATENT
 

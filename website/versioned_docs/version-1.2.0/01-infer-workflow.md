@@ -130,7 +130,7 @@ all the compilation commands and stores the results in Infer's internal format.
 
 Next, if you change some files in your project, for instance in response to an
 Infer report, or as part of normal development, you can either clean and
-reanalyze the entire project (as in the [global workflow](#Global-workflow)
+reanalyze the entire project (as in the [global workflow](#global-workflow)
 above), or else tell Infer that you are interested in the effects of the code
 change. The second option can be significantly faster, as only a subset of the
 project needs to be analyzed: the modified files/procedures and their

@@ -736,7 +736,7 @@ let expensive_loop_invariant_call =
 
 let memory_leak =
   register ~enabled:false ~category:ResourceLeak ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak"
-    Error Biabduction ~user_documentation:"See [MEMORY_LEAK](#memory_leak)."
+    Error Biabduction ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)."
 
 
 let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error Biabduction

@@ -1,4 +1,4 @@
-This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
+This issue is similar to [`PULSE_UNINITIALIZED_VALUE`](#pulse_uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
 
 For example, in the following code, the `FIELD` can be read by the static method `get_field`.
 

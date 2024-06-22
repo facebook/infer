@@ -13,7 +13,7 @@ The Infer GitHub repo has seen a lot of activity since then:
 - 339 [issues](https://github.com/facebook/infer/issues) opened
 - 44 [pull requests](https://github.com/facebook/infer/pulls) by 15 contributors
 - 10 [releases](https://github.com/facebook/infer/releases/)
-- 5 [external companies](/#who-uses-infer) officially using Infer (add yourself
+- 5 external companies officially using Infer (add yourself
   [here](https://github.com/facebook/infer/edit/main/website/src/pages/index.js))
 
 Infer was presented at 13 academic and tech international conferences, and at 8

@@ -108,7 +108,7 @@ for an up-to-date list of dependencies and how to get them.
 
 ### My problem is not listed here
 
-Do not hesitate to [contact us](support#need-help?).
+Do not hesitate to [contact us](#need-help).
 
 ## FAQ
 

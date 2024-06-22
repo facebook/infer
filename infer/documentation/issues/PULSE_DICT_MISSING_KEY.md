@@ -1,4 +1,4 @@
-This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to warn
+This issue is similar to [`PULSE_UNINITIALIZED_VALUE`](#pulse_uninitialized_value), but it is to warn
 reading a missing key of dictionary in Hack.
 
 For example, in the following code, the dictionary `$d` has no entry for `bye`, so reading

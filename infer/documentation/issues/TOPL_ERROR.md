@@ -3,4 +3,4 @@ There is an execution path in the code that drives a Topl property from a start 
 
 This indicates that the code has a user-defined undesired behavior.
 
-See [Topl](/docs/next/checker-topl##what-is-it) for an example
+See [Topl](/docs/next/checker-topl#what-is-it) for an example
