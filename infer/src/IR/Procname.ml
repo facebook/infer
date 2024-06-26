@@ -553,6 +553,11 @@ module Hack = struct
      x, vx,
   *)
 
+  let is_vec_or_dict_from_async {function_name} =
+    String.equal function_name "FlibSL::Vec::from_async"
+    || String.equal function_name "FlibSL::Dict::from_async"
+
+
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
       match verbosity with
@@ -653,7 +658,11 @@ let is_erlang_unsupported name =
 
 
 let is_hack_async_name name =
-  match name with Hack hack_name -> Hack.is_named_genx hack_name | _ -> false
+  match name with
+  | Hack hack_name ->
+      Hack.is_named_genx hack_name || Hack.is_vec_or_dict_from_async hack_name
+  | _ ->
+      false
 
 
 let is_erlang_call_unqualified name =

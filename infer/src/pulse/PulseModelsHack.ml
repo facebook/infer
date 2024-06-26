@@ -164,8 +164,7 @@ module Vec = struct
        let* awaited_fst_val = await_hack_value fst_val in
        let* awaited_snd_val = await_hack_value snd_val in
        let* fresh_vec = new_vec_dsl [awaited_fst_val; awaited_snd_val] in
-       let* wrapped_fresh_vec = make_new_awaitable fresh_vec in
-       assign_ret wrapped_fresh_vec
+       assign_ret fresh_vec
 
 
   let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
@@ -553,8 +552,7 @@ module Dict = struct
              | _ ->
                  ret () )
        in
-       let* new_awaitable = make_new_awaitable new_dict in
-       assign_ret new_awaitable
+       assign_ret new_dict
 
 
   let hack_add_elem_c_dsl dict key value : unit DSL.model_monad =
