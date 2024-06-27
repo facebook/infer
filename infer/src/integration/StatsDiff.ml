@@ -98,6 +98,16 @@ let json_of_changed_entry {event; value_before; value_after} =
 
 let json_of_changed_entries entries = `List (List.map entries ~f:json_of_changed_entry)
 
+(** delta in percent if the values are numerical *)
+let delta_of_changed_entry {value_before; value_after} =
+  match (value_before, value_after) with
+  | Int i1, Int i2 ->
+      let delta = (float_of_int i2 -. float_of_int i1) *. 100. /. float_of_int i1 in
+      Some (i1, i2, delta)
+  | _ ->
+      None
+
+
 let get_value_exn json =
   (* some values are strings ("normal"), some are ints, none are neither *)
   match json |> get_field_exn "normal" |> get_field "message" with
@@ -209,25 +219,22 @@ let pp_with_width pp width fmt x =
   pp_string_with_width width fmt s
 
 
-let pp_diff ~skip_delta_below fmt diff =
+let pp_diff fmt diff =
   let max_event_length = ref 0 in
   let max_value_before_length = ref 0 in
   let max_value_after_length = ref 0 in
   let max_delta_length = ref 0 in
   let changed_entries =
-    List.filter_map diff ~f:(fun ({event; value_before; value_after} as entry) ->
-        match (value_before, value_after) with
-        | Int i1, Int i2 ->
-            let delta = (float_of_int i2 -. float_of_int i1) *. 100. /. float_of_int i1 in
+    List.filter_map diff ~f:(fun ({event} as entry) ->
+        match delta_of_changed_entry entry with
+        | Some (i1, i2, delta) ->
             let delta_abs = Float.abs delta in
-            if Float.(delta_abs > skip_delta_below) then (
-              let delta_s = Printf.sprintf "%+.2f%%" delta in
-              max_event_length := max !max_event_length (String.length event) ;
-              max_value_before_length := max !max_value_before_length (int_width i1) ;
-              max_value_after_length := max !max_value_before_length (int_width i2) ;
-              max_delta_length := max !max_delta_length (String.length delta_s) ;
-              Some (delta_abs, delta_s, entry) )
-            else None
+            let delta_s = Printf.sprintf "%+.2f%%" delta in
+            max_event_length := max !max_event_length (String.length event) ;
+            max_value_before_length := max !max_value_before_length (int_width i1) ;
+            max_value_after_length := max !max_value_before_length (int_width i2) ;
+            max_delta_length := max !max_delta_length (String.length delta_s) ;
+            Some (delta_abs, delta_s, entry)
         | _ ->
             None )
     |> List.sort ~compare:[%compare: float_inv_compare * string * changed_entry]
@@ -261,6 +268,11 @@ let pp_diff ~skip_delta_below fmt diff =
         delta )
 
 
+let is_changed_entry_significant entry =
+  String.Set.mem stable_stat_events entry.event
+  && Option.exists (delta_of_changed_entry entry) ~f:(fun (_, _, delta) -> Float.(abs delta > 0.5))
+
+
 let text_output (extra_before, extra_after, unchanged, diff) =
   let n_extra_before = List.length extra_before in
   let n_extra_after = List.length extra_after in
@@ -274,15 +286,12 @@ let text_output (extra_before, extra_after, unchanged, diff) =
   L.progress "%a entries only in new version@\n" (pp_int_with_width max_width) n_extra_after ;
   L.progress "%a entries changed values (details for numerical values below)@\n@\n"
     (pp_int_with_width max_width) n_changed ;
-  L.progress "%a" (pp_diff ~skip_delta_below:0.0) diff ;
+  L.progress "%a" pp_diff diff ;
   L.progress "@\nUnchanged entries:@\n" ;
   List.sort ~compare:[%compare: entry] unchanged
   |> List.iter ~f:(fun {event; value} -> L.progress "%s: %a@\n" event pp_value value) ;
-  let diff_to_print =
-    List.filter diff ~f:(fun {event} -> String.Set.mem stable_stat_events event)
-  in
-  if not (List.is_empty diff_to_print) then
-    L.result "%a" (pp_diff ~skip_delta_below:0.5) diff_to_print
+  let diff_to_print = List.filter diff ~f:is_changed_entry_significant in
+  if not (List.is_empty diff_to_print) then L.result "%a" pp_diff diff_to_print
 
 
 let diff ~previous:stats_dir_previous ~current:stats_dir_current =
