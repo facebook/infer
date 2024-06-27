@@ -3590,10 +3590,10 @@ module Formula = struct
                             Debug.p "prop atom in term_eq adding below, nullable=%b\n" nullable ;
                             let* phi, new_eqs =
                               if not nullable then (
-                                Debug.p "also adding not equal to zero" ;
+                                Debug.p "also adding greater than zero" ;
                                 let* atoms =
                                   Atom.eval ~is_neq_zero:(is_neq_zero phi)
-                                    (NotEqual (Var var, Term.zero))
+                                    (LessThan (Term.zero, Var var))
                                 in
                                 and_normalized_atoms (phi, new_eqs) atoms >>| snd )
                               else Sat (phi, new_eqs)

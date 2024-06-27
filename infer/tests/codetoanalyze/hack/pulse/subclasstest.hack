@@ -314,7 +314,9 @@ class Wrapper {
   }
 
   // same but with below
-  public async function earlyInstanceOf2OK(mixed $x): Awaitable<void> {
+  // this is only an FP when we use v>0 in propagate_atom, rather than v != 0
+  // TODO: investigate
+  public async function earlyInstanceOf2OK_FP(mixed $x): Awaitable<void> {
     if ($x is F) {
       $b1 = $x is D;
       $b2 = $x is E;
