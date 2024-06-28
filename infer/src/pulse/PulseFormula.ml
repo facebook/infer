@@ -889,13 +889,6 @@ module Term = struct
     fold_map_direct_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
 
-  let rec fold_map_subterms t ~init ~f =
-    let acc, t' =
-      fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_map_subterms t' ~init:acc ~f)
-    in
-    f acc t'
-
-
   let satunsat_map_direct_subterms t ~f =
     let exception FoundUnsat in
     try
@@ -904,10 +897,6 @@ module Term = struct
              match f t' with Unsat -> raise_notrace FoundUnsat | Sat t'' -> t'' ) )
     with FoundUnsat -> Unsat
 
-
-  let fold_subterms t ~init ~f = fold_map_subterms t ~init ~f:(fun acc t' -> (f acc t', t')) |> fst
-
-  let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
   let rec fold_subst_variables ~init ~f_subst ?(f_post = fun ~prev:_ acc t -> (acc, t)) t =
     match t with
@@ -1516,14 +1505,6 @@ module Atom = struct
 
   let fold_terms atom ~init ~f = fold_map_terms atom ~init ~f:(fun acc t -> (f acc t, t)) |> fst
 
-  let fold_subterms atom ~init ~f =
-    fold_terms atom ~init ~f:(fun acc t -> Term.fold_subterms t ~init:acc ~f)
-
-
-  let iter_subterms atom ~f = Container.iter ~fold:fold_subterms atom ~f
-
-  let exists_subterm atom ~f = Container.exists ~iter:iter_subterms atom ~f
-
   let fold_variables atom ~init ~f =
     fold_terms atom ~init ~f:(fun acc t -> Term.fold_variables t ~init:acc ~f)
 
@@ -1548,9 +1529,6 @@ module Atom = struct
 
 
   let map_terms atom ~f = fold_map_terms atom ~init:() ~f:(fun () t -> ((), f t)) |> snd
-
-  (* Preseves physical equality if [f] does. *)
-  let map_subterms atom ~f = map_terms atom ~f:(fun t -> Term.map_subterms t ~f)
 
   let to_term : t -> Term.t = function
     | LessEqual (t1, t2) ->
@@ -2262,10 +2240,6 @@ module Formula = struct
 
     val set_intervals : intervals -> t -> t
 
-    val reset_atoms : t -> t
-
-    val reset_term_eqs : t -> t
-
     val unsafe_mk :
          var_eqs:var_eqs
       -> const_eqs:Term.t Var.Map.t
@@ -2758,12 +2732,6 @@ module Formula = struct
     let set_tableau tableau phi = {phi with tableau}
 
     let set_intervals intervals phi = {phi with intervals}
-
-    let reset_atoms phi = {phi with atoms= Atom.Set.empty; atoms_occurrences= Var.Map.empty}
-
-    let reset_term_eqs phi =
-      {phi with term_eqs= Term.VarMap.empty; term_eqs_occurrences= Var.Map.empty}
-
 
     let unsafe_mk ~var_eqs ~const_eqs ~type_constraints ~linear_eqs ~term_eqs ~tableau ~intervals
         ~atoms ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences
@@ -4062,65 +4030,6 @@ module DynamicTypes = struct
           else None
 
 
-  let really_simplify formula =
-    let simplify_term (t : Term.t) =
-      match t with
-      | IsInstanceOf {var= v; typ; nullable} -> (
-        match evaluate_instanceof formula v typ nullable with None -> t | Some t' -> t' )
-      | t ->
-          t
-    in
-    let simplify_atom atom = Atom.map_subterms ~f:simplify_term atom in
-    let open SatUnsat.Import in
-    let old_atoms = formula.phi.atoms in
-    let* phi, new_eqs =
-      let f t v acc_phi =
-        let* acc_phi in
-        let t = simplify_term t in
-        Formula.Normalizer.and_var_term v t acc_phi
-      in
-      Formula.term_eqs_fold f formula.phi
-        (Sat (formula.phi |> Formula.reset_term_eqs |> Formula.reset_atoms, RevList.empty))
-    in
-    let+ phi, new_eqs =
-      let f atom acc_phi =
-        let* acc_phi in
-        let atom = simplify_atom atom in
-        Formula.Normalizer.and_atom atom acc_phi
-      in
-      Atom.Set.fold f old_atoms (Sat (phi, new_eqs))
-    in
-    ({formula with phi}, new_eqs)
-
-
-  let has_instanceof formula =
-    let in_term (t : Term.t) = match t with IsInstanceOf _ -> true | _ -> false in
-    let in_atom atom = Atom.exists_subterm atom ~f:in_term in
-    Formula.term_eqs_exists (fun t _v -> in_term t) formula.phi
-    || Atom.Set.exists in_atom formula.phi.atoms
-
-
-  (* The previous summary-time simplification wipes out v1 = InstanceOf(v2,t) when we can evaluate the term, which messes with
-     the distinction between latent and manifest errors (if v2 is an argument). I tried hacks to keep the
-     intensional information, but they're unconvincing and a waste of effort, since we ultimately aim to remove the simplification
-     phase anyway. Instead, we just log situations in which the simplification would lead to Unsat, as those are ones in which the
-     new on-the-fly propagation is deficient. If none show up, we can safely remove simplification.
-  *)
-  let simplify ?location formula =
-    if has_instanceof formula then
-      match really_simplify formula with
-      | Unsat ->
-          L.d_printfln ~color:Pp.Orange "WARNING: Summary-time simplify returned Unsat on %a" pp
-            formula ;
-          ScubaLogging.log_message_with_location ~label:"summary_unsat"
-            ~loc:(Option.value_map location ~default:"missing" ~f:Location.to_string)
-            ~message:"summary-time normalization returned Unsat"
-      | Sat _ ->
-          ()
-    else () ;
-    Sat (formula, RevList.empty)
-
-
   (* TODO: fix messy separation between (new) InstanceOf and (old) DynamicTypes - not sure where to put the next definition *)
   let and_callee_type_constraints v type_constraints_foreign (phi, new_eqs) =
     match type_constraints_foreign with
@@ -4183,13 +4092,6 @@ let and_equal_instanceof v1 v2 t ~nullable formula =
   in
   Debug.p "formula is %a" pp formula ;
   Sat (formula, new_eqs')
-
-
-let normalize ?location formula =
-  (* Sat (formula, RevList.empty) *)
-  Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
-  (* normalization happens incrementally except for dynamic types (TODO) *)
-  DynamicTypes.simplify ?location formula
 
 
 let and_dynamic_type v t ?source_file formula =
@@ -4593,7 +4495,6 @@ end
 
 let simplify ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
-  let* formula, new_eqs = normalize formula in
   L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula Var.Set.pp
     keep Var.Set.pp precondition_vocabulary ;
   (* get rid of as many variables as possible *)
@@ -4601,7 +4502,7 @@ let simplify ~precondition_vocabulary ~keep formula =
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
   let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
-  (formula, live_vars, new_eqs)
+  (formula, live_vars, RevList.empty)
 
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v

@@ -90,9 +90,6 @@ val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new
 
 (** {3 Operations} *)
 
-val normalize : ?location:Location.t -> t -> (t * new_eqs) SatUnsat.t
-(** think a bit harder about the formula *)
-
 val simplify :
   precondition_vocabulary:Var.Set.t -> keep:Var.Set.t -> t -> (t * Var.Set.t * new_eqs) SatUnsat.t
 

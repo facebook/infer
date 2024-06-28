@@ -343,7 +343,6 @@ end = struct
             let* path_condition, new_eqs_a =
               Formula.prune_binop ~negated:false op l r path_condition
             in
-            let* path_condition, new_eqs_b = Formula.normalize path_condition in
             let new_eqs =
               let new_eqs = RevList.empty in
               let new_eqs =
@@ -358,7 +357,7 @@ end = struct
                     new_eqs
               in
               let ( ++ ) = RevList.append in
-              new_eqs ++ new_eqs_a ++ new_eqs_b
+              new_eqs ++ new_eqs_a
             in
             let* heap =
               let incorporate_eq heap (eq : Formula.new_eq) =

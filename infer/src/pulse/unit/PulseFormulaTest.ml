@@ -192,7 +192,7 @@ let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 
 let cons_typ = Typ.mk (Tstruct (ErlangType Cons))
 
-let normalize_with phi init_phi = test ~f:(fun phi -> normalize phi >>| fst) phi init_phi
+let normalize_with phi init_phi = test ~f:(fun phi -> Sat phi) phi init_phi
 
 let normalize phi = normalize_with phi ttrue
 

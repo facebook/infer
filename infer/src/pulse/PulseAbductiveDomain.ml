@@ -1895,20 +1895,12 @@ module Summary = struct
   let of_post_ proc_name (proc_attrs : ProcAttributes.t) location astate0 =
     let open SatUnsat.Import in
     let astate = astate0 in
-    (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
-       canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
-       contradictions about addresses we are about to garbage collect *)
-    let* path_condition, new_eqs = Formula.normalize ~location astate.path_condition in
-    let astate = {astate with path_condition} in
-    let* astate, error = incorporate_new_eqs astate new_eqs in
     let astate_before_filter = astate in
     (* do not store the decompiler in the summary and make sure we only use the original one by
        marking it invalid *)
     let astate = {astate with decompiler= Decompiler.invalid} in
     let* astate, live_addresses, dead_addresses, new_eqs = filter_for_summary proc_name astate in
-    let+ astate, error =
-      match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
-    in
+    let+ astate, error = incorporate_new_eqs astate new_eqs in
     match error with
     | None -> (
       (* NOTE: it's important for correctness that we check leaks last because we are going to carry
