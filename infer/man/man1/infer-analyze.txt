@@ -328,20 +328,6 @@ OPTIONS
        --qualified-cpp-name-block-list +string
            Skip analyzing the procedures under the qualified cpp type name.
 
-       --quandary
-           Activates: quandary checker: The Quandary taint analysis detects
-           flows of values between sources and sinks, except if the value
-           went through a "sanitizer". In addition to some defaults, users
-           can specify their own sources, sinks, and sanitizers functions.
-           
-           DEPRECATED: Taint analysis is now supported by the Pulse checker
-           and Quandary will be removed in the next release.
-            (Conversely: --no-quandary)
-
-       --quandary-only
-           Activates: Enable quandary and disable all other checkers
-           (Conversely: --no-quandary-only)
-
        --quiet,-q
            Activates: Do not print anything on standard output. (Conversely:
            --no-quiet | -Q)
@@ -1046,19 +1032,6 @@ PULSE CHECKER OPTIONS
 
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations
-
-QUANDARY CHECKER OPTIONS
-       --quandary-endpoints json
-           Specify endpoint classes for Quandary
-
-       --quandary-sanitizers json
-           Specify custom sanitizers for Quandary
-
-       --quandary-sinks json
-           Specify custom sinks for Quandary
-
-       --quandary-sources json
-           Specify custom sources for Quandary
 
 RACERD CHECKER OPTIONS
        --racerd-always-report-java

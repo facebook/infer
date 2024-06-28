@@ -171,9 +171,6 @@ let create_fresh kind = NameGenerator.create_fresh_ident kind (standard_name kin
 
 let create_none () = create_fresh KNone
 
-(** Generate a footprint identifier with the given name and stamp *)
-let create_footprint name stamp = create_with_stamp KFootprint name stamp
-
 (** {2 Functions for Identifiers} *)
 
 (** Get a name of an identifier *)

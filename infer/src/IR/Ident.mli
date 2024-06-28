@@ -86,9 +86,6 @@ val create_normal : name -> int -> t
 val create_none : unit -> t
 (** Create a "null" identifier for situations where the IR requires an id that will never be read *)
 
-val create_footprint : name -> int -> t
-(** Generate a footprint identifier with the given name and stamp. *)
-
 val update_name_generator : t list -> unit
 (** Update the name generator so that the given id's are not generated again *)
 

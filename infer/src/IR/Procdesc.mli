@@ -242,6 +242,7 @@ val from_proc_attributes : ProcAttributes.t -> t
 (** Use [Cfg.create_proc_desc] if you are adding a proc desc to a cfg *)
 
 val get_access : t -> ProcAttributes.access
+[@@warning "-unused-value-declaration"]
 (** Return the visibility attribute *)
 
 val get_attributes : t -> ProcAttributes.t

@@ -85,8 +85,6 @@ let thread_confined = "ThreadConfined"
 
 let thread_safe = "ThreadSafe"
 
-let thrift_service = "ThriftService"
-
 let ui_thread = "UiThread"
 
 let visibleForTesting = "VisibleForTesting"
@@ -196,8 +194,6 @@ let ia_is_returns_ownership ia = ia_ends_with ia returns_ownership
 let ia_is_synchronized_collection ia = ia_ends_with ia synchronized_collection
 
 let ia_is_thread_safe ia = ia_ends_with ia thread_safe
-
-let ia_is_thrift_service ia = ia_ends_with ia thrift_service
 
 let ia_is_nonblocking ia = ia_ends_with ia nonblocking
 

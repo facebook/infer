@@ -113,14 +113,6 @@ Detects pure (side-effect-free) functions. A different implementation of "impuri
 
 [Visit here for more information.](/docs/next/checker-purity)
 
-## Quandary
-
-The Quandary taint analysis detects flows of values between sources and sinks, except if the value went through a "sanitizer". In addition to some defaults, users can specify their own sources, sinks, and sanitizers functions.
-
-**\*\*\*DEPRECATED\*\*\*** Taint analysis is now supported by the Pulse checker and Quandary will be removed in the next release.
-
-[Visit here for more information.](/docs/next/checker-quandary)
-
 ## RacerD
 
 Thread safety analysis.
@@ -168,4 +160,3 @@ Detect various kinds of situations when no progress is being made because of con
 Detect errors based on user-provided state machines describing temporal properties over multiple objects.
 
 [Visit here for more information.](/docs/next/checker-topl)
-

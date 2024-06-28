@@ -24,8 +24,6 @@ let make attrs =
     ~init:AccessPath.BaseMap.empty formals_with_nums
 
 
-let empty = AccessPath.BaseMap.empty
-
 let is_formal = AccessPath.BaseMap.mem
 
 let get_formal_index base t = AccessPath.BaseMap.find_opt base t

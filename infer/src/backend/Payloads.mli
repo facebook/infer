@@ -30,7 +30,6 @@ include sig
     ; litho_required_props: LithoDomain.summary Lazy.t option
     ; pulse: PulseSummary.t Lazy.t option
     ; purity: PurityDomain.summary Lazy.t option
-    ; quandary: QuandarySummary.t Lazy.t option
     ; racerd: RacerDDomain.summary Lazy.t option
     ; scope_leakage: ScopeLeakage.Summary.t Lazy.t option
     ; siof: SiofDomain.Summary.t Lazy.t option

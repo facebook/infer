@@ -9,8 +9,6 @@ open! IStd
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
-let drawable_prefix = "R$drawable"
-
 let is_autocloseable tenv tname =
   PatternMatch.is_subtype_of_str tenv tname "java.lang.AutoCloseable"
 

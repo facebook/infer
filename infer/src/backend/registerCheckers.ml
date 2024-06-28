@@ -164,10 +164,6 @@ let all_checkers =
          ; (racerd_file, Clang)
          ; (racerd_file, Java)
          ; (racerd_file, CIL) ] ) }
-  ; { checker= Quandary
-    ; callbacks=
-        [ (interprocedural Payloads.Fields.quandary JavaTaintAnalysis.checker, Java)
-        ; (interprocedural Payloads.Fields.quandary ClangTaintAnalysis.checker, Clang) ] }
   ; { checker= DisjunctiveDemo
     ; callbacks= [(interprocedural Payloads.Fields.disjunctive_demo DisjunctiveDemo.checker, Clang)]
     }

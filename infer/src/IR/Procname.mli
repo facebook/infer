@@ -87,10 +87,6 @@ module Java : sig
   val is_static : t -> bool
   (** Check if the java procedure is static. *)
 
-  val is_vararg : t -> bool
-  (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
-      last argument has type Object[]. *)
-
   val is_generated : t -> bool
   (** Check if the proc name comes from generated code *)
 
@@ -145,8 +141,6 @@ module ObjC_Cpp : sig
   val make :
     Typ.Name.t -> string -> kind -> Typ.template_spec_info -> Parameter.clang_parameter list -> t
   (** Create an objc procedure name from a class_name and method_name. *)
-
-  val get_class_name : t -> string
 
   val get_class_type_name : t -> Typ.Name.t [@@warning "-unused-value-declaration"]
 

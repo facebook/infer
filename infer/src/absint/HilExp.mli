@@ -85,9 +85,6 @@ end
 
 val pp : F.formatter -> t -> unit
 
-val get_typ : Tenv.t -> t -> Typ.t option
-(** Get the type of the expression. Warning: not fully implemented *)
-
 val of_sil :
      include_array_indexes:bool
   -> f_resolve_id:(Var.t -> AccessExpression.t option)
@@ -105,14 +102,12 @@ val is_null_literal : t -> bool
 
 val is_int_zero : t -> bool
 
-val eval : t -> Const.t option
+(* val eval : t -> Const.t option *)
 
 val eval_boolean_exp : AccessExpression.t -> t -> bool option
 (** [eval_boolean_exp var exp] returns [Some bool_value] if the given boolean expression [exp]
     evaluates to [bool_value] when [var] is set to true. Return None if it has free variables that
     stop us from evaluating it, or is not a boolean expression. *)
-
-val ignore_cast : t -> t
 
 val access_expr_of_exp :
      include_array_indexes:bool

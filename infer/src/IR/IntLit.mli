@@ -98,7 +98,7 @@ val max : t -> t -> t
 
 val min : t -> t -> t
 
-val to_int : t -> int option
+val to_int : t -> int option [@@warning "-unused-value-declaration"]
 
 val to_int_exn : t -> int
 

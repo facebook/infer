@@ -84,8 +84,6 @@ val ia_is_thread_safe : Annot.Item.t -> bool
 
 val ia_is_thread_confined : Annot.Item.t -> bool
 
-val ia_is_thrift_service : Annot.Item.t -> bool
-
 val ia_is_volatile : Annot.Item.t -> bool
 
 val ia_is_worker_thread : Annot.Item.t -> bool

@@ -30,7 +30,6 @@ type t =
   | Pulse
   | PurityAnalysis
   | PurityChecker
-  | Quandary
   | RacerD
   | ResourceLeakLabExercise
   | SILValidation

@@ -14,9 +14,6 @@ type t
 val make : ProcAttributes.t -> t
 (** create a formal map for the given procdesc *)
 
-val empty : t
-(** the empty formal map *)
-
 val is_formal : AccessPath.base -> t -> bool
 (** return true if the given base var is a formal according to the given formal map *)
 

@@ -6,12 +6,6 @@
  *)
 
 open! IStd
-module F = Format
-
-let all_formals_untainted pdesc =
-  let make_untainted (name, typ, _) = (name, typ, None) in
-  List.map ~f:make_untainted (Procdesc.get_formals pdesc)
-
 
 module type Kind = sig
   include TaintTraceElem.Kind
@@ -30,45 +24,6 @@ module type S = sig
   val get : caller_pname:Procname.t -> CallSite.t -> HilExp.t list -> Tenv.t -> spec list
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
-end
-
-module Make (Kind : Kind) = struct
-  module Kind = Kind
-
-  type t = {kind: Kind.t; site: CallSite.t} [@@deriving compare, equal]
-
-  type spec = {source: t; index: int option}
-
-  let call_site t = t.site
-
-  let kind t = t.kind
-
-  let make ?indexes:_ kind site = {site; kind}
-
-  let get ~caller_pname site actuals tenv =
-    Kind.get ~caller_pname (CallSite.pname site) actuals tenv
-    |> List.rev_map ~f:(fun (kind, index) ->
-           let source = make kind site in
-           {source; index} )
-
-
-  let get_tainted_formals pdesc tenv =
-    let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
-    List.map
-      ~f:(fun (name, typ, kind_opt) ->
-        (name, typ, Option.map kind_opt ~f:(fun kind -> make kind site)) )
-      (Kind.get_tainted_formals pdesc tenv)
-
-
-  let pp fmt s = F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
-
-  let with_callsite t callee_site = {t with site= callee_site}
-
-  module Set = PrettyPrintable.MakePPSet (struct
-    type nonrec t = t [@@deriving compare]
-
-    let pp = pp
-  end)
 end
 
 module Dummy = struct

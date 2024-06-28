@@ -9,8 +9,6 @@ open! IStd
 
 type t [@@deriving compare]
 
-val make : CallSite.t -> t
-
 val site : t -> CallSite.t
 
 module Set : PrettyPrintable.PPSet with type elt = t

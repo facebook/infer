@@ -26,12 +26,6 @@ val append_qualifier : t -> qual:string -> t
 val extract_last : t -> (string * t) option
 (** returns last (innermost scope) qualifier and qualified name without last qualifier *)
 
-val strip_template_args : t -> t
-(** returns qualified name without template arguments. For example:
-
-    - input: std::shared_ptr<int>::shared_ptr<long>
-    - output: std::shared_ptr::shared_ptr *)
-
 val compare_name : t -> t -> int
 (** similar to compare, but compares only names, except template arguments *)
 

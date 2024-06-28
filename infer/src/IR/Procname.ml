@@ -252,16 +252,6 @@ module Java = struct
 
   let is_autogen_method {method_name} = JConfig.is_synthetic_name method_name
 
-  (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
-      last argument has type Object[]. *)
-  let is_vararg {parameters} =
-    match List.last parameters with
-    | Some {desc= Tptr ({desc= Tarray {elt}}, Pk_pointer)} ->
-        Typ.equal StdTyp.Java.pointer_to_java_lang_object elt
-    | _ ->
-        false
-
-
   let is_external java_pname =
     let package = get_package java_pname in
     Option.exists ~f:Config.java_package_is_external package

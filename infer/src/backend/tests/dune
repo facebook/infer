@@ -37,8 +37,6 @@
    -open
    Costlib
    -open
-   Quandary
-   -open
    Topllib
    -open
    Concurrency
@@ -63,7 +61,6 @@
   BO
   Checkers
   Costlib
-  Quandary
   Topllib
   Concurrency
   Labs

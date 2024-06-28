@@ -11,8 +11,6 @@ open! IStd
 module type S = sig
   type t
 
-  val __array_access : t
-
   val __assert_fail : t
 
   val __builtin_add_overflow : t
@@ -49,8 +47,6 @@ module type S = sig
   val __get_array_length : t
 
   val __get_type_of : t
-
-  val __global_access : t
 
   val __infer_assume : t
 

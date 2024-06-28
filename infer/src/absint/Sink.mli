@@ -25,5 +25,3 @@ module type S = sig
 
   val with_indexes : t -> IntSet.t -> t
 end
-
-module Make (Kind : Kind) : S with module Kind = Kind

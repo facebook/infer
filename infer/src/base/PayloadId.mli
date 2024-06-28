@@ -20,7 +20,6 @@ type t =
   | LithoRequiredProps
   | Pulse
   | Purity
-  | Quandary
   | RacerD
   | ScopeLeakage
   | SIOF

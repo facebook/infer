@@ -27,8 +27,6 @@ let of_id id = LogicalVar id
 
 let of_pvar pvar = ProgramVar pvar
 
-let of_formal_index formal_index = of_id (Ident.create_footprint Ident.name_spec formal_index)
-
 let to_exp = function ProgramVar pvar -> Exp.Lvar pvar | LogicalVar id -> Exp.Var id
 
 let get_ident = function ProgramVar _ -> None | LogicalVar id -> Some id

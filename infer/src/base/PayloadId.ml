@@ -19,7 +19,6 @@ type t =
   | LithoRequiredProps
   | Pulse
   | Purity
-  | Quandary
   | RacerD
   | ScopeLeakage
   | SIOF
@@ -54,8 +53,6 @@ let to_checker payload_id : Checker.t =
       Pulse
   | Purity ->
       PurityAnalysis
-  | Quandary ->
-      Quandary
   | RacerD ->
       RacerD
   | ScopeLeakage ->

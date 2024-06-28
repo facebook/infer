@@ -28,7 +28,6 @@ open BO;;
 open Pulselib;;
 open Checkers;;
 open Costlib;;
-open Quandary;;
 open Topllib;;
 open Concurrency;;
 open Labs;;

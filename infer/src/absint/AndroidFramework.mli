@@ -9,7 +9,7 @@ open! IStd
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
-val drawable_prefix : string
+(* val drawable_prefix : string *)
 (** prefix for Drawable fields in generated resources *)
 
 val is_autocloseable : Tenv.t -> Typ.Name.t -> bool

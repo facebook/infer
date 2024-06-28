@@ -76,7 +76,6 @@ DIRECT_TESTS += \
   cpp_pulse-11 \
   cpp_pulse-17 \
   cpp_pulse-20 \
-  cpp_quandary \
   cpp_racerd \
   cpp_siof \
   cpp_starvation \
@@ -150,7 +149,6 @@ DIRECT_TESTS += \
   objc_performance \
   objc_pulse \
   objc_pulse-data-lineage \
-  objc_quandary \
   objc_self-in-block \
   objcpp_biabduction \
   objcpp_frontend \
@@ -258,7 +256,6 @@ DIRECT_TESTS += \
   java_performance-exclusive \
   java_pulse \
   java_purity \
-  java_quandary \
   java_racerd \
   java_scopeleakage \
   java_sil \

@@ -21,7 +21,6 @@ type t =
   ; litho_required_props: LithoDomain.summary Lazy.t option
   ; pulse: PulseSummary.t Lazy.t option
   ; purity: PurityDomain.summary Lazy.t option
-  ; quandary: QuandarySummary.t Lazy.t option
   ; racerd: RacerDDomain.summary Lazy.t option
   ; scope_leakage: ScopeLeakage.Summary.t Lazy.t option
   ; siof: SiofDomain.Summary.t Lazy.t option
@@ -59,7 +58,6 @@ let all_fields =
     ~litho_required_props:(fun f -> mk f LithoRequiredProps LithoDomain.pp_summary)
     ~pulse:(fun f -> mk f Pulse PulseSummary.pp)
     ~purity:(fun f -> mk f Purity PurityDomain.pp_summary)
-    ~quandary:(fun f -> mk f Quandary QuandarySummary.pp)
     ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
     ~scope_leakage:(fun f -> mk f ScopeLeakage ScopeLeakage.Summary.pp)
@@ -93,7 +91,6 @@ let empty =
   ; litho_required_props= None
   ; pulse= None
   ; purity= None
-  ; quandary= None
   ; racerd= None
   ; scope_leakage= None
   ; siof= None
@@ -189,11 +186,10 @@ module SQLite = struct
       ~buffer_overrun_analysis:data_of_sqlite_column ~buffer_overrun_checker:data_of_sqlite_column
       ~config_impact_analysis:data_of_sqlite_column ~cost:data_of_sqlite_column
       ~disjunctive_demo:data_of_sqlite_column ~litho_required_props:data_of_sqlite_column
-      ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~quandary:data_of_sqlite_column
-      ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
-      ~scope_leakage:data_of_sqlite_column ~siof:data_of_sqlite_column
-      ~lineage:data_of_sqlite_column ~lineage_shape:data_of_sqlite_column
-      ~starvation:data_of_sqlite_column
+      ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~racerd:data_of_sqlite_column
+      ~lab_resource_leaks:data_of_sqlite_column ~scope_leakage:data_of_sqlite_column
+      ~siof:data_of_sqlite_column ~lineage:data_of_sqlite_column
+      ~lineage_shape:data_of_sqlite_column ~starvation:data_of_sqlite_column
 
 
   let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
@@ -244,7 +240,6 @@ module SQLite = struct
     ; litho_required_props= load table ~proc_uid LithoRequiredProps
     ; pulse= load table ~proc_uid Pulse
     ; purity= load table ~proc_uid Purity
-    ; quandary= load table ~proc_uid Quandary
     ; racerd= load table ~proc_uid RacerD
     ; scope_leakage= load table ~proc_uid ScopeLeakage
     ; siof= load table ~proc_uid SIOF

@@ -10,13 +10,6 @@ open! IStd
 (** Conversions from checkers taking "functional" {!Absint.InterproceduralAnalysis.t} et al.
     payloads to {!Callbacks.proc_callback_t} and friends. *)
 
-val mk_interprocedural_field_t :
-     (Payloads.t, 'payload Lazy.t option) Field.t
-  -> Callbacks.proc_callback_args
-  -> ?tenv:Tenv.t
-  -> unit
-  -> 'payload InterproceduralAnalysis.t * Summary.Stats.t ref
-
 val interprocedural :
      AnalysisRequest.t
   -> f_analyze_dep:('payloads_orig -> 'payloads option)

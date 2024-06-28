@@ -11,8 +11,6 @@ open! IStd
    etc. depending on what we need *)
 type t = {site: CallSite.t} [@@deriving compare]
 
-let make site = {site}
-
 let site t = t.site
 
 let pp fmt s = CallSite.pp fmt s.site

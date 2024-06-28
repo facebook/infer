@@ -43,8 +43,6 @@ let () =
         ; RestartSchedulerTests.tests
         ; SchedulerTests.tests
         ; SeverityTests.tests
-        ; TaintTests.tests
-        ; TraceTests.tests
         ; WeakTopologicalOrderTests.tests ]
       @ ClangTests.tests )
   in

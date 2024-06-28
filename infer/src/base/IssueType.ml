@@ -533,18 +533,6 @@ let cxx_ref_captured_in_block =
     ~user_documentation:[%blob "./documentation/issues/CXX_REF_CAPTURED_IN_BLOCK.md"]
 
 
-let create_intent_from_uri =
-  register ~category:NoCategory ~id:"CREATE_INTENT_FROM_URI" Error Quandary
-    ~user_documentation:
-      "Create an intent/start a component using a (possibly user-controlled) URI. may or may not \
-       be an issue depending on where the URI comes from."
-
-
-let cross_site_scripting =
-  register ~category:NoCategory ~id:"CROSS_SITE_SCRIPTING" Error Quandary
-    ~user_documentation:"Untrusted data flows into HTML; XSS risk."
-
-
 let dangling_pointer_dereference =
   register ~category:NoCategory ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error
     Biabduction (* TODO *)
@@ -570,16 +558,11 @@ let divide_by_zero =
     ~user_documentation:""
 
 
-let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error Quandary
+let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error SIOF
 
 let empty_vector_access =
   register ~category:NoCategory ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
     ~user_documentation:[%blob "./documentation/issues/EMPTY_VECTOR_ACCESS.md"]
-
-
-let exposed_insecure_intent_handling =
-  register ~category:NoCategory ~id:"EXPOSED_INSECURE_INTENT_HANDLING" Error Quandary
-    ~user_documentation:"Undocumented."
 
 
 let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
@@ -649,11 +632,6 @@ let inherently_dangerous_function =
   register_hidden ~id:"INHERENTLY_DANGEROUS_FUNCTION" Warning Biabduction
 
 
-let insecure_intent_handling =
-  register ~category:NoCategory ~id:"INSECURE_INTENT_HANDLING" Error Quandary
-    ~user_documentation:"Undocumented."
-
-
 let integer_overflow_l1 =
   register ~category:NoCategory ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "./documentation/issues/INTEGER_OVERFLOW.md"]
@@ -696,11 +674,6 @@ let ipc_on_ui_thread =
     ~user_documentation:"A blocking `Binder` IPC call occurs on the UI thread."
 
 
-let javascript_injection =
-  register ~category:NoCategory ~id:"JAVASCRIPT_INJECTION" Error Quandary
-    ~user_documentation:"Untrusted data flows into JavaScript."
-
-
 let lab_resource_leak =
   register ~category:NoCategory ~id:"LAB_RESOURCE_LEAK" Error ResourceLeakLabExercise
     ~user_documentation:"Toy issue."
@@ -722,11 +695,6 @@ let lock_consistency_violation =
 let lockless_violation =
   register ~category:NoCategory ~id:"LOCKLESS_VIOLATION" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/LOCKLESS_VIOLATION.md"]
-
-
-let logging_private_data =
-  register ~category:NoCategory ~id:"LOGGING_PRIVATE_DATA" Error Quandary
-    ~user_documentation:"Undocumented."
 
 
 let expensive_loop_invariant_call =
@@ -901,11 +869,6 @@ let pure_function =
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]
 
 
-let quandary_taint_error =
-  register ~category:NoCategory ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
-    ~user_documentation:"Generic taint error when nothing else fits."
-
-
 let readonly_shared_ptr_param =
   register ~category:PerfRegression ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
     ~hum:"Read-only Shared Parameter"
@@ -961,26 +924,6 @@ let scope_leakage =
 
 
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
-
-let shell_injection =
-  register ~category:NoCategory ~id:"SHELL_INJECTION" Error Quandary
-    ~user_documentation:"Environment variable or file data flowing to shell."
-
-
-let shell_injection_risk =
-  register ~category:NoCategory ~id:"SHELL_INJECTION_RISK" Error Quandary
-    ~user_documentation:"Code injection if the caller of the endpoint doesn't sanitize on its end."
-
-
-let sql_injection =
-  register ~category:NoCategory ~id:"SQL_INJECTION" Error Quandary
-    ~user_documentation:"Untrusted and unescaped data flows to SQL."
-
-
-let sql_injection_risk =
-  register ~category:NoCategory ~id:"SQL_INJECTION_RISK" Error Quandary
-    ~user_documentation:"Untrusted and unescaped data flows to SQL."
-
 
 let stack_variable_address_escape =
   register ~category:MemoryError ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
@@ -1106,66 +1049,6 @@ let use_after_free =
 let use_after_lifetime =
   register_with_latent ~category:MemoryError ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/USE_AFTER_LIFETIME.md"]
-
-
-let user_controlled_sql_risk =
-  register ~category:NoCategory ~id:"USER_CONTROLLED_SQL_RISK" Error Quandary
-    ~user_documentation:"Untrusted data flows to SQL (no injection risk)."
-
-
-let untrusted_buffer_access =
-  register ~category:NoCategory ~enabled:false ~id:"UNTRUSTED_BUFFER_ACCESS" Error Quandary
-    ~user_documentation:"Untrusted data of any kind flowing to buffer."
-
-
-let untrusted_deserialization =
-  register ~category:NoCategory ~id:"UNTRUSTED_DESERIALIZATION" Error Quandary
-    ~user_documentation:"User-controlled deserialization."
-
-
-let untrusted_deserialization_risk =
-  register ~category:NoCategory ~id:"UNTRUSTED_DESERIALIZATION_RISK" Error Quandary
-    ~user_documentation:"User-controlled deserialization"
-
-
-let untrusted_environment_change_risk =
-  register ~category:NoCategory ~id:"UNTRUSTED_ENVIRONMENT_CHANGE_RISK" Error Quandary
-    ~user_documentation:"User-controlled environment mutation."
-
-
-let untrusted_file =
-  register ~category:NoCategory ~id:"UNTRUSTED_FILE" Error Quandary
-    ~user_documentation:
-      "User-controlled file creation; may be vulnerable to path traversal and more."
-
-
-let untrusted_file_risk =
-  register ~category:NoCategory ~id:"UNTRUSTED_FILE_RISK" Error Quandary
-    ~user_documentation:
-      "User-controlled file creation; may be vulnerable to path traversal and more."
-
-
-let untrusted_heap_allocation =
-  register ~category:NoCategory ~enabled:false ~id:"UNTRUSTED_HEAP_ALLOCATION" Error Quandary
-    ~user_documentation:
-      "Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS."
-
-
-let untrusted_intent_creation =
-  register ~category:NoCategory ~id:"UNTRUSTED_INTENT_CREATION" Error Quandary
-    ~user_documentation:"Creating an Intent from user-controlled data."
-
-
-let untrusted_url_risk =
-  register ~category:NoCategory ~id:"UNTRUSTED_URL_RISK" Error Quandary
-    ~user_documentation:"Untrusted flag, environment variable, or file data flowing to URL."
-
-
-let untrusted_variable_length_array =
-  register ~category:NoCategory ~id:"UNTRUSTED_VARIABLE_LENGTH_ARRAY" Error Quandary
-    ~user_documentation:
-      "Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack \
-       buffer that's too large will cause a stack overflow."
 
 
 let vector_invalidation =

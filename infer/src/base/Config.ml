@@ -177,8 +177,6 @@ let manual_lineage = "LINEAGE OPTIONS"
 
 let manual_pulse = "PULSE CHECKER OPTIONS"
 
-let manual_quandary = "QUANDARY CHECKER OPTIONS"
-
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
 let manual_scheduler = "ANALYSIS SCHEDULER OPTIONS"
@@ -2991,36 +2989,6 @@ and qualified_cpp_name_block_list =
     "Skip analyzing the procedures under the qualified cpp type name."
 
 
-and quandary_endpoints =
-  CLOpt.mk_json ~long:"quandary-endpoints"
-    ~in_help:InferCommand.[(Analyze, manual_quandary)]
-    "Specify endpoint classes for Quandary"
-
-
-and quandary_sanitizers =
-  CLOpt.mk_json ~long:"quandary-sanitizers"
-    ~in_help:InferCommand.[(Analyze, manual_quandary)]
-    "Specify custom sanitizers for Quandary"
-
-
-and quandary_show_passthroughs =
-  CLOpt.mk_bool ~deprecated:["-passthroughs"] ~long:"quandary-show-passthroughs" ~default:false
-    "In error traces, show intermediate steps that propagate data. When false, error traces are \
-     shorter and show only direct flow via souces/sinks"
-
-
-and quandary_sinks =
-  CLOpt.mk_json ~long:"quandary-sinks"
-    ~in_help:InferCommand.[(Analyze, manual_quandary)]
-    "Specify custom sinks for Quandary"
-
-
-and quandary_sources =
-  CLOpt.mk_json ~long:"quandary-sources"
-    ~in_help:InferCommand.[(Analyze, manual_quandary)]
-    "Specify custom sources for Quandary"
-
-
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:'q' ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
@@ -4690,16 +4658,6 @@ and pyc_file = RevList.to_list !pyc_file
 and python_builtin_models = !python_builtin_models
 
 and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
-
-and quandary_endpoints = !quandary_endpoints
-
-and quandary_sanitizers = !quandary_sanitizers
-
-and quandary_show_passthroughs = !quandary_show_passthroughs
-
-and quandary_sinks = !quandary_sinks
-
-and quandary_sources = !quandary_sources
 
 and quiet = !quiet
 

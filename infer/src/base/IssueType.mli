@@ -171,10 +171,6 @@ val constant_address_dereference : latent:bool -> t
 
 val cxx_ref_captured_in_block : t
 
-val create_intent_from_uri : t
-
-val cross_site_scripting : t
-
 val dangling_pointer_dereference : t
 
 val dangling_pointer_dereference_maybe : t
@@ -193,8 +189,6 @@ val do_not_report : t
 (** an issue type that should never be reported *)
 
 val empty_vector_access : t
-
-val exposed_insecure_intent_handling : t
 
 val expensive_cost_call : kind:CostKind.t -> t
 
@@ -220,8 +214,6 @@ val infinite_cost_call : kind:CostKind.t -> t
 
 val inherently_dangerous_function : t
 
-val insecure_intent_handling : t
-
 val integer_overflow_l1 : t
 
 val integer_overflow_l2 : t
@@ -240,8 +232,6 @@ val invariant_call : t
 
 val ipc_on_ui_thread : t
 
-val javascript_injection : t
-
 val lab_resource_leak : t
 
 val leak_after_array_abstraction : t
@@ -253,8 +243,6 @@ val leak_unknown_origin : t
 val lockless_violation : t
 
 val lock_consistency_violation : t
-
-val logging_private_data : t
 
 val expensive_loop_invariant_call : t
 
@@ -326,8 +314,6 @@ val pulse_uninitialized_const : t
 
 val pure_function : t
 
-val quandary_taint_error : t
-
 val readonly_shared_ptr_param : t
 
 val regex_op_on_ui_thread : t
@@ -343,14 +329,6 @@ val scope_leakage : t
 val sensitive_data_flow : t
 
 val skip_function : t
-
-val shell_injection : t
-
-val shell_injection_risk : t
-
-val sql_injection : t
-
-val sql_injection_risk : t
 
 val stack_variable_address_escape : t
 
@@ -399,28 +377,6 @@ val use_after_delete : latent:bool -> t
 val use_after_free : latent:bool -> t
 
 val use_after_lifetime : latent:bool -> t
-
-val untrusted_buffer_access : t
-
-val untrusted_deserialization : t
-
-val untrusted_deserialization_risk : t
-
-val untrusted_file : t
-
-val untrusted_file_risk : t
-
-val untrusted_heap_allocation : t
-
-val untrusted_intent_creation : t
-
-val untrusted_url_risk : t
-
-val untrusted_environment_change_risk : t
-
-val untrusted_variable_length_array : t
-
-val user_controlled_sql_risk : t
 
 val vector_invalidation : latent:bool -> t
 

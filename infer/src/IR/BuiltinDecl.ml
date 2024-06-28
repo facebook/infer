@@ -32,8 +32,6 @@ let create_objc_class_method class_name method_name parameters =
 
 let is_declared pname = Procname.Set.mem pname !builtin_decls
 
-let __array_access = create_procname "__array_access"
-
 let __assert_fail = create_procname "__assert_fail"
 
 let __atomic_fetch_max = create_procname "__atomic_fetch_max"
@@ -155,8 +153,6 @@ let __get_array_length = create_procname "__get_array_length"
 let __get_hidden_field = create_procname "__get_hidden_field"
 
 let __get_type_of = create_procname "__get_type_of"
-
-let __global_access = create_procname "__global_access"
 
 let __infer_assume = create_procname "__infer_assume"
 

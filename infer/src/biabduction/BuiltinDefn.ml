@@ -833,9 +833,6 @@ let execute___objc_dictionary_literal builtin_args =
   execute_objc_NSDictionary_alloc_no_fail res' pname builtin_args
 
 
-(* only used in Quandary, so ok to skip *)
-let __array_access = Builtin.register BuiltinDecl.__array_access execute_skip
-
 let __assert_fail = Builtin.register BuiltinDecl.__assert_fail execute___assert_fail
 
 let __builtin_add_overflow = Builtin.register BuiltinDecl.__builtin_add_overflow execute_skip
@@ -876,9 +873,6 @@ let __objc_bridge_transfer = Builtin.register BuiltinDecl.__objc_bridge_transfer
 let __get_array_length = Builtin.register BuiltinDecl.__get_array_length execute___get_array_length
 
 let __get_type_of = Builtin.register BuiltinDecl.__get_type_of execute___get_type_of
-
-(* only used in Quandary, so ok to skip *)
-let __global_access = Builtin.register BuiltinDecl.__global_access execute_skip
 
 (* infer assume, diverging on inconsistencies *)
 let __infer_assume = Builtin.register BuiltinDecl.__infer_assume execute___infer_assume

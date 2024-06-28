@@ -7,9 +7,6 @@
 
 open! IStd
 
-val all_formals_untainted : Procdesc.t -> (Mangled.t * Typ.t * 'a option) list
-(** specify that all the formals of the procdesc are not tainted *)
-
 module type Kind = sig
   include TaintTraceElem.Kind
 
@@ -37,7 +34,5 @@ module type S = sig
   (** return each formal of the function paired with either Some(source) if the formal is a taint
       source, or None if the formal is not a taint source *)
 end
-
-module Make (Kind : Kind) : S with module Kind = Kind
 
 module Dummy : S with type t = unit

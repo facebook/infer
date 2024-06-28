@@ -19,23 +19,23 @@ type access =
     as (x, [f; g]) *)
 and t = base * access list [@@deriving compare, equal]
 
-val get_typ : t -> Tenv.t -> Typ.t option
-(** get the typ of the last access in the list of accesses if the list is non-empty, or the base if
-    the list is empty. that is, for x.f.g, return typ(g), and for x, return typ(x) *)
-
 val base_of_pvar : Pvar.t -> Typ.t -> base
 (** create a base from a pvar *)
 
 val of_pvar : Pvar.t -> Typ.t -> t
 (** create an access path from a pvar *)
 
+(* used in infer/src/labs/ *)
 val of_id : Ident.t -> Typ.t -> t
+[@@warning "-unused-value-declaration"]
 (** create an access path from an ident *)
 
 val of_var : Var.t -> Typ.t -> t
 (** create an access path from a var *)
 
+(* used in infer/src/labs/ *)
 val append : t -> access list -> t
+[@@warning "-unused-value-declaration"]
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
 
@@ -64,16 +64,9 @@ module Abs : sig
 
   val equal : t -> t -> bool
 
-  val to_footprint : int -> t -> t
-  (** replace the base var with a footprint variable rooted at formal index [formal_index] *)
-
   val get_footprint_index_base : base -> int option
   (** return the formal index associated with the base of this access path if there is one, or None
       otherwise *)
-
-  val with_base : base -> t -> t
-  (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces
-      `x.f.g` *)
 
   val extract : t -> raw
   (** extract a raw access path from its wrapper *)

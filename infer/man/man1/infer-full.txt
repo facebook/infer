@@ -621,8 +621,6 @@ OPTIONS
              CONFIG_USAGE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
-             CREATE_INTENT_FROM_URI (enabled by default),
-             CROSS_SITE_SCRIPTING (enabled by default),
              CXX_REF_CAPTURED_IN_BLOCK (enabled by default),
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
@@ -640,7 +638,6 @@ OPTIONS
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
              EXPENSIVE_EXECUTION_TIME (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
-             EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
              IMPURE_FUNCTION (enabled by default),
@@ -652,7 +649,6 @@ OPTIONS
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
-             INSECURE_INTENT_HANDLING (enabled by default),
              INTEGER_OVERFLOW_L1 (enabled by default),
              INTEGER_OVERFLOW_L2 (enabled by default),
              INTEGER_OVERFLOW_L5 (disabled by default),
@@ -662,11 +658,9 @@ OPTIONS
              INVARIANT_CALL (disabled by default),
              IPC_ON_UI_THREAD (enabled by default),
              Internal_error (enabled by default),
-             JAVASCRIPT_INJECTION (enabled by default),
              LAB_RESOURCE_LEAK (enabled by default),
              LOCKLESS_VIOLATION (enabled by default),
              LOCK_CONSISTENCY_VIOLATION (enabled by default),
-             LOGGING_PRIVATE_DATA (enabled by default),
              Leak_after_array_abstraction (enabled by default),
              Leak_in_footprint (enabled by default),
              Leak_unknown_origin (disabled by default),
@@ -732,18 +726,13 @@ OPTIONS
              PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
              PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
-             QUANDARY_TAINT_ERROR (enabled by default),
              REGEX_OP_ON_UI_THREAD (enabled by default),
              RESOURCE_LEAK (enabled by default),
              RETAIN_CYCLE (enabled by default),
              RETAIN_CYCLE_NO_WEAK_INFO (disabled by default),
              SCOPE_LEAKAGE (enabled by default),
              SENSITIVE_DATA_FLOW (disabled by default),
-             SHELL_INJECTION (enabled by default),
-             SHELL_INJECTION_RISK (enabled by default),
              SKIP_FUNCTION (disabled by default),
-             SQL_INJECTION (enabled by default),
-             SQL_INJECTION_RISK (enabled by default),
              STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default),
              STARVATION (enabled by default),
              STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
@@ -755,17 +744,6 @@ OPTIONS
              TOPL_ERROR (enabled by default),
              TOPL_ERROR_LATENT (disabled by default),
              UNREACHABLE_CODE (enabled by default),
-             UNTRUSTED_BUFFER_ACCESS (disabled by default),
-             UNTRUSTED_DESERIALIZATION (enabled by default),
-             UNTRUSTED_DESERIALIZATION_RISK (enabled by default),
-             UNTRUSTED_ENVIRONMENT_CHANGE_RISK (enabled by default),
-             UNTRUSTED_FILE (enabled by default),
-             UNTRUSTED_FILE_RISK (enabled by default),
-             UNTRUSTED_HEAP_ALLOCATION (disabled by default),
-             UNTRUSTED_INTENT_CREATION (enabled by default),
-             UNTRUSTED_URL_RISK (enabled by default),
-             UNTRUSTED_VARIABLE_LENGTH_ARRAY (enabled by default),
-             USER_CONTROLLED_SQL_RISK (enabled by default),
              USE_AFTER_DELETE (enabled by default),
              USE_AFTER_DELETE_LATENT (disabled by default),
              USE_AFTER_FREE (enabled by default),
@@ -1840,38 +1818,6 @@ OPTIONS
 
        --qualified-cpp-name-block-list +string
            Skip analyzing the procedures under the qualified cpp type name.
-           See also infer-analyze(1).
-
-       --quandary
-           Activates: quandary checker: The Quandary taint analysis detects
-           flows of values between sources and sinks, except if the value
-           went through a "sanitizer". In addition to some defaults, users
-           can specify their own sources, sinks, and sanitizers functions.
-           
-           DEPRECATED: Taint analysis is now supported by the Pulse checker
-           and Quandary will be removed in the next release.
-            (Conversely: --no-quandary)
-           See also infer-analyze(1).
-
-       --quandary-endpoints json
-           Specify endpoint classes for Quandary
-           See also infer-analyze(1).
-
-       --quandary-only
-           Activates: Enable quandary and disable all other checkers
-           (Conversely: --no-quandary-only)
-           See also infer-analyze(1).
-
-       --quandary-sanitizers json
-           Specify custom sanitizers for Quandary
-           See also infer-analyze(1).
-
-       --quandary-sinks json
-           Specify custom sinks for Quandary
-           See also infer-analyze(1).
-
-       --quandary-sources json
-           Specify custom sources for Quandary
            See also infer-analyze(1).
 
        --quiet,-q
@@ -3220,12 +3166,6 @@ INTERNAL OPTIONS
 
        --qualified-cpp-name-block-list-reset
            Set --qualified-cpp-name-block-list to the empty list.
-
-       --quandary-show-passthroughs
-           Activates: In error traces, show intermediate steps that propagate
-           data. When false, error traces are shorter and show only direct
-           flow via souces/sinks (Conversely:
-           --no-quandary-show-passthroughs)
 
        --racerd-ignore-classes-reset
            Set --racerd-ignore-classes to the empty list.

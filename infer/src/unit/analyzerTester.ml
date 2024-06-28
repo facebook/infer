@@ -100,18 +100,6 @@ module StructuredSil = struct
     Cmd (Sil.Call (ret_id_typ, call_exp, args, dummy_loc, CallFlags.default))
 
 
-  let make_store ~rhs_typ root_exp fld_str ~rhs_exp =
-    let fld = AccessPathTestUtils.make_fieldname fld_str in
-    let lhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
-    make_set ~rhs_typ ~lhs_exp ~rhs_exp
-
-
-  let make_load_fld ~rhs_typ lhs_str fld_str root_exp =
-    let fld = AccessPathTestUtils.make_fieldname fld_str in
-    let rhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
-    make_load ~rhs_typ (ident_of_str lhs_str) rhs_exp
-
-
   let id_assign_exp ?(rhs_typ = dummy_typ) lhs rhs_exp =
     let lhs_id = ident_of_str lhs in
     make_load ~rhs_typ lhs_id rhs_exp
@@ -142,12 +130,6 @@ module StructuredSil = struct
     let rhs_exp = Exp.int (IntLit.of_int rhs) in
     let rhs_typ = Typ.mk (Tint Typ.IInt) in
     var_assign_exp ~rhs_typ lhs rhs_exp
-
-
-  let var_assign_id ?(rhs_typ = dummy_typ) lhs rhs =
-    let lhs_exp = var_of_str lhs in
-    let rhs_exp = Exp.Var (ident_of_str rhs) in
-    make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
 
   (* x = &y *)

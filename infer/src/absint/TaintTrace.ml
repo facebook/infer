@@ -517,14 +517,7 @@ module Make (Spec : Spec) = struct
             (Sinks.elements callee_trace.sinks)
           |> Sinks.of_list |> Sinks.union caller_trace.sinks
       in
-      let passthroughs =
-        if Config.quandary_show_passthroughs then
-          if phys_equal sources caller_trace.sources && phys_equal sinks caller_trace.sinks then
-            (* this callee didn't add any new sources or any news sinks; it's just a passthrough *)
-            Passthroughs.add (Passthrough.make callee_site) caller_trace.passthroughs
-          else caller_trace.passthroughs
-        else Passthroughs.empty
-      in
+      let passthroughs = caller_trace.passthroughs in
       {sources; sinks; passthroughs}
 
 

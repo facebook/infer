@@ -348,43 +348,6 @@ module AccessExpression = struct
   let is_return_var = function Base (var, _) -> Var.is_return var | _ -> false
 end
 
-let rec get_typ tenv = function
-  | AccessExpression access_expr ->
-      AccessExpression.get_typ access_expr tenv
-  | UnaryOperator (_, _, typ_opt) ->
-      typ_opt
-  | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _) ->
-      Some (Typ.mk (Typ.Tint Typ.IBool))
-  | BinaryOperator (_, e1, e2) -> (
-    (* TODO: doing this properly will require taking account of language-specific coercion
-       semantics. Only return a type when the operands have the same type for now *)
-    match (get_typ tenv e1, get_typ tenv e2) with
-    | Some typ1, Some typ2 when Typ.equal typ1 typ2 ->
-        Some typ1
-    | _ ->
-        None )
-  | Exception t ->
-      get_typ tenv t
-  | Closure _ | Constant (Cfun _) ->
-      (* We don't have a way to represent function types *)
-      None
-  | Constant (Cint _) ->
-      (* TODO: handle signedness *)
-      Some (Typ.mk (Typ.Tint Typ.IInt))
-  | Constant (Cfloat _) ->
-      Some (Typ.mk (Typ.Tfloat Typ.FFloat))
-  | Constant (Cclass _) ->
-      Some StdTyp.Java.pointer_to_java_lang_class
-  | Constant (Cstr _) ->
-      (* TODO: this will need to behave differently depending on whether we're in C++ or Java *)
-      None
-  | Cast (typ, _) ->
-      Some typ
-  | Sizeof _ ->
-      (* sizeof returns a size_t, which is an unsigned int *)
-      Some (Typ.mk (Typ.Tint Typ.IUInt))
-
-
 let rec array_index_of_exp ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
   if include_array_indexes then
     Some (of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ)
@@ -587,34 +550,6 @@ let rec is_int_zero = function
       is_int_zero e
   | _ ->
       false
-
-
-let rec eval_arithmetic_binop op e1 e2 =
-  match (eval e1, eval e2) with
-  | Some (Const.Cint i1), Some (Const.Cint i2) ->
-      Some (Const.Cint (op i1 i2))
-  | _ ->
-      None
-
-
-and eval = function
-  | Constant c ->
-      Some c
-  | Cast (_, e) ->
-      eval e
-  | BinaryOperator (Binop.DivI, e1, e2) -> (
-    try eval_arithmetic_binop IntLit.div e1 e2 with Division_by_zero -> None )
-  | BinaryOperator (Binop.MinusA _, e1, e2) ->
-      eval_arithmetic_binop IntLit.sub e1 e2
-  | BinaryOperator (Binop.Mod, e1, e2) ->
-      eval_arithmetic_binop IntLit.rem e1 e2
-  | BinaryOperator (Binop.Mult _, e1, e2) ->
-      eval_arithmetic_binop IntLit.mul e1 e2
-  | BinaryOperator (Binop.PlusA _, e1, e2) ->
-      eval_arithmetic_binop IntLit.add e1 e2
-  | _ ->
-      (* TODO: handle bitshifting cases, port eval_binop from RacerD.ml *)
-      None
 
 
 let rec eval_boolean_binop op var e1 e2 =

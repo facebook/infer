@@ -728,16 +728,6 @@ val python_builtin_models : string
 
 val qualified_cpp_name_block_list : string list
 
-val quandary_endpoints : Yojson.Safe.t
-
-val quandary_sanitizers : Yojson.Safe.t
-
-val quandary_show_passthroughs : bool
-
-val quandary_sinks : Yojson.Safe.t
-
-val quandary_sources : Yojson.Safe.t
-
 val quiet : bool
 
 val racerd_always_report_java : bool
