@@ -16,6 +16,8 @@ type AliasD<T> = D<T>;
 // should it encounter a case type - we don't actually do anything sensible with them yet
 case type CT3 = string | bool;
 
+type TShape = shape();
+
 // should come out as HackArray
 type AShapeAlias = shape('success' => bool, 'count' => int);
 // should come out as HackDict
@@ -31,7 +33,19 @@ class HasConstant {
   const type T = int;
 }
 
-class C {
+final class C {
+
+  public function returnAliasedShape(): TShape {
+    return shape();
+  }
+
+  // want to make sure that return type enforcement doesn't yield
+  // no disjuncts for returnAliasedShape
+  public async function testAliasedShapeReturnBad(): Awaitable<void> {
+    $s = $this->returnAliasedShape();
+    $_ = $this->fail();
+  }
+
   public function foo(A $x): int {
     return $x;
   }

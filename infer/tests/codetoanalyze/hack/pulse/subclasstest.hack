@@ -349,4 +349,19 @@ class Wrapper {
     }
   }
 
+  public function return_arraykey(): arraykey {
+    return 3;
+  }
+
+  public async function hhiAliasImportedOK(mixed $m): Awaitable<void> {
+    if ($m is \HH\ClassKind) {
+      // here we  should know that's just and alias to string underneath
+      if ($m is string) {
+        return;
+      } else {
+        $_ = $this->fail();
+      }
+    }
+    return;
+  }
 }

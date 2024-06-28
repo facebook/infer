@@ -9,6 +9,8 @@
 declare $builtins.nondet() : int
 
 type HackDict extends HH::AnyArray = .final {}
+type HH::dict equals HackDict
+type HackArray equals HH::AnyArray
 
 type HackInt = .final { val: int }
 
@@ -139,12 +141,12 @@ define HackMixed._86reifiedinit(o: *HackMixed): *HackMixed {
 type HH::BuiltinAbstractEnumClass = .kind="class" .abstract {}
 type HH::BuiltinEnum = .kind="class" .abstract {}
 type HH::BuiltinEnumClass extends HH::BuiltinAbstractEnumClass  = .kind="class" .abstract {}
-// ALIAS: type HH::MemberOf should be defined manually above
-// ALIAS: type HH::enumname should be defined manually above
+type HH::MemberOf equals HackMixed //manual
+type HH::enumname equals HH::classname //manual
 // decls from ./InvalidOperationException.hhi
 type InvalidOperationException extends RuntimeException, StringishObject  = .kind="class" {}
 // decls from ./Label.hhi
-// ALIAS: type HH::EnumClass::Label should be defined manually above
+type HH::EnumClass::Label equals HackMixed
 // decls from ./NumberFormatter.hhi
 type NumberFormatter = .kind="class" {}
 // decls from ./Shapes.hhi
@@ -187,55 +189,56 @@ type HH::SleepWaitHandle extends HH::WaitableWaitHandle  = .kind="class" .final 
 // *** type HH::WaitableWaitHandle extends HH::Awaitable  = .kind="class" .abstract {}
 type stdClass = .kind="class" .final {}
 // decls from ./classname.hhi
-// ALIAS: type HH::classname should be defined manually above
-// ALIAS: type HH::typename should be defined manually above
+type HH::classname = .kind="class" {} // TODO manual hackery, this needs revisiting
+type HH::typename equals string // manual hackery again, needs revisiting
 // decls from ./coeffect/capabilities.hhi
-type HH::Capabilities::AccessGlobals extends HH::Capabilities::ReadGlobals  = .kind="interface" {}
-type HH::Capabilities::IO = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicy = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicyLocal extends HH::Capabilities::ImplicitPolicyShallow  = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicyOf extends HH::Capabilities::ImplicitPolicy  = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicyOfLocal extends HH::Capabilities::ImplicitPolicyLocal, HH::Capabilities::ImplicitPolicyOfShallow  = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicyOfShallow extends HH::Capabilities::ImplicitPolicyOf, HH::Capabilities::ImplicitPolicyShallow  = .kind="interface" {}
-type HH::Capabilities::ImplicitPolicyShallow extends HH::Capabilities::ImplicitPolicy  = .kind="interface" {}
-type HH::Capabilities::ReadGlobals = .kind="interface" {}
-type HH::Capabilities::Rx = .kind="interface" {}
-type HH::Capabilities::RxLocal extends HH::Capabilities::RxShallow  = .kind="interface" {}
-type HH::Capabilities::RxShallow extends HH::Capabilities::Rx  = .kind="interface" {}
-type HH::Capabilities::System = .kind="interface" {}
-type HH::Capabilities::SystemLocal extends HH::Capabilities::SystemShallow  = .kind="interface" {}
-type HH::Capabilities::SystemShallow extends HH::Capabilities::System  = .kind="interface" {}
-type HH::Capabilities::WriteProperty = .kind="interface" {}
+// We can't model capabilities accurately and they're not the tags of runtime objects anyway, so make them all null
+type HH::Capabilities::AccessGlobals equals void
+type HH::Capabilities::IO equals void
+type HH::Capabilities::ImplicitPolicy equals void
+type HH::Capabilities::ImplicitPolicyLocal equals void
+type HH::Capabilities::ImplicitPolicyOf equals void
+type HH::Capabilities::ImplicitPolicyOfLocal equals void
+type HH::Capabilities::ImplicitPolicyOfShallow equals void
+type HH::Capabilities::ImplicitPolicyShallow equals void
+type HH::Capabilities::ReadGlobals equals void
+type HH::Capabilities::Rx equals void
+type HH::Capabilities::RxLocal equals void
+type HH::Capabilities::RxShallow equals void
+type HH::Capabilities::System equals void
+type HH::Capabilities::SystemLocal equals void
+type HH::Capabilities::SystemShallow equals void
+type HH::Capabilities::WriteProperty equals void
 // decls from ./coeffect/contexts.hhi
-// ALIAS: type HH::Contexts::defaults should be defined manually above
-// ALIAS: type HH::Contexts::globals should be defined manually above
-// ALIAS: type HH::Contexts::leak_safe should be defined manually above
-// ALIAS: type HH::Contexts::leak_safe_local should be defined manually above
-// ALIAS: type HH::Contexts::leak_safe_shallow should be defined manually above
-// ALIAS: type HH::Contexts::read_globals should be defined manually above
-// ALIAS: type HH::Contexts::rx should be defined manually above
-// ALIAS: type HH::Contexts::rx_local should be defined manually above
-// ALIAS: type HH::Contexts::rx_shallow should be defined manually above
-// ALIAS: type HH::Contexts::write_props should be defined manually above
-// ALIAS: type HH::Contexts::zoned should be defined manually above
-// ALIAS: type HH::Contexts::zoned_local should be defined manually above
-// ALIAS: type HH::Contexts::zoned_shallow should be defined manually above
-// ALIAS: type HH::Contexts::zoned_with should be defined manually above
+type HH::Contexts::defaults equals void
+type HH::Contexts::globals equals void
+type HH::Contexts::leak_safe equals void
+type HH::Contexts::leak_safe_local equals void
+type HH::Contexts::leak_safe_shallow equals void
+type HH::Contexts::read_globals equals void
+type HH::Contexts::rx equals void
+type HH::Contexts::rx_local equals void
+type HH::Contexts::rx_shallow equals void
+type HH::Contexts::write_props equals void
+type HH::Contexts::zoned equals void
+type HH::Contexts::zoned_local equals void
+type HH::Contexts::zoned_shallow equals void
+type HH::Contexts::zoned_with equals void
 // decls from ./coeffect/unsafe_contexts.hhi
-// ALIAS: type HH::Contexts::Unsafe::defaults should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::globals should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::leak_safe should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::leak_safe_local should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::leak_safe_shallow should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::read_globals should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::rx should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::rx_local should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::rx_shallow should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::write_props should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::zoned should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::zoned_local should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::zoned_shallow should be defined manually above
-// ALIAS: type HH::Contexts::Unsafe::zoned_with should be defined manually above
+type HH::Contexts::Unsafe::defaults equals void
+type HH::Contexts::Unsafe::globals equals void
+type HH::Contexts::Unsafe::leak_safe equals void
+type HH::Contexts::Unsafe::leak_safe_local equals void
+type HH::Contexts::Unsafe::leak_safe_shallow equals void
+type HH::Contexts::Unsafe::read_globals equals void
+type HH::Contexts::Unsafe::rx equals void
+type HH::Contexts::Unsafe::rx_local equals void
+type HH::Contexts::Unsafe::rx_shallow equals void
+type HH::Contexts::Unsafe::write_props equals void
+type HH::Contexts::Unsafe::zoned equals void
+type HH::Contexts::Unsafe::zoned_local equals void
+type HH::Contexts::Unsafe::zoned_shallow equals void
+type HH::Contexts::Unsafe::zoned_with equals void
 // decls from ./collections/ImmMap.hhi
 type HH::ImmMap extends ConstMap  = .kind="class" .final {}
 // decls from ./collections/ImmSet.hhi
@@ -312,56 +315,56 @@ type UndefinedVariableException extends LogicException  = .kind="class" .final {
 type UnderflowException extends RuntimeException  = .kind="class" {}
 type UnexpectedValueException extends RuntimeException  = .kind="class" {}
 // decls from ./experimental_parser_utils.hhi
-// ALIAS: type HH::ExperimentalParserUtils::ClassBodyNode should be defined manually above
-// ALIAS: type HH::ExperimentalParserUtils::EnumBodyNode should be defined manually above
-// ALIAS: type HH::ExperimentalParserUtils::FunctionNode should be defined manually above
-// ALIAS: type HH::ExperimentalParserUtils::MethodParametersNode should be defined manually above
-// ALIAS: type HH::ExperimentalParserUtils::ShapeNode should be defined manually above
+type HH::ExperimentalParserUtils::ClassBodyNode equals HackArray
+type HH::ExperimentalParserUtils::EnumBodyNode equals HackArray
+type HH::ExperimentalParserUtils::FunctionNode equals HackArray
+type HH::ExperimentalParserUtils::MethodParametersNode equals HackArray
+type HH::ExperimentalParserUtils::ShapeNode equals HackArray
 // decls from ./ext_decl.hhi
-// ALIAS: type HH::ClassKind should be defined manually above
-// ALIAS: type HH::ExtDeclAttribute should be defined manually above
-// ALIAS: type HH::ExtDeclClass should be defined manually above
-// ALIAS: type HH::ExtDeclClassConst should be defined manually above
-// ALIAS: type HH::ExtDeclEnumType should be defined manually above
-// ALIAS: type HH::ExtDeclFile should be defined manually above
-// ALIAS: type HH::ExtDeclFileConst should be defined manually above
-// ALIAS: type HH::ExtDeclFileFunc should be defined manually above
-// ALIAS: type HH::ExtDeclMethod should be defined manually above
-// ALIAS: type HH::ExtDeclMethodParam should be defined manually above
-// ALIAS: type HH::ExtDeclModule should be defined manually above
-// ALIAS: type HH::ExtDeclProp should be defined manually above
-// ALIAS: type HH::ExtDeclSignature should be defined manually above
-// ALIAS: type HH::ExtDeclTParam should be defined manually above
-// ALIAS: type HH::ExtDeclTParam_ should be defined manually above
-// ALIAS: type HH::ExtDeclTypeConst should be defined manually above
-// ALIAS: type HH::ExtDeclTypeConstraint should be defined manually above
-// ALIAS: type HH::ExtDeclTypeStructure should be defined manually above
-// ALIAS: type HH::ExtDeclTypeStructureKind should be defined manually above
-// ALIAS: type HH::ExtDeclTypeStructureSubType should be defined manually above
-// ALIAS: type HH::ExtDeclTypeStructure_ should be defined manually above
-// ALIAS: type HH::ExtDeclTypedef should be defined manually above
+type HH::ClassKind equals HackString
+type HH::ExtDeclAttribute equals HackArray
+type HH::ExtDeclClass equals HackArray
+type HH::ExtDeclClassConst equals HackArray
+type HH::ExtDeclEnumType equals HackArray
+type HH::ExtDeclFile equals HackArray
+type HH::ExtDeclFileConst equals HackArray
+type HH::ExtDeclFileFunc equals HackArray
+type HH::ExtDeclMethod equals HackArray
+type HH::ExtDeclMethodParam equals HackArray
+type HH::ExtDeclModule equals HackArray
+type HH::ExtDeclProp equals HackArray
+type HH::ExtDeclSignature equals HackArray
+type HH::ExtDeclTParam equals HackArray
+type HH::ExtDeclTParam_ equals HackMixed
+type HH::ExtDeclTypeConst equals HackArray
+type HH::ExtDeclTypeConstraint equals HackArray
+type HH::ExtDeclTypeStructure equals HackArray
+type HH::ExtDeclTypeStructureKind equals HackString
+type HH::ExtDeclTypeStructureSubType equals HackArray
+type HH::ExtDeclTypeStructure_ equals HackMixed
+type HH::ExtDeclTypedef equals HackArray
 type HH::FileDecls = .kind="class" .final {}
-// ALIAS: type HH::Reified should be defined manually above
-// ALIAS: type HH::TypeConstraintKind should be defined manually above
-// ALIAS: type HH::TypeExpr should be defined manually above
-// ALIAS: type HH::TypedefVisibility should be defined manually above
-// ALIAS: type HH::Variance should be defined manually above
-// ALIAS: type HH::Visibility should be defined manually above
+type HH::Reified equals HackString
+type HH::TypeConstraintKind equals HackString
+type HH::TypeExpr equals HackString
+type HH::TypedefVisibility equals HackString
+type HH::Variance equals HackString
+type HH::Visibility equals HackString
 // decls from ./ext_facts.hhi
-// ALIAS: type HH::Facts::DeriveFilters should be defined manually above
+type HH::Facts::DeriveFilters equals HackArray
 type HH::Facts::DeriveKind extends HH::BuiltinEnum {}
 type HH::Facts::SymbolKind extends HH::BuiltinEnum {}
-// ALIAS: type HH::Facts::TypeAttributeFilter should be defined manually above
+type HH::Facts::TypeAttributeFilter equals HackArray
 type HH::Facts::TypeFlag extends HH::BuiltinEnum {}
 type HH::Facts::TypeKind extends HH::BuiltinEnum {}
 // decls from ./ext_rqtrace.hhi
 // decls from ./ext_sodium.hhi
 type SodiumException extends Exception  = .kind="class" .final {}
 // decls from ./ext_watchman.hhi
-// ALIAS: type HH::WatchmanResult should be defined manually above
+type HH::WatchmanResult equals HackArray
 // decls from ./func_pointers.hhi
 // decls from ./functions.hhi
-// ALIAS: type HH::ParseTree should be defined manually above
+type HH::ParseTree equals HackArray
 // decls from ./get_proxygen_headers.hhi
 // decls from ./hackarray.hhi
 type HH::AnyArray extends HH::KeyedContainer, XHPChild  = .kind="class" .abstract {}
@@ -373,25 +376,25 @@ type HH::AnyArray extends HH::KeyedContainer, XHPChild  = .kind="class" .abstrac
 type HH::Lib::Locale::InvalidLocaleException extends Exception  = .kind="class" .final {}
 type HH::Lib::_Private::_Locale::Locale = .kind="class" .final {}
 // decls from ./hsl/ext_hsl_os.hhi
-// ALIAS: type HH::Lib::OS::FileDescriptor should be defined manually above
+type HH::Lib::OS::FileDescriptor equals HackMixed
 // decls from ./hsl/ext_hsl_os_fds.hhi
 type HH::Lib::_Private::_OS::ErrnoException extends Exception  = .kind="class" .final {}
-// ALIAS: type HH::Lib::_Private::_OS::in_port_t should be defined manually above
-// ALIAS: type HH::Lib::_Private::_OS::sa_family_t should be defined manually above
+type HH::Lib::_Private::_OS::in_port_t equals HackInt
+type HH::Lib::_Private::_OS::sa_family_t equals HackInt
 type HH::Lib::_Private::_OS::sockaddr = .kind="class" {}
 type HH::Lib::_Private::_OS::sockaddr_in extends HH::Lib::_Private::_OS::sockaddr  = .kind="class" .final {}
 type HH::Lib::_Private::_OS::sockaddr_in6 extends HH::Lib::_Private::_OS::sockaddr  = .kind="class" .final {}
 type HH::Lib::_Private::_OS::sockaddr_un extends HH::Lib::_Private::_OS::sockaddr  = .kind="class" .abstract {}
 type HH::Lib::_Private::_OS::sockaddr_un_pathname extends HH::Lib::_Private::_OS::sockaddr_un  = .kind="class" .final {}
 type HH::Lib::_Private::_OS::sockaddr_un_unnamed extends HH::Lib::_Private::_OS::sockaddr_un  = .kind="class" .final {}
-// ALIAS: type HH::Lib::_Private::_OS::uint32_t should be defined manually above
+type HH::Lib::_Private::_OS::uint32_t equals HackInt
 // decls from ./hsl/ext_hsl_os_subprocesses.hhi
-// ALIAS: type HH::Lib::_Private::_OS::ForkAndExecveOptions should be defined manually above
+type HH::Lib::_Private::_OS::ForkAndExecveOptions equals HackArray
 // decls from ./hsl/ext_hsl_str.hhi
 // decls from ./hsl/ext_random.hhi
 // decls from ./hsl/ext_regex.hhi
-// ALIAS: type HH::Lib::Regex::Match should be defined manually above
-// ALIAS: type HH::Lib::Regex::Pattern should be defined manually above
+type HH::Lib::Regex::Match equals HackArray
+type HH::Lib::Regex::Pattern equals HackString
 // decls from ./hsl/ext_time.hhi
 // decls from ./idx.hhi
 // decls from ./imagick/Imagick.hhi
@@ -461,10 +464,10 @@ type ReflectionTypeConstant extends Reflector  = .kind="class" {}
 type Reflector extends IPureStringishObject  = .kind="interface" {}
 // decls from ./reified_generics.hhi
 // decls from ./soundness.hhi
-// ALIAS: type HH::FIXME::MISSING_PARAM_TYPE should be defined manually above
-// ALIAS: type HH::FIXME::MISSING_PROP_TYPE should be defined manually above
-// ALIAS: type HH::FIXME::MISSING_RETURN_TYPE should be defined manually above
-// ALIAS: type HH::FIXME::POISON_MARKER should be defined manually above
+type HH::FIXME::MISSING_PARAM_TYPE equals HackMixed
+type HH::FIXME::MISSING_PROP_TYPE equals HackMixed
+type HH::FIXME::MISSING_RETURN_TYPE equals HackMixed
+type HH::FIXME::POISON_MARKER equals HackMixed
 // decls from ./spl/ArrayIterator.hhi
 type ArrayIterator extends HH::KeyedIterator, HH::KeyedTraversable  = .kind="class" {}
 // decls from ./spl/EmptyIterator.hhi
@@ -519,7 +522,7 @@ type AsyncMysqlRowBlock extends Countable, HH::KeyedTraversable  = .kind="class"
 type HH::Lib::SQL::ListFormat = .kind="interface" {}
 type HH::Lib::SQL::Query = .kind="class" .final {}
 type HH::Lib::SQL::QueryFormat extends HH::Lib::SQL::ScalarFormat  = .kind="interface" {}
-// ALIAS: type HH::Lib::SQL::QueryFormatString should be defined manually above
+type HH::Lib::SQL::QueryFormatString equals HH::FormatString
 type HH::Lib::SQL::ScalarFormat = .kind="interface" {}
 type HH::SQLFormatter extends HH::SQLScalarFormatter  = .kind="interface" {}
 type HH::SQLListFormatter = .kind="interface" {}
@@ -540,7 +543,7 @@ type CURLFile = .kind="class" {}
 type DateInterval = .kind="class" {}
 type DatePeriod extends HH::Iterator  = .kind="class" {}
 type DateTime extends DateTimeInterface  = .kind="class" {}
-// ALIAS: type DateTimeErrors should be defined manually above
+type DateTimeErrors equals HackArray
 type DateTimeImmutable extends DateTimeInterface  = .kind="class" {}
 type DateTimeInterface = .kind="interface" {}
 type DateTimeZone = .kind="class" {}
@@ -636,9 +639,9 @@ type PDOStatement = .kind="class" {}
 // decls from ./stdlib/builtins_preg.hhi
 // decls from ./stdlib/builtins_process.hhi
 // decls from ./stdlib/builtins_prof.hhi
-// ALIAS: type HH::ObjprofObjectStats should be defined manually above
-// ALIAS: type HH::ObjprofPathsStats should be defined manually above
-// ALIAS: type HH::ObjprofStringStats should be defined manually above
+type HH::ObjprofObjectStats equals HackArray
+type HH::ObjprofPathsStats equals HackArray
+type HH::ObjprofStringStats equals HackArray
 // decls from ./stdlib/builtins_random.hhi
 // decls from ./stdlib/builtins_readline.hhi
 // decls from ./stdlib/builtins_readonly.hhi
@@ -685,7 +688,7 @@ type Transliterator = .kind="class" {}
 // decls from ./stdlib/builtins_url.hhi
 // decls from ./stdlib/builtins_variable.hhi
 // decls from ./stdlib/builtins_xenon.hhi
-// ALIAS: type HH::XenonSample should be defined manually above
+type HH::XenonSample equals HackArray
 // decls from ./stdlib/builtins_xml.hhi
 // decls from ./stdlib/builtins_xmlwriter.hhi
 type XMLWriter = .kind="class" {}
@@ -696,13 +699,13 @@ type ZipArchive = .kind="class" {}
 // decls from ./stdlib/builtins_zlib.hhi
 // decls from ./string_coercions.hhi
 // decls from ./supportdynamic.hhi
-// ALIAS: type HH::supportdyn should be defined manually above
+type HH::supportdyn equals HackMixed
 // decls from ./traits.hhi
 // decls from ./typenames.hhi
-// ALIAS: type HH::FormatString should be defined manually above
-// ALIAS: type HH::FunctionRef should be defined manually above
+type HH::FormatString equals HackString
+type HH::FunctionRef equals HackMixed
 // decls from ./typestructure.hhi
-// ALIAS: type HH::TypeStructure should be defined manually above
+type HH::TypeStructure equals HackArray
 type HH::TypeStructureKind extends HH::BuiltinEnum {}
 // decls from ./weakref.hhi
 type WeakRef = .kind="class" .final {}
