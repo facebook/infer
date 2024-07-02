@@ -23,9 +23,7 @@
    -open
    IBase
    -open
-   Absint
-   -open
-   Biabduction))
- (libraries base64 core IStdlib ATDGenerated IBase IR Absint Biabduction)
+   Absint))
+ (libraries base64 core IStdlib ATDGenerated IBase IR Absint)
  (preprocess
   (pps ppx_compare inferppx)))

@@ -1082,13 +1082,5 @@ let explain_divide_by_zero tenv exp node loc =
       Localise.no_desc
 
 
-(** explain a condition which is always true or false *)
-let explain_condition_always_true_false tenv i cond node loc =
-  let cond_str_opt =
-    match exp_rv_dexp tenv node cond with Some de -> Some (DExp.to_string de) | None -> None
-  in
-  Localise.desc_condition_always_true_false i cond_str_opt loc
-
-
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc

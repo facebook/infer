@@ -23,13 +23,11 @@ module Trace = BufferOverrunTrace
 module UnusedBranch = struct
   type t = {node: CFG.Node.t; location: Location.t; condition: Exp.t; true_branch: bool}
 
-  let report {InterproceduralAnalysis.proc_desc; tenv; err_log}
-      {node; location; condition; true_branch} =
+  let report {InterproceduralAnalysis.proc_desc; err_log} {location; condition; true_branch} =
     let desc =
       let err_desc =
         let i = match condition with Exp.Const (Const.Cint i) -> i | _ -> IntLit.zero in
-        Errdesc.explain_condition_always_true_false tenv i condition (CFG.Node.underlying_node node)
-          location
+        Localise.desc_condition_always_true_false i None location
       in
       F.asprintf "%a" Localise.pp_error_desc err_desc
     in

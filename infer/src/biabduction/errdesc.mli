@@ -62,10 +62,6 @@ val explain_dereference_as_caller_expression :
 val explain_divide_by_zero : Tenv.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a division by zero *)
 
-val explain_condition_always_true_false :
-  Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
-(** explain a condition which is always true or false *)
-
 val explain_leak :
      Tenv.t
   -> Predicates.hpred
