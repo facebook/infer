@@ -368,6 +368,7 @@ let setup_log_file () =
       log_file := Some (fmt, chan) ;
       if preexisting_logfile then is_newline := false ;
       reset_formatters () ;
+      EarlyScubaLogging.finish () |> ScubaLogging.log_many ;
       if Config.is_originator && preexisting_logfile then
         phase
           "============================================================@\n\

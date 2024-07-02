@@ -38,9 +38,34 @@ let strict_mode_env_var = "INFER_STRICT_MODE"
 let strict_mode = is_env_var_set strict_mode_env_var
 
 let warnf =
-  if strict_mode then fun fmt -> L.(die UserError) fmt
+  if strict_mode then fun fmt -> L.die UserError fmt
   else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
   else F.eprintf
+
+
+let log_deprecated_option source ~deprecated ~instead ~short_instead ~doc =
+  ( if is_originator then
+      let label =
+        match source with
+        | `CLI ->
+            "deprecated_option"
+        | `Inferconfig _ ->
+            "deprecated_option_inferconfig"
+      in
+      EarlyScubaLogging.log_message ~label ~message:deprecated ) ;
+  let pp_source fmt = function
+    | `CLI ->
+        ()
+    | `Inferconfig root ->
+        F.fprintf fmt " in %s/.inferconfig:" root
+  in
+  if String.is_empty instead then
+    warnf "WARNING:%a '-%s' is deprecated. Here is its documentation:@\n%s@." pp_source source
+      deprecated doc
+  else
+    warnf "WARNING:%a '-%s' is deprecated. Use '--%s'%s instead.@." pp_source source deprecated
+      instead
+      (if short_instead = "" then "" else Printf.sprintf " or '-%s'" short_instead)
 
 
 (** This is the subset of Arg.spec that we actually use. What's important is that all these specs
@@ -231,22 +256,11 @@ let add parse_mode sections desc =
 
 let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
   let warn source =
-    let source_s =
-      match source with
-      | `CLI ->
-          ""
-      | `Inferconfig root ->
-          Printf.sprintf " in %s/.inferconfig:" root
-    in
     match parse_mode with
     | Javac | NoParse ->
         ()
-    | InferCommand when not (String.is_empty long) ->
-        warnf "WARNING:%s '-%s' is deprecated. Use '--%s'%s instead.@." source_s deprecated long
-          (if short = "" then "" else Printf.sprintf " or '-%s'" short)
     | InferCommand ->
-        warnf "WARNING:%s '-%s' is deprecated. Here is its documentation:@\n%s@." source_s
-          deprecated doc
+        log_deprecated_option source ~deprecated ~instead:long ~short_instead:short ~doc
   in
   let warn_then_f f x =
     warn `CLI ;
@@ -891,7 +905,8 @@ let mk_subcommand command ?on_unknown_arg:(on_unknown = `Reject) ~name ?deprecat
            ~decode_json:(fun ~inferconfig_dir:_ _ ->
              raise (Arg.Bad ("Bad option in config file: " ^ long)) )
            ~mk_setter:(fun _ _ ->
-             warnf "WARNING: '%s' is deprecated. Please use '%s' instead.@\n" (dashdash long) name ;
+             log_deprecated_option `CLI ~deprecated:("-" ^ long) ~instead:name ~short_instead:""
+               ~doc:"" ;
              switch () )
            ~mk_spec:(fun set -> Unit (fun () -> set "")) )
   | None ->
