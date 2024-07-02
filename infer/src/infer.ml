@@ -12,24 +12,6 @@ module Cmd = InferCommandImplementation
 
 (** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
 
-let run_ driver_mode =
-  let open Driver in
-  if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
-    L.die UserError "ERROR: Textual generation is only allowed in Java and Python mode currently" ;
-  run_prologue driver_mode ;
-  let changed_files = SourceFile.read_config_files_to_analyze () in
-  capture driver_mode ~changed_files ;
-  if Config.incremental_analysis then AnalysisDependencyGraph.invalidate ~changed_files ;
-  analyze_and_report driver_mode ~changed_files ;
-  ()
-
-
-let run driver_mode =
-  ScubaLogging.execute_with_time_logging "run" (fun () -> run_ driver_mode) ;
-  (* logging should finish before we run the epilogue *)
-  Driver.run_epilogue ()
-
-
 let setup () =
   ( match Config.command with
   | Analyze ->
@@ -156,9 +138,9 @@ let () =
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
       else JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
   | Analyze ->
-      run Driver.Analyze
+      Driver.run Analyze
   | Capture | Compile | Run ->
-      run (Lazy.force Driver.mode_from_command_line)
+      Driver.run (Lazy.force Driver.mode_from_command_line)
   | Help ->
       Cmd.help ()
   | Report ->

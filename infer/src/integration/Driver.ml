@@ -596,3 +596,20 @@ let run_epilogue () =
     () ) ;
   if Config.buck_cache_mode then ResultsDir.scrub_for_caching () ;
   ()
+
+
+let run driver_mode =
+  if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
+    L.die UserError "ERROR: Textual generation is only allowed in Java and Python mode currently" ;
+  run_prologue driver_mode ;
+  let changed_files = SourceFile.read_config_files_to_analyze () in
+  capture driver_mode ~changed_files ;
+  if Config.incremental_analysis then AnalysisDependencyGraph.invalidate ~changed_files ;
+  analyze_and_report driver_mode ~changed_files ;
+  ()
+
+
+let run driver_mode =
+  ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode) ;
+  (* logging should finish before we run the epilogue *)
+  run_epilogue ()

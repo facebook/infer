@@ -40,21 +40,9 @@ type mode =
 
 val is_analyze_mode : mode -> bool
 
-val is_compatible_with_textual_generation : mode -> bool
-
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)
 
-val run_prologue : mode -> unit
-(** prepare the environment for running the given mode *)
-
-val capture : changed_files:SourceFile.Set.t option -> mode -> unit
-(** run the capture for the given mode *)
-
-val analyze_and_report : changed_files:SourceFile.Set.t option -> mode -> unit
-(** run the analysis for the given mode *)
-
 val report : unit -> unit
 
-val run_epilogue : unit -> unit
-(** cleanup infer-out/ for Buck, generate stats, and generally post-process the results of a run *)
+val run : mode -> unit
