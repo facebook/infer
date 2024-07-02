@@ -214,7 +214,7 @@ let parse_target_string =
     else if Str.string_match normal_target_regexp s 0 then `NormalTarget s
     else if Str.string_match noname_target_regexp s 0 then
       let name = String.split s ~on:'/' |> List.last_exn in
-      `NormalTarget (F.sprintf "%s:%s" s name)
+      if Char.equal name.[0] ':' then `NormalTarget s else `NormalTarget (F.sprintf "%s:%s" s name)
     else retry s
   in
   fun s ->
