@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-# see explanations in cpp/biabduction/Makefile for the custom isystem
+# see explanations in cpp/pulse/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++17 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --no-pulse-force-continue --project-root $(TESTS_DIR) \
