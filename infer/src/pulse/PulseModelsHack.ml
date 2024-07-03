@@ -878,6 +878,20 @@ let make_hack_random_bool : DSL.aval DSL.model_monad =
   ret boxed_bool
 
 
+let make_hack_unconstrained_int : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* any = mk_fresh ~model_desc:"make_hack_unconstrained_int" () in
+  let* boxed_int = constructor hack_int_type_name [("val", any)] in
+  ret boxed_int
+
+
+let hack_unconstrained_int : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* rv = make_hack_unconstrained_int in
+     assign_ret rv
+
+
 let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   (* this operator is always run on a HackBool argument (nonnull type) *)
@@ -1527,5 +1541,6 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> hhbc_iter_next ]
+    $+ capt_arg_payload $--> hhbc_iter_next
+  ; -"Infer$static" &:: "newUnconstrainedInt" <>$ any_arg $--> hack_unconstrained_int ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
