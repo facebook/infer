@@ -235,8 +235,9 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
       hist ;
     (* No relevant taint events in value history -> skip reporting taint *)
     None )
-  else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-    Some (suspicious_source, sink_kind, description, policy_id, privacy_effect)
+  else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then (
+    L.d_printfln ~color:Red "Value history: %a" ValueHistory.pp hist ;
+    Some (suspicious_source, sink_kind, description, policy_id, privacy_effect) )
   else (
     L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
       matching_sanitizers ;
