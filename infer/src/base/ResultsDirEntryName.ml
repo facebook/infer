@@ -26,7 +26,6 @@ type id =
   | CaptureDependencies
   | ChangedFunctions
   | ChangedFunctionsTempResults
-  | DatalogFacts
   | DBWriterSocket
   | Debug
   | Differential
@@ -176,12 +175,6 @@ let of_id = function
       { rel_path= "duplicates.txt"
       ; kind= File
       ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
-  | DatalogFacts ->
-      { rel_path= "facts"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
   | GlobalTypeEnvironment ->

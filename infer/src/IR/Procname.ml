@@ -734,14 +734,6 @@ let is_java t = match t with Java _ -> true | _ -> false
 
 let is_python t = match t with Python _ -> true | _ -> false
 
-let as_java_exn ~explanation t =
-  match t with
-  | Java java ->
-      java
-  | _ ->
-      Logging.die InternalError "Expected Java procname: %s" explanation
-
-
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
 let is_c_method t = match t with ObjC_Cpp _ -> true | _ -> false
 

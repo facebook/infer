@@ -376,9 +376,6 @@ val is_java : t -> bool
 val is_python : t -> bool
 (** Check if this is a Python procedure name. *)
 
-val as_java_exn : explanation:string -> t -> Java.t
-(** Converts to a Java.t. Throws if [is_java] is false *)
-
 val objc_cpp_replace_method_name : t -> string -> t
 
 val is_infer_undefined : t -> bool

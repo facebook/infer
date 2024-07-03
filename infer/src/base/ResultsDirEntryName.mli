@@ -27,7 +27,6 @@ type id =
   | CaptureDependencies  (** list of infer-out/ directories that contain capture artefacts *)
   | ChangedFunctions  (** results of the clang test determinator *)
   | ChangedFunctionsTempResults  (** a directory for temporary [ChangedFunctions] files *)
-  | DatalogFacts  (** directory for datalog facts *)
   | DBWriterSocket  (** socket to the DBWriter process for serializing writes to SQLite *)
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)

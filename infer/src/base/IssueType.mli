@@ -177,8 +177,6 @@ val dangling_pointer_dereference_maybe : t
 
 val data_flow_to_sink : t
 
-val datalog_fact : t
-
 val dead_store : t
 
 val deadlock : t

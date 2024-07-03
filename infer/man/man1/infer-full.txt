@@ -484,16 +484,6 @@ OPTIONS
            without being reported as dead stores.
            See also infer-analyze(1).
 
-       --datalog
-           Activates: datalog checker: Experimental datalog-based points-to
-           analysis. (Conversely: --no-datalog)
-           See also infer-analyze(1).
-
-       --datalog-only
-           Activates: Enable datalog and disable all other checkers
-           (Conversely: --no-datalog-only)
-           See also infer-analyze(1).
-
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
@@ -625,7 +615,6 @@ OPTIONS
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
-             DATALOG_FACT (enabled by default),
              DATA_FLOW_TO_SINK (disabled by default),
              DEADLOCK (enabled by default),
              DEAD_STORE (enabled by default),
@@ -2840,10 +2829,6 @@ INTERNAL OPTIONS
 
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
-
-       --java-reflection
-           Activates: Print usages of reflection in the log. (Conversely:
-           --no-java-reflection)
 
        --java-source-parser-experimental
            Activates: The experimental Java source parser for declaration

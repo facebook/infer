@@ -83,14 +83,6 @@ OPTIONS
            Deactivates: Suppress printing function pointers in cost reports
            (Conversely: --cost-suppress-func-ptr)
 
-       --datalog
-           Activates: datalog checker: Experimental datalog-based points-to
-           analysis. (Conversely: --no-datalog)
-
-       --datalog-only
-           Activates: Enable datalog and disable all other checkers
-           (Conversely: --no-datalog-only)
-
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,

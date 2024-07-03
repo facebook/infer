@@ -179,10 +179,6 @@ let all_checkers =
          ; (pulse, Java)
          ; (pulse, CIL)
          ; (pulse, Python) ] ) }
-  ; { checker= Datalog
-    ; callbacks=
-        (let datalog = intraprocedural DatalogAnalysis.checker in
-         [(datalog, Java)] ) }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =

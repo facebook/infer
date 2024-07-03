@@ -43,8 +43,6 @@
    -open
    Labs
    -open
-   Datalog
-   -open
    Backend))
  (libraries
   fmt
@@ -64,7 +62,6 @@
   Topllib
   Concurrency
   Labs
-  Datalog
   Textuallib)
  (preprocess
   (pps ppx_expect)))

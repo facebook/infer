@@ -892,11 +892,6 @@ let data_flow_to_sink =
     ~user_documentation:"A flow of data was detected to a sink."
 
 
-let datalog_fact =
-  register ~category:NoCategory ~id:"DATALOG_FACT" Info Datalog
-    ~user_documentation:"Datalog fact used as input for a datalog solver."
-
-
 let regex_op_on_ui_thread =
   register ~category:PerfRegression Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:
