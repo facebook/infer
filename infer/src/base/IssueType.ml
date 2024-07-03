@@ -918,6 +918,11 @@ let scope_leakage =
     ~user_documentation:[%blob "./documentation/issues/SCOPE_LEAKAGE.md"]
 
 
+let self_in_block_passed_to_init =
+  register ~category:ResourceLeak ~enabled:true ~id:"SELF_IN_BLOCK_PASSED_TO_INIT" Error SelfInBlock
+    ~user_documentation:[%blob "./documentation/issues/SELF_IN_BLOCK_PASSED_TO_INIT.md"]
+
+
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
 
 let stack_variable_address_escape =

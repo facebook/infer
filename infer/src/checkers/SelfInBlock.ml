@@ -337,7 +337,8 @@ type report_issues_result =
   ; reported_weak_self_in_noescape_block: Pvar.Set.t
   ; selfList: DomainData.t list
   ; weakSelfList: DomainData.t list
-  ; reported_cxx_ref: Pvar.Set.t }
+  ; reported_cxx_ref: Pvar.Set.t
+  ; reported_self_in_block_passed_to_init: Pvar.Set.t }
 
 module TransferFunctions = struct
   module Domain = Domain
@@ -462,7 +463,7 @@ let make_trace_captured domain var =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | (CAPTURED_STRONG_SELF | CXX_REF) when Pvar.equal pvar var ->
+        | (CAPTURED_STRONG_SELF | CXX_REF | SELF) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -555,6 +556,36 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
   else report_captured_strongself
 
 
+let report_self_in_block_passed_to_init_issue proc_desc err_log domain (capturedSelf : DomainData.t)
+    reported_self_in_init_block_param =
+  let attributes = Procdesc.get_attributes proc_desc in
+  let passed_to_init =
+    Option.bind
+      ~f:(fun ({passed_to} : ProcAttributes.block_as_arg_attributes) ->
+        if Procname.is_objc_init passed_to then Some passed_to else None )
+      attributes.block_as_arg_attributes
+  in
+  match passed_to_init with
+  | Some passed_to_init ->
+      if not (Pvar.Set.mem capturedSelf.pvar reported_self_in_init_block_param) then (
+        let reported_self_in_init_block_param =
+          Pvar.Set.add capturedSelf.pvar reported_self_in_init_block_param
+        in
+        let message =
+          F.asprintf
+            "`self` is captured in the block at %a. The block is passed to the initializer `%a`. \
+             This could lead to retain cycles or unexpected behavior."
+            Location.pp capturedSelf.loc Procname.pp passed_to_init
+        in
+        let ltr = make_trace_captured domain capturedSelf.pvar in
+        Reporting.log_issue proc_desc err_log ~ltr ~loc:capturedSelf.loc SelfInBlock
+          IssueType.self_in_block_passed_to_init message ;
+        reported_self_in_init_block_param )
+      else reported_self_in_init_block_param
+  | None ->
+      reported_self_in_init_block_param
+
+
 let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
     reported_cxx_ref =
   let attributes = Procdesc.get_attributes proc_desc in
@@ -608,7 +639,11 @@ let report_issues proc_desc err_log domain =
           reported_weak_self_in_noescape_block
         ; weakSelfList= domain_data :: result.weakSelfList }
     | DomainData.SELF ->
-        {result with selfList= domain_data :: result.selfList}
+        let reported_self_in_block_passed_to_init =
+          report_self_in_block_passed_to_init_issue proc_desc err_log domain domain_data
+            result.reported_self_in_block_passed_to_init
+        in
+        {result with selfList= domain_data :: result.selfList; reported_self_in_block_passed_to_init}
     | _ ->
         result
   in
@@ -617,7 +652,8 @@ let report_issues proc_desc err_log domain =
     ; reported_weak_self_in_noescape_block= Pvar.Set.empty
     ; selfList= []
     ; weakSelfList= []
-    ; reported_cxx_ref= Pvar.Set.empty }
+    ; reported_cxx_ref= Pvar.Set.empty
+    ; reported_self_in_block_passed_to_init= Pvar.Set.empty }
   in
   let domain_bindings =
     Vars.bindings domain

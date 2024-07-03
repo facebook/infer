@@ -324,6 +324,8 @@ val retain_cycle_no_weak_info : t
 
 val scope_leakage : t
 
+val self_in_block_passed_to_init : t
+
 val sensitive_data_flow : t
 
 val skip_function : t
