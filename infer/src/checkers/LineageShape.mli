@@ -172,9 +172,6 @@ module Summary : sig
 
   val map_return : t option -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
 
-  val map_argument_of :
-    t option -> Procname.t -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
-
   val map_return_of : t option -> Procname.t -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
 end
 

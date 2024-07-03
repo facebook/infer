@@ -235,6 +235,124 @@ module G = struct
         false (* TODO T154077173: model as a call? *)
 end
 
+module Unified = struct
+  module UVertex = struct
+    type v =
+      | Local of Local.t * (PPNode.t[@sexp.opaque])
+      | Argument of int * FieldPath.t
+      | Return of FieldPath.t
+      | Captured of int
+      | Function
+    [@@deriving sexp, compare, equal, hash]
+
+    let pp_v fmt v =
+      match v with
+      | Local (local, _node) ->
+          Local.pp fmt local
+      | Argument (index, path) ->
+          F.arg_path fmt (index, path)
+      | Return path ->
+          F.ret_path fmt path
+      | Captured index ->
+          F.captured fmt index
+      | Function ->
+          F.fun_ fmt ()
+
+
+    type t = {procname: Procname.t; vertex: v} [@@deriving sexp, compare, equal, hash]
+
+    let pp fmt {procname; vertex} = F.in_procname pp_v fmt (procname, vertex)
+  end
+
+  module UEdge = struct
+    include Edge
+
+    let pp fmt {kind; _} =
+      (* Print the edge mimicking the json terminology *)
+      match kind with
+      | Direct ->
+          Fmt.string fmt "Copy"
+      | Call ->
+          Fmt.string fmt "Call"
+      | Return ->
+          Fmt.string fmt "Return"
+      | Capture ->
+          Fmt.string fmt "Capture"
+      | Builtin ->
+          Fmt.string fmt "Builtin"
+      | Summary {callee; _} ->
+          Fmt.pf fmt "Derive.%a" Procname.pp_verbose callee
+      | DynamicCallFunction ->
+          Fmt.string fmt "DynamicCallFunction"
+      | DynamicCallModule ->
+          Fmt.string fmt "DynamicCallModule"
+  end
+
+  module G = Graph.Persistent.Digraph.ConcreteBidirectionalLabeled (UVertex) (UEdge)
+
+  let transform_v fetch_shapes procname (vertex : Vertex.t) : UVertex.t list =
+    match vertex with
+    | Local (local, node) ->
+        [{procname; vertex= Local (local, node)}]
+    | Argument (index, path) ->
+        [{procname; vertex= Argument (index, path)}]
+    | ArgumentOf (callee, index, path) ->
+        let shapes = fetch_shapes callee in
+        Shapes.map_argument shapes index path ~f:(fun path' ->
+            {UVertex.procname= callee; vertex= Argument (index, path')} )
+    | Captured index ->
+        [{procname; vertex= Captured index}]
+    | CapturedBy (closure, index) ->
+        [{procname= closure; vertex= Captured index}]
+    | Return path ->
+        [{procname; vertex= Return path}]
+    | ReturnOf (callee, path) ->
+        let shapes = fetch_shapes callee in
+        Shapes.map_return shapes path ~f:(fun path' ->
+            {UVertex.procname= callee; vertex= Return path'} )
+    | Self ->
+        [{procname; vertex= Function}]
+    | Function fun_ ->
+        [{procname= fun_; vertex= Function}]
+
+
+  let transform_e fetch_shapes procname (src, edge, dst) : G.E.t list =
+    let srcs = transform_v fetch_shapes procname src in
+    let dsts = transform_v fetch_shapes procname dst in
+    List.cartesian_product srcs dsts |> List.map ~f:(fun (src', dst') -> (src', edge, dst'))
+
+
+  module Dot = Graph.Graphviz.Dot (struct
+    include G
+
+    module Color = struct
+      let blue_gray_900 = 0x263238
+
+      let blue_gray_600 = 0x546E7A
+
+      let edge = blue_gray_600
+
+      let vertex = blue_gray_900
+    end
+
+    let vertex_name v = string_of_int @@ [%hash: UVertex.t] v
+
+    let graph_attributes _ = []
+
+    let default_vertex_attributes _ =
+      [`Shape `Box; `Style `Rounded; `Color Color.vertex; `Color Color.vertex]
+
+
+    let vertex_attributes v = [`Label (Fmt.to_to_string UVertex.pp v)]
+
+    let get_subgraph _ = None
+
+    let default_edge_attributes _ = [`Color Color.edge; `Fontcolor Color.edge]
+
+    let edge_attributes (_, edge, _) = [`Label (Fmt.to_to_string UEdge.pp edge)]
+  end)
+end
+
 (** Helper function. *)
 let get_formals proc_desc : Var.t list =
   let f (pvar, _typ) = Var.of_pvar pvar in
@@ -1114,8 +1232,6 @@ module Out = struct
     write_graph json_dedup_cache outchan proc_desc graph ;
     Out_channel.flush outchan
 
-
-  let report_graph outchan proc_desc graph = with_dedup_cache write_graph outchan proc_desc graph
 
   let report_summary proc_desc summary =
     let outchan = get_pid_channel () in

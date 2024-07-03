@@ -532,10 +532,6 @@ module Env : sig
     val map_return : t option -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
     (* Doc in .mli *)
 
-    val map_argument_of :
-      t option -> Procname.t -> int -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
-    (* Doc in .mli *)
-
     val map_return_of : t option -> Procname.t -> FieldPath.t -> f:(FieldPath.t -> 'a) -> 'a list
     (* Doc in .mli *)
 
@@ -1447,15 +1443,6 @@ end = struct
       |> fst
 
 
-    let fold_argument_of summary_option procname index field_path ~init ~f =
-      match summary_option with
-      | Some ({argument_of; _} as summary) ->
-          let shape_hset = (Caml.Hashtbl.find argument_of procname).(index) in
-          fold_shape_hset summary shape_hset field_path ~init ~f
-      | None ->
-          f init []
-
-
     let fold_return_of summary_option procname field_path ~init ~f =
       match summary_option with
       | Some ({return_of; _} as summary) ->
@@ -1506,11 +1493,6 @@ end = struct
 
     let map_argument shapes arg_index field_path ~f =
       fold_argument shapes arg_index field_path ~init:[] ~f:(fun acc path -> f path :: acc)
-
-
-    let map_argument_of shapes procname arg_index field_path ~f =
-      fold_argument_of shapes procname arg_index field_path ~init:[] ~f:(fun acc path ->
-          f path :: acc )
   end
 end
 
