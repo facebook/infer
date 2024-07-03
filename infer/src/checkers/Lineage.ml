@@ -818,7 +818,7 @@ module Out = struct
       - With some information lost/summarised, such as fields of procedure arguments/return
         (although the Derive edges will be generated taking fields into account, we only output one
         node for each argument in the Json graph to denote function calls). *)
-  type local_vertex = Argument of int | Captured of int | Return | Normal of Local.t | Function
+  type local_vertex = Argument of int | Captured of int | Return | Local of Local.t | Function
 
   module Id = struct
     (** Internal representation of an Id. *)
@@ -907,9 +907,9 @@ module Out = struct
           Format.asprintf "$cap%d" index
       | Return ->
           Format.asprintf "$ret"
-      | Normal (Cell cell) ->
+      | Local (Cell cell) ->
           Format.asprintf "%a" Cell.pp cell
-      | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
+      | Local (ConstantAtom x) | Local (ConstantInt x) | Local (ConstantString x) ->
           x
       | Function ->
           "$fun"
@@ -920,13 +920,13 @@ module Out = struct
           Argument
       | Return ->
           Return
-      | Normal (Cell cell) ->
+      | Local (Cell cell) ->
           if Cell.var_appears_in_source_code cell then UserVariable else TemporaryVariable
-      | Normal (ConstantAtom _) ->
+      | Local (ConstantAtom _) ->
           ConstantAtom
-      | Normal (ConstantInt _) ->
+      | Local (ConstantInt _) ->
           ConstantInt
-      | Normal (ConstantString _) ->
+      | Local (ConstantString _) ->
           ConstantString
       | Function ->
           Function
@@ -1007,7 +1007,7 @@ module Out = struct
     let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
     match vertex with
     | Local (var, node) ->
-        save procname (Normal node) (Normal var)
+        save procname (Normal node) (Local var)
     | Argument (index, _field_path) ->
         save procname start (Argument index)
     | ArgumentOf (callee_procname, index, _field_path) ->
