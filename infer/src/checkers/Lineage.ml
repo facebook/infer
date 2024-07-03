@@ -34,6 +34,31 @@ module Shapes = LineageShape.Summary
 
 type shapes = Shapes.t option
 
+(** For easier nested-tuples: [a & b & c] is [(a, (b, c))] *)
+let ( & ) x y = (x, y)
+
+module F = struct
+  (* Pretty printing common utilities *)
+
+  let arg = Fmt.fmt "$arg%d"
+
+  let ret = Fmt.any "$ret"
+
+  let captured = Fmt.fmt "$cap%d"
+
+  let fun_ = Fmt.any "fun"
+
+  let self = Fmt.any "self"
+
+  let in_procname pp_v fmt (proc, v) = Fmt.pf fmt "%a.%a" Procname.pp_verbose proc pp_v v
+
+  let with_path pp_v fmt (v, path) = Fmt.pf fmt "%a%a" pp_v v FieldPath.pp path
+
+  let arg_path fmt = with_path arg fmt
+
+  let ret_path fmt path = with_path ret fmt (() & path)
+end
+
 module Local = struct
   module T = struct
     type t =
@@ -50,13 +75,13 @@ module Local = struct
   let pp fmt local =
     match local with
     | ConstantAtom atom_name ->
-        Format.fprintf fmt "A(%s)" atom_name
+        Fmt.string fmt atom_name
     | ConstantInt digits ->
-        Format.fprintf fmt "I(%s)" digits
+        Fmt.string fmt digits
     | ConstantString s ->
-        Format.fprintf fmt "S(%s)" s
+        Fmt.string fmt s
     | Cell cell ->
-        Format.fprintf fmt "V(%a)" Cell.pp cell
+        Cell.pp fmt cell
 
 
   module Set = struct
@@ -98,21 +123,21 @@ module Vertex = struct
     | Local (local, node) ->
         Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
     | Argument (index, field_path) ->
-        Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
+        F.arg_path fmt (index & field_path)
     | Captured index ->
-        Format.fprintf fmt "cap%d" index
+        F.captured fmt index
     | Return field_path ->
-        Format.fprintf fmt "ret%a" FieldPath.pp field_path
+        F.ret_path fmt field_path
     | CapturedBy (proc_name, index) ->
-        Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
+        F.in_procname F.captured fmt (proc_name & index)
     | ArgumentOf (proc_name, index, field_path) ->
-        Format.fprintf fmt "%a.arg%d%a" Procname.pp proc_name index FieldPath.pp field_path
+        F.in_procname F.arg_path fmt (proc_name & index & field_path)
     | ReturnOf (proc_name, field_path) ->
-        Format.fprintf fmt "%a.ret%a" Procname.pp proc_name FieldPath.pp field_path
+        F.in_procname F.ret_path fmt (proc_name & field_path)
     | Function proc_name ->
-        Format.fprintf fmt "%a.fun" Procname.pp proc_name
+        F.in_procname F.fun_ fmt (proc_name & ())
     | Self ->
-        Format.fprintf fmt "self"
+        F.self fmt ()
 end
 
 module Edge = struct
@@ -273,12 +298,6 @@ module Tito : sig
           -> 'accum )
     -> 'accum
 end = struct
-  (* Utility pretty printers *)
-
-  let pp_arg_index = Fmt.fmt "$arg%d"
-
-  let pp_ret = Fmt.any "$ret"
-
   module ArgPathSet = struct
     module FieldPathSet = struct
       (* Sets of field paths, that shall be associated to an argument index *)
@@ -288,7 +307,7 @@ end = struct
 
       let pp ~arg_index =
         (* Prints: $argN#foo#bar $argN#other#field *)
-        let pp_field_path = Fmt.(const pp_arg_index arg_index ++ FieldPath.pp) in
+        let pp_field_path = Fmt.using (fun path -> arg_index & path) F.arg_path in
         IFmt.Labelled.iter ~sep:Fmt.sp M.iter pp_field_path
     end
 
@@ -346,7 +365,7 @@ end = struct
     let pp fmt source =
       match source with
       | Shape_preserved {arg_index; arg_field_path} ->
-          Fmt.pf fmt "=%a%a" pp_arg_index arg_index FieldPath.pp arg_field_path
+          Fmt.pf fmt "=%a" F.arg_path (arg_index & arg_field_path)
       | Shape_mixed arg_path_set ->
           Fmt.pf fmt "{%a}" ArgPathSet.pp arg_path_set
 
@@ -391,7 +410,7 @@ end = struct
   let pp =
     (* Prints: ($ret#field: $arg0#foo) ($ret#other:$arg2 $arg3#bar) *)
     IFmt.Labelled.iter_bindings ~sep:Fmt.comma RetPathMap.iteri
-      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(pp_ret ++ FieldPath.pp) Sources.pp)
+      Fmt.(parens @@ pair ~sep:IFmt.colon_sp F.ret_path Sources.pp)
 
 
   let empty = RetPathMap.empty
@@ -812,14 +831,6 @@ module Out = struct
 
   type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-  (** Like [G.vertex], but :
-
-      - Without the ability to refer to other procedures, which makes it "local".
-      - With some information lost/summarised, such as fields of procedure arguments/return
-        (although the Derive edges will be generated taking fields into account, we only output one
-        node for each argument in the Json graph to denote function calls). *)
-  type local_vertex = Argument of int | Captured of int | Return | Local of Local.t | Function
-
   module Id = struct
     (** Internal representation of an Id. *)
     type t = Z.t
@@ -898,22 +909,30 @@ module Out = struct
       try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
   end
 
+  (** Like [G.vertex], but :
+
+      - Without the ability to refer to other procedures, which makes it "local".
+      - With some information lost/summarised, such as fields of procedure arguments/return
+        (although the Derive edges will be generated taking fields into account, we only output one
+        node for each argument in the Json graph to denote function calls). *)
+  type local_vertex = Argument of int | Captured of int | Return | Local of Local.t | Function
+
+  let pp_local_vertex fmt vertex =
+    match vertex with
+    | Argument index ->
+        F.arg fmt index
+    | Captured index ->
+        F.captured fmt index
+    | Return ->
+        F.ret fmt ()
+    | Local local ->
+        Local.pp fmt local
+    | Function ->
+        F.fun_ fmt ()
+
+
   let term_of_vertex (vertex : local_vertex) : Json.term =
-    let term_name =
-      match vertex with
-      | Argument index ->
-          Format.asprintf "$arg%d" index
-      | Captured index ->
-          Format.asprintf "$cap%d" index
-      | Return ->
-          Format.asprintf "$ret"
-      | Local (Cell cell) ->
-          Format.asprintf "%a" Cell.pp cell
-      | Local (ConstantAtom x) | Local (ConstantInt x) | Local (ConstantString x) ->
-          x
-      | Function ->
-          "$fun"
-    in
+    let term_name = Fmt.to_to_string pp_local_vertex vertex in
     let term_type : Json.term_type =
       match vertex with
       | Argument _ | Captured _ ->
