@@ -12,8 +12,8 @@ module TaintConfig : sig
   type t
 
   val parse :
-       lineage_source:string option
-    -> lineage_sink:string option
+       lineage_source:string list
+    -> lineage_sink:string list
     -> lineage_sanitizers:string list
     -> lineage_limit:int option
     -> t option

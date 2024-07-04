@@ -1100,14 +1100,14 @@ OPTIONS
            different seed.
            See also infer-analyze(1).
 
-       --lineage-sink string
-           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
-           format [module:]function/arity.{ret,argN}
+       --lineage-sink +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sinks for taint finding,
+           format [module:]function/arity.{ret,argN}, comma-separated.
            See also infer-report(1).
 
-       --lineage-source string
-           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
-           format [module:]function/arity.{ret,argN}
+       --lineage-source +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sources for taint finding,
+           format [module:]function/arity.{ret,argN}, comma-separated.
            See also infer-report(1).
 
        --lineage-variant-width int

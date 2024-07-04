@@ -160,7 +160,10 @@ module TaintConfig = struct
   end
 
   type t =
-    {source: Endpoint.t; sink: Endpoint.t; sanitizers: Procname.Comparable.Set.t; limit: int option}
+    { sources: Endpoint.t list
+    ; sinks: Endpoint.t list
+    ; sanitizers: Procname.Comparable.Set.t
+    ; limit: int option }
 
   let parse_mfa string =
     let module_name, string =
@@ -202,20 +205,20 @@ module TaintConfig = struct
 
   let parse ~lineage_source ~lineage_sink ~lineage_sanitizers ~lineage_limit =
     match (lineage_source, lineage_sink) with
-    | None, None ->
+    | [], [] ->
         None
-    | None, Some _ | Some _, None ->
+    | [], _ :: _ | _ :: _, [] ->
         L.die UserError "Lineage: source and taint should be both present or both absent."
-    | Some lineage_source, Some lineage_sink ->
+    | _ :: _, _ :: _ ->
         Some
-          { source= parse_endpoint_exn "lineage-source" lineage_source
-          ; sink= parse_endpoint_exn "lineage-sink" lineage_sink
+          { sources= List.map ~f:(parse_endpoint_exn "lineage-source") lineage_source
+          ; sinks= List.map ~f:(parse_endpoint_exn "lineage-sink") lineage_sink
           ; sanitizers=
               Set.of_list (module Procname) @@ List.map ~f:parse_mfa_exn lineage_sanitizers
           ; limit= lineage_limit }
 
 
-  let check caller_table {source; sink; sanitizers; _} =
+  let check caller_table {sources; sinks; sanitizers; _} =
     let check_procname name procname =
       (* Check that this procname exists in the graph. A procname exists if either:
          - It is called by something (eg. stdlib functions with no summary)
@@ -229,20 +232,25 @@ module TaintConfig = struct
         L.user_warning "@[LineageTaint: %s `%a` not found. Did you make a typo?@]@." name
           Procname.pp_verbose procname
     in
-    check_procname "source" source.procname ;
-    check_procname "sink" sink.procname ;
+    let check_endpoint name ({procname; _} : Endpoint.t) = check_procname name procname in
+    List.iter ~f:(check_endpoint "source") sources ;
+    List.iter ~f:(check_endpoint "sink") sinks ;
     Set.iter ~f:(check_procname "sanitizer") sanitizers
 
 
-  let todo_source {source; _} = Endpoint.todo source
+  let todo_sources {sources; _} = List.map ~f:Endpoint.todo sources
 
-  let unified_sources {source; _} = Endpoint.unified_vertices source
+  let unified_sources {sources; _} = List.concat_map ~f:Endpoint.unified_vertices sources
 
-  let unified_sinks {sink; _} = Endpoint.unified_vertices sink
+  let unified_sinks {sinks; _} = List.concat_map ~f:Endpoint.unified_vertices sinks
 
-  let is_source {source; _} unified_vertex = Endpoint.matches_u source unified_vertex
+  let is_source {sources; _} unified_vertex =
+    List.exists ~f:(fun source -> Endpoint.matches_u source unified_vertex) sources
 
-  let is_sink {sink; _} procname vertex = Endpoint.matches_v sink procname vertex
+
+  let is_sink {sinks; _} procname vertex =
+    List.exists ~f:(fun sink -> Endpoint.matches_v sink procname vertex) sinks
+
 
   let is_sanitizer {sanitizers; _} procname = Set.mem sanitizers procname
 
@@ -365,7 +373,7 @@ let collect_reachable (config : TaintConfig.t) caller_table =
           let todo_later' = List.rev_append call_todo todo_later in
           aux ~follow_return todo' todo_later' acc'
   in
-  aux ~follow_return:true [TaintConfig.todo_source config] [] U.G.empty
+  aux ~follow_return:true (TaintConfig.todo_sources config) [] U.G.empty
 
 
 let collect_coreachable (config : TaintConfig.t) reachable_graph =

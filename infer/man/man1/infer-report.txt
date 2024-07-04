@@ -400,13 +400,13 @@ LINEAGE OPTIONS
            [EXPERIMENTAL; UNSTABLE API] Lineage sanitizers, comma-separated
            m:f/a
 
-       --lineage-sink string
-           [EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding,
-           format [module:]function/arity.{ret,argN}
+       --lineage-sink +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sinks for taint finding,
+           format [module:]function/arity.{ret,argN}, comma-separated.
 
-       --lineage-source string
-           [EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding,
-           format [module:]function/arity.{ret,argN}
+       --lineage-source +string
+           [EXPERIMENTAL; UNSTABLE API] Lineage sources for taint finding,
+           format [module:]function/arity.{ret,argN}, comma-separated.
 
 PULSE CHECKER OPTIONS
        --pulse-report-flows-from-taint-source procname

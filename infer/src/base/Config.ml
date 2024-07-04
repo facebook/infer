@@ -1984,17 +1984,17 @@ and kotlin_capture =
 
 
 and lineage_source =
-  CLOpt.mk_string_opt ~long:"lineage-source"
+  CLOpt.mk_string_list ~long:"lineage-source"
     ~in_help:InferCommand.[(Report, manual_lineage)]
-    "[EXPERIMENTAL; UNSTABLE API] Lineage source for taint finding, format \
-     [module:]function/arity.{ret,argN}"
+    "[EXPERIMENTAL; UNSTABLE API] Lineage sources for taint finding, format \
+     [module:]function/arity.{ret,argN}, comma-separated."
 
 
 and lineage_sink =
-  CLOpt.mk_string_opt ~long:"lineage-sink"
+  CLOpt.mk_string_list ~long:"lineage-sink"
     ~in_help:InferCommand.[(Report, manual_lineage)]
-    "[EXPERIMENTAL; UNSTABLE API] Lineage sink for taint finding, format \
-     [module:]function/arity.{ret,argN}"
+    "[EXPERIMENTAL; UNSTABLE API] Lineage sinks for taint finding, format \
+     [module:]function/arity.{ret,argN}, comma-separated."
 
 
 and lineage_sanitizers =
@@ -4294,12 +4294,22 @@ and keep_going = !keep_going
 
 and kotlin_capture = !kotlin_capture
 
-and lineage_source = !lineage_source
+and lineage_source =
+  RevList.to_list !lineage_source
+  |> List.concat_map ~f:(String.split ~on:',')
+  |> List.filter ~f:(Fn.non String.is_empty)
 
-and lineage_sink = !lineage_sink
+
+and lineage_sink =
+  RevList.to_list !lineage_sink
+  |> List.concat_map ~f:(String.split ~on:',')
+  |> List.filter ~f:(Fn.non String.is_empty)
+
 
 and lineage_sanitizers =
-  RevList.to_list !lineage_sanitizers |> List.concat_map ~f:(String.split ~on:',')
+  RevList.to_list !lineage_sanitizers
+  |> List.concat_map ~f:(String.split ~on:',')
+  |> List.filter ~f:(Fn.non String.is_empty)
 
 
 and lineage_limit = !lineage_limit

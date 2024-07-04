@@ -474,9 +474,9 @@ val keep_going : bool
 
 val kotlin_capture : bool
 
-val lineage_source : string option
+val lineage_source : string list
 
-val lineage_sink : string option
+val lineage_sink : string list
 
 val lineage_sanitizers : string list
 
