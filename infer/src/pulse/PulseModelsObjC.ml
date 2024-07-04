@@ -365,6 +365,9 @@ let matchers : matcher list =
       ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
         &:: "stringWithString:" <>$ capt_arg_payload
         $--> check_arg_not_nil ~desc:"NSString.stringWithString:"
+      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSAttributedString")
+        &:: "initWithString:" <>$ any_arg $+ capt_arg_payload
+        $--> check_arg_not_nil ~desc:"NSAttributedString.initWithString:"
       ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
         &:: "stringByAppendingString:" <>$ any_arg $+ capt_arg_payload
         $--> check_arg_not_nil ~desc:"NSString.stringByAppendingString:"

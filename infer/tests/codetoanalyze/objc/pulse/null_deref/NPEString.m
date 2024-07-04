@@ -32,6 +32,10 @@ NSString* stringWithString(NSString* str) {
 
 NSString* stringWithStringBad() { return stringWithString(nil); }
 
+NSString* attributedStringBad() {
+  return [[NSAttributedString alloc] initWithString:nil];
+}
+
 NSString* stringWithStringOk() { return stringWithString(@"something"); }
 
 NSString* initWithFormat(NSString* fmt) {
