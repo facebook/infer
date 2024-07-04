@@ -236,6 +236,8 @@ module TaintConfig = struct
 
   let todo_source {source; _} = Endpoint.todo source
 
+  let unified_sources {source; _} = Endpoint.unified_vertices source
+
   let unified_sinks {sink; _} = Endpoint.unified_vertices sink
 
   let is_source {source; _} unified_vertex = Endpoint.matches_u source unified_vertex
@@ -263,7 +265,6 @@ end
     ignored). *)
 let collect_reachable_in_procedure (config : TaintConfig.t) ~follow_return caller_table
     ~init:subgraph procname graph vertices =
-  let limit = TaintConfig.limit_or_max_int config in
   let rec dfs todo acc_subgraph (return_todo : todo list) (call_todo : todo list) =
     match todo with
     | [] ->
@@ -272,10 +273,10 @@ let collect_reachable_in_procedure (config : TaintConfig.t) ~follow_return calle
         (* Stop propagation at the first sink *)
         dfs next acc_subgraph return_todo call_todo
     | vertex :: next ->
-        let acc_subgraph', todo', _ =
+        let acc_subgraph', todo' =
           G.fold_succ_e
-            (fun edge (acc, todo, n) ->
-              if n <= 0 || TaintConfig.is_sanitizing_e config edge then (acc, todo, n)
+            (fun edge (acc, todo) ->
+              if TaintConfig.is_sanitizing_e config edge then (acc, todo)
               else
                 let unified_edges = U.transform_e fetch_shapes procname edge in
                 let todo_with_dst = G.E.dst edge :: todo in
@@ -286,8 +287,8 @@ let collect_reachable_in_procedure (config : TaintConfig.t) ~follow_return calle
                       else (U.G.add_edge_e acc edge', todo_with_dst) )
                     ~init:(acc, todo)
                 in
-                (acc', todo', n - 1) )
-            graph vertex (acc_subgraph, next, limit)
+                (acc', todo') )
+            graph vertex (acc_subgraph, next)
         in
         let return_todo' =
           if follow_return then
@@ -398,6 +399,61 @@ let collect_coreachable (config : TaintConfig.t) reachable_graph =
   codfs (TaintConfig.unified_sinks config) U.G.empty
 
 
+module Weight = struct
+  type t = int
+
+  type edge = U.G.edge
+
+  let compare = [%compare: int]
+
+  let zero = 0
+
+  let add = ( + )
+
+  let weight _ = 1
+end
+
+module D = Graph.Path.Dijkstra (U.G) (Weight)
+
+let dummy_procname function_name =
+  Procname.make_erlang ~module_name:"__infer__lineage_taint__dummy__" ~function_name ~arity:0
+
+
+let limit (config : TaintConfig.t) graph =
+  let sources = TaintConfig.unified_sources config in
+  let sinks = TaintConfig.unified_sinks config in
+  (* Add dummy unique source and sink to make pathfinding easier *)
+  let dummy_source : U.V.t = {procname= dummy_procname "source"; vertex= Function} in
+  let dummy_sink : U.V.t = {procname= dummy_procname "sink"; vertex= Function} in
+  let graph =
+    List.fold sources ~f:(fun acc source -> U.G.add_edge acc dummy_source source) ~init:graph
+  in
+  let graph = List.fold sinks ~f:(fun acc sink -> U.G.add_edge acc sink dummy_sink) ~init:graph in
+  (* Repetitively add the shortest flows *)
+  let rec loop acc work_graph fuel =
+    match D.shortest_path work_graph dummy_source dummy_sink with
+    | path, distance ->
+        let fuel = fuel - distance in
+        if fuel < 0 then acc
+        else
+          let acc = List.fold path ~init:acc ~f:(fun acc edge -> U.G.add_edge_e acc edge) in
+          let work_graph =
+            List.fold path ~init:work_graph ~f:(fun acc edge ->
+                if
+                  [%equal: U.V.t] (U.G.E.src edge) dummy_source
+                  || [%equal: U.V.t] (U.G.E.dst edge) dummy_sink
+                then acc
+                else U.G.remove_edge_e acc edge )
+          in
+          loop acc work_graph fuel
+    | exception Stdlib.Not_found ->
+        acc
+  in
+  let graph = loop U.G.empty graph (TaintConfig.limit_or_max_int config) in
+  (* Remove the dummy nodes *)
+  graph |> Fn.flip U.G.remove_vertex dummy_source |> Fn.flip U.G.remove_vertex dummy_sink
+
+
 let report_unified name filename_parts graph =
   let filename = Filename.of_parts (Config.results_dir :: filename_parts) in
   Unix.mkdir_p (Filename.dirname filename) ;
@@ -407,16 +463,23 @@ let report_unified name filename_parts graph =
     " (but it seems empty)"
 
 
+let debug_unified name filename_parts graph =
+  if Config.debug_mode then report_unified name filename_parts graph
+
+
 let report taint_config =
   let caller_table = create_caller_table () in
   TaintConfig.check caller_table taint_config ;
   let reachable_graph = collect_reachable taint_config caller_table in
-  if Config.debug_mode then
-    report_unified "Reachability graph"
-      ["lineage-taint-debug"; "lineage-reachable.dot"]
-      reachable_graph ;
+  debug_unified "Reachability graph"
+    ["lineage-taint-debug"; "lineage-reachable.dot"]
+    reachable_graph ;
   let coreachable_graph = collect_coreachable taint_config reachable_graph in
-  report_unified "Lineage taint graph" ["lineage-taint"; "lineage-taint.dot"] coreachable_graph
+  debug_unified "Coreachability graph"
+    ["lineage-taint-debug"; "lineage-coreachable.dot"]
+    coreachable_graph ;
+  let final_taint_graph = limit taint_config coreachable_graph in
+  report_unified "Lineage taint graph" ["lineage-taint"; "lineage-taint.dot"] final_taint_graph
 
 
 module Private = struct
