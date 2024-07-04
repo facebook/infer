@@ -1930,6 +1930,28 @@ module TransferFunctions = struct
 
 
   module CustomModel = struct
+    let nop_model _shapes _node _analyze_dependency _ret_id _procname _args astate =
+      (* A model that does nothing. *)
+      astate
+
+
+    let with_call_flow model shapes node analyze_dependency ret_id procname args astate =
+      (* A model transformer that will run the original model and add [Call] and [Return] flows as if
+         it was a standard procedure.
+
+         The idea is to use the original model to generate edges that would be more precise than the
+         default Derive ones, but still have the function appear in the graph in the standard way,
+         for instance to be able to find flows into it. *)
+      let _ : payload AnalysisResult.t =
+        (* Request procname payload to have it registered in the callgraph *)
+        analyze_dependency procname
+      in
+      astate
+      |> model shapes node analyze_dependency ret_id procname args
+      |> add_arg_flows shapes node procname args
+      |> add_ret_flows shapes node procname ret_id
+
+
     let call_unqualified shapes node analyze_dependency ret_id procname args astate =
       match args with
       | fun_ :: _ ->
@@ -2041,11 +2063,9 @@ module TransferFunctions = struct
 
 
     let maps_new =
-      (* The generic call model with zero parameter will simply add a flow from maps:new$ret to
-         ret_id. We could also consider doing nothing and simply return the abstract state, which
-         would amount to considering maps:new as a zero-argument builtin and would generate no flow
-         at all. *)
-      generic_call_model
+      (* [maps:new] adds no flow by itself. Used in conjunction with {!with_call_flow}, one can
+           generate a single edge from [maps:new.ret] to the ret_id destination variable. *)
+      nop_model
 
 
     let maps_put shapes node _analyze_dependency ret_id _procname args astate =
@@ -2133,11 +2153,16 @@ module TransferFunctions = struct
         [ (BuiltinDecl.__erlang_make_atom, make_atom)
         ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
         ; (BuiltinDecl.__erlang_make_map, make_map)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"find" ~arity:2, maps_find)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
+        ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0
+          , with_call_flow maps_new )
+        ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2
+          , with_call_flow maps_get_2 )
+        ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3
+          , with_call_flow maps_get_3 )
+        ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"find" ~arity:2
+          , with_call_flow maps_find )
+        ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3
+          , with_call_flow maps_put )
         ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (apply 2, call_unqualified)
         ; (apply 3, call_qualified) ]
