@@ -317,7 +317,7 @@ AS_IF([test "$OPAM" != "no"], [
     *) AC_MSG_ERROR([opam version $opam_version is not supported, please install opam version 2 instead]); break;;
   esac
   AC_MSG_CHECKING([current opam root])
-  OPAMROOT=$("$OPAM" config var root)
+  OPAMROOT=$("$OPAM" var root)
   AC_MSG_RESULT([$OPAMROOT])
   AC_MSG_CHECKING([current opam switch])
   OPAMSWITCH=$("$OPAM" switch show)
