@@ -354,14 +354,17 @@ if test "x$enable_java_analyzers" = "xyes"; then
   AC_ARG_VAR([KOTLIN_HOME], [Root of a Kotlin installation.])
   AC_CHECK_TOOL([KOTLINC], [kotlinc], [no])
 
+  JAVAC_VERSION=`"$JAVAC" -version 2>&1`
+  AC_MSG_NOTICE([output of javac --version: $JAVAC_VERSION])
   AC_MSG_CHECKING([for Java major version])
   JAVA_MAJOR_VERSION=`"$JAVAC" -version 2>&1 | head -n 1 | cut -d ' ' -f 2`
-  AS_IF([test "x`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`" = "x1"], [
+  JAVA_MAJOR_VERSION_FIRST_NUMBER=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 1`
+  AS_IF([test "x$JAVA_MAJOR_VERSION_FIRST_NUMBER" = "x1"], [
     # version 1.8.xx -> 8
-    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d '.' -f 2`
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | cut -d . -f 2`
   ], [
     # otherwise pick the first number as the major version
-    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | $AWK -F'[[.-]]' '{print $1}'`
+    JAVA_MAJOR_VERSION=`echo $JAVA_MAJOR_VERSION | tr - . | cut -d . -f 1`
   ])
   AC_MSG_RESULT([$JAVA_MAJOR_VERSION])
   AC_SUBST([JAVA_MAJOR_VERSION])
