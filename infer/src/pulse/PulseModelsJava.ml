@@ -217,13 +217,15 @@ module Resource = struct
 
 
   let release this : model_no_non_disj =
-   fun _ astate ->
-    PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+   fun model_data astate ->
+    PulseOperations.java_resource_release ~recursive:true (fst this) astate
+    |> use ~exn_class_name:"java.io.IOException" model_data
 
 
   let release_this_only this : model_no_non_disj =
-   fun _ astate ->
-    PulseOperations.java_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
+   fun model_data astate ->
+    PulseOperations.java_resource_release ~recursive:false (fst this) astate
+    |> use ~exn_class_name:"java.io.IOException" model_data
 end
 
 module Collection = struct

@@ -138,7 +138,7 @@ public class ResourceLeaks {
 
   // TwoResources tests
 
-  public static void FN_twoResourcesBad() throws IOException {
+  public static void twoResourcesBad() throws IOException {
     FileInputStream fis = null;
     FileOutputStream fos = null;
     try {
