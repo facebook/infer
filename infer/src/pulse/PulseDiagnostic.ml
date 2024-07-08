@@ -1223,7 +1223,7 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
-    | JavaResource _ | CSharpResource _ | ObjCAlloc | HackAsync ->
+    | JavaResource _ | CSharpResource _ | ObjCAlloc | HackAsync | HackBuilderResource ->
         L.die InternalError
           "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
            as allocator" )

@@ -30,6 +30,7 @@ module Attribute = struct
     | CSharpResource of CSharpClassName.t
     | ObjCAlloc
     | HackAsync
+    | HackBuilderResource
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -53,6 +54,8 @@ module Attribute = struct
         F.fprintf fmt "alloc"
     | HackAsync ->
         F.fprintf fmt "hack async"
+    | HackBuilderResource ->
+        F.fprintf fmt "hack builder"
 
 
   type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@compare.ignore] [@equal.ignore])}
@@ -157,6 +160,10 @@ module Attribute = struct
           F.fprintf f "%s.%a" config_type AbstractValue.pp v
   end
 
+  module Builder = struct
+    type t = Discardable | NonDiscardable [@@deriving compare, equal, show]
+  end
+
   module UninitializedTyp = struct
     type t =
       | Value
@@ -212,6 +219,7 @@ module Attribute = struct
     | DictContainConstKeys
     | DictReadConstKeys of ConstKeys.t
     | EndOfCollection
+    | HackBuilder of Builder.t
     | InReportedRetainCycle
     | Initialized
     | Invalid of Invalidation.t * Trace.t
@@ -267,6 +275,8 @@ module Attribute = struct
   let dict_read_const_keys_rank = Variants.dictreadconstkeys.rank
 
   let end_of_collection_rank = Variants.endofcollection.rank
+
+  let hack_builder_rank = Variants.hackbuilder.rank
 
   let in_reported_retain_cycle_rank = Variants.inreportedretaincycle.rank
 
@@ -343,6 +353,8 @@ module Attribute = struct
         F.fprintf f "DictReadConstKeys(@[%a@])" ConstKeys.pp keys
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
+    | HackBuilder builderstate ->
+        F.fprintf f "HackBuilder(%a)" Builder.pp builderstate
     | InReportedRetainCycle ->
         F.pp_print_string f "InReportedRetainCycle"
     | Initialized ->
@@ -430,6 +442,7 @@ module Attribute = struct
     | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
+    | HackBuilder _ (* TODO: right choice? Planning on doing on the outside in pulse call/return *)
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
@@ -449,6 +462,7 @@ module Attribute = struct
 
   let is_suitable_for_post = function
     | DictReadConstKeys _
+    | HackBuilder _ (* TODO: right choice again? *)
     | MustBeInitialized _
     | MustNotBeTainted _
     | MustBeValid _
@@ -490,7 +504,7 @@ module Attribute = struct
 
   let make_suitable_for_summary attr =
     match attr with
-    | CopiedInto _ | SourceOriginOfCopy _ ->
+    | CopiedInto _ | HackBuilder _ | SourceOriginOfCopy _ ->
         None
     | Tainted tainted ->
         let tainted' =
@@ -614,6 +628,7 @@ module Attribute = struct
       | DictContainConstKeys
       | EndOfCollection
       | HackAsyncAwaited
+      | HackBuilder _
       | Initialized
       | JavaResourceReleased
       | LastLookup _
@@ -632,7 +647,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->
         true
-    | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ ->
+    | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ | HackBuilderResource, _ ->
         is_released
     | _ ->
         false
@@ -687,6 +702,7 @@ module Attribute = struct
       | DictReadConstKeys _
       | EndOfCollection
       | HackAsyncAwaited
+      | HackBuilder _
       | InReportedRetainCycle
       | Initialized
       | Invalid _
@@ -835,6 +851,23 @@ module Attributes = struct
 
   let is_hack_async_awaited = mem_by_rank Attribute.hack_async_awaited_rank
 
+  let get_hack_builder =
+    get_by_rank Attribute.hack_builder_rank ~dest:(function [@warning "-partial-match"]
+        | Attribute.HackBuilder builderstate -> builderstate )
+
+
+  let is_hack_builder_discardable s =
+    match get_hack_builder s with
+    | None ->
+        false
+    | Some Discardable ->
+        true
+    | Some NonDiscardable ->
+        false
+
+
+  let remove_hack_builder = remove_by_rank Attribute.hack_builder_rank
+
   let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
 
   let get_must_be_valid =
@@ -905,6 +938,7 @@ module Attributes = struct
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
     || mem_by_rank Attribute.hack_async_awaited_rank attrs
+    || mem_by_rank Attribute.hack_builder_rank attrs
     || mem_by_rank Attribute.csharp_resource_released_rank attrs
     || mem_by_rank Attribute.propagate_taint_from_rank attrs
 
@@ -965,6 +999,7 @@ module Attributes = struct
           is_java_resource_released attributes
           || is_csharp_resource_released attributes
           || is_hack_async_awaited attributes
+          || is_hack_builder_discardable attributes (* Not sure about the definition of this *)
         in
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )

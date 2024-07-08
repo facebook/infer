@@ -28,6 +28,7 @@ type allocator =
   | CSharpResource of CSharpClassName.t
   | ObjCAlloc
   | HackAsync
+  | HackBuilderResource
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
@@ -89,6 +90,12 @@ module ConfigUsage : sig
   type t = ConfigName of ConfigName.t | StringParam of {v: AbstractValue.t; config_type: string}
 end
 
+module Builder : sig
+  type t = Discardable | NonDiscardable [@@deriving compare, equal]
+
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+end
+
 module UninitializedTyp : sig
   type t =
     | Value
@@ -123,6 +130,7 @@ type t =
           now) *)
   | DictReadConstKeys of ConstKeys.t  (** constant string keys that are read from the dictionary *)
   | EndOfCollection
+  | HackBuilder of Builder.t
   | InReportedRetainCycle
   | Initialized
   | Invalid of Invalidation.t * Trace.t
@@ -197,6 +205,12 @@ module Attributes : sig
   val get_static_type : t -> Typ.Name.t option
 
   val is_java_resource_released : t -> bool
+
+  val get_hack_builder : t -> Builder.t option [@@warning "-unused-value-declaration"]
+
+  val remove_hack_builder : t -> t [@@warning "-unused-value-declaration"]
+
+  val is_hack_builder_discardable : t -> bool [@@warning "-unused-value-declaration"]
 
   val is_csharp_resource_released : t -> bool
 
