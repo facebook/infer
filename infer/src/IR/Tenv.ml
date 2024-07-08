@@ -20,6 +20,8 @@ let pp fmt (tenv : t) =
   TypenameHash.iter (fun name typ -> Format.fprintf fmt "%a@," (Struct.pp Pp.text name) typ) tenv
 
 
+let length tenv = TypenameHash.length tenv
+
 let fold tenv ~init ~f = TypenameHash.fold f tenv init
 
 (** Create a new type environment. *)
@@ -241,9 +243,15 @@ let global_tenv_path = ResultsDir.get_path GlobalTypeEnvironment |> DB.filename_
 
 let read path = Serialization.read_from_file tenv_serializer path
 
-let load_global () : t option =
-  if is_none !global_tenv then global_tenv := read global_tenv_path ;
+let read_global () = read global_tenv_path
+
+let force_load_global () =
+  global_tenv := read_global () ;
   !global_tenv
+
+
+let load_global () : t option =
+  if Option.is_some !global_tenv then !global_tenv else force_load_global ()
 
 
 let load =

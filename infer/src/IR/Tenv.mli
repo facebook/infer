@@ -15,6 +15,8 @@ type t
 val create : unit -> t
 (** Create a new type environment. *)
 
+val length : t -> int
+
 val load : SourceFile.t -> t option
 [@@alert tenv "Analysis code should use [Exe_env.get_source_tenv] instead."]
 (** Load a type environment for a source file *)
@@ -27,11 +29,17 @@ val read : DB.filename -> t option
 val write : t -> DB.filename -> unit
 (** Write the type environment into the given file *)
 
+val read_global : unit -> t option
+(** Load (without caching) the global type environment *)
+
+val force_load_global : unit -> t option
+(** Load and cache the global type environment *)
+
 val load_global : unit -> t option
-(** Load the global type environment (Java) *)
+(** Load and cache the global type environment if not already loaded *)
 
 val store_global : normalize:bool -> t -> unit
-(** Save a global type environment (Java/Hack) *)
+(** Save and cache the global type environment *)
 
 val lookup : t -> Typ.Name.t -> Struct.t option
 (** Look up a name in the given type environment. *)

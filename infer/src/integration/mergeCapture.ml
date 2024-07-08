@@ -12,7 +12,18 @@ module L = Logging
 
 module TenvMerger = struct
   let merge paths =
-    let output = Tenv.create () in
+    let output =
+      if Config.(continue_capture || reactive_capture) then (
+        match Tenv.read_global () with
+        | None ->
+            L.progress "Merge found no pre-existing global type environment@\n" ;
+            Tenv.create ()
+        | Some tenv ->
+            L.progress "Merge found pre-existing global type environment with %d entries@\n"
+              (Tenv.length tenv) ;
+            tenv )
+      else Tenv.create ()
+    in
     let do_merge path =
       Tenv.read path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:output)
     in
@@ -95,6 +106,7 @@ let merge_captured_targets ~root =
   let tenv_merger_child = TenvMerger.start infer_deps_file in
   DBWriter.merge_captures ~root ~infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
+  Tenv.force_load_global () |> ignore ;
   let targets_num =
     let counter = ref 0 in
     let incr_counter _line = incr counter in
