@@ -226,6 +226,8 @@ module Name : sig
 
     val extract_curry_info : t -> (HackClassName.t * string) option
     (** See {!HackClassName.extract_curry_info} *)
+
+    val is_hack_builder : t -> bool
   end
 
   module Java : sig

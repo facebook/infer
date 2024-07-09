@@ -189,6 +189,14 @@ module AddressAttributes : sig
 
   val hack_async_await : AbstractValue.t -> t -> t
 
+  val remove_hack_builder : AbstractValue.t -> t -> t [@@warning "-unused-value-declaration"]
+
+  val set_hack_builder : AbstractValue.t -> Attribute.Builder.t -> t -> t
+  [@@warning "-unused-value-declaration"]
+
+  val get_hack_builder : AbstractValue.t -> t -> Attribute.Builder.t option
+  [@@warning "-unused-value-declaration"]
+
   val is_java_resource_released : AbstractValue.t -> t -> bool
 
   val csharp_resource_release : AbstractValue.t -> t -> t

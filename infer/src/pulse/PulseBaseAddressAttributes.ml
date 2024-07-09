@@ -206,6 +206,14 @@ let remove_taint_attrs address memory =
   |> remove_propagate_taint_from address
 
 
+let remove_hack_builder = remove_attribute Attributes.remove_hack_builder
+
+let set_hack_builder address builderstate memory =
+  remove_hack_builder address memory |> add_one address (Attribute.HackBuilder builderstate)
+
+
+let get_hack_builder = get_attribute Attributes.get_hack_builder
+
 let remove_must_be_valid_attr = remove_attribute Attributes.remove_must_be_valid
 
 let map_attributes ~f =
@@ -381,6 +389,12 @@ module type S = sig
   val java_resource_release : key -> t -> t
 
   val hack_async_await : key -> t -> t
+
+  val remove_hack_builder : key -> t -> t
+
+  val set_hack_builder : key -> Attribute.Builder.t -> t -> t
+
+  val get_hack_builder : key -> t -> Attribute.Builder.t option
 
   val csharp_resource_release : key -> t -> t
 

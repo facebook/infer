@@ -35,6 +35,12 @@ module type S = sig
 
   val hack_async_await : key -> t -> t
 
+  val remove_hack_builder : key -> t -> t
+
+  val set_hack_builder : key -> Attribute.Builder.t -> t -> t
+
+  val get_hack_builder : key -> t -> Attribute.Builder.t option
+
   val csharp_resource_release : key -> t -> t
 
   val in_reported_retain_cycle : key -> t -> t

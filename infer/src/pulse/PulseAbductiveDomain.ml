@@ -457,6 +457,18 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.hack_async_await address)
 
 
+    let remove_hack_builder address astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.remove_hack_builder address)
+
+
+    let set_hack_builder address builderstate astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.set_hack_builder address builderstate)
+
+
+    let get_hack_builder address astate =
+      BaseAddressAttributes.get_hack_builder address (astate.post :> base_domain).attrs
+
+
     let csharp_resource_release address astate =
       map_post_attrs astate ~f:(BaseAddressAttributes.csharp_resource_release address)
 
@@ -2266,6 +2278,18 @@ module AddressAttributes = struct
 
   let hack_async_await v astate =
     SafeAttributes.hack_async_await (CanonValue.canon' astate v) astate
+
+
+  let remove_hack_builder v astate =
+    SafeAttributes.remove_hack_builder (CanonValue.canon' astate v) astate
+
+
+  let set_hack_builder v builderstate astate =
+    SafeAttributes.set_hack_builder (CanonValue.canon' astate v) builderstate astate
+
+
+  let get_hack_builder v astate =
+    SafeAttributes.get_hack_builder (CanonValue.canon' astate v) astate
 
 
   let is_java_resource_released v astate =

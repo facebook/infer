@@ -638,6 +638,14 @@ module Name = struct
           false
 
 
+    let is_hack_builder typename =
+      match typename with
+      | HackClass class_name ->
+          HackClassName.is_hack_builder class_name
+      | _ ->
+          false
+
+
     let extract_curry_info typename =
       match typename with
       | HackClass class_name ->

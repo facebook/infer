@@ -43,3 +43,6 @@ val extract_curry_info : t -> (t * string) option
 
     - classname is the enclosing type of the corresponding function reference
     - short_method_name is the short name of the corresponding function reference *)
+
+val is_hack_builder : t -> bool
+(** identifies builder pattern classes just by name - only for prototyping! *)

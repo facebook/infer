@@ -489,6 +489,13 @@ module Syntax = struct
     | Exp.Sizeof {typ} ->
         (* TODO: pass a nullable parameter to and_dynamic_type_is *)
         let* () = and_dynamic_type_is new_obj typ in
+        let* () =
+          match Typ.name typ with
+          | Some typname when Typ.Name.Hack.is_hack_builder typname ->
+              allocation Attribute.HackBuilderResource new_obj (* set attributes *)
+          | _ ->
+              ret ()
+        in
         ret new_obj
     | _ ->
         unreachable
