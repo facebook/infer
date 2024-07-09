@@ -38,6 +38,11 @@ class C1 {
     \Level1\taintSink($s['debug_data']);
   }
 
+  public function passUnrelatedViaShapeGetOk(SensitiveClass $sc): void {
+    $s = shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField);
+    \Level1\taintSink($s['msg']);
+  }
+
   public function passViaUnknownBad(SensitiveClass $sc): void {
     $data = unknown($sc);
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $data));
