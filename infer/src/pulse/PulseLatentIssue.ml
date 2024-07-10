@@ -106,6 +106,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | TransitiveAccess _
   | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
+  | HackUnfinishedBuilder _
   | MemoryLeak _
   | MutualRecursionCycle _
   | ReadUninitialized _

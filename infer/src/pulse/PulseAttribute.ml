@@ -462,7 +462,6 @@ module Attribute = struct
 
   let is_suitable_for_post = function
     | DictReadConstKeys _
-    | HackBuilder _ (* TODO: right choice again? *)
     | MustBeInitialized _
     | MustNotBeTainted _
     | MustBeValid _
@@ -486,6 +485,7 @@ module Attribute = struct
     | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
+    | HackBuilder _ (* TODO: right choice again? *)
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
@@ -504,7 +504,7 @@ module Attribute = struct
 
   let make_suitable_for_summary attr =
     match attr with
-    | CopiedInto _ | HackBuilder _ | SourceOriginOfCopy _ ->
+    | CopiedInto _ | SourceOriginOfCopy _ ->
         None
     | Tainted tainted ->
         let tainted' =
@@ -528,6 +528,7 @@ module Attribute = struct
     | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
+    | HackBuilder _
     | MustBeInitialized _
     | MustBeValid _
     | MustNotBeTainted _
@@ -999,7 +1000,8 @@ module Attributes = struct
           is_java_resource_released attributes
           || is_csharp_resource_released attributes
           || is_hack_async_awaited attributes
-          || is_hack_builder_discardable attributes (* Not sure about the definition of this *)
+          || is_hack_builder_discardable
+               attributes (* Not entirely sure about the definition of this *)
         in
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )

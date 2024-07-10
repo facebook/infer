@@ -231,6 +231,7 @@ OPTIONS
              PULSE_RESOURCE_LEAK (enabled by default),
              PULSE_TRANSITIVE_ACCESS (enabled by default),
              PULSE_UNAWAITED_AWAITABLE (enabled by default),
+             PULSE_UNFINISHED_BUILDER (disabled by default),
              PULSE_UNINITIALIZED_CONST (disabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNNECESSARY_COPY (enabled by default),

@@ -68,6 +68,8 @@ val ignore_leaks :
          AbductiveDomain.Summary.t * AbductiveDomain.t * JavaClassName.t * Trace.t * Location.t
        | `HackUnawaitedAwaitable of
          AbductiveDomain.Summary.t * AbductiveDomain.t * Trace.t * Location.t
+       | `HackUnfinishedBuilder of
+         AbductiveDomain.Summary.t * AbductiveDomain.t * Trace.t * Location.t
        | `CSharpResourceLeak of
          AbductiveDomain.Summary.t * AbductiveDomain.t * CSharpClassName.t * Trace.t * Location.t
        | abductive_summary_error ] )

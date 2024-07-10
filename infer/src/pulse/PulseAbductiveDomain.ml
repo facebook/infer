@@ -1939,6 +1939,13 @@ module Summary = struct
               , astate_before_filter
               , trace
               , Option.value unreachable_location ~default:location ) )
+      | Error (unreachable_location, HackBuilderResource, trace) ->
+          Error
+            (`HackUnfinishedBuilder
+              ( astate
+              , astate_before_filter
+              , trace
+              , Option.value unreachable_location ~default:location ) )
       | Error (unreachable_location, CSharpResource class_name, trace) ->
           Error
             (`CSharpResourceLeak

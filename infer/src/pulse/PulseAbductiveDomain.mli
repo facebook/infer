@@ -379,6 +379,7 @@ module Summary : sig
     -> ( summary
        , [> `JavaResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
          | `HackUnawaitedAwaitable of summary * t * Trace.t * Location.t
+         | `HackUnfinishedBuilder of summary * t * Trace.t * Location.t
          | `CSharpResourceLeak of summary * t * CSharpClassName.t * Trace.t * Location.t
          | `MemoryLeak of summary * t * Attribute.allocator * Trace.t * Location.t
          | `PotentialInvalidAccessSummary of

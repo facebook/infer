@@ -308,6 +308,8 @@ val pulse_resource_leak : t
 
 val pulse_unawaited_awaitable : t
 
+val pulse_unfinished_builder : t
+
 val pulse_uninitialized_const : t
 
 val pure_function : t

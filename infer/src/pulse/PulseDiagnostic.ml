@@ -149,6 +149,7 @@ type t =
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
+  | HackUnfinishedBuilder of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
@@ -214,6 +215,9 @@ let pp fmt diagnostic =
         type_name (Trace.pp ~pp_immediate) trace
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
+        (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | HackUnfinishedBuilder {allocation_trace; location} ->
+      F.fprintf fmt "UnfinishedBuilder {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | MemoryLeak {allocator; allocation_trace; location} ->
       F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
@@ -316,6 +320,7 @@ let get_location = function
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
   | HackUnawaitedAwaitable {location}
+  | HackUnfinishedBuilder {location}
   | MemoryLeak {location}
   | MutualRecursionCycle {location}
   | ReadonlySharedPtrParameter {location}
@@ -369,6 +374,7 @@ let aborts_execution = function
   | TransitiveAccess _
   | HackCannotInstantiateAbstractClass _
   | HackUnawaitedAwaitable _
+  | HackUnfinishedBuilder _
   | MemoryLeak _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
@@ -702,6 +708,24 @@ let get_message_and_suggestion diagnostic =
               allocation_line
       in
       F.asprintf "Awaitable dynamically allocated %a is not awaited after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
+      |> no_suggestion
+  | HackUnfinishedBuilder {location; allocation_trace} ->
+      let allocation_line =
+        let {Location.line; _} = Trace.get_outer_location allocation_trace in
+        line
+      in
+      let pp_allocation_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate _ ->
+            F.fprintf fmt " on line %d" allocation_line
+        | ViaCall {f; _} ->
+            F.fprintf fmt "indirectly via call to %a on line %d" CallEvent.describe f
+              allocation_line
+      in
+      F.asprintf
+        "Builder object dynamically allocated %a is not built/saved/finalised after the last \
+         access at %a"
         pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
   | MemoryLeak {allocator; location; allocation_trace} ->
@@ -1099,6 +1123,14 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated here")
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "awaitable becomes unreachable here" []]
+  | HackUnfinishedBuilder {location; allocation_trace} ->
+      let access_start_location = Trace.get_start_location allocation_trace in
+      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
+        access_start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated here")
+           allocation_trace
+      @@ [Errlog.make_trace_element 0 location "awaitable becomes unreachable here" []]
   | MemoryLeak {allocator; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
@@ -1189,6 +1221,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_cannot_instantiate_abstract_class
   | HackUnawaitedAwaitable _, false ->
       IssueType.pulse_unawaited_awaitable
+  | HackUnfinishedBuilder _, false ->
+      IssueType.pulse_unfinished_builder
   | DynamicTypeMismatch _, false ->
       IssueType.pulse_dynamic_type_mismatch
   | ErlangError (Badarg _), _ ->
@@ -1279,6 +1313,7 @@ let get_issue_type ~latent issue_type =
       | TransitiveAccess _
       | HackCannotInstantiateAbstractClass _
       | HackUnawaitedAwaitable _
+      | HackUnfinishedBuilder _
       | MemoryLeak _
       | ReadonlySharedPtrParameter _
       | RetainCycle _

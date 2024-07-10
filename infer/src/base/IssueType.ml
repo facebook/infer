@@ -858,6 +858,11 @@ let pulse_unawaited_awaitable =
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNAWAITED_AWAITABLE.md"]
 
 
+let pulse_unfinished_builder =
+  register ~enabled:false ~category:ResourceLeak ~id:"PULSE_UNFINISHED_BUILDER" Error Pulse
+    ~hum:"Unfinished Builder" ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
+
+
 let pulse_uninitialized_const =
   register ~category:RuntimeException ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse
     ~hum:"Uninitialized Const"

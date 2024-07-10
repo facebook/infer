@@ -492,7 +492,9 @@ module Syntax = struct
         let* () =
           match Typ.name typ with
           | Some typname when Typ.Name.Hack.is_hack_builder typname ->
-              allocation Attribute.HackBuilderResource new_obj (* set attributes *)
+              let* () = allocation Attribute.HackBuilderResource new_obj in
+              AddressAttributes.set_hack_builder (fst new_obj) Attribute.Builder.NonDiscardable
+              |> exec_command
           | _ ->
               ret ()
         in

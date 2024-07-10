@@ -52,6 +52,14 @@ let is_hack_async tenv pname =
                   Struct.is_hack_interface str ) )
 
 
+let is_hack_builder_consumer _tenv pname =
+  match Procname.get_class_type_name pname with
+  | Some tn when Typ.Name.Hack.is_hack_builder tn && Procname.is_hack_builder_consumer_name pname ->
+      true
+  | _ ->
+      false
+
+
 let is_not_implicit_or_copy_ctor_assignment pname =
   not
     (Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
@@ -845,6 +853,16 @@ module PulseTransferFunctions = struct
     in
     let astate, func_args =
       modify_receiver_if_hack_function_reference path call_loc astate func_args
+    in
+    let astate =
+      match (callee_pname, func_args) with
+      | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+        when is_hack_builder_consumer tenv callee_pname ->
+          L.d_printfln "**it's a builder consumer" ;
+          AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
+            astate
+      | _, _ ->
+          astate
     in
     let astate =
       match (callee_pname, func_args) with

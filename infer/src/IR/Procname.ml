@@ -548,6 +548,8 @@ module Hack = struct
     || String.equal function_name "FlibSL::Dict::from_async"
 
 
+  let starts_with_save {function_name} = String.is_prefix function_name ~prefix:"save"
+
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
       match verbosity with
@@ -653,6 +655,10 @@ let is_hack_async_name name =
       Hack.is_named_genx hack_name || Hack.is_vec_or_dict_from_async hack_name
   | _ ->
       false
+
+
+let is_hack_builder_consumer_name name =
+  match name with Hack hack_name -> Hack.starts_with_save hack_name | _ -> false
 
 
 let is_erlang_call_unqualified name =
