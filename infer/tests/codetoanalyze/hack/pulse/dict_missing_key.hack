@@ -218,7 +218,7 @@ class DictFieldUsingConstKey {
     return $o->f[ConstKey::HI];
   }
 
-  public function read_dict_hi_bad_FN(): int {
+  public function read_dict_hi_bad(): int {
     $o = new DictFieldUsingConstKey();
     return $o->f[ConstKey::BYE];
   }

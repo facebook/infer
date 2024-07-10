@@ -380,7 +380,8 @@ module VecIter = struct
 end
 
 let get_static_companion_var type_name =
-  Pvar.mk_global (Mangled.mangled (Typ.Name.name type_name) "STATIC")
+  let static_type_name = Typ.Name.Hack.static_companion type_name in
+  Pvar.mk_global (Mangled.from_string (Typ.Name.name static_type_name))
 
 
 let get_static_companion ~model_desc path location type_name astate =
