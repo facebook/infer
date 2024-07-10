@@ -73,7 +73,7 @@ let make_new_awaitable av =
   ret av
 
 
-let deep_await_hack_value aval : unit DSL.model_monad =
+let deep_clean_hack_value aval : unit DSL.model_monad =
   let open DSL.Syntax in
   let* reachable_addresses =
     exec_pure_operation (fun astate ->
@@ -81,6 +81,9 @@ let deep_await_hack_value aval : unit DSL.model_monad =
   in
   absvalue_set_iter reachable_addresses ~f:(fun absval ->
       let* _v = await_hack_value (absval, ValueHistory.epoch) in
+      let* () =
+        AddressAttributes.set_hack_builder absval Attribute.Builder.Discardable |> exec_command
+      in
       ret () )
 
 
@@ -143,7 +146,7 @@ module Vec = struct
                   ret ()
               (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
-                  list_iter rest ~f:deep_await_hack_value ) )
+                  list_iter rest ~f:deep_clean_hack_value ) )
     in
     ret vec
 
@@ -239,7 +242,7 @@ module Vec = struct
     | [_key; value] ->
         let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
         let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
-        let* () = deep_await_hack_value v_fst in
+        let* () = deep_clean_hack_value v_fst in
         let* new_vec = new_vec_dsl [v_snd; value] in
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
@@ -618,7 +621,7 @@ module Dict = struct
           match field with
           | None ->
               let* () = remove_dict_contain_const_keys inner_dict in
-              deep_await_hack_value value
+              deep_clean_hack_value value
           | Some field ->
               write_deref_field field ~ref:inner_dict ~obj:value
         in
@@ -797,7 +800,7 @@ let hack_array_cow_set this args : model =
   start_model
   @@
   let default () =
-    let* () = option_iter (List.last args) ~f:deep_await_hack_value in
+    let* () = option_iter (List.last args) ~f:deep_clean_hack_value in
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" () in
     assign_ret fresh
   in

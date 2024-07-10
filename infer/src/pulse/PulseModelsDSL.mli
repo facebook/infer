@@ -127,6 +127,9 @@ module Syntax : sig
   (** [constructor_dsl typ_name fields] builds a fresh object of type [typ_name] and initializes its
       fields using list [fields] *)
 
+  val remove_hack_builder_attributes : aval -> unit model_monad
+  [@@warning "-unused-value-declaration"]
+
   val get_const_string : aval -> string option model_monad
 
   val mk_fresh : model_desc:string -> ?more:string -> unit -> aval model_monad

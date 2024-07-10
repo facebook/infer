@@ -521,6 +521,10 @@ module Syntax = struct
     ret new_obj
 
 
+  let remove_hack_builder_attributes bv : unit model_monad =
+    AddressAttributes.remove_hack_builder (fst bv) |> exec_command
+
+
   let deep_copy ?depth_max source : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.deep_copy ?depth_max path location source >> sat |> exec_partial_operation

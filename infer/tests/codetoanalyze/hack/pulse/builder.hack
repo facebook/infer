@@ -38,4 +38,26 @@ class BuilderTester {
     $b = new MyBuilder();
     $b->setA(42)->setB(97);
   }
+
+  public static function vectorOfBuildersOK(): void {
+    $v = vec[new MyBuilder(), new MyBuilder()];
+    foreach ($v as $b) {
+      $b->setA(42);
+    }
+    foreach ($v as $b) {
+      $x = $b->saveX();
+    }
+  }
+
+  // Would be an FP except for deep_clean_hack_value
+  public static function vectorOfBuilders2OK(): void {
+    $v = vec[new MyBuilder(), new MyBuilder(), new MyBuilder()];
+    foreach ($v as $b) {
+      $b->setA(42);
+    }
+    foreach ($v as $b) {
+      $x = $b->saveX();
+    }
+  }
+
 }
