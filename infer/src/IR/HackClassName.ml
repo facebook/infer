@@ -66,6 +66,3 @@ let extract_curry_info {classname} =
   let sep1_end = sep1_start + String.length sep1 in
   let shortprocname = String.sub classname ~pos:sep1_end ~len:(sep2_start - sep1_end) in
   Some (typename, shortprocname)
-
-
-let is_hack_builder {classname} = String.is_suffix ~suffix:"Builder" classname

@@ -93,7 +93,8 @@ type t =
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
-  | HackUnfinishedBuilder of {allocation_trace: Trace.t; location: Location.t}
+  | HackUnfinishedBuilder of
+      {builder_type: HackClassName.t; allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of

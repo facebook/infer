@@ -5,6 +5,10 @@
     "models/test_models.sil",
     "models/test_models.hack"
   ],
+  "hack-builder-patterns": [
+    { "class": "TestBuilderBase", "finalizers": ["doFinalize", "altFinalize"]},
+    { "class": "MyBuilder", "finalizers": ["saveX"]}
+  ],
   "pulse-taint-short-traces": true,
   "pulse-taint-sources": [
     { "procedure": "$root.Level1::taintSource" },

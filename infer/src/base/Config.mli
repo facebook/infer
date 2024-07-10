@@ -411,6 +411,8 @@ val global_tenv : bool
 
 val hackc_binary : string option
 
+val hack_builder_patterns : (string * string list) list
+
 val hack_builtin_models : string
 
 val hack_models : string list

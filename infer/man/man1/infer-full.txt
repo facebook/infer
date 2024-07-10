@@ -2754,6 +2754,9 @@ INTERNAL OPTIONS
            Activates: Enable the genrule compatibility mode used for the Buck
            integration (Conversely: --no-genrule-mode)
 
+       --hack-builder-patterns json
+           Specify builder classes and finalizer methods
+
        --hack-builtin-models path
            Specify .sil file to use as Hack builtin models (uses bundled
            models by default)

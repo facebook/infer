@@ -30,7 +30,7 @@ module Attribute = struct
     | CSharpResource of CSharpClassName.t
     | ObjCAlloc
     | HackAsync
-    | HackBuilderResource
+    | HackBuilderResource of HackClassName.t
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -54,8 +54,8 @@ module Attribute = struct
         F.fprintf fmt "alloc"
     | HackAsync ->
         F.fprintf fmt "hack async"
-    | HackBuilderResource ->
-        F.fprintf fmt "hack builder"
+    | HackBuilderResource class_name ->
+        F.fprintf fmt "hack builder %a" HackClassName.pp class_name
 
 
   type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@compare.ignore] [@equal.ignore])}
@@ -648,7 +648,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->
         true
-    | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ | HackBuilderResource, _ ->
+    | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ | HackBuilderResource _, _ ->
         is_released
     | _ ->
         false

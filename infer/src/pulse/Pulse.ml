@@ -52,10 +52,16 @@ let is_hack_async tenv pname =
                   Struct.is_hack_interface str ) )
 
 
-let is_hack_builder_consumer _tenv pname =
+let is_hack_builder_consumer tenv pname =
   match Procname.get_class_type_name pname with
-  | Some tn when Typ.Name.Hack.is_hack_builder tn && Procname.is_hack_builder_consumer_name pname ->
-      true
+  | Some (HackClass _ as tn) ->
+      let res =
+        List.exists Config.hack_builder_patterns ~f:(fun (class_name, consumer_names) ->
+            PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name))
+            && List.mem consumer_names (Procname.get_method pname) ~equal:String.equal )
+      in
+      L.d_printfln "doing builder consumer check, result is %b" res ;
+      res
   | _ ->
       false
 

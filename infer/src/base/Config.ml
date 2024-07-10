@@ -649,7 +649,7 @@ and append_buck_flavors =
      $(b,--buck-compilation-database) option."
 
 
-let biabduction_abs_struct =
+and biabduction_abs_struct =
   CLOpt.mk_int ~deprecated:["-abs-struct"] ~long:"biabduction-abs-struct" ~default:1 ~meta:"int"
     {|Specify abstraction level for fields of structs:
 - 0 = no
@@ -1776,6 +1776,10 @@ and global_tenv =
 
 
 and hackc_binary = CLOpt.mk_path_opt ~long:"hackc-binary" "Specify hackc binary to use"
+
+and hack_builder_patterns =
+  CLOpt.mk_json ~long:"hack-builder-patterns" "Specify builder classes and finalizer methods"
+
 
 and hack_builtin_models =
   CLOpt.mk_path ~long:"hack-builtin-models" ~default:default_hack_builtin_models
@@ -4223,6 +4227,15 @@ and genrule_mode = !genrule_mode
 and global_tenv = !global_tenv
 
 and hackc_binary = !hackc_binary
+
+and hack_builder_patterns =
+  let open Yojson.Safe.Util in
+  let json = !hack_builder_patterns in
+  let class_of j = j |> member "class" |> to_string in
+  let finalizers j = j |> member "finalizers" |> to_list |> List.map ~f:to_string in
+  let pattern j = (class_of j, finalizers j) in
+  json |> to_list |> List.map ~f:pattern
+
 
 and hack_builtin_models = !hack_builtin_models
 

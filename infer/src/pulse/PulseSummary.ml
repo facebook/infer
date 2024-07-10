@@ -102,14 +102,15 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
                 {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
             , summary )
           |> Option.value ~default:(exec_domain_of_summary summary)
-    | Error (`HackUnfinishedBuilder (summary, astate, allocation_trace, location)) ->
+    | Error (`HackUnfinishedBuilder (summary, astate, allocation_trace, location, builder_type)) ->
         if is_exceptional_state then (
           L.d_printfln "Suppressing Unfinished Builder report because exception thown" ;
           exec_domain_of_summary summary )
         else
           PulseReport.report_summary_error analysis_data
             ( ReportableError
-                {astate; diagnostic= HackUnfinishedBuilder {allocation_trace; location}}
+                { astate
+                ; diagnostic= HackUnfinishedBuilder {builder_type; allocation_trace; location} }
             , summary )
           |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->

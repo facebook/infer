@@ -483,7 +483,16 @@ module Syntax = struct
     |> lift_model
 
 
+  let is_hack_builder_in_config tenv hacktypname =
+    L.d_printfln "typname = %a" HackClassName.pp hacktypname ;
+    (* TODO: deal with namespaces properly! *)
+    List.exists Config.hack_builder_patterns ~f:(fun (builder_class_name, _) ->
+        let builder_class_name = Typ.HackClass (HackClassName.make builder_class_name) in
+        PatternMatch.is_subtype tenv (HackClass hacktypname) builder_class_name )
+
+
   let new_ type_name_exp =
+    let* {analysis_data= {tenv}} = get_data in
     let* new_obj = lift_to_monad_and_get_result (internal_new_ type_name_exp) in
     match type_name_exp with
     | Exp.Sizeof {typ} ->
@@ -491,8 +500,8 @@ module Syntax = struct
         let* () = and_dynamic_type_is new_obj typ in
         let* () =
           match Typ.name typ with
-          | Some typname when Typ.Name.Hack.is_hack_builder typname ->
-              let* () = allocation Attribute.HackBuilderResource new_obj in
+          | Some (HackClass hacktypname) when is_hack_builder_in_config tenv hacktypname ->
+              let* () = allocation (Attribute.HackBuilderResource hacktypname) new_obj in
               AddressAttributes.set_hack_builder (fst new_obj) Attribute.Builder.NonDiscardable
               |> exec_command
           | _ ->

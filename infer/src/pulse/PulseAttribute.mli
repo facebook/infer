@@ -28,7 +28,7 @@ type allocator =
   | CSharpResource of CSharpClassName.t
   | ObjCAlloc
   | HackAsync
-  | HackBuilderResource
+  | HackBuilderResource of HackClassName.t
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
