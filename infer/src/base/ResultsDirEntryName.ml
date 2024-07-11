@@ -68,241 +68,108 @@ type t =
   ; before_new_capture: cleanup_action
         (** whether this should be deleted before a from-scratch, non-incremental capture *) }
 
+let keep = function None -> Delete | Some () -> Keep
+
+let make ~kind ?keep_before_incremental_analysis ?keep_before_caching_capture
+    ?keep_before_new_capture rel_path =
+  let before_incremental_analysis = keep keep_before_incremental_analysis in
+  let before_caching_capture = keep keep_before_caching_capture in
+  let before_new_capture = keep keep_before_new_capture in
+  {rel_path; kind; before_incremental_analysis; before_caching_capture; before_new_capture}
+
+
+let file ?keep_before_incremental_analysis ?keep_before_caching_capture ?keep_before_new_capture
+    rel_path =
+  make ~kind:File ?keep_before_incremental_analysis ?keep_before_caching_capture
+    ?keep_before_new_capture rel_path
+
+
+let directory ?keep_before_incremental_analysis ?keep_before_caching_capture
+    ?keep_before_new_capture rel_path =
+  make ~kind:Directory ?keep_before_incremental_analysis ?keep_before_caching_capture
+    ?keep_before_new_capture rel_path
+
+
 let of_id = function
   | AllocationTraces ->
-      { rel_path= "memtrace"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "memtrace"
   | AnalysisDependencyGraph ->
-      { rel_path= "analysis_dependency_graph"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Keep }
+      file "analysis_dependency_graph" ~keep_before_incremental_analysis:()
+        ~keep_before_new_capture:()
   | AnalysisDependencyGraphDot ->
-      { rel_path= "analysis_dependency_graph.dot"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "analysis_dependency_graph.dot" ~keep_before_incremental_analysis:()
   | AnalysisDependencyInvalidationGraphDot ->
-      { rel_path= "analysis_dependency_invalidation_graph.dot"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "analysis_dependency_invalidation_graph.dot" ~keep_before_incremental_analysis:()
   | AnalysisDB ->
-      { rel_path= "results.db"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "results.db" ~keep_before_incremental_analysis:()
   | AnalysisDBShm ->
-      { rel_path= "results.db-shm"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "results.db-shm" ~keep_before_incremental_analysis:()
   | AnalysisDBWal ->
-      { rel_path= "results.db-wal"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "results.db-wal" ~keep_before_incremental_analysis:()
   | CallGraphCyclesDot ->
-      { rel_path= "call_graph_cycles.dot"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      file "call_graph_cycles.dot" ~keep_before_caching_capture:()
   | CaptureDB ->
-      { rel_path= "capture.db"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      file "capture.db" ~keep_before_incremental_analysis:() ~keep_before_caching_capture:()
   | CaptureDBShm ->
-      { rel_path= "capture.db-shm"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "capture.db-shm" ~keep_before_incremental_analysis:()
   | CaptureDBWal ->
-      { rel_path= "capture.db-wal"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "capture.db-wal" ~keep_before_incremental_analysis:()
   | CaptureDependencies ->
-      { rel_path= infer_deps_file_name
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file infer_deps_file_name ~keep_before_incremental_analysis:()
   | ChangedFunctions ->
-      { rel_path= "changed_functions.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      file "changed_functions.json" ~keep_before_caching_capture:()
   | ChangedFunctionsTempResults ->
-      { rel_path= "changed_functions_results"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      directory "changed_functions_results" ~keep_before_caching_capture:()
   | DBWriterSocket ->
-      { rel_path= db_writer_socket_name
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file db_writer_socket_name ~keep_before_incremental_analysis:()
   | Debug ->
-      { rel_path= "captured"
-      ; kind= Directory
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "captured" ~keep_before_incremental_analysis:()
   | Differential ->
-      { rel_path= "differential"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "differential"
   | DuplicateFunctions ->
-      { rel_path= "duplicates.txt"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "duplicates.txt" ~keep_before_incremental_analysis:()
   | GlobalTypeEnvironment ->
-      { rel_path= ".global.tenv"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      file ".global.tenv" ~keep_before_incremental_analysis:() ~keep_before_caching_capture:()
   | Logs ->
-      { rel_path= "logs"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "logs" ~keep_before_incremental_analysis:()
   | MissingSourceFiles ->
-      { rel_path= "missing-source-files"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "missing-source-files"
   | MissingProcedures ->
-      { rel_path= "missing-procedures"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "missing-procedures"
   | PerfEvents ->
-      { rel_path= "perf_events.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "perf_events.json"
   | ProcnamesLocks ->
-      { rel_path= "procnames_locks"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "procnames_locks"
   | ReactiveCaptureMissingTypes ->
-      { rel_path= "reactive_capture_missed_types.txt"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "reactive_capture_missed_types.txt"
   | ReportConfigImpactJson ->
-      { rel_path= "config-impact-report.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "config-impact-report.json"
   | ReportCostsJson ->
-      { rel_path= "costs-report.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "costs-report.json"
   | ReportHtml ->
-      { rel_path= "report.html"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "report.html"
   | ReportJson ->
-      { rel_path= "report.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "report.json"
   | ReportSarif ->
-      { rel_path= "report.sarif"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "report.sarif"
   | ReportText ->
-      { rel_path= "report.txt"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "report.txt"
   | ReportXML ->
-      { rel_path= "report.xml"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "report.xml"
   | RetainCycles ->
-      { rel_path= "retain_cycle_dotty"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "retain_cycle_dotty"
   | RunState ->
-      { rel_path= ".infer_runstate.json"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file ".infer_runstate.json" ~keep_before_incremental_analysis:()
   | Stats ->
-      { rel_path= "stats"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "stats"
   | SyntacticDependencyGraphDot ->
-      { rel_path= "syntactic_dependency_graph.dot"
-      ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      file "syntactic_dependency_graph.dot" ~keep_before_incremental_analysis:()
   | Temporary ->
-      { rel_path= "tmp"
-      ; kind= Directory
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "tmp" ~keep_before_incremental_analysis:()
   | TestDeterminatorReport ->
-      { rel_path= "test_determinator.json"
-      ; kind= File
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Keep
-      ; before_new_capture= Delete }
+      file "test_determinator.json" ~keep_before_caching_capture:()
   | TestDeterminatorTempResults ->
-      { rel_path= "test_determinator_results"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete
-      ; before_new_capture= Delete }
+      directory "test_determinator_results"
 
 
 let path_of_entry ~results_dir {rel_path; _} = results_dir ^/ rel_path
