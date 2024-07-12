@@ -535,16 +535,6 @@ For more information see the [`NULLPTR_DEREFERENCE`](#nullptr_dereference) issue
 *Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## CREATE_INTENT_FROM_URI
-
-*Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).*
-
-Create an intent/start a component using a (possibly user-controlled) URI. may or may not be an issue depending on where the URI comes from.
-## CROSS_SITE_SCRIPTING
-
-*Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data flows into HTML; XSS risk.
 ## CXX_REF_CAPTURED_IN_BLOCK
 
 *Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).*
@@ -574,11 +564,6 @@ dereferences it later.
 *Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).*
 
 
-## DATALOG_FACT
-
-*Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).*
-
-Datalog fact used as input for a datalog solver.
 ## DATA_FLOW_TO_SINK
 
 *Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).*
@@ -770,11 +755,6 @@ void symbolic_expensive_hoist(int size) {
 }
 ```
 
-## EXPOSED_INSECURE_INTENT_HANDLING
-
-*Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).*
-
-Undocumented.
 ## GUARDEDBY_VIOLATION
 
 *Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "GuardedBy Violation" by [racerd](/docs/next/checker-racerd).*
@@ -925,11 +905,6 @@ void call_top_cost_FP() {
 ```
 
 
-## INSECURE_INTENT_HANDLING
-
-*Reported as "Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).*
-
-Undocumented.
 ## INTEGER_OVERFLOW_L1
 
 *Reported as "Integer Overflow L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
@@ -1015,11 +990,6 @@ void invariant_hoist(int size) {
 *Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).*
 
 A blocking `Binder` IPC call occurs on the UI thread.
-## JAVASCRIPT_INJECTION
-
-*Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data flows into JavaScript.
 ## LAB_RESOURCE_LEAK
 
 *Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).*
@@ -1072,11 +1042,6 @@ container (an array, a vector, etc).
   Infer considers a method as private if it's not exported in the header-file
   interface.
 
-## LOGGING_PRIVATE_DATA
-
-*Reported as "Logging Private Data" by [quandary](/docs/next/checker-quandary).*
-
-Undocumented.
 ## MEMORY_LEAK_C
 
 *Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).*
@@ -2023,6 +1988,11 @@ class A {
 
 Failure to `await` an `Awaitable` can lead to non-deterministic amount of the asynchronous call actually being executed, and can also indicate a logical confusion between `T` and `Awaitable<T>` that may not be caught by the type-checker.
 
+## PULSE_UNFINISHED_BUILDER
+
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Unfinished Builder" by [pulse](/docs/next/checker-pulse).*
+
+See [RESOURCE_LEAK](#resource_leak)
 ## PULSE_UNINITIALIZED_CONST
 
 *Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).*
@@ -2275,11 +2245,6 @@ void set_impure(int x, int y) {
 }
 ```
 
-## QUANDARY_TAINT_ERROR
-
-*Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).*
-
-Generic taint error when nothing else fits.
 ## REGEX_OP_ON_UI_THREAD
 
 *Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Regex Op On Ui Thread" by [starvation](/docs/next/checker-starvation).*
@@ -2677,31 +2642,40 @@ listed for the given class returns an object that is known to have scope SA. (Th
 as a form of lightweight modeling.) A scope class is the name of the class that represents a
 given scope.
 
+## SELF_IN_BLOCK_PASSED_TO_INIT
+
+*Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Self In Block Passed To Init" by [self-in-block](/docs/next/checker-self-in-block).*
+
+This check flags when `self` is captured in a block that is passed to an initialiser method. That
+could cause retain cycles if the initialiser code retains the block.
+
+Example:
+
+```objectivec
+  [obj initWithHandler:^() {
+    [self foo];
+    ...
+  }];
+```
+
+Instead it's better to use the `weakSelf`/`strongSelf` pattern.
+
+```objectivec
+  __weak __typeof(self) weakSelf = self;
+  [obj initWithHandler:^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+        [strongSelf foo];
+    }
+    ...
+  }];
+```
+
 ## SENSITIVE_DATA_FLOW
 
 *Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).*
 
 A flow of sensitive data was detected from a source.
-## SHELL_INJECTION
-
-*Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).*
-
-Environment variable or file data flowing to shell.
-## SHELL_INJECTION_RISK
-
-*Reported as "Shell Injection Risk" by [quandary](/docs/next/checker-quandary).*
-
-Code injection if the caller of the endpoint doesn't sanitize on its end.
-## SQL_INJECTION
-
-*Reported as "Sql Injection" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted and unescaped data flows to SQL.
-## SQL_INJECTION_RISK
-
-*Reported as "Sql Injection Risk" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted and unescaped data flows to SQL.
 ## STACK_VARIABLE_ADDRESS_ESCAPE
 
 *Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Stack Variable Address Escape" by [pulse](/docs/next/checker-pulse).*
@@ -2961,61 +2935,6 @@ See [Topl](/docs/next/checker-topl#what-is-it) for an example
 *Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).*
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## UNTRUSTED_BUFFER_ACCESS
-
-*Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data of any kind flowing to buffer.
-## UNTRUSTED_DESERIALIZATION
-
-*Reported as "Untrusted Deserialization" by [quandary](/docs/next/checker-quandary).*
-
-User-controlled deserialization.
-## UNTRUSTED_DESERIALIZATION_RISK
-
-*Reported as "Untrusted Deserialization Risk" by [quandary](/docs/next/checker-quandary).*
-
-User-controlled deserialization
-## UNTRUSTED_ENVIRONMENT_CHANGE_RISK
-
-*Reported as "Untrusted Environment Change Risk" by [quandary](/docs/next/checker-quandary).*
-
-User-controlled environment mutation.
-## UNTRUSTED_FILE
-
-*Reported as "Untrusted File" by [quandary](/docs/next/checker-quandary).*
-
-User-controlled file creation; may be vulnerable to path traversal and more.
-## UNTRUSTED_FILE_RISK
-
-*Reported as "Untrusted File Risk" by [quandary](/docs/next/checker-quandary).*
-
-User-controlled file creation; may be vulnerable to path traversal and more.
-## UNTRUSTED_HEAP_ALLOCATION
-
-*Reported as "Untrusted Heap Allocation" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS.
-## UNTRUSTED_INTENT_CREATION
-
-*Reported as "Untrusted Intent Creation" by [quandary](/docs/next/checker-quandary).*
-
-Creating an Intent from user-controlled data.
-## UNTRUSTED_URL_RISK
-
-*Reported as "Untrusted Url Risk" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted flag, environment variable, or file data flowing to URL.
-## UNTRUSTED_VARIABLE_LENGTH_ARRAY
-
-*Reported as "Untrusted Variable Length Array" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data of any kind flowing to stack buffer allocation. Trying to allocate a stack buffer that's too large will cause a stack overflow.
-## USER_CONTROLLED_SQL_RISK
-
-*Reported as "User Controlled Sql Risk" by [quandary](/docs/next/checker-quandary).*
-
-Untrusted data flows to SQL (no injection risk).
 ## USE_AFTER_DELETE
 
 *Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Use After Delete" by [pulse](/docs/next/checker-pulse).*

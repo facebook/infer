@@ -37,12 +37,6 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 [Visit here for more information.](/docs/next/checker-cost)
 
-## Datalog-based points-to analysis
-
-Experimental datalog-based points-to analysis.
-
-[Visit here for more information.](/docs/next/checker-datalog)
-
 ## Fragment Retains View
 
 Detects when Android fragments are not explicitly nullified before becoming unreachable.
@@ -160,3 +154,4 @@ Detect various kinds of situations when no progress is being made because of con
 Detect errors based on user-provided state machines describing temporal properties over multiple objects.
 
 [Visit here for more information.](/docs/next/checker-topl)
+

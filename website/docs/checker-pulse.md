@@ -189,6 +189,7 @@ The following issue types are reported by this checker:
 - [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
 - [PULSE_TRANSITIVE_ACCESS](/docs/next/all-issue-types#pulse_transitive_access)
 - [PULSE_UNAWAITED_AWAITABLE](/docs/next/all-issue-types#pulse_unawaited_awaitable)
+- [PULSE_UNFINISHED_BUILDER](/docs/next/all-issue-types#pulse_unfinished_builder)
 - [PULSE_UNINITIALIZED_CONST](/docs/next/all-issue-types#pulse_uninitialized_const)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)

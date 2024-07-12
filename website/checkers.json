@@ -4,13 +4,13 @@
     "all-checkers", "all-categories", "all-issue-types",
     "checker-annotation-reachability", "checker-biabduction",
     "checker-bufferoverrun", "checker-config-impact-analysis",
-    "checker-cost", "checker-datalog", "checker-fragment-retains-view",
-    "checker-impurity", "checker-inefficient-keyset-iterator",
-    "checker-lineage", "checker-litho-required-props", "checker-liveness",
+    "checker-cost", "checker-fragment-retains-view", "checker-impurity",
+    "checker-inefficient-keyset-iterator", "checker-lineage",
+    "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-parameter-not-null-checked",
     "checker-printf-args", "checker-pulse", "checker-purity",
-    "checker-quandary", "checker-racerd", "checker-resource-leak-lab",
-    "checker-sil-validation", "checker-siof", "checker-scope-leakage",
-    "checker-self-in-block", "checker-starvation", "checker-topl"
+    "checker-racerd", "checker-resource-leak-lab", "checker-sil-validation",
+    "checker-siof", "checker-scope-leakage", "checker-self-in-block",
+    "checker-starvation", "checker-topl"
   ]
 }
