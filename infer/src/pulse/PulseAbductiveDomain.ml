@@ -637,6 +637,10 @@ module Internal = struct
 
     let has_unknown_effect addr astate =
       BaseAddressAttributes.has_unknown_effect addr (astate.post :> base_domain).attrs
+
+
+    let is_hack_sinit_called addr astate =
+      BaseAddressAttributes.is_hack_sinit_called addr (astate.post :> base_domain).attrs
   end
 
   module SafeMemory = struct
@@ -2427,6 +2431,10 @@ module AddressAttributes = struct
 
   let has_unknown_effect v astate =
     SafeAttributes.has_unknown_effect (CanonValue.canon' astate v) astate
+
+
+  let is_hack_sinit_called v astate =
+    SafeAttributes.is_hack_sinit_called (CanonValue.canon' astate v) astate
 end
 
 module CanonValue = struct

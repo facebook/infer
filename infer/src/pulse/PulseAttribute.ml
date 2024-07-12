@@ -220,6 +220,8 @@ module Attribute = struct
     | DictReadConstKeys of ConstKeys.t
     | EndOfCollection
     | HackBuilder of Builder.t
+    | HackSinitCalled
+    | HackSinitMustNotBeCalled of Timestamp.t
     | InReportedRetainCycle
     | Initialized
     | Invalid of Invalidation.t * Trace.t
@@ -277,6 +279,10 @@ module Attribute = struct
   let end_of_collection_rank = Variants.endofcollection.rank
 
   let hack_builder_rank = Variants.hackbuilder.rank
+
+  let hack_sinit_called_rank = Variants.hacksinitcalled.rank
+
+  let hack_sinit_must_not_be_called_rank = Variants.hacksinitmustnotbecalled.rank
 
   let in_reported_retain_cycle_rank = Variants.inreportedretaincycle.rank
 
@@ -355,6 +361,10 @@ module Attribute = struct
         F.pp_print_string f "EndOfCollection"
     | HackBuilder builderstate ->
         F.fprintf f "HackBuilder(%a)" Builder.pp builderstate
+    | HackSinitCalled ->
+        F.pp_print_string f "HackSinitCalled"
+    | HackSinitMustNotBeCalled timestamp ->
+        F.fprintf f "HackSinitMustNotBeCalled(%d)" (timestamp :> int)
     | InReportedRetainCycle ->
         F.pp_print_string f "InReportedRetainCycle"
     | Initialized ->
@@ -420,6 +430,7 @@ module Attribute = struct
 
   let is_suitable_for_pre = function
     | DictReadConstKeys _
+    | HackSinitMustNotBeCalled _
     | MustBeValid _
     | MustBeInitialized _
     | MustNotBeTainted _
@@ -436,6 +447,7 @@ module Attribute = struct
     | CopiedReturn _
     | DictContainConstKeys
     | EndOfCollection
+    | HackSinitCalled
     | InReportedRetainCycle
     | Initialized
     | JavaResourceReleased
@@ -462,6 +474,7 @@ module Attribute = struct
 
   let is_suitable_for_post = function
     | DictReadConstKeys _
+    | HackSinitMustNotBeCalled _
     | MustBeInitialized _
     | MustNotBeTainted _
     | MustBeValid _
@@ -478,6 +491,7 @@ module Attribute = struct
     | CopiedReturn _
     | DictContainConstKeys
     | EndOfCollection
+    | HackSinitCalled
     | InReportedRetainCycle
     | Initialized
     | Invalid _
@@ -529,6 +543,8 @@ module Attribute = struct
     | CSharpResourceReleased
     | HackAsyncAwaited
     | HackBuilder _
+    | HackSinitCalled
+    | HackSinitMustNotBeCalled _
     | MustBeInitialized _
     | MustBeValid _
     | MustNotBeTainted _
@@ -565,6 +581,8 @@ module Attribute = struct
           (ConstKeys.map
              (fun (_timestamp, trace) -> (timestamp, add_call_to_trace trace))
              const_keys )
+    | HackSinitMustNotBeCalled _timestamp ->
+        HackSinitMustNotBeCalled timestamp
     | InReportedRetainCycle ->
         InReportedRetainCycle
     | Invalid (invalidation, trace) ->
@@ -630,6 +648,7 @@ module Attribute = struct
       | EndOfCollection
       | HackAsyncAwaited
       | HackBuilder _
+      | HackSinitCalled
       | Initialized
       | JavaResourceReleased
       | LastLookup _
@@ -704,6 +723,8 @@ module Attribute = struct
       | EndOfCollection
       | HackAsyncAwaited
       | HackBuilder _
+      | HackSinitCalled
+      | HackSinitMustNotBeCalled _
       | InReportedRetainCycle
       | Initialized
       | Invalid _
@@ -868,6 +889,14 @@ module Attributes = struct
 
 
   let remove_hack_builder = remove_by_rank Attribute.hack_builder_rank
+
+  let is_hack_sinit_called = mem_by_rank Attribute.hack_sinit_called_rank
+
+  let get_hack_sinit_must_not_be_called =
+    get_by_rank Attribute.hack_sinit_must_not_be_called_rank
+        ~dest:(function [@warning "-partial-match"] HackSinitMustNotBeCalled timestamp ->
+        timestamp )
+
 
   let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
 

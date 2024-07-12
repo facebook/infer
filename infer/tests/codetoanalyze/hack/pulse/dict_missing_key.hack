@@ -235,3 +235,47 @@ abstract final class StaticDictField {
     return self::f['bye'];
   }
 }
+
+class InitStaticField {
+  const int DUMMY = -1;
+  public static bool $b = false;
+  public static function nop(): void {}
+}
+
+class CallInitStaticField {
+  public function call_get_bad(): void {
+    InitStaticField::$b = true;
+    InitStaticField::nop();
+    if (InitStaticField::$b) {
+      dict_argument(dict['hi' => 42]);
+    }
+  }
+
+  public function call_get_ok(): void {
+    InitStaticField::$b = true;
+    InitStaticField::nop();
+    if (!InitStaticField::$b) {
+      dict_argument(dict['hi' => 42]);
+    }
+  }
+
+  public function call_nop(): void {
+    InitStaticField::nop();
+  }
+
+  public function call_get_interproc_bad(): void {
+    InitStaticField::$b = true;
+    $this->call_nop();
+    if (InitStaticField::$b) {
+      dict_argument(dict['hi' => 42]);
+    }
+  }
+
+  public function call_get_interproc_ok(): void {
+    InitStaticField::$b = true;
+    $this->call_nop();
+    if (!InitStaticField::$b) {
+      dict_argument(dict['hi' => 42]);
+    }
+  }
+}

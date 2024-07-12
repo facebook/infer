@@ -404,8 +404,9 @@ let get_static_companion_dsl ~model_desc type_name : DSL.aval DSL.model_monad =
   exec_operation (get_static_companion ~model_desc path location type_name)
 
 
-(* NOTE: We model [lazy_class_initialize] as invoking the corresponding [sinit] procedure.  This is
-   unsound in terms of that it gets non-final values. *)
+(* NOTE: We model [lazy_class_initialize] as invoking the corresponding [sinit] procedure.  To be
+   sound, we consider the cases where the initialization has been done before or not by separating
+   disjuncts. *)
 let lazy_class_initialize size_exp : model =
   let open DSL.Syntax in
   start_model
@@ -422,15 +423,27 @@ let lazy_class_initialize size_exp : model =
   let* () =
     match type_name with
     | HackClass class_name ->
-        let ret_id = Ident.create_none () in
-        let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
-        let* {analysis_data= {tenv}} = get_data in
-        let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
-        let pname = Procname.get_hack_static_init ~is_trait class_name in
         let exp = Exp.Lvar (get_static_companion_var type_name) in
-        let typ = Typ.mk_struct type_name in
         let* arg_payload = eval_to_value_origin exp in
-        dispatch_call (ret_id, ret_typ) pname [(exp, typ)] [{exp; typ; arg_payload}]
+        let static_companion_addr_hist = ValueOrigin.addr_hist arg_payload in
+        let* is_sinit_called = is_hack_sinit_called static_companion_addr_hist in
+        if is_sinit_called then ret ()
+        else
+          (* Note that we set the [HackSinitCalled] attribute even in the [not_call_sinit] case to
+             avoid sinit is called later in the following instructions. *)
+          let* () = set_hack_sinit_called static_companion_addr_hist in
+          let call_sinit : unit DSL.model_monad =
+            let* () = set_hack_sinit_must_not_be_called static_companion_addr_hist in
+            let ret_id = Ident.create_none () in
+            let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
+            let* {analysis_data= {tenv}} = get_data in
+            let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
+            let pname = Procname.get_hack_static_init ~is_trait class_name in
+            let typ = Typ.mk_struct type_name in
+            dispatch_call (ret_id, ret_typ) pname [(exp, typ)] [{exp; typ; arg_payload}]
+          in
+          let not_call_sinit : unit DSL.model_monad = ret () in
+          disjuncts [call_sinit; not_call_sinit]
     | _ ->
         ret ()
   in

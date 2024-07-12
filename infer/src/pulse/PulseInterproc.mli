@@ -34,6 +34,7 @@ type contradiction = private
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+  | HackSinitMustNotBeCalled of AbstractValue.t
   | PathCondition
 
 val is_dynamic_type_needed_contradiction :

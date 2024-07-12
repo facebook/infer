@@ -321,6 +321,7 @@ type contradiction =
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+  | HackSinitMustNotBeCalled of AbstractValue.t
   | PathCondition
 
 let pp_aliases fmt aliases =
@@ -346,6 +347,8 @@ let pp_contradiction fmt = function
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
+  | HackSinitMustNotBeCalled addr ->
+      F.fprintf fmt "sinit of %a must not be called" AbstractValue.pp addr
   | PathCondition ->
       F.pp_print_string fmt "path condition evaluates to false"
 
@@ -359,7 +362,7 @@ let log_contradiction = function
       Stats.incr_pulse_args_length_contradictions ()
   | CapturedFormalActualLength _ ->
       Stats.incr_pulse_captured_vars_length_contradictions ()
-  | PathCondition ->
+  | HackSinitMustNotBeCalled _ | PathCondition ->
       ()
 
 
@@ -370,6 +373,7 @@ let is_dynamic_type_needed_contradiction = function
   | AliasingWithAllAliases _
   | CapturedFormalActualLength _
   | FormalActualLength _
+  | HackSinitMustNotBeCalled _
   | PathCondition ->
       None
 
@@ -1122,15 +1126,24 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
-        match UnsafeAttributes.get_must_be_initialized addr_pre pre.BaseDomain.attrs with
+        let to_check =
+          match UnsafeAttributes.get_must_be_initialized addr_pre pre.BaseDomain.attrs with
+          | None ->
+              to_check
+          | Some must_be_init_data ->
+              (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check
+        in
+        match UnsafeAttributes.get_hack_sinit_must_not_be_called addr_pre pre.BaseDomain.attrs with
         | None ->
             to_check
-        | Some must_be_init_data ->
-            (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check )
+        | Some data ->
+            (addr_hist_caller, `HackSinitMustNotBeCalled data) :: to_check )
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
+    | `MustBeValid (timestamp, _, _)
+    | `MustBeInitialized (timestamp, _)
+    | `HackSinitMustNotBeCalled timestamp ->
         timestamp
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
@@ -1169,7 +1182,11 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
                       addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic= ReadUninitialized {typ; calling_context= []; trace= access_trace}
-                      ; astate } ) )
+                      ; astate } )
+         | `HackSinitMustNotBeCalled _timestamp ->
+             if AddressAttributes.is_hack_sinit_called addr_caller astate then
+               raise (Contradiction (HackSinitMustNotBeCalled addr_caller))
+             else Ok astate )
 
 
 let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst astate =
