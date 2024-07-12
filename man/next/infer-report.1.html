@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.23.0 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -38,7 +38,7 @@
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">infer-report -
+<p style="margin-left:11%; margin-top: 1em">infer-report -
 compute and manipulate infer reports</p>
 
 <h2>SYNOPSIS
@@ -46,7 +46,7 @@ compute and manipulate infer reports</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>infer report
+<p style="margin-left:11%; margin-top: 1em"><b>infer report
 <br>
 infer report --issues-tests <br>
 infer report --cost-issues-tests <br>
@@ -59,7 +59,7 @@ infer report --merge-report</b> <i>dir1 ...</i>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">When used
+<p style="margin-left:11%; margin-top: 1em">When used
 without parameters, generate report output in Json. With a
 <b>--tests</b> parameter, write out issues in a format
 suitable for tests. With <b>--merge-report</b>, merge
@@ -71,17 +71,17 @@ multiple JSON reports in one.</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>--no-censor-report</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-censor-report</b>
 <i>+issue_type_regex</i></p>
 
-<p style="margin-left:14%;">For debugging/experimentation
+<p style="margin-left:17%;">For debugging/experimentation
 only: Specify issues not to be censored by
 <b>--censor-report</b>.</p>
 
-<p style="margin-left:9%;"><b>--censor-report</b>
+<p style="margin-left:11%;"><b>--censor-report</b>
 <i>+string</i></p>
 
-<p style="margin-left:14%;">Specify a filter for issues to
+<p style="margin-left:17%;">Specify a filter for issues to
 be censored by adding a 'censored_reason' field in the json
 report. Infer will not report censored issues on the console
 output and in report.txt, but tools that post-process the
@@ -105,36 +105,36 @@ are tested by the regex are relative to the
 used to explain why the issue was filtered.</p>
 
 
-<p style="margin-left:9%;"><b>--config-impact-data-file</b>
+<p style="margin-left:11%;"><b>--config-impact-data-file</b>
 <i>file</i></p>
 
-<p style="margin-left:14%;">[ConfigImpact] Specify the file
+<p style="margin-left:17%;">[ConfigImpact] Specify the file
 containing the config data</p>
 
 
-<p style="margin-left:9%;"><b>--config-impact-issues-tests</b>
+<p style="margin-left:11%;"><b>--config-impact-issues-tests</b>
 <i>file</i></p>
 
-<p style="margin-left:14%;">Write a list of config impact
+<p style="margin-left:17%;">Write a list of config impact
 issues in a format suitable for config impact tests to
 <i>file</i></p>
 
 
-<p style="margin-left:9%;"><b>--config-impact-max-callees-to-print</b>
+<p style="margin-left:11%;"><b>--config-impact-max-callees-to-print</b>
 <i>int</i></p>
 
-<p style="margin-left:14%;">Specify the maximum number of
+<p style="margin-left:17%;">Specify the maximum number of
 unchecked callees to print in the config impact checker</p>
 
-<p style="margin-left:9%;"><b>--cost-issues-tests</b>
+<p style="margin-left:11%;"><b>--cost-issues-tests</b>
 <i>file</i></p>
 
-<p style="margin-left:14%;">Write a list of cost issues in
+<p style="margin-left:17%;">Write a list of cost issues in
 a format suitable for cost tests to <i>file</i></p>
 
-<p style="margin-left:9%;"><b>--debug</b>,<b>-g</b></p>
+<p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
 
-<p style="margin-left:14%;">Activates: Debug mode (also
+<p style="margin-left:17%;">Activates: Debug mode (also
 sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <b>--print-buckets</b>, <b>--print-types</b>,
 <b>--reports-include-ml-loc</b>,
@@ -142,61 +142,61 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <b>--write-html</b>) (Conversely: <b>--no-debug</b> |
 <b>-G</b>)</p>
 
-<p style="margin-left:9%;"><b>--debug-level</b>
+<p style="margin-left:11%;"><b>--debug-level</b>
 <i>level</i></p>
 
-<p style="margin-left:14%;">Debug level (sets
+<p style="margin-left:17%;">Debug level (sets
 <b>--bo-debug</b> <i>level</i>,
 <b>--debug-level-analysis</b> <i>level</i>,
 <b>--debug-level-capture</b> <i>level</i>):</p>
 
-<p style="margin-left:9%;">- 0: only basic debugging
+<p style="margin-left:11%;">- 0: only basic debugging
 enabled <br>
 - 1: verbose debugging enabled <br>
 - 2: very verbose debugging enabled <b><br>
 --debug-level-analysis</b> <i>int</i></p>
 
-<p style="margin-left:14%;">Debug level for the analysis.
+<p style="margin-left:17%;">Debug level for the analysis.
 See <b>--debug-level</b> for accepted values.</p>
 
-<p style="margin-left:9%;"><b>--debug-level-capture</b>
+<p style="margin-left:11%;"><b>--debug-level-capture</b>
 <i>int</i></p>
 
-<p style="margin-left:14%;">Debug level for the capture.
+<p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
-<p style="margin-left:9%;"><b>--debug-level-report</b>
+<p style="margin-left:11%;"><b>--debug-level-report</b>
 <i>int</i></p>
 
-<p style="margin-left:14%;">Debug level for the report. See
+<p style="margin-left:17%;">Debug level for the report. See
 <b>--debug-level</b> for accepted values.</p>
 
-<p style="margin-left:9%;"><b>--no-deduplicate</b></p>
+<p style="margin-left:11%;"><b>--no-deduplicate</b></p>
 
-<p style="margin-left:14%;">Deactivates: Apply
+<p style="margin-left:17%;">Deactivates: Apply
 issue-specific deduplication during analysis and/or
 reporting. (Conversely: <b>--deduplicate</b>)</p>
 
 
-<p style="margin-left:9%;"><b>--differential-filter-files</b>
+<p style="margin-left:11%;"><b>--differential-filter-files</b>
 <i>string</i></p>
 
-<p style="margin-left:14%;">Specify the file containing the
+<p style="margin-left:17%;">Specify the file containing the
 list of source files for which a differential report is
 desired. Source files should be specified relative to
 project root or be absolute</p>
 
-<p style="margin-left:9%;"><b>--disable-issue-type</b>
+<p style="margin-left:11%;"><b>--disable-issue-type</b>
 <i>+issue_type</i></p>
 
-<p style="margin-left:14%;">Do not show reports coming from
+<p style="margin-left:17%;">Do not show reports coming from
 this type of issue. Each checker can report a range of issue
 types. This option provides fine-grained filtering over
 which types of issue should be reported once the checkers
 have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
-<p style="margin-left:9%;">Available issue types are as
+<p style="margin-left:11%;">Available issue types are as
 follows: <br>
 ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
 <br>
@@ -248,14 +248,11 @@ CONFIG_USAGE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
-CREATE_INTENT_FROM_URI (enabled by default), <br>
-CROSS_SITE_SCRIPTING (enabled by default), <br>
 CXX_REF_CAPTURED_IN_BLOCK (enabled by default), <br>
 Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 <br>
-DATALOG_FACT (enabled by default), <br>
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
@@ -271,7 +268,6 @@ EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
 <br>
 EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
 EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
-EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
 Failure_exe (enabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
@@ -283,7 +279,6 @@ INFERBO_ALLOC_MAY_BE_BIG (enabled by default), <br>
 INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default), <br>
 INFINITE_EXECUTION_TIME (disabled by default), <br>
 INHERENTLY_DANGEROUS_FUNCTION (enabled by default), <br>
-INSECURE_INTENT_HANDLING (enabled by default), <br>
 INTEGER_OVERFLOW_L1 (enabled by default), <br>
 INTEGER_OVERFLOW_L2 (enabled by default), <br>
 INTEGER_OVERFLOW_L5 (disabled by default), <br>
@@ -293,11 +288,9 @@ INVALID_SIL (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
 IPC_ON_UI_THREAD (enabled by default), <br>
 Internal_error (enabled by default), <br>
-JAVASCRIPT_INJECTION (enabled by default), <br>
 LAB_RESOURCE_LEAK (enabled by default), <br>
 LOCKLESS_VIOLATION (enabled by default), <br>
 LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
-LOGGING_PRIVATE_DATA (enabled by default), <br>
 Leak_after_array_abstraction (enabled by default), <br>
 Leak_in_footprint (enabled by default), <br>
 Leak_unknown_origin (disabled by default), <br>
@@ -355,6 +348,7 @@ PULSE_REFERENCE_STABILITY (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_TRANSITIVE_ACCESS (enabled by default), <br>
 PULSE_UNAWAITED_AWAITABLE (enabled by default), <br>
+PULSE_UNFINISHED_BUILDER (disabled by default), <br>
 PULSE_UNINITIALIZED_CONST (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNNECESSARY_COPY (enabled by default), <br>
@@ -373,18 +367,14 @@ PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
-QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (enabled by default), <br>
 RETAIN_CYCLE_NO_WEAK_INFO (disabled by default), <br>
 SCOPE_LEAKAGE (enabled by default), <br>
+SELF_IN_BLOCK_PASSED_TO_INIT (enabled by default), <br>
 SENSITIVE_DATA_FLOW (disabled by default), <br>
-SHELL_INJECTION (enabled by default), <br>
-SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
-SQL_INJECTION (enabled by default), <br>
-SQL_INJECTION_RISK (enabled by default), <br>
 STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
 STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
@@ -397,17 +387,6 @@ THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 TOPL_ERROR_LATENT (disabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
-UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
-UNTRUSTED_DESERIALIZATION (enabled by default), <br>
-UNTRUSTED_DESERIALIZATION_RISK (enabled by default), <br>
-UNTRUSTED_ENVIRONMENT_CHANGE_RISK (enabled by default), <br>
-UNTRUSTED_FILE (enabled by default), <br>
-UNTRUSTED_FILE_RISK (enabled by default), <br>
-UNTRUSTED_HEAP_ALLOCATION (disabled by default), <br>
-UNTRUSTED_INTENT_CREATION (enabled by default), <br>
-UNTRUSTED_URL_RISK (enabled by default), <br>
-UNTRUSTED_VARIABLE_LENGTH_ARRAY (enabled by default), <br>
-USER_CONTROLLED_SQL_RISK (enabled by default), <br>
 USE_AFTER_DELETE (enabled by default), <br>
 USE_AFTER_DELETE_LATENT (disabled by default), <br>
 USE_AFTER_FREE (enabled by default), <br>
@@ -420,7 +399,7 @@ WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
 Wrong_argument_number (enabled by default). <b><br>
 --enable-issue-type</b> <i>+issue_type</i></p>
 
-<p style="margin-left:14%;">Show reports coming from this
+<p style="margin-left:17%;">Show reports coming from this
 type of issue. By default, all issue types are enabled
 except the ones listed in <b>--disable-issue-type</b>. Note
 that enabling issue types does not make the corresponding
@@ -428,56 +407,57 @@ checker run; see individual checker options to turn them on
 or off.</p>
 
 
-<p style="margin-left:9%;"><b>--no-filtering</b>,<b>-F</b></p>
+<p style="margin-left:11%;"><b>--no-filtering</b>,<b>-F</b></p>
 
-<p style="margin-left:14%;">Deactivates: Do not show the
+<p style="margin-left:17%;">Deactivates: Do not show the
 experimental and block listed issue types (Conversely:
 <b>--filtering</b> | <b>-f</b>)</p>
 
 
-<p style="margin-left:9%;"><b>--from-json-config-impact-report</b>
+<p style="margin-left:11%;"><b>--from-json-config-impact-report</b>
 <i>config-impact-report.json</i></p>
 
-<p style="margin-left:14%;">Load costs analysis results
+<p style="margin-left:17%;">Load costs analysis results
 from a config-impact-report file.</p>
 
-<p style="margin-left:9%;"><b>--from-json-costs-report</b>
+
+<p style="margin-left:11%;"><b>--from-json-costs-report</b>
 <i>costs-report.json</i></p>
 
-<p style="margin-left:14%;">Load costs analysis results
+<p style="margin-left:17%;">Load costs analysis results
 from a costs-report file.</p>
 
-<p style="margin-left:9%;"><b>--from-json-report</b>
+<p style="margin-left:11%;"><b>--from-json-report</b>
 <i>report.json</i></p>
 
-<p style="margin-left:14%;">Load analysis results from a
+<p style="margin-left:17%;">Load analysis results from a
 report file (default is to load the results from the specs
 files generated by the analysis).</p>
 
-<p style="margin-left:9%;"><b>--help</b></p>
+<p style="margin-left:11%;"><b>--help</b></p>
 
-<p style="margin-left:14%;">Show this manual</p>
+<p style="margin-left:17%;">Show this manual</p>
 
-<p style="margin-left:9%;"><b>--help-format</b> <i>{ auto |
-groff | pager | plain }</i></p>
+<p style="margin-left:11%;"><b>--help-format</b> <i>{ auto
+| groff | pager | plain }</i></p>
 
-<p style="margin-left:14%;">Show this help in the specified
+<p style="margin-left:17%;">Show this help in the specified
 format. <b>auto</b> sets the format to <b>plain</b> if the
 environment variable <b>TERM</b> is &quot;dumb&quot; or
 undefined, and to <b>pager</b> otherwise.</p>
 
-<p style="margin-left:9%;"><b>--help-full</b></p>
+<p style="margin-left:11%;"><b>--help-full</b></p>
 
-<p style="margin-left:14%;">Show this manual with all
+<p style="margin-left:17%;">Show this manual with all
 internal options in the INTERNAL OPTIONS section</p>
 
-<p style="margin-left:9%;"><b>--issues-tests</b>
+<p style="margin-left:11%;"><b>--issues-tests</b>
 <i>file</i></p>
 
-<p style="margin-left:14%;">Write a list of issues in a
+<p style="margin-left:17%;">Write a list of issues in a
 format suitable for tests to <i>file</i></p>
 
-<p style="margin-left:9%;"><b>--issues-tests-fields</b>
+<p style="margin-left:11%;"><b>--issues-tests-fields</b>
 <i>,-separated sequence of { bug_type | bucket | <br>
 qualifier | suggestion | severity | line | column |
 procedure | <br>
@@ -487,74 +467,76 @@ qualifier_contains_potential_exception_note | taint_extra |
 <br>
 transitive_callees_extra }</i></p>
 
-<p style="margin-left:14%;">Fields to emit with
+<p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>
 
-<p style="margin-left:9%;"><b>--merge-report</b>
+<p style="margin-left:11%;"><b>--merge-report</b>
 <i>+string</i></p>
 
-<p style="margin-left:14%;">Specifies an Infer results
+<p style="margin-left:17%;">Specifies an Infer results
 directory. The reports stored in JSON files in all specified
 results directories will be merged together and deduplicated
 before being stored in the main results directory.</p>
 
-<p style="margin-left:9%;"><b>--merge-summaries</b>
+<p style="margin-left:11%;"><b>--merge-summaries</b>
 <i>+string</i></p>
 
-<p style="margin-left:14%;">Specifies an Infer results
+<p style="margin-left:17%;">Specifies an Infer results
 directory. The summaries in all specified results
 directories will be merged together and deduplicated before
 reporting is done.</p>
 
-<p style="margin-left:9%;"><b>--print-logs</b></p>
+<p style="margin-left:11%;"><b>--print-logs</b></p>
 
-<p style="margin-left:14%;">Activates: Also log messages to
+<p style="margin-left:17%;">Activates: Also log messages to
 stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 
-<p style="margin-left:9%;"><b>--project-root</b>,<b>-C</b>
+
+<p style="margin-left:11%;"><b>--project-root</b>,<b>-C</b>
 <i>dir</i></p>
 
-<p style="margin-left:14%;">Specify the root directory of
+<p style="margin-left:17%;">Specify the root directory of
 the project</p>
 
-<p style="margin-left:9%;"><b>--quiet</b>,<b>-q</b></p>
+<p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
 
-<p style="margin-left:14%;">Activates: Do not print
+<p style="margin-left:17%;">Activates: Do not print
 anything on standard output. (Conversely: <b>--no-quiet</b>
 | <b>-Q</b>)</p>
 
 
-<p style="margin-left:9%;"><b>--report-allow-list-path-regex</b>
+<p style="margin-left:11%;"><b>--report-allow-list-path-regex</b>
 <i>+path_regex</i></p>
 
-<p style="margin-left:14%;">Report issues only on files
+<p style="margin-left:17%;">Report issues only on files
 whose relative path matches the specified OCaml regex (and
 which do not match
 <b>--report-block-list-path-regex</b>)</p>
 
 
-<p style="margin-left:9%;"><b>--report-block-list-files-containing</b>
+<p style="margin-left:11%;"><b>--report-block-list-files-containing</b>
 <i>+string</i></p>
 
-<p style="margin-left:14%;">Do not report any issues on
+<p style="margin-left:17%;">Do not report any issues on
 files containing the specified string</p>
 
 
-<p style="margin-left:9%;"><b>--report-block-list-path-regex</b>
+<p style="margin-left:11%;"><b>--report-block-list-path-regex</b>
 <i>+path_regex</i></p>
 
-<p style="margin-left:14%;">Do not report any issues on
+<p style="margin-left:17%;">Do not report any issues on
 files whose relative path matches the specified OCaml regex,
 even if they match the allow list specified by
 <b>--report-allow-list-path-regex</b></p>
 
-<p style="margin-left:9%;"><b>--report-block-list-spec</b>
+
+<p style="margin-left:11%;"><b>--report-block-list-spec</b>
 <i>json</i></p>
 
-<p style="margin-left:14%;">Do not report the issues in
+<p style="margin-left:17%;">Do not report the issues in
 this list.</p>
 
-<p style="margin-left:9%;">Example format: <br>
+<p style="margin-left:11%;">Example format: <br>
 &quot;report-block-list-spec&quot;: [ <br>
 { &quot;bug_type&quot;:
 &quot;CXX_REF_CAPTURED_IN_BLOCK&quot;, <br>
@@ -571,32 +553,33 @@ this list.</p>
 ] <b><br>
 --report-console-limit</b> <i>int</i></p>
 
-<p style="margin-left:14%;">Maximum number of issues to
+<p style="margin-left:17%;">Maximum number of issues to
 display on standard output. Unset with
 <b>--report-console-limit-reset</b> to show all.</p>
 
-<p style="margin-left:9%;"><b>--report-formatter</b> <i>{
+<p style="margin-left:11%;"><b>--report-formatter</b> <i>{
 none | phabricator }</i></p>
 
-<p style="margin-left:14%;">Which formatter to use when
+<p style="margin-left:17%;">Which formatter to use when
 emitting the report</p>
 
-<p style="margin-left:9%;"><b>--report-suppress-errors</b>
+
+<p style="margin-left:11%;"><b>--report-suppress-errors</b>
 <i>+error_name</i></p>
 
-<p style="margin-left:14%;">do not report a type of
+<p style="margin-left:17%;">do not report a type of
 errors</p>
 
-<p style="margin-left:9%;"><b>--results-dir</b>,<b>-o</b>
+<p style="margin-left:11%;"><b>--results-dir</b>,<b>-o</b>
 <i>dir</i></p>
 
-<p style="margin-left:14%;">Write results and internal
+<p style="margin-left:17%;">Write results and internal
 files in the specified directory</p>
 
 
-<p style="margin-left:9%;"><b>--skip-analysis-in-path-skips-compilation</b></p>
+<p style="margin-left:11%;"><b>--skip-analysis-in-path-skips-compilation</b></p>
 
-<p style="margin-left:14%;">Activates: Whether paths in
+<p style="margin-left:17%;">Activates: Whether paths in
 --skip-analysis-in-path should be compiled or not
 (Conversely:
 <b>--no-skip-analysis-in-path-skips-compilation</b>)</p>
@@ -607,9 +590,9 @@ files in the specified directory</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>--no-hoisting-report-only-expensive</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-hoisting-report-only-expensive</b></p>
 
-<p style="margin-left:14%;">Deactivates: [Hoisting] Report
+<p style="margin-left:17%;">Deactivates: [Hoisting] Report
 loop-invariant calls only when the function is expensive,
 i.e. at least linear (Conversely:
 <b>--hoisting-report-only-expensive</b>)</p>
@@ -620,25 +603,25 @@ i.e. at least linear (Conversely:
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>--lineage-sanitizers</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--lineage-sanitizers</b>
 <i>+string</i></p>
 
-<p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
+<p style="margin-left:17%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage sanitizers, comma-separated m:f/a</p>
 
-<p style="margin-left:9%;"><b>--lineage-sink</b>
-<i>string</i></p>
+<p style="margin-left:11%;"><b>--lineage-sink</b>
+<i>+string</i></p>
 
-<p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
-Lineage sink for taint finding, format
-[module:]function/arity.{ret,argN}</p>
+<p style="margin-left:17%;">[EXPERIMENTAL; UNSTABLE API]
+Lineage sinks for taint finding, format
+[module:]function/arity.{ret,argN}, comma-separated.</p>
 
-<p style="margin-left:9%;"><b>--lineage-source</b>
-<i>string</i></p>
+<p style="margin-left:11%;"><b>--lineage-source</b>
+<i>+string</i></p>
 
-<p style="margin-left:14%;">[EXPERIMENTAL; UNSTABLE API]
-Lineage source for taint finding, format
-[module:]function/arity.{ret,argN}</p>
+<p style="margin-left:17%;">[EXPERIMENTAL; UNSTABLE API]
+Lineage sources for taint finding, format
+[module:]function/arity.{ret,argN}, comma-separated.</p>
 
 <h2>PULSE CHECKER OPTIONS
 <a name="PULSE CHECKER OPTIONS"></a>
@@ -646,17 +629,17 @@ Lineage source for taint finding, format
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>--pulse-report-flows-from-taint-source</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--pulse-report-flows-from-taint-source</b>
 <i>procname</i></p>
 
-<p style="margin-left:14%;">Report data flows which
+<p style="margin-left:17%;">Report data flows which
 originate at taint source <b>procname</b></p>
 
 
-<p style="margin-left:9%;"><b>--pulse-report-flows-to-taint-sink</b>
+<p style="margin-left:11%;"><b>--pulse-report-flows-to-taint-sink</b>
 <i>procname</i></p>
 
-<p style="margin-left:14%;">Report data flows which pass
+<p style="margin-left:17%;">Report data flows which pass
 through taint sink <b>procname</b></p>
 
 <h2>ENVIRONMENT
@@ -665,10 +648,10 @@ through taint sink <b>procname</b></p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>INFER_ARGS</b>,
+<p style="margin-left:11%; margin-top: 1em"><b>INFER_ARGS</b>,
 <b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
 
-<p style="margin-left:14%;">See the ENVIRONMENT section in
+<p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
 <h2>FILES
@@ -677,9 +660,9 @@ the manual of <b>infer</b>(1).</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>.inferconfig</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>.inferconfig</b></p>
 
-<p style="margin-left:14%;">See the FILES section in the
+<p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
 <h2>SEE ALSO
@@ -688,7 +671,7 @@ manual of <b>infer</b>(1).</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em"><b>infer-reportdiff</b>(1),
+<p style="margin-left:11%; margin-top: 1em"><b>infer-reportdiff</b>(1),
 <b>infer-run</b>(1)</p>
 <hr>
 </body>
