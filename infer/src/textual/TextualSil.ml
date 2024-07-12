@@ -1206,11 +1206,7 @@ module ModuleBridge = struct
         let cfgs = Cfg.create () in
         let tenv = Tenv.create () in
         TypeName.Set.iter
-          (fun name ->
-            let proc_entries = TypeName.Map.find name all_proc_entries in
-            let struct_ = {Textual.Struct.name; supers= []; fields= []; attributes= []} in
-            let source_file = None in
-            StructBridge.to_sil lang decls_env tenv proc_entries source_file struct_ )
+          (fun name -> TypeNameBridge.to_sil lang name |> Tenv.mk_struct ~dummy:true tenv |> ignore)
           types_used_as_enclosing_but_not_defined ;
         List.iter module_.decls ~f:(fun decl ->
             match decl with

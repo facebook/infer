@@ -83,14 +83,11 @@ let%expect_test "undefined types are included in tenv" =
          statics: {}
          supers: {}
          objc_protocols: {}
-         methods: {
-                     Bar.f
-                     Bar.f#0
-                   }
+         methods: {}
          exported_obj_methods: {}
          annots: {<>}
          class_info: {NoInfo}
-         dummy: false |}]
+         dummy: true |}]
 
 
 let%expect_test "final annotation" =
@@ -255,15 +252,11 @@ let%expect_test "overloads in tenv" =
     statics: {}
     supers: {}
     objc_protocols: {}
-    methods: {
-                C.f
-                C.f#1
-                C.f#2
-              }
+    methods: {}
     exported_obj_methods: {}
     annots: {<>}
     class_info: {NoInfo}
-    dummy: false
+    dummy: true
     hack bool
     fields: {}
     statics: {}
@@ -323,15 +316,11 @@ let%expect_test "undefined + overloads in merged tenv" =
     statics: {}
     supers: {}
     objc_protocols: {}
-    methods: {
-                Dep.f
-                Dep.f#1
-                Dep.f#2
-              }
+    methods: {}
     exported_obj_methods: {}
     annots: {<>}
     class_info: {NoInfo}
-    dummy: false |}]
+    dummy: true |}]
 
 
 let%expect_test "instanceof translation" =
