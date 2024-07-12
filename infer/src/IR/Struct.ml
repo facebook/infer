@@ -352,16 +352,21 @@ let merge_class_info ~newer ~current =
       Logging.die InternalError "Tried to merge a JavaClassInfo with a HackClassInfo value.@\n"
 
 
+let merge_source_file ~newer ~current =
+  merge_opt ~newer ~current ~merge:(fun ~newer ~current ->
+      (* return [current] if equal, else lexicographically least *)
+      if SourceFile.compare newer current >= 0 then current else newer )
+
+
 (* must only be used on structs made with [make_sorted_struct] *)
 let full_merge ~newer ~current =
   let fields = merge_fields ~newer:newer.fields ~current:current.fields in
   let statics = merge_fields ~newer:newer.statics ~current:current.statics in
   let supers = merge_supers ~newer:newer.supers ~current:current.supers in
   let methods = merge_methods ~newer:newer.methods ~current:current.methods in
-  (* we are merging only Java and Hack classes, so [exported_obj_methods] should be empty, so no
-     merge *)
   let annots = merge_annots ~newer:newer.annots ~current:current.annots in
   let class_info = merge_class_info ~newer:newer.class_info ~current:current.class_info in
+  let source_file = merge_source_file ~newer:newer.source_file ~current:current.source_file in
   if
     phys_equal fields current.fields
     && phys_equal statics current.statics
@@ -369,8 +374,20 @@ let full_merge ~newer ~current =
     && phys_equal methods current.methods
     && phys_equal annots current.annots
     && phys_equal class_info current.class_info
+    && phys_equal source_file current.source_file
   then current
-  else {current with fields; statics; supers; methods; annots; class_info}
+  else
+    (* not using [with] syntax to force handling new fields added to [t] *)
+    { fields
+    ; statics
+    ; supers
+    ; methods
+    ; annots
+    ; class_info
+    ; source_file
+    ; objc_protocols= current.objc_protocols
+    ; exported_objc_methods= current.exported_objc_methods
+    ; dummy= current.dummy }
 
 
 let merge typename ~newer ~current =
