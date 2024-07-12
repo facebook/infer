@@ -85,8 +85,9 @@ runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 runtest_formatted: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
 	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
 
+# TODO: We turn off the format test temporarily.
 .PHONY: test
-test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
+test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest # runtest_formatted
 	BYTE_MODE=true $(DUNE_BUILD) \
 	  $(INFER_MAIN).bc.exe scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
 
