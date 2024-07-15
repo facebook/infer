@@ -941,7 +941,7 @@ let starvation =
 
 
 let static_initialization_order_fiasco =
-  register ~category:NoCategory ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
+  register ~category:MemoryError ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
     ~user_documentation:[%blob "./documentation/issues/STATIC_INITIALIZATION_ORDER_FIASCO.md"]
 
 

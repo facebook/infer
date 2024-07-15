@@ -2756,7 +2756,7 @@ include the JAR files in `infer/annotations` for this annotation to work.
 
 ## STATIC_INITIALIZATION_ORDER_FIASCO
 
-*Reported as "Static Initialization Order Fiasco" by [siof](/docs/next/checker-siof).*
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Static Initialization Order Fiasco" by [siof](/docs/next/checker-siof).*
 
 This error is reported in C++. It fires when the initialization of a static
 variable `A`, accesses a static variable `B` from another translation unit
