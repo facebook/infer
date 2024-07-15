@@ -435,12 +435,10 @@ struct
 
 
   let exec_node_instrs old_state_opt ~exec_instr (pre, pre_non_disj) instrs =
-    let is_new_pre disjunct =
-      match old_state_opt with
-      | None ->
-          true
-      | Some {State.pre= previous_pre, _; _} ->
-          not (List.mem ~equal:T.DisjDomain.equal_fast previous_pre disjunct)
+    let new_pre, old_pre =
+      Option.value_map old_state_opt ~default:(pre, []) ~f:(fun {State.pre= old_pre, _; _} ->
+          List.partition_tf pre ~f:(fun disj ->
+              not (List.mem ~equal:T.DisjDomain.equal_fast old_pre disj) ) )
     in
     let current_post_n =
       match old_state_opt with
@@ -450,36 +448,26 @@ struct
           ((post_disjuncts, post_non_disjunct), List.length post_disjuncts)
     in
     let ((disjuncts, non_disj_astates), _), dropped, need_join_non_disj =
-      List.foldi (List.rev pre) ~init:(current_post_n, [], false)
+      List.foldi (List.rev new_pre) ~init:(current_post_n, [], false)
         ~f:(fun
-            i
-            ((((post, non_disj_astate) as post_astate), n_disjuncts), dropped, need_join_non_disj)
-            pre_disjunct
-          ->
+            i (((post, non_disj_astate), n_disjuncts), dropped, need_join_non_disj) pre_disjunct ->
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
-          let is_new_pre = is_new_pre pre_disjunct in
-          if is_new_pre then
-            if limit <= 0 then (
-              L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
-              (((post, non_disj_astate), n_disjuncts), pre_disjunct :: dropped, true) )
-            else (
-              L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
-              let disjuncts', non_disj' =
-                Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
-              in
-              L.d_printfln "@]@\n" ;
-              let disj', n, new_dropped =
-                Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts'
-              in
-              ( ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n)
-              , new_dropped @ dropped
-              , need_join_non_disj ) )
+          if limit <= 0 then (
+            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
+            (((post, non_disj_astate), n_disjuncts), pre_disjunct :: dropped, true) )
           else (
-            L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
-            (* HACK: [pre_non_disj] may have a new information, e.g. when the predecessor node
-               reached the disjunct limit, so join [pre_non_disj]. *)
-            ((post_astate, n_disjuncts), dropped, true) ) )
+            L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
+            let disjuncts', non_disj' =
+              Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
+            in
+            L.d_printfln "@]@\n" ;
+            let disj', n, new_dropped =
+              Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts'
+            in
+            ( ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n)
+            , new_dropped @ dropped
+            , need_join_non_disj ) ) )
     in
     let non_disj_astates = add_dropped_disjuncts dropped non_disj_astates in
     let non_disjunct =
@@ -488,7 +476,7 @@ struct
         || List.exists disjuncts ~f:T.DisjDomain.is_executable
         || List.is_empty disjuncts
       then
-        if need_join_non_disj then
+        if need_join_non_disj || not (List.is_empty old_pre) then
           (* HACK: When we drop disjuncts due to the disjunct limit, we may lose some information on
              the non-disjunctive abstract state, i.e. [pre_non_disj], which can result in false
              positives.  To mitigate the issue, join [pre_non_disj] when dropping disjuncts even
