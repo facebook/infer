@@ -440,33 +440,23 @@ struct
           List.partition_tf pre ~f:(fun disj ->
               not (List.mem ~equal:T.DisjDomain.equal_fast old_pre disj) ) )
     in
-    let current_post_n =
+    let current_post =
       match old_state_opt with
       | None ->
-          (([], T.NonDisjDomain.bottom), 0)
+          ([], T.NonDisjDomain.bottom)
       | Some {State.post= post_disjuncts, post_non_disjunct; _} ->
-          ((post_disjuncts, post_non_disjunct), List.length post_disjuncts)
+          (post_disjuncts, post_non_disjunct)
     in
-    let ((disjuncts, non_disj_astates), _), dropped =
-      List.foldi (List.rev new_pre) ~init:(current_post_n, [])
-        ~f:(fun i (((post, non_disj_astate), n_disjuncts), dropped) pre_disjunct ->
-          let limit = disjunct_limit - n_disjuncts in
-          AnalysisState.set_remaining_disjuncts limit ;
-          if limit <= 0 then (
-            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
-            (((post, non_disj_astate), n_disjuncts), pre_disjunct :: dropped) )
-          else (
-            L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
-            let disjuncts', non_disj' =
-              Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
-            in
-            L.d_printfln "@]@\n" ;
-            let disj', n, new_dropped =
-              Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts'
-            in
-            (((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n), new_dropped @ dropped) ) )
+    let limit = disjunct_limit - List.length (fst current_post) in
+    AnalysisState.set_remaining_disjuncts limit ;
+    let disjuncts, non_disj_astates =
+      Instrs.foldi instrs ~init:(new_pre, pre_non_disj) ~f:exec_instr
+    in
+    let disjuncts, _, dropped =
+      Domain.join_up_to ~limit:disjunct_limit ~into:(fst current_post) disjuncts
     in
     let non_disj_astates = add_dropped_disjuncts dropped non_disj_astates in
+    let non_disj_astates = T.NonDisjDomain.join (snd current_post) non_disj_astates in
     let non_disjunct =
       if
         Config.pulse_prevent_non_disj_top
