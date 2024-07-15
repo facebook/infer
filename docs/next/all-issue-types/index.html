@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="Infer" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.0297c997.css">
-<script src="/assets/js/runtime~main.75cfa04b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.ba8e59c3.js" defer="defer"></script>
 <script src="/assets/js/main.2d18de6e.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -1150,7 +1150,7 @@ appearences, you can use the <code>@NonBlocking</code> annotation:</p>
 due to a call to <code>m()</code>. You will need to set up your class path appropriately to
 include the JAR files in <code>infer/annotations</code> for this annotation to work.</p>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="static_initialization_order_fiasco">STATIC_INITIALIZATION_ORDER_FIASCO<a href="#static_initialization_order_fiasco" class="hash-link" aria-label="Direct link to STATIC_INITIALIZATION_ORDER_FIASCO" title="Direct link to STATIC_INITIALIZATION_ORDER_FIASCO">​</a></h2>
-<p><em>Reported as &quot;Static Initialization Order Fiasco&quot; by <a href="/docs/next/checker-siof">siof</a>.</em></p>
+<p><em>Category: <a href="/docs/next/all-categories#memory-error">Memory error</a>. Reported as &quot;Static Initialization Order Fiasco&quot; by <a href="/docs/next/checker-siof">siof</a>.</em></p>
 <p>This error is reported in C++. It fires when the initialization of a static
 variable <code>A</code>, accesses a static variable <code>B</code> from another translation unit
 (usually another <code>.cpp</code> file). There are no guarantees whether <code>B</code> has been
