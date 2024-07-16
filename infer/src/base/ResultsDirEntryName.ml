@@ -25,7 +25,6 @@ type id =
   | CaptureDBWal
   | CaptureDependencies
   | ChangedFunctions
-  | ChangedFunctionsTempResults
   | DBWriterSocket
   | Debug
   | Differential
@@ -118,8 +117,6 @@ let of_id = function
       file infer_deps_file_name ~keep_before_incremental_analysis:()
   | ChangedFunctions ->
       file "changed_functions.json" ~keep_before_caching_capture:()
-  | ChangedFunctionsTempResults ->
-      directory "changed_functions_results" ~keep_before_caching_capture:()
   | DBWriterSocket ->
       file db_writer_socket_name ~keep_before_incremental_analysis:()
   | Debug ->

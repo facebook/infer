@@ -2705,11 +2705,6 @@ INTERNAL OPTIONS
        --erlang-ast-dir-reset
            Cancel the effect of --erlang-ast-dir.
 
-       --export-changed-functions
-           Activates: Make infer output changed functions, similar to
-           test-determinator. It is used together with the --modified-lines.
-           (Conversely: --no-export-changed-functions)
-
        --external-java-packages-reset
            Set --external-java-packages to the empty list.
 

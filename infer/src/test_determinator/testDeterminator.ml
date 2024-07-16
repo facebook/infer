@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module F = Format
 module YB = Yojson.Basic
 module YBU = Yojson.Basic.Util
 
@@ -79,22 +78,7 @@ module DiffLines = struct
           L.die UserError "Could not read file %s" changed_lines_file )
     | None ->
         L.die UserError "Missing modified lines argument"
-
-
-  [@@@warning "-unused-value-declaration"]
-
-  let pp_changed_lines fmt map =
-    F.fprintf fmt "--- Changed Lines Map ---@\n" ;
-    String.Map.iteri map ~f:(fun ~key ~data ->
-        F.fprintf fmt "%s --> [%a]@\n" key (Pp.seq ~sep:", " F.pp_print_int) data )
 end
-
-[@@@warning "-unused-value-declaration"]
-
-let pp_profiler_sample_set fmt s =
-  F.fprintf fmt " (set size = %i) " (Procname.Set.cardinal s) ;
-  Procname.Set.iter (fun m -> F.fprintf fmt "@\n      <Method:>  %a " Procname.pp m) s
-
 
 module TestSample = struct
   let read_java_test_sample test_samples_file_opt =
@@ -114,14 +98,6 @@ module TestSample = struct
           test_samples_file
     | None ->
         L.die UserError "Missing profiler samples argument"
-
-
-  [@@@warning "-unused-value-declaration"]
-
-  let pp_map fmt labeled_test_samples =
-    List.iter labeled_test_samples ~f:(fun (label, profiler_samples) ->
-        F.fprintf fmt "=== Samples for %s ===@\n%a@\n=== End Samples for %s ===@\n" label
-          pp_profiler_sample_set profiler_samples label )
 end
 
 let in_range l range = l >= (fst range).Location.line && l <= (snd range).Location.line
@@ -149,15 +125,6 @@ let compute_affected_methods_java changed_lines_map method_range_map =
       Procname.Set.union am acc )
 
 
-let compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map =
-  let fname = SourceFile.to_rel_path source_file in
-  match String.Map.find changed_lines_map fname with
-  | Some changed_lines ->
-      affected_methods clang_range_map fname changed_lines
-  | None ->
-      Procname.Set.empty
-
-
 let compute_affected_proc_names_clang ~clang_range_map ~source_file ~changed_lines_map =
   let fname = SourceFile.to_rel_path source_file in
   match String.Map.find changed_lines_map fname with
@@ -178,23 +145,6 @@ let emit_string_list_to_tmp_dir tmp_dir_id source_file data =
     let tmp_file = tmp_dir ^/ abbrev_source_file ^ ".json" in
     Utils.create_dir tmp_dir ;
     Utils.write_json_to_file tmp_file json )
-
-
-let emit_relevant_methods source_file relevant_methods =
-  let relevant_methods =
-    List.dedup_and_sort ~compare:String.compare
-      (List.map (Procname.Set.elements relevant_methods) ~f:Procname.to_string)
-  in
-  emit_string_list_to_tmp_dir ChangedFunctionsTempResults source_file relevant_methods
-
-
-let compute_and_emit_relevant_methods ~clang_range_map ~source_file =
-  let changed_lines_file = Config.modified_lines in
-  let changed_lines_map = DiffLines.create_changed_lines_map changed_lines_file in
-  let relevant_methods =
-    compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map
-  in
-  emit_relevant_methods source_file relevant_methods
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
@@ -356,11 +306,6 @@ let merge_string_list_tmp_results step ~tmp_dir_id ~result_file_id =
   let main_results_file = ResultsDir.get_path result_file_id in
   YB.to_file main_results_file (`List sorted_results) ;
   Logging.progress "Finished %s successfully, results are in %s@." step main_results_file
-
-
-let merge_changed_functions_results () =
-  merge_string_list_tmp_results "merging changed functions" ~tmp_dir_id:ChangedFunctionsTempResults
-    ~result_file_id:ChangedFunctions
 
 
 let merge_test_determinator_results () =

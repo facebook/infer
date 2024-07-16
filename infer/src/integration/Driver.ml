@@ -235,12 +235,11 @@ let capture ~changed_files mode =
     | _ ->
         not (List.is_empty Config.merge_capture)
   in
-  if should_merge then (
-    if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
+  if should_merge then
     let root =
       match mode with BxlClang _ | BxlJava _ -> Config.buck2_root | _ -> Config.project_root
     in
-    MergeCapture.merge_captured_targets ~root )
+    MergeCapture.merge_captured_targets ~root
 
 
 let log_db_size_mb db db_entry debug_mode label =
@@ -291,7 +290,6 @@ let report () =
       SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
         ~report_json:issues_json ;
     () ) ;
-  if Config.export_changed_functions then TestDeterminator.merge_changed_functions_results () ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   ()

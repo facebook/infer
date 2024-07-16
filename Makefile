@@ -50,10 +50,6 @@ ifeq ($(BUILD_CPU),x86_64)
 BUILD_SYSTEM_TESTS += assembly
 endif
 
-ifeq ($(DIFF_CAN_FORMAT),yes)
-BUILD_SYSTEMS_TESTS += export_changed_functions
-endif
-
 DIRECT_TESTS += \
   c_bufferoverrun \
   c_performance \
@@ -113,7 +109,7 @@ BUILD_SYSTEMS_TESTS += \
   buck_flavors_deterministic
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
-BUILD_SYSTEMS_TESTS += buck_clang_test_determinator buck_export_changed_functions
+BUILD_SYSTEMS_TESTS += buck_clang_test_determinator
 endif
 endif
 

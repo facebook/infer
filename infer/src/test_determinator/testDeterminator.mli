@@ -13,11 +13,4 @@ val compute_and_emit_test_to_run :
   -> unit
   -> unit
 
-val compute_and_emit_relevant_methods :
-     clang_range_map:((Location.t * Location.t) * ClangProc.t option) Procname.Map.t
-  -> source_file:SourceFile.t
-  -> unit
-
-val merge_changed_functions_results : unit -> unit
-
 val merge_test_determinator_results : unit -> unit

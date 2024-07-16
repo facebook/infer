@@ -1608,12 +1608,6 @@ and erlang_with_otp_specs =
      Pulse summaries for unknown library functions."
 
 
-and export_changed_functions =
-  CLOpt.mk_bool ~long:"export-changed-functions" ~default:false
-    "Make infer output changed functions, similar to test-determinator. It is used together with \
-     the $(b,--modified-lines)."
-
-
 and external_java_packages =
   CLOpt.mk_string_list ~long:"external-java-packages"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -4074,8 +4068,6 @@ and erlang_skip_compile = !erlang_skip_compile
 
 and erlang_with_otp_specs = !erlang_with_otp_specs
 
-and export_changed_functions = !export_changed_functions
-
 and external_java_packages = !external_java_packages
 
 and extract_capture_from = !extract_capture_from
@@ -4838,10 +4830,6 @@ let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
   let text =
     if process_clang_ast && test_determinator then "Test Determinator and" :: text else text
-  in
-  let text =
-    if process_clang_ast && export_changed_functions then "Export Changed Functions and" :: text
-    else text
   in
   String.concat ~sep:", " text
 

@@ -371,8 +371,6 @@ val erlang_skip_compile : bool
 
 val erlang_with_otp_specs : bool
 
-val export_changed_functions : bool
-
 val extract_capture_from : string option
 
 val fail_on_bug : bool

@@ -78,27 +78,6 @@ end
 
 let merge_global_tenv = TenvMerger.merge_into_global
 
-let merge_changed_functions () =
-  L.progress "Merging changed functions files...@." ;
-  let tgt_dir = ResultsDir.get_path ChangedFunctionsTempResults in
-  let infer_deps_file = ResultsDir.get_path CaptureDependencies in
-  Utils.iter_infer_deps infer_deps_file ~root:Config.project_root ~f:(fun infer_out_src ->
-      let src_dir =
-        ResultsDirEntryName.get_path ~results_dir:infer_out_src ChangedFunctionsTempResults
-      in
-      match Sys.is_directory src_dir with
-      | `Yes ->
-          Utils.create_dir tgt_dir ;
-          Utils.directory_iter
-            (fun src ->
-              let data = In_channel.read_all src in
-              Out_channel.write_all (tgt_dir ^/ Filename.basename src) ~data )
-            src_dir
-      | `No | `Unknown ->
-          () ) ;
-  L.progress "Done merging changed functions files@."
-
-
 let merge_captured_targets ~root =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured targets...@\n%!" ;
