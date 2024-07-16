@@ -107,10 +107,6 @@ BUILD_SYSTEMS_TESTS += \
   buck_flavors_diff \
   buck_flavors_run \
   buck_flavors_deterministic
-
-ifeq ($(DIFF_CAN_FORMAT),yes)
-BUILD_SYSTEMS_TESTS += buck_clang_test_determinator
-endif
 endif
 
 ifneq ($(CMAKE),no)
@@ -131,10 +127,6 @@ BUILD_SYSTEMS_TESTS += \
   pulse_taint_sanitize_objc \
   pulse_taint_exclude_in_objc \
 	pulse_taint_exclude_matching_objc
-
-ifeq ($(DIFF_CAN_FORMAT),yes)
-BUILD_SYSTEMS_TESTS += clang_test_determinator
-endif
 
 DIRECT_TESTS += \
   objc_bufferoverrun \
@@ -229,10 +221,6 @@ BUILD_SYSTEMS_TESTS += \
   resource_leak_exception_lines \
   racerd_dedup \
   merge-capture \
-
-ifeq ($(DIFF_CAN_FORMAT),yes)
-BUILD_SYSTEMS_TESTS += java_test_determinator
-endif
 
 DIRECT_TESTS += \
   java_annotreach \

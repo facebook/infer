@@ -9,7 +9,7 @@
 ; 2. Check the dune logs in infer/_build/log. At the very end is the linking command, which
 ;    contains linking directives starting with `-l`, e.g.
 ;
-;  '-lCStubs_stubs' '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lpthread' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lcamlstr' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lpthread' '-lANSITerminal_stubs' '-lcore_stubs' '-lbase_bigstring_stubs' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lunix' '-lbase_stubs' '-lbase_internalhash_types_stubs' '/data/users/jul/opam/4.14.0+flambda/lib/ocaml/libasmrun.a' -lm -ldl
+;  '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lpthread' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lcamlstr' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lpthread' '-lANSITerminal_stubs' '-lcore_stubs' '-lbase_bigstring_stubs' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lunix' '-lbase_stubs' '-lbase_internalhash_types_stubs' '/data/users/jul/opam/4.14.0+flambda/lib/ocaml/libasmrun.a' -lm -ldl
 ;
 ;  3. Copy those below as follows: Keep the flags the same until the dynamic section after
 ;     `-cclib -Wl,-Bdynamic`. The flags already included are for static libraries; we want to keep
@@ -29,7 +29,7 @@
  -cclib -Wl,-Bstatic
  -cclib -lzarith -cclib -lgmp -cclib -lsqlite3_stubs -cclib -lsqlite3
  -cclib -Wl,-Bdynamic
- -cclib -lCStubs_stubs -cclib -lcamlzip -cclib -lz -cclib -lpthread -cclib -lparmap_stubs
+ -cclib -lcamlzip -cclib -lz -cclib -lpthread -cclib -lparmap_stubs
  -cclib -lmtime_clock_stubs -cclib -lrt -cclib -lcamlstr -cclib -lfilename_unix_stubs
  -cclib -lsys_unix_stubs -cclib -lcore_unix_stubs -cclib -lspawn_stubs -cclib -lsignal_unix_stubs
  -cclib -lerror_checking_mutex_stubs -cclib -lthreadsnat -cclib -lpthread

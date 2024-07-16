@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./c_stubs ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./dotnet ./pulse ./scripts ./test_determinator ./topl ./unit
-INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I c_stubs -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I pulse -I scripts -I test_determinator -I topl -I unit
+LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./dotnet ./pulse ./scripts ./topl ./unit
+INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I pulse -I scripts -I topl -I unit
 
 ml_src_files = $(shell \
   cd $(INFER_BUILD_DIR); \

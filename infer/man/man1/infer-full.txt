@@ -2657,10 +2657,6 @@ INTERNAL OPTIONS
        --debug-level-reset
            Cancel the effect of --debug-level.
 
-       --debug-level-test-determinator int
-           Debug level for the test determinator. See --debug-level for
-           accepted values.
-
        --developer-mode
            Activates: Show internal exceptions (Conversely:
            --no-developer-mode)
@@ -2917,13 +2913,6 @@ INTERNAL OPTIONS
        --method-decls-info-reset
            Cancel the effect of --method-decls-info.
 
-       --modified-lines path
-           Specifies the file containing the modified lines when Infer is run
-           Test Determinator mode with --test-determinator.
-
-       --modified-lines-reset
-           Cancel the effect of --modified-lines.
-
        --nullable-annotation-name string
            Specify a custom nullable annotation name.
 
@@ -2969,13 +2958,6 @@ INTERNAL OPTIONS
            Activates: process the ast to emit some info about the file with
            --test-determinator or --export-changed-functions (Not available
            for Java) (Conversely: --no-process-clang-ast)
-
-       --profiler-samples path
-           File containing the profiler samples when Infer is run Test
-           Determinator mode with --test-determinator.
-
-       --profiler-samples-reset
-           Cancel the effect of --profiler-samples.
 
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
@@ -3346,12 +3328,6 @@ INTERNAL OPTIONS
 
        --tenv-json-reset
            Cancel the effect of --tenv-json.
-
-       --test-determinator
-           Activates: Run infer in Test Determinator mode. It is used
-           together with the --modified-lines and --profiler-samples flags,
-           which specify the relevant arguments. (Conversely:
-           --no-test-determinator)
 
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and

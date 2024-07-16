@@ -54,8 +54,6 @@ type id =
           procedure and recording the (static) calls it makes during an analysis phase; used by the
           [callgraph] analysis scheduler and presented here in dotty format for debug purposes *)
   | Temporary  (** directory containing temp files *)
-  | TestDeterminatorReport  (** the report produced by the test determinator capture mode *)
-  | TestDeterminatorTempResults  (** a directory for temporary [TestDeterminatorReport] files *)
 
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)

@@ -48,8 +48,6 @@ type id =
   | Stats
   | SyntacticDependencyGraphDot
   | Temporary
-  | TestDeterminatorReport
-  | TestDeterminatorTempResults
 [@@deriving enumerate]
 
 type cleanup_action = Delete | Keep [@@deriving equal]
@@ -163,10 +161,6 @@ let of_id = function
       file "syntactic_dependency_graph.dot" ~keep_before_incremental_analysis:()
   | Temporary ->
       directory "tmp" ~keep_before_incremental_analysis:()
-  | TestDeterminatorReport ->
-      file "test_determinator.json" ~keep_before_caching_capture:()
-  | TestDeterminatorTempResults ->
-      directory "test_determinator_results"
 
 
 let path_of_entry ~results_dir {rel_path; _} = results_dir ^/ rel_path

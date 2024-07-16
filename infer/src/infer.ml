@@ -131,8 +131,6 @@ let () =
   | _ when Option.is_some Config.run_as_child ->
       InferAnalyze.register_active_checkers () ;
       never_returns (ProcessPool.run_as_child ())
-  | _ when Config.test_determinator && not Config.process_clang_ast ->
-      TestDeterminator.compute_and_emit_test_to_run ()
   | _ when Option.is_some Config.java_debug_source_file_info ->
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)

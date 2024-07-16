@@ -333,8 +333,6 @@ val debug_level_capture : int
 
 val debug_level_report : int
 
-val debug_level_test_determinator : int
-
 val debug_mode : bool
 
 val deduplicate : bool
@@ -550,8 +548,6 @@ val method_decls_info : string option
 
 val modeled_expensive : string * Yojson.Safe.t
 
-val modified_lines : string option
-
 val never_returning_null : string * Yojson.Safe.t
 
 val no_censor_report : Str.regexp list
@@ -607,8 +603,6 @@ val procedures_summary_json : bool
 val procedures_summary_skip_empty : bool
 
 val process_clang_ast : bool
-
-val profiler_samples : string option
 
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
@@ -873,8 +867,6 @@ val summaries_caches_max_size : int [@@warning "-unused-value-declaration"]
 val suppress_lint_ignore_types : bool
 
 val tenv_json : string option
-
-val test_determinator : bool
 
 val testing_mode : bool
 

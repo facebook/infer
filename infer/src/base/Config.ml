@@ -767,7 +767,6 @@ and ( biabduction_write_dotty
     , debug_level_analysis
     , debug_level_capture
     , debug_level_report
-    , debug_level_test_determinator
     , deduplicate
     , developer_mode
     , filtering
@@ -813,9 +812,6 @@ and ( biabduction_write_dotty
   and debug_level_report =
     CLOpt.mk_int ~long:"debug-level-report" ~default:0 ~in_help:all_generic_manuals
       "Debug level for the report. See $(b,--debug-level) for accepted values."
-  and debug_level_test_determinator =
-    CLOpt.mk_int ~long:"debug-level-test-determinator" ~default:0
-      "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
       ~default:(Option.exists ~f:InferCommand.(equal Report) initial_command)
@@ -857,8 +853,7 @@ and ( biabduction_write_dotty
     bo_debug := level ;
     debug_level_analysis := level ;
     debug_level_capture := level ;
-    debug_level_report := level ;
-    debug_level_test_determinator := level
+    debug_level_report := level
   in
   let debug =
     CLOpt.mk_bool_group ~long:"debug" ~short:'g' ~in_help:all_generic_manuals
@@ -910,7 +905,6 @@ and ( biabduction_write_dotty
   , debug_level_analysis
   , debug_level_capture
   , debug_level_report
-  , debug_level_test_determinator
   , deduplicate
   , developer_mode
   , filtering
@@ -2195,12 +2189,6 @@ and modeled_expensive =
        performance critical checker." )
 
 
-and modified_lines =
-  CLOpt.mk_path_opt ~long:"modified-lines"
-    "Specifies the file containing the modified lines when Infer is run Test Determinator mode \
-     with $(b,--test-determinator)."
-
-
 and never_returning_null =
   let long = "never-returning-null" in
   ( long
@@ -2354,12 +2342,6 @@ and process_clang_ast =
   CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
     "process the ast to emit some info about the file with $(b,--test-determinator) or \
      $(b,--export-changed-functions) (Not available for Java)"
-
-
-and profiler_samples =
-  CLOpt.mk_path_opt ~long:"profiler-samples"
-    "File containing the profiler samples when Infer is run Test Determinator mode with \
-     $(b,--test-determinator)."
 
 
 and progress_bar =
@@ -3438,12 +3420,6 @@ and tenv_json =
     ~meta:"file" "Path to TEnv json file"
 
 
-and test_determinator =
-  CLOpt.mk_bool ~long:"test-determinator" ~default:false
-    "Run infer in Test Determinator mode. It is used together with the $(b,--modified-lines) and \
-     $(b,--profiler-samples) flags, which specify the relevant arguments."
-
-
 and testing_mode =
   CLOpt.mk_bool ~long:"testing-mode"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
@@ -4028,8 +4004,6 @@ and debug_level_capture = !debug_level_capture
 
 and debug_level_report = !debug_level_report
 
-and debug_level_test_determinator = !debug_level_test_determinator
-
 and debug_mode = !debug
 
 and deduplicate = !deduplicate
@@ -4286,8 +4260,6 @@ and method_decls_info = !method_decls_info
 
 and modeled_expensive = match modeled_expensive with k, r -> (k, !r)
 
-and modified_lines = !modified_lines
-
 and never_returning_null = match never_returning_null with k, r -> (k, !r)
 
 and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
@@ -4343,8 +4315,6 @@ and procedures_summary_json = !procedures_summary_json
 and procedures_summary_skip_empty = !procedures_summary_skip_empty
 
 and process_clang_ast = !process_clang_ast
-
-and profiler_samples = !profiler_samples
 
 and progress_bar =
   let style =
@@ -4726,8 +4696,6 @@ and suppress_lint_ignore_types = !suppress_lint_ignore_types
 
 and tenv_json = !tenv_json
 
-and test_determinator = !test_determinator
-
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
@@ -4828,9 +4796,6 @@ let is_checker_enabled c = mem_checkers enabled_checkers c
 
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
-  let text =
-    if process_clang_ast && test_determinator then "Test Determinator and" :: text else text
-  in
   String.concat ~sep:", " text
 
 

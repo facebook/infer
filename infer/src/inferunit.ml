@@ -28,7 +28,6 @@ let () =
       ( [ AbstractInterpreterTests.tests
         ; AccessTreeTests.tests
         ; AddressTakenTests.tests
-        ; CStubsTests.tests
         ; DifferentialFiltersTests.tests
         ; DifferentialTests.tests
         ; FileDiffTests.tests
@@ -36,7 +35,6 @@ let () =
         ; HilExpTests.tests
         ; IListTests.tests
         ; JavaClassNameTests.tests
-        ; JavaProfilerSamplesTest.tests
         ; LivenessTests.tests
         ; LRUHashtblTests.tests
         ; ProcCfgTests.tests

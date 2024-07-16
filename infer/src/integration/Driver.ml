@@ -290,8 +290,6 @@ let report () =
       SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
         ~report_json:issues_json ;
     () ) ;
-  if Config.(test_determinator && process_clang_ast) then
-    TestDeterminator.merge_test_determinator_results () ;
   ()
 
 

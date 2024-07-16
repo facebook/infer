@@ -18,9 +18,6 @@ There are two frontends:
 - {{:ClangFrontend.html} Clang}
 - {{:JavaFrontend.html} Java}
 
-See also {{:TestDeterminators.html} TestDeterminators}, which operate right
-after the frontends.
-
 {1 Utilities}
 
 {{:IStdlib.html} IStdlib} groups non-Infer-specific modules, and

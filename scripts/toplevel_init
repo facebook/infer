@@ -19,7 +19,6 @@
 
 open IStdlib;;
 open ATDGenerated;;
-open CStubs;;
 open IBase;;
 open IR;;
 open Absint;;
@@ -35,7 +34,6 @@ open OpenSource;;
 open Backend;;
 open JavaFrontend;;
 open ClangFrontend;;
-open TestDeterminators;;
 open Integration;;
 
 (* Most of infer uses this, useful for copy/pasting. Can be (partially) countered by typing `open
