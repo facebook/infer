@@ -400,6 +400,10 @@ JAVA OPTIONS
            Deactivates: Mask exceptions thrown by Sawja/Javalib during Java
            capture (Conversely: --mask-sawja-exceptions)
 
+       --no-read-java-modules
+           Deactivates: Read java modules file using jimage. (Conversely:
+           --read-java-modules)
+
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).

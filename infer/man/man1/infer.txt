@@ -1855,6 +1855,11 @@ OPTIONS
            --no-reactive-capture)
            See also infer-analyze(1).
 
+       --no-read-java-modules
+           Deactivates: Read java modules file using jimage. (Conversely:
+           --read-java-modules)
+           See also infer-capture(1).
+
        --replay-analysis-schedule
            Activates: Replay the analysis schedule stored in
            --replay-analysis-schedule-file, which should analyze the

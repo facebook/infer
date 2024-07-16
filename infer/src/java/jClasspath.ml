@@ -8,6 +8,7 @@
 
 open! IStd
 open Javalib_pack
+module F = Format
 module L = Logging
 
 let split_classpath = String.split ~on:JFile.sep
@@ -84,6 +85,30 @@ let add_source_file =
 
 let add_root_path path roots = String.Set.add roots path
 
+let read_modules_1 path =
+  let temp_dir = Filename.temp_dir "java_modules_lib" "" in
+  Epilogues.register
+    ~f:(fun () -> Utils.rmtree temp_dir)
+    ~description:("Remove the temp dir for java modules: " ^ temp_dir) ;
+  let jimage_cmd =
+    ["jimage"; "extract"; F.sprintf "--dir=%s" temp_dir; path]
+    |> List.map ~f:Escape.escape_shell |> String.concat ~sep:" "
+  in
+  L.debug Capture Medium "reading Java modules with: %s@\n" jimage_cmd ;
+  let jimage_ret = Sys.command jimage_cmd in
+  let root_paths = ref [] in
+  if Int.equal jimage_ret 0 then
+    Utils.iter_dir temp_dir ~f:(fun path -> root_paths := path :: !root_paths)
+  else L.debug Capture Medium "Failed to run jimage for reading java modules.@\n" ;
+  !root_paths
+
+
+let read_modules paths =
+  let suffix = Filename.dir_sep ^ "modules" in
+  List.concat_map paths ~f:(fun path ->
+      if String.is_suffix path ~suffix then read_modules_1 path else [path] )
+
+
 let load_from_verbose_output =
   let class_filename_re =
     Printf.sprintf
@@ -104,6 +129,7 @@ let load_from_verbose_output =
   let rec loop paths roots sources classes file_in =
     match In_channel.input_line file_in with
     | None ->
+        let paths = if Config.java_read_modules then read_modules paths else paths in
         let classpath = classpath_of_paths (String.Set.elements roots @ paths) in
         {classpath_channel= Javalib.class_path classpath; sources; classes}
     | Some line when Str.string_match class_filename_re line 0 -> (
