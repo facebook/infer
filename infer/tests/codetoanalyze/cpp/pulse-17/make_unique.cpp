@@ -171,4 +171,9 @@ void allocate_in_branch_ok(bool b) {
   }
 }
 
+A copy_elision_unique_ptr_ok() {
+  static std::shared_ptr<A> ptr(std::make_unique<A>());
+  return *ptr;
+}
+
 } // namespace make_unique_ptr

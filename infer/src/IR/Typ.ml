@@ -785,6 +785,8 @@ let is_pointer_to_smart_pointer =
   make_cpp_class_matcher ~non_ptr:false ("std::unique_ptr" :: shared_pointer_qual_names)
 
 
+let is_unique_pointer = make_cpp_class_matcher ~ptr:false ["std::unique_ptr"]
+
 let is_pointer_to_unique_pointer = make_cpp_class_matcher ~non_ptr:false ["std::unique_ptr"]
 
 let is_shared_pointer = make_cpp_class_matcher ~ptr:false shared_pointer_qual_names

@@ -30,7 +30,7 @@ int destructor0_ok() {
   return 0;
 }
 
-int destructor1_ok() {
+int destructor1_ok_FP() {
   { std::unique_ptr<int>(new int(5)); }
   return 0;
 }

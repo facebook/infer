@@ -96,21 +96,29 @@ module CXXTemporaries = struct
                 stmt
         in
         let temporaries =
-          if should_accumulate then (
+          if should_accumulate then
             let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
-            L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
-            let marker =
-              Option.map marker ~f:(fun if_kind ->
-                  let marker_pvar =
-                    Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
-                  in
-                  L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text)
-                    marker_pvar (Pvar.pp Pp.text) pvar ;
-                  (marker_pvar, if_kind) )
-            in
-            CContext.CXXTemporarySet.add
-              {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker}
-              temporaries )
+            if Option.is_none bound_to_decl && Typ.is_unique_pointer typ then
+              (* HACK: We avoid destructing [unique_ptr] when its bound declaration is unclear. In
+                 that case, the [unique_ptr] object can be *passed* to a function as an argument,
+                 sometimes via copy-elision, but Infer cannot understand excatly when the
+                 copy-elision happens, so which resulted in FPs of use after lifetime after
+                 injecting destructor calls at incorrect places. *)
+              temporaries
+            else (
+              L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
+              let marker =
+                Option.map marker ~f:(fun if_kind ->
+                    let marker_pvar =
+                      Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
+                    in
+                    L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text)
+                      marker_pvar (Pvar.pp Pp.text) pvar ;
+                    (marker_pvar, if_kind) )
+              in
+              CContext.CXXTemporarySet.add
+                {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker}
+                temporaries )
           else temporaries
         in
         visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries

@@ -26,7 +26,7 @@ struct Vector {
 };
 
 // missing a more precise model for vector::push_back
-int FP_push_back0_ok(int* value) {
+int push_back0_ok(int* value) {
   std::unique_ptr<int> ptr(value);
   Vector* v = Vector::getInstance();
   v->add(std::move(ptr));
