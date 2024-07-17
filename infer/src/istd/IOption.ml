@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
+open! Core
 
 let value_default_f ~f = function None -> f () | Some v -> v
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
+open! Core
 
 (* [take_append ~max list ~tail] takes the first max elements of [list] and appends [tail] to the result.
    Does not create garbage for [max] <= 1000. *)

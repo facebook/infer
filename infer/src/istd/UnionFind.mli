@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
+open! Core
 module F = Format
 
 (** A union-find data structure. *)

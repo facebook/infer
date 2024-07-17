@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! Core
+
 (** a hashed type with a normalization function which respects equality *)
 module type NormalizedT = sig
   include Caml.Hashtbl.HashedType

@@ -61,3 +61,9 @@ module ANSITerminal : module type of ANSITerminal = struct
 
   let sprintf = if Unix.(isatty stderr) then sprintf else fun _ -> Printf.sprintf
 end
+
+(* HACK to make the deadcode script record dependencies on [HashNormalizer]: the "normalize" ppx in
+   inferppx generates code that refers to [HashNormalizer] but that dependency is invisible to
+   [ocamldep], which runs before ppx expansion. This way any file that depends on [IStd]
+   automatically depends on [HashNormalizer], which is enough for now. *)
+module _ = HashNormalizer

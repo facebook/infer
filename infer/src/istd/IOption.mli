@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! IStd
+open! Core
 
 val value_default_f : f:(unit -> 'a) -> 'a option -> 'a
 (** Like [Option.value ~default:(f ())] but [f] is called only if [None]. *)
