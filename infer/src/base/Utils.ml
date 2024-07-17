@@ -270,10 +270,6 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
   Exception.try_finally ~f ~finally
 
 
-let write_json_to_file destfile json =
-  with_file_out destfile ~f:(fun oc -> Yojson.Safe.pretty_to_channel oc json)
-
-
 let with_channel_in ~f chan_in =
   try
     while true do

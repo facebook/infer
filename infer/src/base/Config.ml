@@ -2174,10 +2174,11 @@ and merge_summaries =
      be merged together and deduplicated before reporting is done."
 
 
-and method_decls_info =
-  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
-    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
-     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
+and _method_decls_info =
+  CLOpt.mk_path_opt ~long:"" ~deprecated:["-method-decls-info"] ~meta:"method_decls_info.json"
+    "[DOES NOTHING, test determinator has been removed] Specifies the file containing the method \
+     declarations info (eg. start line, end line, class, method name, etc.) when Infer is run Test \
+     Determinator mode with $(b,--test-determinator)."
 
 
 and modeled_expensive =
@@ -4255,8 +4256,6 @@ and merge_capture = RevList.to_list !merge_capture
 and merge_report = RevList.to_list !merge_report
 
 and merge_summaries = RevList.to_list !merge_summaries
-
-and method_decls_info = !method_decls_info
 
 and modeled_expensive = match modeled_expensive with k, r -> (k, !r)
 

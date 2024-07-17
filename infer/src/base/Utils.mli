@@ -74,8 +74,6 @@ val with_intermediate_temp_file_out : ?retry:bool -> string -> f:(Out_channel.t 
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid
     write-write races *)
 
-val write_json_to_file : string -> Yojson.Safe.t -> unit
-
 val consume_in : In_channel.t -> unit
 (** consume and ignore all the lines from the channel until End_of_file is reached *)
 

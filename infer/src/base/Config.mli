@@ -544,8 +544,6 @@ val merge_report : string list
 
 val merge_summaries : string list
 
-val method_decls_info : string option
-
 val modeled_expensive : string * Yojson.Safe.t
 
 val never_returning_null : string * Yojson.Safe.t

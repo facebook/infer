@@ -89,20 +89,6 @@
  (action
   (run atdgen -t %{deps})))
 
-; ATD for java_method_decl
-
-(rule
- (targets java_method_decl_j.ml java_method_decl_j.mli)
- (deps java_method_decl.atd)
- (action
-  (run atdgen -j -j-std %{deps})))
-
-(rule
- (targets java_method_decl_t.ml java_method_decl_t.mli)
- (deps java_method_decl.atd)
- (action
-  (run atdgen -t %{deps})))
-
 ; ATD for config_impact_data
 
 (rule

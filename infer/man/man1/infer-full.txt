@@ -2889,14 +2889,6 @@ INTERNAL OPTIONS
        --merge-summaries-reset
            Set --merge-summaries to the empty list.
 
-       --method-decls-info method_decls_info.json
-           Specifies the file containing the method declarations info (eg.
-           start line, end line, class, method name, etc.) when Infer is run
-           Test Determinator mode with --test-determinator.
-
-       --method-decls-info-reset
-           Cancel the effect of --method-decls-info.
-
        --nullable-annotation-name string
            Specify a custom nullable annotation name.
 
