@@ -1,3 +1,0 @@
-codetoanalyze/java/checkers/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []
-codetoanalyze/java/checkers/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []
-codetoanalyze/java/checkers/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []

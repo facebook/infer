@@ -5,12 +5,8 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = \
-  --debug-exceptions --no-default-checkers \
-  --fragment-retains-view \
-  --racerd \
-
+INFER_OPTIONS = --debug-exceptions --fragment-retains-view-only
 INFERPRINT_OPTIONS = --issues-tests
-SOURCES = $(wildcard *.java) $(wildcard $(TESTS_DIR)/external/library/*.java)
+SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

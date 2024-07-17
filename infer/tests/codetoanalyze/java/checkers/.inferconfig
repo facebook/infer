@@ -1,6 +1,0 @@
-{
-  "force-delete-results-dir": true,
-  "external-java-packages": [
-    "external."
-  ]
-}

@@ -227,8 +227,8 @@ DIRECT_TESTS += \
   java_annotreach-nosuperclass \
   java_biabduction \
   java_bufferoverrun \
-  java_checkers \
   java_dependencies \
+  java_fragment-retains-view \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
