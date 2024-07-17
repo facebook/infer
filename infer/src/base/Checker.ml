@@ -276,7 +276,7 @@ let config_unsafe checker =
       ; support=
           mk_support_func ~clang:Support ~java:Support ~erlang:ExperimentalSupport ~hack:Support ()
       ; short_documentation= "General-purpose memory and value analysis engine."
-      ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | PurityAnalysis ->
@@ -303,7 +303,7 @@ let config_unsafe checker =
           UserFacing {title= "RacerD"; markdown_body= [%blob "./documentation/checkers/RacerD.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ~csharp:Support ()
       ; short_documentation= "Thread safety analysis."
-      ; cli_flags= Some {deprecated= ["-threadsafety"]; show_in_help= true}
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
   | ResourceLeakLabExercise ->
@@ -349,7 +349,7 @@ let config_unsafe checker =
       ; kind= UserFacing {title= "Lineage"; markdown_body= ""}
       ; support= mk_support_func ~erlang:Support ()
       ; short_documentation= "Computes a dataflow graph"
-      ; cli_flags= Some {deprecated= ["-simple-lineage"]; show_in_help= true}
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [LineageShape] }
   | LineageShape ->
