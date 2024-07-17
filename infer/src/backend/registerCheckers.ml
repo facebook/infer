@@ -185,7 +185,6 @@ let all_checkers =
            intraprocedural_with_field_dependency Payloads.Fields.pulse Impurity.checker
          in
          [(impurity, Java); (impurity, Clang)] ) }
-  ; {checker= PrintfArgs; callbacks= [(intraprocedural PrintfArgs.checker, Java)]}
   ; {checker= Liveness; callbacks= [(intraprocedural Liveness.checker, Clang)]}
   ; { checker= InefficientKeysetIterator
     ; callbacks= [(intraprocedural InefficientKeysetIterator.checker, Java)] }

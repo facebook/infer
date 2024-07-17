@@ -74,22 +74,6 @@ let rec get_type_name {Typ.desc} =
       "_"
 
 
-let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string option =
-  match typ.desc with
-  | Tstruct name | Tptr ({desc= Tstruct name}, _) -> (
-    match Tenv.lookup tenv name with
-    | Some {fields} -> (
-      match List.find ~f:(function {Struct.name= fn} -> Fieldname.equal fn fieldname) fields with
-      | Some {typ} ->
-          Some (get_type_name typ)
-      | None ->
-          None )
-    | None ->
-        None )
-  | _ ->
-      None
-
-
 module CSharp = struct
   let implements interface tenv typename =
     let is_interface s _ = String.equal interface (Typ.Name.name s) in
@@ -199,18 +183,6 @@ module Java = struct
 
   let implements_kotlin_intrinsics = implements "kotlin.jvm.internal.Intrinsics"
 
-  let get_const_type_name (const : Const.t) : string =
-    match const with
-    | Const.Cstr _ ->
-        "java.lang.String"
-    | Const.Cint _ ->
-        "java.lang.Integer"
-    | Const.Cfloat _ ->
-        "java.lang.Double"
-    | _ ->
-        ""
-
-
   (** Checks if the class name is a Java exception *)
   let is_throwable tenv typename = is_subtype_of_str tenv typename "java.lang.Throwable"
 
@@ -290,79 +262,6 @@ module ObjectiveC = struct
   let implements_ns_string_variants tenv procname =
     implements "NSString" tenv procname || implements "NSAttributedString" tenv procname
 end
-
-let get_vararg_type_names tenv (call_node : Procdesc.Node.t) (ivar : Pvar.t) : string list =
-  (* Is this the node creating ivar? *)
-  let initializes_array instrs =
-    instrs
-    |> Instrs.find_map ~f:(function
-         | Sil.Store {e1= Exp.Lvar iv; e2= Exp.Var t2} when Pvar.equal ivar iv ->
-             Some t2
-         | _ ->
-             None )
-    |> Option.exists ~f:(fun t2 ->
-           Instrs.exists instrs ~f:(function
-             | Sil.Call ((t1, _), Exp.Const (Const.Cfun pn), _, _, _) ->
-                 Ident.equal t1 t2 && Procname.equal pn (Procname.from_string_c_fun "__new_array")
-             | _ ->
-                 false ) )
-  in
-  (* Get the type name added to ivar or None *)
-  let added_type_name instrs =
-    let nvar_type_name nvar =
-      instrs
-      |> Instrs.find_map ~f:(function
-           | Sil.Load {id= nv; e; typ= t} when Ident.equal nv nvar ->
-               Some (e, t)
-           | _ ->
-               None )
-      |> Option.bind ~f:(function
-           | Exp.Lfield (_, id, t), _ ->
-               get_field_type_name tenv t id
-           | _, t ->
-               Some (get_type_name t) )
-    in
-    let added_nvar array_nvar =
-      instrs
-      |> Instrs.find_map ~f:(function
-           | Sil.Store {e1= Exp.Lindex (Exp.Var iv, _); e2= Exp.Var nvar}
-             when Ident.equal iv array_nvar ->
-               Some (nvar_type_name nvar)
-           | Sil.Store {e1= Exp.Lindex (Exp.Var iv, _); e2= Exp.Const c}
-             when Ident.equal iv array_nvar ->
-               Some (Some (Java.get_const_type_name c))
-           | _ ->
-               None )
-      |> Option.join
-    in
-    let array_nvar =
-      instrs
-      |> Instrs.find_map ~f:(function
-           | Sil.Load {id= nv; e= Exp.Lvar iv} when Pvar.equal iv ivar ->
-               Some nv
-           | _ ->
-               None )
-      |> Option.bind ~f:added_nvar
-    in
-    array_nvar
-  in
-  (* Walk nodes backward until definition of ivar, adding type names *)
-  let rec type_names acc node =
-    let instrs = Procdesc.Node.get_instrs node in
-    if initializes_array instrs then acc
-    else
-      match Procdesc.Node.get_preds node with
-      | [n] -> (
-        match added_type_name instrs with
-        | Some name ->
-            type_names (name :: acc) n
-        | None ->
-            type_names acc n )
-      | _ ->
-          raise Caml.Not_found
-  in
-  type_names [] call_node
-
 
 let type_is_class typ =
   match typ.Typ.desc with

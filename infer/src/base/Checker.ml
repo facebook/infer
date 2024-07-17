@@ -26,7 +26,6 @@ type t =
   | Liveness
   | LoopHoisting
   | ParameterNotNullChecked
-  | PrintfArgs
   | Pulse
   | PurityAnalysis
   | PurityChecker
@@ -254,21 +253,6 @@ let config_unsafe checker =
            checked for null first."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; activates= [] }
-  | PrintfArgs ->
-      { id= "printf-args"
-      ; kind=
-          UserFacingDeprecated
-            { title= "`printf()` Argument Types"
-            ; markdown_body= ""
-            ; deprecation_message= "Unmaintained." }
-      ; support= mk_support_func ~java:Support ()
-      ; short_documentation=
-          "Detect mismatches between the Java `printf` format strings and the argument types For \
-           example, this checker will warn about the type error in `printf(\"Hello %d\", \
-           \"world\")`"
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
       ; activates= [] }
   | Pulse ->
       { id= "pulse"

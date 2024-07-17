@@ -482,11 +482,6 @@ let checkers_fragment_retain_view =
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
 
-let checkers_printf_args =
-  register ~category:NoCategory ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
-    ~user_documentation:[%blob "./documentation/issues/CHECKERS_PRINTF_ARGS.md"]
-
-
 let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 

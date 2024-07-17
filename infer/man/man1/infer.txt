@@ -602,7 +602,6 @@ OPTIONS
              CHECKERS_CALLS_EXPENSIVE_METHOD (enabled by default),
              CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by default),
              CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default),
-             CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
@@ -1315,21 +1314,6 @@ OPTIONS
            --no-print-logs)
            See also infer-analyze(1), infer-capture(1), infer-report(1), and
            infer-run(1).
-
-       --printf-args
-           Activates: printf-args checker: Detect mismatches between the Java
-           `printf` format strings and the argument types For example, this
-           checker will warn about the type error in `printf("Hello %d",
-           "world")`
-           
-           DEPRECATED: Unmaintained.
-            (Conversely: --no-printf-args)
-           See also infer-analyze(1).
-
-       --printf-args-only
-           Activates: Enable printf-args and disable all other checkers
-           (Conversely: --no-printf-args-only)
-           See also infer-analyze(1).
 
        --procedures
            Activates: Print functions and methods discovered by infer

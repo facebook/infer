@@ -33,9 +33,6 @@ val pp : Format.formatter -> t -> unit
 val pp_line : Format.formatter -> t -> unit
 (** print just the line information *)
 
-val to_string : t -> string
-(** String representation of a location. *)
-
 val pp_file_pos : Format.formatter -> t -> unit
 (** Pretty print a file-position of a location *)
 

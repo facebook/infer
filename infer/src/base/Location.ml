@@ -38,8 +38,6 @@ let pp_short f loc =
   if loc.col <> -1 then F.fprintf f ":%d" loc.col
 
 
-let to_string loc = F.asprintf "%a" pp_short loc
-
 (** Pretty print a file-position of a location *)
 let pp_file_pos f (loc : t) = F.fprintf f "%a:%a" SourceFile.pp loc.file pp_short loc
 

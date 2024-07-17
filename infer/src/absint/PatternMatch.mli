@@ -16,9 +16,6 @@ val get_this_type_nonstatic_methods_only : ProcAttributes.t -> Typ.t option
 val get_type_name : Typ.t -> string
 (** Get the name of a type *)
 
-val get_vararg_type_names : Tenv.t -> Procdesc.Node.t -> Pvar.t -> string list
-(** Get the type names of a variable argument *)
-
 val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 (** Is the type a transitive subtype of the typename? *)
 

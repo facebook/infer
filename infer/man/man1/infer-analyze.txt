@@ -280,19 +280,6 @@ OPTIONS
            Activates: Also log messages to stdout and stderr (Conversely:
            --no-print-logs)
 
-       --printf-args
-           Activates: printf-args checker: Detect mismatches between the Java
-           `printf` format strings and the argument types For example, this
-           checker will warn about the type error in `printf("Hello %d",
-           "world")`
-           
-           DEPRECATED: Unmaintained.
-            (Conversely: --no-printf-args)
-
-       --printf-args-only
-           Activates: Enable printf-args and disable all other checkers
-           (Conversely: --no-printf-args-only)
-
        --progress-bar-style { auto | plain | multiline }
            Style of the progress bar. auto selects multiline if connected to
            a tty, otherwise plain.
