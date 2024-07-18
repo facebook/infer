@@ -670,10 +670,10 @@ module Syntax = struct
         Option.value_map default ~default:unreachable ~f:(fun f -> f ())
 
 
-  let dispatch_call ret pname actuals func_args : unit model_monad =
+  let dispatch_call ret pname func_args : unit model_monad =
     lift_to_monad
     @@ fun {analysis_data; dispatch_call_eval_args; path; location} astate non_disj ->
-    dispatch_call_eval_args analysis_data path ret (Const (Cfun pname)) actuals func_args location
+    dispatch_call_eval_args analysis_data path ret (Const (Cfun pname)) func_args location
       CallFlags.default astate non_disj (Some pname)
 
 
@@ -716,10 +716,7 @@ module Syntax = struct
                   let arg_payload = ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= arg} in
                   {exp; typ; arg_payload} )
             in
-            let actuals =
-              List.map call_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
-            in
-            let* () = dispatch_call (ret_id, typ) resolved_pname actuals call_args in
+            let* () = dispatch_call (ret_id, typ) resolved_pname call_args in
             let* res = eval_read (Exp.Var ret_id) in
             L.d_printfln "[ocaml model] Closure return value is %a." AbstractValue.pp (fst res) ;
             ret res )

@@ -467,7 +467,7 @@ let lazy_class_initialize size_exp : model =
             let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
             let pname = Procname.get_hack_static_init ~is_trait class_name in
             let typ = Typ.mk_struct type_name in
-            dispatch_call (ret_id, ret_typ) pname [(exp, typ)] [{exp; typ; arg_payload}]
+            dispatch_call (ret_id, ret_typ) pname [{exp; typ; arg_payload}]
           in
           let not_call_sinit : unit DSL.model_monad = ret () in
           disjuncts [call_sinit; not_call_sinit]

@@ -19,7 +19,6 @@ type model_data =
       -> PathContext.t
       -> Ident.t * Typ.t
       -> Exp.t
-      -> (Exp.t * Typ.t) list
       -> arg_payload ProcnameDispatcher.Call.FuncArg.t list
       -> Location.t
       -> CallFlags.t

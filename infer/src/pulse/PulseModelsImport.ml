@@ -21,7 +21,6 @@ type model_data =
       -> PathContext.t
       -> Ident.t * Typ.t
       -> Exp.t
-      -> (Exp.t * Typ.t) list
       -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
       -> Location.t
       -> CallFlags.t
@@ -264,9 +263,8 @@ module Basic = struct
           (ok_continue astate, non_disj)
       | Some destructor ->
           let callflags : CallFlags.t = CallFlags.default in
-          dispatch_call_eval_args analysis_data path ret exp
-            [(exp, typ)]
-            [deleted_arg] location callflags astate non_disj (Some destructor) )
+          dispatch_call_eval_args analysis_data path ret exp [deleted_arg] location callflags astate
+            non_disj (Some destructor) )
     | _ ->
         Logging.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
           (Typ.pp_desc (Pp.html Black))
@@ -294,10 +292,8 @@ module Basic = struct
     match match_args_of_procedures Typ.overloading_resolution actuals candidates with
     | Some constructor ->
         L.d_printfln_escaped "Constructor found: %a" Procname.pp_unique_id constructor ;
-        dispatch_call_eval_args analysis_data path ret exp
-          (List.map args ~f:(fun x ->
-               (x.ProcnameDispatcher.Call.FuncArg.exp, x.ProcnameDispatcher.Call.FuncArg.typ) ) )
-          args location CallFlags.default astate non_disj (Some constructor)
+        dispatch_call_eval_args analysis_data path ret exp args location CallFlags.default astate
+          non_disj (Some constructor)
     | None ->
         (* A constructor can be not found if it is not in captured data, e.g. standard library. *)
         L.d_printfln "Constructor not found" ;

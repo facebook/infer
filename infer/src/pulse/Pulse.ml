@@ -803,7 +803,10 @@ module PulseTransferFunctions = struct
 
 
   let rec dispatch_call_eval_args ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path
-      ret call_exp actuals func_args call_loc flags astate non_disj callee_pname =
+      ret call_exp func_args call_loc flags astate non_disj callee_pname =
+    let actuals =
+      List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
+    in
     let method_info, ret, actuals, func_args, astate =
       let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
       if flags.CallFlags.cf_virtual then
@@ -1081,8 +1084,8 @@ module PulseTransferFunctions = struct
     let<**> astate, call_exp, callee_pname, func_args =
       eval_function_call_args path call_exp actuals call_loc astate
     in
-    dispatch_call_eval_args analysis_data path ret call_exp actuals func_args call_loc flags astate
-      non_disj callee_pname
+    dispatch_call_eval_args analysis_data path ret call_exp func_args call_loc flags astate non_disj
+      callee_pname
 
 
   (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and
@@ -1498,8 +1501,8 @@ module PulseTransferFunctions = struct
                        not accept more complicated types than lists of states (we need a pair of the
                        before astate and the list of results) *)
                   astates_before := astate :: !astates_before ;
-                  dispatch_call_eval_args analysis_data path ret call_exp actuals func_args loc
-                    call_flags astate astate_n callee_pname )
+                  dispatch_call_eval_args analysis_data path ret call_exp func_args loc call_flags
+                    astate astate_n callee_pname )
             in
             let astates_before = !astates_before in
             (PulseReport.report_exec_results analysis_data loc res, astate_n, astates_before)

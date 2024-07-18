@@ -64,7 +64,6 @@ module Syntax : sig
   val dispatch_call :
        Ident.t * Typ.t
     -> Procname.t
-    -> (Exp.t * Typ.t) list
     -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
     -> unit model_monad
 
