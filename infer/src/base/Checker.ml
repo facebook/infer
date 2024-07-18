@@ -385,8 +385,7 @@ let config_unsafe checker =
       ; activates= [] }
 
 
-let config c =
-  let config = config_unsafe c in
+let sanity_check config =
   let is_illegal_id_char c = match c with 'a' .. 'z' | '-' -> false | _ -> true in
   String.find config.id ~f:is_illegal_id_char
   |> Option.iter ~f:(fun c ->
@@ -394,6 +393,17 @@ let config c =
            "Illegal character '%c' in id: '%s'. Checker ids must be easy to pass on the command \
             line."
            c config.id ) ;
+  ( match config.kind with
+  | UserFacingDeprecated _ when config.enabled_by_default ->
+      L.die InternalError "Checker %s is both deprecated and enabled by default." config.id
+  | _ ->
+      () ) ;
+  ()
+
+
+let config checker =
+  let config = config_unsafe checker in
+  sanity_check config ;
   config
 
 
