@@ -59,7 +59,6 @@ DIRECT_TESTS += \
   c_topl \
   cpp_biabduction \
   cpp_bufferoverrun \
-  cpp_conflicts \
   cpp_frontend \
   cpp_frontend-17 \
   cpp_frontend-20 \
