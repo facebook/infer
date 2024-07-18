@@ -165,6 +165,11 @@ module TaintConfig = struct
     ; sanitizers: Procname.Comparable.Set.t
     ; limit: int option }
 
+  let parse_builtin string =
+    let builtins = [("__erlang_make_map", BuiltinDecl.__erlang_make_map)] in
+    List.Assoc.find ~equal:[%equal: string] builtins string
+
+
   let parse_mfa string =
     let module_name, string =
       match String.lsplit2 ~on:':' string with
@@ -178,15 +183,21 @@ module TaintConfig = struct
     Procname.make_erlang ~module_name ~function_name ~arity
 
 
-  let parse_mfa_exn s =
-    match parse_mfa s with Some mfa -> mfa | None -> L.die InternalError "`%s`" s
+  let parse_procname string = Option.first_some (parse_builtin string) (parse_mfa string)
+
+  let parse_procname_exn s =
+    match parse_procname s with
+    | Some procname ->
+        procname
+    | None ->
+        L.die InternalError "Can't parse procname `%s`" s
 
 
   (** Expects ["[module:]function/arity.{ret,argN}"] and returns the corresponding procname and todo
       node. *)
   let parse_endpoint string =
     let* mfa, node = String.lsplit2 ~on:'.' string in
-    let* procname = parse_mfa mfa in
+    let* procname = parse_procname mfa in
     if [%equal: string] node "ret" then Some (Endpoint.return procname)
     else
       let* arg_index = String.chop_prefix ~prefix:"arg" node in
@@ -199,8 +210,8 @@ module TaintConfig = struct
     | Some node ->
         node
     | None ->
-        L.die UserError "%s: invalid format. Expected `mod:fun/arity${ret,argN}, got `%s`." name
-          string
+        L.die UserError
+          "%s: invalid format. Expected `{mod:fun/arity,builtin}.{ret,argN}, got `%s`." name string
 
 
   let parse ~lineage_source ~lineage_sink ~lineage_sanitizers ~lineage_limit =
@@ -214,7 +225,7 @@ module TaintConfig = struct
           { sources= List.map ~f:(parse_endpoint_exn "lineage-source") lineage_source
           ; sinks= List.map ~f:(parse_endpoint_exn "lineage-sink") lineage_sink
           ; sanitizers=
-              Set.of_list (module Procname) @@ List.map ~f:parse_mfa_exn lineage_sanitizers
+              Set.of_list (module Procname) @@ List.map ~f:parse_procname_exn lineage_sanitizers
           ; limit= lineage_limit }
 
 

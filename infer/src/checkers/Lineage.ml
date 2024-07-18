@@ -2152,7 +2152,7 @@ module TransferFunctions = struct
       let pairs =
         [ (BuiltinDecl.__erlang_make_atom, make_atom)
         ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
-        ; (BuiltinDecl.__erlang_make_map, make_map)
+        ; (BuiltinDecl.__erlang_make_map, with_call_flow make_map)
         ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0
           , with_call_flow maps_new )
         ; ( Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2
