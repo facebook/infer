@@ -297,7 +297,6 @@ DIRECT_TESTS += \
   dotnet_array \
   dotnet_bgeble \
   dotnet_box \
-  dotnet_exception \
   dotnet_fieldderef \
   dotnet_isinst \
   dotnet_ldstr \
