@@ -404,11 +404,7 @@ module MethodInfo = struct
 end
 
 let is_captured tenv type_name =
-  (let open IOption.Let_syntax in
-   let* struct_ = lookup tenv type_name in
-   let* _sourcefile = struct_.Struct.source_file in
-   Some true )
-  |> Option.value ~default:false
+  lookup tenv type_name |> Option.exists ~f:(fun (s : Struct.t) -> not s.dummy)
 
 
 let resolve_method ~method_exists tenv class_name proc_name =
