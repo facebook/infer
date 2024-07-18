@@ -143,8 +143,11 @@ let mk_issue_to_report ?suggestion issue_type error_message =
 let log_issue_from_summary_simplified ?severity_override proc_desc err_log ~loc ?(ltr = []) ?extras
     ?suggestion checker issue_type error_message =
   let issue_to_report = mk_issue_to_report issue_type error_message ?suggestion in
-  log_issue_from_summary ?severity_override proc_desc err_log ~node:Errlog.UnknownNode ~session:0
-    ~loc ~ltr ?extras checker issue_to_report
+  let node : Errlog.node =
+    match AnalysisState.get_node () with None -> UnknownNode | Some node -> BackendNode {node}
+  in
+  log_issue_from_summary ?severity_override proc_desc err_log ~node ~session:0 ~loc ~ltr ?extras
+    checker issue_to_report
 
 
 let log_issue proc_desc err_log ~loc ?loc_instantiated ?ltr ?extras ?suggestion checker issue_type

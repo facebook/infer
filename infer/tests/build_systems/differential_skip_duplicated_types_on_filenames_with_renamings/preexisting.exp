@@ -1,2 +1,2 @@
-RESOURCE_LEAK, no_bucket, src/DiffExampleRenamed.java, DiffExampleRenamed.openResource():void, 5
-NULL_DEREFERENCE, no_bucket, src/DiffExampleRenamed.java, DiffExampleRenamed.triggerNpe():int, 1
+NULLPTR_DEREFERENCE, no_bucket, src/DiffExampleRenamed.java, DiffExampleRenamed.triggerNpe():int, 1
+PULSE_RESOURCE_LEAK, no_bucket, src/DiffExampleRenamed.java, DiffExampleRenamed.openResource():void, 8
