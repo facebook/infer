@@ -500,13 +500,20 @@ let find_cpp_constructor tenv class_name =
       []
 
 
-let is_trivially_copyable tenv typ =
-  Option.exists (Typ.name typ) ~f:(fun name ->
-      match lookup tenv name with
-      | Some {class_info= CppClassInfo {is_trivially_copyable}} ->
-          is_trivially_copyable
-      | _ ->
-          false )
+let rec is_trivially_copyable tenv {Typ.desc} =
+  match desc with
+  | Tstruct name -> (
+    match lookup tenv name with
+    | Some {class_info= CppClassInfo {is_trivially_copyable}} ->
+        is_trivially_copyable
+    | _ ->
+        false )
+  | Tint _ | Tfloat _ | Tvoid | Tptr _ ->
+      true
+  | Tarray {elt} ->
+      is_trivially_copyable tenv elt
+  | Tfun | TVar _ ->
+      false
 
 
 let get_hack_direct_used_traits tenv class_name =
