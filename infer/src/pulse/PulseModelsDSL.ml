@@ -452,11 +452,6 @@ module Syntax = struct
     ret (v, hist)
 
 
-  let eval_to_value_origin exp : ValueOrigin.t model_monad =
-    let* {path; location} = get_data in
-    PulseOperations.eval_to_value_origin path Read location exp |> exec_partial_operation
-
-
   let allocation attr (addr, _) : unit model_monad =
     let* {location} = get_data in
     PulseOperations.allocate attr location addr |> exec_command
