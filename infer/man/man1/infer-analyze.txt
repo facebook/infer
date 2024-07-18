@@ -137,10 +137,7 @@ OPTIONS
        --no-fragment-retains-view
            Deactivates: fragment-retains-view checker: Detects when Android
            fragments are not explicitly nullified before becoming
-           unreachable.
-           
-           DEPRECATED: Unmaintained due to poor precision.
-            (Conversely: --fragment-retains-view)
+           unreachable. (Conversely: --fragment-retains-view)
 
        --fragment-retains-view-only
            Activates: Enable fragment-retains-view and disable all other

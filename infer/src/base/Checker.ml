@@ -174,11 +174,7 @@ let config_unsafe checker =
       ; activates= [] }
   | FragmentRetainsView ->
       { id= "fragment-retains-view"
-      ; kind=
-          UserFacingDeprecated
-            { title= "Fragment Retains View"
-            ; markdown_body= ""
-            ; deprecation_message= "Unmaintained due to poor precision." }
+      ; kind= UserFacing {title= "Fragment Retains View"; markdown_body= ""}
       ; support= mk_support_func ~java:Support ()
       ; short_documentation=
           "Detects when Android fragments are not explicitly nullified before becoming unreachable."
