@@ -117,10 +117,10 @@ module Vec = struct
 
   let last_read_field = mk_vec_field last_read_field_name
 
-  let new_vec_dsl args : DSL.aval DSL.model_monad =
+  let new_vec_dsl ?(know_size = None) args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let actual_size = List.length args in
-    let* size = eval_const_int actual_size in
+    let* size = match know_size with None -> eval_const_int actual_size | Some size -> ret size in
     let* last_read = mk_fresh ~model_desc:"new_vec.last_read" () in
     let* dummy = eval_const_int 9 in
     let* vec =
@@ -168,6 +168,33 @@ module Vec = struct
        let* awaited_snd_val = await_hack_value snd_val in
        let* fresh_vec = new_vec_dsl [awaited_fst_val; awaited_snd_val] in
        assign_ret fresh_vec
+
+
+  let map _this arg closure =
+    let open DSL.Syntax in
+    start_model
+    @@
+    let* size_val = eval_deref_access Read arg (FieldAccess size_field) in
+    let size_eq_0_case : DSL.aval DSL.model_monad =
+      let* () = prune_eq_zero size_val in
+      new_vec_dsl []
+    in
+    let size_eq_1_case : DSL.aval DSL.model_monad =
+      let* () = prune_eq_int size_val IntLit.one in
+      let* fst_val = eval_deref_access Read arg (FieldAccess fst_field) in
+      let* mapped_fst_val = apply_hack_closure closure [fst_val] in
+      new_vec_dsl [mapped_fst_val]
+    in
+    let size_gt_1_case : DSL.aval DSL.model_monad =
+      let* () = prune_gt_int size_val IntLit.one in
+      let* fst_val = eval_deref_access Read arg (FieldAccess fst_field) in
+      let* snd_val = eval_deref_access Read arg (FieldAccess snd_field) in
+      let* mapped_fst_val = apply_hack_closure closure [fst_val] in
+      let* mapped_snd_val = apply_hack_closure closure [snd_val] in
+      new_vec_dsl ~know_size:(Some size_val) [mapped_fst_val; mapped_snd_val]
+    in
+    let* ret = disjuncts [size_eq_0_case; size_eq_1_case; size_gt_1_case] in
+    assign_ret ret
 
 
   let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
@@ -1548,6 +1575,8 @@ let matchers : matcher list =
     $+ capt_arg_payload $+ capt_arg_payload $--> hhbc_is_type_struct_c
   ; -"$root" &:: "FlibSL::C::contains_key" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
     $--> Dict.contains_key
+  ; -"$root" &:: "FlibSL::Vec::map" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> Vec.map
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload

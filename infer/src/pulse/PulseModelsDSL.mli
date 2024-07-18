@@ -68,6 +68,8 @@ module Syntax : sig
     -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
     -> unit model_monad
 
+  val apply_hack_closure : aval -> aval list -> aval model_monad
+
   val get_data : PulseModelsImport.model_data model_monad
 
   (** {2 Disjunctive reasoning} *)
@@ -168,6 +170,8 @@ module Syntax : sig
   val prune_le : aval -> aval -> unit model_monad
 
   val prune_gt : aval -> aval -> unit model_monad
+
+  val prune_gt_int : aval -> IntLit.t -> unit model_monad
 
   val prune_ge : aval -> aval -> unit model_monad
 

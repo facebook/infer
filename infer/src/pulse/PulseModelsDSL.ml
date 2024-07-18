@@ -421,6 +421,17 @@ module Syntax = struct
     ret field_name data astate
 
 
+  let tenv_resolve_method typ_name proc_name : Procname.t option model_monad =
+   fun ({analysis_data= {tenv}} as data) astate ->
+    (* Remark: this is a simplified resolution that will work well for closure resolution,
+       but does not implement all the steps proposed for regular virtual calls in Pulse.ml *)
+    let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
+    let opt_info, _ = Tenv.resolve_method ~method_exists tenv typ_name proc_name in
+    (* warning: we skipped missed capture informations here *)
+    let opt_resolved_proc_name = Option.map opt_info ~f:Tenv.MethodInfo.get_procname in
+    ret opt_resolved_proc_name data astate
+
+
   let eval_read exp : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval path Read location exp |> exec_partial_operation
@@ -624,6 +635,10 @@ module Syntax = struct
 
   let prune_gt arg1 arg2 = prune_lt arg2 arg1
 
+  let prune_gt_int arg1 i : unit model_monad =
+    prune_binop Gt (aval_operand arg1) (ConstOperand (Cint i))
+
+
   let prune_le arg1 arg2 = prune_ge arg2 arg1
 
   let prune_eq arg1 arg2 : unit model_monad = prune_binop Eq (aval_operand arg1) (aval_operand arg2)
@@ -642,19 +657,16 @@ module Syntax = struct
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
       match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
       | Some (_, case_fun), _ ->
-          Logging.d_printfln
-            "[ocaml model] dynamic_dispatch: executing case for type %a on value %a" Typ.Name.pp
-            type_name AbstractValue.pp (fst aval) ;
+          L.d_printfln "[ocaml model] dynamic_dispatch: executing case for type %a on value %a"
+            Typ.Name.pp type_name AbstractValue.pp (fst aval) ;
           case_fun ()
       | None, Some default ->
           default ()
       | None, None ->
-          Logging.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp
-            type_name ;
+          L.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp type_name ;
           unreachable )
     | _ ->
-        Logging.d_printfln "[ocaml model] No dynamic type found for value %a!" AbstractValue.pp
-          (fst aval) ;
+        L.d_printfln "[ocaml model] No dynamic type found for value %a!" AbstractValue.pp (fst aval) ;
         Option.value_map default ~default:unreachable ~f:(fun f -> f ())
 
 
@@ -673,6 +685,48 @@ module Syntax = struct
     PulseArithmetic.and_equal (AbstractValueOperand class_object)
       (FunctionApplicationOperand {f; actuals= [aval]})
     |> exec_partial_command
+
+
+  let apply_hack_closure (closure : aval) closure_args : aval model_monad =
+    let typ = Typ.mk_ptr (Typ.mk_struct TextualSil.hack_mixed_type_name) in
+    let args = closure :: closure_args in
+    let unresolved_pname =
+      Procname.make_hack ~class_name:(Some HackClassName.wildcard) ~function_name:"__invoke"
+        ~arity:(Some (List.length args))
+    in
+    let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+    match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
+        let* opt_resolved_pname = tenv_resolve_method type_name unresolved_pname in
+        match opt_resolved_pname with
+        | None ->
+            L.d_printfln "[ocaml model] Closure dynamic type is %a but no implementation was found!"
+              Typ.Name.pp type_name ;
+            let* unknown_res = mk_fresh ~model_desc:"apply_hack_closure" () in
+            ret unknown_res
+        | Some resolved_pname ->
+            L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
+            let ret_id = Ident.create_none () in
+            let call_args =
+              List.mapi args ~f:(fun i arg : arg_payload ProcnameDispatcher.Call.FuncArg.t ->
+                  let pvar =
+                    Pvar.mk (Mangled.from_string (Printf.sprintf "CLOSURE_ARG%d" i)) resolved_pname
+                  in
+                  let exp = Exp.Lvar pvar in
+                  let arg_payload = ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= arg} in
+                  {exp; typ; arg_payload} )
+            in
+            let actuals =
+              List.map call_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
+            in
+            let* () = dispatch_call (ret_id, typ) resolved_pname actuals call_args in
+            let* res = eval_read (Exp.Var ret_id) in
+            L.d_printfln "[ocaml model] Closure return value is %a." AbstractValue.pp (fst res) ;
+            ret res )
+    | _ ->
+        L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
+        let* unknown_res = mk_fresh ~model_desc:"apply_hack_closure" () in
+        ret unknown_res
 
 
   module Basic = struct
