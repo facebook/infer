@@ -1404,7 +1404,7 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   | None ->
       L.d_printfln "didn't get known integer tag in check against type struct" ;
       let* md = get_data in
-      L.internal_error "known tag failure tdict is %a at %a" AbstractValue.pp (fst tdict)
+      L.internal_error "known tag failure tdict is %a at %a@\n" AbstractValue.pp (fst tdict)
         Location.pp_file_pos md.location ;
       (* duplicating behaviour of previous sil model instead of calling this an internal error *)
       let* one = eval_const_int 1 in
