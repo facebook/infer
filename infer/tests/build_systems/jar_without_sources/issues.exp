@@ -1,3 +1,3 @@
-/hello/Hello.class, hello.Hello.mayCauseNPE():void, 3, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure mayCauseNPE()]
-/hello/Hello.class, hello.Hello.mayLeakResource():void, 6, RESOURCE_LEAK, no_bucket, ERROR, [start of procedure mayLeakResource(),Taking false branch]
-/hello/Hello.class, hello.Hello.twoResources():void, 14, RESOURCE_LEAK, no_bucket, ERROR, [start of procedure twoResources(),Taking true branch,exception java.io.IOException]
+/hello/Hello.class, hello.Hello.mayCauseNPE():void, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `Pointers$A Pointers.mayReturnNull(int)`,is assigned to the null pointer,returned,return from call to `Pointers$A Pointers.mayReturnNull(int)`,assigned,invalid access occurs here]
+/hello/Hello.class, hello.Hello.mayLeakResource():void, 6, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,when calling `FileOutputStream Resources.allocateResource()` here,allocated by constructor java.io.FileOutputStream() here,memory becomes unreachable here]
+/hello/Hello.class, hello.Hello.mayLeakResource():void, 10, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,when calling `FileOutputStream Resources.allocateResource()` here,allocated by constructor java.io.FileOutputStream() here,memory becomes unreachable here]
