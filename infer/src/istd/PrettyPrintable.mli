@@ -43,6 +43,8 @@ module type PPSet = sig
 
   include PrintableType with type t := t
 
+  val pp_hov : F.formatter -> t -> unit
+
   val pp_element : F.formatter -> elt -> unit
 end
 

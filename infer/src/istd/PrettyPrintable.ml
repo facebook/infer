@@ -41,6 +41,8 @@ module type PPSet = sig
 
   include PrintableType with type t := t
 
+  val pp_hov : F.formatter -> t -> unit
+
   val pp_element : F.formatter -> elt -> unit
 end
 
@@ -146,7 +148,11 @@ module type PPMap = sig
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
-let pp_collection ~pp_item fmt c = IContainer.pp_collection ~fold:List.fold ~pp_item fmt c
+let pp_collection_common ?hov ~pp_item fmt c =
+  IContainer.pp_collection ?hov ~fold:List.fold ~pp_item fmt c
+
+
+let pp_collection ~pp_item fmt c = pp_collection_common ~pp_item fmt c
 
 module MakePPSet (Ord : PrintableOrderedType) = struct
   include Caml.Set.Make (Ord)
@@ -162,6 +168,8 @@ module MakePPSet (Ord : PrintableOrderedType) = struct
   let pp_element = Ord.pp
 
   let pp fmt s = pp_collection ~pp_item:pp_element fmt (elements s)
+
+  let pp_hov fmt s = pp_collection_common ~hov:true ~pp_item:pp_element fmt (elements s)
 end
 
 module MakePPMap (Ord : PrintableOrderedType) = struct

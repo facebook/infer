@@ -503,7 +503,7 @@ let with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_r
       d_printf_escaped ?color:name_color "%s" name ;
       d_printf "</%s>" name_tag ;
       (* Open a paragraph for the log of [f] *)
-      d_printf "<DIV class='details_child'>" ;
+      d_printf "<DIV class='details_child'>@\n" ;
       let result = f () in
       d_printf "</DIV>" ;
       (* Print result if needed *)

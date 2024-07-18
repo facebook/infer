@@ -55,13 +55,14 @@ let iter_consecutive ~fold t ~f =
   ()
 
 
-let pp_collection ~fold ~pp_item fmt c =
+let pp_collection ?(hov = false) ~fold ~pp_item fmt c =
   let f prev_opt item =
     prev_opt |> Option.iter ~f:(F.fprintf fmt "@[<h>%a,@]@ " pp_item) ;
     Some item
   in
   let pp_aux fmt c = fold c ~init:None ~f |> Option.iter ~f:(F.fprintf fmt "@[<h>%a@] " pp_item) in
-  F.fprintf fmt "@[<hv 2>{ %a}@]" pp_aux c
+  if hov then F.fprintf fmt "@[<hov 2>" else F.fprintf fmt "@[<hv 2>" ;
+  F.fprintf fmt "{ %a}@]" pp_aux c
 
 
 let filter ~fold ~filter t ~init ~f =

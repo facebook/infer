@@ -4426,7 +4426,7 @@ module DeadVariables = struct
     (* INVARIANT: [vars_to_keep] contains a var in an atom of the formula (a linear eq or term eq
        or actual atom) iff it contains all vars in that atom *)
     let vars_to_keep = get_reachable_from var_graph keep in
-    L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
+    L.d_printfln "Reachable vars: %a" Var.Set.pp_hov vars_to_keep ;
     let simplify_phi phi =
       let var_eqs = VarUF.filter ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs in
       let type_constraints =
@@ -4495,8 +4495,8 @@ end
 
 let simplify ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
-  L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula Var.Set.pp
-    keep Var.Set.pp precondition_vocabulary ;
+  L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula
+    Var.Set.pp_hov keep Var.Set.pp_hov precondition_vocabulary ;
   (* get rid of as many variables as possible *)
   let* formula = QuantifierElimination.eliminate_vars ~precondition_vocabulary ~keep formula in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may

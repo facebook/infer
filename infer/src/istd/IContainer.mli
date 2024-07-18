@@ -36,7 +36,8 @@ val rev_filter_map_to_list :
 val iter_consecutive : fold:('t, 'a, 'a option) Container.fold -> 't -> f:('a -> 'a -> unit) -> unit
 
 val pp_collection :
-     fold:('t, 'a, 'a option) Container.fold
+     ?hov:bool
+  -> fold:('t, 'a, 'a option) Container.fold
   -> pp_item:(F.formatter -> 'a -> unit)
   -> F.formatter
   -> 't
