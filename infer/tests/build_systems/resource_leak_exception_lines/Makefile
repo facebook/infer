@@ -15,11 +15,9 @@ default: analyze
 .PHONY: analyze
 analyze: $(REPORT)
 
-# TODO: build similar support of exception lines in Pulse
-
 $(REPORT): $(JAVA_DEPS) $(MAKEFILE_LIST) SimpleLeak.java
 	$(QUIET)$(call silent_on_success,Running analysis,\
-	  $(INFER_BIN) --biabduction-only -o $(INFER_OUT) --project-root $(CURDIR) \
+	  $(INFER_BIN) --pulse-only -o $(INFER_OUT) --project-root $(CURDIR) \
 	    -- javac SimpleLeak.java)
 
 $(EXPECTED_TEST_OUTPUT): $(REPORT)
