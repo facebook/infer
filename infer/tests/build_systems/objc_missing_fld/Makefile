@@ -9,7 +9,7 @@ CODETOANALYZE_DIR = ../codetoanalyze/objc_missing_fld
 
 SOURCES = $(CODETOANALYZE_DIR)/A.m $(CODETOANALYZE_DIR)/B.m
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-INFER_OPTIONS = -j 1 --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = -j 1 --pulse-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 
