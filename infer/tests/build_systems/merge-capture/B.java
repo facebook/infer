@@ -9,10 +9,8 @@ package codetoanalyze.java.infer;
 
 public class B {
 
-  public int bDivideByZero() {
-    int denom = 0;
-    int nom = 5;
-    int result = nom / denom;
-    return result;
+  public void bNullCrash() {
+    Object q = null;
+    q.toString();
   }
 }
