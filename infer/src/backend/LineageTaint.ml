@@ -276,6 +276,92 @@ module TaintConfig = struct
   let limit_or_max_int {limit; _} = match limit with None -> Int.max_value | Some limit -> limit
 end
 
+module Weight = struct
+  type t = int
+
+  type edge = U.G.edge
+
+  let compare = [%compare: int]
+
+  let zero = 0
+
+  let add = ( + )
+
+  let weight _ = 1
+end
+
+module D = Graph.Path.Dijkstra (U.G) (Weight)
+
+module Instrumented : sig
+  (** Instrumented graph for easier querying of paths from sources / to sinks. *)
+
+  type t
+
+  val instrument : TaintConfig.t -> U.G.t -> t
+
+  val clear : t -> U.G.t
+
+  val limit : TaintConfig.t -> t -> t
+end = struct
+  include U.G
+
+  let instrument_procname function_name =
+    Procname.make_erlang ~module_name:"__infer__lineage_taint__instrument__" ~function_name ~arity:0
+
+
+  (* Unique source and sink nodes make taint pathfinding easier: for instance, instead of looking
+     from the shortest path from "any source" to a node, we can find the shortest path from the
+     unique source (which will then contain an edge into annactual source as its first step). *)
+
+  let unique_source : U.V.t = {procname= instrument_procname "source"; vertex= Function}
+
+  let unique_sink : U.V.t = {procname= instrument_procname "sink"; vertex= Function}
+
+  let instrument (config : TaintConfig.t) graph : t =
+    let sources = TaintConfig.unified_sources config in
+    let sinks = TaintConfig.unified_sinks config in
+    (* Add dummy unique source and sink nodes *)
+    let graph =
+      List.fold sources ~f:(fun acc source -> U.G.add_edge acc unique_source source) ~init:graph
+    in
+    let graph =
+      List.fold sinks ~f:(fun acc sink -> U.G.add_edge acc sink unique_sink) ~init:graph
+    in
+    graph
+
+
+  let clear (instrumented_graph : t) : U.G.t =
+    instrumented_graph
+    |> Fn.flip U.G.remove_vertex unique_source
+    |> Fn.flip U.G.remove_vertex unique_sink
+
+
+  let limit (config : TaintConfig.t) (graph : t) : t =
+    (* Repetitively add the shortest flows *)
+    let rec loop acc work_graph fuel =
+      match D.shortest_path work_graph unique_source unique_sink with
+      | path, distance ->
+          let fuel = fuel - distance in
+          if fuel < 0 then acc
+          else
+            let acc = List.fold path ~init:acc ~f:(fun acc edge -> U.G.add_edge_e acc edge) in
+            let work_graph =
+              List.fold path ~init:work_graph ~f:(fun acc edge ->
+                  if
+                    [%equal: U.V.t] (U.G.E.src edge) unique_source
+                    || [%equal: U.V.t] (U.G.E.dst edge) unique_sink
+                  then acc
+                  else U.G.remove_edge_e acc edge )
+            in
+            loop acc work_graph fuel
+      | exception Stdlib.Not_found ->
+          acc
+    in
+    loop U.G.empty graph (TaintConfig.limit_or_max_int config)
+end
+
+module I = Instrumented
+
 (** Collects the reachable subgraph from a given source node in the lineage graph of one procedures.
     Returns this subgraph and two lists of nodes from other procedures to explore, the first one
     being reached through Return edges and the second one though Calls.
@@ -418,61 +504,6 @@ let collect_coreachable (config : TaintConfig.t) reachable_graph =
   codfs (TaintConfig.unified_sinks config) U.G.empty
 
 
-module Weight = struct
-  type t = int
-
-  type edge = U.G.edge
-
-  let compare = [%compare: int]
-
-  let zero = 0
-
-  let add = ( + )
-
-  let weight _ = 1
-end
-
-module D = Graph.Path.Dijkstra (U.G) (Weight)
-
-let dummy_procname function_name =
-  Procname.make_erlang ~module_name:"__infer__lineage_taint__dummy__" ~function_name ~arity:0
-
-
-let limit (config : TaintConfig.t) graph =
-  let sources = TaintConfig.unified_sources config in
-  let sinks = TaintConfig.unified_sinks config in
-  (* Add dummy unique source and sink to make pathfinding easier *)
-  let dummy_source : U.V.t = {procname= dummy_procname "source"; vertex= Function} in
-  let dummy_sink : U.V.t = {procname= dummy_procname "sink"; vertex= Function} in
-  let graph =
-    List.fold sources ~f:(fun acc source -> U.G.add_edge acc dummy_source source) ~init:graph
-  in
-  let graph = List.fold sinks ~f:(fun acc sink -> U.G.add_edge acc sink dummy_sink) ~init:graph in
-  (* Repetitively add the shortest flows *)
-  let rec loop acc work_graph fuel =
-    match D.shortest_path work_graph dummy_source dummy_sink with
-    | path, distance ->
-        let fuel = fuel - distance in
-        if fuel < 0 then acc
-        else
-          let acc = List.fold path ~init:acc ~f:(fun acc edge -> U.G.add_edge_e acc edge) in
-          let work_graph =
-            List.fold path ~init:work_graph ~f:(fun acc edge ->
-                if
-                  [%equal: U.V.t] (U.G.E.src edge) dummy_source
-                  || [%equal: U.V.t] (U.G.E.dst edge) dummy_sink
-                then acc
-                else U.G.remove_edge_e acc edge )
-          in
-          loop acc work_graph fuel
-    | exception Stdlib.Not_found ->
-        acc
-  in
-  let graph = loop U.G.empty graph (TaintConfig.limit_or_max_int config) in
-  (* Remove the dummy nodes *)
-  graph |> Fn.flip U.G.remove_vertex dummy_source |> Fn.flip U.G.remove_vertex dummy_sink
-
-
 let report_unified name filename_parts graph =
   let filename = Filename.of_parts (Config.results_dir :: filename_parts) in
   Unix.mkdir_p (Filename.dirname filename) ;
@@ -497,8 +528,11 @@ let report taint_config =
   debug_unified "Coreachability graph"
     ["lineage-taint-debug"; "lineage-coreachable.dot"]
     coreachable_graph ;
-  let final_taint_graph = limit taint_config coreachable_graph in
-  report_unified "Lineage taint graph" ["lineage-taint"; "lineage-taint.dot"] final_taint_graph
+  let instrumented_graph = I.instrument taint_config coreachable_graph in
+  let final_taint_graph = I.limit taint_config instrumented_graph in
+  report_unified "Lineage taint graph"
+    ["lineage-taint"; "lineage-taint.dot"]
+    (I.clear final_taint_graph)
 
 
 module Private = struct
