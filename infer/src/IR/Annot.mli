@@ -28,6 +28,9 @@ and value =
   | Class of Typ.t
   | Annot of t
 
+val abstract : t
+(** annotation for fields marked with the "abstract" keyword *)
+
 val volatile : t
 (** annotation for fields marked with the "volatile" keyword *)
 
@@ -55,6 +58,9 @@ module Item : sig
 
   val empty : t
   (** Empty item annotation. *)
+
+  val is_abstract : t -> bool
+  (** Check if abstract annotation is included in. *)
 
   val is_empty : t -> bool
 

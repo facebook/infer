@@ -28,11 +28,15 @@ and value =
   | Class of Typ.t
   | Annot of t
 
+let abstract = {class_name= "abstract"; parameters= []}
+
 let volatile = {class_name= "volatile"; parameters= []}
 
 let final = {class_name= "final"; parameters= []}
 
 let notnull = {class_name= "notnull"; parameters= []}
+
+let is_abstract x = equal abstract x
 
 let is_final x = equal final x
 
@@ -100,6 +104,8 @@ module Item = struct
 
   (** Empty item annotation. *)
   let empty = []
+
+  let is_abstract ia = List.exists ia ~f:is_abstract
 
   (** Check if the item annotation is empty. *)
   let is_empty ia = List.is_empty ia

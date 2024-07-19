@@ -204,3 +204,17 @@ class SetConstInTraitDeepClass extends SetConstInTraitClass {
 function call_get_field_set_in_trait_deep_ok(): string {
   return SetConstInTraitDeepClass::get_field();
 }
+
+class NonAbstractField {
+  const string FIELD = "field";
+
+  public function get_field(): string {
+    return self::FIELD;
+  }
+}
+
+class NonAbstractField2 extends NonAbstractField {}
+
+function call_get_non_abstract_field_ok(): string {
+  return (new NonAbstractField2())->get_field();
+}

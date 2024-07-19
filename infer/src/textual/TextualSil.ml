@@ -479,10 +479,14 @@ module StructBridge = struct
       |> List.map ~f:(ProcDeclBridge.to_sil lang)
     in
     let fields =
-      List.map fields ~f:(fun (fdecl : FieldDecl.t) ->
-          SilStruct.mk_field
+      List.map fields ~f:(fun ({FieldDecl.typ; attributes} as fdecl) ->
+          let annot =
+            List.filter_map attributes ~f:(fun attr ->
+                if Attr.is_abstract attr then Some Annot.abstract else None )
+          in
+          SilStruct.mk_field ~annot
             (FieldDeclBridge.to_sil lang fdecl)
-            (TypBridge.to_sil lang ~attrs:fdecl.attributes fdecl.typ) )
+            (TypBridge.to_sil lang ~attrs:attributes typ) )
     in
     let annots =
       List.filter_map attributes ~f:(fun attr ->

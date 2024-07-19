@@ -1638,10 +1638,9 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
     let fields = Tenv.get_fields_trans tenv name in
     let class_global_var = PulseModelsHack.get_static_companion_var name in
     let typ = Typ.mk_struct name in
-    List.fold fields ~init:astate ~f:(fun astate {Struct.name= fld; typ= {Typ.quals= fld_quals}} ->
-        (* Ideally, we would like to analyze `abstract const` fields only, but current SIL cannot
-           express the `abstract` field at the moment. *)
-        if Typ.is_const fld_quals then
+    List.fold fields ~init:astate
+      ~f:(fun astate {Struct.name= fld; typ= {Typ.quals= fld_quals}; annot} ->
+        if Annot.Item.is_abstract annot && Typ.is_const fld_quals then
           match
             PulseOperations.eval path NoAccess loc (Lfield (Lvar class_global_var, fld, typ)) astate
           with
