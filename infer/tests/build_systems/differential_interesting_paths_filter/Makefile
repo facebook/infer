@@ -46,15 +46,13 @@ test: compare_reports
 print: current.exp.test previous.exp.test
 replace: replace_reports
 
-# TODO: Pulse behaves differently on osx and linux here, missing a resource leak on osx
-
 $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/com/example/DiffClass1.java.current src/com/example/DiffClass1.java
 	$(QUIET)$(COPY) src/com/example/DiffClass2.java.current src/com/example/DiffClass2.java
 	$(QUIET)$(COPY) src/com/example/DiffClass3.java.current src/com/example/DiffClass3.java
 	$(QUIET)$(COPY) src/com/example/DiffClassUnchanged.java.unchanged src/com/example/DiffClassUnchanged.java
 	$(QUIET)$(call silent_on_success,Testing Differential with interesting paths: current,\
-	  $(INFER_BIN) --biabduction-only -o $(CURRENT_DIR) -- $(JAVAC) src/com/example/*.java)
+	  $(INFER_BIN) --pulse-only -o $(CURRENT_DIR) -- $(JAVAC) src/com/example/*.java)
 	$(QUIET)$(REMOVE_DIR) $(SRC_OBJECT_FILES)
 
 $(PREVIOUS_REPORT):
@@ -63,5 +61,5 @@ $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/com/example/DiffClassThree.java.previous src/com/example/DiffClassThree.java
 	$(QUIET)$(COPY) src/com/example/DiffClassUnchanged.java.unchanged src/com/example/DiffClassUnchanged.java
 	$(QUIET)$(call silent_on_success,Testing Differential with interesting paths: previous,\
-	  $(INFER_BIN) --biabduction-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/com/example/*.java)
+	  $(INFER_BIN) --pulse-only -o $(PREVIOUS_DIR) -- $(JAVAC) src/com/example/*.java)
 	$(QUIET)$(REMOVE_DIR) $(SRC_OBJECT_FILES)
