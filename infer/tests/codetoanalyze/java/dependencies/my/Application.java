@@ -31,6 +31,10 @@ public class Application {
     sink(propagate(Framework.getStr()));
   }
 
+  /* Note: Unfortunately, we comment out these functions since their test results are flaky
+     depending on Java versions; sometimes they report on the two tainted expressions, `s` and
+     `source()`, but sometimes on only one of them, `s`.
+
   void indirectSink() {
     Str s = source();
     Framework.readFile(s);
@@ -39,5 +43,5 @@ public class Application {
   void indirectTaintFlow() {
     Str s = Framework.getStr();
     Framework.readFile(s);
-  }
+  } */
 }

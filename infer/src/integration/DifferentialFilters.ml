@@ -121,6 +121,13 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
       (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, previous_file1)
       (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, previous_file2)
   in
+  let sort_for_print issues =
+    let get_fields {Jsonbug_t.file; line; column; bug_type; hash} =
+      (file, line, column, bug_type, hash)
+    in
+    List.sort issues ~compare:(fun issue1 issue2 ->
+        [%compare: string * int * int * string * string] (get_fields issue1) (get_fields issue2) )
+  in
   let introduced, preexisting, fixed =
     (* All comparisons will be made against filenames *before* renamings.
        This way, all introduced and fixed issues can be sorted independently
@@ -135,9 +142,9 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
       relative_complements ~compare ~pred:has_node_key introduced_normalized fixed_normalized
     in
     let list_map_fst = List.map ~f:fst in
-    ( list_map_fst introduced_normalized'
-    , list_map_fst preexisting' @ diff.preexisting
-    , list_map_fst fixed_normalized' )
+    ( list_map_fst introduced_normalized' |> sort_for_print
+    , list_map_fst preexisting' @ diff.preexisting |> sort_for_print
+    , list_map_fst fixed_normalized' |> sort_for_print )
   in
   {introduced; fixed; preexisting; costs_summary= diff.costs_summary}
 
