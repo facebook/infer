@@ -19,7 +19,9 @@ module TaintConfig : sig
     -> t option
 end
 
-val report : TaintConfig.t -> unit
+val export_result : name:string -> fileparts:string list -> 'a Fmt.t -> 'a -> unit
+
+val report : TaintConfig.t -> IssueLog.t
 
 include sig
   (** Used for tests*)

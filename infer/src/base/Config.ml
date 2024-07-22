@@ -1932,14 +1932,20 @@ and lineage_source =
   CLOpt.mk_string_list ~long:"lineage-source"
     ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage sources for taint finding, format \
-     [module:]function/arity.{ret,argN}, comma-separated."
+     [module:]function/arity.{ret,argN}, comma-separated.\n\n\
+     See --lineage-sink for additional documentation."
 
 
 and lineage_sink =
   CLOpt.mk_string_list ~long:"lineage-sink"
     ~in_help:InferCommand.[(Report, manual_lineage)]
     "[EXPERIMENTAL; UNSTABLE API] Lineage sinks for taint finding, format \
-     [module:]function/arity.{ret,argN}, comma-separated."
+     [module:]function/arity.{ret,argN}, comma-separated. Must be used with --lineage-source as \
+     options to the report subcommand.\n\n\
+     Will produce a graph materializing the flows between the sources and the sinks along with a \
+     json issues file. The issues file will contain one trace per sink, exhibiting a shortest path \
+     from a source. The report command will print the filesystem paths of the files containing \
+     those results."
 
 
 and lineage_sanitizers =

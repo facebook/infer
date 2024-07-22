@@ -13,6 +13,8 @@ type t = Errlog.t Procname.Map.t
 
 let empty = Procname.Map.empty
 
+let iter ~f (t : t) = Procname.Map.iter f t
+
 let get_or_add ~proc m =
   match Procname.Map.find_opt proc m with
   | Some errlog ->

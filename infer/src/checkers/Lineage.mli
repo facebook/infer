@@ -10,6 +10,8 @@ open LineageShape.StdModules
 
 module PPNode : sig
   type t
+
+  val pp : t Fmt.t [@@warning "-unused-value-declaration"]
 end
 
 module Local : sig
@@ -49,7 +51,13 @@ module Edge : sig
 
   type t
 
+  val pp : t Fmt.t [@@warning "-unused-value-declaration"]
+
   val kind : t -> kind
+
+  val location : t -> Location.t
+
+  val procname : t -> Procname.t
 end
 
 module G : sig
@@ -71,6 +79,8 @@ module Unified : sig
     [@@deriving sexp, compare, equal, hash]
 
     type t = {procname: Procname.t; vertex: v} [@@deriving sexp, compare, equal, hash]
+
+    val pp : t Fmt.t [@@warning "-unused-value-declaration"]
   end
 
   module LocalG := G
@@ -81,7 +91,7 @@ module Unified : sig
     (Procname.t -> LineageShape.Summary.t option) -> Procname.t -> LocalG.edge -> G.edge list
 
   module Dot : sig
-    val output_graph : Stdlib.out_channel -> G.t -> unit
+    val pp : G.t Fmt.t
   end
 end
 

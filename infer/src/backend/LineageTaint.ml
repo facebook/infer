@@ -47,7 +47,7 @@ let create_caller_table () =
       in
       List.iter summary_loads ~f:(fun callee -> record ~callee ~caller:proc_name) ;
       List.iter other_proc_names ~f:(fun callee -> record ~callee ~caller:proc_name) ) ;
-  L.debug Report Verbose "@;@[Caller table: @[%a@]@]@;" pp_caller_table caller_table ;
+  L.debug Report Verbose "@;@[Caller table: @[%a@]@]@." pp_caller_table caller_table ;
   caller_table
 
 
@@ -297,11 +297,19 @@ module Instrumented : sig
 
   type t
 
+  type edge := U.G.E.t
+
   val instrument : TaintConfig.t -> U.G.t -> t
 
   val clear : t -> U.G.t
 
   val limit : TaintConfig.t -> t -> t
+
+  val edges_into_sink : t -> edge list
+
+  val shortest_path_from_source : t -> U.V.t -> edge list
+  (** Returns the shortest path from any source into the node. Instrumentation nodes will not
+      appear. *)
 end = struct
   include U.G
 
@@ -358,6 +366,16 @@ end = struct
           acc
     in
     loop U.G.empty graph (TaintConfig.limit_or_max_int config)
+
+
+  let shortest_path_from_source (graph : t) vertex =
+    let path_from_unique_source, _weight = D.shortest_path graph unique_source vertex in
+    List.tl_exn path_from_unique_source
+
+
+  let edges_into_sink graph =
+    let sinks = U.G.pred graph unique_sink in
+    List.concat_map sinks ~f:(U.G.pred_e graph)
 end
 
 module I = Instrumented
@@ -504,17 +522,46 @@ let collect_coreachable (config : TaintConfig.t) reachable_graph =
   codfs (TaintConfig.unified_sinks config) U.G.empty
 
 
-let report_unified name filename_parts graph =
+let with_result_file filename_parts ~f =
   let filename = Filename.of_parts (Config.results_dir :: filename_parts) in
   Unix.mkdir_p (Filename.dirname filename) ;
-  Out_channel.with_file filename ~f:(fun outchan -> U.Dot.output_graph outchan graph) ;
-  L.result "@[%s exported as %s%a@]@;" name filename
-    (IFmt.if' (U.G.is_empty graph) Fmt.string)
-    " (but it seems empty)"
+  Out_channel.with_file filename ~f:(fun outchan ->
+      f outchan ;
+      Out_channel.flush outchan ) ;
+  filename
+
+
+let export_result ~name ~fileparts pp_result result =
+  let filename =
+    with_result_file fileparts ~f:(fun outchan ->
+        let fmt = Format.formatter_of_out_channel outchan in
+        pp_result fmt result )
+  in
+  L.progress "@;%s exported as '%s'@." name filename
+
+
+let export_unified name fileparts graph =
+  export_result ~name ~fileparts U.Dot.pp graph ;
+  if U.G.is_empty graph then L.user_warning "Warning: %s is empty.@." name
 
 
 let debug_unified name filename_parts graph =
-  if Config.debug_mode then report_unified name filename_parts graph
+  if Config.debug_mode then export_unified name filename_parts graph
+
+
+let ltr_elem edge =
+  let edge = U.G.E.label edge in
+  Errlog.make_trace_element 0 (E.location edge) (Fmt.to_to_string E.pp edge) []
+
+
+let log_issue graph issue_log sinking_edge =
+  let edge_label = U.G.E.label sinking_edge in
+  let message = "LINEAGE_TAINT" in
+  let procname = E.procname edge_label in
+  let loc = E.location edge_label in
+  let path = I.shortest_path_from_source graph (U.G.E.src sinking_edge) @ [sinking_edge] in
+  let ltr = List.map ~f:ltr_elem path in
+  Reporting.log_issue_external procname ~issue_log ~loc ~ltr Lineage IssueType.lineage_flow message
 
 
 let report taint_config =
@@ -530,9 +577,11 @@ let report taint_config =
     coreachable_graph ;
   let instrumented_graph = I.instrument taint_config coreachable_graph in
   let final_taint_graph = I.limit taint_config instrumented_graph in
-  report_unified "Lineage taint graph"
+  export_unified "Lineage taint graph"
     ["lineage-taint"; "lineage-taint.dot"]
-    (I.clear final_taint_graph)
+    (I.clear final_taint_graph) ;
+  let sinking_edges = I.edges_into_sink instrumented_graph in
+  List.fold ~f:(log_issue instrumented_graph) ~init:IssueLog.empty sinking_edges
 
 
 module Private = struct

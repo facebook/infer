@@ -27,6 +27,9 @@ module PPNode = struct
     in
     let dummy_instr_index = -42 in
     (Procdesc.Node.dummy dummy_procname, dummy_instr_index)
+
+
+  let procname t = Procdesc.Node.get_proc_name (underlying_node t)
 end
 
 open LineageShape.StdModules
@@ -191,9 +194,15 @@ module Edge = struct
 
   let default = {kind= Direct; node= PPNode.dummy ()}
 
-  let pp_e fmt (src, {kind; node}, dst) =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" Vertex.pp src Vertex.pp dst Kind.pp kind
-      PPNode.pp node
+  let pp fmt {kind; node} = Fmt.pf fmt "%a@@%a" Kind.pp kind PPNode.pp node
+
+  let pp_e fmt (src, edge, dst) =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a)]@]@;" Vertex.pp src Vertex.pp dst pp edge
+
+
+  let location {node; _} = PPNode.loc node
+
+  let procname {node; _} = PPNode.procname node
 end
 
 module G = struct
@@ -322,35 +331,39 @@ module Unified = struct
     List.cartesian_product srcs dsts |> List.map ~f:(fun (src', dst') -> (src', edge, dst'))
 
 
-  module Dot = Graph.Graphviz.Dot (struct
-    include G
+  module Dot = struct
+    include Graph.Graphviz.Dot (struct
+      include G
 
-    module Color = struct
-      let blue_gray_900 = 0x263238
+      module Color = struct
+        let blue_gray_900 = 0x263238
 
-      let blue_gray_600 = 0x546E7A
+        let blue_gray_600 = 0x546E7A
 
-      let edge = blue_gray_600
+        let edge = blue_gray_600
 
-      let vertex = blue_gray_900
-    end
+        let vertex = blue_gray_900
+      end
 
-    let vertex_name v = string_of_int @@ [%hash: UVertex.t] v
+      let vertex_name v = string_of_int @@ [%hash: UVertex.t] v
 
-    let graph_attributes _ = []
+      let graph_attributes _ = []
 
-    let default_vertex_attributes _ =
-      [`Shape `Box; `Style `Rounded; `Color Color.vertex; `Color Color.vertex]
+      let default_vertex_attributes _ =
+        [`Shape `Box; `Style `Rounded; `Color Color.vertex; `Color Color.vertex]
 
 
-    let vertex_attributes v = [`Label (Fmt.to_to_string UVertex.pp v)]
+      let vertex_attributes v = [`Label (Fmt.to_to_string UVertex.pp v)]
 
-    let get_subgraph _ = None
+      let get_subgraph _ = None
 
-    let default_edge_attributes _ = [`Color Color.edge; `Fontcolor Color.edge]
+      let default_edge_attributes _ = [`Color Color.edge; `Fontcolor Color.edge]
 
-    let edge_attributes (_, edge, _) = [`Label (Fmt.to_to_string UEdge.pp edge)]
-  end)
+      let edge_attributes (_, edge, _) = [`Label (Fmt.to_to_string UEdge.pp edge)]
+    end)
+
+    let pp = fprint_graph
+  end
 end
 
 (** Helper function. *)

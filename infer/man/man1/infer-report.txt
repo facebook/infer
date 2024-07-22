@@ -177,6 +177,7 @@ OPTIONS
              IPC_ON_UI_THREAD (enabled by default),
              Internal_error (enabled by default),
              LAB_RESOURCE_LEAK (enabled by default),
+             LINEAGE_FLOW (enabled by default),
              LOCKLESS_VIOLATION (enabled by default),
              LOCK_CONSISTENCY_VIOLATION (enabled by default),
              Leak_after_array_abstraction (enabled by default),
@@ -402,11 +403,20 @@ LINEAGE OPTIONS
 
        --lineage-sink +string
            [EXPERIMENTAL; UNSTABLE API] Lineage sinks for taint finding,
-           format [module:]function/arity.{ret,argN}, comma-separated.
+           format [module:]function/arity.{ret,argN}, comma-separated. Must
+           be used with --lineage-source as options to the report subcommand.
+           
+           Will produce a graph materializing the flows between the sources
+           and the sinks along with a json issues file. The issues file will
+           contain one trace per sink, exhibiting a shortest path from a
+           source. The report command will print the filesystem paths of the
+           files containing those results.
 
        --lineage-source +string
            [EXPERIMENTAL; UNSTABLE API] Lineage sources for taint finding,
            format [module:]function/arity.{ret,argN}, comma-separated.
+           
+           See --lineage-sink for additional documentation.
 
 PULSE CHECKER OPTIONS
        --pulse-report-flows-from-taint-source procname

@@ -13,6 +13,8 @@ type t
 
 val empty : t
 
+val iter : f:(Procname.t -> Errlog.t -> unit) -> t -> unit
+
 val get_or_add : proc:Procname.t -> t -> t * Errlog.t
 (** Get the error log for a given procname. If there is none, add an empty one to the map. Return
     the resulting map together with the errlog. *)

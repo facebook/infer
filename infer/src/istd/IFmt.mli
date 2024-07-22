@@ -14,6 +14,7 @@ val colon_sp : 'a t
 (** [colon_sp] is [Fmt.any ":@ "]. It prints a colon and a space break hint. *)
 
 val if' : bool -> 'a t -> 'a t
+[@@warning "-unused-value-declaration"]
 (** Should be directly in Fmt >=0.9.1.
 
     [if' bool pp] is [pp] if [bool] is [true] and {!Fmt.nop} otherwise. *)

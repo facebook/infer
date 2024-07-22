@@ -1066,6 +1066,11 @@ let weak_self_in_noescape_block =
     ~user_documentation:[%blob "./documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
 
 
+let lineage_flow =
+  register ~category:SensitiveDataFlow ~id:"LINEAGE_FLOW" Error Lineage ~hum:"Lineage Flow"
+    ~user_documentation:[%blob "./documentation/issues/LINEAGE_FLOW.md"]
+
+
 let wrong_argument_number =
   register_hidden ~id:"Wrong_argument_number" ~hum:"Wrong Argument Number" Error Biabduction
 
