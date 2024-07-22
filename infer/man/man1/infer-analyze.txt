@@ -872,6 +872,11 @@ PULSE CHECKER OPTIONS
            originate at the source will be reported. If a sink has such a
            kind, only sensitive data flows to the sink will be reported.
 
+       --pulse-taint-opaque-files +path
+           Specify files that should be treated as opaque for taint analysis
+           to make sure that procedure's belonging to these files are always
+           free of any potential taint flows.
+
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:

@@ -1627,6 +1627,12 @@ OPTIONS
            kind, only sensitive data flows to the sink will be reported.
            See also infer-analyze(1).
 
+       --pulse-taint-opaque-files +path
+           Specify files that should be treated as opaque for taint analysis
+           to make sure that procedure's belonging to these files are always
+           free of any potential taint flows.
+           See also infer-analyze(1).
+
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:
@@ -3058,6 +3064,9 @@ INTERNAL OPTIONS
 
        --pulse-taint-config-reset
            Set --pulse-taint-config to the empty list.
+
+       --pulse-taint-opaque-files-reset
+           Set --pulse-taint-opaque-files to the empty list.
 
        --pulse-transitive-access-config +path
            Specifies the accesses that must be tracked and the entry methods.

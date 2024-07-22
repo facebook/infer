@@ -226,6 +226,8 @@ let make_suitable_for_pre_summary = map_attributes ~f:Attributes.make_suitable_f
 
 let make_suitable_for_post_summary = map_attributes ~f:Attributes.make_suitable_for_post_summary
 
+let remove_all_taint_related_attrs = map_attributes ~f:Attributes.remove_all_taint_related
+
 let initialize address memory =
   add_one address Initialized memory |> remove_attribute Attributes.remove_uninitialized address
 

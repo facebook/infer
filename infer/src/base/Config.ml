@@ -2709,6 +2709,13 @@ and pulse_taint_data_flow_kinds =
      such a kind, only sensitive data flows to the sink will be reported."
 
 
+and pulse_taint_opaque_files =
+  CLOpt.mk_path_list ~long:"pulse-taint-opaque-files"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Specify files that should be treated as opaque for taint analysis to make sure that \
+     procedure's belonging to these files are always free of any potential taint flows."
+
+
 and pulse_taint_policies =
   CLOpt.mk_json ~long:"pulse-taint-policies"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4515,6 +4522,8 @@ and pulse_taint_config =
       | exception Unix.Unix_error (ENOENT, _, _) ->
           taint_config )
 
+
+and pulse_taint_opaque_files = RevList.to_list !pulse_taint_opaque_files
 
 and pulse_taint_short_traces = !pulse_taint_short_traces
 

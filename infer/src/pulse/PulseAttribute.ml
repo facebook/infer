@@ -745,6 +745,13 @@ module Attribute = struct
       | UsedAsBranchCond _
       | WrittenTo _ ) as attr ->
         Some attr
+
+
+  let is_not_taint_related_attribute = function
+    | MustNotBeTainted _ | PropagateTaintFrom _ | Tainted _ | TaintSanitized _ ->
+        false
+    | _ ->
+        true
 end
 
 module Attributes = struct
@@ -1047,6 +1054,10 @@ module Attributes = struct
 
   let make_suitable_for_post_summary attributes =
     make_suitable_for_summary Attribute.is_suitable_for_post_summary attributes
+
+
+  let remove_all_taint_related attributes =
+    Set.filter attributes ~f:Attribute.is_not_taint_related_attribute
 
 
   include Set

@@ -143,6 +143,8 @@ include S with type key := AbstractValue.t
 
 val make_suitable_for_pre_summary : t -> t
 
+val remove_all_taint_related_attrs : t -> t
+
 val canonicalize_post : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
 (** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
     non-canonical variables in favor of their representative *)

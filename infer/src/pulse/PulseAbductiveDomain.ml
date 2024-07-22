@@ -1043,7 +1043,17 @@ module Internal = struct
 
 
   (** it's a good idea to normalize the path condition before calling this function *)
-  let canonicalize astate =
+  let canonicalize location astate =
+    let remove_taint_attrs_from_opaque_files attrs location =
+      let is_opaque_for_taint (location : Location.t) =
+        let file = location.file in
+        let path = SourceFile.to_abs_path file in
+        List.mem Config.pulse_taint_opaque_files ~equal:String.equal path
+      in
+      if is_opaque_for_taint location then
+        PulseBaseAddressAttributes.remove_all_taint_related_attrs attrs
+      else attrs
+    in
     let open SatUnsat.Import in
     let get_var_repr v = Formula.get_var_repr astate.path_condition v in
     let canonicalize_pre (pre : PreDomain.t) =
@@ -1054,6 +1064,7 @@ module Internal = struct
       let attrs' =
         PulseBaseAddressAttributes.make_suitable_for_pre_summary (pre :> BaseDomain.t).attrs
       in
+      let attrs' = remove_taint_attrs_from_opaque_files attrs' location in
       PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
     in
     let canonicalize_post (post : PostDomain.t) =
@@ -1063,6 +1074,7 @@ module Internal = struct
       let attrs' =
         PulseBaseAddressAttributes.canonicalize_post ~get_var_repr (post :> BaseDomain.t).attrs
       in
+      let attrs' = remove_taint_attrs_from_opaque_files attrs' location in
       PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
     in
     let* pre = canonicalize_pre astate.pre in
@@ -1761,12 +1773,12 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   (astate, pre_addresses, post_addresses, dead_addresses)
 
 
-let filter_for_summary proc_name astate0 =
+let filter_for_summary proc_name location astate0 =
   let open SatUnsat.Import in
   L.d_printfln "state *before* calling canonicalize:" ;
   L.d_printfln "%a" pp astate0 ;
   L.d_printfln "Canonicalizing..." ;
-  let* astate_before_filter = canonicalize astate0 in
+  let* astate_before_filter = canonicalize location astate0 in
   let pp_state = Pp.html_collapsible_block ~name:"Show/hide canonicalized state" HTML pp in
   L.d_printfln "%a" pp_state astate_before_filter ;
   (* Remove the stack from the post as it's not used: the values of formals are the same as in the
@@ -1915,7 +1927,9 @@ module Summary = struct
     (* do not store the decompiler in the summary and make sure we only use the original one by
        marking it invalid *)
     let astate = {astate with decompiler= Decompiler.invalid} in
-    let* astate, live_addresses, dead_addresses, new_eqs = filter_for_summary proc_name astate in
+    let* astate, live_addresses, dead_addresses, new_eqs =
+      filter_for_summary proc_name location astate
+    in
     let+ astate, error = incorporate_new_eqs astate new_eqs in
     match error with
     | None -> (

@@ -283,4 +283,6 @@ module Attributes : sig
   val make_suitable_for_pre_summary : t -> t
 
   val make_suitable_for_post_summary : t -> t
+
+  val remove_all_taint_related : t -> t
 end
