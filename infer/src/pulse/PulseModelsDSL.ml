@@ -358,11 +358,6 @@ module Syntax = struct
     AddressAttributes.add_one addr HackSinitCalled |> exec_command
 
 
-  let set_hack_sinit_must_not_be_called (addr, _) : unit model_monad =
-    let* {path= {timestamp}} = get_data in
-    AddressAttributes.abduce_one addr (HackSinitMustNotBeCalled timestamp) |> exec_command
-
-
   let and_dynamic_type_is (v, _) t : unit model_monad =
     PulseArithmetic.and_dynamic_type_is v t |> exec_partial_command
 

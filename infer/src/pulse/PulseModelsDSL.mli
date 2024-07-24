@@ -101,8 +101,6 @@ module Syntax : sig
 
   val set_hack_sinit_called : aval -> unit model_monad
 
-  val set_hack_sinit_must_not_be_called : aval -> unit model_monad
-
   val add_static_type : Typ.name -> aval -> unit model_monad
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad

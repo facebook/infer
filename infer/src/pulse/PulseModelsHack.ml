@@ -460,7 +460,6 @@ let lazy_class_initialize size_exp : model =
              avoid sinit is called later in the following instructions. *)
           let* () = set_hack_sinit_called static_companion in
           let call_sinit : unit DSL.model_monad =
-            let* () = set_hack_sinit_must_not_be_called static_companion in
             let ret_id = Ident.create_none () in
             let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
             let* {analysis_data= {tenv}} = get_data in

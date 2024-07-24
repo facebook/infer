@@ -132,7 +132,6 @@ type t =
   | EndOfCollection
   | HackBuilder of Builder.t
   | HackSinitCalled
-  | HackSinitMustNotBeCalled of Timestamp.t
   | InReportedRetainCycle
   | Initialized
   | Invalid of Invalidation.t * Trace.t
@@ -215,8 +214,6 @@ module Attributes : sig
   val is_hack_builder_discardable : t -> bool [@@warning "-unused-value-declaration"]
 
   val is_hack_sinit_called : t -> bool
-
-  val get_hack_sinit_must_not_be_called : t -> Timestamp.t option
 
   val is_csharp_resource_released : t -> bool
 

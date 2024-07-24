@@ -271,7 +271,7 @@ class CallInitStaticField {
     }
   }
 
-  public function call_get_interproc_ok(): void {
+  public function call_get_interproc_ok_FP(): void {
     InitStaticField::$b = true;
     $this->call_nop();
     if (!InitStaticField::$b) {
