@@ -186,7 +186,9 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             {title= "Impurity"; markdown_body= [%blob "./documentation/checkers/Impurity.md"]}
-      ; support= mk_support_func ~clang:ExperimentalSupport ~java:ExperimentalSupport ()
+      ; support=
+          mk_support_func ~clang:ExperimentalSupport ~java:ExperimentalSupport
+            ~hack:ExperimentalSupport ()
       ; short_documentation=
           "Detects functions with potential side-effects. Same as \"purity\", but implemented on \
            top of Pulse."
