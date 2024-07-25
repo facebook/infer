@@ -189,6 +189,7 @@ endif # BUILD_ERLANG_ANALYZERS
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
+	hack_impurity \
   hack_pulse \
   hack_performance \
 
