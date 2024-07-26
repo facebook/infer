@@ -88,9 +88,13 @@ module Syntax = struct
     List.rev rev_res |> ret
 
 
-  let option_iter (o : 'a option) ~(f : 'a -> unit model_monad) : unit model_monad =
-    Option.value_map o ~default:(ret ()) ~f
+  let option_value_map o ~default ~f = match o with Some v -> f v | None -> ret default
 
+  let option_bind o ~f = option_value_map o ~default:None ~f
+
+  let option_exists o ~f = option_value_map o ~default:false ~f
+
+  let option_iter o ~f = option_value_map o ~default:() ~f
 
   (* TODO: this isn't quite as general as one might like, could put a functor in here *)
   let absvalue_set_fold (s : AbstractValue.Set.t) ~(init : 'accum)
@@ -304,17 +308,12 @@ module Syntax = struct
 
 
   let is_dict_non_alias formals addr : bool model_monad =
-    let opt_bind ~default opt_x f =
-      let* opt_x in
-      match opt_x with None -> ret default | Some x -> f x
-    in
     let rec get_field_typ typ accesses : Typ.name option model_monad =
       match (accesses : DecompilerExpr.access list) with
       | FieldAccess fld :: Dereference :: accesses ->
-          let ( let** ) opt_x f = opt_bind ~default:None opt_x f in
-          let** {Struct.typ} = resolve_field_info typ fld in
-          let** typ = Typ.name (Typ.strip_ptr typ) |> ret in
-          get_field_typ typ accesses
+          let* field_info = resolve_field_info typ fld in
+          option_bind field_info ~f:(fun {Struct.typ} ->
+              option_bind (Typ.name (Typ.strip_ptr typ)) ~f:(fun typ -> get_field_typ typ accesses) )
       | [] ->
           ret (Some typ)
       | _ ->
@@ -330,13 +329,9 @@ module Syntax = struct
       (* NOTE: The [access] in [DecompilerExpr.source_expr] has the reverse order by default,
          e.g. the access of [x->f->g] is [\[*; g; *; f; *\]]. *)
       match List.rev rev_accesses with
-      | Dereference :: accesses -> (
+      | Dereference :: accesses ->
           let* base_typ = get_pvar_deref_typ formals pvar in
-          match base_typ with
-          | Some base_typ ->
-              is_field_dict_typ base_typ accesses
-          | None ->
-              ret false )
+          option_exists base_typ ~f:(fun base_typ -> is_field_dict_typ base_typ accesses)
       | accesses when Pvar.is_static_companion pvar ->
           let base_typ = Typ.HackClass (HackClassName.make (Pvar.to_string pvar)) in
           is_field_dict_typ base_typ accesses

@@ -910,20 +910,20 @@ let hack_field_get this field : model =
      | Some string_field_name -> (
          let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true this in
          match opt_dynamic_type_data with
-         | Some {Formula.typ= {Typ.desc= Tstruct type_name}} ->
-             let field = Fieldname.make type_name string_field_name in
+         | Some {Formula.typ= {desc= Tstruct type_name}} ->
              let* aval =
                eval_resolved_field ~model_desc:"hack_field_get" type_name string_field_name
              in
-             let* struct_info = tenv_resolve_field_info type_name field in
-             let opt_field_type_name =
-               let open IOption.Let_syntax in
-               let* {Struct.typ= field_typ} = struct_info in
-               if Typ.is_pointer field_typ then Typ.name (Typ.strip_ptr field_typ) else None
-             in
              let* () =
-               option_iter opt_field_type_name ~f:(fun field_type_name ->
-                   add_static_type field_type_name aval )
+               let field = Fieldname.make type_name string_field_name in
+               let* struct_info = tenv_resolve_field_info type_name field in
+               match struct_info with
+               | Some {Struct.typ= field_typ} when Typ.is_pointer field_typ ->
+                   option_iter
+                     (Typ.name (Typ.strip_ptr field_typ))
+                     ~f:(fun field_type_name -> add_static_type field_type_name aval)
+               | _ ->
+                   ret ()
              in
              assign_ret aval
          | _ ->
