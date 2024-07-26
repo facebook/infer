@@ -107,6 +107,14 @@ let is_seed pv = match pv.pv_kind with Seed_var -> true | _ -> false
 (** Check if the pvar is a global var *)
 let is_global pv = match pv.pv_kind with Global_var _ -> true | _ -> false
 
+let is_static_companion {pv_name; pv_kind} =
+  match pv_kind with
+  | Global_var _ ->
+      String.is_suffix (Mangled.to_string pv_name) ~suffix:HackClassName.static_suffix
+  | _ ->
+      false
+
+
 let is_static_local pv =
   match pv.pv_kind with Global_var {is_static_local} -> is_static_local | _ -> false
 

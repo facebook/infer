@@ -22,6 +22,8 @@ val pp : F.formatter -> t -> unit
 
 val to_string : t -> string
 
+val static_suffix : string
+
 val static_companion : t -> t
 (** return the class of the companion class object of this class eg: Foo -> Foo$static *)
 

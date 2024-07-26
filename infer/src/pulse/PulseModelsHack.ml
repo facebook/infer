@@ -887,6 +887,21 @@ let hack_array_idx this key default_val : model =
     ~default
 
 
+let eval_resolved_field ~model_desc typ_name fld_str =
+  let open DSL.Syntax in
+  let* fld_opt = tenv_resolve_fieldname typ_name fld_str in
+  let name, fld =
+    match fld_opt with
+    | None ->
+        L.d_printfln_escaped "Could not resolve the field %a.%s" Typ.Name.pp typ_name fld_str ;
+        (typ_name, Fieldname.make typ_name fld_str)
+    | Some fld ->
+        (Fieldname.get_class_name fld, fld)
+  in
+  let* class_object = get_static_companion_dsl ~model_desc name in
+  eval_deref_access Read class_object (FieldAccess fld)
+
+
 let hack_field_get this field : model =
   let open DSL.Syntax in
   start_model
@@ -897,7 +912,9 @@ let hack_field_get this field : model =
          match opt_dynamic_type_data with
          | Some {Formula.typ= {Typ.desc= Tstruct type_name}} ->
              let field = Fieldname.make type_name string_field_name in
-             let* aval = eval_deref_access Read this (FieldAccess field) in
+             let* aval =
+               eval_resolved_field ~model_desc:"hack_field_get" type_name string_field_name
+             in
              let* struct_info = tenv_resolve_field_info type_name field in
              let opt_field_type_name =
                let open IOption.Let_syntax in
@@ -1107,18 +1124,7 @@ let hhbc_cls_cns this field : model =
                  L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
                  "__dummy_constant_name__"
            in
-           let* fld_opt = tenv_resolve_fieldname name string_field_name in
-           let name, fld =
-             match fld_opt with
-             | None ->
-                 L.d_printfln_escaped "Could not resolve the constant field %a::%s" Typ.Name.pp name
-                   string_field_name ;
-                 (name, Fieldname.make name string_field_name)
-             | Some fld ->
-                 (Fieldname.get_class_name fld, fld)
-           in
-           let* class_object = get_static_companion_dsl ~model_desc name in
-           eval_deref_access Read class_object (FieldAccess fld)
+           eval_resolved_field ~model_desc name string_field_name
        | _ ->
            mk_fresh ~model_desc ()
      in

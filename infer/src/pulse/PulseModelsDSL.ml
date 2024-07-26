@@ -320,17 +320,26 @@ module Syntax = struct
       | _ ->
           ret None
     in
+    let is_field_dict_typ base_typ accesses =
+      let* typ = get_field_typ base_typ accesses in
+      ret (Option.exists typ ~f:(Typ.Name.equal TextualSil.hack_dict_type_name))
+    in
     let* decompiled = find_decompiler_expr addr in
     match (decompiled : DecompilerExpr.t) with
     | SourceExpr ((PVar pvar, rev_accesses), _) -> (
       (* NOTE: The [access] in [DecompilerExpr.source_expr] has the reverse order by default,
          e.g. the access of [x->f->g] is [\[*; g; *; f; *\]]. *)
       match List.rev rev_accesses with
-      | Dereference :: accesses ->
-          let ( let** ) opt_x f = opt_bind ~default:false opt_x f in
-          let** base_typ = get_pvar_deref_typ formals pvar in
-          let** typ = get_field_typ base_typ accesses in
-          ret (Typ.Name.equal typ TextualSil.hack_dict_type_name)
+      | Dereference :: accesses -> (
+          let* base_typ = get_pvar_deref_typ formals pvar in
+          match base_typ with
+          | Some base_typ ->
+              is_field_dict_typ base_typ accesses
+          | None ->
+              ret false )
+      | accesses when Pvar.is_static_companion pvar ->
+          let base_typ = Typ.HackClass (HackClassName.make (Pvar.to_string pvar)) in
+          is_field_dict_typ base_typ accesses
       | _ ->
           ret false )
     | _ ->

@@ -227,13 +227,21 @@ class DictFieldUsingConstKey {
 abstract final class StaticDictField {
   const dict<string, int> f = dict['hi' => 42];
 
-  public static function call_read_dict_hi_ok(): int {
+  public static function read_self_dict_hi(): int {
     return self::f['hi'];
   }
 
-  public static function call_read_dict_hi_bad_FN(): int {
+  public static function read_self_dict_bye(): int {
     return self::f['bye'];
   }
+}
+
+function call_read_self_dict_hi_ok(): int {
+  return StaticDictField::read_self_dict_hi();
+}
+
+function call_read_self_dict_bye_bad(): int {
+  return StaticDictField::read_self_dict_bye();
 }
 
 class InitStaticField {
