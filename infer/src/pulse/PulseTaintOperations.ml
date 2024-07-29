@@ -195,6 +195,13 @@ let exclude_in_loc source_file exclude_in exclude_matching =
   explicitly_excluded || excluded_by_regex
 
 
+type taint_policy_violation =
+  { source_kind: Kind.t
+  ; sink_kind: Kind.t
+  ; description: string
+  ; policy_id: int
+  ; privacy_effect: string option }
+
 let check_source_against_sink_policy location ~source source_times intra_procedural_only hist
     sanitizers ~sink sink_kind sink_policy =
   let has_matching_taint_event_in_history source hist =
@@ -215,10 +222,10 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
     else true
   in
   let open IOption.Let_syntax in
-  let* suspicious_source =
+  let* source_kind =
     List.find source.TaintItem.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
   in
-  L.d_printfln ~color:Red "TAINTED: %a -> %a" Kind.pp suspicious_source Kind.pp sink_kind ;
+  L.d_printfln ~color:Red "TAINTED: %a -> %a" Kind.pp source_kind Kind.pp sink_kind ;
   let matching_sanitizers =
     Attribute.TaintSanitizedSet.filter (source_is_sanitized source_times sink_policy) sanitizers
   in
@@ -237,7 +244,7 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
     None )
   else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then (
     L.d_printfln ~color:Red "Value history: %a" ValueHistory.pp hist ;
-    Some (suspicious_source, sink_kind, description, policy_id, privacy_effect) )
+    Some {source_kind; sink_kind; description; policy_id; privacy_effect} )
   else (
     L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
       matching_sanitizers ;
@@ -385,8 +392,11 @@ let check_flows_wrt_sink_ ?(policy_violations_to_report = (IntSet.empty, [])) pa
               ~sanitizers ~location
           in
           let report_policy_violation (reported_so_far, policy_violations_to_report)
-              (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
-              =
+              { source_kind
+              ; sink_kind
+              ; description= policy_description
+              ; policy_id= violated_policy_id
+              ; privacy_effect= policy_privacy_effect } =
             if IntSet.mem violated_policy_id reported_so_far then
               (reported_so_far, policy_violations_to_report)
             else
