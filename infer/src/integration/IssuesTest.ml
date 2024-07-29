@@ -26,6 +26,18 @@ let pp_trace fmt trace comma =
   F.fprintf fmt "%s[%a]" comma (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
 
 
+let pp_bug_type fmt issue comma_separator index =
+  let open Jsonbug_t in
+  let issue_type_override =
+    let open IOption.Let_syntax in
+    let* extras = issue.extras in
+    let* taint_extras = extras.taint_extra in
+    taint_extras.report_as_issue_type
+  in
+  let issue_type = Option.value issue_type_override ~default:issue.bug_type in
+  F.fprintf fmt "%s%s" (comma_separator index) issue_type
+
+
 let pp_custom_of_report fmt report fields =
   let pp_custom_of_issue fmt (issue : Jsonbug_t.jsonbug) =
     let open Jsonbug_t in
@@ -33,7 +45,7 @@ let pp_custom_of_report fmt report fields =
     let pp_field index field =
       match (field : IssuesTestField.t) with
       | BugType ->
-          F.fprintf fmt "%s%s" (comma_separator index) issue.bug_type
+          pp_bug_type fmt issue comma_separator index
       | Bucket ->
           let bucket =
             match

@@ -18,7 +18,8 @@
     { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]},
     { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]},
     { "class_names": ["Exclusions::Source"], "method_names": ["get"], "kinds": ["Exclusions"]},
-    { "class_names": ["Traces::Source"], "method_names": ["get"], "kinds": ["Traces"]}
+    { "class_names": ["Traces::Source"], "method_names": ["get"], "kinds": ["Traces"]},
+    { "class_names": ["CustomTaintIssueType::Source"], "method_names": ["get"], "kinds": ["CustomTaintIssueType"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -39,7 +40,8 @@
       "procedure_regex": ".*",
       "exclude_from_regex_names": ["excluded"],
       "kinds": ["Exclusions"]
-    }
+    },
+    { "class_names": ["CustomTaintIssueType::Sink"], "method_names": ["process"], "kinds": ["CustomTaintIssueType"]}
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -70,6 +72,11 @@
     {
       "short_description": "Flow with catch-all sink and multiple traces",
       "taint_flows": [{"source_kinds": ["Traces"], "sink_kinds": ["BuiltinCatchAll"]}]
+    },
+    {
+      "short_description": "Taint flow with a custom taint issue type",
+      "taint_flows": [{"source_kinds": ["CustomTaintIssueType"], "sink_kinds": ["CustomTaintIssueType"]}],
+      "report_as_issue_type": "CUSTOM_TAINT_ERROR"
     }
   ]
 }

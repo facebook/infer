@@ -103,3 +103,7 @@ val merge : into:t -> t -> [`Modified | `Intact]
 val loc_trace_length : loc_trace -> int
 
 val loc_trace_max_depth : loc_trace -> int
+
+val issue_type_override : err_data -> string option
+
+val category_override : err_data -> string option

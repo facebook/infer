@@ -286,3 +286,17 @@ let loc_trace_length loc_trace = List.length loc_trace
 
 let loc_trace_max_depth loc_trace =
   List.fold loc_trace ~init:0 ~f:(fun max {lt_level} -> if lt_level > max then lt_level else max)
+
+
+let issue_type_override err_data =
+  let open IOption.Let_syntax in
+  let* extras = err_data.extras in
+  let* taint_extras = extras.Jsonbug_t.taint_extra in
+  taint_extras.Jsonbug_t.report_as_issue_type
+
+
+let category_override err_data =
+  let open IOption.Let_syntax in
+  let* extras = err_data.extras in
+  let* taint_extras = extras.Jsonbug_t.taint_extra in
+  taint_extras.Jsonbug_t.report_as_category
