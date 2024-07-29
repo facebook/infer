@@ -110,7 +110,9 @@ type t =
       ; flow_kind: flow_kind
       ; policy_description: string
       ; policy_id: int
-      ; policy_privacy_effect: string option }
+      ; policy_privacy_effect: string option
+      ; report_as_issue_type: string option
+      ; report_as_category: string option }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option

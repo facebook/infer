@@ -75,12 +75,32 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
         | _ ->
             None
       in
+      let taint_report_as_issue_type, taint_report_as_category =
+        match diagnostic with
+        | TaintFlow {report_as_issue_type; report_as_category} ->
+            (report_as_issue_type, report_as_category)
+        | _ ->
+            (None, None)
+      in
       let taint_extra : Jsonbug_t.taint_extra option =
-        match (taint_source, taint_sink, taint_policy_privacy_effect, tainted_expression) with
-        | None, None, None, None ->
+        match
+          ( taint_source
+          , taint_sink
+          , taint_policy_privacy_effect
+          , tainted_expression
+          , taint_report_as_issue_type
+          , taint_report_as_category )
+        with
+        | None, None, None, None, None, None ->
             None
-        | _, _, _, _ ->
-            Some {taint_source; taint_sink; taint_policy_privacy_effect; tainted_expression}
+        | _, _, _, _, _, _ ->
+            Some
+              { taint_source
+              ; taint_sink
+              ; taint_policy_privacy_effect
+              ; tainted_expression
+              ; report_as_issue_type= taint_report_as_issue_type
+              ; report_as_category= taint_report_as_category }
       in
       let config_usage_extra : Jsonbug_t.config_usage_extra option =
         match diagnostic with

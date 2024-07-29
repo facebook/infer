@@ -200,7 +200,9 @@ type taint_policy_violation =
   ; sink_kind: Kind.t
   ; description: string
   ; policy_id: int
-  ; privacy_effect: string option }
+  ; privacy_effect: string option
+  ; report_as_issue_type: string option
+  ; report_as_category: string option }
 
 let check_source_against_sink_policy location ~source source_times intra_procedural_only hist
     sanitizers ~sink sink_kind sink_policy =
@@ -229,7 +231,13 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
   let matching_sanitizers =
     Attribute.TaintSanitizedSet.filter (source_is_sanitized source_times sink_policy) sanitizers
   in
-  let {SinkPolicy.description; policy_id; privacy_effect; exclude_in; exclude_matching} =
+  let { SinkPolicy.description
+      ; policy_id
+      ; privacy_effect
+      ; exclude_in
+      ; exclude_matching
+      ; report_as_issue_type
+      ; report_as_category } =
     sink_policy
   in
   if exclude_in_loc location.Location.file exclude_in exclude_matching then (
@@ -244,7 +252,14 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
     None )
   else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then (
     L.d_printfln ~color:Red "Value history: %a" ValueHistory.pp hist ;
-    Some {source_kind; sink_kind; description; policy_id; privacy_effect} )
+    Some
+      { source_kind
+      ; sink_kind
+      ; description
+      ; policy_id
+      ; privacy_effect
+      ; report_as_issue_type
+      ; report_as_category } )
   else (
     L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
       matching_sanitizers ;
@@ -396,7 +411,9 @@ let check_flows_wrt_sink_ ?(policy_violations_to_report = (IntSet.empty, [])) pa
               ; sink_kind
               ; description= policy_description
               ; policy_id= violated_policy_id
-              ; privacy_effect= policy_privacy_effect } =
+              ; privacy_effect= policy_privacy_effect
+              ; report_as_issue_type
+              ; report_as_category } =
             if IntSet.mem violated_policy_id reported_so_far then
               (reported_so_far, policy_violations_to_report)
             else
@@ -415,7 +432,9 @@ let check_flows_wrt_sink_ ?(policy_violations_to_report = (IntSet.empty, [])) pa
                      ; flow_kind
                      ; policy_description
                      ; policy_id= violated_policy_id
-                     ; policy_privacy_effect } )
+                     ; policy_privacy_effect
+                     ; report_as_issue_type
+                     ; report_as_category } )
                 :: policy_violations_to_report )
           in
           List.fold potential_policy_violations ~init:policy_violations_to_report

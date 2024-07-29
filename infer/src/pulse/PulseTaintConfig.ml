@@ -628,7 +628,9 @@ module SinkPolicy = struct
     ; policy_id: int
     ; privacy_effect: string option [@ignore]
     ; exclude_in: string list option [@ignore]
-    ; exclude_matching: Str.regexp list option [@ignore] }
+    ; exclude_matching: Str.regexp list option [@ignore]
+    ; report_as_issue_type: string option [@ignore]
+    ; report_as_category: string option [@ignore] }
   [@@deriving equal]
 
   let pp f policy =
@@ -671,7 +673,9 @@ let fill_policies_from_config () =
            ; taint_flows
            ; privacy_effect
            ; exclude_in
-           ; exclude_matching }
+           ; exclude_matching
+           ; report_as_issue_type
+           ; report_as_category }
          ->
          let policy_id = SinkPolicy.next_policy_id () in
          let exclude_matching =
@@ -690,7 +694,9 @@ let fill_policies_from_config () =
                    ; policy_id
                    ; privacy_effect
                    ; exclude_in
-                   ; exclude_matching }
+                   ; exclude_matching
+                   ; report_as_issue_type
+                   ; report_as_category }
                  in
                  Hashtbl.update SinkPolicy.sink_policies sink_kind ~f:(function
                    | None ->
@@ -710,7 +716,9 @@ let () =
         ; policy_id= SinkPolicy.next_policy_id ()
         ; privacy_effect= None
         ; exclude_in= None
-        ; exclude_matching= None } ]
+        ; exclude_matching= None
+        ; report_as_issue_type= None
+        ; report_as_category= None } ]
   |> ignore ;
   fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()
