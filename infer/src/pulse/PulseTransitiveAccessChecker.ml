@@ -31,6 +31,7 @@ end = struct
     { class_names: string list option [@yojson.option]
     ; method_names: string list option [@yojson.option]
     ; class_name_regex: regexp_type option [@yojson.option]
+    ; method_name_regex: regexp_type option [@yojson.option]
     ; annotations: string list option [@yojson.option] }
   [@@deriving of_yojson]
 
@@ -96,16 +97,22 @@ end = struct
             (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
             class_name )
     in
+    let match_method_name_regex regexp = regexp_match regexp method_name in
     let check_one_procname_spec spec =
       match spec with
-      | {class_names= None; method_names= None; class_name_regex= None; annotations= None} ->
+      | { class_names= None
+        ; method_names= None
+        ; class_name_regex= None
+        ; method_name_regex= None
+        ; annotations= None } ->
           false
-      | {class_names; method_names; class_name_regex; annotations} ->
+      | {class_names; method_names; class_name_regex; method_name_regex; annotations} ->
           let map_or_true = Option.value_map ~default:true in
           map_or_true class_names ~f:match_class_name
           && map_or_true method_names ~f:(function mn ->
                  List.mem ~equal:String.equal mn method_name )
           && map_or_true class_name_regex ~f:match_class_name_regex
+          && map_or_true method_name_regex ~f:match_method_name_regex
           && map_or_true annotations ~f:(procname_has_annotation procname)
     in
     List.exists specs ~f:check_one_procname_spec

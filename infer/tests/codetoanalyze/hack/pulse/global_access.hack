@@ -30,6 +30,18 @@ class Parent1 extends Parent2 {
     return 42;
   }
 
+  public function very_suspicious(): int {
+    return 42;
+  }
+
+  public function extremely_suspicious(): int {
+    return 42;
+  }
+
+  public function not_suspicious(): int {
+    return 42;
+  }
+
   public function fine(): int {
     return 42;
   }
@@ -114,6 +126,18 @@ final class GlobalAccess extends Parent1 {
     return $a->foo();
   }
 
+  public function call7_is_entry_bad(ExtendsUnsafeInterface $a): int {
+    return $a->very_suspicious();
+  }
+
+  public function call8_is_entry_bad(ExtendsUnsafeInterface $a): int {
+    return $a->extremely_suspicious();
+  }
+
+  public function call9_is_entry_ok(ExtendsUnsafeInterface $a): int {
+    return $a->not_suspicious();
+  }
+
   public static function gen_closure1(A $a): (function(): int) {
     return () ==> $a->get();
   }
@@ -149,9 +173,12 @@ final class DoesNotInheritEvenHandler extends EventNotHandler {
 interface Unsafe {
   public function dangerous(): int;
   public function suspicious(): int;
+  public function extremely_suspicious(): int;
+  public function very_suspicious(): int;
+  public function not_suspicious(): int;
   public function fine(): int;
 }
-interface I extends Unsafe {}
+interface ExtendsUnsafeInterface extends Unsafe {}
 
 final class ImplementUnsafe extends Parent1 implements Unsafe {
   public function indirect_other_is_not_entry_ok(A $a): int {
@@ -160,7 +187,9 @@ final class ImplementUnsafe extends Parent1 implements Unsafe {
 
 }
 
-class ImplementUnsafeByTransitivity extends Parent1 implements I {
+class ImplementUnsafeByTransitivity
+  extends Parent1
+  implements ExtendsUnsafeInterface {
   public function indirect_other_is_not_entry_ok(A $a): int {
     return $a->get();
   }

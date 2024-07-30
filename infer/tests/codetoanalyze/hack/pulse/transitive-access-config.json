@@ -11,6 +11,10 @@
       "class_names": ["GlobalAccess::Unsafe", "GlobalAccess::VeryUnsafe"],
       "method_names": ["dangerous", "suspicious"]
     },
+    {
+      "class_names": ["GlobalAccess::Unsafe"],
+      "method_name_regex": "y_suspicious$"
+    },
     { "class_name_regex": "BadPattern" }
   ],
   "procnames_to_skip": [
