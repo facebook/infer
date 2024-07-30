@@ -255,11 +255,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       let severity = IssueType.string_of_severity err_key.severity in
       let category =
         Option.value
-          (Errlog.issue_type_override err_data)
+          (Errlog.category_override err_data)
           ~default:(IssueType.string_of_category err_key.issue_type.category)
       in
       let bug_type =
-        Option.value (Errlog.category_override err_data) ~default:err_key.issue_type.unique_id
+        Option.value (Errlog.issue_type_override err_data) ~default:err_key.issue_type.unique_id
       in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
