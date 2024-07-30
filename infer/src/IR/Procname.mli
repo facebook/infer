@@ -188,6 +188,8 @@ module Hack : sig
   type t = private {class_name: HackClassName.t option; function_name: string; arity: int option}
 
   val get_class_name_as_a_string : t -> string option
+
+  val is_xinit : t -> bool
 end
 
 module Python : sig

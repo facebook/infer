@@ -573,6 +573,10 @@ module Hack = struct
     let static_class_name = HackClassName.static_companion class_name in
     let arity = if is_trait then 2 else 1 in
     {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some arity}
+
+
+  let is_xinit {function_name= name} =
+    String.equal name "_86sinit" || String.equal name "_86pinit" || String.equal name "_86cinit"
 end
 
 module Python = struct

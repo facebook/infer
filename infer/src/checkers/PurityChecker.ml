@@ -19,6 +19,8 @@ let should_report proc_name =
     | Procname.ObjC_Cpp name ->
         Procname.ObjC_Cpp.is_destructor name
         || Procname.ObjC_Cpp.is_objc_constructor name.method_name
+    | Procname.Hack hack_pname ->
+        Procname.Hack.is_xinit hack_pname
     | _ ->
         false )
 
