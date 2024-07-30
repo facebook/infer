@@ -174,10 +174,14 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.summary) :
   let modified_params = get_modified_params pname astate post pre_heap formals in
   let modified_globals = get_modified_globals pname astate pre_heap post in
   let skipped_calls =
-    SkippedCalls.filter
-      (fun proc_name _ ->
-        PurityChecker.should_report proc_name && not (is_modeled_pure tenv proc_name) )
-      (AbductiveDomain.Summary.get_skipped_calls astate)
+    (* In hack we still have many unmodelled unknown hhbc instructions and other functions.
+       Also, due to the depth-based capture implementation it is impossible to fully avoid unknown calls. *)
+    if Language.curr_language_is Hack then SkippedCalls.empty
+    else
+      SkippedCalls.filter
+        (fun proc_name _ ->
+          PurityChecker.should_report proc_name && not (is_modeled_pure tenv proc_name) )
+        (AbductiveDomain.Summary.get_skipped_calls astate)
   in
   {modified_globals; modified_params; skipped_calls; exited}
 
