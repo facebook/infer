@@ -33,6 +33,8 @@ type allocator =
 
 val pp_allocator : F.formatter -> allocator -> unit
 
+val is_hack_resource : allocator -> bool
+
 (** Describes the source of taint in taint propagation.
 
     NOTE: [history] is ignored in equality and comparison. *)

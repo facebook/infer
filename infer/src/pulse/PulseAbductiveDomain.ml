@@ -2358,6 +2358,10 @@ module AddressAttributes = struct
     add_static_type tenv typ (CanonValue.canon' astate v) location astate
 
 
+  let get_allocation_attr v astate =
+    SafeAttributes.get_allocation (CanonValue.canon' astate v) astate
+
+
   let remove_allocation_attr v astate =
     SafeAttributes.remove_allocation_attr (CanonValue.canon' astate v) astate
 

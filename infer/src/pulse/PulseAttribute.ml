@@ -663,6 +663,22 @@ module Attribute = struct
         false
 
 
+  let is_hack_resource allocator =
+    match allocator with
+    | CMalloc
+    | CustomMalloc _
+    | CRealloc
+    | CustomRealloc _
+    | CppNew
+    | CppNewArray
+    | ObjCAlloc
+    | JavaResource _
+    | CSharpResource _ ->
+        false
+    | HackAsync | HackBuilderResource _ ->
+        true
+
+
   let filter_unreachable subst f_keep attr =
     let filter_aux things ~get_addr ~set_addr =
       let module Hashtbl = Stdlib.Hashtbl in

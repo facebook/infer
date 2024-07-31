@@ -20,3 +20,11 @@ function basicFlowReturnBad(Unknown $sc): void {
   $res = $tainted->myUnknownFun();
   UnknownClass::explicitSinkAllArgs($res);
 }
+
+async function genAndUnknownOk(): Awaitable<void> {
+  $x = async {
+    return 42;
+  };
+  UnknownClass::mayAwait($x);
+  return;
+}

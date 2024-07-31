@@ -167,8 +167,18 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
             (Attributes.singleton (UnknownEffect (reason, hist)))
             astate
         in
-        fold_on_reachable_from_arg astate (fun reachable_actual ->
-            AddressAttributes.remove_allocation_attr reachable_actual )
+        let some_resource_found, astate =
+          fold_on_reachable_from_arg (false, astate)
+            (fun reachable_actual (some_resource_found, astate) ->
+              let some_resource_found =
+                some_resource_found
+                || AddressAttributes.get_allocation_attr reachable_actual astate
+                   |> Option.exists ~f:(fun (attr, _) -> Attribute.is_hack_resource attr)
+              in
+              (some_resource_found, AddressAttributes.remove_allocation_attr reachable_actual astate) )
+        in
+        if some_resource_found then Stats.incr_pulse_unknown_calls_on_hack_resource () ;
+        astate
   in
   let add_skipped_proc astate =
     let** astate, f =
