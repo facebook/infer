@@ -40,6 +40,8 @@ val add_pulse_disjuncts_dropped : int -> unit
 
 val add_pulse_interrupted_loops : int -> unit
 
+val incr_pulse_unknown_calls : unit -> unit
+
 val incr_pulse_summaries_contradictions : unit -> unit
 
 val incr_pulse_summaries_unsat_for_caller : unit -> unit

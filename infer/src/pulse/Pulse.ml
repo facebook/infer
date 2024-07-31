@@ -969,6 +969,7 @@ module PulseTransferFunctions = struct
             let call_was_unknown =
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
+            if call_was_unknown then Stats.incr_pulse_unknown_calls () ;
             let ret_opt = PulseOperations.read_id (fst ret) astate in
             let+ astate =
               let astate_after_call =
