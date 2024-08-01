@@ -577,6 +577,14 @@ module Hack = struct
 
   let is_xinit {function_name= name} =
     String.equal name "_86sinit" || String.equal name "_86pinit" || String.equal name "_86cinit"
+
+
+  let belongs_to_static_companion {class_name} =
+    match class_name with
+    | Some class_name ->
+        HackClassName.is_static_companion class_name
+    | None ->
+        false
 end
 
 module Python = struct

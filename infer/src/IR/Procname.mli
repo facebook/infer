@@ -190,6 +190,8 @@ module Hack : sig
   val get_class_name_as_a_string : t -> string option
 
   val is_xinit : t -> bool
+
+  val belongs_to_static_companion : t -> bool
 end
 
 module Python : sig
