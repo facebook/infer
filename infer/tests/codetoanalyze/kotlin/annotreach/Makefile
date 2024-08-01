@@ -8,8 +8,9 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = --debug-exceptions --annotation-reachability-only
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.kt)
+JAVA_SOURCES = $(wildcard *.java)
+KOTLIN_SOURCES = $(wildcard *.kt)
 
 CLEAN_EXTRA = *.class META-INF
 
-include $(TESTS_DIR)/kotlinc.make
+include $(TESTS_DIR)/kotlinc_with_java.make

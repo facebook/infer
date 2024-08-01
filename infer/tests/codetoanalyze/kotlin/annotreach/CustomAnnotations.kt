@@ -48,4 +48,9 @@ class CustomAnnotations {
   }
 
   @UserDefinedSource @UserDefinedSink fun sourceAndSinkAtTheSameTimeBad(): Unit {}
+
+  @JavaSource
+  fun sourceWithJavaAnnoBad(): Unit {
+    sink()
+  }
 }

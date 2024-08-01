@@ -4,7 +4,7 @@
   "annotation-reachability-no-allocation": false,
   "annotation-reachability-custom-pairs": [
     {
-      "sources": ["UserDefinedSource"],
+      "sources": ["UserDefinedSource", "JavaSource"],
       "sinks": ["UserDefinedSink"],
       "sanitizers": ["UserDefinedSanitizer"]
     }

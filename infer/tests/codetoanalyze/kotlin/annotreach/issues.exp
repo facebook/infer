@@ -1,2 +1,3 @@
-CustomAnnotations.kt, codetoanalyze.kotlin.annotreach.CustomAnnotations.sourceBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
-CustomAnnotations.kt, codetoanalyze.kotlin.annotreach.CustomAnnotations.sourceAndSinkAtTheSameTimeBad():void, 0, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/kotlin/annotreach/CustomAnnotations.kt, codetoanalyze.kotlin.annotreach.CustomAnnotations.sourceBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/kotlin/annotreach/CustomAnnotations.kt, codetoanalyze.kotlin.annotreach.CustomAnnotations.sourceAndSinkAtTheSameTimeBad():void, 0, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
+codetoanalyze/kotlin/annotreach/CustomAnnotations.kt, codetoanalyze.kotlin.annotreach.CustomAnnotations.sourceWithJavaAnnoBad():void, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, []
