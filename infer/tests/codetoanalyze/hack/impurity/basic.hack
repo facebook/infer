@@ -37,8 +37,7 @@ class Object {
     return $k;
   }
 
-  // FP due to $builtins.hhbc_cast_int being unknown
-  public function localWritePureWithCast_FP(int $x, ?int $y): int {
+  public function localWritePureWithCast(int $x, ?int $y): int {
     $y = (int)$y;
     $k = $x + $y;
     $k++;
