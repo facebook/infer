@@ -67,6 +67,13 @@ class Object {
     $obj->a = $i;
   }
 
+  public static function staticParameterFieldWriteImpure(
+    Object $obj,
+    int $i,
+  ): void {
+    $obj->a = $i;
+  }
+
   public function parameterFieldAccessPure(Object $obj): int {
     return $obj->a;
   }
