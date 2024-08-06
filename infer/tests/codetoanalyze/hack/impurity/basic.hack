@@ -23,11 +23,11 @@ class Object {
     return $this->a;
   }
 
-  public function staticSetImpure_FN(int $e): void {
+  public function staticSetImpure(int $e): void {
     self::$GLOBAL = $e;
   }
 
-  public static function staticGetPure(): int {
+  public static function staticGetPure_FP(): int {
     return self::$GLOBAL;
   }
 
