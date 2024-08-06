@@ -28,6 +28,7 @@ test: issues.exp.test$(TEST_SUFFIX)
 .PHONY: replace
 replace: issues.exp.test$(TEST_SUFFIX)
 	cp $< issues.exp$(TEST_RESULT_SUFFIX)
+	$(QUIET)$(call check_no_duplicates,$(INFER_OUT)/duplicates.txt)
 
 .PHONY: clean
 clean:
