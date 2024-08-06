@@ -78,14 +78,8 @@ class Object {
     return $obj->a;
   }
 
-  public function swapImpure(vec<int> $vec, int $i, int $j): void {
-    $tmp = $vec[$i];
-    $vec[$i] = $vec[$j];
-    $vec[$j] = $vec[$tmp];
-  }
-
-  public function aliasImpure_FN(vec<int> $vec, int $i, int $j): void {
-    $tmp = $vec;
-    $tmp[$i] = $j;
+  public function aliasImpure(Object $obj, int $i): void {
+    $tmp = $obj;
+    $obj->a = $i;
   }
 }

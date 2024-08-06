@@ -5,4 +5,4 @@ basic.hack, Basic::Object.staticGetPure_FP, 0, IMPURE_FUNCTION, no_bucket, ERROR
 basic.hack, Basic::Object.callImpureImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.callImpureImpure,when calling `Basic::Object.setImpure` here,parameter `$this.*a` modified here]
 basic.hack, Basic::Object.parameterFieldWriteImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.parameterFieldWriteImpure,parameter `$obj.*a` modified here]
 basic.hack, Basic::Object.staticParameterFieldWriteImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.staticParameterFieldWriteImpure,when calling `Basic::Object$static.staticParameterFieldWriteImpure` here,parameter `$obj.*a` modified here]
-basic.hack, Basic::Object.swapImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.swapImpure,parameter `$vec.*__infer_model_backing_last_read` modified here]
+basic.hack, Basic::Object.aliasImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.aliasImpure,parameter `$obj.*a` modified here]
