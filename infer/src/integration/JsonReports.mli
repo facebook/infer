@@ -11,7 +11,7 @@ val potential_exception_message : string
 
 val loc_trace_to_jsonbug_record : Errlog.loc_trace_elem list -> Jsonbug_t.json_trace_item list
 
-val censored_reason : IssueType.t -> SourceFile.t -> string option
+val censored_reason : issue_id:string -> SourceFile.t -> string option
 
 val sanitize_qualifier : string -> string [@@warning "-unused-value-declaration"]
 

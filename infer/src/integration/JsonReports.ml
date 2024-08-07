@@ -113,23 +113,22 @@ let should_report proc_name issue_type error_desc =
     if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
 
 
-let should_not_censor (issue_type : IssueType.t) =
+let should_not_censor ~issue_id =
   List.exists Config.no_censor_report ~f:(fun issue_type_re ->
-      Str.string_match issue_type_re issue_type.unique_id 0 )
+      Str.string_match issue_type_re issue_id 0 )
 
 
 (* The reason an issue should be censored (that is, not reported). The empty
    string (that is "no reason") means that the issue should be reported. *)
-let censored_reason (issue_type : IssueType.t) source_file =
-  if should_not_censor issue_type then None
+let censored_reason ~issue_id source_file =
+  if should_not_censor ~issue_id then None
   else
     let filename = SourceFile.to_rel_path source_file in
     let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason)
         =
       let accepted =
         (* matches issue_type_re implies matches filename_re *)
-        (not
-           (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0)) )
+        (not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_id 0)))
         || Bool.equal filename_polarity (Str.string_match filename_re filename 0)
       in
       Option.some_if (not accepted) reason
@@ -307,7 +306,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= err_key.issue_type.hum
         ; traceview_id= None
-        ; censored_reason= censored_reason err_key.issue_type source_file
+        ; censored_reason= censored_reason ~issue_id:bug_type source_file
         ; access= err_data.access
         ; extras= err_data.extras }
       in
