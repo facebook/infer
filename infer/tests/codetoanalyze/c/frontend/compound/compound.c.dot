@@ -1,0 +1,39 @@
+/* @generated */
+digraph cfg {
+"foo.acbd18db4cc2f85c_1" [label="1: Start foo\nFormals:  b:int\nLocals:  __s1:int x:int \n  " color=yellow style=filled]
+	
+
+	 "foo.acbd18db4cc2f85c_1" -> "foo.acbd18db4cc2f85c_9" ;
+"foo.acbd18db4cc2f85c_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+"foo.acbd18db4cc2f85c_3" [label="3: + \n   END_BRANCHES\n " ]
+	
+
+	 "foo.acbd18db4cc2f85c_3" -> "foo.acbd18db4cc2f85c_4" ;
+"foo.acbd18db4cc2f85c_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85c_4" -> "foo.acbd18db4cc2f85c_2" ;
+"foo.acbd18db4cc2f85c_5" [label="5: Prune (true branch, if (terminated)) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(n$0, true); [line 15, column 7]\n " shape="invhouse"]
+	
+
+	 "foo.acbd18db4cc2f85c_5" -> "foo.acbd18db4cc2f85c_8" ;
+"foo.acbd18db4cc2f85c_6" [label="6: Prune (false branch, if (terminated)) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(!n$0, false); [line 15, column 7]\n " shape="invhouse"]
+	
+
+	 "foo.acbd18db4cc2f85c_6" -> "foo.acbd18db4cc2f85c_3" ;
+"foo.acbd18db4cc2f85c_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(__s1:int); [line 17, column 5]\n  *&__s1:int=42 [line 17, column 5]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85c_7" -> "foo.acbd18db4cc2f85c_3" ;
+"foo.acbd18db4cc2f85c_8" [label="8:  Call _fun_goo \n   n$1=*&x:int [line 16, column 9]\n  n$2=_fun_goo(n$1:int) [line 16, column 5]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85c_8" -> "foo.acbd18db4cc2f85c_7" ;
+"foo.acbd18db4cc2f85c_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 13, column 3]\n  *&x:int=42 [line 13, column 3]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85c_9" -> "foo.acbd18db4cc2f85c_5" ;
+	 "foo.acbd18db4cc2f85c_9" -> "foo.acbd18db4cc2f85c_6" ;
+}

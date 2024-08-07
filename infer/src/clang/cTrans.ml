@@ -3449,7 +3449,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       extract_stmt_from_singleton stmt_list stmt_info.Clang_ast_t.si_source_range
         "We expect only one element in stmt list defining the operand in UnaryOperator."
     in
-    let trans_state' = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+    let trans_state' = {trans_state_pri with var_exp_typ= None} in
     let res_trans_stmt = instruction trans_state' stmt in
     (* Assumption: the operand does not create a cfg node*)
     let sil_e', _ = res_trans_stmt.return in
