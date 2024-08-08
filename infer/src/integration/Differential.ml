@@ -80,7 +80,8 @@ let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
   ; traceview_id= None
   ; censored_reason= JsonReports.censored_reason ~issue_id:issue_type.unique_id source_file
   ; access= None
-  ; extras= None }
+  ; extras= None
+  ; suppressed= false }
 
 
 module CostsSummary = struct

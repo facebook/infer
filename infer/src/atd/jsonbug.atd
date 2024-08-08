@@ -87,6 +87,7 @@ type jsonbug = {
   ?censored_reason : string option;
   ?access : string option;
   ?extras : extra option;
+  ~suppressed: bool;
 }
 
 type report = jsonbug list

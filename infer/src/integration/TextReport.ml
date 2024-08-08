@@ -113,7 +113,7 @@ let pp_source_context ~indent fmt
 
 
 let is_user_visible (issue : Jsonbug_t.jsonbug) =
-  (not Config.filtering) || Option.is_none issue.censored_reason
+  (not Config.filtering) || (Option.is_none issue.censored_reason && not issue.suppressed)
 
 
 let create_from_json ~quiet ~console_limit ~report_txt ~report_json =

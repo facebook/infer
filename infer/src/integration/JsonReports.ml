@@ -226,6 +226,8 @@ let issue_in_report_block_list_specs ~file ~issue ~proc =
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
+  let suppressions_cache = ref SourceFile.Map.empty
+
   let to_string ({error_filter; proc_name; proc_location_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
       match proc_location_opt with
@@ -250,7 +252,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       && not
            (issue_in_report_block_list_specs ~file:source_file ~issue:err_key.issue_type
               ~proc:proc_name )
-    then
+    then (
       let severity = IssueType.string_of_severity err_key.severity in
       let category =
         Option.value
@@ -285,6 +287,25 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else base_qualifier
       in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
+      let suppressions =
+        match SourceFile.Map.find_opt source_file !suppressions_cache with
+        | Some s ->
+            s
+        | None -> (
+            let filename = SourceFile.to_string source_file in
+            L.debug Report Verbose "Parsing suppressions for %s@\n" filename ;
+            match Utils.read_file filename with
+            | Error _ ->
+                L.user_error "Could not read file %s" filename ;
+                String.Map.empty
+            | Ok lines ->
+                Suppressions.parse_lines ~file:filename lines )
+      in
+      suppressions_cache := SourceFile.Map.add source_file suppressions !suppressions_cache ;
+      let suppressed =
+        Suppressions.is_suppressed ~suppressions ~issue_type:bug_type
+          ~line:err_data.loc.Location.line
+      in
       let bug =
         { Jsonbug_j.bug_type
         ; qualifier
@@ -308,9 +329,10 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; traceview_id= None
         ; censored_reason= censored_reason ~issue_id:bug_type source_file
         ; access= err_data.access
-        ; extras= err_data.extras }
+        ; extras= err_data.extras
+        ; suppressed }
       in
-      Some (Jsonbug_j.string_of_jsonbug bug)
+      Some (Jsonbug_j.string_of_jsonbug bug) )
     else None
 end)
 
