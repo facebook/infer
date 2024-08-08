@@ -34,5 +34,6 @@ Tenv types without source: { hack $builtins,
                              hack TParent,
                              hack TParent$static,
                              hack TypeInUnit3,
+                             hack __self__$static,
                              hack class,
                              hack string }.
