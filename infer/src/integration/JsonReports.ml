@@ -292,11 +292,11 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         | Some s ->
             s
         | None -> (
-            let filename = SourceFile.to_string source_file in
+            let filename = SourceFile.to_abs_path source_file in
             L.debug Report Verbose "Parsing suppressions for %s@\n" filename ;
             match Utils.read_file filename with
             | Error _ ->
-                L.user_error "Could not read file %s" filename ;
+                L.user_error "Could not read file %s@\n" filename ;
                 String.Map.empty
             | Ok lines ->
                 Suppressions.parse_lines ~file:filename lines )
