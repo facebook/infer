@@ -3428,6 +3428,13 @@ and suppress_lint_ignore_types =
      compatibility only!"
 
 
+and suppressions =
+  CLOpt.mk_bool ~long:"suppressions" ~default:true
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Suppress infer issues on source lines matching the @infer-disable ISSUE_TYPE1, ISSUE_TYPE2, \
+     ... and @infer-disable-every ISSUE_TYPE1, ISSUE_TYPE2, ... keywords."
+
+
 and tenv_json =
   CLOpt.mk_path_opt ~long:"tenv-json"
     ~in_help:InferCommand.[(Capture, manual_generic)]
@@ -4707,6 +4714,8 @@ and suffix_match_changed_files = !suffix_match_changed_files
 and summaries_caches_max_size = !summaries_caches_max_size
 
 and suppress_lint_ignore_types = !suppress_lint_ignore_types
+
+and suppressions = !suppressions
 
 and tenv_json = !tenv_json
 

@@ -390,6 +390,12 @@ OPTIONS
            compiled or not (Conversely:
            --no-skip-analysis-in-path-skips-compilation)
 
+       --no-suppressions
+           Deactivates: Suppress infer issues on source lines matching the
+           @infer-disable ISSUE_TYPE1, ISSUE_TYPE2, ... and
+           @infer-disable-every ISSUE_TYPE1, ISSUE_TYPE2, ... keywords.
+           (Conversely: --suppressions)
+
 HOISTING OPTIONS
        --no-hoisting-report-only-expensive
            Deactivates: [Hoisting] Report loop-invariant calls only when the

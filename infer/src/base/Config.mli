@@ -866,6 +866,8 @@ val summaries_caches_max_size : int [@@warning "-unused-value-declaration"]
 
 val suppress_lint_ignore_types : bool
 
+val suppressions : bool
+
 val tenv_json : string option
 
 val testing_mode : bool

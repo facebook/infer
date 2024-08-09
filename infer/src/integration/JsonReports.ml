@@ -228,6 +228,25 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
 
   let suppressions_cache = ref SourceFile.Map.empty
 
+  let is_suppressed source_file ~issue_type ~line =
+    let suppressions =
+      match SourceFile.Map.find_opt source_file !suppressions_cache with
+      | Some s ->
+          s
+      | None -> (
+          let filename = SourceFile.to_abs_path source_file in
+          L.debug Report Verbose "Parsing suppressions for %s@\n" filename ;
+          match Utils.read_file filename with
+          | Error _ ->
+              L.user_error "Could not read file %s@\n" filename ;
+              String.Map.empty
+          | Ok lines ->
+              Suppressions.parse_lines ~file:filename lines )
+    in
+    suppressions_cache := SourceFile.Map.add source_file suppressions !suppressions_cache ;
+    Suppressions.is_suppressed ~suppressions ~issue_type ~line
+
+
   let to_string ({error_filter; proc_name; proc_location_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
       match proc_location_opt with
@@ -252,7 +271,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       && not
            (issue_in_report_block_list_specs ~file:source_file ~issue:err_key.issue_type
               ~proc:proc_name )
-    then (
+    then
       let severity = IssueType.string_of_severity err_key.severity in
       let category =
         Option.value
@@ -287,24 +306,9 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else base_qualifier
       in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
-      let suppressions =
-        match SourceFile.Map.find_opt source_file !suppressions_cache with
-        | Some s ->
-            s
-        | None -> (
-            let filename = SourceFile.to_abs_path source_file in
-            L.debug Report Verbose "Parsing suppressions for %s@\n" filename ;
-            match Utils.read_file filename with
-            | Error _ ->
-                L.user_error "Could not read file %s@\n" filename ;
-                String.Map.empty
-            | Ok lines ->
-                Suppressions.parse_lines ~file:filename lines )
-      in
-      suppressions_cache := SourceFile.Map.add source_file suppressions !suppressions_cache ;
       let suppressed =
-        Suppressions.is_suppressed ~suppressions ~issue_type:bug_type
-          ~line:err_data.loc.Location.line
+        Config.suppressions
+        && is_suppressed source_file ~issue_type:bug_type ~line:err_data.loc.Location.line
       in
       let bug =
         { Jsonbug_j.bug_type
@@ -332,7 +336,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; extras= err_data.extras
         ; suppressed }
       in
-      Some (Jsonbug_j.string_of_jsonbug bug) )
+      Some (Jsonbug_j.string_of_jsonbug bug)
     else None
 end)
 
