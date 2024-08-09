@@ -712,7 +712,7 @@ endif
 
 .PHONY: test-replace
 test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace) \
-              clang_plugin_test_replace
+              clang_plugin_test_replace $(INFER_MANUALS)
 ifneq ($(UTOP),no)
 	$(MAKE) build_infertop_replace
 endif
