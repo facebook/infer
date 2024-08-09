@@ -122,7 +122,7 @@ let parse_lines ?file lines =
   let parse_result =
     List.fold lines
       ~init:
-        {current_line= 0; block_start= None; issue_types= String.Set.empty; res= String.Map.empty}
+        {current_line= 1; block_start= None; issue_types= String.Set.empty; res= String.Map.empty}
       ~f:(fun {current_line; block_start; issue_types; res} line ->
         let next_line = current_line + 1 in
         match (substring_after_match ignore_all_rx line, substring_after_match ignore_rx line) with

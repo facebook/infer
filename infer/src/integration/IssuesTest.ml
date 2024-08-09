@@ -63,6 +63,9 @@ let pp_custom_of_report fmt report fields =
           F.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
       | Suggestion ->
           F.fprintf fmt "%s%s" (comma_separator index) (Option.value ~default:"" issue.suggestion)
+      | Suppressed ->
+          F.fprintf fmt "%s%s" (comma_separator index)
+            (if issue.suppressed then "suppressed" else "reported")
       | Severity ->
           F.fprintf fmt "%s%s" (comma_separator index) issue.severity
       | Line ->

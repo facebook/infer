@@ -25,6 +25,7 @@ type t =
   | QualifierContainsPotentialExceptionNote
   | TaintExtra
   | TransitiveCalleesExtra
+  | Suppressed
 [@@deriving equal]
 
 val all_symbols : (string * t) list

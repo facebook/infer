@@ -993,7 +993,7 @@ OPTIONS
        qualifier | suggestion | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note | taint_extra |
-       transitive_callees_extra }
+       transitive_callees_extra | suppressed }
            Fields to emit with --issues-tests
            See also infer-report(1).
 

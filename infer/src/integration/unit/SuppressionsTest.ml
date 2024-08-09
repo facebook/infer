@@ -19,13 +19,13 @@ let%test "parsing non-matching line" = Map.is_empty @@ Suppressions.parse_lines 
 let%test "parsing matching line" =
   Map.equal Suppressions.Span.equal
     (Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1"])
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 0; last= 1}])
+    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 1; last= 2}])
 
 
 let%test "parsing matching line inside string gotcha" =
   Map.equal Suppressions.Span.equal
     (Suppressions.parse_lines ["const char* s = \"@infer-ignore BUFFER_OVERRUN_L1,\";"])
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 0; last= 1}])
+    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 1; last= 2}])
 
 
 let%test "parsing matching line no issue type" =
@@ -41,8 +41,8 @@ let%test "parsing matching line multiple issue types" =
     (Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY"])
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 0; last= 1}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 0; last= 1}]) )
+      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}])
+      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}]) )
 
 
 let%test "parsing matching line multiple noise" =
@@ -51,8 +51,8 @@ let%test "parsing matching line multiple noise" =
        ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,,,, PULSE_UNNECESSARY_COPY,,,,,,,"] )
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 0; last= 1}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 0; last= 1}]) )
+      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}])
+      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}]) )
 
 
 let%test "multi line block" =
@@ -61,8 +61,8 @@ let%test "multi line block" =
        ["// @infer-ignore BUFFER_OVERRUN_L1"; "1+1 // @infer-ignore ,PULSE_UNNECESSARY_COPY"] )
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 0; last= 2}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 0; last= 2}]) )
+      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 3}])
+      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 3}]) )
 
 
 let%test "multiple blocks" =
@@ -72,7 +72,7 @@ let%test "multiple blocks" =
     Map.(
       empty
       |> add_exn ~key:"BUFFER_OVERRUN_L1"
-           ~data:(Suppressions.Span.Blocks [{first= 0; last= 1}; {first= 2; last= 3}]) )
+           ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}; {first= 3; last= 4}]) )
 
 
 let%test "parsing matching line every" =
@@ -138,28 +138,28 @@ let s2 =
 let s_every = Suppressions.parse_lines ["1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"]
 
 let%test "matching suppression" =
-  Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:0
-
-
-let%test "matching suppression, next line" =
   Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:1
 
 
+let%test "matching suppression, next line" =
+  Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:2
+
+
 let%test "non matching suppression" =
-  not @@ Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"PULSE_UNNECESSARY_COPY" ~line:0
+  not @@ Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"PULSE_UNNECESSARY_COPY" ~line:1
 
 
 let%test "non matching suppression line" =
-  not @@ Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:3
+  not @@ Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:4
 
 
 let%test "matching suppression block" =
-  Suppressions.is_suppressed ~suppressions:s2 ~issue_type:"BUFFER_OVERRUN_L1" ~line:1
-  && Suppressions.is_suppressed ~suppressions:s2 ~issue_type:"PULSE_UNNECESSARY_COPY" ~line:0
+  Suppressions.is_suppressed ~suppressions:s2 ~issue_type:"BUFFER_OVERRUN_L1" ~line:2
+  && Suppressions.is_suppressed ~suppressions:s2 ~issue_type:"PULSE_UNNECESSARY_COPY" ~line:1
 
 
 let%test "matching suppression every" =
-  Suppressions.is_suppressed ~suppressions:s_every ~issue_type:"BUFFER_OVERRUN_L1" ~line:0
+  Suppressions.is_suppressed ~suppressions:s_every ~issue_type:"BUFFER_OVERRUN_L1" ~line:1
 
 
 let%test "matching suppression every large line" =
@@ -170,8 +170,8 @@ let s_wild = Suppressions.parse_lines ["1+1 // @infer-ignore-every PULSE_UNNECES
 
 let%test "matching suppression wildcard" =
   Suppressions.is_suppressed ~suppressions:s_wild ~issue_type:"PULSE_UNNECESSARY_COPY_ASSIGNMENT"
-    ~line:0
+    ~line:1
 
 
 let%test "non matching suppression wildcard" =
-  not @@ Suppressions.is_suppressed ~suppressions:s_wild ~issue_type:"PULSE_UNNECESSARY" ~line:0
+  not @@ Suppressions.is_suppressed ~suppressions:s_wild ~issue_type:"PULSE_UNNECESSARY" ~line:1

@@ -1,0 +1,5 @@
+NULLPTR_DEREFERENCE, src/a.cpp, deref_nullptr_bad, `p` could be null (null value originating from line 11) and is dereferenced., reported
+NULLPTR_DEREFERENCE, src/a.cpp, deref_nullptr_suppressed, `p` could be null (null value originating from line 16) and is dereferenced., suppressed
+NULLPTR_DEREFERENCE, src/a.cpp, deref_nullptr2_suppressed, `p` could be null (null value originating from line 22) and is dereferenced., suppressed
+USE_AFTER_FREE, src/a.cpp, use_after_free_simple_suppressed, accessing `x` that was invalidated by call to `free()` on line 29., suppressed
+USE_AFTER_FREE, src/a.cpp, use_after_free_simple2_suppressed, accessing `x` that was invalidated by call to `free()` on line 34., suppressed

@@ -27,6 +27,7 @@ BUILD_SYSTEMS_TESTS += \
   disjunctive_domain \
   duplicate_symbols \
   extract_capture \
+  suppressions \
   fail_on_issue \
   infer-debug \
   j1 \
