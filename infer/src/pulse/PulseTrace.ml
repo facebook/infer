@@ -174,6 +174,17 @@ let find_map_last_main trace ~f = Container.find_map ~iter:rev_iter_main_events 
 
 let exists_main trace ~f = Container.exists ~iter:rev_iter_main_events trace ~f
 
+let rec iter_calls trace ~f =
+  match trace with
+  | ViaCall {f= call; in_call} ->
+      f call ;
+      iter_calls in_call ~f
+  | _ ->
+      ()
+
+
+let exists_call trace ~f = Container.exists ~iter:iter_calls trace ~f
+
 let of_call_stack calls imm_location =
   let rec wrap_in_calls trace = function
     | [] ->

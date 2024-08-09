@@ -51,3 +51,5 @@ val add_to_errlog :
 val join : t -> t -> t
 
 val get_modified_immutables_opt : Tenv.t -> t -> (ModifiedVarMap.t * ModifiedVarMap.t) option
+
+val get_pulse_trace : trace -> Trace.t

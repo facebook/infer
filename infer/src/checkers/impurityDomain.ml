@@ -128,3 +128,6 @@ let add_to_errlog ~nesting param_source pvar (ModifiedAccess.{trace} as access) 
       F.fprintf fmt "%a `%a.%a` %s here" pp_param_source param_source PVar.pp pvar ModifiedAccess.pp
         access desc )
     trace errlog
+
+
+let get_pulse_trace = function WrittenTo trace -> trace | Invalid (_, trace) -> trace

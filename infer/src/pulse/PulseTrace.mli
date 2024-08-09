@@ -70,5 +70,7 @@ val find_map_last_main : t -> f:(ValueHistory.event -> 'a option) -> 'a option
 val exists_main : t -> f:(ValueHistory.event -> bool) -> bool
 (** whether the trace contains an event satisfying [f]; does not look into contextual events *)
 
+val exists_call : t -> f:(CallEvent.t -> bool) -> bool
+
 val get_trace_until : t -> f:(ValueHistory.event -> bool) -> t option
 (** build a sub-trace leading to the first element of the trace satisfying [f] *)

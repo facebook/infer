@@ -27,7 +27,7 @@ class Object {
     self::$GLOBAL = $e;
   }
 
-  public static function staticGetPure_FP(): int {
+  public static function staticGetPure(): int {
     return self::$GLOBAL;
   }
 
@@ -56,7 +56,7 @@ class Object {
     }
   }
 
-  public function localAllocPure_FP(int $x, int $y): void {
+  public function localAllocPure(int $x, int $y): void {
     $obj = new Object($x);
     $obj->a = $y;
   }

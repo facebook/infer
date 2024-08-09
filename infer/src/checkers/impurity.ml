@@ -39,6 +39,14 @@ let ignore_array_index (access : Access.t) : unit Access.access =
       Dereference
 
 
+let should_ignore_modified_by_hack_sinit trace =
+  if Language.curr_language_is Hack then
+    let trace = ImpurityDomain.get_pulse_trace trace in
+    Trace.exists_call trace ~f:(fun call ->
+        match call with Call proc_name -> Procname.is_hack_sinit proc_name | _ -> false )
+  else false
+
+
 let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
   let modified =
     Attributes.get_written_to attrs
@@ -58,9 +66,11 @@ let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
     ( access_list
     , List.fold_left ~init:acc
         ~f:(fun acc trace ->
-          ImpurityDomain.ModifiedVarMap.add pvar
-            {ordered_access_list= List.rev access_list; trace}
-            acc )
+          if should_ignore_modified_by_hack_sinit trace then acc
+          else
+            ImpurityDomain.ModifiedVarMap.add pvar
+              {ordered_access_list= List.rev access_list; trace}
+              acc )
         invalid_and_modified )
 
 
