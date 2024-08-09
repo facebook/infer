@@ -56,11 +56,9 @@ class Object {
     }
   }
 
-  public function localAllocPure(int $x, int $y): void {
-    $vec = vec[$x, $y];
-    foreach ($vec as $e) {
-      $this->callPurePure($e);
-    }
+  public function localAllocPure_FP(int $x, int $y): void {
+    $obj = new Object($x);
+    $obj->a = $y;
   }
 
   public function parameterFieldWriteImpure(Object $obj, int $i): void {
