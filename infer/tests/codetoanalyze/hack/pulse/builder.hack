@@ -23,6 +23,7 @@ class NoBuilderSuffix implements TestBuilderBase {
   }
 }
 
+<<__ConsistentConstruct>>
 class MyBuilder {
   private int $a = 0;
   private int $b = 0;
@@ -95,4 +96,26 @@ class BuilderTester {
     $b->setFoo(42);
     $b->doFinalize();
   }
+}
+
+// In real code, builders are often created via some icky reflection
+final class BuilderTester2 {
+  const type TB = MyBuilder;
+
+  public static function create(): this::TB {
+    $builder_cls = type_structure(static::class, 'TB')['classname'];
+    return new $builder_cls();
+  }
+
+  public static function testCreateOK(): void {
+    $b = static::create();
+    $b->setA(42);
+    $b->saveX();
+  }
+
+  public static function testCreateBad(): void {
+    $b = static::create();
+    $b->setA(42);
+  }
+
 }

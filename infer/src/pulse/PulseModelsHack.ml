@@ -431,6 +431,33 @@ let get_static_companion_dsl ~model_desc type_name : DSL.aval DSL.model_monad =
   exec_operation (get_static_companion ~model_desc path location type_name)
 
 
+(* TODO: refactor to remove copy-pasta *)
+let constinit_existing_class_object static_companion : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* typ_opt = get_dynamic_type ~ask_specialization:true static_companion in
+  match typ_opt with
+  | Some {Formula.typ= {desc= Tstruct type_name}} -> (
+      let origin_name = Typ.Name.Hack.static_companion_origin type_name in
+      match origin_name with
+      | HackClass hack_origin_name ->
+          let pvar = get_static_companion_var origin_name in
+          let exp = Exp.Lvar pvar in
+          let ret_id = Ident.create_none () in
+          let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
+          let* {analysis_data= {tenv}} = get_data in
+          let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
+          let constinit_pname = Procname.get_hack_static_constinit ~is_trait hack_origin_name in
+          let typ = Typ.mk_struct type_name in
+          let arg_payload =
+            ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= static_companion}
+          in
+          dispatch_call (ret_id, ret_typ) constinit_pname [{exp; typ; arg_payload}]
+      | _ ->
+          ret () )
+  | _ ->
+      ret ()
+
+
 (* NOTE: We model [lazy_class_initialize] as invoking the corresponding [sinit] procedure.  To be
    sound, we consider the cases where the initialization has been done before or not by separating
    disjuncts. *)
@@ -911,36 +938,43 @@ let eval_resolved_field ~model_desc typ_name fld_str =
   eval_deref_access Read class_object (FieldAccess fld)
 
 
+let internal_hack_field_get this field : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_string_field_name = get_const_string field in
+  match opt_string_field_name with
+  | Some string_field_name -> (
+      let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true this in
+      match opt_dynamic_type_data with
+      | Some {Formula.typ= {desc= Tstruct type_name}} ->
+          let* aval =
+            eval_resolved_field ~model_desc:"hack_field_get" type_name string_field_name
+          in
+          let* () =
+            let field = Fieldname.make type_name string_field_name in
+            let* struct_info = tenv_resolve_field_info type_name field in
+            match struct_info with
+            | Some {Struct.typ= field_typ} when Typ.is_pointer field_typ ->
+                option_iter
+                  (Typ.name (Typ.strip_ptr field_typ))
+                  ~f:(fun field_type_name -> add_static_type field_type_name aval)
+            | _ ->
+                ret ()
+          in
+          ret aval
+      | _ ->
+          let field = TextualSil.wildcard_sil_fieldname Hack string_field_name in
+          let* aval = eval_deref_access Read this (FieldAccess field) in
+          ret aval )
+  | None ->
+      L.die InternalError "hack_field_get expect a string constant as 2nd argument"
+
+
 let hack_field_get this field : model =
   let open DSL.Syntax in
   start_model
-  @@ let* opt_string_field_name = get_const_string field in
-     match opt_string_field_name with
-     | Some string_field_name -> (
-         let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true this in
-         match opt_dynamic_type_data with
-         | Some {Formula.typ= {desc= Tstruct type_name}} ->
-             let* aval =
-               eval_resolved_field ~model_desc:"hack_field_get" type_name string_field_name
-             in
-             let* () =
-               let field = Fieldname.make type_name string_field_name in
-               let* struct_info = tenv_resolve_field_info type_name field in
-               match struct_info with
-               | Some {Struct.typ= field_typ} when Typ.is_pointer field_typ ->
-                   option_iter
-                     (Typ.name (Typ.strip_ptr field_typ))
-                     ~f:(fun field_type_name -> add_static_type field_type_name aval)
-               | _ ->
-                   ret ()
-             in
-             assign_ret aval
-         | _ ->
-             let field = TextualSil.wildcard_sil_fieldname Hack string_field_name in
-             let* aval = eval_deref_access Read this (FieldAccess field) in
-             assign_ret aval )
-     | None ->
-         L.die InternalError "hack_field_get expect a string constant as 2nd argument"
+  @@
+  let* retval = internal_hack_field_get this field in
+  assign_ret retval
 
 
 let make_hack_random_bool : DSL.aval DSL.model_monad =
@@ -1148,6 +1182,29 @@ let hack_get_class this : model =
        match typ_opt with Some _ -> ret this | None -> mk_fresh ~model_desc:"hack_get_class" ()
      in
      assign_ret field_v
+
+
+(* we don't have a different kind of lazy class objects, so this is the identity, but maybe we should force initialization here? *)
+let hhbc_lazy_class_from_class this : model =
+  let open DSL.Syntax in
+  start_model @@ assign_ret this
+
+
+(* HH::type_structure should officially be able to take an instance of a class or the name (classname=string) as first argument, and
+   null or the name of a type constant as second argument
+   See https://github.com/facebook/hhvm/blob/master/hphp/runtime/ext/reflection/ext_reflection-classes.php
+   However, to start with we just deal with the case that the first argument is one of our static companion objects
+   and the second is a type constant name
+   If the static companion has been _86constinit'd then this should just be a field dereference
+*)
+let hh_type_structure clsobj constnameobj : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let* constname = eval_deref_access Read constnameobj (FieldAccess string_val_field) in
+  let* () = constinit_existing_class_object clsobj in
+  let* retval = internal_hack_field_get clsobj constname in
+  assign_ret retval
 
 
 let hack_set_static_prop this prop obj : model =
@@ -1598,6 +1655,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_new_vec" &::.*+++> Vec.new_vec
   ; -"$builtins" &:: "hhbc_not" <>$ capt_arg_payload $--> hhbc_not
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload $--> hack_get_class
+  ; -"$builtins" &:: "hhbc_lazy_class_from_class" <>$ capt_arg_payload
+    $--> hhbc_lazy_class_from_class
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
   ; -"$builtins" &:: "hhbc_cast_string" <>$ capt_arg_payload $--> hhbc_cast_string
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
@@ -1639,6 +1698,8 @@ let matchers : matcher list =
     $--> Dict.dict_from_async
   ; -"Asio$static" &:: "awaitSynchronously" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_await_static
+  ; -"$root" &:: "HH::type_structure" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> hh_type_structure
   ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
