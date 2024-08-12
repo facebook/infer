@@ -8,6 +8,8 @@
 
 typedef void (^MyBlock)();
 
+typedef void (^MyBlock1)(int x);
+
 @interface Blocks_as_parameters : NSObject
 
 @end
@@ -17,6 +19,11 @@ typedef void (^MyBlock)();
 + (void)blockNotCheckedBad:(int)z and:(MyBlock)block {
   block();
 }
+
++ (void)blockNotCheckedBad1:(int)z and:(MyBlock1)block {
+  block(z);
+}
+
 + (void)blockCheckedOk:(int)z and:(MyBlock)block {
   if (block) {
     block();

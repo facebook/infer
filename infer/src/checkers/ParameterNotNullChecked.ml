@@ -43,9 +43,7 @@ module TraceData = struct
     | Execute ->
         F.asprintf "Executing `%a`" Mangled.pp arg
     | Parameter proc_name ->
-        F.asprintf "Parameter `%a` of %a" Mangled.pp arg
-          (Procname.pp_simplified_string ~withclass:false)
-          proc_name
+        F.asprintf "Parameter `%a` of %a" Mangled.pp arg Procname.pp proc_name
 
 
   let pp fmt {arg; loc; usage} =
@@ -184,7 +182,9 @@ module TransferFunctions = struct
           Domain.exec_null_check_id id loc astate
       | _ ->
           astate )
-    | Call (_, Exp.Var var, _, loc, call_flags) when call_flags.CallFlags.cf_is_objc_block ->
+    | Call (_, Exp.Const (Const.Cfun procname), (Exp.Var var, _) :: _, loc, call_flags)
+      when Procname.equal procname BuiltinDecl.__call_objc_block
+           && call_flags.CallFlags.cf_is_objc_block ->
         Domain.report_unchecked_block_param_issues proc_desc err_log var loc astate ;
         astate
     | _ ->
