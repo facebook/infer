@@ -575,8 +575,15 @@ module Hack = struct
     {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some arity}
 
 
+  let get_static_constinit ~is_trait class_name =
+    let static_class_name = HackClassName.static_companion class_name in
+    let arity = if is_trait then 2 else 1 in
+    {class_name= Some static_class_name; function_name= "_86constinit"; arity= Some arity}
+
+
   let is_xinit {function_name= name} =
     String.equal name "_86sinit" || String.equal name "_86pinit" || String.equal name "_86cinit"
+    || String.equal name "_86constinit"
 
 
   let belongs_to_static_companion {class_name} =
@@ -1369,6 +1376,10 @@ let decr_hack_arity procname =
 
 
 let get_hack_static_init ~is_trait class_name = Hack (Hack.get_static_init ~is_trait class_name)
+
+let get_hack_static_constinit ~is_trait class_name =
+  Hack (Hack.get_static_constinit ~is_trait class_name)
+
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

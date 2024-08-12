@@ -21,6 +21,7 @@ final class A {
 }
 
 final class B {
+  const int BCONST = A::MYCONST;
   public static function f(): int {
     return A::MYCONST;
   }

@@ -456,6 +456,9 @@ val get_hack_arity : t -> int option
 val get_hack_static_init : is_trait:bool -> HackClassName.t -> t
 (** get the sinit procname in Hack *)
 
+val get_hack_static_constinit : is_trait:bool -> HackClassName.t -> t
+(** get the constinit procname in Hack *)
+
 val pp_name_only : F.formatter -> t -> unit
 (** Print name of procedure with at most one-level path. For example,
 
