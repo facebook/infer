@@ -1633,7 +1633,7 @@ let with_html_debug_node node ~desc ~f =
 
 let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate =
   let pname = ProcAttributes.get_proc_name proc_attrs in
-  if Procname.is_hack_sinit pname then
+  if Procname.is_hack_constinit pname then
     let ( let* ) x f = match x with None -> astate | Some x -> f x in
     let* name = Procname.get_class_type_name pname in
     let fields = Tenv.get_fields_trans tenv name in

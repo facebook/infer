@@ -1020,6 +1020,13 @@ let is_hack_sinit = function
       false
 
 
+let is_hack_constinit = function
+  | Hack {function_name} ->
+      String.equal function_name "_86constinit"
+  | _ ->
+      false
+
+
 let is_hack_construct = function
   | Hack {function_name} ->
       String.equal function_name "__construct"

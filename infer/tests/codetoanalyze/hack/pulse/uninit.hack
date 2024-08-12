@@ -95,8 +95,7 @@ abstract class AbstractUseTrait extends A {
     return self::get_field_from_trait2();
   }
 
-  // need to check for constinit instead of sinit
-  public static function call_my_trait_get_field_Bad_FN(): string {
+  public static function call_my_trait_get_field_Bad(): string {
     return MyTrait::get_field_from_trait();
   }
 }
@@ -109,8 +108,7 @@ function call_self_get_field2_Bad(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
-// need to check for constinit instead of sinit
-function call_my_trait_get_field_Bad_FN(): string {
+function call_my_trait_get_field_Bad(): string {
   return MyTrait::get_field_from_trait();
 }
 
