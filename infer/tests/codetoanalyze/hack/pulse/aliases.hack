@@ -104,8 +104,7 @@ final class C {
     $_ = $this->fail();
   }
 
-  // don't do type constants yet :-(
-  public async function testTypeConstantOK_FP(): Awaitable<void> {
+  public async function testTypeConstantOK(): Awaitable<void> {
     if (3 is HasConstant::T) {
       return;
     }

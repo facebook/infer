@@ -434,18 +434,8 @@ let get_static_companion_dsl ~model_desc type_name : DSL.aval DSL.model_monad =
 (* NOTE: We model [lazy_class_initialize] as invoking the corresponding [sinit] procedure.  To be
    sound, we consider the cases where the initialization has been done before or not by separating
    disjuncts. *)
-let lazy_class_initialize size_exp : model =
+let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@
-  let type_name =
-    match size_exp with
-    | Exp.Sizeof {typ= {desc= Typ.Tstruct type_name}} ->
-        type_name
-    | _ ->
-        L.die InternalError
-          "lazy_class_initialize: the Hack frontend should never generate such argument type"
-  in
   let* class_object = get_static_companion_dsl ~model_desc:"lazy_class_initialize" type_name in
   let* () =
     match type_name with
@@ -479,6 +469,22 @@ let lazy_class_initialize size_exp : model =
     | _ ->
         ret ()
   in
+  ret class_object
+
+
+let lazy_class_initialize size_exp : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let type_name =
+    match size_exp with
+    | Exp.Sizeof {typ= {desc= Typ.Tstruct type_name}} ->
+        type_name
+    | _ ->
+        L.die InternalError
+          "lazy_class_initialize: the Hack frontend should never generate such argument type"
+  in
+  let* class_object = get_initialized_class_object type_name in
   assign_ret class_object
 
 
@@ -1391,58 +1397,97 @@ let read_nullable_field_from_ts tdict =
   as_constant_bool nullable_bool_val
 
 
-let read_classname_field_from_ts tdict =
+let read_string_field_from_ts fieldname tdict =
   let open DSL.Syntax in
-  let classname_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "classname" in
-  let* classname_boxed_string = eval_deref_access Read tdict (FieldAccess classname_field) in
-  let* classname_string_val =
-    eval_deref_access Read classname_boxed_string (FieldAccess string_val_field)
+  let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack fieldname in
+  let* field_boxed_string = eval_deref_access Read tdict (FieldAccess field) in
+  let* field_string_val =
+    eval_deref_access Read field_boxed_string (FieldAccess string_val_field)
   in
-  as_constant_string classname_string_val
+  as_constant_string field_string_val
+
+
+let read_access_from_ts tdict =
+  let open DSL.Syntax in
+  let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "access_list" in
+  let* access_list_vec = eval_deref_access Read tdict (FieldAccess field) in
+  (* TODO: this should work for an access list of length one, but will not for more accesses
+     (which we get for source like C::T1::T2) because
+      vec_get_dsl actually ignores its index :-( To fix, we either have to change the way we deal with
+      vectors to be more precise (at least for smallish constant vecs) or tweak the encoding
+      of type structures for Infer to use something different (less faithful to HHVM) *)
+  let* type_prop_name_boxed_string = Vec.get_vec_dsl access_list_vec 0 in
+  let* type_prop_name_string_val =
+    eval_deref_access Read type_prop_name_boxed_string (FieldAccess string_val_field)
+  in
+  as_constant_string type_prop_name_string_val
 
 
 (* returns a fresh value equated to the SIL result of the comparison *)
 let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
-  let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
-  let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
-  let* kind_int_opt = as_constant_int kind_int_val in
-  match kind_int_opt with
-  | None ->
-      L.d_printfln "didn't get known integer tag in check against type struct" ;
-      let* md = get_data in
-      L.internal_error "known tag failure tdict is %a at %a@\n" AbstractValue.pp (fst tdict)
-        Location.pp_file_pos md.location ;
-      (* duplicating behaviour of previous sil model instead of calling this an internal error *)
-      let* one = eval_const_int 1 in
-      ret one
-  | Some k -> (
-      let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
-      let* nullable_bool_opt = read_nullable_field_from_ts tdict in
-      let nullable = Option.value nullable_bool_opt ~default:false in
-      let* classname =
+  let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
+  let rec find_name tdict nullable_already =
+    let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
+    let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
+    let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
+    let* kind_int_opt = as_constant_int kind_int_val in
+    match kind_int_opt with
+    | None ->
+        L.d_printfln "didn't get known integer tag in check against type struct" ;
+        let* md = get_data in
+        L.internal_error "known tag failure tdict is %a at %a" AbstractValue.pp (fst tdict)
+          Location.pp_file_pos md.location ;
+        ret None
+    | Some k -> (
+        let* nullable_bool_opt = read_nullable_field_from_ts tdict in
+        let nullable = nullable_already || Option.value nullable_bool_opt ~default:false in
         match type_struct_prim_tag_to_classname k with
         | Some name ->
-            ret (Some name)
+            ret (Some (name, nullable))
         | None ->
-            (* 101 is the magic number for "Unresolved type" in type structures.
-               See https://github.com/facebook/hhvm/blob/master/hphp/runtime/base/type-structure-kinds.h *)
             if Int.(k = 101) then
-              let* classname_string_opt = read_classname_field_from_ts tdict in
+              (* 101 is the magic number for "Unresolved type" in type structures.
+                 See https://github.com/facebook/hhvm/blob/master/hphp/runtime/base/type-structure-kinds.h *)
+              let* classname_string_opt = read_string_field_from_ts "classname" tdict in
               ret
                 (Option.map classname_string_opt ~f:(fun s ->
-                     Typ.HackClass (HackClassName.make (replace_backslash_with_colon s)) ) )
-            else ret None
-      in
-      match classname with
-      | Some name ->
-          L.d_printfln "type structure test against type name %a" Typ.Name.pp name ;
-          let typ = Typ.mk (Typ.Tstruct name) in
-          let* () = and_equal_instanceof inner_val v typ ~nullable in
-          ret inner_val
-      | None ->
-          ret inner_val )
+                     (Typ.HackClass (HackClassName.make (replace_backslash_with_colon s)), nullable) )
+                )
+            else if Int.(k = 102) then (
+              (* 102 is the magic number for type access *)
+              L.d_printfln "testing against type access" ;
+              let* rootname_opt = read_string_field_from_ts "root_name" tdict in
+              let* type_prop_name_opt = read_access_from_ts tdict in
+              match (rootname_opt, type_prop_name_opt) with
+              | Some rootname, Some type_prop_name ->
+                  let rootname = replace_backslash_with_colon rootname in
+                  L.d_printfln "got root_name = %s, type_prop_name = %s" rootname type_prop_name ;
+                  let type_prop_field = TextualSil.wildcard_sil_fieldname Hack type_prop_name in
+                  let* companion =
+                    get_initialized_class_object (HackClass (HackClassName.make rootname))
+                  in
+                  L.d_printfln "companion object is %a" AbstractValue.pp (fst companion) ;
+                  let* type_constant_ts =
+                    eval_deref_access Read companion (FieldAccess type_prop_field)
+                  in
+                  (* We've got another type structure in our hands now, so recurse *)
+                  L.d_printfln "type structure for projection=%a" AbstractValue.pp
+                    (fst type_constant_ts) ;
+                  find_name type_constant_ts nullable
+              | _, _ ->
+                  ret None )
+            else ret None )
+  in
+  let* name_opt = find_name tdict false in
+  match name_opt with
+  | Some (name, nullable) ->
+      L.d_printfln "type structure test against type name %a" Typ.Name.pp name ;
+      let typ = Typ.mk (Typ.Tstruct name) in
+      let* () = and_equal_instanceof inner_val v typ ~nullable in
+      ret inner_val
+  | None ->
+      ret inner_val
 
 
 (* for now ignores resolve and enforce options *)
