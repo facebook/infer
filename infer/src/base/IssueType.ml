@@ -396,7 +396,7 @@ let bad_return =
 
 
 let block_parameter_not_null_checked =
-  register ~category:NoCategory ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning
+  register ~category:NullPointerDereference ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning
     ParameterNotNullChecked
     ~user_documentation:[%blob "./documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
 
