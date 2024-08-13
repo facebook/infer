@@ -58,6 +58,9 @@ val describe : F.formatter -> t -> unit
 
 val suggest : t -> string option
 
+val is_same_type : t -> t -> bool
+(** whether both invalidations have are of the same variant case *)
+
 type must_be_valid_reason =
   | BlockCall
   | InsertionIntoCollectionKey

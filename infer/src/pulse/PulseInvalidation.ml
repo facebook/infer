@@ -98,7 +98,11 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | CppMap of map_type * map_function
-[@@deriving compare, equal]
+[@@deriving compare, equal, variants]
+
+let is_same_type invalidation1 invalidation2 =
+  Int.equal (Variants.to_rank invalidation1) (Variants.to_rank invalidation2)
+
 
 type must_be_valid_reason =
   | BlockCall
