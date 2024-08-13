@@ -909,8 +909,8 @@ let cleanup_attribute_store proc_desc path loc (astate : AbductiveDomain.t) ~lhs
           proc_attributes.ProcAttributes.locals
       in
       if has_cleanup_attribute var then
-        let** astate, (rhs_addr, _) = eval_deref path loc rhs_exp astate in
-        let astate = AbductiveDomain.AddressAttributes.remove_allocation_attr rhs_addr astate in
+        let** astate, (rhs_addr, _) = eval path NoAccess loc rhs_exp astate in
+        let astate = AbductiveDomain.AddressAttributes.always_reachable rhs_addr astate in
         Sat (Ok astate)
       else Sat (Ok astate)
   | _ ->
