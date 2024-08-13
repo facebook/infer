@@ -12,8 +12,6 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
-type arg_payload = ValueOrigin.t
-
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
   ; dispatch_call_eval_args:
@@ -41,7 +39,7 @@ type model =
   -> NonDisjDomain.t
   -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
 
-type matcher = (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.matcher
+type matcher = (Tenv.t * Procname.t, model, ValueOrigin.t) ProcnameDispatcher.Call.matcher
 
 let lift_model model data astate non_disj = (model data astate, non_disj)
 

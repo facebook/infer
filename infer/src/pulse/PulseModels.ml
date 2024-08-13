@@ -6,10 +6,11 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseModelsImport
 
 module ProcNameDispatcher = struct
-  let dispatch : (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.dispatcher =
+  let dispatch : (Tenv.t * Procname.t, model, ValueOrigin.t) ProcnameDispatcher.Call.dispatcher =
     ProcnameDispatcher.Call.make_dispatcher
       ( FbPulseModels.matchers @ PulseModelsCSharp.matchers
       @ PulseModelsObjC.transfer_ownership_matchers @ PulseModelsCpp.abort_matchers

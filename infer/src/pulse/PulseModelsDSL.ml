@@ -702,7 +702,7 @@ module Syntax = struct
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
             let ret_id = Ident.create_none () in
             let call_args =
-              List.mapi args ~f:(fun i arg : arg_payload ProcnameDispatcher.Call.FuncArg.t ->
+              List.mapi args ~f:(fun i arg : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t ->
                   let pvar =
                     Pvar.mk (Mangled.from_string (Printf.sprintf "CLOSURE_ARG%d" i)) resolved_pname
                   in
