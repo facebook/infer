@@ -3375,8 +3375,8 @@ INTERNAL OPTIONS
 
        --no-unix-fork
            Deactivates: Use the fork(2) system call to spawn sub-processes.
-           Otherwise use the equivalent of fork(2) followed by undefined(3)
-           -- which is usually slower, but is available on all OSes.
+           Otherwise use the equivalent of fork(2) followed by exec(3) --
+           which is usually slower, but is available on all OSes.
            (Conversely: --unix-fork)
 
        --version-vcs

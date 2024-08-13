@@ -3505,7 +3505,7 @@ and unix_fork =
   CLOpt.mk_bool ~long:"unix-fork"
     ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
     "Use the $(b,fork)(2) system call to spawn sub-processes. Otherwise use the equivalent of \
-     $(b,fork)(2) followed by $(exec)(3) -- which  is usually slower, but is available on all \
+     $(b,fork)(2) followed by $(b,exec)(3) -- which  is usually slower, but is available on all \
      OSes."
 
 
