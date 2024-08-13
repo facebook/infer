@@ -78,8 +78,8 @@ let eval_unop ret unop v astate =
       Formula.and_equal_unop ret unop (AbstractValueOperand v) phi )
 
 
-let prune_binop ~negated binop lhs rhs astate =
-  map_path_condition astate ~f:(fun phi -> Formula.prune_binop ~negated binop lhs rhs phi)
+let prune_binop ?depth ~negated binop lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> Formula.prune_binop ?depth ~negated binop lhs rhs phi)
 
 
 let and_equal_string_concat ret lhs rhs astate =
@@ -98,8 +98,8 @@ let prune_ne_zero v astate =
   prune_binop ~negated:false Ne (AbstractValueOperand v) literal_zero astate
 
 
-let prune_nonnegative v astate =
-  prune_binop ~negated:false Ge (AbstractValueOperand v) literal_zero astate
+let prune_nonnegative ?depth v astate =
+  prune_binop ?depth ~negated:false Ge (AbstractValueOperand v) literal_zero astate
 
 
 let prune_positive v astate =

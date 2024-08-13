@@ -422,7 +422,7 @@ let and_restricted_arith ~addr_callee ~addr_caller call_state =
     (* [addr_callee] is implicitly [≥0] but [addr_caller] isn't, we need to propagate that fact to
        the caller address (no need to do anything in all other cases) *)
     let+ astate =
-      PulseArithmetic.prune_nonnegative addr_caller call_state.astate
+      PulseArithmetic.prune_nonnegative ~depth:1 addr_caller call_state.astate
       |> raise_if_unsat PathCondition
     in
     {call_state with astate}

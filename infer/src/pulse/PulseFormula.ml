@@ -1866,6 +1866,23 @@ module Atom = struct
 
     let yojson_of_t atoms = `List (List.map (elements atoms) ~f:yojson_of_t)
   end
+
+  module Map = struct
+    include Caml.Map.Make (struct
+      type nonrec t = t [@@deriving compare]
+    end)
+
+    let pp pp_binding fmt atoms =
+      if is_empty atoms then F.pp_print_string fmt "(empty)"
+      else
+        Pp.collection ~sep:"∧"
+          ~fold:(IContainer.fold_of_pervasives_map_fold fold)
+          pp_binding fmt atoms
+
+
+    (* TODO: ignores values for now *)
+    let yojson_of_t _yojson_of_value atoms = bindings atoms |> [%yojson_of: (t * _) list]
+  end
 end
 
 module VarUF = UnionFind.Make (Var) (Var.Set) (Var.Map)
@@ -3759,21 +3776,44 @@ module Formula = struct
 end
 
 type t =
-  { conditions: Atom.Set.t
+  { conditions: int Atom.Map.t
         (** collection of conditions that have been assumed (via [PRUNE] CFG nodes) along the path.
             Note that these conditions are *not* normalized w.r.t. [phi]: [phi] already contains
-            them so normalization w.r.t. [phi] would make them trivially true most of the time. *)
+            them so normalization w.r.t. [phi] would make them trivially true most of the time.
+
+            Each condition is associated with the *call depth* at which the condition was added: 0
+            if the condition is from the current function, 1 if it's in a direct callee, N if the
+            condition appears after a call chain of length N. *)
   ; phi: Formula.t
         (** the arithmetic constraints of the current symbolic state; true in both the pre and post
             since abstract values [Var.t] have immutable semantics *) }
 [@@deriving compare, equal, yojson_of]
 
-let ttrue = {conditions= Atom.Set.empty; phi= Formula.ttrue}
+let pp_conditions pp_var fmt conditions =
+  (Atom.Map.pp (fun fmt (atom, depth) ->
+       if Config.debug_level_analysis < 3 then
+         F.fprintf fmt "{%a}" (Atom.pp_with_pp_var pp_var) atom
+       else F.fprintf fmt "{%a@%d}" (Atom.pp_with_pp_var pp_var) atom depth ) )
+    fmt conditions
+
+
+let add_condition (atom, depth) conditions =
+  Atom.Map.update atom
+    (fun depth0_opt -> Some (min (Option.value depth0_opt ~default:Int.max_value) depth))
+    conditions
+
+
+let add_conditions (atoms, depth) conditions =
+  List.fold atoms ~init:conditions ~f:(fun conditions atom ->
+      add_condition (atom, depth) conditions )
+
+
+let ttrue = {conditions= Atom.Map.empty; phi= Formula.ttrue}
 
 let pp_with_pp_var pp_var fmt {conditions; phi} =
   let pp_conditions fmt conditions =
-    if Atom.Set.is_empty conditions then F.pp_print_string fmt "(empty)"
-    else Atom.Set.pp_with_pp_var pp_var fmt conditions
+    if Atom.Map.is_empty conditions then F.pp_print_string fmt "(empty)"
+    else pp_conditions pp_var fmt conditions
   in
   F.fprintf fmt "@[<hv>conditions: %a@;phi: %a@]" pp_conditions conditions
     (Formula.pp_with_pp_var pp_var) phi
@@ -3943,7 +3983,7 @@ let and_equal_string_concat v x y formula =
   and_atom (Equal (Var v, StringConcat (Term.of_operand x, Term.of_operand y))) formula
 
 
-let prune_atom atom (formula, new_eqs) =
+let prune_atom ~depth atom (formula, new_eqs) =
   (* Use [phi] to normalize [atom] here to take previous [prune]s into account. *)
   Debug.p "prune atom %a" (Atom.pp_with_pp_var Var.pp) atom ;
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
@@ -3954,18 +3994,18 @@ let prune_atom atom (formula, new_eqs) =
   let* phi, new_eqs = Formula.Normalizer.propagate_atom atom (phi, new_eqs) in
   let conditions =
     List.fold normalized_atoms ~init:formula.conditions ~f:(fun conditions atom ->
-        Atom.Set.add atom conditions )
+        add_condition (atom, depth) conditions )
   in
   let+ formula = Intervals.incorporate_new_eqs new_eqs {phi; conditions} in
   (formula, new_eqs)
 
 
-let prune_atoms atoms formula_new_eqs =
+let prune_atoms ~depth atoms formula_new_eqs =
   SatUnsat.list_fold atoms ~init:formula_new_eqs ~f:(fun formula_new_eqs atom ->
-      prune_atom atom formula_new_eqs )
+      prune_atom ~depth atom formula_new_eqs )
 
 
-let prune_binop ~negated (bop : Binop.t) x y formula =
+let prune_binop ?(depth = 0) ~negated (bop : Binop.t) x y formula =
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
@@ -3979,7 +4019,7 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
      important to do [prune_atoms] *first* otherwise it might become trivial. For instance adding [x
      = 4] would prune [4 = 4] and so not add anything to [formula.conditions] instead of adding [x =
      4]. *)
-  prune_atoms atoms (formula, RevList.empty) >>= Intervals.and_binop ~negated bop x y
+  prune_atoms ~depth atoms (formula, RevList.empty) >>= Intervals.and_binop ~negated bop x y
 
 
 let is_known_zero formula v =
@@ -4196,10 +4236,10 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
     match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
   in
   let add_conditions conditions_foreign init =
-    IContainer.fold_of_pervasives_set_fold Atom.Set.fold conditions_foreign ~init
-      ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
+    IContainer.fold_of_pervasives_map_fold Atom.Map.fold conditions_foreign ~init
+      ~f:(fun (acc_f, phi_new_eqs) (atom_foreign, depth) ->
         let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f_subst in
-        let phi_new_eqs = prune_atom atom phi_new_eqs |> sat_value_exn in
+        let phi_new_eqs = prune_atom ~depth:(depth + 1) atom phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
   try
@@ -4250,8 +4290,8 @@ end = struct
 
 
   let subst_var_atoms_for_conditions ~precondition_vocabulary subst atoms =
-    Atom.Set.fold
-      (fun atom atoms' ->
+    Atom.Map.fold
+      (fun atom depth atoms' ->
         let changed, atom' =
           Atom.fold_subst_variables atom ~init:false ~f_subst:(fun changed v ->
               if Var.Set.mem v precondition_vocabulary then (changed, VarSubst v)
@@ -4268,9 +4308,9 @@ end = struct
           | Unsat ->
               raise_notrace Contradiction
           | Sat atoms'' ->
-              Atom.Set.add_seq (Caml.List.to_seq atoms'') atoms'
-        else Atom.Set.add atom' atoms' )
-      atoms Atom.Set.empty
+              add_conditions (atoms'', depth) atoms'
+        else add_condition (atom', depth) atoms' )
+      atoms Atom.Map.empty
 
 
   let subst_var_phi subst
@@ -4486,8 +4526,9 @@ module DeadVariables = struct
       (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
          contain variables related to variables in the pre *)
       let closed_prunable_vars = get_reachable_from var_graph precondition_vocabulary in
-      Atom.Set.filter
-        (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom))
+      L.d_printfln "closed_prunable_vars: %a" Var.Set.pp closed_prunable_vars ;
+      Atom.Map.filter
+        (fun atom _depth -> not (Atom.has_var_notin closed_prunable_vars atom))
         formula.conditions
     in
     Sat ({conditions; phi}, vars_to_keep)
@@ -4508,8 +4549,8 @@ let simplify ~precondition_vocabulary ~keep formula =
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
 let is_manifest ~is_allocated formula =
-  Atom.Set.for_all
-    (fun atom ->
+  Atom.Map.for_all
+    (fun atom _depth ->
       let is_ground = not @@ Term.has_var_notin Var.Set.empty @@ Atom.to_term atom in
       is_ground
       ||
@@ -4572,8 +4613,8 @@ let and_callee_formula subst formula ~callee:formula_callee =
 
 let fold_variables {conditions; phi} ~init ~f =
   let init =
-    let f atom acc = Atom.fold_variables atom ~init:acc ~f in
-    Atom.Set.fold f conditions init
+    let f atom _depth acc = Atom.fold_variables atom ~init:acc ~f in
+    Atom.Map.fold f conditions init
   in
   Formula.fold_variables phi ~init ~f
 
@@ -4657,5 +4698,5 @@ let pp_formula_explained pp_var fmt {phi} =
 
 
 let pp_conditions_explained pp_var fmt {conditions} =
-  if not (Atom.Set.is_empty conditions) then
-    F.fprintf fmt "@;∧ %a" (Atom.Set.pp_with_pp_var pp_var) conditions
+  if not (Atom.Map.is_empty conditions) then
+    F.fprintf fmt "@;∧ %a" (pp_conditions pp_var) conditions
