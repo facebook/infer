@@ -69,7 +69,7 @@ let count_references tenv astate =
           else (seen, ref_counts) )
   in
   Stack.fold
-    (fun _var (addr, _) (seen, ref_counts) -> count_references_from addr seen ref_counts)
+    (fun _var vo (seen, ref_counts) -> count_references_from (ValueOrigin.value vo) seen ref_counts)
     astate
     (AbstractValue.Set.empty, AbstractValue.Map.empty)
   |> snd
@@ -90,7 +90,8 @@ let is_released tenv astate addr non_retaining_addrs =
              || is_retained_by accessed_addr (src_addr :: seen) ) )
   in
   Stack.exists
-    (fun _var (src_addr, _) ->
+    (fun _var src_vo ->
+      let src_addr = ValueOrigin.value src_vo in
       (is_retaining src_addr || AbstractValue.equal src_addr addr) && is_retained_by src_addr [] )
     astate
   |> not
@@ -111,10 +112,12 @@ let is_released tenv astate addr non_retaining_addrs =
    removed. *)
 let removable_vars tenv astate vars =
   let non_retaining_addrs =
-    List.filter_map vars ~f:(fun var -> Stack.find_opt var astate |> Option.map ~f:fst)
+    List.filter_map vars ~f:(fun var ->
+        Stack.find_opt var astate |> Option.map ~f:ValueOrigin.value )
   in
   let is_removable addr =
     (not (is_ref_counted addr astate)) || is_released tenv astate addr non_retaining_addrs
   in
   List.filter vars ~f:(fun var ->
-      Stack.find_opt var astate |> Option.for_all ~f:(fun (addr, _) -> is_removable addr) )
+      Stack.find_opt var astate
+      |> Option.for_all ~f:(fun vo -> is_removable @@ ValueOrigin.value vo) )

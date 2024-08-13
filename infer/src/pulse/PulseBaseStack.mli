@@ -17,7 +17,7 @@ module type S = sig
   val equal : t -> t -> bool
 end
 
-include S with type value = AbstractValue.t * ValueHistory.t
+include S with type value = ValueOrigin.t
 
 val yojson_of_t : t -> Yojson.Safe.t
 

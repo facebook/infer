@@ -133,13 +133,13 @@ let get_modified_params pname (summary : AbductiveDomain.Summary.t) post pre_hea
   List.fold_left formals ~init:ImpurityDomain.ModifiedVarMap.bottom ~f:(fun acc (name, typ, _) ->
       let pvar = Pvar.mk name pname in
       match Stack.find_opt (Var.of_pvar pvar) (summary :> AbductiveDomain.t) with
-      | Some (addr, _) when Typ.is_pointer typ -> (
-        match UnsafeMemory.find_opt addr pre_heap with
+      | Some vo when Typ.is_pointer typ -> (
+        match UnsafeMemory.find_opt (ValueOrigin.value vo) pre_heap with
         | Some edges_pre ->
             UnsafeMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
                 add_to_modified pname ~pvar ~access ~addr pre_heap post acc )
         | None ->
-            debug "The address %a is not materialized in pre-heap.\n" AbstractValue.pp addr ;
+            debug "The address %a is not materialized in pre-heap.@\n" ValueOrigin.pp vo ;
             acc )
       | _ ->
           acc )
@@ -147,14 +147,14 @@ let get_modified_params pname (summary : AbductiveDomain.Summary.t) post pre_hea
 
 let get_modified_globals pname (summary : AbductiveDomain.Summary.t) pre_heap post =
   Stack.fold
-    (fun var (addr, _) modified_globals ->
+    (fun var vo modified_globals ->
       if Var.is_global var then
         (* since global vars are rooted in the stack, we don't have
            access here but we still want to pick up changes to
            globals. *)
         add_to_modified pname
           ~pvar:(Option.value_exn (Var.get_pvar var))
-          ~access:Access.Dereference ~addr pre_heap post modified_globals
+          ~access:Access.Dereference ~addr:(ValueOrigin.value vo) pre_heap post modified_globals
       else modified_globals )
     (summary :> AbductiveDomain.t)
     ImpurityDomain.ModifiedVarMap.bottom

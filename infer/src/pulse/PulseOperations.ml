@@ -145,9 +145,10 @@ let eval_deref_access path ?must_be_valid_reason mode location addr_hist access 
 
 let eval_var_to_value_origin {PathContext.timestamp} location pvar astate =
   let var = Var.of_pvar pvar in
-  let astate, addr_hist =
+  let astate, vo =
     Stack.eval (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp))) var astate
   in
+  let addr_hist = ValueOrigin.addr_hist vo in
   let origin = ValueOrigin.OnStack {var; addr_hist} in
   (astate, origin)
 
@@ -157,7 +158,10 @@ let eval_var path location pvar astate =
   (astate, ValueOrigin.addr_hist value_origin)
 
 
-let eval_ident id astate = Stack.eval ValueHistory.epoch (Var.of_id id) astate
+let eval_ident id astate =
+  let astate, vo = Stack.eval ValueHistory.epoch (Var.of_id id) astate in
+  (astate, ValueOrigin.addr_hist vo)
+
 
 let write_access path location addr_trace_ref access addr_trace_obj astate =
   check_addr_access path Write location addr_trace_ref astate
@@ -236,8 +240,8 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
   | Var id ->
       let var = Var.of_id id in
       (* error in case of missing history? *)
-      let astate, addr_hist = Stack.eval ValueHistory.epoch var astate in
-      let origin = ValueOrigin.OnStack {var; addr_hist} in
+      let astate, var_origin = Stack.eval ValueHistory.epoch var astate in
+      let origin = ValueOrigin.OnStack {var; addr_hist= ValueOrigin.addr_hist var_origin} in
       Sat (Ok (astate, origin))
   | Lvar pvar ->
       Sat (Ok (eval_var_to_value_origin path location pvar astate))
@@ -443,19 +447,18 @@ let eval_proc_name path location call_exp astate =
 let realloc_pvar tenv ({PathContext.timestamp} as path) ~set_uninitialized pvar typ location astate
     =
   let addr = AbstractValue.mk_fresh () in
-  let astate =
-    Stack.add (Var.of_pvar pvar)
-      (addr, ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)))
-      astate
+  let vo =
+    ValueOrigin.Unknown (addr, ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)))
   in
+  let astate = Stack.add (Var.of_pvar pvar) vo astate in
   if set_uninitialized then
     AddressAttributes.set_uninitialized tenv path (`LocalDecl (pvar, Some addr)) typ location astate
   else astate
 
 
-let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
+let write_id id addr_hist astate = Stack.add (Var.of_id id) (ValueOrigin.unknown addr_hist) astate
 
-let read_id id astate = Stack.find_opt (Var.of_id id) astate
+let read_id id astate = Stack.find_opt (Var.of_id id) astate |> Option.map ~f:ValueOrigin.addr_hist
 
 let add_static_type_objc_class tenv typ address location astate =
   match typ with
@@ -465,10 +468,10 @@ let add_static_type_objc_class tenv typ address location astate =
       astate
 
 
-let havoc_id id loc_opt astate =
+let havoc_id id hist astate =
   (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
   if Topl.is_active () || Stack.mem (Var.of_id id) astate then
-    write_id id (AbstractValue.mk_fresh (), loc_opt) astate
+    write_id id (AbstractValue.mk_fresh (), hist) astate
   else astate
 
 
@@ -610,11 +613,14 @@ let record_invalidation ({PathContext.timestamp; conditions} as path) access_pat
     astate =
   match access_path with
   | StackAddress (x, hist0) ->
-      let astate, (addr, hist) = Stack.eval hist0 x astate in
+      let astate, vo = Stack.eval hist0 x astate in
       let hist' =
-        ValueHistory.sequence ~context:conditions (Invalidated (cause, location, timestamp)) hist
+        ValueHistory.sequence ~context:conditions
+          (Invalidated (cause, location, timestamp))
+          (ValueOrigin.hist vo)
       in
-      Stack.add x (addr, hist') astate
+      let vo' = ValueOrigin.with_hist hist' vo in
+      Stack.add x vo' astate
   | MemoryAccess {pointer; access; hist_obj_default} ->
       let addr_obj, hist_obj =
         match Memory.find_edge_opt (fst pointer) access astate with
@@ -720,7 +726,7 @@ let check_address_escape escape_location proc_desc address history astate =
       |> Option.exists ~f:(fun (pointee, _) -> AbstractValue.equal pointee address)
     in
     Stack.exists
-      (fun var (pointer, _) -> Var.is_global var && points_to_address pointer address astate)
+      (fun var vo -> Var.is_global var && points_to_address (ValueOrigin.value vo) address astate)
       astate
   in
   let check_address_of_cpp_temporary () =
@@ -745,9 +751,9 @@ let check_address_escape escape_location proc_desc address history astate =
     IContainer.iter_result
       ~fold:(IContainer.fold_of_pervasives_map_fold (Stack.fold ~pre_or_post:`Post))
       astate
-      ~f:(fun (variable, (var_address, _)) ->
+      ~f:(fun (variable, var_address_vo) ->
         if
-          AbstractValue.equal var_address address
+          AbstractValue.equal (ValueOrigin.value var_address_vo) address
           && ( Var.is_cpp_temporary variable
              || Option.exists (Var.get_pvar variable) ~f:(fun pvar ->
                     Procdesc.is_non_structured_binding_local_or_formal proc_desc pvar )
@@ -795,8 +801,8 @@ let get_dynamic_type_unreachable_values vars astate =
      more than one, it doesn't matter which *)
   let find_var_opt astate addr =
     Stack.fold
-      (fun var (var_addr, _) var_opt ->
-        if AbstractValue.equal addr var_addr then Some var else var_opt )
+      (fun var vo_var_addr var_opt ->
+        if AbstractValue.equal addr (ValueOrigin.value vo_var_addr) then Some var else var_opt )
       astate None
   in
   let astate' = Stack.remove_vars vars astate in
@@ -819,7 +825,8 @@ let remove_vars vars location astate =
   let+ astate =
     SatUnsat.list_fold vars ~init:astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
-        | Some (address, history) ->
+        | Some vo ->
+            let address, history = ValueOrigin.addr_hist vo in
             let* astate =
               if Var.appears_in_source_code var && AbductiveDomain.is_local var astate then
                 mark_address_of_stack_variable history var location address astate

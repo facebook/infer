@@ -25,6 +25,8 @@ type 'array_index access = (Fieldname.t, 'array_index) access_
 
 val pp_access : (F.formatter -> 'array_index -> unit) -> F.formatter -> 'array_index access -> unit
 
+val map_array_index : f:('idx -> 'idx') -> 'idx access -> 'idx' access
+
 module type S = sig
   type key
 

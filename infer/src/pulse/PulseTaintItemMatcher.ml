@@ -405,10 +405,11 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                   if Stack.mem return astate then astate
                   else
                     let ret_val = AbstractValue.mk_fresh () in
-                    Stack.add return (ret_val, ValueHistory.epoch) astate
+                    Stack.add return (ValueOrigin.unknown (ret_val, ValueHistory.epoch)) astate
                 in
                 Stack.find_opt return astate
-                |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
+                |> Option.fold ~init:acc ~f:(fun (_, tainted) return_vo ->
+                       let return_value = ValueOrigin.addr_hist return_vo in
                        let taint =
                          { TaintItem.value_tuple=
                              Basic {value= potential_taint_value; origin= ReturnValue}

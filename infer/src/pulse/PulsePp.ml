@@ -322,6 +322,10 @@ module Printer = struct
       decorator.f value_hist_opt pp_value_ fmt value_hist_opt
     in
     let pp_value fmt (value, hist) = pp_value_hist_opt fmt (value, Some hist) in
+    let pp_value_origin fmt vo =
+      let value, hist = ValueOrigin.addr_hist vo in
+      pp_value_hist_opt fmt (value, Some hist)
+    in
     let pp_value_no_hist fmt value = pp_value_hist_opt fmt (value, None) in
     let rec pp_value_accesses ~is_prev_deref fmt (value, hist_opt) =
       let dereference, field_accesses, array_accesses =
@@ -404,7 +408,8 @@ module Printer = struct
       need_sep := true
     in
     Stack.fold ~pre_or_post
-      (fun var ((value, hist) as value_hist) () ->
+      (fun var vo () ->
+        let value, hist = ValueOrigin.addr_hist vo in
         match AbstractValue.Map.find value explainer with
         | Aliases {print_as} ->
             if not (Option.exists print_as ~f:(Var.equal var)) then (
@@ -412,7 +417,7 @@ module Printer = struct
               add_delayed_value (value, Some hist) ;
               F.fprintf fmt "@[<h>%a=%a@]"
                 (pp_var pp_kind ~with_ampersand:true)
-                var pp_value value_hist )
+                var pp_value_origin vo )
         | Unique _ -> (
             let pp, var_value_hist, with_ampersand =
               if Var.is_pvar var then
@@ -420,7 +425,7 @@ module Printer = struct
                 | None ->
                     ( (fun fmt (v, hist) ->
                         pp_value_accesses ~is_prev_deref:false fmt (v, Some hist) )
-                    , value_hist
+                    , ValueOrigin.addr_hist vo
                     , true )
                 | Some (var_address_deref_value, hist) ->
                     let pp fmt (v, hist) =
@@ -436,7 +441,7 @@ module Printer = struct
                     (pp, (var_address_deref_value, hist), false)
               else
                 ( (fun fmt (v, hist) -> pp_value_accesses ~is_prev_deref:false fmt (v, Some hist))
-                , value_hist
+                , ValueOrigin.addr_hist vo
                 , false )
             in
             match AbstractValue.Map.find (fst var_value_hist) explainer with

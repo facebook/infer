@@ -714,8 +714,10 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
   in
   let astate =
     match Stack.find_opt return astate with
-    | Some return_addr_hist when propagate_to_return ->
-        let return_value_origin = ValueOrigin.OnStack {var= return; addr_hist= return_addr_hist} in
+    | Some return_vo when propagate_to_return ->
+        let return_value_origin =
+          ValueOrigin.OnStack {var= return; addr_hist= ValueOrigin.addr_hist return_vo}
+        in
         propagate_to path location UnknownCall return_value_origin actuals call astate
     | _ ->
         astate

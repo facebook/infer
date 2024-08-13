@@ -386,10 +386,10 @@ let raise_if_unsat contradiction = function
 let fold_globals_of_callee_stack {PathContext.timestamp} call_loc stack call_state ~f =
   (* safe to use [UnsafeStack] because these stacks come from a summary *)
   PulseResult.container_fold ~fold:(IContainer.fold_of_pervasives_map_fold UnsafeStack.fold)
-    stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
+    stack ~init:call_state ~f:(fun call_state (var, vo_callee) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
-          let call_state, addr_hist_caller =
+          let call_state, vo_caller =
             let astate, var_value =
               Stack.eval
                 (ValueHistory.singleton (VariableAccessed (pvar, call_loc, timestamp)))
@@ -398,7 +398,8 @@ let fold_globals_of_callee_stack {PathContext.timestamp} call_loc stack call_sta
             if phys_equal astate call_state.astate then (call_state, var_value)
             else ({call_state with astate}, var_value)
           in
-          f pvar ~stack_value ~addr_hist_caller call_state
+          f pvar ~addr_hist_callee:(ValueOrigin.addr_hist vo_callee)
+            ~addr_hist_caller:(ValueOrigin.addr_hist vo_caller) call_state
       | _ ->
           Ok call_state )
 
@@ -662,7 +663,7 @@ let materialize_pre_from_actual callee call_location ~pre ~formal:(formal, typ) 
   let formal = Var.of_pvar formal in
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
-   let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
+   let* addr_formal_pre = UnsafeStack.find_opt formal pre.BaseDomain.stack >>| ValueOrigin.value in
    let+ formal_pre, cell_id = callee_deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
    materialize_pre_from_address callee call_location ~pre ~addr_pre:formal_pre cell_id
      ~addr_hist_caller:actual path call_state )
@@ -698,7 +699,7 @@ let materialize_pre_for_parameters callee call_location ~pre ~formals ~actuals c
 
 let materialize_pre_for_globals path callee call_location ~pre call_state =
   fold_globals_of_callee_stack path call_location pre.BaseDomain.stack call_state
-    ~f:(fun pvar ~stack_value:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
+    ~f:(fun pvar ~addr_hist_callee:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
       let path = LazyHeapPath.from_pvar pvar in
       materialize_pre_from_address callee call_location ~pre ~addr_pre
         (ValueHistory.get_cell_id_exn pre_hist)
@@ -1058,9 +1059,9 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
   match Stack.find_opt return_var (callee_summary :> AbductiveDomain.t) with
   | None ->
       (call_state, None)
-  | Some (addr_return, _) -> (
+  | Some vo_return -> (
     match
-      UnsafeMemory.find_edge_opt addr_return Dereference
+      UnsafeMemory.find_edge_opt (ValueOrigin.value vo_return) Dereference
         (AbductiveDomain.Summary.get_post callee_summary).BaseDomain.heap
     with
     | None ->

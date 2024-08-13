@@ -418,9 +418,10 @@ let get_static_companion ~model_desc path location type_name astate =
   let pvar = get_static_companion_var type_name in
   let var = Var.of_pvar pvar in
   let hist = Hist.single_call path location model_desc in
-  let astate, ((addr, _) as addr_hist) = AbductiveDomain.Stack.eval hist var astate in
+  let astate, vo = AbductiveDomain.Stack.eval hist var astate in
   let static_type_name = Typ.Name.Hack.static_companion type_name in
   let typ = Typ.mk_struct static_type_name in
+  let ((addr, _) as addr_hist) = ValueOrigin.addr_hist vo in
   let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ location astate in
   (addr_hist, astate)
 

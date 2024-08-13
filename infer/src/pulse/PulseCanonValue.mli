@@ -67,6 +67,11 @@ module type S = sig
   val canon_opt_fst4' :
     astate -> (AbstractValue.t * 'a * 'b * 'c) option -> (t * 'a * 'b * 'c) option
 
+  val canon_value_origin : astate -> needs_canon ValueOrigin.t_ -> t ValueOrigin.t_
+
+  val canon_opt_value_origin :
+    astate -> needs_canon ValueOrigin.t_ option -> t ValueOrigin.t_ option
+
   val mk_fresh : unit -> t
   (** This is just [AbstractValue.mk_fresh] so technically is only guaranteed to produce a canonical
       representative if the value is not immediately made equal to another one... Use with caution! *)
@@ -81,9 +86,9 @@ module type S = sig
 
   module Stack : sig
     include
-      PulseBaseStack.S with type value = needs_canon * ValueHistory.t and type t = PulseBaseStack.t
+      PulseBaseStack.S with type value = needs_canon ValueOrigin.t_ and type t = PulseBaseStack.t
 
-    val add : Var.t -> AbstractValue.t * ValueHistory.t -> t -> t
+    val add : Var.t -> ValueOrigin.t -> t -> t
     (* we don't care about the normalization status of the value we put in the map since the idea is
        to always normalize upon reading *)
   end

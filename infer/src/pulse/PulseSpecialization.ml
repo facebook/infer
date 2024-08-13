@@ -25,7 +25,9 @@ let prune_eq_list_values astate values =
 let rec initialize_heap_path heap_path astate =
   match (heap_path : Specialization.HeapPath.t) with
   | Pvar pvar ->
-      let opt_addr = Stack.find_opt (Var.of_pvar pvar) astate in
+      let opt_addr =
+        Stack.find_opt (Var.of_pvar pvar) astate |> Option.map ~f:ValueOrigin.addr_hist
+      in
       let default () = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
       (astate, Option.value_or_thunk opt_addr ~default)
   | FieldAccess (fieldname, heap_path) ->

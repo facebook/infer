@@ -256,7 +256,9 @@ module PulseTransferFunctions = struct
     let return = Var.of_id return in
     let do_astate astate =
       let return =
-        Option.map ~f:(fun (value, _history) -> (value, return_type)) (Stack.find_opt return astate)
+        Option.map
+          ~f:(fun return_vo -> (ValueOrigin.value return_vo, return_type))
+          (Stack.find_opt return astate)
       in
       let topl_event = PulseTopl.Call {return; arguments; procname} in
       AbductiveDomain.Topl.small_step tenv loc topl_event astate
@@ -1117,8 +1119,8 @@ module PulseTransferFunctions = struct
       =
     let find_var_opt astate addr =
       Stack.fold
-        (fun var (var_addr, _) var_opt ->
-          if AbstractValue.equal addr var_addr then Some var else var_opt )
+        (fun var var_addr_vo var_opt ->
+          if AbstractValue.equal addr (ValueOrigin.value var_addr_vo) then Some var else var_opt )
         astate None
     in
     let ref_counts = PulseRefCounting.count_references tenv astate in
@@ -1658,7 +1660,7 @@ let assume_notnull_params {ProcAttributes.proc_name; formals} astate =
       if Annot.Item.is_notnull anno then
         (let open IOption.Let_syntax in
          let var = Pvar.mk mangled proc_name |> Var.of_pvar in
-         let* addr_var = Stack.find_opt var astate in
+         let* addr_var = Stack.find_opt var astate >>| ValueOrigin.addr_hist in
          let astate, (addr, _) = Memory.eval_edge addr_var Dereference astate in
          PulseArithmetic.and_positive addr astate |> PulseOperationResult.sat_ok )
         |> Option.value ~default:astate

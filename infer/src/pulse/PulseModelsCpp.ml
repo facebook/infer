@@ -83,7 +83,7 @@ let infer_structured_binding var {FuncArg.exp= arg; arg_payload} _ astate =
     match (var, arg) with
     | Exp.Lvar pvar, Var arg ->
         AbductiveDomain.Stack.remove_vars [Var.of_id arg] astate
-        |> AbductiveDomain.Stack.add (Var.of_pvar pvar) arg_payload
+        |> AbductiveDomain.Stack.add (Var.of_pvar pvar) (ValueOrigin.unknown arg_payload)
     | _ ->
         L.internal_error "Unexpected arguments for c17_structured_binding: %a, %a" Exp.pp var Exp.pp
           arg ;

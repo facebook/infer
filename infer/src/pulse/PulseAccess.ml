@@ -29,6 +29,17 @@ let pp_access pp_array_index fmt = function
       F.pp_print_string fmt "*"
 
 
+let map_array_index ~f access =
+  match access with
+  | ArrayAccess (typ, idx) ->
+      let idx' = f idx in
+      ArrayAccess (typ, idx')
+  | FieldAccess field ->
+      FieldAccess field
+  | Dereference ->
+      Dereference
+
+
 module type S = sig
   type key
 

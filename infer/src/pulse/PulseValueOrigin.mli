@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module AbstractValue = PulseAbstractValue
 module Access = PulseAccess
 module ValueHistory = PulseValueHistory
@@ -20,16 +21,24 @@ type 'value t_ =
   | Unknown of 'value * ValueHistory.t
       (** Values without a known origin such as those containing constant values. *)
 
-type t = AbstractValue.t t_
+type t = AbstractValue.t t_ [@@deriving compare, equal, yojson_of]
 
-val unknown : AbstractValue.t * ValueHistory.t -> t
+val pp : F.formatter -> t -> unit
 
-val addr_hist : t -> AbstractValue.t * ValueHistory.t
+val unknown : 'value * ValueHistory.t -> 'value t_
+
+val with_value : AbstractValue.t -> t -> t
+
+val with_hist : ValueHistory.t -> t -> t
+
+val map_value : 'value t_ -> f:('value -> 'value') -> 'value' t_
+
+val addr_hist : 'value t_ -> 'value * ValueHistory.t
 
 val addr_hist_args :
      t ProcnameDispatcher.Call.FuncArg.t list
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
 
-val value : t -> AbstractValue.t
+val value : 'value t_ -> 'value
 
-val hist : t -> ValueHistory.t
+val hist : _ t_ -> ValueHistory.t

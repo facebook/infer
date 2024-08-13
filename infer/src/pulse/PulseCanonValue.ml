@@ -43,15 +43,20 @@ module type S = sig
   val canon_opt_fst4' :
     astate -> (AbstractValue.t * 'a * 'b * 'c) option -> (t * 'a * 'b * 'c) option
 
+  val canon_value_origin : astate -> needs_canon ValueOrigin.t_ -> t ValueOrigin.t_
+
+  val canon_opt_value_origin :
+    astate -> needs_canon ValueOrigin.t_ option -> t ValueOrigin.t_ option
+
   val mk_fresh : unit -> t
 
   val unsafe_cast : AbstractValue.t -> t [@@deprecated ""] [@@inline always]
 
   module Stack : sig
     include
-      PulseBaseStack.S with type value = needs_canon * ValueHistory.t and type t = PulseBaseStack.t
+      PulseBaseStack.S with type value = needs_canon ValueOrigin.t_ and type t = PulseBaseStack.t
 
-    val add : Var.t -> AbstractValue.t * ValueHistory.t -> t -> t
+    val add : Var.t -> ValueOrigin.t -> t -> t
   end
 
   module Memory :
@@ -151,4 +156,11 @@ end) : S with type astate = AbductiveDomain.astate = struct
         FieldAccess f
     | Dereference ->
         Dereference
+
+
+  let canon_value_origin astate (vo : ValueOrigin.t) : t ValueOrigin.t_ =
+    ValueOrigin.map_value vo ~f:(canon astate)
+
+
+  let canon_opt_value_origin astate vo_opt = Option.map vo_opt ~f:(canon_value_origin astate)
 end

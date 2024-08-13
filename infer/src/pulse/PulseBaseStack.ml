@@ -45,25 +45,17 @@ module VarAddress = struct
     F.fprintf f "%a%a%a" pp_ampersand var Var.pp var pp_proc_name var
 end
 
-module AddrHistPair = struct
-  type t = AbstractValue.t * ValueHistory.t [@@deriving compare, equal, yojson_of]
+module M = PrettyPrintable.MakePPMonoMap (VarAddress) (ValueOrigin)
 
-  let pp f addr_trace =
-    if Config.debug_level_analysis >= 3 then
-      Pp.pair ~fst:AbstractValue.pp ~snd:ValueHistory.pp f addr_trace
-    else AbstractValue.pp f (fst addr_trace)
-end
-
-module M = PrettyPrintable.MakePPMonoMap (VarAddress) (AddrHistPair)
-
-let yojson_of_t m = [%yojson_of: (VarAddress.t * AddrHistPair.t) list] (M.bindings m)
+let yojson_of_t m = [%yojson_of: (VarAddress.t * ValueOrigin.t) list] (M.bindings m)
 
 let canonicalize ~get_var_repr stack =
   let exception AliasingContradiction in
   try
     let (_allocated, changed), stack' =
       M.fold_mapi stack ~init:(AbstractValue.Set.empty, false)
-        ~f:(fun var (allocated, changed) ((addr, hist) as addr_hist) ->
+        ~f:(fun var (allocated, changed) vo ->
+          let addr = ValueOrigin.value vo in
           let addr' = get_var_repr addr in
           if Var.is_pvar var && AbstractValue.Set.mem addr' allocated then (
             L.d_printfln
@@ -74,10 +66,10 @@ let canonicalize ~get_var_repr stack =
           let allocated =
             if Var.is_pvar var then AbstractValue.Set.add addr' allocated else allocated
           in
-          if phys_equal addr addr' then ((allocated, changed), addr_hist)
+          if phys_equal addr addr' then ((allocated, changed), vo)
           else
             let changed = true in
-            ((allocated, changed), (addr', hist)) )
+            ((allocated, changed), ValueOrigin.with_value addr' vo) )
     in
     Sat (if changed then stack' else stack)
   with AliasingContradiction -> Unsat
@@ -89,13 +81,13 @@ let subst_var (v, v') stack =
 
 include M
 
-let compare = M.compare AddrHistPair.compare
+let compare = M.compare ValueOrigin.compare
 
-let equal = M.equal AddrHistPair.equal
+let equal = M.equal ValueOrigin.equal
 
 let pp fmt m =
   let pp_item fmt (var_address, v) =
-    F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrHistPair.pp v
+    F.fprintf fmt "%a=%a" VarAddress.pp var_address ValueOrigin.pp v
   in
   PrettyPrintable.pp_collection ~pp_item fmt (M.bindings m)
 

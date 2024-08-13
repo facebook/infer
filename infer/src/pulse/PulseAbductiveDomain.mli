@@ -91,7 +91,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> PulseBaseStack.value option
 
-  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+  val eval : ValueHistory.t -> Var.t -> t -> t * ValueOrigin.t
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
