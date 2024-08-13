@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 type action_item =
@@ -13,6 +14,17 @@ type action_item =
   | DriverCommand of ClangCommand.t  (** commands prior to [clang -###] treatment *)
   | ClangError of string
   | ClangWarning of string
+
+let status_string_of_action_item = function
+  | CanonicalCommand _ ->
+      (* we would very much want to print which file is being captured but we cannot extract the
+         file name from a [ClangCommand.t] so we cannot do that here *)
+      "capturing source file"
+  | DriverCommand _ ->
+      "running clang -###"
+  | ClangError s | ClangWarning s ->
+      s
+
 
 let check_for_existing_file args =
   match (Config.buck_mode, Config.clang_ignore_regex) with
@@ -157,6 +169,28 @@ let exec_action_item ~prog ~args = function
           (ClangCommand.command_to_run clang_cmd)
 
 
+let parallel_threshold = 1
+
+let s fmt l = match l with [_] -> () | [] | _ :: _ :: _ -> F.pp_print_char fmt 's'
+
+let exec_in_parallel ~prog ~args commands =
+  L.progress "Starting parallel capture for %d command%a@\n%!" (List.length commands) s commands ;
+  let tasks () = ProcessPool.TaskGenerator.of_list commands in
+  Tasks.Runner.create tasks ~jobs:Config.jobs ~child_prologue:ignore ~child_epilogue:ignore
+    ~f:(fun command ->
+      !ProcessPoolState.update_status (Mtime_clock.now ()) (status_string_of_action_item command) ;
+      exec_action_item ~prog ~args command ;
+      None )
+  |> Tasks.Runner.run |> ignore
+
+
+let exec_all_commands ~prog ~args commands =
+  if Int.equal Config.jobs 1 || List.length commands <= parallel_threshold then (
+    L.progress "Starting sequential capture for %d command%a@\n%!" (List.length commands) s commands ;
+    List.iter ~f:(exec_action_item ~prog ~args) commands )
+  else exec_in_parallel ~prog ~args commands
+
+
 let exe ~prog ~args =
   let xx_suffix = match String.is_suffix ~suffix:"++" prog with true -> "++" | false -> "" in
   (* use clang in facebook-clang-plugins *)
@@ -174,7 +208,7 @@ let exe ~prog ~args =
     | None ->
         (clang_xx, false)
   in
-  List.iter ~f:(exec_action_item ~prog ~args) commands ;
+  exec_all_commands ~prog ~args commands ;
   if List.is_empty commands || should_run_original_command then (
     if List.is_empty commands then
       (* No command to execute after -###, let's execute the original command
