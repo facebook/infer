@@ -13,14 +13,14 @@ module ValueHistory = PulseValueHistory
 (** Describes a (value, history) pair with path/origin when available.
 
     Useful when one needs to overwrite a history of a particular value in the abstract state. *)
-type t =
+type 'value t_ =
   | InMemory of
-      { src: AbstractValue.t * ValueHistory.t
-      ; access: Access.t
-      ; dest: AbstractValue.t * ValueHistory.t }
-  | OnStack of {var: Var.t; addr_hist: AbstractValue.t * ValueHistory.t}
-  | Unknown of AbstractValue.t * ValueHistory.t
+      {src: 'value * ValueHistory.t; access: 'value Access.access; dest: 'value * ValueHistory.t}
+  | OnStack of {var: Var.t; addr_hist: 'value * ValueHistory.t}
+  | Unknown of 'value * ValueHistory.t
       (** Values without a known origin such as those containing constant values. *)
+
+type t = AbstractValue.t t_
 
 val unknown : AbstractValue.t * ValueHistory.t -> t
 

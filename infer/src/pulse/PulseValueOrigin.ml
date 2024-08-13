@@ -10,13 +10,13 @@ module AbstractValue = PulseAbstractValue
 module Access = PulseAccess
 module ValueHistory = PulseValueHistory
 
-type t =
+type 'value t_ =
   | InMemory of
-      { src: AbstractValue.t * ValueHistory.t
-      ; access: Access.t
-      ; dest: AbstractValue.t * ValueHistory.t }
-  | OnStack of {var: Var.t; addr_hist: AbstractValue.t * ValueHistory.t}
-  | Unknown of AbstractValue.t * ValueHistory.t
+      {src: 'value * ValueHistory.t; access: 'value Access.access; dest: 'value * ValueHistory.t}
+  | OnStack of {var: Var.t; addr_hist: 'value * ValueHistory.t}
+  | Unknown of 'value * ValueHistory.t
+
+type t = AbstractValue.t t_
 
 let unknown (addr, hist) = Unknown (addr, hist)
 
