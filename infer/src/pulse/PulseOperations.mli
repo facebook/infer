@@ -155,6 +155,9 @@ val realloc_pvar :
   Tenv.t -> PathContext.t -> set_uninitialized:bool -> Pvar.t -> Typ.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
+(** does not record the value origin, unlike [write_load_id], so only use for return values *)
+
+val write_load_id : Ident.t -> ValueOrigin.t -> t -> t
 
 val read_id : Ident.t -> t -> (AbstractValue.t * ValueHistory.t) option
 

@@ -1384,20 +1384,21 @@ module PulseTransferFunctions = struct
           (* [lhs_id := *rhs_exp] *)
           let model_opt = PulseLoadInstrModels.dispatch ~load:rhs_exp in
           let deref_rhs astate =
-            (let** astate, rhs_addr_hist =
+            (let** astate, rhs_vo =
                match model_opt with
                | None ->
                    (* no model found: evaluate the expression as normal *)
-                   PulseOperations.eval_deref path loc rhs_exp astate
+                   PulseOperations.eval_deref_to_value_origin path loc rhs_exp astate
                | Some model ->
                    (* we are loading from something modelled; apply the model *)
-                   model {path; location= loc} astate
+                   let++ astate, addr_hist = model {path; location= loc} astate in
+                   (astate, ValueOrigin.unknown addr_hist)
              in
-             let rhs_addr, _ = rhs_addr_hist in
+             let rhs_addr = ValueOrigin.value rhs_vo in
              and_is_int_if_integer_type typ rhs_addr astate
              >>|| PulseOperations.hack_python_propagates_type_on_load tenv path loc rhs_exp rhs_addr
              >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
-             >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
+             >>|| PulseOperations.write_load_id lhs_id rhs_vo )
             |> SatUnsat.to_list
             |> PulseReport.report_results analysis_data loc
           in

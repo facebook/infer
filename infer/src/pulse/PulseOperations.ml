@@ -456,6 +456,8 @@ let realloc_pvar tenv ({PathContext.timestamp} as path) ~set_uninitialized pvar 
   else astate
 
 
+let write_load_id id vo astate = Stack.add (Var.of_id id) vo astate
+
 let write_id id addr_hist astate = Stack.add (Var.of_id id) (ValueOrigin.unknown addr_hist) astate
 
 let read_id id astate = Stack.find_opt (Var.of_id id) astate |> Option.map ~f:ValueOrigin.addr_hist

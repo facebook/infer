@@ -2469,16 +2469,44 @@ module AddressAttributes = struct
     SafeAttributes.is_hack_sinit_called (CanonValue.canon' astate v) astate
 end
 
-let add_event_to_value_origin (path : PathContext.t) location event value_origin astate =
+(* [recurse] is here to enforce that we can only ever make one recursive call when calling into this
+      function. That's what the code should ensure already as we should only ever need one recursive
+      call (namely when we are changing the history of a logical var: we should also update the history
+      of the program var or memory location where it came from) but better safe than infinite
+      loop-y. *)
+let rec add_event_to_value_origin_ ~recurse (path : PathContext.t) location event value_origin
+    astate =
   match (value_origin : ValueOrigin.t) with
   | InMemory {src; access; dest= dest_addr, dest_hist} ->
       let dest_hist = ValueHistory.sequence event dest_hist ~context:path.conditions in
       Memory.add_edge path src access (dest_addr, dest_hist) location astate
   | OnStack {var; addr_hist= addr, hist} ->
       let hist = ValueHistory.sequence event hist ~context:path.conditions in
-      Stack.add var (OnStack {var; addr_hist= (addr, hist)}) astate
-  | Unknown _ ->
+      let astate, new_origin =
+        match Stack.find_opt var astate with
+        | None ->
+            (astate, ValueOrigin.Unknown (addr, hist))
+        | Some var_origin ->
+            let astate =
+              if recurse then
+                add_event_to_value_origin_ ~recurse:false path location event var_origin astate
+              else astate
+            in
+            let origin =
+              ValueOrigin.with_hist
+                (ValueHistory.sequence event (ValueOrigin.hist var_origin) ~context:path.conditions)
+                var_origin
+            in
+            (astate, origin)
+      in
+      Stack.add var new_origin astate
+  | Unknown (v, _) ->
+      L.d_printfln "could not add event to %a with Unknown origin" AbstractValue.pp v ;
       astate
+
+
+let add_event_to_value_origin path location event value_origin astate =
+  add_event_to_value_origin_ ~recurse:true path location event value_origin astate
 
 
 module CanonValue = struct
