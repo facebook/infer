@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-int FP_sizeof_eval_ok(void) {
+int sizeof_eval_ok(void) {
   int a = 4;
   int b = sizeof(a);
   char c[2];

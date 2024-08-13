@@ -67,7 +67,7 @@ void free_via_ptr(void* x) { free_func(x); }
 
 void malloc_ptr_leak_bad_FN() { int* p = (int*)malloc_via_ptr(sizeof(int)); }
 
-void malloc_ptr_no_check_leak_bad() {
+void FN_malloc_ptr_no_check_leak_bad() {
   int* p = (int*)malloc_via_ptr(sizeof(int));
   *p = 42;
 }

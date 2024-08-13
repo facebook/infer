@@ -318,7 +318,9 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
       (astate, ValueOrigin.Unknown (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
   | Exn exp ->
       eval_to_value_origin path Read location exp astate
-  | Sizeof _ ->
+  | Sizeof {nbytes= Some n} ->
+      eval_to_value_origin path mode location (Exp.Const (Cint (IntLit.of_int n))) astate
+  | Sizeof {nbytes= None} ->
       let addr_hist = (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch) in
       Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
 
