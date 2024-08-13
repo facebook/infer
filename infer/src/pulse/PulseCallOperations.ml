@@ -290,8 +290,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
        but when we want to call the actual code of the block or function, we need to remove the closure argument again. *)
     let actuals =
       match call_flags with
-      | Some call_flags
-        when call_flags.CallFlags.cf_is_objc_block || call_flags.CallFlags.cf_is_c_function_ptr -> (
+      | Some call_flags when call_flags.CallFlags.cf_is_objc_block -> (
         match actuals with _ :: rest -> rest | [] -> [] )
       | _ ->
           actuals
