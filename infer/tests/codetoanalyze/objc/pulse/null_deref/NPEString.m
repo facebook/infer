@@ -9,7 +9,7 @@
 // Test (non-nil) returned values of NSString methods against `nil`
 NSString* stringNotNil(NSString* str) {
   if (!str) {
-    return [NSString stringWithString:nil];
+    return [NSString stringWithString:nil]; // crash
   }
   return str;
 }

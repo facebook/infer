@@ -82,21 +82,21 @@ public class InstanceOfExample {
     }
   }
 
-  public void testInstanceOfPersonLatent(Person p) {
+  public void testInstanceOfPersonBad(Person p) {
     if (p instanceof Person) {
       Object o = null;
       o.toString();
     }
   }
 
-  public void testInstanceOfStudentLatent(Person p) {
+  public void testInstanceOfStudentBad(Person p) {
     if (p instanceof Student) {
       Object o = null;
       o.toString();
     }
   }
 
-  public void testNotInstanceOfPersonLatent(Person p) {
+  public void testNotInstanceOfPersonBad(Person p) {
     if (!(p instanceof Person)) { // true if p is null
       Object o = null;
       o.toString();
@@ -144,25 +144,25 @@ public class InstanceOfExample {
     }
   }
 
-  public void checkInstanceArray(Object array) {
+  public void checkInstanceArrayLatent(Object array, boolean b) {
     Object o = null;
     if (array instanceof int[]) {
       o = new Object();
     }
 
-    if (array instanceof boolean[]) {
+    if (b && array instanceof boolean[]) {
       o.toString();
     }
   }
 
   public void testInstanceOfIntArrayOk() {
     int arr[] = new int[10];
-    checkInstanceArray(arr);
+    checkInstanceArrayLatent(arr, true);
   }
 
   public void testInstanceOfBooleanArrayBad() {
     boolean arr[] = new boolean[10];
-    checkInstanceArray(arr);
+    checkInstanceArrayLatent(arr, true);
   }
 
   public List<Integer> createsEmptyList() {

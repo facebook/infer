@@ -71,8 +71,8 @@ int else_good() {
   return *ptr;
 }
 
-int conditional_call(int x) {
-  __block int* ptr = &x;
+int* conditional_call(int x, int* p) {
+  __block int* ptr = p;
   void (^block)(void);
   if (!x) {
     block = ^{
@@ -83,12 +83,18 @@ int conditional_call(int x) {
     };
   }
   block();
-  return *ptr;
+  return ptr;
 }
 
-int conditional_call_bad() { return conditional_call(0); }
+int conditional_call_bad(int* p) {
+  int* q = conditional_call(0, p);
+  return *q;
+}
 
-int conditional_call_good() { return conditional_call(1); }
+int conditional_call_good(int* p) {
+  int* q = conditional_call(1, p);
+  return *q;
+}
 
 void apply_block(void (^block)(void)) { block(); }
 

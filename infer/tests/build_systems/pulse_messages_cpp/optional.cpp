@@ -32,11 +32,15 @@ void empty_via_return_via_access_bad() {
   access(p);
 }
 
-void latent(int a) {
+void latent_access(int a, std::optional<int> foo) {
   if (a == 4) {
-    std::optional<int> foo;
     int _ = foo.value();
   }
+}
+
+void latent(int a) {
+  std::optional<int> foo;
+  latent_access(a, foo);
 }
 
 void propagate_latent_1_latent(int a1) { latent(a1); }

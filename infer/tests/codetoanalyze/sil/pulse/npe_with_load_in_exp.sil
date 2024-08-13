@@ -76,7 +76,7 @@ define .static load_in_exp.if_test_eq_bad(l: *list) : void {
     ret null
 }
 
-define .static load_in_exp.conditional_latent(n: int) : void {
+define .static load_in_exp.conditional_bad(n: int) : void {
   local l: *list
   #entry:
     n4 : int = load &n
@@ -89,18 +89,6 @@ define .static load_in_exp.conditional_latent(n: int) : void {
     ret null
   #else_node:
     prune ! n5
-    ret null
-}
-
-define .static load_in_exp.call_ok() : void {
-  #entry:
-    n1 = load_in_exp.conditional_latent(1)
-    ret null
-}
-
-define .static load_in_exp.call_bad() : void {
-  #entry:
-    n1 = load_in_exp.conditional_latent(2)
     ret null
 }
 

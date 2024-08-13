@@ -16,8 +16,8 @@ public class SimpleLeak {
       if (v) {
         z = new FileInputStream("bbb");
         z.read();
+        z.close();
       }
-      z.close();
     } catch (IOException e) {
       // do nothing
     }

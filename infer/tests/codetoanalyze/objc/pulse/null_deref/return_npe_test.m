@@ -36,7 +36,7 @@
   }
 }
 
-- (void)no_early_return_bad_latent_FN:(ContainerClass*)c {
+- (void)no_early_return_bad:(ContainerClass*)c {
   int i = 0;
   if (c == nil) {
   }
@@ -44,10 +44,6 @@
   if (i == 0) {
     i = c->containedValue;
   }
-}
-
-- (void)no_early_return_manifest_bad {
-  [self no_early_return_bad_latent_FN:nil];
 }
 
 - (void)no_early_return_no_zero_latent_bad_FN:(ContainerClass*)c {

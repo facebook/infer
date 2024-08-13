@@ -54,9 +54,9 @@ struct s {
   int j;
 };
 
-void FPlatent_even_cannot_be_odd_fields_ok(struct s* x) {
+void FP_even_cannot_be_odd_fields_ok(struct s* x) {
   if (x->i + x->i == 5 || x->i + x->i + x->j + x->j == 5) {
-    // latent issue is FP: arithmetic does not know 2x + 2y == 5 is impossible
+    // issue is FP: arithmetic does not know 2x + 2y == 5 is impossible
     // when x and y are ints
     int* p = NULL;
     *p = 42;
@@ -71,7 +71,7 @@ void float_div_bad() {
   }
 }
 
-void FNlatent_float_comparison_bad(float f) {
+void float_comparison_bad(float f) {
   if (2 + f < 2.2) {
     int* p = NULL;
     *p = 42;

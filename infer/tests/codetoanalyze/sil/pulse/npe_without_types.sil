@@ -81,7 +81,7 @@ define .static without_types.if_test_eq_bad(l: *list) : void {
     ret null
 }
 
-define .static without_types.conditional_latent(n: int) : void {
+define .static without_types.conditional_bad(n: int) : void {
   local l: *list
   #entry:
     n4 = load &n
@@ -95,18 +95,6 @@ define .static without_types.conditional_latent(n: int) : void {
     ret null
   #else_node:
     prune ! n5
-    ret null
-}
-
-define .static without_types.call_ok() : void {
-  #entry:
-    n1 = without_types.conditional_latent(1)
-    ret null
-}
-
-define .static without_types.call_bad() : void {
-  #entry:
-    n1 = without_types.conditional_latent(2)
     ret null
 }
 

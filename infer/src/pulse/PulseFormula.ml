@@ -4550,9 +4550,10 @@ let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
 let is_manifest ~is_allocated formula =
   Atom.Map.for_all
-    (fun atom _depth ->
+    (fun atom depth ->
       let is_ground = not @@ Term.has_var_notin Var.Set.empty @@ Atom.to_term atom in
       is_ground
+      || ((not (Language.curr_language_is Erlang)) && Int.equal depth 0)
       ||
       match Atom.get_as_var_neq_zero atom with
       | Some x ->

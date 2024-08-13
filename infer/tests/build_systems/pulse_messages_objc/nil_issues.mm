@@ -60,7 +60,7 @@ std::shared_ptr<int> testNonPODTraceBad() {
   return result;
 }
 
-std::shared_ptr<int> testCallMethodReturnsnonPODLatent(bool b) {
+std::shared_ptr<int> testCallMethodReturnsnonPODBad(bool b) {
   SomeObject* obj;
   if (b) {
     obj = nil;
@@ -69,10 +69,6 @@ std::shared_ptr<int> testCallMethodReturnsnonPODLatent(bool b) {
   }
   std::shared_ptr<int> d = [obj returnsnonPOD]; // UB if obj nil
   return d;
-}
-
-std::shared_ptr<int> testCallMethodReturnsnonPODLatentBad(bool b) {
-  return testCallMethodReturnsnonPODLatent(true);
 }
 
 std::shared_ptr<int> testAccessPropertyAccessorBad() {

@@ -56,7 +56,7 @@ public class PreconditionsExample {
     x.toString();
   }
 
-  void testCheckNotNullArgLatent(Object x) {
+  void testCheckNotNullArgBad(Object x) {
     Object y = null;
     Preconditions.checkNotNull(x);
     y.toString();

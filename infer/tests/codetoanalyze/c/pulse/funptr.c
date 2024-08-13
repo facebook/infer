@@ -87,7 +87,7 @@ int funptr_else_good() {
   return *ptr;
 }
 
-int FNlatent_funptr_conditional_call_bad(int x) {
+int funptr_conditional_call_bad(int x) {
   int* ptr = &x;
   void (*funptr)(int**);
   if (!x) {

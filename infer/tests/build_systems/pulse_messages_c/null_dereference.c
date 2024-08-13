@@ -52,10 +52,21 @@ void follow_value_by_ref_bad() {
   *z = 42;
 }
 
-void latent(int a) {
+void latent_deref(int a, int* p) {
   if (a == 4) {
-    int* p = NULL;
     *p = 42;
+  }
+}
+
+void latent(int a) {
+  int* p = NULL;
+  latent_deref(a, p);
+}
+
+void non_latent_deref_bad(int a) {
+  int* p = NULL;
+  if (a == 4) {
+    latent_deref(a, p);
   }
 }
 

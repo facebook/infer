@@ -41,21 +41,22 @@
 
 @end
 
-int isKindOfClassUnknown(Base* b) {
+int* nullIfIsDerived(Base* b, int* p) {
   if ([b isKindOfClass:[Derived class]]) {
-    int* p = NULL;
-    return *p;
+    return NULL;
   } else {
-    return 0;
+    return p;
   }
 }
 
-int isKindOfClassBaseNoNPEGood() {
+void isKindOfClassBaseNoNPEGood(int* p) {
   Base* base = [[Base alloc] init];
-  return isKindOfClassUnknown(base);
+  int* q = nullIfIsDerived(base, p);
+  return *q;
 }
 
-int isKindOfClassBaseNPEBad() {
+int isKindOfClassBaseNPEBad(int* p) {
   Base* derived = [[Derived alloc] init];
-  return isKindOfClassUnknown(derived);
+  int* q = nullIfIsDerived(derived, p);
+  return *q;
 }

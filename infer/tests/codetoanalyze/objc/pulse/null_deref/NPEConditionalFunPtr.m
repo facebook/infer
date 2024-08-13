@@ -63,8 +63,8 @@ int funptr_else_good() {
   return *ptr;
 }
 
-int funptr_conditional_call(int x) {
-  int* ptr = &x;
+int* funptr_conditional_call(int x, int* p) {
+  int* ptr = p;
   void (*funptr)(int**);
   if (!x) {
     funptr = &assign_NULL;
@@ -72,12 +72,18 @@ int funptr_conditional_call(int x) {
     funptr = &do_nothing;
   }
   (*funptr)(&ptr);
-  return *ptr;
+  return ptr;
 }
 
-int funptr_conditional_call_bad() { return funptr_conditional_call(0); }
+int funptr_conditional_call_bad(int* p) {
+  int* q = funptr_conditional_call(0, p);
+  return *q;
+}
 
-int funptr_conditional_call_good() { return funptr_conditional_call(1); }
+int funptr_conditional_call_good(int* p) {
+  int* q = funptr_conditional_call(1, p);
+  return *q;
+}
 
 void apply_funptr_with_intptrptr(void (*funptr)(int**), int** ptr) {
   (*funptr)(ptr);

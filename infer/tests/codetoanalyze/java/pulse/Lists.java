@@ -19,7 +19,7 @@ class Lists {
     }
   }
 
-  void FN_latent_removeInvalidatesNonEmptinessNPEBad(List l) {
+  void removeInvalidatesNonEmptinessNPEBad(List l) {
     l.removeAll(l);
     Object o = null;
     if (l.isEmpty()) {
