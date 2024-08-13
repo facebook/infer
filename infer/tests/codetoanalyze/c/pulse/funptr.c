@@ -87,7 +87,7 @@ int funptr_else_good() {
   return *ptr;
 }
 
-int funptr_conditional_call(int x) {
+int FNlatent_funptr_conditional_call_bad(int x) {
   int* ptr = &x;
   void (*funptr)(int**);
   if (!x) {
@@ -98,10 +98,6 @@ int funptr_conditional_call(int x) {
   (*funptr)(&ptr);
   return *ptr;
 }
-
-int funptr_conditional_call_bad() { return funptr_conditional_call(0); }
-
-int funptr_conditional_call_good() { return funptr_conditional_call(1); }
 
 void apply_funptr_with_intptrptr(void (*funptr)(int**), int** ptr) {
   (*funptr)(ptr);

@@ -39,15 +39,19 @@ void assume_non_negative_is_non_negative_ok() {
 }
 
 void if_negative_then_crash_latent(int x) {
+  assume_non_negative(-x);
+  int* p = NULL;
+  *p = 42;
+}
+
+void FN_call_if_negative_then_crash_with_negative_bad(int x) {
   if (x < 0) {
-    int* p = NULL;
-    *p = 42;
+    if_negative_then_crash_latent(x);
   }
 }
 
-void call_if_negative_then_crash_with_negative_bad() {
+void call_if_negative_then_crash_with_local_bad() {
   int x = random();
-  assume_non_negative(-x);
   if_negative_then_crash_latent(x);
 }
 

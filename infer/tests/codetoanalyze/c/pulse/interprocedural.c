@@ -6,20 +6,29 @@
  */
 #include <stdlib.h>
 
-void if_freed_invalid_latent(int x, int* y) {
+void conditional_free(int x, int* y) {
   if (x > 5) {
     free(y);
+  }
+}
+
+void conditional_free_then_use_latent(int x) {
+  int* y = (int*)malloc(sizeof(int));
+  conditional_free(x, y);
+  if (y != NULL) {
+    // arguably we should report here since the code is bad, but the current
+    // heuristic classifies this as latent
     *y = 1;
   }
-}
-
-void call_if_freed_invalid_latent(int x) {
-  if (x > 0) {
-    if_freed_invalid_latent(x, NULL);
+  // avoid memory leak
+  if (x <= 5) {
+    free(y);
   }
 }
 
-void call_if_freed_invalid2_bad() { call_if_freed_invalid_latent(7); }
+void call_conditional_free_then_use_bad() {
+  conditional_free_then_use_latent(7);
+}
 
 // make sure this isn't classified as latent as callers have no control over the
 // value of x being tested in the body of the function
@@ -34,14 +43,13 @@ void test_modified_value_then_error_bad(int* x) {
 // below is a test that the calling context appears in the correct order in the
 // trace
 
-void latent(int a) {
+void latent_dereference(int a, int* p) {
   if (a == 4) {
-    int* p = NULL;
     *p = 42;
   }
 }
 
-void propagate_latent_1_latent(int a1) { latent(a1); }
+void propagate_latent_1_latent(int a1) { latent_dereference(a1, NULL); }
 
 void propagate_latent_2_latent(int a2) { propagate_latent_1_latent(a2); }
 

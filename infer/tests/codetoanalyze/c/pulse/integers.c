@@ -71,7 +71,7 @@ void float_div_bad() {
   }
 }
 
-void float_comparison_latent(float f) {
+void FNlatent_float_comparison_bad(float f) {
   if (2 + f < 2.2) {
     int* p = NULL;
     *p = 42;

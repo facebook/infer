@@ -33,7 +33,7 @@ void call_create_null_path_then_deref_unconditionally_ok(int* p) {
   *p = 52;
 }
 
-void create_null_path2_latent_FN(int* p) {
+void create_null_path2_bad_FN(int* p) {
   int* q = NULL;
   if (p) {
     *p = 32;
@@ -45,7 +45,7 @@ void create_null_path2_latent_FN(int* p) {
 }
 
 // combine several of the difficulties above
-void malloc_then_call_create_null_path_then_deref_unconditionally_latent_FN(
+void malloc_then_call_create_null_path_then_deref_unconditionally_bad_FN(
     int* p) {
   int* x = (int*)malloc(sizeof(int));
   if (p) {
@@ -165,11 +165,14 @@ void unknown_with_different_values_bad() {
   }
 }
 
-void unknown_from_parameters_latent(int x) {
-  int* p = NULL;
+void unknown_conditional_dereference(int x, int* p) {
   if (unknown(x) == 999) {
     *p = 42;
   }
+}
+
+void unknown_from_parameters_latent(int x) {
+  unknown_conditional_dereference(x, NULL);
 }
 
 // is pruned away without the model

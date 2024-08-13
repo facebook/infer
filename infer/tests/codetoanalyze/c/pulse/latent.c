@@ -7,10 +7,14 @@
 
 #include <stdlib.h>
 
-void latent_use_after_free(int b, int* x) {
+void conditional_free2(int b, int* x) {
   if (b) {
     free(x);
   }
+}
+
+void latent_use_after_free(int b, int* x) {
+  conditional_free2(b, x);
   *x = 42;
   if (!b) {
     // just to avoid memory leaks
@@ -26,12 +30,16 @@ void deref_then_free_then_deref_bad(int* x) {
   *x = 42;
 }
 
+void create_branching(int b) {
+  if (b) {
+  }
+}
+
 // FN because it's flagged only as latent at the moment
 void FN_nonlatent_use_after_free_bad(int b, int* x) {
   // the branch is independent of the issue here, so we should report the issue
   // in this function
-  if (b) {
-  }
+  create_branching(b);
   free(x);
   *x = 42;
 }
@@ -65,12 +73,12 @@ void crash_if_different_addresses(int* x, int* y) {
 
 struct node {
   int data;
-  struct node *next;
+  struct node* next;
 };
 
-void traverse_and_crash_if_equal_to_root(struct node *p) {
+void traverse_and_crash_if_equal_to_root(struct node* p) {
   struct node* old_p = p;
-  while(p != NULL) {
+  while (p != NULL) {
     p = p->next;
     if (old_p == p) {
       int* crash = NULL;
@@ -79,17 +87,17 @@ void traverse_and_crash_if_equal_to_root(struct node *p) {
   }
 }
 
-void crash_after_one_node_bad(struct node *q) {
+void crash_after_one_node_bad(struct node* q) {
   q->next = q;
   traverse_and_crash_if_equal_to_root(q);
 }
 
-void crash_after_two_nodes_bad(struct node *q) {
+void crash_after_two_nodes_bad(struct node* q) {
   q->next->next = q;
   traverse_and_crash_if_equal_to_root(q);
 }
 
-void FN_crash_after_six_nodes_bad(struct node *q) {
+void FN_crash_after_six_nodes_bad(struct node* q) {
   q->next->next->next->next->next->next = q;
   traverse_and_crash_if_equal_to_root(q);
 }
