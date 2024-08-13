@@ -1485,7 +1485,7 @@ let read_access_from_ts tdict =
 let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
-  let rec find_name tdict nullable_already =
+  let rec find_name tdict nullable_already visited_set =
     let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
     let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
     let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
@@ -1521,23 +1521,29 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
               | Some rootname, Some type_prop_name ->
                   let rootname = replace_backslash_with_colon rootname in
                   L.d_printfln "got root_name = %s, type_prop_name = %s" rootname type_prop_name ;
-                  let type_prop_field = TextualSil.wildcard_sil_fieldname Hack type_prop_name in
-                  let* companion =
-                    get_initialized_class_object (HackClass (HackClassName.make rootname))
-                  in
-                  L.d_printfln "companion object is %a" AbstractValue.pp (fst companion) ;
-                  let* type_constant_ts =
-                    eval_deref_access Read companion (FieldAccess type_prop_field)
-                  in
-                  (* We've got another type structure in our hands now, so recurse *)
-                  L.d_printfln "type structure for projection=%a" AbstractValue.pp
-                    (fst type_constant_ts) ;
-                  find_name type_constant_ts nullable
+                  let concatenated_name = Printf.sprintf "%s$$%s" rootname type_prop_name in
+                  if String.Set.mem visited_set concatenated_name then (
+                    L.d_printfln "Cyclic type constant detected!" ;
+                    ret None )
+                  else
+                    let type_prop_field = TextualSil.wildcard_sil_fieldname Hack type_prop_name in
+                    let* companion =
+                      get_initialized_class_object (HackClass (HackClassName.make rootname))
+                    in
+                    L.d_printfln "companion object is %a" AbstractValue.pp (fst companion) ;
+                    let* type_constant_ts =
+                      eval_deref_access Read companion (FieldAccess type_prop_field)
+                    in
+                    (* We've got another type structure in our hands now, so recurse *)
+                    L.d_printfln "type structure for projection=%a" AbstractValue.pp
+                      (fst type_constant_ts) ;
+                    find_name type_constant_ts nullable
+                      (String.Set.add visited_set concatenated_name)
               | _, _ ->
                   ret None )
             else ret None )
   in
-  let* name_opt = find_name tdict false in
+  let* name_opt = find_name tdict false String.Set.empty in
   match name_opt with
   | Some (name, nullable) ->
       L.d_printfln "type structure test against type name %a" Typ.Name.pp name ;
