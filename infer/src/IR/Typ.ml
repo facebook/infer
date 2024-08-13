@@ -793,6 +793,8 @@ let is_shared_pointer = make_cpp_class_matcher ~ptr:false shared_pointer_qual_na
 
 let is_folly_coro = make_cpp_class_matcher ~prefix:true ["folly::coro"]
 
+let is_thrift_field_ref = make_cpp_class_matcher ["apache::thrift::field_ref"]
+
 let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false

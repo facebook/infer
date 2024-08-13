@@ -344,6 +344,8 @@ val is_shared_pointer : t -> bool
 
 val is_folly_coro : t -> bool
 
+val is_thrift_field_ref : t -> bool
+
 val is_pointer_to_void : t -> bool
 
 val is_void : t -> bool

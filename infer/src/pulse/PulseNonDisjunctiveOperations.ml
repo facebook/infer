@@ -28,17 +28,34 @@ let get_modeled_as_returning_copy_opt proc_name =
         if Str.string_match r s 0 then Some Attribute.CopyOrigin.CopyCtor else None )
 
 
-let get_copy_origin pname =
+let to_arg_payloads actuals =
+  List.map actuals ~f:(fun (exp, typ) ->
+      ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+
+
+let is_thrift_field_copy_assignment =
+  let dispatch : (unit, unit, unit) ProcnameDispatcher.Call.dispatcher =
+    let open ProcnameDispatcher.Call in
+    (* HACK: There are `operator=` definitions and the non-templated one is for move
+       assignment. Thus, here we check if the funtion is templated.
+       https://github.com/facebook/fbthrift/blob/bf6f866e2f4ce7adb35b99c6c126720cd9e2b095/thrift/lib/cpp2/FieldRef.h#L293-L310 *)
+    make_dispatcher
+      [ -"apache" &:: "thrift" &:: "field_ref" &:: "operator=" < any_typ >$ any_arg $+ any_arg
+        $--> () ]
+  in
+  fun pname actuals ->
+    let arg_payloads = to_arg_payloads actuals in
+    Option.is_some (dispatch () pname arg_payloads)
+
+
+let get_copy_origin pname actuals =
   let open IOption.Let_syntax in
   let* attrs = IRAttributes.load pname in
   if attrs.ProcAttributes.is_cpp_copy_ctor then Some Attribute.CopyOrigin.CopyCtor
   else if attrs.ProcAttributes.is_cpp_copy_assignment then Some Attribute.CopyOrigin.CopyAssignment
+  else if is_thrift_field_copy_assignment pname actuals then
+    Some Attribute.CopyOrigin.CopyAssignment
   else None
-
-
-let to_arg_payloads actuals =
-  List.map actuals ~f:(fun (exp, typ) ->
-      ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
 
 
 let is_optional_copy_constructor_with_arg_payloads =
@@ -189,7 +206,10 @@ let is_cheap_to_copy_one integer_type_widths tenv typ =
 
 
 let is_cheap_to_copy integer_type_widths tenv ~source ~target =
-  is_cheap_to_copy_one integer_type_widths tenv target
+  ( if Typ.is_thrift_field_ref target then
+      (* On thrift field copy, it is good enough to check on source only. *)
+      false
+    else is_cheap_to_copy_one integer_type_widths tenv target )
   || is_cheap_to_copy_one integer_type_widths tenv source
 
 
@@ -452,7 +472,7 @@ let add_copies integer_type_widths tenv proc_desc path location pname actuals ~a
         |-> remove_optional_copies_to_return proc_desc path location pname args )
   in
   let ( |-> ) = IOption.continue ~default in
-  aux get_copy_origin Fn.id default
+  aux (fun pname -> get_copy_origin pname actuals) Fn.id default
   (* For functions that return a copy, the last argument is the assigned copy *)
   |-> aux get_modeled_as_returning_copy_opt List.rev
   (* Record a copy of element in optional constructors *)
