@@ -155,9 +155,8 @@ let report_latent_issue analysis_data latent_issue ~is_suppressed =
 let is_constant_deref_without_invalidation (invalidation : Invalidation.t) access_trace =
   let res =
     match invalidation with
-    | ConstantDereference _ ->
+    | ConstantDereference _ | ComparedToNullInThisProcedure _ ->
         not (Trace.exists_main access_trace ~f:(function Invalidated _ -> true | _ -> false))
-    | ComparedToNullInThisProcedure _
     | CFree
     | CppDelete
     | CppDeleteArray
