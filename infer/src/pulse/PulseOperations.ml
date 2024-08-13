@@ -185,25 +185,25 @@ let rec eval (path : PathContext.t) mode location exp astate :
 and record_closure astate (path : PathContext.t) loc procname
     (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) =
   let assign_event = ValueHistory.Assignment (loc, path.timestamp) in
-  let closure_addr_hist = (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event) in
+  let closure_addr, closure_hist =
+    (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event)
+  in
   let astate =
     match (Procname.get_class_type_name procname, procname) with
     | Some typ_name, _ when Procname.is_cpp_lambda procname ->
         let typ = Typ.mk (Typ.Tstruct typ_name) in
-        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
+        PulseArithmetic.and_dynamic_type_is_unsafe closure_addr typ loc astate
     | _, Procname.Block bsig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.ObjcBlock bsig)) in
-        let astate =
-          PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
-        in
-        AbductiveDomain.add_block_source (fst closure_addr_hist) bsig.name astate
+        let astate = PulseArithmetic.and_dynamic_type_is_unsafe closure_addr typ loc astate in
+        AbductiveDomain.add_block_source closure_addr bsig.name astate
     | _, Procname.C csig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
-        PulseArithmetic.and_dynamic_type_is_unsafe (fst closure_addr_hist) typ loc astate
+        PulseArithmetic.and_dynamic_type_is_unsafe closure_addr typ loc astate
     | _ ->
         astate
   in
-  let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
+  let** astate = PulseArithmetic.and_positive closure_addr astate in
   let store_captured_var result (exp, var, typ, capture_mode) =
     let captured_data =
       {Fieldname.capture_mode; is_function_pointer= Typ.is_pointer_to_function typ}
@@ -216,10 +216,10 @@ and record_closure astate (path : PathContext.t) loc procname
     let** astate, rhs_value_origin = eval_to_value_origin path NoAccess loc exp astate in
     let rhs_addr, rhs_history = ValueOrigin.addr_hist rhs_value_origin in
     let astate = conservatively_initialize_args [rhs_addr] astate in
-    L.d_printfln "Storing %a.%a = %a" AbstractValue.pp (fst closure_addr_hist) Fieldname.pp
-      field_name AbstractValue.pp rhs_addr ;
+    L.d_printfln "Storing %a.%a = %a" AbstractValue.pp closure_addr Fieldname.pp field_name
+      AbstractValue.pp rhs_addr ;
     let=+ astate, lhs_addr_hist =
-      eval_access path Read loc closure_addr_hist (FieldAccess field_name) astate
+      eval_access path Read loc (closure_addr, closure_hist) (FieldAccess field_name) astate
     in
     let* astate = write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, rhs_history) astate in
     (* This is to update the decompiler entry for lhs_addr *)
@@ -227,7 +227,7 @@ and record_closure astate (path : PathContext.t) loc procname
     Ok astate
   in
   let++ astate = List.fold captured_vars ~init:(Sat (Ok astate)) ~f:store_captured_var in
-  (astate, ValueOrigin.Unknown closure_addr_hist)
+  (astate, ValueOrigin.Unknown (closure_addr, closure_hist))
 
 
 and eval_to_value_origin (path : PathContext.t) mode location exp astate :
@@ -265,13 +265,15 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
               let++ astate, addr_trace = eval path Read location capt_exp astate in
               (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
         in
-        let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
+        let++ astate, (v, hist) =
+          Closures.record path location name (List.rev rev_captured) astate
+        in
         let astate =
           conservatively_initialize_args
             (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
             astate
         in
-        (astate, ValueOrigin.Unknown v_hist)
+        (astate, ValueOrigin.Unknown (v, hist))
   | Const (Cfun proc_name) ->
       (* function pointers are represented as closures with no captured variables *)
       let++ astate, v_hist = record_closure astate path location proc_name [] in
@@ -286,10 +288,8 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
           (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
           invalidation location astate
       in
-      let addr_hist =
-        (v, ValueHistory.singleton (Invalidated (invalidation, location, path.timestamp)))
-      in
-      Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
+      let hist = ValueHistory.singleton (Invalidated (invalidation, location, path.timestamp)) in
+      Sat (Ok (astate, ValueOrigin.Unknown (v, hist)))
   | Const (Cstr s) ->
       let astate, v = PulseArithmetic.absval_of_string astate s in
       Sat
@@ -321,8 +321,11 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
   | Sizeof {nbytes= Some n} ->
       eval_to_value_origin path mode location (Exp.Const (Cint (IntLit.of_int n))) astate
   | Sizeof {nbytes= None} ->
-      let addr_hist = (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch) in
-      Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
+      Sat
+        (Ok
+           ( astate
+           , ValueOrigin.Unknown (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch)
+           ) )
 
 
 let eval_to_operand path location exp astate =

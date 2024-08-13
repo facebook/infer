@@ -7,8 +7,8 @@
 
 open! IStd
 module AbstractValue = PulseAbstractValue
-module ValueHistory = PulseValueHistory
 module Access = PulseAccess
+module ValueHistory = PulseValueHistory
 
 (** Describes a (value, history) pair with path/origin when available.
 
@@ -19,7 +19,7 @@ type t =
       ; access: Access.t
       ; dest: AbstractValue.t * ValueHistory.t }
   | OnStack of {var: Var.t; addr_hist: AbstractValue.t * ValueHistory.t}
-  | Unknown of (AbstractValue.t * ValueHistory.t)
+  | Unknown of AbstractValue.t * ValueHistory.t
       (** Values without a known origin such as those containing constant values. *)
 
 val unknown : AbstractValue.t * ValueHistory.t -> t

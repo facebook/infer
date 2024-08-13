@@ -87,7 +87,7 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
          the constructor. *)
       let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
       let args : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list =
-        {typ; exp= fake_exp; arg_payload= ValueOrigin.Unknown value_address} :: [other]
+        {typ; exp= fake_exp; arg_payload= ValueOrigin.unknown value_address} :: [other]
       in
       (* create the list of types of the actual arguments of the constructor *)
       let actuals = [typ; actual] in
@@ -141,7 +141,7 @@ let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload}
       let assign_value, non_disj =
         let<**> astate = PulseArithmetic.prune_positive other_addr astate in
         assign_precise_value this
-          {exp= Var (Ident.create_none ()); typ; arg_payload= ValueOrigin.Unknown other}
+          {exp= Var (Ident.create_none ()); typ; arg_payload= ValueOrigin.unknown other}
           ~desc model_data astate non_disj
       in
       (assign_none @ assign_value, non_disj)

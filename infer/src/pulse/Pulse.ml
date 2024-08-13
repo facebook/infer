@@ -506,7 +506,7 @@ module PulseTransferFunctions = struct
         let static_used = Typ.Name.Hack.static_companion used in
         let typ = Typ.mk_struct static_used |> Typ.mk_ptr in
         let self =
-          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ValueOrigin.Unknown arg_payload}
+          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ValueOrigin.unknown arg_payload}
         in
         (astate, func_args @ [self])
     | Some IsClass | None ->

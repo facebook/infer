@@ -7,8 +7,8 @@
 
 open! IStd
 module AbstractValue = PulseAbstractValue
-module ValueHistory = PulseValueHistory
 module Access = PulseAccess
+module ValueHistory = PulseValueHistory
 
 type t =
   | InMemory of
@@ -16,13 +16,15 @@ type t =
       ; access: Access.t
       ; dest: AbstractValue.t * ValueHistory.t }
   | OnStack of {var: Var.t; addr_hist: AbstractValue.t * ValueHistory.t}
-  | Unknown of (AbstractValue.t * ValueHistory.t)
+  | Unknown of AbstractValue.t * ValueHistory.t
 
-let unknown addr_hist = Unknown addr_hist
+let unknown (addr, hist) = Unknown (addr, hist)
 
 let addr_hist = function
-  | InMemory {dest= addr_hist} | OnStack {addr_hist} | Unknown addr_hist ->
+  | InMemory {dest= addr_hist} | OnStack {addr_hist} ->
       addr_hist
+  | Unknown (addr, hist) ->
+      (addr, hist)
 
 
 let value t = addr_hist t |> fst
