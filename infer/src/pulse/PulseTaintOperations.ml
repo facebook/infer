@@ -18,17 +18,9 @@ module TaintItemMatcher = PulseTaintItemMatcher
 (** {2 Methods for applying taint to relevant values} *)
 
 let taint_value_origin (path : PathContext.t) location taint_item value_origin astate =
-  match value_origin with
-  | ValueOrigin.InMemory {src; access; dest= dest_addr, dest_hist} ->
-      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
-      let dest_hist = ValueHistory.sequence taint_event dest_hist ~context:path.conditions in
-      Memory.add_edge path src access (dest_addr, dest_hist) location astate
-  | ValueOrigin.OnStack {var; addr_hist= addr, hist} ->
-      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
-      let hist = ValueHistory.sequence taint_event hist ~context:path.conditions in
-      Stack.add var (addr, hist) astate
-  | ValueOrigin.Unknown _ ->
-      astate
+  AbductiveDomain.add_event_to_value_origin path location
+    (TaintSource (taint_item, location, path.timestamp))
+    value_origin astate
 
 
 let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, hist) astate =

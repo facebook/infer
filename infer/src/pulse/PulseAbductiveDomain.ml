@@ -2455,6 +2455,18 @@ module AddressAttributes = struct
     SafeAttributes.is_hack_sinit_called (CanonValue.canon' astate v) astate
 end
 
+let add_event_to_value_origin (path : PathContext.t) location event value_origin astate =
+  match (value_origin : ValueOrigin.t) with
+  | InMemory {src; access; dest= dest_addr, dest_hist} ->
+      let dest_hist = ValueHistory.sequence event dest_hist ~context:path.conditions in
+      Memory.add_edge path src access (dest_addr, dest_hist) location astate
+  | OnStack {var; addr_hist= addr, hist} ->
+      let hist = ValueHistory.sequence event hist ~context:path.conditions in
+      Stack.add var (addr, hist) astate
+  | Unknown _ ->
+      astate
+
+
 module CanonValue = struct
   include CanonValue
 

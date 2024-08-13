@@ -25,10 +25,9 @@ let addr_hist = function
       addr_hist
 
 
-let value t =
-  let value, _ = addr_hist t in
-  value
+let value t = addr_hist t |> fst
 
+let hist t = addr_hist t |> snd
 
 let addr_hist_arg = ProcnameDispatcher.Call.FuncArg.map_payload ~f:addr_hist
 

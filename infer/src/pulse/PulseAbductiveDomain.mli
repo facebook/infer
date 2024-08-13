@@ -433,6 +433,9 @@ module Summary : sig
   val get_transitive_info : t -> TransitiveInfo.t
 end
 
+val add_event_to_value_origin :
+  PathContext.t -> Location.t -> ValueHistory.event -> ValueOrigin.t -> t -> t
+
 val transfer_transitive_info_to_caller : Procname.t -> Location.t -> Summary.t -> t -> t
 
 module Topl : sig

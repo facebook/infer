@@ -31,3 +31,5 @@ val addr_hist_args :
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
 
 val value : t -> AbstractValue.t
+
+val hist : t -> ValueHistory.t
