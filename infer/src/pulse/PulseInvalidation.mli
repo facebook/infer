@@ -41,6 +41,7 @@ val pp_map_function : F.formatter -> map_function -> unit
 
 type t =
   | CFree
+  | ComparedToNullInThisProcedure of Location.t
   | ConstantDereference of IntLit.t
   | CppDelete
   | CppDeleteArray

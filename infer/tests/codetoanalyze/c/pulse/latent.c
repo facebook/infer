@@ -44,6 +44,13 @@ void FN_nonlatent_use_after_free_bad(int b, int* x) {
   *x = 42;
 }
 
+// same as above but branch after freeing
+void FN_nonlatent_use_after_free_bad2(int b, int* x) {
+  free(x);
+  create_branching(b);
+  *x = 42;
+}
+
 // all latent issues that reach main are manifest, so this should be called
 // "main_bad" but that would defeat the actual point :)
 int main(int argc, char** argv) {

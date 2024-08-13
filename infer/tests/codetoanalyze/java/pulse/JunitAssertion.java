@@ -15,12 +15,13 @@ public class JunitAssertion {
     public void f() {}
   }
 
-  public void consistentAssertion(A a) {
+  // need model
+  public void FP_consistentAssertionOk(A a) {
     assertTrue(a != null);
     a.f();
   }
 
-  public void inconsistentAssertion(A a) {
+  public void inconsistentAssertionBad(A a) {
     assertFalse("Should not happen!", a != null);
     a.f();
   }

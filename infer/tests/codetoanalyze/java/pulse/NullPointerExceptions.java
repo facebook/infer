@@ -257,13 +257,13 @@ public class NullPointerExceptions {
     arrayReadShouldNotCauseSymexMemoryError(0).toString();
   }
 
-  public void FP_sinkWithNeverNullSource() {
+  public void sinkWithNeverNullSource() {
     NeverNullSource source = new NeverNullSource();
     T t = source.get();
     t.f();
   }
 
-  public void FP_otherSinkWithNeverNullSource() {
+  public void otherSinkWithNeverNullSource() {
     SomeLibrary source = new SomeLibrary();
     T t = source.get();
     t.f();
@@ -525,7 +525,7 @@ public class NullPointerExceptions {
 
   native @Nonnull Object doesNotReturnNull();
 
-  void noNPEWhenCallingSkippedNonnullAnnotatedMethodGood() {
+  void FP_noNPEWhenCallingSkippedNonnullAnnotatedMethodGood() {
     Object object = doesNotReturnNull();
     if (object == null) {
       object.toString();
@@ -581,7 +581,7 @@ public class NullPointerExceptions {
     return null;
   }
 
-  void dereferenceAfterLoopOnList(L l) {
+  void FN_dereferenceAfterLoopOnList(L l) {
     Object obj = returnsNullAfterLoopOnList(l);
     obj.toString();
   }

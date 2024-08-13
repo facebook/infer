@@ -603,6 +603,7 @@ OPTIONS
              CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by default),
              CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
+             COMPARED_TO_NULL_AND_DEREFERENCED (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (enabled by default),

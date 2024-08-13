@@ -981,6 +981,9 @@ let get_trace_calling_context calling_context errlog =
 
 let invalidation_titles (invalidation : Invalidation.t) =
   match invalidation with
+  | ComparedToNullInThisProcedure _ ->
+      (* no titles needed in this case as [include_title] will be false *)
+      ("", "")
   | ConstantDereference i when IntLit.equal i IntLit.zero ->
       ( "source of the null value part of the trace starts here"
       , "null pointer dereference part of the trace starts here" )
@@ -1029,6 +1032,13 @@ let pp_copy_typ fmt =
 
 
 let get_trace = function
+  | AccessToInvalidAddress
+      { calling_context= _
+      ; invalidation= ComparedToNullInThisProcedure null_comparison as invalidation
+      ; invalidation_trace= _
+      ; access_trace } ->
+      Errlog.make_trace_element 0 null_comparison "compared to null here" []
+      :: (add_access_trace ~include_title:false ~nesting:0 invalidation access_trace @@ [])
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
       let should_print_invalidation_trace =

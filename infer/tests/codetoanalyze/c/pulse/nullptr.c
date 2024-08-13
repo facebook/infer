@@ -202,10 +202,7 @@ void arithmetic_weakness_ok() {
 
 int* unknown_int_pointer();
 
-/* This report is currently suppressed because there is no evidence
-that p can be NULL, but since it is compared to NULL *in the same
-function* it may be worth reporting this. */
-void FNsuppressed_no_invalidation_compare_to_NULL_bad() {
+void no_invalidation_compare_to_NULL_bad() {
   int* p = unknown_int_pointer();
   int x;
   int* q = &x;

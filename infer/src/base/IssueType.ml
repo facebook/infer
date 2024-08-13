@@ -486,6 +486,18 @@ let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
+let compared_to_null_and_dereferenced =
+  register ~enabled:false ~category:NullPointerDereference ~id:"COMPARED_TO_NULL_AND_DEREFERENCED"
+    Error Pulse
+    ~user_documentation:
+      "A pointer that has both been compared to null, whcich suggests that it could be null, but \
+       has also been dereferenced without a null check."
+
+
+let complexity_increase ~kind ~is_on_ui_thread =
+  register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
+
+
 let condition_always_false =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
@@ -958,10 +970,6 @@ let symexec_memory_error =
 let thread_safety_violation =
   register Warning ~category:Concurrency ~id:"THREAD_SAFETY_VIOLATION" RacerD
     ~user_documentation:[%blob "./documentation/issues/THREAD_SAFETY_VIOLATION.md"]
-
-
-let complexity_increase ~kind ~is_on_ui_thread =
-  register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
 
 let topl_error =

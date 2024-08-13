@@ -151,6 +151,8 @@ val checkers_fragment_retain_view : t
 
 val class_cast_exception : t
 
+val compared_to_null_and_dereferenced : t
+
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
 val condition_always_false : t

@@ -327,7 +327,7 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
 
 let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
-  | Const c ->
+  | Const c | Cast (_, Const c) ->
       Sat (Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.epoch))
   | exp ->
       let++ astate, (value, hist) = eval path Read location exp astate in
@@ -338,8 +338,29 @@ let prune path location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
-        let** astate, lhs_op, lhs_hist = eval_to_operand path location exp_lhs astate in
-        let** astate, rhs_op, rhs_hist = eval_to_operand path location exp_rhs astate in
+        (* TODO: eval to value origin and place an Invalidation event in the corresponding value history *)
+        let** astate, (lhs_op : PulseArithmetic.operand), lhs_hist =
+          eval_to_operand path location exp_lhs astate
+        in
+        let** astate, (rhs_op : PulseArithmetic.operand), rhs_hist =
+          eval_to_operand path location exp_rhs astate
+        in
+        let is_bop_equal = match (bop, negated) with Eq, false | Ne, true -> true | _ -> false in
+        L.d_printfln "is_bop_equal: %b" is_bop_equal ;
+        let astate =
+          match (lhs_op, rhs_op) with
+          | AbstractValueOperand p, ConstOperand (Cint null)
+          | ConstOperand (Cint null), AbstractValueOperand p
+            when is_bop_equal && IntLit.isnull null ->
+              L.d_printfln "comparison to null detected, recording attribute on %a" AbstractValue.pp
+                p ;
+              AbductiveDomain.AddressAttributes.invalidate (p, ValueHistory.epoch)
+                (ComparedToNullInThisProcedure location) location astate
+          | _ ->
+              L.d_printfln "not a comparison to null: %a %a %a (negated: %b, is_bop_equal: %b)"
+                Exp.pp exp_lhs Binop.pp bop Exp.pp exp_rhs negated is_bop_equal ;
+              astate
+        in
         let++ astate = PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate in
         let hist =
           match (lhs_hist, rhs_hist) with

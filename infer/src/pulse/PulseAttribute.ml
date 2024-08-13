@@ -468,6 +468,7 @@ module Attribute = struct
 
   let is_suitable_for_post = function
     | DictReadConstKeys _
+    | Invalid (ComparedToNullInThisProcedure _, _)
     | MustBeInitialized _
     | MustNotBeTainted _
     | MustBeValid _

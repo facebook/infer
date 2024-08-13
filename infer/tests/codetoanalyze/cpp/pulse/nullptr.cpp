@@ -225,15 +225,13 @@ void delete_nullptr_ok() {
   delete p;
 }
 
-void FN_test_after_dereference_latent(int* x) {
+void test_after_dereference_bad(int* x) {
   // create a path split where x==0 in one of the paths
+  // since this happens in the same function that x is dereferenced we
+  // should report
   if (x == 0)
     ;
   *x = 42;
-}
-
-void call_test_after_dereference_bad() {
-  FN_test_after_dereference_latent(NULL);
 }
 
 // Filtered out
