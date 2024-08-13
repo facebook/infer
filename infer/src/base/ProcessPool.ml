@@ -97,7 +97,7 @@ let buffer_size = 65_535
     for now. To lift it, it should be possible to extend the buffer to the required length if we
     notice that we are trying to read more than [buffer_size] for example. *)
 type 'result worker_message =
-  | UpdateStatus of int * Mtime.t * string
+  | UpdateStatus of int * Mtime.t option * string
       (** [(i, t, status)]: starting a task from slot [i], at start time [t], with description
           [status]. Watch out that [status] must not be too close in length to [buffer_size]. *)
   | UpdateHeapWords of int * int
@@ -280,7 +280,7 @@ let process_updates pool buffer =
            | Idle ->
                L.die InternalError "Received a Ready message from an idle worker@." ) ;
            TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
-           TaskBar.update_status pool.task_bar ~slot (Mtime_clock.now ()) ?heap_words "idle" ;
+           TaskBar.update_status pool.task_bar ~slot (Some (Mtime_clock.now ())) ?heap_words "idle" ;
            pool.children_states.(slot) <- Idle ) ;
   (* try to schedule more work if there are idle workers *)
   if not (pool.tasks.is_empty ()) then

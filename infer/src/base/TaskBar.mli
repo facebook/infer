@@ -15,9 +15,11 @@ val refresh : t -> unit
 val create : jobs:int -> t
 (** creates a task bar for running [jobs] jobs in parallel *)
 
-val update_status : t -> slot:int -> Mtime.t -> ?heap_words:int -> string -> unit
+val update_status : t -> slot:int -> Mtime.t option -> ?heap_words:int -> string -> unit
 (** [update_status task_bar ~slot t ?heap_words status] records an event described by [status] on
-    slot [slot] started at time [t] with total size of the major heap [heap_words] *)
+    slot [slot] started at time [t] with total size of the major heap [heap_words]. If [t] is [None]
+    then the timer for the current task is not reset, so in effect this simply renames the
+    currently-running task on slot [slot]. *)
 
 val update_heap_words : t -> slot:int -> int -> unit
 (** [update_heap_words task_bar ~slot heap_words] records [heap_words] on slot [slot] *)

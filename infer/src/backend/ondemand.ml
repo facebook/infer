@@ -72,7 +72,7 @@ let () =
         (* forget about the time spent doing a nested analysis and resend the status of the outer
            analysis with the updated "original" start time *)
         let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span |> Option.value_exn in
-        !ProcessPoolState.update_status new_t0 status ;
+        !ProcessPoolState.update_status (Some new_t0) status ;
         (new_t0, status) )
     ~init:(fun _ -> current_taskbar_status := None)
 
@@ -111,7 +111,7 @@ let update_taskbar proc_name_opt source_file_opt =
         "Unspecified task"
   in
   current_taskbar_status := Some (t0, status) ;
-  !ProcessPoolState.update_status t0 status
+  !ProcessPoolState.update_status (Some t0) status
 
 
 let set_complete_result analysis_req summary =

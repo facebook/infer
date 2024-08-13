@@ -105,7 +105,7 @@ let capture_files ~is_binary files =
     Tenv.merge ~src:builtin_model ~dst:child_tenv ;
     let child_action file =
       let t0 = Mtime_clock.now () in
-      !ProcessPoolState.update_status t0 file ;
+      !ProcessPoolState.update_status (Some t0) file ;
       match capture_file ~is_binary file with
       | Ok () ->
           (* | Ok file_tenv -> *)

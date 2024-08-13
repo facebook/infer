@@ -58,7 +58,7 @@ let parse_translate_store ?(base_dir = None) result_dir =
     if should_process json_file then (
       let t0 = Mtime_clock.now () in
       let status = Filename.basename json_file in
-      !ProcessPoolState.update_status t0 status ;
+      !ProcessPoolState.update_status (Some t0) status ;
       match Utils.read_json_file json_file with
       | Ok json ->
           if not (process_one_ast json) then

@@ -18,7 +18,9 @@ type action_item =
 let status_string_of_action_item = function
   | CanonicalCommand _ ->
       (* we would very much want to print which file is being captured but we cannot extract the
-         file name from a [ClangCommand.t] so we cannot do that here *)
+         file name from a [ClangCommand.t] so we cannot do that here; instead, the correct file name
+         is extracted and send to the progress bar in [Capture] once we start parsing the clang
+         AST *)
       "capturing source file"
   | DriverCommand _ ->
       "running clang -###"
@@ -178,7 +180,9 @@ let exec_in_parallel ~prog ~args commands =
   let tasks () = ProcessPool.TaskGenerator.of_list commands in
   Tasks.Runner.create tasks ~jobs:Config.jobs ~child_prologue:ignore ~child_epilogue:ignore
     ~f:(fun command ->
-      !ProcessPoolState.update_status (Mtime_clock.now ()) (status_string_of_action_item command) ;
+      !ProcessPoolState.update_status
+        (Some (Mtime_clock.now ()))
+        (status_string_of_action_item command) ;
       exec_action_item ~prog ~args command ;
       None )
   |> Tasks.Runner.run |> ignore

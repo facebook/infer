@@ -77,7 +77,7 @@ let report exe_env work_set =
   let wrap_report (procname, (pair : CriticalPair.t)) init =
     to_do_items := !to_do_items - 1 ;
     TaskBar.set_remaining_tasks task_bar !to_do_items ;
-    TaskBar.update_status task_bar ~slot:0 (Mtime_clock.now ()) (Procname.to_string procname) ;
+    TaskBar.update_status task_bar ~slot:0 (Some (Mtime_clock.now ())) (Procname.to_string procname) ;
     TaskBar.refresh task_bar ;
     Summary.OnDisk.get ~lazy_payloads:true analysis_req procname
     |> Option.fold ~init ~f:(fun acc summary ->

@@ -195,17 +195,17 @@ let create ~jobs =
       MultiLine task_bar
 
 
-let update_status_multiline task_bar ~slot:job t0 ?heap_words status =
+let update_status_multiline task_bar ~slot:job t0_opt ?heap_words status =
   task_bar.jobs_statuses.(job) <- status ;
-  task_bar.jobs_start_times.(job) <- t0 ;
+  Option.iter t0_opt ~f:(fun t0 -> task_bar.jobs_start_times.(job) <- t0) ;
   if Option.is_some heap_words then task_bar.heap_words.(job) <- heap_words ;
   ()
 
 
-let update_status task_bar ~slot t0 ?heap_words status =
+let update_status task_bar ~slot t0_opt ?heap_words status =
   match task_bar with
   | MultiLine t ->
-      update_status_multiline t ~slot t0 ?heap_words status
+      update_status_multiline t ~slot t0_opt ?heap_words status
   | NonInteractive | Quiet ->
       ()
 
