@@ -125,6 +125,63 @@ let pp_flow_kind fmt flow_kind =
 type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
 [@@deriving equal]
 
+type resource =
+  | CSharpClass of CSharpClassName.t
+  | JavaClass of JavaClassName.t
+  (* TODO: add more data to HackAsync tracking the parameter type *)
+  | HackAsync
+  | HackBuilderResource of HackClassName.t
+  | Memory of Attribute.allocator
+[@@deriving equal]
+
+let pp_resource fmt = function
+  | CSharpClass class_name ->
+      CSharpClassName.pp fmt class_name
+  | JavaClass class_name ->
+      JavaClassName.pp fmt class_name
+  | HackAsync ->
+      F.pp_print_string fmt "async call"
+  | HackBuilderResource class_name ->
+      F.fprintf fmt "builder %a" HackClassName.pp class_name
+  | Memory allocator ->
+      Attribute.pp_allocator fmt allocator
+
+
+let describe_allocation fmt = function
+  | CSharpClass class_name ->
+      F.fprintf fmt "constructor `%a()`" CSharpClassName.pp class_name
+  | JavaClass class_name ->
+      F.fprintf fmt "constructor `%a()`" JavaClassName.pp class_name
+  | HackAsync ->
+      F.pp_print_string fmt "async call"
+  | HackBuilderResource class_name ->
+      F.fprintf fmt "constructor `%a()`" HackClassName.pp class_name
+  | Memory allocator ->
+      F.fprintf fmt "`%a`" Attribute.pp_allocator allocator
+
+
+let resource_type_s = function
+  | CSharpClass _ | JavaClass _ ->
+      "resource"
+  | HackAsync ->
+      "awaitable"
+  | HackBuilderResource _ ->
+      "builder object"
+  | Memory _ ->
+      "memory"
+
+
+let resource_closed_s = function
+  | CSharpClass _ | JavaClass _ ->
+      "closed"
+  | HackAsync ->
+      "awaited"
+  | HackBuilderResource _ ->
+      "built/saved/finalised"
+  | Memory _ ->
+      "freed"
+
+
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | ConfigUsage of
@@ -134,8 +191,6 @@ type t =
       ; location: Location.t
       ; trace: Trace.t }
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
-  | CSharpResourceLeak of
-      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | TransitiveAccess of
@@ -144,18 +199,12 @@ type t =
       ; call_trace: Trace.t
       ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
       ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
-  | JavaResourceLeak of
-      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
-    (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
-  | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
-  | HackUnfinishedBuilder of
-      {builder_type: HackClassName.t; allocation_trace: Trace.t; location: Location.t}
-  | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
+  | ResourceLeak of {resource: resource; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of {values: retain_cycle_data list; location: Location.t; unknown_access_type: bool}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
@@ -193,16 +242,10 @@ let pp fmt diagnostic =
   | ConstRefableParameter {param; typ; location} ->
       F.fprintf fmt "ConstRefableParameter {@[param=%a;@;typ=%a;@;location=%a@]}" Var.pp param
         (Typ.pp_full Pp.text) typ Location.pp location
-  | CSharpResourceLeak {class_name; allocation_trace; location} ->
-      F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
-        CSharpClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | DynamicTypeMismatch {location} ->
       F.fprintf fmt "DynamicTypeMismatch {@[location:%a@]}" Location.pp location
   | ErlangError erlang_error ->
       ErlangError.pp fmt erlang_error
-  | JavaResourceLeak {class_name; allocation_trace; location} ->
-      F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
-        JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | TransitiveAccess {tag; description; call_trace; transitive_callees; transitive_missed_captures}
     ->
       F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t%t@]}" tag description
@@ -216,16 +259,6 @@ let pp fmt diagnostic =
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
         type_name (Trace.pp ~pp_immediate) trace
-  | HackUnawaitedAwaitable {allocation_trace; location} ->
-      F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
-        (Trace.pp ~pp_immediate) allocation_trace Location.pp location
-  | HackUnfinishedBuilder {builder_type; allocation_trace; location} ->
-      F.fprintf fmt "UnfinishedBuilder:%a {@[allocation_trace:%a;@;location:%a@]}" HackClassName.pp
-        builder_type (Trace.pp ~pp_immediate) allocation_trace Location.pp location
-  | MemoryLeak {allocator; allocation_trace; location} ->
-      F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
-        Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
-        location
   | MutualRecursionCycle {cycle; location} ->
       F.fprintf fmt "MutualRecursionCycle {@[cycle=%a;@;location=%a@]}" PulseMutualRecursion.pp
         cycle Location.pp location
@@ -237,6 +270,9 @@ let pp fmt diagnostic =
         used_locations
   | ReadUninitialized read_uninitialized ->
       F.fprintf fmt "ReadUninitialized %a" ReadUninitialized.pp read_uninitialized
+  | ResourceLeak {resource; allocation_trace; location} ->
+      F.fprintf fmt "ResourceLeak {@[resource=%a;@;allocation_trace:%a;@;location:%a@]}" pp_resource
+        resource (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | RetainCycle {values; location; unknown_access_type} ->
       let values_loc = List.map ~f:(fun {expr; location; _} -> (expr, location)) values in
       let assignment_traces = List.map ~f:(fun {trace; _} -> trace) values in
@@ -320,13 +356,9 @@ let get_location = function
       (* report at the call site that triggers the bug *) location
   | ConfigUsage {location}
   | ConstRefableParameter {location}
-  | CSharpResourceLeak {location}
-  | JavaResourceLeak {location}
-  | HackUnawaitedAwaitable {location}
-  | HackUnfinishedBuilder {location}
-  | MemoryLeak {location}
   | MutualRecursionCycle {location}
   | ReadonlySharedPtrParameter {location}
+  | ResourceLeak {location}
   | RetainCycle {location}
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
@@ -372,16 +404,12 @@ let aborts_execution = function
   | DynamicTypeMismatch _
   | ConfigUsage _
   | ConstRefableParameter _
-  | CSharpResourceLeak _
-  | JavaResourceLeak _
   | TransitiveAccess _
   | HackCannotInstantiateAbstractClass _
-  | HackUnawaitedAwaitable _
-  | HackUnfinishedBuilder _
-  | MemoryLeak _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
   | ReadUninitialized _
+  | ResourceLeak _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
@@ -611,24 +639,6 @@ let get_message_and_suggestion diagnostic =
            resulting in a potential unnecessary copy at the function's callsites."
           Var.pp param
       , Some "Change the type of the parameter to `const &`." )
-  | CSharpResourceLeak {class_name; location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let allocation_line =
-        let {Location.line; _} = Trace.get_outer_location allocation_trace in
-        line
-      in
-      let pp_allocation_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
-            F.fprintf fmt "by constructor %a() on line %d" CSharpClassName.pp class_name
-              allocation_line
-        | ViaCall {f; _} ->
-            F.fprintf fmt "by constructor %a(), indirectly via call to %a on line %d"
-              CSharpClassName.pp class_name CallEvent.describe f allocation_line
-      in
-      F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
-        pp_allocation_trace allocation_trace Location.pp location
-      |> no_suggestion
   | DynamicTypeMismatch {location} ->
       F.asprintf "bad dynamic type at %a" Location.pp location |> no_suggestion
   | ErlangError (Badarg {calling_context= _; location}) ->
@@ -656,24 +666,6 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "no true branch in if expression at %a" Location.pp location |> no_suggestion
   | ErlangError (Try_clause {calling_context= _; location}) ->
       F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
-  | JavaResourceLeak {class_name; location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let allocation_line =
-        let {Location.line; _} = Trace.get_outer_location allocation_trace in
-        line
-      in
-      let pp_allocation_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
-            F.fprintf fmt "by constructor %a() on line %d" JavaClassName.pp class_name
-              allocation_line
-        | ViaCall {f; _} ->
-            F.fprintf fmt "by constructor %a(), indirectly via call to %a on line %d"
-              JavaClassName.pp class_name CallEvent.describe f allocation_line
-      in
-      F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
-        pp_allocation_trace allocation_trace Location.pp location
-      |> no_suggestion
   | TransitiveAccess {tag; description; call_trace} ->
       let pp fmt (trace : Trace.t) =
         match trace with
@@ -695,57 +687,6 @@ let get_message_and_suggestion diagnostic =
       in
       F.asprintf "Abstract class `%s` is being instantiated %a" (Typ.Name.name type_name) pp_trace
         trace
-      |> no_suggestion
-  | HackUnawaitedAwaitable {location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let allocation_line =
-        let {Location.line; _} = Trace.get_outer_location allocation_trace in
-        line
-      in
-      let pp_allocation_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
-            F.fprintf fmt " on line %d" allocation_line
-        | ViaCall {f; _} ->
-            F.fprintf fmt "indirectly via call to %a on line %d" CallEvent.describe f
-              allocation_line
-      in
-      F.asprintf "Awaitable dynamically allocated %a is not awaited after the last access at %a"
-        pp_allocation_trace allocation_trace Location.pp location
-      |> no_suggestion
-  | HackUnfinishedBuilder {builder_type; location; allocation_trace} ->
-      let allocation_line =
-        let {Location.line; _} = Trace.get_outer_location allocation_trace in
-        line
-      in
-      let pp_allocation_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
-            F.fprintf fmt " on line %d" allocation_line
-        | ViaCall {f; _} ->
-            F.fprintf fmt "indirectly via call to %a on line %d" CallEvent.describe f
-              allocation_line
-      in
-      F.asprintf
-        "Builder object of type %a, allocated %a is not built/saved/finalised after the last \
-         access at %a"
-        HackClassName.pp builder_type pp_allocation_trace allocation_trace Location.pp location
-      |> no_suggestion (* TODO: add type-based suggestion of what method to call *)
-  | MemoryLeak {allocator; location; allocation_trace} ->
-      let allocation_line =
-        let {Location.line; _} = Trace.get_outer_location allocation_trace in
-        line
-      in
-      let pp_allocation_trace fmt (trace : Trace.t) =
-        match trace with
-        | Immediate _ ->
-            F.fprintf fmt "by `%a` on line %d" Attribute.pp_allocator allocator allocation_line
-        | ViaCall {f; _} ->
-            F.fprintf fmt "by `%a`, indirectly via call to %a on line %d" Attribute.pp_allocator
-              allocator CallEvent.describe f allocation_line
-      in
-      F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
-        pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
   | MutualRecursionCycle {cycle} ->
       PulseMutualRecursion.get_error_message cycle |> no_suggestion
@@ -834,6 +775,23 @@ let get_message_and_suggestion diagnostic =
       | Const _ | DictMissingKey _ ->
           F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
             pp_access_path pp_location )
+      |> no_suggestion
+  | ResourceLeak {resource; location; allocation_trace} ->
+      let allocation_line =
+        let {Location.line; _} = Trace.get_outer_location allocation_trace in
+        line
+      in
+      let pp_allocation_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate _ ->
+            F.fprintf fmt "by %a on line %d" describe_allocation resource allocation_line
+        | ViaCall {f; _} ->
+            F.fprintf fmt "by %a, indirectly via call to %a on line %d" describe_allocation resource
+              CallEvent.describe f allocation_line
+      in
+      F.asprintf "%s dynamically allocated %a is not %s after the last access at %a"
+        (resource_type_s resource |> String.capitalize)
+        pp_allocation_trace allocation_trace (resource_closed_s resource) Location.pp location
       |> no_suggestion
   | RetainCycle {location; values} ->
       F.asprintf "Retain cycle found at %a between the following objects: %a" Location.pp location
@@ -1059,16 +1017,6 @@ let get_trace = function
   | ConstRefableParameter {param; typ; location} ->
       let nesting = 0 in
       [Errlog.make_trace_element nesting location (get_param_typ param typ) []]
-  | CSharpResourceLeak {class_name; location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
-        access_start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt ->
-             F.fprintf fmt "allocated by constructor %a() here" CSharpClassName.pp class_name )
-           allocation_trace
-      @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | DynamicTypeMismatch {location} ->
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "" []]
@@ -1108,16 +1056,6 @@ let get_trace = function
   | ErlangError (Try_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching branch in try here" []]
-  | JavaResourceLeak {class_name; location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
-        access_start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt ->
-             F.fprintf fmt "allocated by constructor %a() here" JavaClassName.pp class_name )
-           allocation_trace
-      @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | TransitiveAccess {call_trace} ->
       Trace.add_to_errlog ~nesting:1
         ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
@@ -1127,32 +1065,6 @@ let get_trace = function
         ~pp_immediate:(fun fmt ->
           F.fprintf fmt "abstract class %s is instantiated here" (Typ.Name.name type_name) )
         trace []
-  | HackUnawaitedAwaitable {location; allocation_trace} ->
-      (* NOTE: this is very similar to the MemoryLeak case *)
-      let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
-        access_start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated here")
-           allocation_trace
-      @@ [Errlog.make_trace_element 0 location "awaitable becomes unreachable here" []]
-  | HackUnfinishedBuilder {location; allocation_trace} ->
-      let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
-        access_start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated here")
-           allocation_trace
-      @@ [Errlog.make_trace_element 0 location "builder object becomes unreachable here" []]
-  | MemoryLeak {allocator; location; allocation_trace} ->
-      let access_start_location = Trace.get_start_location allocation_trace in
-      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
-        access_start_location
-      @@ Trace.add_to_errlog ~nesting:1
-           ~pp_immediate:(fun fmt ->
-             F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
-           allocation_trace
-      @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | MutualRecursionCycle {cycle} ->
       PulseMutualRecursion.to_errlog cycle
   | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
@@ -1166,6 +1078,17 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "read to uninitialized value occurs here")
            trace
       @@ []
+  | ResourceLeak {resource; location; allocation_trace} ->
+      let access_start_location = Trace.get_start_location allocation_trace in
+      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
+        access_start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           ~pp_immediate:(fun fmt ->
+             F.fprintf fmt "allocated by %a here" describe_allocation resource )
+           allocation_trace
+      @@ [ Errlog.make_trace_element 0 location
+             (F.asprintf "%s becomes unreachable here" (resource_type_s resource))
+             [] ]
   | RetainCycle {values; location} ->
       let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
       List.fold_right ~init:errlog
@@ -1228,14 +1151,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->
       IssueType.pulse_const_refable
-  | CSharpResourceLeak _, false | JavaResourceLeak _, false ->
-      IssueType.pulse_resource_leak
   | HackCannotInstantiateAbstractClass _, false ->
       IssueType.pulse_cannot_instantiate_abstract_class
-  | HackUnawaitedAwaitable _, false ->
-      IssueType.pulse_unawaited_awaitable
-  | HackUnfinishedBuilder _, false ->
-      IssueType.pulse_unfinished_builder
   | DynamicTypeMismatch _, false ->
       IssueType.pulse_dynamic_type_mismatch
   | ErlangError (Badarg _), _ ->
@@ -1264,16 +1181,6 @@ let get_issue_type ~latent issue_type =
       IssueType.no_matching_branch_in_try ~latent
   | TransitiveAccess _, false ->
       IssueType.pulse_transitive_access
-  | MemoryLeak {allocator}, false -> (
-    match allocator with
-    | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
-        IssueType.pulse_memory_leak_c
-    | CppNew | CppNewArray ->
-        IssueType.pulse_memory_leak_cpp
-    | JavaResource _ | CSharpResource _ | ObjCAlloc | HackAsync | HackBuilderResource _ ->
-        L.die InternalError
-          "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
-           as allocator" )
   | MutualRecursionCycle _, _ ->
       IssueType.mutual_recursion_cycle
   | ReadonlySharedPtrParameter _, false ->
@@ -1284,6 +1191,22 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_uninitialized_const
   | ReadUninitialized {typ= DictMissingKey _}, _ ->
       IssueType.pulse_dict_missing_key
+  | ResourceLeak {resource= Memory allocator}, false -> (
+    match allocator with
+    | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
+        IssueType.pulse_memory_leak_c
+    | CppNew | CppNewArray ->
+        IssueType.pulse_memory_leak_cpp
+    | JavaResource _ | CSharpResource _ | HackAsync | HackBuilderResource _ | ObjCAlloc ->
+        L.die InternalError
+          "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
+           as allocator" )
+  | ResourceLeak {resource= CSharpClass _ | JavaClass _}, false ->
+      IssueType.pulse_resource_leak
+  | ResourceLeak {resource= HackAsync}, false ->
+      IssueType.pulse_unawaited_awaitable
+  | ResourceLeak {resource= HackBuilderResource _}, false ->
+      IssueType.pulse_unfinished_builder
   | RetainCycle {unknown_access_type}, false ->
       if unknown_access_type then IssueType.retain_cycle_no_weak_info else IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
@@ -1320,15 +1243,11 @@ let get_issue_type ~latent issue_type =
       else IssueType.unnecessary_copy_optional_pulse
   | ( ( ConfigUsage _
       | ConstRefableParameter _
-      | CSharpResourceLeak _
       | DynamicTypeMismatch _
-      | JavaResourceLeak _
       | TransitiveAccess _
       | HackCannotInstantiateAbstractClass _
-      | HackUnawaitedAwaitable _
-      | HackUnfinishedBuilder _
-      | MemoryLeak _
       | ReadonlySharedPtrParameter _
+      | ResourceLeak _
       | RetainCycle _
       | StackVariableAddressEscape _
       | UnnecessaryCopy _ )

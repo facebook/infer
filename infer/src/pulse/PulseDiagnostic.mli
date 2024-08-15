@@ -69,6 +69,13 @@ type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
 [@@deriving equal]
 
+type resource =
+  | CSharpClass of CSharpClassName.t
+  | JavaClass of JavaClassName.t
+  | HackAsync
+  | HackBuilderResource of HackClassName.t
+  | Memory of Attribute.allocator
+
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
@@ -79,8 +86,6 @@ type t =
       ; location: Location.t
       ; trace: Trace.t }
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
-  | CSharpResourceLeak of
-      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | TransitiveAccess of
@@ -89,17 +94,12 @@ type t =
       ; call_trace: Trace.t
       ; transitive_callees: TransitiveInfo.Callees.t
       ; transitive_missed_captures: Typ.Name.Set.t }
-  | JavaResourceLeak of
-      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
-  | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
-  | HackUnfinishedBuilder of
-      {builder_type: HackClassName.t; allocation_trace: Trace.t; location: Location.t}
-  | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
+  | ResourceLeak of {resource: resource; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of {values: retain_cycle_data list; location: Location.t; unknown_access_type: bool}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of

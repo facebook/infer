@@ -184,18 +184,14 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   match diagnostic with
   | ConfigUsage _
   | ConstRefableParameter _
-  | CSharpResourceLeak _
   | DynamicTypeMismatch _
   | ErlangError _
   | TransitiveAccess _
-  | JavaResourceLeak _
   | HackCannotInstantiateAbstractClass _
-  | HackUnawaitedAwaitable _
-  | HackUnfinishedBuilder _
-  | MemoryLeak _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
   | ReadUninitialized _
+  | ResourceLeak _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
