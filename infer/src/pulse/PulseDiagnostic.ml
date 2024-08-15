@@ -193,12 +193,6 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
-  | TransitiveAccess of
-      { tag: string
-      ; description: string
-      ; call_trace: Trace.t
-      ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
-      ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
@@ -218,6 +212,12 @@ type t =
       ; policy_privacy_effect: string option
       ; report_as_issue_type: string option
       ; report_as_category: string option }
+  | TransitiveAccess of
+      { tag: string
+      ; description: string
+      ; call_trace: Trace.t
+      ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
+      ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
@@ -246,16 +246,6 @@ let pp fmt diagnostic =
       F.fprintf fmt "DynamicTypeMismatch {@[location:%a@]}" Location.pp location
   | ErlangError erlang_error ->
       ErlangError.pp fmt erlang_error
-  | TransitiveAccess {tag; description; call_trace; transitive_callees; transitive_missed_captures}
-    ->
-      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t%t@]}" tag description
-        (Trace.pp ~pp_immediate) call_trace
-        (fun fmt ->
-          if TransitiveInfo.Callees.is_bottom transitive_callees then ()
-          else TransitiveInfo.Callees.pp fmt transitive_callees )
-        (fun fmt ->
-          if Typ.Name.Set.is_empty transitive_missed_captures then ()
-          else Typ.Name.Set.pp fmt transitive_missed_captures )
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
         type_name (Trace.pp ~pp_immediate) trace
@@ -295,6 +285,16 @@ let pp fmt diagnostic =
         source
         (Pp.pair ~fst:TaintItem.pp ~snd:(Trace.pp ~pp_immediate))
         sink Location.pp location pp_flow_kind flow_kind
+  | TransitiveAccess {tag; description; call_trace; transitive_callees; transitive_missed_captures}
+    ->
+      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t%t@]}" tag description
+        (Trace.pp ~pp_immediate) call_trace
+        (fun fmt ->
+          if TransitiveInfo.Callees.is_bottom transitive_callees then ()
+          else TransitiveInfo.Callees.pp fmt transitive_callees )
+        (fun fmt ->
+          if Typ.Name.Set.is_empty transitive_missed_captures then ()
+          else Typ.Name.Set.pp fmt transitive_missed_captures )
   | UnnecessaryCopy
       {copied_into; source_typ; source_opt; location; copied_location; from; location_instantiated}
     ->
@@ -401,10 +401,9 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
-  | DynamicTypeMismatch _
   | ConfigUsage _
   | ConstRefableParameter _
-  | TransitiveAccess _
+  | DynamicTypeMismatch _
   | HackCannotInstantiateAbstractClass _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
@@ -413,6 +412,7 @@ let aborts_execution = function
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
+  | TransitiveAccess _
   | UnnecessaryCopy _ ->
       false
 
@@ -666,16 +666,6 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "no true branch in if expression at %a" Location.pp location |> no_suggestion
   | ErlangError (Try_clause {calling_context= _; location}) ->
       F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
-  | TransitiveAccess {tag; description; call_trace} ->
-      let pp fmt (trace : Trace.t) =
-        match trace with
-        | Immediate {location} ->
-            F.fprintf fmt "on %a" Location.pp_line location
-        | ViaCall {f; location; _} ->
-            F.fprintf fmt "indirectly via call to %a on %a" CallEvent.describe f Location.pp_line
-              location
-      in
-      F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       let pp_trace fmt (trace : Trace.t) =
         match trace with
@@ -824,6 +814,16 @@ let get_message_and_suggestion diagnostic =
             F.asprintf "%s. `%a` is tainted by %a and%s %a" policy_description DecompilerExpr.pp
               expr TaintItem.pp source flows_to TaintItem.pp sink )
       |> no_suggestion
+  | TransitiveAccess {tag; description; call_trace} ->
+      let pp fmt (trace : Trace.t) =
+        match trace with
+        | Immediate {location} ->
+            F.fprintf fmt "on %a" Location.pp_line location
+        | ViaCall {f; location; _} ->
+            F.fprintf fmt "indirectly via call to %a on %a" CallEvent.describe f Location.pp_line
+              location
+      in
+      F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
   | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       ( F.asprintf
@@ -1056,10 +1056,6 @@ let get_trace = function
   | ErlangError (Try_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching branch in try here" []]
-  | TransitiveAccess {call_trace} ->
-      Trace.add_to_errlog ~nesting:1
-        ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
-        call_trace []
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       Trace.add_to_errlog ~nesting:0
         ~pp_immediate:(fun fmt ->
@@ -1130,6 +1126,10 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> F.fprintf fmt "flows to this sink: %a" TaintItem.pp sink)
            sink_trace
       @@ []
+  | TransitiveAccess {call_trace} ->
+      Trace.add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
+        call_trace []
   | UnnecessaryCopy {location; source_typ; copied_location= None; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -1179,8 +1179,6 @@ let get_issue_type ~latent issue_type =
       IssueType.no_true_branch_in_if ~latent
   | ErlangError (Try_clause _), _ ->
       IssueType.no_matching_branch_in_try ~latent
-  | TransitiveAccess _, false ->
-      IssueType.pulse_transitive_access
   | MutualRecursionCycle _, _ ->
       IssueType.mutual_recursion_cycle
   | ReadonlySharedPtrParameter _, false ->
@@ -1217,6 +1215,8 @@ let get_issue_type ~latent issue_type =
       IssueType.data_flow_to_sink
   | TaintFlow {flow_kind= FlowFromSource}, _ ->
       IssueType.sensitive_data_flow
+  | TransitiveAccess _, false ->
+      IssueType.pulse_transitive_access
   | UnnecessaryCopy {copied_location= Some _}, false ->
       IssueType.unnecessary_copy_return_pulse
   | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment}, false
@@ -1244,12 +1244,12 @@ let get_issue_type ~latent issue_type =
   | ( ( ConfigUsage _
       | ConstRefableParameter _
       | DynamicTypeMismatch _
-      | TransitiveAccess _
       | HackCannotInstantiateAbstractClass _
       | ReadonlySharedPtrParameter _
       | ResourceLeak _
       | RetainCycle _
       | StackVariableAddressEscape _
+      | TransitiveAccess _
       | UnnecessaryCopy _ )
     , true ) ->
       L.die InternalError "Issue type cannot be latent"

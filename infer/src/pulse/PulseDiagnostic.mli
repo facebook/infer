@@ -88,12 +88,6 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
-  | TransitiveAccess of
-      { tag: string
-      ; description: string
-      ; call_trace: Trace.t
-      ; transitive_callees: TransitiveInfo.Callees.t
-      ; transitive_missed_captures: Typ.Name.Set.t }
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
   | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
   | ReadonlySharedPtrParameter of
@@ -113,6 +107,12 @@ type t =
       ; policy_privacy_effect: string option
       ; report_as_issue_type: string option
       ; report_as_category: string option }
+  | TransitiveAccess of
+      { tag: string
+      ; description: string
+      ; call_trace: Trace.t
+      ; transitive_callees: TransitiveInfo.Callees.t
+      ; transitive_missed_captures: Typ.Name.Set.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option

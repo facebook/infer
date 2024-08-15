@@ -186,7 +186,6 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ConstRefableParameter _
   | DynamicTypeMismatch _
   | ErlangError _
-  | TransitiveAccess _
   | HackCannotInstantiateAbstractClass _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
@@ -195,6 +194,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
+  | TransitiveAccess _
   | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} ->
