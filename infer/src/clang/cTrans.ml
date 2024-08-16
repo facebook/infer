@@ -3934,13 +3934,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let block_as_arg_attributes = trans_state.block_as_arg_attributes in
         let captured_vars =
-          List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
+          List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block, is_formal) ->
               let capture_mode, typ =
                 if modify_in_block || Pvar.is_global var then
                   (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_lvalue_reference)))
                 else (CapturedVar.ByValue, typ)
               in
-              {CapturedVar.pvar= var; typ; capture_mode} )
+              {CapturedVar.pvar= var; typ; capture_mode; is_formal= Some is_formal} )
         in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
@@ -3962,7 +3962,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let get_captured_pvar_typ decl_ref =
       CVar_decl.sil_var_of_captured_var context stmt_info.Clang_ast_t.si_source_range procname
         decl_ref
-      |> Option.map ~f:(fun (var, typ, _modify_in_block) -> (var, typ))
+      |> Option.map ~f:(fun (var, typ, _modify_in_block, _) -> (var, typ))
     in
     let loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -4069,7 +4069,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let captured_vars =
       List.map
-        ~f:(fun (exp, var, typ, capture_mode) -> (exp, {CapturedVar.pvar= var; typ; capture_mode}))
+        ~f:(fun (exp, var, typ, capture_mode) ->
+          (exp, {CapturedVar.pvar= var; typ; capture_mode; is_formal= None}) )
         captured_vars
     in
     let captured_var_names = List.map ~f:(fun (_, captured_var) -> captured_var) captured_vars in

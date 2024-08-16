@@ -18,8 +18,10 @@ let tests =
   let closure_exp captured_pvars =
     let mk_captured_var str =
       ( Exp.Var (ident_of_str str)
-      , {CapturedVar.pvar= pvar_of_str str; typ= dummy_typ; capture_mode= CapturedVar.ByReference}
-      )
+      , { CapturedVar.pvar= pvar_of_str str
+        ; typ= dummy_typ
+        ; capture_mode= CapturedVar.ByReference
+        ; is_formal= None } )
     in
     let captured_vars = List.map ~f:mk_captured_var captured_pvars in
     let closure = {Exp.name= dummy_procname; captured_vars} in

@@ -44,7 +44,6 @@ val create_attributes :
   -> Tenv.t
   -> CMethodSignature.t
   -> Clang_ast_t.stmt list
-  -> (Pvar.t * Typ.t * CapturedVar.capture_mode) list
   -> ProcAttributes.t
 
 val create_external_procdesc :

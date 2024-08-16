@@ -390,7 +390,7 @@ let parse_ret_annot (json : Safe.t) : Annot.Item.t =
 let parse_captured_var (json : Safe.t) =
   let pvar = parse_pvar (member "name" json) in
   let typ = parse_sil_type_name (member "type" json) in
-  {CapturedVar.pvar; typ; capture_mode= ByValue}
+  {CapturedVar.pvar; typ; capture_mode= ByValue; is_formal= None}
 
 
 let parse_proc_attributes_var (json : Safe.t) =

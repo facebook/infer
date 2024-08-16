@@ -264,12 +264,8 @@ let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false)
 
 
 let create_attributes ?loc_instantiated ?(set_objc_accessor_attr = false) trans_unit_ctx tenv ms
-    fbody captured =
-  let captured_mangled =
-    List.map ~f:(fun (pvar, typ, capture_mode) -> {CapturedVar.pvar; typ; capture_mode}) captured
-  in
-  create_attributes_helper ?loc_instantiated ~set_objc_accessor_attr trans_unit_ctx tenv ms fbody
-    captured_mangled
+    fbody =
+  create_attributes_helper ?loc_instantiated ~set_objc_accessor_attr trans_unit_ctx tenv ms fbody []
 
 
 (** Creates a procedure description. *)
