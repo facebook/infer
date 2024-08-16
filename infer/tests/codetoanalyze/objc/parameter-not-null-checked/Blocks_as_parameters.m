@@ -87,17 +87,36 @@ typedef void (^MyBlock1)(int x);
 + (void)addOperationWithBlock:(void (^)())completion {
 }
 
-- (void)uploadTaskWithRequestOk:(NSURLRequest*)urlRequest
-                       fromFile:(NSURL*)fileURL
-                       delegate:(id)delegate
-                  delegateQueue:(NSOperationQueue*)delegateQueue
-                     completion:(void (^)())completion {
+- (void)uploadTaskWithRequestOk_FP:(NSURLRequest*)urlRequest
+                          fromFile:(NSURL*)fileURL
+                          delegate:(id)delegate
+                     delegateQueue:(NSOperationQueue*)delegateQueue
+                        completion:(void (^)())completion {
   if (!completion) {
     return;
   }
 
   [Blocks_as_parameters addOperationWithBlock:^{
     completion();
+  }];
+}
+
+
+- (void)uploadTaskWithRequestBad:(NSURLRequest*)urlRequest
+                        fromFile:(NSURL*)fileURL
+                        delegate:(id)delegate
+                   delegateQueue:(NSOperationQueue*)delegateQueue
+                      completion:(void (^)())completion {
+  [Blocks_as_parameters addOperationWithBlock:^{
+    completion();
+  }];
+}
+
+- (void)capturedNotFormalOK {
+  MyBlock block;
+
+  [Blocks_as_parameters addOperationWithBlock:^{
+    block();
   }];
 }
 

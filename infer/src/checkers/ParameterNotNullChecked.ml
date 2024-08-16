@@ -13,6 +13,15 @@ let is_block_param formals name =
     formals
 
 
+let is_block_param_in_captured captured name =
+  List.exists
+    ~f:(fun {CapturedVar.pvar; is_formal; typ} ->
+      Mangled.equal (Pvar.get_name pvar) name
+      && Typ.is_pointer_to_function typ
+      && Option.value is_formal ~default:false )
+    captured
+
+
 module DomainData = struct
   type t = {arg: Mangled.t} [@@deriving compare]
 
@@ -78,10 +87,13 @@ module Mem = struct
         astate
 
 
-  let load formals_not_captured id pvar _ astate =
+  let load (attributes : ProcAttributes.t) id pvar _ astate =
     let name = Pvar.get_name pvar in
     let vars =
-      if is_block_param formals_not_captured name then Vars.add id {arg= name} astate.vars
+      if
+        is_block_param attributes.formals name
+        || is_block_param_in_captured attributes.captured name
+      then Vars.add id {arg= name} astate.vars
       else astate.vars
     in
     {astate with vars}
@@ -143,9 +155,7 @@ module Domain = struct
 
   let exec_null_check_id id loc astate = map (Mem.exec_null_check_id id loc) astate
 
-  let load formals_not_captured id pvar loc astate =
-    map (Mem.load formals_not_captured id pvar loc) astate
-
+  let load attributes id pvar loc astate = map (Mem.load attributes id pvar loc) astate
 
   let store pvar e loc astate = map (Mem.store pvar e loc) astate
 
@@ -166,7 +176,7 @@ module TransferFunctions = struct
     let attributes = Procdesc.get_attributes proc_desc in
     match instr with
     | Load {id; e= Lvar pvar; loc} ->
-        Domain.load attributes.ProcAttributes.formals id pvar loc astate
+        Domain.load attributes id pvar loc astate
     | Store {e1= Lvar pvar; e2; loc} ->
         Domain.store pvar e2 loc astate
     | Prune (Var id, loc, _, _) ->
