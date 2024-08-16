@@ -1,0 +1,2 @@
+StringLiteral.java, StringLiteral.fBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to StringLiteral.sink(java.lang.String):void]
+StringLiteral.java, StringLiteral.gBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to StringLiteral.gLatent(java.lang.String):void,call to StringLiteral.sink(java.lang.String):void]

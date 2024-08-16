@@ -1,0 +1,2 @@
+property TaintTrack
+  start -> error: "StringLiteral.sink"(Receiver, Arg, Ret) when Arg == "bad"
