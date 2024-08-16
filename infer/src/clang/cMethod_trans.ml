@@ -280,11 +280,12 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
   let proc_name = ms.CMethodSignature.name in
   let captured_mangled =
     List.map
-      ~f:(fun (pvar, typ, capture_mode) ->
+      ~f:(fun (captured_var : CapturedVar.t) ->
         let pvar =
-          if is_cpp_lambda_call_operator then Pvar.mk (Pvar.get_name pvar) proc_name else pvar
+          if is_cpp_lambda_call_operator then Pvar.mk (Pvar.get_name captured_var.pvar) proc_name
+          else captured_var.pvar
         in
-        {CapturedVar.pvar; typ; capture_mode} )
+        {captured_var with pvar} )
       captured
   in
   (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)

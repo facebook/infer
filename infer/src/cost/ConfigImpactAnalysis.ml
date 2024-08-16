@@ -1191,7 +1191,7 @@ module TransferFunctions = struct
         , location
         , _ )
       when Procname.equal dispatch_sync BuiltinDecl.dispatch_sync ->
-        let args = List.map captured_vars ~f:(fun (exp, _, typ, _) -> (exp, typ)) in
+        let args = List.map captured_vars ~f:(fun (exp, {CapturedVar.typ}) -> (exp, typ)) in
         call analysis_data ret callee args location astate
     | Call (ret, Const (Cfun callee), args, location, _)
     | Call (ret, Closure {name= callee}, args, location, _) ->

@@ -171,7 +171,7 @@ let check_expr_for_array_access :
     | Exp.Cast (_, e) ->
         check_sub_expr e cond_set
     | Exp.Closure {captured_vars} ->
-        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _, _) ->
+        List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _) ->
             check_sub_expr e cond_set )
     | Exp.Var _ | Exp.Lvar _ | Exp.Const _ | Exp.Sizeof _ ->
         cond_set
@@ -224,7 +224,7 @@ let rec check_expr_for_integer_overflow integer_type_widths pname exp location m
       |> check_expr_for_integer_overflow integer_type_widths pname e1 location mem
       |> check_expr_for_integer_overflow integer_type_widths pname e2 location mem
   | Exp.Closure {captured_vars} ->
-      List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _, _, _) ->
+      List.fold captured_vars ~init:cond_set ~f:(fun cond_set (e, _) ->
           check_expr_for_integer_overflow integer_type_widths pname e location mem cond_set )
   | Exp.Var _ | Exp.Const _ | Exp.Lvar _ | Exp.Sizeof {dynamic_length= None} ->
       cond_set
@@ -236,7 +236,7 @@ let instantiate_cond :
     -> Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
-    -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+    -> (Exp.t * CapturedVar.t) list
     -> Dom.Mem.t
     -> BufferOverrunCheckerSummary.t
     -> Location.t

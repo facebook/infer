@@ -920,10 +920,10 @@ let rec exp_sub_ids (f : subst_fun) exp =
       if phys_equal e' e then exp else Exp.Exn e'
   | Closure c ->
       let captured_vars =
-        IList.map_changed ~equal:[%equal: Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode]
-          ~f:(fun ((e, pvar, typ, mode) as captured) ->
+        IList.map_changed ~equal:[%equal: Exp.t * CapturedVar.t]
+          ~f:(fun ((e, captured_var) as captured) ->
             let e' = exp_sub_ids f e in
-            if phys_equal e' e then captured else (e', pvar, typ, mode) )
+            if phys_equal e' e then captured else (e', captured_var) )
           c.captured_vars
       in
       if phys_equal captured_vars c.captured_vars then exp else Exp.Closure {c with captured_vars}

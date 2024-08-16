@@ -187,7 +187,7 @@ let rec eval (path : PathContext.t) mode location exp astate :
 
 
 and record_closure astate (path : PathContext.t) loc procname
-    (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) =
+    (captured_vars : (Exp.t * CapturedVar.t) list) =
   let assign_event = ValueHistory.Assignment (loc, path.timestamp) in
   let closure_addr, closure_hist =
     (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event)
@@ -208,7 +208,7 @@ and record_closure astate (path : PathContext.t) loc procname
         astate
   in
   let** astate = PulseArithmetic.and_positive closure_addr astate in
-  let store_captured_var result (exp, var, typ, capture_mode) =
+  let store_captured_var result (exp, {CapturedVar.pvar= var; typ; capture_mode}) =
     let captured_data =
       {Fieldname.capture_mode; is_function_pointer= Typ.is_pointer_to_function typ}
     in
@@ -264,10 +264,10 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
         let** astate, rev_captured =
           List.fold captured_vars
             ~init:(Sat (Ok (astate, [])))
-            ~f:(fun result (capt_exp, captured_as, typ, mode) ->
+            ~f:(fun result (capt_exp, {CapturedVar.pvar= captured_as; typ; capture_mode}) ->
               let** astate, rev_captured = result in
               let++ astate, addr_trace = eval path Read location capt_exp astate in
-              (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
+              (astate, (captured_as, addr_trace, typ, capture_mode) :: rev_captured) )
         in
         let++ astate, (v, hist) =
           Closures.record path location name (List.rev rev_captured) astate
@@ -847,7 +847,7 @@ let get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
     astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (pvar, capture_mode, typ) ->
+      ~f:(fun (id, astate, captured) {CapturedVar.pvar; typ; capture_mode} ->
         let var_name = Pvar.get_name pvar in
         let captured_data =
           {Fieldname.capture_mode; is_function_pointer= Typ.is_pointer_to_function typ}
@@ -871,7 +871,7 @@ let get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
 let get_closure_captured_actuals path location ~captured_actuals astate =
   let++ astate, captured_actuals =
     PulseOperationResult.list_fold captured_actuals ~init:(astate, [])
-      ~f:(fun (astate, captured_actuals) (exp, _, typ, _) ->
+      ~f:(fun (astate, captured_actuals) (exp, {CapturedVar.typ}) ->
         let++ astate, captured_actual = eval path Read location exp astate in
         (astate, (captured_actual, typ) :: captured_actuals) )
   in
@@ -882,10 +882,7 @@ let get_closure_captured_actuals path location ~captured_actuals astate =
   (astate, List.rev captured_actuals)
 
 
-type call_kind =
-  [ `Closure of (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
-  | `Var of Ident.t
-  | `ResolvedProcname ]
+type call_kind = [`Closure of (Exp.t * CapturedVar.t) list | `Var of Ident.t | `ResolvedProcname]
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
   let is_lambda_or_block = Procname.is_cpp_lambda procname || Procname.is_objc_block procname in

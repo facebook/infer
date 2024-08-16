@@ -13,8 +13,7 @@
 open! IStd
 module F = Format
 
-type closure =
-  {name: Procname.t; captured_vars: (t * Pvar.t * Typ.t * CapturedVar.capture_mode) list}
+type closure = {name: Procname.t; captured_vars: (t * CapturedVar.t) list}
 
 (** This records information about a [sizeof(typ)] expression.
 

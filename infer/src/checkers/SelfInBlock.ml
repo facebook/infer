@@ -215,7 +215,7 @@ module Mem = struct
      actual "use" of the captured variable in the source program though, and causes false
      positives. Here we remove the ids from the domain when that id is being added to a closure. *)
   let remove_ids_in_closures_from_domain (instr : Sil.instr) (astate : t) =
-    let remove_id_in_closures_from_domain vars ((exp : Exp.t), _, _, _) =
+    let remove_id_in_closures_from_domain vars ((exp : Exp.t), _) =
       match exp with Var id -> Vars.remove id vars | _ -> vars
     in
     let do_exp vars (exp : Exp.t) =

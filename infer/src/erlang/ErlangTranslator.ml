@@ -949,7 +949,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
     let mk_capt_var (var : Pvar.t) =
       let id = mk_fresh_id () in
       let instr = Sil.Load {id; e= Exp.Lvar var; typ= any_typ; loc= env.location} in
-      (instr, (Exp.Var id, var, any_typ, CapturedVar.ByValue))
+      (instr, (Exp.Var id, {CapturedVar.pvar= var; typ= any_typ; capture_mode= CapturedVar.ByValue}))
     in
     let instrs, captured_vars = List.unzip (List.map ~f:mk_capt_var captured_vars) in
     (instrs, Exp.Closure {name; captured_vars})

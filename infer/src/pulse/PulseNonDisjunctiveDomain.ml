@@ -483,8 +483,9 @@ module IntraDomElt = struct
   let set_captured_variables exp astate_n =
     match exp with
     | Exp.Closure {captured_vars} ->
-        List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, mode) ->
-            {astate_n with captured= Captured.add pvar mode astate_n.captured} )
+        List.fold captured_vars ~init:astate_n
+          ~f:(fun astate_n (_, {CapturedVar.pvar; capture_mode}) ->
+            {astate_n with captured= Captured.add pvar capture_mode astate_n.captured} )
     | _ ->
         astate_n
 

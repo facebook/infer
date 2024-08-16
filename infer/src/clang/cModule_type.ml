@@ -8,7 +8,7 @@
 open! IStd
 
 type block_data =
-  { captured_vars: (Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  { captured_vars: CapturedVar.t list
   ; context: CContext.t
   ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option
   ; procname: Procname.t

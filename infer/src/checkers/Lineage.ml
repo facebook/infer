@@ -1759,7 +1759,7 @@ module TransferFunctions = struct
   (** Return variables that are captured by the closures occurring in [e]. *)
   let captured_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
-      List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
+      List.fold captured_vars ~init:locals ~f:(fun locals (_exp, {CapturedVar.pvar}) ->
           Local.Set.union locals (free_locals_from_path shapes (VarPath.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
@@ -1798,7 +1798,7 @@ module TransferFunctions = struct
       | Closure c ->
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
-      let one_var index astate (_exp, pvar, _typ, _mode) =
+      let one_var index astate (_exp, {CapturedVar.pvar}) =
         Domain.add_flow ~shapes ~node ~kind:Direct
           ~src:(Src.silence @@ Src.pvar pvar)
           ~dst:(Dst.captured_by name index) astate

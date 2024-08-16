@@ -489,7 +489,7 @@ let eval_sympath ~mode params sympath mem =
 
 let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
     (callee_formals : (Pvar.t * Typ.t) list) (actual_exps : (Exp.t * Typ.t) list)
-    (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) caller_mem =
+    (captured_vars : (Exp.t * CapturedVar.t) list) caller_mem =
   let actuals =
     if is_args_ref then
       match actual_exps with
@@ -513,7 +513,7 @@ let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
   let params =
     ParamBindings.make callee_formals actuals
     |> fun init ->
-    List.fold captured_vars ~init ~f:(fun acc (_, pvar, _, _) ->
+    List.fold captured_vars ~init ~f:(fun acc (_, {CapturedVar.pvar}) ->
         let v = Mem.find (Loc.of_pvar pvar) caller_mem in
         ParamBindings.add (Pvar.get_name pvar) v acc )
   in

@@ -25,7 +25,7 @@ module Normalize = struct
           e
       | Closure c ->
           let captured_vars =
-            List.map ~f:(fun (exp, pvar, typ, mode) -> (eval exp, pvar, typ, mode)) c.captured_vars
+            List.map ~f:(fun (exp, captured_var) -> (eval exp, captured_var)) c.captured_vars
           in
           Closure {c with captured_vars}
       | Const _ ->

@@ -302,14 +302,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** Given a captured var, return the instruction to assign it to a temp *)
-  let assign_captured_var loc (cvar, typ, mode) =
-    match (mode : CapturedVar.capture_mode) with
+  let assign_captured_var loc ({CapturedVar.pvar; typ; capture_mode} as captured) =
+    match (capture_mode : CapturedVar.capture_mode) with
     | ByReference ->
-        ((Exp.Lvar cvar, cvar, typ, mode), None)
+        ((Exp.Lvar pvar, captured), None)
     | ByValue ->
         let id = Ident.create_fresh Ident.knormal in
-        let instr = Sil.Load {id; e= Exp.Lvar cvar; typ; loc} in
-        ((Exp.Var id, cvar, typ, mode), Some instr)
+        let instr = Sil.Load {id; e= Exp.Lvar pvar; typ; loc} in
+        ((Exp.Var id, captured), Some instr)
 
 
   let closure_trans closure_pname captured_vars context stmt_info expr_info =
@@ -3935,12 +3935,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let block_as_arg_attributes = trans_state.block_as_arg_attributes in
         let captured_vars =
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
-              let mode, typ =
+              let capture_mode, typ =
                 if modify_in_block || Pvar.is_global var then
                   (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_lvalue_reference)))
                 else (CapturedVar.ByValue, typ)
               in
-              (var, typ, mode) )
+              {CapturedVar.pvar= var; typ; capture_mode} )
         in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
@@ -4067,9 +4067,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_results, captured_vars =
       List.fold_right ~f:translate_captured ~init:([], []) lei_captures
     in
-    let captured_var_names =
-      List.map ~f:(fun (_, var, typ, mode) -> (var, typ, mode)) captured_vars
+    let captured_vars =
+      List.map
+        ~f:(fun (exp, var, typ, capture_mode) -> (exp, {CapturedVar.pvar= var; typ; capture_mode}))
+        captured_vars
     in
+    let captured_var_names = List.map ~f:(fun (_, captured_var) -> captured_var) captured_vars in
     let lambda_pname =
       CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl captured_var_names
     in

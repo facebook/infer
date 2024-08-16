@@ -15,6 +15,6 @@ val string_of_capture_mode : capture_mode -> string
 val is_captured_by_ref : capture_mode -> bool
 
 type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode}
-[@@deriving compare, equal, normalize]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val pp : Format.formatter -> t -> unit

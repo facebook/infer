@@ -457,16 +457,15 @@ let call_aux ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc cal
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
         (Pvar.mk mangled callee_pname, typ) )
   in
-  let captured_formals =
-    List.map callee_proc_attrs.captured ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
-        (pvar, capture_mode, typ) )
-  in
+  let captured_formals = callee_proc_attrs.captured in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate, captured_actuals =
     PulseOperations.get_captured_actuals callee_pname path call_loc ~captured_formals ~call_kind
       ~actuals astate_caller
   in
-  let captured_formals = List.map captured_formals ~f:(fun (var, _, typ) -> (var, typ)) in
+  let captured_formals =
+    List.map captured_formals ~f:(fun {CapturedVar.pvar; typ} -> (pvar, typ))
+  in
   let should_keep_at_most_one_disjunct =
     Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
         Str.string_match regex (Procname.to_string callee_pname) 0 )

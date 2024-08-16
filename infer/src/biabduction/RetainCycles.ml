@@ -108,12 +108,12 @@ let get_cycle_blocks root_node exp =
   match exp with
   | Exp.Closure {name; captured_vars} ->
       List.find_map
-        ~f:(fun (e, var, typ, _) ->
+        ~f:(fun (e, {CapturedVar.pvar; typ}) ->
           match typ.Typ.desc with
           | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
               None
           | _ ->
-              if Exp.equal e root_node.RetainCyclesType.rc_node_exp then Some (name, var) else None )
+              if Exp.equal e root_node.RetainCyclesType.rc_node_exp then Some (name, pvar) else None )
         captured_vars
   | _ ->
       None

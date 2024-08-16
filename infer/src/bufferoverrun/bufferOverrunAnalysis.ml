@@ -166,7 +166,7 @@ module TransferFunctions = struct
       -> (Pvar.t * Typ.t) list
       -> Procname.t
       -> (Exp.t * Typ.t) list
-      -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+      -> (Exp.t * CapturedVar.t) list
       -> Dom.Mem.t
       -> BufferOverrunAnalysisSummary.t
       -> Location.t

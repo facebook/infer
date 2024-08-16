@@ -68,7 +68,7 @@ val mk_eval_sym_trace :
   -> IntegerWidths.t
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
-  -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  -> (Exp.t * CapturedVar.t) list
   -> BufferOverrunDomain.Mem.t
   -> mode:eval_mode
   -> BufferOverrunDomain.eval_sym_trace
@@ -78,7 +78,7 @@ val mk_eval_sym_cost :
      IntegerWidths.t
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
-  -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  -> (Exp.t * CapturedVar.t) list
   -> BufferOverrunDomain.Mem.t
   -> BufferOverrunDomain.eval_sym_trace
 (** Make [eval_sym] function of [EvalCost] mode for on-demand symbol evaluation *)
