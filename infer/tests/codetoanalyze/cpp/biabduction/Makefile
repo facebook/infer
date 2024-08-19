@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 CLANG_OPTIONS = -x c++ -std=c++1y -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = \
   --biabduction-only --biabduction-memleak-buckets cpp --debug-exceptions --report-custom-error \
-  --project-root $(TESTS_DIR)
+  --project-root $(TESTS_DIR) --biabduction-seconds-per-iteration 200
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
