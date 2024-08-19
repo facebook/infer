@@ -1126,6 +1126,7 @@ let simple_matchers =
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
     ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array |> with_non_disj
     ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new |> with_non_disj
+    ; -"apache" &:: "thrift" &:: "field_ref" &:: "operator=" &--> Basic.skip |> with_non_disj
     ; -"std" &:: "basic_string" &:: "substr"
       &--> Basic.nondet ~desc:"std::basic_string::substr"
       |> with_non_disj

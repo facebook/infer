@@ -363,10 +363,13 @@ module IntraDomElt = struct
     {astate_n with destructor_checked= DestructorChecked.add var astate_n.destructor_checked}
 
 
-  let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t)
-      {passed_to; loads; stores} =
+  let is_never_used_after_copy_into_intermediate_or_field pvar (copied_location : Location.t)
+      (copied_timestamp : Timestamp.t) {passed_to; loads; stores} =
     let is_after_copy =
-      TrackedLoc.exists (fun _ timestamp -> (copied_timestamp :> int) < (timestamp :> int))
+      TrackedLoc.exists (fun location timestamp ->
+          SourceFile.equal copied_location.file location.file
+          && copied_location.line <= location.line
+          && (copied_timestamp :> int) < (timestamp :> int) )
     in
     let source_var = Var.of_pvar pvar in
     let is_passed_to_non_destructor_after_copy =
@@ -428,7 +431,11 @@ module IntraDomElt = struct
               (not (Pvar.is_global pvar))
               && (not (is_lvalue_ref_param ~ref_formals pvar))
               && (not (List.Assoc.mem ptr_formals ~equal:Pvar.equal pvar))
-              && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate_n
+              && (* Note: We should NOT use [copied_location] here, because which is highly liked a
+                    location of another procedure, so is unhelpful to reason about intra-procedrual
+                    order. *)
+              is_never_used_after_copy_into_intermediate_or_field pvar location copied_timestamp
+                astate_n
             then
               (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
               (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
