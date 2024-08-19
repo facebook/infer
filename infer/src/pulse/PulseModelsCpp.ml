@@ -1241,6 +1241,18 @@ let simple_matchers =
       |> with_non_disj
     ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
       &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip"
+      |> with_non_disj
+    ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "get"
+      &++> Basic.unknown_call "folly::detail::SingletonHolder::get"
+      |> with_non_disj
+    ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "get_weak"
+      &++> Basic.unknown_call "folly::detail::SingletonHolder::get_weak"
+      |> with_non_disj
+    ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "try_get"
+      &++> Basic.unknown_call "folly::detail::SingletonHolder::try_get"
+      |> with_non_disj
+    ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "try_get_fast"
+      &++> Basic.unknown_call "folly::detail::SingletonHolder::try_get_fast"
       |> with_non_disj ]
 
 
