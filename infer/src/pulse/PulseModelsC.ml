@@ -23,12 +23,10 @@ let invalidate path access_path location cause addr_trace : unit DSL.model_monad
 let alloc_common ~desc allocator ~size_exp_opt : model =
   let open DSL.Syntax in
   start_named_model desc
-  @@ let* {callee_procname; path; location; ret= ret_id, _} = get_data in
+  @@ let* {path; location; ret= ret_id, _} = get_data in
      let astate_alloc = Basic.alloc_not_null allocator ~initialize:false size_exp_opt in
      let result_null =
-       let* ret_addr =
-         mk_fresh ~model_desc:(Procname.to_string callee_procname) ~more:"(null case)" ()
-       in
+       let* ret_addr = mk_fresh ~more:"(null case)" () in
        let* () = assign_ret ret_addr in
        let* () = and_eq_int ret_addr IntLit.zero in
        invalidate path

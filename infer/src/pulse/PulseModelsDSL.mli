@@ -121,7 +121,7 @@ module Syntax : sig
 
   val eval_string_concat : aval -> aval -> aval model_monad
 
-  val eval_access : ?desc:string -> access_mode -> aval -> Access.t -> aval model_monad
+  val eval_access : access_mode -> aval -> Access.t -> aval model_monad
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
@@ -139,7 +139,7 @@ module Syntax : sig
 
   val get_const_string : aval -> string option model_monad
 
-  val mk_fresh : model_desc:string -> ?more:string -> unit -> aval model_monad
+  val mk_fresh : ?more:string -> unit -> aval model_monad
 
   val write_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
@@ -198,7 +198,7 @@ module Syntax : sig
 
   val as_constant_string : aval -> string option model_monad
 
-  val aval_of_int : ValueHistory.t -> int -> aval model_monad
+  val mk_int : ?hist:ValueHistory.t -> int -> aval model_monad
 
   (** {2 Tenv operations} *)
 
@@ -230,8 +230,7 @@ module Syntax : sig
   (** This is used to make hack_get_static_class behave like a pure function *)
 
   module Basic : sig
-    val alloc_not_null :
-      ?desc:string -> Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
+    val alloc_not_null : Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
   end
 end
 

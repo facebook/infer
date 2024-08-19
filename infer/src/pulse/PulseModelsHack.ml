@@ -121,7 +121,7 @@ module Vec = struct
     let open DSL.Syntax in
     let actual_size = List.length args in
     let* size = match know_size with None -> eval_const_int actual_size | Some size -> ret size in
-    let* last_read = mk_fresh ~model_desc:"new_vec.last_read" () in
+    let* last_read = mk_fresh () in
     let* dummy = eval_const_int 9 in
     let* vec =
       constructor type_name
@@ -199,8 +199,8 @@ module Vec = struct
 
   let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let* ret_val = mk_fresh ~model_desc:"vec index" () in
-    let* new_last_read_val = mk_fresh ~model_desc:"vec index" () in
+    let* ret_val = mk_fresh () in
+    let* new_last_read_val = mk_fresh () in
     let* _size_val = eval_deref_access Read argv (FieldAccess size_field) in
     let* fst_val = eval_deref_access Read argv (FieldAccess fst_field) in
     let* snd_val = eval_deref_access Read argv (FieldAccess snd_field) in
@@ -526,7 +526,7 @@ let get_static_class aval : model =
          let* () = register_class_object_for_value aval class_object in
          assign_ret class_object
      | _ ->
-         let* unknown_class_object = mk_fresh ~model_desc:"get_static_class" () in
+         let* unknown_class_object = mk_fresh () in
          let* () = register_class_object_for_value aval unknown_class_object in
          assign_ret unknown_class_object
 
@@ -693,7 +693,7 @@ module Dict = struct
                   let* () = write_deref_field ~ref:dict field ~obj:copied_inned_dict in
                   ret copied_inned_dict
               | None ->
-                  mk_fresh ~model_desc:"hack_array_cow_set_dsl" () )
+                  mk_fresh () )
         in
         let* field = field_of_string_value key in
         let* () =
@@ -716,11 +716,7 @@ module Dict = struct
     let open DSL.Syntax in
     (* TODO: a key for a non-vec could be also a int *)
     let* field = field_of_string_value key in
-    match field with
-    | Some field ->
-        read_dict_field_with_check dict field
-    | None ->
-        mk_fresh ~model_desc:"hack_array_get_one_dim" ()
+    match field with Some field -> read_dict_field_with_check dict field | None -> mk_fresh ()
 
 
   let hack_array_idx dict key default : unit DSL.model_monad =
@@ -731,7 +727,7 @@ module Dict = struct
       | Some field ->
           eval_deref_access Read dict (FieldAccess field)
       | None ->
-          mk_fresh ~model_desc:"hack_array_idx" ()
+          mk_fresh ()
     in
     let* ret_values = disjuncts [value; ret default] in
     assign_ret ret_values
@@ -819,8 +815,8 @@ module DictIter = struct
       let* key_value, elt_value =
         match index_q_opt with
         | None ->
-            let* key_value = mk_fresh ~model_desc:"dict_iter_next" () in
-            let* elt_value = mk_fresh ~model_desc:"dict_iter_next" () in
+            let* key_value = mk_fresh () in
+            let* elt_value = mk_fresh () in
             ret (key_value, elt_value)
         | Some q -> (
             let* index_int =
@@ -866,7 +862,7 @@ let hack_add_elem_c this key value : model =
   start_model
   @@
   let default () =
-    let* fresh = mk_fresh ~model_desc:"hack_add_elem_c" () in
+    let* fresh = mk_fresh () in
     assign_ret fresh
   in
   dynamic_dispatch this
@@ -880,7 +876,7 @@ let hack_array_cow_set this args : model =
   @@
   let default () =
     let* () = option_iter (List.last args) ~f:deep_clean_hack_value in
-    let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" () in
+    let* fresh = mk_fresh () in
     assign_ret fresh
   in
   dynamic_dispatch this
@@ -896,7 +892,7 @@ let hack_array_get this args : model =
   @@
   let default () =
     L.d_warning "default case of hack_array_get" ;
-    mk_fresh ~model_desc:"hack_array_get" ()
+    mk_fresh ()
   in
   let hack_array_get_one_dim this key : DSL.aval DSL.model_monad =
     dynamic_dispatch this
@@ -914,7 +910,7 @@ let hack_array_idx this key default_val : model =
   start_model
   @@
   let default () =
-    let* fresh = mk_fresh ~model_desc:"hack_array_idx" () in
+    let* fresh = mk_fresh () in
     assign_ret fresh
   in
   dynamic_dispatch this
@@ -980,14 +976,14 @@ let hack_field_get this field : model =
 
 let make_hack_random_bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* any = mk_fresh ~model_desc:"make_hack_random_bool" () in
+  let* any = mk_fresh () in
   let* boxed_bool = constructor hack_bool_type_name [("val", any)] in
   ret boxed_bool
 
 
 let make_hack_unconstrained_int : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* any = mk_fresh ~model_desc:"make_hack_unconstrained_int" () in
+  let* any = mk_fresh () in
   let* boxed_int = constructor hack_int_type_name [("val", any)] in
   ret boxed_int
 
@@ -1170,7 +1166,7 @@ let hhbc_cls_cns this field : model =
            in
            eval_resolved_field ~model_desc name string_field_name
        | _ ->
-           mk_fresh ~model_desc ()
+           mk_fresh ()
      in
      assign_ret field_v
 
@@ -1179,9 +1175,7 @@ let hack_get_class this : model =
   let open DSL.Syntax in
   start_model
   @@ let* typ_opt = get_dynamic_type ~ask_specialization:true this in
-     let* field_v =
-       match typ_opt with Some _ -> ret this | None -> mk_fresh ~model_desc:"hack_get_class" ()
-     in
+     let* field_v = match typ_opt with Some _ -> ret this | None -> mk_fresh () in
      assign_ret field_v
 
 
@@ -1351,7 +1345,7 @@ let hhbc_add x y : model =
          let* res = aval_to_hack_int sum in
          assign_ret res
      | _, _ ->
-         let* sum = mk_fresh ~model_desc:"hhbc_add" () in
+         let* sum = mk_fresh () in
          assign_ret sum (* unconstrained value *)
 
 
@@ -1485,7 +1479,7 @@ let read_access_from_ts tdict =
 (* returns a fresh value equated to the SIL result of the comparison *)
 let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
+  let* inner_val = mk_fresh () in
   let rec find_name tdict nullable_already visited_set =
     let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
     let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
@@ -1576,10 +1570,10 @@ let hhbc_verify_param_type_ts v tdict : model =
 let hhbc_is_type_prim typname v : model =
   let open DSL.Syntax in
   let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
-  start_model
+  start_named_model model_desc
   @@
   let typ = Typ.mk (Typ.Tstruct typname) in
-  let* inner_val = mk_fresh ~model_desc () in
+  let* inner_val = mk_fresh () in
   let* rv = aval_to_hack_bool inner_val in
   let* () = and_equal_instanceof inner_val v typ ~nullable:false in
   assign_ret rv
@@ -1628,7 +1622,7 @@ let hhbc_cast_string arg : model =
          assign_ret rv
      | _ ->
          (* hopefully we will come back later with a dynamic type thanks to specialization *)
-         let* rv = mk_fresh ~model_desc:"hhbc_cast_string" () in
+         let* rv = mk_fresh () in
          assign_ret rv
 
 

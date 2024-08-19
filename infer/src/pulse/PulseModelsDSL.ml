@@ -226,10 +226,18 @@ module Syntax = struct
     ret (Formula.as_constant_string phi v) data astate
 
 
-  let aval_of_int hist i : aval model_monad =
-   fun data astate ->
+  let mk_int ?hist i : aval model_monad =
+   fun (desc, data) astate ->
     let astate, v = PulseArithmetic.absval_of_int astate (IntLit.of_int i) in
-    ret (v, hist) data astate
+    let hist =
+      match hist with
+      | Some hist ->
+          hist
+      | None ->
+          let {path; location} = data in
+          Hist.single_call path location desc
+    in
+    ret (v, hist) (desc, data) astate
 
 
   let get_known_fields (v, _) =
@@ -266,15 +274,14 @@ module Syntax = struct
         ret aval
 
 
-  let eval_access ?desc access_mode aval access : aval model_monad =
+  let eval_access access_mode aval access : aval model_monad =
     let* {path; location} = get_data in
+    let* desc = get_desc in
     let* addr, hist =
       PulseOperations.eval_access path access_mode location aval access
       >> sat |> exec_partial_operation
     in
-    let hist =
-      Option.value_map desc ~default:hist ~f:(fun desc -> Hist.add_call path location desc hist)
-    in
+    let hist = Hist.add_call path location desc hist in
     ret (addr, hist)
 
 
@@ -469,8 +476,9 @@ module Syntax = struct
     PulseOperations.allocate attr location addr |> exec_command
 
 
-  let mk_fresh ~model_desc ?more () : aval model_monad =
+  let mk_fresh ?more () : aval model_monad =
     let* {path; location} = get_data in
+    let* model_desc = get_desc in
     let addr = AbstractValue.mk_fresh () in
     let hist = Hist.single_call path location model_desc ?more in
     ret (addr, hist)
@@ -709,7 +717,7 @@ module Syntax = struct
         | None ->
             L.d_printfln "[ocaml model] Closure dynamic type is %a but no implementation was found!"
               Typ.Name.pp type_name ;
-            let* unknown_res = mk_fresh ~model_desc:"apply_hack_closure" () in
+            let* unknown_res = mk_fresh () in
             ret unknown_res
         | Some resolved_pname ->
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
@@ -729,15 +737,16 @@ module Syntax = struct
             ret res )
     | _ ->
         L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
-        let* unknown_res = mk_fresh ~model_desc:"apply_hack_closure" () in
+        let* unknown_res = mk_fresh () in
         ret unknown_res
 
 
   module Basic = struct
     (* See internal_new_. We do some crafty unboxing to make the external API nicer *)
-    let alloc_not_null ?desc allocator size ~initialize : unit model_monad =
+    let alloc_not_null allocator size ~initialize : unit model_monad =
+      let* desc = get_desc in
       let model_ model_data astate =
-        let<++> astate = Basic.alloc_not_null ?desc allocator size ~initialize model_data astate in
+        let<++> astate = Basic.alloc_not_null ~desc allocator size ~initialize model_data astate in
         astate
       in
       lift_to_monad (lift_model model_)
