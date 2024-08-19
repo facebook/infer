@@ -387,6 +387,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
               <"ParmVarDecl" : (
                 {
                   "pointer" : 19,
+                  "parent_pointer" : 17,
                   "source_range" : (
                     {
                       "line" : 19,
@@ -413,6 +414,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
               <"ParmVarDecl" : (
                 {
                   "pointer" : 21,
+                  "parent_pointer" : 17,
                   "source_range" : (
                     {
                       "column" : 33

@@ -146,6 +146,7 @@
           <"ParmVarDecl" : (
             {
               "pointer" : 9,
+              "parent_pointer" : 7,
               "source_range" : (
                 {
                   "column" : 20
@@ -201,6 +202,7 @@
           <"ParmVarDecl" : (
             {
               "pointer" : 13,
+              "parent_pointer" : 11,
               "source_range" : (
                 {
                   "column" : 19
@@ -225,6 +227,7 @@
           <"ParmVarDecl" : (
             {
               "pointer" : 14,
+              "parent_pointer" : 11,
               "source_range" : (
                 {
                   "column" : 27
@@ -635,6 +638,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 36,
+                  "parent_pointer" : 34,
                   "source_range" : (
                     {
                       "column" : 16
@@ -861,6 +865,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 45,
+                  "parent_pointer" : 43,
                   "source_range" : (
                     {
                     },
@@ -918,6 +923,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 49,
+                  "parent_pointer" : 47,
                   "source_range" : (
                     {
                     },
@@ -1715,6 +1721,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 85,
+                  "parent_pointer" : 84,
                   "source_range" : (
                     {
                       "column" : 17
@@ -2418,6 +2425,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 118,
+                  "parent_pointer" : 116,
                   "source_range" : (
                     {
                     },
@@ -2475,6 +2483,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 122,
+                  "parent_pointer" : 120,
                   "source_range" : (
                     {
                     },

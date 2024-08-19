@@ -600,6 +600,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 34,
+                                              "parent_pointer" : 32,
                                               "source_range" : (
                                                 {
                                                 },
@@ -661,6 +662,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 38,
+                                              "parent_pointer" : 36,
                                               "source_range" : (
                                                 {
                                                 },
@@ -1173,6 +1175,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 34,
+                                                  "parent_pointer" : 32,
                                                   "source_range" : (
                                                     {
                                                     },
@@ -1234,6 +1237,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 38,
+                                                  "parent_pointer" : 36,
                                                   "source_range" : (
                                                     {
                                                     },
@@ -1676,6 +1680,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 59,
+                                              "parent_pointer" : 57,
                                               "source_range" : (
                                                 {
                                                   "column" : 22
@@ -1918,6 +1923,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 66,
+                                              "parent_pointer" : 64,
                                               "source_range" : (
                                                 {
                                                 },
@@ -1979,6 +1985,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 70,
+                                              "parent_pointer" : 68,
                                               "source_range" : (
                                                 {
                                                 },
@@ -2765,6 +2772,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 59,
+                                                  "parent_pointer" : 57,
                                                   "source_range" : (
                                                     {
                                                       "column" : 22
@@ -3007,6 +3015,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 66,
+                                                  "parent_pointer" : 64,
                                                   "source_range" : (
                                                     {
                                                     },
@@ -3068,6 +3077,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 70,
+                                                  "parent_pointer" : 68,
                                                   "source_range" : (
                                                     {
                                                     },
@@ -3966,6 +3976,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 103,
+                                              "parent_pointer" : 101,
                                               "source_range" : (
                                                 {
                                                 },
@@ -4027,6 +4038,7 @@
                                           <"ParmVarDecl" : (
                                             {
                                               "pointer" : 107,
+                                              "parent_pointer" : 105,
                                               "source_range" : (
                                                 {
                                                 },
@@ -4827,6 +4839,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 103,
+                                                  "parent_pointer" : 101,
                                                   "source_range" : (
                                                     {
                                                     },
@@ -4888,6 +4901,7 @@
                                               <"ParmVarDecl" : (
                                                 {
                                                   "pointer" : 107,
+                                                  "parent_pointer" : 105,
                                                   "source_range" : (
                                                     {
                                                     },

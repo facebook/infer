@@ -591,7 +591,7 @@ and objc_method_procname ?tenv decl_info method_name parameters mdi =
 
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   let open Clang_ast_t in
-  let parameters =
+  let parameters () =
     match tenv with
     | Some tenv ->
         let parameters =
@@ -612,7 +612,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
     let mangled = get_mangled_method_name fdi mdi in
     let method_name = CAst_utils.get_unqualified_name name_info in
     let class_typename = get_class_typename ?tenv decl_info in
-    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
+    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled (parameters ())
   in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -633,7 +633,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
       mk_cpp_method decl_info name_info fdi mdi
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
-      objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name parameters mdi
+      objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name (parameters ()) mdi
   | BlockDecl (decl_info, block_decl_info) ->
       let outer_proc_class_name =
         Option.value_map ~default:None ~f:Procname.get_class_type_name outer_proc

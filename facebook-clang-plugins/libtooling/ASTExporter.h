@@ -1027,10 +1027,11 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
 template <class ATDWriter>
 bool ASTExporter<ATDWriter>::alwaysEmitParent(const Decl *D) {
   if (isa<ObjCMethodDecl>(D) || isa<CXXMethodDecl>(D) || isa<FieldDecl>(D) ||
-      isa<ObjCIvarDecl>(D) || isa<BlockDecl>(D) || isa<ObjCInterfaceDecl>(D) ||
-      isa<ObjCImplementationDecl>(D) || isa<ObjCCategoryDecl>(D) ||
-      isa<ObjCCategoryImplDecl>(D) || isa<ObjCPropertyDecl>(D) ||
-      isa<RecordDecl>(D) || isa<ObjCProtocolDecl>(D)) {
+      isa<ParmVarDecl>(D) || isa<ObjCIvarDecl>(D) || isa<BlockDecl>(D) ||
+      isa<ObjCInterfaceDecl>(D) || isa<ObjCImplementationDecl>(D) ||
+      isa<ObjCCategoryDecl>(D) || isa<ObjCCategoryImplDecl>(D) ||
+      isa<ObjCPropertyDecl>(D) || isa<RecordDecl>(D) ||
+      isa<ObjCProtocolDecl>(D)) {
     return true;
   }
   return false;

@@ -224,6 +224,7 @@
               ["ParmVarDecl" , [
                 {
                   "pointer" : 13,
+                  "parent_pointer" : 11,
                   "source_range" : [
                     {
                       "column" : 5
@@ -284,6 +285,7 @@
               ["ParmVarDecl" , [
                 {
                   "pointer" : 17,
+                  "parent_pointer" : 15,
                   "source_range" : [
                     {
                       "column" : 5
@@ -346,6 +348,7 @@
               ["ParmVarDecl" , [
                 {
                   "pointer" : 21,
+                  "parent_pointer" : 19,
                   "source_range" : [
                     {
                       "column" : 16
@@ -542,6 +545,7 @@
               ["ParmVarDecl" , [
                 {
                   "pointer" : 29,
+                  "parent_pointer" : 28,
                   "source_range" : [
                     {
                       "column" : 5
@@ -638,6 +642,7 @@
               ["ParmVarDecl" , [
                 {
                   "pointer" : 33,
+                  "parent_pointer" : 31,
                   "source_range" : [
                     {
                     },
@@ -734,6 +739,7 @@
           ["ParmVarDecl" , [
             {
               "pointer" : 38,
+              "parent_pointer" : 36,
               "source_range" : [
                 {
                   "column" : 5
@@ -789,6 +795,7 @@
           ["ParmVarDecl" , [
             {
               "pointer" : 42,
+              "parent_pointer" : 40,
               "source_range" : [
                 {
                   "column" : 5

@@ -162,6 +162,7 @@
           <"ParmVarDecl" : (
             {
               "pointer" : 10,
+              "parent_pointer" : 7,
               "source_range" : (
                 {
                   "column" : 18

@@ -928,7 +928,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
     let access : ProcAttributes.access = Private in
     let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) arity in
     let mk_capt_var (pvar : Pvar.t) =
-      {CapturedVar.pvar; typ= any_typ; capture_mode= ByValue; is_formal= None}
+      {CapturedVar.pvar; typ= any_typ; capture_mode= ByValue; is_formal_of= None}
     in
     let captured = List.map ~f:mk_capt_var captured_vars in
     {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ; captured}
@@ -953,8 +953,10 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
       let instr = Sil.Load {id; e= Exp.Lvar var; typ= any_typ; loc= env.location} in
       ( instr
       , ( Exp.Var id
-        , {CapturedVar.pvar= var; typ= any_typ; capture_mode= CapturedVar.ByValue; is_formal= None}
-        ) )
+        , { CapturedVar.pvar= var
+          ; typ= any_typ
+          ; capture_mode= CapturedVar.ByValue
+          ; is_formal_of= None } ) )
     in
     let instrs, captured_vars = List.unzip (List.map ~f:mk_capt_var captured_vars) in
     (instrs, Exp.Closure {name; captured_vars})

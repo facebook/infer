@@ -258,16 +258,27 @@ let sil_var_of_captured_var context source_range procname decl_ref =
   in
   match (var_opt, typ_opt) with
   | Some var, Some typ ->
-      let modify_in_block, is_formal =
+      let modify_in_block, is_formal_of =
         match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
         | Some (VarDecl (decl_info, _, _, _)) ->
-            (has_block_attribute decl_info, false)
-        | Some (ParmVarDecl (_, _, _, _)) ->
-            (false, true)
+            (has_block_attribute decl_info, None)
+        | Some (ParmVarDecl (decl_info, _, _, _)) -> (
+          match CAst_utils.get_decl_opt decl_info.Clang_ast_t.di_parent_pointer with
+          | Some (FunctionDecl _ as decl)
+          | Some (CXXConstructorDecl _ as decl)
+          | Some (CXXMethodDecl _ as decl)
+          | Some (CXXConversionDecl _ as decl)
+          | Some (CXXDestructorDecl _ as decl)
+          | Some (ObjCMethodDecl _ as decl)
+          | Some (BlockDecl _ as decl) ->
+              let procname = CType_decl.CProcname.from_decl ~tenv:context.CContext.tenv decl in
+              (false, Some procname)
+          | _ ->
+              (false, None) )
         | _ ->
-            (false, false)
+            (false, None)
       in
-      Some (var, typ, modify_in_block, is_formal)
+      Some (var, typ, modify_in_block, is_formal_of)
   | None, None ->
       None
   | _ ->

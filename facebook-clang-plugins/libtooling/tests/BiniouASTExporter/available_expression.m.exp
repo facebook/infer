@@ -170,6 +170,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                     <#fd75cc45:
                        ({
                           #d121c0bd: 19,
+                          #f9005968: 17,
                           #21793419:
                             ({ #c7b317f4: 19, #c68b4ed6: 22 },
                              { #c68b4ed6: 26 })
@@ -180,6 +181,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                     <#fd75cc45:
                        ({
                           #d121c0bd: 21,
+                          #f9005968: 17,
                           #21793419: ({ #c68b4ed6: 33 }, { #c68b4ed6: 56 })
                         },
                         { #c8ff724b: "data", #2cdb06fb: [ "data" ] },

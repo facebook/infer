@@ -324,6 +324,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 19,
+                  "parent_pointer" : 17,
                   "source_range" : (
                     {
                     },

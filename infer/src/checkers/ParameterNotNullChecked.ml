@@ -15,10 +15,9 @@ let is_block_param formals name =
 
 let is_block_param_in_captured captured name =
   List.exists
-    ~f:(fun {CapturedVar.pvar; is_formal; typ} ->
+    ~f:(fun {CapturedVar.pvar; is_formal_of; typ} ->
       Mangled.equal (Pvar.get_name pvar) name
-      && Typ.is_pointer_to_function typ
-      && Option.value is_formal ~default:false )
+      && Typ.is_pointer_to_function typ && Option.is_some is_formal_of )
     captured
 
 

@@ -259,6 +259,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 15,
+                  "parent_pointer" : 13,
                   "source_range" : (
                     {
                     },
@@ -317,6 +318,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 19,
+                  "parent_pointer" : 17,
                   "source_range" : (
                     {
                     },
@@ -453,6 +455,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 28,
+                  "parent_pointer" : 26,
                   "source_range" : (
                     {
                     },
@@ -511,6 +514,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 31,
+                  "parent_pointer" : 29,
                   "source_range" : (
                     {
                     },
@@ -651,6 +655,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 37,
+                  "parent_pointer" : 35,
                   "source_range" : (
                     {
                     },
@@ -709,6 +714,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 41,
+                  "parent_pointer" : 39,
                   "source_range" : (
                     {
                     },
@@ -893,6 +899,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 51,
+                  "parent_pointer" : 49,
                   "source_range" : (
                     {
                     },
@@ -951,6 +958,7 @@
               <"ParmVarDecl" : (
                 {
                   "pointer" : 54,
+                  "parent_pointer" : 52,
                   "source_range" : (
                     {
                     },

@@ -21,7 +21,7 @@ let tests =
       , { CapturedVar.pvar= pvar_of_str str
         ; typ= int_ptr_typ
         ; capture_mode= CapturedVar.ByReference
-        ; is_formal= None } )
+        ; is_formal_of= None } )
     in
     let captured_vars = List.map ~f:mk_captured_var captureds in
     let closure = {Exp.name= dummy_procname; captured_vars} in

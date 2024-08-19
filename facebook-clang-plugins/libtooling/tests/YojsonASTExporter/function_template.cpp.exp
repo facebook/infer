@@ -167,6 +167,7 @@
                 <"ParmVarDecl" : (
                   {
                     "pointer" : 10,
+                    "parent_pointer" : 8,
                     "source_range" : (
                       {
                         "line" : 9,
@@ -330,6 +331,7 @@
                 <"ParmVarDecl" : (
                   {
                     "pointer" : 19,
+                    "parent_pointer" : 17,
                     "source_range" : (
                       {
                         "line" : 9,
@@ -493,6 +495,7 @@
                 <"ParmVarDecl" : (
                   {
                     "pointer" : 28,
+                    "parent_pointer" : 26,
                     "source_range" : (
                       {
                         "line" : 9,
@@ -657,6 +660,7 @@
           <"ParmVarDecl" : (
             {
               "pointer" : 37,
+              "parent_pointer" : 35,
               "source_range" : (
                 {
                   "line" : 15,
