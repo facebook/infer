@@ -22,7 +22,7 @@ type aval = AbstractValue.t * ValueHistory.t
 
 (* we work on a disjunction of executions *)
 type 'a model_monad =
-  string * model_data -> astate -> non_disj -> 'a execution result list * non_disj
+  CallEvent.t * model_data -> astate -> non_disj -> 'a execution result list * non_disj
 
 and 'a execution =
   | ContinueProgram of 'a * astate
@@ -119,7 +119,25 @@ module Syntax = struct
 
   let get_data : model_data model_monad = fun (desc, data) astate -> ret data (desc, data) astate
 
-  let get_desc : string model_monad = fun (desc, data) astate -> ret desc (desc, data) astate
+  let get_desc : CallEvent.t model_monad = fun (desc, data) astate -> ret desc (desc, data) astate
+
+  let mk_event ?more (desc, data) =
+    let desc =
+      match more with
+      | None ->
+          desc
+      | Some more ->
+          CallEvent.Model (Format.asprintf "%a %s" CallEvent.pp_name_only desc more)
+    in
+    ValueHistory.Call
+      {f= desc; location= data.location; in_call= ValueHistory.epoch; timestamp= data.path.timestamp}
+
+
+  let get_event ?more () : ValueHistory.event model_monad =
+    let* data = get_data in
+    let* desc = get_desc in
+    ret (mk_event ?more (desc, data))
+
 
   let ok x = Ok x
 
@@ -140,7 +158,7 @@ module Syntax = struct
     , non_disj )
 
 
-  let start_named_model desc (monad : unit model_monad) : model =
+  let start_model_ desc (monad : unit model_monad) : model =
    fun data astate non_disj ->
     let execs, non_disj = monad (desc, data) astate non_disj in
     ( List.map execs
@@ -153,8 +171,12 @@ module Syntax = struct
     , non_disj )
 
 
+  let start_named_model desc monad data astate non_disj =
+    start_model_ (Model desc) monad data astate non_disj
+
+
   let start_model monad data astate non_disj =
-    start_named_model (Procname.to_string data.callee_procname) monad data astate non_disj
+    start_model_ (ModelName data.callee_procname) monad data astate non_disj
 
 
   let disjuncts (list : 'a model_monad list) : 'a model_monad =
@@ -197,9 +219,9 @@ module Syntax = struct
 
 
   let add_model_call hist =
-    let* {path; location} = get_data in
-    let* desc = get_desc in
-    ret (Hist.add_call path location desc hist)
+    let* {path} = get_data in
+    let* event = get_event () in
+    ret (Hist.add_event path event hist)
 
 
   let as_constant_q (v, _) : Q.t option model_monad =
@@ -234,8 +256,8 @@ module Syntax = struct
       | Some hist ->
           hist
       | None ->
-          let {path; location} = data in
-          Hist.single_call path location desc
+          let event = mk_event (desc, data) in
+          Hist.single_event data.path event
     in
     ret (v, hist) (desc, data) astate
 
@@ -276,12 +298,12 @@ module Syntax = struct
 
   let eval_access access_mode aval access : aval model_monad =
     let* {path; location} = get_data in
-    let* desc = get_desc in
     let* addr, hist =
       PulseOperations.eval_access path access_mode location aval access
       >> sat |> exec_partial_operation
     in
-    let hist = Hist.add_call path location desc hist in
+    let* event = get_event () in
+    let hist = Hist.add_event path event hist in
     ret (addr, hist)
 
 
@@ -477,10 +499,10 @@ module Syntax = struct
 
 
   let mk_fresh ?more () : aval model_monad =
-    let* {path; location} = get_data in
-    let* model_desc = get_desc in
+    let* {path} = get_data in
     let addr = AbstractValue.mk_fresh () in
-    let hist = Hist.single_call path location model_desc ?more in
+    let* event = get_event ?more () in
+    let hist = Hist.single_event path event in
     ret (addr, hist)
 
 
@@ -746,7 +768,10 @@ module Syntax = struct
     let alloc_not_null allocator size ~initialize : unit model_monad =
       let* desc = get_desc in
       let model_ model_data astate =
-        let<++> astate = Basic.alloc_not_null ~desc allocator size ~initialize model_data astate in
+        let<++> astate =
+          Basic.alloc_not_null ~desc:(CallEvent.to_name_only desc) allocator size ~initialize
+            model_data astate
+        in
         astate
       in
       lift_to_monad (lift_model model_)
@@ -754,7 +779,7 @@ module Syntax = struct
 end
 
 let unsafe_to_astate_transformer (monad : 'a model_monad) :
-    string * model_data -> astate -> ('a * astate) sat_unsat_t =
+    CallEvent.t * model_data -> astate -> ('a * astate) sat_unsat_t =
  fun data astate ->
   (* warning: we currently ignore the non-disjunctive state *)
   match monad data astate NonDisjDomain.bottom |> fst with

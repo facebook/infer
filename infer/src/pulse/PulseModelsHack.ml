@@ -1411,7 +1411,7 @@ end
 
 let build_vec_for_variadic_callee data args astate =
   (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer)
-    ("variadic args vec", data) astate
+    (Model "variadic args vec", data) astate
 
 
 (* Map the kind tag values used in type structure dictionaries to their corresponding Pulse dynamic type names

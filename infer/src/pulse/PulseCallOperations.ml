@@ -183,7 +183,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let add_skipped_proc astate =
     let** astate, f =
       match reason with
-      | Call _ | Model _ ->
+      | Call _ | Model _ | ModelName _ ->
           Sat (Ok (astate, None))
       | SkippedKnownCall proc_name ->
           Sat (Ok (astate, Some (PulseFormula.Procname proc_name)))

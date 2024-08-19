@@ -143,11 +143,11 @@ let replace_getter_call_with_property_access procname v call actuals decompiler 
 let add_call_source v (call : CallEvent.t) actuals decompiler =
   let+ decompiler in
   match call with
-  | CallEvent.Call procname | SkippedKnownCall procname -> (
+  | Call procname | SkippedKnownCall procname -> (
     match Attributes.load procname with
     | Some {objc_accessor= Some (Objc_getter _)} ->
         replace_getter_call_with_property_access procname v call actuals decompiler
     | _ ->
         Map.add v (ReturnValue call, []) decompiler )
-  | Model _ | SkippedUnknownCall _ ->
+  | Model _ | ModelName _ | SkippedUnknownCall _ ->
       Map.add v (ReturnValue call, []) decompiler

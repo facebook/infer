@@ -235,7 +235,10 @@ module Syntax : sig
 end
 
 val unsafe_to_astate_transformer :
-  'a model_monad -> string * PulseModelsImport.model_data -> astate -> ('a * astate) sat_unsat_t
+     'a model_monad
+  -> CallEvent.t * PulseModelsImport.model_data
+  -> astate
+  -> ('a * astate) sat_unsat_t
 (** warning: the transformation will fail if the result of the computation is not a single abstract
     state with no error and it ignores the non-disjunctive state. You should think twice before
     using it... *)

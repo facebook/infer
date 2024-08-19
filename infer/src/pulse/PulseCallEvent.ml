@@ -10,6 +10,7 @@ module F = Format
 type t =
   | Call of Procname.t
   | Model of string
+  | ModelName of Procname.t
   | SkippedKnownCall of Procname.t
   | SkippedUnknownCall of Exp.t
 [@@deriving compare, equal]
@@ -21,6 +22,8 @@ let pp_config ~verbose fmt =
       F.fprintf fmt "`%a`" pp_proc_name proc_name
   | Model model ->
       F.fprintf fmt "`%s` (modelled)" model
+  | ModelName proc_name ->
+      F.fprintf fmt "`%a` (modelled)" pp_proc_name proc_name
   | SkippedKnownCall proc_name ->
       F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
   | SkippedUnknownCall call_exp ->
@@ -32,11 +35,12 @@ let pp = pp_config ~verbose:true
 let describe = pp_config ~verbose:false
 
 let pp_name_only fmt = function
-  | Call proc_name ->
-      F.fprintf fmt "%a" Procname.pp_without_templates proc_name
+  | Call proc_name | ModelName proc_name | SkippedKnownCall proc_name ->
+      Procname.pp_without_templates fmt proc_name
   | Model model ->
       F.fprintf fmt "%s" model
-  | SkippedKnownCall proc_name ->
-      F.fprintf fmt "%a" Procname.pp_without_templates proc_name
   | SkippedUnknownCall call_exp ->
-      F.fprintf fmt "%a" Exp.pp call_exp
+      Exp.pp fmt call_exp
+
+
+let to_name_only call_event = F.asprintf "%a" pp_name_only call_event

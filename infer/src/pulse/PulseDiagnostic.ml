@@ -448,7 +448,7 @@ let pp_calling_context_prefix fmt calling_context =
 
 let is_from_std_move (base, _) =
   match (base : DecompilerExpr.base) with
-  | ReturnValue (SkippedKnownCall pname) | ReturnValue (Call pname) ->
+  | ReturnValue (Call pname | ModelName pname | SkippedKnownCall pname) ->
       String.is_prefix (Procname.to_string pname) ~prefix:"std::move"
   | ReturnValue (Model pname) ->
       String.is_prefix pname ~prefix:"std::move"
@@ -571,7 +571,7 @@ let get_message_and_suggestion diagnostic =
                  let {Location.file} = Trace.get_outer_location invalidation_trace in
                  let null =
                    match call_event with
-                   | Call proc_name | SkippedKnownCall proc_name ->
+                   | Call proc_name | ModelName proc_name | SkippedKnownCall proc_name ->
                        if Procname.is_objc_method proc_name then "nil" else "null"
                    | Model _ | SkippedUnknownCall _ ->
                        if

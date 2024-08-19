@@ -64,7 +64,7 @@ let rec pp_access_expr fmt access_expr =
   | Call call ->
       let java_or_objc =
         match call with
-        | Call procname | SkippedKnownCall procname -> (
+        | Call procname | ModelName procname | SkippedKnownCall procname -> (
             Procname.is_java procname || Procname.is_objc_method procname
             ||
             match Attributes.load procname with
