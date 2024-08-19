@@ -4526,7 +4526,7 @@ module DeadVariables = struct
       (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
          contain variables related to variables in the pre *)
       let closed_prunable_vars = get_reachable_from var_graph precondition_vocabulary in
-      L.d_printfln "closed_prunable_vars: %a" Var.Set.pp closed_prunable_vars ;
+      L.d_printfln "closed_prunable_vars: %a" Var.Set.pp_hov closed_prunable_vars ;
       Atom.Map.filter
         (fun atom _depth -> not (Atom.has_var_notin closed_prunable_vars atom))
         formula.conditions
