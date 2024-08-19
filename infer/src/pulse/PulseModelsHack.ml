@@ -1416,7 +1416,8 @@ module SplatedVec = struct
 end
 
 let build_vec_for_variadic_callee data args astate =
-  (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer) data astate
+  (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer)
+    ("variadic args vec", data) astate
 
 
 (* Map the kind tag values used in type structure dictionaries to their corresponding Pulse dynamic type names
@@ -1574,10 +1575,10 @@ let hhbc_verify_param_type_ts v tdict : model =
 
 let hhbc_is_type_prim typname v : model =
   let open DSL.Syntax in
+  let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
   start_model
   @@
   let typ = Typ.mk (Typ.Tstruct typname) in
-  let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
   let* inner_val = mk_fresh ~model_desc () in
   let* rv = aval_to_hack_bool inner_val in
   let* () = and_equal_instanceof inner_val v typ ~nullable:false in
@@ -1627,7 +1628,7 @@ let hhbc_cast_string arg : model =
          assign_ret rv
      | _ ->
          (* hopefully we will come back later with a dynamic type thanks to specialization *)
-         let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
+         let* rv = mk_fresh ~model_desc:"hhbc_cast_string" () in
          assign_ret rv
 
 

@@ -21,7 +21,8 @@ type 'a result = 'a AccessResult.t
 type aval = AbstractValue.t * ValueHistory.t
 
 (* we work on a disjunction of executions *)
-type 'a model_monad = model_data -> astate -> non_disj -> 'a execution result list * non_disj
+type 'a model_monad =
+  string * model_data -> astate -> non_disj -> 'a execution result list * non_disj
 
 and 'a execution =
   | ContinueProgram of 'a * astate
@@ -116,7 +117,9 @@ module Syntax = struct
     ret ()
 
 
-  let get_data : model_data model_monad = fun data astate -> ret data data astate
+  let get_data : model_data model_monad = fun (desc, data) astate -> ret data (desc, data) astate
+
+  let get_desc : string model_monad = fun (desc, data) astate -> ret desc (desc, data) astate
 
   let ok x = Ok x
 
@@ -124,9 +127,22 @@ module Syntax = struct
 
   let ( >> ) f g x = f x |> g
 
-  let start_model (monad : unit model_monad) : model =
+  let lift_to_monad (model : model) : unit model_monad =
+   fun (_desc, data) astate non_disj ->
+    let execs, non_disj = model data astate non_disj in
+    ( List.map execs
+        ~f:
+          (PulseResult.map ~f:(function
+            | ExecutionDomain.ContinueProgram astate ->
+                ContinueProgram ((), astate)
+            | exec ->
+                Other exec ) )
+    , non_disj )
+
+
+  let start_named_model desc (monad : unit model_monad) : model =
    fun data astate non_disj ->
-    let execs, non_disj = monad data astate non_disj in
+    let execs, non_disj = monad (desc, data) astate non_disj in
     ( List.map execs
         ~f:
           (PulseResult.map ~f:(function
@@ -137,17 +153,8 @@ module Syntax = struct
     , non_disj )
 
 
-  let lift_to_monad (model : model) : unit model_monad =
-   fun data astate non_disj ->
-    let execs, non_disj = model data astate non_disj in
-    ( List.map execs
-        ~f:
-          (PulseResult.map ~f:(function
-            | ExecutionDomain.ContinueProgram astate ->
-                ContinueProgram ((), astate)
-            | exec ->
-                Other exec ) )
-    , non_disj )
+  let start_model monad data astate non_disj =
+    start_named_model (Procname.to_string data.callee_procname) monad data astate non_disj
 
 
   let disjuncts (list : 'a model_monad list) : 'a model_monad =
@@ -187,6 +194,12 @@ module Syntax = struct
    fun data astate ->
     let a = f astate in
     ret a data astate
+
+
+  let add_model_call hist =
+    let* {path; location} = get_data in
+    let* desc = get_desc in
+    ret (Hist.add_call path location desc hist)
 
 
   let as_constant_q (v, _) : Q.t option model_monad =
@@ -397,7 +410,7 @@ module Syntax = struct
 
 
   let add_static_type typ_name (addr, _) : unit model_monad =
-   fun ({analysis_data= {tenv}; location} as data) astate ->
+   fun ((_, {analysis_data= {tenv}; location}) as data) astate ->
     let astate =
       AbductiveDomain.AddressAttributes.add_static_type tenv typ_name addr location astate
     in
@@ -409,19 +422,19 @@ module Syntax = struct
 
 
   let tenv_resolve_field_info typ_name field_name : Struct.field_info option model_monad =
-   fun ({analysis_data= {tenv}} as data) astate ->
+   fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     let info = Tenv.resolve_field_info tenv typ_name field_name in
     ret info data astate
 
 
   let tenv_resolve_fieldname typ_name name : Fieldname.t option model_monad =
-   fun ({analysis_data= {tenv}} as data) astate ->
+   fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     let field_name = Tenv.resolve_fieldname tenv typ_name name in
     ret field_name data astate
 
 
   let tenv_resolve_method typ_name proc_name : Procname.t option model_monad =
-   fun ({analysis_data= {tenv}} as data) astate ->
+   fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     (* Remark: this is a simplified resolution that will work well for closure resolution,
        but does not implement all the steps proposed for regular virtual calls in Pulse.ml *)
     let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
@@ -732,7 +745,7 @@ module Syntax = struct
 end
 
 let unsafe_to_astate_transformer (monad : 'a model_monad) :
-    model_data -> astate -> ('a * astate) sat_unsat_t =
+    string * model_data -> astate -> ('a * astate) sat_unsat_t =
  fun data astate ->
   (* warning: we currently ignore the non-disjunctive state *)
   match monad data astate NonDisjDomain.bottom |> fst with

@@ -998,7 +998,7 @@ module PulseTransferFunctions = struct
                                  but it seems better not to keep writing new lower-level stuff *)
                               PulseModelsDSL.unsafe_to_astate_transformer
                                 (PulseModelsHack.make_new_awaitable (rv, vh))
-                                md astate
+                                ("Awaitable", md) astate
                             |> SatUnsat.sat )
                             ~default:((rv, vh), astate)
                         in
