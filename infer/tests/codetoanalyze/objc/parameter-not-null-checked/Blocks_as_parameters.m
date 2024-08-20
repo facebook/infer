@@ -95,7 +95,6 @@ typedef void (^MyBlock1)(int x);
   if (!completion) {
     return;
   }
-
   [Blocks_as_parameters addOperationWithBlock:^{
     completion();
   }];
@@ -106,7 +105,17 @@ typedef void (^MyBlock1)(int x);
                         fromFile:(NSURL*)fileURL
                         delegate:(id)delegate
                    delegateQueue:(NSOperationQueue*)delegateQueue
-                      completion:(void (^)())completion {
+                      completion:(MyBlock)completion {
+  [Blocks_as_parameters addOperationWithBlock:^{
+    completion();
+  }];
+}
+
+- (void)uploadTaskWithRequestOk:(NSURLRequest*)urlRequest
+                       fromFile:(NSURL*)fileURL
+                       delegate:(id)delegate
+                  delegateQueue:(NSOperationQueue*)delegateQueue
+                     completion:(_Nonnull MyBlock)completion {
   [Blocks_as_parameters addOperationWithBlock:^{
     completion();
   }];
