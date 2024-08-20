@@ -22,19 +22,21 @@ let is_block_param_in_captured captured name =
 
 
 module DomainData = struct
-  type t = {arg: Mangled.t} [@@deriving compare]
+  type t = {checked: bool} [@@deriving compare]
 
-  let pp fmt {arg} = F.fprintf fmt "%a" Mangled.pp arg
+  let pp fmt {checked} = F.fprintf fmt "checked=%b" checked
 end
 
 module BlockParams = struct
-  include AbstractDomain.FiniteSet (Mangled)
+  include PrettyPrintable.MakePPMonoMap (Mangled) (DomainData)
+
+  let compare = compare DomainData.compare
 end
 
 module Vars = struct
-  include PrettyPrintable.MakePPMonoMap (Ident) (DomainData)
+  include PrettyPrintable.MakePPMonoMap (Ident) (Mangled)
 
-  let compare = compare DomainData.compare
+  let compare = compare Mangled.compare
 end
 
 module TraceData = struct
@@ -77,10 +79,9 @@ module Mem = struct
 
   let exec_null_check_id id loc ({vars; blockParams; traceInfo} as astate : t) =
     match find_block_param id astate with
-    | Some {arg} ->
-        let traceInfo = {TraceData.arg; loc; usage= CheckNil} :: traceInfo in
-        let blockParams = BlockParams.add arg blockParams in
-        let vars = Vars.add id {arg} vars in
+    | Some name ->
+        let traceInfo = {TraceData.arg= name; loc; usage= CheckNil} :: traceInfo in
+        let blockParams = BlockParams.add name {checked= true} blockParams in
         {vars; blockParams; traceInfo}
     | None ->
         astate
@@ -88,31 +89,41 @@ module Mem = struct
 
   let load (attributes : ProcAttributes.t) id pvar _ astate =
     let name = Pvar.get_name pvar in
-    let vars =
-      if
-        is_block_param attributes.formals name
-        || is_block_param_in_captured attributes.captured name
-      then Vars.add id {arg= name} astate.vars
-      else astate.vars
+    let vars, blockParams =
+      if BlockParams.mem name astate.blockParams then
+        (Vars.add id name astate.vars, astate.blockParams)
+      else if is_block_param_in_captured attributes.captured name then
+        (Vars.add id name astate.vars, BlockParams.add name {checked= false} astate.blockParams)
+      else (astate.vars, astate.blockParams)
     in
-    {astate with vars}
+    {astate with vars; blockParams}
+
+
+  let set_checked name ~checked blockParams =
+    BlockParams.update name (Option.map ~f:(fun _ -> {DomainData.checked})) blockParams
 
 
   let store pvar e loc ({vars; blockParams; traceInfo} as astate) =
     let name = Pvar.get_name pvar in
     let traceInfo = {TraceData.arg= name; loc; usage= Assign} :: traceInfo in
-    let blockParams = BlockParams.remove name blockParams in
     let blockParams =
       match e with
       | Exp.Var id -> (
         match find_block_param id astate with
-        | Some {DomainData.arg} ->
-            if BlockParams.mem arg blockParams then BlockParams.add name blockParams
-            else blockParams
+        | Some param_name -> (
+          match BlockParams.find_opt param_name blockParams with
+          | Some param_checked ->
+              BlockParams.add name param_checked blockParams
+          | None ->
+              blockParams )
         | None ->
-            blockParams )
+            (* we assigned something else to this formal so we shouldn't report anymore. *)
+            set_checked name ~checked:true blockParams )
+      | _ when Exp.is_null_literal e ->
+          set_checked name ~checked:false blockParams
       | _ ->
-          blockParams
+          (* we assigned something else to this formal so we shouldn't report anymore. *)
+          set_checked name ~checked:true blockParams
     in
     {vars; blockParams; traceInfo}
 
@@ -130,21 +141,23 @@ module Mem = struct
 
 
   let report_unchecked_block_param_issues proc_desc err_log var loc
-      ({blockParams; traceInfo} as astate : t) =
+      ({traceInfo; blockParams} as astate : t) =
     match find_block_param var astate with
-    | Some {DomainData.arg} ->
-        let traceInfo = call_trace arg loc traceInfo in
-        if BlockParams.mem arg blockParams then ()
-        else
-          let ltr = make_trace arg traceInfo in
+    | Some name -> (
+      match BlockParams.find_opt name blockParams with
+      | Some {checked} when not checked ->
+          let traceInfo = call_trace name loc traceInfo in
+          let ltr = make_trace name traceInfo in
           let message =
             F.asprintf
               "The block `%a` is executed without a check for nil at %a. This could cause a crash."
-              Mangled.pp arg Location.pp loc
+              Mangled.pp name Location.pp loc
           in
           Reporting.log_issue proc_desc err_log ~ltr ~loc ParameterNotNullChecked
             IssueType.block_parameter_not_null_checked message ;
           ()
+      | _ ->
+          () )
     | None ->
         ()
 end
@@ -203,12 +216,12 @@ end
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let init_block_params formals =
-  let add_non_nullable_block blockParams (formal, _, annotation) =
-    if is_block_param formals formal && Annotations.ia_is_nonnull annotation then
-      BlockParams.add formal blockParams
+  let add_nullable_block blockParams (formal, _, annotation) =
+    if is_block_param formals formal && not (Annotations.ia_is_nonnull annotation) then
+      BlockParams.add formal {checked= false} blockParams
     else blockParams
   in
-  List.fold formals ~init:BlockParams.empty ~f:add_non_nullable_block
+  List.fold formals ~init:BlockParams.empty ~f:add_nullable_block
 
 
 let init_block_param_trace_info attributes =
