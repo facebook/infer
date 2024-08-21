@@ -939,8 +939,9 @@ CHECKERS_CALLS_EXPENSIVE_METHOD (enabled by default), <br>
 CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by
 default), <br>
 CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default), <br>
-CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
+COMPARED_TO_NULL_AND_DEREFERENCED (disabled by default),
+<br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (enabled by default), <br>
@@ -990,6 +991,7 @@ INVARIANT_CALL (disabled by default), <br>
 IPC_ON_UI_THREAD (enabled by default), <br>
 Internal_error (enabled by default), <br>
 LAB_RESOURCE_LEAK (enabled by default), <br>
+LINEAGE_FLOW (enabled by default), <br>
 LOCKLESS_VIOLATION (enabled by default), <br>
 LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
 Leak_after_array_abstraction (enabled by default), <br>
@@ -1067,6 +1069,8 @@ PULSE_UNNECESSARY_COPY_OPTIONAL (enabled by default), <br>
 PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_THRIFT_ASSIGNMENT (enabled by
+default), <br>
 PURE_FUNCTION (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
@@ -1261,12 +1265,11 @@ values: <i>ant</i>, <i>buck1</i>, <i>buck</i>, <i>buck2</i>,
 <p style="margin-left:17%;">Deactivates:
 <i>fragment-retains-view</i> checker: Detects when Android
 fragments are not explicitly nullified before becoming
-unreachable.</p>
+unreachable. (Conversely:
+<b>--fragment-retains-view</b>)</p>
 
-<p style="margin-left:11%;"><b>DEPRECATED</b>: Unmaintained
-due to poor precision. <br>
-(Conversely: <b>--fragment-retains-view</b>) <br>
-See also <b>infer-analyze</b>(1). <b><br>
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --fragment-retains-view-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
@@ -1483,7 +1486,7 @@ procedure_start_line | file | bug_trace | key | hash |
 line_offset | <br>
 qualifier_contains_potential_exception_note | taint_extra |
 <br>
-transitive_callees_extra }</i></p>
+transitive_callees_extra | suppressed }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>
@@ -1647,18 +1650,29 @@ seed.</p>
 
 <p style="margin-left:17%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage sinks for taint finding, format
-[module:]function/arity.{ret,argN}, comma-separated.</p>
+[module:]function/arity.{ret,argN}, comma-separated. Must be
+used with --lineage-source as options to the report
+subcommand.</p>
 
-<p style="margin-left:11%;">See also
-<b>infer-report</b>(1). <b><br>
+<p style="margin-left:11%;">Will produce a graph
+materializing the flows between the sources <br>
+and the sinks along with a json issues file. The issues file
+will <br>
+contain one trace per sink, exhibiting a shortest path from
+a <br>
+source. The report command will print the filesystem paths
+of the <br>
+files containing those results. <br>
+See also <b>infer-report</b>(1). <b><br>
 --lineage-source</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">[EXPERIMENTAL; UNSTABLE API]
 Lineage sources for taint finding, format
 [module:]function/arity.{ret,argN}, comma-separated.</p>
 
-<p style="margin-left:11%;">See also
-<b>infer-report</b>(1). <b><br>
+<p style="margin-left:11%;">See --lineage-sink for
+additional documentation. <br>
+See also <b>infer-report</b>(1). <b><br>
 --lineage-variant-width</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Maximal width of variant types
@@ -1973,27 +1987,6 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
 <b>infer-report</b>(1), and <b><br>
 infer-run</b>(1). <b><br>
---printf-args</b></p>
-
-<p style="margin-left:17%;">Activates: <i>printf-args</i>
-checker: Detect mismatches between the Java
-&lsquo;printf&lsquo; format strings and the argument types
-For example, this checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo;</p>
-
-<p style="margin-left:11%;"><b>DEPRECATED</b>:
-Unmaintained. <br>
-(Conversely: <b>--no-printf-args</b>) <br>
-See also <b>infer-analyze</b>(1). <b><br>
---printf-args-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable
-<i>printf-args</i> and disable all other checkers
-(Conversely: <b>--no-printf-args-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --procedures</b></p>
 
 <p style="margin-left:17%;">Activates: Print functions and
@@ -2278,6 +2271,13 @@ modelled as returning non-null in Pulse</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-model-return-nonnull-list</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning non-null in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-model-return-this</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
@@ -2472,6 +2472,15 @@ should be used for data flow reporting only. If a source has
 such a kind, only data flows to sinks which originate at the
 source will be reported. If a sink has such a kind, only
 sensitive data flows to the sink will be reported.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-taint-opaque-files</b> <i>+path</i></p>
+
+<p style="margin-left:17%;">Specify files that should be
+treated as opaque for taint analysis to make sure that
+procedure's belonging to these files are always free of any
+potential taint flows.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2776,6 +2785,14 @@ available for the Hack frontend for now. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-read-java-modules</b></p>
+
+<p style="margin-left:17%;">Deactivates: Read java modules
+file using <b>jimage</b>. (Conversely:
+<b>--read-java-modules</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --replay-analysis-schedule</b></p>
 
 <p style="margin-left:17%;">Activates: Replay the analysis
@@ -3267,6 +3284,16 @@ C++ source files are treated as same variables</p>
 <p style="margin-left:11%;">(Conversely:
 <b>--no-struct-as-cpp-class</b>) <br>
 See also <b>infer-capture</b>(1). <b><br>
+--no-suppressions</b></p>
+
+<p style="margin-left:17%;">Deactivates: Suppress infer
+issues on source lines matching the @infer-disable
+ISSUE_TYPE1, ISSUE_TYPE2, ... and @infer-disable-every
+ISSUE_TYPE1, ISSUE_TYPE2, ... keywords. (Conversely:
+<b>--suppressions</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --tenv-json</b> <i>file</i></p>
 
 <p style="margin-left:17%;">Path to TEnv json file</p>

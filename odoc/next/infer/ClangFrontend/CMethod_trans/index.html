@@ -14,7 +14,7 @@
   <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-stmt">ATDGenerated.Clang_ast_t.stmt</a> list</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/CapturedVar/index.html#type-t">IR.CapturedVar.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   bool</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_attributes"><a href="#val-create_attributes" class="anchor"></a><code><span><span class="keyword">val</span> create_attributes : 
   <span><span class="optlabel">?loc_instantiated</span>:<a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="optlabel">?set_objc_accessor_attr</span>:bool <span class="arrow">&#45;&gt;</span></span>
@@ -22,7 +22,6 @@
   <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-stmt">ATDGenerated.Clang_ast_t.stmt</a> list</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
   <a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_external_procdesc"><a href="#val-create_external_procdesc" class="anchor"></a><code><span><span class="keyword">val</span> create_external_procdesc : 
   <span><a href="../CFrontend_config/index.html#type-translation_unit_context">CFrontend_config.translation_unit_context</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Cfg/index.html#type-t">IR.Cfg.t</a> <span class="arrow">&#45;&gt;</span></span>
@@ -45,7 +44,7 @@
   <span><span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_procdesc_with_pointer"><a href="#val-create_procdesc_with_pointer" class="anchor"></a><code><span><span class="keyword">val</span> create_procdesc_with_pointer : 
   <span><span class="optlabel">?is_cpp_lambda_call_operator</span>:bool <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="optlabel">?captured_vars</span>:<span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?captured_vars</span>:<span><a href="../../IR/CapturedVar/index.html#type-t">IR.CapturedVar.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../CContext/index.html#type-t">CContext.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-pointer">ATDGenerated.Clang_ast_t.pointer</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../../IR/Typ/Name/index.html#type-t">IR.Typ.Name.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
@@ -53,7 +52,7 @@
   <a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_procname_from_cpp_lambda"><a href="#val-get_procname_from_cpp_lambda" class="anchor"></a><code><span><span class="keyword">val</span> get_procname_from_cpp_lambda : 
   <span><a href="../CContext/index.html#type-t">CContext.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-decl">ATDGenerated.Clang_ast_t.decl</a> <span class="arrow">&#45;&gt;</span></span>
-  <span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../IR/CapturedVar/index.html#type-t">IR.CapturedVar.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_captures_from_cpp_lambda"><a href="#val-get_captures_from_cpp_lambda" class="anchor"></a><code><span><span class="keyword">val</span> get_captures_from_cpp_lambda : 
   <span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-decl">ATDGenerated.Clang_ast_t.decl</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-lambda_capture_info">ATDGenerated.Clang_ast_t.lambda_capture_info</a> list</span></span></code></div></div></div></body></html>

@@ -273,12 +273,11 @@ specified).</p>
 <p style="margin-left:17%;">Deactivates:
 <i>fragment-retains-view</i> checker: Detects when Android
 fragments are not explicitly nullified before becoming
-unreachable.</p>
+unreachable. (Conversely:
+<b>--fragment-retains-view</b>)</p>
 
-<p style="margin-left:11%;"><b>DEPRECATED</b>: Unmaintained
-due to poor precision. <br>
-(Conversely: <b>--fragment-retains-view</b>) <b><br>
---fragment-retains-view-only</b></p>
+
+<p style="margin-left:11%;"><b>--fragment-retains-view-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
 <i>fragment-retains-view</i> and disable all other checkers
@@ -500,24 +499,6 @@ checkers before starting the analysis (Conversely:
 
 <p style="margin-left:17%;">Activates: Also log messages to
 stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
-
-<p style="margin-left:11%;"><b>--printf-args</b></p>
-
-<p style="margin-left:17%;">Activates: <i>printf-args</i>
-checker: Detect mismatches between the Java
-&lsquo;printf&lsquo; format strings and the argument types
-For example, this checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo;</p>
-
-<p style="margin-left:11%;"><b>DEPRECATED</b>:
-Unmaintained. <br>
-(Conversely: <b>--no-printf-args</b>) <b><br>
---printf-args-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable
-<i>printf-args</i> and disable all other checkers
-(Conversely: <b>--no-printf-args-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--progress-bar-style</b>
 <i>{ auto | plain | multiline }</i></p>
@@ -1343,6 +1324,13 @@ C, Objective-C</p>
 modelled as returning non-null in Pulse</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-model-return-nonnull-list</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning non-null in Pulse</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-model-return-this</b>
 <i>string</i></p>
 
@@ -1508,6 +1496,15 @@ should be used for data flow reporting only. If a source has
 such a kind, only data flows to sinks which originate at the
 source will be reported. If a sink has such a kind, only
 sensitive data flows to the sink will be reported.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-taint-opaque-files</b>
+<i>+path</i></p>
+
+<p style="margin-left:17%;">Specify files that should be
+treated as opaque for taint analysis to make sure that
+procedure's belonging to these files are always free of any
+potential taint flows.</p>
 
 <p style="margin-left:11%;"><b>--pulse-taint-policies</b>
 <i>json</i></p>
