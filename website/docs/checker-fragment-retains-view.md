@@ -5,8 +5,6 @@ description: "Detects when Android fragments are not explicitly nullified before
 
 Detects when Android fragments are not explicitly nullified before becoming unreachable.
 
-**\*\*\*DEPRECATED\*\*\*** Unmaintained due to poor precision.
-
 Activate with `--fragment-retains-view`.
 
 Supported languages:

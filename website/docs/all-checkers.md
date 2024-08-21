@@ -41,8 +41,6 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 Detects when Android fragments are not explicitly nullified before becoming unreachable.
 
-**\*\*\*DEPRECATED\*\*\*** Unmaintained due to poor precision.
-
 [Visit here for more information.](/docs/next/checker-fragment-retains-view)
 
 ## Impurity
@@ -86,14 +84,6 @@ Detect opportunities to hoist function calls that are invariant outside of loop 
 An Objective-C-specific analysis to detect when a block parameter is used before being checked for null first.
 
 [Visit here for more information.](/docs/next/checker-parameter-not-null-checked)
-
-## `printf()` Argument Types
-
-Detect mismatches between the Java `printf` format strings and the argument types For example, this checker will warn about the type error in `printf("Hello %d", "world")`
-
-**\*\*\*DEPRECATED\*\*\*** Unmaintained.
-
-[Visit here for more information.](/docs/next/checker-printf-args)
 
 ## Pulse
 

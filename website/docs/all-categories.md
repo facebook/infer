@@ -50,6 +50,8 @@ Issue types in this category:
 The null pointer is used where a valid pointer is required, causing a memory fault and a crash. For example, it is dereferenced.
 
 Issue types in this category:
+- [BLOCK_PARAMETER_NOT_NULL_CHECKED](/docs/next/all-issue-types#block_parameter_not_null_checked)
+- [COMPARED_TO_NULL_AND_DEREFERENCED](/docs/next/all-issue-types#compared_to_null_and_dereferenced)
 - [NIL_BLOCK_CALL](/docs/next/all-issue-types#nil_block_call)
 - [NIL_BLOCK_CALL_LATENT](/docs/next/all-issue-types#nil_block_call_latent)
 - [NULLPTR_DEREFERENCE](/docs/next/all-issue-types#nullptr_dereference)
@@ -80,6 +82,7 @@ Issue types in this category:
 - [PULSE_UNNECESSARY_COPY_OPTIONAL](/docs/next/all-issue-types#pulse_unnecessary_copy_optional)
 - [PULSE_UNNECESSARY_COPY_OPTIONAL_CONST](/docs/next/all-issue-types#pulse_unnecessary_copy_optional_const)
 - [PULSE_UNNECESSARY_COPY_RETURN](/docs/next/all-issue-types#pulse_unnecessary_copy_return)
+- [PULSE_UNNECESSARY_COPY_THRIFT_ASSIGNMENT](/docs/next/all-issue-types#pulse_unnecessary_copy_thrift_assignment)
 - [REGEX_OP_ON_UI_THREAD](/docs/next/all-issue-types#regex_op_on_ui_thread)
 - [STRICT_MODE_VIOLATION](/docs/next/all-issue-types#strict_mode_violation)
 
@@ -149,6 +152,7 @@ Sensitive data is flowing where it shouldn't.
 
 Issue types in this category:
 - [DATA_FLOW_TO_SINK](/docs/next/all-issue-types#data_flow_to_sink)
+- [LINEAGE_FLOW](/docs/next/all-issue-types#lineage_flow)
 - [SCOPE_LEAKAGE](/docs/next/all-issue-types#scope_leakage)
 - [SENSITIVE_DATA_FLOW](/docs/next/all-issue-types#sensitive_data_flow)
 - [TAINT_ERROR](/docs/next/all-issue-types#taint_error)

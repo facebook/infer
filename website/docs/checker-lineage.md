@@ -15,3 +15,9 @@ Supported languages:
 - Java: No
 - Python: No
 
+
+
+## List of Issue Types
+
+The following issue types are reported by this checker:
+- [LINEAGE_FLOW](/docs/next/all-issue-types#lineage_flow)

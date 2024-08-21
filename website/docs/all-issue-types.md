@@ -167,7 +167,7 @@ See [MEMORY_LEAK_C](#memory_leak_c).
 See [RETAIN_CYCLE](#retain_cycle).
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
 
-*Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).*
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).*
 
 This error type is reported only in Objective-C/Objective-C++. It happens when a method has a block as a parameter,
 and the block is executed in the method's body without checking it for `nil` first. If a `nil` block is passed to
@@ -416,20 +416,11 @@ retain a useless reference to that `View` that will not be cleaned up until the
 
 Action: Nullify the `View` in question in `onDestroyView`.
 
-## CHECKERS_PRINTF_ARGS
+## COMPARED_TO_NULL_AND_DEREFERENCED
 
-*Reported as "Printf Args" by [printf-args](/docs/next/checker-printf-args).*
+*Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Compared To Null And Dereferenced" by [pulse](/docs/next/checker-pulse).*
 
-This error is reported when the argument types to a `printf` method do not match the format string.
-
-```java
-  void stringInsteadOfInteger(PrintStream out) {
-    out.printf("Hello %d", "world");
-  }
-```
-
-Action: fix the mismatch between format string and argument types.
-
+A pointer that has both been compared to null, whcich suggests that it could be null, but has also been dereferenced without a null check.
 ## CONFIG_IMPACT
 
 *Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).*
@@ -995,6 +986,12 @@ A blocking `Binder` IPC call occurs on the UI thread.
 *Reported as "Lab Resource Leak" by [resource-leak-lab](/docs/next/checker-resource-leak-lab).*
 
 Toy issue.
+## LINEAGE_FLOW
+
+*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Lineage Flow" by [lineage](/docs/next/checker-lineage).*
+
+A Lineage taint flow has been detected from a source to a sink.
+
 ## LOCKLESS_VIOLATION
 
 *Reported as "Lockless Violation" by [starvation](/docs/next/checker-starvation).*
@@ -2206,6 +2203,13 @@ void caller(MyClass obj) {
   std::cout << x; // x is not modified.
 }
 ```
+
+## PULSE_UNNECESSARY_COPY_THRIFT_ASSIGNMENT
+
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Unnecessary Copy Assignment into Thrift" by [pulse](/docs/next/checker-pulse).*
+
+This is similar to [PULSE_UNNECESSARY_COPY_ASSIGNMENT](#pulse_unnecessary_copy_assignment), but is
+reported when copied into thrift fields.
 
 ## PURE_FUNCTION
 

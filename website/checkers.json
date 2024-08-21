@@ -8,9 +8,9 @@
     "checker-inefficient-keyset-iterator", "checker-lineage",
     "checker-litho-required-props", "checker-liveness",
     "checker-loop-hoisting", "checker-parameter-not-null-checked",
-    "checker-printf-args", "checker-pulse", "checker-purity",
-    "checker-racerd", "checker-resource-leak-lab", "checker-sil-validation",
-    "checker-siof", "checker-scope-leakage", "checker-self-in-block",
-    "checker-starvation", "checker-topl"
+    "checker-pulse", "checker-purity", "checker-racerd",
+    "checker-resource-leak-lab", "checker-sil-validation", "checker-siof",
+    "checker-scope-leakage", "checker-self-in-block", "checker-starvation",
+    "checker-topl"
   ]
 }

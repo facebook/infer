@@ -11,7 +11,7 @@ Supported languages:
 - C/C++/ObjC: Experimental
 - C#/.Net: No
 - Erlang: No
-- Hack: No
+- Hack: Experimental
 - Java: Experimental
 - Python: No
 
