@@ -101,7 +101,7 @@ let is_copy_cted_into_var from copied_into =
   match (from : Attribute.CopyOrigin.t) with
   | CopyInGetDefault | CopyCtor ->
       true
-  | CopyAssignment | CopyToOptional ->
+  | CopyAssignment _ | CopyToOptional ->
       false
 
 

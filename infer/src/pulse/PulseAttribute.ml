@@ -112,13 +112,15 @@ module Attribute = struct
   [@@deriving compare, equal, show {with_path= false}]
 
   module CopyOrigin = struct
-    type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
+    type assign_t = Normal | Thrift [@@deriving compare, equal]
+
+    type t = CopyCtor | CopyAssignment of assign_t | CopyToOptional | CopyInGetDefault
     [@@deriving compare, equal]
 
     let pp fmt = function
       | CopyCtor ->
           F.fprintf fmt "copied"
-      | CopyAssignment ->
+      | CopyAssignment (Normal | Thrift) ->
           F.fprintf fmt "copy assigned"
       | CopyToOptional ->
           F.fprintf fmt "copied by Optional value construction"

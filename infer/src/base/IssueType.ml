@@ -1042,6 +1042,12 @@ let unnecessary_copy_return_pulse =
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_RETURN.md"]
 
 
+let unnecessary_copy_thrift_assignment_pulse =
+  register ~category:PerfRegression ~id:"PULSE_UNNECESSARY_COPY_THRIFT_ASSIGNMENT" Error Pulse
+    ~hum:"Unnecessary Copy Assignment into Thrift"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_THRIFT_ASSIGNMENT.md"]
+
+
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =

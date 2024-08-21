@@ -52,9 +52,10 @@ let get_copy_origin pname actuals =
   let open IOption.Let_syntax in
   let* attrs = IRAttributes.load pname in
   if attrs.ProcAttributes.is_cpp_copy_ctor then Some Attribute.CopyOrigin.CopyCtor
-  else if attrs.ProcAttributes.is_cpp_copy_assignment then Some Attribute.CopyOrigin.CopyAssignment
+  else if attrs.ProcAttributes.is_cpp_copy_assignment then
+    Some (Attribute.CopyOrigin.CopyAssignment Normal)
   else if is_thrift_field_copy_assignment pname actuals then
-    Some Attribute.CopyOrigin.CopyAssignment
+    Some (Attribute.CopyOrigin.CopyAssignment Thrift)
   else None
 
 
@@ -286,8 +287,12 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
 let is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_intermediate ~from
     source_addr_typ_opt proc_lvalue_ref_parameters ~astates_before =
   ( is_intermediate
-  || Attribute.CopyOrigin.equal from CopyAssignment
-  || Attribute.CopyOrigin.equal from CopyToOptional )
+  ||
+  match (from : Attribute.CopyOrigin.t) with
+  | CopyAssignment _ | CopyToOptional ->
+      true
+  | CopyCtor | CopyInGetDefault ->
+      false )
   && Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
          ( match source_expr with
          | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->

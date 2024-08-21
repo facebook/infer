@@ -1219,7 +1219,7 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_transitive_access
   | UnnecessaryCopy {copied_location= Some _}, false ->
       IssueType.unnecessary_copy_return_pulse
-  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment}, false
+  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment Normal}, false
     when Option.exists ~f:Typ.is_rvalue_reference source_typ ->
       IssueType.unnecessary_copy_assignment_movable_pulse
   | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyCtor}, false
@@ -1235,9 +1235,11 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor | CopyInGetDefault}, false ->
       IssueType.unnecessary_copy_pulse
-  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false ->
+  | UnnecessaryCopy {from= CopyAssignment Normal; source_typ}, false ->
       if is_from_const source_typ then IssueType.unnecessary_copy_assignment_const_pulse
       else IssueType.unnecessary_copy_assignment_pulse
+  | UnnecessaryCopy {from= CopyAssignment Thrift}, false ->
+      IssueType.unnecessary_copy_thrift_assignment_pulse
   | UnnecessaryCopy {source_typ; from= CopyToOptional}, false ->
       if is_from_const source_typ then IssueType.unnecessary_copy_optional_const_pulse
       else IssueType.unnecessary_copy_optional_pulse

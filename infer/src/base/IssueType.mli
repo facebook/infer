@@ -372,6 +372,8 @@ val unnecessary_copy_optional_const_pulse : t
 
 val unnecessary_copy_return_pulse : t
 
+val unnecessary_copy_thrift_assignment_pulse : t
+
 val unreachable_code_after : t
 
 val use_after_delete : latent:bool -> t

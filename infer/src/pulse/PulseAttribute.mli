@@ -70,7 +70,9 @@ type taint_propagation_reason = InternalModel | UnknownCall | UserConfig
 val pp_taint_propagation_reason : F.formatter -> taint_propagation_reason -> unit
 
 module CopyOrigin : sig
-  type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
+  type assign_t = Normal | Thrift [@@deriving compare, equal]
+
+  type t = CopyCtor | CopyAssignment of assign_t | CopyToOptional | CopyInGetDefault
   [@@deriving compare, equal]
 
   val pp : Formatter.t -> t -> unit
