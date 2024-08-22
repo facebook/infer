@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 abstract class StringLiteral {
+  abstract String source(String type);
+
   abstract void sink(String s);
 
   void fOk() {
@@ -21,5 +23,13 @@ abstract class StringLiteral {
 
   void gLatent(String s) {
     sink(s);
+  }
+
+  void hOk() {
+    sink(source("ok"));
+  }
+
+  void hBad() {
+    sink(source("bad"));
   }
 }

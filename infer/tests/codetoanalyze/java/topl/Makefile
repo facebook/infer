@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 # NOTE: If you wish to deactivate a Topl test, simply remove it from this list
-SUBDIRS = compareArgs hasnext immutableArray servlet slowIter taint typeFilter validRange
+SUBDIRS = compareArgs hasnext immutableArray servlet slowIter strLiteral taint typeFilter validRange
 # inactive: baos (reactivate when tests migrate to Java 11)
 
 test-%:

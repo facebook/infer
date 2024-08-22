@@ -1,2 +1,5 @@
 property TaintTrack
+  start -> start: *
   start -> error: "StringLiteral.sink"(Receiver, Arg, Ret) when Arg == "bad"
+  start -> track: "StringLiteral.source"(Receiver, Arg, Ret) when Arg == "bad" => dirty := Ret
+  track -> error: "StringLiteral.sink"(Receiver, Arg, Ret) when Arg == dirty
