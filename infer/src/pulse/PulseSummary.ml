@@ -419,7 +419,15 @@ let get_missed_captures ~get_summary procnames =
     |> List.reduce ~f:MissedCaptures.join
     |> Option.value ~default:MissedCaptures.bottom
   in
-  let from_simple_summary {pre_post_list} = from_pre_post_list pre_post_list in
+  let from_simple_summary {pre_post_list; non_disj} =
+    let from_disjs = from_pre_post_list pre_post_list in
+    let from_non_disj =
+      NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj
+      |> Option.value_map ~default:MissedCaptures.bottom
+           ~f:(fun {PulseTransitiveInfo.missed_captures} -> missed_captures )
+    in
+    MissedCaptures.join from_disjs from_non_disj
+  in
   let from_summary summary =
     Specialization.Pulse.Map.fold
       (fun _ summary -> MissedCaptures.join (from_simple_summary summary))
