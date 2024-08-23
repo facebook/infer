@@ -29,6 +29,7 @@ Incorrect handling of pointers that isn't a null pointer dereference, but can st
 
 Issue types in this category:
 - [CXX_REF_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#cxx_ref_captured_in_block)
+- [CXX_STRING_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#cxx_string_captured_in_block)
 - [NIL_MESSAGING_TO_NON_POD](/docs/next/all-issue-types#nil_messaging_to_non_pod)
 - [NIL_MESSAGING_TO_NON_POD_LATENT](/docs/next/all-issue-types#nil_messaging_to_non_pod_latent)
 - [PULSE_REFERENCE_STABILITY](/docs/next/all-issue-types#pulse_reference_stability)

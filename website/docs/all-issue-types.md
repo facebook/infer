@@ -550,6 +550,30 @@ This could cause crashes because C++ references are not managed pointers
 (like ARC pointers) and so the referent is likely to be gone if the block
 dereferences it later.
 
+## CXX_STRING_CAPTURED_IN_BLOCK
+
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "C++ String Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).*
+
+This check flags when a local variable of type `std::string` is captured in an escaping block.
+This means that the block will be leaving the current scope, i.e. it is
+not annotated with `__attribute__((noescape))`.
+
+Example:
+
+```
+- (void)string_captured_in_escaping_block_bad {
+  std::string fullName;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    const char* c = fullName.c_str();
+    ...
+  });
+  ...;
+}
+```
+
+This could cause crashes because the variable is likely to be freed if the block
+uses it later.
+
 ## DANGLING_POINTER_DEREFERENCE
 
 *Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).*

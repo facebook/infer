@@ -5,7 +5,7 @@ not annotated with `__attribute__((noescape))`.
 Example:
 
 ```
-- (void)ref_captured_in_escaping_block_bad {
+- (void)string_captured_in_escaping_block_bad {
   std::string fullName;
   dispatch_async(dispatch_get_main_queue(), ^{
     const char* c = fullName.c_str();
