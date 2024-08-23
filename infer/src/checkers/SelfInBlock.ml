@@ -15,6 +15,7 @@ module DomainData = struct
     | UNCHECKED_STRONG_SELF
     | WEAK_SELF
     | CXX_REF
+    | LOCAL_CXX_STRING
   [@@deriving compare]
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
@@ -34,6 +35,8 @@ module DomainData = struct
           "WEAK_SELF"
       | CXX_REF ->
           "CXX_REF"
+      | LOCAL_CXX_STRING ->
+          "LOCAL_CXX_STRING"
     in
     F.fprintf fmt "%s" s
 
@@ -261,22 +264,51 @@ module Mem = struct
       attributes.ProcAttributes.captured
 
 
-  let get_captured_cpp_reference attributes pvar =
+  let get_captured_var_type typ capture_mode =
+    (* In the frontend, if the variable is captured by reference, which is the case if it's
+        declared with the __block attribute, we add an extra reference to the type, so we need to
+        remove it here to check the real type. *)
+    if CapturedVar.is_captured_by_ref capture_mode then
+      match typ with
+      | {Typ.desc= Typ.Tptr (t, _)} ->
+          t
+      | _ ->
+          Logging.die InternalError "Not a possible case because of frontend constraints."
+    else typ
+
+
+  let is_captured_cpp_reference attributes pvar =
     let is_ref typ capture_mode =
-      (* In the frontend, if the variable is captured by reference, which is the case if it's
-         declared with the __block attribute, we add an extra reference to the type, so we need to
-         remove it here to check the real type. *)
-      if CapturedVar.is_captured_by_ref capture_mode then
-        match typ with
-        | {Typ.desc= Typ.Tptr (t, _)} ->
-            Typ.is_reference t
-        | _ ->
-            Logging.die InternalError "Not a possible case because of frontend constraints."
-      else Typ.is_reference typ
+      let typ = get_captured_var_type typ capture_mode in
+      Typ.is_reference typ
     in
     List.exists attributes.ProcAttributes.captured
       ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
         pvar_same_name captured pvar && is_ref typ capture_mode )
+
+
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
+
+  let is_captured_cpp_std_string attributes pvar =
+    let is_std_string typ capture_mode =
+      let typ = get_captured_var_type typ capture_mode in
+      match typ.Typ.desc with
+      | Tstruct name ->
+          let qual_name = Typ.Name.qual_name name in
+          QualifiedCppName.Match.match_qualifiers matcher qual_name
+      | _ ->
+          false
+    in
+    List.exists attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
+        pvar_same_name captured pvar && is_std_string typ capture_mode )
+
+
+  let is_captured_local attributes pvar =
+    let is_local pvar is_formal_of = (not (Pvar.is_global pvar)) && Option.is_none is_formal_of in
+    List.exists attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; is_formal_of} ->
+        pvar_same_name captured pvar && is_local pvar is_formal_of )
 
 
   let load attributes id pvar loc typ astate =
@@ -286,8 +318,10 @@ module Mem = struct
         Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
       else if is_captured_weak_self attributes pvar then
         Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
-      else if get_captured_cpp_reference attributes pvar then
+      else if is_captured_cpp_reference attributes pvar then
         Vars.add id {pvar; typ; loc; kind= CXX_REF} astate.vars
+      else if is_captured_cpp_std_string attributes pvar && is_captured_local attributes pvar then
+        Vars.add id {pvar; typ; loc; kind= LOCAL_CXX_STRING} astate.vars
       else
         try
           let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
@@ -338,6 +372,7 @@ type report_issues_result =
   ; selfList: DomainData.t list
   ; weakSelfList: DomainData.t list
   ; reported_cxx_ref: Pvar.Set.t
+  ; reported_cxx_string: Pvar.Set.t
   ; reported_self_in_block_passed_to_init: Pvar.Set.t }
 
 module TransferFunctions = struct
@@ -463,7 +498,7 @@ let make_trace_captured domain var =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | (CAPTURED_STRONG_SELF | CXX_REF | SELF) when Pvar.equal pvar var ->
+        | (CAPTURED_STRONG_SELF | CXX_REF | SELF | LOCAL_CXX_STRING) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -610,6 +645,30 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
   else reported_cxx_ref
 
 
+let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
+    reported_cxx_string =
+  let attributes = Procdesc.get_attributes proc_desc in
+  let passed_as_noescape_block =
+    Option.value_map
+      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
+        passed_as_noescape_block )
+      ~default:true attributes.ProcAttributes.block_as_arg_attributes
+  in
+  if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_string.pvar reported_cxx_string) then (
+    let reported_cxx_string = Pvar.Set.add cxx_string.pvar reported_cxx_string in
+    let message =
+      F.asprintf
+        "The local variable `%a` is of type std::string and it's captured in the block. This can \
+         lead to crashes if the class is freed before the block's execution."
+        (Pvar.pp Pp.text) cxx_string.pvar
+    in
+    let ltr = make_trace_captured domain cxx_string.pvar in
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_string.loc SelfInBlock
+      IssueType.cxx_string_captured_in_block message ;
+    reported_cxx_string )
+  else reported_cxx_string
+
+
 let report_issues proc_desc err_log domain =
   let process_domain_item (result : report_issues_result) (_, (domain_data : DomainData.t)) =
     match domain_data.kind with
@@ -625,6 +684,12 @@ let report_issues proc_desc err_log domain =
             result.reported_cxx_ref
         in
         {result with reported_cxx_ref}
+    | DomainData.LOCAL_CXX_STRING ->
+        let reported_cxx_string =
+          report_cxx_string_captured_in_block proc_desc err_log domain domain_data
+            result.reported_cxx_string
+        in
+        {result with reported_cxx_string}
     | DomainData.WEAK_SELF ->
         let reported_weak_self_in_noescape_block =
           let attributes = Procdesc.get_attributes proc_desc in
@@ -653,6 +718,7 @@ let report_issues proc_desc err_log domain =
     ; selfList= []
     ; weakSelfList= []
     ; reported_cxx_ref= Pvar.Set.empty
+    ; reported_cxx_string= Pvar.Set.empty
     ; reported_self_in_block_passed_to_init= Pvar.Set.empty }
   in
   let domain_bindings =

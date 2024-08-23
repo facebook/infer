@@ -169,6 +169,8 @@ val pulse_const_refable : t
 
 val constant_address_dereference : latent:bool -> t
 
+val cxx_string_captured_in_block : t
+
 val cxx_ref_captured_in_block : t
 
 val dangling_pointer_dereference : t

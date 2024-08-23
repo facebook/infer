@@ -142,6 +142,7 @@ OPTIONS
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CXX_REF_CAPTURED_IN_BLOCK (enabled by default),
+             CXX_STRING_CAPTURED_IN_BLOCK (disabled by default),
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
