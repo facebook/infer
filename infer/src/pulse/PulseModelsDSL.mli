@@ -23,6 +23,13 @@ module Syntax : sig
 
   val ( let* ) : 'a model_monad -> ('a -> 'b model_monad) -> 'b model_monad
 
+  val ( >>= ) : 'a model_monad -> ('a -> 'b model_monad) -> 'b model_monad
+
+  val ( @= ) : ('a -> 'b model_monad) -> 'a model_monad -> 'b model_monad
+
+  val ( @@> ) : unit model_monad -> 'a model_monad -> 'a model_monad
+  (** sequential composition *)
+
   val ret : 'a -> 'a model_monad
 
   val throw : unit model_monad [@@warning "-unused-value-declaration"]
@@ -53,7 +60,6 @@ module Syntax : sig
   val ignore : 'a model_monad -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val assign_ret : aval -> unit model_monad
-  (** assign the value to the return variable of the current function *)
 
   val dynamic_dispatch :
        cases:(Typ.name * (unit -> 'a model_monad)) list
@@ -75,7 +81,7 @@ module Syntax : sig
 
   (** {2 Disjunctive reasoning} *)
 
-  val disjuncts : 'a model_monad list -> 'a model_monad
+  val disj : 'a model_monad list -> 'a model_monad
 
   val start_model : unit model_monad -> PulseModelsImport.model
   (** get a model from a disjunctive model_monad *)
@@ -109,21 +115,24 @@ module Syntax : sig
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
 
-  val eval_binop : Binop.t -> aval -> aval -> aval model_monad
+  val binop : Binop.t -> aval -> aval -> aval model_monad
 
-  val eval_binop_int : Binop.t -> aval -> IntLit.t -> aval model_monad
+  val binop_int : Binop.t -> aval -> IntLit.t -> aval model_monad
 
-  val eval_read : Exp.t -> aval model_monad [@@warning "-unused-value-declaration"]
+  val read : Exp.t -> aval model_monad [@@warning "-unused-value-declaration"]
 
-  val eval_const_int : int -> aval model_monad
+  val int : ?hist:ValueHistory.t -> int -> aval model_monad
 
-  val eval_const_string : string -> aval model_monad
+  val string : string -> aval model_monad
 
-  val eval_string_concat : aval -> aval -> aval model_monad
+  val string_concat : aval -> aval -> aval model_monad
 
-  val eval_access : access_mode -> aval -> Access.t -> aval model_monad
+  val access : access_mode -> aval -> Access.t -> aval model_monad
 
-  val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
+  val load_access : aval -> Access.t -> aval model_monad
+
+  val load : aval -> aval model_monad
+  (** read the Dereference access from the value *)
 
   val get_dynamic_type :
     ask_specialization:bool -> aval -> Formula.dynamic_type_data option model_monad
@@ -137,13 +146,13 @@ module Syntax : sig
   val remove_hack_builder_attributes : aval -> unit model_monad
   [@@warning "-unused-value-declaration"]
 
-  val get_const_string : aval -> string option model_monad
+  val fresh : ?more:string -> unit -> aval model_monad
 
-  val mk_fresh : ?more:string -> unit -> aval model_monad
+  val write_field : ref:aval -> Fieldname.t -> aval -> unit model_monad
 
-  val write_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
+  val store_field : ref:aval -> Fieldname.t -> aval -> unit model_monad
 
-  val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
+  val store : ref:aval -> aval -> unit model_monad
 
   val get_known_fields : aval -> Access.t list model_monad
   (** Return the fields we know about. There may be more, so use with caution *)
@@ -198,15 +207,11 @@ module Syntax : sig
 
   val as_constant_string : aval -> string option model_monad
 
-  val mk_int : ?hist:ValueHistory.t -> int -> aval model_monad
-
   (** {2 Tenv operations} *)
 
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
   val tenv_resolve_fieldname : Typ.name -> string -> Fieldname.t option model_monad
-
-  val write_deref : ref:aval -> obj:aval -> unit model_monad
 
   (** {2 Invalidation operations} *)
 
@@ -230,7 +235,8 @@ module Syntax : sig
   (** This is used to make hack_get_static_class behave like a pure function *)
 
   module Basic : sig
-    val alloc_not_null : Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
+    val return_alloc_not_null :
+      Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
   end
 end
 

@@ -24,21 +24,20 @@ let alloc_common ~desc allocator ~size_exp_opt : model =
   let open DSL.Syntax in
   start_named_model desc
   @@ let* {path; location; ret= ret_id, _} = get_data in
-     let astate_alloc = Basic.alloc_not_null allocator ~initialize:false size_exp_opt in
+     let astate_alloc = Basic.return_alloc_not_null allocator ~initialize:false size_exp_opt in
      let result_null =
-       let* ret_addr = mk_fresh ~more:"(null case)" () in
-       let* () = assign_ret ret_addr in
-       let* () = and_eq_int ret_addr IntLit.zero in
-       invalidate path
-         (StackAddress (Var.of_id ret_id, snd ret_addr))
-         location (ConstantDereference IntLit.zero) ret_addr
+       let* ret_addr = fresh ~more:"(null case)" () in
+       assign_ret ret_addr @@> and_eq_int ret_addr IntLit.zero
+       @@> invalidate path
+             (StackAddress (Var.of_id ret_id, snd ret_addr))
+             location (ConstantDereference IntLit.zero) ret_addr
      in
-     disjuncts [astate_alloc; result_null]
+     disj [astate_alloc; result_null]
 
 
 let alloc_not_null_common_dsl allocator ~size_exp_opt : unit DSL.model_monad =
   let open DSL.Syntax in
-  Basic.alloc_not_null ~initialize:false allocator size_exp_opt
+  Basic.return_alloc_not_null ~initialize:false allocator size_exp_opt
 
 
 let alloc_not_null_common ~desc allocator ~size_exp_opt : model =

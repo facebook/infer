@@ -69,6 +69,15 @@ module Syntax = struct
 
   let ( let* ) a f = bind a f
 
+  let ( >>= ) a f = bind a f
+
+  let ( @= ) f a = bind a f
+
+  let ( @@> ) f g =
+    let* () = f in
+    g
+
+
   let list_fold (list : 'a list) ~(init : 'accum) ~(f : 'accum -> 'a -> 'accum model_monad) :
       'accum model_monad =
     List.fold list ~init:(ret init) ~f:(fun monad a ->
@@ -121,7 +130,7 @@ module Syntax = struct
 
   let get_desc : CallEvent.t model_monad = fun (desc, data) astate -> ret desc (desc, data) astate
 
-  let mk_event ?more (desc, data) =
+  let event ?more (desc, data) =
     let desc =
       match more with
       | None ->
@@ -136,7 +145,7 @@ module Syntax = struct
   let get_event ?more () : ValueHistory.event model_monad =
     let* data = get_data in
     let* desc = get_desc in
-    ret (mk_event ?more (desc, data))
+    ret (event ?more (desc, data))
 
 
   let ok x = Ok x
@@ -179,7 +188,7 @@ module Syntax = struct
     start_model_ (ModelName data.callee_procname) monad data astate non_disj
 
 
-  let disjuncts (list : 'a model_monad list) : 'a model_monad =
+  let disj (list : 'a model_monad list) : 'a model_monad =
    fun data astate non_disj ->
     NonDisjDomain.bind (list, non_disj) ~f:(fun monad non_disj -> monad data astate non_disj)
 
@@ -248,7 +257,7 @@ module Syntax = struct
     ret (Formula.as_constant_string phi v) data astate
 
 
-  let mk_int ?hist i : aval model_monad =
+  let int ?hist i : aval model_monad =
    fun (desc, data) astate ->
     let astate, v = PulseArithmetic.absval_of_int astate (IntLit.of_int i) in
     let hist =
@@ -256,7 +265,7 @@ module Syntax = struct
       | Some hist ->
           hist
       | None ->
-          let event = mk_event (desc, data) in
+          let event = event (desc, data) in
           Hist.single_event data.path event
     in
     ret (v, hist) (desc, data) astate
@@ -296,7 +305,7 @@ module Syntax = struct
         ret aval
 
 
-  let eval_access access_mode aval access : aval model_monad =
+  let access access_mode aval access : aval model_monad =
     let* {path; location} = get_data in
     let* addr, hist =
       PulseOperations.eval_access path access_mode location aval access
@@ -307,16 +316,20 @@ module Syntax = struct
     ret (addr, hist)
 
 
-  let eval_deref exp : aval model_monad =
+  let load_exp exp : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval_deref path location exp |> exec_partial_operation
 
 
-  let eval_deref_access access_mode aval access : aval model_monad =
+  let load_access aval access : aval model_monad =
     let* {path; location} = get_data in
-    PulseOperations.eval_deref_access path access_mode location aval access
+    PulseOperations.eval_deref_access path Read location aval access
     >> sat |> exec_partial_operation
 
+
+  let load x = access Read x Dereference
+
+  let _field x f = access Read x (FieldAccess f)
 
   let add_dict_contain_const_keys (addr, _) : unit model_monad =
     PulseOperations.add_dict_contain_const_keys addr |> exec_command
@@ -338,7 +351,7 @@ module Syntax = struct
       | Some typ ->
           ret (Typ.name (Typ.strip_ptr typ))
       | None ->
-          let* addr, _ = eval_deref (Lvar pvar) in
+          let* addr, _ = load_exp (Lvar pvar) in
           AddressAttributes.get_static_type addr |> exec_pure_operation
 
 
@@ -446,10 +459,6 @@ module Syntax = struct
     ret () data astate
 
 
-  let get_const_string (v, _) : string option model_monad =
-   fun data astate -> ret (PulseArithmetic.as_constant_string astate v) data astate
-
-
   let tenv_resolve_field_info typ_name field_name : Struct.field_info option model_monad =
    fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     let info = Tenv.resolve_field_info tenv typ_name field_name in
@@ -479,16 +488,14 @@ module Syntax = struct
     ret opt_resolved_proc_name data astate
 
 
-  let eval_read exp : aval model_monad =
+  let read exp : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval path Read location exp |> exec_partial_operation
 
 
-  let eval_const_int i : aval model_monad = eval_read (Const (Cint (IntLit.of_int i)))
+  let string str : aval model_monad = read (Const (Cstr str))
 
-  let eval_const_string str : aval model_monad = eval_read (Const (Cstr str))
-
-  let eval_string_concat (v1, hist1) (v2, hist2) : aval model_monad =
+  let string_concat (v1, hist1) (v2, hist2) : aval model_monad =
     let v = AbstractValue.mk_fresh () in
     let hist = ValueHistory.binary_op (PlusA None) hist1 hist2 in
     let* () =
@@ -504,7 +511,7 @@ module Syntax = struct
     PulseOperations.allocate attr location addr |> exec_command
 
 
-  let mk_fresh ?more () : aval model_monad =
+  let fresh ?more () : aval model_monad =
     let* {path} = get_data in
     let addr = AbstractValue.mk_fresh () in
     let* event = get_event ?more () in
@@ -512,17 +519,17 @@ module Syntax = struct
     ret (addr, hist)
 
 
-  let write_field ~ref ~obj field : unit model_monad =
+  let write_field ~ref field obj : unit model_monad =
     let* {path; location} = get_data in
     PulseOperations.write_field path location ~ref ~obj field >> sat |> exec_partial_command
 
 
-  let write_deref_field ~ref ~obj field : unit model_monad =
+  let store_field ~ref field obj : unit model_monad =
     let* {path; location} = get_data in
     PulseOperations.write_deref_field path location ~ref ~obj field >> sat |> exec_partial_command
 
 
-  let write_deref ~ref ~obj : unit model_monad =
+  let store ~ref obj : unit model_monad =
     let* {path; location} = get_data in
     PulseOperations.write_deref path location ~ref ~obj >> sat |> exec_partial_command
 
@@ -592,7 +599,7 @@ module Syntax = struct
     let* () =
       list_iter fields ~f:(fun (fieldname, obj) ->
           let field = Fieldname.make type_name fieldname in
-          write_deref_field ~ref:new_obj field ~obj )
+          store_field ~ref:new_obj field obj )
     in
     ret new_obj
 
@@ -608,7 +615,7 @@ module Syntax = struct
 
   let aval_operand (addr, _) = PulseArithmetic.AbstractValueOperand addr
 
-  let eval_binop binop (addr1, hist1) (addr2, hist2) : aval model_monad =
+  let binop binop (addr1, hist1) (addr2, hist2) : aval model_monad =
     let* {path} = get_data in
     let addr_res = AbstractValue.mk_fresh () in
     let hist_res = Hist.binop path binop hist1 hist2 in
@@ -620,7 +627,7 @@ module Syntax = struct
     ret (addr_res, hist_res)
 
 
-  let eval_binop_int binop (arg, hist) i : aval model_monad =
+  let binop_int binop (arg, hist) i : aval model_monad =
     let addr_res = AbstractValue.mk_fresh () in
     let* addr_res =
       PulseArithmetic.eval_binop addr_res binop (AbstractValueOperand arg)
@@ -745,7 +752,7 @@ module Syntax = struct
         | None ->
             L.d_printfln "[ocaml model] Closure dynamic type is %a but no implementation was found!"
               Typ.Name.pp type_name ;
-            let* unknown_res = mk_fresh () in
+            let* unknown_res = fresh () in
             ret unknown_res
         | Some resolved_pname ->
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
@@ -760,18 +767,18 @@ module Syntax = struct
                   {exp; typ; arg_payload} )
             in
             let* () = dispatch_call (ret_id, typ) resolved_pname call_args in
-            let* res = eval_read (Exp.Var ret_id) in
+            let* res = read (Exp.Var ret_id) in
             L.d_printfln "[ocaml model] Closure return value is %a." AbstractValue.pp (fst res) ;
             ret res )
     | _ ->
         L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
-        let* unknown_res = mk_fresh () in
+        let* unknown_res = fresh () in
         ret unknown_res
 
 
   module Basic = struct
     (* See internal_new_. We do some crafty unboxing to make the external API nicer *)
-    let alloc_not_null allocator size ~initialize : unit model_monad =
+    let return_alloc_not_null allocator size ~initialize : unit model_monad =
       let* desc = get_desc in
       let model_ model_data astate =
         let<++> astate =

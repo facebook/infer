@@ -42,9 +42,7 @@ let delete_array deleted_arg : model =
 
 let new_ type_exp =
   let open PulseModelsDSL.Syntax in
-  start_named_model "new"
-  @@ let* ret_val = new_ type_exp in
-     assign_ret ret_val
+  start_named_model "new" @@ (new_ type_exp >>= assign_ret)
 
 
 (* TODO: actually allocate an array  *)
@@ -254,9 +252,8 @@ module BasicString = struct
   let constructor_from_constant_dsl (this, this_hist) init_hist : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     let* this_hist' = add_model_call this_hist in
-    let* () =
-      write_deref_field ~ref:(this, this_hist') ~obj:init_hist ModeledField.internal_string
-    in
+    store_field ~ref:(this, this_hist') ModeledField.internal_string init_hist
+    @@>
     let* s_opt = as_constant_string init_hist in
     let* len =
       exec_operation (fun astate ->
@@ -269,7 +266,7 @@ module BasicString = struct
           | None ->
               (AbstractValue.mk_fresh_restricted (), astate) )
     in
-    write_field ~ref:(this, this_hist') ~obj:(len, snd init_hist) ModeledField.string_length
+    write_field ~ref:(this, this_hist') ModeledField.string_length (len, snd init_hist)
 
 
   (** constructor from constant string *)
@@ -282,7 +279,7 @@ module BasicString = struct
     let open PulseModelsDSL.Syntax in
     start_named_model desc
     @@
-    let* init_hist = eval_const_string "" in
+    let* init_hist = string "" in
     constructor_from_constant_dsl this_hist init_hist
 
 
@@ -291,12 +288,10 @@ module BasicString = struct
     start_named_model desc
     @@
     let* this_hist = add_model_call hist in
-    let* src_string = eval_deref_access Read src_hist (FieldAccess ModeledField.internal_string) in
-    let* src_length = eval_access Read src_hist (FieldAccess ModeledField.string_length) in
-    let* () =
-      write_deref_field ~ref:(this, this_hist) ~obj:src_string ModeledField.internal_string
-    in
-    write_field ~ref:(this, this_hist) ~obj:src_length ModeledField.string_length
+    let* src_string = load_access src_hist (FieldAccess ModeledField.internal_string) in
+    let* src_length = access Read src_hist (FieldAccess ModeledField.string_length) in
+    store_field ~ref:(this, this_hist) ModeledField.internal_string src_string
+    @@> write_field ~ref:(this, this_hist) ModeledField.string_length src_length
 
 
   let constructor_rev ~desc init this : model = copy_constructor ~desc this init
@@ -306,7 +301,7 @@ module BasicString = struct
     start_named_model desc
     @@
     let* this_string, this_string_hist =
-      eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+      access Read this_hist (FieldAccess ModeledField.internal_string)
     in
     let* hist = add_model_call this_string_hist in
     assign_ret (this_string, hist)
@@ -315,18 +310,12 @@ module BasicString = struct
   let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) :
       (PulseModelsDSL.aval * PulseModelsDSL.aval) PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    let* backing_ptr =
-      eval_access Read iter_hist (FieldAccess GenericArrayBackedCollection.field)
-    in
-    let* internal_string =
-      eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string)
-    in
-    let* () =
-      exec_command
-        (AbductiveDomain.AddressAttributes.add_one iter
-           (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
-    in
-    ret (backing_ptr, internal_string)
+    let* backing_ptr = access Read iter_hist (FieldAccess GenericArrayBackedCollection.field) in
+    let* internal_string = load_access this_hist (FieldAccess ModeledField.internal_string) in
+    exec_command
+      (AbductiveDomain.AddressAttributes.add_one iter
+         (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
+    @@> ret (backing_ptr, internal_string)
 
 
   let begin_ this_hist iter_hist ~desc : model =
@@ -334,7 +323,7 @@ module BasicString = struct
     start_named_model desc
     @@ let* backing_ptr, (string, hist) = iterator_common this_hist iter_hist in
        let* hist' = add_model_call hist in
-       write_deref ~ref:backing_ptr ~obj:(string, hist')
+       store ~ref:backing_ptr (string, hist')
 
 
   let end_ this_hist iter_hist ~desc : model =
@@ -349,7 +338,7 @@ module BasicString = struct
                   astate ) )
        in
        let* hist' = add_model_call hist in
-       write_deref ~ref:backing_ptr ~obj:(last, hist')
+       store ~ref:backing_ptr (last, hist')
 
 
   let destructor this_hist : model =
@@ -358,7 +347,7 @@ module BasicString = struct
     @@ let* {path; location} = get_data in
        let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
        let* string_addr, string_hist =
-         eval_access Read this_hist (FieldAccess ModeledField.internal_string)
+         access Read this_hist (FieldAccess ModeledField.internal_string)
        in
        let string_hist = Hist.add_event path call_event string_hist in
        exec_partial_command (fun astate ->
@@ -375,18 +364,12 @@ module BasicString = struct
     let open PulseModelsDSL.Syntax in
     start_named_model "std::basic_string::empty()"
     @@
-    let* len = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
-    let* string = eval_deref_access Read this_hist (FieldAccess ModeledField.internal_string) in
+    let* len = access Read this_hist (FieldAccess ModeledField.string_length) in
+    let* string = load_access this_hist (FieldAccess ModeledField.internal_string) in
     let* ret_hist = add_model_call (snd string) in
-    disjuncts
-      [ (let* () = prune_eq_zero len in
-         let* () = prune_eq_string string "" in
-         let* ret_v = mk_int ~hist:ret_hist 1 in
-         assign_ret ret_v )
-      ; (let* () = prune_positive len in
-         let* () = prune_ne_string string "" in
-         let* ret_v = mk_int ~hist:ret_hist 0 in
-         assign_ret ret_v ) ]
+    disj
+      [ prune_eq_zero len @@> prune_eq_string string "" @@> assign_ret @= int ~hist:ret_hist 1
+      ; prune_positive len @@> prune_ne_string string "" @@> assign_ret @= int ~hist:ret_hist 0 ]
 
 
   let length this_hist : model =
@@ -394,7 +377,7 @@ module BasicString = struct
     start_named_model "std::basic_string::length()"
     @@ let* {path; location} = get_data in
        let event = Hist.call_event path location "std::basic_string::length()" in
-       let* length, hist = eval_access Read this_hist (FieldAccess ModeledField.string_length) in
+       let* length, hist = access Read this_hist (FieldAccess ModeledField.string_length) in
        assign_ret (length, Hist.add_event path event hist)
 
 
@@ -701,8 +684,8 @@ module GenericMapCollection = struct
   let return_value_reference_dsl ({FuncArg.arg_payload} as map) : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
-        let* pair = eval_access Read arg_payload pair_access in
-        let* value_ref = eval_access Read pair (pair_second_access key_t value_t) in
+        let* pair = access Read arg_payload pair_access in
+        let* value_ref = access Read pair (pair_second_access key_t value_t) in
         assign_ret value_ref )
 
 
@@ -713,8 +696,8 @@ module GenericMapCollection = struct
 
   let return_it_dsl arg_payload it : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    let* pair = eval_access Read arg_payload pair_access in
-    write_deref ~ref:it ~obj:pair
+    let* pair = access Read arg_payload pair_access in
+    store ~ref:it pair
 
 
   let return_it desc arg_payload it =
@@ -727,22 +710,21 @@ module GenericMapCollection = struct
   let return_it_pair_first_dsl map_payload FuncArg.{arg_payload; typ} :
       unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    let* it = mk_fresh () in
-    let* pair = eval_access Read map_payload pair_access in
-    let* () = write_deref ~ref:it ~obj:pair in
-    write_field ~ref:arg_payload ~obj:it
-      (Fieldname.make (unwrap_pointer_to_struct_type typ) "first")
+    let* it = fresh () in
+    let* pair = access Read map_payload pair_access in
+    store ~ref:it pair
+    @@> write_field ~ref:arg_payload (Fieldname.make (unwrap_pointer_to_struct_type typ) "first") it
 
 
   let reset_backing_fields_dsl ({FuncArg.arg_payload} as map) : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
-        let* first = mk_fresh () in
-        let* second = mk_fresh () in
-        let* pair = mk_fresh () in
-        let* () = write_field ~ref:pair ~obj:first (pair_first_field key_t value_t) in
-        let* () = write_field ~ref:pair ~obj:second (pair_second_field key_t value_t) in
-        write_field ~ref:arg_payload ~obj:pair pair_field )
+        let* first = fresh () in
+        let* second = fresh () in
+        let* pair = fresh () in
+        write_field ~ref:pair (pair_first_field key_t value_t) first
+        @@> write_field ~ref:pair (pair_second_field key_t value_t) second
+        @@> write_field ~ref:arg_payload pair_field pair )
 
 
   let update_last_dsl arg_payload key_payload : unit PulseModelsDSL.model_monad =
@@ -758,8 +740,8 @@ module GenericMapCollection = struct
   let check_and_update_last_dsl arg_payload key_payload : bool PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     let* last_lookup = AddressAttributes.get_last_lookup (fst arg_payload) |> exec_pure_operation in
-    let* () = update_last_dsl arg_payload key_payload in
-    ret (Option.value_map last_lookup ~default:false ~f:(AbstractValue.equal (fst key_payload)))
+    update_last_dsl arg_payload key_payload
+    @@> ret (Option.value_map last_lookup ~default:false ~f:(AbstractValue.equal (fst key_payload)))
 
 
   let constructor map_t classname map =
@@ -773,11 +755,11 @@ module GenericMapCollection = struct
     let open PulseModelsDSL.Syntax in
     Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
         let cause = Invalidation.CppMap (map_t, map_f) in
-        let* pair = eval_access NoAccess arg_payload pair_access in
-        let* () = invalidate_access cause arg_payload pair_access in
-        let* () = invalidate_access cause pair (pair_first_access key_t value_t) in
-        let* () = invalidate_access cause pair (pair_second_access key_t value_t) in
-        reset_backing_fields_dsl map )
+        let* pair = access NoAccess arg_payload pair_access in
+        invalidate_access cause arg_payload pair_access
+        @@> invalidate_access cause pair (pair_first_access key_t value_t)
+        @@> invalidate_access cause pair (pair_second_access key_t value_t)
+        @@> reset_backing_fields_dsl map )
 
 
   let invalidate_references map_t map_f map =
@@ -805,8 +787,7 @@ module GenericMapCollection = struct
     (* We expect the last argument to be the returned iterator. *)
     (* This will only throw if SIL intermediate representation changes. *)
     let it = (List.last_exn args).FuncArg.arg_payload in
-    let* () = invalidate_references_dsl map_t map_f map in
-    return_it_dsl arg_payload it
+    invalidate_references_dsl map_t map_f map @@> return_it_dsl arg_payload it
 
 
   let emplace desc map_t map_f ({FuncArg.arg_payload} as map) args =
@@ -814,8 +795,7 @@ module GenericMapCollection = struct
     start_named_model desc
     @@
     let last_arg = List.last_exn args in
-    let* () = invalidate_references_dsl map_t map_f map in
-    return_it_pair_first_dsl arg_payload last_arg
+    invalidate_references_dsl map_t map_f map @@> return_it_pair_first_dsl arg_payload last_arg
 
 
   let try_emplace ~hinted map_t map_f map args =
@@ -832,8 +812,8 @@ module GenericMapCollection = struct
     let open PulseModelsDSL.Syntax in
     let desc = Format.asprintf "%a::find" Invalidation.pp_map_type map_t in
     start_named_model desc
-    @@ let* () = update_last_dsl arg_payload key_payload in
-       return_it_dsl arg_payload it
+    @@ update_last_dsl arg_payload key_payload
+    @@> return_it_dsl arg_payload it
 
 
   let swap map_t arg_payload other_payload =
@@ -841,24 +821,24 @@ module GenericMapCollection = struct
     let desc = Format.asprintf "%a::swap" Invalidation.pp_map_type map_t in
     start_named_model desc
     @@
-    let* arg_pair = eval_access Read arg_payload pair_access in
-    let* other_pair = eval_access Read other_payload pair_access in
-    let* () = write_field ~ref:arg_payload ~obj:other_pair pair_field in
-    write_field ~ref:other_payload ~obj:arg_pair pair_field
+    let* arg_pair = access Read arg_payload pair_access in
+    let* other_pair = access Read other_payload pair_access in
+    write_field ~ref:arg_payload pair_field other_pair
+    @@> write_field ~ref:other_payload pair_field arg_pair
 
 
   let iterator_star desc it =
     let open PulseModelsDSL.Syntax in
     start_named_model desc
-    @@ let* pair = eval_access Read it Dereference in
+    @@ let* pair = load it in
        assign_ret pair
 
 
   let iterator_copy desc it other =
     let open PulseModelsDSL.Syntax in
     start_named_model desc
-    @@ let* pair = eval_access Read other Dereference in
-       write_deref ~ref:it ~obj:pair
+    @@ let* pair = load other in
+       store ~ref:it pair
 end
 
 let get_cpp_matchers =
