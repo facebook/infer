@@ -403,9 +403,7 @@ module MethodInfo = struct
   let get_hack_kind = function HackInfo {kind} -> Some kind | _ -> None
 end
 
-let is_captured tenv type_name =
-  lookup tenv type_name |> Option.exists ~f:(fun (s : Struct.t) -> not s.dummy)
-
+type resolution_result = ResolvedTo of MethodInfo.t | Unresolved of Typ.Name.Set.t
 
 let resolve_method ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
@@ -414,19 +412,17 @@ let resolve_method ~method_exists tenv class_name proc_name =
   let last_class_visited = ref None in
   let missed_capture_types = ref Typ.Name.Set.empty in
   let rec resolve_name (class_name : Typ.Name.t) =
-    Option.bind (lookup tenv class_name) ~f:(fun ({Struct.methods; supers} as class_struct) ->
-        if
-          (not (Typ.Name.is_class class_name))
-          || (not (Struct.is_not_java_interface class_struct))
-          || Typ.Name.Set.mem class_name !visited
-        then None
-        else (
-          visited := Typ.Name.Set.add class_name !visited ;
-          if Language.curr_language_is Hack && not (is_captured tenv class_name) then
-            (* we do not need to record class names for which [lookup tenv class_name == None] because
-               we assume that all direct super classes of a captured class are declared in Tenv
-               (even if not necessarily properly captured) *)
+    if Typ.Name.Set.mem class_name !visited || not (Typ.Name.is_class class_name) then None
+    else (
+      visited := Typ.Name.Set.add class_name !visited ;
+      match lookup tenv class_name with
+      | None | Some {dummy= true} ->
+          if Language.curr_language_is Hack then
             missed_capture_types := Typ.Name.Set.add class_name !missed_capture_types ;
+          None
+      | Some class_struct when not (Struct.is_not_java_interface class_struct) ->
+          None
+      | Some ({Struct.methods; supers} as class_struct) ->
           let kind =
             MethodInfo.get_kind_from_struct ~last_class_visited:!last_class_visited class_name
               class_struct
@@ -472,10 +468,15 @@ let resolve_method ~method_exists tenv class_name proc_name =
                   (* We currently only support single inheritance for Python so this is straightforward *)
                   supers
             in
-            List.find_map supers_to_search ~f:resolve_name ) )
+            List.find_map supers_to_search ~f:resolve_name )
   in
-  let opt_info = resolve_name class_name in
-  (opt_info, !missed_capture_types)
+  match resolve_name class_name with
+  | _ when not (Typ.Name.Set.is_empty !missed_capture_types) ->
+      Unresolved !missed_capture_types
+  | None ->
+      Unresolved !missed_capture_types
+  | Some method_info ->
+      ResolvedTo method_info
 
 
 let find_cpp_destructor tenv class_name =

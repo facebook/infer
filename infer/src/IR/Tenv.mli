@@ -121,19 +121,21 @@ module MethodInfo : sig
   val get_hack_kind : t -> Hack.kind option
 end
 
+type resolution_result = ResolvedTo of MethodInfo.t | Unresolved of Typ.Name.Set.t
+
 val resolve_method :
      method_exists:(Procname.t -> Procname.t list -> bool)
   -> t
   -> Typ.Name.t
   -> Procname.t
-  -> MethodInfo.t option * Typ.Name.Set.t
-(** [resolve_method ~method_exists tenv class_name procname] return a pair
-    [(info_opt, missed_captures)] where [info_opt] tries to resolve [procname] to a method in
-    [class_name] or its super-classes, that is non-virtual (non-Java-interface method).
-    [missed_captures] is the set of classnames for which the hierarchy traversal would have need to
-    examine its members but the class was not captured. [method_exists adapted_procname methods]
-    should check if [adapted_procname] ([procname] but with its class potentially changed to some
-    [other_class]) is among the [methods] of [other_class]. *)
+  -> resolution_result
+(** [resolve_method ~method_exists tenv class_name procname] returns either [ResolvedTo info] where
+    [info] resolves [procname] to a method in [class_name] or its super-classes, that is non-virtual
+    (non-Java-interface method); or, it returns [Unresolved missed_captures] where [missed_captures]
+    is the set of classnames for which the hierarchy traversal needs to examine its members but
+    which have not been captured. [method_exists adapted_procname methods] should check if
+    [adapted_procname] ([procname] but with its class potentially changed to some [other_class]) is
+    among the [methods] of [other_class]. *)
 
 val resolve_field_info : t -> Typ.Name.t -> Fieldname.t -> Struct.field_info option
 (** [resolve_field_info tenv class_name field] tries to find the first field declaration that

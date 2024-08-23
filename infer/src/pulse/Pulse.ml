@@ -327,7 +327,7 @@ module PulseTransferFunctions = struct
            (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
            (Tenv.MethodInfo.mk_class proc_name, `HackFunctionReference) )
         , no_missed_captures )
-    | Some (dynamic_type_name, source_file_opt) ->
+    | Some (dynamic_type_name, source_file_opt) -> (
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
         L.d_printfln "finding override for dynamic type %a, proc_name %a with sourcefile %a"
@@ -337,11 +337,12 @@ module PulseTransferFunctions = struct
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
-        let opt_proc_name, missed_captures = tenv_resolve_method tenv dynamic_type_name proc_name in
-        L.d_printfln "opt_procname is %a" (Pp.option Tenv.MethodInfo.pp) opt_proc_name ;
-        ( (let+ proc_name = opt_proc_name in
-           (proc_name, `ExactDevirtualization) )
-        , missed_captures )
+        match tenv_resolve_method tenv dynamic_type_name proc_name with
+        | ResolvedTo method_info ->
+            L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
+            (Some (method_info, `ExactDevirtualization), no_missed_captures)
+        | Unresolved missed_captures ->
+            (None, missed_captures) )
     | None ->
         let opt_proc_name, missed_captures =
           if Language.curr_language_is Hack || Language.curr_language_is Python then
@@ -349,7 +350,11 @@ module PulseTransferFunctions = struct
                static resolution so we have to do it here *)
             Procname.get_class_type_name proc_name
             |> Option.value_map ~default:(None, no_missed_captures) ~f:(fun type_name ->
-                   tenv_resolve_method tenv type_name proc_name )
+                   match tenv_resolve_method tenv type_name proc_name with
+                   | ResolvedTo method_info ->
+                       (Some method_info, no_missed_captures)
+                   | Unresolved missed_captures ->
+                       (None, missed_captures) )
           else (Some (Tenv.MethodInfo.mk_class proc_name), no_missed_captures)
         in
         ( (let+ proc_name = opt_proc_name in
@@ -403,7 +408,12 @@ module PulseTransferFunctions = struct
       if is_already_resolved proc_name then (
         L.d_printfln "always_implemented %a" Procname.pp proc_name ;
         (Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
-      else Tenv.resolve_method ~method_exists tenv type_name proc_name
+      else
+        match Tenv.resolve_method ~method_exists tenv type_name proc_name with
+        | ResolvedTo method_info ->
+            (Some method_info, Typ.Name.Set.empty)
+        | Unresolved missed_captures ->
+            (None, missed_captures)
     in
     (* In a Hack trait, try to replace [__self__$static] with the static class name where the
        [use] of the trait was located. This information is stored in the additional [self]

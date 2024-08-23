@@ -467,7 +467,13 @@ module Syntax = struct
     (* Remark: this is a simplified resolution that will work well for closure resolution,
        but does not implement all the steps proposed for regular virtual calls in Pulse.ml *)
     let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
-    let opt_info, _ = Tenv.resolve_method ~method_exists tenv typ_name proc_name in
+    let opt_info =
+      match Tenv.resolve_method ~method_exists tenv typ_name proc_name with
+      | ResolvedTo method_info ->
+          Some method_info
+      | Unresolved _ ->
+          None
+    in
     (* warning: we skipped missed capture informations here *)
     let opt_resolved_proc_name = Option.map opt_info ~f:Tenv.MethodInfo.get_procname in
     ret opt_resolved_proc_name data astate

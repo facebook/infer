@@ -432,12 +432,12 @@ let method_exists right_proc_name methods =
 
 
 let resolve_method tenv class_name proc_name =
-  match Tenv.resolve_method ~method_exists tenv class_name proc_name |> fst with
-  | None ->
+  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
+  | Unresolved _ ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;
       proc_name
-  | Some method_info ->
+  | ResolvedTo method_info ->
       Tenv.MethodInfo.get_procname method_info
 
 
