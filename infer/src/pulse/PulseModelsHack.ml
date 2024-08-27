@@ -303,6 +303,21 @@ let int_to_hack_int n : DSL.aval DSL.model_monad =
   aval_to_hack_int @= int n
 
 
+let zero_test_to_hack_bool v : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* zero = int 0 in
+  let* internal_val = binop Binop.Eq v zero in
+  aval_to_hack_bool internal_val
+
+
+let hhbc_is_type_null v : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let* ret_val = zero_test_to_hack_bool v in
+  assign_ret ret_val
+
+
 let hack_string_dsl str_val : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* ret_val = constructor hack_string_type_name [("val", str_val)] in
@@ -973,12 +988,9 @@ let hack_unconstrained_int : model =
 let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   (* this operator is always run on a HackBool argument (nonnull type) *)
-  prune_ne_zero arg
-  @@>
+  let* () = prune_ne_zero arg in
   let* int = load_access arg (FieldAccess bool_val_field) in
-  let arg_is_true = prune_ne_zero int @@> make_hack_bool false in
-  let arg_is_false = prune_eq_zero int @@> make_hack_bool true in
-  disj [arg_is_true; arg_is_false]
+  zero_test_to_hack_bool int
 
 
 let hhbc_not arg : model =
@@ -1612,6 +1624,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_concat" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_concat
   ; -"$builtins" &:: "hhbc_cmp_le" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_le
   ; -"$builtins" &:: "hack_is_true" <>$ capt_arg_payload $--> hack_is_true
+  ; -"$builtins" &:: "hhbc_is_type_null" <>$ capt_arg_payload $--> hhbc_is_type_null
   ; -"$builtins" &:: "hhbc_is_type_str" <>$ capt_arg_payload $--> hhbc_is_type_str
   ; -"$builtins" &:: "hhbc_is_type_bool" <>$ capt_arg_payload $--> hhbc_is_type_bool
   ; -"$builtins" &:: "hhbc_is_type_int" <>$ capt_arg_payload $--> hhbc_is_type_int

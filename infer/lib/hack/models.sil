@@ -67,21 +67,6 @@ define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
     ret $builtins.hack_make_false()
 }
 
-define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
-  #entry:
-    jmp tlab, flab
-
-  #tlab:
-    n0: *HackMixed = load &o
-    prune __sil_ne(n0, 0)
-    ret $builtins.hack_make_false()
-
-  #flab:
-    n0: *HackMixed = load &o
-    prune __sil_lnot(__sil_ne(n0, 0))
-    ret $builtins.hack_make_true()
-}
-
 define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_random_bool()
