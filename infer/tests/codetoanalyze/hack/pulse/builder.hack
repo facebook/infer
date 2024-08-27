@@ -24,11 +24,16 @@ class NoBuilderSuffix implements TestBuilderBase {
 }
 
 <<__ConsistentConstruct>>
-class MyBuilder {
+abstract class AbstractBuilder {
+  abstract public function __construct(int $foo);
+}
+
+<<__ConsistentConstruct>>
+class MyBuilder extends AbstractBuilder {
   private int $a = 0;
   private int $b = 0;
 
-  public function __construct() {}
+  public function __construct(int $foo) {}
 
   public function setA(int $a): MyBuilder {
     $this->a = $a;
@@ -51,17 +56,17 @@ class MyBuilder {
 
 class BuilderTester {
   public static function builderUserOK(): void {
-    $b = new MyBuilder();
+    $b = new MyBuilder(0);
     $b->setA(42)->setB(97)->saveX();
   }
 
   public static function builderUserBad(): void {
-    $b = new MyBuilder();
+    $b = new MyBuilder(0);
     $b->setA(42)->setB(97);
   }
 
   public static function vectorOfBuildersOK(): void {
-    $v = vec[new MyBuilder(), new MyBuilder()];
+    $v = vec[new MyBuilder(0), new MyBuilder(1)];
     foreach ($v as $b) {
       $b->setA(42);
     }
@@ -72,7 +77,7 @@ class BuilderTester {
 
   // Would be an FP except for deep_clean_hack_value
   public static function vectorOfBuilders2OK(): void {
-    $v = vec[new MyBuilder(), new MyBuilder(), new MyBuilder()];
+    $v = vec[new MyBuilder(0), new MyBuilder(1), new MyBuilder(2)];
     foreach ($v as $b) {
       $b->setA(42);
     }
@@ -99,23 +104,61 @@ class BuilderTester {
 }
 
 // In real code, builders are often created via some icky reflection
+// so see that works
 final class BuilderTester2 {
   const type TB = MyBuilder;
 
-  public static function create(): this::TB {
+  public static function create(int $arg): this::TB {
     $builder_cls = type_structure(static::class, 'TB')['classname'];
-    return new $builder_cls();
+    return new $builder_cls($arg);
   }
 
   public static function testCreateOK(): void {
-    $b = static::create();
+    $b = static::create(0);
     $b->setA(42);
     $b->saveX();
   }
 
   public static function testCreateBad(): void {
-    $b = static::create();
+    $b = static::create(0);
     $b->setA(42);
   }
 
+}
+
+// Now wrap that pattern in a trait and a bit of hierarchy to make it even harder to spot
+abstract class MutatorRealBase {
+  abstract const type TB as AbstractBuilder;
+}
+
+abstract class MutatorBase extends MutatorRealBase {
+  use MutatorTrait;
+}
+
+trait MutatorTrait {
+
+  require extends MutatorRealBase;
+
+  public static function create(int $arg): this::TB {
+    $builder_cls = type_structure(static::class, 'TB')['classname'];
+    return new $builder_cls($arg);
+  }
+}
+
+final class ConcreteMutator extends MutatorBase {
+  const type TB = MyBuilder;
+}
+
+final class BuilderTester3 {
+
+  public static function testCreateOK(): void {
+    $b = ConcreteMutator::create(42);
+    $b->setA(42);
+    $b->saveX();
+  }
+
+  public static function testCreateBad(): void {
+    $b = ConcreteMutator::create(42);
+    $b->setA(42);
+  }
 }
