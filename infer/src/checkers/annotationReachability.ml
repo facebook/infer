@@ -166,7 +166,7 @@ let get_issue_type ~src ~snk =
 
 
 let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~src ~snk models loc
-    trace snk_pname call_loc =
+    trace snk_pname =
   let get_original_pname annot pname =
     find_override_with_annot annot models tenv pname |> Option.value ~default:pname
   in
@@ -222,8 +222,7 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
         (get_class_details snk snk_pname)
   in
   let issue_type = get_issue_type ~src ~snk in
-  let final_trace = List.rev (update_trace call_loc trace) in
-  Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
+  Reporting.log_issue proc_desc err_log ~loc ~ltr:trace AnnotationReachability issue_type
     description
 
 
@@ -231,20 +230,21 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     sink_map models =
   let rec loop fst_call_loc visited_pnames trace (callee_pname, call_loc) =
     let is_end_of_stack proc_name = method_overrides_annot snk models tenv proc_name in
+    let callee_def_loc =
+      Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
+        (Attributes.load callee_pname)
+    in
+    let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
     if is_end_of_stack callee_pname then
-      report_src_to_snk_path analysis_data ~src ~snk models fst_call_loc trace callee_pname call_loc
+      report_src_to_snk_path analysis_data ~src ~snk models fst_call_loc (List.rev new_trace)
+        callee_pname
     else if
       Config.annotation_reachability_minimize_sources
       && method_overrides_annot src models tenv callee_pname
     then (* Found a source in the middle, this path is not minimal *)
       ()
     else
-      let callee_def_loc =
-        Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
-          (Attributes.load callee_pname)
-      in
       let next_calls = lookup_annotation_calls analysis_data snk callee_pname in
-      let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_callees, updated_callees =
         Domain.SinkMap.fold
           (fun _ call_sites ((unseen, visited) as accu) ->
