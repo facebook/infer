@@ -43,7 +43,11 @@ let should_ignore_modified_by_hack_sinit trace =
   if Language.curr_language_is Hack then
     let trace = ImpurityDomain.get_pulse_trace trace in
     Trace.exists_call trace ~f:(fun call ->
-        match call with Call proc_name -> Procname.is_hack_sinit proc_name | _ -> false )
+        match call with
+        | Call proc_name ->
+            Procname.is_hack_sinit proc_name || Procname.is_hack_constinit proc_name
+        | _ ->
+            false )
   else false
 
 

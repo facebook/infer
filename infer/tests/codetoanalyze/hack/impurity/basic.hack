@@ -7,6 +7,8 @@ namespace Basic;
 
 class Object {
 
+  const type T = int;
+
   private static int $GLOBAL = 42;
 
   private int $a;
