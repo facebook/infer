@@ -31,6 +31,7 @@ module Attribute = struct
     | ObjCAlloc
     | HackAsync
     | HackBuilderResource of HackClassName.t
+    | FileDescriptor
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -56,6 +57,8 @@ module Attribute = struct
         F.fprintf fmt "hack async"
     | HackBuilderResource class_name ->
         F.fprintf fmt "hack builder %a" HackClassName.pp class_name
+    | FileDescriptor ->
+        F.pp_print_string fmt "file descriptor"
 
 
   type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@compare.ignore] [@equal.ignore])}
@@ -658,7 +661,8 @@ module Attribute = struct
     | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some (CFree, _)
     | CppNew, Some (CppDelete, _)
     | CppNewArray, Some (CppDeleteArray, _)
-    | ObjCAlloc, _ ->
+    | ObjCAlloc, _
+    | FileDescriptor, Some (FClose, _) ->
         true
     | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ | HackBuilderResource _, _ ->
         is_released
@@ -668,6 +672,8 @@ module Attribute = struct
 
   let is_hack_resource allocator =
     match allocator with
+    | HackAsync | HackBuilderResource _ ->
+        true
     | CMalloc
     | CustomMalloc _
     | CRealloc
@@ -676,10 +682,9 @@ module Attribute = struct
     | CppNewArray
     | ObjCAlloc
     | JavaResource _
-    | CSharpResource _ ->
+    | CSharpResource _
+    | FileDescriptor ->
         false
-    | HackAsync | HackBuilderResource _ ->
-        true
 
 
   let filter_unreachable subst f_keep attr =

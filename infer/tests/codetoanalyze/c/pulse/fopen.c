@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void FN_no_fopen_check_getc_bad() {
+void no_fopen_check_getc_bad() {
   FILE* f;
   int i;
   f = fopen("this_file_doesnt_exist", "r");
@@ -28,7 +28,17 @@ void fopen_check_getc_ok() {
   }
 }
 
-void FN_no_fopen_check_fgetc_bad() {
+void fopen_no_fclose_bad() {
+  FILE* f;
+  int i;
+  f = fopen("some_file", "r");
+  if (f) {
+    i = getc(f);
+    printf("i =%i\n", i);
+  }
+}
+
+void no_fopen_check_fgetc_bad() {
   FILE* f;
   int i;
   f = fopen("this_file_doesnt_exist", "r");
@@ -48,7 +58,7 @@ void fopen_check_fgetc_ok() {
   }
 }
 
-void FN_no_fopen_check_ungetc_bad() {
+void no_fopen_check_ungetc_bad() {
   FILE* f;
   f = fopen("this_file_doesnt_exist", "r");
   int i = ungetc(10, f);
@@ -64,7 +74,7 @@ void fopen_check_ungetc_ok() {
   }
 }
 
-void FN_no_fopen_check_fputs_bad() {
+void no_fopen_check_fputs_bad() {
   FILE* f;
   f = fopen("this_file_doesnt_exist", "r");
   fputs("blablabla", f);
@@ -81,7 +91,7 @@ void fopen_check_fputs_ok() {
   }
 }
 
-void FN_no_fopen_check_fputc_bad() {
+void no_fopen_check_fputc_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -99,7 +109,7 @@ void fopen_check_fputc_ok() {
   }
 }
 
-void FN_no_fopen_check_putc_bad() {
+void no_fopen_check_putc_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -117,7 +127,7 @@ void fopen_check_putc_ok() {
   }
 }
 
-void FN_no_fopen_check_fseeks_bad() {
+void no_fopen_check_fseek_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -135,7 +145,7 @@ void fopen_check_fseek_ok() {
   }
 }
 
-void FN_no_fopen_check_ftell_bad() {
+void no_fopen_check_ftell_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -153,7 +163,7 @@ void fopen_check_ftell_ok() {
   }
 }
 
-void FN_no_fopen_check_fgets_bad() {
+void no_fopen_check_fgets_bad() {
   FILE* f;
   char str[60];
 
@@ -173,7 +183,7 @@ void fopen_check_fgets_ok() {
   }
 }
 
-void FN_no_fopen_check_rewind_bad() {
+void no_fopen_check_rewind_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -191,7 +201,7 @@ void fopen_check_rewind_ok() {
   }
 }
 
-void FN_no_fopen_check_fileno_bad() {
+void no_fopen_check_fileno_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -209,7 +219,7 @@ void fopen_check_fileno_ok() {
   }
 }
 
-void FN_no_fopen_check_clearerr_bad() {
+void no_fopen_check_clearerr_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -227,7 +237,7 @@ void fopen_check_clearerr_ok() {
   }
 }
 
-void FN_no_fopen_check_ferror_bad() {
+void no_fopen_check_ferror_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -245,7 +255,7 @@ void fopen_check_ferror_ok() {
   }
 }
 
-void FN_no_fopen_check_feof_bad() {
+void no_fopen_check_feof_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -263,7 +273,7 @@ void fopen_check_feof_ok() {
   }
 }
 
-void FN_no_fopen_check_fprintf_bad() {
+void no_fopen_check_fprintf_bad() {
   FILE* f;
 
   f = fopen("this_file_doesnt_exist", "r");
@@ -281,7 +291,7 @@ void fopen_check_fprintf_ok() {
   }
 }
 
-void FN_no_fopen_check_vfprintf_bad() {
+void no_fopen_check_vfprintf_bad() {
   FILE* f;
   va_list arg;
 
@@ -301,7 +311,7 @@ void fopen_check_vfprintf_ok() {
   }
 }
 
-void FN_no_fopen_check_fgetpos_bad() {
+void no_fopen_check_fgetpos_bad() {
   FILE* f;
   fpos_t position;
 
@@ -321,7 +331,7 @@ void fopen_check_fgetpos_ok() {
   }
 }
 
-void FN_no_fopen_check_fsetpos_bad() {
+void no_fopen_check_fsetpos_bad() {
   FILE* f;
   fpos_t position;
 

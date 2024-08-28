@@ -29,6 +29,7 @@ type allocator =
   | ObjCAlloc
   | HackAsync
   | HackBuilderResource of HackClassName.t
+  | FileDescriptor
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit

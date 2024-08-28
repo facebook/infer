@@ -156,6 +156,8 @@ let describe_allocation fmt = function
       F.pp_print_string fmt "async call"
   | HackBuilderResource class_name ->
       F.fprintf fmt "constructor `%a()`" HackClassName.pp class_name
+  | Memory FileDescriptor ->
+      F.pp_print_string fmt "`fopen()`"
   | Memory allocator ->
       F.fprintf fmt "`%a`" Attribute.pp_allocator allocator
 
@@ -167,12 +169,14 @@ let resource_type_s = function
       "awaitable"
   | HackBuilderResource _ ->
       "builder object"
+  | Memory FileDescriptor ->
+      "file descriptor"
   | Memory _ ->
       "memory"
 
 
 let resource_closed_s = function
-  | CSharpClass _ | JavaClass _ ->
+  | CSharpClass _ | JavaClass _ | Memory FileDescriptor ->
       "closed"
   | HackAsync ->
       "awaited"
@@ -952,6 +956,7 @@ let invalidation_titles (invalidation : Invalidation.t) =
   | CppDelete
   | CppDeleteArray
   | EndIterator
+  | FClose
   | GoneOutOfScope _
   | OptionalEmpty
   | StdVector _
@@ -1195,6 +1200,8 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
+    | FileDescriptor ->
+        IssueType.pulse_resource_leak
     | JavaResource _ | CSharpResource _ | HackAsync | HackBuilderResource _ | ObjCAlloc ->
         L.die InternalError
           "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \

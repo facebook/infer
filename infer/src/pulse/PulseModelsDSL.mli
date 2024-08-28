@@ -20,6 +20,8 @@ type aval = AbstractValue.t * ValueHistory.t
 module Syntax : sig
   module ModeledField = PulseOperations.ModeledField
 
+  val to_aval : ValueOrigin.t -> aval
+
   (** {2 Polymorphic Operations} *)
 
   val ( let* ) : 'a model_monad -> ('a -> 'b model_monad) -> 'b model_monad
@@ -30,6 +32,10 @@ module Syntax : sig
 
   val ( @@> ) : unit model_monad -> 'a model_monad -> 'a model_monad
   (** sequential composition *)
+
+  val compose1 : ('a -> model) -> ('a -> model) -> 'a -> model
+
+  val compose2 : ('a -> 'b -> model) -> ('a -> 'b -> model) -> 'a -> 'b -> model
 
   val ret : 'a -> 'a model_monad
 
@@ -115,6 +121,9 @@ module Syntax : sig
   val add_static_type : Typ.name -> aval -> unit model_monad
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
+
+  val check_valid :
+    ?must_be_valid_reason:Invalidation.must_be_valid_reason -> ValueOrigin.t -> unit model_monad
 
   val binop : Binop.t -> aval -> aval -> aval model_monad
 
@@ -208,6 +217,8 @@ module Syntax : sig
 
   val as_constant_string : aval -> string option model_monad
 
+  val null : aval model_monad
+
   (** {2 Tenv operations} *)
 
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
@@ -238,6 +249,8 @@ module Syntax : sig
   module Basic : sig
     val return_alloc_not_null :
       Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
+
+    val free : Invalidation.t -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t -> unit model_monad
   end
 end
 

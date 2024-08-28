@@ -31,6 +31,8 @@ and 'a execution =
 module Syntax = struct
   module ModeledField = PulseOperations.ModeledField
 
+  let to_aval = ValueOrigin.addr_hist
+
   let ret (a : 'a) : 'a model_monad =
    fun _data astate non_disj -> ([Ok (ContinueProgram (a, astate))], non_disj)
 
@@ -188,6 +190,14 @@ module Syntax = struct
     start_model_ (ModelName data.callee_procname) monad data astate non_disj
 
 
+  let compose1 model1 model2 arg =
+    start_model @@ lift_to_monad (model1 arg) @@> lift_to_monad (model2 arg)
+
+
+  let compose2 model1 model2 arg1 arg2 =
+    start_model @@ lift_to_monad (model1 arg1 arg2) @@> lift_to_monad (model2 arg1 arg2)
+
+
   let disj (list : 'a model_monad list) : 'a model_monad =
    fun data astate non_disj ->
     NonDisjDomain.bind (list, non_disj) ~f:(fun monad non_disj -> monad data astate non_disj)
@@ -271,6 +281,19 @@ module Syntax = struct
     ret (v, hist) (desc, data) astate
 
 
+  let null : aval model_monad =
+    let* {path; location} = get_data in
+    let* v, hist = int 0 in
+    let null_deref = Invalidation.ConstantDereference IntLit.zero in
+    let aval =
+      (v, ValueHistory.sequence (Invalidated (null_deref, location, path.timestamp)) hist)
+    in
+    let* () =
+      PulseOperations.invalidate path UntraceableAccess location null_deref aval |> exec_command
+    in
+    ret aval
+
+
   let get_known_fields (v, _) =
     exec_pure_operation (fun astate ->
         let res =
@@ -303,6 +326,13 @@ module Syntax = struct
         L.die InternalError "call_model_and_get_result: the model did not assign ret_id"
     | Some aval ->
         ret aval
+
+
+  let check_valid ?must_be_valid_reason vo : unit model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.check_addr_access path ?must_be_valid_reason NoAccess location
+      (ValueOrigin.addr_hist vo)
+    >> sat |> exec_partial_command
 
 
   let access access_mode aval access : aval model_monad =
@@ -788,6 +818,10 @@ module Syntax = struct
         astate
       in
       lift_to_monad (lift_model model_)
+
+
+    let free invalidation func_arg : unit model_monad =
+      Basic.free_or_delete `Free invalidation func_arg |> lift_to_monad
   end
 end
 

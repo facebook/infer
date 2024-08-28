@@ -94,6 +94,7 @@ type t =
   | CppDelete
   | CppDeleteArray
   | EndIterator
+  | FClose
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
@@ -151,6 +152,9 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.use_after_delete ~latent
   | EndIterator ->
       IssueType.vector_invalidation ~latent
+  | FClose ->
+      (* TODO: this probably deserves its own issue type *)
+      IssueType.use_after_free ~latent
   | GoneOutOfScope _ ->
       IssueType.use_after_lifetime ~latent
   | OptionalEmpty ->
@@ -177,6 +181,8 @@ let describe f cause =
       F.pp_print_string f "was invalidated by `delete[]`"
   | EndIterator ->
       F.pp_print_string f "is pointed to by the `end()` iterator"
+  | FClose ->
+      F.pp_print_string f "was closed with `fclose()`"
   | GoneOutOfScope (pvar, typ) ->
       let pp_var f pvar =
         if Pvar.is_cpp_temporary pvar then
@@ -216,6 +222,8 @@ let pp f invalidation =
       F.fprintf f "CppDelete(%a)" describe invalidation
   | EndIterator | GoneOutOfScope _ | OptionalEmpty ->
       describe f invalidation
+  | FClose ->
+      F.fprintf f "FClose(%a)" describe invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
   | CppMap _ ->
