@@ -142,9 +142,9 @@ let lookup_annotation_calls {InterproceduralAnalysis.analyze_dependency} annot p
   |> Option.value ~default:Domain.SinkMap.empty
 
 
-let update_trace level loc trace =
+let update_trace level loc description trace =
   if Location.equal loc Location.dummy then trace
-  else Errlog.make_trace_element level loc "" [] :: trace
+  else Errlog.make_trace_element level loc description [] :: trace
 
 
 let str_of_pname ?(withclass = false) pname =
@@ -229,13 +229,21 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} ~s
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ~src ~snk
     sink_map models =
   let rec loop fst_call_loc visited_pnames trace (callee_pname, call_loc) =
-    let is_end_of_stack proc_name = method_overrides_annot snk models tenv proc_name in
+    let end_of_stack = method_overrides_annot snk models tenv callee_pname in
     let callee_def_loc =
       Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
         (Attributes.load callee_pname)
     in
-    let new_trace = update_trace 1 call_loc trace |> update_trace 0 callee_def_loc in
-    if is_end_of_stack callee_pname then
+    let new_trace =
+      let callee_str = str_of_pname callee_pname in
+      let call_desc = "calls " ^ callee_str in
+      let def_desc =
+        callee_str ^ " defined here"
+        ^ if end_of_stack then ", marked as sink @" ^ snk.Annot.class_name else ""
+      in
+      update_trace 1 call_loc call_desc trace |> update_trace 0 callee_def_loc def_desc
+    in
+    if end_of_stack then
       report_src_to_snk_path analysis_data ~src ~snk models fst_call_loc (List.rev new_trace)
         callee_pname
     else if
@@ -263,13 +271,18 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     let call_site = CallSite.make (Procdesc.get_proc_name proc_desc) (Procdesc.get_loc proc_desc) in
     CallSite.loc call_site
   in
+  let source_desc =
+    "Method "
+    ^ str_of_pname (Procdesc.get_proc_name proc_desc)
+    ^ ", marked as source @" ^ src.Annot.class_name
+  in
   Domain.SinkMap.iter
     (fun _ call_sites ->
       try
         let fst_call_site = Domain.CallSites.min_elt call_sites in
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
-        let start_trace = update_trace 0 source_loc [] in
+        let start_trace = update_trace 0 source_loc source_desc [] in
         loop fst_call_loc Procname.Set.empty start_trace (fst_callee_pname, fst_call_loc)
       with Caml.Not_found -> () )
     sink_map
