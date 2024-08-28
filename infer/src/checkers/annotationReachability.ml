@@ -142,9 +142,9 @@ let lookup_annotation_calls {InterproceduralAnalysis.analyze_dependency} annot p
   |> Option.value ~default:Domain.SinkMap.empty
 
 
-let update_trace loc trace =
+let update_trace level loc trace =
   if Location.equal loc Location.dummy then trace
-  else Errlog.make_trace_element 0 loc "" [] :: trace
+  else Errlog.make_trace_element level loc "" [] :: trace
 
 
 let str_of_pname ?(withclass = false) pname =
@@ -234,7 +234,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
         (Attributes.load callee_pname)
     in
-    let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
+    let new_trace = update_trace 1 call_loc trace |> update_trace 0 callee_def_loc in
     if is_end_of_stack callee_pname then
       report_src_to_snk_path analysis_data ~src ~snk models fst_call_loc (List.rev new_trace)
         callee_pname
@@ -259,14 +259,17 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       in
       List.iter ~f:(loop fst_call_loc updated_callees new_trace) unseen_callees
   in
-  let call_site = CallSite.make (Procdesc.get_proc_name proc_desc) (Procdesc.get_loc proc_desc) in
+  let source_loc =
+    let call_site = CallSite.make (Procdesc.get_proc_name proc_desc) (Procdesc.get_loc proc_desc) in
+    CallSite.loc call_site
+  in
   Domain.SinkMap.iter
     (fun _ call_sites ->
       try
         let fst_call_site = Domain.CallSites.min_elt call_sites in
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
-        let start_trace = update_trace (CallSite.loc call_site) [] in
+        let start_trace = update_trace 0 source_loc [] in
         loop fst_call_loc Procname.Set.empty start_trace (fst_callee_pname, fst_call_loc)
       with Caml.Not_found -> () )
     sink_map
