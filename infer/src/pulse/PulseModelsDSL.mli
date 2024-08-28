@@ -9,6 +9,7 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+open PulseModelsImport
 
 type 'a model_monad
 
@@ -75,7 +76,7 @@ module Syntax : sig
 
   val apply_hack_closure : aval -> aval list -> aval model_monad
 
-  val get_data : PulseModelsImport.model_data model_monad
+  val get_data : model_data model_monad
 
   val add_model_call : ValueHistory.t -> ValueHistory.t model_monad
 
@@ -83,15 +84,15 @@ module Syntax : sig
 
   val disj : 'a model_monad list -> 'a model_monad
 
-  val start_model : unit model_monad -> PulseModelsImport.model
+  val start_model : unit model_monad -> model
   (** get a model from a disjunctive model_monad *)
 
-  val start_named_model : string -> unit model_monad -> PulseModelsImport.model
+  val start_named_model : string -> unit model_monad -> model
 
-  val lift_to_monad : PulseModelsImport.model -> unit model_monad
-  (** beware that the model may modify the [PulseModelsImport.model_data.ret] field *)
+  val lift_to_monad : model -> unit model_monad
+  (** beware that the model may modify the [model_data.ret] field *)
 
-  val lift_to_monad_and_get_result : PulseModelsImport.model -> aval model_monad
+  val lift_to_monad_and_get_result : model -> aval model_monad
   (** apply the model and return its result. fails if the model did not assign the reserved
       [model_data.ret] variable. *)
 
@@ -241,10 +242,7 @@ module Syntax : sig
 end
 
 val unsafe_to_astate_transformer :
-     'a model_monad
-  -> CallEvent.t * PulseModelsImport.model_data
-  -> astate
-  -> ('a * astate) sat_unsat_t
+  'a model_monad -> CallEvent.t * model_data -> astate -> ('a * astate) sat_unsat_t
 (** warning: the transformation will fail if the result of the computation is not a single abstract
     state with no error and it ignores the non-disjunctive state. You should think twice before
     using it... *)
