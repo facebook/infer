@@ -236,7 +236,9 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     in
     let new_trace =
       let callee_str = str_of_pname callee_pname in
-      let call_desc = "calls " ^ callee_str in
+      let call_desc =
+        (if is_dummy_field_pname callee_pname then "accesses " else "calls ") ^ callee_str
+      in
       let def_desc =
         callee_str ^ " defined here"
         ^ if end_of_stack then ", marked as sink @" ^ snk.Annot.class_name else ""
