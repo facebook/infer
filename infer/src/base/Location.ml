@@ -25,6 +25,8 @@ let none file = {line= -1; col= -1; file; macro_file_opt= None; macro_line= -1}
 
 let dummy = none (SourceFile.invalid __FILE__)
 
+let is_dummy loc = equal dummy loc
+
 let pp_line f loc = F.fprintf f "line %d" loc.line
 
 (** Pretty print a location *)
