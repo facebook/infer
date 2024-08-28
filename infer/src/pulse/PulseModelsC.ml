@@ -176,14 +176,29 @@ include struct
   let fgets str stream : model =
     start_model @@ check_valid stream @@> check_valid str
     @@> disj [assign_ret @= null; assign_ret (to_aval str)]
+    @@> data_dependency str [str; stream]
 
 
   let fopen path mode : model =
     start_model @@ check_valid path @@> check_valid mode @@> ret_alloc_or_null FileDescriptor
+    @@> data_dependency_to_ret [path]
+
+
+  let fprintf stream format args =
+    start_model @@ check_valid stream @@> check_valid format
+    @@> data_dependency stream (format :: args)
+    @@> assign_ret (* pretend [fprintf] always succeeds *) @= fresh_nonneg ()
+
+
+  let fputs s stream =
+    start_model @@ check_valid stream @@> check_valid s @@> data_dependency stream [s]
+    @@> assign_ret (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
 
 
   let putc c stream : model =
-    start_model @@ check_valid stream @@> disj [assign_ret @= int (-1); assign_ret (to_aval c)]
+    start_model @@ check_valid stream
+    @@> disj [assign_ret @= int (-1); assign_ret (to_aval c)]
+    @@> data_dependency stream [c]
 end
 
 let matchers : matcher list =
@@ -194,8 +209,10 @@ let matchers : matcher list =
         let s = Procname.to_string proc_name in
         Str.string_match r s 0 )
   in
+  let rev_compose1 model2 model1 = compose1 model1 model2 in
   let ignore_arg model _arg = model in
   let ignore_args2 model _arg1 _arg2 = model in
+  let taint_ret_from_arg arg = start_model @@ data_dependency_to_ret [arg] in
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
@@ -207,17 +224,17 @@ let matchers : matcher list =
   ; -"fclose" <>$ capt_arg $--> fclose
   ; -"feof" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"ferror" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"fgetc" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"fgetc" <>$ capt_arg_payload
+    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
   ; -"fgetpos" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fgetpos" <>$ capt_arg_payload $+ capt_arg_payload $--> fgetpos
   ; -"fgets" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> fgets
   ; -"fileno" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"fopen" <>$ capt_arg_payload $+ capt_arg_payload $--> fopen
-  ; -"fprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"fprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
   ; -"fputc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
-  ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload $--> fputs
   ; -"fseek" <>$ capt_arg_payload $+ any_arg $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fsetpos" <>$ capt_arg_payload $+ any_arg
@@ -225,13 +242,14 @@ let matchers : matcher list =
   ; -"fsetpos" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"ftell" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
-  ; -"getc" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"getc" <>$ capt_arg_payload
+    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
   ; -"gets" <>$ capt_arg_payload $--> gets
   ; -"printf" &--> start_model @@ assign_ret @= fresh ()
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"vfprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret) ]
+  ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf ]
   @ ( [ ( +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
         $--> if Config.pulse_unsafe_malloc then malloc_not_null else malloc )

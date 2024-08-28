@@ -312,6 +312,12 @@ module Syntax = struct
     PulseOperations.read_id ret_id |> exec_pure_operation
 
 
+  let read_ret_origin : ValueOrigin.t model_monad =
+    let* {path; location; ret= ret_id, _} = get_data in
+    PulseOperations.eval_to_value_origin path NoAccess location (Var ret_id)
+    |> exec_partial_operation
+
+
   let remove_ret_binding : unit model_monad =
     let* {ret= ret_id, _} = get_data in
     AbductiveDomain.Stack.remove_vars [Var.of_id ret_id] |> exec_command
@@ -541,13 +547,23 @@ module Syntax = struct
     PulseOperations.allocate attr location addr |> exec_command
 
 
-  let fresh ?more () : aval model_monad =
+  let fresh_ var_type ?more () : aval model_monad =
     let* {path} = get_data in
-    let addr = AbstractValue.mk_fresh () in
+    let addr =
+      match var_type with
+      | `Unrestricted ->
+          AbstractValue.mk_fresh ()
+      | `NonNegative ->
+          AbstractValue.mk_fresh_restricted ()
+    in
     let* event = get_event ?more () in
     let hist = Hist.single_event path event in
     ret (addr, hist)
 
+
+  let fresh ?more () = fresh_ `Unrestricted ?more ()
+
+  let fresh_nonneg ?more () = fresh_ `NonNegative ?more ()
 
   let write_field ~ref field obj : unit model_monad =
     let* {path; location} = get_data in
@@ -665,6 +681,17 @@ module Syntax = struct
       |> exec_partial_operation
     in
     ret (addr_res, hist)
+
+
+  let data_dependency dest sources =
+    let* {path; location} = get_data in
+    let* desc = get_desc in
+    PulseTaintOperations.propagate_to path location InternalModel dest sources desc |> exec_command
+
+
+  let data_dependency_to_ret sources =
+    let* ret = read_ret_origin in
+    data_dependency ret sources
 
 
   let prune_binop binop operand1 operand2 =

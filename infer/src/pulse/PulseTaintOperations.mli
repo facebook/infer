@@ -66,3 +66,13 @@ val dedup_reports :
   -> ('a ExecutionDomain.base_t, AccessResult.error) pulse_result list
 
 val procedure_matches_source : Tenv.t -> Procname.t -> bool
+
+val propagate_to :
+     PathContext.t
+  -> Location.t
+  -> Attribute.taint_propagation_reason
+  -> ValueOrigin.t
+  -> ValueOrigin.t list
+  -> CallEvent.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t

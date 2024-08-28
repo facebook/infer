@@ -350,3 +350,56 @@ void fopen_check_fsetpos_ok() {
     fclose(f);
   }
 }
+
+char* string_source();
+void sink_string(char* s);
+void sink_int(int c);
+
+// excepting 3 taint flows
+void file_operations_propagate_taint_bad() {
+  char* tainted = string_source();
+  FILE* file = fopen(tainted, "r");
+  if (!file) {
+    return;
+  }
+  char s[256];
+  char* t = fgets(s, 256, file);
+  sink_string(t);
+  sink_int(fgetc(file));
+  sink_int(getc(file));
+  sink_int(fileno(file)); // benign
+  fclose(file);
+}
+
+void fprintf_propagate_taint_bad() {
+  char* tainted = string_source();
+  FILE* file = fopen("some_file", "r");
+  if (!file) {
+    return;
+  }
+  fprintf(file, "%s", tainted);
+  sink_int(getc(file));
+  fclose(file);
+}
+
+void fputs_propagate_taint_bad() {
+  char* tainted = string_source();
+  FILE* file = fopen("some_file", "r");
+  if (!file) {
+    return;
+  }
+  fputs(tainted, file);
+  sink_int(getc(file));
+  fclose(file);
+}
+
+void FN_fputc_propagate_taint_bad() {
+  char* tainted = string_source();
+  FILE* file = fopen("some_file", "r");
+  if (!file) {
+    return;
+  }
+  fputc(file, tainted[42]);
+  sink_int(getc(file));
+  fclose(file);
+}

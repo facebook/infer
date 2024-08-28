@@ -108,6 +108,10 @@ module Syntax : sig
 
   val allocation : Attribute.allocator -> aval -> unit model_monad
 
+  val data_dependency : ValueOrigin.t -> ValueOrigin.t list -> unit model_monad
+
+  val data_dependency_to_ret : ValueOrigin.t list -> unit model_monad
+
   val add_dict_contain_const_keys : aval -> unit model_monad
 
   val add_dict_read_const_key : aval -> Fieldname.t -> unit model_monad
@@ -157,6 +161,8 @@ module Syntax : sig
   [@@warning "-unused-value-declaration"]
 
   val fresh : ?more:string -> unit -> aval model_monad
+
+  val fresh_nonneg : ?more:string -> unit -> aval model_monad
 
   val write_field : ref:aval -> Fieldname.t -> aval -> unit model_monad
 
