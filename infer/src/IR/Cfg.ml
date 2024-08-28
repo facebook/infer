@@ -48,7 +48,7 @@ let store source_file cfg =
     let attributes = Procdesc.get_attributes proc_desc in
     let loc = attributes.loc in
     let attributes' =
-      let loc' = if Location.equal loc Location.dummy then {loc with file= source_file} else loc in
+      let loc' = if Location.is_dummy loc then {loc with file= source_file} else loc in
       {attributes with loc= loc'; translation_unit= source_file}
     in
     Procdesc.set_attributes proc_desc attributes' ;

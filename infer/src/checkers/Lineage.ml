@@ -1125,7 +1125,7 @@ module Out = struct
         in
         let function_ = Procname.hashable_name procname in
         let file =
-          if Location.equal Location.dummy location then "unknown"
+          if Location.is_dummy location then "unknown"
           else SourceFile.to_rel_path location.Location.file
         in
         let line = if location.Location.line < 0 then None else Some location.Location.line in

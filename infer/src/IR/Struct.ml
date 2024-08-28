@@ -319,8 +319,8 @@ let merge_opt ~merge ~newer ~current =
 
 
 let merge_loc ~newer ~current =
-  if Location.equal Location.dummy newer then current
-  else if Location.equal Location.dummy current then newer
+  if Location.is_dummy newer then current
+  else if Location.is_dummy current then newer
   else if (* arbitrarily but deterministically choose one *) Location.compare newer current <= 0
   then newer
   else current
