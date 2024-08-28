@@ -165,6 +165,8 @@ module Call : sig
     type 'arg_payload t = {exp: Exp.t; typ: Typ.t; arg_payload: 'arg_payload}
 
     val map_payload : f:('arg_payload -> 'arg_payload') -> 'arg_payload t -> 'arg_payload' t
+
+    val to_payload : 'payload t -> 'payload
   end
 
   include
