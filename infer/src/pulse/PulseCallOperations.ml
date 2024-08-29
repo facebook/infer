@@ -747,7 +747,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
       | `NoMoreSpecialization ->
           (res, summary, non_disj, contradiction, `KnownCall)
       | `MoreSpecialization specialization
-        when Specialization.Pulse.is_empty specialization
+        when Specialization.Pulse.is_bottom specialization
              && AbstractValue.Set.is_empty needs_from_caller ->
           (res, summary, non_disj, contradiction, `KnownCall)
       | `MoreSpecialization specialization ->
@@ -759,7 +759,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
             L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
           if
             nth_iteration >= max_iteration || has_already_be_given || ask_caller_of_caller_first
-            || Specialization.Pulse.is_empty specialization
+            || Specialization.Pulse.is_bottom specialization
           then
             case_if_specialization_is_impossible
               ~f:(add_need_dynamic_type_specialization needs_from_caller)

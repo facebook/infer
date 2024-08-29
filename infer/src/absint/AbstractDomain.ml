@@ -939,7 +939,7 @@ module BooleanAnd = struct
 end
 
 module BooleanOr = struct
-  type t = bool
+  include Bool
 
   let bottom = false
 

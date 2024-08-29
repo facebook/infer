@@ -41,9 +41,12 @@ type t =
   { accesses: PulseTrace.Set.t  (** record specific accesses inter-procedurally *)
   ; callees: Callees.t  (** record all call resolutions that were transitively performed *)
   ; direct_callees: DirectCallee.Set.t  (** record direct callee with specialization key *)
-  ; missed_captures: Typ.Name.Set.t
+  ; direct_missed_captures: Typ.Name.Set.t
         (** record types that were missing during name resolution (fields/methods) while analysing
-            this function and its transitive callees *) }
+            this function (ignoring what happened in callees) *)
+  ; has_transitive_missed_captures: AbstractDomain.BooleanOr.t
+        (** true iff one the callees of this function has at least one transitively missing type.
+            This does not take into account the local [direct_missed_captures] set above. *) }
 [@@deriving compare, equal]
 
 include AbstractDomain.WithBottom with type t := t

@@ -267,21 +267,21 @@ let report_errors ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       in
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
-            let {PulseTransitiveInfo.accesses; callees; missed_captures} =
+            let {PulseTransitiveInfo.accesses; callees; direct_missed_captures} =
               AbductiveDomain.Summary.get_transitive_info astate
             in
-            PulseTrace.Set.iter (report callees missed_captures) accesses
+            PulseTrace.Set.iter (report callees direct_missed_captures) accesses
         | _ ->
             () ) ;
       NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj
-      |> Option.iter ~f:(fun {PulseTransitiveInfo.accesses; callees; missed_captures} ->
-             PulseTrace.Set.iter (report callees missed_captures) accesses ;
+      |> Option.iter ~f:(fun {PulseTransitiveInfo.accesses; callees; direct_missed_captures} ->
+             PulseTrace.Set.iter (report callees direct_missed_captures) accesses ;
              if !nothing_reported && pulse_transitive_access_verbose then
                let call_trace : PulseTrace.t =
                  Immediate {location= Location.dummy; history= PulseValueHistory.epoch}
                in
                let transitive_callees = callees in
-               let transitive_missed_captures = missed_captures in
+               let transitive_missed_captures = direct_missed_captures in
                PulseReport.report analysis_data ~is_suppressed:false ~latent:false
                  (TransitiveAccess
                     { tag= "NO ACCESS FOUND"

@@ -41,7 +41,7 @@ module Pulse : sig
 
   val bottom : t
 
-  val is_empty : t -> bool
+  val is_bottom : t -> bool
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 

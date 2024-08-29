@@ -134,35 +134,47 @@ type t =
   { accesses: Accesses.t
   ; callees: Callees.t
   ; direct_callees: DirectCallee.Set.t
-  ; missed_captures: MissedCaptures.t }
+  ; direct_missed_captures: MissedCaptures.t
+  ; has_transitive_missed_captures: AbstractDomain.BooleanOr.t }
 [@@deriving abstract_domain, compare, equal]
 
-let pp fmt {accesses; callees; direct_callees; missed_captures} =
+let pp fmt
+    {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures} =
   F.fprintf fmt
-    "@[@[accesses: %a@],@ @[callees: %a@],@ @[direct_callees: %a@],@ @[missed captures: %a@]@]"
+    "@[@[accesses: %a@],@ @[callees: %a@],@ @[direct_callees: %a@],@ @[direct_missed captures: \
+     %a@],@ @[has_transitive_missed_captures: %b@]@]"
     Accesses.pp accesses Callees.pp callees DirectCallee.Set.pp direct_callees Typ.Name.Set.pp
-    missed_captures
+    direct_missed_captures has_transitive_missed_captures
 
 
 let bottom =
   { accesses= Accesses.empty
   ; callees= Callees.bottom
   ; direct_callees= DirectCallee.Set.empty
-  ; missed_captures= Typ.Name.Set.empty }
+  ; direct_missed_captures= Typ.Name.Set.empty
+  ; has_transitive_missed_captures= false }
 
 
-let is_bottom {accesses; callees; direct_callees; missed_captures} =
+let is_bottom
+    {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures} =
   Accesses.is_bottom accesses && Callees.is_bottom callees
   && DirectCallee.Set.is_empty direct_callees
-  && Typ.Name.Set.is_empty missed_captures
+  && Typ.Name.Set.is_empty direct_missed_captures
+  && not has_transitive_missed_captures
 
 
-let remember_dropped_elements ~dropped {accesses; callees; direct_callees; missed_captures} =
+let remember_dropped_elements ~dropped
+    {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures} =
   let accesses = Accesses.union dropped.accesses accesses in
   let callees = Callees.join dropped.callees callees in
   let direct_callees = DirectCallee.Set.union dropped.direct_callees direct_callees in
-  let missed_captures = Typ.Name.Set.union dropped.missed_captures missed_captures in
-  {accesses; callees; direct_callees; missed_captures}
+  let direct_missed_captures =
+    Typ.Name.Set.union dropped.direct_missed_captures direct_missed_captures
+  in
+  let has_transitive_missed_captures =
+    dropped.has_transitive_missed_captures || has_transitive_missed_captures
+  in
+  {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures}
 
 
 let add_specialized_direct_callee procname specialization loc ({direct_callees} as transitive_info)
@@ -173,11 +185,15 @@ let add_specialized_direct_callee procname specialization loc ({direct_callees} 
 
 
 let apply_summary ~callee_pname ~call_loc ~summary
-    {accesses; callees; direct_callees; missed_captures} =
+    {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures} =
   let accesses =
     PulseTrace.Set.map_callee (Call callee_pname) call_loc summary.accesses
     |> PulseTrace.Set.union accesses
   in
   let callees = Callees.join callees summary.callees in
-  let missed_captures = MissedCaptures.join missed_captures summary.missed_captures in
-  {accesses; callees; direct_callees; missed_captures}
+  let has_transitive_missed_captures =
+    summary.has_transitive_missed_captures
+    || (not (MissedCaptures.is_empty summary.direct_missed_captures))
+    || has_transitive_missed_captures
+  in
+  {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures}

@@ -55,7 +55,7 @@ module Pulse = struct
 
   let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty}
 
-  let is_empty {aliases; dynamic_types} =
+  let is_bottom {aliases; dynamic_types} =
     Option.is_none aliases && HeapPath.Map.is_empty dynamic_types
 
 

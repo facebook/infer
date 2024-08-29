@@ -2093,8 +2093,10 @@ end
 
 let add_missed_captures missed_captures ({transitive_info} as astate) =
   if Config.pulse_monitor_transitive_missed_captures || Config.reactive_capture then
-    let missed_captures = Typ.Name.Set.union missed_captures transitive_info.missed_captures in
-    let transitive_info = {transitive_info with TransitiveInfo.missed_captures} in
+    let direct_missed_captures =
+      Typ.Name.Set.union missed_captures transitive_info.direct_missed_captures
+    in
+    let transitive_info = {transitive_info with TransitiveInfo.direct_missed_captures} in
     {astate with transitive_info}
   else astate
 

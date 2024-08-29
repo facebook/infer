@@ -17,7 +17,12 @@ let get_missed_captures source_files_filter =
     Summary.OnDisk.get ~lazy_payloads:true (AnalysisRequest.one Pulse) procname
     |> Option.bind ~f:(fun {Summary.payloads= {pulse}} -> ILazy.force_option pulse)
   in
-  PulseSummary.get_missed_captures ~get_summary procnames
+  let procnames =
+    List.map procnames ~f:(fun procname ->
+        let specialization = Specialization.Pulse.bottom in
+        (procname, specialization) )
+  in
+  PulseSpecializedCallGraph.get_missed_captures ~get_summary procnames
 
 
 let normalize_type_name (name : Typ.name) =
