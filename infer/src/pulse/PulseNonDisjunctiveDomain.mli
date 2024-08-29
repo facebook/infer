@@ -104,6 +104,8 @@ val is_lifetime_extended : Var.t -> t -> bool
 
 val remember_dropped_disjuncts : (ExecutionDomain.t * PathContext.t) list -> t -> t
 
+val add_specialized_direct_callee : Procname.t -> Specialization.Pulse.t -> Location.t -> t -> t
+
 val apply_summary :
      callee_pname:Procname.t
   -> call_loc:Location.t

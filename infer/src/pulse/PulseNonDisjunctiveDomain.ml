@@ -647,6 +647,10 @@ module InterDom = struct
 
   let remember_dropped_elements dropped = map (TransitiveInfo.remember_dropped_elements ~dropped)
 
+  let add_specialized_direct_callee procname specialisation loc =
+    map (TransitiveInfo.add_specialized_direct_callee procname specialisation loc)
+
+
   let apply_summary ~callee_pname ~call_loc ~summary ~skip_transitive_accesses non_disj =
     match (non_disj, summary) with
     | Top, _ | _, Top ->
@@ -750,6 +754,10 @@ let remember_dropped_disjuncts disjuncts non_disj =
             non_disj
       | _ ->
           non_disj )
+
+
+let add_specialized_direct_callee procname specialisation loc non_disj =
+  map_inter (InterDom.add_specialized_direct_callee procname specialisation loc) non_disj
 
 
 let bind (execs, non_disj) ~f =

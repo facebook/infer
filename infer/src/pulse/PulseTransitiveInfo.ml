@@ -107,35 +107,77 @@ module Callees = struct
   let equal = Map.equal Status.equal
 end
 
+module DirectCallee = struct
+  type t = {procname: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
+  [@@deriving equal, compare]
+
+  let pp fmt {procname; specialization} =
+    F.fprintf fmt "%a (specialized for %a)" Procname.pp procname Specialization.Pulse.pp
+      specialization
+
+
+  module Set = struct
+    include AbstractDomain.FiniteSet (struct
+      type nonrec t = t
+
+      let compare = compare
+
+      let pp = pp
+    end)
+  end
+end
+
 module Accesses = AbstractDomain.FiniteSetOfPPSet (PulseTrace.Set)
 module MissedCaptures = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
 
-type t = {accesses: Accesses.t; callees: Callees.t; missed_captures: MissedCaptures.t}
+type t =
+  { accesses: Accesses.t
+  ; callees: Callees.t
+  ; direct_callees: DirectCallee.Set.t
+  ; missed_captures: MissedCaptures.t }
 [@@deriving abstract_domain, compare, equal]
 
-let pp fmt {accesses; callees; missed_captures} =
-  F.fprintf fmt "@[@[accesses: %a@],@ @[callees: %a@],@ @[missed captures: %a@]@]" Accesses.pp
-    accesses Callees.pp callees Typ.Name.Set.pp missed_captures
+let pp fmt {accesses; callees; direct_callees; missed_captures} =
+  F.fprintf fmt
+    "@[@[accesses: %a@],@ @[callees: %a@],@ @[direct_callees: %a@],@ @[missed captures: %a@]@]"
+    Accesses.pp accesses Callees.pp callees DirectCallee.Set.pp direct_callees Typ.Name.Set.pp
+    missed_captures
 
 
-let bottom = {accesses= Accesses.empty; callees= Callees.bottom; missed_captures= Typ.Name.Set.empty}
+let bottom =
+  { accesses= Accesses.empty
+  ; callees= Callees.bottom
+  ; direct_callees= DirectCallee.Set.empty
+  ; missed_captures= Typ.Name.Set.empty }
 
-let is_bottom {accesses; callees; missed_captures} =
-  Accesses.is_bottom accesses && Callees.is_bottom callees && Typ.Name.Set.is_empty missed_captures
+
+let is_bottom {accesses; callees; direct_callees; missed_captures} =
+  Accesses.is_bottom accesses && Callees.is_bottom callees
+  && DirectCallee.Set.is_empty direct_callees
+  && Typ.Name.Set.is_empty missed_captures
 
 
-let remember_dropped_elements ~dropped {accesses; callees; missed_captures} =
+let remember_dropped_elements ~dropped {accesses; callees; direct_callees; missed_captures} =
   let accesses = Accesses.union dropped.accesses accesses in
   let callees = Callees.join dropped.callees callees in
+  let direct_callees = DirectCallee.Set.union dropped.direct_callees direct_callees in
   let missed_captures = Typ.Name.Set.union dropped.missed_captures missed_captures in
-  {accesses; callees; missed_captures}
+  {accesses; callees; direct_callees; missed_captures}
 
 
-let apply_summary ~callee_pname ~call_loc ~summary {accesses; callees; missed_captures} =
+let add_specialized_direct_callee procname specialization loc ({direct_callees} as transitive_info)
+    =
+  { transitive_info with
+    direct_callees= DirectCallee.Set.add {DirectCallee.procname; specialization; loc} direct_callees
+  }
+
+
+let apply_summary ~callee_pname ~call_loc ~summary
+    {accesses; callees; direct_callees; missed_captures} =
   let accesses =
     PulseTrace.Set.map_callee (Call callee_pname) call_loc summary.accesses
     |> PulseTrace.Set.union accesses
   in
   let callees = Callees.join callees summary.callees in
   let missed_captures = MissedCaptures.join missed_captures summary.missed_captures in
-  {accesses; callees; missed_captures}
+  {accesses; callees; direct_callees; missed_captures}

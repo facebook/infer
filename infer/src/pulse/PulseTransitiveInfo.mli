@@ -7,6 +7,14 @@
 
 open! IStd
 
+module DirectCallee : sig
+  type t = {procname: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
+
+  module Set : sig
+    include PrettyPrintable.PPSet with type elt = t
+  end
+end
+
 module Callees : sig
   (** for each call site, we remember which resolution was performed *)
 
@@ -32,6 +40,7 @@ end
 type t =
   { accesses: PulseTrace.Set.t  (** record specific accesses inter-procedurally *)
   ; callees: Callees.t  (** record all call resolutions that were transitively performed *)
+  ; direct_callees: DirectCallee.Set.t  (** record direct callee with specialization key *)
   ; missed_captures: Typ.Name.Set.t
         (** record types that were missing during name resolution (fields/methods) while analysing
             this function and its transitive callees *) }
@@ -40,6 +49,8 @@ type t =
 include AbstractDomain.WithBottom with type t := t
 
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> summary:t -> t -> t
+
+val add_specialized_direct_callee : Procname.t -> Specialization.Pulse.t -> Location.t -> t -> t
 
 val remember_dropped_elements : dropped:t -> t -> t
 

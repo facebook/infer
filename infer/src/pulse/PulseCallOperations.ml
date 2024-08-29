@@ -647,17 +647,20 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
       ([], non_disj) )
     else (results, non_disj)
   in
-  let call_aux {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} =
+  let call_aux specialization {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} =
     let results, (non_disj, contradiction) =
       call_aux analysis_data path call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
         exec_states non_disj_callee astate ?call_flags non_disj_caller
     in
+    let non_disj =
+      NonDisjDomain.add_specialized_direct_callee callee_pname specialization call_loc non_disj
+    in
     (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
       ?(specialization = Specialization.Pulse.bottom) already_given summary =
-    let res, non_disj, contradiction = call_aux summary in
+    let res, non_disj, contradiction = call_aux specialization summary in
     let needs_aliasing_specialization =
       match (res, contradiction) with
       | [], Some (Aliasing _) ->
