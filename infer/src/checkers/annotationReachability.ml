@@ -304,37 +304,37 @@ let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} ~src ~snk =
   Reporting.log_issue proc_desc err_log ~loc ~ltr:[] AnnotationReachability issue_type description
 
 
-let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src_list
-    snk annot_map models =
-  let check_one_src_and_find_snk src =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    if method_overrides_annot src models tenv proc_name then (
-      (* If there are callsites to sinks, find/report such paths. *)
-      Option.iter (Domain.find_opt snk annot_map) ~f:(fun sink_map ->
-          find_paths_to_snk analysis_data ~src ~snk sink_map models ) ;
-      (* Reporting something that is both a source and a sink at the same time needs to be
-         treated as a special case because there is no call/callsite (path of length 0). *)
-      if
-        Config.annotation_reachability_report_source_and_sink
-        && method_overrides_annot snk models tenv proc_name
-      then report_src_and_sink analysis_data ~src ~snk )
-  in
-  List.iter ~f:check_one_src_and_find_snk src_list
-
-
 module AnnotationSpec = struct
   type predicate = Tenv.t -> Procname.t -> bool
 
   type t =
     { description: string  (** for debugging *)
     ; sink_predicate: predicate  (** decide if something is a sink *)
-    ; sanitizer_predicate: predicate
+    ; sanitizer_predicate: predicate  (** decide if something is a sanitizer *)
     ; sink_annotation: Annot.t  (** used as key in the domain (sink -> procedure -> callsite) *)
-    ; report: Domain.t InterproceduralAnalysis.t -> Domain.t -> unit }
-
-  (* The default sanitizer does not sanitize anything *)
-  let default_sanitizer _ _ = false
+    ; source_annotation_list: Annot.t list  (** decide if something is a source *)
+    ; models: Str.regexp list IStd.String.Map.t  (** model functions as if they were annotated *)
+    ; pre_check: Domain.t InterproceduralAnalysis.t -> unit
+          (** additional check before reporting *) }
 end
+
+let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data)
+    (spec : AnnotationSpec.t) annot_map =
+  let check_one_src_and_find_snk src =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    if method_overrides_annot src spec.models tenv proc_name then (
+      (* If there are callsites to sinks, find/report such paths. *)
+      Option.iter (Domain.find_opt spec.sink_annotation annot_map) ~f:(fun sink_map ->
+          find_paths_to_snk analysis_data ~src ~snk:spec.sink_annotation sink_map spec.models ) ;
+      (* Reporting something that is both a source and a sink at the same time needs to be
+         treated as a special case because there is no call/callsite (path of length 0). *)
+      if
+        Config.annotation_reachability_report_source_and_sink
+        && method_overrides_annot spec.sink_annotation spec.models tenv proc_name
+      then report_src_and_sink analysis_data ~src ~snk:spec.sink_annotation )
+  in
+  List.iter ~f:check_one_src_and_find_snk spec.source_annotation_list
+
 
 module StandardAnnotationSpec = struct
   let from_annotations str_src_annots str_snk_annot str_sanitizer_annots models =
@@ -348,9 +348,9 @@ module StandardAnnotationSpec = struct
         (fun tenv pname ->
           List.exists sanitizer_annots ~f:(fun s -> method_overrides_annot s models tenv pname) )
     ; sink_annotation= snk
-    ; report=
-        (fun proc_data annot_map -> check_srcs_and_find_snk proc_data src_list snk annot_map models)
-    }
+    ; source_annotation_list= src_list
+    ; models
+    ; pre_check= (fun _ -> ()) }
 end
 
 module NoAllocationAnnotationSpec = struct
@@ -363,10 +363,9 @@ module NoAllocationAnnotationSpec = struct
     ; sanitizer_predicate=
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
     ; sink_annotation= dummy_constructor_annot
-    ; report=
-        (fun proc_data annot_map ->
-          check_srcs_and_find_snk proc_data [no_allocation_annot] dummy_constructor_annot annot_map
-            String.Map.empty ) }
+    ; source_annotation_list= [no_allocation_annot]
+    ; models= String.Map.empty
+    ; pre_check= (fun _ -> ()) }
 end
 
 module ExpensiveAnnotationSpec = struct
@@ -400,17 +399,17 @@ module ExpensiveAnnotationSpec = struct
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
           check_attributes has_annot tenv pname || is_modeled_expensive tenv pname )
-    ; sanitizer_predicate= default_sanitizer
+    ; sanitizer_predicate= (fun _ _ -> false)
     ; sink_annotation= expensive_annot
-    ; report=
-        (fun ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) annot_map ->
+    ; source_annotation_list= [performance_critical_annot]
+    ; models= String.Map.empty
+    ; pre_check=
+        (fun ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ->
           let proc_name = Procdesc.get_proc_name proc_desc in
           if is_expensive tenv proc_name then
             PatternMatch.override_iter
               (check_expensive_subtyping_rules analysis_data)
-              tenv proc_name ;
-          check_srcs_and_find_snk analysis_data [performance_critical_annot] expensive_annot
-            annot_map String.Map.empty ) }
+              tenv proc_name ) }
 end
 
 module MakeTransferFunctions (CFG : ProcCfg.S) = struct
@@ -522,5 +521,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t op
   let proc_data = {TransferFunctions.analysis_data; specs} in
   let post = Analyzer.compute_post proc_data ~initial proc_desc in
   Option.iter post ~f:(fun annot_map ->
-      List.iter specs ~f:(fun spec -> spec.AnnotationSpec.report analysis_data annot_map) ) ;
+      List.iter specs ~f:(fun spec ->
+          spec.AnnotationSpec.pre_check analysis_data ;
+          check_srcs_and_find_snk analysis_data spec annot_map ) ) ;
   post
