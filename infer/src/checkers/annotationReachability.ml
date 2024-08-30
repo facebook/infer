@@ -109,27 +109,24 @@ let check_modeled_annotation models annot pname =
       List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
 
 
-let method_has_annot annot models tenv pname =
-  let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
-  if Config.annotation_reachability_no_allocation && is_dummy_constructor annot then
-    is_allocator tenv pname
-  else if
-    Config.annotation_reachability_expensive
-    && Annotations.annot_ends_with annot Annotations.expensive
-  then check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
-  else check_attributes has_annot tenv pname || check_modeled_annotation models annot pname
-
-
 let find_override_with_annot annot models tenv pname =
+  let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
   if is_dummy_field_pname pname then
     (* Get back the original field from the fake call *)
     let struct_typ = struct_from_dummy_pname tenv pname in
     let fieldname = fieldname_from_dummy_pname pname in
-    let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
     if Annotations.field_has_annot fieldname struct_typ has_annot then Some pname else None
   else
-    let is_annotated = method_has_annot annot models in
-    PatternMatch.override_find (fun pn -> is_annotated tenv pn) tenv pname
+    let method_has_annot pname =
+      if Config.annotation_reachability_no_allocation && is_dummy_constructor annot then
+        is_allocator tenv pname
+      else if
+        Config.annotation_reachability_expensive
+        && Annotations.annot_ends_with annot Annotations.expensive
+      then check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
+      else check_attributes has_annot tenv pname || check_modeled_annotation models annot pname
+    in
+    PatternMatch.override_find method_has_annot tenv pname
 
 
 let method_overrides_annot annot models tenv pname =
