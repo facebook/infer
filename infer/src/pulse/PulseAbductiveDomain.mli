@@ -276,7 +276,7 @@ module AddressAttributes : sig
 
   val has_unknown_effect : AbstractValue.t -> t -> bool
 
-  val is_hack_sinit_called : AbstractValue.t -> t -> bool
+  val is_hack_constinit_called : AbstractValue.t -> t -> bool
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]

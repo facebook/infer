@@ -334,8 +334,8 @@ let has_unknown_effect address attrs =
   |> Option.exists ~f:(fun attribute -> Option.is_some (Attributes.get_unknown_effect attribute))
 
 
-let is_hack_sinit_called address attrs =
-  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_hack_sinit_called
+let is_hack_constinit_called address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_hack_constinit_called
 
 
 let merge attrs attrs' =
@@ -495,5 +495,5 @@ module type S = sig
 
   val has_unknown_effect : key -> t -> bool
 
-  val is_hack_sinit_called : key -> t -> bool
+  val is_hack_constinit_called : key -> t -> bool
 end

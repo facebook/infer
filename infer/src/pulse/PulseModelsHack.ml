@@ -474,7 +474,7 @@ let constinit_existing_class_object static_companion : unit DSL.model_monad =
 
 
 (* We no longer call _86sinit at all, but still call _86constinit.
-   At the moment we keep the is_hack_sinit_called mechanism around in an attempt to
+   We keep the is_hack_constinit_called mechanism around in an attempt to
    avoid too many redundant calls to constinit
 *)
 let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_monad =
@@ -485,12 +485,11 @@ let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_mon
       let pvar = get_static_companion_var type_name in
       let exp = Exp.Lvar pvar in
       let* static_companion = read exp in
-      let* is_sinit_called = is_hack_sinit_called static_companion in
-      if is_sinit_called then ret ()
+      let* is_constinit_called = is_hack_constinit_called static_companion in
+      if is_constinit_called then ret ()
       else
-        (* TODO: If we decide to keep the is_hack_sinit_around then not only should we rename it,
-           but we should make this bit of code set the attribute up the hierarchy *)
-        set_hack_sinit_called static_companion
+        (* TODO: we should make this bit of code set the attribute up the hierarchy *)
+        set_hack_constinit_called static_companion
         @@>
         let ret_id = Ident.create_none () in
         let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in

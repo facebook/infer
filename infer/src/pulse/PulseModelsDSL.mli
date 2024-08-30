@@ -118,9 +118,9 @@ module Syntax : sig
 
   val remove_dict_contain_const_keys : aval -> unit model_monad
 
-  val is_hack_sinit_called : aval -> bool model_monad
+  val is_hack_constinit_called : aval -> bool model_monad
 
-  val set_hack_sinit_called : aval -> unit model_monad
+  val set_hack_constinit_called : aval -> unit model_monad
 
   val add_static_type : Typ.name -> aval -> unit model_monad
 

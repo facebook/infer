@@ -647,8 +647,8 @@ module Internal = struct
       BaseAddressAttributes.has_unknown_effect addr (astate.post :> base_domain).attrs
 
 
-    let is_hack_sinit_called addr astate =
-      BaseAddressAttributes.is_hack_sinit_called addr (astate.post :> base_domain).attrs
+    let is_hack_constinit_called addr astate =
+      BaseAddressAttributes.is_hack_constinit_called addr (astate.post :> base_domain).attrs
   end
 
   module SafeMemory = struct
@@ -2467,8 +2467,8 @@ module AddressAttributes = struct
     SafeAttributes.has_unknown_effect (CanonValue.canon' astate v) astate
 
 
-  let is_hack_sinit_called v astate =
-    SafeAttributes.is_hack_sinit_called (CanonValue.canon' astate v) astate
+  let is_hack_constinit_called v astate =
+    SafeAttributes.is_hack_constinit_called (CanonValue.canon' astate v) astate
 end
 
 (* [recurse] is here to enforce that we can only ever make one recursive call when calling into this

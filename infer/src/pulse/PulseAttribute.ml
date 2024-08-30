@@ -225,7 +225,7 @@ module Attribute = struct
     | DictReadConstKeys of ConstKeys.t
     | EndOfCollection
     | HackBuilder of Builder.t
-    | HackSinitCalled
+    | HackConstinitCalled
     | InReportedRetainCycle
     | Initialized
     | Invalid of Invalidation.t * Trace.t
@@ -284,7 +284,7 @@ module Attribute = struct
 
   let hack_builder_rank = Variants.hackbuilder.rank
 
-  let hack_sinit_called_rank = Variants.hacksinitcalled.rank
+  let hack_constinit_called_rank = Variants.hackconstinitcalled.rank
 
   let in_reported_retain_cycle_rank = Variants.inreportedretaincycle.rank
 
@@ -363,8 +363,8 @@ module Attribute = struct
         F.pp_print_string f "EndOfCollection"
     | HackBuilder builderstate ->
         F.fprintf f "HackBuilder(%a)" Builder.pp builderstate
-    | HackSinitCalled ->
-        F.pp_print_string f "HackSinitCalled"
+    | HackConstinitCalled ->
+        F.pp_print_string f "HackConstinitCalled"
     | InReportedRetainCycle ->
         F.pp_print_string f "InReportedRetainCycle"
     | Initialized ->
@@ -446,7 +446,7 @@ module Attribute = struct
     | CopiedReturn _
     | DictContainConstKeys
     | EndOfCollection
-    | HackSinitCalled
+    | HackConstinitCalled
     | InReportedRetainCycle
     | Initialized
     | JavaResourceReleased
@@ -490,7 +490,7 @@ module Attribute = struct
     | CopiedReturn _
     | DictContainConstKeys
     | EndOfCollection
-    | HackSinitCalled
+    | HackConstinitCalled
     | InReportedRetainCycle
     | Initialized
     | Invalid _
@@ -542,7 +542,7 @@ module Attribute = struct
     | CSharpResourceReleased
     | HackAsyncAwaited
     | HackBuilder _
-    | HackSinitCalled
+    | HackConstinitCalled
     | MustBeInitialized _
     | MustBeValid _
     | MustNotBeTainted _
@@ -644,7 +644,7 @@ module Attribute = struct
       | EndOfCollection
       | HackAsyncAwaited
       | HackBuilder _
-      | HackSinitCalled
+      | HackConstinitCalled
       | Initialized
       | JavaResourceReleased
       | LastLookup _
@@ -737,7 +737,7 @@ module Attribute = struct
       | EndOfCollection
       | HackAsyncAwaited
       | HackBuilder _
-      | HackSinitCalled
+      | HackConstinitCalled
       | InReportedRetainCycle
       | Initialized
       | Invalid _
@@ -910,7 +910,7 @@ module Attributes = struct
 
   let remove_hack_builder = remove_by_rank Attribute.hack_builder_rank
 
-  let is_hack_sinit_called = mem_by_rank Attribute.hack_sinit_called_rank
+  let is_hack_constinit_called = mem_by_rank Attribute.hack_constinit_called_rank
 
   let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
 

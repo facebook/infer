@@ -134,7 +134,7 @@ module type S = sig
 
   val has_unknown_effect : key -> t -> bool
 
-  val is_hack_sinit_called : key -> t -> bool
+  val is_hack_constinit_called : key -> t -> bool
 end
 
 include S with type key := AbstractValue.t

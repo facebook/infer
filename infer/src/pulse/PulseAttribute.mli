@@ -136,7 +136,7 @@ type t =
   | DictReadConstKeys of ConstKeys.t  (** constant string keys that are read from the dictionary *)
   | EndOfCollection
   | HackBuilder of Builder.t
-  | HackSinitCalled
+  | HackConstinitCalled
   | InReportedRetainCycle
   | Initialized
   | Invalid of Invalidation.t * Trace.t
@@ -218,7 +218,7 @@ module Attributes : sig
 
   val is_hack_builder_discardable : t -> bool [@@warning "-unused-value-declaration"]
 
-  val is_hack_sinit_called : t -> bool
+  val is_hack_constinit_called : t -> bool
 
   val is_csharp_resource_released : t -> bool
 

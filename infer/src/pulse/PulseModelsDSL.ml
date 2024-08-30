@@ -445,12 +445,12 @@ module Syntax = struct
     PulseOperations.remove_dict_contain_const_keys addr |> exec_command
 
 
-  let is_hack_sinit_called (addr, _) : bool model_monad =
-    AddressAttributes.is_hack_sinit_called addr |> exec_pure_operation
+  let is_hack_constinit_called (addr, _) : bool model_monad =
+    AddressAttributes.is_hack_constinit_called addr |> exec_pure_operation
 
 
-  let set_hack_sinit_called (addr, _) : unit model_monad =
-    AddressAttributes.add_one addr HackSinitCalled |> exec_command
+  let set_hack_constinit_called (addr, _) : unit model_monad =
+    AddressAttributes.add_one addr HackConstinitCalled |> exec_command
 
 
   let and_dynamic_type_is (v, _) t : unit model_monad =
