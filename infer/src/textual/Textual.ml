@@ -107,7 +107,7 @@ module Name : NAME = struct
 
   let pp fmt name = F.pp_print_string fmt name.value
 
-  let is_hack_init {value} = String.equal value "_86pinit" || String.equal value "_86sinit"
+  let is_hack_init {value} = String.equal value "_86pinit" || String.equal value "_86constinit"
 
   module Hashtbl = Hashtbl.Make (T)
   module HashSet = HashSet.Make (T)

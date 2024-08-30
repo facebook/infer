@@ -576,8 +576,7 @@ module Hack = struct
 
 
   let is_xinit {function_name= name} =
-    String.equal name "_86sinit" || String.equal name "_86pinit" || String.equal name "_86cinit"
-    || String.equal name "_86constinit"
+    String.equal name "_86pinit" || String.equal name "_86cinit" || String.equal name "_86constinit"
 
 
   let belongs_to_static_companion {class_name} =
@@ -1003,13 +1002,6 @@ let is_shared_ptr_observer =
 let is_hack_builtins = function
   | Hack {class_name= Some classname} ->
       HackClassName.is_builtins classname
-  | _ ->
-      false
-
-
-let is_hack_sinit = function
-  | Hack {function_name} ->
-      String.equal function_name "_86sinit"
   | _ ->
       false
 
