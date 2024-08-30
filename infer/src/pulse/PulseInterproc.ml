@@ -1275,7 +1275,7 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
           | None ->
               ()
           | Some v ->
-              L.internal_error
+              L.d_printfln
                 "huho, we found an error on accessing invalid address %a when applying the \
                  precondition but did not actually report an error. Abort!"
                 AbstractValue.pp v ;

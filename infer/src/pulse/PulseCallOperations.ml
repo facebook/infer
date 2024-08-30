@@ -708,7 +708,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
       let more_specialization, ask_caller_of_caller_first, needs_from_caller =
         match needs_aliasing_specialization with
         | `AliasSpecializationImpossible ->
-            L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
+            L.d_printfln "Alias specialization of %a failed" Procname.pp callee_pname ;
             (`NoMoreSpecialization, false, AbstractValue.Set.empty)
         | `AliasSpeciationWith alias_specialization ->
             let specialization =

@@ -190,7 +190,8 @@ let exec_in_parallel ~prog ~args commands =
 
 let exec_all_commands ~prog ~args commands =
   if Int.equal Config.jobs 1 || List.length commands <= parallel_threshold then (
-    L.progress "Starting sequential capture for %d command%a@\n%!" (List.length commands) s commands ;
+    L.debug Capture Medium "Starting sequential capture for %d command%a@\n%!"
+      (List.length commands) s commands ;
     List.iter ~f:(exec_action_item ~prog ~args) commands )
   else exec_in_parallel ~prog ~args commands
 
