@@ -325,7 +325,7 @@ module TransferFunctions = struct
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
-          ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
     in
     match Models.Call.dispatch tenv callee_pname fun_arg_list with
     | Some {Models.exec} ->

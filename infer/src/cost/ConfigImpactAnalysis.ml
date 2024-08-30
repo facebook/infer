@@ -784,7 +784,7 @@ module Dom = struct
     fun tenv pname args ->
       let args =
         List.map args ~f:(fun (exp, typ) ->
-            ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+            {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
       in
       dispatch tenv pname args
 

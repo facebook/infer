@@ -61,7 +61,7 @@ let get_instantiated_cost
   | None ->
       let fun_arg_list =
         List.map args ~f:(fun (exp, typ) ->
-            ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+            {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
       in
       CostModels.Call.dispatch tenv pname fun_arg_list
       |> Option.value_map ~default:NoModel ~f:(fun model ->

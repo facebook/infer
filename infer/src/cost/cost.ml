@@ -103,7 +103,7 @@ module InstrBasicCostWithReason = struct
       instr_node callee_pname ret args captured_vars location =
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
-          ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
     in
     let inferbo_mem_opt =
       BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map

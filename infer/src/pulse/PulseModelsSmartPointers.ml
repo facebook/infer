@@ -448,7 +448,7 @@ module SharedPtr = struct
                   (astate, arg :: rev_func_args)
               | _ ->
                   ( astate
-                  , ProcnameDispatcher.Call.FuncArg.{exp; arg_payload= new_payload; typ}
+                  , {ProcnameDispatcher.Call.FuncArg.exp; arg_payload= new_payload; typ}
                     :: rev_func_args ) )
         in
         (* We need an expression corresponding to the value of the argument we pass to

@@ -263,7 +263,7 @@ let check_call get_checks_summary get_summary get_formals pname tenv integer_typ
   in
   let fun_arg_list =
     List.map args ~f:(fun (exp, typ) ->
-        ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+        {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
   in
   match Models.Call.dispatch tenv callee_pname fun_arg_list with
   | Some {Models.check} ->
