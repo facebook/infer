@@ -439,8 +439,6 @@ module Call = struct
 
     let map_payload ~f ({arg_payload} as func_arg) = {func_arg with arg_payload= f arg_payload}
 
-    let to_payload {arg_payload} = arg_payload
-
     let get_var_exn {exp; typ} =
       match exp with
       | Exp.Var v ->

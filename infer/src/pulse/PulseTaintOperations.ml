@@ -601,7 +601,7 @@ let taint_propagators path location reason proc_name actuals tainted astate =
               not (AbstractValue.equal v actual) )
         in
         propagate_to path location reason value_origin
-          (List.map other_actuals ~f:FuncArg.to_payload)
+          (List.map other_actuals ~f:FuncArg.arg_payload)
           (Call proc_name) astate )
   in
   L.with_indent "taint_propagators" ~f:aux
@@ -723,7 +723,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
           ValueOrigin.OnStack {var= return; addr_hist= ValueOrigin.addr_hist return_vo}
         in
         propagate_to path location UnknownCall return_value_origin
-          (List.map actuals ~f:FuncArg.to_payload)
+          (List.map actuals ~f:FuncArg.arg_payload)
           call astate
     | _ ->
         astate
@@ -732,7 +732,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     match actuals with
     | {FuncArg.arg_payload= this} :: other_actuals when propagate_to_receiver ->
         propagate_to path location UnknownCall this
-          (List.map other_actuals ~f:FuncArg.to_payload)
+          (List.map other_actuals ~f:FuncArg.arg_payload)
           call astate
     | _ ->
         astate
@@ -740,7 +740,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
   match List.rev actuals with
   | {FuncArg.arg_payload= last} :: other_actuals when propagate_to_last_actual ->
       propagate_to path location UnknownCall last
-        (List.map other_actuals ~f:FuncArg.to_payload)
+        (List.map other_actuals ~f:FuncArg.arg_payload)
         call astate
   | _ ->
       astate
