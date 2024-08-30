@@ -38,7 +38,7 @@ let alloc_common_dsl ~null_case ~initialize allocator size_exp_opt : unit DSL.mo
 
 let alloc_common ~null_case ~initialize ~desc allocator size_exp_opt : model =
   let open DSL.Syntax in
-  start_named_model desc @@ alloc_common_dsl ~null_case ~initialize allocator size_exp_opt
+  start_named_model desc @@ fun () -> alloc_common_dsl ~null_case ~initialize allocator size_exp_opt
 
 
 let malloc ~null_case size_exp =
@@ -125,18 +125,18 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
 include struct
   open DSL.Syntax
 
-  let valid_arg arg : model = start_model @@ check_valid arg
+  let valid_arg arg : model = start_model @@ fun () -> check_valid arg
 
-  let valid_args2 arg1 arg2 : model = start_model @@ check_valid arg1 @@> check_valid arg2
+  let valid_args2 arg1 arg2 : model = start_model @@ fun () -> check_valid arg1 @@> check_valid arg2
 
-  let non_det_ret : model = start_model @@ assign_ret @= fresh ()
+  let non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh ()
 
   let zero_or_minus_one_ret : model =
-    start_model @@ disj [assign_ret @= int (-1); assign_ret @= int 0]
+    start_model @@ fun () -> disj [assign_ret @= int (-1); assign_ret @= int 0]
 
 
   let non_det_or_minus_one_ret : model =
-    start_model @@ disj [assign_ret @= int (-1); assign_ret @= fresh ()]
+    start_model @@ fun () -> disj [assign_ret @= int (-1); assign_ret @= fresh ()]
 
 
   let ret_alloc_or_null allocator =
@@ -144,45 +144,58 @@ include struct
 
 
   let fclose stream : model =
-    start_model @@ Basic.free FClose stream
-    @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+    start_model
+    @@ fun () ->
+    Basic.free FClose stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
 
 
   let fgetpos stream pos =
-    start_model @@ check_valid stream
+    start_model
+    @@ fun () ->
+    check_valid stream
     @@>
     let* obj = fresh () in
     store ~ref:(to_aval pos) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
 
 
   let gets str : model =
-    start_model @@ check_valid str @@> disj [assign_ret @= null; assign_ret (to_aval str)]
+    start_model @@ fun () -> check_valid str @@> disj [assign_ret @= null; assign_ret (to_aval str)]
 
 
   let fgets str stream : model =
-    start_model @@ check_valid stream @@> check_valid str
+    start_model
+    @@ fun () ->
+    check_valid stream @@> check_valid str
     @@> disj [assign_ret @= null; assign_ret (to_aval str)]
     @@> data_dependency str [str; stream]
 
 
   let fopen path mode : model =
-    start_model @@ check_valid path @@> check_valid mode @@> ret_alloc_or_null FileDescriptor
+    start_model
+    @@ fun () ->
+    check_valid path @@> check_valid mode @@> ret_alloc_or_null FileDescriptor
     @@> data_dependency_to_ret [path]
 
 
   let fprintf stream format args =
-    start_model @@ check_valid stream @@> check_valid format
+    start_model
+    @@ fun () ->
+    check_valid stream @@> check_valid format
     @@> data_dependency stream (format :: args)
     @@> assign_ret (* pretend [fprintf] always succeeds *) @= fresh_nonneg ()
 
 
   let fputs s stream =
-    start_model @@ check_valid stream @@> check_valid s @@> data_dependency stream [s]
-    @@> assign_ret (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
+    start_model
+    @@ fun () ->
+    check_valid stream @@> check_valid s @@> data_dependency stream [s] @@> assign_ret
+    (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
 
 
   let putc c stream : model =
-    start_model @@ check_valid stream
+    start_model
+    @@ fun () ->
+    check_valid stream
     @@> disj [assign_ret @= int (-1); assign_ret (to_aval c)]
     @@> data_dependency stream [c]
 end
@@ -198,7 +211,7 @@ let matchers : matcher list =
   let rev_compose1 model2 model1 = compose1 model1 model2 in
   let ignore_arg model _arg = model in
   let ignore_args2 model _arg1 _arg2 = model in
-  let taint_ret_from_arg arg = start_model @@ data_dependency_to_ret [arg] in
+  let taint_ret_from_arg arg = start_model @@ fun () -> data_dependency_to_ret [arg] in
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
@@ -231,7 +244,7 @@ let matchers : matcher list =
   ; -"getc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
   ; -"gets" <>$ capt_arg_payload $--> gets
-  ; -"printf" &--> start_model @@ assign_ret @= fresh ()
+  ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)

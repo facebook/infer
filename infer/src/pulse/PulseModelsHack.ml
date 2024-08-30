@@ -55,15 +55,17 @@ let await_hack_value aval : DSL.aval DSL.model_monad =
 let hack_await arg : model =
   let open DSL.Syntax in
   start_model
-  @@ let* rv = await_hack_value arg in
-     assign_ret rv
+  @@ fun () ->
+  let* rv = await_hack_value arg in
+  assign_ret rv
 
 
 let hack_await_static _ arg : model =
   let open DSL.Syntax in
   start_model
-  @@ let* rv = await_hack_value arg in
-     assign_ret rv
+  @@ fun () ->
+  let* rv = await_hack_value arg in
+  assign_ret rv
 
 
 let make_new_awaitable av =
@@ -153,26 +155,28 @@ module Vec = struct
   let new_vec args : model =
     let open DSL.Syntax in
     start_model
-    @@ let* vec = new_vec_dsl args in
-       assign_ret vec
+    @@ fun () ->
+    let* vec = new_vec_dsl args in
+    assign_ret vec
 
 
   (* TODO: this isn't *quite* right with respect to dummy values, but int think it's OK *)
   let vec_from_async _dummy aval : model =
     let open DSL.Syntax in
     start_model
-    @@ let* fst_val = load_access aval (FieldAccess fst_field) in
-       let* snd_val = load_access aval (FieldAccess snd_field) in
-       let* awaited_fst_val = await_hack_value fst_val in
-       let* awaited_snd_val = await_hack_value snd_val in
-       let* fresh_vec = new_vec_dsl [awaited_fst_val; awaited_snd_val] in
-       assign_ret fresh_vec
+    @@ fun () ->
+    let* fst_val = load_access aval (FieldAccess fst_field) in
+    let* snd_val = load_access aval (FieldAccess snd_field) in
+    let* awaited_fst_val = await_hack_value fst_val in
+    let* awaited_snd_val = await_hack_value snd_val in
+    let* fresh_vec = new_vec_dsl [awaited_fst_val; awaited_snd_val] in
+    assign_ret fresh_vec
 
 
   let map _this arg closure =
     let open DSL.Syntax in
     start_model
-    @@
+    @@ fun () ->
     let* size_val = load_access arg (FieldAccess size_field) in
     let size_eq_0_case : DSL.aval DSL.model_monad = prune_eq_zero size_val @@> new_vec_dsl [] in
     let size_eq_1_case : DSL.aval DSL.model_monad =
@@ -313,7 +317,7 @@ let zero_test_to_hack_bool v : DSL.aval DSL.model_monad =
 let hhbc_is_type_null v : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let* ret_val = zero_test_to_hack_bool v in
   assign_ret ret_val
 
@@ -327,8 +331,9 @@ let hack_string_dsl str_val : DSL.aval DSL.model_monad =
 let hack_string str_val : model =
   let open DSL.Syntax in
   start_model
-  @@ let* str_val = hack_string_dsl str_val in
-     assign_ret str_val
+  @@ fun () ->
+  let* str_val = hack_string_dsl str_val in
+  assign_ret str_val
 
 
 let make_hack_string (str : string) : DSL.aval DSL.model_monad =
@@ -511,7 +516,7 @@ let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_mon
 let lazy_class_initialize size_exp : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let type_name =
     match size_exp with
     | Exp.Sizeof {typ= {desc= Typ.Tstruct type_name}} ->
@@ -527,21 +532,21 @@ let lazy_class_initialize size_exp : model =
 let get_static_class aval : model =
   let open DSL.Syntax in
   start_model
-  @@ let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true aval in
-     match opt_dynamic_type_data with
-     | Some {Formula.typ= {desc= Tstruct type_name}} ->
-         let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
-         register_class_object_for_value aval class_object @@> assign_ret class_object
-     | _ ->
-         let* unknown_class_object = fresh () in
-         register_class_object_for_value aval unknown_class_object
-         @@> assign_ret unknown_class_object
+  @@ fun () ->
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true aval in
+  match opt_dynamic_type_data with
+  | Some {Formula.typ= {desc= Tstruct type_name}} ->
+      let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
+      register_class_object_for_value aval class_object @@> assign_ret class_object
+  | _ ->
+      let* unknown_class_object = fresh () in
+      register_class_object_for_value aval unknown_class_object @@> assign_ret unknown_class_object
 
 
 let hhbc_class_get_c value : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let default () =
     let* {location} = DSL.Syntax.get_data in
     ScubaLogging.log_message_with_location ~label:"hhbc_class_get_c argument"
@@ -611,31 +616,33 @@ module Dict = struct
   let new_dict args : model =
     let open DSL.Syntax in
     start_model
-    @@ let* bindings, key_types = get_bindings args in
-       let* dict = constructor type_name [] in
-       list_iter bindings ~f:(fun (field, value) -> store_field ~ref:dict field value)
-       @@> ( match key_types with
-           | AllConstStrs ->
-               add_dict_contain_const_keys dict
-           | SomeOthers ->
-               ret () )
-       @@> assign_ret dict
+    @@ fun () ->
+    let* bindings, key_types = get_bindings args in
+    let* dict = constructor type_name [] in
+    list_iter bindings ~f:(fun (field, value) -> store_field ~ref:dict field value)
+    @@> ( match key_types with
+        | AllConstStrs ->
+            add_dict_contain_const_keys dict
+        | SomeOthers ->
+            ret () )
+    @@> assign_ret dict
 
 
   let dict_from_async _dummy dict : model =
     let open DSL.Syntax in
     start_model
-    @@ let* fields = get_known_fields dict in
-       let* new_dict = constructor type_name [] in
-       list_iter fields ~f:(fun field_access ->
-           match (field_access : Access.t) with
-           | FieldAccess field_name ->
-               let* awaitable_value = read_dict_field_with_check dict field_name in
-               let* awaited_value = await_hack_value awaitable_value in
-               store_field ~ref:new_dict field_name awaited_value
-           | _ ->
-               ret () )
-       @@> assign_ret new_dict
+    @@ fun () ->
+    let* fields = get_known_fields dict in
+    let* new_dict = constructor type_name [] in
+    list_iter fields ~f:(fun field_access ->
+        match (field_access : Access.t) with
+        | FieldAccess field_name ->
+            let* awaitable_value = read_dict_field_with_check dict field_name in
+            let* awaited_value = await_hack_value awaitable_value in
+            store_field ~ref:new_dict field_name awaited_value
+        | _ ->
+            ret () )
+    @@> assign_ret new_dict
 
 
   let hack_add_elem_c_dsl dict key value : unit DSL.model_monad =
@@ -652,7 +659,7 @@ module Dict = struct
   let contains_key dict key : model =
     let open DSL.Syntax in
     start_model
-    @@
+    @@ fun () ->
     let* field = field_of_string_value key in
     match field with
     | None ->
@@ -849,7 +856,7 @@ end
 let hack_add_elem_c this key value : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let default () =
     let* fresh = fresh () in
     assign_ret fresh
@@ -862,7 +869,7 @@ let hack_add_elem_c this key value : model =
 let hack_array_cow_set this args : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let default () =
     option_iter (List.last args) ~f:deep_clean_hack_value
     @@>
@@ -879,7 +886,7 @@ let hack_array_cow_set this args : model =
 let hack_array_get this args : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let default () =
     L.d_warning "default case of hack_array_get" ;
     fresh ()
@@ -898,7 +905,7 @@ let hack_array_get this args : model =
 let hack_array_idx this key default_val : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let default () =
     let* fresh = fresh () in
     assign_ret fresh
@@ -959,7 +966,7 @@ let internal_hack_field_get this field : DSL.aval DSL.model_monad =
 let hack_field_get this field : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let* retval = internal_hack_field_get this field in
   assign_ret retval
 
@@ -981,8 +988,9 @@ let make_hack_unconstrained_int : DSL.aval DSL.model_monad =
 let hack_unconstrained_int : model =
   let open DSL.Syntax in
   start_model
-  @@ let* rv = make_hack_unconstrained_int in
-     assign_ret rv
+  @@ fun () ->
+  let* rv = make_hack_unconstrained_int in
+  assign_ret rv
 
 
 let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
@@ -996,8 +1004,9 @@ let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
 let hhbc_not arg : model =
   let open DSL.Syntax in
   start_model
-  @@ let* res = hhbc_not_dsl arg in
-     assign_ret res
+  @@ fun () ->
+  let* res = hhbc_not_dsl arg in
+  assign_ret res
 
 
 let int_val_field = Fieldname.make hack_int_type_name "val"
@@ -1008,7 +1017,7 @@ let hhbc_cmp_same x y : model =
   L.d_printfln "hhbc_cmp_same(%a, %a)" AbstractValue.pp (fst x) AbstractValue.pp (fst y) ;
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let value_equality_test val1 val2 =
     let true_case = prune_eq val1 val2 @@> make_hack_bool true in
     let false_case = prune_ne val1 val2 @@> make_hack_bool false in
@@ -1077,7 +1086,7 @@ let hhbc_cmp_same x y : model =
 let hack_is_true b : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let nullcase =
     prune_eq_zero b
     @@>
@@ -1109,50 +1118,53 @@ let hack_is_true b : model =
 let hhbc_cmp_nsame x y : model =
   let open DSL.Syntax in
   start_model
-  @@ let* bool = lift_to_monad_and_get_result (hhbc_cmp_same x y) in
-     let* neg_bool = hhbc_not_dsl bool in
-     assign_ret neg_bool
+  @@ fun () ->
+  let* bool = lift_to_monad_and_get_result (hhbc_cmp_same x y) in
+  let* neg_bool = hhbc_not_dsl bool in
+  assign_ret neg_bool
 
 
 let hhbc_cls_cns this field : model =
   let model_desc = "hhbc_cls_cns" in
   let open DSL.Syntax in
   start_model
-  @@ let* dynamic_Type_data_opt = get_dynamic_type ~ask_specialization:true this in
-     let* field_v =
-       match dynamic_Type_data_opt with
-       | Some {Formula.typ= {Typ.desc= Tstruct name}} ->
-           let* opt_string_field_name = read_string_value_dsl field in
-           let string_field_name =
-             match opt_string_field_name with
-             | Some str ->
-                 str
-             | None ->
-                 (* we do not expect this situation to happen because hhbc_cls_cns takes as argument
-                    a literal string see:
-                    https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
-                 L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
-                 "__dummy_constant_name__"
-           in
-           eval_resolved_field ~model_desc name string_field_name
-       | _ ->
-           fresh ()
-     in
-     assign_ret field_v
+  @@ fun () ->
+  let* dynamic_Type_data_opt = get_dynamic_type ~ask_specialization:true this in
+  let* field_v =
+    match dynamic_Type_data_opt with
+    | Some {Formula.typ= {Typ.desc= Tstruct name}} ->
+        let* opt_string_field_name = read_string_value_dsl field in
+        let string_field_name =
+          match opt_string_field_name with
+          | Some str ->
+              str
+          | None ->
+              (* we do not expect this situation to happen because hhbc_cls_cns takes as argument
+                 a literal string see:
+                 https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
+              L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
+              "__dummy_constant_name__"
+        in
+        eval_resolved_field ~model_desc name string_field_name
+    | _ ->
+        fresh ()
+  in
+  assign_ret field_v
 
 
 let hack_get_class this : model =
   let open DSL.Syntax in
   start_model
-  @@ let* typ_opt = get_dynamic_type ~ask_specialization:true this in
-     let* field_v = match typ_opt with Some _ -> ret this | None -> fresh () in
-     assign_ret field_v
+  @@ fun () ->
+  let* typ_opt = get_dynamic_type ~ask_specialization:true this in
+  let* field_v = match typ_opt with Some _ -> ret this | None -> fresh () in
+  assign_ret field_v
 
 
 (* we don't have a different kind of lazy class objects, so this is the identity, but maybe we should force initialization here? *)
 let hhbc_lazy_class_from_class this : model =
   let open DSL.Syntax in
-  start_model @@ assign_ret this
+  start_model @@ fun () -> assign_ret this
 
 
 (* HH::type_structure should officially be able to take an instance of a class or the name (classname=string) as first argument, and
@@ -1165,7 +1177,7 @@ let hhbc_lazy_class_from_class this : model =
 let hh_type_structure clsobj constnameobj : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let* constname = load_access constnameobj (FieldAccess string_val_field) in
   constinit_existing_class_object clsobj
   @@>
@@ -1176,22 +1188,23 @@ let hh_type_structure clsobj constnameobj : model =
 let hack_set_static_prop this prop obj : model =
   let open DSL.Syntax in
   start_model
-  @@ let* opt_this = read_string_value_dsl this in
-     let* opt_prop = read_string_value_dsl prop in
-     match (opt_this, opt_prop) with
-     | Some this, Some prop ->
-         let this = replace_backslash_with_colon this in
-         let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
-         let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
-         store_field ~ref:class_object (Fieldname.make name prop) obj
-     | _, _ ->
-         ret ()
+  @@ fun () ->
+  let* opt_this = read_string_value_dsl this in
+  let* opt_prop = read_string_value_dsl prop in
+  match (opt_this, opt_prop) with
+  | Some this, Some prop ->
+      let this = replace_backslash_with_colon this in
+      let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
+      let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
+      store_field ~ref:class_object (Fieldname.make name prop) obj
+  | _, _ ->
+      ret ()
 
 
 let hhbc_cmp_lt x y : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let value_lt_test val1 val2 =
     let true_case = prune_lt val1 val2 @@> make_hack_bool true in
     let false_case = prune_ge val1 val2 @@> make_hack_bool false in
@@ -1242,7 +1255,7 @@ let hhbc_cmp_gt x y : model = hhbc_cmp_lt y x
 let hhbc_cmp_le x y : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let value_le_test val1 val2 =
     let true_case = prune_le val1 val2 @@> make_hack_bool true in
     let false_case = prune_gt val1 val2 @@> make_hack_bool false in
@@ -1290,52 +1303,55 @@ let hhbc_cmp_ge x y : model = hhbc_cmp_le y x
 let hhbc_add x y : model =
   let open DSL.Syntax in
   start_model
-  @@ let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
-     let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
-     match (x_dynamic_type_data, y_dynamic_type_data) with
-     | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
-       , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
-       when Typ.Name.equal x_typ_name y_typ_name && Typ.Name.equal x_typ_name hack_int_type_name ->
-         let* x_val = load_access x (FieldAccess int_val_field) in
-         let* y_val = load_access y (FieldAccess int_val_field) in
-         let* sum = binop (PlusA (Some IInt)) x_val y_val in
-         let* res = aval_to_hack_int sum in
-         assign_ret res
-     | _, _ ->
-         let* sum = fresh () in
-         assign_ret sum (* unconstrained value *)
+  @@ fun () ->
+  let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
+  let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
+  match (x_dynamic_type_data, y_dynamic_type_data) with
+  | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
+    , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
+    when Typ.Name.equal x_typ_name y_typ_name && Typ.Name.equal x_typ_name hack_int_type_name ->
+      let* x_val = load_access x (FieldAccess int_val_field) in
+      let* y_val = load_access y (FieldAccess int_val_field) in
+      let* sum = binop (PlusA (Some IInt)) x_val y_val in
+      let* res = aval_to_hack_int sum in
+      assign_ret res
+  | _, _ ->
+      let* sum = fresh () in
+      assign_ret sum (* unconstrained value *)
 
 
 let hhbc_iter_base arg : model =
   let open DSL.Syntax in
-  start_model @@ assign_ret arg
+  start_model @@ fun () -> assign_ret arg
 
 
 let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
   let open DSL.Syntax in
   start_model
-  @@ dynamic_dispatch arg
-       ~cases:
-         [ (Dict.type_name, fun () -> DictIter.iter_init_dict iteraddr keyaddr eltaddr arg)
-         ; (Vec.type_name, fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg) ]
-         (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-       ~default:(fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
+  @@ fun () ->
+  dynamic_dispatch arg
+    ~cases:
+      [ (Dict.type_name, fun () -> DictIter.iter_init_dict iteraddr keyaddr eltaddr arg)
+      ; (Vec.type_name, fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg) ]
+      (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
+    ~default:(fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
 
 
 let hhbc_iter_next iter keyaddr eltaddr _base : model =
   let open DSL.Syntax in
   start_model
-  @@ dynamic_dispatch iter
-       ~cases:
-         [ (VecIter.type_name, fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
-         ; (DictIter.type_name, fun () -> DictIter.iter_next_dict iter keyaddr eltaddr) ]
-         (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-       ~default:(fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
+  @@ fun () ->
+  dynamic_dispatch iter
+    ~cases:
+      [ (VecIter.type_name, fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
+      ; (DictIter.type_name, fun () -> DictIter.iter_next_dict iter keyaddr eltaddr) ]
+      (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
+    ~default:(fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
 
 
 let hack_throw : model =
   let open DSL.Syntax in
-  start_model @@ throw
+  start_model @@ fun () -> throw
 
 
 module SplatedVec = struct
@@ -1348,8 +1364,9 @@ module SplatedVec = struct
   let make arg : model =
     let open DSL.Syntax in
     start_model
-    @@ let* boxed = constructor type_name [(field_name, arg)] in
-       assign_ret boxed
+    @@ fun () ->
+    let* boxed = constructor type_name [(field_name, arg)] in
+    assign_ret boxed
 
 
   let build_vec_for_variadic_callee args : DSL.aval DSL.model_monad =
@@ -1503,26 +1520,28 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
 let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
   let open DSL.Syntax in
   start_model
-  @@ let* inner_val = check_against_type_struct v tdict in
-     let* wrapped_result = aval_to_hack_bool inner_val in
-     assign_ret wrapped_result
+  @@ fun () ->
+  let* inner_val = check_against_type_struct v tdict in
+  let* wrapped_result = aval_to_hack_bool inner_val in
+  assign_ret wrapped_result
 
 
 let hhbc_verify_param_type_ts v tdict : model =
   let open DSL.Syntax in
   start_model
-  @@ let* inner_val = check_against_type_struct v tdict in
-     prune_ne_zero inner_val
-     @@>
-     let* zero = int 0 in
-     assign_ret zero
+  @@ fun () ->
+  let* inner_val = check_against_type_struct v tdict in
+  prune_ne_zero inner_val
+  @@>
+  let* zero = int 0 in
+  assign_ret zero
 
 
 let hhbc_is_type_prim typname v : model =
   let open DSL.Syntax in
   let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
   start_named_model model_desc
-  @@
+  @@ fun () ->
   let typ = Typ.mk (Typ.Tstruct typname) in
   let* inner_val = fresh () in
   let* rv = aval_to_hack_bool inner_val in
@@ -1544,12 +1563,13 @@ let hhbc_is_type_vec = hhbc_is_type_prim Vec.type_name
 let hhbc_verify_type_pred _dummy pred : model =
   let open DSL.Syntax in
   start_model
-  @@ let* pred_val = load_access pred (FieldAccess bool_val_field) in
-     prune_ne_zero pred_val
-     @@>
-     (* TODO: log when state is unsat at this point *)
-     let* zero = int 0 in
-     assign_ret zero
+  @@ fun () ->
+  let* pred_val = load_access pred (FieldAccess bool_val_field) in
+  prune_ne_zero pred_val
+  @@>
+  (* TODO: log when state is unsat at this point *)
+  let* zero = int 0 in
+  assign_ret zero
 
 
 let hhbc_cast_string arg : model =
@@ -1561,26 +1581,27 @@ let hhbc_cast_string arg : model =
   *)
   let open DSL.Syntax in
   start_model
-  @@ let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
-     match dynamic_type_data with
-     | Some {Formula.typ= {Typ.desc= Tstruct typ_name}}
-       when Typ.Name.equal typ_name hack_string_type_name ->
-         assign_ret arg
-     | Some _ ->
-         (* note: we do not model precisely the value returned by __toString() *)
-         let* rv = make_hack_string "__infer_hack_generated_from_cast_string" in
-         (* note: we do not model the case where __toString() is not implemented *)
-         assign_ret rv
-     | _ ->
-         (* hopefully we will come back later with a dynamic type thanks to specialization *)
-         let* rv = fresh () in
-         assign_ret rv
+  @@ fun () ->
+  let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+  match dynamic_type_data with
+  | Some {Formula.typ= {Typ.desc= Tstruct typ_name}}
+    when Typ.Name.equal typ_name hack_string_type_name ->
+      assign_ret arg
+  | Some _ ->
+      (* note: we do not model precisely the value returned by __toString() *)
+      let* rv = make_hack_string "__infer_hack_generated_from_cast_string" in
+      (* note: we do not model the case where __toString() is not implemented *)
+      assign_ret rv
+  | _ ->
+      (* hopefully we will come back later with a dynamic type thanks to specialization *)
+      let* rv = fresh () in
+      assign_ret rv
 
 
 let hhbc_concat arg1 arg2 : model =
   let open DSL.Syntax in
   start_model
-  @@
+  @@ fun () ->
   let* arg1_val = load_access arg1 (FieldAccess string_val_field) in
   let* arg2_val = load_access arg2 (FieldAccess string_val_field) in
   let* res = string_concat arg1_val arg2_val in

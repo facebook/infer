@@ -548,31 +548,34 @@ module Integer = struct
 
   let init this init_value : model =
     let open DSL.Syntax in
-    start_model @@ store_field ~ref:this internal_int init_value
+    start_model @@ fun () -> store_field ~ref:this internal_int init_value
 
 
   let equals this arg : model =
     let open DSL.Syntax in
     start_model
-    @@ let* this_int = load_access this (FieldAccess internal_int) in
-       let* arg_int = load_access arg (FieldAccess internal_int) in
-       let* res = binop Eq this_int arg_int in
-       assign_ret res
+    @@ fun () ->
+    let* this_int = load_access this (FieldAccess internal_int) in
+    let* arg_int = load_access arg (FieldAccess internal_int) in
+    let* res = binop Eq this_int arg_int in
+    assign_ret res
 
 
   let int_val this : model =
     let open DSL.Syntax in
     start_model
-    @@ let* this_int = load_access this (FieldAccess internal_int) in
-       assign_ret this_int
+    @@ fun () ->
+    let* this_int = load_access this (FieldAccess internal_int) in
+    assign_ret this_int
 
 
   let value_of init_value : model =
     let open DSL.Syntax in
     start_model
-    @@ let* res = fresh () in
-       let* () = lift_to_monad (init res init_value) in
-       assign_ret res
+    @@ fun () ->
+    let* res = fresh () in
+    let* () = lift_to_monad (init res init_value) in
+    assign_ret res
 end
 
 module Boolean = struct
@@ -580,31 +583,34 @@ module Boolean = struct
 
   let init this init_value : model =
     let open DSL.Syntax in
-    start_model @@ store_field ~ref:this internal_boolean init_value
+    start_model @@ fun () -> store_field ~ref:this internal_boolean init_value
 
 
   let equals this arg : model =
     let open DSL.Syntax in
     start_model
-    @@ let* this_boolean = load_access this (FieldAccess internal_boolean) in
-       let* arg_boolean = load_access arg (FieldAccess internal_boolean) in
-       let* res = binop Eq this_boolean arg_boolean in
-       assign_ret res
+    @@ fun () ->
+    let* this_boolean = load_access this (FieldAccess internal_boolean) in
+    let* arg_boolean = load_access arg (FieldAccess internal_boolean) in
+    let* res = binop Eq this_boolean arg_boolean in
+    assign_ret res
 
 
   let boolean_val this : model =
     let open DSL.Syntax in
     start_model
-    @@ let* this_bool = load_access this (FieldAccess internal_boolean) in
-       assign_ret this_bool
+    @@ fun () ->
+    let* this_bool = load_access this (FieldAccess internal_boolean) in
+    assign_ret this_bool
 
 
   let value_of init_value : model =
     let open DSL.Syntax in
     start_model
-    @@ let* res = fresh () in
-       let* () = lift_to_monad (init res init_value) in
-       assign_ret res
+    @@ fun () ->
+    let* res = fresh () in
+    let* () = lift_to_monad (init res init_value) in
+    assign_ret res
 end
 
 module Preconditions = struct

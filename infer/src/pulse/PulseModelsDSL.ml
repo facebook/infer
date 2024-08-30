@@ -20,13 +20,13 @@ type 'a result = 'a AccessResult.t
 
 type aval = AbstractValue.t * ValueHistory.t
 
+type 'a execution =
+  | ContinueProgram of 'a * astate
+  | Other of ExecutionDomain.t (* should never contain a ExecutionDomain.ContinueProgram *)
+
 (* we work on a disjunction of executions *)
 type 'a model_monad =
   CallEvent.t * model_data -> astate -> non_disj -> 'a execution result list * non_disj
-
-and 'a execution =
-  | ContinueProgram of 'a * astate
-  | Other of ExecutionDomain.t (* should never contain a ExecutionDomain.ContinueProgram *)
 
 module Syntax = struct
   module ModeledField = PulseOperations.ModeledField
@@ -169,9 +169,9 @@ module Syntax = struct
     , non_disj )
 
 
-  let start_model_ desc (monad : unit model_monad) : model =
+  let start_model_ desc (monad : unit -> unit model_monad) : model =
    fun data astate non_disj ->
-    let execs, non_disj = monad (desc, data) astate non_disj in
+    let execs, non_disj = monad () (desc, data) astate non_disj in
     ( List.map execs
         ~f:
           (PulseResult.map ~f:(function
@@ -191,11 +191,11 @@ module Syntax = struct
 
 
   let compose1 model1 model2 arg =
-    start_model @@ lift_to_monad (model1 arg) @@> lift_to_monad (model2 arg)
+    start_model @@ fun () -> lift_to_monad (model1 arg) @@> lift_to_monad (model2 arg)
 
 
   let compose2 model1 model2 arg1 arg2 =
-    start_model @@ lift_to_monad (model1 arg1 arg2) @@> lift_to_monad (model2 arg1 arg2)
+    start_model @@ fun () -> lift_to_monad (model1 arg1 arg2) @@> lift_to_monad (model2 arg1 arg2)
 
 
   let disj (list : 'a model_monad list) : 'a model_monad =

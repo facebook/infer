@@ -90,10 +90,10 @@ module Syntax : sig
 
   val disj : 'a model_monad list -> 'a model_monad
 
-  val start_model : unit model_monad -> model
+  val start_model : (unit -> unit model_monad) -> model
   (** get a model from a disjunctive model_monad *)
 
-  val start_named_model : string -> unit model_monad -> model
+  val start_named_model : string -> (unit -> unit model_monad) -> model
 
   val lift_to_monad : model -> unit model_monad
   (** beware that the model may modify the [model_data.ret] field *)
