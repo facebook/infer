@@ -473,9 +473,10 @@ let constinit_existing_class_object static_companion : unit DSL.model_monad =
       ret ()
 
 
-(* NOTE: We model [lazy_class_initialize] as invoking the corresponding [sinit] procedure.  To be
-   sound, we consider the cases where the initialization has been done before or not by separating
-   disjuncts. *)
+(* We no longer call _86sinit at all, but still call _86constinit.
+   At the moment we keep the is_hack_sinit_called mechanism around in an attempt to
+   avoid too many redundant calls to constinit
+*)
 let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* class_object = get_static_companion_dsl ~model_desc:"lazy_class_initialize" type_name in
@@ -487,27 +488,20 @@ let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_mon
       let* is_sinit_called = is_hack_sinit_called static_companion in
       if is_sinit_called then ret ()
       else
-        (* Note that we set the [HackSinitCalled] attribute even in the [just_call_constinit] case to
-           avoid sinit is called later in the following instructions. *)
+        (* TODO: If we decide to keep the is_hack_sinit_around then not only should we rename it,
+           but we should make this bit of code set the attribute up the hierarchy *)
         set_hack_sinit_called static_companion
         @@>
         let ret_id = Ident.create_none () in
         let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
         let* {analysis_data= {tenv}} = get_data in
         let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
-        let sinit_pname = Procname.get_hack_static_init ~is_trait class_name in
         let constinit_pname = Procname.get_hack_static_constinit ~is_trait class_name in
         let typ = Typ.mk_struct type_name in
         let arg_payload =
           ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= static_companion}
         in
-        let call_sinit : unit DSL.model_monad =
-          dispatch_call (ret_id, ret_typ) sinit_pname [{exp; typ; arg_payload}]
-        in
-        let just_call_constinit : unit DSL.model_monad =
-          dispatch_call (ret_id, ret_typ) constinit_pname [{exp; typ; arg_payload}]
-        in
-        disj [call_sinit; just_call_constinit]
+        dispatch_call (ret_id, ret_typ) constinit_pname [{exp; typ; arg_payload}]
   | _ ->
       ret () )
   @@> ret class_object

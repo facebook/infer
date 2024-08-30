@@ -1,6 +1,6 @@
 basic.hack, Basic::Object.__construct, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.__construct,parameter `$this.*a` modified here]
 basic.hack, Basic::Object.setImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.setImpure,parameter `$this.*a` modified here]
-basic.hack, Basic::Object.staticSetImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.staticSetImpure,global variable `Basic::Object$static.*GLOBAL` modified here,global variable `Basic::Object$static.*GLOBAL` modified here]
+basic.hack, Basic::Object.staticSetImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.staticSetImpure,global variable `Basic::Object$static.*GLOBAL` modified here]
 basic.hack, Basic::Object.callImpureImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.callImpureImpure,when calling `Basic::Object.setImpure` here,parameter `$this.*a` modified here]
 basic.hack, Basic::Object.parameterFieldWriteImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.parameterFieldWriteImpure,parameter `$obj.*a` modified here]
 basic.hack, Basic::Object.staticParameterFieldWriteImpure, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function Basic::Object.staticParameterFieldWriteImpure,when calling `Basic::Object$static.staticParameterFieldWriteImpure` here,parameter `$obj.*a` modified here]
