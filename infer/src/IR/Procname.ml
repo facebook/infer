@@ -569,12 +569,6 @@ module Hack = struct
 
   let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
 
-  let get_static_init ~is_trait class_name =
-    let static_class_name = HackClassName.static_companion class_name in
-    let arity = if is_trait then 2 else 1 in
-    {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some arity}
-
-
   let get_static_constinit ~is_trait class_name =
     let static_class_name = HackClassName.static_companion class_name in
     let arity = if is_trait then 2 else 1 in
@@ -1381,8 +1375,6 @@ let decr_hack_arity procname =
   | _ ->
       None
 
-
-let get_hack_static_init ~is_trait class_name = Hack (Hack.get_static_init ~is_trait class_name)
 
 let get_hack_static_constinit ~is_trait class_name =
   Hack (Hack.get_static_constinit ~is_trait class_name)

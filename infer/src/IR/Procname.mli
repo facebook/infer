@@ -453,9 +453,6 @@ val decr_hack_arity : t -> t option
 val get_hack_arity : t -> int option
 (** get the arity of a Hack procname *)
 
-val get_hack_static_init : is_trait:bool -> HackClassName.t -> t
-(** get the sinit procname in Hack *)
-
 val get_hack_static_constinit : is_trait:bool -> HackClassName.t -> t
 (** get the constinit procname in Hack *)
 

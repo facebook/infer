@@ -461,7 +461,7 @@ module NoReturn = struct
       proc_desc
 end
 
-module InjectTraitSinit = struct
+module InjectTraitConstinit = struct
   let update_ident_generator pdesc =
     let idents =
       Procdesc.fold_instrs pdesc ~init:Ident.Set.empty ~f:(fun acc _ instr ->
@@ -472,7 +472,7 @@ module InjectTraitSinit = struct
     Ident.update_name_generator (Ident.Set.elements idents)
 
 
-  let inject_trait_sinit tenv pdesc =
+  let inject_trait_constinit tenv pdesc =
     let traits =
       let pname = Procdesc.get_proc_name pdesc in
       Option.value_map (Procname.get_class_type_name pname) ~default:[] ~f:(fun name ->
@@ -487,26 +487,26 @@ module InjectTraitSinit = struct
             let loc = Procdesc.Node.get_loc entry_node in
             let this_id = Ident.create_fresh Ident.knormal in
             let this_load = Sil.Load {id= this_id; e= Lvar this_pvar; typ= this_typ; loc} in
-            let sinit_calls =
+            let constinit_calls =
               let ret_typ = Procdesc.get_ret_type pdesc in
               let arg = [(Exp.Var this_id, this_typ)] in
               List.map traits ~f:(fun trait ->
                   let ret_id = Ident.create_none () in
-                  let sinit = Procname.get_hack_static_init ~is_trait:true trait in
-                  Sil.Call ((ret_id, ret_typ), Const (Cfun sinit), arg, loc, CallFlags.default) )
+                  let constinit = Procname.get_hack_static_constinit ~is_trait:true trait in
+                  Sil.Call ((ret_id, ret_typ), Const (Cfun constinit), arg, loc, CallFlags.default) )
             in
-            this_load :: sinit_calls
+            this_load :: constinit_calls
           in
           let succs = Procdesc.Node.get_succs entry_node in
           List.iter succs ~f:(fun succ -> Procdesc.Node.prepend_instrs succ instrs)
       | [] ->
-          L.internal_error "Error loading the `$this` formal from sinit"
+          L.internal_error "Error loading the `$this` formal from constinit"
 
 
   let process tenv pdesc =
     NodePrinter.with_session (Procdesc.get_start_node pdesc) ~kind:`ComputePre
-      ~pp_name:(fun fmt -> Format.pp_print_string fmt "Inject trait sinit")
-      ~f:(fun () -> inject_trait_sinit tenv pdesc)
+      ~pp_name:(fun fmt -> Format.pp_print_string fmt "Inject trait constinit")
+      ~f:(fun () -> inject_trait_constinit tenv pdesc)
 end
 
 let do_preanalysis tenv pdesc =
@@ -518,7 +518,7 @@ let do_preanalysis tenv pdesc =
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
     (* Apply dynamic selection of copy and overriden methods *)
     ReplaceObjCMethodCall.process tenv pdesc proc_name ;
-  if Procname.is_hack_sinit proc_name then InjectTraitSinit.process tenv pdesc ;
+  if Procname.is_hack_constinit proc_name then InjectTraitConstinit.process tenv pdesc ;
   Liveness.process pdesc ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
