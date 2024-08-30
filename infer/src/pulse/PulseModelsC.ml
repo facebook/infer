@@ -20,54 +20,39 @@ let invalidate path access_path location cause addr_trace : unit DSL.model_monad
   PulseOperations.invalidate path access_path location cause addr_trace |> exec_command
 
 
-let alloc_common_dsl ?(initialize = false) allocator ~size_exp_opt : unit DSL.model_monad =
+let alloc_common_dsl ~null_case ~initialize allocator size_exp_opt : unit DSL.model_monad =
   let open DSL.Syntax in
   let* {path; location; ret= ret_id, _} = get_data in
   let astate_alloc = Basic.return_alloc_not_null allocator ~initialize size_exp_opt in
-  let result_null =
-    let* ret_addr = fresh ~more:"(null case)" () in
-    assign_ret ret_addr @@> and_eq_int ret_addr IntLit.zero
-    @@> invalidate path
-          (StackAddress (Var.of_id ret_id, snd ret_addr))
-          location (ConstantDereference IntLit.zero) ret_addr
-  in
-  disj [astate_alloc; result_null]
+  if null_case then
+    let result_null =
+      let* ret_addr = fresh ~more:"(null case)" () in
+      assign_ret ret_addr @@> and_eq_int ret_addr IntLit.zero
+      @@> invalidate path
+            (StackAddress (Var.of_id ret_id, snd ret_addr))
+            location (ConstantDereference IntLit.zero) ret_addr
+    in
+    disj [astate_alloc; result_null]
+  else astate_alloc
 
 
-let alloc_common ?initialize ~desc allocator ~size_exp_opt : model =
+let alloc_common ~null_case ~initialize ~desc allocator size_exp_opt : model =
   let open DSL.Syntax in
-  start_named_model desc @@ alloc_common_dsl ?initialize allocator ~size_exp_opt
+  start_named_model desc @@ alloc_common_dsl ~null_case ~initialize allocator size_exp_opt
 
 
-let alloc_not_null_common_dsl ?(initialize = false) allocator ~size_exp_opt : unit DSL.model_monad =
-  let open DSL.Syntax in
-  Basic.return_alloc_not_null ~initialize allocator size_exp_opt
+let malloc ~null_case size_exp =
+  alloc_common ~null_case ~initialize:false ~desc:"malloc" CMalloc (Some size_exp)
 
 
-let alloc_not_null_common ~desc allocator ~size_exp_opt : model =
-  let open DSL.Syntax in
-  start_named_model desc @@ alloc_not_null_common_dsl allocator ~size_exp_opt
-
-
-let malloc size_exp = alloc_common ~desc:"malloc" CMalloc ~size_exp_opt:(Some size_exp)
-
-let malloc_not_null size_exp =
-  alloc_not_null_common ~desc:"malloc" CMalloc ~size_exp_opt:(Some size_exp)
-
-
-let custom_malloc size_exp model_data astate =
-  alloc_common ~desc:"custom malloc" (CustomMalloc model_data.callee_procname)
-    ~size_exp_opt:(Some size_exp) model_data astate
-
-
-let custom_malloc_not_null size_exp model_data astate =
-  alloc_not_null_common ~desc:"custom malloc" (CustomMalloc model_data.callee_procname)
-    ~size_exp_opt:(Some size_exp) model_data astate
+let custom_malloc ~null_case size_exp model_data astate =
+  alloc_common ~null_case ~initialize:false ~desc:"custom malloc"
+    (CustomMalloc model_data.callee_procname) (Some size_exp) model_data astate
 
 
 let custom_alloc_not_null desc model_data astate =
-  alloc_not_null_common ~desc (CustomMalloc model_data.callee_procname) ~size_exp_opt:None
-    model_data astate
+  alloc_common ~initialize:false ~null_case:false ~desc (CustomMalloc model_data.callee_procname)
+    None model_data astate
 
 
 let realloc_common ~desc allocator pointer size : model =
@@ -78,7 +63,8 @@ let realloc_common ~desc allocator pointer size : model =
          let<*> exec_state = result in
          match (exec_state : ExecutionDomain.t) with
          | ContinueProgram astate ->
-             alloc_common ~desc allocator ~size_exp_opt:(Some size) data astate non_disj
+             alloc_common ~null_case:true ~initialize:false ~desc allocator (Some size) data astate
+               non_disj
          | ExceptionRaised _
          | ExitProgram _
          | AbortProgram _
@@ -250,17 +236,17 @@ let matchers : matcher list =
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf ]
-  @ ( [ ( +BuiltinDecl.(match_builtin malloc)
+  @ ( [ +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
-        $--> if Config.pulse_unsafe_malloc then malloc_not_null else malloc )
-      ; ( +match_regexp_opt Config.pulse_model_malloc_pattern
+        $--> malloc ~null_case:(not Config.pulse_unsafe_malloc)
+      ; +match_regexp_opt Config.pulse_model_malloc_pattern
         <>$ capt_exp
-        $+...$--> if Config.pulse_unsafe_malloc then custom_malloc_not_null else custom_malloc )
+        $+...$--> custom_malloc ~null_case:(not Config.pulse_unsafe_malloc)
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
         &--> custom_alloc_not_null "CGCreate/Copy"
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
         &--> custom_alloc_not_null "CFCreate/Copy"
-      ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc_not_null
+      ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc ~null_case:false
       ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null "custom alloc"
       ]
     |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
