@@ -971,14 +971,14 @@ let hack_field_get this field : model =
   assign_ret retval
 
 
-let make_hack_random_bool : DSL.aval DSL.model_monad =
+let make_hack_random_bool () : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* any = fresh () in
   let* boxed_bool = constructor hack_bool_type_name [("val", any)] in
   ret boxed_bool
 
 
-let make_hack_unconstrained_int : DSL.aval DSL.model_monad =
+let make_hack_unconstrained_int () : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* any = fresh () in
   let* boxed_int = constructor hack_int_type_name [("val", any)] in
@@ -989,7 +989,7 @@ let hack_unconstrained_int : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* rv = make_hack_unconstrained_int in
+  let* rv = make_hack_unconstrained_int () in
   assign_ret rv
 
 
@@ -1072,13 +1072,13 @@ let hhbc_cmp_same x y : model =
                          shape, taking into account the difference between == and ===. *)
                       (* TODO(dpichardie) cover the specificities of == that compare objects properties
                          (structural equality). *)
-                  make_hack_random_bool ] )
+                  make_hack_random_bool () ] )
         | Some {Formula.typ= x_typ}, Some {Formula.typ= y_typ} when not (Typ.equal x_typ y_typ) ->
             L.d_printfln "hhbc_cmp_same: known different dynamic types: false result" ;
             make_hack_bool false
         | _ ->
             L.d_printfln "hhbc_cmp_same: at least one unknown dynamic type: unknown result" ;
-            make_hack_random_bool ) ]
+            make_hack_random_bool () ) ]
   in
   assign_ret res
 
@@ -1099,7 +1099,7 @@ let hack_is_true b : model =
     let* b_dynamic_type_data = get_dynamic_type ~ask_specialization:true b in
     match b_dynamic_type_data with
     | None ->
-        let* ret = make_hack_random_bool in
+        let* ret = make_hack_random_bool () in
         assign_ret ret
     | Some {Formula.typ= {Typ.desc= Tstruct b_typ_name}} ->
         if Typ.Name.equal b_typ_name hack_bool_type_name then
@@ -1225,7 +1225,7 @@ let hhbc_cmp_lt x y : model =
                 match (x_dynamic_type_data, y_dynamic_type_data) with
                 | None, _ | _, None ->
                     L.d_printfln "random nones" ;
-                    make_hack_random_bool
+                    make_hack_random_bool ()
                 | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
                   , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
                   when Typ.Name.equal x_typ_name y_typ_name ->
@@ -1243,7 +1243,7 @@ let hhbc_cmp_lt x y : model =
                       value_lt_test x_val y_val
                     else (
                       L.d_printfln "random somes" ;
-                      make_hack_random_bool )
+                      make_hack_random_bool () )
                 | _, _ ->
                     make_hack_bool false ) ] ]
   in
@@ -1275,7 +1275,7 @@ let hhbc_cmp_le x y : model =
                 let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
                 match (x_dynamic_type_data, y_dynamic_type_data) with
                 | None, _ | _, None ->
-                    make_hack_random_bool
+                    make_hack_random_bool ()
                 | ( Some {Formula.typ= {Typ.desc= Tstruct x_typ_name}}
                   , Some {Formula.typ= {Typ.desc= Tstruct y_typ_name}} )
                   when Typ.Name.equal x_typ_name y_typ_name ->
@@ -1291,7 +1291,7 @@ let hhbc_cmp_le x y : model =
                       let* x_val = load_access x (FieldAccess bool_val_field) in
                       let* y_val = load_access y (FieldAccess bool_val_field) in
                       value_le_test x_val y_val
-                    else make_hack_random_bool
+                    else make_hack_random_bool ()
                 | _, _ ->
                     make_hack_bool false ) ] ]
   in
