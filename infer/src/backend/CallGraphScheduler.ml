@@ -72,7 +72,7 @@ let bottom_up call_graph =
         decr remaining ;
         decr scheduled ;
         CallGraph.remove call_graph pname
-    | File _ | ProcUID _ ->
-        L.die InternalError "Only Procnames are scheduled but File/ProcUID target was received"
+    | File _ ->
+        L.die InternalError "Only Procnames are scheduled but File target was received"
   in
   {ProcessPool.TaskGenerator.remaining_tasks; is_empty; finished; next}

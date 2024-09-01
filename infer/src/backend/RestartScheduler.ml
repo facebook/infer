@@ -35,14 +35,13 @@ let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.Task
 
 let make sources =
   let target_count = ref 0 in
-  let cons_proc_uid_work acc procname =
+  let cons_procname_work acc procname =
     incr target_count ;
-    let proc_uid = Procname.to_unique_id procname in
-    {work= TaskSchedulerTypes.ProcUID proc_uid; dependency_filename_opt= None} :: acc
+    {work= TaskSchedulerTypes.Procname procname; dependency_filename_opt= None} :: acc
   in
   let pname_targets =
     List.fold sources ~init:[] ~f:(fun init source ->
-        SourceFiles.proc_names_of_source source |> List.fold ~init ~f:cons_proc_uid_work )
+        SourceFiles.proc_names_of_source source |> List.fold ~init ~f:cons_procname_work )
   in
   let make_file_work file =
     incr target_count ;

@@ -29,7 +29,7 @@ let find =
       (run_query select_statement_adb)
 
 
-let load_from_uid, load, clear_cache, store =
+let load, clear_cache, store =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)
   let cache : ProcAttributes.t Procname.Hash.t = Procname.Hash.create 1 in
   let load_from_uid uid =
@@ -71,7 +71,7 @@ let load_from_uid, load, clear_cache, store =
     DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis ;
     Procname.Hash.remove cache pname
   in
-  (load_from_uid, load, clear_cache, store)
+  (load, clear_cache, store)
 
 
 let load_exn pname = Option.value_exn (load pname)

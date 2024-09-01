@@ -6,11 +6,7 @@
  *)
 open! IStd
 
-type target =
-  | Procname of Procname.t
-  | File of SourceFile.t
-  | ProcUID of string
-      (** matches primary key of [procedures] and [specs] tables; see [Database.ml] *)
+type target = Procname of Procname.t | File of SourceFile.t
 
 type analysis_result =
   | Ok  (** Analysis finished normally. *)
