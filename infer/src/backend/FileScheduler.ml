@@ -16,6 +16,6 @@ let make sources =
   let next x =
     gen.next x
     (* see defn of gen above to see why res should never match Some (Procname _) *)
-    |> Option.map ~f:(function File _ as v -> v | Procname _ | ProcUID _ -> assert false)
+    |> Option.map ~f:(function File _ as v -> v | Procname _ -> assert false)
   in
   {gen with next}

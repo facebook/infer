@@ -54,14 +54,6 @@ let clear_caches () =
   Dependencies.clear ()
 
 
-let proc_name_of_uid uid =
-  match Attributes.load_from_uid uid with
-  | Some attrs ->
-      ProcAttributes.get_proc_name attrs
-  | None ->
-      L.die InternalError "Requested non-existent proc_uid: %s@." uid
-
-
 let useful_time = ref ExecutionDuration.zero
 
 let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) Tasks.doer =
@@ -106,8 +98,6 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
       match target with
       | Procname procname ->
           analyze_proc_name exe_env procname
-      | ProcUID proc_uid ->
-          proc_name_of_uid proc_uid |> analyze_proc_name exe_env
       | File source_file ->
           analyze_source_file exe_env source_file
     in
