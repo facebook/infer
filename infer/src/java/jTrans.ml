@@ -1098,7 +1098,7 @@ let instruction (context : JContext.t) pc instr : translation =
         let sil_op = get_test_operator op in
         let sil_test_false = Exp.BinOp (sil_op, sil_ex1, sil_ex2) in
         let sil_test_true = Exp.UnOp (Unop.LNot, sil_test_false, None) in
-        let if_kind = Sil.Ik_if {terminated= false} in
+        let if_kind = Sil.Ik_if in
         let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, if_kind) in
         let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, if_kind) in
         let node_kind_true = Procdesc.Node.Prune_node (true, if_kind, PruneNodeKind_MethodBody) in

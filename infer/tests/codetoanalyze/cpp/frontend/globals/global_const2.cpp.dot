@@ -7,15 +7,15 @@ digraph cfg {
 "__infer_globals_initializer_globa.bdc08c089842ce08_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_globa.bdc08c089842ce08_3" [label="3: + \n   END_BRANCHES\n " ]
+"__infer_globals_initializer_globa.bdc08c089842ce08_3" [label="3: + \n  " ]
 	
 
 	 "__infer_globals_initializer_globa.bdc08c089842ce08_3" -> "__infer_globals_initializer_globa.bdc08c089842ce08_8" ;
-"__infer_globals_initializer_globa.bdc08c089842ce08_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   PRUNE(1, true); [line 8, column 20]\n " shape="invhouse"]
+"__infer_globals_initializer_globa.bdc08c089842ce08_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 8, column 20]\n " shape="invhouse"]
 	
 
 	 "__infer_globals_initializer_globa.bdc08c089842ce08_4" -> "__infer_globals_initializer_globa.bdc08c089842ce08_6" ;
-"__infer_globals_initializer_globa.bdc08c089842ce08_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!1, false); [line 8, column 20]\n " shape="invhouse"]
+"__infer_globals_initializer_globa.bdc08c089842ce08_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 8, column 20]\n " shape="invhouse"]
 	
 
 	 "__infer_globals_initializer_globa.bdc08c089842ce08_5" -> "__infer_globals_initializer_globa.bdc08c089842ce08_7" ;
@@ -27,7 +27,7 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer_globa.bdc08c089842ce08_7" -> "__infer_globals_initializer_globa.bdc08c089842ce08_3" ;
-"__infer_globals_initializer_globa.bdc08c089842ce08_8" [label="8:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"__infer_globals_initializer_globa.bdc08c089842ce08_8" [label="8:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "__infer_globals_initializer_globa.bdc08c089842ce08_8" -> "__infer_globals_initializer_globa.bdc08c089842ce08_2" ;

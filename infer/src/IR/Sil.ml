@@ -11,29 +11,27 @@ module F = Format
 module L = Logging
 
 type if_kind =
-  | Ik_bexp of {terminated: bool}
+  | Ik_bexp
   | Ik_compexch
   | Ik_dowhile
   | Ik_for
-  | Ik_if of {terminated: bool}
+  | Ik_if
   | Ik_land_lor
   | Ik_while
   | Ik_switch
 [@@deriving compare, equal, hash, normalize]
 
 let pp_if_kind fmt = function
-  | Ik_bexp {terminated} ->
-      F.pp_print_string fmt "boolean exp" ;
-      if terminated then F.pp_print_string fmt " (terminated)"
+  | Ik_bexp ->
+      F.pp_print_string fmt "boolean exp"
   | Ik_compexch ->
       F.pp_print_string fmt "atomic compare exchange"
   | Ik_dowhile ->
       F.pp_print_string fmt "do while"
   | Ik_for ->
       F.pp_print_string fmt "for loop"
-  | Ik_if {terminated} ->
-      F.pp_print_string fmt "if" ;
-      if terminated then F.pp_print_string fmt " (terminated)"
+  | Ik_if ->
+      F.pp_print_string fmt "if"
   | Ik_land_lor ->
       F.pp_print_string fmt "obtained from && or ||"
   | Ik_while ->
@@ -42,17 +40,9 @@ let pp_if_kind fmt = function
       F.pp_print_string fmt "switch"
 
 
-let is_terminated_if_kind = function
-  | Ik_bexp {terminated} | Ik_if {terminated} ->
-      terminated
-  | Ik_compexch | Ik_dowhile | Ik_for | Ik_land_lor | Ik_while | Ik_switch ->
-      false
-
-
 type instr_metadata =
   | Abstract of Location.t
   | CatchEntry of {try_id: int; loc: Location.t}
-  | EndBranches
   | ExitScope of Var.t list * Location.t
   | Nullify of Pvar.t * Location.t
   | Skip
@@ -98,7 +88,7 @@ let location_of_instr_metadata = function
   | TryExit {loc}
   | VariableLifetimeBegins {loc} ->
       loc
-  | EndBranches | Skip ->
+  | Skip ->
       Location.dummy
 
 
@@ -110,7 +100,7 @@ let location_of_instr = function
 
 
 let exps_of_instr_metadata = function
-  | Abstract _ | CatchEntry _ | EndBranches ->
+  | Abstract _ | CatchEntry _ ->
       []
   | ExitScope (vars, _) ->
       List.map ~f:Var.to_exp vars
@@ -141,8 +131,6 @@ let pp_instr_metadata pe f = function
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
   | CatchEntry {loc} ->
       F.fprintf f "CATCH_ENTRY; [%a]" Location.pp loc
-  | EndBranches ->
-      F.fprintf f "END_BRANCHES"
   | ExitScope (vars, loc) ->
       F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
   | Nullify (pvar, loc) ->

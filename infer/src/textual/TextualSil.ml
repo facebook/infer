@@ -708,7 +708,7 @@ module InstrBridge = struct
     | Prune {exp; loc} ->
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
-        Prune (e, loc, true, Ik_if {terminated= false})
+        Prune (e, loc, true, Ik_if)
     | Let {id; exp= Call {proc; args= [Typ typ]}; loc} when ProcDecl.is_allocate_object_builtin proc
       ->
         let typ = TypBridge.to_sil lang typ in
@@ -964,7 +964,7 @@ module NodeBridge = struct
       with
       | Some branch ->
           (* This is incomplete as Textual cannot distinguish between if/loops as well as the branch condition for now.*)
-          let if_kind = Sil.Ik_if {terminated= false} in
+          let if_kind = Sil.Ik_if in
           SilProcdesc.Node.Prune_node (branch, if_kind, PruneNodeKind_MethodBody)
       | None ->
           SilProcdesc.Node.Stmt_node MethodBody

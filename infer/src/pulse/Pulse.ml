@@ -1536,36 +1536,16 @@ module PulseTransferFunctions = struct
                 NonDisjDomain.set_captured_variables exp astate_n )
           in
           (astates, path, astate_n)
-      | Prune (condition, loc, is_then_branch, if_kind) ->
+      | Prune (condition, loc, _is_then_branch, _if_kind) ->
           let prune_result =
             let=* astate = check_config_usage analysis_data loc condition astate in
             PulseOperations.prune path loc ~condition astate
-          in
-          let path =
-            match PulseOperationResult.sat_ok prune_result with
-            | None ->
-                path
-            | Some (_, hist) ->
-                if Sil.is_terminated_if_kind if_kind then
-                  let hist =
-                    ValueHistory.sequence
-                      (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp})
-                      hist
-                  in
-                  {path with conditions= hist :: path.conditions}
-                else path
           in
           let results =
             let<++> astate, _ = prune_result in
             astate
           in
           (PulseReport.report_exec_results analysis_data loc results, path, astate_n)
-      | Metadata EndBranches ->
-          (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]
-             instruction terminates the most recently seen terminated conditional. The empty case
-             shouldn't happen but let's not crash by the fault of possible errors in frontends. *)
-          let path = {path with conditions= List.tl path.conditions |> Option.value ~default:[]} in
-          ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
           exit_scope vars location path astate astate_n analysis_data
       | Metadata (VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding})

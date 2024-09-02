@@ -29,19 +29,19 @@ digraph cfg {
 "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_2" [label="2: Exit ExceptionExample.test1 \n  " color=yellow style=filled]
 	
 
-"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_3" [label="3: + \n   END_BRANCHES\n " ]
+"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_3" [label="3: + \n  " ]
 	
 
 	 "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_3" -> "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_4" ;
-"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_4" -> "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_2" ;
-"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_5" [label="5: Prune (true branch, if (terminated)) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(n$4, true); [line 27, column 7]\n " shape="invhouse"]
+"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_5" [label="5: Prune (true branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(n$4, true); [line 27, column 7]\n " shape="invhouse"]
 	
 
 	 "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_5" -> "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_7" ;
-"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_6" [label="6: Prune (false branch, if (terminated)) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(!n$4, false); [line 27, column 7]\n " shape="invhouse"]
+"test1#ExceptionExample#[instance].a03ebc2a7c41ec04_6" [label="6: Prune (false branch, if) \n   n$4=*&s:NSString* [line 27, column 7]\n  PRUNE(!n$4, false); [line 27, column 7]\n " shape="invhouse"]
 	
 
 	 "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_6" -> "test1#ExceptionExample#[instance].a03ebc2a7c41ec04_3" ;

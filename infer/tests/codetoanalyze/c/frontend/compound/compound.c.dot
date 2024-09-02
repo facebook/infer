@@ -7,19 +7,19 @@ digraph cfg {
 "foo.acbd18db4cc2f85c_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo.acbd18db4cc2f85c_3" [label="3: + \n   END_BRANCHES\n " ]
+"foo.acbd18db4cc2f85c_3" [label="3: + \n  " ]
 	
 
 	 "foo.acbd18db4cc2f85c_3" -> "foo.acbd18db4cc2f85c_4" ;
-"foo.acbd18db4cc2f85c_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"foo.acbd18db4cc2f85c_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85c_4" -> "foo.acbd18db4cc2f85c_2" ;
-"foo.acbd18db4cc2f85c_5" [label="5: Prune (true branch, if (terminated)) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(n$0, true); [line 15, column 7]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85c_5" [label="5: Prune (true branch, if) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(n$0, true); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85c_5" -> "foo.acbd18db4cc2f85c_8" ;
-"foo.acbd18db4cc2f85c_6" [label="6: Prune (false branch, if (terminated)) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(!n$0, false); [line 15, column 7]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85c_6" [label="6: Prune (false branch, if) \n   n$0=*&b:int [line 15, column 7]\n  PRUNE(!n$0, false); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85c_6" -> "foo.acbd18db4cc2f85c_3" ;

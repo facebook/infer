@@ -8,15 +8,15 @@ digraph cfg {
 "neg_bool.e953d6477eaaeafa_2" [label="2: Exit neg_bool \n  " color=yellow style=filled]
 	
 
-"neg_bool.e953d6477eaaeafa_3" [label="3: + \n   END_BRANCHES\n " ]
+"neg_bool.e953d6477eaaeafa_3" [label="3: + \n  " ]
 	
 
 	 "neg_bool.e953d6477eaaeafa_3" -> "neg_bool.e953d6477eaaeafa_8" ;
-"neg_bool.e953d6477eaaeafa_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(n$0, true); [line 12, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafa_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(n$0, true); [line 12, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafa_4" -> "neg_bool.e953d6477eaaeafa_6" ;
-"neg_bool.e953d6477eaaeafa_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(!n$0, false); [line 12, column 33]\n " shape="invhouse"]
+"neg_bool.e953d6477eaaeafa_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:_Bool [line 12, column 33]\n  PRUNE(!n$0, false); [line 12, column 33]\n " shape="invhouse"]
 	
 
 	 "neg_bool.e953d6477eaaeafa_5" -> "neg_bool.e953d6477eaaeafa_7" ;
@@ -40,15 +40,15 @@ digraph cfg {
 "neg_char.53ef6b31d8438604_2" [label="2: Exit neg_char \n  " color=yellow style=filled]
 	
 
-"neg_char.53ef6b31d8438604_3" [label="3: + \n   END_BRANCHES\n " ]
+"neg_char.53ef6b31d8438604_3" [label="3: + \n  " ]
 	
 
 	 "neg_char.53ef6b31d8438604_3" -> "neg_char.53ef6b31d8438604_8" ;
-"neg_char.53ef6b31d8438604_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(n$0, true); [line 10, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d8438604_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(n$0, true); [line 10, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d8438604_4" -> "neg_char.53ef6b31d8438604_6" ;
-"neg_char.53ef6b31d8438604_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(!n$0, false); [line 10, column 32]\n " shape="invhouse"]
+"neg_char.53ef6b31d8438604_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:char [line 10, column 32]\n  PRUNE(!n$0, false); [line 10, column 32]\n " shape="invhouse"]
 	
 
 	 "neg_char.53ef6b31d8438604_5" -> "neg_char.53ef6b31d8438604_7" ;
@@ -72,15 +72,15 @@ digraph cfg {
 "neg_int.2aa25aca565c41dd_2" [label="2: Exit neg_int \n  " color=yellow style=filled]
 	
 
-"neg_int.2aa25aca565c41dd_3" [label="3: + \n   END_BRANCHES\n " ]
+"neg_int.2aa25aca565c41dd_3" [label="3: + \n  " ]
 	
 
 	 "neg_int.2aa25aca565c41dd_3" -> "neg_int.2aa25aca565c41dd_8" ;
-"neg_int.2aa25aca565c41dd_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(n$0, true); [line 8, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd_4" [label="4: Prune (true branch, boolean exp) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(n$0, true); [line 8, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd_4" -> "neg_int.2aa25aca565c41dd_6" ;
-"neg_int.2aa25aca565c41dd_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(!n$0, false); [line 8, column 30]\n " shape="invhouse"]
+"neg_int.2aa25aca565c41dd_5" [label="5: Prune (false branch, boolean exp) \n   n$0=*&a:int [line 8, column 30]\n  PRUNE(!n$0, false); [line 8, column 30]\n " shape="invhouse"]
 	
 
 	 "neg_int.2aa25aca565c41dd_5" -> "neg_int.2aa25aca565c41dd_7" ;

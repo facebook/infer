@@ -19,15 +19,15 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb540_5" -> "arithmetic.26e816805c2eb540_4" ;
-"arithmetic.26e816805c2eb540_6" [label="6: + \n   END_BRANCHES\n " ]
+"arithmetic.26e816805c2eb540_6" [label="6: + \n  " ]
 	
 
 	 "arithmetic.26e816805c2eb540_6" -> "arithmetic.26e816805c2eb540_11" ;
-"arithmetic.26e816805c2eb540_7" [label="7: Prune (true branch, boolean exp (terminated)) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(n$10, true); [line 23, column 34]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb540_7" [label="7: Prune (true branch, boolean exp) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(n$10, true); [line 23, column 34]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb540_7" -> "arithmetic.26e816805c2eb540_9" ;
-"arithmetic.26e816805c2eb540_8" [label="8: Prune (false branch, boolean exp (terminated)) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(!n$10, false); [line 23, column 34]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb540_8" [label="8: Prune (false branch, boolean exp) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(!n$10, false); [line 23, column 34]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb540_8" -> "arithmetic.26e816805c2eb540_10" ;
@@ -43,15 +43,15 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb540_11" -> "arithmetic.26e816805c2eb540_5" ;
-"arithmetic.26e816805c2eb540_12" [label="12: + \n   END_BRANCHES\n " ]
+"arithmetic.26e816805c2eb540_12" [label="12: + \n  " ]
 	
 
 	 "arithmetic.26e816805c2eb540_12" -> "arithmetic.26e816805c2eb540_17" ;
-"arithmetic.26e816805c2eb540_13" [label="13: Prune (true branch, boolean exp (terminated)) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(n$17, true); [line 20, column 8]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb540_13" [label="13: Prune (true branch, boolean exp) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(n$17, true); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb540_13" -> "arithmetic.26e816805c2eb540_15" ;
-"arithmetic.26e816805c2eb540_14" [label="14: Prune (false branch, boolean exp (terminated)) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(!n$17, false); [line 20, column 8]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb540_14" [label="14: Prune (false branch, boolean exp) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(!n$17, false); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb540_14" -> "arithmetic.26e816805c2eb540_16" ;
@@ -88,11 +88,11 @@ digraph cfg {
 "load_store_exchange.3da178fb2a20c1b2_2" [label="2: Exit load_store_exchange \n  " color=yellow style=filled]
 	
 
-"load_store_exchange.3da178fb2a20c1b2_3" [label="3: + \n   END_BRANCHES\n " ]
+"load_store_exchange.3da178fb2a20c1b2_3" [label="3: + \n  " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_3" -> "load_store_exchange.3da178fb2a20c1b2_10" ;
-"load_store_exchange.3da178fb2a20c1b2_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b2_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_4" -> "load_store_exchange.3da178fb2a20c1b2_2" ;
@@ -121,7 +121,7 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_10" -> "load_store_exchange.3da178fb2a20c1b2_2" ;
-"load_store_exchange.3da178fb2a20c1b2_11" [label="11: + \n   END_BRANCHES\n " ]
+"load_store_exchange.3da178fb2a20c1b2_11" [label="11: + \n  " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_11" -> "load_store_exchange.3da178fb2a20c1b2_17" ;
@@ -158,15 +158,15 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_19" -> "load_store_exchange.3da178fb2a20c1b2_18" ;
-"load_store_exchange.3da178fb2a20c1b2_20" [label="20: + \n   END_BRANCHES\n " ]
+"load_store_exchange.3da178fb2a20c1b2_20" [label="20: + \n  " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_20" -> "load_store_exchange.3da178fb2a20c1b2_25" ;
-"load_store_exchange.3da178fb2a20c1b2_21" [label="21: Prune (true branch, boolean exp (terminated)) \n   n$35=*&b:_Bool [line 44, column 7]\n  PRUNE(n$35, true); [line 44, column 7]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_21" [label="21: Prune (true branch, boolean exp) \n   n$35=*&b:_Bool [line 44, column 7]\n  PRUNE(n$35, true); [line 44, column 7]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_21" -> "load_store_exchange.3da178fb2a20c1b2_23" ;
-"load_store_exchange.3da178fb2a20c1b2_22" [label="22: Prune (false branch, boolean exp (terminated)) \n   n$35=*&b:_Bool [line 44, column 7]\n  PRUNE(!n$35, false); [line 44, column 7]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_22" [label="22: Prune (false branch, boolean exp) \n   n$35=*&b:_Bool [line 44, column 7]\n  PRUNE(!n$35, false); [line 44, column 7]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_22" -> "load_store_exchange.3da178fb2a20c1b2_24" ;
@@ -182,15 +182,15 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_25" -> "load_store_exchange.3da178fb2a20c1b2_19" ;
-"load_store_exchange.3da178fb2a20c1b2_26" [label="26: + \n   END_BRANCHES\n " ]
+"load_store_exchange.3da178fb2a20c1b2_26" [label="26: + \n  " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_26" -> "load_store_exchange.3da178fb2a20c1b2_31" ;
-"load_store_exchange.3da178fb2a20c1b2_27" [label="27: Prune (true branch, boolean exp (terminated)) \n   n$39=*&b:_Bool [line 42, column 8]\n  PRUNE(n$39, true); [line 42, column 8]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_27" [label="27: Prune (true branch, boolean exp) \n   n$39=*&b:_Bool [line 42, column 8]\n  PRUNE(n$39, true); [line 42, column 8]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_27" -> "load_store_exchange.3da178fb2a20c1b2_29" ;
-"load_store_exchange.3da178fb2a20c1b2_28" [label="28: Prune (false branch, boolean exp (terminated)) \n   n$39=*&b:_Bool [line 42, column 8]\n  PRUNE(!n$39, false); [line 42, column 8]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_28" [label="28: Prune (false branch, boolean exp) \n   n$39=*&b:_Bool [line 42, column 8]\n  PRUNE(!n$39, false); [line 42, column 8]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_28" -> "load_store_exchange.3da178fb2a20c1b2_30" ;
@@ -207,7 +207,7 @@ digraph cfg {
 
 	 "load_store_exchange.3da178fb2a20c1b2_31" -> "load_store_exchange.3da178fb2a20c1b2_21" ;
 	 "load_store_exchange.3da178fb2a20c1b2_31" -> "load_store_exchange.3da178fb2a20c1b2_22" ;
-"load_store_exchange.3da178fb2a20c1b2_32" [label="32: + \n   END_BRANCHES\n " ]
+"load_store_exchange.3da178fb2a20c1b2_32" [label="32: + \n  " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_32" -> "load_store_exchange.3da178fb2a20c1b2_38" ;
@@ -216,11 +216,11 @@ digraph cfg {
 
 	 "load_store_exchange.3da178fb2a20c1b2_33" -> "load_store_exchange.3da178fb2a20c1b2_34" ;
 	 "load_store_exchange.3da178fb2a20c1b2_33" -> "load_store_exchange.3da178fb2a20c1b2_35" ;
-"load_store_exchange.3da178fb2a20c1b2_34" [label="34: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$43, true); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_34" [label="34: Prune (true branch, boolean exp) \n   PRUNE(n$43, true); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_34" -> "load_store_exchange.3da178fb2a20c1b2_36" ;
-"load_store_exchange.3da178fb2a20c1b2_35" [label="35: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!n$43, false); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_35" [label="35: Prune (false branch, boolean exp) \n   PRUNE(!n$43, false); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_35" -> "load_store_exchange.3da178fb2a20c1b2_37" ;

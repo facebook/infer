@@ -497,25 +497,25 @@ end = struct
           | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
               let descr =
                 match (is_true_branch, if_kind) with
-                | true, Sil.Ik_if _ ->
+                | true, Ik_if ->
                     "Taking true branch"
-                | false, Sil.Ik_if _ ->
+                | false, Ik_if ->
                     "Taking false branch"
-                | true, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
+                | true, (Ik_for | Ik_while | Ik_dowhile) ->
                     "Loop condition is true. Entering loop body"
-                | false, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
+                | false, (Ik_for | Ik_while | Ik_dowhile) ->
                     "Loop condition is false. Leaving loop"
-                | true, Sil.Ik_switch ->
+                | true, Ik_switch ->
                     "Switch condition is true. Entering switch case"
-                | false, Sil.Ik_switch ->
+                | false, Ik_switch ->
                     "Switch condition is false. Skipping switch case"
-                | true, Sil.Ik_compexch ->
+                | true, Ik_compexch ->
                     "Pointer contains expected value. Writing desired to pointer"
-                | false, Sil.Ik_compexch ->
+                | false, Ik_compexch ->
                     "Pointer does not contain expected value. Writing to expected"
-                | true, (Sil.Ik_bexp _ | Sil.Ik_land_lor) ->
+                | true, (Ik_bexp | Ik_land_lor) ->
                     "Condition is true"
-                | false, (Sil.Ik_bexp _ | Sil.Ik_land_lor) ->
+                | false, (Ik_bexp | Ik_land_lor) ->
                     "Condition is false"
               in
               let node_tags = [Errlog.Condition is_true_branch] in

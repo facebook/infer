@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "conditional_assignment#8950169167.be2d62cec5392b85_6" -> "conditional_assignment#8950169167.be2d62cec5392b85_3" ;
-"conditional_assignment#8950169167.be2d62cec5392b85_7" [label="7: + \n   END_BRANCHES\n " ]
+"conditional_assignment#8950169167.be2d62cec5392b85_7" [label="7: + \n  " ]
 	
 
 	 "conditional_assignment#8950169167.be2d62cec5392b85_7" -> "conditional_assignment#8950169167.be2d62cec5392b85_5" ;
@@ -33,11 +33,11 @@ digraph cfg {
 
 	 "conditional_assignment#8950169167.be2d62cec5392b85_8" -> "conditional_assignment#8950169167.be2d62cec5392b85_9" ;
 	 "conditional_assignment#8950169167.be2d62cec5392b85_8" -> "conditional_assignment#8950169167.be2d62cec5392b85_10" ;
-"conditional_assignment#8950169167.be2d62cec5392b85_9" [label="9: Prune (true branch, boolean exp (terminated)) \n   PRUNE((n$1 > 0), true); [line 21, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167.be2d62cec5392b85_9" [label="9: Prune (true branch, boolean exp) \n   PRUNE((n$1 > 0), true); [line 21, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167.be2d62cec5392b85_9" -> "conditional_assignment#8950169167.be2d62cec5392b85_11" ;
-"conditional_assignment#8950169167.be2d62cec5392b85_10" [label="10: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!(n$1 > 0), false); [line 21, column 18]\n " shape="invhouse"]
+"conditional_assignment#8950169167.be2d62cec5392b85_10" [label="10: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 > 0), false); [line 21, column 18]\n " shape="invhouse"]
 	
 
 	 "conditional_assignment#8950169167.be2d62cec5392b85_10" -> "conditional_assignment#8950169167.be2d62cec5392b85_12" ;

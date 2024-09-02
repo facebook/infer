@@ -19,7 +19,7 @@ digraph cfg {
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f_5" -> "vaarg_foo.73af1e8d32c2d09f_3" ;
-"vaarg_foo.73af1e8d32c2d09f_6" [label="6: + \n   END_BRANCHES\n " ]
+"vaarg_foo.73af1e8d32c2d09f_6" [label="6: + \n  " ]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f_6" -> "vaarg_foo.73af1e8d32c2d09f_5" ;
@@ -28,11 +28,11 @@ digraph cfg {
 
 	 "vaarg_foo.73af1e8d32c2d09f_7" -> "vaarg_foo.73af1e8d32c2d09f_8" ;
 	 "vaarg_foo.73af1e8d32c2d09f_7" -> "vaarg_foo.73af1e8d32c2d09f_9" ;
-"vaarg_foo.73af1e8d32c2d09f_8" [label="8: Prune (true branch, if (terminated)) \n   PRUNE((n$2 == 9), true); [line 15, column 7]\n " shape="invhouse"]
+"vaarg_foo.73af1e8d32c2d09f_8" [label="8: Prune (true branch, if) \n   PRUNE((n$2 == 9), true); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f_8" -> "vaarg_foo.73af1e8d32c2d09f_10" ;
-"vaarg_foo.73af1e8d32c2d09f_9" [label="9: Prune (false branch, if (terminated)) \n   PRUNE(!(n$2 == 9), false); [line 15, column 7]\n " shape="invhouse"]
+"vaarg_foo.73af1e8d32c2d09f_9" [label="9: Prune (false branch, if) \n   PRUNE(!(n$2 == 9), false); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f_9" -> "vaarg_foo.73af1e8d32c2d09f_11" ;

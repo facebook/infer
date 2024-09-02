@@ -312,9 +312,9 @@ let pp_event_no_location fmt event =
         Pvar.pp_value_non_verbose captured_as
   | ConditionPassed {if_kind; is_then_branch} ->
       ( match (is_then_branch, if_kind) with
-      | true, Ik_if _ ->
+      | true, Ik_if ->
           "taking \"then\" branch"
-      | false, Ik_if _ ->
+      | false, Ik_if ->
           "taking \"else\" branch"
       | true, (Ik_for | Ik_while | Ik_dowhile) ->
           "loop condition is true; entering loop body"
@@ -328,9 +328,9 @@ let pp_event_no_location fmt event =
           "pointer contains expected value; writing desired to pointer"
       | false, Ik_compexch ->
           "pointer does not contain expected value; writing to expected"
-      | true, (Ik_bexp _ | Ik_land_lor) ->
+      | true, (Ik_bexp | Ik_land_lor) ->
           "condition is true"
-      | false, (Ik_bexp _ | Ik_land_lor) ->
+      | false, (Ik_bexp | Ik_land_lor) ->
           "condition is false" )
       |> F.pp_print_string fmt
   | CppTemporaryCreated _ ->

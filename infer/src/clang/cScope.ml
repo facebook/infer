@@ -126,8 +126,8 @@ module CXXTemporaries = struct
         (* temporaries created in branches need instrumentation markers to remember if they have
            been created or not during the evaluation of the expression *)
         visit_stmt ~bound_to_decl context cond ~marker temporaries
-        |> visit_stmt ~bound_to_decl context then_ ~marker:(Some (Sil.Ik_bexp {terminated= true}))
-        |> visit_stmt ~bound_to_decl context else_ ~marker:(Some (Sil.Ik_bexp {terminated= true}))
+        |> visit_stmt ~bound_to_decl context then_ ~marker:(Some Sil.Ik_bexp)
+        |> visit_stmt ~bound_to_decl context else_ ~marker:(Some Sil.Ik_bexp)
     | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
         (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
            && b] and [a || b] will be executed *)

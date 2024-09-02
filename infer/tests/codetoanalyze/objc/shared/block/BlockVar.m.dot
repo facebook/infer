@@ -86,11 +86,11 @@ digraph cfg {
 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_2" [label="2: Exit BlockVar.navigateToURLInBackground \n  " color=yellow style=filled]
 	
 
-"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_3" [label="3: + \n   END_BRANCHES\n " ]
+"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_3" [label="3: + \n  " ]
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_3" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_4" ;
-"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_4" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_2" ;
@@ -99,11 +99,11 @@ digraph cfg {
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_5" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_6" ;
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_5" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_7" ;
-"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == 8), true); [line 23, column 7]\n " shape="invhouse"]
+"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 8), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_6" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_8" ;
-"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n " shape="invhouse"]
+"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_7" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_10" ;

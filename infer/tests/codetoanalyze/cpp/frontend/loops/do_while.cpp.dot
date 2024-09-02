@@ -32,15 +32,15 @@ digraph cfg {
 
 	 "test1#18336337528475129646.aabe036d545fef7e_8" -> "test1#18336337528475129646.aabe036d545fef7e_6" ;
 	 "test1#18336337528475129646.aabe036d545fef7e_8" -> "test1#18336337528475129646.aabe036d545fef7e_7" ;
-"test1#18336337528475129646.aabe036d545fef7e_9" [label="9: + \n   END_BRANCHES\n " ]
+"test1#18336337528475129646.aabe036d545fef7e_9" [label="9: + \n  " ]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e_9" -> "test1#18336337528475129646.aabe036d545fef7e_8" ;
-"test1#18336337528475129646.aabe036d545fef7e_10" [label="10: Prune (true branch, if (terminated)) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(n$3, true); [line 12, column 9]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e_10" [label="10: Prune (true branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(n$3, true); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e_10" -> "test1#18336337528475129646.aabe036d545fef7e_12" ;
-"test1#18336337528475129646.aabe036d545fef7e_11" [label="11: Prune (false branch, if (terminated)) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$3, false); [line 12, column 9]\n " shape="invhouse"]
+"test1#18336337528475129646.aabe036d545fef7e_11" [label="11: Prune (false branch, if) \n   n$3=*&a:_Bool [line 12, column 9]\n  PRUNE(!n$3, false); [line 12, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#18336337528475129646.aabe036d545fef7e_11" -> "test1#18336337528475129646.aabe036d545fef7e_13" ;

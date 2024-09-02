@@ -30,15 +30,15 @@ digraph cfg {
 "test5:#A#[instance].c5d2b4449c627d12_2" [label="2: Exit A.test5: \n  " color=yellow style=filled]
 	
 
-"test5:#A#[instance].c5d2b4449c627d12_3" [label="3: + \n   END_BRANCHES\n " ]
+"test5:#A#[instance].c5d2b4449c627d12_3" [label="3: + \n  " ]
 	
 
 	 "test5:#A#[instance].c5d2b4449c627d12_3" -> "test5:#A#[instance].c5d2b4449c627d12_8" ;
-"test5:#A#[instance].c5d2b4449c627d12_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(n$2, true); [line 22, column 23]\n " shape="invhouse"]
+"test5:#A#[instance].c5d2b4449c627d12_4" [label="4: Prune (true branch, boolean exp) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(n$2, true); [line 22, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#[instance].c5d2b4449c627d12_4" -> "test5:#A#[instance].c5d2b4449c627d12_6" ;
-"test5:#A#[instance].c5d2b4449c627d12_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(!n$2, false); [line 22, column 23]\n " shape="invhouse"]
+"test5:#A#[instance].c5d2b4449c627d12_5" [label="5: Prune (false branch, boolean exp) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(!n$2, false); [line 22, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#[instance].c5d2b4449c627d12_5" -> "test5:#A#[instance].c5d2b4449c627d12_7" ;

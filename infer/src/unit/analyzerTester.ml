@@ -207,9 +207,7 @@ struct
           set_succs last_node [node] ~exn_handlers ;
           (node, assert_map)
       | If (exp, then_instrs, else_instrs) ->
-          let then_prune_node, else_prune_node =
-            mk_prune_nodes_for_cond exp (Sil.Ik_if {terminated= true})
-          in
+          let then_prune_node, else_prune_node = mk_prune_nodes_for_cond exp Sil.Ik_if in
           set_succs last_node [then_prune_node; else_prune_node] ~exn_handlers ;
           let then_branch_end_node, assert_map' =
             structured_instrs_to_node then_prune_node assert_map exn_handlers then_instrs
@@ -217,7 +215,7 @@ struct
           let else_branch_end_node, assert_map'' =
             structured_instrs_to_node else_prune_node assert_map' exn_handlers else_instrs
           in
-          let join_node = create_node Procdesc.Node.Join_node [Sil.Metadata EndBranches] in
+          let join_node = create_node Procdesc.Node.Join_node [] in
           set_succs then_branch_end_node [join_node] ~exn_handlers ;
           set_succs else_branch_end_node [join_node] ~exn_handlers ;
           (join_node, assert_map'')

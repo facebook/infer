@@ -1471,9 +1471,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ; Sil.Load {id= expected_id; e= expected_exp; typ; loc= sil_loc} ]
           @ desired_instrs
         in
-        let join_node =
-          Procdesc.create_node context.procdesc sil_loc Join_node [Sil.Metadata EndBranches]
-        in
+        let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
         Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
         let var_exp_typ =
           match trans_state.var_exp_typ with
@@ -2150,8 +2148,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let var_typ = add_reference_if_glvalue typ expr_info in
     let join_node =
-      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Join_node
-        [Sil.Metadata EndBranches]
+      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Join_node []
     in
     Procdesc.node_set_succs context.procdesc join_node ~normal:succ_nodes ~exn:[] ;
     let var_exp_typ =
@@ -2170,7 +2167,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {trans_state with continuation= continuation'; succ_nodes= []; var_exp_typ= None}
       in
       exec_with_priority_exception trans_state' cond
-        (cond_trans ~if_kind:(Sil.Ik_bexp {terminated= true}) ~negate_cond:false)
+        (cond_trans ~if_kind:Sil.Ik_bexp ~negate_cond:false)
     in
     let trans_state = {trans_state with succ_nodes= [join_node]} in
     (* Note: by contruction prune nodes are leafs_nodes_cond *)
@@ -2402,9 +2399,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.iter prune_nodes' ~f:(fun n ->
           Procdesc.node_set_succs context.procdesc n ~normal:nodes_branch ~exn:[] )
     in
-    let join_node =
-      Procdesc.create_node context.procdesc sil_loc Join_node [Sil.Metadata EndBranches]
-    in
+    let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
     Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
     let trans_state_join_succ = {trans_state with succ_nodes= [join_node]} in
     (* translate the condition expression *)
@@ -2413,7 +2408,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let continuation' = mk_cond_continuation trans_state.continuation in
       let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
       let cond_stmt = CAst_utils.get_stmt_exn if_stmt_info.isi_cond source_range in
-      cond_trans ~if_kind:(Sil.Ik_if {terminated= true}) ~negate_cond:false trans_state'' cond_stmt
+      cond_trans ~if_kind:Sil.Ik_if ~negate_cond:false trans_state'' cond_stmt
     in
     (* translate the variable declaration inside the condition if present *)
     let res_trans_cond_var =
@@ -4549,10 +4544,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              - [join_node] to join [dtor_trans_result] and [prune_false] and continue with the
              successor node(s) of the translation [trans_state.succ_nodes] *)
           let proc_desc = trans_state.context.procdesc in
-          let join_node =
-            Procdesc.create_node proc_desc sil_loc Join_node
-            @@ if Sil.is_terminated_if_kind if_kind then [Sil.Metadata EndBranches] else []
-          in
+          let join_node = Procdesc.create_node proc_desc sil_loc Join_node [] in
           Procdesc.node_set_succs proc_desc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
           (* create dtor call as a new node connected to the join node, force new node creation by
              creating a fresh pointer and calling [force_claim_priority_node] *)

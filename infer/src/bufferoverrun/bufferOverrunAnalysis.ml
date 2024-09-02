@@ -493,7 +493,6 @@ module TransferFunctions = struct
       | Metadata
           ( Abstract _
           | CatchEntry _
-          | EndBranches
           | Nullify _
           | Skip
           | TryEntry _

@@ -38,15 +38,15 @@ digraph cfg {
 	
 
 	 "hash_combine_generic<MyHasher,_in.3016efe6a900b985_3" -> "hash_combine_generic<MyHasher,_in.3016efe6a900b985_2" ;
-"hash_combine_generic<MyHasher,_in.3016efe6a900b985_4" [label="4: + \n   END_BRANCHES\n " ]
+"hash_combine_generic<MyHasher,_in.3016efe6a900b985_4" [label="4: + \n  " ]
 	
 
 	 "hash_combine_generic<MyHasher,_in.3016efe6a900b985_4" -> "hash_combine_generic<MyHasher,_in.3016efe6a900b985_3" ;
-"hash_combine_generic<MyHasher,_in.3016efe6a900b985_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((_t$0 == (unsigned long)0), true); [line 15, column 7]\n " shape="invhouse"]
+"hash_combine_generic<MyHasher,_in.3016efe6a900b985_5" [label="5: Prune (true branch, if) \n   PRUNE((_t$0 == (unsigned long)0), true); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "hash_combine_generic<MyHasher,_in.3016efe6a900b985_5" -> "hash_combine_generic<MyHasher,_in.3016efe6a900b985_7" ;
-"hash_combine_generic<MyHasher,_in.3016efe6a900b985_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!(_t$0 == (unsigned long)0), false); [line 15, column 7]\n " shape="invhouse"]
+"hash_combine_generic<MyHasher,_in.3016efe6a900b985_6" [label="6: Prune (false branch, if) \n   PRUNE(!(_t$0 == (unsigned long)0), false); [line 15, column 7]\n " shape="invhouse"]
 	
 
 	 "hash_combine_generic<MyHasher,_in.3016efe6a900b985_6" -> "hash_combine_generic<MyHasher,_in.3016efe6a900b985_4" ;

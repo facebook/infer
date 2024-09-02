@@ -7,11 +7,11 @@ digraph cfg {
 "aMethod#MyClass#[instance].69c3f3885a278b00_2" [label="2: Exit MyClass.aMethod \n  " color=yellow style=filled]
 	
 
-"aMethod#MyClass#[instance].69c3f3885a278b00_3" [label="3: + \n   END_BRANCHES\n " ]
+"aMethod#MyClass#[instance].69c3f3885a278b00_3" [label="3: + \n  " ]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_3" -> "aMethod#MyClass#[instance].69c3f3885a278b00_4" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+"aMethod#MyClass#[instance].69c3f3885a278b00_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_4" -> "aMethod#MyClass#[instance].69c3f3885a278b00_2" ;
@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_5" -> "aMethod#MyClass#[instance].69c3f3885a278b00_6" ;
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_5" -> "aMethod#MyClass#[instance].69c3f3885a278b00_7" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == 0), true); [line 23, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#[instance].69c3f3885a278b00_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 0), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_6" -> "aMethod#MyClass#[instance].69c3f3885a278b00_8" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == 0), false); [line 23, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#[instance].69c3f3885a278b00_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 0), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_7" -> "aMethod#MyClass#[instance].69c3f3885a278b00_3" ;
@@ -32,7 +32,7 @@ digraph cfg {
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_8" -> "aMethod#MyClass#[instance].69c3f3885a278b00_3" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_9" [label="9: + \n   END_BRANCHES\n " ]
+"aMethod#MyClass#[instance].69c3f3885a278b00_9" [label="9: + \n  " ]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_9" -> "aMethod#MyClass#[instance].69c3f3885a278b00_5" ;
@@ -41,11 +41,11 @@ digraph cfg {
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_10" -> "aMethod#MyClass#[instance].69c3f3885a278b00_11" ;
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_10" -> "aMethod#MyClass#[instance].69c3f3885a278b00_12" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_11" [label="11: Prune (true branch, if (terminated)) \n   PRUNE((n$4 == 0), true); [line 19, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#[instance].69c3f3885a278b00_11" [label="11: Prune (true branch, if) \n   PRUNE((n$4 == 0), true); [line 19, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_11" -> "aMethod#MyClass#[instance].69c3f3885a278b00_13" ;
-"aMethod#MyClass#[instance].69c3f3885a278b00_12" [label="12: Prune (false branch, if (terminated)) \n   PRUNE(!(n$4 == 0), false); [line 19, column 7]\n " shape="invhouse"]
+"aMethod#MyClass#[instance].69c3f3885a278b00_12" [label="12: Prune (false branch, if) \n   PRUNE(!(n$4 == 0), false); [line 19, column 7]\n " shape="invhouse"]
 	
 
 	 "aMethod#MyClass#[instance].69c3f3885a278b00_12" -> "aMethod#MyClass#[instance].69c3f3885a278b00_9" ;
