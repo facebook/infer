@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type t = {conditions: ValueHistory.t list; timestamp: Timestamp.t} [@@deriving compare, equal]
+type t = {timestamp: Timestamp.t} [@@deriving compare, equal]
 
 (** path contexts is metadata that do not contribute to the semantics *)
 let leq ~lhs:_ ~rhs:_ = true
@@ -25,14 +25,10 @@ let is_executable _ = true
 
 let exceptional_to_normal x = x
 
-let pp fmt ({conditions; timestamp} [@warning "+missing-record-field-pattern"]) =
-  let pp_condition fmt hist =
-    if Config.debug_level_analysis >= 3 then F.fprintf fmt "[%a]" ValueHistory.pp hist
-  in
-  F.fprintf fmt "conditions= [%a]@;timestamp= %a" (Pp.seq ~sep:";" pp_condition) conditions
-    Timestamp.pp timestamp
+let pp fmt ({timestamp} [@warning "+missing-record-field-pattern"]) =
+  F.fprintf fmt "timestamp= %a" Timestamp.pp timestamp
 
 
-let initial = {conditions= []; timestamp= Timestamp.t0}
+let initial = {timestamp= Timestamp.t0}
 
-let post_exec_instr {conditions; timestamp} = {conditions; timestamp= Timestamp.incr timestamp}
+let post_exec_instr {timestamp} = {timestamp= Timestamp.incr timestamp}
