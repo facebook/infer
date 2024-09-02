@@ -19,7 +19,7 @@ let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model_no_non_disj 
  fun {path; location} astate ->
   let bop_addr = AbstractValue.mk_fresh () in
   let<**> astate, bop_addr = PulseArithmetic.eval_binop_absval bop_addr binop x y astate in
-  let hist = Hist.binop path binop x_hist y_hist in
+  let hist = Hist.binop binop x_hist y_hist in
   let<+> astate = PulseOperations.write_deref path location ~ref:res ~obj:(bop_addr, hist) astate in
   astate
 
@@ -68,11 +68,11 @@ let placement_new =
     ( match (List.rev actuals : _ FuncArg.t list) with
     | {typ= {desc= Tstruct (CppClass {name})}} :: _
       when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
-        PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
+        PulseOperations.havoc_id ret_id (Hist.single_event event) astate
     | {arg_payload= address, hist} :: _ ->
-        PulseOperations.write_id ret_id (address, Hist.add_event path event hist) astate
+        PulseOperations.write_id ret_id (address, Hist.add_event event hist) astate
     | _ ->
-        PulseOperations.havoc_id ret_id (Hist.single_event path event) astate )
+        PulseOperations.havoc_id ret_id (Hist.single_event event) astate )
     |> Basic.ok_continue
 
 
@@ -125,7 +125,7 @@ module AtomicInteger = struct
 
   let arith_bop path prepost location event ret_id bop this operand astate =
     let=* astate, int_addr, (old_int, old_hist) = load_backing_int path location this astate in
-    let hist = Hist.add_event path event old_hist in
+    let hist = Hist.add_event event old_hist in
     let bop_addr = AbstractValue.mk_fresh () in
     let+* astate, bop_addr =
       PulseArithmetic.eval_binop bop_addr bop (AbstractValueOperand old_int) operand astate
@@ -241,11 +241,9 @@ module AtomicInteger = struct
       load_backing_int path location this_address astate
     in
     let<+> astate =
-      store_backing_int path location this_address
-        (new_value, Hist.add_event path event new_hist)
-        astate
+      store_backing_int path location this_address (new_value, Hist.add_event event new_hist) astate
     in
-    PulseOperations.write_id ret_id (old_int, Hist.add_event path event old_hist) astate
+    PulseOperations.write_id ret_id (old_int, Hist.add_event event old_hist) astate
 end
 
 module BasicString = struct
@@ -352,7 +350,7 @@ module BasicString = struct
     let* string_addr, string_hist =
       access Read this_hist (FieldAccess ModeledField.internal_string)
     in
-    let string_hist = Hist.add_event path call_event string_hist in
+    let string_hist = Hist.add_event call_event string_hist in
     exec_partial_command (fun astate ->
         Sat
           (PulseOperations.check_and_invalidate path
@@ -382,7 +380,7 @@ module BasicString = struct
     let* {path; location} = get_data in
     let event = Hist.call_event path location "std::basic_string::length()" in
     let* length, hist = access Read this_hist (FieldAccess ModeledField.string_length) in
-    assign_ret (length, Hist.add_event path event hist)
+    assign_ret (length, Hist.add_event event hist)
 
 
   let address ~desc ptr_hist (idx, _) : model_no_non_disj =
@@ -431,7 +429,7 @@ module Function = struct
     | _ ->
         (* we don't know what proc name this lambda resolves to *)
         let desc = "std::function::operator()" in
-        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let hist = Hist.single_event (Hist.call_event path location desc) in
         let astate = PulseOperations.havoc_id ret_id hist astate in
         let astate = AbductiveDomain.add_need_dynamic_type_specialization lambda astate in
         let astate =
@@ -449,10 +447,10 @@ module Function = struct
       let empty_target = AbstractValue.mk_fresh () in
       let<+> astate =
         PulseOperations.write_deref path location ~ref:dest
-          ~obj:(empty_target, Hist.single_event path event)
+          ~obj:(empty_target, Hist.single_event event)
           astate
       in
-      PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
+      PulseOperations.havoc_id ret_id (Hist.single_event event) astate
     else
       match src_typ.Typ.desc with
       | Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
@@ -491,7 +489,7 @@ module Vector = struct
     let event = Hist.call_event path location desc in
     let* astate, init_copy = PulseOperations.shallow_copy path location init_list astate in
     PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
-      ~obj:(fst init_copy, Hist.add_event path event (snd init_copy))
+      ~obj:(fst init_copy, Hist.add_event event (snd init_copy))
       astate
 
 
@@ -530,7 +528,7 @@ module Vector = struct
         (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
     in
     let<+> astate =
-      reallocate_internal_array path (Hist.single_event path event) vector vector_f location astate
+      reallocate_internal_array path (Hist.single_event event) vector vector_f location astate
     in
     astate
 
@@ -547,13 +545,13 @@ module Vector = struct
     let<+> astate, (addr, hist) =
       GenericArrayBackedCollection.element path location vector (fst index) astate
     in
-    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+    PulseOperations.write_id (fst ret) (addr, Hist.add_event event hist) astate
 
 
   let vector_begin vector iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::vector::begin()" in
-    let pointer_hist = Hist.add_event path event (snd iter) in
+    let pointer_hist = Hist.add_event event (snd iter) in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let index_zero = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
@@ -583,7 +581,7 @@ module Vector = struct
     let<*> astate, (pointer_addr, _) =
       GenericArrayBackedCollection.eval_pointer_to_last_element path location vector astate
     in
-    let pointer_hist = Hist.add_event path event (snd iter) in
+    let pointer_hist = Hist.add_event event (snd iter) in
     let pointer_val = (pointer_addr, pointer_hist) in
     let<*> astate =
       PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field

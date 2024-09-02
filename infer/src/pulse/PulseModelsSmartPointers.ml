@@ -74,7 +74,7 @@ let at this index ~desc : model_no_non_disj =
       (ArrayAccess (StdTyp.void, fst index))
       astate
   in
-  PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+  PulseOperations.write_id (fst ret) (addr, Hist.add_event event hist) astate
 
 
 let swap this other ~desc : model_no_non_disj =
@@ -117,7 +117,7 @@ module SharedPtr = struct
   let delete_internal_count path location this ~desc astate =
     let call_event = Hist.call_event path location desc in
     let+ astate, (value_addr, value_hist) = to_internal_count path Read location this astate in
-    let value_addr_hist = (value_addr, Hist.add_event path call_event value_hist) in
+    let value_addr_hist = (value_addr, Hist.add_event call_event value_hist) in
     PulseOperations.invalidate_access path location CppDelete value_addr_hist Dereference astate
 
 

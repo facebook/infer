@@ -55,12 +55,12 @@ let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) 
   let<*> astate, _ =
     PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionValue Read
       location
-      (value, Hist.add_event path event value_hist)
+      (value, Hist.add_event event value_hist)
       Dereference astate
   in
   let<+> astate, _ =
     PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionKey Read location
-      (key, Hist.add_event path event key_hist)
+      (key, Hist.add_event event key_hist)
       Dereference astate
   in
   astate
@@ -172,11 +172,11 @@ let read_from_collection (key, _key_hist) ~desc : model_no_non_disj =
   let astate_nil =
     let<**> astate = PulseArithmetic.prune_eq_zero key astate in
     let<++> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
-    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event event) astate
   in
   let astate_not_nil =
     let<++> astate = PulseArithmetic.prune_positive key astate in
-    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event event) astate
   in
   List.rev_append astate_nil astate_not_nil
 
@@ -225,7 +225,7 @@ let construct_string ((value, value_hist) as char_array) : model_no_non_disj =
   let event = Hist.call_event path location desc in
   let<*> astate, _ =
     PulseOperations.eval_access path Read location
-      (value, Hist.add_event path event value_hist)
+      (value, Hist.add_event event value_hist)
       Dereference astate
   in
   let string = AbstractValue.mk_fresh () in
@@ -244,7 +244,7 @@ let check_arg_not_nil (value, value_hist) ~desc : model_no_non_disj =
     PulseOperations.eval_access path
       ~must_be_valid_reason:(NullArgumentWhereNonNullExpected (CallEvent.Model desc, None))
       Read location
-      (value, Hist.add_event path event value_hist)
+      (value, Hist.add_event event value_hist)
       Dereference astate
   in
   let ret_val = AbstractValue.mk_fresh () in
@@ -284,7 +284,7 @@ let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
             block_ptr_hist Dereference astate
         in
         let desc = Procname.to_string BuiltinDecl.__call_objc_block in
-        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let hist = Hist.single_event (Hist.call_event path location desc) in
         let astate = PulseOperations.havoc_id ret_id hist astate in
         let astate = AbductiveDomain.add_need_dynamic_type_specialization block astate in
         let astate =

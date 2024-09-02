@@ -2480,10 +2480,10 @@ let rec add_event_to_value_origin_ ~recurse (path : PathContext.t) location even
     astate =
   match (value_origin : ValueOrigin.t) with
   | InMemory {src; access; dest= dest_addr, dest_hist} ->
-      let dest_hist = ValueHistory.sequence event dest_hist ~context:path.conditions in
+      let dest_hist = ValueHistory.sequence event dest_hist in
       Memory.add_edge path src access (dest_addr, dest_hist) location astate
   | OnStack {var; addr_hist= addr, hist} ->
-      let hist = ValueHistory.sequence event hist ~context:path.conditions in
+      let hist = ValueHistory.sequence event hist in
       let astate, new_origin =
         match Stack.find_opt var astate with
         | None ->
@@ -2496,7 +2496,7 @@ let rec add_event_to_value_origin_ ~recurse (path : PathContext.t) location even
             in
             let origin =
               ValueOrigin.with_hist
-                (ValueHistory.sequence event (ValueOrigin.hist var_origin) ~context:path.conditions)
+                (ValueHistory.sequence event (ValueOrigin.hist var_origin))
                 var_origin
             in
             (astate, origin)

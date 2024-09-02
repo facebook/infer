@@ -68,24 +68,20 @@ module Collection = struct
   let init ~desc this : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
-    let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event path event) in
+    let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event event) in
     let is_empty_value = AbstractValue.mk_fresh () in
     let init_value = AbstractValue.mk_fresh () in
     (* The two internal fields are initially set to null *)
     let<*> astate =
-      write_field path fst_field
-        (init_value, Hist.single_event path event)
-        location fresh_val astate
+      write_field path fst_field (init_value, Hist.single_event event) location fresh_val astate
     in
     let<*> astate =
-      write_field path snd_field
-        (init_value, Hist.single_event path event)
-        location fresh_val astate
+      write_field path snd_field (init_value, Hist.single_event event) location fresh_val astate
     in
     (* The empty field is initially set to true *)
     let<*> astate =
       write_field path is_empty_field
-        (is_empty_value, Hist.single_event path event)
+        (is_empty_value, Hist.single_event event)
         location fresh_val astate
     in
     let<**> astate =
@@ -121,7 +117,7 @@ module Collection = struct
     (* Collection.add returns a boolean, in this case the return always has value one *)
     let<**> astate =
       PulseArithmetic.and_eq_int ret_value IntLit.one astate
-      >>|| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
+      >>|| PulseOperations.write_id ret_id (ret_value, Hist.single_event event)
     in
     (* empty field set to false if the collection was empty *)
     let<*> astate, _, (is_empty_val, hist) =
@@ -132,7 +128,7 @@ module Collection = struct
       let is_empty_new_val = AbstractValue.mk_fresh () in
       let<**> astate =
         write_field path is_empty_field
-          (is_empty_new_val, Hist.add_event path event hist)
+          (is_empty_new_val, Hist.add_event event hist)
           location coll_val astate
         >>>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
       in
@@ -153,22 +149,18 @@ module Collection = struct
     let is_empty_val = AbstractValue.mk_fresh () in
     let<*> astate' =
       write_field path is_empty_field
-        (is_empty_val, Hist.single_event path event)
+        (is_empty_val, Hist.single_event event)
         location coll_val astate
     in
     (* case1: fst_field is updated *)
     let astate1 =
-      write_field path fst_field
-        (new_val, Hist.add_event path event new_val_hist)
-        location coll astate'
+      write_field path fst_field (new_val, Hist.add_event event new_val_hist) location coll astate'
       >>| PulseOperations.write_id ret_id fst_val
       |> Basic.map_continue
     in
     (* case2: snd_field is updated *)
     let astate2 =
-      write_field path snd_field
-        (new_val, Hist.add_event path event new_val_hist)
-        location coll astate'
+      write_field path snd_field (new_val, Hist.add_event event new_val_hist) location coll astate'
       >>| PulseOperations.write_id ret_id snd_val
       |> Basic.map_continue
     in
@@ -198,7 +190,7 @@ module Collection = struct
     let is_empty_val = AbstractValue.mk_fresh () in
     let=* astate =
       write_field path is_empty_field
-        (is_empty_val, Hist.single_event path event)
+        (is_empty_val, Hist.single_event event)
         location coll_val astate
     in
     let** astate =
@@ -211,10 +203,10 @@ module Collection = struct
     in
     let+ astate =
       PulseOperations.write_deref path location ~ref:field_addr
-        ~obj:(null_val, Hist.single_event path event)
+        ~obj:(null_val, Hist.single_event event)
         astate
     in
-    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event event) astate
 
 
   let remove_obj path ~desc coll (elem, _) location ret_id astate =
@@ -270,7 +262,7 @@ module Collection = struct
     let<*> astate, _, (is_empty_val, hist) =
       load_field path is_empty_field location coll_val astate
     in
-    PulseOperations.write_id ret_id (is_empty_val, Hist.add_event path event hist) astate
+    PulseOperations.write_id ret_id (is_empty_val, Hist.add_event event hist) astate
     |> Basic.ok_continue
 
 
@@ -303,12 +295,12 @@ module Collection = struct
       >>== PulseArithmetic.and_eq_int not_found_val IntLit.zero
       >>== PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
     in
-    let hist = Hist.single_event path event in
+    let hist = Hist.single_event event in
     let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
     PulseOperations.invalidate path
       (StackAddress (Var.of_id ret_id, hist))
       location (ConstantDereference IntLit.zero)
-      (not_found_val, Hist.single_event path event)
+      (not_found_val, Hist.single_event event)
       astate
 
 
@@ -362,7 +354,7 @@ module Collection = struct
         PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
           (AbstractValueOperand true_val) astate2
         >>== PulseArithmetic.and_eq_int true_val IntLit.one
-        >>|| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
+        >>|| PulseOperations.write_id ret_id (found_val, Hist.single_event event)
       in
       get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
@@ -490,7 +482,7 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model_no_no
   let astate_null =
     PulseArithmetic.prune_eq_zero addr astate
     >>== PulseArithmetic.and_eq_int ret_val IntLit.one
-    >>|| PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist)
+    >>|| PulseOperations.write_id ret_id (ret_val, Hist.add_event event hist)
     >>|| ExecutionDomain.continue |> SatUnsat.to_list
   in
   let astate_not_null =
@@ -498,7 +490,7 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model_no_no
     let<*> astate, (len_addr, hist) =
       PulseOperations.eval_access path Read location addr_hist string_length_access astate
     in
-    let astate = PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist) astate in
+    let astate = PulseOperations.write_id ret_id (ret_val, Hist.add_event event hist) astate in
     let astate_empty =
       PulseArithmetic.prune_eq_zero len_addr astate
       >>== PulseArithmetic.and_eq_int ret_val IntLit.one

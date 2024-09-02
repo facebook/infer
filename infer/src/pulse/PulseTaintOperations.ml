@@ -553,7 +553,7 @@ let propagate_to path location reason dest sources call astate =
                 Attribute.TaintedSet.map
                   (fun {source; time_trace; hist= source_hist; intra_procedural_only} ->
                     let hist =
-                      ValueHistory.sequence ~context:path.PathContext.conditions
+                      ValueHistory.sequence
                         (Call
                            { f= call
                            ; location

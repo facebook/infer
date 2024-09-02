@@ -82,14 +82,12 @@ module Closures = struct
             else astate_result )
 
 
-  let record ({PathContext.timestamp; conditions} as path) location pname captured astate =
+  let record ({PathContext.timestamp} as path) location pname captured astate =
     let captured_addresses =
       List.filter_map captured
         ~f:(fun (captured_as, (address_captured, trace_captured), typ, mode) ->
           let new_trace =
-            ValueHistory.sequence ~context:conditions
-              (Capture {captured_as; mode; location; timestamp})
-              trace_captured
+            ValueHistory.sequence (Capture {captured_as; mode; location; timestamp}) trace_captured
           in
           Some (mode, typ, address_captured, new_trace, captured_as) )
     in
@@ -611,15 +609,12 @@ type invalidation_access =
   | StackAddress of Var.t * ValueHistory.t
   | UntraceableAccess
 
-let record_invalidation ({PathContext.timestamp; conditions} as path) access_path location cause
-    astate =
+let record_invalidation ({PathContext.timestamp} as path) access_path location cause astate =
   match access_path with
   | StackAddress (x, hist0) ->
       let astate, vo = Stack.eval hist0 x astate in
       let hist' =
-        ValueHistory.sequence ~context:conditions
-          (Invalidated (cause, location, timestamp))
-          (ValueOrigin.hist vo)
+        ValueHistory.sequence (Invalidated (cause, location, timestamp)) (ValueOrigin.hist vo)
       in
       let vo' = ValueOrigin.with_hist hist' vo in
       Stack.add x vo' astate
@@ -631,11 +626,7 @@ let record_invalidation ({PathContext.timestamp; conditions} as path) access_pat
         | None ->
             (AbstractValue.mk_fresh (), hist_obj_default)
       in
-      let hist' =
-        ValueHistory.sequence ~context:conditions
-          (Invalidated (cause, location, timestamp))
-          hist_obj
-      in
+      let hist' = ValueHistory.sequence (Invalidated (cause, location, timestamp)) hist_obj in
       Memory.add_edge path pointer access (addr_obj, hist') location astate
   | UntraceableAccess ->
       astate

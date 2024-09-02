@@ -673,7 +673,7 @@ module Lists = struct
    fun astate ->
     let event = Hist.alloc_event path location "[]" in
     let addr_nil_val = AbstractValue.mk_fresh () in
-    let addr_nil = (addr_nil_val, Hist.single_event path event) in
+    let addr_nil = (addr_nil_val, Hist.single_event event) in
     let astate =
       PulseArithmetic.and_dynamic_type_is_unsafe addr_nil_val (Typ.mk_struct (ErlangType Nil))
         location astate

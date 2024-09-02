@@ -61,14 +61,12 @@ module Hist = struct
     ValueHistory.Call {f= Model desc; location; in_call; timestamp}
 
 
-  let add_event path event hist =
-    ValueHistory.sequence ~context:path.PathContext.conditions event hist
+  let add_event event hist = ValueHistory.sequence event hist
 
-
-  let single_event path event = add_event path event ValueHistory.epoch
+  let single_event event = add_event event ValueHistory.epoch
 
   let add_call path ?(in_call = ValueHistory.epoch) location model_desc ?more hist =
-    add_event path (call_event path ~in_call location ?more model_desc) hist
+    add_event (call_event path ~in_call location ?more model_desc) hist
 
 
   let single_call path ?(in_call = ValueHistory.epoch) location ?more model_desc =
@@ -76,11 +74,10 @@ module Hist = struct
 
 
   let single_alloc path location ?more model_desc =
-    alloc_event path location ?more model_desc |> single_event path
+    alloc_event path location ?more model_desc |> single_event
 
 
-  let binop path bop hist1 hist2 =
-    ValueHistory.in_context path.PathContext.conditions (ValueHistory.binary_op bop hist1 hist2)
+  let binop bop hist1 hist2 = ValueHistory.binary_op bop hist1 hist2
 end
 
 module Basic = struct
@@ -98,10 +95,10 @@ module Basic = struct
     let<*> astate, obj_copy = PulseOperations.shallow_copy path location src_value_hist astate in
     let<+> astate =
       PulseOperations.write_deref path location ~ref:dest_pointer_hist
-        ~obj:(fst obj_copy, Hist.add_event path event (snd obj_copy))
+        ~obj:(fst obj_copy, Hist.add_event event (snd obj_copy))
         astate
     in
-    PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
+    PulseOperations.havoc_id ret_id (Hist.single_event event) astate
 
 
   let shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate =

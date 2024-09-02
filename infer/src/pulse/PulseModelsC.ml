@@ -105,7 +105,7 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
             Dereference astate
         in
         let desc = Procname.to_string BuiltinDecl.__call_c_function_ptr in
-        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let hist = Hist.single_event (Hist.call_event path location desc) in
         let astate = PulseOperations.havoc_id ret_id hist astate in
         let astate =
           AbductiveDomain.add_need_dynamic_type_specialization (ValueOrigin.value function_ptr)

@@ -56,9 +56,9 @@ module Hist : sig
     -> string
     -> ValueHistory.event
 
-  val add_event : PathContext.t -> ValueHistory.event -> ValueHistory.t -> ValueHistory.t
+  val add_event : ValueHistory.event -> ValueHistory.t -> ValueHistory.t
 
-  val single_event : PathContext.t -> ValueHistory.event -> ValueHistory.t
+  val single_event : ValueHistory.event -> ValueHistory.t
 
   val add_call :
        PathContext.t
@@ -79,7 +79,7 @@ module Hist : sig
 
   val single_alloc : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.t
 
-  val binop : PathContext.t -> Binop.t -> ValueHistory.t -> ValueHistory.t -> ValueHistory.t
+  val binop : Binop.t -> ValueHistory.t -> ValueHistory.t -> ValueHistory.t
 end
 
 module Basic : sig

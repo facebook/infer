@@ -1465,7 +1465,7 @@ module PulseTransferFunctions = struct
             in
             let rhs_addr, rhs_history = ValueOrigin.addr_hist rhs_value_origin in
             let** astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
-            let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
+            let hist = ValueHistory.sequence event rhs_history in
             let** astate = and_is_int_if_integer_type typ rhs_addr astate in
             let** astate =
               PulseOperations.cleanup_attribute_store proc_desc path loc astate ~lhs_exp ~rhs_exp

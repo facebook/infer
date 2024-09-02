@@ -167,12 +167,12 @@ module Iterator = struct
     let* astate, (arr_addr, arr_hist) = eval path Read location init astate in
     let* astate =
       PulseOperations.write_deref_field path location ~ref field
-        ~obj:(arr_addr, Hist.add_event path event arr_hist)
+        ~obj:(arr_addr, Hist.add_event event arr_hist)
         astate
     in
     let* astate, (p_addr, p_hist) = to_internal_pointer path Read location init astate in
     PulseOperations.write_field path location ~ref internal_pointer
-      ~obj:(p_addr, Hist.add_event path event p_hist)
+      ~obj:(p_addr, Hist.add_event event p_hist)
       astate
 
 
@@ -193,7 +193,7 @@ module Iterator = struct
       to_internal_pointer_deref path Read location iter_rhs astate
     in
     let ret_val = AbstractValue.mk_fresh () in
-    let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate in
+    let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event event) astate in
     let ret_val_equal, ret_val_notequal =
       match comparison with
       | `Equal ->
@@ -222,7 +222,7 @@ module Iterator = struct
     let<+> astate, pointer, (elem, _) =
       to_elem_pointed_by_iterator path Read location iter astate
     in
-    PulseOperations.write_id (fst ret) (elem, Hist.add_event path event (snd pointer)) astate
+    PulseOperations.write_id (fst ret) (elem, Hist.add_event event (snd pointer)) astate
 
 
   let operator_step step ~desc iter : model_no_non_disj =
@@ -234,7 +234,7 @@ module Iterator = struct
     in
     let<+> astate =
       PulseOperations.write_deref path location ~ref:pointer
-        ~obj:(index_new, Hist.add_event path event (snd pointer))
+        ~obj:(index_new, Hist.add_event event (snd pointer))
         astate
     in
     astate

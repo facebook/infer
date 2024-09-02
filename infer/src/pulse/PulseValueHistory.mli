@@ -52,9 +52,6 @@ and t = private
       (** [Sequence [event, hist]] represents an event [event] occurring *after* [hist]. Invariant:
           the timestamp of [event] is greater than all the (local, i.e. not inside function calls)
           timestamps in [hist]. *)
-  | InContext of
-      { main: t  (** trace of the "main" value being traced *)
-      ; context: t list  (** contextual traces, eg conditionals that the path is under *) }
   | BinaryOp of Binop.t * t * t  (** branch history due to a binop *)
   | FromCellIds of CellId.Set.t * t
       (** the set of cells that this were used in this history; used in particular in summary
@@ -66,9 +63,7 @@ and t = private
 
 val epoch : t
 
-val sequence : ?context:t list -> event -> t -> t
-
-val in_context : t list -> t -> t
+val sequence : event -> t -> t
 
 val binary_op : Binop.t -> t -> t -> t
 

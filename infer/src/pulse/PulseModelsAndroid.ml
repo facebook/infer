@@ -20,7 +20,7 @@ let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
   let astate_null =
     PulseArithmetic.prune_eq_zero addr astate
     >>== PulseArithmetic.and_eq_int ret_val IntLit.one
-    >>|| PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist)
+    >>|| PulseOperations.write_id ret_id (ret_val, Hist.add_event event hist)
     >>|| ExecutionDomain.continue |> SatUnsat.to_list
   in
   let astates_not_null =
@@ -28,7 +28,7 @@ let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
     let<*> astate, (len_addr, hist) =
       PulseOperations.eval_access path Read location addr_hist string_length_access astate
     in
-    let astate = PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist) astate in
+    let astate = PulseOperations.write_id ret_id (ret_val, Hist.add_event event hist) astate in
     let astate_empty =
       PulseArithmetic.prune_eq_zero len_addr astate
       >>== PulseArithmetic.and_eq_int ret_val IntLit.one

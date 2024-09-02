@@ -238,9 +238,8 @@ module Syntax = struct
 
 
   let add_model_call hist =
-    let* {path} = get_data in
     let* event = get_event () in
-    ret (Hist.add_event path event hist)
+    ret (Hist.add_event event hist)
 
 
   let as_constant_q (v, _) : Q.t option model_monad =
@@ -276,7 +275,7 @@ module Syntax = struct
           hist
       | None ->
           let event = event (desc, data) in
-          Hist.single_event data.path event
+          Hist.single_event event
     in
     ret (v, hist) (desc, data) astate
 
@@ -348,7 +347,7 @@ module Syntax = struct
       >> sat |> exec_partial_operation
     in
     let* event = get_event () in
-    let hist = Hist.add_event path event hist in
+    let hist = Hist.add_event event hist in
     ret (addr, hist)
 
 
@@ -548,7 +547,6 @@ module Syntax = struct
 
 
   let fresh_ var_type ?more () : aval model_monad =
-    let* {path} = get_data in
     let addr =
       match var_type with
       | `Unrestricted ->
@@ -557,7 +555,7 @@ module Syntax = struct
           AbstractValue.mk_fresh_restricted ()
     in
     let* event = get_event ?more () in
-    let hist = Hist.single_event path event in
+    let hist = Hist.single_event event in
     ret (addr, hist)
 
 
@@ -662,9 +660,8 @@ module Syntax = struct
   let aval_operand (addr, _) = PulseArithmetic.AbstractValueOperand addr
 
   let binop binop (addr1, hist1) (addr2, hist2) : aval model_monad =
-    let* {path} = get_data in
     let addr_res = AbstractValue.mk_fresh () in
-    let hist_res = Hist.binop path binop hist1 hist2 in
+    let hist_res = Hist.binop binop hist1 hist2 in
     let* addr_res =
       PulseArithmetic.eval_binop addr_res binop (AbstractValueOperand addr1)
         (AbstractValueOperand addr2)
