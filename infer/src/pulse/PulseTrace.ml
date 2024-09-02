@@ -22,7 +22,7 @@ let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -
 let get_cell_ids trace = ValueHistory.get_cell_ids (get_outer_history trace)
 
 let get_start_location trace =
-  match ValueHistory.get_first_main_event (get_outer_history trace) with
+  match ValueHistory.get_first_event (get_outer_history trace) with
   | Some event ->
       ValueHistory.location_of_event event
   | None ->
@@ -153,26 +153,26 @@ let rec synchronous_add_to_errlog ~nesting ~pp_immediate traces errlog =
       synchronous_add_to_errlog ~nesting ~pp_immediate (List.rev out_sync) errlog
 
 
-let rec rev_iter_main trace ~f =
+let rec rev_iter trace ~f =
   match trace with
   | Immediate {history} ->
-      ValueHistory.rev_iter_main history ~f
+      ValueHistory.rev_iter history ~f
   | ViaCall {history; in_call; f= call; location} ->
       f (ValueHistory.ReturnFromCall (call, location)) ;
-      rev_iter_main in_call ~f ;
+      rev_iter in_call ~f ;
       f (ValueHistory.EnterCall (call, location)) ;
-      ValueHistory.rev_iter_main history ~f
+      ValueHistory.rev_iter history ~f
 
 
-let rev_iter_main_events trace ~f =
-  rev_iter_main trace ~f:(function ValueHistory.Event event -> f event | _ -> ())
+let rev_iter_events trace ~f =
+  rev_iter trace ~f:(function ValueHistory.Event event -> f event | _ -> ())
 
 
-let iter_main trace ~f = Iter.rev (Iter.from_labelled_iter (rev_iter_main trace)) f
+let iter trace ~f = Iter.rev (Iter.from_labelled_iter (rev_iter trace)) f
 
-let find_map_last_main trace ~f = Container.find_map ~iter:rev_iter_main_events trace ~f
+let find_map_last trace ~f = Container.find_map ~iter:rev_iter_events trace ~f
 
-let exists_main trace ~f = Container.exists ~iter:rev_iter_main_events trace ~f
+let exists trace ~f = Container.exists ~iter:rev_iter_events trace ~f
 
 let rec iter_calls trace ~f =
   match trace with
@@ -201,7 +201,7 @@ let get_trace_until trace ~f =
   let exception Found of t in
   let call_stack = ref [] in
   match
-    iter_main trace ~f:(fun (event : ValueHistory.iter_event) ->
+    iter trace ~f:(fun (event : ValueHistory.iter_event) ->
         match event with
         | EnterCall (call, loc) ->
             call_stack := (call, loc) :: !call_stack

@@ -157,7 +157,7 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
     match invalidation with
     | ConstantDereference _ | ComparedToNullInThisProcedure _ ->
         not
-          (Trace.exists_main access_trace ~f:(function
+          (Trace.exists access_trace ~f:(function
             | Invalidated (trace_invalidation, _, _)
               when Invalidation.is_same_type trace_invalidation invalidation ->
                 true

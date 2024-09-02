@@ -708,13 +708,13 @@ let get_message_and_suggestion diagnostic =
   | ReadUninitialized {typ; calling_context; trace} ->
       let get_access_path_from_trace () =
         let root_var =
-          Trace.find_map_last_main trace ~f:(function
+          Trace.find_map_last trace ~f:(function
             | VariableDeclared (pvar, _, _) ->
                 Some pvar
             | _ ->
                 None )
           |> IOption.if_none_evalopt ~f:(fun () ->
-                 Trace.find_map_last_main trace ~f:(function
+                 Trace.find_map_last trace ~f:(function
                    | FormalDeclared (pvar, _, _) ->
                        Some pvar
                    | _ ->
@@ -722,7 +722,7 @@ let get_message_and_suggestion diagnostic =
           |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
         in
         let declared_fields =
-          Trace.find_map_last_main trace ~f:(function
+          Trace.find_map_last trace ~f:(function
             | StructFieldAddressCreated (fields, _, _) ->
                 Some fields
             | _ ->
@@ -1005,7 +1005,7 @@ let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
       let should_print_invalidation_trace =
-        not (Trace.exists_main access_trace ~f:(function Invalidated _ -> true | _ -> false))
+        not (Trace.exists access_trace ~f:(function Invalidated _ -> true | _ -> false))
       in
       ( if should_print_invalidation_trace then
           add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace

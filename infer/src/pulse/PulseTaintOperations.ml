@@ -212,7 +212,7 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
           | _ ->
               false
         in
-        ValueHistory.exists_main hist ~f:check
+        ValueHistory.exists hist ~f:check
     else true
   in
   let open IOption.Let_syntax in

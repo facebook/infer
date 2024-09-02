@@ -218,15 +218,15 @@ type iter_event =
   | ReturnFromCall of CallEvent.t * Location.t
   | Event of event
 
-let rec rev_iter_branches ~main_only hists ~f =
+let rec rev_iter_branches hists ~f =
   if List.is_empty hists then ()
   else
     let latest_events, hists = pop_least_timestamp hists in
-    rev_iter_simultaneous_events ~main_only latest_events ~f ;
-    rev_iter_branches ~main_only hists ~f
+    rev_iter_simultaneous_events latest_events ~f ;
+    rev_iter_branches hists ~f
 
 
-and rev_iter_simultaneous_events ~main_only events ~f =
+and rev_iter_simultaneous_events events ~f =
   let is_nonempty = function
     | Epoch | FromCellIds (_, Epoch) ->
         false
@@ -250,7 +250,7 @@ and rev_iter_simultaneous_events ~main_only events ~f =
          those in [in_calls] just above and it will be non-empty in this match branch by
          construction *)
       f (ReturnFromCall (callee, location)) ;
-      rev_iter_branches ~main_only in_calls ~f ;
+      rev_iter_branches in_calls ~f ;
       f (EnterCall (callee, location)) ;
       ()
   | _ ->
@@ -266,26 +266,24 @@ and rev_iter_simultaneous_events ~main_only events ~f =
   |> ignore
 
 
-and rev_iter ~main_only (history : t) ~f =
+and rev_iter (history : t) ~f =
   match history with
   | Epoch ->
       ()
   | Sequence (event, rest) ->
-      rev_iter_simultaneous_events ~main_only [event] ~f ;
-      rev_iter ~main_only rest ~f
+      rev_iter_simultaneous_events [event] ~f ;
+      rev_iter rest ~f
   | FromCellIds (_, hist) ->
-      rev_iter ~main_only hist ~f
+      rev_iter hist ~f
   | BinaryOp (_, hist1, hist2) ->
-      rev_iter_branches ~main_only [hist1; hist2] ~f
+      rev_iter_branches [hist1; hist2] ~f
   | Multiplex hists ->
-      rev_iter_branches ~main_only hists ~f
+      rev_iter_branches hists ~f
   | UnknownCall {f= f_; location; timestamp} ->
-      rev_iter_simultaneous_events ~main_only [Call {f= f_; location; timestamp; in_call= Epoch}] ~f
+      rev_iter_simultaneous_events [Call {f= f_; location; timestamp; in_call= Epoch}] ~f
 
 
-let rev_iter_main = rev_iter ~main_only:true
-
-let iter ~main_only history ~f = Iter.rev (Iter.from_labelled_iter (rev_iter ~main_only history)) f
+let iter history ~f = Iter.rev (Iter.from_labelled_iter (rev_iter history)) f
 
 let yojson_of_event = [%yojson_of: _]
 
@@ -446,14 +444,14 @@ let add_to_errlog ?(include_taint_events = false) ~nesting history errlog =
         errlog := add_returned_from_call_to_errlog ~nesting:!nesting call location !errlog ;
         incr nesting
   in
-  rev_iter ~main_only:false history ~f:one_iter_event ;
+  rev_iter history ~f:one_iter_event ;
   !errlog
 
 
-let get_first_main_event hist =
-  Iter.head (Iter.from_labelled_iter (iter ~main_only:true hist))
+let get_first_event hist =
+  Iter.head (Iter.from_labelled_iter (iter hist))
   |> Option.bind ~f:(function Event event -> Some event | _ -> None)
 
 
-let exists_main t ~f =
-  Container.exists ~iter:rev_iter_main t ~f:(function Event event -> f event | _ -> false)
+let exists t ~f =
+  Container.exists ~iter:rev_iter t ~f:(function Event event -> f event | _ -> false)

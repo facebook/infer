@@ -91,11 +91,10 @@ type iter_event =
   | ReturnFromCall of CallEvent.t * Location.t
   | Event of event
 
-val rev_iter_main : t -> f:(iter_event -> unit) -> unit
-(** iterate on all events in reverse timestamp order, ignoring events in contexts and recursing into
-    the histories inside call events. Timestamp order is the lexicographic order induced by
-    projecting events onto their timestamps and appending timestamps within calls, e.g. the
-    timestamp of the inner assignement in
+val rev_iter : t -> f:(iter_event -> unit) -> unit
+(** iterate on all events in reverse timestamp order, recursing into the histories inside call
+    events. Timestamp order is the lexicographic order induced by projecting events onto their
+    timestamps and appending timestamps within calls, e.g. the timestamp of the inner assignement in
 
     {[
       Call {timestamp=10; in_call=[..., Call{timestamp=4;
@@ -105,11 +104,9 @@ val rev_iter_main : t -> f:(iter_event -> unit) -> unit
     can be written [10.4.3] and the order is such that, e.g., [10.4.3 < 10.5], [10.5] being the
     timestamp of the event following the inner [Call] event in the example above. *)
 
-val iter : main_only:bool -> t -> f:(iter_event -> unit) -> unit
+val iter : t -> f:(iter_event -> unit) -> unit
 [@@warning "-unused-value-declaration"]
-(** like [rev_iter_main] but iterates in order (by reversing the order iteration) and iterates on
-    only main events like [rev_iter_main] if [main_only] is [true], otherwise iterates on *all*
-    events including contexts if [main_only] is [false] *)
+(** like [rev_iter] but iterates in order (by reversing the order iteration) *)
 (* used in unit tests *)
 
 val location_of_event : event -> Location.t
@@ -124,6 +121,6 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
 
-val get_first_main_event : t -> event option
+val get_first_event : t -> event option
 
-val exists_main : t -> f:(event -> bool) -> bool
+val exists : t -> f:(event -> bool) -> bool

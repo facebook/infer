@@ -64,11 +64,11 @@ val synchronous_add_to_errlog :
     happen at the same location, then that call will only appear once and the rest of those traces
     will then be added synchronously as well *)
 
-val find_map_last_main : t -> f:(ValueHistory.event -> 'a option) -> 'a option
-(** [find_map] applied to history events in reverse order; does not look into contextual events *)
+val find_map_last : t -> f:(ValueHistory.event -> 'a option) -> 'a option
+(** [find_map] applied to history events in reverse order *)
 
-val exists_main : t -> f:(ValueHistory.event -> bool) -> bool
-(** whether the trace contains an event satisfying [f]; does not look into contextual events *)
+val exists : t -> f:(ValueHistory.event -> bool) -> bool
+(** whether the trace contains an event satisfying [f] *)
 
 val exists_call : t -> f:(CallEvent.t -> bool) -> bool
 
