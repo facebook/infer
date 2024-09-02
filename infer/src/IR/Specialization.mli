@@ -59,4 +59,4 @@ end
     interprocedural engine will reanalyze a procedure if it needs specialization and it will add the
     obtained specialized summary to the summaries stored for this procedure. This techique avoids
     cloning procedures. *)
-type t = Pulse of Pulse.t
+type t = Pulse of Pulse.t [@@deriving sexp]

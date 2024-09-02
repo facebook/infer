@@ -28,6 +28,14 @@ module type PrintableOrderedType = sig
   include PrintableType with type t := t
 end
 
+module type SexpablePrintableOrderedType = sig
+  include Caml.Set.OrderedType
+
+  include PrintableType with type t := t
+
+  include Sexpable with type t := t
+end
+
 module type PrintableEquatableOrderedType = sig
   include Caml.Set.OrderedType
 
@@ -148,6 +156,14 @@ module type PPMap = sig
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
+module type SexpPPMap = sig
+  include PPMap
+
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+
+  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
+end
+
 let pp_collection_common ?hov ~pp_item fmt c =
   IContainer.pp_collection ?hov ~fold:List.fold ~pp_item fmt c
 
@@ -214,6 +230,30 @@ module MakePPMap (Ord : PrintableOrderedType) = struct
   let pp ~pp_value fmt m =
     let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Ord.pp k pp_value v in
     pp_collection ~pp_item fmt (bindings m)
+end
+
+module MakeSexpPPMap (Ord : SexpablePrintableOrderedType) = struct
+  include MakePPMap (Ord)
+
+  let sexp_of_t sexp_of_data t =
+    let f key data acc = Sexp.List [Ord.sexp_of_t key; sexp_of_data data] :: acc in
+    Sexp.List (fold f t [])
+
+
+  let t_of_sexp data_of_sexp sexp =
+    match sexp with
+    | Sexp.Atom _ ->
+        of_sexp_error "MakeSexpPPMap(...).t_of_sexp: list needed" sexp
+    | Sexp.List l ->
+        let f acc = function
+          | Sexp.List [key_sexp; data_sexp] ->
+              let key = Ord.t_of_sexp key_sexp in
+              let data = data_of_sexp data_sexp in
+              add key data acc
+          | Sexp.List _ | Sexp.Atom _ ->
+              of_sexp_error "MakeSexpPPMap(...).t_of_sexp: 2-element list needed" sexp
+        in
+        List.fold_left ~f ~init:empty l
 end
 
 module type PPMonoMap = sig

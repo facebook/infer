@@ -30,6 +30,14 @@ module type PrintableOrderedType = sig
   include PrintableType with type t := t
 end
 
+module type SexpablePrintableOrderedType = sig
+  include Caml.Set.OrderedType
+
+  include PrintableType with type t := t
+
+  include Sexpable with type t := t
+end
+
 module type PrintableEquatableOrderedType = sig
   include Caml.Set.OrderedType
 
@@ -150,6 +158,14 @@ module type PPMap = sig
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
+module type SexpPPMap = sig
+  include PPMap
+
+  val sexp_of_t : ('a -> Sexplib.Sexp.t) -> 'a t -> Sexplib.Sexp.t
+
+  val t_of_sexp : (Sexplib.Sexp.t -> 'a) -> Sexplib.Sexp.t -> 'a t
+end
+
 module type PPMonoMap = sig
   include MonoMap
 
@@ -161,6 +177,8 @@ end
 module MakePPSet (Ord : PrintableOrderedType) : PPSet with type elt = Ord.t
 
 module MakePPMap (Ord : PrintableOrderedType) : PPMap with type key = Ord.t
+
+module MakeSexpPPMap (Ord : SexpablePrintableOrderedType) : SexpPPMap with type key = Ord.t
 
 module PPMonoMapOfPPMap (M : PPMap) (Val : PrintableType) :
   PPMonoMap with type key = M.key and type value = Val.t and type t = Val.t M.t
