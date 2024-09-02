@@ -602,6 +602,8 @@ val procedures_summary_skip_empty : bool
 
 val process_clang_ast : bool
 
+val procs_to_analyze_index : string option
+
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string

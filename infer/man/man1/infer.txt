@@ -1400,6 +1400,12 @@ OPTIONS
            (Conversely: --no-procedures-summary-skip-empty)
            See also infer-debug(1).
 
+       --procs-to-analyze-index file
+           Specify the file containing an Sexp representing a list of pairs
+           of procedures and specializations to analyze. Only works with the
+           restart scheduler.
+           See also infer-analyze(1).
+
        --no-progress-bar,-P
            Deactivates: Show a progress bar (Conversely: --progress-bar | -p)
            See also infer-run(1).

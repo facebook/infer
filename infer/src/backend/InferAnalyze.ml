@@ -82,22 +82,22 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
   let per_procedure_logging_granularity = 200 in
   (* [procs_left] is set to 1 so that we log the first procedure sent to us. *)
   let procs_left = ref 1 in
-  let analyze_proc_name exe_env proc_name =
+  let analyze_proc_name exe_env ~specialization proc_name =
     decr procs_left ;
     if Int.( <= ) !procs_left 0 then (
       L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
         Procname.pp proc_name ;
       procs_left := per_procedure_logging_granularity ) ;
     run_and_interpret_result ~f:(fun () ->
-        Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all proc_name )
+        Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all ~specialization proc_name )
   in
   fun target ->
     let start = ExecutionDuration.counter () in
     let exe_env = Exe_env.mk () in
     let result =
       match target with
-      | Procname procname ->
-          analyze_proc_name exe_env procname
+      | Procname {procname; specialization} ->
+          analyze_proc_name exe_env ~specialization procname
       | File source_file ->
           analyze_source_file exe_env source_file
     in
@@ -109,7 +109,7 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
     result
 
 
-let source_file_should_be_analyzed ~changed_files source_file =
+let source_file_should_be_analyzed ?(no_file_means_all = true) ~changed_files source_file =
   (* whether [fname] is one of the [changed_files] *)
   let is_changed_file =
     if Config.suffix_match_changed_files then
@@ -130,20 +130,20 @@ let source_file_should_be_analyzed ~changed_files source_file =
   | None when Config.reactive_mode ->
       check_modified ()
   | None ->
-      true
+      no_file_means_all
 
 
 let register_active_checkers () =
   RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
 
 
-let get_source_files_to_analyze ~changed_files =
+let get_source_files_to_analyze ~no_file_means_all ~changed_files =
   let n_all_source_files = ref 0 in
   let n_source_files_to_analyze = ref 0 in
   let filter sourcefile =
     let result =
       (Lazy.force Filtering.source_files_filter) sourcefile
-      && source_file_should_be_analyzed ~changed_files sourcefile
+      && source_file_should_be_analyzed ~no_file_means_all ~changed_files sourcefile
     in
     incr n_all_source_files ;
     if result then incr n_source_files_to_analyze ;
@@ -290,7 +290,8 @@ let main ~changed_files =
       IssueLog.invalidate_all ~procedures ;
       L.progress "Done@." )
     else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
-  let source_files = lazy (get_source_files_to_analyze ~changed_files) in
+  let no_file_means_all = Option.is_none Config.procs_to_analyze_index in
+  let source_files = lazy (get_source_files_to_analyze ~no_file_means_all ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let initial_spec_count =

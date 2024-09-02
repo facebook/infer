@@ -2351,6 +2351,14 @@ and process_clang_ast =
      $(b,--export-changed-functions) (Not available for Java)"
 
 
+and procs_to_analyze_index =
+  CLOpt.mk_path_opt ~long:"procs-to-analyze-index"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"file"
+    "Specify the file containing an Sexp representing a list of pairs of procedures and \
+     specializations to analyze. Only works with the restart scheduler."
+
+
 and progress_bar =
   CLOpt.mk_bool ~short:'p' ~long:"progress-bar" ~default:true
     ~in_help:InferCommand.[(Run, manual_generic)]
@@ -4340,6 +4348,8 @@ and procedures_summary_json = !procedures_summary_json
 and procedures_summary_skip_empty = !procedures_summary_skip_empty
 
 and process_clang_ast = !process_clang_ast
+
+and procs_to_analyze_index = !procs_to_analyze_index
 
 and progress_bar =
   let style =

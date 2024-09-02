@@ -277,6 +277,11 @@ OPTIONS
            Activates: Also log messages to stdout and stderr (Conversely:
            --no-print-logs)
 
+       --procs-to-analyze-index file
+           Specify the file containing an Sexp representing a list of pairs
+           of procedures and specializations to analyze. Only works with the
+           restart scheduler.
+
        --progress-bar-style { auto | plain | multiline }
            Style of the progress bar. auto selects multiline if connected to
            a tty, otherwise plain.

@@ -1400,6 +1400,12 @@ OPTIONS
            (Conversely: --no-procedures-summary-skip-empty)
            See also infer-debug(1).
 
+       --procs-to-analyze-index file
+           Specify the file containing an Sexp representing a list of pairs
+           of procedures and specializations to analyze. Only works with the
+           restart scheduler.
+           See also infer-analyze(1).
+
        --no-progress-bar,-P
            Deactivates: Show a progress bar (Conversely: --progress-bar | -p)
            See also infer-run(1).
@@ -2962,6 +2968,9 @@ INTERNAL OPTIONS
            Activates: process the ast to emit some info about the file with
            --test-determinator or --export-changed-functions (Not available
            for Java) (Conversely: --no-process-clang-ast)
+
+       --procs-to-analyze-index-reset
+           Cancel the effect of --procs-to-analyze-index.
 
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.

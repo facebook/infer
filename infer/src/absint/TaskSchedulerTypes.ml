@@ -6,7 +6,9 @@
  *)
 open! IStd
 
-type target = Procname of Procname.t | File of SourceFile.t
+type target =
+  | Procname of {procname: Procname.t; specialization: Specialization.t option}
+  | File of SourceFile.t
 
 type analysis_result =
   | Ok  (** Analysis finished normally. *)

@@ -32,6 +32,7 @@ BUILD_SYSTEMS_TESTS += \
   infer-debug \
   j1 \
   missing_deps \
+  procs_to_analyze \
   project_root_rel \
   pulse_messages_c \
   pulse_messages_cpp \

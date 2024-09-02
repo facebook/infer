@@ -122,7 +122,7 @@ let set_complete_result analysis_req summary =
       ()
 
 
-let analyze exe_env analysis_req ?specialization callee_summary callee_pdesc =
+let analyze exe_env analysis_req ~specialization callee_summary callee_pdesc =
   let summary =
     Callbacks.iterate_procedure_callbacks exe_env analysis_req ?specialization callee_summary
       callee_pdesc
@@ -132,7 +132,7 @@ let analyze exe_env analysis_req ?specialization callee_summary callee_pdesc =
   summary
 
 
-let run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env tenv analysis_req ~specialization ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
@@ -206,7 +206,7 @@ let run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname ca
     let callee_summary =
       if callee_attributes.ProcAttributes.is_defined then
         let specialization = Option.map ~f:snd specialization in
-        analyze exe_env analysis_req ?specialization initial_callee_summary callee_pdesc
+        analyze exe_env analysis_req ~specialization initial_callee_summary callee_pdesc
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
@@ -243,7 +243,7 @@ let run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname ca
 
 
 (* shadowed for tracing *)
-let run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env tenv analysis_req ~specialization ?caller_pname callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
@@ -251,7 +251,7 @@ let run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname ca
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
           () ) ) ;
   let summary =
-    run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname callee_pdesc
+    run_proc_analysis exe_env tenv analysis_req ~specialization ?caller_pname callee_pdesc
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
@@ -325,7 +325,7 @@ let is_in_block_list =
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) )
 
 
-let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ?specialization
+let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
     ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
   let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
   let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed in
@@ -348,7 +348,7 @@ let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ?sp
                 ~f:(fun () ->
                   let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
                   Some
-                    (run_proc_analysis exe_env tenv analysis_req ?specialization ?caller_pname
+                    (run_proc_analysis exe_env tenv analysis_req ~specialization ?caller_pname
                        callee_pdesc ) )
                 ~on_timeout:(fun span ->
                   L.debug Analysis Quiet
@@ -390,7 +390,7 @@ let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ?sp
 
 
 let analyze_proc_name exe_env analysis_req ?specialization ~caller_summary callee_pname =
-  analyze_callee ~lazy_payloads:false ?specialization exe_env analysis_req ~caller_summary
+  analyze_callee ~lazy_payloads:false ~specialization exe_env analysis_req ~caller_summary
     callee_pname
 
 
@@ -399,7 +399,8 @@ let analyze_proc_name_for_file_analysis exe_env analysis_req callee_pname =
      and we don't want to load all payloads at once (to avoid high memory usage when only a few of
      the payloads are actually needed), or we are starting a procedure analysis in which case we're
      not interested in loading the summary if it has already been computed *)
-  analyze_callee ~lazy_payloads:true exe_env analysis_req ~from_file_analysis:true callee_pname
+  analyze_callee ~lazy_payloads:true ~specialization:None exe_env analysis_req
+    ~from_file_analysis:true callee_pname
 
 
 let analyze_file_procedures exe_env analysis_req procs_to_analyze source_file_opt =
@@ -423,6 +424,6 @@ let analyze_file exe_env analysis_req source_file =
 
 
 (** Invoke procedure callbacks on a given environment. *)
-let analyze_proc_name_toplevel exe_env analysis_req proc_name =
+let analyze_proc_name_toplevel exe_env analysis_req ~specialization proc_name =
   update_taskbar (Some proc_name) None ;
-  analyze_callee ~lazy_payloads:true exe_env analysis_req proc_name |> ignore
+  analyze_callee ~lazy_payloads:true ~specialization exe_env analysis_req proc_name |> ignore

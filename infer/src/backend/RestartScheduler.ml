@@ -8,6 +8,13 @@ open! IStd
 module L = Logging
 open TaskSchedulerTypes
 
+type specialized_procnames = (Procname.t * Specialization.t option) list [@@deriving sexp]
+
+let read_procs_to_analyze () =
+  Option.value_map ~default:[] Config.procs_to_analyze_index ~f:(fun index ->
+      In_channel.read_all index |> Parsexp.Single.parse_string_exn |> specialized_procnames_of_sexp )
+
+
 type work_with_dependency = {work: TaskSchedulerTypes.target; dependency_filename_opt: string option}
 
 let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
@@ -35,13 +42,20 @@ let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.Task
 
 let make sources =
   let target_count = ref 0 in
-  let cons_procname_work acc procname =
+  let cons_procname_work acc ~specialization procname =
     incr target_count ;
-    {work= TaskSchedulerTypes.Procname procname; dependency_filename_opt= None} :: acc
+    {work= TaskSchedulerTypes.Procname {procname; specialization}; dependency_filename_opt= None}
+    :: acc
+  in
+  let procs_to_analyze_targets =
+    read_procs_to_analyze ()
+    |> List.fold ~init:[] ~f:(fun acc (procname, specialization) ->
+           cons_procname_work acc ~specialization procname )
   in
   let pname_targets =
-    List.fold sources ~init:[] ~f:(fun init source ->
-        SourceFiles.proc_names_of_source source |> List.fold ~init ~f:cons_procname_work )
+    List.fold sources ~init:procs_to_analyze_targets ~f:(fun init source ->
+        SourceFiles.proc_names_of_source source
+        |> List.fold ~init ~f:(cons_procname_work ~specialization:None) )
   in
   let make_file_work file =
     incr target_count ;

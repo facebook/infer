@@ -29,7 +29,8 @@ val analyze_proc_name_for_file_analysis :
 val analyze_file : Exe_env.t -> AnalysisRequest.t -> SourceFile.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)
 
-val analyze_proc_name_toplevel : Exe_env.t -> AnalysisRequest.t -> Procname.t -> unit
+val analyze_proc_name_toplevel :
+  Exe_env.t -> AnalysisRequest.t -> specialization:Specialization.t option -> Procname.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given procedure. *)
 
 val edges_to_ignore : Procname.Set.t Procname.Map.t option ref
