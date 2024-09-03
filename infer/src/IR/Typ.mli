@@ -346,6 +346,8 @@ val is_folly_coro : t -> bool
 
 val is_thrift_field_ref : t -> bool
 
+val is_thrift_field_ref_str : string -> bool
+
 val is_pointer_to_void : t -> bool
 
 val is_void : t -> bool

@@ -40,8 +40,9 @@ let is_thrift_field_copy_assignment =
        assignment. Thus, here we check if the funtion is templated.
        https://github.com/facebook/fbthrift/blob/bf6f866e2f4ce7adb35b99c6c126720cd9e2b095/thrift/lib/cpp2/FieldRef.h#L293-L310 *)
     make_dispatcher
-      [ -"apache" &:: "thrift" &:: "field_ref" &:: "operator=" < any_typ >$ any_arg $+ any_arg
-        $--> () ]
+      [ -"apache" &:: "thrift"
+        &::+ (fun _ s -> Typ.is_thrift_field_ref_str s)
+        &:: "operator=" < any_typ >$ any_arg $+ any_arg $--> () ]
   in
   fun pname actuals ->
     let arg_payloads = to_arg_payloads actuals in

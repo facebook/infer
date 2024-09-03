@@ -793,7 +793,20 @@ let is_shared_pointer = make_cpp_class_matcher ~ptr:false shared_pointer_qual_na
 
 let is_folly_coro = make_cpp_class_matcher ~prefix:true ["folly::coro"]
 
-let is_thrift_field_ref = make_cpp_class_matcher ["apache::thrift::field_ref"]
+let thrift_field_refs =
+  [ "field_ref"
+  ; "optional_field_ref"
+  ; "required_field_ref"
+  ; "optional_boxed_field_ref"
+  ; "union_field_ref" ]
+
+
+let is_thrift_field_ref =
+  make_cpp_class_matcher
+    (List.map thrift_field_refs ~f:(fun field_ref -> "apache::thrift::" ^ field_ref))
+
+
+let is_thrift_field_ref_str s = List.mem thrift_field_refs s ~equal:String.equal
 
 let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
