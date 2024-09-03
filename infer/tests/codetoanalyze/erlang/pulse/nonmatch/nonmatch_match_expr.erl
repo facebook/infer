@@ -23,7 +23,15 @@
     test_match_nested2_Bad/0,
     test_match_nested3_Bad/0,
     test_match_eager_Ok/0,
-    test_match_eager_Bad/0
+    test_match_eager_Bad/0,
+    test_match_func_args_Ok/0,
+    fn_test_match_func_args_Bad/0,
+    test_match_func_arg_Ok/0,
+    fn_test_match_func_arg_Bad/0,
+    test_match_with_var_Ok/0,
+    fn_test_match_with_var_Bad/0,
+    test_match_with_var_swapped_Ok/0,
+    fn_test_match_with_var_swapped_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -117,3 +125,43 @@ test_match_eager_Bad() ->
 
 only_accepts_one(1) -> ok.
 two() -> 2.
+
+%% Tests for matching against already bound variables
+
+crash_if_different(A, B) ->
+    A = B.
+
+test_match_func_args_Ok() ->
+    crash_if_different(1, 1).
+
+fn_test_match_func_args_Bad() ->
+    crash_if_different(1, 2).
+
+crash_if_not_one(A) ->
+    A = 1.
+
+test_match_func_arg_Ok() ->
+    crash_if_not_one(1).
+
+fn_test_match_func_arg_Bad() ->
+    crash_if_not_one(2).
+
+crash_if_not_one_with_var(A) ->
+    B = 1,
+    A = B.
+
+test_match_with_var_Ok() ->
+    crash_if_not_one_with_var(1).
+
+fn_test_match_with_var_Bad() ->
+    crash_if_not_one_with_var(2).
+
+crash_if_not_one_with_var_swapped(A) ->
+    B = 1,
+    B = A.
+
+test_match_with_var_swapped_Ok() ->
+    crash_if_not_one_with_var_swapped(1).
+
+fn_test_match_with_var_swapped_Bad() ->
+    crash_if_not_one_with_var_swapped(2).
