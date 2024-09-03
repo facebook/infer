@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "ocamlformat"
-version: "0.26.1"
+version: "0.26.2"
 synopsis: "Auto-formatter for OCaml code"
 description: """\
 **ocamlformat** is a code formatter for OCaml. It comes with opinionated default settings but is also fully customizable to suit your coding style.
@@ -20,26 +20,28 @@ depends: [
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "camlp-streams" {= "5.0.1"}
-  "cmdliner" {= "1.2.0"}
+  "cmdliner" {= "1.3.0"}
   "csexp" {= "1.5.2"}
-  "dune" {= "3.14.2"}
-  "dune-build-info" {= "3.14.2"}
-  "dune-configurator" {= "3.14.2"}
+  "dune" {= "3.16.0"}
+  "dune-build-info" {= "3.16.0"}
+  "dune-configurator" {= "3.16.0"}
   "either" {= "1.0.0"}
   "fix" {= "20230505"}
   "fpath" {= "0.7.3"}
-  "menhir" {= "20231231"}
-  "menhirCST" {= "20231231"}
-  "menhirLib" {= "20231231"}
-  "menhirSdk" {= "20231231"}
+  "host-arch-x86_64" {= "1"}
+  "host-system-other" {= "1"}
+  "menhir" {= "20240715"}
+  "menhirCST" {= "20240715"}
+  "menhirLib" {= "20240715"}
+  "menhirSdk" {= "20240715"}
   "ocaml" {= "4.14.0"}
   "ocaml-config" {= "2"}
   "ocaml-option-flambda" {= "1"}
   "ocaml-variants" {= "4.14.0+options"}
-  "ocaml-version" {= "3.6.4"}
-  "ocamlbuild" {= "0.14.3"}
+  "ocaml-version" {= "3.6.8"}
+  "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.6"}
-  "ocamlformat-lib" {= "0.26.1"}
+  "ocamlformat-lib" {= "0.26.2"}
   "ocp-indent" {= "1.8.1"}
   "re" {= "1.11.0"}
   "result" {= "1.5"}
@@ -66,12 +68,17 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ocaml-ppx/ocamlformat.git"
-url {
-  src:
-    "https://github.com/ocaml-ppx/ocamlformat/releases/download/0.26.1/ocamlformat-0.26.1.tbz"
-  checksum: [
-    "sha256=da006e427f15b9ec612fb808d446599bd9b7c3ee25abeb3d555747a70d74c6d7"
-    "sha512=b7413f8dc47ba3a2372e89d59cae54f9a602ab81e31cd14ed986a831111080b79a5a3cc45dac04d8ffae5054c35bf29fe9559f145c76c87a30e191ed5400942a"
-  ]
-}
+
 x-commit-hash: "651f767b48e14ba6b24db9421306942d9e51adcc"
+maintainer: [
+  "Guillaume Petiot <guillaume@tarides.com>"
+  "Jules Aguillon <jules@j3s.fr>"
+  "Emile Trotignon <emile@tarides.com>"
+]
+authors: [
+  "Josh Berdine <jjb@fb.com>"
+  "Hugo Heuzard <hugo.heuzard@gmail.com>"
+  "Etienne Millon <etienne@tarides.com>"
+  "Guillaume Petiot <guillaume@tarides.com>"
+  "Jules Aguillon <jules@j3s.fr>"
+]
