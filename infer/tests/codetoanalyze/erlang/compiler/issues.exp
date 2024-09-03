@@ -568,6 +568,10 @@ nonmatch_case_expr:test_case_tail1_Ok/0: ok
 nonmatch_case_expr:test_case_tail2_Ok/0: ok
 nonmatch_case_expr:test_case_tail3_Bad/0: case_clause
 
+----- nonmatch_case_expr_arg -----
+nonmatch_case_expr_arg:fn_test_Bad/0: case_clause
+nonmatch_case_expr_arg:test_Ok/0: ok
+
 ----- nonmatch_case_guards -----
 nonmatch_case_guards:test_accepts_all_Ok/0: ok
 nonmatch_case_guards:test_accepts_positive2_Bad/0: case_clause
