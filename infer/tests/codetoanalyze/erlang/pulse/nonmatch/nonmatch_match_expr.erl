@@ -31,7 +31,11 @@
     test_match_with_var_Ok/0,
     fn_test_match_with_var_Bad/0,
     test_match_with_var_swapped_Ok/0,
-    fn_test_match_with_var_swapped_Bad/0
+    fn_test_match_with_var_swapped_Bad/0,
+    fn_test_simple_match_Bad/0,
+    test_match_anonymus_Ok/0,
+    fn_test_not_real_anon_match1_Bad/0,
+    fn_test_not_real_anon_match2_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -165,3 +169,21 @@ test_match_with_var_swapped_Ok() ->
 
 fn_test_match_with_var_swapped_Bad() ->
     crash_if_not_one_with_var_swapped(2).
+
+fn_test_simple_match_Bad() ->
+    A = 1,
+    A = 2.
+
+test_match_anonymus_Ok() ->
+    _ = 1,
+    _ = 2.
+
+fn_test_not_real_anon_match1_Bad() ->
+    % `_` is the only truly anonymus name
+    _A = 1,
+    _A = 2.
+
+fn_test_not_real_anon_match2_Bad() ->
+    % `_` is the only truly anonymus name
+    __ = 1,
+    __ = 2.

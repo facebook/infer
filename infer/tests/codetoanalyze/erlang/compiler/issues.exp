@@ -661,7 +661,11 @@ nonmatch_match_expr:fn_test_match_func_arg_Bad/0: badmatch
 nonmatch_match_expr:fn_test_match_func_args_Bad/0: badmatch
 nonmatch_match_expr:fn_test_match_with_var_Bad/0: badmatch
 nonmatch_match_expr:fn_test_match_with_var_swapped_Bad/0: badmatch
+nonmatch_match_expr:fn_test_not_real_anon_match1_Bad/0: badmatch
+nonmatch_match_expr:fn_test_not_real_anon_match2_Bad/0: badmatch
+nonmatch_match_expr:fn_test_simple_match_Bad/0: badmatch
 nonmatch_match_expr:test_match_a_Ok/0: ok
+nonmatch_match_expr:test_match_anonymus_Ok/0: ok
 nonmatch_match_expr:test_match_b_Bad/0: badmatch
 nonmatch_match_expr:test_match_c_Ok/0: ok
 nonmatch_match_expr:test_match_d_Ok/0: ok
