@@ -11,7 +11,11 @@
     test_case_simple3_Bad/0,
     test_case_tail1_Ok/0,
     test_case_tail2_Ok/0,
-    test_case_tail3_Bad/0
+    test_case_tail3_Bad/0,
+    test_arg_Ok/0,
+    fn_test_arg_Bad/0,
+    test_local_var_Ok/0,
+    fn_test_local_var_Bad/0
 ]).
 
 case_simple(X) ->
@@ -38,3 +42,27 @@ test_case_tail2_Ok() ->
     tail_with_case([1]).
 test_case_tail3_Bad() ->
     tail_with_case([]).
+
+crash_if_different(A, B) ->
+    % The matching of A against the bound B should be compiled to an equality check.
+    case A of
+        B -> ok
+    end.
+
+test_arg_Ok() ->
+    crash_if_different(0, 0).
+fn_test_arg_Bad() ->
+    crash_if_different(0, 1).
+
+crash_if_not_one(A) ->
+    B = 1,
+    % The matching of A against the bound B should be compiled to an equality check.
+    case A of
+        B -> ok
+    end.
+
+test_local_var_Ok() ->
+    crash_if_not_one(1).
+
+fn_test_local_var_Bad() ->
+    crash_if_not_one(2).
