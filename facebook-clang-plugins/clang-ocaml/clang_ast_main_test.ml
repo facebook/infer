@@ -8,8 +8,9 @@
 exception PointerMismatch
 
 let validate_ptr key_ptr node =
-  let node_ptr = Clang_ast_main.get_ptr_from_node node in
-  if node_ptr != key_ptr then raise PointerMismatch
+  Option.iter
+    (fun node_ptr -> if node_ptr != key_ptr then raise PointerMismatch)
+    (Clang_ast_main.get_ptr_from_node node)
 
 
 let validate_decl_ptr key_ptr decl = validate_ptr key_ptr (`DeclNode decl)
@@ -39,10 +40,11 @@ let src_range_to_str range =
 
 
 let print_decl path decl =
-  let kind_str = Clang_ast_proj.get_decl_kind_string decl in
-  let decl_info = Clang_ast_proj.get_decl_tuple decl in
-  let src_str = src_range_to_str decl_info.Clang_ast_t.di_source_range in
-  print_node path (kind_str ^ " " ^ src_str)
+  if not (Clang_ast_proj.is_sve_decl decl) then
+    let kind_str = Clang_ast_proj.get_decl_kind_string decl in
+    let decl_info = Clang_ast_proj.get_decl_tuple decl in
+    let src_str = src_range_to_str decl_info.Clang_ast_t.di_source_range in
+    print_node path (kind_str ^ " " ^ src_str)
 
 
 let print_stmt path stmt = print_node path (Clang_ast_proj.get_stmt_kind_string stmt)
@@ -57,7 +59,8 @@ let check_decl_cache_from_file fname =
   let decl_cache, stmt_cache, type_cache, _ = Clang_ast_main.index_node_pointers ast in
   print_map_size decl_cache ;
   print_map_size stmt_cache ;
-  print_map_size type_cache ;
+  (* NOTE: The size of type_cache is slightly different in x86_64 and arm64. *)
+  (* print_map_size type_cache ; *)
   prerr_newline () ;
   Clang_ast_main.PointerMap.iter validate_decl_ptr decl_cache ;
   Clang_ast_main.PointerMap.iter validate_stmt_ptr stmt_cache ;

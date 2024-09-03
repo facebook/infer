@@ -8,9 +8,8 @@
 module P = Printf
 
 let rec visit_named_decls f decl =
-  let () =
-    match Clang_ast_proj.get_named_decl_tuple decl with Some (x, y) -> f x y | None -> ()
-  in
+  ( if not (Clang_ast_proj.is_sve_decl decl) then
+      match Clang_ast_proj.get_named_decl_tuple decl with Some (x, y) -> f x y | None -> () ) ;
   match Clang_ast_proj.get_decl_context_tuple decl with
   | Some (l, _) ->
       List.iter (visit_named_decls f) l

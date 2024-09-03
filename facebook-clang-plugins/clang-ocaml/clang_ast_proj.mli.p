@@ -22,6 +22,8 @@ val get_type_decl_tuple : decl -> (type_decl_tuple) option
 val get_type_tuple : c_type -> (type_tuple)
 val get_var_decl_tuple : decl -> (var_decl_tuple) option
 
+val is_sve_decl : decl -> bool
+val is_sve_type_kind : builtin_type_kind -> bool
 val is_valid_astnode_kind : string -> bool
 val is_valid_binop_kind_name : string -> bool
 val is_valid_unop_kind_name : string -> bool

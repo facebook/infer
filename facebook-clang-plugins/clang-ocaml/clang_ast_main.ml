@@ -36,15 +36,20 @@ let visit_ast ?(visit_decl = empty_v) ?(visit_stmt = empty_v) ?(visit_type = emp
 
 let get_ptr_from_node node =
   match node with
+  | `DeclNode decl when Clang_ast_proj.is_sve_decl decl ->
+      None
   | `DeclNode decl ->
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
-      decl_info.Clang_ast_t.di_pointer
+      Some decl_info.Clang_ast_t.di_pointer
   | `StmtNode stmt ->
       let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-      stmt_info.Clang_ast_t.si_pointer
+      Some stmt_info.Clang_ast_t.si_pointer
+  | `TypeNode (Clang_ast_t.BuiltinType (_, builtin_type_kind))
+    when Clang_ast_proj.is_sve_type_kind builtin_type_kind ->
+      None
   | `TypeNode c_type ->
       let type_info = Clang_ast_proj.get_type_tuple c_type in
-      type_info.Clang_ast_t.ti_pointer
+      Some type_info.Clang_ast_t.ti_pointer
 
 
 let get_val_from_node node =
@@ -52,9 +57,11 @@ let get_val_from_node node =
 
 
 let add_node_to_cache node cache =
-  let key = get_ptr_from_node node in
-  let value = get_val_from_node node in
-  cache := PointerMap.add key value !cache
+  Option.iter
+    (fun key ->
+      let value = get_val_from_node node in
+      cache := PointerMap.add key value !cache )
+    (get_ptr_from_node node)
 
 
 let process_decl _path decl =

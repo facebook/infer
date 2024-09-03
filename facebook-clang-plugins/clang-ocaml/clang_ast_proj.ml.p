@@ -224,3 +224,20 @@ let get_cast_kind = function
 #include<clang/AST/StmtNodes.inc>
 -> Some cast_expr_info.cei_cast_kind
 | _ -> None
+
+let is_sve_type = function
+#define SVE_TYPE(NAME, ID, SINGLETONID) | NAME -> true
+#include<clang/Basic/AArch64SVEACLETypes.def>
+| _ -> false
+
+let is_sve_decl decl =
+  match get_named_decl_tuple decl with
+  | Some (_, {Clang_ast_t.ni_name}) ->
+      is_sve_type ni_name
+  | None ->
+      false
+
+let is_sve_type_kind = function
+#define SVE_TYPE(NAME, ID, SINGLETONID) | `ID -> true
+#include<clang/Basic/AArch64SVEACLETypes.def>
+| _ -> false
