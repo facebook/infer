@@ -399,8 +399,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         false
 
 
-  let is_used_in_file (sl_file_class : Clang_ast_t.source_file option) ctx_source_file =
-    Option.exists sl_file_class ~f:(String.equal ctx_source_file)
+  let is_used_in_file (sl_file_class : Clang_ast_t.source_file) ctx_source_file =
+    String.equal (Utils.realpath sl_file_class) ctx_source_file
 
 
   let rec store_attributes tenv trans_unit_ctx dec =
@@ -414,10 +414,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
         let class_decl = CAst_utils.get_decl parent_ptr in
         let ctx_source_file =
-          trans_unit_ctx.CFrontend_config.source_file |> SourceFile.to_abs_path
+          trans_unit_ctx.CFrontend_config.source_file |> SourceFile.to_abs_path |> Utils.realpath
         in
         match class_decl with
-        | Some (ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, _, {sl_file}, _))
+        | Some
+            (ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, _, {sl_file= Some sl_file}, _))
           when Config.cxx && is_used_in_file sl_file ctx_source_file ->
             let ms =
               let procname = CType_decl.CProcname.from_decl ~tenv dec in
