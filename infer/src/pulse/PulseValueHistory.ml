@@ -118,7 +118,16 @@ let from_cell_id id hist =
 
 let multiplex hists =
   let ids, hists = pop_all_cell_ids hists in
-  construct ids (Multiplex hists)
+  let rec build acc = function
+    | [] ->
+        acc
+    | Epoch :: hists' ->
+        build acc hists'
+    | hist :: hists' ->
+        if List.mem ~equal:phys_equal acc hist then build acc hists' else build (hist :: acc) hists'
+  in
+  let hists' = build [] hists in
+  construct ids (Multiplex hists')
 
 
 let unknown_call f actuals location timestamp =
@@ -176,41 +185,50 @@ let timestamp_of_event = function
 
 
 let pop_least_timestamp hists0 =
-  let rec aux orig_hists_prefix curr_ts_hists_prefix latest_events (highest_t : Timestamp.t option)
-      hists =
-    match (highest_t, hists) with
-    | _, [] ->
+  let rec aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events
+      (highest_t : Timestamp.t option) hists =
+    match hists with
+    | [] ->
         (latest_events, curr_ts_hists_prefix)
-    | _, Epoch :: hists ->
-        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
-    | _, FromCellIds (_, hist) :: hists ->
-        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist :: hists)
-    | _, BinaryOp (_, hist1, hist2) :: hists ->
-        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist1 :: hist2 :: hists)
-    | _, Multiplex hists' :: hists ->
-        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hists' @ hists)
-    | _, UnknownCall {f; location; timestamp} :: hists ->
-        (* cheat a bit: transform an [UnknownCall] history into a singleton [Call] history *)
-        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
-          (Sequence (Call {f; location; timestamp; in_call= Epoch}, Epoch) :: hists)
-    | None, (Sequence (event, hist') as hist) :: hists ->
-        aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
-          (Some (timestamp_of_event event))
-          hists
-    | Some highest_ts, (Sequence (event, hist') as hist) :: hists
-      when (timestamp_of_event event :> int) > (highest_ts :> int) ->
-        aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
-          (Some (timestamp_of_event event))
-          hists
-    | Some highest_ts, (Sequence (event, _) as hist) :: hists
-      when (timestamp_of_event event :> int) < (highest_ts :> int) ->
-        aux (hist :: orig_hists_prefix) (hist :: curr_ts_hists_prefix) latest_events highest_t hists
-    | Some _, (Sequence (event, hist') as hist) :: hists
-    (* when  timestamp_of_event _event = highest_ts *) ->
-        aux (hist :: orig_hists_prefix) (hist' :: curr_ts_hists_prefix) (event :: latest_events)
-          highest_t hists
+    | hist :: hists when List.mem ~equal:phys_equal treated_hists hist ->
+        aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
+    | hist :: hists -> (
+        let treated_hists = hist :: treated_hists in
+        match (highest_t, hist) with
+        | _, Epoch ->
+            aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
+        | _, FromCellIds (_, hist) ->
+            aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+              (hist :: hists)
+        | _, BinaryOp (_, hist1, hist2) ->
+            aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+              (hist1 :: hist2 :: hists)
+        | _, Multiplex hists' ->
+            aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+              (hists' @ hists)
+        | _, UnknownCall {f; location; timestamp} ->
+            (* cheat a bit: transform an [UnknownCall] history into a singleton [Call] history *)
+            aux treated_hists orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+              (Sequence (Call {f; location; timestamp; in_call= Epoch}, Epoch) :: hists)
+        | None, (Sequence (event, hist') as hist) ->
+            aux treated_hists (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
+              (Some (timestamp_of_event event))
+              hists
+        | Some highest_ts, (Sequence (event, hist') as hist)
+          when (timestamp_of_event event :> int) > (highest_ts :> int) ->
+            aux treated_hists (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
+              (Some (timestamp_of_event event))
+              hists
+        | Some highest_ts, (Sequence (event, _) as hist)
+          when (timestamp_of_event event :> int) < (highest_ts :> int) ->
+            aux treated_hists (hist :: orig_hists_prefix) (hist :: curr_ts_hists_prefix)
+              latest_events highest_t hists
+        | Some _, (Sequence (event, hist') as hist)
+        (* when  timestamp_of_event _event = highest_ts *) ->
+            aux treated_hists (hist :: orig_hists_prefix) (hist' :: curr_ts_hists_prefix)
+              (event :: latest_events) highest_t hists )
   in
-  aux [] [] [] None hists0
+  aux [] [] [] [] None hists0
 
 
 type iter_event =
