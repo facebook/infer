@@ -199,21 +199,19 @@ type taint_policy_violation =
 let check_source_against_sink_policy location ~source source_times intra_procedural_only hist
     sanitizers ~sink sink_kind sink_policy =
   let has_matching_taint_event_in_history source hist =
-    if Config.pulse_taint_check_history then
-      (* TODO(izorin): tainting based on value histories doesn't work for function calls arguments yet *)
-      if TaintItem.is_argument_origin source && not intra_procedural_only then true
-      else if TaintItem.equal source sink then true
-      else
-        let check = function
-          | ValueHistory.TaintSource (taint_item, _, _) ->
-              List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
-          | ValueHistory.TaintPropagated _ ->
-              true
-          | _ ->
-              false
-        in
-        ValueHistory.exists hist ~f:check
-    else true
+    (* TODO(izorin): tainting based on value histories doesn't work for function calls arguments yet *)
+    if TaintItem.is_argument_origin source && not intra_procedural_only then true
+    else if TaintItem.equal source sink then true
+    else
+      let check = function
+        | ValueHistory.TaintSource (taint_item, _, _) ->
+            List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
+        | ValueHistory.TaintPropagated _ ->
+            true
+        | _ ->
+            false
+      in
+      ValueHistory.exists hist ~f:check
   in
   let open IOption.Let_syntax in
   let* source_kind =

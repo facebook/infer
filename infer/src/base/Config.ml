@@ -2701,14 +2701,6 @@ and pulse_specialization_partial =
      specialized analysis of the callee."
 
 
-and pulse_taint_check_history =
-  CLOpt.mk_bool ~long:"pulse-taint-check-history" ~default:true
-    ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "Check values histories for taint events before reporting a taint issue. This is a temporary \
-     flag while the taint analysis transitions from being mainly attribute-based to being \
-     history-based."
-
-
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4489,8 +4481,6 @@ and pulse_specialization_iteration_limit = !pulse_specialization_iteration_limit
 and pulse_specialization_limit = !pulse_specialization_limit
 
 and pulse_specialization_partial = !pulse_specialization_partial
-
-and pulse_taint_check_history = !pulse_taint_check_history
 
 and pulse_taint_config =
   (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore
