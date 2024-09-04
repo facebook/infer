@@ -1,0 +1,9 @@
+{
+  "scheduler": "callgraph",
+  "pulse-specialization-partial": true,
+  "pulse-taint-short-traces": true,
+  "pulse-taint-follow-field-accesses": false,
+  "pulse-taint-config": [
+    "taint_config.json"
+  ]
+}

@@ -290,7 +290,8 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
     | ArrayAccess _ ->
         true
     | FieldAccess _ ->
-        Language.curr_language_is Hack || Language.curr_language_is Python
+        Config.pulse_taint_follow_field_accesses
+        && (Language.curr_language_is Hack || Language.curr_language_is Python)
     | Dereference ->
         false
   in

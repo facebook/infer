@@ -198,6 +198,7 @@ DIRECT_TESTS += \
 BUILD_SYSTEMS_TESTS += \
   differential_hack \
   pulse_messages_hack \
+	pulse_taint_hack_no_follow_field_accesses \
 
 endif
 

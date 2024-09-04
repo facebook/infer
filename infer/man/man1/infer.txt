@@ -1644,6 +1644,12 @@ OPTIONS
            kind, only sensitive data flows to the sink will be reported.
            See also infer-analyze(1).
 
+       --no-pulse-taint-follow-field-accesses
+           Deactivates: Specify if taint analysis should follow field
+           accesses when propagating taints. (Conversely:
+           --pulse-taint-follow-field-accesses)
+           See also infer-analyze(1).
+
        --pulse-taint-opaque-files +path
            Specify files that should be treated as opaque for taint analysis
            to make sure that procedure's belonging to these files are always

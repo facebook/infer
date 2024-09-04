@@ -1,0 +1,23 @@
+{
+  "pulse-taint-sources": [
+    {
+      "procedure_regex": ".*",
+      "taint_target": [
+        "ArgumentsMatchingTypes",
+        [
+          "SensitiveClass"
+        ]
+      ],
+      "kinds": ["Shapes"]
+    }
+  ],
+  "pulse-taint-sinks": [
+    { "class_names": ["Shapes::ShapeLogger"], "method_names": ["taintSink"],  "kinds": ["Shapes"] }
+  ],
+  "pulse-taint-policies": [
+    {
+      "short_description": "Taint flow",
+      "taint_flows": [{"source_kinds": ["Shapes"], "sink_kinds": ["Shapes"]}]
+    }
+  ]
+}

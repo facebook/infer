@@ -2721,6 +2721,12 @@ and pulse_taint_data_flow_kinds =
      such a kind, only sensitive data flows to the sink will be reported."
 
 
+and pulse_taint_follow_field_accesses =
+  CLOpt.mk_bool ~long:"pulse-taint-follow-field-accesses" ~default:true
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Specify if taint analysis should follow field accesses when propagating taints."
+
+
 and pulse_taint_opaque_files =
   CLOpt.mk_path_list ~long:"pulse-taint-opaque-files"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4546,6 +4552,8 @@ and pulse_taint_config =
 
 
 and pulse_taint_opaque_files = RevList.to_list !pulse_taint_opaque_files
+
+and pulse_taint_follow_field_accesses = !pulse_taint_follow_field_accesses
 
 and pulse_taint_short_traces = !pulse_taint_short_traces
 
