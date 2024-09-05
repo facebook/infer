@@ -267,6 +267,8 @@ features_lc:test_filtered1_Bad/0: function_clause
 features_lc:test_filtered1_Ok/0: ok
 features_lc:test_filtered2_Bad/0: function_clause
 features_lc:test_filtered2_Ok/0: ok
+features_lc:test_gen_after_filter_Bad/0: function_clause
+features_lc:test_gen_after_filter_Ok/0: ok
 features_lc:test_simple1_Bad/0: function_clause
 features_lc:test_simple1_Ok/0: ok
 features_lc:test_simple1a_Bad/0: case_clause

@@ -987,32 +987,8 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases p
 (* Helper function for the main loop of translating list/map comprehensions, taking care of
    generators and filters. *)
 and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Block.t =
-  (* Surround expression with filters *)
-  let apply_one_filter (qual : Ast.qualifier) (acc : Block.t) : Block.t =
-    match qual with
-    | Filter expr ->
-        (* Check expression, execute inner block (accumulator) only if true *)
-        let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
-        let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
-        let true_node = Node.make_if env true unboxed in
-        let false_node = Node.make_if env false unboxed in
-        let fail_node = Node.make_nop env in
-        let succ_node = Node.make_nop env in
-        let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
-        filter_expr_block.exit_success |~~> [true_node; false_node] ;
-        filter_expr_block.exit_failure |~~> [fail_node] ;
-        true_node |~~> [acc.start] ;
-        false_node |~~> [succ_node] ;
-        acc.exit_success |~~> [succ_node] ;
-        acc.exit_failure |~~> [fail_node] ;
-        {start= filter_expr_block.start; exit_success= succ_node; exit_failure= fail_node}
-    | _ ->
-        (* Ignore generators *)
-        acc
-  in
-  let loop_body_with_filters = List.fold_right qualifiers ~f:apply_one_filter ~init:loop_body in
-  (* Wrap filtered expression with loops for generators*)
-  let apply_one_gen (qual : Ast.qualifier) (acc : Block.t) : Block.t =
+  (* Surround expression with filters and and loops for generators *)
+  let apply_one_qualifier (qual : Ast.qualifier) (acc : Block.t) : Block.t =
     (* Helper function for the common parts of list/map generators, namely taking elements from
        the list one-by-one in a loop (maps are also converted to lists). *)
     let make_gen gen_var (init_block : Block.t) mk_matcher : Block.t =
@@ -1050,6 +1026,22 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
       Block.any env (check_blocks @ [fail_block])
     in
     match qual with
+    | Filter expr ->
+        (* Check expression, execute inner block (accumulator) only if true *)
+        let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
+        let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
+        let true_node = Node.make_if env true unboxed in
+        let false_node = Node.make_if env false unboxed in
+        let fail_node = Node.make_nop env in
+        let succ_node = Node.make_nop env in
+        let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
+        filter_expr_block.exit_success |~~> [true_node; false_node] ;
+        filter_expr_block.exit_failure |~~> [fail_node] ;
+        true_node |~~> [acc.start] ;
+        false_node |~~> [succ_node] ;
+        acc.exit_success |~~> [succ_node] ;
+        acc.exit_failure |~~> [fail_node] ;
+        {start= filter_expr_block.start; exit_success= succ_node; exit_failure= fail_node}
     | Generator {pattern; expression} ->
         let gen_var, init_block = translate_expression_to_fresh_id env expression in
         let check_block = make_gen_checker gen_var [Nil; Cons] in
@@ -1085,10 +1077,12 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
           {matcher with start= key_val_load}
         in
         make_gen gen_var init_block mk_matcher
-    | _ ->
-        acc
+    | BitsGenerator _ ->
+        let unsupported = call_unsupported "bits_generator" 0 in
+        let call_instr = builtin_call env (mk_fresh_id ()) unsupported [] in
+        Block.all env [Block.make_instruction env [call_instr]; acc]
   in
-  List.fold_right qualifiers ~f:apply_one_gen ~init:loop_body_with_filters
+  List.fold_right qualifiers ~f:apply_one_qualifier ~init:loop_body
 
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :

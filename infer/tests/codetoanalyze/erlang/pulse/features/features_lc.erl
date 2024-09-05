@@ -27,7 +27,9 @@
     test_two_gen1_Bad/0,
     test_two_gen2_Ok/0,
     test_two_gen2_Bad/0,
-    test_bad_gen_Bad/0
+    test_bad_gen_Bad/0,
+    test_gen_after_filter_Ok/0,
+    test_gen_after_filter_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -182,3 +184,20 @@ test_two_gen2_Bad() ->
 
 test_bad_gen_Bad() ->
     [X || X <- #{}].
+
+
+accepts_one(1) -> [ok].
+
+test_gen_after_filter_Ok() ->
+    L = [X || X <- [1,2], X < 2, _Y <- accepts_one(X)],
+    case L of
+        [1] -> ok;
+        _ -> warn(1)
+    end.
+
+test_gen_after_filter_Bad() ->
+    L = [X || X <- [1,2], X < 2, _Y <- accepts_one(X)],
+    case L of
+        [1] -> warn(1);
+        _ -> ok
+    end.
