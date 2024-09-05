@@ -2206,6 +2206,13 @@ and never_returning_null =
        $(i,null)." )
 
 
+and noescaping_function_list =
+  CLOpt.mk_string_list ~long:"noescaping-function-list" ~meta:"string"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Useful for the check CXX_REF_CAPTURED_IN_BLOCK. It declares a list of functions that take \
+     blocks as arguments that are no escaping but we cannot annotate them accordingly."
+
+
 and no_censor_report =
   CLOpt.mk_string_list ~long:"no-censor-report" ~meta:"issue_type_regex"
     ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
@@ -4292,6 +4299,8 @@ and merge_summaries = RevList.to_list !merge_summaries
 and modeled_expensive = match modeled_expensive with k, r -> (k, !r)
 
 and never_returning_null = match never_returning_null with k, r -> (k, !r)
+
+and noescaping_function_list = RevList.to_list !noescaping_function_list
 
 and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 

@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS =  --debug-exceptions --self-in-block-only --project-root $(TESTS_DIR)
+INFER_OPTIONS =  --debug-exceptions --self-in-block-only --project-root $(TESTS_DIR) --noescaping-function-list "A::call_block_noescape"
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.mm)

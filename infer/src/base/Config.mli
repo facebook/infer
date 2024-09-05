@@ -548,6 +548,8 @@ val modeled_expensive : string * Yojson.Safe.t
 
 val never_returning_null : string * Yojson.Safe.t
 
+val noescaping_function_list : string list
+
 val no_censor_report : Str.regexp list
 
 val no_translate_libs : bool

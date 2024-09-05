@@ -14,6 +14,9 @@ typedef void (^MyHandler)();
 struct A {
   template <typename Model>
   void call_block(std::vector<Model> models, NS_NOESCAPE MyHandler block) {}
+
+  template <typename Model>
+  void call_block_noescape(std::vector<Model> models, MyHandler block) {}
 };
 
 typedef struct InternalInput {
@@ -129,6 +132,16 @@ void foo(Attachments* attachments);
   std::vector<int> v;
   A* a = new A();
   a->call_block(v, ^{
+    int a = y;
+    int i = *ptr;
+  });
+  return 1;
+}
+
+- (int)ref_captured_in_block_no_annot_good:(int&)y and:(int*)ptr {
+  std::vector<int> v;
+  A* a = new A();
+  a->call_block_noescape(v, ^{
     int a = y;
     int i = *ptr;
   });

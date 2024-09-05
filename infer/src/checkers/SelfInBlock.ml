@@ -287,7 +287,7 @@ module Mem = struct
         pvar_same_name captured pvar && is_ref typ capture_mode )
 
 
-  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
+  let std_string_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
 
   let is_captured_cpp_std_string attributes pvar =
     let is_std_string typ capture_mode =
@@ -295,7 +295,7 @@ module Mem = struct
       match typ.Typ.desc with
       | Tstruct name ->
           let qual_name = Typ.Name.qual_name name in
-          QualifiedCppName.Match.match_qualifiers matcher qual_name
+          QualifiedCppName.Match.match_qualifiers std_string_matcher qual_name
       | _ ->
           false
     in
@@ -621,16 +621,25 @@ let report_self_in_block_passed_to_init_issue proc_desc err_log domain (captured
       reported_self_in_init_block_param
 
 
+let noescaping_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.noescaping_function_list
+
+let should_ignore_cxx_captured attributes =
+  match attributes.ProcAttributes.block_as_arg_attributes with
+  | Some {passed_to; passed_as_noescape_block} ->
+      passed_as_noescape_block
+      || QualifiedCppName.Match.match_qualifiers noescaping_matcher
+           (Procname.get_qualifiers passed_to)
+  | None ->
+      true
+
+
 let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
     reported_cxx_ref =
   let attributes = Procdesc.get_attributes proc_desc in
-  let passed_as_noescape_block =
-    Option.value_map
-      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
-        passed_as_noescape_block )
-      ~default:true attributes.ProcAttributes.block_as_arg_attributes
-  in
-  if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref) then (
+  if
+    (not (should_ignore_cxx_captured attributes))
+    && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref)
+  then (
     let reported_cxx_ref = Pvar.Set.add cxx_ref.pvar reported_cxx_ref in
     let message =
       F.asprintf
@@ -648,13 +657,10 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
 let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
     reported_cxx_string =
   let attributes = Procdesc.get_attributes proc_desc in
-  let passed_as_noescape_block =
-    Option.value_map
-      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
-        passed_as_noescape_block )
-      ~default:true attributes.ProcAttributes.block_as_arg_attributes
-  in
-  if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_string.pvar reported_cxx_string) then (
+  if
+    (not (should_ignore_cxx_captured attributes))
+    && not (Pvar.Set.mem cxx_string.pvar reported_cxx_string)
+  then (
     let reported_cxx_string = Pvar.Set.add cxx_string.pvar reported_cxx_string in
     let message =
       F.asprintf

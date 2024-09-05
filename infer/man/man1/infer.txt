@@ -1284,6 +1284,12 @@ OPTIONS
            functions that never return null.
            See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
+       --noescaping-function-list +string
+           Useful for the check CXX_REF_CAPTURED_IN_BLOCK. It declares a list
+           of functions that take blocks as arguments that are no escaping
+           but we cannot annotate them accordingly.
+           See also infer-analyze(1).
+
        --objc-synthesize-dealloc
            Activates: If enabled, the capture tries to synthesize code in the
            dealloc methods of Objective-C classes corresponding to what the
