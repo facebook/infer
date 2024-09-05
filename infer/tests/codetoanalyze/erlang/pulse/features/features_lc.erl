@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_lc).
+-include("../../common.hrl").
 
 -export([
     test_empty_Ok/0,
@@ -32,29 +33,17 @@
     test_gen_after_filter_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_empty_Ok() ->
     L = [X || X <- []],
-    case L of
-        [] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([], L).
 
 test_empty_Bad() ->
     L = [X || X <- []],
-    case L of
-        [] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([], L).
 
 test_simple1_Ok() ->
     L = [X + 1 || X <- [2]],
-    case L of
-        [3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([3], L).
 
 test_simple1a_Bad() ->
     L = [X || X <- [3]],
@@ -64,123 +53,72 @@ test_simple1a_Bad() ->
 
 test_simple1_Bad() ->
     L = [X + 1 || X <- [2]],
-    case L of
-        [3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([3], L).
 
 test_simple2_Ok() ->
     L = [X + 1 || X <- [1, 2]],
-    case L of
-        [2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([2, 3], L).
 
 test_simple2_Bad() ->
     L = [X + 1 || X <- [1, 2]],
-    case L of
-        [2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([2, 3], L).
 
 test_simple3_Ok() ->
     L = [X + 1 || X <- [1, 2, 3]],
-    case L of
-        [2, 3, 4] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([2, 3, 4], L).
 
 test_simple3_Bad() ->
     L = [X + 1 || X <- [1, 2, 3]],
-    case L of
-        [2, 3, 4] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([2, 3, 4], L).
 
 test_simple4_Ok() ->
     L = [X + 1 || X <- [1, 2, 3, 4]],
-    case L of
-        [2, 3, 4, 5] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([2, 3, 4, 5], L).
 
 % Known FN due to loop unrolling limit
 fn_test_simple4_Bad() ->
     L = [X + 1 || X <- [1, 2, 3, 4]],
-    case L of
-        [2, 3, 4, 5] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([2, 3, 4, 5], L).
 
 test_filtered1_Ok() ->
     L = [X + 1 || X <- [1, 2], X > 1],
-    case L of
-        [3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([3], L).
 
 test_filtered1_Bad() ->
     L = [X + 1 || X <- [1, 2], X > 1],
-    case L of
-        [3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([3], L).
 
 test_filtered2_Ok() ->
     L = [X + 1 || X <- [1, 2], X > 5],
-    case L of
-        [] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([], L).
 
 test_filtered2_Bad() ->
     L = [X + 1 || X <- [1, 2], X > 5],
-    case L of
-        [] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([], L).
 
 test_two_filters_Ok() ->
     L = [X + 1 || X <- [1, 2, 3], X > 1, X + 1 < 4],
-    case L of
-        [3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([3], L).
 
 test_two_filters_Bad() ->
     L = [X + 1 || X <- [1, 2, 3], X > 1, X + 1 < 4],
-    case L of
-        [3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([3], L).
 
 test_two_gen1_Ok() ->
     L = [X + Y || X <- [2, 3], Y <- [4]],
-    case L of
-        [6, 7] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([6, 7], L).
 
 test_two_gen1_Bad() ->
     L = [X + Y || X <- [2, 3], Y <- [4]],
-    case L of
-        [6, 7] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([6, 7], L).
 
 test_two_gen2_Ok() ->
     L = [Y || X <- [2, 3], Y <- [X]],
-    case L of
-        [2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([2, 3], L).
 
 test_two_gen2_Bad() ->
     L = [Y || X <- [2, 3], Y <- [X]],
-    case L of
-        [2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([2, 3], L).
 
 test_bad_gen_Bad() ->
     [X || X <- #{}].
@@ -190,14 +128,8 @@ accepts_one(1) -> [ok].
 
 test_gen_after_filter_Ok() ->
     L = [X || X <- [1,2], X < 2, _Y <- accepts_one(X)],
-    case L of
-        [1] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1], L).
 
 test_gen_after_filter_Bad() ->
     L = [X || X <- [1,2], X < 2, _Y <- accepts_one(X)],
-    case L of
-        [1] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1], L).
