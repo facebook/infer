@@ -13,14 +13,17 @@ all: infer.opam.locked infer-tests.opam.locked ocamlformat.opam.locked
 .PHONY: infer.opam.locked
 infer.opam.locked:
 	$(OPAM) lock --switch $(OPAMSWITCH) ./infer.opam
+	sed -i '/^ *"host-/d' $@
 
 # depends on opam internal state
 .PHONY: infer-tests.opam.locked
 infer-tests.opam.locked:
 	sed -e 's/{with-test}//' -e 's/ & with-test}/}/' infer.opam > infer-tests.opam
 	$(OPAM) lock --switch $(OPAMSWITCH) ./infer-tests.opam
+	sed -i '/^ *"host-/d' $@
 
 # depends on opam internal state
 .PHONY: ocamlformat.opam.locked
 ocamlformat.opam.locked:
 	$(OPAM) lock --switch $(OPAMSWITCH) ocamlformat
+	sed -i '/^ *"host-/d' $@

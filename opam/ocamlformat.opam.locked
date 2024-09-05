@@ -28,8 +28,6 @@ depends: [
   "either" {= "1.0.0"}
   "fix" {= "20230505"}
   "fpath" {= "0.7.3"}
-  "host-arch-x86_64" {= "1"}
-  "host-system-other" {= "1"}
   "menhir" {= "20240715"}
   "menhirCST" {= "20240715"}
   "menhirLib" {= "20240715"}
