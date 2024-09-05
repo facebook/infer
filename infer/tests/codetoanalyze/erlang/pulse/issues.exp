@@ -138,7 +138,6 @@ codetoanalyze/erlang/pulse/features/features_lambdas.erl, test_scopes3_Bad/0, 4,
 codetoanalyze/erlang/pulse/features/features_lambdas.erl, test_nondet_lambda2_Latent/1, 8, NO_MATCHING_CASE_CLAUSE_LATENT, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/pulse/features/features_lambdas.erl, test_nondet_lambda3_Latent/1, 8, NO_MATCHING_CASE_CLAUSE_LATENT, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/pulse/features/features_lambdas.erl, test_nested_capture_Bad/0, 6, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
-codetoanalyze/erlang/pulse/features/features_lc.erl, warn/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/features/features_lc.erl, test_empty_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_lc.erl, test_simple1a_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 codetoanalyze/erlang/pulse/features/features_lc.erl, test_simple1_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
