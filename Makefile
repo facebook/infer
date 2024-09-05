@@ -481,8 +481,6 @@ byte_infer: byte
 opt:
 	$(QUIET)$(MAKE) BUILD_MODE=opt infer
 
-PLUGIN_SETUP_SCRIPT ?= setup.sh
-
 .PHONY: clang_setup
 clang_setup:
 #	if clang is already built then let the user know they might not need to rebuild clang

@@ -100,6 +100,11 @@ AC_SUBST([REALPATH])
 
 AC_ARG_VAR([PLATFORM_ENV], [Build and link binaries against this platform rather than system default (Linux only)])
 
+AC_MSG_CHECKING([for the name of the plugin setup script])
+AC_ARG_VAR([PLUGIN_SETUP_SCRIPT], [name of the setup script for building clang (default: setup.sh)])
+AS_IF([test x"$PLUGIN_SETUP_SCRIPT" = x], [PLUGIN_SETUP_SCRIPT=setup.sh])
+AC_MSG_RESULT([$PLUGIN_SETUP_SCRIPT])
+
 AC_ARG_ENABLE(c-analyzers,
   AS_HELP_STRING([--disable-c-analyzers],
     [do not build the C/C++/ObjC analyzers (default is to build them)]),
