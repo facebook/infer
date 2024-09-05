@@ -83,8 +83,8 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       annotate_clauses env lambda_cntr scopes clauses
   | ListComprehension {expression; qualifiers} | BitstringComprehension {expression; qualifiers} ->
       (* TODO: support local variables in list/bitstring comprehensions: T105967634 *)
-      let scopes = annotate_expression env lambda_cntr scopes expression in
-      List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
+      let scopes = List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers in
+      annotate_expression env lambda_cntr scopes expression
   | Literal _ | Nil | RecordIndex _ | Fun _ ->
       scopes
   | Map {map; updates} ->
@@ -92,9 +92,9 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       List.fold_left ~f:(annotate_association env lambda_cntr) ~init:scopes updates
   | MapComprehension {expression; qualifiers} ->
       (* TODO: support local variables in map comprehensions: T105967634 *)
+      let scopes = List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers in
       let scopes = annotate_expression env lambda_cntr scopes expression.key in
-      let scopes = annotate_expression env lambda_cntr scopes expression.value in
-      List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers
+      annotate_expression env lambda_cntr scopes expression.value
   | Match {pattern; body} | MaybeMatch {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
   | Maybe {body; else_cases} ->
