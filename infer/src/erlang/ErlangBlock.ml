@@ -91,8 +91,8 @@ let make_load env id e typ =
   {start= exit_success; exit_success; exit_failure}
 
 
-let make_branch env condition =
-  let start = Node.make_nop env in
+let make_branch env pre_instrs condition =
+  let start = Node.make_stmt env pre_instrs in
   let exit_success = Node.make_if env true condition in
   let exit_failure = Node.make_if env false condition in
   start |~~> [exit_success; exit_failure] ;

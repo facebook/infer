@@ -35,5 +35,5 @@ val make_instruction :
 
 val make_load : (Procdesc.t Env.present, _) Env.t -> Ident.t -> Exp.t -> Typ.t -> t
 
-val make_branch : (Procdesc.t Env.present, _) Env.t -> Exp.t -> t
+val make_branch : (Procdesc.t Env.present, _) Env.t -> Sil.instr list -> Exp.t -> t
 (** Make a branch based on the condition: go to success if true, go to failure if false *)

@@ -279,15 +279,14 @@ and translate_pattern_unsupported (env : (_, _) Env.t) value expr : Block.t =
   (* Make a nondet. choice based on call to unknown. *)
   let id = mk_fresh_id () in
   let unsupported = call_unsupported "pattern_match" 1 in
-  let branch_call = Block.make_instruction env [builtin_call_1 env id unsupported (Var value)] in
-  let branch_block = Block.make_branch env (Var id) in
-  let blocks = Block.all env [branch_call; branch_block] in
+  let call_instr = builtin_call_1 env id unsupported (Var value) in
+  let branch_block = Block.make_branch env [call_instr] (Var id) in
   (* Bind variables on success (matched) branch. *)
   let vars = vars_of_pattern expr in
   let bind_instrs = List.concat_map ~f:bind_one_var (Pvar.Set.elements vars) in
   let bind_node = Node.make_stmt env bind_instrs in
-  blocks.exit_success |~~> [bind_node] ;
-  {Block.start= blocks.start; exit_success= bind_node; exit_failure= blocks.exit_failure}
+  branch_block.exit_success |~~> [bind_node] ;
+  {Block.start= branch_block.start; exit_success= bind_node; exit_failure= branch_block.exit_failure}
 
 
 and translate_pattern_cons env value head tail : Block.t =
@@ -320,14 +319,15 @@ and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
   let load_expected =
     load_field_from_id env expected_hash expected_id ErlangTypeName.atom_hash Atom
   in
-  let load_node = Node.make_stmt env [load_actual; load_expected] in
-  let hash_checker = Block.make_branch env (Exp.BinOp (Eq, Var actual_hash, Var expected_hash)) in
+  let hash_checker =
+    Block.make_branch env [load_actual; load_expected]
+      (Exp.BinOp (Eq, Var actual_hash, Var expected_hash))
+  in
   let type_checker = check_type env value Atom in
   let exit_failure = Node.make_nop env in
   type_checker.exit_success |~~> [expected_block.start] ;
   expected_block.exit_failure |~~> [exit_failure] ;
-  expected_block.exit_success |~~> [load_node] ;
-  load_node |~~> [hash_checker.start] ;
+  expected_block.exit_success |~~> [hash_checker.start] ;
   type_checker.exit_failure |~~> [exit_failure] ;
   hash_checker.exit_failure |~~> [exit_failure] ;
   {start= type_checker.start; exit_success= hash_checker.exit_success; exit_failure}
@@ -341,7 +341,7 @@ and translate_pattern_integer (env : (_, _) Env.t) value expected_int : Block.t 
   (* We already typecheck the value as part of the pattern matching
      translation, no need to have the unboxing do it a second time *)
   let actual_value, load = unsafe_unbox_integer env (Var value) in
-  let value_checker = Block.make_branch env (Exp.BinOp (Eq, actual_value, expected_int)) in
+  let value_checker = Block.make_branch env [] (Exp.BinOp (Eq, actual_value, expected_int)) in
   let exit_failure = Node.make_nop env in
   type_checker.exit_failure |~~> [exit_failure] ;
   type_checker.exit_success |~~> [load.start] ;
@@ -357,16 +357,12 @@ and translate_pattern_literal_integer (env : (_, _) Env.t) value i : Block.t =
 
 and translate_pattern_string (env : (_, _) Env.t) value expected_id expected_block : Block.t =
   let equals_id = mk_fresh_id () in
-  let call_block =
-    (* TODO: add Pulse model for this function T93361792 *)
-    let instr =
-      builtin_call_2 env equals_id BuiltinDecl.__erlang_str_equal (Exp.Var value)
-        (Exp.Var expected_id)
-    in
-    Block.make_instruction env [instr]
+  (* TODO: add Pulse model for this function T93361792 *)
+  let instr =
+    builtin_call_2 env equals_id BuiltinDecl.__erlang_str_equal (Exp.Var value) (Exp.Var expected_id)
   in
-  let checker_block = Block.make_branch env (Var equals_id) in
-  Block.all env [expected_block; call_block; checker_block]
+  let checker_block = Block.make_branch env [instr] (Var equals_id) in
+  Block.all env [expected_block; checker_block]
 
 
 and translate_pattern_literal_string (env : (_, _) Env.t) value s : Block.t =
@@ -556,7 +552,7 @@ and translate_guard env (expressions : Ast.expression list) : Block.t =
       let exprs, blocks = List.unzip exprs_blocks in
       let make_and e1 e2 = Exp.BinOp (LAnd, e1, e2) in
       let condition = List.reduce_exn exprs ~f:make_and in
-      let branch_block = Block.make_branch env condition in
+      let branch_block = Block.make_branch env [] condition in
       Block.all env (blocks @ [branch_block])
 
 
