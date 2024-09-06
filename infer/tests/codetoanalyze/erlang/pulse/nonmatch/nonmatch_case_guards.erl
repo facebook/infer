@@ -14,19 +14,19 @@
 ]).
 
 accepts_positive(X) ->
-    case X of
-        X when X > 0 -> ok
+    case 1 of
+        1 when X > 0 -> ok
     end.
 
 accepts_positive2(X) ->
-    case X of
-        X when 1 =:= 1, 1 =:= 0; X > 0 -> ok
+    case 1 of
+        1 when 1 =:= 1, 1 =:= 0; X > 0 -> ok
     end.
 
 accepts_all(X) ->
-    case X of
-        X when X > 0 -> ok;
-        X when not (X > 0) -> ok
+    case 1 of
+        1 when X > 0 -> ok;
+        1 when not (X > 0) -> ok
     end.
 
 test_accepts_positive_Bad() ->
