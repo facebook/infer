@@ -19,7 +19,10 @@
     { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]},
     { "class_names": ["Exclusions::Source"], "method_names": ["get"], "kinds": ["Exclusions"]},
     { "class_names": ["Traces::Source"], "method_names": ["get"], "kinds": ["Traces"]},
-    { "class_names": ["CustomTaintIssueType::Source"], "method_names": ["get"], "kinds": ["CustomTaintIssueType"]}
+    { "class_names": ["CustomTaintIssueType::Source"], "method_names": ["get"], "kinds": ["CustomTaintIssueType"]},
+    { "class_name_regex": ".*",
+      "method_return_type_names": ["ReturnTypeMatcher::Sensitive"],
+      "kinds":["ReturnTypeMatcher"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -41,7 +44,8 @@
       "exclude_from_regex_names": ["excluded"],
       "kinds": ["Exclusions"]
     },
-    { "class_names": ["CustomTaintIssueType::Sink"], "method_names": ["process"], "kinds": ["CustomTaintIssueType"]}
+    { "class_names": ["CustomTaintIssueType::Sink"], "method_names": ["process"], "kinds": ["CustomTaintIssueType"]},
+    { "class_names": ["ReturnTypeMatcher::Sink"], "method_names": ["process"], "kinds": ["ReturnTypeMatcher"]}
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -77,6 +81,10 @@
       "short_description": "Taint flow with a custom taint issue type",
       "taint_flows": [{"source_kinds": ["CustomTaintIssueType"], "sink_kinds": ["CustomTaintIssueType"]}],
       "report_as_issue_type": "CUSTOM_TAINT_ERROR"
+    },
+    {
+      "short_description": "Taint flow with a matcher based on return type",
+      "taint_flows": [{"source_kinds": ["ReturnTypeMatcher"], "sink_kinds": ["ReturnTypeMatcher"]}]
     }
   ]
 }

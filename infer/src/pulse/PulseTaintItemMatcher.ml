@@ -151,6 +151,10 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
   List.filter_map matchers ~f:(fun matcher ->
       let class_name = Procname.get_class_type_name proc_name in
       let proc_name_s = get_proc_name_s proc_name in
+      let procedure_return_type_match method_return_type_names =
+        Option.exists proc_attributes ~f:(fun attrs ->
+            type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
+      in
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
@@ -179,11 +183,12 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
               proc_attributes
             && check_regex method_name_regex proc_name_s exclude_in exclude_names
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
-            let procedure_return_type_match method_return_type_names =
-              Option.exists proc_attributes ~f:(fun attrs ->
-                  type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
-            in
             class_names_match tenv class_names class_name
+            && procedure_return_type_match method_return_type_names
+        | ClassRegexAndMethodReturnTypeNames
+            {class_name_regex; method_return_type_names; exclude_in; exclude_names} ->
+            check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+              proc_attributes
             && procedure_return_type_match method_return_type_names
         | ClassWithAnnotation {annotation; annotation_values} ->
             check_class_annotation tenv class_name annotation annotation_values

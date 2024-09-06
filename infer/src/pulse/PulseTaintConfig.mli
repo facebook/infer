@@ -51,6 +51,11 @@ module Unit : sig
         ; exclude_names: string list option }
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
+    | ClassRegexAndMethodReturnTypeNames of
+        { class_name_regex: Str.regexp
+        ; method_return_type_names: string list
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
     | ClassWithAnnotationAndRegexAndMethodRegex of
         { annotation: string

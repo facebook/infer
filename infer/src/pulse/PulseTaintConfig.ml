@@ -159,6 +159,11 @@ module Unit = struct
         ; exclude_names: string list option }
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
+    | ClassRegexAndMethodReturnTypeNames of
+        { class_name_regex: Str.regexp
+        ; method_return_type_names: string list
+        ; exclude_in: string list option
+        ; exclude_names: string list option }
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
     | ClassWithAnnotationAndRegexAndMethodRegex of
         { annotation: string
@@ -191,6 +196,9 @@ module Unit = struct
     | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
         F.fprintf f "class_names=%a, method_return_type_names=%a" (Pp.comma_seq String.pp)
           class_names (Pp.comma_seq String.pp) method_return_type_names
+    | ClassRegexAndMethodReturnTypeNames {method_return_type_names} ->
+        F.fprintf f "Class name regex and method_return_type_names=%a" (Pp.comma_seq String.pp)
+          method_return_type_names
     | ClassWithAnnotation {annotation; annotation_values: string list option} ->
         F.fprintf f "class with annotation=%s and annotation_values=%a" annotation
           (Pp.option (Pp.comma_seq String.pp))
@@ -312,6 +320,7 @@ module Unit = struct
        or else \"class_names\" and \"procedure_regex\" must be provided, \n\
        or else \"class_name_regex\" and \"procedure_regex\" must be provided, \n\
        or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
+       or else \"class_name_regex\" and \"method_return_type_names\" must be provided, \n\
        or else \"method_with_annotation\" and \"annotation_values\" must be provided, \n\
        or else \"class_with_annotation\", \"class_name_regex\" and \"procedure_regex\" must be \
        provided, \n\
@@ -384,6 +393,7 @@ module Unit = struct
         ; class_with_annotation= None
         ; method_names= None
         ; overrides_of_class_with_annotation= None
+        ; method_return_type_names= None
         ; method_with_annotation= None
         ; annotation_values= None
         ; block_passed_to= None
@@ -436,6 +446,22 @@ module Unit = struct
           ClassRegexAndMethodRegex
             { class_name_regex= Str.regexp class_name_regex
             ; method_name_regex= Str.regexp method_name_regex
+            ; exclude_in= matcher.exclude_from_regex_in
+            ; exclude_names= matcher.exclude_from_regex_names }
+      | { procedure= None
+        ; procedure_regex= None
+        ; class_name_regex= Some class_name_regex
+        ; class_names= None
+        ; class_with_annotation= None
+        ; method_names= None
+        ; method_return_type_names= Some method_return_type_names
+        ; overrides_of_class_with_annotation= None
+        ; method_with_annotation= None
+        ; annotation_values= None
+        ; allocation= None } ->
+          ClassRegexAndMethodReturnTypeNames
+            { class_name_regex= Str.regexp class_name_regex
+            ; method_return_type_names
             ; exclude_in= matcher.exclude_from_regex_in
             ; exclude_names= matcher.exclude_from_regex_names }
       | { procedure= None
@@ -523,6 +549,7 @@ module Unit = struct
         ; class_names= None
         ; class_with_annotation= None
         ; method_names= None
+        ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
         ; annotation_values= None
@@ -535,6 +562,7 @@ module Unit = struct
         ; class_names= None
         ; class_with_annotation= None
         ; method_names= None
+        ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
         ; annotation_values= None
