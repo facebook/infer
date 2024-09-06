@@ -150,7 +150,11 @@ val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
 
 val is_trivially_copyable : t -> Typ.t -> bool
 
-val get_hack_direct_used_traits : t -> Typ.Name.t -> HackClassName.t list
+val get_hack_direct_used_traits_interfaces :
+  t -> Typ.Name.t -> ([`Interface | `Trait] * HackClassName.t) list
+(** [get_hack_direct_used_traits_interfaces tenv tname] returns a list of the directly used traits
+    and directly implemented interfaces of [tname], each paired with [`Trait] or [`Interface] to
+    indicate its kind *)
 
 val expand_hack_alias : t -> Typ.name -> Typ.name option [@@warning "-unused-value-declaration"]
 

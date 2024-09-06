@@ -517,12 +517,14 @@ let rec is_trivially_copyable tenv {Typ.desc} =
       false
 
 
-let get_hack_direct_used_traits tenv class_name =
+let get_hack_direct_used_traits_interfaces tenv class_name =
   Option.value_map (lookup tenv class_name) ~default:[] ~f:(fun {Struct.supers} ->
       List.fold supers ~init:[] ~f:(fun acc name ->
           match (name, lookup tenv name) with
           | Typ.HackClass name, Some str ->
-              if Struct.is_hack_trait str then name :: acc else acc
+              if Struct.is_hack_trait str then (`Trait, name) :: acc
+              else if Struct.is_hack_interface str then (`Interface, name) :: acc
+              else acc
           | _, _ ->
               acc ) )
 

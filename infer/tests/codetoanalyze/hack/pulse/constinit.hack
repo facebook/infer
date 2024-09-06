@@ -3,11 +3,9 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-// this wasn't't originally intended to produce signal - just for looking at
+// this wasn't originally intended to produce signal - just for looking at
 // debug info to check initialisation of constants is
 // happening correctly
-// However it turns out to demonstrate that we're not dealing with constants in
-// interfaces properly yet, so there is an FP in there at the moment
 namespace ConstantInit;
 
 interface I {
@@ -28,13 +26,13 @@ class D extends C {
 }
 
 class Tester {
-  public static async function mainFP(): Awaitable<void> {
+  public static async function mainOK(): Awaitable<void> {
     $d = D::Dc;
     // at this point we should have called, and marked as
     // called, C$static._86init
     // So the subsequent access to C::Cc shouldn't call constinit first
     $c = C::Cc;
-    // next bit shows we're not dealing with constants in interfaces properly yet
+    // next bit shows we're dealing with constants in interfaces properly
     $i = C::Ic;
     if ($i === 3) {
       return; // should always happen

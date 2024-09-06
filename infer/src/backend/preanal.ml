@@ -459,7 +459,7 @@ module NoReturn = struct
       proc_desc
 end
 
-module InjectTraitConstinit = struct
+module InjectTraitInterfaceConstinit = struct
   let update_ident_generator pdesc =
     let idents =
       Procdesc.fold_instrs pdesc ~init:Ident.Set.empty ~f:(fun acc _ instr ->
@@ -470,13 +470,13 @@ module InjectTraitConstinit = struct
     Ident.update_name_generator (Ident.Set.elements idents)
 
 
-  let inject_trait_constinit tenv pdesc =
-    let traits =
+  let inject_trait_interface_constinit tenv pdesc =
+    let extra_supers =
       let pname = Procdesc.get_proc_name pdesc in
       Option.value_map (Procname.get_class_type_name pname) ~default:[] ~f:(fun name ->
-          Tenv.get_hack_direct_used_traits tenv name )
+          Tenv.get_hack_direct_used_traits_interfaces tenv name )
     in
-    if not (List.is_empty traits) then
+    if not (List.is_empty extra_supers) then
       match Procdesc.get_pvar_formals pdesc with
       | (this_pvar, this_typ) :: _ ->
           update_ident_generator pdesc ;
@@ -488,9 +488,12 @@ module InjectTraitConstinit = struct
             let constinit_calls =
               let ret_typ = Procdesc.get_ret_type pdesc in
               let arg = [(Exp.Var this_id, this_typ)] in
-              List.map traits ~f:(fun trait ->
+              List.map extra_supers ~f:(fun (trait_or_interface, super) ->
+                  let is_trait =
+                    match trait_or_interface with `Trait -> true | `Interface -> false
+                  in
                   let ret_id = Ident.create_none () in
-                  let constinit = Procname.get_hack_static_constinit ~is_trait:true trait in
+                  let constinit = Procname.get_hack_static_constinit ~is_trait super in
                   Sil.Call ((ret_id, ret_typ), Const (Cfun constinit), arg, loc, CallFlags.default) )
             in
             this_load :: constinit_calls
@@ -503,8 +506,8 @@ module InjectTraitConstinit = struct
 
   let process tenv pdesc =
     NodePrinter.with_session (Procdesc.get_start_node pdesc) ~kind:`ComputePre
-      ~pp_name:(fun fmt -> Format.pp_print_string fmt "Inject trait constinit")
-      ~f:(fun () -> inject_trait_constinit tenv pdesc)
+      ~pp_name:(fun fmt -> Format.pp_print_string fmt "Inject trait/interface constinit")
+      ~f:(fun () -> inject_trait_interface_constinit tenv pdesc)
 end
 
 let do_preanalysis tenv pdesc =
@@ -516,7 +519,7 @@ let do_preanalysis tenv pdesc =
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
     (* Apply dynamic selection of copy and overriden methods *)
     ReplaceObjCMethodCall.process tenv pdesc proc_name ;
-  if Procname.is_hack_constinit proc_name then InjectTraitConstinit.process tenv pdesc ;
+  if Procname.is_hack_constinit proc_name then InjectTraitInterfaceConstinit.process tenv pdesc ;
   Liveness.process pdesc ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
