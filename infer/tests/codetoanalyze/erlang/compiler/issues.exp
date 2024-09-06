@@ -564,6 +564,7 @@ nonmatch_atoms:test_match7_Bad/0: function_clause
 
 ----- nonmatch_case_expr -----
 nonmatch_case_expr:fn_test_arg_Bad/0: case_clause
+nonmatch_case_expr:fn_test_constant_vs_arg_Bad/0: case_clause
 nonmatch_case_expr:fn_test_local_var_Bad/0: case_clause
 nonmatch_case_expr:test_arg_Ok/0: ok
 nonmatch_case_expr:test_case_simple1_Ok/0: ok
@@ -572,6 +573,7 @@ nonmatch_case_expr:test_case_simple3_Bad/0: case_clause
 nonmatch_case_expr:test_case_tail1_Ok/0: ok
 nonmatch_case_expr:test_case_tail2_Ok/0: ok
 nonmatch_case_expr:test_case_tail3_Bad/0: case_clause
+nonmatch_case_expr:test_constant_vs_arg_Ok/0: ok
 nonmatch_case_expr:test_local_var_Ok/0: ok
 
 ----- nonmatch_case_guards -----

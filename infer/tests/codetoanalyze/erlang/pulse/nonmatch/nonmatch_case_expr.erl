@@ -15,7 +15,9 @@
     test_arg_Ok/0,
     fn_test_arg_Bad/0,
     test_local_var_Ok/0,
-    fn_test_local_var_Bad/0
+    fn_test_local_var_Bad/0,
+    test_constant_vs_arg_Ok/0,
+    fn_test_constant_vs_arg_Bad/0
 ]).
 
 case_simple(X) ->
@@ -66,3 +68,15 @@ test_local_var_Ok() ->
 
 fn_test_local_var_Bad() ->
     crash_if_not_one(2).
+
+crash_if_not_one_constant(A) ->
+    % The matching of 1 against the bound A should be compiled to an equality check.
+    case 1 of
+        A -> ok
+    end.
+
+test_constant_vs_arg_Ok() ->
+    crash_if_not_one_constant(1).
+
+fn_test_constant_vs_arg_Bad() ->
+    crash_if_not_one_constant(2).
