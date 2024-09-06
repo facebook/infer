@@ -38,6 +38,15 @@ let pop_scope scopes =
 
 let top_scope scopes = match scopes with hd :: _ -> hd | [] -> L.die InternalError "No top scope."
 
+let pop_and_propagate_captured scopes =
+  let popped, scopes = pop_scope scopes in
+  match scopes with
+  | hd :: tl ->
+      {hd with captured= Pvar.Set.union popped.captured hd.captured} :: tl
+  | [] ->
+      L.die InternalError "No top scope found to propagate captured variables."
+
+
 let assert_empty scopes =
   if not (List.is_empty scopes) then L.die InternalError "Expected empty stack of scopes."
 
@@ -82,19 +91,21 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
   | If clauses ->
       annotate_clauses env lambda_cntr scopes clauses
   | ListComprehension {expression; qualifiers} | BitstringComprehension {expression; qualifiers} ->
-      (* TODO: support local variables in list/bitstring comprehensions: T105967634 *)
+      let scopes = push_scope scopes (top_scope scopes).procname in
       let scopes = List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers in
-      annotate_expression env lambda_cntr scopes expression
+      let scopes = annotate_expression env lambda_cntr scopes expression in
+      pop_and_propagate_captured scopes
   | Literal _ | Nil | RecordIndex _ | Fun _ ->
       scopes
   | Map {map; updates} ->
       let scopes = annotate_expression_opt env lambda_cntr scopes map in
       List.fold_left ~f:(annotate_association env lambda_cntr) ~init:scopes updates
   | MapComprehension {expression; qualifiers} ->
-      (* TODO: support local variables in map comprehensions: T105967634 *)
+      let scopes = push_scope scopes (top_scope scopes).procname in
       let scopes = List.fold_left ~f:(annotate_qualifier env lambda_cntr) ~init:scopes qualifiers in
       let scopes = annotate_expression env lambda_cntr scopes expression.key in
-      annotate_expression env lambda_cntr scopes expression.value
+      let scopes = annotate_expression env lambda_cntr scopes expression.value in
+      pop_and_propagate_captured scopes
   | Match {pattern; body} | MaybeMatch {pattern; body} ->
       annotate_expression_list env lambda_cntr scopes [pattern; body]
   | Maybe {body; else_cases} ->
@@ -142,7 +153,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       annotate_expression_list env lambda_cntr scopes exprs
   | UnaryOperator (_, e) ->
       annotate_expression env lambda_cntr scopes e
-  | Lambda lambda -> (
+  | Lambda lambda ->
       let arity =
         match lambda.cases with
         | c :: _ ->
@@ -156,14 +167,8 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       lambda.procname <- Some procname ;
       let scopes = push_scope scopes procname in
       let scopes = annotate_clauses env lambda_cntr scopes lambda.cases in
-      let popped, scopes = pop_scope scopes in
-      lambda.captured <- Some popped.captured ;
-      (* Propagate captured to current scope. *)
-      match scopes with
-      | hd :: tl ->
-          {hd with captured= Pvar.Set.union popped.captured hd.captured} :: tl
-      | [] ->
-          L.die InternalError "No scope found during lambda annotation." )
+      lambda.captured <- Some (top_scope scopes).captured ;
+      pop_and_propagate_captured scopes
   | Variable v -> (
     match scopes with
     | hd :: tl -> (
