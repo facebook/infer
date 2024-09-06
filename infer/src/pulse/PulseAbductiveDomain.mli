@@ -316,6 +316,8 @@ val reachable_addresses_from :
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
+val finalize_all_hack_builders : t -> t
+
 val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
 val add_recursive_call : Location.t -> Procname.t -> t -> t * PulseMutualRecursion.t

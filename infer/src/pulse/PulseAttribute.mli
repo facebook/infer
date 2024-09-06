@@ -212,11 +212,11 @@ module Attributes : sig
 
   val is_java_resource_released : t -> bool
 
-  val get_hack_builder : t -> Builder.t option [@@warning "-unused-value-declaration"]
+  val get_hack_builder : t -> Builder.t option
 
-  val remove_hack_builder : t -> t [@@warning "-unused-value-declaration"]
+  val remove_hack_builder : t -> t
 
-  val is_hack_builder_discardable : t -> bool [@@warning "-unused-value-declaration"]
+  val set_hack_builder_discardable : t -> t
 
   val is_hack_constinit_called : t -> bool
 

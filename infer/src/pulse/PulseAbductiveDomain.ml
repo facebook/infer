@@ -549,6 +549,11 @@ module Internal = struct
       map_pre_attrs astate ~f:(BaseAddressAttributes.remove_all_must_not_be_tainted ?kinds)
 
 
+    let finalize_all_hack_builders astate =
+      let astate = map_post_attrs astate ~f:BaseAddressAttributes.finalize_all_hack_builders in
+      map_pre_attrs astate ~f:BaseAddressAttributes.finalize_all_hack_builders
+
+
     let get_closure_proc_name addr astate =
       BaseAddressAttributes.get_closure_proc_name addr (astate.post :> base_domain).attrs
 
@@ -1565,6 +1570,8 @@ let get_unreachable_attributes astate =
     : CanonValue.t list
     :> AbstractValue.t list )
 
+
+let finalize_all_hack_builders = SafeAttributes.finalize_all_hack_builders
 
 exception NoLeak
 

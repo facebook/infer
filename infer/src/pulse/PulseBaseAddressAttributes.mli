@@ -126,6 +126,8 @@ module type S = sig
 
   val remove_all_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> t -> t
 
+  val finalize_all_hack_builders : t -> t
+
   val remove_must_be_valid_attr : key -> t -> t
 
   val initialize : key -> t -> t

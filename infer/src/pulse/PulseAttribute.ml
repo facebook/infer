@@ -910,6 +910,14 @@ module Attributes = struct
 
   let remove_hack_builder = remove_by_rank Attribute.hack_builder_rank
 
+  let set_hack_builder_discardable s =
+    match get_hack_builder s with
+    | Some NonDiscardable ->
+        Set.add (remove_hack_builder s) (HackBuilder Discardable)
+    | _ ->
+        s
+
+
   let is_hack_constinit_called = mem_by_rank Attribute.hack_constinit_called_rank
 
   let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank

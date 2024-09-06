@@ -280,10 +280,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           PulseTaintItemMatcher.procedure_matching_kinds tenv callee_proc_name None
             TaintConfig.sink_procedure_matchers
         in
-        let calee_summary =
-          AbductiveDomain.Summary.remove_all_must_not_be_tainted ~kinds callee_summary
-        in
-        calee_summary
+        AbductiveDomain.Summary.remove_all_must_not_be_tainted ~kinds callee_summary
       else callee_summary
     in
     (* In order to apply summary specialisation, we call blocks or function pointers with the closure as the first argument,

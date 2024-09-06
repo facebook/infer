@@ -75,6 +75,21 @@ class BuilderTester {
     }
   }
 
+  public static function maybeThrow(): void {
+    throw new Exception();
+  }
+
+  public static function exceptionalBuilderOK(): void {
+    try {
+      $b = new MyBuilder(0);
+      $b->setA(42);
+      self::maybeThrow();
+      $b->saveX();
+    } catch (Exception $e) {
+      // do nothing
+    }
+  }
+
   // Would be an FP except for deep_clean_hack_value
   public static function vectorOfBuilders2OK(): void {
     $v = vec[new MyBuilder(0), new MyBuilder(1), new MyBuilder(2)];

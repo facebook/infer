@@ -1026,8 +1026,12 @@ module PulseTransferFunctions = struct
                 func_args astate
             in
             ContinueProgram astate
-        | ( ExceptionRaised _
-          | ExitProgram _
+        | ExceptionRaised astate ->
+            (* clear any builder attributes if we threw so as not to over-report *)
+            L.d_printfln "clearing builder attributes on exception" ;
+            let astate = AbductiveDomain.finalize_all_hack_builders astate in
+            Ok (ExceptionRaised astate)
+        | ( ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
           | LatentInvalidAccess _
