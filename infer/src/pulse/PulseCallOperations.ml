@@ -512,6 +512,15 @@ let call_aux_unknown ({InterproceduralAnalysis.tenv} as analysis_data) path call
       ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
       ~message:
         (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
+  Option.iter Config.pulse_log_unknown_calls_sampled ~f:(fun sample_rate ->
+      ScubaLogging.log_message_with_location_sampled
+        ~label:(lazy "unmodeled_function_operation_pulse")
+        ~loc:(lazy (F.asprintf "%a" Location.pp_file_pos call_loc))
+        ~message:
+          ( lazy
+            (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates
+               callee_pname ) )
+        ~sample_rate ) ;
   if Procname.is_objc_instance_method callee_pname then
     (* a special case for objc nil messaging *)
     let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =

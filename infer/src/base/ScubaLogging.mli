@@ -24,7 +24,13 @@ val log_duration : label:string -> duration_us:int -> unit
 val log_message : label:string -> message:string -> unit
 (** Log a [string]. Event is prefixed with ["msg."] *)
 
+val log_message_sampled : label:string Lazy.t -> message:string Lazy.t -> sample_rate:int -> unit
+[@@warning "-unused-value-declaration"]
+
 val log_message_with_location : label:string -> loc:string -> message:string -> unit
+
+val log_message_with_location_sampled :
+  label:string Lazy.t -> loc:string Lazy.t -> message:string Lazy.t -> sample_rate:int -> unit
 
 val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 (** A helper to log execution time of a particular function. Use this to measure a performance of a

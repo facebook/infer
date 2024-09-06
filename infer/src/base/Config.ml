@@ -2437,6 +2437,12 @@ and pulse_log_unknown_calls =
   CLOpt.mk_bool ~long:"pulse-log-unknown-calls" "log calls to unknown functions in pulse in stats"
 
 
+and pulse_log_unknown_calls_sampled =
+  CLOpt.mk_int_opt ~long:"pulse-log-unknown-calls-sampled"
+    "log calls to unknown functions in pulse in stats with specified sample rate bound to avoid \
+     excessive logging"
+
+
 and pulse_max_cfg_size =
   CLOpt.mk_int ~default:15000 ~long:"pulse-max-cfg-size"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4403,6 +4409,8 @@ and pulse_intraprocedural_only = !pulse_intraprocedural_only
 and pulse_log_summary_count = !pulse_log_summary_count
 
 and pulse_log_unknown_calls = !pulse_log_unknown_calls
+
+and pulse_log_unknown_calls_sampled = !pulse_log_unknown_calls_sampled
 
 and pulse_max_cfg_size = !pulse_max_cfg_size
 

@@ -93,13 +93,31 @@ let log_one ~loc entry = log_many ~loc [entry]
 
 let log_message ~label ~loc ~message = log_one ~loc (LogEntry.mk_string ~label ~message)
 
+let () = if not Config.is_running_unit_test then Random.self_init ()
+
+let log_message_sampled ~label ~loc ~message ~sample_rate =
+  let gen = Random.int sample_rate in
+  (* Drop log entry unless 0 was randomly generated *)
+  if Int.equal gen 0 then
+    let label = Lazy.force label in
+    let message = Lazy.force message in
+    let loc = Option.map loc ~f:Lazy.force in
+    log_one ~loc (LogEntry.mk_string ~label ~message)
+
+
 let log_many = log_many ~loc:None
 
 let log_one = log_one ~loc:None
 
 let log_message_with_location ~label ~loc ~message = log_message ~label ~loc:(Some loc) ~message
 
+let log_message_with_location_sampled ~label ~loc ~message ~sample_rate =
+  log_message_sampled ~label ~loc:(Some loc) ~message ~sample_rate
+
+
 let log_message = log_message ~loc:None
+
+let log_message_sampled = log_message_sampled ~loc:None
 
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
 

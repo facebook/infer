@@ -3006,6 +3006,13 @@ INTERNAL OPTIONS
            Activates: log calls to unknown functions in pulse in stats
            (Conversely: --no-pulse-log-unknown-calls)
 
+       --pulse-log-unknown-calls-sampled int
+           log calls to unknown functions in pulse in stats with specified
+           sample rate bound to avoid excessive logging
+
+       --pulse-log-unknown-calls-sampled-reset
+           Cancel the effect of --pulse-log-unknown-calls-sampled.
+
        --pulse-max-heap-reset
            Cancel the effect of --pulse-max-heap.
 
