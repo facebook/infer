@@ -14,8 +14,8 @@ module DomainData = struct
     | SELF
     | UNCHECKED_STRONG_SELF
     | WEAK_SELF
-    | CXX_REF
-    | LOCAL_CXX_STRING
+    | CXX_REF of Location.t
+    | LOCAL_CXX_STRING of Location.t
   [@@deriving compare]
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
@@ -33,9 +33,9 @@ module DomainData = struct
           "UNCHECKED_STRONG_SELF"
       | WEAK_SELF ->
           "WEAK_SELF"
-      | CXX_REF ->
+      | CXX_REF _ ->
           "CXX_REF"
-      | LOCAL_CXX_STRING ->
+      | LOCAL_CXX_STRING _ ->
           "LOCAL_CXX_STRING"
     in
     F.fprintf fmt "%s" s
@@ -277,42 +277,46 @@ module Mem = struct
     else typ
 
 
-  let is_captured_cpp_reference attributes pvar =
-    let is_ref typ capture_mode =
-      let typ = get_captured_var_type typ capture_mode in
-      Typ.is_reference typ
-    in
-    List.exists attributes.ProcAttributes.captured
-      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
-        pvar_same_name captured pvar && is_ref typ capture_mode )
+  let is_ref typ capture_mode =
+    let typ = get_captured_var_type typ capture_mode in
+    Typ.is_reference typ
 
 
   let std_string_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
 
-  let is_captured_cpp_std_string attributes pvar =
-    let is_std_string typ capture_mode =
-      let typ = get_captured_var_type typ capture_mode in
-      match typ.Typ.desc with
-      | Tstruct name ->
-          let qual_name = Typ.Name.qual_name name in
-          QualifiedCppName.Match.match_qualifiers std_string_matcher qual_name
-      | _ ->
-          false
-    in
-    List.exists attributes.ProcAttributes.captured
-      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
-        pvar_same_name captured pvar && is_std_string typ capture_mode )
+  let is_std_string typ capture_mode =
+    let typ = get_captured_var_type typ capture_mode in
+    match typ.Typ.desc with
+    | Tstruct name ->
+        let qual_name = Typ.Name.qual_name name in
+        QualifiedCppName.Match.match_qualifiers std_string_matcher qual_name
+    | _ ->
+        false
 
 
-  let is_captured_local attributes pvar =
-    let is_local pvar (captured_from : CapturedVar.captured_info option) =
-      (not (Pvar.is_global pvar))
-      && not
-           (match captured_from with Some {is_formal} -> Option.is_some is_formal | None -> false)
-    in
-    List.exists attributes.ProcAttributes.captured
-      ~f:(fun {CapturedVar.pvar= captured; captured_from} ->
-        pvar_same_name captured pvar && is_local pvar captured_from )
+  let is_local pvar (captured_from : CapturedVar.captured_info option) =
+    (not (Pvar.is_global pvar))
+    && not (match captured_from with Some {is_formal} -> Option.is_some is_formal | None -> false)
+
+
+  let get_captured_of_type_loc is_type ?is_local attributes pvar =
+    List.find_map attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode; captured_from} ->
+        match (captured_from : CapturedVar.captured_info option) with
+        | Some {loc} when pvar_same_name captured pvar && is_type typ capture_mode -> (
+          match is_local with
+          | Some is_local ->
+              if is_local pvar captured_from then Some loc else None
+          | None ->
+              Some loc )
+        | _ ->
+            None )
+
+
+  let get_captured_ref_loc attributes pvar = get_captured_of_type_loc is_ref attributes pvar
+
+  let get_captured_local_cpp_std_string_loc attributes pvar =
+    get_captured_of_type_loc is_std_string ~is_local attributes pvar
 
 
   let load attributes id pvar loc typ astate =
@@ -322,17 +326,23 @@ module Mem = struct
         Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
       else if is_captured_weak_self attributes pvar then
         Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
-      else if is_captured_cpp_reference attributes pvar then
-        Vars.add id {pvar; typ; loc; kind= CXX_REF} astate.vars
-      else if is_captured_cpp_std_string attributes pvar && is_captured_local attributes pvar then
-        Vars.add id {pvar; typ; loc; kind= LOCAL_CXX_STRING} astate.vars
       else
-        try
-          let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
-          if not isChecked.checked then
-            Vars.add id {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF} astate.vars
-          else astate.vars
-        with Caml.Not_found -> astate.vars
+        match get_captured_ref_loc attributes pvar with
+        | Some captured_definition_loc ->
+            Vars.add id {pvar; typ; loc; kind= CXX_REF captured_definition_loc} astate.vars
+        | None -> (
+          match get_captured_local_cpp_std_string_loc attributes pvar with
+          | Some captured_definition_loc ->
+              Vars.add id
+                {pvar; typ; loc; kind= LOCAL_CXX_STRING captured_definition_loc}
+                astate.vars
+          | _ -> (
+            try
+              let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
+              if not isChecked.checked then
+                Vars.add id {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF} astate.vars
+              else astate.vars
+            with Caml.Not_found -> astate.vars ) )
     in
     {astate with vars}
 
@@ -502,7 +512,7 @@ let make_trace_captured domain var =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | (CAPTURED_STRONG_SELF | CXX_REF | SELF | LOCAL_CXX_STRING) when Pvar.equal pvar var ->
+        | (CAPTURED_STRONG_SELF | CXX_REF _ | SELF | LOCAL_CXX_STRING _) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -637,8 +647,15 @@ let should_ignore_cxx_captured attributes =
       true
 
 
+let init_trace_captured_var data captured_definition_loc =
+  let trace_elem_desc =
+    F.asprintf "Captured variable %a defined here" (Pvar.pp Pp.text) data.DomainData.pvar
+  in
+  Errlog.make_trace_element 0 captured_definition_loc trace_elem_desc []
+
+
 let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
-    reported_cxx_ref =
+    reported_cxx_ref captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
   if
     (not (should_ignore_cxx_captured attributes))
@@ -651,7 +668,8 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
          crashes."
         (Pvar.pp Pp.text) cxx_ref.pvar
     in
-    let ltr = make_trace_captured domain cxx_ref.pvar in
+    let init_trace_elem = init_trace_captured_var cxx_ref captured_definition_loc in
+    let ltr = init_trace_elem :: make_trace_captured domain cxx_ref.pvar in
     Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_ref.loc SelfInBlock
       IssueType.cxx_ref_captured_in_block message ;
     reported_cxx_ref )
@@ -659,7 +677,7 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
 
 
 let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
-    reported_cxx_string =
+    reported_cxx_string captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
   if
     (not (should_ignore_cxx_captured attributes))
@@ -672,7 +690,8 @@ let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : D
          lead to crashes if the class is freed before the block's execution."
         (Pvar.pp Pp.text) cxx_string.pvar
     in
-    let ltr = make_trace_captured domain cxx_string.pvar in
+    let init_trace_elem = init_trace_captured_var cxx_string captured_definition_loc in
+    let ltr = init_trace_elem :: make_trace_captured domain cxx_string.pvar in
     Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_string.loc SelfInBlock
       IssueType.cxx_string_captured_in_block message ;
     reported_cxx_string )
@@ -688,16 +707,16 @@ let report_issues proc_desc err_log domain =
             result.reported_captured_strong_self
         in
         {result with reported_captured_strong_self}
-    | DomainData.CXX_REF ->
+    | DomainData.CXX_REF captured_definition_loc ->
         let reported_cxx_ref =
           report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
-            result.reported_cxx_ref
+            result.reported_cxx_ref captured_definition_loc
         in
         {result with reported_cxx_ref}
-    | DomainData.LOCAL_CXX_STRING ->
+    | DomainData.LOCAL_CXX_STRING captured_definition_loc ->
         let reported_cxx_string =
           report_cxx_string_captured_in_block proc_desc err_log domain domain_data
-            result.reported_cxx_string
+            result.reported_cxx_string captured_definition_loc
         in
         {result with reported_cxx_string}
     | DomainData.WEAK_SELF ->
