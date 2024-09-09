@@ -30,7 +30,9 @@
     test_two_gen2_Bad/0,
     test_bad_gen_Bad/0,
     test_gen_after_filter_Ok/0,
-    test_gen_after_filter_Bad/0
+    test_gen_after_filter_Bad/0,
+    test_scoping1_Ok/0,
+    test_scoping2_Ok/0
 ]).
 
 test_empty_Ok() ->
@@ -133,3 +135,14 @@ test_gen_after_filter_Ok() ->
 test_gen_after_filter_Bad() ->
     L = [X || X <- [1,2], X < 2, _Y <- accepts_one(X)],
     ?CRASH_IF_EQUAL([1], L).
+
+test_scoping1_Ok() ->
+    _ = [X || X <- [1]],
+    % This X is different from the one in the list comprehension
+    X = 2,
+    _ = X.
+
+test_scoping2_Ok() ->
+    % Both Xs are different ones
+    _ = [X || X <- [1]],
+    _ = [X || X <- [2]].

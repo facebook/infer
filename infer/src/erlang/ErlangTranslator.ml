@@ -521,17 +521,28 @@ and translate_pattern_number_expression (env : (_, _) Env.t) value location simp
 
 
 and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t =
-  (* We also assign to _ so that stuff like f()->_=1. works. But if we start checking for
-     re-binding, we should exclude _ from such checks. *)
-  let procname = (scope_exn scope).procname in
-  let store : Sil.instr =
-    let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-    let e2 : Exp.t = Var value in
-    Store {e1; typ= any_typ; e2; loc= env.location}
-  in
-  let exit_success = Node.make_stmt env [store] in
-  let exit_failure = Node.make_nop env in
-  {start= exit_success; exit_success; exit_failure}
+  let var_scope = scope_exn scope in
+  let var_exp = Exp.Lvar (Pvar.mk (Mangled.from_string vname) var_scope.procname) in
+  if var_scope.is_first_use then
+    let store : Sil.instr =
+      let e1 = var_exp in
+      let e2 = Exp.Var value in
+      Store {e1; typ= any_typ; e2; loc= env.location}
+    in
+    let exit_success = Node.make_stmt env [store] in
+    let exit_failure = Node.make_nop env in
+    {start= exit_success; exit_success; exit_failure}
+  else
+    let var_id = mk_fresh_id () in
+    let load_instr = Sil.Load {id= var_id; e= var_exp; typ= any_typ; loc= env.location} in
+    let is_equal = mk_fresh_id () in
+    let eq_instr =
+      builtin_call env is_equal BuiltinDecl.__erlang_equal [Exp.Var var_id; Exp.Var value]
+    in
+    let eq_block = Block.make_instruction env [load_instr; eq_instr] in
+    let is_equal, unbox_block = unbox_bool env (Var is_equal) in
+    let check_eq_block = Block.make_branch env [] is_equal in
+    Block.all env [eq_block; unbox_block; check_eq_block]
 
 
 and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) : Exp.t * Block.t

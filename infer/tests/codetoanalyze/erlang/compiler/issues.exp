@@ -269,6 +269,8 @@ features_lc:test_filtered2_Bad/0: expected_crash
 features_lc:test_filtered2_Ok/0: ok
 features_lc:test_gen_after_filter_Bad/0: expected_crash
 features_lc:test_gen_after_filter_Ok/0: ok
+features_lc:test_scoping1_Ok/0: ok
+features_lc:test_scoping2_Ok/0: ok
 features_lc:test_simple1_Bad/0: expected_crash
 features_lc:test_simple1_Ok/0: ok
 features_lc:test_simple1a_Bad/0: case_clause
@@ -564,8 +566,6 @@ nonmatch_atoms:test_match7_Bad/0: function_clause
 
 ----- nonmatch_case_expr -----
 nonmatch_case_expr:fn_test_arg_Bad/0: case_clause
-nonmatch_case_expr:fn_test_constant_vs_arg_Bad/0: case_clause
-nonmatch_case_expr:fn_test_local_var_Bad/0: case_clause
 nonmatch_case_expr:test_arg_Ok/0: ok
 nonmatch_case_expr:test_case_simple1_Ok/0: ok
 nonmatch_case_expr:test_case_simple2_Ok/0: ok
@@ -573,7 +573,9 @@ nonmatch_case_expr:test_case_simple3_Bad/0: case_clause
 nonmatch_case_expr:test_case_tail1_Ok/0: ok
 nonmatch_case_expr:test_case_tail2_Ok/0: ok
 nonmatch_case_expr:test_case_tail3_Bad/0: case_clause
+nonmatch_case_expr:test_constant_vs_arg_Bad/0: case_clause
 nonmatch_case_expr:test_constant_vs_arg_Ok/0: ok
+nonmatch_case_expr:test_local_var_Bad/0: case_clause
 nonmatch_case_expr:test_local_var_Ok/0: ok
 
 ----- nonmatch_case_guards -----
@@ -661,13 +663,7 @@ nonmatch_maps:test_update_match_in_function_Ok/0: ok
 nonmatch_maps:test_update_old_value_Ok/0: ok
 
 ----- nonmatch_match_expr -----
-nonmatch_match_expr:fn_test_match_func_arg_Bad/0: badmatch
 nonmatch_match_expr:fn_test_match_func_args_Bad/0: badmatch
-nonmatch_match_expr:fn_test_match_with_var_Bad/0: badmatch
-nonmatch_match_expr:fn_test_match_with_var_swapped_Bad/0: badmatch
-nonmatch_match_expr:fn_test_not_real_anon_match1_Bad/0: badmatch
-nonmatch_match_expr:fn_test_not_real_anon_match2_Bad/0: badmatch
-nonmatch_match_expr:fn_test_simple_match_Bad/0: badmatch
 nonmatch_match_expr:test_match_a_Ok/0: ok
 nonmatch_match_expr:test_match_anonymus_Ok/0: ok
 nonmatch_match_expr:test_match_b_Bad/0: badmatch
@@ -677,6 +673,7 @@ nonmatch_match_expr:test_match_e_Bad/0: function_clause
 nonmatch_match_expr:test_match_eager_Bad/0: badmatch
 nonmatch_match_expr:test_match_eager_Ok/0: ok
 nonmatch_match_expr:test_match_f_Ok/0: ok
+nonmatch_match_expr:test_match_func_arg_Bad/0: badmatch
 nonmatch_match_expr:test_match_func_arg_Ok/0: ok
 nonmatch_match_expr:test_match_func_args_Ok/0: ok
 nonmatch_match_expr:test_match_g_Bad/0: function_clause
@@ -689,8 +686,13 @@ nonmatch_match_expr:test_match_in_pattern_f_Bad/0: case_clause
 nonmatch_match_expr:test_match_nested1_Ok/0: ok
 nonmatch_match_expr:test_match_nested2_Bad/0: badmatch
 nonmatch_match_expr:test_match_nested3_Bad/0: badmatch
+nonmatch_match_expr:test_match_with_var_Bad/0: badmatch
 nonmatch_match_expr:test_match_with_var_Ok/0: ok
+nonmatch_match_expr:test_match_with_var_swapped_Bad/0: badmatch
 nonmatch_match_expr:test_match_with_var_swapped_Ok/0: ok
+nonmatch_match_expr:test_not_real_anon_match1_Bad/0: badmatch
+nonmatch_match_expr:test_not_real_anon_match2_Bad/0: badmatch
+nonmatch_match_expr:test_simple_match_Bad/0: badmatch
 
 ----- nonmatch_maybe -----
 nonmatch_maybe:test_maybe1_Ok/0: ok

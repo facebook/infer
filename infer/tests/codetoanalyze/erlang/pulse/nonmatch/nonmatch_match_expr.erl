@@ -27,15 +27,15 @@
     test_match_func_args_Ok/0,
     fn_test_match_func_args_Bad/0,
     test_match_func_arg_Ok/0,
-    fn_test_match_func_arg_Bad/0,
+    test_match_func_arg_Bad/0,
     test_match_with_var_Ok/0,
-    fn_test_match_with_var_Bad/0,
+    test_match_with_var_Bad/0,
     test_match_with_var_swapped_Ok/0,
-    fn_test_match_with_var_swapped_Bad/0,
-    fn_test_simple_match_Bad/0,
+    test_match_with_var_swapped_Bad/0,
+    test_simple_match_Bad/0,
     test_match_anonymus_Ok/0,
-    fn_test_not_real_anon_match1_Bad/0,
-    fn_test_not_real_anon_match2_Bad/0
+    test_not_real_anon_match1_Bad/0,
+    test_not_real_anon_match2_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -132,14 +132,15 @@ two() -> 2.
 
 %% Tests for matching against already bound variables
 
-crash_if_different(A, B) ->
+% Currently FP because equality model for unknown types
+fp_crash_if_different(A, B) ->
     A = B.
 
 test_match_func_args_Ok() ->
-    crash_if_different(1, 1).
+    fp_crash_if_different(1, 1).
 
 fn_test_match_func_args_Bad() ->
-    crash_if_different(1, 2).
+    fp_crash_if_different(1, 2).
 
 crash_if_not_one(A) ->
     A = 1.
@@ -147,7 +148,7 @@ crash_if_not_one(A) ->
 test_match_func_arg_Ok() ->
     crash_if_not_one(1).
 
-fn_test_match_func_arg_Bad() ->
+test_match_func_arg_Bad() ->
     crash_if_not_one(2).
 
 crash_if_not_one_with_var(A) ->
@@ -157,7 +158,7 @@ crash_if_not_one_with_var(A) ->
 test_match_with_var_Ok() ->
     crash_if_not_one_with_var(1).
 
-fn_test_match_with_var_Bad() ->
+test_match_with_var_Bad() ->
     crash_if_not_one_with_var(2).
 
 crash_if_not_one_with_var_swapped(A) ->
@@ -167,10 +168,10 @@ crash_if_not_one_with_var_swapped(A) ->
 test_match_with_var_swapped_Ok() ->
     crash_if_not_one_with_var_swapped(1).
 
-fn_test_match_with_var_swapped_Bad() ->
+test_match_with_var_swapped_Bad() ->
     crash_if_not_one_with_var_swapped(2).
 
-fn_test_simple_match_Bad() ->
+test_simple_match_Bad() ->
     A = 1,
     A = 2.
 
@@ -178,12 +179,12 @@ test_match_anonymus_Ok() ->
     _ = 1,
     _ = 2.
 
-fn_test_not_real_anon_match1_Bad() ->
+test_not_real_anon_match1_Bad() ->
     % `_` is the only truly anonymus name
     _A = 1,
     _A = 2.
 
-fn_test_not_real_anon_match2_Bad() ->
+test_not_real_anon_match2_Bad() ->
     % `_` is the only truly anonymus name
     __ = 1,
     __ = 2.

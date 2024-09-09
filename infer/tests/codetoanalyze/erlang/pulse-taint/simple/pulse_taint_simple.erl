@@ -93,7 +93,7 @@ test_taint10_Ok() ->
     sink(not_tainted).
 
 test_taint11_Ok() ->
-    X = source(),
+    _X = source(),
     X = not_tainted,
     sink(X).
 
