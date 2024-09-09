@@ -17,11 +17,18 @@ let is_captured_by_ref captured_mode =
   match captured_mode with ByReference -> true | ByValue -> false
 
 
-type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode; is_formal_of: Procname.t option}
-[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+type captured_info = {loc: Location.t; is_formal: Procname.t option}
+[@@deriving compare, equal, sexp, hash, normalize]
 
-let pp fmt {pvar; typ; capture_mode; is_formal_of} =
+type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode; captured_from: captured_info option}
+[@@deriving compare, equal, sexp, hash, normalize]
+
+let captured_info_pp fmt {loc; is_formal} =
+  F.fprintf fmt "(%a, %a)" (Pp.option Procname.pp) is_formal Location.pp loc
+
+
+let pp fmt {pvar; typ; capture_mode; captured_from} =
   F.fprintf fmt "(%a,@,%a,@,%s,%a)" (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ
     (string_of_capture_mode capture_mode)
-    (Pp.option (fun fmt procname -> F.fprintf fmt "is formal of %a" Procname.pp procname))
-    is_formal_of
+    (Pp.option (fun fmt info -> F.fprintf fmt "captured from %a" captured_info_pp info))
+    captured_from

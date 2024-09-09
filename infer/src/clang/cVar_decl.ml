@@ -236,7 +236,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
 
 
 (* The context here is of the method that contains the block *)
-let sil_var_of_captured_var context source_range procname decl_ref =
+let sil_var_of_captured_var (context : CContext.t) source_range procname decl_ref =
   let is_block_inside_objc_class_method = CContext.is_objc_class_method context in
   let var_opt =
     match decl_ref with
@@ -258,27 +258,33 @@ let sil_var_of_captured_var context source_range procname decl_ref =
   in
   match (var_opt, typ_opt) with
   | Some var, Some typ ->
-      let modify_in_block, is_formal_of =
+      let modify_in_block, captured_from =
         match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
         | Some (VarDecl (decl_info, _, _, _)) ->
-            (has_block_attribute decl_info, None)
+            let loc =
+              CLocation.location_of_decl_info context.translation_unit_context.source_file decl_info
+            in
+            (has_block_attribute decl_info, Some {CapturedVar.loc; is_formal= None})
         | Some (ParmVarDecl (decl_info, _, _, _)) -> (
-          match CAst_utils.get_decl_opt decl_info.Clang_ast_t.di_parent_pointer with
-          | Some (FunctionDecl _ as decl)
-          | Some (CXXConstructorDecl _ as decl)
-          | Some (CXXMethodDecl _ as decl)
-          | Some (CXXConversionDecl _ as decl)
-          | Some (CXXDestructorDecl _ as decl)
-          | Some (ObjCMethodDecl _ as decl)
-          | Some (BlockDecl _ as decl) ->
-              let procname = CType_decl.CProcname.from_decl ~tenv:context.CContext.tenv decl in
-              (false, Some procname)
-          | _ ->
-              (false, None) )
+            let loc =
+              CLocation.location_of_decl_info context.translation_unit_context.source_file decl_info
+            in
+            match CAst_utils.get_decl_opt decl_info.Clang_ast_t.di_parent_pointer with
+            | Some (FunctionDecl _ as decl)
+            | Some (CXXConstructorDecl _ as decl)
+            | Some (CXXMethodDecl _ as decl)
+            | Some (CXXConversionDecl _ as decl)
+            | Some (CXXDestructorDecl _ as decl)
+            | Some (ObjCMethodDecl _ as decl)
+            | Some (BlockDecl _ as decl) ->
+                let procname = CType_decl.CProcname.from_decl ~tenv:context.CContext.tenv decl in
+                (has_block_attribute decl_info, Some {CapturedVar.loc; is_formal= Some procname})
+            | _ ->
+                (has_block_attribute decl_info, Some {CapturedVar.loc; is_formal= None}) )
         | _ ->
             (false, None)
       in
-      Some (var, typ, modify_in_block, is_formal_of)
+      Some (var, typ, modify_in_block, captured_from)
   | None, None ->
       None
   | _ ->

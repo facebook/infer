@@ -305,10 +305,14 @@ module Mem = struct
 
 
   let is_captured_local attributes pvar =
-    let is_local pvar is_formal_of = (not (Pvar.is_global pvar)) && Option.is_none is_formal_of in
+    let is_local pvar (captured_from : CapturedVar.captured_info option) =
+      (not (Pvar.is_global pvar))
+      && not
+           (match captured_from with Some {is_formal} -> Option.is_some is_formal | None -> false)
+    in
     List.exists attributes.ProcAttributes.captured
-      ~f:(fun {CapturedVar.pvar= captured; is_formal_of} ->
-        pvar_same_name captured pvar && is_local pvar is_formal_of )
+      ~f:(fun {CapturedVar.pvar= captured; captured_from} ->
+        pvar_same_name captured pvar && is_local pvar captured_from )
 
 
   let load attributes id pvar loc typ astate =
