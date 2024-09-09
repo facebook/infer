@@ -71,6 +71,8 @@ type literal = Atom of string | Char of string | Float of float | Int of string 
 
 (** {2 S8.4: Expressions} *)
 
+type scope = {procname: (Procname.t[@sexp.opaque]); is_first_use: bool} [@@deriving sexp_of]
+
 type body = expression list
 
 and simple_expression =
@@ -104,7 +106,7 @@ and simple_expression =
   | TryCatch of {body: body; ok_cases: case_clause list; catch_cases: catch_clause list; after: body}
   | Tuple of expression list
   | UnaryOperator of unary_operator * expression
-  | Variable of {vname: string; mutable scope: (Procname.t option[@sexp.opaque])}
+  | Variable of {vname: string; mutable scope: scope option}
 
 and expression = {location: location; simple_expression: simple_expression}
 

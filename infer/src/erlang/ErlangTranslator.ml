@@ -179,10 +179,10 @@ let unbox_integer env expr : Exp.t * Block.t =
   (unboxed_expr, {start; exit_success= unbox_block.exit_success; exit_failure= Node.make_nop env})
 
 
-let procname_exn scope =
+let scope_exn (scope : Ast.scope option) =
   match scope with
-  | Some name ->
-      name
+  | Some scope ->
+      scope
   | None ->
       (* Can happen e.g. if we have the _ variable in record field initializers (T134336886) *)
       L.die InternalError "Scope not found for variable, probably missing annotation."
@@ -210,7 +210,7 @@ let vars_of_pattern p =
     | UnaryOperator (_, e) ->
         f acc e
     | Variable {vname; scope} ->
-        let procname = procname_exn scope in
+        let procname = (scope_exn scope).procname in
         Pvar.Set.add (Pvar.mk (Mangled.from_string vname) procname) acc
     | Literal _ | Nil | RecordIndex _ ->
         acc
@@ -523,7 +523,7 @@ and translate_pattern_number_expression (env : (_, _) Env.t) value location simp
 and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t =
   (* We also assign to _ so that stuff like f()->_=1. works. But if we start checking for
      re-binding, we should exclude _ from such checks. *)
-  let procname = procname_exn scope in
+  let procname = (scope_exn scope).procname in
   let store : Sil.instr =
     let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
     let e2 : Exp.t = Var value in
@@ -1486,7 +1486,7 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
 
 
 and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Block.t =
-  let procname = procname_exn scope in
+  let procname = (scope_exn scope).procname in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
   let load_instr = Sil.Load {id= ret_var; e; typ= any_typ; loc= env.location} in
   Block.make_instruction env [load_instr]

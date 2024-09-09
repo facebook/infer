@@ -172,20 +172,24 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
   | Variable v -> (
     match scopes with
     | hd :: tl -> (
-        if String.Set.mem hd.locals v.vname then (
+        if String.equal "_" v.vname then (
+          (* The anonymus variable is always fresh in the local scope *)
+          v.scope <- Some {procname= hd.procname; is_first_use= true} ;
+          scopes )
+        else if String.Set.mem hd.locals v.vname then (
           (* Known local var *)
-          v.scope <- Some hd.procname ;
+          v.scope <- Some {procname= hd.procname; is_first_use= false} ;
           scopes )
         else
           (* Check if it's captured from outside *)
           match lookup_var tl v.vname with
           | Some procname ->
               let pvar = Pvar.mk (Mangled.from_string v.vname) procname in
-              v.scope <- Some procname ;
+              v.scope <- Some {procname; is_first_use= false} ;
               {hd with captured= Pvar.Set.add pvar hd.captured} :: tl
           | None ->
               (* It's a local we see here first *)
-              v.scope <- Some hd.procname ;
+              v.scope <- Some {procname= hd.procname; is_first_use= true} ;
               {hd with locals= String.Set.add hd.locals v.vname} :: tl )
     | [] ->
         L.die InternalError "No scope found during variable annotation." )
