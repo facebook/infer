@@ -176,7 +176,7 @@ let pp_var fmt v =
       AbstractValue.pp fmt v
 
 
-let test ~f phi init_phi =
+let test_f ~f phi init_phi =
   (* reset global state before each test so that variable id's remain stable when tests are added in
       the future *)
   AnalysisGlobalState.restore global_state ;
@@ -188,15 +188,20 @@ let test ~f phi init_phi =
   else F.printf "changed@\n  @[<2>%a@]" (SatUnsat.pp (pp_with_pp_var pp_var)) phi'
 
 
+let test_with_initial phi init_phi =
+  AnalysisGlobalState.restore global_state ;
+  let phi = phi init_phi in
+  F.printf "@[%a@]" (SatUnsat.pp (pp_with_pp_var pp_var)) phi ;
+  ()
+
+
+let test phi = test_with_initial phi ttrue
+
 let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 
 let cons_typ = Typ.mk (Tstruct (ErlangType Cons))
 
-let normalize_with phi init_phi = test ~f:(fun phi -> Sat phi) phi init_phi
-
-let normalize phi = normalize_with phi ttrue
-
-let normalize_with_all_types_Nil phi =
+let test_with_all_types_Nil phi =
   match
     SatUnsat.list_fold [x_var; y_var; z_var; w_var] ~init:ttrue ~f:(fun phi v ->
         let* phi, _ = and_dynamic_type v nil_typ phi in
@@ -205,220 +210,158 @@ let normalize_with_all_types_Nil phi =
   | Unsat ->
       Logging.die InternalError "Failed to initialise test phi"
   | Sat init_phi ->
-      normalize_with phi init_phi
+      test_with_initial phi init_phi
 
 
 let () = Language.curr_language := Language.Erlang
 
 let simplify ~keep phi =
   let keep = AbstractValue.Set.of_list keep in
-  test phi
-    ~f:(fun phi ->
+  test_f phi ttrue ~f:(fun phi ->
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
       simplify ~precondition_vocabulary:keep ~keep phi >>| fst3 )
-    ttrue
 
 
 (* These instanceof tests now normalize at construction time *)
 let%test_module "normalization" =
   ( module struct
     let%expect_test _ =
-      normalize_with_all_types_Nil
+      test_with_all_types_Nil
         (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && z = i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize_with_all_types_Nil
+      test_with_all_types_Nil
         (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && w = i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize_with_all_types_Nil
-        (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test_with_all_types_Nil (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (x < y) ;
+      test (x < y) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty) phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x
-        Result: same|}]
+        conditions: (empty) phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x|}]
 
 
     let%expect_test _ =
-      normalize (x + i 1 - i 1 < x) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x + i 1 - i 1 < x) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (i 1 = i 1) ;
-      [%expect
-        {|
-        Formula:
-          conditions: (empty) phi: (empty)
-        Result: same|}]
+      test (i 1 = i 1) ;
+      [%expect {|conditions: (empty) phi: (empty)|}]
 
 
     let%expect_test _ =
-      normalize (x + (y - x) < y) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x + (y - x) < y) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (x = y && y = z && z = i 0 && x = i 1) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x = y && y = z && z = i 0 && x = i 1) ;
+      [%expect {|unsat|}]
 
 
     (* should be false (x = w + (y+1) -> 1 = w + z -> 1 = 0)  *)
     let%expect_test _ =
-      normalize (x = w + y + i 1 && y + i 1 = z && x = i 1 && w + z = i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x = w + y + i 1 && y + i 1 = z && x = i 1 && w + z = i 0) ;
+      [%expect {|unsat|}]
 
 
     (* same as above but atoms are given in the opposite order *)
     let%expect_test _ =
-      normalize (w + z = i 0 && x = i 1 && y + i 1 = z && x = w + y + i 1) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (w + z = i 0 && x = i 1 && y + i 1 = z && x = w + y + i 1) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (of_binop Ne x y = i 0 && x = i 0 && y = i 1) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (of_binop Ne x y = i 0 && x = i 0 && y = i 1) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (of_binop Ne x y = i 0 && x = i 0 && y = i 12) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (of_binop Ne x y = i 0 && x = i 0 && y = i 12) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (of_binop Eq x y = i 0 && x = i 0 && y = i 1) ;
+      test (of_binop Eq x y = i 0 && x = i 0 && y = i 1) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: x=v6
-               && linear_eqs: x = 0 ∧ y = 1
-               && term_eqs: 0=x∧1=y
-               && intervals: x=0 ∧ y=1
-        Result: same|}]
+        conditions: (empty)
+        phi: var_eqs: x=v6 && linear_eqs: x = 0 ∧ y = 1 && term_eqs: 0=x∧1=y && intervals: x=0 ∧ y=1|}]
 
 
     let%expect_test _ =
-      normalize (x = i 0 && x < i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x = i 0 && x < i 0) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (x + y < x + y) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x + y < x + y) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "nonlinear arithmetic" =
-      normalize (z * (x + (v * y) + i 1) / w = i 0) ;
+      test (z * (x + (v * y) + i 1) / w = i 0) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-               && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
-               && intervals: v10=0
-        Result: same|}]
+        conditions: (empty)
+        phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
+             && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
+             && intervals: v10=0|}]
 
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
-      normalize (i 12 * (x + (i 3 * y) + i 1) / i 1 = i 0) ;
+      test (i 12 * (x + (i 3 * y) + i 1) / i 1 = i 0) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: v8=v9=v10
-               && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
-               && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-               && intervals: v8=0
-        Result: same|}]
+        conditions: (empty)
+        phi: var_eqs: v8=v9=v10
+             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
+             && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
+             && intervals: v8=0|}]
 
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
     let%expect_test _ =
-      normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 1) ;
+      test (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 1) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: v8=v9=v10
-               && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1
-                               ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
-               && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-               && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0
-        Result: same|}]
+        conditions: (empty)
+        phi: var_eqs: v8=v9=v10
+             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3
+                             ∧ v7 = -1 ∧ v8 = 0
+             && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
+             && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0|}]
 
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
     let%expect_test _ =
-      normalize
-        (is_int x_var && x + x = i 4 && is_int y_var && y = i (-42) && is_int z_var && z = x + w) ;
+      test (is_int x_var && x + x = i 4 && is_int y_var && y = i (-42) && is_int z_var && z = x + w) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: z=v7
-               && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
-               && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
-               && intervals: y=-42 ∧ v6=4
-               && atoms: {is_int([w +2]) = 1}
-        Result: same
+        conditions: (empty)
+        phi: var_eqs: z=v7
+             && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
+             && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
+             && intervals: y=-42 ∧ v6=4
+             && atoms: {is_int([w +2]) = 1}
 |}]
 
 
     let%expect_test _ =
-      normalize (is_int x_var && x + x = i 5) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (is_int x_var && x + x = i 5) ;
+      [%expect {|unsat|}]
   end )
 
 
@@ -532,98 +475,75 @@ let%test_module "non-linear simplifications" =
 
 
     let%expect_test "non-linear becomes linear" =
-      normalize (w = (i 2 * z) - i 3 && z = x * y && y = i 2) ;
+      test (w = (i 2 * z) - i 3 && z = x * y && y = i 2) ;
       [%expect
         {|
-          Formula:
-            conditions: (empty)
-            phi: var_eqs: z=v8 ∧ w=v7
-                 && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
-                 && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
-                 && intervals: y=2
-          Result: same|}]
+          conditions: (empty)
+          phi: var_eqs: z=v8 ∧ w=v7
+               && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
+               && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
+               && intervals: y=2|}]
   end )
 
 
 let%test_module "inequalities" =
   ( module struct
     let%expect_test "simple contradiction" =
-      normalize (x < i 0 && x >= i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x < i 0 && x >= i 0) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "simple contradiction" =
-      normalize (x < y && x >= y) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x < y && x >= y) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "add to tableau with pivot" =
-      normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3)) ;
+      test (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3)) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
-               && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
-               && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
-               && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
+             && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
+             && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
+             && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3 |}]
 
 
     let%expect_test "add to tableau with pivot then unsat" =
-      normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "contradiction using pivot" =
-      normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y <= i 2 && y - z >= i 3) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x >= i 0 && y >= i 0 && z >= i 0 && x + y <= i 2 && y - z >= i 3) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "constant propagation to tableau" =
-      normalize (x < i 34 && y < i 2 * x && x = i 32 && y = i 64) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x < i 34 && y < i 2 * x && x = i 32 && y = i 64) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "tableau simplified away by constant propagation" =
-      normalize (x < i 34 && y <= i 2 * x && x = i 32 && y = i 64) ;
+      test (x < i 34 && y <= i 2 * x && x = i 32 && y = i 64) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: y=v6
-               && linear_eqs: a2 = 0 ∧ a1 = 1 ∧ x = 32 ∧ y = 64
-               && term_eqs: 0=a2∧1=a1∧32=x∧64=y
-               && intervals: a2=0 ∧ x=32 ∧ y=64
-        Result: same|}]
+        conditions: (empty)
+        phi: var_eqs: y=v6
+             && linear_eqs: a2 = 0 ∧ a1 = 1 ∧ x = 32 ∧ y = 64
+             && term_eqs: 0=a2∧1=a1∧32=x∧64=y
+             && intervals: a2=0 ∧ x=32 ∧ y=64|}]
 
 
     let%expect_test "(negated) inequality followed by pruned equality" =
-      normalize (lt x (i 2) = i 0 && x =. i 2) ;
+      test (lt x (i 2) = i 0 && x =. i 2) ;
       [%expect
         {|
-         Formula:
-           conditions: {x = 2}
-           phi: var_eqs: a1=v6
-                && linear_eqs: a1 = 0 ∧ x = 2
-                && term_eqs: 0=a1∧2=x
-                && intervals: a1=0 ∧ x=2
-         Result: same |}]
+         conditions: {x = 2}
+         phi: var_eqs: a1=v6
+              && linear_eqs: a1 = 0 ∧ x = 2
+              && term_eqs: 0=a1∧2=x
+              && intervals: a1=0 ∧ x=2 |}]
   end )
 
 
@@ -631,11 +551,8 @@ let%test_module "intervals" =
   ( module struct
     (* rationals cannot detect the contradiction but intervals do integer reasoning *)
     let%expect_test "integer equality in concrete interval" =
-      normalize (x >= i 0 && x < i 3 && x <> i 0 && x <> i 1 && x <> i 2) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (x >= i 0 && x < i 3 && x <> i 0 && x <> i 1 && x <> i 2) ;
+      [%expect {|unsat|}]
 
 
     (* same as above but we stop earlier to see that intervals infer that [x = 2] *)
@@ -654,150 +571,116 @@ let%test_module "intervals" =
 
 
     let%expect_test "interval intersection" =
-      normalize (x >= i 0 && x < i 3 && x <> i 0 && y >= i 2 && y < i 10 && x = y) ;
+      test (x >= i 0 && x < i 3 && x <> i 0 && y >= i 2 && y < i 10 && x = y) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: a3=a2 ∧ a1=x=y
-               && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
-               && term_eqs: 0=a3∧2=a1∧7=a4
-               && intervals: a3=0 ∧ a1=2
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: a3=a2 ∧ a1=x=y
+             && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
+             && term_eqs: 0=a3∧2=a1∧7=a4
+             && intervals: a3=0 ∧ a1=2 |}]
   end )
 
 
 let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
-      normalize (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
+      [%expect {|unsat|}]
 
 
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
-      normalize (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
-      normalize (or_ (ne x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
+      test (or_ (ne x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
       [%expect
         {|
-          Formula:
-            conditions: (empty)
-            phi: var_eqs: x=v6=v7=v8=v9=v10 && linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0
-          Result: same |}]
+          conditions: (empty)
+          phi: var_eqs: x=v6=v7=v8=v9=v10 && linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0 |}]
 
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
-      normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same|}]
+      test (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (and_ (ge x (i 0)) (gt x (i 0)) <> i 0) ;
+      test (and_ (ge x (i 0)) (gt x (i 0)) <> i 0) ;
       [%expect
         {|
-          Formula:
-            conditions: (empty)
-            phi: var_eqs: v6=v7
-                 && linear_eqs: x = a1 +1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a1 +1]=x∧(0<x)=v6∧(0≤x)=v6
-                 && intervals: v8≠0
-                 && atoms: {v8 ≠ 0}
-          Result: same|}]
+          conditions: (empty)
+          phi: var_eqs: v6=v7
+               && linear_eqs: x = a1 +1 ∧ v6 = 1
+               && term_eqs: 1=v6∧[a1 +1]=x∧(0<x)=v6∧(0≤x)=v6
+               && intervals: v8≠0
+               && atoms: {v8 ≠ 0}|}]
   end )
 
 
 let%test_module "non-numerical constants" =
   ( module struct
     let%expect_test _ =
-      normalize (x = s "hello world") ;
+      test (x = s "hello world") ;
       [%expect
         {|
-        Formula:
-          conditions: (empty) phi: const_eqs: x="hello world" && term_eqs: "hello world"=x
-        Result: same |}]
+        conditions: (empty) phi: const_eqs: x="hello world" && term_eqs: "hello world"=x |}]
 
 
     let%expect_test _ =
-      normalize (x = s "hello" && x = s "world") ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same |}]
+      test (x = s "hello" && x = s "world") ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (x = s "hello" ^ s " " ^ s "world" && y = s "hello world" && x = y) ;
+      test (x = s "hello" ^ s " " ^ s "world" && y = s "hello world" && x = y) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: x=y=v7
-               && const_eqs: x="hello world" ∧ v6=" world"
-               && term_eqs: " world"=v6∧"hello world"=x
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: x=y=v7
+             && const_eqs: x="hello world" ∧ v6=" world"
+             && term_eqs: " world"=v6∧"hello world"=x |}]
 
 
     let%expect_test _ =
-      normalize (x = s "hello" ^ s "world" && y = s "no match" && x = y) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same |}]
+      test (x = s "hello" ^ s "world" && y = s "no match" && x = y) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (y = s "hello" && z = s "world" && x = y ^ z) ;
+      test (y = s "hello" && z = s "world" && x = y ^ z) ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: x=v6
-               && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world"
-               && term_eqs: "hello"=y∧"helloworld"=x∧"world"=z
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: x=v6
+             && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world"
+             && term_eqs: "hello"=y∧"helloworld"=x∧"world"=z |}]
 
 
     let%expect_test _ =
-      normalize (x = y ^ z && y = s "hello" && z = s "world") ;
+      test (x = y ^ z && y = s "hello" && z = s "world") ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: x=v6
-               && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world"
-               && term_eqs: "hello"=y∧"world"=z
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: x=v6
+             && const_eqs: x="helloworld" ∧ y="hello" ∧ z="world"
+             && term_eqs: "hello"=y∧"world"=z |}]
 
 
     let%expect_test _ =
-      normalize (x = y ^ z && y = s "hello" && z = s "world" && x = y) ;
-      [%expect {|
-        Formula:
-          unsat
-        Result: same |}]
+      test (x = y ^ z && y = s "hello" && z = s "world" && x = y) ;
+      [%expect {|unsat|}]
 
 
     let%expect_test _ =
-      normalize (x = y ^ z && y = s "hello" && x = s "prefix cannot match") ;
+      test (x = y ^ z && y = s "hello" && x = s "prefix cannot match") ;
       [%expect
         {|
-        Formula:
-          conditions: (empty)
-          phi: var_eqs: x=v6
-               && const_eqs: x="prefix cannot match" ∧ y="hello"
-               && term_eqs: "hello"=y∧"prefix cannot match"=x∧("hello"^z)=x
-        Result: same |}]
+        conditions: (empty)
+        phi: var_eqs: x=v6
+             && const_eqs: x="prefix cannot match" ∧ y="hello"
+             && term_eqs: "hello"=y∧"prefix cannot match"=x∧("hello"^z)=x |}]
   end )
