@@ -703,16 +703,6 @@
                       "qual_type" : {
                         "type_ptr" : 25
                       }
-                    },
-                    "found_decl_ref" : {
-                      "kind" : "FunctionTemplate",
-                      "decl_pointer" : 23,
-                      "name" : {
-                        "name" : "is_pod",
-                        "qual_name" : [
-                          "is_pod"
-                        ]
-                      }
                     }
                   }
                 ]]
@@ -820,16 +810,6 @@
                       },
                       "qual_type" : {
                         "type_ptr" : 25
-                      }
-                    },
-                    "found_decl_ref" : {
-                      "kind" : "FunctionTemplate",
-                      "decl_pointer" : 23,
-                      "name" : {
-                        "name" : "is_pod",
-                        "qual_name" : [
-                          "is_pod"
-                        ]
                       }
                     }
                   }

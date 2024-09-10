@@ -1071,16 +1071,6 @@
                               "qual_type" : {
                                 "type_ptr" : 18
                               }
-                            },
-                            "found_decl_ref" : {
-                              "kind" : <"FunctionTemplate">,
-                              "decl_pointer" : 7,
-                              "name" : {
-                                "name" : "get",
-                                "qual_name" : [
-                                  "get"
-                                ]
-                              }
                             }
                           }
                         )>
@@ -1278,16 +1268,6 @@
                               },
                               "qual_type" : {
                                 "type_ptr" : 27
-                              }
-                            },
-                            "found_decl_ref" : {
-                              "kind" : <"FunctionTemplate">,
-                              "decl_pointer" : 7,
-                              "name" : {
-                                "name" : "get",
-                                "qual_name" : [
-                                  "get"
-                                ]
                               }
                             }
                           }

@@ -87,7 +87,7 @@ let create_decl_ref_expr stmt_info pointer ni qual_type =
     ( stmt_info
     , []
     , {ei_qual_type= qual_type; ei_value_kind= `LValue; ei_object_kind= `Ordinary}
-    , {drti_decl_ref= Some (create_decl_ref pointer ni qual_type); drti_found_decl_ref= None} )
+    , {drti_decl_ref= Some (create_decl_ref pointer ni qual_type)} )
 
 
 let create_integer_literal n =

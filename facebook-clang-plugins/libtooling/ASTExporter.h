@@ -3393,24 +3393,17 @@ int ASTExporter<ATDWriter>::DeclRefExprTupleSize() {
 //@atd #define decl_ref_expr_tuple expr_tuple * decl_ref_expr_info
 //@atd type decl_ref_expr_info = {
 //@atd   ?decl_ref : decl_ref option;
-//@atd   ?found_decl_ref : decl_ref option
 //@atd } <ocaml field_prefix="drti_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitDeclRefExpr(const DeclRefExpr *Node) {
   VisitExpr(Node);
 
   const ValueDecl *D = Node->getDecl();
-  const NamedDecl *FD = Node->getFoundDecl();
-  bool HasFoundDeclRef = FD && D != FD;
-  ObjectScope Scope(OF, 0 + (bool)D + HasFoundDeclRef);
+  ObjectScope Scope(OF, 0 + (bool)D);
 
   if (D) {
     OF.emitTag("decl_ref");
     dumpDeclRef(*D);
-  }
-  if (HasFoundDeclRef) {
-    OF.emitTag("found_decl_ref");
-    dumpDeclRef(*FD);
   }
 }
 
