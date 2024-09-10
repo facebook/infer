@@ -15,19 +15,33 @@ disjunctive.exp.test: $(INFER_BIN) $(SRC) $(MAKEFILE_LIST)
 	$(QUIET)echo "This tests that the set of paths explored by the disjunctive analysis" >> $@
 	$(QUIET)echo "monotonically increases as the disjunct limit increases" >> $@
 	$(QUIET)echo "" >> $@
-	$(QUIET)echo "N_disjuncts = 1" >> $@
+	$(QUIET)echo "N_disjuncts = 1 with default strategy" >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 1 -- clang -c $(SRC) >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)echo "----------------------------------------" >> $@
-	$(QUIET)echo "N_disjuncts = 4" >> $@
+	$(QUIET)echo "N_disjuncts = 4 with default strategy" >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 4 >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)echo "----------------------------------------" >> $@
-	$(QUIET)echo "N_disjuncts = 10" >> $@
+	$(QUIET)echo "N_disjuncts = 10 with default strategy" >> $@
 	$(QUIET)echo "" >> $@
 	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 10 >> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)echo "N_disjuncts = 1 with balanced strategy" >> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 1 --pulse-balanced-disjuncts-strategy -- clang -c $(SRC) >> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)echo "----------------------------------------" >> $@
+	$(QUIET)echo "N_disjuncts = 4 with balanced strategy" >> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 4 --pulse-balanced-disjuncts-strategy >> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)echo "----------------------------------------" >> $@
+	$(QUIET)echo "N_disjuncts = 10 with balanced strategy">> $@
+	$(QUIET)echo "" >> $@
+	$(QUIET)$(INFER_BIN) -j 1 --disjunctive-demo-only --pulse-max-disjuncts 10 --pulse-balanced-disjuncts-strategy >> $@
 
 .PHONY: print
 print: disjunctive.exp.test

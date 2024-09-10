@@ -2980,6 +2980,11 @@ INTERNAL OPTIONS
        --procs-to-analyze-index-reset
            Cancel the effect of --procs-to-analyze-index.
 
+       --pulse-balanced-disjuncts-strategy
+           Activates: Enable a disjunct selection strategy where each caller
+           disjunct is given near the same budget of post disjuncts.
+           (Conversely: --no-pulse-balanced-disjuncts-strategy)
+
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 

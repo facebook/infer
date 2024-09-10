@@ -168,8 +168,8 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call ({InterproceduralAnalysis.tenv} as analysis_data) path ret callee_pname
-      call_exp func_args call_loc astate non_disj =
+  let interprocedural_call disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path ret
+      callee_pname call_exp func_args call_loc astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
@@ -186,8 +186,8 @@ module PulseTransferFunctions = struct
     let eval_args_and_call callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
-      PulseCallOperations.call analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
-        ~call_kind astate non_disj
+      PulseCallOperations.call ~disjunct_limit analysis_data path call_loc callee_pname ~ret
+        ~actuals ~formals_opt ~call_kind astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
@@ -814,8 +814,9 @@ module PulseTransferFunctions = struct
     |> Option.value ~default:(astate, callee_procname, func_args)
 
 
-  let rec dispatch_call_eval_args ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path
-      ret call_exp func_args call_loc flags astate non_disj callee_pname =
+  let rec dispatch_call_eval_args disjunct_limit
+      ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path ret call_exp func_args
+      call_loc flags astate non_disj callee_pname =
     let actuals =
       List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
     in
@@ -839,8 +840,9 @@ module PulseTransferFunctions = struct
         (Option.first_some info default_info, ret, actuals, func_args, astate)
       else if Language.curr_language_is Python then
         (* In Python, we need to be careful about implicit class constructors *)
-        dispatch_python_constructor_and_init dispatch_call_eval_args analysis_data path ret actuals
-          func_args call_loc astate callee_pname default_info
+        dispatch_python_constructor_and_init
+          (dispatch_call_eval_args disjunct_limit)
+          analysis_data path ret actuals func_args call_loc astate callee_pname default_info
       else (default_info, ret, actuals, func_args, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
@@ -868,8 +870,9 @@ module PulseTransferFunctions = struct
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate, callee_pname, func_args =
       if Language.curr_language_is Hack then
-        prepare_args_if_hack_variadic dispatch_call_eval_args analysis_data path ret func_args
-          call_loc astate callee_pname
+        prepare_args_if_hack_variadic
+          (dispatch_call_eval_args disjunct_limit)
+          analysis_data path ret func_args call_loc astate callee_pname
       else (astate, callee_pname, func_args)
     in
     let astate, func_args =
@@ -938,7 +941,7 @@ module PulseTransferFunctions = struct
           let astates, non_disj =
             model
               { analysis_data
-              ; dispatch_call_eval_args
+              ; dispatch_call_eval_args= dispatch_call_eval_args disjunct_limit
               ; path
               ; callee_procname
               ; location= call_loc
@@ -950,7 +953,7 @@ module PulseTransferFunctions = struct
               Location.pp_file_pos call_loc Procname.pp callee_procname
               (List.length astates - 1) ;
           if has_continue_program astates then CallGlobalForStats.node_is_not_stuck () ;
-          (astates, non_disj, `KnownCall)
+          (List.take astates disjunct_limit, non_disj, `KnownCall)
       | InvalidSpecializedCall specialized_type ->
           let trace = Trace.Immediate {location= call_loc; history= ValueHistory.epoch} in
           let result =
@@ -960,8 +963,8 @@ module PulseTransferFunctions = struct
       | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
-            interprocedural_call analysis_data path ret callee_pname call_exp func_args call_loc
-              astate non_disj
+            interprocedural_call disjunct_limit analysis_data path ret callee_pname call_exp
+              func_args call_loc astate non_disj
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
@@ -996,7 +999,7 @@ module PulseTransferFunctions = struct
                         L.d_printfln "async return value %a" AbstractValue.pp rv ;
                         let (md : PulseModelsImport.model_data) =
                           { PulseModelsImport.analysis_data
-                          ; dispatch_call_eval_args
+                          ; dispatch_call_eval_args= dispatch_call_eval_args disjunct_limit
                           ; path
                           ; callee_procname= saved_name
                           ; location= call_loc
@@ -1096,13 +1099,13 @@ module PulseTransferFunctions = struct
     (astate, call_exp, callee_pname, List.rev rev_actuals)
 
 
-  let dispatch_call analysis_data path ret call_exp actuals call_loc flags astate non_disj =
+  let dispatch_call limit analysis_data path ret call_exp actuals call_loc flags astate non_disj =
     let ( let<**> ) x f = bind_sat_result non_disj x f in
     let<**> astate, call_exp, callee_pname, func_args =
       eval_function_call_args path call_exp actuals call_loc astate
     in
-    dispatch_call_eval_args analysis_data path ret call_exp func_args call_loc flags astate non_disj
-      callee_pname
+    dispatch_call_eval_args limit analysis_data path ret call_exp func_args call_loc flags astate
+      non_disj callee_pname
 
 
   (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and
@@ -1129,8 +1132,8 @@ module PulseTransferFunctions = struct
      object in memory and set that count to their respective
      __infer_mode_reference_count field by calling the __objc_set_ref_count
      builtin *)
-  let set_ref_counts astate non_disj location path ({InterproceduralAnalysis.tenv} as analysis_data)
-      =
+  let set_ref_counts limit astate non_disj location path
+      ({InterproceduralAnalysis.tenv} as analysis_data) =
     let find_var_opt astate addr =
       Stack.fold
         (fun var var_addr_vo var_opt ->
@@ -1169,7 +1172,7 @@ module PulseTransferFunctions = struct
                      (Sil.pp_instr Pp.text ~print_types:true)
                      call_instr ;
                    let execs, non_disj =
-                     dispatch_call analysis_data path ret call_exp actuals location call_flags
+                     dispatch_call limit analysis_data path ret call_exp actuals location call_flags
                        astate non_disj
                    in
                    (PulseReport.report_exec_results analysis_data location execs, non_disj) )
@@ -1184,7 +1187,7 @@ module PulseTransferFunctions = struct
      add and execute calls to dealloc. The main advantage of adding this calls
      is that some memory could be freed in dealloc, and we would be reporting a leak on it if we
      didn't call it. *)
-  let execute_injected_dealloc_calls analysis_data path vars astate non_disj location =
+  let execute_injected_dealloc_calls limit analysis_data path vars astate non_disj location =
     let used_ids = Stack.keys astate |> List.filter_map ~f:(fun var -> Var.get_ident var) in
     Ident.update_name_generator used_ids ;
     let call_dealloc (astate_list, non_disj) (ret_id, id, typ, dealloc) =
@@ -1207,8 +1210,8 @@ module PulseTransferFunctions = struct
               ([astate], non_disj)
           | ContinueProgram astate ->
               let execs, non_disj =
-                dispatch_call analysis_data path ret call_exp actuals location call_flags astate
-                  non_disj
+                dispatch_call limit analysis_data path ret call_exp actuals location call_flags
+                  astate non_disj
               in
               (PulseReport.report_exec_results analysis_data location execs, non_disj) )
     in
@@ -1249,7 +1252,7 @@ module PulseTransferFunctions = struct
               None ) )
 
 
-  let exit_scope vars location path astate astate_n
+  let exit_scope limit vars location path astate astate_n
       ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
     if Procname.is_java (Procdesc.get_proc_name proc_desc) then
       (remove_vars vars location [ContinueProgram astate], path, astate_n)
@@ -1274,7 +1277,7 @@ module PulseTransferFunctions = struct
          removed *)
       let astates, non_disj, ret_vars =
         if Config.objc_synthesize_dealloc then
-          set_ref_counts astate astate_n location path analysis_data
+          set_ref_counts limit astate astate_n location path analysis_data
         else ([ContinueProgram astate], astate_n, [])
       in
       (* Here we add and execute calls to dealloc for Objective-C objects
@@ -1286,7 +1289,8 @@ module PulseTransferFunctions = struct
             match astate with
             | ContinueProgram astate ->
                 let astates, astate_n, ret_vars =
-                  execute_injected_dealloc_calls analysis_data path vars astate non_disj location
+                  execute_injected_dealloc_calls limit analysis_data path vars astate non_disj
+                    location
                 in
                 ( astates @ acc_astates
                 , NonDisjDomain.join acc_astate_n astate_n
@@ -1330,8 +1334,8 @@ module PulseTransferFunctions = struct
               ~branch_location:loc ~location:loc trace acc ) )
 
 
-  let set_global_astates path ({InterproceduralAnalysis.proc_desc} as analysis_data) exp typ loc
-      astate non_disj =
+  let set_global_astates limit path ({InterproceduralAnalysis.proc_desc} as analysis_data) exp typ
+      loc astate non_disj =
     let is_global_constant pvar =
       Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
     in
@@ -1351,8 +1355,8 @@ module PulseTransferFunctions = struct
           let call_flags = CallFlags.default in
           let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
           let no_error_states, non_disj =
-            dispatch_call analysis_data path ret_id_void (Const (Cfun init_pname)) [] loc call_flags
-              astate non_disj
+            dispatch_call limit analysis_data path ret_id_void (Const (Cfun init_pname)) [] loc
+              call_flags astate non_disj
           in
           let no_error_states =
             List.filter_map no_error_states ~f:(function
@@ -1378,7 +1382,7 @@ module PulseTransferFunctions = struct
       instr
 
 
-  let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
+  let exec_instr_aux limit ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
@@ -1420,7 +1424,7 @@ module PulseTransferFunctions = struct
             (* call the initializer for certain globals to populate their values, unless we already
                have a model for it *)
             if Option.is_some model_opt then ([astate], astate_n)
-            else set_global_astates path analysis_data rhs_exp typ loc astate astate_n
+            else set_global_astates limit path analysis_data rhs_exp typ loc astate astate_n
           in
           let astate_n =
             match rhs_exp with
@@ -1448,7 +1452,7 @@ module PulseTransferFunctions = struct
               PulseTransitiveAccessChecker.record_load rhs_exp loc astates
             else astates
           in
-          (astates, path, non_disj)
+          (List.take astates limit, path, non_disj)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
@@ -1497,33 +1501,49 @@ module PulseTransferFunctions = struct
           in
           let astate_n = NonDisjDomain.set_captured_variables rhs_exp astate_n in
           let results = SatUnsat.to_list result in
-          (PulseReport.report_results analysis_data loc results, path, astate_n)
+          let astates = PulseReport.report_results analysis_data loc results in
+          (List.take astates limit, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astate_n = check_modified_before_destructor actuals call_exp astate astate_n in
           let astates, astate_n =
             List.fold actuals ~init:([astate], astate_n) ~f:(fun (astates, astate_n) (exp, typ) ->
                 NonDisjDomain.bind (astates, astate_n) ~f:(fun astate astate_n ->
-                    set_global_astates path analysis_data exp typ loc astate astate_n ) )
+                    set_global_astates limit path analysis_data exp typ loc astate astate_n ) )
           in
+          let astates = List.take astates limit in
           (* [astates_before] are the states after we evaluate args but before we apply the callee. This is needed for PulseNonDisjunctiveOperations to determine whether we are copying from something pointed to by [this].  *)
           CallGlobalForStats.init_before_call () ;
           let astates, astate_n, astates_before =
             let astates_before = ref [] in
-            let res, astate_n =
-              NonDisjDomain.bind (astates, astate_n) ~f:(fun astate astate_n ->
-                  let ( let<**> ) x f = bind_sat_result astate_n x f in
-                  let<**> astate, call_exp, callee_pname, func_args =
-                    eval_function_call_args path call_exp actuals loc astate
-                  in
-                  (* stash the intermediate "before" [astate] here because the result monad does
-                       not accept more complicated types than lists of states (we need a pair of the
-                       before astate and the list of results) *)
-                  astates_before := astate :: !astates_before ;
-                  dispatch_call_eval_args analysis_data path ret call_exp func_args loc call_flags
-                    astate astate_n callee_pname )
+            let res, post_astate_n, _ =
+              List.rev astates
+              |> List.fold ~init:([], NonDisjDomain.bottom, 0)
+                   ~f:(fun (astates, post_astate_n, n_disjuncts) astate ->
+                     if n_disjuncts >= limit then
+                       ( astates
+                       , NonDisjDomain.remember_dropped_disjuncts
+                           [(ContinueProgram astate, path)]
+                           astate_n
+                       , n_disjuncts )
+                     else
+                       let new_astates, astate_n =
+                         let ( let<**> ) x f = bind_sat_result astate_n x f in
+                         let<**> astate, call_exp, callee_pname, func_args =
+                           eval_function_call_args path call_exp actuals loc astate
+                         in
+                         (* stash the intermediate "before" [astate] here because the result monad does
+                                  not accept more complicated types than lists of states (we need a pair of the
+                                  before astate and the list of results) *)
+                         astates_before := astate :: !astates_before ;
+                         dispatch_call_eval_args (limit - n_disjuncts) analysis_data path ret
+                           call_exp func_args loc call_flags astate astate_n callee_pname
+                       in
+                       ( new_astates @ astates
+                       , NonDisjDomain.join post_astate_n astate_n
+                       , List.length new_astates + n_disjuncts ) )
             in
             let astates_before = !astates_before in
-            (PulseReport.report_exec_results analysis_data loc res, astate_n, astates_before)
+            (PulseReport.report_exec_results analysis_data loc res, post_astate_n, astates_before)
           in
           if not (CallGlobalForStats.is_node_not_stuck ()) then (
             if Config.log_pulse_coverage then add_verbose_never_return_info proc_desc instr loc ;
@@ -1549,9 +1569,10 @@ module PulseTransferFunctions = struct
             let<++> astate, _ = prune_result in
             astate
           in
-          (PulseReport.report_exec_results analysis_data loc results, path, astate_n)
+          let astates = PulseReport.report_exec_results analysis_data loc results in
+          (List.take astates limit, path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
-          exit_scope vars location path astate astate_n analysis_data
+          exit_scope limit vars location path astate astate_n analysis_data
       | Metadata (VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding})
         when not (Pvar.is_global pvar) ->
           let set_uninitialized = (not is_cpp_structured_binding) && not (Typ.is_folly_coro typ) in
@@ -1586,8 +1607,9 @@ module PulseTransferFunctions = struct
         raise_notrace AboutToOOM
     | _ ->
         () ) ;
+    let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
     let astates, path, astate_n =
-      exec_instr_aux path astate astate_n analysis_data cfg_node instr
+      exec_instr_aux limit path astate astate_n analysis_data cfg_node instr
     in
     ( List.map astates ~f:(fun exec_state -> (exec_state, PathContext.post_exec_instr path))
     , astate_n )
@@ -1684,7 +1706,7 @@ let should_analyze proc_desc =
   && not (Procdesc.is_too_big Pulse ~max_cfg_size:Config.pulse_max_cfg_size proc_desc)
 
 
-let exit_function analysis_data location posts non_disj_astate =
+let exit_function limit analysis_data location posts non_disj_astate =
   let astates, astate_n =
     List.fold_left posts ~init:([], non_disj_astate)
       ~f:(fun (acc_astates, astate_n) (exec_state, path) ->
@@ -1703,7 +1725,8 @@ let exit_function analysis_data location posts non_disj_astate =
                 astate []
             in
             let astates, _, astate_n =
-              PulseTransferFunctions.exit_scope vars location path astate astate_n analysis_data
+              PulseTransferFunctions.exit_scope limit vars location path astate astate_n
+                analysis_data
             in
             (PulseTransferFunctions.remove_vars vars location astates @ acc_astates, astate_n) )
   in
@@ -1817,6 +1840,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
   let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
   log_number_of_unreachable_nodes proc_desc invariant_map ;
   if CallGlobalForStats.is_one_call_stuck () then Stats.incr_pulse_summaries_unsat_for_caller () ;
+  let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->
@@ -1825,7 +1849,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
         let posts, non_disj_astate =
           (* Do final cleanup at the end of procdesc
              Forget path contexts on the way, we don't propagate them across functions *)
-          exit_function analysis_data node_loc posts non_disj_astate
+          exit_function limit analysis_data node_loc posts non_disj_astate
         in
         let posts =
           if convert_normal_to_exceptional then

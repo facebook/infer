@@ -610,6 +610,8 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
 
+val pulse_balanced_disjuncts_strategy : bool
+
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
 val pulse_force_continue : bool

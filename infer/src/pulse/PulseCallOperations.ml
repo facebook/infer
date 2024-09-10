@@ -447,9 +447,9 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                          , [] ) ) ) ) )
 
 
-let call_aux ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc callee_pname ret
-    actuals call_kind (callee_proc_attrs : ProcAttributes.t) exec_states_callee non_disj_callee
-    (astate_caller : AbductiveDomain.t) ?call_flags non_disj_caller =
+let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc
+    callee_pname ret actuals call_kind (callee_proc_attrs : ProcAttributes.t) exec_states_callee
+    non_disj_callee (astate_caller : AbductiveDomain.t) ?call_flags non_disj_caller =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
         (Pvar.mk mangled callee_pname, typ) )
@@ -480,7 +480,10 @@ let call_aux ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc cal
   let posts, contradiction =
     List.fold ~init:([], None) exec_states_callee
       ~f:(fun (posts, contradiction) callee_exec_state ->
-        if should_keep_at_most_one_disjunct && not (List.is_empty posts) then (posts, contradiction)
+        if
+          Option.exists disjunct_limit ~f:(fun limit -> List.length posts >= limit)
+          || (should_keep_at_most_one_disjunct && not (List.is_empty posts))
+        then (posts, contradiction)
         else (
           (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
               *)
@@ -498,8 +501,9 @@ let call_aux ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc cal
   (posts, (non_disj, contradiction))
 
 
-let call_aux_unknown ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc callee_pname
-    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags non_disj_caller =
+let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc
+    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags
+    non_disj_caller =
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate_unknown =
@@ -539,8 +543,9 @@ let call_aux_unknown ({InterproceduralAnalysis.tenv} as analysis_data) path call
         |> Option.value_map
              ~default:([], (NonDisjDomain.bottom, None))
              ~f:(fun nil_summary ->
-               call_aux analysis_data path call_loc callee_pname ret actuals call_kind proc_attrs
-                 [nil_summary] NonDisjDomain.Summary.bottom astate ?call_flags non_disj_caller )
+               call_aux limit analysis_data path call_loc callee_pname ret actuals call_kind
+                 proc_attrs [nil_summary] NonDisjDomain.Summary.bottom astate ?call_flags
+                 non_disj_caller )
       in
       ( result_unknown @ result_unknown_nil
       , (NonDisjDomain.join non_disj non_disj_nil, contradiction) )
@@ -626,9 +631,9 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
       `UseCurrentSummary
 
 
-let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_data) path call_loc
-    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) ?call_flags
-    non_disj_caller =
+let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_data)
+    path call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
+    ?call_flags non_disj_caller =
   let has_continue_program results =
     let f one_result =
       match one_result with
@@ -641,8 +646,8 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
   in
   let call_as_unknown () =
     let results, (non_disj, contradiction) =
-      call_aux_unknown analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
-        ~call_kind astate ?call_flags non_disj_caller
+      call_aux_unknown disjunct_limit analysis_data path call_loc callee_pname ~ret ~actuals
+        ~formals_opt ~call_kind astate ?call_flags non_disj_caller
     in
     if Option.is_some contradiction then (
       L.debug Analysis Verbose
@@ -655,7 +660,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
   in
   let call_aux specialization {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} =
     let results, (non_disj, contradiction) =
-      call_aux analysis_data path call_loc callee_pname ret actuals call_kind
+      call_aux disjunct_limit analysis_data path call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
         exec_states non_disj_callee astate ?call_flags non_disj_caller
     in
@@ -828,7 +833,7 @@ let call ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_da
             astate
       in
       let res, (non_disj, contradiction) =
-        call_aux_unknown analysis_data path call_loc callee_pname ~ret ~actuals ~formals_opt
-          ~call_kind astate ?call_flags non_disj_caller
+        call_aux_unknown disjunct_limit analysis_data path call_loc callee_pname ~ret ~actuals
+          ~formals_opt ~call_kind astate ?call_flags non_disj_caller
       in
       (res, non_disj, contradiction, `UnknownCall)

@@ -10,7 +10,8 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 val call :
-     PulseSummary.t InterproceduralAnalysis.t
+     ?disjunct_limit:int
+  -> PulseSummary.t InterproceduralAnalysis.t
   -> PathContext.t
   -> Location.t
   -> Procname.t

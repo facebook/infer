@@ -2392,6 +2392,12 @@ and project_root =
     ~meta:"dir" "Specify the root directory of the project"
 
 
+and pulse_balanced_disjuncts_strategy =
+  CLOpt.mk_bool ~long:"pulse-balanced-disjuncts-strategy"
+    "Enable a disjunct selection strategy where each caller disjunct is given near the same budget \
+     of post disjuncts."
+
+
 and pulse_cut_to_one_path_procedures_pattern =
   CLOpt.mk_string_opt ~long:"pulse-cut-to-one-path-procedures-pattern"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4393,6 +4399,8 @@ and progress_bar =
 
 
 and project_root = !project_root
+
+and pulse_balanced_disjuncts_strategy = !pulse_balanced_disjuncts_strategy
 
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
