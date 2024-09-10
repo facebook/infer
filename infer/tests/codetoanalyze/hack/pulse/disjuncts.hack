@@ -32,7 +32,7 @@ class Branchs {
     }
   }
 
-  public static function gen8(bool $b1, bool $b2, bool $b3): int {
+  public static function gen8(bool $b1, bool $b2, bool $b3, int $leaf): int {
     if ($b1) {
       if ($b2) {
         if ($b3) {
@@ -58,11 +58,12 @@ class Branchs {
         if ($b3) {
           return 7;
         } else {
-          return 8;
+          return $leaf; // 7th disjunct
         }
       }
     }
   }
+
 }
 
 class Flows {
@@ -97,7 +98,43 @@ class Flows {
     } else {
       $v = 0;
     }
-    $x = Branchs::gen8($b1, $b2, $b3);
+    $x = Branchs::gen8($b1, $b2, $b3, 8);
+    \Level1\taintSink($v);
+  }
+
+  public function call_gen8_many_unsat_cases_left_bad(
+    bool $b1,
+    bool $b2,
+    bool $b3,
+    bool $b4,
+  ): void {
+    if ($b4) {
+      $v = \Level1\taintSource();
+    } else {
+      $v = 0;
+      $b1 = true;
+      $b2 = true;
+      $b3 = true;
+    }
+    $v = Branchs::gen8($b1, $b2, $b3, $v);
+    \Level1\taintSink($v);
+  }
+
+  public function call_gen8_many_unsat_cases_right_bad(
+    bool $b1,
+    bool $b2,
+    bool $b3,
+    bool $b4,
+  ): void {
+    if ($b4) {
+      $v = 0;
+      $b1 = true;
+      $b2 = true;
+      $b3 = true;
+    } else {
+      $v = \Level1\taintSource();
+    }
+    $v = Branchs::gen8($b1, $b2, $b3, $v);
     \Level1\taintSink($v);
   }
 }
