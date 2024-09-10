@@ -56,5 +56,3 @@ val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> summary:t 
 val add_specialized_direct_callee : Procname.t -> Specialization.Pulse.t -> Location.t -> t -> t
 
 val remember_dropped_elements : dropped:t -> t -> t
-
-module MissedCaptures : AbstractDomain.FiniteSetS with type t = Typ.Name.Set.t

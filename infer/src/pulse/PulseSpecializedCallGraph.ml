@@ -49,40 +49,46 @@ let get_missed_captures ~get_summary entry_nodes =
     if NodeSet.mem node seen then (seen, missed_captures_map)
     else
       let seen = NodeSet.add node seen in
-      let opt_summary = get_summary node.procname in
       let specialization =
         Option.value_map node.specialization ~default:Specialization.Pulse.bottom ~f:(function
             | Specialization.Pulse t -> t )
       in
-      let missed_captures, seen, missed_captures_map =
-        Option.value_map opt_summary ~default:(Typ.Name.Set.empty, seen, missed_captures_map)
-          ~f:(fun summary ->
-            let info = from_specialized_summary specialization summary in
+      let direct_missed_captures, seen, missed_captures_map =
+        match get_summary node.procname with
+        | None ->
+            (Typ.Name.Set.empty, seen, missed_captures_map)
+        | Some summary ->
             let { TransitiveInfo.direct_callees
                 ; has_transitive_missed_captures
                 ; direct_missed_captures } =
-              info
+              from_specialized_summary specialization summary
             in
             if has_transitive_missed_captures then
-              TransitiveInfo.DirectCallee.Set.fold
-                (fun {procname; specialization} (missed_captures, seen, missed_captures_map) ->
-                  let node = Node.{procname; specialization= Some (Pulse specialization)} in
-                  let seen, missed_captures_map = visit (seen, missed_captures_map) node in
-                  let callee_missed_captures =
-                    NodeMap.find_opt node missed_captures_map
-                    |> Option.value ~default:Typ.Name.Set.empty
-                  in
-                  ( Typ.Name.Set.union callee_missed_captures missed_captures
-                  , seen
-                  , missed_captures_map ) )
-                direct_callees
-                (direct_missed_captures, seen, missed_captures_map)
-            else (direct_missed_captures, seen, missed_captures_map) )
+              let seen, missed_captures_map =
+                TransitiveInfo.DirectCallee.Set.fold
+                  (fun {procname; specialization} acc ->
+                    let node = Node.{procname; specialization= Some (Pulse specialization)} in
+                    visit acc node )
+                  direct_callees (seen, missed_captures_map)
+              in
+              (direct_missed_captures, seen, missed_captures_map)
+            else (direct_missed_captures, seen, missed_captures_map)
       in
-      (seen, NodeMap.add node missed_captures missed_captures_map)
+      (seen, NodeMap.add node direct_missed_captures missed_captures_map)
   in
   let _, missed_captures_map =
     List.fold entry_nodes ~init:(NodeSet.empty, NodeMap.empty) ~f:visit
   in
-  List.fold entry_nodes ~init:Typ.Name.Set.empty ~f:(fun set node ->
-      Typ.Name.Set.union set (NodeMap.find node missed_captures_map) )
+  NodeMap.fold
+    (fun node missed_types acc ->
+      Typ.Name.Set.fold
+        (fun missed_type acc ->
+          Typ.Name.Map.update missed_type
+            (function
+              | None ->
+                  Some (NodeSet.singleton node)
+              | Some node_set ->
+                  Some (NodeSet.add node node_set) )
+            acc )
+        missed_types acc )
+    missed_captures_map Typ.Name.Map.empty

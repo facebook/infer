@@ -35,25 +35,24 @@ let normalize_type_name (name : Typ.name) =
       F.asprintf "%a" Typ.Name.pp name
 
 
-let output type_name_set =
-  let channel =
+let output_json type_map =
+  let out_file =
     ResultsDirEntryName.get_path ~results_dir:Config.results_dir ReactiveCaptureMissingTypes
-    |> Out_channel.create
   in
-  let fmt = F.formatter_of_out_channel channel in
-  let _ =
-    Typ.Name.Set.fold
-      (fun typ_name seen ->
+  let output_node_set node_set = SpecializedProcname.Set.sexp_of_t node_set |> Sexp.to_string in
+  let type_list =
+    Typ.Name.Map.fold
+      (fun typ_name node_set acc ->
         let normalized_type_name = normalize_type_name typ_name in
-        if String.Set.mem seen normalized_type_name then seen
-        else (
-          F.fprintf fmt "%s\n" normalized_type_name ;
-          String.Set.add seen normalized_type_name ) )
-      type_name_set String.Set.empty
+        let node_set = output_node_set node_set in
+        `Assoc [("type_name", `String normalized_type_name); ("node_set", `String node_set)] :: acc
+        )
+      type_map []
   in
-  Out_channel.close_no_err channel
+  let json = `List (List.rev type_list) in
+  Utils.with_file_out out_file ~f:(fun out_channel -> Yojson.to_channel out_channel json)
 
 
 let store_missed_captures ~source_files_filter () =
-  let type_name_set = get_missed_captures source_files_filter in
-  output type_name_set
+  let type_map = get_missed_captures source_files_filter in
+  output_json type_map

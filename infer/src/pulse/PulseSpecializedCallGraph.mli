@@ -6,9 +6,10 @@
  *)
 
 open! IStd
-open PulseBasicInterface
 
 val get_missed_captures :
      get_summary:(Procname.t -> PulseSummary.t option)
   -> SpecializedProcname.t list
-  -> TransitiveInfo.MissedCaptures.t
+  -> SpecializedProcname.Set.t Typ.Name.Map.t
+(** traverses stored Pulse summaries and creates a map from missed types to the set of specialized
+    procnames where the types are missing *)

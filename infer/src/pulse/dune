@@ -44,6 +44,7 @@
    ppx_compare
    ppx_hash
    ppx_show
+   ppx_sexp_conv
    ppx_variants_conv
    ppx_yojson_conv
    inferppx)))
