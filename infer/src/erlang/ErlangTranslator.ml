@@ -300,13 +300,11 @@ and translate_pattern_cons env value head tail : Block.t =
   let head_matcher = translate_pattern env head_value head in
   let tail_matcher = translate_pattern env tail_value tail in
   let submatcher = Block.all env [head_matcher; tail_matcher] in
-  let exit_failure = Node.make_nop env in
   let type_checker = check_type env value Cons in
+  let exit_failure = Block.join_failures env [type_checker; submatcher] in
   type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [submatcher.start] ;
-  type_checker.exit_failure |?~> [exit_failure] ;
-  submatcher.exit_failure |?~> [exit_failure] ;
-  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure= Some exit_failure}
+  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
 and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
@@ -326,15 +324,10 @@ and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
       (Exp.BinOp (Eq, Var actual_hash, Var expected_hash))
   in
   let type_checker = check_type env value Atom in
-  let exit_failure = Node.make_nop env in
+  let exit_failure = Block.join_failures env [expected_block; type_checker; hash_checker] in
   type_checker.exit_success |~~> [expected_block.start] ;
-  expected_block.exit_failure |?~> [exit_failure] ;
   expected_block.exit_success |~~> [hash_checker.start] ;
-  type_checker.exit_failure |?~> [exit_failure] ;
-  hash_checker.exit_failure |?~> [exit_failure] ;
-  { start= type_checker.start
-  ; exit_success= hash_checker.exit_success
-  ; exit_failure= Some exit_failure }
+  {start= type_checker.start; exit_success= hash_checker.exit_success; exit_failure}
 
 
 (** Generic helper when we can have an unboxed integer as the expected_value. Generates a pattern
@@ -346,15 +339,10 @@ and translate_pattern_integer (env : (_, _) Env.t) value expected_int : Block.t 
      translation, no need to have the unboxing do it a second time *)
   let actual_value, load = unsafe_unbox_integer env (Var value) in
   let value_checker = Block.make_branch env [] (Exp.BinOp (Eq, actual_value, expected_int)) in
-  let exit_failure = Node.make_nop env in
-  type_checker.exit_failure |?~> [exit_failure] ;
+  let exit_failure = Block.join_failures env [type_checker; load; value_checker] in
   type_checker.exit_success |~~> [load.start] ;
-  load.exit_failure |?~> [exit_failure] ;
   load.exit_success |~~> [value_checker.start] ;
-  value_checker.exit_failure |?~> [exit_failure] ;
-  { start= type_checker.start
-  ; exit_success= value_checker.exit_success
-  ; exit_failure= Some exit_failure }
+  {start= type_checker.start; exit_success= value_checker.exit_success; exit_failure}
 
 
 and translate_pattern_literal_integer (env : (_, _) Env.t) value i : Block.t =
@@ -433,13 +421,9 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
   in
   let type_checker = check_type env value Map in
   let submatchers = Block.all env (List.map ~f:make_submatcher updates) in
-  let exit_failure = Node.make_nop env in
+  let exit_failure = Block.join_failures env [type_checker; submatchers] in
   type_checker.exit_success |~~> [submatchers.start] ;
-  type_checker.exit_failure |?~> [exit_failure] ;
-  submatchers.exit_failure |?~> [exit_failure] ;
-  { start= type_checker.start
-  ; exit_success= submatchers.exit_success
-  ; exit_failure= Some exit_failure }
+  {start= type_checker.start; exit_success= submatchers.exit_success; exit_failure}
 
 
 and translate_pattern_record_index (env : (_, _) Env.t) value name field : Block.t =
@@ -457,14 +441,10 @@ and match_record_name env value name (record_info : Env.record_info) : Block.t =
   let name_load = load_field_from_id env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
   let unpack_node = Node.make_stmt env [name_load] in
   let name_checker = translate_pattern_literal_atom env name_id name in
-  let exit_failure = Node.make_nop env in
+  let exit_failure = Block.join_failures env [type_checker; name_checker] in
   type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [name_checker.start] ;
-  type_checker.exit_failure |?~> [exit_failure] ;
-  name_checker.exit_failure |?~> [exit_failure] ;
-  { start= type_checker.start
-  ; exit_success= name_checker.exit_success
-  ; exit_failure= Some exit_failure }
+  {start= type_checker.start; exit_success= name_checker.exit_success; exit_failure}
 
 
 and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Block.t =
@@ -512,12 +492,10 @@ and translate_pattern_tuple env value exprs : Block.t =
       (List.zip_exn exprs value_ids)
   in
   let submatcher = Block.all env matchers in
-  let exit_failure = Node.make_nop env in
+  let exit_failure = Block.join_failures env [type_checker; submatcher] in
   type_checker.exit_success |~~> [unpack_node] ;
   unpack_node |~~> [submatcher.start] ;
-  type_checker.exit_failure |?~> [exit_failure] ;
-  submatcher.exit_failure |?~> [exit_failure] ;
-  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure= Some exit_failure}
+  {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
 and translate_pattern_number_expression (env : (_, _) Env.t) value location simple_expression :
@@ -1020,10 +998,9 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
       let unpack_node = Node.make_stmt env [head_load; tail_load] in
       (* Match head and evaluate expression *)
       let head_matcher : Block.t = mk_matcher head_var in
-      let fail_node = Node.make_nop env in
+      let exit_failure = Block.join_failures env [init_block; acc] in
       let join_node = Node.make_join env in
       init_block.exit_success |~~> [join_node] ;
-      init_block.exit_failure |?~> [fail_node] ;
       join_node |~~> [check_cons_node] ;
       check_cons_node |~~> [is_cons_node; no_cons_node] ;
       is_cons_node |~~> [unpack_node] ;
@@ -1031,8 +1008,7 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
       head_matcher.exit_success |~~> [acc.start] ;
       head_matcher.exit_failure |?~> [join_node] ;
       acc.exit_success |~~> [join_node] ;
-      acc.exit_failure |?~> [fail_node] ;
-      {start= init_block.start; exit_success= no_cons_node; exit_failure= Some fail_node}
+      {start= init_block.start; exit_success= no_cons_node; exit_failure}
     in
     let make_gen_checker id types =
       let check_blocks = List.map ~f:(fun typ -> check_type env id typ) types in
@@ -1046,16 +1022,14 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
         let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
         let true_node = Node.make_if env true unboxed in
         let false_node = Node.make_if env false unboxed in
-        let fail_node = Node.make_nop env in
+        let exit_failure = Block.join_failures env [filter_expr_block; acc] in
         let succ_node = Node.make_nop env in
         let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
         filter_expr_block.exit_success |~~> [true_node; false_node] ;
-        filter_expr_block.exit_failure |?~> [fail_node] ;
         true_node |~~> [acc.start] ;
         false_node |~~> [succ_node] ;
         acc.exit_success |~~> [succ_node] ;
-        acc.exit_failure |?~> [fail_node] ;
-        {start= filter_expr_block.start; exit_success= succ_node; exit_failure= Some fail_node}
+        {start= filter_expr_block.start; exit_success= succ_node; exit_failure}
     | Generator {pattern; expression} ->
         let gen_var, init_block = translate_expression_to_fresh_id env expression in
         let check_block = make_gen_checker gen_var [Nil; Cons] in
@@ -1320,14 +1294,12 @@ and translate_expression_receive (env : (_, _) Env.t) cases timeout : Block.t =
         let cases_or_timeout_block =
           let timeout_block = translate_body env handler in
           let start = Node.make_nop env in
-          let exit_failure = Node.make_nop env in
+          let exit_failure = Block.join_failures env [cases_block; timeout_block] in
           let exit_success = Node.make_nop env in
           start |~~> [cases_block.start; timeout_block.start] ;
           cases_block.exit_success |~~> [exit_success] ;
           timeout_block.exit_success |~~> [exit_success] ;
-          cases_block.exit_failure |?~> [exit_failure] ;
-          timeout_block.exit_failure |?~> [exit_failure] ;
-          {Block.start; exit_success; exit_failure= Some exit_failure}
+          {Block.start; exit_success; exit_failure}
         in
         let _, time_expr_block = translate_expression_to_fresh_id env time in
         Block.all env [time_expr_block; cases_or_timeout_block]
