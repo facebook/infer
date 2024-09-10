@@ -203,7 +203,7 @@ void testUnknownNilSpecOk() {
   NSDictionary* dict = @{@"helloString" : str};
 }
 
-std::shared_ptr<int> unknown_call_twice_FP() {
+std::shared_ptr<int> unknown_call_twice() {
   if (![SomeObject sharedInstance]) {
     return std::make_shared<int>(0);
   }

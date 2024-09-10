@@ -91,7 +91,7 @@ digraph cfg {
 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" [label="1: Start EscapingByref.capture_local_static_byvalue\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" ;
+	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" ;
 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" [label="2: Exit EscapingByref.capture_local_static_byvalue \n  " color=yellow style=filled]
 	
 
@@ -99,10 +99,6 @@ digraph cfg {
 	
 
 	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" ;
-"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int); [line 38, column 3]\n  *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int=3 [line 38, column 3]\n " shape="box"]
-	
-
-	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" ;
 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" [label="1: Start EscapingByref.capture_param_byvalue:\nFormals:  param:int\nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
 	
 

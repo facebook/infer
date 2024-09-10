@@ -3204,15 +3204,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let procname = Procdesc.get_proc_name procdesc in
-    let do_var_dec var_decl qual_type vdi next_node trans_state =
+    let do_var_dec var_decl qual_type (vdi : Clang_ast_t.var_decl_info) next_node trans_state =
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
       let trans_state = {trans_state with succ_nodes= next_node} in
       let var_exp_typ = (Exp.Lvar pvar, typ) in
       let is_structured_binding = match var_decl with BindingDecl _ -> true | _ -> false in
-      init_expr_trans ~is_structured_binding trans_state var_exp_typ ~qual_type stmt_info
-        vdi.Clang_ast_t.vdi_init_expr
+      (* do not translate the initialization of static locals; to accurately represent the semantics
+         we need to only run the inilialization once at "program start" (or run it once at some
+         point) *)
+      if vdi.vdi_is_static_local then
+        mk_trans_result var_exp_typ {empty_control with root_nodes= trans_state.succ_nodes}
+      else
+        init_expr_trans ~is_structured_binding trans_state var_exp_typ ~qual_type stmt_info
+          vdi.vdi_init_expr
     in
     let aux_var res_trans_tl var_decl qt vdi =
       (* Var are defined when procdesc is created, here we only take care of initialization *)

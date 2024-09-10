@@ -77,9 +77,7 @@ void static_local_alloc_ok() { static X* x = new X; }
 
 void call_static_local_alloc_ok() { static_local_alloc_ok(); }
 
-// the initialization of the static local is run every time the function is
-// called instead of at most once, causing the FP
-void FP_call_static_local_alloc_twice_ok() {
+void call_static_local_alloc_twice_ok() {
   static_local_alloc_ok();
   static_local_alloc_ok();
 }

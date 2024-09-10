@@ -75,7 +75,7 @@ digraph cfg {
 "main1.38f534a9576db7ec_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:_fn_(*) add2:int add1:int x:int \n  " color=yellow style=filled]
 	
 
-	 "main1.38f534a9576db7ec_1" -> "main1.38f534a9576db7ec_11" ;
+	 "main1.38f534a9576db7ec_1" -> "main1.38f534a9576db7ec_10" ;
 "main1.38f534a9576db7ec_2" [label="2: Exit main1 \n  " color=yellow style=filled]
 	
 
@@ -111,8 +111,4 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec_10" -> "main1.38f534a9576db7ec_9" ;
-"main1.38f534a9576db7ec_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int); [line 10, column 3]\n  *&#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int=3 [line 10, column 3]\n " shape="box"]
-	
-
-	 "main1.38f534a9576db7ec_11" -> "main1.38f534a9576db7ec_10" ;
 }
