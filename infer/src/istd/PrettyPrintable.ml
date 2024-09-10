@@ -54,6 +54,12 @@ module type PPSet = sig
   val pp_element : F.formatter -> elt -> unit
 end
 
+module type SexpPPSet = sig
+  include PPSet
+
+  include Core.Sexpable with type t := t
+end
+
 module type MonoMap = sig
   type key
 
@@ -186,6 +192,19 @@ module MakePPSet (Ord : PrintableOrderedType) = struct
   let pp fmt s = pp_collection ~pp_item:pp_element fmt (elements s)
 
   let pp_hov fmt s = pp_collection_common ~hov:true ~pp_item:pp_element fmt (elements s)
+end
+
+module MakeSexpPPSet (Ord : SexpablePrintableOrderedType) = struct
+  include MakePPSet (Ord)
+
+  let sexp_of_t t = Sexp.List (elements t |> List.rev_map ~f:Ord.sexp_of_t)
+
+  let t_of_sexp sexp =
+    match sexp with
+    | Sexp.Atom _ ->
+        of_sexp_error "MakeSexpPPSet(...).t_of_sexp: list needed" sexp
+    | Sexp.List l ->
+        List.rev_map l ~f:Ord.t_of_sexp |> of_list
 end
 
 module MakePPMap (Ord : PrintableOrderedType) = struct

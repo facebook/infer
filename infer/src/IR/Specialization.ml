@@ -107,4 +107,6 @@ module Pulse = struct
       dynamic_types
 end
 
-type t = Pulse of Pulse.t [@@deriving sexp]
+type t = Pulse of Pulse.t [@@deriving equal, compare, sexp]
+
+let pp fmt = function Pulse t -> F.fprintf fmt "Pulse(%a)" Pulse.pp t

@@ -56,6 +56,12 @@ module type PPSet = sig
   val pp_element : F.formatter -> elt -> unit
 end
 
+module type SexpPPSet = sig
+  include PPSet
+
+  include Core.Sexpable with type t := t
+end
+
 module type MonoMap = sig
   type key
 
@@ -175,6 +181,8 @@ module type PPMonoMap = sig
 end
 
 module MakePPSet (Ord : PrintableOrderedType) : PPSet with type elt = Ord.t
+
+module MakeSexpPPSet (Ord : SexpablePrintableOrderedType) : SexpPPSet with type elt = Ord.t
 
 module MakePPMap (Ord : PrintableOrderedType) : PPMap with type key = Ord.t
 

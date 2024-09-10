@@ -7,12 +7,12 @@
 open! IStd
 module L = Logging
 open TaskSchedulerTypes
-
-type specialized_procnames = (Procname.t * Specialization.t option) list [@@deriving sexp]
+module Node = SpecializedProcname
+module NodeSet = SpecializedProcname.Set
 
 let read_procs_to_analyze () =
-  Option.value_map ~default:[] Config.procs_to_analyze_index ~f:(fun index ->
-      In_channel.read_all index |> Parsexp.Single.parse_string_exn |> specialized_procnames_of_sexp )
+  Option.value_map ~default:NodeSet.empty Config.procs_to_analyze_index ~f:(fun index ->
+      In_channel.read_all index |> Parsexp.Single.parse_string_exn |> NodeSet.t_of_sexp )
 
 
 type work_with_dependency = {work: TaskSchedulerTypes.target; dependency_filename_opt: string option}
@@ -48,9 +48,9 @@ let make sources =
     :: acc
   in
   let procs_to_analyze_targets =
-    read_procs_to_analyze ()
-    |> List.fold ~init:[] ~f:(fun acc (procname, specialization) ->
-           cons_procname_work acc ~specialization procname )
+    NodeSet.fold
+      (fun Node.{procname; specialization} acc -> cons_procname_work acc ~specialization procname)
+      (read_procs_to_analyze ()) []
   in
   let pname_targets =
     List.fold sources ~init:procs_to_analyze_targets ~f:(fun init source ->

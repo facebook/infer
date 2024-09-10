@@ -1,4 +1,4 @@
-(((C
+(((procname (C
    ((c_name (via_access_bad optional_empty_access))
-    (c_mangled (17386314213849484025)) (c_template_args NoTemplate)))
-  ()))
+    (c_mangled (17386314213849484025)) (c_template_args NoTemplate))))
+  (specialization())))

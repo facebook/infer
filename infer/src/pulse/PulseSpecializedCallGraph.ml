@@ -6,36 +6,14 @@
  *)
 
 open! IStd
-module F = Format
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+module Node = SpecializedProcname
+module NodeMap = SpecializedProcname.Map
+module NodeSet = SpecializedProcname.Set
 
-type node = {procname: Procname.t; specialization: Specialization.Pulse.t}
-[@@deriving equal, compare]
-
-let pp fmt {procname; specialization} =
-  F.fprintf fmt "%a (specialized for %a)" Procname.pp procname Specialization.Pulse.pp
-    specialization
-
-
-module NodeMap = PrettyPrintable.MakePPMap (struct
-  type nonrec t = node
-
-  let compare = compare_node
-
-  let pp = pp
-end)
-
-module NodeSet = PrettyPrintable.MakePPSet (struct
-  type nonrec t = node
-
-  let compare = compare_node
-
-  let pp = pp
-end)
-
-let get_missed_captures ~get_summary procnames =
+let get_missed_captures ~get_summary entry_nodes =
   let from_execution = function
     | ExecutionDomain.ContinueProgram summary
     | ExceptionRaised summary
@@ -67,15 +45,19 @@ let get_missed_captures ~get_summary procnames =
       Specialization.Pulse.Map.find_opt specialization summary.PulseSummary.specialized
       |> Option.value_map ~default:TransitiveInfo.bottom ~f:from_simple_summary
   in
-  let rec visit (seen, missed_captures_map) node =
+  let rec visit (seen, missed_captures_map) (node : Node.t) =
     if NodeSet.mem node seen then (seen, missed_captures_map)
     else
       let seen = NodeSet.add node seen in
       let opt_summary = get_summary node.procname in
+      let specialization =
+        Option.value_map node.specialization ~default:Specialization.Pulse.bottom ~f:(function
+            | Specialization.Pulse t -> t )
+      in
       let missed_captures, seen, missed_captures_map =
         Option.value_map opt_summary ~default:(Typ.Name.Set.empty, seen, missed_captures_map)
           ~f:(fun summary ->
-            let info = from_specialized_summary node.specialization summary in
+            let info = from_specialized_summary specialization summary in
             let { TransitiveInfo.direct_callees
                 ; has_transitive_missed_captures
                 ; direct_missed_captures } =
@@ -84,7 +66,7 @@ let get_missed_captures ~get_summary procnames =
             if has_transitive_missed_captures then
               TransitiveInfo.DirectCallee.Set.fold
                 (fun {procname; specialization} (missed_captures, seen, missed_captures_map) ->
-                  let node = {procname; specialization} in
+                  let node = Node.{procname; specialization= Some (Pulse specialization)} in
                   let seen, missed_captures_map = visit (seen, missed_captures_map) node in
                   let callee_missed_captures =
                     NodeMap.find_opt node missed_captures_map
@@ -98,9 +80,6 @@ let get_missed_captures ~get_summary procnames =
             else (direct_missed_captures, seen, missed_captures_map) )
       in
       (seen, NodeMap.add node missed_captures missed_captures_map)
-  in
-  let entry_nodes =
-    List.map procnames ~f:(fun (procname, specialization) -> {procname; specialization})
   in
   let _, missed_captures_map =
     List.fold entry_nodes ~init:(NodeSet.empty, NodeMap.empty) ~f:visit

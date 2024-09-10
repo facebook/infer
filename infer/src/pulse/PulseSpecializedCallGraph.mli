@@ -10,5 +10,5 @@ open PulseBasicInterface
 
 val get_missed_captures :
      get_summary:(Procname.t -> PulseSummary.t option)
-  -> (Procname.t * Specialization.Pulse.t) list
+  -> SpecializedProcname.t list
   -> TransitiveInfo.MissedCaptures.t
