@@ -240,6 +240,24 @@ include struct
     @@> assign_ret (to_aval dest)
 
 
+  let memset s value size : model =
+    start_model
+    @@ fun () ->
+    check_valid s
+    @@> (let typ = match (size : Exp.t) with Sizeof {typ} -> typ | _ -> Typ.mk Tvoid in
+         let* {path; analysis_data= {tenv}; location} = get_data in
+         DSL.Syntax.exec_command
+           (AbductiveDomain.fold_pointer_targets tenv path
+              (`Malloc (ValueOrigin.addr_hist s))
+              typ location
+              ~f:(fun addr_hist astate ->
+                (* this will always be ok because the address is generated fresh *)
+                PulseOperations.write_deref path location ~ref:addr_hist
+                  ~obj:(ValueOrigin.addr_hist value) astate
+                |> PulseResult.ok_exn ) ) )
+    @@> assign_ret (to_aval s)
+
+
   let open_ = start_model @@ fun () -> ret_alloc_or_minus_one FileDescriptor
 
   let fopen path mode : model =
@@ -449,6 +467,7 @@ let matchers : matcher list =
   ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
   ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
   ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
+  ; -"memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
   ; -"open" <>$ any_arg $+ any_arg $+ any_arg $--> open_
   ; -"opendir" <>$ capt_arg_payload $--> opendir
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))

@@ -201,6 +201,7 @@ codetoanalyze/c/pulse/uninit.c, uninit_interproc_manifest_bad, 4, NULLPTR_DEREFE
 codetoanalyze/c/pulse/uninit.c, FP_build_struct_after_var_init_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [struct field address `x` created,read to uninitialized value occurs here]
 codetoanalyze/c/pulse/uninit.c, FP_build_struct_after_var_init_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [struct field address `y` created,read to uninitialized value occurs here]
 codetoanalyze/c/pulse/uninit.c, init_only_x_bad, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [struct field address `y` created,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/uninit.c, memset_wrapper_value_bad, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/unsigned_values.c, FP_nonnegative_int_ok, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/unsigned_values.c, signed_int_bad, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/unsigned_values.c, FP_nonnegative_int_ptr_ok, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

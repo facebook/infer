@@ -258,4 +258,28 @@ struct my_pair init_only_x_bad(int x) {
   return pair;
 }
 
+int memset_init_ok() {
+  struct my_pair pair;
+  memset(&pair, '\0', sizeof(struct my_pair));
+  return pair.x + pair.y;
+}
+
+struct my_pair* set_pair_to_zero(struct my_pair* pair) {
+  return memset(pair, '\0', sizeof(struct my_pair));
+}
+
+int memset_wrapper_init_ok() {
+  struct my_pair pair;
+  set_pair_to_zero(&pair);
+  return pair.x + pair.y;
+}
+
+void memset_wrapper_value_bad(struct my_pair* pair) {
+  set_pair_to_zero(pair);
+  if (pair->x == 0 && pair->y == 0) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
 /** /testing passing structs by value */

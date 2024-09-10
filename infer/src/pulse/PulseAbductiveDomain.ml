@@ -1442,6 +1442,14 @@ let set_uninitialized tenv timestamp src typ location astate =
     ~f:(fun (addr, _) astate -> SafeAttributes.add_one addr (Uninitialized Value) astate )
 
 
+let fold_pointer_targets tenv path src typ location ~f astate =
+  fold_pointer_targets tenv path.PathContext.timestamp
+    (canon_pointer_source' astate src)
+    typ location
+    ~f:(fun addr_hist astate -> f (downcast_fst addr_hist) astate)
+    astate
+
+
 let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   let proc_name = proc_attrs.proc_name in
   let location = proc_attrs.loc in
