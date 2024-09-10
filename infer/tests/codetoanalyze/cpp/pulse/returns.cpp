@@ -160,4 +160,30 @@ const int& return_structured_variable_ok() {
     return key;
   }
 }
+
+const int* return_bound_memory_ref(const std::map<int, int>& m) {
+  // take a ref inside the heap
+  auto& [_, v] = *m.begin();
+  // &v is an address in memory
+  return &v;
+}
+
+int deref_return_bound_memory_ref_ok() {
+  std::map<int, int> m = {{1, 11}};
+  const int* vp = return_bound_memory_ref(m);
+  return *vp;
+}
+
+const int* return_bound_stack_ref(const std::map<int, int>& m) {
+  auto [_, v] = *m.begin();
+  // &v is an address on the stack
+  return &v;
+}
+
+int deref_return_bound_stack_ref_bad() {
+  std::map<int, int> m = {{1, 11}};
+  const int* vp = return_bound_stack_ref(m);
+  return *vp;
+}
+
 } // namespace returns

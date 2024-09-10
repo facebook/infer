@@ -2150,17 +2150,24 @@ int ASTExporter<ATDWriter>::BindingDeclTupleSize() {
   return ValueDeclTupleSize() + 1;
 }
 
-//@atd #define binding_decl_tuple value_decl_tuple * holding_var_decl_info
-//@atd type holding_var_decl_info = {
+//@atd #define binding_decl_tuple value_decl_tuple * binding_decl_info
+//@atd type binding_decl_info = {
 //@atd  ?binding_var: var_decl_info option;
+//@atd  ?bound_decl_type: qual_type option;
 //@atd } <ocaml field_prefix="hvdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBindingDecl(const BindingDecl *D) {
   VisitValueDecl(D);
-  ObjectScope oScope(OF, 1);
-  if (VarDecl *V = D->getHoldingVar()) {
+  VarDecl *HV = D->getHoldingVar();
+  const ValueDecl *BoundDecl = D->getDecomposedDecl();
+  ObjectScope oScope(OF, 0 + (bool)HV + (bool)BoundDecl);
+  if (HV) {
     OF.emitTag("binding_var");
-    dumpVarDeclInfo(V);
+    dumpVarDeclInfo(HV);
+  }
+  if (BoundDecl) {
+    OF.emitTag("bound_decl_type");
+    dumpQualType(BoundDecl->getType());
   }
 }
 

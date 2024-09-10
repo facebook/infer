@@ -867,8 +867,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
-    let _, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
-    let ast_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
+    let _, decl_ptr, ast_qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
+    let ast_typ = CType_decl.qual_type_to_sil_type context.tenv ast_qual_type in
     let typ =
       match ast_typ.Typ.desc with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
@@ -877,6 +877,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else ast_typ
       | _ ->
           ast_typ
+    in
+    let typ =
+      match CAst_utils.get_decl decl_ptr with
+      | Some (BindingDecl (_, _, _, {hvdi_bound_decl_type= Some qt})) -> (
+        (* clang gives us the wrong type for bindings in the AST, with missing references, we have
+           to go back to the BindingDecl that defines the binding to get the correct type *)
+        match CAst_utils.get_desugared_type qt.qt_type_ptr with
+        | Some (LValueReferenceType _) ->
+            Typ.mk (Tptr (typ, Pk_lvalue_reference))
+        | _ ->
+            typ )
+      | _ ->
+          typ
     in
     let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc =
