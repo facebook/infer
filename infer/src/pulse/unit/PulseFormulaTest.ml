@@ -595,6 +595,30 @@ let%test_module "conjunctive normal form" =
       [%expect {|unsat|}]
 
 
+    let%expect_test "(x ≠ 0 ∨ y ≠ 0) && x = 0  => y ≠ 0" =
+      test (or_ (ne x (i 0)) (ne y (i 0)) = i 1 && x = i 0) ;
+      [%expect
+        {|
+          conditions: (empty)
+          phi: var_eqs: x=v6 ∧ v7=v8
+               && linear_eqs: x = 0 ∧ v7 = 1
+               && term_eqs: 0=x∧1=v7∧(y≠0)=v7
+               && intervals: x=0 ∧ v7=1
+               && atoms: {y ≠ 0} |}]
+
+
+    let%expect_test "x = 0 && (x ≠ 0 ∨ y ≠ 0)  => y ≠ 0" =
+      test (x = i 0 && or_ (ne x (i 0)) (ne y (i 0)) = i 1) ;
+      [%expect
+        {|
+          conditions: (empty)
+          phi: var_eqs: x=v6 ∧ v7=v8
+               && linear_eqs: x = 0 ∧ v7 = 1
+               && term_eqs: 0=x∧1=v7∧(y≠0)=v7
+               && intervals: x=0 ∧ v7=1
+               && atoms: {y ≠ 0} |}]
+
+
     let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
       test (or_ (ne x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
       [%expect

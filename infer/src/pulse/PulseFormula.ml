@@ -2886,6 +2886,24 @@ module Formula = struct
               LinSubst l' )
 
 
+    let get_var_as_const phi v =
+      Var.Map.find_opt v phi.linear_eqs |> Option.bind ~f:LinArith.get_as_const
+
+
+    let subst_target_of_term phi t =
+      match Term.to_subst_target t with
+      | (QSubst _ | ConstantSubst _ | LinSubst _) as subst ->
+          subst
+      | VarSubst v as subst -> (
+        match get_var_as_const phi v with Some q -> QSubst q | None -> subst )
+      | NonLinearTermSubst t' as subst -> (
+        match get_term_eq phi t' |> Option.bind ~f:(get_var_as_const phi) with
+        | Some q ->
+            QSubst q
+        | None ->
+            subst )
+
+
     (** substitute vars in [l] *once* with their linear form to discover more simplification
         opportunities *)
     let normalize_linear phi l = normalize_linear_ phi phi.linear_eqs l
@@ -3334,7 +3352,7 @@ module Formula = struct
 
 
     and propagate_in_term_eqs ~fuel (tx : Term.t) x ((phi, new_eqs) as phi_new_eqs) =
-      match Term.to_subst_target tx with
+      match subst_target_of_term phi tx with
       | LinSubst _ | NonLinearTermSubst _ ->
           Debug.p "prop in term eqs tx=%a, x=%a being ignored" (Term.pp Var.pp) tx Var.pp x ;
           Sat phi_new_eqs
@@ -3512,7 +3530,7 @@ module Formula = struct
              substitute them with [tx] to get maximally-expanded atoms *)
           Debug.p "propagating %a = %a in atoms@\n" (Term.pp Var.pp) tx Var.pp x ;
           let phi = remove_from_atoms_occurrences x phi in
-          let subst_target_x = Term.to_subst_target tx in
+          let subst_target_x = subst_target_of_term phi tx in
           (* TODO: could be more efficient to Atom.Set.map + linearly follow along in in_atoms,
              raising Unsat as needed and accumulating in a ref (no fold_map...) *)
           Atom.Set.fold
