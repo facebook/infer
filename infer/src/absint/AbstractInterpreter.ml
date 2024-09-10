@@ -420,12 +420,8 @@ struct
             (post_astate, pre_disjunct :: dropped, n_disjuncts, 0) )
           else
             let limit =
-              if use_balanced_disjunct_strategy () then (
-                let limit =
-                  (global_limit / nb_pre) + extra + if i < global_limit % nb_pre then 1 else 0
-                in
-                AnalysisState.set_remaining_disjuncts limit ;
-                limit )
+              if use_balanced_disjunct_strategy () then
+                (global_limit / nb_pre) + extra + if i < global_limit % nb_pre then 1 else 0
               else global_limit
             in
             L.with_indent ~escape_result:false "Executing instruction from disjunct #%d" i
@@ -433,7 +429,7 @@ struct
                 (* check timeout once per disjunct to execute instead of once for all disjuncts *)
                 Timer.check_timeout () ;
                 let disjuncts', non_disj' =
-                  T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
+                  T.exec_instr ~limit (pre_disjunct, non_disj) analysis_data node instr
                 in
                 ( if Config.write_html then
                     let n = List.length disjuncts' in
@@ -450,7 +446,6 @@ struct
       else List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates
     in
     let non_disj = add_dropped_disjuncts dropped non_disj in
-    AnalysisState.set_remaining_disjuncts global_limit ;
     (disjuncts, non_disj)
 
 

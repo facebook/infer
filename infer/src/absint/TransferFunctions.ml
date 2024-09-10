@@ -54,7 +54,8 @@ module type DisjReady = sig
   type analysis_data
 
   val exec_instr :
-       DisjDomain.t * NonDisjDomain.t
+       limit:int
+    -> DisjDomain.t * NonDisjDomain.t
     -> analysis_data
     -> CFG.Node.t
     -> Sil.instr

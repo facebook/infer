@@ -1591,7 +1591,7 @@ module PulseTransferFunctions = struct
           ([ContinueProgram astate], path, astate_n) )
 
 
-  let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
+  let exec_instr ~limit ((astate, path), astate_n) analysis_data cfg_node instr :
       DisjDomain.t list * NonDisjDomain.t =
     let heap_size = heap_size () in
     ( match Config.pulse_max_heap with
@@ -1607,7 +1607,6 @@ module PulseTransferFunctions = struct
         raise_notrace AboutToOOM
     | _ ->
         () ) ;
-    let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
     let astates, path, astate_n =
       exec_instr_aux limit path astate astate_n analysis_data cfg_node instr
     in

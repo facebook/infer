@@ -44,7 +44,7 @@ module DisjunctiveAnalyzerTransferFunctions = struct
 
   type analysis_data = (DisjDomain.t list * NonDisjDomain.t) InterproceduralAnalysis.t
 
-  let exec_instr (astate, astate_non_disj) analysis_data _cfg_node (instr : Sil.instr) :
+  let exec_instr ~limit:_ (astate, astate_non_disj) analysis_data _cfg_node (instr : Sil.instr) :
       DisjDomain.t list * NonDisjDomain.t =
     let astate' =
       match instr with
