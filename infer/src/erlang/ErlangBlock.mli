@@ -8,9 +8,12 @@
 open! IStd
 module Env = ErlangEnvironment
 
-type t = {start: Procdesc.Node.t; exit_success: Procdesc.Node.t; exit_failure: Procdesc.Node.t}
+type t =
+  {start: Procdesc.Node.t; exit_success: Procdesc.Node.t; exit_failure: Procdesc.Node.t option}
 
 val ( |~~> ) : Procdesc.Node.t -> Procdesc.Node.t list -> unit
+
+val ( |?~> ) : Procdesc.Node.t option -> Procdesc.Node.t list -> unit
 
 val make_success : (Procdesc.t Env.present, _) Env.t -> t
 (** Two nodes: start=exit_success, and exit_failure is distinct. *)

@@ -30,7 +30,7 @@ let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : I
   let simple_condition typ id =
     let is_typ = mk_fresh_id () in
     let start = Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Var id) typ] in
-    ({Block.start; exit_success= start; exit_failure= Node.make_nop env}, Exp.Var is_typ)
+    ({Block.start; exit_success= start; exit_failure= None}, Exp.Var is_typ)
   in
   let userdef_condition module_ name =
     let procname = Env.procname_for_user_type module_ name in
