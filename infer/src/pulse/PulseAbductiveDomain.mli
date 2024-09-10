@@ -172,9 +172,10 @@ module AddressAttributes : sig
   val set_uninitialized :
        Tenv.t
     -> PathContext.t
-    -> [ `LocalDecl of Pvar.t * AbstractValue.t option
+    -> [ `LocalDecl of Pvar.t * (AbstractValue.t * ValueHistory.t) option
          (** the second optional parameter is for the address of the variable *)
-       | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
+       | `Malloc of AbstractValue.t * ValueHistory.t
+         (** the address parameter is a newly allocated address *) ]
     -> Typ.t
     -> Location.t
     -> t

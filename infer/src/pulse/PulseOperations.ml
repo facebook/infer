@@ -445,12 +445,13 @@ let eval_proc_name path location call_exp astate =
 let realloc_pvar tenv ({PathContext.timestamp} as path) ~set_uninitialized pvar typ location astate
     =
   let addr = AbstractValue.mk_fresh () in
-  let vo =
-    ValueOrigin.Unknown (addr, ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)))
-  in
+  let hist = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
+  let vo = ValueOrigin.Unknown (addr, hist) in
   let astate = Stack.add (Var.of_pvar pvar) vo astate in
   if set_uninitialized then
-    AddressAttributes.set_uninitialized tenv path (`LocalDecl (pvar, Some addr)) typ location astate
+    AddressAttributes.set_uninitialized tenv path
+      (`LocalDecl (pvar, Some (addr, hist)))
+      typ location astate
   else astate
 
 

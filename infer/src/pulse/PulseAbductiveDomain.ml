@@ -1365,31 +1365,38 @@ let get_pointer_target timestamp src location astate =
             (downcast_value_origin (ValueOrigin.Unknown (addr, history)))
             astate
         in
-        (astate, addr)
-    | Some addr ->
-        (astate, addr) )
-  | `Malloc addr ->
-      (astate, addr)
+        (astate, (addr, history))
+    | Some addr_hist ->
+        (astate, addr_hist) )
+  | `Malloc addr_hist ->
+      (astate, addr_hist)
 
 
-let rec fold_pointer_targets tenv timestamp src typ location ?(fields_prefix = RevList.empty) astate
-    ~f =
+let canon_pointer_source' astate = function
+  | `Malloc addr_hist ->
+      `Malloc (CanonValue.canon_fst' astate addr_hist)
+  | `LocalDecl (pvar, Some addr_hist) ->
+      `LocalDecl (pvar, Some (CanonValue.canon_fst' astate addr_hist))
+  | `LocalDecl (_, None) as src ->
+      src
+
+
+let rec fold_pointer_targets tenv timestamp src typ location ?(fields_prefix = RevList.empty) ~f
+    ?(filter_name = fun _ -> true) ?(filter_struct = fun _ -> true) astate =
   match typ.Typ.desc with
   | Tint _ | Tfloat _ | Tptr _ ->
-      let astate, addr = get_pointer_target timestamp src location astate in
-      f addr astate
-  | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
+      let astate, addr_hist = get_pointer_target timestamp src location astate in
+      f addr_hist astate
+  | Tstruct typ_name when not (filter_name typ_name) ->
       astate
-  | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
-      (* Ignore union fields in the uninitialized checker *)
-      astate
-  | Tstruct _ -> (
-    match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
-    | None | Some {fields= [_]} ->
-        (* Ignore single field structs: see D26146578 *)
+  | Tstruct name -> (
+    match Tenv.lookup tenv name with
+    | None ->
+        astate
+    | Some struct_ when not (filter_struct struct_) ->
         astate
     | Some {fields} ->
-        let astate, addr = get_pointer_target timestamp src location astate in
+        let astate, addr_hist = get_pointer_target timestamp src location astate in
         List.fold fields ~init:astate ~f:(fun astate {Struct.name= field; typ= field_typ} ->
             if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
               astate
@@ -1401,21 +1408,38 @@ let rec fold_pointer_targets tenv timestamp src typ location ?(fields_prefix = R
                 ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
               in
               let heap =
-                BaseMemory.add_edge addr field_access
+                BaseMemory.add_edge (fst addr_hist) field_access
                   (downcast field_addr, history)
                   (astate.post :> base_domain).heap
               in
               let astate = {astate with post= PostDomain.update ~heap astate.post} in
-              fold_pointer_targets tenv timestamp (`Malloc field_addr) field_typ location
-                ~fields_prefix:fields astate ~f ) )
+              fold_pointer_targets tenv timestamp
+                (`Malloc (field_addr, history))
+                field_typ location ~fields_prefix:fields astate ~f ~filter_name ~filter_struct ) )
   | Tarray _ | Tvoid | Tfun | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
       astate
 
 
 let set_uninitialized tenv timestamp src typ location astate =
-  fold_pointer_targets tenv timestamp src typ location astate ~f:(fun addr astate ->
-      SafeAttributes.add_one addr (Uninitialized Value) astate )
+  let filter_name (typ_name : Typ.name) =
+    match typ_name with
+    | CUnion _ | CppClass {is_union= true} ->
+        (* Ignore union fields in the uninitialized checker *)
+        false
+    | _ ->
+        not (UninitBlocklist.is_blocklisted_struct typ_name)
+  in
+  let filter_struct (struct_ : Struct.t) =
+    match struct_ with
+    | {fields= [_]} ->
+        (* Ignore single field structs: see D26146578 *)
+        false
+    | {fields= [] | _ :: _ :: _} ->
+        true
+  in
+  fold_pointer_targets tenv timestamp src typ location astate ~filter_name ~filter_struct
+    ~f:(fun (addr, _) astate -> SafeAttributes.add_one addr (Uninitialized Value) astate )
 
 
 let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
@@ -2304,14 +2328,7 @@ module AddressAttributes = struct
 
   let set_uninitialized tenv {PathContext.timestamp} src typ location astate =
     if Language.curr_language_is Clang then
-      let src =
-        match src with
-        | `LocalDecl (pvar, v_opt) ->
-            `LocalDecl (pvar, CanonValue.canon_opt' astate v_opt)
-        | `Malloc v ->
-            `Malloc (CanonValue.canon' astate v)
-      in
-      set_uninitialized tenv timestamp src typ location astate
+      set_uninitialized tenv timestamp (canon_pointer_source' astate src) typ location astate
     else astate
 
 

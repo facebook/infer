@@ -394,7 +394,7 @@ module Basic = struct
     in
     let astate =
       if initialize then astate
-      else set_uninitialized tenv path size_exp_opt location ret_addr astate
+      else set_uninitialized tenv path size_exp_opt location (ret_addr, ret_alloc_hist) astate
     in
     PulseArithmetic.and_positive ret_addr astate
 
