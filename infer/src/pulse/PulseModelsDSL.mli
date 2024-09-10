@@ -257,6 +257,8 @@ module Syntax : sig
       Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
 
     val free : Invalidation.t -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t -> unit model_monad
+
+    val early_exit : model
   end
 end
 

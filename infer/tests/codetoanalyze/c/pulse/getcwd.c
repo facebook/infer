@@ -23,14 +23,14 @@ char getcwd_ok() {
   return 'a';
 }
 
-char FN_getcwd_no_buf_no_check_bad() {
+char getcwd_no_buf_no_check_bad() {
   char* cwd = getcwd(NULL, 0);
   char result = cwd[0];
   free(cwd);
   return result;
 }
 
-char FN_getcwd_no_buf_no_free_bad() {
+char getcwd_no_buf_no_free_bad() {
   char* cwd = getcwd(NULL, 0);
   if (cwd != NULL) {
     return cwd[0];
@@ -38,7 +38,7 @@ char FN_getcwd_no_buf_no_free_bad() {
   return 'a';
 }
 
-char FN_getcwd_no_check_bad() {
+char getcwd_no_check_bad() {
   char buf[BUFFER_SIZE];
   char* cwd = getcwd(&buf, BUFFER_SIZE);
   return cwd[0];

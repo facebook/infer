@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-void FN_fileNotClosed_bad() {
+void fileNotClosed_bad() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     char buffer[256];
@@ -41,6 +41,7 @@ void fdopen_to_global_ok() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     handler = fdopen(fd, "w");
+    fclose(handler);
   }
 }
 
@@ -48,10 +49,11 @@ void gzdopen_to_global_ok() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     handler = gzdopen(fd, "w");
+    fclose(handler);
   }
 }
 
-void FN_socketNotClosed_bad() {
+void socketNotClosed_bad() {
   int fd = socket(AF_LOCAL, SOCK_RAW, 0);
   if (fd != -1) {
     char buffer[256];

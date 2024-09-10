@@ -63,7 +63,7 @@ void memmove_bad() {
   __infer_taint_sink(copy);
 }
 
-void memchr_bad() {
+void memchr_ok() {
   auto source = __infer_taint_source();
   auto laundered_source = (char*)memchr(source.c_str(), 'a', 10);
   __infer_taint_sink(laundered_source);

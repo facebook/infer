@@ -127,9 +127,18 @@ include struct
 
   let valid_arg arg : model = start_model @@ fun () -> check_valid arg
 
+  let null_or_valid_arg arg =
+    start_model
+    @@ fun () -> disj [prune_eq_zero (to_aval arg); prune_ne_zero (to_aval arg) @@> check_valid arg]
+
+
   let valid_args2 arg1 arg2 : model = start_model @@ fun () -> check_valid arg1 @@> check_valid arg2
 
   let non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh ()
+
+  let nonneg_non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh_nonneg ()
+
+  let ret_arg arg : model = start_model @@ fun () -> assign_ret (to_aval arg)
 
   let zero_or_minus_one_ret : model =
     start_model @@ fun () -> disj [assign_ret @= int (-1); assign_ret @= int 0]
@@ -139,14 +148,58 @@ include struct
     start_model @@ fun () -> disj [assign_ret @= int (-1); assign_ret @= fresh ()]
 
 
+  let null_or_non_det_ret =
+    start_model @@ fun () -> disj [assign_ret @= null; assign_ret @= fresh ()]
+
+
+  let null_or_nonneg_non_det_ret () : unit DSL.model_monad =
+    disj [assign_ret @= null; assign_ret @= fresh_nonneg ()]
+
+
   let ret_alloc_or_null allocator =
     disj [assign_ret @= null; Basic.return_alloc_not_null allocator None ~initialize:true]
 
+
+  let ret_alloc_or_minus_one allocator =
+    disj [assign_ret @= int (-1); Basic.return_alloc_not_null allocator None ~initialize:true]
+
+
+  let calloc ~x nmemb size =
+    start_model
+    @@ fun () ->
+    let total_size_exp = Exp.BinOp (Mult None, nmemb, size) in
+    alloc_common_dsl ~null_case:(not x) ~initialize:true CMalloc (Some total_size_exp)
+
+
+  let close fd = start_model @@ fun () -> Basic.free FClose fd
 
   let fclose stream : model =
     start_model
     @@ fun () ->
     Basic.free FClose stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+
+
+  let closedir dirp : model =
+    start_model
+    @@ fun () ->
+    Basic.free FClose dirp
+    (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or [free]
+       above would have caught an error *)
+    @@> (int 0 >>= assign_ret)
+
+
+  let confstr buf size =
+    start_model
+    @@ fun () ->
+    let* () =
+      disj
+        [ ( prune_ne_zero (to_aval size)
+          @@>
+          let* obj = fresh () in
+          store ~ref:(to_aval buf) obj )
+        ; prune_eq_zero (to_aval size) @@> prune_eq_zero (to_aval buf) ]
+    in
+    fresh_nonneg () >>= assign_ret
 
 
   let fgetpos stream pos =
@@ -156,6 +209,16 @@ include struct
     @@>
     let* obj = fresh () in
     store ~ref:(to_aval pos) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+
+
+  let getcwd buf _size : model =
+    start_model
+    @@ fun () ->
+    disj
+      [ prune_eq_zero (to_aval buf) @@> ret_alloc_or_null CMalloc
+      ; prune_ne_zero (to_aval buf)
+        @@> check_valid buf
+        @@> disj [assign_ret @= null; assign_ret (to_aval buf)] ]
 
 
   let gets str : model =
@@ -169,6 +232,15 @@ include struct
     @@> disj [assign_ret @= null; assign_ret (to_aval str)]
     @@> data_dependency str [str; stream]
 
+
+  let memcpy dest src : model =
+    start_model
+    @@ fun () ->
+    check_valid dest @@> check_valid src @@> data_dependency dest [src]
+    @@> assign_ret (to_aval dest)
+
+
+  let open_ = start_model @@ fun () -> ret_alloc_or_minus_one FileDescriptor
 
   let fopen path mode : model =
     start_model
@@ -185,11 +257,28 @@ include struct
     @@> assign_ret (* pretend [fprintf] always succeeds *) @= fresh_nonneg ()
 
 
+  let sprintf str format args =
+    start_model
+    @@ fun () ->
+    check_valid str @@> check_valid format
+    @@> data_dependency str (format :: args)
+    @@> assign_ret (* pretend [snprintf] always succeeds *) @= fresh_nonneg ()
+
+
   let fputs s stream =
     start_model
     @@ fun () ->
     check_valid stream @@> check_valid s @@> data_dependency stream [s] @@> assign_ret
     (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
+
+
+  let fdopen fd mode : model =
+    start_model
+    @@ fun () -> check_valid mode @@> Basic.free FClose fd @@> ret_alloc_or_null FileDescriptor
+
+
+  let opendir path : model =
+    start_model @@ fun () -> check_valid path @@> ret_alloc_or_null FileDescriptor
 
 
   let putc c stream : model =
@@ -198,6 +287,92 @@ include struct
     check_valid stream
     @@> disj [assign_ret @= int (-1); assign_ret (to_aval c)]
     @@> data_dependency stream [c]
+
+
+  let read_model fd buf count =
+    start_model
+    @@ fun () ->
+    disj
+      [ prune_ne_zero (to_aval count)
+        @@> (store ~ref:(to_aval buf) @= fresh ())
+        @@> data_dependency buf [fd] @@> assign_ret @= fresh_nonneg ()
+      ; prune_eq_zero (to_aval count) @@> assign_ret @= int 0 ]
+
+
+  let fread ptr size stream =
+    start_model @@ fun () -> check_valid stream @@> (read_model stream ptr size |> lift_to_monad)
+
+
+  let shmget : model = start_model @@ fun () -> ret_alloc_or_minus_one CMalloc
+
+  let statfs path buf =
+    start_model
+    @@ fun () ->
+    check_valid path
+    @@>
+    let* obj = fresh () in
+    store ~ref:(to_aval buf) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+
+
+  let stpcpy dst src : model =
+    start_model
+    @@ fun () ->
+    (store ~ref:(to_aval dst) @= fresh_nonneg ())
+    @@> check_valid src @@> data_dependency dst [src] @@> assign_ret @= fresh_nonneg ()
+
+
+  let strchr str _c : model =
+    start_model @@ fun () -> check_valid str @@> null_or_nonneg_non_det_ret ()
+
+
+  let strcpy dst src : model =
+    start_model
+    @@ fun () ->
+    (store ~ref:(to_aval dst) @= fresh_nonneg ())
+    @@> check_valid src @@> data_dependency dst [src]
+    @@> assign_ret (to_aval dst)
+
+
+  let strdup str : model =
+    start_model
+    @@ fun () ->
+    check_valid str
+    @@> alloc_common_dsl ~null_case:true ~initialize:true CMalloc None
+    @@> data_dependency_to_ret [str]
+
+
+  let strpbrk str accept : model =
+    start_model
+    @@ fun () -> check_valid str @@> check_valid accept @@> null_or_nonneg_non_det_ret ()
+
+
+  let strstr haystack needle : model =
+    start_model
+    @@ fun () -> check_valid haystack @@> check_valid needle @@> null_or_nonneg_non_det_ret ()
+
+
+  let time tloc =
+    start_model
+    @@ fun () ->
+    let* t = fresh () in
+    let* () =
+      disj
+        [prune_eq_zero (to_aval tloc); prune_ne_zero (to_aval tloc) @@> store ~ref:(to_aval tloc) t]
+    in
+    assign_ret t
+
+
+  let write fd buf count =
+    start_model
+    @@ fun () ->
+    disj
+      [ prune_ne_zero (to_aval count)
+        @@> check_valid buf @@> data_dependency fd [buf] @@> assign_ret @= fresh_nonneg ()
+      ; prune_eq_zero (to_aval count) @@> assign_ret @= int 0 ]
+
+
+  let fwrite ptr size stream =
+    start_model @@ fun () -> check_valid stream @@> (write stream ptr size |> lift_to_monad)
 end
 
 let matchers : matcher list =
@@ -219,8 +394,18 @@ let matchers : matcher list =
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc
   ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr
+  ; -"access" <>$ capt_arg_payload $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"asctime" <>$ capt_arg_payload
+    $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
   ; -"clearerr" <>$ capt_arg_payload $--> valid_arg
+  ; -"close" <>$ capt_arg $--> close
+  ; -"closedir" <>$ capt_arg $--> closedir
+  ; -"confstr" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> confstr
+  ; -"ctime" <>$ capt_arg_payload
+    $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
   ; -"fclose" <>$ capt_arg $--> fclose
+  ; -"fdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
   ; -"feof" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"ferror" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"fgetc" <>$ capt_arg_payload
@@ -234,6 +419,9 @@ let matchers : matcher list =
   ; -"fprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
   ; -"fputc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload $--> fputs
+  ; -"fread" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fread
+  ; -"fsct" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
+    $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"fseek" <>$ capt_arg_payload $+ any_arg $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fsetpos" <>$ capt_arg_payload $+ any_arg
@@ -241,17 +429,100 @@ let matchers : matcher list =
   ; -"fsetpos" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"ftell" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; -"fwrite" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fwrite
   ; -"getc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
+  ; -"getcwd" <>$ capt_arg_payload $+ capt_arg_payload $--> getcwd
+  ; -"getenv" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"getlogin" $$--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"getpwent" $$--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"getpwnam" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"getpwuid" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"gets" <>$ capt_arg_payload $--> gets
+  ; -"gmtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"gzdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
+  ; -"localtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"longjmp" <>$ any_arg $+ any_arg $--> Basic.early_exit
+  ; -"memchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
+  ; -"memcmp" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
+  ; -"open" <>$ any_arg $+ any_arg $+ any_arg $--> open_
+  ; -"opendir" <>$ capt_arg_payload $--> opendir
+  ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
+  ; -"pthread_exit" <>$ any_arg $+ any_arg $--> Basic.early_exit
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
+  ; -"puts" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> read_model
+  ; -"readdir" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"readline" <>$ capt_arg_payload
+    $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"remove" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"rename" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
+  ; -"setlocale" <>$ any_arg $+ capt_arg_payload
+    $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"shmget" <>$ any_arg $+ any_arg $+ any_arg $--> shmget
+  ; -"snprintf" <>$ capt_arg_payload $+ any_arg (* size *) $+ capt_arg_payload $+++$--> sprintf
+  ; -"socket" <>$ any_arg $+ any_arg $+ any_arg $--> open_
+  ; -"sprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> sprintf
+  ; -"stat" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
+  ; -"statfs" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
+  ; -"stpcpy" <>$ capt_arg_payload $+ capt_arg_payload $--> stpcpy
+  ; -"strcasestr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr
+  ; -"strcat" <>$ capt_arg_payload $+ capt_arg_payload $--> strcpy
+  ; -"strchr" <>$ capt_arg_payload $+ capt_arg_payload $--> strchr
+  ; -"strcmp" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"strcpy" <>$ capt_arg_payload $+ capt_arg_payload $--> strcpy
+  ; -"strspn" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"strcspn" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> compose2 valid_args2 (ignore_args2 nonneg_non_det_ret)
+  ; -"strdup" <>$ capt_arg_payload $--> strdup
+  ; -"strecpy" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> strcpy
+  ; -"strlcat" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
+  ; -"strlcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
+  ; -"strlen" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"strlwr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
+  ; -"strncat" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
+  ; -"strncmp" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"strncpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
+  ; -"strpbrk" <>$ capt_arg_payload $+ capt_arg_payload $--> strpbrk
+  ; -"strrchr" <>$ capt_arg_payload $+ capt_arg_payload $--> strchr
+  ; -"strspn" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> compose2 valid_args2 (ignore_args2 non_det_ret)
+  ; -"strstr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr
+  ; -"strtcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
+  ; -"strtod" <>$ capt_arg_payload $+ any_arg
+    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
+  ; -"strtol" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
+  ; -"strtoul" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
+  ; -"strupr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
+  ; -"time" <>$ capt_arg_payload $--> time
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf ]
+  ; -"unlink" <>$ capt_arg_payload $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"utimes" <>$ capt_arg_payload $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
+  ; -"vprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"vsnprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"vsprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write ]
   @ ( [ +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
         $--> malloc ~null_case:(not Config.pulse_unsafe_malloc)
+      ; -"calloc" <>$ capt_exp $+ capt_exp $--> calloc ~x:false
+      ; -"xmalloc" <>$ capt_exp $--> malloc ~null_case:false
+      ; -"xcalloc" <>$ capt_exp $+ capt_exp $--> calloc ~x:true
       ; +match_regexp_opt Config.pulse_model_malloc_pattern
         <>$ capt_exp
         $+...$--> custom_malloc ~null_case:(not Config.pulse_unsafe_malloc)

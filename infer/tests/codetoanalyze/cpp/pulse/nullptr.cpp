@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+
 class A {
  public:
 #pragma clang diagnostic push
@@ -181,6 +182,9 @@ void set_S() {
   }
 
   s = (S*)calloc(1, sizeof(S));
+  if (!s) {
+    exit(1);
+  }
 }
 
 int thread_local_was_set_ok() { return T::get()->field; }

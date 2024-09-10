@@ -5,13 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdlib.h>
+
 struct X {
   int f;
 };
 
 typedef struct X X;
 
-void test_ok() {
+void memcpy_ok() {
   X x;
   X* p = malloc(sizeof(X));
   if (p)
@@ -19,25 +21,25 @@ void test_ok() {
   free(p);
 }
 
-void FN_test_bad1() {
+void memcpy_to_null_bad() {
   X x;
-  X* p = 0;
+  X* p = NULL;
   memcpy(p, &x, sizeof(X)); // crash
 }
 
-void FN_test_bad2() {
+void memcpy_to_null_indirect_bad() {
   X x;
   X* r;
-  X* p = 0;
+  X* p = NULL;
   r = p;
   memcpy(r, &x, sizeof(X)); // crash
 }
 
-void FN_test_bad3() {
-  X* x = 0;
+void memcpy_from_null_bad() {
+  X* src = NULL;
   X* p = malloc(sizeof(X));
   if (p) {
-    memcpy(p, x, sizeof(X)); // crash
+    memcpy(p, src, sizeof(X)); // crash
     free(p);
   }
 }

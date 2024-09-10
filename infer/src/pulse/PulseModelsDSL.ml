@@ -846,6 +846,9 @@ module Syntax = struct
 
     let free invalidation func_arg : unit model_monad =
       Basic.free_or_delete `Free invalidation func_arg |> lift_to_monad
+
+
+    let early_exit = Basic.early_exit |> lift_model
   end
 end
 
