@@ -384,67 +384,6 @@ module Internal = struct
       Attribute.Attributes.get_propagate_taint_from addr_attrs
 
 
-    let add_edge_on_src timestamp src location stack =
-      match src with
-      | `LocalDecl (pvar, addr_opt) -> (
-        match addr_opt with
-        | None ->
-            let addr = CanonValue.mk_fresh () in
-            let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
-            ( BaseStack.add (Var.of_pvar pvar)
-                (downcast_value_origin (ValueOrigin.Unknown (addr, history)))
-                stack
-            , addr )
-        | Some addr ->
-            (stack, addr) )
-      | `Malloc addr ->
-          (stack, addr)
-
-
-    let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix = RevList.empty)
-        (post : PostDomain.t) =
-      match typ.Typ.desc with
-      | Tint _ | Tfloat _ | Tptr _ ->
-          let {stack; attrs} = (post :> base_domain) in
-          let stack, addr = add_edge_on_src timestamp src location stack in
-          let attrs = BaseAddressAttributes.add_one addr (Uninitialized Value) attrs in
-          PostDomain.update ~stack ~attrs post
-      | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
-          post
-      | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
-          (* Ignore union fields in the uninitialized checker *)
-          post
-      | Tstruct _ -> (
-        match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
-        | None | Some {fields= [_]} ->
-            (* Ignore single field structs: see D26146578 *)
-            post
-        | Some {fields} ->
-            let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
-            let init = PostDomain.update ~stack post in
-            List.fold fields ~init
-              ~f:(fun (acc : PostDomain.t) {Struct.name= field; typ= field_typ} ->
-                if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
-                  acc
-                else
-                  let field_addr = CanonValue.mk_fresh () in
-                  let fields = RevList.cons field fields_prefix in
-                  let history =
-                    ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
-                  in
-                  let heap =
-                    BaseMemory.add_edge addr (FieldAccess field)
-                      (downcast field_addr, history)
-                      (acc :> base_domain).heap
-                  in
-                  PostDomain.update ~heap acc
-                  |> set_uninitialized_post tenv timestamp (`Malloc field_addr) field_typ location
-                       ~fields_prefix:fields ) )
-      | Tarray _ | Tvoid | Tfun | TVar _ ->
-          (* We ignore tricky types to mark uninitialized addresses. *)
-          post
-
-
     let invalidate address invalidation location astate =
       map_post_attrs ~f:(BaseAddressAttributes.invalidate address invalidation location) astate
 
@@ -1414,6 +1353,71 @@ let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
 
+let get_pointer_target timestamp src location astate =
+  match src with
+  | `LocalDecl (pvar, addr_opt) -> (
+    match addr_opt with
+    | None ->
+        let addr = CanonValue.mk_fresh () in
+        let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
+        let astate =
+          SafeStack.add (Var.of_pvar pvar)
+            (downcast_value_origin (ValueOrigin.Unknown (addr, history)))
+            astate
+        in
+        (astate, addr)
+    | Some addr ->
+        (astate, addr) )
+  | `Malloc addr ->
+      (astate, addr)
+
+
+let rec fold_pointer_targets tenv timestamp src typ location ?(fields_prefix = RevList.empty) astate
+    ~f =
+  match typ.Typ.desc with
+  | Tint _ | Tfloat _ | Tptr _ ->
+      let astate, addr = get_pointer_target timestamp src location astate in
+      f addr astate
+  | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
+      astate
+  | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
+      (* Ignore union fields in the uninitialized checker *)
+      astate
+  | Tstruct _ -> (
+    match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
+    | None | Some {fields= [_]} ->
+        (* Ignore single field structs: see D26146578 *)
+        astate
+    | Some {fields} ->
+        let astate, addr = get_pointer_target timestamp src location astate in
+        List.fold fields ~init:astate ~f:(fun astate {Struct.name= field; typ= field_typ} ->
+            if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
+              astate
+            else
+              let field_access = Access.FieldAccess field in
+              let fields = RevList.cons field fields_prefix in
+              let field_addr = CanonValue.mk_fresh () in
+              let history =
+                ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
+              in
+              let heap =
+                BaseMemory.add_edge addr field_access
+                  (downcast field_addr, history)
+                  (astate.post :> base_domain).heap
+              in
+              let astate = {astate with post= PostDomain.update ~heap astate.post} in
+              fold_pointer_targets tenv timestamp (`Malloc field_addr) field_typ location
+                ~fields_prefix:fields astate ~f ) )
+  | Tarray _ | Tvoid | Tfun | TVar _ ->
+      (* We ignore tricky types to mark uninitialized addresses. *)
+      astate
+
+
+let set_uninitialized tenv timestamp src typ location astate =
+  fold_pointer_targets tenv timestamp src typ location astate ~f:(fun addr astate ->
+      SafeAttributes.add_one addr (Uninitialized Value) astate )
+
+
 let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   let proc_name = proc_attrs.proc_name in
   let location = proc_attrs.loc in
@@ -1503,19 +1507,6 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   let post =
     PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty
   in
-  let post =
-    List.fold proc_attrs.locals ~init:post
-      ~f:(fun
-          (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr; tmp_id} ->
-        if
-          modify_in_block || is_constexpr || Option.is_some tmp_id
-          || not (Language.curr_language_is Clang)
-        then acc
-        else
-          SafeAttributes.set_uninitialized_post tenv Timestamp.t0
-            (`LocalDecl (Pvar.mk name proc_name, None))
-            typ proc_attrs.loc acc )
-  in
   let astate =
     { pre
     ; post
@@ -1526,6 +1517,18 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
     ; transitive_info= TransitiveInfo.bottom
     ; recursive_calls= PulseMutualRecursion.Set.empty
     ; skipped_calls= SkippedCalls.empty }
+  in
+  let astate =
+    List.fold proc_attrs.locals ~init:astate
+      ~f:(fun astate {ProcAttributes.name; typ; modify_in_block; is_constexpr; tmp_id} ->
+        if
+          modify_in_block || is_constexpr || Option.is_some tmp_id
+          || not (Language.curr_language_is Clang)
+        then astate
+        else
+          set_uninitialized tenv Timestamp.t0
+            (`LocalDecl (Pvar.mk name proc_name, None))
+            typ proc_attrs.loc astate )
   in
   let astate =
     if
@@ -2308,8 +2311,7 @@ module AddressAttributes = struct
         | `Malloc v ->
             `Malloc (CanonValue.canon' astate v)
       in
-      { astate with
-        post= SafeAttributes.set_uninitialized_post tenv timestamp src typ location astate.post }
+      set_uninitialized tenv timestamp src typ location astate
     else astate
 
 
