@@ -421,6 +421,19 @@ module Glib = struct
         @@ realloc_common ~null_case:false ~desc:"g_realloc" CMalloc pointer (FuncArg.exp size) ]
 end
 
+module Xlib = struct
+  open DSL.Syntax
+
+  let xGetAtomName =
+    alloc_common ~null_case:true ~initialize:false ~desc:"XGetAtomName" CMalloc None
+
+
+  let xFree pointer =
+    start_model
+    @@ fun () ->
+    prune_ne_zero (to_aval @@ FuncArg.arg_payload pointer) @@> lift_to_monad (free pointer)
+end
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let open DSL.Syntax in
@@ -567,7 +580,9 @@ let matchers : matcher list =
   ; -"vprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"vsnprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"vsprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write ]
+  ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write
+  ; -"XGetAtomName" <>$ any_arg $+ any_arg $--> Xlib.xGetAtomName
+  ; -"XFree" <>$ capt_arg $--> Xlib.xFree ]
   @ ( [ +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
         $--> malloc ~null_case:(not Config.pulse_unsafe_malloc)
