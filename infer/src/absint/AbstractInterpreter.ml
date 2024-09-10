@@ -407,17 +407,23 @@ struct
        set from [exec_node_instrs], so [remaining_disjuncts] should always be [Some _]. *)
     let global_limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
     let nb_pre = List.length pre_disjuncts in
-    let (disjuncts, non_disj_astates), dropped, _ =
+    let (disjuncts, non_disj_astates), dropped, _, _ =
       List.foldi (List.rev pre_disjuncts)
-        ~init:(([], []), [], 0)
-        ~f:(fun i (((post, non_disj_astates) as post_astate), dropped, n_disjuncts) pre_disjunct ->
+        ~init:(([], []), [], 0, 0)
+        ~f:(fun
+            i
+            (((post, non_disj_astates) as post_astate), dropped, n_disjuncts, extra)
+            pre_disjunct
+          ->
           if n_disjuncts >= global_limit && not (use_balanced_disjunct_strategy ()) then (
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
-            (post_astate, pre_disjunct :: dropped, n_disjuncts) )
+            (post_astate, pre_disjunct :: dropped, n_disjuncts, 0) )
           else
             let limit =
               if use_balanced_disjunct_strategy () then (
-                let limit = (global_limit / nb_pre) + if i < global_limit % nb_pre then 1 else 0 in
+                let limit =
+                  (global_limit / nb_pre) + extra + if i < global_limit % nb_pre then 1 else 0
+                in
                 AnalysisState.set_remaining_disjuncts limit ;
                 limit )
               else global_limit
@@ -437,7 +443,7 @@ struct
                   if use_balanced_disjunct_strategy () then n_disjuncts + limit else limit
                 in
                 let post_disj', n, new_dropped = Domain.join_up_to ~limit ~into:post disjuncts' in
-                ((post_disj', non_disj' :: non_disj_astates), new_dropped @ dropped, n) ) )
+                ((post_disj', non_disj' :: non_disj_astates), new_dropped @ dropped, n, limit - n) ) )
     in
     let non_disj =
       if List.is_empty disjuncts then non_disj
