@@ -167,6 +167,8 @@ module Call : sig
     val map_payload : f:('arg_payload -> 'arg_payload') -> 'arg_payload t -> 'arg_payload' t
 
     val arg_payload : 'payload t -> 'payload
+
+    val exp : _ t -> Exp.t
   end
 
   include

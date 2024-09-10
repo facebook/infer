@@ -55,7 +55,7 @@ let custom_alloc_not_null desc model_data astate =
     None model_data astate
 
 
-let realloc_common ~desc allocator pointer size : model =
+let realloc_common ~null_case ~desc allocator pointer size : model =
  fun data astate non_disj ->
   free pointer data astate non_disj
   |> NonDisjDomain.bind ~f:(fun result non_disj ->
@@ -63,7 +63,7 @@ let realloc_common ~desc allocator pointer size : model =
          let<*> exec_state = result in
          match (exec_state : ExecutionDomain.t) with
          | ContinueProgram astate ->
-             alloc_common ~null_case:true ~initialize:false ~desc allocator (Some size) data astate
+             alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate
                non_disj
          | ExceptionRaised _
          | ExitProgram _
@@ -124,6 +124,10 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
 (** a few models from (g)libc and beyond *)
 include struct
   open DSL.Syntax
+
+  let assume_not_null pointer =
+    start_model @@ fun () -> prune_ne_zero (to_aval pointer) @@> assign_ret (to_aval pointer)
+
 
   let valid_arg arg : model = start_model @@ fun () -> check_valid arg
 
@@ -393,6 +397,30 @@ include struct
     start_model @@ fun () -> check_valid stream @@> (write stream ptr size |> lift_to_monad)
 end
 
+module Glib = struct
+  open DSL.Syntax
+
+  let g_malloc size =
+    start_model
+    @@ fun () ->
+    disj
+      [ prune_eq_zero (to_aval @@ FuncArg.arg_payload size) @@> assign_ret @= null
+      ; prune_ne_zero (to_aval @@ FuncArg.arg_payload size)
+        @@> lift_to_monad
+        @@ alloc_common ~initialize:false ~null_case:false ~desc:"g_malloc" CMalloc
+             (Some (FuncArg.exp size)) ]
+
+
+  let g_realloc pointer size =
+    start_model
+    @@ fun () ->
+    disj
+      [ prune_eq_zero (to_aval @@ FuncArg.arg_payload size) @@> assign_ret @= null
+      ; prune_ne_zero (to_aval @@ FuncArg.arg_payload size)
+        @@> lift_to_monad
+        @@ realloc_common ~null_case:false ~desc:"g_realloc" CMalloc pointer (FuncArg.exp size) ]
+end
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let open DSL.Syntax in
@@ -408,9 +436,9 @@ let matchers : matcher list =
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
-  ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc
+  ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc ~null_case:true
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
-    <>$ capt_arg $+ capt_exp $+...$--> custom_realloc
+    <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ~null_case:true
   ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr
   ; -"access" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
@@ -448,6 +476,9 @@ let matchers : matcher list =
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"ftell" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
   ; -"fwrite" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fwrite
+  ; -"g_free" <>$ capt_arg $--> free
+  ; -"g_malloc" <>$ capt_arg $--> Glib.g_malloc
+  ; -"g_realloc" <>$ capt_arg $+ capt_arg $--> Glib.g_realloc
   ; -"getc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
   ; -"getcwd" <>$ capt_arg_payload $+ capt_arg_payload $--> getcwd
@@ -458,6 +489,7 @@ let matchers : matcher list =
   ; -"getpwuid" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"gets" <>$ capt_arg_payload $--> gets
   ; -"gmtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
+  ; -"gtk_type_check_object_cast" <>$ capt_arg_payload $+ any_arg $--> assume_not_null
   ; -"gzdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
   ; -"localtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"longjmp" <>$ any_arg $+ any_arg $--> Basic.early_exit
