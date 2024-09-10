@@ -56,7 +56,7 @@ let sequence ~(continue : t -> Procdesc.Node.t option) ~(stop : t -> Procdesc.No
         List.fold ~f ~init:(continue first_block) next_blocks
       in
       if List.exists ~f:(fun b -> Option.is_some (stop b)) blocks then (
-        let new_stop = Node.make_join env in
+        let new_stop = Node.make_join env [] in
         List.iter ~f:(fun b -> stop b |?~> [new_stop]) blocks ;
         (first_block.start, continue_node, Some new_stop) )
       else (first_block.start, continue_node, None)
@@ -114,6 +114,6 @@ let join_failures env blocks =
   | [b] ->
       b.exit_failure
   | blocks ->
-      let node = Node.make_join env in
+      let node = Node.make_join env [] in
       List.iter ~f:(fun b -> b.exit_failure |?~> [node]) blocks ;
       Some node

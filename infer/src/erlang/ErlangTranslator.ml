@@ -118,7 +118,6 @@ let mk_integer_call (env : (_, _) Env.t) ret_var value_exp =
 (** Boxes a SIL integer expression (interpreted as a Boolean) into an Erlang atom (true/false). *)
 let box_bool env into_id expr : Block.t =
   let start = Node.make_nop env in
-  let exit_success = Node.make_nop env in
   let true_branch = Node.make_if env true expr in
   let false_branch = Node.make_if env false expr in
   let mk_true_atom = Node.make_stmt env [mk_atom_call env into_id ErlangTypeName.atom_true] in
@@ -126,9 +125,7 @@ let box_bool env into_id expr : Block.t =
   start |~~> [true_branch; false_branch] ;
   true_branch |~~> [mk_true_atom] ;
   false_branch |~~> [mk_false_atom] ;
-  mk_true_atom |~~> [exit_success] ;
-  mk_false_atom |~~> [exit_success] ;
-  {start; exit_success; exit_failure= None}
+  {start; exit_success= Node.make_join env [mk_true_atom; mk_false_atom]; exit_failure= None}
 
 
 (** Unboxes an Erlang atom (true/false) into a SIL integer expression (1/0). Currently we do not
@@ -696,13 +693,11 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
     let id2_cond = Node.make_if env (not short_circuit_when_lhs_is) unbox1 in
     let store_id1 = Node.make_load env ret_var (Var id1) any_typ in
     let store_id2 = Node.make_load env ret_var (Var id2) any_typ in
-    let exit_success = Node.make_nop env in
+    let exit_success = Node.make_join env [store_id1; store_id2] in
     start |~~> [id1_cond; id2_cond] ;
     id1_cond |~~> [store_id1] ;
-    store_id1 |~~> [exit_success] ;
     id2_cond |~~> [block2.start] ;
     block2.exit_success |~~> [store_id2] ;
-    store_id2 |~~> [exit_success] ;
     Block.all env [block1; unbox_block1; {start; exit_success; exit_failure= block2.exit_failure}]
   in
   let make_builtin_call fun_name =
@@ -999,15 +994,13 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
       (* Match head and evaluate expression *)
       let head_matcher : Block.t = mk_matcher head_var in
       let exit_failure = Block.join_failures env [init_block; acc] in
-      let join_node = Node.make_join env in
-      init_block.exit_success |~~> [join_node] ;
+      let join_node = Node.make_join env [init_block.exit_success; acc.exit_success] in
       join_node |~~> [check_cons_node] ;
       check_cons_node |~~> [is_cons_node; no_cons_node] ;
       is_cons_node |~~> [unpack_node] ;
       unpack_node |~~> [head_matcher.start] ;
       head_matcher.exit_success |~~> [acc.start] ;
       head_matcher.exit_failure |?~> [join_node] ;
-      acc.exit_success |~~> [join_node] ;
       {start= init_block.start; exit_success= no_cons_node; exit_failure}
     in
     let make_gen_checker id types =
@@ -1023,13 +1016,11 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
         let true_node = Node.make_if env true unboxed in
         let false_node = Node.make_if env false unboxed in
         let exit_failure = Block.join_failures env [filter_expr_block; acc] in
-        let succ_node = Node.make_nop env in
+        let exit_success = Node.make_join env [false_node; acc.exit_success] in
         let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
         filter_expr_block.exit_success |~~> [true_node; false_node] ;
         true_node |~~> [acc.start] ;
-        false_node |~~> [succ_node] ;
-        acc.exit_success |~~> [succ_node] ;
-        {start= filter_expr_block.start; exit_success= succ_node; exit_failure}
+        {start= filter_expr_block.start; exit_success; exit_failure}
     | Generator {pattern; expression} ->
         let gen_var, init_block = translate_expression_to_fresh_id env expression in
         let check_block = make_gen_checker gen_var [Nil; Cons] in
@@ -1267,14 +1258,12 @@ and translate_expression_maybe (env : (_, _) Env.t) body else_cases ret_var : Bl
         cases.exit_failure |?~> [crash_node] ;
         {cases with exit_failure= Some crash_node}
   in
-  let exit_node = Node.make_nop env in
+  let exit_success = Node.make_join env [store_last_expr; else_blocks.exit_success] in
   (* In case of success, simply return last expression *)
   maybe_block.exit_success |~~> [store_last_expr] ;
   (* In case of short circuit, go to else clauses *)
   maybe_block.exit_failure |?~> [else_blocks.start] ;
-  store_last_expr |~~> [exit_node] ;
-  else_blocks.exit_success |~~> [exit_node] ;
-  {maybe_block with exit_success= exit_node; exit_failure= None}
+  {maybe_block with exit_success; exit_failure= None}
 
 
 and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =
@@ -1295,10 +1284,10 @@ and translate_expression_receive (env : (_, _) Env.t) cases timeout : Block.t =
           let timeout_block = translate_body env handler in
           let start = Node.make_nop env in
           let exit_failure = Block.join_failures env [cases_block; timeout_block] in
-          let exit_success = Node.make_nop env in
+          let exit_success =
+            Node.make_join env [cases_block.exit_success; timeout_block.exit_success]
+          in
           start |~~> [cases_block.start; timeout_block.start] ;
-          cases_block.exit_success |~~> [exit_success] ;
-          timeout_block.exit_success |~~> [exit_success] ;
           {Block.start; exit_success; exit_failure}
         in
         let _, time_expr_block = translate_expression_to_fresh_id env time in

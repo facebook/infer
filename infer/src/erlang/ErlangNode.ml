@@ -30,7 +30,11 @@ let make_load (env : (_, _) Env.t) id e typ =
 
 let make_nop env = make_stmt env []
 
-let make_join env = make env Join_node []
+let make_join env incoming =
+  let node = make env Join_node [] in
+  List.iter ~f:(Procdesc.set_succs ~normal:(Some [node]) ~exn:None) incoming ;
+  node
+
 
 let make_throw env one_instruction = make env Procdesc.Node.throw_kind [one_instruction]
 
