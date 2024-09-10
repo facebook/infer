@@ -118,7 +118,7 @@ let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
   let open Clang_ast_t in
   match var_decl with
-  | BindingDecl (_, name_info, _, Clang_ast_t.{hvdi_binding_var= None}) ->
+  | BindingDecl (_, name_info, _, {binding_var= None}) ->
       mk_sil_var ~is_decomposition:false context name_info None procname outer_procname
   | _ ->
       let should_be_mangled =
@@ -136,8 +136,7 @@ let sil_var_of_decl context var_decl procname =
       let name_info, decl_info, qual_type, var_decl_info =
         match var_decl with
         | VarDecl (decl_info, name_info, qual_type, var_decl_info)
-        | BindingDecl
-            (decl_info, name_info, qual_type, Clang_ast_t.{hvdi_binding_var= Some var_decl_info})
+        | BindingDecl (decl_info, name_info, qual_type, {binding_var= Some var_decl_info})
         | DecompositionDecl (decl_info, name_info, qual_type, var_decl_info, _)
         | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info)
         | VarTemplateSpecializationDecl (_, decl_info, name_info, qual_type, var_decl_info) ->
@@ -204,7 +203,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
   let open Clang_ast_t in
   match var_decl with
   | VarDecl (decl_info, _, _, vdi)
-  | BindingDecl (decl_info, _, _, Clang_ast_t.{hvdi_binding_var= Some vdi})
+  | BindingDecl (decl_info, _, _, {binding_var= Some vdi})
   | DecompositionDecl (decl_info, _, _, vdi, _)
   | VarTemplateSpecializationDecl (_, decl_info, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
@@ -229,7 +228,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
           ; has_cleanup_attribute }
         in
         Procdesc.append_locals procdesc [var_data]
-  | BindingDecl (_, _, _, Clang_ast_t.{hvdi_binding_var= None}) ->
+  | BindingDecl (_, _, _, {binding_var= None}) ->
       ()
   | _ ->
       assert false

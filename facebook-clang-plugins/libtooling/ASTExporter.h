@@ -2154,7 +2154,7 @@ int ASTExporter<ATDWriter>::BindingDeclTupleSize() {
 //@atd type binding_decl_info = {
 //@atd  ?binding_var: var_decl_info option;
 //@atd  ?bound_decl_type: qual_type option;
-//@atd } <ocaml field_prefix="hvdi_">
+//@atd }
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBindingDecl(const BindingDecl *D) {
   VisitValueDecl(D);

@@ -880,7 +880,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let typ =
       match CAst_utils.get_decl decl_ptr with
-      | Some (BindingDecl (_, _, _, {hvdi_bound_decl_type= Some qt})) -> (
+      | Some (BindingDecl (_, _, _, {bound_decl_type= Some qt})) -> (
         (* clang gives us the wrong type for bindings in the AST, with missing references, we have
            to go back to the BindingDecl that defines the binding to get the correct type *)
         match CAst_utils.get_desugared_type qt.qt_type_ptr with
@@ -3265,7 +3265,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | [] ->
           None
       | ( ( VarDecl (_, _, qt, vdi)
-          | BindingDecl (_, _, qt, Clang_ast_t.{hvdi_binding_var= Some vdi})
+          | BindingDecl (_, _, qt, {binding_var= Some vdi})
           | VarTemplateSpecializationDecl (_, _, _, qt, vdi) ) as var_decl )
         :: var_decls' ->
           let res_trans_tl = aux var_decls' in
