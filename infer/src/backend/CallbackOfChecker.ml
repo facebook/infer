@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 (* make sure callbacks are set or the checkers will not be able to call into them (and get a nice
    crash) *)
@@ -75,8 +74,8 @@ let make_is_already_specialized_test payload_field is_already_specialized specia
   match get_payload summary with
   | Some summary ->
       is_already_specialized specialization summary
-  | _ ->
-      L.die InternalError "make_is_already_specialized_test: unexpected None payload"
+  | None ->
+      false
 
 
 let interprocedural_with_field_dependency ~dep_field payload_field checker

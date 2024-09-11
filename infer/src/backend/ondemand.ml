@@ -325,7 +325,7 @@ let is_in_block_list =
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) )
 
 
-let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
+let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
     ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
   let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
   let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed in
@@ -373,8 +373,14 @@ let analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~sp
           Ok summary
       | All | One _ | CheckerWithoutPayload _ ->
           analyze_specialization_none () )
-    | None, Some _ ->
-        L.die InternalError "specialization should always happend after regular analysis"
+    | None, Some specialization' -> (
+      match analyze_specialization_none () with
+      | Ok _ ->
+          analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
+            ~from_file_analysis callee_pname
+      | _ ->
+          L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp callee_pname
+            Specialization.pp specialization' )
     | Some summary, Some specialization ->
         if Callbacks.is_specialized_for specialization summary then
           (* the current summary is specialized enough for this request *)

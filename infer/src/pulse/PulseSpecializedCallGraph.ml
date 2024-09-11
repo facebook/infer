@@ -79,8 +79,16 @@ let get_missed_captures ~get_summary entry_nodes =
   let _, missed_captures_map =
     List.fold entry_nodes ~init:(NodeSet.empty, NodeMap.empty) ~f:visit
   in
+  let normalize_node (node : Node.t) =
+    match node.specialization with
+    | Some (Pulse pulse_specialization) when Specialization.Pulse.is_bottom pulse_specialization ->
+        {node with specialization= None}
+    | _ ->
+        node
+  in
   NodeMap.fold
     (fun node missed_types acc ->
+      let node = normalize_node node in
       Typ.Name.Set.fold
         (fun missed_type acc ->
           Typ.Name.Map.update missed_type

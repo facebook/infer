@@ -15,7 +15,7 @@ module T = struct
   let pp fmt {procname; specialization} =
     match specialization with
     | Some specialization ->
-        F.fprintf fmt "%a (specialized for %a)" Procname.pp procname Specialization.pp
+        F.fprintf fmt "%a (specialized for %a)" Procname.pp_verbose procname Specialization.pp
           specialization
     | None ->
         Procname.pp fmt procname

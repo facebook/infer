@@ -6,9 +6,12 @@
  *)
 
 open! IStd
+module F = Format
 
 type t = {procname: Procname.t; specialization: Specialization.t option}
 [@@deriving equal, compare, sexp]
+
+val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
 module Set : PrettyPrintable.SexpPPSet with type elt = t
 
