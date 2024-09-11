@@ -1539,9 +1539,9 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
   let maybe_prune_args =
     match spec with
     | Some spec ->
-        Block.any env [ErlangTypes.prune_spec_args env idents spec; Block.make_stuck env]
+        [Block.any env [ErlangTypes.prune_spec_args env idents spec; Block.make_stuck env]]
     | None ->
-        Block.make_success env
+        []
   in
   let maybe_prune_ret =
     match spec with
@@ -1553,11 +1553,11 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
         in
         let prune_ret = ErlangTypes.prune_spec_return env id spec in
         let bad_ret_type = Block.make_fail env BuiltinDecl.__erlang_error_badreturn in
-        Block.all env [load; Block.any env [prune_ret; bad_ret_type]]
+        [Block.all env [load; Block.any env [prune_ret; bad_ret_type]]]
     | _ ->
-        Block.make_success env
+        []
   in
-  let body = Block.all env [loads; maybe_prune_args; clauses_blocks; maybe_prune_ret] in
+  let body = Block.all env ([loads] @ maybe_prune_args @ [clauses_blocks] @ maybe_prune_ret) in
   Procdesc.get_start_node procdesc |~~> [body.start] ;
   body.exit_success |~~> [Procdesc.get_exit_node procdesc] ;
   body.exit_failure |?~> [Procdesc.get_exit_node procdesc]
