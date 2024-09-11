@@ -1497,24 +1497,30 @@ and translate_body (env : (_, _) Env.t) body : Block.t =
 and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
     {Ast.location; patterns; guards; body} : Block.t =
   let env = update_location location env in
-  let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
-  let matchers = Block.all env (List.map ~f (List.zip_exn values patterns)) in
-  let matchers_and_guards =
-    match guards with
+  let matcher_blocks =
+    match patterns with
     | [] ->
-        matchers
+        []
     | _ ->
-        Block.all env [matchers; translate_guard_sequence env guards]
+        let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
+        List.map ~f (List.zip_exn values patterns)
   in
+  let guard_blocks = match guards with [] -> [] | _ -> [translate_guard_sequence env guards] in
+  let matchers_and_guards = matcher_blocks @ guard_blocks in
   let body_block = translate_body env body in
-  matchers_and_guards.exit_success |~~> [body_block.start] ;
+  (* Redirect body's exit failure to the end of the procedure, otherwise a failure in the body
+     would mean we go to the next clause. Plus if there is some failure in the body, there should
+     already be an explicit fail node on the path. *)
   let () =
     let (Env.Present procdesc) = env.procdesc in
     body_block.exit_failure |?~> [Procdesc.get_exit_node procdesc]
   in
-  { start= matchers_and_guards.start
-  ; exit_failure= matchers_and_guards.exit_failure
-  ; exit_success= body_block.exit_success }
+  let body_block = {body_block with exit_failure= None} in
+  match matchers_and_guards with
+  | [] ->
+      body_block
+  | _ ->
+      Block.all env (matchers_and_guards @ [body_block])
 
 
 (** Translate all clauses of a function (top-level or lambda). *)
