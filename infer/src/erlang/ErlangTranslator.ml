@@ -660,7 +660,7 @@ and translate_expression env {Ast.location; simple_expression} =
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
-        Block.all env [mk_general_unsupported_block env; Block.make_success env]
+        mk_general_unsupported_block env
   in
   (* Add extra nodes/instructions to store return value if needed *)
   match result with
@@ -1529,7 +1529,14 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
       (id, load)
     in
     let idents, load_instructions = List.unzip (List.map ~f:load attributes.formals) in
-    (idents, Block.make_instruction env ~kind:ErlangCaseClause load_instructions)
+    let load_blocks =
+      match load_instructions with
+      | [] ->
+          []
+      | _ ->
+          [Block.make_instruction env ~kind:ErlangCaseClause load_instructions]
+    in
+    (idents, load_blocks)
   in
   (* Translate each clause using the idents we load into. *)
   let clauses_blocks =
@@ -1557,7 +1564,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     | _ ->
         []
   in
-  let body = Block.all env ([loads] @ maybe_prune_args @ [clauses_blocks] @ maybe_prune_ret) in
+  let body = Block.all env (loads @ maybe_prune_args @ [clauses_blocks] @ maybe_prune_ret) in
   Procdesc.get_start_node procdesc |~~> [body.start] ;
   body.exit_success |~~> [Procdesc.get_exit_node procdesc] ;
   body.exit_failure |?~> [Procdesc.get_exit_node procdesc]
