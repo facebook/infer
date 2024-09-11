@@ -221,6 +221,16 @@ let vars_of_pattern p =
   f Pvar.Set.empty p
 
 
+let add_crash_node env (block : Block.t) crash_func =
+  match block.exit_failure with
+  | Some _ ->
+      let crash_node = Node.make_fail env crash_func in
+      block.exit_failure |?~> [crash_node] ;
+      {block with exit_failure= Some crash_node}
+  | None ->
+      block
+
+
 (** Main entry point for patterns. Result is a block where if the pattern-match succeeds, the
     [exit_success] node is reached and the pattern variables are storing the corresponding values;
     otherwise, the [exit_failure] node is reached. *)
@@ -861,9 +871,7 @@ and translate_expression_call_static (env : (_, _) Env.t) ret_var module_name_op
 and translate_expression_case (env : (_, _) Env.t) expression cases : Block.t =
   let id, expr_block = translate_expression_to_fresh_id env expression in
   let blocks = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
-  let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_case_clause in
-  blocks.exit_failure |?~> [crash_node] ;
-  let blocks = {blocks with exit_failure= Some crash_node} in
+  let blocks = add_crash_node env blocks BuiltinDecl.__erlang_error_case_clause in
   Block.all env [expr_block; blocks]
 
 
@@ -878,9 +886,7 @@ and translate_expression_cons (env : (_, _) Env.t) ret_var head tail : Block.t =
 
 and translate_expression_if env clauses : Block.t =
   let blocks = Block.any env (List.map ~f:(translate_case_clause env []) clauses) in
-  let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_if_clause in
-  blocks.exit_failure |?~> [crash_node] ;
-  {blocks with exit_failure= Some crash_node}
+  add_crash_node env blocks BuiltinDecl.__erlang_error_if_clause
 
 
 and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases procname_opt
@@ -1210,9 +1216,7 @@ and translate_expression_mapcomprehension (env : (_, _) Env.t) ret_var
 and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block.t =
   let body_id, body_block = translate_expression_to_fresh_id env body in
   let pattern_block = translate_pattern env body_id pattern in
-  let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmatch in
-  pattern_block.exit_failure |?~> [crash_node] ;
-  let pattern_block = {pattern_block with exit_failure= Some crash_node} in
+  let pattern_block = add_crash_node env pattern_block BuiltinDecl.__erlang_error_badmatch in
   (* Note that for an expression X = Y, this causes X to be returned. This is because
      in lineage, for Z = (X = Y) we wanted flows to be Y -> X and X -> Y instead of
      Y -> X and Y -> Z. But if X is some data structure (e.g. a tuple) this causes
@@ -1525,8 +1529,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
   (* Translate each clause using the idents we load into. *)
   let clauses_blocks =
     let match_cases = List.map ~f:(translate_case_clause env idents) clauses in
-    let no_match_case = Block.make_fail env BuiltinDecl.__erlang_error_function_clause in
-    Block.any env (match_cases @ [no_match_case])
+    add_crash_node env (Block.any env match_cases) BuiltinDecl.__erlang_error_function_clause
   in
   let maybe_prune_args =
     match spec with
