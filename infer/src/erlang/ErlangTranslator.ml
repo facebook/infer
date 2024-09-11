@@ -1498,9 +1498,14 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
     {Ast.location; patterns; guards; body} : Block.t =
   let env = update_location location env in
   let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
-  let matchers = List.map ~f (List.zip_exn values patterns) in
-  let guard_block = translate_guard_sequence env guards in
-  let matchers_and_guards = Block.all env [Block.all env matchers; guard_block] in
+  let matchers = Block.all env (List.map ~f (List.zip_exn values patterns)) in
+  let matchers_and_guards =
+    match guards with
+    | [] ->
+        matchers
+    | _ ->
+        Block.all env [matchers; translate_guard_sequence env guards]
+  in
   let body_block = translate_body env body in
   matchers_and_guards.exit_success |~~> [body_block.start] ;
   let () =
