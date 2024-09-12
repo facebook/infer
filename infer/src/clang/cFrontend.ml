@@ -45,7 +45,11 @@ let do_objc_preanalyses cfg tenv =
   if Config.objc_synthesize_dealloc then CAddImplicitDeallocImpl.process cfg tenv ;
   CAddImplicitGettersSetters.process cfg tenv ;
   CReplaceDynamicDispatch.process cfg ;
-  CViewControllerLifecycle.process cfg tenv
+  CViewControllerLifecycle.process cfg tenv ;
+  Timer.time Preanalysis
+    ~f:(fun () -> ComputeCapturedInfo.process cfg)
+    ~on_timeout:(fun span ->
+      L.debug Capture Quiet "TIMEOUT in ComputeCapturedInfo.process after %fs of CPU time@\n" span )
 
 
 let do_cpp_preanalyses cfg = CppLambdaCalls.process cfg

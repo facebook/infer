@@ -158,4 +158,17 @@ void AnnotateSync(id flowId, NS_NOESCAPE AnnotateSyncBlock block) {}
   });
 }
 
+#ifndef BLOCK_CALL_SAFE_ON_QUEUE
+#define BLOCK_CALL_SAFE_ON_QUEUE(QUEUE, BLOCK, ...) \
+  ((BLOCK) ? dispatch_async(QUEUE,                  \
+                            ^{                      \
+                              (BLOCK)(__VA_ARGS__); \
+                            })                      \
+           : (void)0)
+#endif
+
++ (void)block_call_safe_on_queue_macro_ok_FP:(MyBlock)completion {
+  BLOCK_CALL_SAFE_ON_QUEUE(dispatch_get_main_queue(), completion, nil);
+}
+
 @end
