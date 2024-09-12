@@ -20,15 +20,28 @@ let is_captured_by_ref captured_mode =
 type captured_info = {loc: Location.t; is_formal: Procname.t option}
 [@@deriving compare, equal, sexp, hash, normalize]
 
-type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode; captured_from: captured_info option}
+type context_info = {is_checked_for_null: bool} [@@deriving compare, equal, sexp, hash, normalize]
+
+type t =
+  { pvar: Pvar.t
+  ; typ: Typ.t
+  ; capture_mode: capture_mode
+  ; captured_from: captured_info option
+  ; context_info: context_info option }
 [@@deriving compare, equal, sexp, hash, normalize]
 
-let captured_info_pp fmt {loc; is_formal} =
+let pp_captured_info fmt {loc; is_formal} =
   F.fprintf fmt "(%a, %a)" (Pp.option Procname.pp) is_formal Location.pp loc
 
 
-let pp fmt {pvar; typ; capture_mode; captured_from} =
-  F.fprintf fmt "(%a,@,%a,@,%s,%a)" (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ
+let pp_context_info fmt {is_checked_for_null} =
+  F.fprintf fmt "is_checked_for_null=%b" is_checked_for_null
+
+
+let pp fmt {pvar; typ; capture_mode; captured_from; context_info} =
+  F.fprintf fmt "(%a,@,%a,@,%s%a%a)" (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ
     (string_of_capture_mode capture_mode)
-    (Pp.option (fun fmt info -> F.fprintf fmt "captured from %a" captured_info_pp info))
+    (Pp.option (fun fmt info -> F.fprintf fmt ", captured from %a" pp_captured_info info))
     captured_from
+    (Pp.option (fun fmt info -> F.fprintf fmt ", context info %a" pp_context_info info))
+    context_info

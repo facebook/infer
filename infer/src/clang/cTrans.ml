@@ -3954,7 +3954,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_lvalue_reference)))
                 else (CapturedVar.ByValue, typ)
               in
-              {CapturedVar.pvar= var; typ; capture_mode; captured_from} )
+              {CapturedVar.pvar= var; typ; capture_mode; captured_from; context_info= None} )
         in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
@@ -4084,7 +4084,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let captured_vars =
       List.map
         ~f:(fun (exp, var, typ, capture_mode) ->
-          (exp, {CapturedVar.pvar= var; typ; capture_mode; captured_from= None}) )
+          (exp, {CapturedVar.pvar= var; typ; capture_mode; captured_from= None; context_info= None}) )
         captured_vars
     in
     let captured_var_names = List.map ~f:(fun (_, captured_var) -> captured_var) captured_vars in
