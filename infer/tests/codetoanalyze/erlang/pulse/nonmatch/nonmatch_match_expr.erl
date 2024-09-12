@@ -24,8 +24,8 @@
     test_match_nested3_Bad/0,
     test_match_eager_Ok/0,
     test_match_eager_Bad/0,
-    test_match_func_args_Ok/0,
-    fn_test_match_func_args_Bad/0,
+    fp_test_match_func_args_Ok/0,
+    test_match_func_args_Bad/0,
     test_match_func_arg_Ok/0,
     test_match_func_arg_Bad/0,
     test_match_with_var_Ok/0,
@@ -133,14 +133,14 @@ two() -> 2.
 %% Tests for matching against already bound variables
 
 % Currently FP because equality model for unknown types
-fp_crash_if_different(A, B) ->
+crash_if_different(A, B) ->
     A = B.
 
-test_match_func_args_Ok() ->
-    fp_crash_if_different(1, 1).
+fp_test_match_func_args_Ok() ->
+    crash_if_different(1, 1).
 
-fn_test_match_func_args_Bad() ->
-    fp_crash_if_different(1, 2).
+test_match_func_args_Bad() ->
+    crash_if_different(1, 2).
 
 crash_if_not_one(A) ->
     A = 1.

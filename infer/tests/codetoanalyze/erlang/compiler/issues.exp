@@ -565,8 +565,8 @@ nonmatch_atoms:test_match6_Bad/0: function_clause
 nonmatch_atoms:test_match7_Bad/0: function_clause
 
 ----- nonmatch_case_expr -----
-nonmatch_case_expr:fn_test_arg_Bad/0: case_clause
-nonmatch_case_expr:test_arg_Ok/0: ok
+nonmatch_case_expr:fp_test_arg_Ok/0: ok
+nonmatch_case_expr:test_arg_Bad/0: case_clause
 nonmatch_case_expr:test_case_simple1_Ok/0: ok
 nonmatch_case_expr:test_case_simple2_Ok/0: ok
 nonmatch_case_expr:test_case_simple3_Bad/0: case_clause
@@ -663,7 +663,7 @@ nonmatch_maps:test_update_match_in_function_Ok/0: ok
 nonmatch_maps:test_update_old_value_Ok/0: ok
 
 ----- nonmatch_match_expr -----
-nonmatch_match_expr:fn_test_match_func_args_Bad/0: badmatch
+nonmatch_match_expr:fp_test_match_func_args_Ok/0: ok
 nonmatch_match_expr:test_match_a_Ok/0: ok
 nonmatch_match_expr:test_match_anonymus_Ok/0: ok
 nonmatch_match_expr:test_match_b_Bad/0: badmatch
@@ -675,7 +675,7 @@ nonmatch_match_expr:test_match_eager_Ok/0: ok
 nonmatch_match_expr:test_match_f_Ok/0: ok
 nonmatch_match_expr:test_match_func_arg_Bad/0: badmatch
 nonmatch_match_expr:test_match_func_arg_Ok/0: ok
-nonmatch_match_expr:test_match_func_args_Ok/0: ok
+nonmatch_match_expr:test_match_func_args_Bad/0: badmatch
 nonmatch_match_expr:test_match_g_Bad/0: function_clause
 nonmatch_match_expr:test_match_in_pattern_a_Ok/0: ok
 nonmatch_match_expr:test_match_in_pattern_b_Bad/0: case_clause

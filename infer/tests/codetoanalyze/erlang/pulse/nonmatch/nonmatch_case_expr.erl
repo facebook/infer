@@ -12,8 +12,8 @@
     test_case_tail1_Ok/0,
     test_case_tail2_Ok/0,
     test_case_tail3_Bad/0,
-    test_arg_Ok/0,
-    fn_test_arg_Bad/0,
+    fp_test_arg_Ok/0,
+    test_arg_Bad/0,
     test_local_var_Ok/0,
     test_local_var_Bad/0,
     test_constant_vs_arg_Ok/0,
@@ -46,16 +46,16 @@ test_case_tail3_Bad() ->
     tail_with_case([]).
 
 % Currently FP because equality model for unknown types
-fp_crash_if_different(A, B) ->
+crash_if_different(A, B) ->
     % The matching of A against the bound B should be compiled to an equality check.
     case A of
         B -> ok
     end.
 
-test_arg_Ok() ->
-    fp_crash_if_different(0, 0).
-fn_test_arg_Bad() ->
-    fp_crash_if_different(0, 1).
+fp_test_arg_Ok() ->
+    crash_if_different(0, 0).
+test_arg_Bad() ->
+    crash_if_different(0, 1).
 
 crash_if_not_one(A) ->
     B = 1,
