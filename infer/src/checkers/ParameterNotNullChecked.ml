@@ -205,36 +205,38 @@ let find_block_param formals name =
 
 let is_block_param formals name =
   List.exists
-    ~f:(fun ((formal, typ, _), _) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
+    ~f:(fun ((formal, typ, _), _, _) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
     formals
 
 
 let get_captured_formals attributes =
   let captured = attributes.ProcAttributes.captured in
   let formal_of_captured (captured : CapturedVar.t) =
-    match (captured.captured_from : CapturedVar.captured_info option) with
-    | Some {is_formal} -> (
-      match is_formal with
-      | Some proc -> (
-        match IRAttributes.load proc with
-        | Some proc_attributes ->
-            let formals =
-              find_block_param proc_attributes.ProcAttributes.formals (Pvar.get_name captured.pvar)
-            in
-            Option.bind ~f:(fun formals -> Some (formals, proc_attributes)) formals
-        | None ->
-            None )
+    match (captured.captured_from, captured.context_info) with
+    | Some {is_formal= Some proc}, Some {CapturedVar.is_checked_for_null} -> (
+      match IRAttributes.load proc with
+      | Some proc_attributes ->
+          let formals =
+            find_block_param proc_attributes.ProcAttributes.formals (Pvar.get_name captured.pvar)
+          in
+          Option.map formals ~f:(fun formals -> (formals, proc_attributes, is_checked_for_null))
       | None ->
           None )
-    | None ->
+    | _ ->
         None
   in
   List.filter_map ~f:formal_of_captured captured
 
 
-let init_block_params formals_attributes =
-  let add_nullable_block (blockParams, traceInfo) ((formal, _, annotation), attributes) =
-    if is_block_param formals_attributes formal && not (Annotations.ia_is_nonnull annotation) then
+let init_block_params
+    (formals_attributes : ((Mangled.t * Typ.t * Annot.Item.t) * ProcAttributes.t * bool) list) =
+  let add_nullable_block (blockParams, traceInfo)
+      ((formal, _, annotation), attributes, is_checked_for_null) =
+    if
+      is_block_param formals_attributes formal
+      && (not (Annotations.ia_is_nonnull annotation))
+      && not is_checked_for_null
+    then
       let procname = attributes.ProcAttributes.proc_name in
       let blockParams = BlockParams.add formal {checked= false} blockParams in
       let usage = TraceData.Parameter procname in
@@ -251,7 +253,7 @@ let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let attributes = Procdesc.get_attributes proc_desc in
   let captured_formals_attributes = get_captured_formals attributes in
   let formals_attributes =
-    List.map ~f:(fun formal -> (formal, attributes)) attributes.ProcAttributes.formals
+    List.map ~f:(fun formal -> (formal, attributes, false)) attributes.ProcAttributes.formals
   in
   let initial_blockParams, initTraceInfo =
     init_block_params (List.append formals_attributes captured_formals_attributes)
