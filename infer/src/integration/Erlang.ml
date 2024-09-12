@@ -68,7 +68,8 @@ let parse_translate_store ?(base_dir = None) result_dir =
     None
   in
   let tasks () =
-    ProcessPool.TaskGenerator.of_list (Utils.directory_fold (fun l p -> p :: l) [] result_dir)
+    ProcessPool.TaskGenerator.of_list ~finish:ProcessPool.TaskGenerator.finish_always_none
+      (Utils.directory_fold (fun l p -> p :: l) [] result_dir)
   in
   Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:process_one_file
     ~child_epilogue:ignore tasks

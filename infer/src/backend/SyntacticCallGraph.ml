@@ -105,4 +105,5 @@ let bottom_up sources : (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerato
   CallGraphScheduler.bottom_up syntactic_call_graph
 
 
-let make sources = ProcessPool.TaskGenerator.chain (bottom_up sources) (FileScheduler.make sources)
+let make ~finish sources =
+  ProcessPool.TaskGenerator.chain (bottom_up sources) (FileScheduler.make ~finish sources)

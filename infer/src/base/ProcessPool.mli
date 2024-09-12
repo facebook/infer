@@ -29,8 +29,10 @@ module TaskGenerator : sig
   val chain : ('a, 'b) t -> ('a, 'b) t -> ('a, 'b) t
   (** chain two generators in order *)
 
-  val of_list : 'a list -> ('a, 'b) t
+  val of_list : finish:('b option -> 'a -> 'a option) -> 'a list -> ('a, 'b) t
   (** schedule tasks out of a concrete list *)
+
+  val finish_always_none : _ option -> _ -> _ option
 end
 
 (** Pool of parallel workers that can both receive tasks from the orchestrator process and start

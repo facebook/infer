@@ -43,8 +43,8 @@ module Runner = struct
     ProcessPool.run runner
 end
 
-let run_sequentially ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
-  let task_generator = ProcessPool.TaskGenerator.of_list tasks in
+let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
+  let task_generator = ProcessPool.TaskGenerator.of_list ~finish tasks in
   let task_bar = TaskBar.create ~jobs:1 in
   (ProcessPoolState.update_status :=
      fun t status ->

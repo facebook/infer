@@ -9,7 +9,7 @@ open! IStd
 
 type ('a, 'b) doer = 'a -> 'b option
 
-val run_sequentially : f:('a, 'b) doer -> 'a list -> unit
+val run_sequentially : finish:('b option -> 'a -> 'a option) -> f:('a, 'b) doer -> 'a list -> unit
 (** Run the tasks sequentially *)
 
 (** A runner accepts new tasks repeatedly for parallel execution *)

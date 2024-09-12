@@ -32,12 +32,18 @@ module TaskGenerator = struct
     {remaining_tasks; is_empty; finished; next}
 
 
-  let of_list (lst : 'a list) : ('a, _) t =
+  let of_list ~finish (lst : 'a list) : ('a, _) t =
     let content = ref lst in
     let length = ref (List.length lst) in
     let remaining_tasks () = !length in
     let is_empty () = List.is_empty !content in
-    let finished ~result:_ _work_item = decr length in
+    let finished ~result work_item =
+      match finish result work_item with
+      | None ->
+          decr length
+      | Some task ->
+          content := task :: !content
+    in
     let next () =
       match !content with
       | [] ->
@@ -47,6 +53,9 @@ module TaskGenerator = struct
           Some x
     in
     {remaining_tasks; is_empty; finished; next}
+
+
+  let finish_always_none result _ = match result with Some _ -> assert false | None -> None
 end
 
 let log_or_die fmt = if Config.keep_going then L.internal_error fmt else L.die InternalError fmt

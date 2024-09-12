@@ -18,3 +18,5 @@ val with_lock : f:(unit -> 'a) -> Procname.t -> 'a
     the dependency can be sent to the scheduler process. Finally, account for time spent analysing
     each procedure as useful (finished analysis) or not (an exception was thrown, terminating
     analysis early). *)
+
+val finish : TaskSchedulerTypes.analysis_result option -> 'a -> 'a option

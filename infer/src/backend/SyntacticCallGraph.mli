@@ -9,7 +9,10 @@ open! IStd
 val iter_captured_procs_and_callees : (Procname.t -> Procname.t list -> unit) -> unit
 (** run a function on every captured procedure, passing its list of syntactic callees *)
 
-val make : SourceFile.t list -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t
+val make :
+     finish:('a option -> TaskSchedulerTypes.target -> TaskSchedulerTypes.target option)
+  -> SourceFile.t list
+  -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t
 (** task generator that works by
 
     - loading the syntactic call graph from the capture DB

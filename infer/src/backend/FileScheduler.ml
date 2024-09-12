@@ -6,12 +6,12 @@
  *)
 open! IStd
 
-let make sources =
+let make ~finish sources =
   let open TaskSchedulerTypes in
   let gen =
     List.rev_map sources ~f:(fun sf -> File sf)
     |> List.permute ~random_state:(Random.State.make (Array.create ~len:1 0))
-    |> ProcessPool.TaskGenerator.of_list
+    |> ProcessPool.TaskGenerator.of_list ~finish
   in
   let next x =
     gen.next x

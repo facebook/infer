@@ -121,3 +121,6 @@ let with_lock ~f pname =
       in
       unlock ~after_exn:false pname ;
       res
+
+
+let finish result task = match result with None | Some Ok -> None | Some (RaceOn _) -> Some task

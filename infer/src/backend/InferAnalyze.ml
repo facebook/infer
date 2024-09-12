@@ -174,15 +174,15 @@ let get_source_files_to_analyze ~no_file_means_all ~changed_files =
 let tasks_generator_builder_for replay_call_graph_opt sources =
   match replay_call_graph_opt with
   | Some replay_call_graph ->
-      ReplayScheduler.make replay_call_graph sources
+      ReplayScheduler.make ~finish:RestartScheduler.finish replay_call_graph sources
   | None -> (
     match Config.scheduler with
     | File ->
-        FileScheduler.make sources
+        FileScheduler.make ~finish:RestartScheduler.finish sources
     | Restart ->
         RestartScheduler.make sources
     | SyntacticCallGraph ->
-        SyntacticCallGraph.make sources )
+        SyntacticCallGraph.make ~finish:RestartScheduler.finish sources )
 
 
 let analyze replay_call_graph source_files_to_analyze =
@@ -195,7 +195,14 @@ let analyze replay_call_graph source_files_to_analyze =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
-    Tasks.run_sequentially ~f:analyze_target target_files ;
+    let fail_on_race (result : TaskSchedulerTypes.analysis_result option) _ =
+      match result with
+      | None | Some Ok ->
+          None
+      | Some (RaceOn _) ->
+          L.die InternalError "Race detected in -j 1"
+    in
+    Tasks.run_sequentially ~finish:fail_on_race ~f:analyze_target target_files ;
     ( [Stats.get ()]
     , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
     , [MissingDependencies.get ()] ) )

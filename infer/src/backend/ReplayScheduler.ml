@@ -7,11 +7,11 @@
 
 open! IStd
 
-let make call_graph sources =
+let make ~finish call_graph sources =
   (* After the procedure-level tasks from [replay_call_graph] have been completed, run the
      file-level analyses. This is done by chaining the file scheduler after
      [replay_call_graph]. This is similar to how callgraph does it but the expectation here is that
      by then all procedure-level analyses required by those have been done already. *)
   ProcessPool.TaskGenerator.chain
     (CallGraphScheduler.bottom_up call_graph)
-    (FileScheduler.make sources)
+    (FileScheduler.make ~finish sources)

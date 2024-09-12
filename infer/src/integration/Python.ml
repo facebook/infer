@@ -129,7 +129,10 @@ let capture_files ~is_binary files =
   in
   L.progress "Expecting to capture %d files@\n" n_files ;
   (* TODO(vsiles) keep try of the number of success / failures like Hack *)
-  let tasks () = ProcessPool.TaskGenerator.of_list files in
+  let tasks () =
+    ProcessPool.TaskGenerator.of_list files ~finish:(fun result _ ->
+        match result with Some () | None -> None )
+  in
   let jobs =
     let per_worker = 100 in
     min ((per_worker + n_files) / per_worker) Config.jobs
