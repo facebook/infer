@@ -78,7 +78,7 @@ end = struct
       else (true, Io_infer.Html.create source node_path)
     in
     curr_html_formatter := fmt ;
-    Hashtbl.replace log_files (node_fname, source) fd ;
+    Hashtbl.add log_files (node_fname, source) fd ;
     if needs_initialization then (
       F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>"
         (Io_infer.Html.pp_line_link source ~text:(Some (string_of_int nodeid)) [".."])
@@ -115,16 +115,15 @@ end = struct
 
   let finish_session node =
     F.fprintf !curr_html_formatter "</LISTING>@?" ;
-    let fd =
-      let source = (Procdesc.Node.get_loc node).file in
-      let node_fname =
-        let proc_name = Procdesc.Node.get_proc_name node in
-        let nodeid = (Procdesc.Node.get_id node :> int) in
-        Io_infer.Html.node_filename proc_name nodeid
-      in
-      Hashtbl.find log_files (node_fname, source)
+    let source = (Procdesc.Node.get_loc node).file in
+    let node_fname =
+      let proc_name = Procdesc.Node.get_proc_name node in
+      let nodeid = (Procdesc.Node.get_id node :> int) in
+      Io_infer.Html.node_filename proc_name nodeid
     in
+    let fd = Hashtbl.find log_files (node_fname, source) in
     Unix.close fd ;
+    Hashtbl.remove log_files (node_fname, source) ;
     curr_html_formatter := F.std_formatter
 end
 
