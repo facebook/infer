@@ -58,8 +58,6 @@ module Node : sig
     | DefineBody
     | Destruction of destruction_kind
     | Erlang
-    | ErlangCaseClause
-    | ErlangExpression
     | ExceptionHandler
     | ExceptionsSink
     | ExprWithCleanups

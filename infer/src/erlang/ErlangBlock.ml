@@ -88,8 +88,8 @@ let any env (blocks : t list) : t =
       {start; exit_success= node_or_default env exit_success; exit_failure}
 
 
-let make_instruction env ?(kind = Procdesc.Node.ErlangExpression) instructions =
-  let exit_success = Node.make_stmt env ~kind instructions in
+let make_instruction env instructions =
+  let exit_success = Node.make_stmt env instructions in
   {start= exit_success; exit_success; exit_failure= None}
 
 

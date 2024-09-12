@@ -13,9 +13,7 @@ let make (env : (Procdesc.t Env.present, _) Env.t) kind instructions =
   Procdesc.create_node procdesc env.location kind instructions
 
 
-let make_stmt env ?(kind = Procdesc.Node.Erlang) instructions =
-  make env (Stmt_node kind) instructions
-
+let make_stmt env instructions = make env (Stmt_node Erlang) instructions
 
 let make_load (env : (_, _) Env.t) id e typ =
   let (Env.Present procdesc) = env.procdesc in
@@ -25,7 +23,7 @@ let make_load (env : (_, _) Env.t) id e typ =
     [ Sil.Store {e1= Lvar temp_pvar; e2= e; typ; loc= env.location}
     ; Sil.Load {id; e= Lvar temp_pvar; typ; loc= env.location} ]
   in
-  make_stmt env ~kind:ErlangExpression instructions
+  make_stmt env instructions
 
 
 let make_nop env = make_stmt env []

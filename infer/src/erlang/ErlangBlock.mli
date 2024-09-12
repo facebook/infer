@@ -33,8 +33,7 @@ val any : (Procdesc.t Env.present, _) Env.t -> t list -> t
 (** Chain a list of blocks together in a disjunctive style: a success in any block leads to a global
     success, and failures lead to the next block. *)
 
-val make_instruction :
-  (Procdesc.t Env.present, _) Env.t -> ?kind:Procdesc.Node.stmt_nodekind -> Sil.instr list -> t
+val make_instruction : (Procdesc.t Env.present, _) Env.t -> Sil.instr list -> t
 
 val make_load : (Procdesc.t Env.present, _) Env.t -> Ident.t -> Exp.t -> Typ.t -> t
 

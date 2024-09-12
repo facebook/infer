@@ -1536,11 +1536,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     in
     let idents, load_instructions = List.unzip (List.map ~f:load attributes.formals) in
     let load_blocks =
-      match load_instructions with
-      | [] ->
-          []
-      | _ ->
-          [Block.make_instruction env ~kind:ErlangCaseClause load_instructions]
+      match load_instructions with [] -> [] | _ -> [Block.make_instruction env load_instructions]
     in
     (idents, load_blocks)
   in
