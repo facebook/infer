@@ -61,7 +61,7 @@ let get_erlang_type_or_any val_ astate =
 let erlang_typ erlang_type_name = Typ.mk_struct (ErlangType erlang_type_name)
 
 let write_dynamic_type_and_return (addr_val, hist) typ ret_id location astate =
-  let typ = Typ.mk_struct (ErlangType typ) in
+  let typ = erlang_typ typ in
   let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr_val typ location astate in
   PulseOperations.write_id ret_id (addr_val, hist) astate
 
@@ -130,7 +130,7 @@ let value_die message opt =
 let has_erlang_type value typ : value_maker =
  fun astate ->
   let instanceof_val = AbstractValue.mk_fresh () in
-  let sil_type = Typ.mk_struct (ErlangType typ) in
+  let sil_type = erlang_typ typ in
   let++ astate = PulseArithmetic.and_equal_instanceof instanceof_val value sil_type astate in
   (astate, instanceof_val)
 
@@ -308,8 +308,7 @@ module Atoms = struct
         ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:hash hash_field astate
     in
-    ( PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_atom) (Typ.mk_struct (ErlangType Atom))
-        location astate
+    ( PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_atom) (erlang_typ Atom) location astate
     , addr_atom )
 
 
@@ -345,7 +344,7 @@ module Atoms = struct
       of_string location path ErlangTypeName.atom_false astate
     in
     let> astate, (addr, hist) = SatUnsat.to_list astate_true @ SatUnsat.to_list astate_false in
-    let typ = Typ.mk_struct (ErlangType Atom) in
+    let typ = erlang_typ Atom in
     let astate = PulseArithmetic.and_dynamic_type_is_unsafe addr typ location astate in
     [Ok (astate, (addr, hist))]
 
@@ -359,7 +358,7 @@ end
 module Integers = struct
   let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value
 
-  let typ = Typ.mk_struct (ErlangType Integer)
+  let typ = erlang_typ Integer
 
   let make_raw location path value : sat_maker =
    fun astate ->
@@ -694,8 +693,7 @@ module Lists = struct
     let addr_nil_val = AbstractValue.mk_fresh () in
     let addr_nil = (addr_nil_val, Hist.single_event event) in
     let astate =
-      PulseArithmetic.and_dynamic_type_is_unsafe addr_nil_val (Typ.mk_struct (ErlangType Nil))
-        location astate
+      PulseArithmetic.and_dynamic_type_is_unsafe addr_nil_val (erlang_typ Nil) location astate
     in
     Ok (astate, addr_nil)
 
@@ -724,8 +722,7 @@ module Lists = struct
         ~field_val:tl tail_field astate
     in
     let astate =
-      PulseArithmetic.and_dynamic_type_is_unsafe addr_cons_val (Typ.mk_struct (ErlangType Cons))
-        location astate
+      PulseArithmetic.and_dynamic_type_is_unsafe addr_cons_val (erlang_typ Cons) location astate
     in
     (astate, addr_cons)
 
@@ -744,8 +741,8 @@ module Lists = struct
             ~field_val:fval field astate
         in
         let astate' =
-          PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_cons)
-            (Typ.mk_struct (ErlangType Cons)) location astate'
+          PulseArithmetic.and_dynamic_type_is_unsafe (fst addr_cons) (erlang_typ Cons) location
+            astate'
         in
         (astate', addr_cons)
     | (fname, fval) :: fld_ls' ->
@@ -796,8 +793,8 @@ module Lists = struct
 
   let make_astate_badarg (list_val, _list_hist) data astate =
     (* arg is not a list if its type is neither Cons nor Nil *)
-    let typ_cons = Typ.mk_struct (ErlangType Cons) in
-    let typ_nil = Typ.mk_struct (ErlangType Nil) in
+    let typ_cons = erlang_typ Cons in
+    let typ_nil = erlang_typ Nil in
     let instanceof_val_cons = AbstractValue.mk_fresh () in
     let instanceof_val_nil = AbstractValue.mk_fresh () in
     let<**> astate =
@@ -941,7 +938,7 @@ module Maps = struct
   let new_ : model_no_non_disj = make []
 
   let make_astate_badmap (map_val, _map_hist) data astate =
-    let typ = Typ.mk_struct (ErlangType Map) in
+    let typ = erlang_typ Map in
     let instanceof_val = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
     let<**> astate = PulseArithmetic.prune_eq_zero instanceof_val astate in
@@ -1127,7 +1124,7 @@ end
 module BIF = struct
   let has_type (value, _hist) type_ : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
-    let typ = Typ.mk_struct (ErlangType type_) in
+    let typ = erlang_typ type_ in
     let is_typ = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.and_equal_instanceof is_typ value typ astate in
     Atoms.write_return_from_bool path location is_typ ret_id astate
@@ -1139,7 +1136,7 @@ module BIF = struct
    fun {location; path; ret= ret_id, _} astate ->
     let astate_not_atom =
       (* Assume not atom: just return false *)
-      let typ = Typ.mk_struct (ErlangType Atom) in
+      let typ = erlang_typ Atom in
       let is_atom = AbstractValue.mk_fresh () in
       let<**> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
       let<**> astate = PulseArithmetic.prune_eq_zero is_atom astate in
@@ -1181,8 +1178,8 @@ module BIF = struct
 
   let is_list (list_val, _list_hist) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
-    let cons_typ = Typ.mk_struct (ErlangType Cons) in
-    let nil_typ = Typ.mk_struct (ErlangType Nil) in
+    let cons_typ = erlang_typ Cons in
+    let nil_typ = erlang_typ Nil in
     let astate_is_cons =
       let is_cons = AbstractValue.mk_fresh () in
       let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
@@ -1394,8 +1391,7 @@ module Custom = struct
           let ret_addr = AbstractValue.mk_fresh () in
           let ret_hist = Hist.single_alloc path location "nondet_atom" in
           let astate =
-            PulseArithmetic.and_dynamic_type_is_unsafe ret_addr (Typ.mk_struct (ErlangType Atom))
-              location astate
+            PulseArithmetic.and_dynamic_type_is_unsafe ret_addr (erlang_typ Atom) location astate
           in
           Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (Atom (Some name)) ->
@@ -1405,7 +1401,7 @@ module Custom = struct
           let ret_hist = Hist.single_alloc path location "gen_server_pid" in
           let astate =
             PulseArithmetic.and_dynamic_type_is_unsafe ret_addr
-              (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
+              (erlang_typ (GenServerPid {module_name}))
               location astate
           in
           Sat (Ok (astate, (ret_addr, ret_hist)))
@@ -1415,9 +1411,7 @@ module Custom = struct
           let ret_addr = AbstractValue.mk_fresh () in
           let ret_hist = Hist.single_alloc path location "nondet_abstr_intlit" in
           let astate =
-            PulseArithmetic.and_dynamic_type_is_unsafe ret_addr
-              (Typ.mk_struct (ErlangType Integer))
-              location astate
+            PulseArithmetic.and_dynamic_type_is_unsafe ret_addr (erlang_typ Integer) location astate
           in
           Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (List elements) ->
@@ -1674,9 +1668,7 @@ module GenServer = struct
           ([Ok (ContinueProgram astate)], non_disj)
       | Some module_name ->
           let procname = Procname.make_erlang ~module_name ~function_name:"init" ~arity:1 in
-          let actuals =
-            [(args, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst args) astate)))]
-          in
+          let actuals = [(args, erlang_typ (get_erlang_type_or_any (fst args) astate))] in
           let res_list, non_disj, _, _ =
             PulseCallOperations.call analysis_data path location procname ~ret ~actuals
               ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
@@ -1806,12 +1798,9 @@ module GenServer = struct
     match module_name_opt with
     | Some module_name ->
         let arg_nondet () =
-          ( (AbstractValue.mk_fresh (), Hist.single_alloc path location "nondet")
-          , Typ.mk_struct (ErlangType Any) )
+          ((AbstractValue.mk_fresh (), Hist.single_alloc path location "nondet"), erlang_typ Any)
         in
-        let arg_req =
-          (request, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst request) astate)))
-        in
+        let arg_req = (request, erlang_typ (get_erlang_type_or_any (fst request) astate)) in
         let procname, actuals =
           match req_type with
           | Call ->
