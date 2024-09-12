@@ -114,6 +114,8 @@ let with_lock ~f pname =
   match Config.scheduler with
   | File | SyntacticCallGraph ->
       f ()
+  | Restart when Int.equal Config.jobs 1 ->
+      f ()
   | Restart ->
       lock_exn pname ;
       let res =
