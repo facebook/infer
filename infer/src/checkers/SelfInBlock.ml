@@ -534,8 +534,10 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
       Location.pp self.loc
   in
   let ltr = make_trace_use_self_weakself domain in
-  Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc SelfInBlock IssueType.mixed_self_weakself
-    message
+  let to_string element = Mangled.to_string (Pvar.get_name element.DomainData.pvar) in
+  let autofix = {Jsonbug_j.original= to_string self; replacement= to_string weakSelf} in
+  Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc ~autofix SelfInBlock
+    IssueType.mixed_self_weakself message
 
 
 let report_weakself_in_no_escape_block_issues proc_desc err_log domain (weakSelf : DomainData.t)
