@@ -59,7 +59,7 @@ class Main {
   }
 }
 
-class ClosuresAndDict {
+class ClosuresAndDict1 {
 
   public static function main_bad(): void {
     $user = new User();
@@ -128,4 +128,89 @@ class Unsafe implements I {
   public function getSource(): int {
     return \Level1\taintSource();
   }
+}
+
+type object = shape(
+  'safe' => int,
+  'unsafe' => int,
+  'get_unsafe' => (function(): int),
+  'get_safe' => (function(): int),
+);
+
+class ClosuresAndDict2 {
+
+  public static function get_unsafe_bad(): void {
+    $o = self::init();
+    $data = $o['get_unsafe']();
+    \Level1\taintSink($data);
+  }
+
+  public static function get_safe_ok(): void {
+    $o = self::init();
+    $data = $o['get_safe']();
+    \Level1\taintSink($data);
+  }
+
+  public static function get_unsafe_method(object $o): void {
+    \Level1\taintSink($o['get_unsafe']());
+  }
+  public static function call_get_unsafe_method_bad(): void {
+    $o = self::init();
+    self::get_unsafe_method($o);
+  }
+
+  public static function get_safe_method(object $o): void {
+    \Level1\taintSink($o['get_safe']());
+  }
+  public static function call_get_safe_method_ok(): void {
+    $o = self::init();
+    self::get_safe_method($o);
+  }
+
+  public static function init(): object {
+    $o = shape('safe' => 0, 'unsafe' => \Level1\taintSource());
+    $o['get_unsafe'] = () ==> ClosuresAndDict2::get_unsafe($o);
+    $o['get_safe'] = () ==> ClosuresAndDict2::get_safe($o);
+    return $o;
+  }
+
+  public static function get_safe(shape('safe' => int, ...) $self): int {
+    return $self['safe'];
+  }
+
+  public static function get_unsafe(shape('unsafe' => int, ...) $self): int {
+    return $self['unsafe'];
+  }
+
+}
+
+class ClosuresAndDict2_with_self {
+
+  public static function get_unsafe_bad(): void {
+    $o = self::init();
+    $data = $o['get_unsafe']();
+    \Level1\taintSink($data);
+  }
+
+  public static function FP_get_safe_ok(): void {
+    $o = self::init();
+    $data = $o['get_safe']();
+    \Level1\taintSink($data);
+  }
+
+  public static function init(): object {
+    $o = shape('safe' => 0, 'unsafe' => \Level1\taintSource());
+    $o['get_unsafe'] = () ==> self::get_unsafe($o);
+    $o['get_safe'] = () ==> self::get_safe($o);
+    return $o;
+  }
+
+  public static function get_safe(shape('safe' => int, ...) $self): int {
+    return $self['safe'];
+  }
+
+  public static function get_unsafe(shape('unsafe' => int, ...) $self): int {
+    return $self['unsafe'];
+  }
+
 }
