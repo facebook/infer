@@ -264,6 +264,9 @@ OPTIONS
            of functions that take blocks as arguments that are no escaping
            but we cannot annotate them accordingly.
 
+       --objc-block-execution-macro string
+           Macro for executing Objective-C blocks safely.
+
        --no-parameter-not-null-checked
            Deactivates: parameter-not-null-checked checker: An
            Objective-C-specific analysis to detect when a block parameter is

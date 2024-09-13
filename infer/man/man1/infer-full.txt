@@ -1290,6 +1290,10 @@ OPTIONS
            but we cannot annotate them accordingly.
            See also infer-analyze(1).
 
+       --objc-block-execution-macro string
+           Macro for executing Objective-C blocks safely.
+           See also infer-analyze(1).
+
        --objc-synthesize-dealloc
            Activates: If enabled, the capture tries to synthesize code in the
            dealloc methods of Objective-C classes corresponding to what the
@@ -2936,6 +2940,9 @@ INTERNAL OPTIONS
 
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
+
+       --objc-block-execution-macro-reset
+           Cancel the effect of --objc-block-execution-macro.
 
        --no-only-cheap-debug
            Deactivates: Disable expensive debugging output (Conversely:

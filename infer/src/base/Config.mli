@@ -560,6 +560,8 @@ val only_cheap_debug : bool
 
 val oom_threshold : int option
 
+val objc_block_execution_macro : string option
+
 val objc_synthesize_dealloc : bool
 
 val pmd_xml : bool

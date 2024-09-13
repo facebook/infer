@@ -123,7 +123,7 @@ module Mem = struct
       ~init:[] traceInfo
 
 
-  let report_unchecked_block_param_issues proc_desc err_log var loc
+  let report_unchecked_block_param_issues proc_desc err_log var args loc
       ({traceInfo; blockParams} as astate : t) =
     match find_block_param var astate with
     | Some name -> (
@@ -136,7 +136,19 @@ module Mem = struct
               "The block `%a` is executed without a check for nil at %a. This could cause a crash."
               Mangled.pp name Location.pp loc
           in
-          Reporting.log_issue proc_desc err_log ~ltr ~loc ParameterNotNullChecked
+          let autofix =
+            match Config.objc_block_execution_macro with
+            | Some objc_block_execution_macro ->
+                let original = F.asprintf "%s(" (Mangled.to_string name) in
+                let comma = if List.is_empty args then "" else "," in
+                let replacement =
+                  F.asprintf "%s(%s%s" objc_block_execution_macro (Mangled.to_string name) comma
+                in
+                Some {Jsonbug_j.original; replacement}
+            | None ->
+                None
+          in
+          Reporting.log_issue proc_desc err_log ~ltr ~loc ?autofix ParameterNotNullChecked
             IssueType.block_parameter_not_null_checked message ;
           ()
       | _ ->
@@ -154,8 +166,8 @@ module Domain = struct
 
   let store pvar e loc astate = map (Mem.store pvar e loc) astate
 
-  let report_unchecked_block_param_issues proc_desc err_log var loc astate =
-    iter (Mem.report_unchecked_block_param_issues proc_desc err_log var loc) astate
+  let report_unchecked_block_param_issues proc_desc err_log var args loc astate =
+    iter (Mem.report_unchecked_block_param_issues proc_desc err_log var args loc) astate
 end
 
 module TransferFunctions = struct
@@ -186,10 +198,10 @@ module TransferFunctions = struct
           Domain.exec_null_check_id id loc astate
       | _ ->
           astate )
-    | Call (_, Exp.Const (Const.Cfun procname), (Exp.Var var, _) :: _, loc, call_flags)
+    | Call (_, Exp.Const (Const.Cfun procname), (Exp.Var var, _) :: args, loc, call_flags)
       when Procname.equal procname BuiltinDecl.__call_objc_block
            && call_flags.CallFlags.cf_is_objc_block ->
-        Domain.report_unchecked_block_param_issues proc_desc err_log var loc astate ;
+        Domain.report_unchecked_block_param_issues proc_desc err_log var args loc astate ;
         astate
     | _ ->
         astate

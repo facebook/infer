@@ -2223,6 +2223,12 @@ and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
 
 
+and objc_block_execution_macro =
+  CLOpt.mk_string_opt ~long:"objc-block-execution-macro" ~meta:"string"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Macro for executing Objective-C blocks safely."
+
+
 and objc_synthesize_dealloc =
   CLOpt.mk_bool ~long:"objc-synthesize-dealloc"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -4323,6 +4329,8 @@ and nullable_annotation = !nullable_annotation
 and only_cheap_debug = !only_cheap_debug
 
 and oom_threshold = !oom_threshold
+
+and objc_block_execution_macro = !objc_block_execution_macro
 
 and objc_synthesize_dealloc = !objc_synthesize_dealloc
 

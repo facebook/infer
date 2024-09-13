@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --parameter-not-null-checked-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --parameter-not-null-checked-only --objc-block-execution-macro "BLOCK_CALL_SAFE" --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.m)
