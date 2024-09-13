@@ -244,7 +244,7 @@ let analyze replay_call_graph source_files_to_analyze =
           | Some stats ->
               Some (GCStats.get ~since:(PreviousStats stats))
           | None ->
-              L.internal_error "child did not store GC stats in its prologue, what happened?" ;
+              L.internal_error "child did not store GC stats in its prologue, what happened?@\n" ;
               None
         in
         let () =

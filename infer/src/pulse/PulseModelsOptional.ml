@@ -120,7 +120,7 @@ let assign_value args ~desc : model =
       assign_non_empty_value ValueHistory.epoch this ~desc:(desc ^ " (non-empty value)")
       |> lift_model
   | _ ->
-      L.internal_error "Not enough arguments to call the constructor for Optional" ;
+      L.internal_error "Not enough arguments to call the constructor for Optional@\n" ;
       Basic.skip |> lift_model
 
 

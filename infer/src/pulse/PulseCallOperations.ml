@@ -696,7 +696,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
       in
       match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
       | None ->
-          L.internal_error "ondemand engine did not return the expected specialized summary" ;
+          L.internal_error "ondemand engine did not return the expected specialized summary@\n" ;
           (* we use the non-specialized summary instead *)
           (specialized_summary.main, is_limit_not_reached)
       | Some pre_posts ->

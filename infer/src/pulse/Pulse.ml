@@ -578,7 +578,7 @@ module PulseTransferFunctions = struct
     in
     match get_receiver callee_pname func_args with
     | None ->
-        L.internal_error "No receiver on virtual call" ;
+        L.internal_error "No receiver on virtual call@\n" ;
         (default_info, astate)
     | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver} -> (
       match

@@ -538,7 +538,7 @@ let alias_expansion_limit = 100
 let expand_hack_alias tenv tname =
   let rec _expand_hack_alias tname n =
     if Int.(n = 0) then (
-      L.internal_error "exceeded alias expansion limit (cycle?), not expanding" ;
+      L.internal_error "exceeded alias expansion limit (cycle?), not expanding@\n" ;
       None )
     else
       match lookup tenv tname with
@@ -549,10 +549,10 @@ let expand_hack_alias tenv tname =
       | Some {class_info= HackClassInfo Alias; supers= ss} -> (
         match ss with
         | [] ->
-            L.internal_error "empty type alias \"supers\", not expanding" ;
+            L.internal_error "empty type alias \"supers\", not expanding@\n" ;
             None
         | x :: _xs ->
-            L.internal_error "alias type defined as union, taking first element" ;
+            L.internal_error "alias type defined as union, taking first element@\n" ;
             Some x )
       | _ ->
           Some tname

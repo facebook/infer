@@ -277,7 +277,7 @@ module Vec = struct
         assign_ret new_vec
     | _ ->
         L.d_printfln "vec hack array cow set argument error" ;
-        L.internal_error "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
+        L.internal_error "Vec.hack_array_cow_set expects 1 key and 1 value arguments@\n" ;
         ret ()
 end
 
@@ -780,7 +780,7 @@ module DictIter = struct
       let* field =
         match List.hd fields with
         | None ->
-            L.internal_error "iter init empty list of fields" ;
+            L.internal_error "iter init empty list of fields@\n" ;
             unreachable
         | Some f ->
             ret f
@@ -791,7 +791,7 @@ module DictIter = struct
         | FieldAccess fn ->
             ret (Fieldname.get_field_name fn)
         | _ ->
-            L.internal_error "dictionary non FieldAccess" ;
+            L.internal_error "dictionary non FieldAccess@\n" ;
             unreachable
       in
       let* hack_str = make_hack_string n in
@@ -837,7 +837,7 @@ module DictIter = struct
             let* index_int =
               match QSafeCapped.to_int q with
               | None ->
-                  L.internal_error "bad index in iter_next_dict" ;
+                  L.internal_error "bad index in iter_next_dict@\n" ;
                   unreachable
               | Some i ->
                   ret i
@@ -845,7 +845,7 @@ module DictIter = struct
             let* index_acc =
               match List.nth fields index_int with
               | None ->
-                  L.internal_error "iter next out of bounds" ;
+                  L.internal_error "iter next out of bounds@\n" ;
                   unreachable
               | Some ia ->
                   ret ia
@@ -856,7 +856,7 @@ module DictIter = struct
                 let* elt_value = load_access thedict index_acc in
                 ret (key_value, elt_value)
             | _ ->
-                L.internal_error "iter next dict non field access" ;
+                L.internal_error "iter next dict non field access@\n" ;
                 unreachable )
       in
       store ~ref:eltaddr elt_value
@@ -1158,7 +1158,7 @@ let hhbc_cls_cns this field : model =
               (* we do not expect this situation to happen because hhbc_cls_cns takes as argument
                  a literal string see:
                  https://github.com/facebook/hhvm/blob/master/hphp/doc/bytecode.specification *)
-              L.internal_error "hhbc_cls_cns has been called on non-constant string" ;
+              L.internal_error "hhbc_cls_cns has been called on non-constant string@\n" ;
               "__dummy_constant_name__"
         in
         eval_resolved_field ~model_desc name string_field_name

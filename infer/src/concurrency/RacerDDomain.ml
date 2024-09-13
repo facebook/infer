@@ -634,8 +634,8 @@ let add_access tenv formals loc ~is_write (astate : t) exp =
 let add_container_access tenv formals ~is_write ret_base callee_pname actuals loc (astate : t) =
   match accexp_of_first_hilexp actuals with
   | None ->
-      L.internal_error "Call to %a is marked as a container access, but has no receiver" Procname.pp
-        callee_pname ;
+      L.internal_error "Call to %a is marked as a container access, but has no receiver@\n"
+        Procname.pp callee_pname ;
       astate
   | Some receiver_expr
     when AttributeMapDomain.is_synchronized astate.attribute_map receiver_expr

@@ -54,7 +54,7 @@ let mk pdesc =
                 (* Current Java frontend does give element types of Java collection. *)
                 None
             | Some JavaInteger ->
-                L.internal_error "Deref of non-array modeled type `%a`" Typ.Name.pp typename ;
+                L.internal_error "Deref of non-array modeled type `%a`@\n" Typ.Name.pp typename ;
                 None
             | None ->
                 L.(die InternalError) "Deref of unmodeled type `%a`" Typ.Name.pp typename )

@@ -45,8 +45,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                | None ->
                    ()
                | Some _e ->
-                   L.internal_error "Double resolved id %a in expression %a" (Const.pp Pp.text) exp
-                     Exp.pp silexp ) ;
+                   L.internal_error "Double resolved id %a in expression %a@\n" (Const.pp Pp.text)
+                     exp Exp.pp silexp ) ;
                constant_var := Some exp ;
                None )
     in

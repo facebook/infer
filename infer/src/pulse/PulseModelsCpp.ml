@@ -83,8 +83,8 @@ let infer_structured_binding var {FuncArg.exp= arg; arg_payload} _ astate =
         AbductiveDomain.Stack.remove_vars [Var.of_id arg] astate
         |> AbductiveDomain.Stack.add (Var.of_pvar pvar) (ValueOrigin.unknown arg_payload)
     | _ ->
-        L.internal_error "Unexpected arguments for c17_structured_binding: %a, %a" Exp.pp var Exp.pp
-          arg ;
+        L.internal_error "Unexpected arguments for c17_structured_binding: %a, %a@\n" Exp.pp var
+          Exp.pp arg ;
         astate
   in
   Basic.ok_continue astate
@@ -673,7 +673,8 @@ module GenericMapCollection = struct
           (* This should never happen, as we already know from using [capt_arg_of_typ] that map
              is of some map type, hence it should have a first and second template arguments
              mapping to key and value types respectively. *)
-          L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp_full Pp.text) map_typ ;
+          L.internal_error "Unexpected (key, value) template type: %a@\n" (Typ.pp_full Pp.text)
+            map_typ ;
           None
     in
     extract_helper map_typ

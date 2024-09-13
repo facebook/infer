@@ -501,7 +501,7 @@ module InjectTraitInterfaceConstinit = struct
           let succs = Procdesc.Node.get_succs entry_node in
           List.iter succs ~f:(fun succ -> Procdesc.Node.prepend_instrs succ instrs)
       | [] ->
-          L.internal_error "Error loading the `$this` formal from constinit"
+          L.internal_error "Error loading the `$this` formal from constinit@\n"
 
 
   let process tenv pdesc =

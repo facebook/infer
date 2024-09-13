@@ -502,7 +502,7 @@ let split_args procname args =
     | instance_reference :: actuals ->
         (Some instance_reference, actuals)
     | [] ->
-        L.internal_error "Procedure %a is supposed to have this/self as a first parameter"
+        L.internal_error "Procedure %a is supposed to have this/self as a first parameter@\n"
           Procname.pp procname ;
         (None, [])
   in

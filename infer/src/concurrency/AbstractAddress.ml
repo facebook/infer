@@ -54,11 +54,11 @@ let pp_with_base pp_base fmt (base, accesses) =
   let rec pp_rev_accesses fmt (accesses : access_list) =
     match (accesses, !Language.curr_language) with
     | _, Erlang ->
-        L.internal_error "Erlang not supported"
+        L.internal_error "Erlang not supported@\n"
     | _, Hack ->
-        L.internal_error "Hack not supported"
+        L.internal_error "Hack not supported@\n"
     | _, Python ->
-        L.internal_error "Python not supported"
+        L.internal_error "Python not supported@\n"
     | [], _ ->
         pp_base fmt base
     | ArrayAccess _ :: rest, _ ->
@@ -102,7 +102,7 @@ let pp_with_base pp_base fmt (base, accesses) =
 
 
 (* A wrapper that ignores ProgramVar.Global_var translation_unit in comparision
- * as we cannot add that ignore there due to issues with Siof 
+ * as we cannot add that ignore there due to issues with Siof
  * similar hack to D51588007 *)
 module SVar = struct
   include Var
