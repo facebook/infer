@@ -86,7 +86,7 @@ type err_data =
   ; visibility: IssueType.visibility
   ; access: string option
   ; extras: Jsonbug_t.extra option (* NOTE: Please consider adding new fields as part of extras *)
-  }
+  ; autofix: Jsonbug_t.autofix option }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
@@ -194,7 +194,7 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras checker
+let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras ~autofix checker
     (error : IssueToReport.t) =
   if not (IssueType.checker_can_report checker error.issue_type) then
     L.die InternalError
@@ -240,7 +240,8 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extra
         ; loc_trace= ltr
         ; visibility= error.issue_type.visibility
         ; access
-        ; extras }
+        ; extras
+        ; autofix }
       in
       let err_key = {severity; issue_type= error.issue_type; err_desc= error.description} in
       add_issue err_log err_key (ErrDataSet.singleton err_data)

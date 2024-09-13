@@ -306,6 +306,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else base_qualifier
       in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
+      let autofix = err_data.autofix in
       let suppressed =
         Config.suppressions
         && is_suppressed source_file ~issue_type:bug_type ~line:err_data.loc.Location.line
@@ -316,6 +317,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; severity
         ; category
         ; suggestion
+        ; autofix
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name

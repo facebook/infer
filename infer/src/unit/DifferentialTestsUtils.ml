@@ -36,7 +36,8 @@ let create_fake_jsonbug ?(bug_type = "bug_type") ?(qualifier = "qualifier")
   ; censored_reason= None
   ; access= None
   ; extras= None
-  ; suppressed= false }
+  ; suppressed= false
+  ; autofix= None }
 
 
 let pp_diff_of_list ~pp group_name fmt (expected, actual) =

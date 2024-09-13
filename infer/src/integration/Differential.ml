@@ -81,7 +81,8 @@ let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
   ; censored_reason= JsonReports.censored_reason ~issue_id:issue_type.unique_id source_file
   ; access= None
   ; extras= None
-  ; suppressed= false }
+  ; suppressed= false
+  ; autofix= None }
 
 
 module CostsSummary = struct

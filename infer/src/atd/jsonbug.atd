@@ -63,6 +63,11 @@ type extra = {
   ~transitive_missed_captures: missed_capture list;
 }
 
+type autofix = {
+  original: string;
+  replacement: string;
+}
+
 type jsonbug = {
   bug_type : string;
   qualifier : string;
@@ -87,6 +92,7 @@ type jsonbug = {
   ?censored_reason : string option;
   ?access : string option;
   ?extras : extra option;
+  ?autofix: autofix option;
   ~suppressed: bool;
 }
 

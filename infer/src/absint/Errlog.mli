@@ -54,7 +54,8 @@ type err_data = private
   ; loc_trace: loc_trace
   ; visibility: IssueType.visibility
   ; access: string option
-  ; extras: Jsonbug_t.extra option }
+  ; extras: Jsonbug_t.extra option
+  ; autofix: Jsonbug_t.autofix option }
 [@@deriving compare]
 
 (** Type of the error log *)
@@ -94,6 +95,7 @@ val log_issue :
   -> ltr:loc_trace
   -> access:string option
   -> extras:Jsonbug_t.extra option
+  -> autofix:Jsonbug_j.autofix option
   -> Checker.t
   -> IssueToReport.t
   -> unit
