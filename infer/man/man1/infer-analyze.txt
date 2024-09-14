@@ -595,6 +595,10 @@ JAVA OPTIONS
            interface. (Conversely:
            --annotation-reachability-apply-superclass-annotations)
 
+       --annotation-reachability-check-loops
+           Activates: Highlights callsites in the trace that are nested in
+           some loop. (Conversely: --no-annotation-reachability-check-loops)
+
        --annotation-reachability-custom-models json
            Specify a map from annotations to lists of regexps to treat
            matching methods as if they had the annotation.

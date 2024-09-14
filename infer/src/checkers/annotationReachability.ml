@@ -234,14 +234,18 @@ let start_trace proc_desc annot =
   if Location.is_dummy loc then [] else [Errlog.make_trace_element 0 loc description []]
 
 
-let add_to_trace callee_pname call_loc end_of_stack snk_annot trace =
+let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot trace =
+  let callee_pname = CallSite.pname call_site_info.call_site in
+  let call_loc = CallSite.loc call_site_info.call_site in
   let update ~level loc description trace =
     if Location.is_dummy loc then trace
     else Errlog.make_trace_element level loc description [] :: trace
   in
   let callee_str = str_of_pname callee_pname in
   let call_description =
-    (if is_dummy_field_pname callee_pname then "accesses " else "calls ") ^ callee_str
+    let call_or_access = if is_dummy_field_pname callee_pname then "accesses " else "calls " in
+    let inside_loop = if call_site_info.is_in_loop then " (inside a loop)" else "" in
+    call_or_access ^ callee_str ^ inside_loop
   in
   let def_description =
     callee_str ^ " defined here"
@@ -257,9 +261,10 @@ let add_to_trace callee_pname call_loc end_of_stack snk_annot trace =
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src
     (spec : AnnotationSpec.t) sink_map =
   let snk = spec.sink_annotation in
-  let rec loop fst_call_loc visited_pnames trace (callee_pname, call_loc) =
+  let rec loop fst_call_loc visited_pnames trace (call_site_info : Domain.call_site_info) =
+    let callee_pname = CallSite.pname call_site_info.call_site in
     let end_of_stack = method_overrides_annot snk spec.models tenv callee_pname in
-    let new_trace = add_to_trace callee_pname call_loc end_of_stack snk trace in
+    let new_trace = add_to_trace call_site_info end_of_stack snk trace in
     if end_of_stack then
       report_src_to_snk_path analysis_data src spec fst_call_loc (List.rev new_trace) callee_pname
     else if
@@ -273,11 +278,10 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
         Domain.SinkMap.fold
           (fun _ call_sites ((unseen, visited) as accu) ->
             try
-              let call_site = Domain.CallSites.min_elt call_sites in
-              let p = CallSite.pname call_site in
-              let loc = CallSite.loc call_site in
+              let call_site_info = Domain.CallSites.min_elt call_sites in
+              let p = CallSite.pname call_site_info.call_site in
               if Procname.Set.mem p visited then accu
-              else ((p, loc) :: unseen, Procname.Set.add p visited)
+              else (call_site_info :: unseen, Procname.Set.add p visited)
             with Caml.Not_found -> accu )
           next_calls ([], visited_pnames)
       in
@@ -288,9 +292,8 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     (fun _ call_sites ->
       try
         let fst_call_site = Domain.CallSites.min_elt call_sites in
-        let fst_callee_pname = CallSite.pname fst_call_site in
-        let fst_call_loc = CallSite.loc fst_call_site in
-        loop fst_call_loc Procname.Set.empty trace (fst_callee_pname, fst_call_loc)
+        let fst_call_loc = CallSite.loc fst_call_site.call_site in
+        loop fst_call_loc Procname.Set.empty trace fst_call_site
       with Caml.Not_found -> () )
     sink_map
 
@@ -409,7 +412,9 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
   module Domain = Domain
 
   type analysis_data =
-    {specs: AnnotationSpec.t list; analysis_data: Domain.t InterproceduralAnalysis.t}
+    { specs: AnnotationSpec.t list
+    ; loop_nodes: Control.GuardNodes.t
+    ; analysis_data: Domain.t InterproceduralAnalysis.t }
 
   let is_sink tenv (spec : AnnotationSpec.t) ~caller_pname ~callee_pname =
     spec.sink_predicate tenv callee_pname
@@ -417,16 +422,16 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     && not (spec.sanitizer_predicate tenv caller_pname)
 
 
-  let check_call tenv ~caller_pname ~callee_pname call_site astate specs =
+  let check_call tenv ~caller_pname ~callee_pname call_site_info astate specs =
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
         if is_sink tenv spec ~caller_pname ~callee_pname then (
           L.d_printfln "%s: Adding sink call `%a -> %a`" spec.description Procname.pp caller_pname
             Procname.pp callee_pname ;
-          Domain.add_call_site spec.sink_annotation callee_pname call_site astate )
+          Domain.add_call_site spec.sink_annotation callee_pname call_site_info astate )
         else astate )
 
 
-  let merge_callee_map {analysis_data= {proc_desc; tenv; analyze_dependency}; specs} call_site
+  let merge_callee_map {analysis_data= {proc_desc; tenv; analyze_dependency}; specs} call_site_info
       ~callee_pname astate =
     match analyze_dependency callee_pname with
     | Error _ ->
@@ -446,7 +451,7 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
                   L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n"
                     spec.description Procname.pp callee_pname Procname.pp caller_pname Procname.pp
                     sink ;
-                  Domain.add_call_site annot sink call_site astate )
+                  Domain.add_call_site annot sink call_site_info astate )
                 else astate )
         in
         Domain.fold
@@ -454,19 +459,27 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
           callee_call_map astate
 
 
-  let exec_instr astate ({analysis_data= {proc_desc; tenv}; specs} as analysis_data) _ _ = function
+  let exec_instr astate ({analysis_data= {proc_desc; tenv}; loop_nodes; specs} as analysis_data)
+      node _ instr =
+    match instr with
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         let caller_pname = Procdesc.get_proc_name proc_desc in
-        let call_site = CallSite.make callee_pname call_loc in
-        check_call tenv ~callee_pname ~caller_pname call_site astate specs
-        |> merge_callee_map analysis_data call_site ~callee_pname
+        let call_site_info : Domain.call_site_info =
+          { call_site= CallSite.make callee_pname call_loc
+          ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
+        in
+        check_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        |> merge_callee_map analysis_data call_site_info ~callee_pname
     | Sil.Load {e= Exp.Lfield (_, fieldname, typ); loc} ->
         (* Pretend that field access is a call to a fake method (containing the name of the field) *)
         let caller_pname = Procdesc.get_proc_name proc_desc in
         let callee_pname = dummy_pname_for_field fieldname typ in
-        let call_site = CallSite.make callee_pname loc in
-        check_call tenv ~callee_pname ~caller_pname call_site astate specs
-        |> merge_callee_map analysis_data call_site ~callee_pname
+        let call_site_info : Domain.call_site_info =
+          { call_site= CallSite.make callee_pname loc
+          ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
+        in
+        check_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        |> merge_callee_map analysis_data call_site_info ~callee_pname
     | _ ->
         astate
 
@@ -500,7 +513,20 @@ let parse_custom_specs () =
   List.concat custom_specs
 
 
+let compute_loop_nodes proc_desc =
+  if Config.annotation_reachability_check_loops then
+    let cfg = ProcCfg.NormalOneInstrPerNode.from_pdesc proc_desc in
+    let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
+    let loop_head_to_loop_nodes =
+      Loop_control.get_loop_head_to_loop_nodes loop_head_to_source_nodes
+    in
+    let _, sets = List.unzip (Procdesc.NodeMap.bindings loop_head_to_loop_nodes) in
+    List.fold ~f:Control.GuardNodes.union ~init:Control.GuardNodes.empty sets
+  else Control.GuardNodes.empty
+
+
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t option =
+  let loop_nodes = compute_loop_nodes proc_desc in
   let initial = Domain.empty in
   let custom_specs = parse_custom_specs () in
   let expensive_specs =
@@ -510,7 +536,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t op
     if Config.annotation_reachability_no_allocation then [NoAllocationAnnotationSpec.spec] else []
   in
   let specs = expensive_specs @ no_alloc_specs @ custom_specs in
-  let proc_data = {TransferFunctions.analysis_data; specs} in
+  let proc_data = {TransferFunctions.analysis_data; loop_nodes; specs} in
   let post = Analyzer.compute_post proc_data ~initial proc_desc in
   Option.iter post ~f:(fun annot_map ->
       List.iter specs ~f:(fun spec ->

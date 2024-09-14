@@ -597,6 +597,12 @@ and annotation_reachability_apply_superclass_annotations =
     ~default:true
 
 
+and annotation_reachability_check_loops =
+  CLOpt.mk_bool ~long:"annotation-reachability-check-loops"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "Highlights callsites in the trace that are nested in some loop." ~default:false
+
+
 and annotation_reachability_custom_models =
   CLOpt.mk_json ~long:"annotation-reachability-custom-models"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -3808,6 +3814,8 @@ and analysis_schedule_file = !analysis_schedule_file
 and annotation_reachability_apply_superclass_annotations =
   !annotation_reachability_apply_superclass_annotations
 
+
+and annotation_reachability_check_loops = !annotation_reachability_check_loops
 
 and annotation_reachability_custom_models = !annotation_reachability_custom_models
 

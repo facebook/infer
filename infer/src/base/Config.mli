@@ -120,6 +120,8 @@ val analysis_schedule_file : string option
 
 val annotation_reachability_apply_superclass_annotations : bool
 
+val annotation_reachability_check_loops : bool
+
 val annotation_reachability_custom_models : Yojson.Safe.t
 
 val annotation_reachability_custom_pairs : Yojson.Safe.t
