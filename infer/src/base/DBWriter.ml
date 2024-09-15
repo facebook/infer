@@ -372,12 +372,10 @@ module Implementation = struct
           SqliteUtils.result_unit ~finalize:false ~log:"store issuelog" db store_stmt )
 
 
-  module IntHash = Caml.Hashtbl.Make (Int)
-
   let specs_overwrite_counts =
     (* We don't want to keep all [proc_uid]s in memory just to keep an overwrite count,
        so use a table keyed on their integer hashes; collisions will just lead to some noise. *)
-    IntHash.create 10
+    IInt.Hash.create 10
 
 
   let select_report_summary =
@@ -450,10 +448,10 @@ module Implementation = struct
     fun analysis_req ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
         ~merge_summary_metadata ->
       let proc_uid_hash = String.hash proc_uid in
-      IntHash.find_opt specs_overwrite_counts proc_uid_hash
+      IInt.Hash.find_opt specs_overwrite_counts proc_uid_hash
       |> Option.value_map ~default:0 ~f:(( + ) 1)
       (* [default] is 0 as we are only counting overwrites *)
-      |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
+      |> IInt.Hash.replace specs_overwrite_counts proc_uid_hash ;
       let now = ExecutionDuration.counter () in
       let f () =
         let found_old, old_report_summary, old_summary_metadata, old_pulse_payload =
@@ -490,7 +488,7 @@ module Implementation = struct
 
 
   let terminate () =
-    let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
+    let overwrites = IInt.Hash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
     ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
     L.debug Analysis Quiet "Detected %d spec overwrites.@\n" overwrites
 

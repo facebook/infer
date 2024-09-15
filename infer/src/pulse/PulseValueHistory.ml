@@ -27,8 +27,8 @@ module CellId = struct
     id
 
 
-  module Map = IntMap
-  module Set = IntSet
+  module Map = IInt.Map
+  module Set = IInt.Set
 end
 
 type event =

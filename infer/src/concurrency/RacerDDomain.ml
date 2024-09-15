@@ -221,15 +221,15 @@ module ThreadsDomain = struct
 end
 
 module OwnershipAbstractValue = struct
-  type t = OwnedIf of IntSet.t | Unowned [@@deriving compare]
+  type t = OwnedIf of IInt.Set.t | Unowned [@@deriving compare]
 
-  let owned = OwnedIf IntSet.empty
+  let owned = OwnedIf IInt.Set.empty
 
-  let is_owned = function OwnedIf set -> IntSet.is_empty set | Unowned -> false
+  let is_owned = function OwnedIf set -> IInt.Set.is_empty set | Unowned -> false
 
   let unowned = Unowned
 
-  let make_owned_if formal_index = OwnedIf (IntSet.singleton formal_index)
+  let make_owned_if formal_index = OwnedIf (IInt.Set.singleton formal_index)
 
   let leq ~lhs ~rhs =
     phys_equal lhs rhs
@@ -240,7 +240,7 @@ module OwnershipAbstractValue = struct
     | Unowned, _ ->
         false
     | OwnedIf s1, OwnedIf s2 ->
-        IntSet.subset s1 s2
+        IInt.Set.subset s1 s2
 
 
   let join astate1 astate2 =
@@ -250,7 +250,7 @@ module OwnershipAbstractValue = struct
       | _, Unowned | Unowned, _ ->
           Unowned
       | OwnedIf s1, OwnedIf s2 ->
-          OwnedIf (IntSet.union s1 s2)
+          OwnedIf (IInt.Set.union s1 s2)
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
@@ -259,11 +259,11 @@ module OwnershipAbstractValue = struct
     | Unowned ->
         F.pp_print_string fmt "Unowned"
     | OwnedIf s ->
-        if IntSet.is_empty s then F.pp_print_string fmt "Owned"
+        if IInt.Set.is_empty s then F.pp_print_string fmt "Owned"
         else
           F.fprintf fmt "OwnedIf%a"
             (PrettyPrintable.pp_collection ~pp_item:Int.pp)
-            (IntSet.elements s)
+            (IInt.Set.elements s)
 end
 
 module AccessSnapshot = struct
@@ -352,7 +352,7 @@ module AccessSnapshot = struct
     let ownership_precondition =
       match snapshot.elem.ownership_precondition with
       | OwnedIf indexes ->
-          IntSet.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
+          IInt.Set.fold update_ownership_precondition indexes OwnershipAbstractValue.owned
       | Unowned ->
           snapshot.elem.ownership_precondition
     in
@@ -435,7 +435,7 @@ module OwnershipDomain = struct
       | OwnershipAbstractValue.Unowned ->
           return_ownership
       | OwnershipAbstractValue.OwnedIf formal_indexes ->
-          IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
+          IInt.Set.fold get_ownership formal_indexes OwnershipAbstractValue.owned
     in
     add ret_access_exp ret_ownership_wrt_actuals ownership
 end

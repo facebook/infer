@@ -29,7 +29,7 @@ module type S = sig
 
   val kind : t -> Kind.t
 
-  val make : ?indexes:IntSet.t -> Kind.t -> CallSite.t -> t
+  val make : ?indexes:IInt.Set.t -> Kind.t -> CallSite.t -> t
 
   val with_callsite : t -> CallSite.t -> t
 

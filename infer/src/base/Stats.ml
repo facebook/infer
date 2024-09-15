@@ -80,7 +80,7 @@ module TimingsStat = OfUnmarshallable (struct
 end)
 
 module PulseSummaryCountMap = struct
-  include IntMap
+  include IInt.Map
 
   let init = empty
 

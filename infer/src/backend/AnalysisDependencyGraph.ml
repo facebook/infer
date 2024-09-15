@@ -197,7 +197,7 @@ module Serialized = struct
   (** change if the format changes in an incompatible way, please *)
   let schema_version = 0
 
-  module IntMap = Caml.Hashtbl.Make (Int)
+  module IntMap = IInt.Hash
 
   (** {2 Serialization} *)
 

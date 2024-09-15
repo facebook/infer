@@ -50,7 +50,7 @@ module type S = sig
 
     val add : Source.t -> t -> t
 
-    val get_footprint_indexes : t -> IntSet.t
+    val get_footprint_indexes : t -> IInt.Set.t
   end
 
   module Sinks = Sink.Set
@@ -113,7 +113,7 @@ module type S = sig
   val update_sinks : t -> Sinks.t -> t
   (** replace sinks with new ones *)
 
-  val get_footprint_indexes : t -> IntSet.t
+  val get_footprint_indexes : t -> IInt.Set.t
   (** get the footprint indexes for all of the sources in the trace *)
 
   val append : t -> t -> CallSite.t -> t

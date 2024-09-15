@@ -10,7 +10,7 @@ open! IStd
 module type Kind = sig
   include TaintTraceElem.Kind
 
-  val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
+  val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IInt.Set.t) list
 end
 
 module type S = sig
@@ -18,7 +18,7 @@ module type S = sig
 
   val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t list
 
-  val indexes : t -> IntSet.t
+  val indexes : t -> IInt.Set.t
 
-  val with_indexes : t -> IntSet.t -> t
+  val with_indexes : t -> IInt.Set.t -> t
 end

@@ -16,13 +16,13 @@ module Stats = struct
     { failure_kind: Exception.failure_kind option
           (** what type of failure stopped the analysis (if any) *)
     ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
-    ; mutable nodes_visited: IntSet.t  (** Nodes visited *) }
+    ; mutable nodes_visited: IInt.Set.t  (** Nodes visited *) }
 
-  let empty = {failure_kind= None; symops= 0; nodes_visited= IntSet.empty}
+  let empty = {failure_kind= None; symops= 0; nodes_visited= IInt.Set.empty}
 
-  let is_visited stats node_id = IntSet.mem node_id stats.nodes_visited
+  let is_visited stats node_id = IInt.Set.mem node_id stats.nodes_visited
 
-  let add_visited stats node_id = stats.nodes_visited <- IntSet.add node_id stats.nodes_visited
+  let add_visited stats node_id = stats.nodes_visited <- IInt.Set.add node_id stats.nodes_visited
 
   let update ?(add_symops = 0) ?failure_kind stats =
     let symops = stats.symops + add_symops in

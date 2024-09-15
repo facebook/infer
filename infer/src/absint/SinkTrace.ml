@@ -34,7 +34,7 @@ module MakeSink (TraceElem : TaintTraceElem.S) = struct
 
   let get _ _ _ _ = []
 
-  let indexes _ = IntSet.empty
+  let indexes _ = IInt.Set.empty
 
   let with_indexes _ _ = assert false
 end

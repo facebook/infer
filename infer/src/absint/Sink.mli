@@ -10,7 +10,7 @@ open! IStd
 module type Kind = sig
   include TaintTraceElem.Kind
 
-  val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IntSet.t) list
+  val get : Procname.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> (t * IInt.Set.t) list
   (** return Some kind if the given procname/actuals are a sink, None otherwise *)
 end
 
@@ -20,8 +20,8 @@ module type S = sig
   val get : CallSite.t -> HilExp.t list -> CallFlags.t -> Tenv.t -> t list
   (** return Some sink if the given call site/actuals are a sink, None otherwise *)
 
-  val indexes : t -> IntSet.t
+  val indexes : t -> IInt.Set.t
   (** return the indexes where taint can flow into the sink *)
 
-  val with_indexes : t -> IntSet.t -> t
+  val with_indexes : t -> IInt.Set.t -> t
 end

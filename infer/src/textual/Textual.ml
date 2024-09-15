@@ -327,8 +327,8 @@ end = struct
 
   let pp fmt id = F.fprintf fmt "n%d" id
 
-  module Map = Caml.Map.Make (Int)
-  module Set = Caml.Set.Make (Int)
+  module Map = IInt.Map
+  module Set = IInt.Set
 
   let fresh set = 1 + (Set.max_elt_opt set |> Option.value ~default:(-1))
 

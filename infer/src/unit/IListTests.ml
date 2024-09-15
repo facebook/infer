@@ -27,7 +27,7 @@ let inter_tests =
   let inter_test input1 input2 _ =
     let using_list = IList.inter ~cmp:Int.compare input1 input2 in
     let using_set =
-      IntSet.inter (IntSet.of_list input1) (IntSet.of_list input2) |> IntSet.elements
+      IInt.Set.inter (IInt.Set.of_list input1) (IInt.Set.of_list input2) |> IInt.Set.elements
     in
     assert_equal using_list using_set
   in

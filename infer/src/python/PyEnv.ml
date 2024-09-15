@@ -12,8 +12,8 @@ module T = Textual
 module Debug = PyDebug
 module Builtin = PyBuiltin
 module Ident = PyCommon.Ident
-module Labels = Caml.Map.Make (Int)
-module ISet = Caml.Set.Make (Int)
+module Labels = IInt.Map
+module ISet = IInt.Set
 
 module Signature = struct
   type t = {annotations: PyCommon.signature; is_static: bool; is_abstract: bool}

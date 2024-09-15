@@ -7,6 +7,12 @@
 
 module F = Format
 
-include Caml.Set.S with type elt = int
+module Map : Caml.Map.S with type key = int
 
-val pp : F.formatter -> t -> unit
+module Set : sig
+  include Caml.Set.S with type elt = int
+
+  val pp : F.formatter -> t -> unit
+end
+
+module Hash : Caml.Hashtbl.S with type key = int

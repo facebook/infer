@@ -40,7 +40,7 @@ module Node = struct
 end
 
 module IdMap = Procname.Hash
-module NodeMap = Caml.Hashtbl.Make (Int)
+module NodeMap = IInt.Hash
 
 (** [node_map] is a map from ids (unique ints) to nodes corresponding to defined procedures.
     [id_map] is a map from all encountered (not necessarily defined) procnames to their ids, and

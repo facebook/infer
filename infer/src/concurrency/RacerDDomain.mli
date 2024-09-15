@@ -63,7 +63,7 @@ end
 
 module OwnershipAbstractValue : sig
   type t = private
-    | OwnedIf of IntSet.t
+    | OwnedIf of IInt.Set.t
         (** Owned if the formals at the given indexes are owned in the caller; unconditionally owned
             if the set of formals is empty = bottom of the lattice *)
     | Unowned  (** Unowned value; top of the lattice *)

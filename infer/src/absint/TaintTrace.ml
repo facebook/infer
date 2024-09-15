@@ -44,7 +44,7 @@ module type S = sig
 
     val add : Source.t -> t -> t
 
-    val get_footprint_indexes : t -> IntSet.t
+    val get_footprint_indexes : t -> IInt.Set.t
   end
 
   module Sinks = Sink.Set
@@ -103,7 +103,7 @@ module type S = sig
 
   val update_sinks : t -> Sinks.t -> t
 
-  val get_footprint_indexes : t -> IntSet.t
+  val get_footprint_indexes : t -> IInt.Set.t
 
   val append : t -> t -> CallSite.t -> t
   (** append the trace for given call site to the current caller trace *)
@@ -221,10 +221,10 @@ module Make (Spec : Spec) = struct
         (fun base _ acc ->
           match AccessPath.Abs.get_footprint_index_base base with
           | Some footprint_index ->
-              IntSet.add footprint_index acc
+              IInt.Set.add footprint_index acc
           | None ->
               acc )
-        footprint IntSet.empty
+        footprint IInt.Set.empty
   end
 
   module Sinks = Sink.Set
@@ -508,8 +508,12 @@ module Make (Spec : Spec) = struct
           let footprint_indices =
             Sources.Footprint.BaseMap.fold
               (fun (vname, _) _ s ->
-                match Var.get_footprint_index vname with Some ind -> IntSet.add ind s | None -> s )
-              callee_trace.sources.footprint IntSet.empty
+                match Var.get_footprint_index vname with
+                | Some ind ->
+                    IInt.Set.add ind s
+                | None ->
+                    s )
+              callee_trace.sources.footprint IInt.Set.empty
           in
           List.map
             ~f:(fun sink ->
