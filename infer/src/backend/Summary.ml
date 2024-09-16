@@ -82,6 +82,7 @@ let pp_html source fmt ({err_log; payloads; stats} as summary) =
   F.fprintf fmt "<br />%a<br />@\n" Stats.pp stats ;
   Errlog.pp_html source [] fmt err_log ;
   Io_infer.Html.pp_hline fmt () ;
+  F.fprintf fmt "<button type='button' onclick='toggleDetailsBlock()'>Toggle details</button>" ;
   F.fprintf fmt "<div class='state code'>@\n" ;
   Payloads.pp (Pp.html Black) fmt payloads ;
   F.fprintf fmt "</div>@\n" ;

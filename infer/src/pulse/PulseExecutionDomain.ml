@@ -102,9 +102,7 @@ let pp fmt exec_state =
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 
-let pp_summary fmt (exec_summary : summary) =
-  pp_with_kind TEXT None fmt (exec_summary :> AbductiveDomain.t base_t)
-
+let pp_summary pe fmt (exec_summary : summary) = pp_with_kind pe None fmt (exec_summary :> t)
 
 let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2

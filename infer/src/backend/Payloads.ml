@@ -64,7 +64,7 @@ let all_fields =
     ~cost:(fun f -> mk f Cost CostDomain.pp_summary)
     ~disjunctive_demo:(fun f -> mk f DisjunctiveDemo DisjunctiveDemo.pp_domain)
     ~litho_required_props:(fun f -> mk f LithoRequiredProps LithoDomain.pp_summary)
-    ~pulse:(fun f -> mk f Pulse PulseSummary.pp)
+    ~pulse:(fun f -> mk_pe f Pulse PulseSummary.pp)
     ~purity:(fun f -> mk f Purity PurityDomain.pp_summary)
     ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)

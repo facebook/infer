@@ -20,33 +20,36 @@ type summary = {pre_post_list: pre_post_list; non_disj: (NonDisjDomain.Summary.t
 type t = {main: summary; specialized: (summary Specialization.Pulse.Map.t[@yojson.opaque])}
 [@@deriving yojson_of]
 
-let pp_pre_post_list fmt ~pp_kind pre_posts =
+let pp_pre_post_list print_kind fmt ~pp_specialized_name pre_posts =
   F.open_vbox 0 ;
-  F.fprintf fmt "%d%t pre/post(s)@;" (List.length pre_posts) pp_kind ;
+  F.fprintf fmt "%d%t pre/post(s)@;" (List.length pre_posts) pp_specialized_name ;
   List.iteri pre_posts ~f:(fun i (pre_post : ExecutionDomain.summary) ->
-      F.fprintf fmt "#%d: @[%a@]@;" i ExecutionDomain.pp_summary pre_post ) ;
+      F.fprintf fmt "#%d: @[%a@]@;" i (ExecutionDomain.pp_summary print_kind) pre_post ) ;
   F.close_box ()
 
 
-let pp_summary fmt ~pp_kind {pre_post_list; non_disj} =
-  F.fprintf fmt "@[<hov>pre/posts:%a@\nnon_disj:%a@]" (pp_pre_post_list ~pp_kind) pre_post_list
-    NonDisjDomain.Summary.pp non_disj
+let pp_summary print_kind fmt ~pp_specialized_name {pre_post_list; non_disj} =
+  F.fprintf fmt "%a%a"
+    (pp_pre_post_list print_kind ~pp_specialized_name)
+    pre_post_list
+    (Pp.html_collapsible_block ~name:"Non-disjunctive state" print_kind NonDisjDomain.Summary.pp)
+    non_disj
 
 
-let pp fmt {main; specialized} =
+let pp {Pp.kind= print_kind} fmt {main; specialized} =
   if Specialization.Pulse.Map.is_empty specialized then
-    pp_summary fmt ~pp_kind:(fun _fmt -> ()) main
+    pp_summary print_kind fmt ~pp_specialized_name:(fun _fmt -> ()) main
   else
-    let pp_kind fmt = F.pp_print_string fmt " main" in
+    let pp_specialized_name fmt = F.pp_print_string fmt " main" in
     F.open_hvbox 0 ;
-    pp_summary fmt ~pp_kind main ;
+    pp_summary print_kind fmt ~pp_specialized_name main ;
     Specialization.Pulse.Map.iter
       (fun specialization pre_posts ->
         F.fprintf fmt "@\n" ;
-        let pp_kind fmt =
+        let pp_specialized_name fmt =
           F.fprintf fmt " specialized with %a" Specialization.Pulse.pp specialization
         in
-        pp_summary fmt ~pp_kind pre_posts )
+        pp_summary print_kind fmt ~pp_specialized_name pre_posts )
       specialized ;
     F.close_box ()
 
