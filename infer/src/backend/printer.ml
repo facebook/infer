@@ -96,25 +96,25 @@ end = struct
       pp_node_link_seq fmt (Procdesc.Node.get_exn node) ;
       F.fprintf fmt "<br>@\n" ;
       (* Instruction listing + buttons to control stickiness/visibility *)
-      F.fprintf fmt "<DIV id='node_listing'>@\n" ;
+      F.fprintf fmt "<div id='node_listing'>@\n" ;
       F.fprintf fmt
-        "<BUTTON type='button' onclick='toggleListingOnTop()'>Listing on top</BUTTON>@\n" ;
+        "<button type='button' onclick='toggleListingOnTop()'>Sticky Instructions</button>@\n" ;
       F.fprintf fmt
-        "<BUTTON type='button' onclick='toggleListingVisibility()'>Listing visibility</BUTTON>@\n" ;
-      F.fprintf fmt "<LISTING class='%s'>%a</LISTING>@\n" (Pp.color_string Green)
+        "<button type='button' onclick='toggleListingVisibility()'>Listing visibility</button>@\n" ;
+      F.fprintf fmt "<code class='code %s'>@\n%a</code>@\n" (Pp.color_string Green)
         (Instrs.pp ~indent:false (Pp.html Green))
         (Procdesc.Node.get_instrs node) ;
-      F.fprintf fmt "</DIV>@\n" ;
+      F.fprintf fmt "</div>@\n" ;
       (* Listing end *)
-      F.fprintf fmt "<BUTTON type='button' onclick='toggleDetailsBlock()'>Toggle details</BUTTON>" ) ;
+      F.fprintf fmt "<button type='button' onclick='toggleDetailsBlock()'>Toggle details</button>" ) ;
     F.fprintf fmt "%a%a %t" Io_infer.Html.pp_hline ()
       (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
       (nodeid, session, line) pp_name ;
-    F.fprintf fmt "@\n<LISTING class='%s'>" (Pp.color_string Black)
+    F.fprintf fmt "@\n<div class='%s state code'>" (Pp.color_string Black)
 
 
   let finish_session node =
-    F.fprintf !curr_html_formatter "</LISTING>@?" ;
+    F.fprintf !curr_html_formatter "</div>@?" ;
     let source = (Procdesc.Node.get_loc node).file in
     let node_fname =
       let proc_name = Procdesc.Node.get_proc_name node in

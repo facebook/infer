@@ -408,7 +408,11 @@ module Node = struct
       node
 
 
-  let d_instrs ~highlight (node : t) = L.d_pp_with_pe ~color:Green (pp_instrs ~highlight) node
+  let d_instrs ~highlight (node : t) =
+    L.d_pp_with_pe ~color:Green
+      (fun pe fmt node -> F.fprintf fmt "@\n%a" (pp_instrs ~highlight pe) node)
+      node
+
 
   let string_of_prune_node_kind = function
     | PruneNodeKind_ExceptionHandler ->
