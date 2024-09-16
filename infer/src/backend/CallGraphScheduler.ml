@@ -65,13 +65,13 @@ let bottom_up call_graph =
     | Some n ->
         incr scheduled ;
         CallGraph.Node.set_flag n ;
-        Some (Procname {procname= n.pname; specialization= None})
+        Some (Procname {proc_name= n.pname; specialization= None})
   in
   let finished ~result:_ = function
-    | Procname {procname} ->
+    | Procname {proc_name} ->
         decr remaining ;
         decr scheduled ;
-        CallGraph.remove call_graph procname
+        CallGraph.remove call_graph proc_name
     | File _ ->
         L.die InternalError "Only Procnames are scheduled but File target was received"
   in

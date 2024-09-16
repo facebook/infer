@@ -12,13 +12,13 @@ let get_missed_captures source_files_filter =
   let filter sourcefile _procname =
     (Lazy.force Filtering.source_files_filter) sourcefile && source_files_filter sourcefile
   in
-  let procnames = Procedures.get_all ~filter () in
-  let get_summary procname =
-    Summary.OnDisk.get ~lazy_payloads:true (AnalysisRequest.one Pulse) procname
+  let proc_names = Procedures.get_all ~filter () in
+  let get_summary proc_name =
+    Summary.OnDisk.get ~lazy_payloads:true (AnalysisRequest.one Pulse) proc_name
     |> Option.bind ~f:(fun {Summary.payloads= {pulse}} -> ILazy.force_option pulse)
   in
   let entry_nodes =
-    List.map procnames ~f:(fun procname -> SpecializedProcname.{procname; specialization= None})
+    List.map proc_names ~f:(fun proc_name -> {SpecializedProcname.proc_name; specialization= None})
   in
   PulseSpecializedCallGraph.get_missed_captures ~get_summary entry_nodes
 

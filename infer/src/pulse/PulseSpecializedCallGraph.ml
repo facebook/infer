@@ -54,7 +54,7 @@ let get_missed_captures ~get_summary entry_nodes =
             | Specialization.Pulse t -> t )
       in
       let direct_missed_captures, seen, missed_captures_map =
-        match get_summary node.procname with
+        match get_summary node.proc_name with
         | None ->
             (Typ.Name.Set.empty, seen, missed_captures_map)
         | Some summary ->
@@ -66,8 +66,8 @@ let get_missed_captures ~get_summary entry_nodes =
             if has_transitive_missed_captures then
               let seen, missed_captures_map =
                 TransitiveInfo.DirectCallee.Set.fold
-                  (fun {procname; specialization} acc ->
-                    let node = Node.{procname; specialization= Some (Pulse specialization)} in
+                  (fun {proc_name; specialization} acc ->
+                    let node = {Node.proc_name; specialization= Some (Pulse specialization)} in
                     visit acc node )
                   direct_callees (seen, missed_captures_map)
               in

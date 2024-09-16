@@ -96,8 +96,8 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
     let exe_env = Exe_env.mk () in
     let result =
       match target with
-      | Procname {procname; specialization} ->
-          analyze_proc_name exe_env ~specialization procname
+      | Procname {proc_name; specialization} ->
+          analyze_proc_name exe_env ~specialization proc_name
       | File source_file ->
           analyze_source_file exe_env source_file
     in

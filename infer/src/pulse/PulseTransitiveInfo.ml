@@ -108,11 +108,11 @@ module Callees = struct
 end
 
 module DirectCallee = struct
-  type t = {procname: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
+  type t = {proc_name: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
   [@@deriving equal, compare]
 
-  let pp fmt {procname; specialization} =
-    F.fprintf fmt "%a (specialized for %a)" Procname.pp procname Specialization.Pulse.pp
+  let pp fmt {proc_name; specialization} =
+    F.fprintf fmt "%a (specialized for %a)" Procname.pp proc_name Specialization.Pulse.pp
       specialization
 
 
@@ -177,11 +177,11 @@ let remember_dropped_elements ~dropped
   {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures}
 
 
-let add_specialized_direct_callee procname specialization loc ({direct_callees} as transitive_info)
+let add_specialized_direct_callee proc_name specialization loc ({direct_callees} as transitive_info)
     =
   { transitive_info with
-    direct_callees= DirectCallee.Set.add {DirectCallee.procname; specialization; loc} direct_callees
-  }
+    direct_callees=
+      DirectCallee.Set.add {DirectCallee.proc_name; specialization; loc} direct_callees }
 
 
 let apply_summary ~callee_pname ~call_loc ~summary

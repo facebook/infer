@@ -8,7 +8,7 @@
 open! IStd
 
 module DirectCallee : sig
-  type t = {procname: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
+  type t = {proc_name: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
 
   module Set : sig
     include PrettyPrintable.PPSet with type elt = t

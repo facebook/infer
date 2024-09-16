@@ -7,7 +7,7 @@
 open! IStd
 
 type target =
-  | Procname of {procname: Procname.t; specialization: Specialization.t option}
+  | Procname of {proc_name: Procname.t; specialization: Specialization.t option}
   | File of SourceFile.t
 
 type analysis_result =

@@ -42,14 +42,13 @@ let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.Task
 
 let make sources =
   let target_count = ref 0 in
-  let cons_procname_work acc ~specialization procname =
+  let cons_procname_work acc ~specialization proc_name =
     incr target_count ;
-    {work= TaskSchedulerTypes.Procname {procname; specialization}; dependency_filename_opt= None}
-    :: acc
+    {work= Procname {proc_name; specialization}; dependency_filename_opt= None} :: acc
   in
   let procs_to_analyze_targets =
     NodeSet.fold
-      (fun Node.{procname; specialization} acc -> cons_procname_work acc ~specialization procname)
+      (fun {Node.proc_name; specialization} acc -> cons_procname_work acc ~specialization proc_name)
       (read_procs_to_analyze ()) []
   in
   let pname_targets =

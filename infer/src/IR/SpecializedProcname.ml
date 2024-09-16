@@ -9,16 +9,16 @@ open! IStd
 module F = Format
 
 module T = struct
-  type t = {procname: Procname.t; specialization: Specialization.t option}
+  type t = {proc_name: Procname.t; specialization: Specialization.t option}
   [@@deriving equal, compare, sexp]
 
-  let pp fmt {procname; specialization} =
+  let pp fmt {proc_name; specialization} =
     match specialization with
     | Some specialization ->
-        F.fprintf fmt "%a (specialized for %a)" Procname.pp_verbose procname Specialization.pp
+        F.fprintf fmt "%a (specialized for %a)" Procname.pp_verbose proc_name Specialization.pp
           specialization
     | None ->
-        Procname.pp fmt procname
+        Procname.pp fmt proc_name
 end
 
 include T
