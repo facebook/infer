@@ -39,7 +39,7 @@ include sig
   [@@deriving fields, yojson_of]
 end
 
-val pp : Pp.env -> Format.formatter -> t -> unit
+val pp : Pp.env -> Procname.t -> Format.formatter -> t -> unit
 
 val empty : t
 

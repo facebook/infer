@@ -36,7 +36,7 @@ val force_exit_program :
   -> ExecutionDomain.t
   -> _ ExecutionDomain.base_t SatUnsat.t
 
-val pp : Pp.env -> Format.formatter -> t -> unit
+val pp : Pp.env -> Procname.t -> Format.formatter -> t -> unit
 
 val append_objc_actual_self_positive :
      Procname.t

@@ -36,20 +36,30 @@ let pp_summary print_kind fmt ~pp_specialized_name {pre_post_list; non_disj} =
     non_disj
 
 
-let pp {Pp.kind= print_kind} fmt {main; specialized} =
+let pp_proc_name_sexp print_kind fmt specialized_proc_name =
+  Pp.html_collapsible_block ~name:"s-exp for --procs-to-analyze" print_kind Sexp.pp_hum fmt
+    (SpecializedProcname.sexp_of_t specialized_proc_name)
+
+
+let pp {Pp.kind= print_kind} proc_name fmt {main; specialized} =
   if Specialization.Pulse.Map.is_empty specialized then
-    pp_summary print_kind fmt ~pp_specialized_name:(fun _fmt -> ()) main
+    pp_summary print_kind ~pp_specialized_name:(fun _fmt -> ()) fmt main
   else
     let pp_specialized_name fmt = F.pp_print_string fmt " main" in
     F.open_hvbox 0 ;
-    pp_summary print_kind fmt ~pp_specialized_name main ;
+    F.fprintf fmt "%a@\n%a"
+      (pp_summary print_kind ~pp_specialized_name)
+      main (pp_proc_name_sexp print_kind)
+      {SpecializedProcname.proc_name; specialization= None} ;
     Specialization.Pulse.Map.iter
       (fun specialization pre_posts ->
-        F.fprintf fmt "@\n" ;
         let pp_specialized_name fmt =
           F.fprintf fmt " specialized with %a" Specialization.Pulse.pp specialization
         in
-        pp_summary print_kind fmt ~pp_specialized_name pre_posts )
+        F.fprintf fmt "@\n%a@\n%a"
+          (pp_summary print_kind ~pp_specialized_name)
+          pre_posts (pp_proc_name_sexp print_kind)
+          {SpecializedProcname.proc_name; specialization= Some (Pulse specialization)} )
       specialized ;
     F.close_box ()
 

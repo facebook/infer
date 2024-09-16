@@ -69,13 +69,13 @@ let pp_signature fmt {proc_name} =
 
 let pp_no_stats_specs fmt summary = F.fprintf fmt "%a@\n" pp_signature summary
 
-let pp_text fmt ({err_log; payloads; stats; dependencies} as summary) =
+let pp_text fmt ({proc_name; err_log; payloads; stats; dependencies} as summary) =
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text) payloads
-    Dependencies.pp dependencies
+  F.fprintf fmt "%a@\n%a%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text proc_name)
+    payloads Dependencies.pp dependencies
 
 
-let pp_html source fmt ({err_log; payloads; stats} as summary) =
+let pp_html source fmt ({proc_name; err_log; payloads; stats} as summary) =
   let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
   F.pp_force_newline fmt () ;
   Pp.html_with_color Black (pp_escaped pp_no_stats_specs) fmt summary ;
@@ -84,7 +84,7 @@ let pp_html source fmt ({err_log; payloads; stats} as summary) =
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<button type='button' onclick='toggleDetailsBlock()'>Toggle details</button>" ;
   F.fprintf fmt "<div class='state code'>@\n" ;
-  Payloads.pp (Pp.html Black) fmt payloads ;
+  Payloads.pp (Pp.html Black) proc_name fmt payloads ;
   F.fprintf fmt "</div>@\n" ;
   ()
 

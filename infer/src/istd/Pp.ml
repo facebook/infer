@@ -124,7 +124,7 @@ let html_collapsible_block ~name pp_kind pp f x =
       F.fprintf f "@[<hv2>%s: %a@]" name pp x
   | HTML ->
       let before =
-        Printf.sprintf "<details class='state'><summary>%s</summary><p>" (Escape.escape_xml name)
+        Printf.sprintf "<details class='state'><summary>%s</summary><p>\n" (Escape.escape_xml name)
       in
       let after = "</p></details>" in
       F.fprintf f "@<0>%s%a@<0>%s" before pp x after

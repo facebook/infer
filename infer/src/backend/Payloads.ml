@@ -39,13 +39,14 @@ let () =
     L.die InternalError "Payloads.t and PayloadId.t do not match."
 
 
-type 'a pp = Pp.env -> F.formatter -> 'a -> unit
+type 'a pp = Pp.env -> Procname.t -> F.formatter -> 'a -> unit
 
 type field =
   | F : {field: (t, 'a Lazy.t option) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
 
 let all_fields =
-  let mk_pe field payload_id pp = F {field; payload_id; pp} in
+  let mk_full field payload_id pp = F {field; payload_id; pp} in
+  let mk_pe field payload_id pp = mk_full field payload_id (fun pe _pname fmt x -> pp pe fmt x) in
   let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
   let mk field payload_id pp =
     mk_pe field payload_id (fun pe fmt state ->
@@ -64,7 +65,7 @@ let all_fields =
     ~cost:(fun f -> mk f Cost CostDomain.pp_summary)
     ~disjunctive_demo:(fun f -> mk f DisjunctiveDemo DisjunctiveDemo.pp_domain)
     ~litho_required_props:(fun f -> mk f LithoRequiredProps LithoDomain.pp_summary)
-    ~pulse:(fun f -> mk_pe f Pulse PulseSummary.pp)
+    ~pulse:(fun f -> mk_full f Pulse PulseSummary.pp)
     ~purity:(fun f -> mk f Purity PurityDomain.pp_summary)
     ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
@@ -80,7 +81,7 @@ let all_fields =
            (PayloadId.Variants.to_rank payload_id2) )
 
 
-let pp pe fmt payloads =
+let pp pe proc_name fmt payloads =
   let is_first = ref true in
   List.iter all_fields ~f:(fun (F {field; payload_id; pp}) ->
       Field.get field payloads |> ILazy.force_option
@@ -94,7 +95,9 @@ let pp pe fmt payloads =
                | TEXT ->
                    F.fprintf fmt "%s:" name
              in
-             F.fprintf fmt "%a %a@\n" pp_name (PayloadId.Variants.to_name payload_id) (pp pe) x ) )
+             F.fprintf fmt "%a %a@\n" pp_name
+               (PayloadId.Variants.to_name payload_id)
+               (pp pe proc_name) x ) )
 
 
 let empty =
