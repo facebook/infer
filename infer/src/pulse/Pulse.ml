@@ -157,6 +157,16 @@ let report_unnecessary_parameter_copies ({InterproceduralAnalysis.proc_desc; ten
 
 let heap_size () = (Gc.quick_stat ()).heap_words
 
+(* for printing the session name only, promise! *)
+let current_specialization = ref None
+
+let () = AnalysisGlobalState.register_ref ~init:(fun () -> None) current_specialization
+
+let pp_space_specialization fmt =
+  Option.iter !current_specialization ~f:(function _, Specialization.Pulse specialization ->
+      F.fprintf fmt " (specialized: %a)" Specialization.Pulse.pp specialization )
+
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.ExceptionalNoSinkToExitEdge
   module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
@@ -1616,7 +1626,7 @@ module PulseTransferFunctions = struct
 
   let remember_dropped_disjuncts = NonDisjDomain.remember_dropped_disjuncts
 
-  let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
+  let pp_session_name _node fmt = F.fprintf fmt "Pulse%t" pp_space_specialization
 
   let pp_disjunct kind fmt (exec_astate, path) =
     ExecutionDomain.pp_with_kind kind (Some path) fmt exec_astate
@@ -1645,7 +1655,7 @@ module DisjunctiveAnalyzer =
 
 let with_html_debug_node node ~desc ~f =
   AnalysisCallbacks.html_debug_new_node_session node
-    ~pp_name:(fun fmt -> F.pp_print_string fmt desc)
+    ~pp_name:(fun fmt -> F.fprintf fmt "%s%t" desc pp_space_specialization)
     ~f
 
 
@@ -1923,6 +1933,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
 let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let open IOption.Let_syntax in
   if should_analyze proc_desc then (
+    current_specialization := specialization ;
     try
       match specialization with
       | None ->

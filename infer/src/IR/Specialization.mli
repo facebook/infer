@@ -43,7 +43,7 @@ module Pulse : sig
 
   val is_bottom : t -> bool
 
-  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+  val pp : F.formatter -> t -> unit
 
   module Map : PrettyPrintable.PPMap with type key = t
 

@@ -16,7 +16,7 @@ module HeapPath = struct
 
   let rec pp fmt = function
     | Pvar pvar ->
-        Pvar.pp Pp.text fmt pvar
+        Pvar.pp_value fmt pvar
     | FieldAccess (fieldname, path) ->
         F.fprintf fmt "%a -> %a " pp path Fieldname.pp fieldname
     | Dereference path ->
@@ -48,7 +48,9 @@ module Pulse = struct
   module DynamicTypes = struct
     type t = Typ.name HeapPath.Map.t [@@deriving equal, compare, sexp]
 
-    let pp fmt dtypes = HeapPath.Map.pp ~pp_value:Typ.Name.pp fmt dtypes
+    let pp fmt dtypes =
+      if not (HeapPath.Map.is_empty dtypes) then
+        F.fprintf fmt "@[dynamic_types: %a@]" (HeapPath.Map.pp ~pp_value:Typ.Name.pp) dtypes
   end
 
   type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
@@ -62,14 +64,13 @@ module Pulse = struct
 
   let pp_aliases fmt = function
     | None ->
-        F.pp_print_string fmt "none"
+        ()
     | Some aliases ->
-        Aliases.pp fmt aliases
+        F.fprintf fmt "@[alias: %a@]@ " Aliases.pp aliases
 
 
   let pp fmt {aliases; dynamic_types} =
-    F.fprintf fmt "@[@[alias: %a@],@ @[dynamic_types: %a@]@]" pp_aliases aliases DynamicTypes.pp
-      dynamic_types
+    F.fprintf fmt "@[%a%a@]" pp_aliases aliases DynamicTypes.pp dynamic_types
 
 
   module Set = PrettyPrintable.MakePPSet (struct
