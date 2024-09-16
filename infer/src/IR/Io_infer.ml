@@ -89,6 +89,7 @@ summary { margin-left: -20pt; }
 .d_with_indent { padding-left: 20pt; }
 .d_with_indent_name { margin-left: -20pt; }
 .has_hover:hover { background-color:LemonChiffon; }
+.state { white-space: pre; }
 .pulse_invalid { color:red; }
 </style>
 |}

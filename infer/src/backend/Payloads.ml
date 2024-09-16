@@ -46,7 +46,15 @@ type field =
 
 let all_fields =
   let mk_pe field payload_id pp = F {field; payload_id; pp} in
-  let mk field payload_id pp = mk_pe field payload_id (fun _ -> pp) in
+  let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
+  let mk field payload_id pp =
+    mk_pe field payload_id (fun pe fmt state ->
+        match pe.Pp.kind with
+        | TEXT ->
+            pp fmt state
+        | HTML ->
+            F.fprintf fmt "<pre>@\n%a@\n</pre>@\n" (pp_escaped pp) state )
+  in
   Fields.to_list
     ~annot_map:(fun f -> mk f AnnotMap AnnotationReachabilityDomain.pp)
     ~biabduction:(fun f -> mk_pe f Biabduction BiabductionSummary.pp)
@@ -72,11 +80,21 @@ let all_fields =
            (PayloadId.Variants.to_rank payload_id2) )
 
 
-let pp pe f payloads =
+let pp pe fmt payloads =
+  let is_first = ref true in
   List.iter all_fields ~f:(fun (F {field; payload_id; pp}) ->
       Field.get field payloads |> ILazy.force_option
       |> Option.iter ~f:(fun x ->
-             F.fprintf f "%s: %a@\n" (PayloadId.Variants.to_name payload_id) (pp pe) x ) )
+             (match pe.Pp.kind with HTML when not !is_first -> F.fprintf fmt "<hr>" | _ -> ()) ;
+             is_first := false ;
+             let pp_name fmt name =
+               match pe.Pp.kind with
+               | HTML ->
+                   F.fprintf fmt "<h3>%s</h3>" name
+               | TEXT ->
+                   F.fprintf fmt "%s:" name
+             in
+             F.fprintf fmt "%a %a@\n" pp_name (PayloadId.Variants.to_name payload_id) (pp pe) x ) )
 
 
 let empty =
