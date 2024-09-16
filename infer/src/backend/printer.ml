@@ -148,7 +148,7 @@ end = struct
     | None ->
         ()
     | Some summary ->
-        F.pp_print_string fmt "<br />@\n" ;
+        F.fprintf fmt "<br />@\n" ;
         Summary.pp_html source fmt summary ) ;
     F.fprintf fmt "<hr />@\n<pre>@\n%s</pre>@\n"
       (Escape.escape_xml (F.asprintf "%a" ProcAttributes.pp (Procdesc.get_attributes pdesc))) ;
