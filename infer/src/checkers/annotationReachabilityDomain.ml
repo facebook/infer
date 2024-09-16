@@ -24,5 +24,5 @@ let add_call_site annot sink call_site annot_map =
   let sink_map = find_opt annot annot_map |> Option.value ~default:SinkMap.empty in
   if SinkMap.mem sink sink_map then annot_map
   else
-    let sink_map' = SinkMap.singleton sink (CallSites.singleton call_site) in
+    let sink_map' = SinkMap.add sink (CallSites.singleton call_site) sink_map in
     add annot sink_map' annot_map
