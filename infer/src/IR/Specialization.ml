@@ -12,7 +12,7 @@ module HeapPath = struct
   (** this is the subset of HilExp.access_expression that make sense in a precondition TODO: deal
       with ArrayAccess *)
   type t = Pvar of Pvar.t | FieldAccess of (Fieldname.t * t) | Dereference of t
-  [@@deriving equal, compare, sexp]
+  [@@deriving equal, compare, hash, sexp]
 
   let rec pp fmt = function
     | Pvar pvar ->
@@ -23,8 +23,8 @@ module HeapPath = struct
         F.fprintf fmt "%a -> * " pp path
 
 
-  module Map = PrettyPrintable.MakeSexpPPMap (struct
-    type nonrec t = t [@@deriving compare, sexp]
+  module Map = PrettyPrintable.MakeHashSexpPPMap (struct
+    type nonrec t = t [@@deriving compare, hash, sexp]
 
     let pp = pp
   end)
@@ -38,7 +38,7 @@ end
 
 module Pulse = struct
   module Aliases = struct
-    type t = HeapPath.t list list [@@deriving equal, compare, sexp]
+    type t = HeapPath.t list list [@@deriving equal, compare, hash, sexp]
 
     let pp fmt aliases =
       let pp_alias fmt alias = Pp.seq ~sep:" = " HeapPath.pp fmt alias in
@@ -46,7 +46,7 @@ module Pulse = struct
   end
 
   module DynamicTypes = struct
-    type t = Typ.name HeapPath.Map.t [@@deriving equal, compare, sexp]
+    type t = Typ.name HeapPath.Map.t [@@deriving equal, compare, hash, sexp]
 
     let pp fmt dtypes =
       if not (HeapPath.Map.is_empty dtypes) then
@@ -54,7 +54,7 @@ module Pulse = struct
   end
 
   type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
-  [@@deriving equal, compare, sexp]
+  [@@deriving equal, compare, hash, sexp]
 
   let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty}
 
@@ -108,6 +108,6 @@ module Pulse = struct
       dynamic_types
 end
 
-type t = Pulse of Pulse.t [@@deriving equal, compare, sexp]
+type t = Pulse of Pulse.t [@@deriving equal, compare, hash, sexp]
 
 let pp fmt = function Pulse t -> F.fprintf fmt "Pulse(%a)" Pulse.pp t

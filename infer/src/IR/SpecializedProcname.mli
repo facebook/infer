@@ -9,10 +9,10 @@ open! IStd
 module F = Format
 
 type t = {proc_name: Procname.t; specialization: Specialization.t option}
-[@@deriving equal, compare, sexp]
+[@@deriving equal, compare, hash, sexp]
 
 val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
-module Set : PrettyPrintable.SexpPPSet with type elt = t
+module Set : PrettyPrintable.HashSexpPPSet with type elt = t
 
 module Map : PrettyPrintable.PPMap with type key = t

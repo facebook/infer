@@ -10,7 +10,7 @@ module F = Format
 
 module T = struct
   type t = {proc_name: Procname.t; specialization: Specialization.t option}
-  [@@deriving equal, compare, sexp]
+  [@@deriving equal, compare, hash, sexp]
 
   let pp fmt {proc_name; specialization} =
     match specialization with
@@ -23,4 +23,4 @@ end
 
 include T
 module Map = PrettyPrintable.MakePPMap (T)
-module Set = PrettyPrintable.MakeSexpPPSet (T)
+module Set = PrettyPrintable.MakeHashSexpPPSet (T)

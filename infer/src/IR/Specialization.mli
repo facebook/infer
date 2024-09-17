@@ -59,6 +59,6 @@ end
     interprocedural engine will reanalyze a procedure if it needs specialization and it will add the
     obtained specialized summary to the summaries stored for this procedure. This techique avoids
     cloning procedures. *)
-type t = Pulse of Pulse.t [@@deriving equal, compare, sexp]
+type t = Pulse of Pulse.t [@@deriving equal, compare, hash, sexp]
 
 val pp : F.formatter -> t -> unit
