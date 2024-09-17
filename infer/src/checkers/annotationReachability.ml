@@ -258,16 +258,18 @@ let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot
   trace |> update ~level:1 call_loc call_description |> update ~level:0 def_loc def_description
 
 
+(* Find paths from a given source procedure to a given sink annotation. If there are multiple
+   procedures annotated with the same sink annotation, there will be one path for each of them. *)
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src
     (spec : AnnotationSpec.t) sink_map =
   let snk_annot = spec.sink_annotation in
-  let rec loop fst_call_loc trace snk_pname (call_site_info : Domain.call_site_info) =
+  let rec step_forward report_loc trace snk_pname (call_site_info : Domain.call_site_info) =
     let callee_pname = CallSite.pname call_site_info.call_site in
     let end_of_stack = Procname.equal callee_pname snk_pname in
     let new_trace = add_to_trace call_site_info end_of_stack snk_annot trace in
     if end_of_stack then
       (* Reached sink, report *)
-      report_src_to_snk_path analysis_data src spec fst_call_loc (List.rev new_trace) callee_pname
+      report_src_to_snk_path analysis_data src spec report_loc (List.rev new_trace) callee_pname
     else if
       Config.annotation_reachability_minimize_sources
       && method_overrides_annot src spec.models tenv callee_pname
@@ -282,20 +284,20 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
         Domain.SinkMap.find_opt snk_pname callee_sink_map
         |> Option.value ~default:Domain.CallSites.empty
       in
-      try
-        let call_site_info = Domain.CallSites.min_elt next_call_sites in
-        loop fst_call_loc new_trace snk_pname call_site_info
-      with Caml.Not_found -> ()
+      let next_fst_call_site = Domain.CallSites.min_elt_opt next_call_sites in
+      Option.iter next_fst_call_site ~f:(step_forward report_loc new_trace snk_pname)
   in
   let trace = start_trace proc_desc src in
   Domain.SinkMap.iter
     (fun snk_pname call_sites ->
       let fst_call_site =
+        (* Just pick one path forward (per sink procedure) to avoid path explosion *)
         try Domain.CallSites.min_elt call_sites
         with Caml.Not_found -> L.die InternalError "Callsite map should not be empty"
       in
-      let fst_call_loc = CallSite.loc fst_call_site.call_site in
-      loop fst_call_loc trace snk_pname fst_call_site )
+      (* Report the issue where the source makes the first call *)
+      let report_loc = CallSite.loc fst_call_site.call_site in
+      step_forward report_loc trace snk_pname fst_call_site )
     sink_map
 
 
@@ -313,8 +315,8 @@ let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} src (spec :
 
 let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data)
     (spec : AnnotationSpec.t) annot_map =
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let check_one_src_and_find_snk src =
-    let proc_name = Procdesc.get_proc_name proc_desc in
     if method_overrides_annot src spec.models tenv proc_name then (
       (* If there are callsites to sinks, find/report such paths. *)
       Option.iter (Domain.find_opt spec.sink_annotation annot_map) ~f:(fun sink_map ->
