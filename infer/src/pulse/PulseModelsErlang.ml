@@ -640,9 +640,13 @@ module Comparison = struct
         let<**> astate, result = cmp.atom x y tenv location path astate in
         let hist = Hist.single_call path location "any_atom_comparison" in
         [Ok (astate, (result, hist))]
-    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map | Any, _ | _, Any ->
+    | Nil, Nil | Cons, Cons | Map, Map | Any, _ | _, Any ->
         let<**> astate, result = cmp.unsupported (x, x_typ) (y, y_typ) tenv location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
+        [Ok (astate, (result, hist))]
+    | Tuple size_x, Tuple size_y when [%equal: int] size_x size_y ->
+        let<**> astate, result = cmp.unsupported (x, x_typ) (y, y_typ) tenv location path astate in
+        let hist = Hist.single_alloc path location "tuple_comparison" in
         [Ok (astate, (result, hist))]
     | _ ->
         let<**> astate, result = cmp.incompatible (x, x_typ) (y, y_typ) tenv location path astate in

@@ -40,7 +40,7 @@
     test_not_equal_atom_Bad/0,
     fp_test_not_equal_tuple_Ok/0,
     test_not_equal_tuple_Bad/0,
-    fp_test_not_equal_tuple_different_size_Ok/0,
+    test_not_equal_tuple_different_size_Ok/0,
     test_not_equal_int_atom_Ok/0,
     test_exactly_not_equal_Ok/0,
     fp_test_exactly_not_equal2_Ok/0,
@@ -217,7 +217,7 @@ fp_test_not_equal_tuple_Ok() ->
 test_not_equal_tuple_Bad () ->
     ?CRASH_IF_EQUAL(false, {ok, 42} /= {ok, 42}).
 
-fp_test_not_equal_tuple_different_size_Ok() ->
+test_not_equal_tuple_different_size_Ok() ->
     ?ASSERT_EQUAL(true, {1, 2} /= {1, 2, 3}).
 
 test_not_equal_int_atom_Ok() ->
