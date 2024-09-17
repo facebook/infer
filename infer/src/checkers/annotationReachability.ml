@@ -261,8 +261,7 @@ let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src
     (spec : AnnotationSpec.t) sink_map =
   let snk_annot = spec.sink_annotation in
-  let rec loop fst_call_loc visited_pnames trace snk_pname (call_site_info : Domain.call_site_info)
-      =
+  let rec loop fst_call_loc trace snk_pname (call_site_info : Domain.call_site_info) =
     let callee_pname = CallSite.pname call_site_info.call_site in
     let end_of_stack = method_overrides_annot snk_annot spec.models tenv callee_pname in
     let new_trace = add_to_trace call_site_info end_of_stack snk_annot trace in
@@ -283,10 +282,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       in
       try
         let call_site_info = Domain.CallSites.min_elt next_call_sites in
-        let p = CallSite.pname call_site_info.call_site in
-        if Procname.Set.mem p visited_pnames then ()
-        else
-          loop fst_call_loc (Procname.Set.add p visited_pnames) new_trace snk_pname call_site_info
+        loop fst_call_loc new_trace snk_pname call_site_info
       with Caml.Not_found -> ()
   in
   let trace = start_trace proc_desc src in
@@ -295,7 +291,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       try
         let fst_call_site = Domain.CallSites.min_elt call_sites in
         let fst_call_loc = CallSite.loc fst_call_site.call_site in
-        loop fst_call_loc Procname.Set.empty trace snk_pname fst_call_site
+        loop fst_call_loc trace snk_pname fst_call_site
       with Caml.Not_found -> () )
     sink_map
 
