@@ -260,12 +260,14 @@ let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot
 
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src
     (spec : AnnotationSpec.t) sink_map =
-  let snk = spec.sink_annotation in
-  let rec loop fst_call_loc visited_pnames trace (call_site_info : Domain.call_site_info) =
+  let snk_annot = spec.sink_annotation in
+  let rec loop fst_call_loc visited_pnames trace snk_pname (call_site_info : Domain.call_site_info)
+      =
     let callee_pname = CallSite.pname call_site_info.call_site in
-    let end_of_stack = method_overrides_annot snk spec.models tenv callee_pname in
-    let new_trace = add_to_trace call_site_info end_of_stack snk trace in
+    let end_of_stack = method_overrides_annot snk_annot spec.models tenv callee_pname in
+    let new_trace = add_to_trace call_site_info end_of_stack snk_annot trace in
     if end_of_stack then
+      (* Reached sink, report *)
       report_src_to_snk_path analysis_data src spec fst_call_loc (List.rev new_trace) callee_pname
     else if
       Config.annotation_reachability_minimize_sources
@@ -273,27 +275,27 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     then (* Found a source in the middle, this path is not minimal *)
       ()
     else
-      let next_calls = lookup_annotation_calls analysis_data snk callee_pname in
-      let unseen_callees, updated_callees =
-        Domain.SinkMap.fold
-          (fun _ call_sites ((unseen, visited) as accu) ->
-            try
-              let call_site_info = Domain.CallSites.min_elt call_sites in
-              let p = CallSite.pname call_site_info.call_site in
-              if Procname.Set.mem p visited then accu
-              else (call_site_info :: unseen, Procname.Set.add p visited)
-            with Caml.Not_found -> accu )
-          next_calls ([], visited_pnames)
+      (* Sink not yet reached, thus we have an intermediate step: let's get its summary and recurse *)
+      let callee_sink_map = lookup_annotation_calls analysis_data snk_annot callee_pname in
+      let next_call_sites =
+        Domain.SinkMap.find_opt snk_pname callee_sink_map
+        |> Option.value ~default:Domain.CallSites.empty
       in
-      List.iter ~f:(loop fst_call_loc updated_callees new_trace) unseen_callees
+      try
+        let call_site_info = Domain.CallSites.min_elt next_call_sites in
+        let p = CallSite.pname call_site_info.call_site in
+        if Procname.Set.mem p visited_pnames then ()
+        else
+          loop fst_call_loc (Procname.Set.add p visited_pnames) new_trace snk_pname call_site_info
+      with Caml.Not_found -> ()
   in
   let trace = start_trace proc_desc src in
   Domain.SinkMap.iter
-    (fun _ call_sites ->
+    (fun snk_pname call_sites ->
       try
         let fst_call_site = Domain.CallSites.min_elt call_sites in
         let fst_call_loc = CallSite.loc fst_call_site.call_site in
-        loop fst_call_loc Procname.Set.empty trace fst_call_site
+        loop fst_call_loc Procname.Set.empty trace snk_pname fst_call_site
       with Caml.Not_found -> () )
     sink_map
 
