@@ -618,6 +618,12 @@ JAVA OPTIONS
            annotation reachability checker) (Conversely:
            --no-annotation-reachability-expensive)
 
+       --no-annotation-reachability-minimize-sinks
+           Deactivates: do not report paths where a prefix is also a source
+           to sink path. For example if there is a source() -> sink1() ->
+           sink2() path then only source() -> sink1() will be reported.
+           (Conversely: --annotation-reachability-minimize-sinks)
+
        --annotation-reachability-minimize-sources
            Activates: do not report paths where a suffix is also a source to
            sink path. For example if there is a source1() -> source2() ->

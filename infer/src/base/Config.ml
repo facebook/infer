@@ -626,6 +626,14 @@ and annotation_reachability_expensive =
      @Expensive or modeled, with annotation reachability checker)"
 
 
+and annotation_reachability_minimize_sinks =
+  CLOpt.mk_bool ~long:"annotation-reachability-minimize-sinks"
+    ~in_help:InferCommand.[(Analyze, manual_java)]
+    "do not report paths where a prefix is also a source to sink path. For example if there is a \
+     source() -> sink1() -> sink2() path then only source() -> sink1() will be reported."
+    ~default:true
+
+
 and annotation_reachability_minimize_sources =
   CLOpt.mk_bool ~long:"annotation-reachability-minimize-sources"
     ~in_help:InferCommand.[(Analyze, manual_java)]
@@ -3822,6 +3830,8 @@ and annotation_reachability_custom_models = !annotation_reachability_custom_mode
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
 and annotation_reachability_expensive = !annotation_reachability_expensive
+
+and annotation_reachability_minimize_sinks = !annotation_reachability_minimize_sinks
 
 and annotation_reachability_minimize_sources = !annotation_reachability_minimize_sources
 

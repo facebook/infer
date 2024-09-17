@@ -72,12 +72,13 @@ class Minimize {
     finalSink();
   }
 
+  // This is reported twice due to no sink minimization
   @UserDefinedSource
   void sourceCallingSinkBad() {
     sinkCallingSink();
   }
 
-  // This is not reported due to minimization
+  // This is not reported due to source minimization
   @UserDefinedSource
   void sourceCallingSourceOk() {
     sourceCallingSinkBad();

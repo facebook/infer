@@ -104,6 +104,13 @@ OPTIONS
            --no-annotation-reachability-expensive)
            See also infer-analyze(1).
 
+       --no-annotation-reachability-minimize-sinks
+           Deactivates: do not report paths where a prefix is also a source
+           to sink path. For example if there is a source() -> sink1() ->
+           sink2() path then only source() -> sink1() will be reported.
+           (Conversely: --annotation-reachability-minimize-sinks)
+           See also infer-analyze(1).
+
        --annotation-reachability-minimize-sources
            Activates: do not report paths where a suffix is also a source to
            sink path. For example if there is a source1() -> source2() ->

@@ -70,7 +70,8 @@ class CustomAnnotations {
     callsTwoSinks();
   }
 
-  // This is reported even though it is a superset of an other trace
+  // By default, due to source minimization being off, this is reported even though it is a superset
+  // of an other trace
   @UserDefinedSource2
   void sourceCallsSourceBad() {
     source22Bad();
@@ -87,7 +88,8 @@ class CustomAnnotations {
     sink1();
   }
 
-  // This is only reported once even though this method ends up calling two sinks
+  // By default, due to sink minimization this is only reported once even though this method ends up
+  // calling two sinks
   @UserDefinedSource1
   void sourceCallsSinkThatCallsSinkBad() {
     sinkCallsSink();

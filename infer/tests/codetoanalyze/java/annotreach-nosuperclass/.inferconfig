@@ -11,5 +11,6 @@
   ],
   "annotation-reachability-apply-superclass-annotations": false,
   "annotation-reachability-report-source-and-sink": true,
-  "annotation-reachability-minimize-sources": true
+  "annotation-reachability-minimize-sources": true,
+  "annotation-reachability-minimize-sinks": false
 }

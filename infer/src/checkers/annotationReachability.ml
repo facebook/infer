@@ -263,7 +263,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
   let snk_annot = spec.sink_annotation in
   let rec loop fst_call_loc trace snk_pname (call_site_info : Domain.call_site_info) =
     let callee_pname = CallSite.pname call_site_info.call_site in
-    let end_of_stack = method_overrides_annot snk_annot spec.models tenv callee_pname in
+    let end_of_stack = Procname.equal callee_pname snk_pname in
     let new_trace = add_to_trace call_site_info end_of_stack snk_annot trace in
     if end_of_stack then
       (* Reached sink, report *)
@@ -271,7 +271,9 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     else if
       Config.annotation_reachability_minimize_sources
       && method_overrides_annot src spec.models tenv callee_pname
-    then (* Found a source in the middle, this path is not minimal *)
+      || Config.annotation_reachability_minimize_sinks
+         && method_overrides_annot snk_annot spec.models tenv callee_pname
+    then (* If minimization is enabled and we find a source/sink in the middle, skip this path *)
       ()
     else
       (* Sink not yet reached, thus we have an intermediate step: let's get its summary and recurse *)
