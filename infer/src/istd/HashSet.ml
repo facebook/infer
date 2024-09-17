@@ -44,39 +44,39 @@ module type S = sig
 end
 
 module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
-  open Hashtbl
+  module H = Hashtbl.Make (Key)
 
   type elt = Key.t
 
-  type nonrec t = (elt, unit) t
+  type t = unit H.t
 
-  let create n = create n
+  let create n = H.create n
 
   let singleton x =
     let xs = create 1 in
-    add xs x () ;
+    H.add xs x () ;
     xs
 
 
-  let add x xs = replace xs x ()
+  let add x xs = H.replace xs x ()
 
-  let remove x xs = remove xs x
+  let remove x xs = H.remove xs x
 
-  let iter xs f = iter (fun x _ -> f x) xs
+  let iter xs f = H.iter (fun x _ -> f x) xs
 
-  let seq xs = to_seq_keys xs
+  let seq xs = H.to_seq_keys xs
 
-  let of_seq xs = of_seq (Seq.map (fun elt -> (elt, ())) xs)
+  let of_seq xs = H.of_seq (Seq.map (fun elt -> (elt, ())) xs)
 
   let remove_all it xs = Iter.iter (fun y -> remove y xs) it
 
-  let fold f = fold (fun x _ acc -> f x acc)
+  let fold f = H.fold (fun x _ acc -> f x acc)
 
-  let length = length
+  let length = H.length
 
-  let mem = mem
+  let mem = H.mem
 
-  let clear = clear
+  let clear = H.clear
 
   let union_into ~into xs = iter xs (fun x -> add x into)
 

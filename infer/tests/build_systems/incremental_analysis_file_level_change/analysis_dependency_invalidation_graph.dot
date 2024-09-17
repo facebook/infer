@@ -6,12 +6,12 @@ digraph callgraph {
   N0 [ label = "a\nflag=false" ];
   N0 -> N1 ;
 
-  N4 [ label = "meaning_of_life\nflag=false" ];
-  N4 -> N3 ;
+  N4 [ label = "main\nflag=true" ];
 
   N2 [ label = "c\nflag=false" ];
-  N2 -> N3 ;
+  N2 -> N4 ;
 
-  N3 [ label = "main\nflag=true" ];
+  N3 [ label = "meaning_of_life\nflag=false" ];
+  N3 -> N4 ;
 
 }
