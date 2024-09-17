@@ -631,8 +631,17 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
       `UseCurrentSummary
 
 
-let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency} as analysis_data)
-    path call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
+let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc callee_pname
+    astate =
+  let astate, cycle = AbductiveDomain.add_recursive_call call_loc callee_pname astate in
+  if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then
+    PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+      (MutualRecursionCycle {cycle; location= call_loc}) ;
+  astate
+
+
+let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analysis_data) path
+    call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
     ?call_flags non_disj_caller =
   let has_continue_program results =
     let f one_result =
@@ -658,7 +667,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
       ([], non_disj) )
     else (results, non_disj)
   in
-  let call_aux specialization {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} =
+  let call_specialized specialization
+      {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} astate =
     let results, (non_disj, contradiction) =
       call_aux disjunct_limit analysis_data path call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
@@ -670,8 +680,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
     (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
-      ?(specialization = Specialization.Pulse.bottom) already_given summary =
-    let res, non_disj, contradiction = call_aux specialization summary in
+      ?(specialization = Specialization.Pulse.bottom) already_given summary astate =
+    let res, non_disj, contradiction = call_specialized specialization summary astate in
     let needs_aliasing_specialization =
       match (res, contradiction) with
       | [], Some (Aliasing _) ->
@@ -682,13 +692,9 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
           `NoAliasSpecializationRequired
     in
     let request_specialization specialization =
-      let specialized_summary : PulseSummary.t =
-        match analyze_dependency ~specialization:(Pulse specialization) callee_pname with
-        | Ok summary ->
-            summary
-        | Error no_summary ->
-            L.die InternalError "No summary found by specialization: %a"
-              AnalysisResult.pp_no_summary no_summary
+      let open IResult.Let_syntax in
+      let+ (specialized_summary : PulseSummary.t) =
+        analyze_dependency ~specialization:(Pulse specialization) callee_pname
       in
       let is_limit_not_reached =
         Specialization.Pulse.is_pulse_specialization_limit_not_reached
@@ -702,8 +708,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
       | Some pre_posts ->
           (pre_posts, is_limit_not_reached)
     in
-    let case_if_specialization_is_impossible ~f =
-      ( f res
+    let case_if_specialization_is_impossible res =
+      ( res
       , summary
       , non_disj
       , contradiction
@@ -713,8 +719,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
         | `NoAliasSpecializationRequired ->
             `KnownCall )
     in
-    if not is_pulse_specialization_limit_not_reached then
-      case_if_specialization_is_impossible ~f:Fun.id
+    if not is_pulse_specialization_limit_not_reached then case_if_specialization_is_impossible res
     else
       let more_specialization, ask_caller_of_caller_first, needs_from_caller =
         match needs_aliasing_specialization with
@@ -773,17 +778,32 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
             || Specialization.Pulse.is_bottom specialization
           then
             case_if_specialization_is_impossible
-              ~f:(add_need_dynamic_type_specialization needs_from_caller)
+              (add_need_dynamic_type_specialization needs_from_caller res)
           else (
             L.d_printfln "requesting specialized analysis using %sspecialization %a"
               (if not (AbstractValue.Set.is_empty needs_from_caller) then "partial " else "")
               Specialization.Pulse.pp specialization ;
-            let summary, is_pulse_specialization_limit_not_reached =
-              request_specialization specialization
-            in
-            let already_given = Specialization.Pulse.Set.add specialization already_given in
-            iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
-              ~is_pulse_specialization_limit_not_reached ~specialization already_given summary )
+            match request_specialization specialization with
+            | Error MutualRecursionCycle ->
+                let res =
+                  List.map res ~f:(function result ->
+                      (let+ exec_state = result in
+                       match exec_state with
+                       | ContinueProgram astate ->
+                           ContinueProgram
+                             (on_recursive_call analysis_data call_loc callee_pname astate)
+                       | exec_state ->
+                           exec_state ) )
+                in
+                case_if_specialization_is_impossible res
+            | Error ((AnalysisFailed | InBlockList | UnknownProcedure) as no_summary) ->
+                L.die InternalError "No summary found by specialization: %a"
+                  AnalysisResult.pp_no_summary no_summary
+            | Ok (summary, is_pulse_specialization_limit_not_reached) ->
+                let already_given = Specialization.Pulse.Set.add specialization already_given in
+                iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
+                  ~is_pulse_specialization_limit_not_reached ~specialization already_given summary
+                  astate )
   in
   match analyze_dependency callee_pname with
   | Ok summary ->
@@ -795,7 +815,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
       let already_given = Specialization.Pulse.Set.empty in
       let res, summary_used, non_disj, contradiction, resolution_status =
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
-          already_given summary.PulseSummary.main
+          already_given summary.PulseSummary.main astate
       in
       let has_continue_program = has_continue_program res in
       if has_continue_program then GlobalForStats.node_is_not_stuck () ;
@@ -824,11 +844,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.proc_desc; analyze_dependency
       let astate =
         match no_summary with
         | MutualRecursionCycle ->
-            let astate, cycle = AbductiveDomain.add_recursive_call call_loc callee_pname astate in
-            if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then
-              PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-                (MutualRecursionCycle {cycle; location= call_loc}) ;
-            astate
+            on_recursive_call analysis_data call_loc callee_pname astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in
