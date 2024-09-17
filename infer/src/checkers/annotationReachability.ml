@@ -290,11 +290,12 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
   let trace = start_trace proc_desc src in
   Domain.SinkMap.iter
     (fun snk_pname call_sites ->
-      try
-        let fst_call_site = Domain.CallSites.min_elt call_sites in
-        let fst_call_loc = CallSite.loc fst_call_site.call_site in
-        loop fst_call_loc trace snk_pname fst_call_site
-      with Caml.Not_found -> () )
+      let fst_call_site =
+        try Domain.CallSites.min_elt call_sites
+        with Caml.Not_found -> L.die InternalError "Callsite map should not be empty"
+      in
+      let fst_call_loc = CallSite.loc fst_call_site.call_site in
+      loop fst_call_loc trace snk_pname fst_call_site )
     sink_map
 
 
