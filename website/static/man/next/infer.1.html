@@ -153,6 +153,14 @@ that are not overridden from the superclass or interface.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--annotation-reachability-check-loops</b></p>
+
+<p style="margin-left:17%;">Activates: Highlights callsites
+in the trace that are nested in some loop. (Conversely:
+<b>--no-annotation-reachability-check-loops</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --annotation-reachability-custom-models</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Specify a map from annotations
@@ -184,6 +192,17 @@ annotated with @PerformanceCritical can call expensive
 methods (annotated @Expensive or modeled, with annotation
 reachability checker) (Conversely:
 <b>--no-annotation-reachability-expensive</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-annotation-reachability-minimize-sinks</b></p>
+
+<p style="margin-left:17%;">Deactivates: do not report
+paths where a prefix is also a source to sink path. For
+example if there is a source() -&gt; sink1() -&gt; sink2()
+path then only source() -&gt; sink1() will be reported.
+(Conversely:
+<b>--annotation-reachability-minimize-sinks</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1925,6 +1944,22 @@ Matcher or list of matchers for functions that never return
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1), and
 <b>infer-run</b>(1). <b><br>
+--noescaping-function-list</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Useful for the check
+CXX_REF_CAPTURED_IN_BLOCK. It declares a list of functions
+that take blocks as arguments that are no escaping but we
+cannot annotate them accordingly.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--objc-block-execution-macro</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Macro for executing Objective-C
+blocks safely.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --objc-synthesize-dealloc</b></p>
 
 <p style="margin-left:17%;">Activates: If enabled, the
@@ -2103,6 +2138,15 @@ a small part of a big project. (To use in conjunction with
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
+--procs-to-analyze-index</b> <i>file</i></p>
+
+<p style="margin-left:17%;">Specify the file containing an
+Sexp representing a list of pairs of procedures and
+specializations to analyze. Only works with the restart
+scheduler.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --no-progress-bar</b>,<b>-P</b></p>
 
 <p style="margin-left:17%;">Deactivates: Show a progress
@@ -2437,17 +2481,6 @@ specialization by procedure.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---no-pulse-taint-check-history</b></p>
-
-<p style="margin-left:17%;">Deactivates: Check values
-histories for taint events before reporting a taint issue.
-This is a temporary flag while the taint analysis
-transitions from being mainly attribute-based to being
-history-based. (Conversely:
-<b>--pulse-taint-check-history</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --pulse-taint-config</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">Path to a taint analysis
@@ -2473,6 +2506,15 @@ should be used for data flow reporting only. If a source has
 such a kind, only data flows to sinks which originate at the
 source will be reported. If a sink has such a kind, only
 sensitive data flows to the sink will be reported.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-pulse-taint-follow-field-accesses</b></p>
+
+<p style="margin-left:17%;">Deactivates: Specify if taint
+analysis should follow field accesses when propagating
+taints. (Conversely:
+<b>--pulse-taint-follow-field-accesses</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
