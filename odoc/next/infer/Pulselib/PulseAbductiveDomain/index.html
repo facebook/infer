@@ -39,7 +39,7 @@
   <span><span>[ `Pre <span>| `Post</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
   <a href="../PulseAbstractValue/Set/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.Set.t</a></span></code></div><div class="spec-doc"><p>Compute the set of abstract addresses that are reachable from given abstract addresses.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_unreachable_attributes"><a href="#val-get_unreachable_attributes" class="anchor"></a><code><span><span class="keyword">val</span> get_unreachable_attributes : 
   <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
-  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> list</span></span></code></div><div class="spec-doc"><p>collect the addresses that have attributes but are unreachable in the current post-condition</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mark_potential_leaks"><a href="#val-mark_potential_leaks" class="anchor"></a><code><span><span class="keyword">val</span> mark_potential_leaks : 
+  <span><a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a> list</span></span></code></div><div class="spec-doc"><p>collect the addresses that have attributes but are unreachable in the current post-condition</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-finalize_all_hack_builders"><a href="#val-finalize_all_hack_builders" class="anchor"></a><code><span><span class="keyword">val</span> finalize_all_hack_builders : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mark_potential_leaks"><a href="#val-mark_potential_leaks" class="anchor"></a><code><span><span class="keyword">val</span> mark_potential_leaks : 
   <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">dead_roots</span>:<span><a href="../../IR/Var/index.html#type-t">IR.Var.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
@@ -75,7 +75,26 @@
   <span><a href="../PulseBaseDomain/index.html#type-cell">BaseDomain.cell</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
-  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>directly set the edges and attributes for the given address, bypassing abduction altogether</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-incorporate_new_eqs"><a href="#val-incorporate_new_eqs" class="anchor"></a><code><span><span class="keyword">val</span> incorporate_new_eqs : 
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>directly set the edges and attributes for the given address, bypassing abduction altogether</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-fold_pointer_targets"><a href="#val-fold_pointer_targets" class="anchor"></a><code><span><span class="keyword">val</span> fold_pointer_targets : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulsePathContext/index.html#type-t">PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>[ <span>`LocalDecl of
+      <a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a>
+      * <span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+         * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span>
+          option</span></span>
+  <span><span>| `Malloc</span> of
+    <a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+    * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">f</span>:
+    <span>(<span><span>(<a href="../PulseAbstractValue/index.html#type-t">Pulselib.PulseBasicInterface.AbstractValue.t</a>
+      * <a href="../PulseValueHistory/index.html#type-t">Pulselib.PulseBasicInterface.ValueHistory.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+      <a href="#type-t">t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Call the provided <code>f</code> on each address in memory corresponding to a field in the struct (or primitive value) starting at the provided address. Also deals with nested struct values. Each address is generated fresh and placed in the heap (or stack if the address comes from a <code>`LocalDecl</code>) before calling <code>f</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-incorporate_new_eqs"><a href="#val-incorporate_new_eqs" class="anchor"></a><code><span><span class="keyword">val</span> incorporate_new_eqs : 
   <span><a href="../PulseFormula/index.html#type-new_eqs">Pulselib.PulseBasicInterface.Formula.new_eqs</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><span>(<a href="#type-t">t</a>,
