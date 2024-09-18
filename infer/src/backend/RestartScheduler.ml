@@ -15,28 +15,33 @@ let read_procs_to_analyze () =
       In_channel.read_all index |> Parsexp.Single.parse_string_exn |> NodeSet.t_of_sexp )
 
 
-type work_with_dependency = {work: TaskSchedulerTypes.target; dependency_filename_opt: string option}
+type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_filename: string}
 
-let of_queue content : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
-  let remaining = ref (Queue.length content) in
+let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
+  let remaining = ref (Queue.length ready) in
+  let blocked = Queue.create () in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
-  let finished ~result work =
+  let finished ~result target =
     match result with
     | None | Some Ok ->
         decr remaining
     | Some (RaceOn {dependency_filename}) ->
-        Queue.enqueue content {work; dependency_filename_opt= Some dependency_filename}
+        Queue.enqueue blocked {target; dependency_filename}
   in
-  let work_if_dependency_allows w =
-    match w.dependency_filename_opt with
-    | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
-        Queue.enqueue content w ;
-        None
-    | None | Some _ ->
-        Some w.work
+  let rec check_for_readiness n =
+    (* check the next [n] items in [blocked] for whether their dependencies are satisfied and
+       they can be moved to the [ready] queue *)
+    if n > 0 then (
+      let w = Queue.dequeue_exn blocked in
+      if ProcLocker.is_locked ~proc_filename:w.dependency_filename then Queue.enqueue blocked w
+      else Queue.enqueue ready w.target ;
+      check_for_readiness (n - 1) )
   in
-  let next () = Option.bind (Queue.dequeue content) ~f:(fun w -> work_if_dependency_allows w) in
+  let next () =
+    if Queue.is_empty ready then check_for_readiness (Queue.length blocked) ;
+    Queue.dequeue ready
+  in
   {remaining_tasks; is_empty; finished; next}
 
 
@@ -44,7 +49,7 @@ let make sources =
   let target_count = ref 0 in
   let cons_procname_work acc ~specialization proc_name =
     incr target_count ;
-    {work= Procname {proc_name; specialization}; dependency_filename_opt= None} :: acc
+    Procname {proc_name; specialization} :: acc
   in
   let procs_to_analyze_targets =
     NodeSet.fold
@@ -58,7 +63,7 @@ let make sources =
   in
   let make_file_work file =
     incr target_count ;
-    {work= TaskSchedulerTypes.File file; dependency_filename_opt= None}
+    TaskSchedulerTypes.File file
   in
   let file_targets = List.rev_map sources ~f:make_file_work in
   let queue = Queue.create ~capacity:!target_count () in
