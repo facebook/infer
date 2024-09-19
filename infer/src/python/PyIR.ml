@@ -323,9 +323,6 @@ module Exp = struct
         ; code: FFI.Code.t
         ; default_values: t SMap.t
         ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
-    | Class of t list
-        (** Result of calling [LOAD_BUILD_CLASS] to create a class. Not much is processed of its
-            content for now *)
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | ImportName of import_name  (** [IMPORT_NAME] *)
@@ -357,8 +354,6 @@ module Exp = struct
         "ConstMap"
     | Function _ ->
         "Function"
-    | Class _ ->
-        "Class"
     | GetAttr _ ->
         "GetAttr"
     | LoadMethod _ ->
@@ -418,8 +413,6 @@ module Exp = struct
         F.fprintf fmt "$FuncObj(%s, %a, {" short_name Ident.pp qualname ;
         SMap.iter (fun key value -> F.fprintf fmt "(%s, %a); " key pp value) default_values ;
         F.pp_print_string fmt "})"
-    | Class cls ->
-        F.fprintf fmt "$ClassObj(%a)" (Pp.seq ~sep:", " pp) cls
     | GetAttr (t, name) ->
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
@@ -442,9 +435,6 @@ module Exp = struct
         F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
-
-
-  let as_short_string = function Const (String s) -> Some s | _ -> None
 end
 
 module Location = struct
@@ -469,8 +459,6 @@ module Error = struct
     | MakeFunction of string * Exp.t
     | BuildConstKeyMapLength of int * int
     | BuildConstKeyMapKeys of Exp.t
-    | LoadBuildClass of Exp.t list
-    | LoadBuildClassName of Exp.t
     | ImportNameFromList of (string * Exp.t)
     | ImportNameLevel of (string * Exp.t)
     | ImportNameLevelOverflow of (string * Z.t)
@@ -502,11 +490,6 @@ module Error = struct
         F.fprintf fmt "BUILD_CONST_KEY_MAP: expected %d keys but got %d" m n
     | BuildConstKeyMapKeys exp ->
         F.fprintf fmt "BUILD_CONST_KEY_MAP: expect constant set of keys but got %a" Exp.pp exp
-    | LoadBuildClass args ->
-        F.fprintf fmt "LOAD_BUILD_CLASS: not enough arguments. Got %a" (Pp.seq ~sep:", " Exp.pp)
-          args
-    | LoadBuildClassName arg ->
-        F.fprintf fmt "LOAD_BUILD_CLASS: expected a name, but got %a" Exp.pp arg
     | ImportNameFromList (name, args) ->
         F.fprintf fmt "IMPORT_NAME(%s): expected constant fromlist but got %a" name Exp.pp args
     | ImportNameLevel (name, arg) ->
@@ -1028,8 +1011,6 @@ module State = struct
   (* TODO: use the [exn_handlers] info to mark statement that can possibly raise * something *)
   let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
 
-  let register_class ({classes} as st) cls = {st with classes= SSet.add cls classes}
-
   let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
 
   let size {stack} = Stack.size stack
@@ -1346,45 +1327,9 @@ let call_function st arg =
   let open IResult.Let_syntax in
   let* args, st = State.pop_n st arg in
   let* fun_exp, st = State.pop st in
-  match (fun_exp : Exp.t) with
-  | BuiltinCaller BuildClass ->
-      (* Building a class looks like
-          LOAD_BUILD_CLASS
-          LOAD_CONST               CODE_OBJ
-          LOAD_CONST               SHORT_NAME
-          ... more arguments ...
-          MAKE_FUNCTION            M
-          LOAD_CONST               SHORT_NAME
-          ... more arguments ...
-          CALL_FUNCTION            N
-
-         so we'll process it in a minimal way to extract the short name
-         which is the second argument (the first being the code object)
-      *)
-      let sz = List.length args in
-      let* () = if sz < 2 then external_error st (Error.LoadBuildClass args) else Ok () in
-      let* short_name =
-        match args with
-        | _code :: short_name :: _ ->
-            let {State.loc} = st in
-            Result.of_option
-              ~error:(L.InternalError, loc, Error.LoadBuildClassName short_name)
-              (Exp.as_short_string short_name)
-        | _ ->
-            external_error st (Error.LoadBuildClass args)
-      in
-      let st = State.register_class st short_name in
-      let exp = Exp.Class args in
-      let st = State.push st exp in
-      Ok (st, None)
-  | BuiltinCaller call ->
-      let id, st = call_builtin_function st call args in
-      let st = State.push st (Exp.Temp id) in
-      Ok (st, None)
-  | _ ->
-      let id, st = call_function_with_unnamed_args st fun_exp args in
-      let st = State.push st (Exp.Temp id) in
-      Ok (st, None)
+  let id, st = call_function_with_unnamed_args st fun_exp args in
+  let st = State.push st (Exp.Temp id) in
+  Ok (st, None)
 
 
 let call_function_kw st argc =

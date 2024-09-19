@@ -929,12 +929,13 @@ c.set(42)
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              n0 <- dummy.C(0, "a")
-              dummy.c <- n0
-              n1 <- dummy.c.x
-              n2 <- $CallMethod($LoadMethod(dummy.c, get), )
-              n3 <- $CallMethod($LoadMethod(dummy.c, set), 42)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- dummy.C(0, "a")
+              dummy.c <- n1
+              n2 <- dummy.c.x
+              n3 <- $CallMethod($LoadMethod(dummy.c, get), )
+              n4 <- $CallMethod($LoadMethod(dummy.c, set), 42)
               return None
 
 
@@ -987,9 +988,6 @@ c.set(42)
                   set -> dummy.C.set
 
 
-                classes:
-                  C
-
                 functions:
                   C -> dummy.C |}]
 
@@ -1039,16 +1037,17 @@ print(c.z)
         object dummy:
           code:
             #b0 .label:
-              dummy.IntBox <- $ClassObj($FuncObj(IntBox, dummy.IntBox, {}), "IntBox")
+              n0 <- $BuildClass($FuncObj(IntBox, dummy.IntBox, {}), "IntBox")
+              dummy.IntBox <- n0
               dummy.getX <- $FuncObj(getX, dummy.getX, {})
-              n0 <- dummy.IntBox(10)
-              dummy.c <- n0
-              n1 <- dummy.c.x
+              n1 <- dummy.IntBox(10)
+              dummy.c <- n1
+              n2 <- dummy.c.x
               dummy.c.z <- 10
-              n2 <- $CallMethod($LoadMethod(dummy.c, get), )
-              n3 <- $CallMethod($LoadMethod(dummy.c, set), 42)
-              n4 <- $CallMethod($LoadMethod(dummy.c, run), )
-              n5 <- print(dummy.c.z)
+              n3 <- $CallMethod($LoadMethod(dummy.c, get), )
+              n4 <- $CallMethod($LoadMethod(dummy.c, set), 42)
+              n5 <- $CallMethod($LoadMethod(dummy.c, run), )
+              n6 <- print(dummy.c.z)
               return None
 
 
@@ -1132,9 +1131,6 @@ print(c.z)
 
 
 
-                classes:
-                  IntBox
-
                 functions:
                   IntBox -> dummy.IntBox
                   getX -> dummy.getX |}]
@@ -1163,8 +1159,10 @@ class D(C):
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              dummy.D <- $ClassObj($FuncObj(D, dummy.D, {}), "D", dummy.C)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", dummy.C)
+              dummy.D <- n1
               return None
 
 
@@ -1216,10 +1214,6 @@ class D(C):
 
 
 
-                classes:
-                  C
-                  D
-
                 functions:
                   C -> dummy.C
                   D -> dummy.D |}]
@@ -1241,8 +1235,9 @@ C.f()
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              n0 <- $CallMethod($LoadMethod(dummy.C, f), )
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- $CallMethod($LoadMethod(dummy.C, f), )
               return None
 
 
@@ -1273,9 +1268,6 @@ C.f()
                   f -> dummy.C.f
 
 
-            classes:
-              C
-
             functions:
               C -> dummy.C |}]
 
@@ -1302,8 +1294,10 @@ def g(c: C) -> None:
         object dummy:
           code:
             #b0 .label:
-              dummy.A <- $ClassObj($FuncObj(A, dummy.A, {}), "A")
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A")
+              dummy.A <- n0
+              n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n1
               dummy.g <- $FuncObj(g, dummy.g, {})
               return None
 
@@ -1356,10 +1350,6 @@ def g(c: C) -> None:
 
 
 
-              classes:
-                A
-                C
-
               functions:
                 A -> dummy.A
                 C -> dummy.C
@@ -1386,9 +1376,12 @@ class C(A, B):
         object dummy:
           code:
             #b0 .label:
-              dummy.A <- $ClassObj($FuncObj(A, dummy.A, {}), "A")
-              dummy.B <- $ClassObj($FuncObj(B, dummy.B, {}), "B")
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", dummy.A, dummy.B)
+              n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A")
+              dummy.A <- n0
+              n1 <- $BuildClass($FuncObj(B, dummy.B, {}), "B")
+              dummy.B <- n1
+              n2 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", dummy.A, dummy.B)
+              dummy.C <- n2
               return None
 
 
@@ -1425,11 +1418,6 @@ class C(A, B):
 
 
 
-            classes:
-              A
-              B
-              C
-
             functions:
               A -> dummy.A
               B -> dummy.B
@@ -1458,11 +1446,12 @@ cs[0].x
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
               dummy.build <- $FuncObj(build, dummy.build, {})
-              n0 <- dummy.build()
-              dummy.cs <- n0
-              n1 <- dummy.cs[0].x
+              n1 <- dummy.build()
+              dummy.cs <- n1
+              n2 <- dummy.cs[0].x
               return None
 
 
@@ -1502,9 +1491,6 @@ cs[0].x
 
 
 
-              classes:
-                C
-
               functions:
                 C -> dummy.C
                 build -> dummy.build |}]
@@ -1543,11 +1529,12 @@ f()
             object dummy.f:
               code:
                 #b0 .label:
-                  A <- $ClassObj($FuncObj(A, dummy.A, {}), "A")
-                  n0 <- A()
-                  a <- n0
-                  n1 <- $CallMethod($LoadMethod(a, get), )
-                  return n1
+                  n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A")
+                  A <- n0
+                  n1 <- A()
+                  a <- n1
+                  n2 <- $CallMethod($LoadMethod(a, get), )
+                  return n2
 
 
 
@@ -1586,9 +1573,6 @@ f()
                       __init__ -> dummy.f.<locals>.A.__init__
                       get -> dummy.f.<locals>.A.get
 
-
-                  classes:
-                    A
 
                   functions:
                     A -> dummy.A
@@ -1689,7 +1673,8 @@ class MyTest(unittest.TestCase):
             #b0 .label:
               $ImportName(unittest, from_list= [])
               dummy.unittest <- $ImportName(unittest, from_list= [])
-              dummy.MyTest <- $ClassObj($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", unittest.TestCase)
+              n0 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", unittest.TestCase)
+              dummy.MyTest <- n0
               return None
 
 
@@ -1705,9 +1690,6 @@ class MyTest(unittest.TestCase):
 
 
 
-
-            classes:
-              MyTest
 
             functions:
               MyTest -> dummy.MyTest |}]
@@ -1941,8 +1923,10 @@ class D(C):
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              dummy.D <- $ClassObj($FuncObj(D, dummy.D, {}), "D", dummy.C)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", dummy.C)
+              dummy.D <- n1
               return None
 
 
@@ -1968,10 +1952,6 @@ class D(C):
 
 
 
-
-            classes:
-              C
-              D
 
             functions:
               C -> dummy.C
@@ -2004,10 +1984,14 @@ class D0(C0):
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              dummy.D <- $ClassObj($FuncObj(D, dummy.D, {}), "D", dummy.C)
-              dummy.C0 <- $ClassObj($FuncObj(C0, dummy.C0, {}), "C0")
-              dummy.D0 <- $ClassObj($FuncObj(D0, dummy.D0, {}), "D0", dummy.C0)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", dummy.C)
+              dummy.D <- n1
+              n2 <- $BuildClass($FuncObj(C0, dummy.C0, {}), "C0")
+              dummy.C0 <- n2
+              n3 <- $BuildClass($FuncObj(D0, dummy.D0, {}), "D0", dummy.C0)
+              dummy.D0 <- n3
               return None
 
 
@@ -2100,12 +2084,6 @@ class D0(C0):
                       __init__ -> dummy.D0.__init__
 
 
-                classes:
-                  C
-                  C0
-                  D
-                  D0
-
                 functions:
                   C -> dummy.C
                   C0 -> dummy.C0
@@ -2132,7 +2110,8 @@ class C(foo.D):
             #b0 .label:
               $ImportName(foo, from_list= [])
               dummy.foo <- $ImportName(foo, from_list= [])
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", foo.D)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", foo.D)
+              dummy.C <- n0
               return None
 
 
@@ -2164,9 +2143,6 @@ class C(foo.D):
                 functions:
                   __init__ -> dummy.C.__init__
 
-
-            classes:
-              C
 
             functions:
               C -> dummy.C |}]
@@ -2436,7 +2412,8 @@ class C(ABC):
               dummy.ABC <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]), name= ABC)
               dummy.abstractmethod <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]),
                 name= abstractmethod)
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", abc.ABC)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", abc.ABC)
+              dummy.C <- n0
               return None
 
 
@@ -2490,9 +2467,6 @@ class C(ABC):
                   get_static0 -> dummy.C.get_static0
                   get_static1 -> dummy.C.get_static1
 
-
-                classes:
-                  C
 
                 functions:
                   C -> dummy.C |}]
@@ -2678,8 +2652,9 @@ class Test(unittest.TestCase):
               dummy.signal <- $ImportName(signal, from_list= [])
               n0 <- hasattr(signal, "setitimer")
               n1 <- $CallMethod($LoadMethod(unittest, skipUnless), n0, "requires setitimer()")
-              n2 <- n1($ClassObj($FuncObj(Test, dummy.Test, {}), "Test", unittest.TestCase))
-              dummy.Test <- n2
+              n2 <- $BuildClass($FuncObj(Test, dummy.Test, {}), "Test", unittest.TestCase)
+              n3 <- n1(n2)
+              dummy.Test <- n3
               return None
 
 
@@ -2695,9 +2670,6 @@ class Test(unittest.TestCase):
 
 
 
-
-            classes:
-              Test
 
             functions:
               Test -> dummy.Test |}]
@@ -2724,7 +2696,8 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
               return None
 
 
@@ -2768,9 +2741,6 @@ class C:
                   g -> dummy.C.g
 
 
-              classes:
-                C
-
               functions:
                 C -> dummy.C |}]
 
@@ -2795,7 +2765,8 @@ class PwdTest(unittest.TestCase):
             #b0 .label:
               $ImportName(unittest, from_list= [])
               dummy.unittest <- $ImportName(unittest, from_list= [])
-              dummy.PwdTest <- $ClassObj($FuncObj(PwdTest, dummy.PwdTest, {}), "PwdTest", unittest.TestCase)
+              n0 <- $BuildClass($FuncObj(PwdTest, dummy.PwdTest, {}), "PwdTest", unittest.TestCase)
+              dummy.PwdTest <- n0
               return None
 
 
@@ -2827,9 +2798,6 @@ class PwdTest(unittest.TestCase):
                 functions:
                   test_values -> dummy.PwdTest.test_values
 
-
-            classes:
-              PwdTest
 
             functions:
               PwdTest -> dummy.PwdTest |}]
@@ -3152,7 +3120,8 @@ def g():
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", $unknown.Exception)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", $unknown.Exception)
+              dummy.C <- n0
               dummy.f <- $FuncObj(f, dummy.f, {})
               dummy.g <- $FuncObj(g, dummy.g, {})
               return None
@@ -3187,9 +3156,6 @@ def g():
 
 
 
-
-            classes:
-              C
 
             functions:
               C -> dummy.C
@@ -3387,12 +3353,13 @@ f(0, 0, 0, "toto")
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
               dummy.f <- $FuncObj(f, dummy.f, {(s, "zuck"); (y, 1); (z, 2); })
-              n0 <- dummy.f(0)
-              n1 <- dummy.f(10, 100)
-              n2 <- dummy.f(100, 1000, 0)
-              n3 <- dummy.f(0, 0, 0, "toto")
+              n1 <- dummy.f(0)
+              n2 <- dummy.f(10, 100)
+              n3 <- dummy.f(100, 1000, 0)
+              n4 <- dummy.f(0, 0, 0, "toto")
               return None
 
 
@@ -3417,9 +3384,6 @@ f(0, 0, 0, "toto")
 
 
 
-            classes:
-              C
-
             functions:
               C -> dummy.C
               f -> dummy.f |}]
@@ -3441,7 +3405,8 @@ class TestHook:
         object dummy:
           code:
             #b0 .label:
-              dummy.TestHook <- $ClassObj($FuncObj(TestHook, dummy.TestHook, {}), "TestHook")
+              n0 <- $BuildClass($FuncObj(TestHook, dummy.TestHook, {}), "TestHook")
+              dummy.TestHook <- n0
               return None
 
 
@@ -3471,9 +3436,6 @@ class TestHook:
                   __init__ -> dummy.TestHook.__init__
 
 
-            classes:
-              TestHook
-
             functions:
               TestHook -> dummy.TestHook |}]
 
@@ -3498,12 +3460,13 @@ c.f(0, 1, 2)
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              n0 <- dummy.C()
-              dummy.c <- n0
-              n1 <- $CallMethod($LoadMethod(dummy.c, f), 0)
-              n2 <- $CallMethod($LoadMethod(dummy.c, f), 0, 1)
-              n3 <- $CallMethod($LoadMethod(dummy.c, f), 0, 1, 2)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- dummy.C()
+              dummy.c <- n1
+              n2 <- $CallMethod($LoadMethod(dummy.c, f), 0)
+              n3 <- $CallMethod($LoadMethod(dummy.c, f), 0, 1)
+              n4 <- $CallMethod($LoadMethod(dummy.c, f), 0, 1, 2)
               return None
 
 
@@ -3535,9 +3498,6 @@ c.f(0, 1, 2)
                   f -> dummy.C.f
 
 
-            classes:
-              C
-
             functions:
               C -> dummy.C |}]
 
@@ -3554,7 +3514,8 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
               return None
 
 
@@ -3573,9 +3534,6 @@ class C:
 
 
 
-
-            classes:
-              C
 
             functions:
               C -> dummy.C |}]
@@ -4339,7 +4297,8 @@ class defaultdict:
         object dummy:
           code:
             #b0 .label:
-              dummy.defaultdict <- $ClassObj($FuncObj(defaultdict, dummy.defaultdict, {}), "defaultdict")
+              n0 <- $BuildClass($FuncObj(defaultdict, dummy.defaultdict, {}), "defaultdict")
+              dummy.defaultdict <- n0
               return None
 
 
@@ -4385,9 +4344,6 @@ class defaultdict:
                 functions:
                   __getitem__ -> dummy.defaultdict.__getitem__
 
-
-            classes:
-              defaultdict
 
             functions:
               defaultdict -> dummy.defaultdict |}]
@@ -4869,7 +4825,8 @@ def powerset(s):
               $ImportName(itertools, from_list= [])
               dummy.itertools <- $ImportName(itertools, from_list= [])
               dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.AsyncYieldFrom <- $ClassObj($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom")
+              n0 <- $BuildClass($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom")
+              dummy.AsyncYieldFrom <- n0
               dummy.powerset <- $FuncObj(powerset, dummy.powerset, {})
               return None
 
@@ -4942,9 +4899,6 @@ def powerset(s):
 
 
 
-
-              classes:
-                AsyncYieldFrom
 
               functions:
                 AsyncYieldFrom -> dummy.AsyncYieldFrom
@@ -5269,13 +5223,14 @@ def g(a, b):
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
-              n0 <- dummy.C()
-              dummy.c <- n0
-              n1 <- $Delete(dummy.c)
-              n2 <- dummy.C()
-              dummy.c0 <- n2
-              n3 <- $Delete(dummy.c0.foo)
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
+              n1 <- dummy.C()
+              dummy.c <- n1
+              n2 <- $Delete(dummy.c)
+              n3 <- dummy.C()
+              dummy.c0 <- n3
+              n4 <- $Delete(dummy.c0.foo)
               dummy.f <- $FuncObj(f, dummy.f, {})
               dummy.g <- $FuncObj(g, dummy.g, {})
               return None
@@ -5327,9 +5282,6 @@ def g(a, b):
 
 
 
-
-              classes:
-                C
 
               functions:
                 C -> dummy.C
@@ -5422,7 +5374,8 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+              dummy.C <- n0
               return None
 
 
@@ -5444,7 +5397,8 @@ class C:
                     #b0 .label:
                       $ImportName(binascii, from_list= [])
                       $Deref(binascii) <- $ImportName(binascii, from_list= [])
-                      D <- $ClassObj($FuncObj(D, dummy.D, {}), "D")
+                      n0 <- $BuildClass($FuncObj(D, dummy.D, {}), "D")
+                      D <- n0
                       return None
 
 
@@ -5474,9 +5428,6 @@ class C:
                           g -> dummy.C.f.<locals>.D.g
 
 
-                    classes:
-                      D
-
                     functions:
                       D -> dummy.D
 
@@ -5484,9 +5435,6 @@ class C:
                   functions:
                     f -> dummy.C.f
 
-
-                classes:
-                  C
 
                 functions:
                   C -> dummy.C |}]
