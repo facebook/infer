@@ -2316,3 +2316,28 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   let* _, toplevel = build_cfg ~debug ~code_qual_name code in
   let* functions = build_cfgs ~debug ~code_qual_name code.FFI.Code.co_consts in
   Ok {Module.name; toplevel; functions}
+
+
+let test ?(filename = "dummy.py") ?(debug = false) source =
+  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
+  let code =
+    match FFI.from_string ~source ~filename with
+    | Error (kind, err) ->
+        L.die kind "FFI error: %a@\n" FFI.Error.pp_kind err
+    | Ok code ->
+        code
+  in
+  Py.finalize () ;
+  match mk ~debug code with
+  | Error (kind, _loc, err) -> (
+    match kind with
+    | L.InternalError ->
+        L.internal_error "IR error: %a@\n" Error.pp_kind err
+    | L.UserError ->
+        L.user_error "IR error: %a@\n" Error.pp_kind err
+    | L.ExternalError ->
+        L.external_error "IR error: %a@\n" Error.pp_kind err )
+  | Ok module_ ->
+      F.printf "%a" Module.pp module_
+  | exception (Py.E _ as e) ->
+      L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)

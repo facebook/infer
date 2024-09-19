@@ -22,8 +22,9 @@ end
 
 module Module : sig
   type t
-
-  val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 val mk : debug:bool -> FFI.Code.t -> (Module.t, Error.t) result
+
+val test : ?filename:string -> ?debug:bool -> string -> unit [@@warning "-unused-value-declaration"]
+(* takes a Python source program as string argument, convert it into PyIR and print the result *)
