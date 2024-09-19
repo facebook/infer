@@ -39,6 +39,8 @@ module QualName : sig
   val extend : t -> string -> t
 
   val pp : F.formatter -> t -> unit
+
+  module Map : Caml.Map.S with type key = t
 end = struct
   type t = {root: string; path: string list} [@@deriving compare]
 
@@ -57,6 +59,30 @@ end = struct
 
 
   let extend {root; path} attr = {root; path= attr :: path}
+
+  module Map = Caml.Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
+end
+
+module NodeName : sig
+  type t
+
+  val mk : string -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Map : Caml.Map.S with type key = t
+end = struct
+  type t = string
+
+  let pp fmt ident = F.pp_print_string fmt ident
+
+  let mk ident = ident
+
+  module Map = SMap
 end
 
 module SSA = struct
@@ -628,13 +654,17 @@ module Terminator = struct
         If {exp; then_; else_}
 end
 
-module CFG = struct
+module CFGBuilder = struct
   type 'a t = {labels: 'a Label.t IMap.t; fresh_label: int}
 
-  let empty = {labels= IMap.empty; fresh_label= 0}
+  let fresh_start = 0
+
+  let empty = {labels= IMap.empty; fresh_label= fresh_start}
+
+  let label_of_int i = sprintf "b%d" i
 
   let fresh_label ({fresh_label} as cfg) =
-    let fresh = sprintf "b%d" fresh_label in
+    let fresh = label_of_int fresh_label in
     let cfg = {cfg with fresh_label= fresh_label + 1} in
     (fresh, cfg)
 
@@ -688,7 +718,7 @@ module CFG = struct
     {cfg with labels}
 end
 
-module Node = struct
+module NodeBuilder = struct
   (** Linear block of code, without any jump. Starts with a label definition and ends with a
       terminator (jump, return, ...) *)
   type 'a t =
@@ -703,6 +733,41 @@ module Node = struct
     List.iter stmts ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
     F.fprintf fmt "%a@\n" Terminator.pp last ;
     F.fprintf fmt "@]@\n"
+  [@@warning "-unused-value-declaration"]
+end
+
+module CFG = struct
+  module Node = struct
+    type t =
+      { name: NodeName.t
+      ; first_loc: Location.t
+      ; last_loc: Location.t
+      ; stmts: (Location.t * Stmt.t) list
+      ; last: Terminator.t }
+
+    let pp fmt {name; stmts; last} =
+      F.fprintf fmt "@[<hv2>%a:@\n" NodeName.pp name ;
+      List.iter stmts ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
+      F.fprintf fmt "%a@\n" Terminator.pp last ;
+      F.fprintf fmt "@]@\n"
+
+
+    let of_node_builder {NodeBuilder.label; label_loc; last_loc; stmts; last} =
+      {name= NodeName.mk label.Label.name; first_loc= label_loc; last_loc; stmts; last}
+  end
+
+  type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t}
+
+  let pp fmt {nodes} = NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
+
+  let of_node_builder_list nodes =
+    let entry = CFGBuilder.label_of_int CFGBuilder.fresh_start |> NodeName.mk in
+    let nodes =
+      List.fold nodes ~init:NodeName.Map.empty ~f:(fun map node_builder ->
+          let ({Node.name} as node) = Node.of_node_builder node_builder in
+          NodeName.Map.add name node map )
+    in
+    {nodes; entry}
 end
 
 module State = struct
@@ -716,7 +781,7 @@ module State = struct
     { debug: bool
     ; code_qual_name: FFI.Code.t -> QualName.t option
     ; loc: Location.t
-    ; cfg: t CFG.t
+    ; cfg: t CFGBuilder.t
           (* TODO:
              ; exn_handlers: exn_handler list
                    (** Stack of except/finally handlers info. The data we store here will be used (TODO) to
@@ -734,7 +799,7 @@ module State = struct
     { debug
     ; code_qual_name
     ; loc
-    ; cfg= CFG.empty (* ; exn_handlers= [] *)
+    ; cfg= CFGBuilder.empty (* ; exn_handlers= [] *)
     ; stack= Stack.empty
     ; block_stack
     ; stmts= []
@@ -826,11 +891,11 @@ module State = struct
 
   let register_label ({cfg} as st) ~offset label =
     debug st "register_label %d %a@\n" offset Label.pp label ;
-    let cfg = CFG.register_label cfg ~offset label in
+    let cfg = CFGBuilder.register_label cfg ~offset label in
     {st with cfg}
 
 
-  let lookup_label {cfg} offset = CFG.lookup_label cfg offset
+  let lookup_label {cfg} offset = CFGBuilder.lookup_label cfg offset
 
   let get_label ({cfg; block_stack} as st) ?prelude ?fix_type ?handler_type offset ~ssa_parameters =
     debug st "get_label at offset %d BLOCK_LAYOUT %s@\n" offset
@@ -845,14 +910,14 @@ module State = struct
           Stack.push block_stack (Block.mk Finally)
     in
     let new_label, label, cfg =
-      CFG.get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack
+      CFGBuilder.get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack
     in
     let label, cfg =
       match fix_type with
       | None ->
           (label, cfg)
       | Some fix_type ->
-          let opt_label, cfg = CFG.set_last_block_type cfg offset fix_type in
+          let opt_label, cfg = CFGBuilder.set_last_block_type cfg offset fix_type in
           let label = Option.value ~default:label opt_label in
           (label, cfg)
     in
@@ -862,23 +927,23 @@ module State = struct
 
 
   let process_label ({cfg} as st) offset ssa_parameters =
-    let cfg = CFG.process_label cfg offset ssa_parameters in
+    let cfg = CFGBuilder.process_label cfg offset ssa_parameters in
     {st with cfg}
 
 
   let set_handler_type ({cfg} as st) offset handler_type =
-    let cfg = CFG.set_handler_type cfg offset handler_type in
+    let cfg = CFGBuilder.set_handler_type cfg offset handler_type in
     {st with cfg}
 
 
   let fresh_label ({cfg} as st) =
-    let fresh_label, cfg = CFG.fresh_label cfg in
+    let fresh_label, cfg = CFGBuilder.fresh_label cfg in
     let st = {st with cfg} in
     (fresh_label, st)
 
 
   let instr_is_jump_target ({cfg; block_stack} as st) {FFI.Instruction.offset; is_jump_target} =
-    match CFG.lookup_label cfg offset with
+    match CFGBuilder.lookup_label cfg offset with
     | Some label ->
         let info = if Label.is_processed label then None else Some (offset, label) in
         (info, st)
@@ -937,6 +1002,14 @@ let error kind {State.loc} err = Error (kind, loc, err)
 let external_error st err = error L.ExternalError st err
 
 let internal_error st err = error L.InternalError st err
+
+let read_code_qual_name st c =
+  match st.State.code_qual_name c with
+  | Some qual_name ->
+      Ok qual_name
+  | None ->
+      internal_error st (Error.CodeWithoutQualifiedName c)
+
 
 let call_function_with_unnamed_args st ?(packed = false) exp args =
   let args = Stmt.unnamed_call_args args in
@@ -1007,17 +1080,14 @@ let make_function st flags =
   let* _qual_name, st = State.pop st in
   (* we use our own notion of qualified name *)
   let* codeobj, st = State.pop st in
-  let* code, qual_name =
+  let* code =
     match (codeobj : Exp.t) with
-    | Const (PYCCode c) -> (
-      match st.State.code_qual_name c with
-      | Some qual_name ->
-          Ok (c, qual_name)
-      | None ->
-          internal_error st (Error.CodeWithoutQualifiedName c) )
+    | Const (PYCCode c) ->
+        Ok c
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
+  let* qual_name = read_code_qual_name st code in
   let short_name = Ident.mk code.FFI.Code.co_name in
   let* st =
     if flags land 0x08 <> 0 then
@@ -2081,11 +2151,11 @@ let mk_node st label code instructions =
   match (jump_op : _ Jump.t) with
   | Absolute info ->
       let last = Terminator.of_jump (`OneTarget info) in
-      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      let node = {NodeBuilder.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
   | Return ret ->
       let last = Terminator.Return ret in
-      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      let node = {NodeBuilder.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
   | Label ({offset} as info) ->
       (* Current invariant, might/will change with the introduction of * back-edges *)
@@ -2094,7 +2164,7 @@ let mk_node st label code instructions =
       (* A label was spotted after a non Terminator instruction. Insert a jump to this label to
          create a proper node, and resume the processing. *)
       let last = Terminator.of_jump (`OneTarget info) in
-      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      let node = {NodeBuilder.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
   | TwoWay {condition; next_info; other_info} ->
       (* The current node ended up with a two-way jump. Either continue to the "next"
@@ -2102,11 +2172,11 @@ let mk_node st label code instructions =
          purpose, register a fresh label for the jump. *)
       (* Register the jump target *)
       let last = Terminator.of_jump (`TwoTargets (condition, next_info, other_info)) in
-      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      let node = {NodeBuilder.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
   | Throw exp ->
       (* TODO: Track exceptions *)
-      let node = {Node.label; last= Throw exp; stmts; last_loc; label_loc} in
+      let node = {NodeBuilder.label; last= Throw exp; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
 
 
@@ -2176,36 +2246,16 @@ let rec mk_nodes st label code instructions =
       Ok (st, node :: nodes)
 
 
-module Object = struct
-  (** Everything in Python is an [Object]. A function is an [Object], a class is an [Object]. We
-      will refine these into functions, classes and closures during the translation to Textual. *)
-
-  type node = State.t Node.t
-
-  type t =
-    { name: Ident.t
-    ; toplevel: node list
-    ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
-    }
-
-  let rec pp fmt {name; toplevel; objects} =
-    F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
-    if not (List.is_empty toplevel) then (
-      F.fprintf fmt "@[<hv2>code:@\n" ;
-      List.iter toplevel ~f:(F.fprintf fmt "@[<hv2>%a@]@\n" Node.pp) ;
-      F.fprintf fmt "@]@\n" ) ;
-    if not (List.is_empty objects) then (
-      F.fprintf fmt "@[<hv2>objects:@\n" ;
-      List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
-      F.fprintf fmt "@]@\n" ) ;
-    F.fprintf fmt "@]"
-end
-
 module Module = struct
-  (** A module is just the "main" [Object] of a Python file, often called toplevel too *)
-  type t = Object.t
+  type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t}
 
-  let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
+  let pp fmt {name; toplevel; functions} =
+    F.fprintf fmt "@[<hv2>module %a:@\n@\n" Ident.pp name ;
+    F.fprintf fmt "@[<hv2>toplevel:@\n%a@]@\n" CFG.pp toplevel ;
+    QualName.Map.iter
+      (fun name cfg -> F.fprintf fmt "@[<hv2>%a:@\n%a@]@\n" QualName.pp name CFG.pp cfg)
+      functions ;
+    F.fprintf fmt "@]@\n"
 end
 
 module CodeMap : Caml.Map.S with type key = FFI.Code.t = Caml.Map.Make (FFI.Code)
@@ -2227,28 +2277,29 @@ let build_code_object_unique_name file_path code =
   fun code -> CodeMap.find_opt code map
 
 
-let translate_code_object ~debug ~code_qual_name name code =
-  let rec visit ?name ({FFI.Code.instructions; co_consts} as code) =
-    let open IResult.Let_syntax in
-    let loc = Location.of_code code in
-    let st = State.enter ~debug ~code_qual_name ~loc in
-    let label, st = State.get_label st 0 ~ssa_parameters:[] in
-    let st = State.process_label st 0 [] in
-    let* _, nodes = mk_nodes st label code instructions in
-    let* objects =
-      Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
-          match constant with
-          | FFI.Constant.PYCCode code ->
-              let* obj = visit code in
-              Ok (obj :: objects)
-          | _ ->
-              Ok objects )
-    in
-    let objects = List.rev objects in
-    let name = Option.value name ~default:(Ident.mk code.FFI.Code.co_name) in
-    Ok (loc, {Object.name; toplevel= nodes; objects})
+let build_cfg ~debug ~code_qual_name ({FFI.Code.instructions} as code) =
+  let open IResult.Let_syntax in
+  let loc = Location.of_code code in
+  let st = State.enter ~debug ~code_qual_name ~loc in
+  let label, st = State.get_label st 0 ~ssa_parameters:[] in
+  let st = State.process_label st 0 [] in
+  let* _, nodes = mk_nodes st label code instructions in
+  let cfg = CFG.of_node_builder_list nodes in
+  let* qual_name = read_code_qual_name st code in
+  Ok (qual_name, cfg)
+
+
+let build_cfgs ~debug ~code_qual_name co_consts =
+  let rec visit cfg_map = function
+    | FFI.Constant.PYCCode ({FFI.Code.co_consts} as code) ->
+        let open IResult.Let_syntax in
+        let* qual_name, cfg = build_cfg ~debug ~code_qual_name code in
+        let cfg_map = QualName.Map.add qual_name cfg cfg_map in
+        Array.fold_result co_consts ~init:cfg_map ~f:visit
+    | _ ->
+        Ok cfg_map
   in
-  visit ~name code
+  Array.fold_result co_consts ~init:QualName.Map.empty ~f:visit
 
 
 let mk ~debug ({FFI.Code.co_filename} as code) =
@@ -2261,6 +2312,7 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   in
   let file_path = Stdlib.Filename.remove_extension file_path in
   let code_qual_name = build_code_object_unique_name file_path code in
-  let module_name = Ident.mk file_path in
-  let* _, obj = translate_code_object ~debug ~code_qual_name module_name code in
-  Ok obj
+  let name = Ident.mk file_path in
+  let* _, toplevel = build_cfg ~debug ~code_qual_name code in
+  let* functions = build_cfgs ~debug ~code_qual_name code.FFI.Code.co_consts in
+  Ok {Module.name; toplevel; functions}
