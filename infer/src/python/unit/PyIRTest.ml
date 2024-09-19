@@ -1598,11 +1598,11 @@ base.f(0)
         object dummy:
           code:
             #b0 .label:
-              $ImportName(base, from_list= [])
-              base(PyIR.Name) <- $ImportName(base, from_list= [])
-              $ImportName(base, from_list= [])
-              base(PyIR.Name) <- $ImportName(base, from_list= [])
-              n0 <- $CallMethod($LoadMethod(base(PyIR.Name), f), PYCInt (0))
+              n0 <- $ImportName(base)(PYCNone, PYCInt (0))
+              base(PyIR.Name) <- n0
+              n1 <- $ImportName(base)(PYCNone, PYCInt (0))
+              base(PyIR.Name) <- n1
+              n2 <- $CallMethod($LoadMethod(base(PyIR.Name), f), PYCInt (0))
               return PYCNone |}]
 
 
@@ -1631,14 +1631,18 @@ g()
             #b0 .label:
               f(PyIR.Name) <- $FuncObj(f, f, {})
               n0 <- f(PyIR.Name)()
-              $ImportName(base, from_list= [f, g])
-              f(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
-              g(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
-              n1 <- f(PyIR.Name)()
-              $ImportName(base, from_list= [f, g])
-              f(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
-              g(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
-              n2 <- g(PyIR.Name)()
+              n1 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
+              n2 <- $ImportFrom(f)(n1)
+              f(PyIR.Name) <- n2
+              n3 <- $ImportFrom(g)(n1)
+              g(PyIR.Name) <- n3
+              n4 <- f(PyIR.Name)()
+              n5 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
+              n6 <- $ImportFrom(f)(n5)
+              f(PyIR.Name) <- n6
+              n7 <- $ImportFrom(g)(n5)
+              g(PyIR.Name) <- n7
+              n8 <- g(PyIR.Name)()
               return PYCNone
 
 
@@ -1671,10 +1675,10 @@ class MyTest(unittest.TestCase):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(unittest, from_list= [])
-              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
-              n0 <- $BuildClass($FuncObj(MyTest, MyTest, {}), PYCString ("MyTest"), unittest(PyIR.Name).TestCase)
-              MyTest(PyIR.Name) <- n0
+              n0 <- $ImportName(unittest)(PYCNone, PYCInt (0))
+              unittest(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(MyTest, MyTest, {}), PYCString ("MyTest"), unittest(PyIR.Name).TestCase)
+              MyTest(PyIR.Name) <- n1
               return PYCNone
 
 
@@ -1738,20 +1742,21 @@ if __name__ == '__main__':
         object dummy:
           code:
             #b0 .label:
-              $ImportName(os, from_list= [])
-              os(PyIR.Name) <- $ImportName(os, from_list= [])
-              $ImportName(sys, from_list= [])
-              sys(PyIR.Name) <- $ImportName(sys, from_list= [])
-              $ImportName(test.libregrtest, from_list= [main])
-              main(PyIR.Name) <- $ImportFrom($ImportName(test.libregrtest, from_list= [main]), name= main)
+              n0 <- $ImportName(os)(PYCNone, PYCInt (0))
+              os(PyIR.Name) <- n0
+              n1 <- $ImportName(sys)(PYCNone, PYCInt (0))
+              sys(PyIR.Name) <- n1
+              n2 <- $ImportName(test.libregrtest)(PYCTuple ([|PYCString ("main")|]), PYCInt (0))
+              n3 <- $ImportFrom(main)(n2)
+              main(PyIR.Name) <- n3
               main_in_temp_cwd(PyIR.Name) <- main(PyIR.Name)
               _main(PyIR.Name) <- $FuncObj(_main, _main, {})
-              n0 <- $Compare.eq(__name__(PyIR.Name), PYCString ("__main__"))
-              if n0 then jmp b1 else jmp b2
+              n4 <- $Compare.eq(__name__(PyIR.Name), PYCString ("__main__"))
+              if n4 then jmp b1 else jmp b2
 
 
             #b1 .label:
-              n1 <- _main(PyIR.Name)()
+              n5 <- _main(PyIR.Name)()
               jmp b2
 
 
@@ -1834,18 +1839,22 @@ path.X()
         object some/long/path/dummy:
           code:
             #b0 .label:
-              $ImportName(A, from_list= [X])
-              X(PyIR.Name) <- $ImportFrom($ImportName(A, from_list= [X]), name= X)
-              n0 <- X(PyIR.Name)()
-              $ImportName(B, from_list= [X])
-              X(PyIR.Name) <- $ImportFrom($ImportName(B, from_list= [X]), name= X)
-              n1 <- X(PyIR.Name)()
-              $ImportName(C, from_list= [X])
-              X(PyIR.Name) <- $ImportFrom($ImportName(C, from_list= [X]), name= X)
+              n0 <- $ImportName(A)(PYCTuple ([|PYCString ("X")|]), PYCInt (0))
+              n1 <- $ImportFrom(X)(n0)
+              X(PyIR.Name) <- n1
               n2 <- X(PyIR.Name)()
-              $ImportName(, from_list= [path])
-              path(PyIR.Name) <- $ImportFrom($ImportName(, from_list= [path]), name= path)
-              n3 <- $CallMethod($LoadMethod(path(PyIR.Name), X), )
+              n3 <- $ImportName(B)(PYCTuple ([|PYCString ("X")|]), PYCInt (1))
+              n4 <- $ImportFrom(X)(n3)
+              X(PyIR.Name) <- n4
+              n5 <- X(PyIR.Name)()
+              n6 <- $ImportName(C)(PYCTuple ([|PYCString ("X")|]), PYCInt (2))
+              n7 <- $ImportFrom(X)(n6)
+              X(PyIR.Name) <- n7
+              n8 <- X(PyIR.Name)()
+              n9 <- $ImportName()(PYCTuple ([|PYCString ("path")|]), PYCInt (2))
+              n10 <- $ImportFrom(path)(n9)
+              path(PyIR.Name) <- n10
+              n11 <- $CallMethod($LoadMethod(path(PyIR.Name), X), )
               return PYCNone |}]
 
 
@@ -1872,22 +1881,30 @@ tata()
         object dummy:
           code:
             #b0 .label:
-              $ImportName(x, from_list= [y, a])
-              z(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
-              b(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
-              $ImportName(x, from_list= [y, a])
-              z(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
-              b(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
-              n0 <- z(PyIR.Name)()
-              n1 <- b(PyIR.Name)()
-              $ImportName(foo, from_list= [toto, tata])
-              toto(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
-              tata(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
-              $ImportName(foo, from_list= [toto, tata])
-              toto(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
-              tata(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
-              n2 <- toto(PyIR.Name)()
-              n3 <- tata(PyIR.Name)()
+              n0 <- $ImportName(x)(PYCTuple ([|PYCString ("y"); PYCString ("a")|]), PYCInt (0))
+              n1 <- $ImportFrom(y)(n0)
+              z(PyIR.Name) <- n1
+              n2 <- $ImportFrom(a)(n0)
+              b(PyIR.Name) <- n2
+              n3 <- $ImportName(x)(PYCTuple ([|PYCString ("y"); PYCString ("a")|]), PYCInt (0))
+              n4 <- $ImportFrom(y)(n3)
+              z(PyIR.Name) <- n4
+              n5 <- $ImportFrom(a)(n3)
+              b(PyIR.Name) <- n5
+              n6 <- z(PyIR.Name)()
+              n7 <- b(PyIR.Name)()
+              n8 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
+              n9 <- $ImportFrom(toto)(n8)
+              toto(PyIR.Name) <- n9
+              n10 <- $ImportFrom(tata)(n8)
+              tata(PyIR.Name) <- n10
+              n11 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
+              n12 <- $ImportFrom(toto)(n11)
+              toto(PyIR.Name) <- n12
+              n13 <- $ImportFrom(tata)(n11)
+              tata(PyIR.Name) <- n13
+              n14 <- toto(PyIR.Name)()
+              n15 <- tata(PyIR.Name)()
               return PYCNone |}]
 
 
@@ -1903,9 +1920,10 @@ import xml.etree.ElementTree as ET
         object dummy:
           code:
             #b0 .label:
-              $ImportName(xml.etree.ElementTree, from_list= [])
-              ET(PyIR.Name) <- $ImportFrom($ImportName(xml.etree.ElementTree, from_list= []),
-                name= ElementTree)
+              n0 <- $ImportName(xml.etree.ElementTree)(PYCNone, PYCInt (0))
+              n1 <- $ImportFrom(etree)(n0)
+              n2 <- $ImportFrom(ElementTree)(n1)
+              ET(PyIR.Name) <- n2
               return PYCNone |}]
 
 
@@ -2109,10 +2127,10 @@ class C(foo.D):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(foo, from_list= [])
-              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
-              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), foo(PyIR.Name).D)
-              C(PyIR.Name) <- n0
+              n0 <- $ImportName(foo)(PYCNone, PYCInt (0))
+              foo(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), foo(PyIR.Name).D)
+              C(PyIR.Name) <- n1
               return PYCNone
 
 
@@ -2409,12 +2427,14 @@ class C(ABC):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(abc, from_list= [ABC, abstractmethod])
-              ABC(PyIR.Name) <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]), name= ABC)
-              abstractmethod(PyIR.Name) <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]),
-                name= abstractmethod)
-              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), ABC(PyIR.Name))
-              C(PyIR.Name) <- n0
+              n0 <- $ImportName(abc)(PYCTuple ([|PYCString ("ABC"); PYCString ("abstractmethod")|]),
+                                     PYCInt (0))
+              n1 <- $ImportFrom(ABC)(n0)
+              ABC(PyIR.Name) <- n1
+              n2 <- $ImportFrom(abstractmethod)(n0)
+              abstractmethod(PyIR.Name) <- n2
+              n3 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), ABC(PyIR.Name))
+              C(PyIR.Name) <- n3
               return PYCNone
 
 
@@ -2649,16 +2669,16 @@ class Test(unittest.TestCase):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(unittest, from_list= [])
-              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
-              $ImportName(signal, from_list= [])
-              signal(PyIR.Name) <- $ImportName(signal, from_list= [])
-              n0 <- hasattr(PyIR.Name)(signal(PyIR.Name), PYCString ("setitimer"))
-              n1 <- $CallMethod($LoadMethod(unittest(PyIR.Name), skipUnless),
-                n0, PYCString ("requires setitimer()"))
-              n2 <- $BuildClass($FuncObj(Test, Test, {}), PYCString ("Test"), unittest(PyIR.Name).TestCase)
-              n3 <- n1(n2)
-              Test(PyIR.Name) <- n3
+              n0 <- $ImportName(unittest)(PYCNone, PYCInt (0))
+              unittest(PyIR.Name) <- n0
+              n1 <- $ImportName(signal)(PYCNone, PYCInt (0))
+              signal(PyIR.Name) <- n1
+              n2 <- hasattr(PyIR.Name)(signal(PyIR.Name), PYCString ("setitimer"))
+              n3 <- $CallMethod($LoadMethod(unittest(PyIR.Name), skipUnless),
+                n2, PYCString ("requires setitimer()"))
+              n4 <- $BuildClass($FuncObj(Test, Test, {}), PYCString ("Test"), unittest(PyIR.Name).TestCase)
+              n5 <- n3(n4)
+              Test(PyIR.Name) <- n5
               return PYCNone
 
 
@@ -2767,10 +2787,10 @@ class PwdTest(unittest.TestCase):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(unittest, from_list= [])
-              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
-              n0 <- $BuildClass($FuncObj(PwdTest, PwdTest, {}), PYCString ("PwdTest"), unittest(PyIR.Name).TestCase)
-              PwdTest(PyIR.Name) <- n0
+              n0 <- $ImportName(unittest)(PYCNone, PYCInt (0))
+              unittest(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(PwdTest, PwdTest, {}), PYCString ("PwdTest"), unittest(PyIR.Name).TestCase)
+              PwdTest(PyIR.Name) <- n1
               return PYCNone
 
 
@@ -3181,8 +3201,8 @@ def f():
         object dummy:
           code:
             #b0 .label:
-              $ImportName(foo, from_list= [])
-              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              n0 <- $ImportName(foo)(PYCNone, PYCInt (0))
+              foo(PyIR.Name) <- n0
               f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
@@ -3223,8 +3243,8 @@ def f(ok):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(foo, from_list= [])
-              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              n0 <- $ImportName(foo)(PYCNone, PYCInt (0))
+              foo(PyIR.Name) <- n0
               f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
@@ -3556,8 +3576,8 @@ def f(co, s):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(dis, from_list= [])
-              dis(PyIR.Name) <- $ImportName(dis, from_list= [])
+              n0 <- $ImportName(dis)(PYCNone, PYCInt (0))
+              dis(PyIR.Name) <- n0
               f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
@@ -3656,8 +3676,8 @@ def test_format_specifier_expressions(self):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(decimal, from_list= [])
-              decimal(PyIR.Name) <- $ImportName(decimal, from_list= [])
+              n0 <- $ImportName(decimal)(PYCNone, PYCInt (0))
+              decimal(PyIR.Name) <- n0
               assertEqual(PyIR.Name) <- $FuncObj(assertEqual, assertEqual, {})
               test_format_specifier_expressions(PyIR.Name) <- $FuncObj(test_format_specifier_expressions, test_format_specifier_expressions, {})
               return PYCNone
@@ -3803,8 +3823,8 @@ def f():
               x(PyIR.Name) <- PYCInt (0)
               y(PyIR.Name) <- PYCString ("zuck")
               __annotations__(PyIR.Name)[PYCString ("y")] <- str(PyIR.Name)
-              $ImportName(C, from_list= [])
-              C(PyIR.Name) <- $ImportName(C, from_list= [])
+              n0 <- $ImportName(C)(PYCNone, PYCInt (0))
+              C(PyIR.Name) <- n0
               z(PyIR.Name) <- PYCInt (42)
               __annotations__(PyIR.Name)[PYCString ("z")] <- C(PyIR.Name).T
               f(PyIR.Name) <- $FuncObj(f, f, {})
@@ -4004,43 +4024,43 @@ except (ValueError, AttributeError):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(os, from_list= [])
-              os(PyIR.Name) <- $ImportName(os, from_list= [])
-              n0 <- $CallMethod($LoadMethod(os(PyIR.Name), sysconf), PYCString ("SC_PAGESIZE"))
-              page_size(PyIR.Name) <- n0
+              n0 <- $ImportName(os)(PYCNone, PYCInt (0))
+              os(PyIR.Name) <- n0
+              n1 <- $CallMethod($LoadMethod(os(PyIR.Name), sysconf), PYCString ("SC_PAGESIZE"))
+              page_size(PyIR.Name) <- n1
               jmp b2
 
 
-            #b1(n6, n5, n4, n3, n2, n1) .except:
-              n7 <- $Compare.exception(n6, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
-              if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
+            #b1(n7, n6, n5, n4, n3, n2) .except:
+              n8 <- $Compare.exception(n7, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
+              if n8 then jmp b3(n7, n6, n5, n4, n3, n2) else jmp b4(n7, n6, n5, n4, n3, n2)
 
 
-            #b3(n13, n12, n11, n10, n9, n8) .label:
+            #b3(n14, n13, n12, n11, n10, n9) .label:
               page_size(PyIR.Name) <- PYCInt (0)
-              jmp b6(n10, n9, n8)
+              jmp b6(n11, n10, n9)
 
 
-            #b5(n31, n30, n29, n28, n27, n26, n22, n21, n20) .except:
-              n32 <- $Compare.exception(n31, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
-              if n32 then jmp b7(n31, n30, n29, n28, n27, n26, n22, n21, n20) else
-              jmp b8(n31, n30, n29, n28, n27, n26, n22, n21, n20)
+            #b5(n32, n31, n30, n29, n28, n27, n23, n22, n21) .except:
+              n33 <- $Compare.exception(n32, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
+              if n33 then jmp b7(n32, n31, n30, n29, n28, n27, n23, n22, n21) else
+              jmp b8(n32, n31, n30, n29, n28, n27, n23, n22, n21)
 
 
-            #b7(n41, n40, n39, n38, n37, n36, n35, n34, n33) .label:
+            #b7(n42, n41, n40, n39, n38, n37, n36, n35, n34) .label:
               page_size(PyIR.Name) <- PYCInt (4096)
-              jmp b9(n35, n34, n33)
+              jmp b9(n36, n35, n34)
 
 
-            #b9(n53, n52, n51) .label:
-              jmp b6(n53, n52, n51)
+            #b9(n54, n53, n52) .label:
+              jmp b6(n54, n53, n52)
 
 
-            #b8(n50, n49, n48, n47, n46, n45, n44, n43, n42) .label:
-              jmp b6(n44, n43, n42)
+            #b8(n51, n50, n49, n48, n47, n46, n45, n44, n43) .label:
+              jmp b6(n45, n44, n43)
 
 
-            #b6(n25, n24, n23) .label:
+            #b6(n26, n25, n24) .label:
               jmp b10
 
 
@@ -4048,7 +4068,7 @@ except (ValueError, AttributeError):
               jmp b2
 
 
-            #b4(n19, n18, n17, n16, n15, n14) .label:
+            #b4(n20, n19, n18, n17, n16, n15) .label:
               jmp b2
 
 
@@ -4077,8 +4097,8 @@ def f(x):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(foo, from_list= [])
-              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              n0 <- $ImportName(foo)(PYCNone, PYCInt (0))
+              foo(PyIR.Name) <- n0
               f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
@@ -4145,58 +4165,59 @@ with open("foo", "r") as fp:
         object dummy:
           code:
             #b0 .label:
-              $ImportName(foo, from_list= [ERROR])
-              ERROR(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [ERROR]), name= ERROR)
-              n0 <- open(PyIR.Name)(PYCString ("foo"), PYCString ("r"))
-              n1 <- $LoadMethod(n0, __enter__)()
-              fp(PyIR.Name) <- n1
-              n3 <- $GetIter(fp(PyIR.Name))
-              jmp b2(n3, CM(n0).__exit__)
+              n0 <- $ImportName(foo)(PYCTuple ([|PYCString ("ERROR")|]), PYCInt (0))
+              n1 <- $ImportFrom(ERROR)(n0)
+              ERROR(PyIR.Name) <- n1
+              n2 <- open(PyIR.Name)(PYCString ("foo"), PYCString ("r"))
+              n3 <- $LoadMethod(n2, __enter__)()
+              fp(PyIR.Name) <- n3
+              n5 <- $GetIter(fp(PyIR.Name))
+              jmp b2(n5, CM(n2).__exit__)
 
 
-            #b2(n5, n4) .label:
-              n6 <- $NextIter(n5)
-              n7 <- $HasNextIter(n6)
-              if n7 then jmp b3(n4) else jmp b4(n4)
+            #b2(n7, n6) .label:
+              n8 <- $NextIter(n7)
+              n9 <- $HasNextIter(n8)
+              if n9 then jmp b3(n6) else jmp b4(n6)
 
 
-            #b3(n8) .label:
-              n10 <- $IterData(n6)
-              line(PyIR.Name) <- n10
-              n13 <- print(PyIR.Name)(PYCString ("TRY"))
-              jmp b6(n5, n8)
+            #b3(n10) .label:
+              n12 <- $IterData(n8)
+              line(PyIR.Name) <- n12
+              n15 <- print(PyIR.Name)(PYCString ("TRY"))
+              jmp b6(n7, n10)
 
 
-            #b5(n21, n20, n19, n18, n17, n16, n12, n11) .except:
-              n22 <- $Compare.exception(n21, ERROR(PyIR.Name))
-              if n22 then jmp b7(n21, n20, n19, n18, n17, n16, n12, n11) else
-              jmp b8(n21, n20, n19, n18, n17, n16, n12, n11)
+            #b5(n23, n22, n21, n20, n19, n18, n14, n13) .except:
+              n24 <- $Compare.exception(n23, ERROR(PyIR.Name))
+              if n24 then jmp b7(n23, n22, n21, n20, n19, n18, n14, n13) else
+              jmp b8(n23, n22, n21, n20, n19, n18, n14, n13)
 
 
-            #b7(n30, n29, n28, n27, n26, n25, n24, n23) .label:
-              n39 <- print(PyIR.Name)(PYCString ("EXCEPT"))
-              jmp b9(n24, n23)
+            #b7(n32, n31, n30, n29, n28, n27, n26, n25) .label:
+              n41 <- print(PyIR.Name)(PYCString ("EXCEPT"))
+              jmp b9(n26, n25)
 
 
-            #b9(n41, n40) .label:
-              jmp b2(n41, n40)
+            #b9(n43, n42) .label:
+              jmp b2(n43, n42)
 
 
-            #b8(n38, n37, n36, n35, n34, n33, n32, n31) .label:
-              jmp b6(n32, n31)
+            #b8(n40, n39, n38, n37, n36, n35, n34, n33) .label:
+              jmp b6(n34, n33)
 
 
-            #b6(n15, n14) .label:
-              n44 <- print(PyIR.Name)(PYCString ("ELSE"))
-              jmp b2(n15, n14)
+            #b6(n17, n16) .label:
+              n46 <- print(PyIR.Name)(PYCString ("ELSE"))
+              jmp b2(n17, n16)
 
 
-            #b4(n9) .label:
-              jmp b1(n9)
+            #b4(n11) .label:
+              jmp b1(n11)
 
 
-            #b1(n2) .finally:
-              n48 <- n2(PYCNone, PYCNone, PYCNone)
+            #b1(n4) .finally:
+              n50 <- n4(PYCNone, PYCNone, PYCNone)
               return PYCNone |}]
 
 
@@ -4831,11 +4852,11 @@ def powerset(s):
         object dummy:
           code:
             #b0 .label:
-              $ImportName(itertools, from_list= [])
-              itertools(PyIR.Name) <- $ImportName(itertools, from_list= [])
+              n0 <- $ImportName(itertools)(PYCNone, PYCInt (0))
+              itertools(PyIR.Name) <- n0
               f(PyIR.Name) <- $FuncObj(f, f, {})
-              n0 <- $BuildClass($FuncObj(AsyncYieldFrom, AsyncYieldFrom, {}), PYCString ("AsyncYieldFrom"))
-              AsyncYieldFrom(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(AsyncYieldFrom, AsyncYieldFrom, {}), PYCString ("AsyncYieldFrom"))
+              AsyncYieldFrom(PyIR.Name) <- n1
               powerset(PyIR.Name) <- $FuncObj(powerset, powerset, {})
               return PYCNone
 
@@ -5403,10 +5424,10 @@ class C:
                 object f:
                   code:
                     #b0 .label:
-                      $ImportName(binascii, from_list= [])
-                      binascii(PyIR.Deref) <- $ImportName(binascii, from_list= [])
-                      n0 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"))
-                      D(PyIR.Fast) <- n0
+                      n0 <- $ImportName(binascii)(PYCNone, PYCInt (0))
+                      binascii(PyIR.Deref) <- n0
+                      n1 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"))
+                      D(PyIR.Fast) <- n1
                       return PYCNone
 
 

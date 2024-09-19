@@ -12,24 +12,9 @@ module Builtin = PyBuiltin
 module SMap = PyCommon.SMap
 module SSet = PyCommon.SSet
 module IMap = PyCommon.IMap
+module Const = FFI.Constant
 
-module Const = struct
-  include FFI.Constant
-
-  (* will probably disappear in a next diff *)
-  let as_names = function
-    | PYCString s ->
-        Ok [s]
-    | PYCNone ->
-        Ok []
-    | PYCTuple tuple ->
-        let tuple = Array.to_list tuple in
-        let opt_lst = List.map ~f:as_name tuple in
-        let opt_lst = Option.all opt_lst in
-        Result.of_option ~error:() opt_lst
-    | _ ->
-        Error ()
-end
+(* will probably disappear in a next diff *)
 
 module ConstMap = Caml.Map.Make (Const)
 
@@ -110,6 +95,8 @@ module BuiltinCaller = struct
     | Format
     | FormatFn of format_function
     | Inplace of Builtin.binary_op
+    | ImportName of string
+    | ImportFrom of string
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
@@ -136,6 +123,10 @@ module BuiltinCaller = struct
         "$Format"
     | FormatFn fn ->
         sprintf "$FormatFn.%s" (show_format_function fn)
+    | ImportName name ->
+        sprintf "$ImportName(%s)" name
+    | ImportFrom name ->
+        sprintf "$ImportFrom(%s)" name
     | Binary op ->
         let op = show_binary op in
         sprintf "$Binary.%s" op
@@ -198,14 +189,6 @@ module Exp = struct
   [@@warning "-unused-value-declaration"]
 
 
-  type import_name = {id: Ident.t; fromlist: string list}
-
-  let pp_import_name fmt {id; fromlist} =
-    F.fprintf fmt "$ImportName(%a, from_list= [%a])" Ident.pp id
-      (Pp.seq ~sep:", " F.pp_print_string)
-      fromlist
-
-
   (** An expression is an abstraction of the state of Python bytecode interpreter, waiting to be
       turned into Textual. During the translation from bytecode to expressions, we introduce SSA
       identifiers for "yet to be named" expressions.
@@ -229,8 +212,6 @@ module Exp = struct
         ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
-    | ImportName of import_name  (** [IMPORT_NAME] *)
-    | ImportFrom of {from: import_name; names: Ident.t}  (** [IMPORT_FROM] *)
     | Ref of string  (** [LOAD_CLOSURE] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
@@ -259,10 +240,6 @@ module Exp = struct
         "GetAttr"
     | LoadMethod _ ->
         "LoadMethod"
-    | ImportName _ ->
-        "ImportName"
-    | ImportFrom _ ->
-        "ImportFrom"
     | Ref _ ->
         "Ref"
     | Not _ ->
@@ -314,10 +291,6 @@ module Exp = struct
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
         F.fprintf fmt "$LoadMethod(%a, %s)" pp self meth
-    | ImportName import_name ->
-        pp_import_name fmt import_name
-    | ImportFrom {from; names} ->
-        F.fprintf fmt "$ImportFrom(%a,@ name= %a)" pp_import_name from Ident.pp names
     | Ref s ->
         F.fprintf fmt "$Ref(%s)" s
     | Not exp ->
@@ -354,10 +327,6 @@ module Error = struct
     | MakeFunction of string * Exp.t
     | BuildConstKeyMapLength of int * int
     | BuildConstKeyMapKeys of Exp.t
-    | ImportNameFromList of (string * Exp.t)
-    | ImportNameLevel of (string * Exp.t)
-    | ImportNameLevelOverflow of (string * Z.t)
-    | ImportFrom of (string * Exp.t)
     | CompareOp of int
     | UnpackSequence of int
     | FormatValueSpec of Exp.t
@@ -384,14 +353,6 @@ module Error = struct
         F.fprintf fmt "BUILD_CONST_KEY_MAP: expected %d keys but got %d" m n
     | BuildConstKeyMapKeys exp ->
         F.fprintf fmt "BUILD_CONST_KEY_MAP: expect constant set of keys but got %a" Exp.pp exp
-    | ImportNameFromList (name, args) ->
-        F.fprintf fmt "IMPORT_NAME(%s): expected constant fromlist but got %a" name Exp.pp args
-    | ImportNameLevel (name, arg) ->
-        F.fprintf fmt "IMPORT_NAME(%s): expected int but got %a" name Exp.pp arg
-    | ImportNameLevelOverflow (name, level) ->
-        F.fprintf fmt "IMPORT_NAME(%s): level is too big: %s" name (Z.to_string level)
-    | ImportFrom (name, from) ->
-        F.fprintf fmt "IMPORT_FROM(%s): expected an `import` but got %a" name Exp.pp from
     | CompareOp n ->
         F.fprintf fmt "COMPARE_OP(%d): invalid operation" n
     | UnpackSequence n ->
@@ -440,7 +401,6 @@ module Stmt = struct
     | Assign of {lhs: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
     | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
-    | ImportName of Exp.import_name
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
     | SetupAnnotations
 
@@ -453,8 +413,6 @@ module Stmt = struct
     | CallMethod {lhs; call; args} ->
         F.fprintf fmt "%a <- $CallMethod(%a, @[%a@])" SSA.pp lhs Exp.pp call
           (Pp.seq ~sep:", " Exp.pp) args
-    | ImportName import_name ->
-        Exp.pp_import_name fmt import_name
     | BuiltinCall {lhs; call; args} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
           (Pp.seq ~sep:", " Exp.pp) args
@@ -1187,59 +1145,6 @@ let call_function_ex st flags =
   Ok (st, None)
 
 
-let import_name st name =
-  let open IResult.Let_syntax in
-  let {State.module_name= _; loc} = st in
-  let* fromlist, st = State.pop st in
-  let* fromlist =
-    let error = (L.ExternalError, loc, Error.ImportNameFromList (name, fromlist)) in
-    match (fromlist : Exp.t) with
-    | Const c ->
-        Result.map_error ~f:(fun () -> error) (Const.as_names c)
-    | _ ->
-        Error error
-  in
-  let* level, st = State.pop st in
-  let* _level =
-    match (level : Exp.t) with
-    | Const (PYCInt z) -> (
-      try Ok (Z.to_int z)
-      with Z.Overflow -> external_error st (Error.ImportNameLevelOverflow (name, z)) )
-    | _ ->
-        external_error st (Error.ImportNameLevel (name, level))
-  in
-  let id = Ident.mk name in
-  (* will desappear soon *)
-  let import_path = id in
-  let import_name = {Exp.id= import_path; fromlist} in
-  let exp = Exp.ImportName import_name in
-  let st = State.push st exp in
-  let stmt = Stmt.ImportName import_name in
-  (* Keeping them as a statement so IR -> Textual can correctly generate the toplevel/side-effect call *)
-  let st = State.push_stmt st stmt in
-  Ok (st, None)
-
-
-let import_from st name =
-  let open IResult.Let_syntax in
-  (* Does not pop the top of stack, which should be the result of an IMPORT_NAME *)
-  let* from = State.peek st in
-  State.debug st "import_from(%s): %a@\n" name Exp.pp from ;
-  let* from, _names =
-    match (from : Exp.t) with
-    | ImportName from ->
-        Ok (from, None)
-    | ImportFrom {from; names} ->
-        Ok (from, Some names)
-    | _ ->
-        external_error st (Error.ImportFrom (name, from))
-  in
-  let names = Ident.mk name in
-  let exp = Exp.ImportFrom {from; names} in
-  let st = State.push st exp in
-  Ok (st, None)
-
-
 let unpack_sequence st count =
   let open IResult.Let_syntax in
   let* tos, st = State.pop st in
@@ -1612,11 +1517,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* rhs, st = State.pop st in
       State.debug st "popping %a@\n" Exp.pp rhs ;
       match (rhs : Exp.t) with
-      | ImportName _
-      | ImportFrom _
-      (* IMPORT_NAME/IMPORT_FROM are kept around for multiple 'from' statement and
-         then popped. The translation to textual will use the statement
-         version do deal with their side effect at the right location *)
       | Temp _ ->
           Ok (st, None)
       | _ ->
@@ -1747,10 +1647,17 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "IMPORT_NAME" ->
       let name = co_names.(arg) in
-      import_name st name
+      let* fromlist, st = State.pop st in
+      let* level, st = State.pop st in
+      let id, st = call_builtin_function st (ImportName name) [fromlist; level] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "IMPORT_FROM" ->
       let name = co_names.(arg) in
-      import_from st name
+      let* module_obj = State.peek st in
+      let id, st = call_builtin_function st (ImportFrom name) [module_obj] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "COMPARE_OP" ->
       let* cmp_op =
         match List.nth Builtin.Compare.all arg with
