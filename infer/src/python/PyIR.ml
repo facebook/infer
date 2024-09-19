@@ -83,6 +83,9 @@ module SSA = struct
   let next n = 1 + n
 end
 
+(* we reuse here the same scope convention as in the bytecode spec *)
+type name_scope = Global | Fast | Name | Deref [@@deriving show]
+
 module BuiltinCaller = struct
   type format_function = Str | Repr | Ascii
 
@@ -146,7 +149,9 @@ module BuiltinCaller = struct
     | ListAppend  (** [LIST_APPEND] *)
     | SetAdd  (** [SET_ADD] *)
     | DictSetItem  (** [MAP_ADD] *)
-    | Delete  (** [DELETE_FAST] & cie *)
+    | Delete of {scope: name_scope; name: string}  (** [DELETE_FAST] & cie *)
+    | DeleteAttr of string
+    | DeleteSubscr
     | YieldFrom  (** [YIELD_FROM] *)
     | GetAwaitable  (** [GET_AWAITABLE] *)
     | UnpackEx  (** [UNPACK_EX] *)
@@ -186,8 +191,12 @@ module BuiltinCaller = struct
         "$SetAdd"
     | DictSetItem ->
         "$DictSetItem"
-    | Delete ->
-        "$Delete"
+    | Delete {scope; name} ->
+        sprintf "$Delete%s(%s)" (show_name_scope scope) name
+    | DeleteAttr name ->
+        sprintf "$DeleteAttr(%s)" name
+    | DeleteSubscr ->
+        "$DeleteSubscr"
     | YieldFrom ->
         "$YieldFrom"
     | GetAwaitable ->
@@ -1666,11 +1675,6 @@ let get_name st co_names arg ~global =
   Exp.Var target
 
 
-let delete st exp =
-  let _id, st = call_builtin_function st Delete [exp] in
-  Ok (st, None)
-
-
 let collection_add st opname arg ?(map = false) builtin =
   (* LIST_APPEND(i) | SET_ADD(i) | MAP_ADD(i)
 
@@ -2267,27 +2271,31 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "MAP_ADD" ->
       collection_add st opname arg ~map:true DictSetItem
   | "DELETE_NAME" ->
-      let exp = get_name st co_names arg ~global:false in
-      delete st exp
+      let name = co_names.(arg) in
+      let _id, st = call_builtin_function st (Delete {scope= Name; name}) [] in
+      Ok (st, None)
   | "DELETE_GLOBAL" ->
-      let exp = get_name st co_names arg ~global:true in
-      delete st exp
+      let name = co_names.(arg) in
+      let _id, st = call_builtin_function st (Delete {scope= Global; name}) [] in
+      Ok (st, None)
   | "DELETE_FAST" ->
       let name = co_varnames.(arg) in
-      delete st (Exp.LocalVar name)
+      let _id, st = call_builtin_function st (Delete {scope= Fast; name}) [] in
+      Ok (st, None)
   | "DELETE_ATTR" ->
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
-      let exp = Exp.GetAttr (tos, name) in
-      delete st exp
+      let _id, st = call_builtin_function st (DeleteAttr name) [tos] in
+      Ok (st, None)
   | "DELETE_DEREF" ->
-      let exp = deref code arg in
-      delete st exp
+      let name = get_cell_name code arg in
+      let _id, st = call_builtin_function st (Delete {scope= Deref; name}) [] in
+      Ok (st, None)
   | "DELETE_SUBSCR" ->
       let* index, st = State.pop st in
       let* exp, st = State.pop st in
-      let exp = Exp.Subscript {exp; index} in
-      delete st exp
+      let _id, st = call_builtin_function st DeleteSubscr [exp; index] in
+      Ok (st, None)
   | "GET_AWAITABLE" ->
       let* tos, st = State.pop st in
       let id, st = call_builtin_function st GetAwaitable [tos] in

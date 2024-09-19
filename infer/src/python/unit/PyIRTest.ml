@@ -4388,7 +4388,7 @@ except C as c:
 
             #b5(n22, n21, n20) .finally:
               dummy.c <- PYCNone
-              n27 <- $Delete(dummy.c)
+              n27 <- $DeletePyIR.Name(c)()
               jmp b6
 
 
@@ -5234,10 +5234,10 @@ def g(a, b):
               dummy.C <- n0
               n1 <- dummy.C()
               dummy.c <- n1
-              n2 <- $Delete(dummy.c)
+              n2 <- $DeletePyIR.Name(c)()
               n3 <- dummy.C()
               dummy.c0 <- n3
-              n4 <- $Delete(dummy.c0.foo)
+              n4 <- $DeleteAttr(foo)(dummy.c0)
               dummy.f <- $FuncObj(f, dummy.f, {})
               dummy.g <- $FuncObj(g, dummy.g, {})
               return PYCNone
@@ -5258,8 +5258,8 @@ def g(a, b):
             object dummy.f:
               code:
                 #b0 .label:
-                  n0 <- $Delete(dummy.c0)
-                  n1 <- $Delete(x)
+                  n0 <- $DeletePyIR.Global(c0)()
+                  n1 <- $DeletePyIR.Fast(x)()
                   $Deref(z) <- PYCInt (0)
                   inner <- $FuncObj(inner, dummy.f.<locals>.inner, {})
                   return PYCNone
@@ -5270,7 +5270,7 @@ def g(a, b):
                 object dummy.f.inner:
                   code:
                     #b0 .label:
-                      n0 <- $Delete($Deref(z))
+                      n0 <- $DeletePyIR.Deref(z)()
                       return PYCNone
 
 
@@ -5283,7 +5283,7 @@ def g(a, b):
               object dummy.g:
                 code:
                   #b0 .label:
-                    n0 <- $Delete(a[b])
+                    n0 <- $DeleteSubscr(a, b)
                     return PYCNone
 
 
