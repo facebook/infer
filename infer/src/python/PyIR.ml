@@ -31,6 +31,34 @@ end = struct
   let mk ident = ident
 end
 
+module QualName : sig
+  type t
+
+  val from_qualified_string : sep:char -> string -> t
+
+  val extend : t -> string -> t
+
+  val pp : F.formatter -> t -> unit
+end = struct
+  type t = {root: string; path: string list} [@@deriving compare]
+
+  let pp fmt {root; path} =
+    if List.is_empty path then F.pp_print_string fmt root
+    else F.fprintf fmt "%s.%a" root (Pp.seq ~sep:"." F.pp_print_string) (List.rev path)
+
+
+  let from_qualified_string ~sep s =
+    let l = String.split ~on:sep s in
+    match l with
+    | [] ->
+        L.die ExternalError "QualName.from_qualified_string with an empty string"
+    | hd :: tl ->
+        {root= hd; path= List.rev tl}
+
+
+  let extend {root; path} attr = {root; path= attr :: path}
+end
+
 module SSA = struct
   type t = int
 
@@ -204,8 +232,8 @@ module Exp = struct
     (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
     | ConstMap of t ConstMap.t
     | Function of
-        { qualname: Ident.t
-        ; short_name: string
+        { qual_name: QualName.t
+        ; short_name: Ident.t
         ; code: FFI.Code.t
         ; default_values: t SMap.t
         ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
@@ -282,8 +310,8 @@ module Exp = struct
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
         F.fprintf fmt "@]}"
-    | Function {qualname; short_name; default_values} ->
-        F.fprintf fmt "$FuncObj(%s, %a, {" short_name Ident.pp qualname ;
+    | Function {qual_name; short_name; default_values} ->
+        F.fprintf fmt "$FuncObj(%a, %a, {" Ident.pp short_name QualName.pp qual_name ;
         SMap.iter (fun key value -> F.fprintf fmt "(%s, %a); " key pp value) default_values ;
         F.pp_print_string fmt "})"
     | GetAttr (t, name) ->
@@ -327,6 +355,7 @@ module Error = struct
     | BuildConstKeyMapLength of int * int
     | BuildConstKeyMapKeys of Exp.t
     | CompareOp of int
+    | CodeWithoutQualifiedName of FFI.Code.t
     | UnpackSequence of int
     | FormatValueSpec of Exp.t
     | NextOffsetMissing
@@ -354,6 +383,9 @@ module Error = struct
         F.fprintf fmt "BUILD_CONST_KEY_MAP: expect constant set of keys but got %a" Exp.pp exp
     | CompareOp n ->
         F.fprintf fmt "COMPARE_OP(%d): invalid operation" n
+    | CodeWithoutQualifiedName {FFI.Code.co_name; co_firstlineno; co_filename} ->
+        F.fprintf fmt "Unknown code object: %s, at line %d, in %s" co_name co_firstlineno
+          co_filename
     | UnpackSequence n ->
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | FormatValueSpec exp ->
@@ -681,8 +713,8 @@ module State = struct
 
   (** Internal state of the Bytecode -> IR compiler *)
   type t =
-    { module_name: Ident.t
-    ; debug: bool
+    { debug: bool
+    ; code_qual_name: FFI.Code.t -> QualName.t option
     ; loc: Location.t
     ; cfg: t CFG.t
           (* TODO:
@@ -693,22 +725,20 @@ module State = struct
     ; stack: Exp.t Stack.t
     ; block_stack: Block.t Stack.t
     ; stmts: (Location.t * Stmt.t) list
-    ; fresh_id: SSA.t
-    ; functions: Ident.t SMap.t }
+    ; fresh_id: SSA.t }
 
-  let empty ~debug ~loc module_name =
+  let empty ~debug ~code_qual_name ~loc =
     let p = if debug then Debug.todo else Debug.p in
     let block_stack = Stack.push Stack.empty (Block.mk Normal) in
     p "State.empty@\n" ;
-    { module_name
-    ; debug
+    { debug
+    ; code_qual_name
     ; loc
     ; cfg= CFG.empty (* ; exn_handlers= [] *)
     ; stack= Stack.empty
     ; block_stack
     ; stmts= []
-    ; fresh_id= 0
-    ; functions= SMap.empty }
+    ; fresh_id= 0 }
 
 
   let debug {debug} = if debug then Debug.todo else Debug.p
@@ -716,7 +746,7 @@ module State = struct
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
-  let enter ~debug ~loc module_name = empty ~debug ~loc module_name
+  let enter ~debug ~code_qual_name ~loc = empty ~debug ~code_qual_name ~loc
 
   let fresh_id ({fresh_id} as st) =
     let st = {st with fresh_id= SSA.next fresh_id} in
@@ -774,8 +804,6 @@ module State = struct
 
   (* TODO: use the [exn_handlers] info to mark statement that can possibly raise * something *)
   let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
-
-  let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
 
   let size {stack} = Stack.size stack
 
@@ -976,28 +1004,21 @@ let named_argument_zip opname argc ~f ~init data tags =
 
 let make_function st flags =
   let open IResult.Let_syntax in
-  let* qualname, st = State.pop st in
-  let* qualname =
-    (* In the toplevel, [qualname] is the short name / string from the source.
-       However in a nested context (e.g. in a class), [qualname] also prefixed
-       by the value stored in the [__qualname__] attribute.
-       We use this information along with our own [module_name] to generate a
-       non ambiguous identifier *)
-    match (qualname : Exp.t) with
-    | Const (PYCString s) ->
-        Ok (Ident.mk s)
-    | _ ->
-        internal_error st (Error.MakeFunction ("a qualified named", qualname))
-  in
+  let* _qual_name, st = State.pop st in
+  (* we use our own notion of qualified name *)
   let* codeobj, st = State.pop st in
-  let* code =
+  let* code, qual_name =
     match (codeobj : Exp.t) with
-    | Const (PYCCode c) ->
-        Ok c
+    | Const (PYCCode c) -> (
+      match st.State.code_qual_name c with
+      | Some qual_name ->
+          Ok (c, qual_name)
+      | None ->
+          internal_error st (Error.CodeWithoutQualifiedName c) )
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
-  let short_name = code.FFI.Code.co_name in
+  let short_name = Ident.mk code.FFI.Code.co_name in
   let* st =
     if flags land 0x08 <> 0 then
       (* TODO: closure *)
@@ -1062,9 +1083,8 @@ let make_function st flags =
           external_error st (Error.MakeFunctionInvalidDefaults defaults)
     else Ok (SMap.empty, st)
   in
-  let exp = Exp.Function {annotations; short_name; default_values; qualname; code} in
+  let exp = Exp.Function {annotations; short_name; default_values; qual_name; code} in
   let st = State.push st exp in
-  let st = State.register_function st short_name qualname in
   Ok (st, None)
 
 
@@ -2166,9 +2186,9 @@ module Object = struct
     { name: Ident.t
     ; toplevel: node list
     ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
-    ; functions: Ident.t SMap.t }
+    }
 
-  let rec pp fmt {name; toplevel; objects; functions} =
+  let rec pp fmt {name; toplevel; objects} =
     F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
     if not (List.is_empty toplevel) then (
       F.fprintf fmt "@[<hv2>code:@\n" ;
@@ -2178,10 +2198,7 @@ module Object = struct
       F.fprintf fmt "@[<hv2>objects:@\n" ;
       List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
       F.fprintf fmt "@]@\n" ) ;
-    if not (SMap.is_empty functions) then (
-      F.fprintf fmt "@[<hv2>functions:@\n" ;
-      SMap.iter (fun short long -> F.fprintf fmt "@[%s -> %a@]@\n" short Ident.pp long) functions ;
-      F.fprintf fmt "@]" )
+    F.fprintf fmt "@]"
 end
 
 module Module = struct
@@ -2191,25 +2208,47 @@ module Module = struct
   let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
 end
 
-let rec translate_code_object ~debug ?module_name ({FFI.Code.instructions; co_consts} as code) =
-  let open IResult.Let_syntax in
-  let loc = Location.of_code code in
-  let module_name = Option.value module_name ~default:(Ident.mk code.FFI.Code.co_name) in
-  let st = State.enter ~debug ~loc module_name in
-  let label, st = State.get_label st 0 ~ssa_parameters:[] in
-  let st = State.process_label st 0 [] in
-  let* {State.functions}, nodes = mk_nodes st label code instructions in
-  let* objects =
-    Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
-        match constant with
-        | FFI.Constant.PYCCode code ->
-            let* obj = translate_code_object ~debug code in
-            Ok (obj :: objects)
-        | _ ->
-            Ok objects )
+module CodeMap : Caml.Map.S with type key = FFI.Code.t = Caml.Map.Make (FFI.Code)
+
+let build_code_object_unique_name file_path code =
+  let rec visit map outer_name ({FFI.Code.co_consts} as code) =
+    if CodeMap.mem code map then map
+    else
+      let map = CodeMap.add code outer_name map in
+      Array.fold co_consts ~init:map ~f:(fun map constant ->
+          match constant with
+          | FFI.Constant.PYCCode code ->
+              let outer_name = QualName.extend outer_name code.FFI.Code.co_name in
+              visit map outer_name code
+          | _ ->
+              map )
   in
-  let objects = List.rev objects in
-  Ok (loc, {Object.name= module_name; toplevel= nodes; objects; functions})
+  let map = visit CodeMap.empty (QualName.from_qualified_string ~sep:'/' file_path) code in
+  fun code -> CodeMap.find_opt code map
+
+
+let translate_code_object ~debug ~code_qual_name name code =
+  let rec visit ?name ({FFI.Code.instructions; co_consts} as code) =
+    let open IResult.Let_syntax in
+    let loc = Location.of_code code in
+    let st = State.enter ~debug ~code_qual_name ~loc in
+    let label, st = State.get_label st 0 ~ssa_parameters:[] in
+    let st = State.process_label st 0 [] in
+    let* _, nodes = mk_nodes st label code instructions in
+    let* objects =
+      Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
+          match constant with
+          | FFI.Constant.PYCCode code ->
+              let* obj = visit code in
+              Ok (obj :: objects)
+          | _ ->
+              Ok objects )
+    in
+    let objects = List.rev objects in
+    let name = Option.value name ~default:(Ident.mk code.FFI.Code.co_name) in
+    Ok (loc, {Object.name; toplevel= nodes; objects})
+  in
+  visit ~name code
 
 
 let mk ~debug ({FFI.Code.co_filename} as code) =
@@ -2221,6 +2260,7 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
     else co_filename
   in
   let file_path = Stdlib.Filename.remove_extension file_path in
+  let code_qual_name = build_code_object_unique_name file_path code in
   let module_name = Ident.mk file_path in
-  let* _, obj = translate_code_object ~module_name ~debug code in
+  let* _, obj = translate_code_object ~debug ~code_qual_name module_name code in
   Ok obj

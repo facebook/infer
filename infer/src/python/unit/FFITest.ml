@@ -30,9 +30,9 @@ let%test_module "load_code" =
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
+        { co_name = "<module>"; co_firstlineno = 1; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
+          co_varnames = [||]; co_nlocals = 0; co_argcount = 0;
           co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
           co_lnotab = [||]; co_consts = [|FFI.PYCInt (42); FFI.PYCNone|];
           instructions =
@@ -56,11 +56,11 @@ let%test_module "load_code" =
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"print"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
-          co_posonlyargcount = 0; co_stacksize = 2; co_kwonlyargcount = 0;
-          co_lnotab = [||];
+        { co_name = "<module>"; co_firstlineno = 1; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||];
+          co_names = [|"print"|]; co_varnames = [||]; co_nlocals = 0;
+          co_argcount = 0; co_posonlyargcount = 0; co_stacksize = 2;
+          co_kwonlyargcount = 0; co_lnotab = [||];
           co_consts = [|FFI.PYCComplex ({ real = 0.; imag = 5. }); FFI.PYCNone|];
           instructions =
           [{ FFI.opname = "LOAD_NAME"; FFI.opcode = 101; FFI.arg = 0;
@@ -89,9 +89,9 @@ let%test_module "load_code" =
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
+        { co_name = "<module>"; co_firstlineno = 1; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
+          co_varnames = [||]; co_nlocals = 0; co_argcount = 0;
           co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
           co_lnotab = [||]; co_consts = [|FFI.PYCNone; FFI.PYCNone|];
           instructions =
@@ -115,9 +115,9 @@ let%test_module "load_code" =
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
+        { co_name = "<module>"; co_firstlineno = 1; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
+          co_varnames = [||]; co_nlocals = 0; co_argcount = 0;
           co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
           co_lnotab = [||];
           co_consts = [|FFI.PYCInt (100000000000000000000); FFI.PYCNone|];
@@ -142,9 +142,9 @@ let%test_module "load_code" =
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
+        { co_name = "<module>"; co_firstlineno = 1; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
+          co_varnames = [||]; co_nlocals = 0; co_argcount = 0;
           co_posonlyargcount = 0; co_stacksize = 2; co_kwonlyargcount = 0;
           co_lnotab = [||];
           co_consts =
@@ -180,11 +180,11 @@ badx = '\uD800'|} in
       test source ;
       [%expect
         {|
-        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
-          co_cellvars = [||]; co_freevars = [||]; co_names = [|"normal"; "badx"|];
-          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 2;
-          co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
-          co_lnotab = [|; |];
+        { co_name = "<module>"; co_firstlineno = 2; co_filename = "dummy.py";
+          co_flags = 64; co_cellvars = [||]; co_freevars = [||];
+          co_names = [|"normal"; "badx"|]; co_varnames = [||]; co_nlocals = 0;
+          co_argcount = 0; co_posonlyargcount = 0; co_stacksize = 1;
+          co_kwonlyargcount = 0; co_lnotab = [|; |];
           co_consts =
           [|FFI.PYCString ("yolo"); FFI.PYCInvalidUnicode ([|27648|]); FFI.PYCNone|];
           instructions =

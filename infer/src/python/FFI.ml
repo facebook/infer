@@ -66,6 +66,7 @@ type pyConstant =
 
 and pyCode =
   { co_name: string
+  ; co_firstlineno: int
   ; co_filename: string
   ; (* TODO Not in use at the moment, just keeping it around not to forget about it *)
     co_flags: int
@@ -75,7 +76,6 @@ and pyCode =
   ; co_varnames: string array
   ; co_nlocals: int
   ; co_argcount: int
-  ; co_firstlineno: int
   ; co_posonlyargcount: int
   ; co_stacksize: int
   ; co_kwonlyargcount: int
@@ -311,6 +311,7 @@ and new_py_instruction obj =
 module Code = struct
   type t = pyCode =
     { co_name: string
+    ; co_firstlineno: int
     ; co_filename: string
     ; co_flags: int [@compare.ignore]
     ; co_cellvars: string array [@compare.ignore]
@@ -319,7 +320,6 @@ module Code = struct
     ; co_varnames: string array [@compare.ignore]
     ; co_nlocals: int [@compare.ignore]
     ; co_argcount: int [@compare.ignore]
-    ; co_firstlineno: int [@compare.ignore]
     ; co_posonlyargcount: int [@compare.ignore]
     ; co_stacksize: int [@compare.ignore]
     ; co_kwonlyargcount: int [@compare.ignore]

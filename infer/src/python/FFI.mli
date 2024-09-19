@@ -54,6 +54,7 @@ end
 and Code : sig
   type t = private
     { co_name: string
+    ; co_firstlineno: int
     ; co_filename: string
     ; co_flags: int
     ; co_cellvars: string array
@@ -71,7 +72,6 @@ and Code : sig
               local variables). *)
     ; co_nlocals: int
     ; co_argcount: int
-    ; co_firstlineno: int
     ; co_posonlyargcount: int
     ; co_stacksize: int
     ; co_kwonlyargcount: int
