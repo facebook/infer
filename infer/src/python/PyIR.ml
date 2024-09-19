@@ -14,92 +14,16 @@ module SSet = PyCommon.SSet
 module IMap = PyCommon.IMap
 
 module Const = struct
-  (** This module is a small layer above [FFI.Constant]. It turns all "byte" strings into strings,
-      and the tuples from array to list.
+  include FFI.Constant
 
-      TODO: Maybe merge it with FFI.Constant.t *)
-
-  type t =
-    | Int of Z.t
-    | Bool of bool
-    | Float of float
-    | Complex of {real: float; imag: float}
-    | String of string
-    | InvalidUnicode of int array
-    | Tuple of t list
-    | FrozenSet of t list
-    | Code of FFI.Code.t
-    | Null
-  [@@deriving compare]
-
-  let rec pp fmt = function
-    | Int z ->
-        F.pp_print_string fmt (Z.to_string z)
-    | Bool b ->
-        Bool.pp fmt b
-    | Float f ->
-        Float.pp fmt f
-    | Complex {real; imag} ->
-        F.fprintf fmt "(%f + %fj)" real imag
-    | String s ->
-        String.pp fmt s
-    | InvalidUnicode b ->
-        F.fprintf fmt "$InvalidUnicode[%a]" (Pp.seq ~sep:" " F.pp_print_int) (Array.to_list b)
-    | Null ->
-        F.pp_print_string fmt "None"
-    | Tuple tuple ->
-        F.fprintf fmt "(@[%a@])" (Pp.seq ~sep:", " pp) tuple
-    | FrozenSet set ->
-        F.fprintf fmt "$frozenset({@[%a@]})" (Pp.seq ~sep:", " pp) set
-    | Code {FFI.Code.co_name; co_freevars; co_cellvars} ->
-        let sz = Array.length co_freevars + Array.length co_cellvars in
-        let maybe_closure = sz <> 0 in
-        F.fprintf fmt "Code(%s, %b)" co_name maybe_closure
-
-
-  let rec from_const c =
-    match (c : FFI.Constant.t) with
-    | PYCBool b ->
-        Bool b
-    | PYCInt i ->
-        Int i
-    | PYCFloat f ->
-        Float f
-    | PYCComplex {real; imag} ->
-        Complex {real; imag}
-    | PYCString s ->
-        String s
-    | PYCInvalidUnicode b ->
-        InvalidUnicode b
-    | PYCBytes b ->
-        let s = Bytes.to_string b in
-        String s
-    | PYCNone ->
-        Null
-    | PYCTuple tuple ->
-        let rev_values =
-          Array.fold ~init:[]
-            ~f:(fun consts c ->
-              let c = from_const c in
-              c :: consts )
-            tuple
-        in
-        Tuple (List.rev rev_values)
-    | PYCFrozenSet lst ->
-        let lst = List.map ~f:from_const lst in
-        FrozenSet lst
-    | PYCCode code ->
-        Code code
-
-
-  let as_name = function String s -> Some s | _ -> None
-
+  (* will probably disappear in a next diff *)
   let as_names = function
-    | String s ->
+    | PYCString s ->
         Ok [s]
-    | Null ->
+    | PYCNone ->
         Ok []
-    | Tuple tuple ->
+    | PYCTuple tuple ->
+        let tuple = Array.to_list tuple in
         let opt_lst = List.map ~f:as_name tuple in
         let opt_lst = Option.all opt_lst in
         Result.of_option ~error:() opt_lst
@@ -1237,7 +1161,7 @@ let make_function st flags =
        We use this information along with our own [module_name] to generate a
        non ambiguous identifier *)
     match (qualname : Exp.t) with
-    | Const (String s) ->
+    | Const (PYCString s) ->
         let {State.module_name} = st in
         let root = Ident.root module_name in
         let lnames = String.split ~on:'.' s in
@@ -1248,7 +1172,7 @@ let make_function st flags =
   let* codeobj, st = State.pop st in
   let* code =
     match (codeobj : Exp.t) with
-    | Const (Code c) ->
+    | Const (PYCCode c) ->
         Ok c
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
@@ -1285,9 +1209,10 @@ let make_function st flags =
     if flags land 0x01 <> 0 then
       let* defaults, st = State.pop st in
       match (defaults : Exp.t) with
-      | Const (Tuple defaults) ->
+      | Const (PYCTuple defaults) ->
           let fn_args = FFI.Code.get_arguments code |> Array.to_list in
           let argc = List.length fn_args in
+          let defaults = Array.to_list defaults in
           let defaults =
             named_argument_zip "MAKE_FUNCTION" argc ~init:SMap.empty
               ~f:(fun hd tl ->
@@ -1336,9 +1261,9 @@ let call_function_kw st argc =
   let open IResult.Let_syntax in
   let extract_kw_names st arg_names =
     match (arg_names : Exp.t) with
-    | Const (Tuple tuple) ->
+    | Const (PYCTuple tuple) ->
         (* kw names should be constant tuple of strings, so we directly access them *)
-        List.fold_right tuple ~init:(Ok []) ~f:(fun const acc ->
+        Array.fold_right tuple ~init:(Ok []) ~f:(fun const acc ->
             let* acc in
             match Const.as_name const with
             | Some name ->
@@ -1405,7 +1330,7 @@ let import_name st name =
   let* level, st = State.pop st in
   let* level =
     match (level : Exp.t) with
-    | Const (Int z) -> (
+    | Const (PYCInt z) -> (
       try Ok (Z.to_int z)
       with Z.Overflow -> external_error st (Error.ImportNameLevelOverflow (name, z)) )
     | _ ->
@@ -1490,7 +1415,7 @@ let unpack_sequence st count =
   let rec unpack st n =
     if n < 0 then Ok st
     else
-      let index = Exp.Const (Int (Z.of_int n)) in
+      let index = Exp.Const (Const.of_int n) in
       let exp = Exp.Subscript {exp= tos; index} in
       let st = State.push st exp in
       unpack st (n - 1)
@@ -1521,7 +1446,7 @@ let format_value st flags =
     if has_fmt_spec flags then
       let* fmt_spec, st = State.pop st in
       match (fmt_spec : Exp.t) with
-      | Const (String _) ->
+      | Const (PYCString _) ->
           Ok (fmt_spec, st)
       | Collection {kind= String; values= _} ->
           Ok (fmt_spec, st)
@@ -1532,7 +1457,7 @@ let format_value st flags =
           Ok (fmt_spec, st)
       | _ ->
           external_error st (Error.FormatValueSpec fmt_spec)
-    else Ok (Exp.Const Null, st)
+    else Ok (Exp.Const Const.none, st)
   in
   let* exp, st = State.pop st in
   let conv_fn = mk_conv flags in
@@ -1661,9 +1586,10 @@ let with_cleanup_start st =
   let open IResult.Let_syntax in
   let* context_manager_exit, st = State.pop st in
   let lhs, st =
-    call_function_with_unnamed_args st context_manager_exit [Const Null; Const Null; Const Null]
+    call_function_with_unnamed_args st context_manager_exit
+      [Const Const.none; Const Const.none; Const Const.none]
   in
-  let st = State.push st (Const Null) in
+  let st = State.push st (Const Const.none) in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
@@ -1687,7 +1613,7 @@ let with_cleanup_finish st =
   let* _exit_res, st = State.pop st in
   let* tos, st = State.pop st in
   match (tos : Exp.t) with
-  | Const Null ->
+  | Const PYCNone ->
       Ok (st, None)
   | _ ->
       internal_error st (Error.WithCleanupFinish tos)
@@ -1789,7 +1715,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
-      let c = Const.from_const c in
       let exp = Exp.Const c in
       let st = State.push st exp in
       Ok (st, None)
@@ -1966,17 +1891,18 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* keys, st = State.pop st in
       let* keys =
         match (keys : Exp.t) with
-        | Const (Tuple keys) ->
+        | Const (PYCTuple keys) ->
             Ok keys
         | _ ->
             internal_error st (Error.BuildConstKeyMapKeys keys)
       in
-      let nr_keys = List.length keys in
+      let nr_keys = Array.length keys in
       let* tys, st = State.pop_n st arg in
       let* () =
         if Int.equal nr_keys arg then Ok ()
         else internal_error st (Error.BuildConstKeyMapLength (arg, nr_keys))
       in
+      let keys = Array.to_list keys in
       let map =
         List.fold2_exn ~init:ConstMap.empty ~f:(fun map key ty -> ConstMap.add key ty map) keys tys
       in
@@ -2370,7 +2296,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "UNPACK_EX" ->
       (* The low byte of counts is the number of values before the list value, the high byte of
          counts the number of values after it. *)
-      let to_int i = Exp.Const (Int (Z.of_int i)) in
+      let to_int i = Exp.Const (Const.of_int i) in
       let nr_before = arg land 0xff in
       let nr_after = (arg lsr 8) land 0xff in
       let* tos, st = State.pop st in

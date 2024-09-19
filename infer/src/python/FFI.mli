@@ -45,6 +45,10 @@ module rec Constant : sig
   val as_code : t -> Code.t option
 
   val as_name : t -> string option
+
+  val of_int : int -> t
+
+  val none : t
 end
 
 and Code : sig
