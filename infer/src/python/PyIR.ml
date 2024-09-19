@@ -10,7 +10,6 @@ module L = Logging
 module Debug = PyDebug
 module Builtin = PyBuiltin
 module SMap = PyCommon.SMap
-module SSet = PyCommon.SSet
 module IMap = PyCommon.IMap
 module Const = FFI.Constant
 
@@ -691,14 +690,11 @@ module State = struct
                    (** Stack of except/finally handlers info. The data we store here will be used (TODO) to
                        inform Textual about statements that can raise exceptions. *)
           *)
-    ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t Stack.t
     ; block_stack: Block.t Stack.t
     ; stmts: (Location.t * Stmt.t) list
     ; fresh_id: SSA.t
-    ; classes: SSet.t
-    ; functions: Ident.t SMap.t
-    ; names: Ident.t SMap.t  (** Translation cache for local names *) }
+    ; functions: Ident.t SMap.t }
 
   let empty ~debug ~loc module_name =
     let p = if debug then Debug.todo else Debug.p in
@@ -708,14 +704,11 @@ module State = struct
     ; debug
     ; loc
     ; cfg= CFG.empty (* ; exn_handlers= [] *)
-    ; global_names= SMap.empty
     ; stack= Stack.empty
     ; block_stack
     ; stmts= []
     ; fresh_id= 0
-    ; classes= SSet.empty
-    ; functions= SMap.empty
-    ; names= SMap.empty }
+    ; functions= SMap.empty }
 
 
   let debug {debug} = if debug then Debug.todo else Debug.p
@@ -723,10 +716,7 @@ module State = struct
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
-  let enter {debug; global_names; names} ~loc module_name =
-    let st = empty ~debug ~loc module_name in
-    {st with global_names; names}
-
+  let enter ~debug ~loc module_name = empty ~debug ~loc module_name
 
   let fresh_id ({fresh_id} as st) =
     let st = {st with fresh_id= SSA.next fresh_id} in
@@ -2176,10 +2166,9 @@ module Object = struct
     { name: Ident.t
     ; toplevel: node list
     ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
-    ; classes: SSet.t
     ; functions: Ident.t SMap.t }
 
-  let rec pp fmt {name; toplevel; objects; classes; functions} =
+  let rec pp fmt {name; toplevel; objects; functions} =
     F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
     if not (List.is_empty toplevel) then (
       F.fprintf fmt "@[<hv2>code:@\n" ;
@@ -2188,10 +2177,6 @@ module Object = struct
     if not (List.is_empty objects) then (
       F.fprintf fmt "@[<hv2>objects:@\n" ;
       List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
-      F.fprintf fmt "@]@\n" ) ;
-    if not (SSet.is_empty classes) then (
-      F.fprintf fmt "@[<hv2>classes:@\n" ;
-      SSet.iter (F.fprintf fmt "@[%a@]@\n" F.pp_print_string) classes ;
       F.fprintf fmt "@]@\n" ) ;
     if not (SMap.is_empty functions) then (
       F.fprintf fmt "@[<hv2>functions:@\n" ;
@@ -2206,26 +2191,25 @@ module Module = struct
   let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
 end
 
-let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
+let rec translate_code_object ~debug ?module_name ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
-  let {State.module_name; loc} = st in
+  let loc = Location.of_code code in
+  let module_name = Option.value module_name ~default:(Ident.mk code.FFI.Code.co_name) in
+  let st = State.enter ~debug ~loc module_name in
   let label, st = State.get_label st 0 ~ssa_parameters:[] in
   let st = State.process_label st 0 [] in
-  let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
+  let* {State.functions}, nodes = mk_nodes st label code instructions in
   let* objects =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
         match constant with
         | FFI.Constant.PYCCode code ->
-            let module_name = Ident.mk code.FFI.Code.co_name in
-            let loc = Location.of_code code in
-            let st = State.enter st ~loc module_name in
-            let* obj = mk_object st code in
+            let* obj = translate_code_object ~debug code in
             Ok (obj :: objects)
         | _ ->
             Ok objects )
   in
   let objects = List.rev objects in
-  Ok (loc, {Object.name= module_name; toplevel= nodes; objects; classes; functions})
+  Ok (loc, {Object.name= module_name; toplevel= nodes; objects; functions})
 
 
 let mk ~debug ({FFI.Code.co_filename} as code) =
@@ -2238,7 +2222,5 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   in
   let file_path = Stdlib.Filename.remove_extension file_path in
   let module_name = Ident.mk file_path in
-  let loc = Location.of_code code in
-  let empty = State.empty ~debug ~loc module_name in
-  let* _, obj = mk_object empty code in
+  let* _, obj = translate_code_object ~module_name ~debug code in
   Ok obj

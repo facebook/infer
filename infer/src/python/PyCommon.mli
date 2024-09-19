@@ -9,8 +9,6 @@ open! IStd
 
 module SMap : Caml.Map.S with type key = string
 
-module SSet : Caml.Set.S with type elt = string
-
 module IMap : Caml.Map.S with type key = int
 
 val proc_name : ?loc:Textual.Location.t -> string -> Textual.ProcName.t
