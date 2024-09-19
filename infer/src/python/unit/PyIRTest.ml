@@ -52,7 +52,7 @@ let%test_module "IR" =
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
+              x(PyIR.Name) <- PYCInt (42)
               return PYCNone |}]
 
 
@@ -68,8 +68,8 @@ print(x)
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
-              n0 <- print(dummy.x)
+              x(PyIR.Name) <- PYCInt (42)
+              n0 <- print(PyIR.Name)(x(PyIR.Name))
               return PYCNone |}]
 
 
@@ -86,10 +86,10 @@ print(x + y)
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
-              dummy.y <- PYCInt (10)
-              n0 <- $Binary.Add(dummy.x, dummy.y)
-              n1 <- print(n0)
+              x(PyIR.Name) <- PYCInt (42)
+              y(PyIR.Name) <- PYCInt (10)
+              n0 <- $Binary.Add(x(PyIR.Name), y(PyIR.Name))
+              n1 <- print(PyIR.Name)(n0)
               return PYCNone |}]
 
 
@@ -106,10 +106,10 @@ print(x - y)
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
-              dummy.y <- PYCInt (10)
-              n0 <- $Binary.Subtract(dummy.x, dummy.y)
-              n1 <- print(n0)
+              x(PyIR.Name) <- PYCInt (42)
+              y(PyIR.Name) <- PYCInt (10)
+              n0 <- $Binary.Subtract(x(PyIR.Name), y(PyIR.Name))
+              n1 <- print(PyIR.Name)(n0)
               return PYCNone |}]
 
 
@@ -126,10 +126,10 @@ print(x)
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
-              n0 <- $Inplace.Add(dummy.x, PYCInt (10))
-              dummy.x <- n0
-              n1 <- print(dummy.x)
+              x(PyIR.Name) <- PYCInt (42)
+              n0 <- $Inplace.Add(x(PyIR.Name), PYCInt (10))
+              x(PyIR.Name) <- n0
+              n1 <- print(PyIR.Name)(x(PyIR.Name))
               return PYCNone |}]
 
 
@@ -146,10 +146,10 @@ print(x)
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCInt (42)
-              n0 <- $Inplace.Subtract(dummy.x, PYCInt (10))
-              dummy.x <- n0
-              n1 <- print(dummy.x)
+              x(PyIR.Name) <- PYCInt (42)
+              n0 <- $Inplace.Subtract(x(PyIR.Name), PYCInt (10))
+              x(PyIR.Name) <- n0
+              n1 <- print(PyIR.Name)(x(PyIR.Name))
               return PYCNone |}]
 
 
@@ -164,7 +164,7 @@ pi = 3.14
         object dummy:
           code:
             #b0 .label:
-              dummy.pi <- PYCFloat (3.14)
+              pi(PyIR.Name) <- PYCFloat (3.14)
               return PYCNone |}]
 
 
@@ -179,7 +179,7 @@ byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
         object dummy:
           code:
             #b0 .label:
-              dummy.byte_data <- PYCBytes ("Hello")
+              byte_data(PyIR.Name) <- PYCBytes ("Hello")
               return PYCNone |}]
 
 
@@ -207,31 +207,31 @@ print(z)
         object dummy:
           code:
             #b0 .label:
-              dummy.my_fun <- $FuncObj(my_fun, dummy.my_fun, {})
-              dummy.a <- PYCInt (10)
-              n0 <- dummy.my_fun(PYCInt (42), dummy.a)
-              dummy.z <- n0
-              n1 <- print(dummy.z)
+              my_fun(PyIR.Name) <- $FuncObj(my_fun, my_fun, {})
+              a(PyIR.Name) <- PYCInt (10)
+              n0 <- my_fun(PyIR.Name)(PYCInt (42), a(PyIR.Name))
+              z(PyIR.Name) <- n0
+              n1 <- print(PyIR.Name)(z(PyIR.Name))
               return PYCNone
 
 
 
           objects:
-            object dummy.my_fun:
+            object my_fun:
               code:
                 #b0 .label:
-                  n0 <- print(x)
-                  n1 <- print(y)
-                  n2 <- $Binary.Add(x, y)
-                  z <- n2
-                  return z
+                  n0 <- print(PyIR.Global)(x(PyIR.Fast))
+                  n1 <- print(PyIR.Global)(y(PyIR.Fast))
+                  n2 <- $Binary.Add(x(PyIR.Fast), y(PyIR.Fast))
+                  z(PyIR.Fast) <- n2
+                  return z(PyIR.Fast)
 
 
 
 
 
             functions:
-              my_fun -> dummy.my_fun |}]
+              my_fun -> my_fun |}]
 
 
     let%expect_test _ =
@@ -254,20 +254,20 @@ print(z)
         object dummy:
           code:
             #b0 .label:
-              dummy.update_global <- $FuncObj(update_global, dummy.update_global, {})
-              dummy.z <- PYCInt (0)
-              n0 <- dummy.update_global()
-              n1 <- print(dummy.z)
+              update_global(PyIR.Name) <- $FuncObj(update_global, update_global, {})
+              z(PyIR.Global) <- PYCInt (0)
+              n0 <- update_global(PyIR.Name)()
+              n1 <- print(PyIR.Name)(z(PyIR.Global))
               return PYCNone
 
 
 
           objects:
-            object dummy.update_global:
+            object update_global:
               code:
                 #b0 .label:
-                  n0 <- $Binary.Add(dummy.z, PYCInt (1))
-                  dummy.z <- n0
+                  n0 <- $Binary.Add(z(PyIR.Global), PYCInt (1))
+                  z(PyIR.Global) <- n0
                   return PYCNone
 
 
@@ -275,7 +275,7 @@ print(z)
 
 
             functions:
-              update_global -> dummy.update_global |}]
+              update_global -> update_global |}]
 
 
     let%expect_test _ =
@@ -298,14 +298,14 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.coin <- $FuncObj(coin, dummy.coin, {})
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              coin(PyIR.Name) <- $FuncObj(coin, coin, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.coin:
+            object coin:
               code:
                 #b0 .label:
                   return PYCBool (false)
@@ -313,27 +313,27 @@ def f(x, y):
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- dummy.coin()
+                  n0 <- coin(PyIR.Global)()
                   if n0 then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  return x
+                  return x(PyIR.Fast)
 
 
                 #b2 .label:
-                  return y
+                  return y(PyIR.Fast)
 
 
 
 
 
             functions:
-              coin -> dummy.coin
-              f -> dummy.f |}]
+              coin -> coin
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -358,14 +358,14 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.coin <- $FuncObj(coin, dummy.coin, {})
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              coin(PyIR.Name) <- $FuncObj(coin, coin, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.coin:
+            object coin:
               code:
                 #b0 .label:
                   return PYCBool (false)
@@ -373,34 +373,34 @@ def f(x, y):
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  z <- PYCInt (0)
-                  n0 <- dummy.coin()
+                  z(PyIR.Fast) <- PYCInt (0)
+                  n0 <- coin(PyIR.Global)()
                   if n0 then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  z <- x
+                  z(PyIR.Fast) <- x(PyIR.Fast)
                   jmp b3
 
 
                 #b2 .label:
-                  z <- y
+                  z(PyIR.Fast) <- y(PyIR.Fast)
                   jmp b3
 
 
                 #b3 .label:
-                  return z
+                  return z(PyIR.Fast)
 
 
 
 
 
             functions:
-              coin -> dummy.coin
-              f -> dummy.f |}]
+              coin -> coin
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -433,14 +433,14 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.coin <- $FuncObj(coin, dummy.coin, {})
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              coin(PyIR.Name) <- $FuncObj(coin, coin, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.coin:
+            object coin:
               code:
                 #b0 .label:
                   return PYCBool (false)
@@ -448,21 +448,21 @@ def f(x, y):
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  z <- PYCInt (0)
-                  n0 <- dummy.coin()
+                  z(PyIR.Fast) <- PYCInt (0)
+                  n0 <- coin(PyIR.Global)()
                   if n0 then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  n1 <- dummy.coin()
+                  n1 <- coin(PyIR.Global)()
                   if n1 then jmp b3 else jmp b4
 
 
                 #b3 .label:
-                  z <- x
+                  z(PyIR.Fast) <- x(PyIR.Fast)
                   jmp b5
 
 
@@ -471,15 +471,15 @@ def f(x, y):
 
 
                 #b5 .label:
-                  n2 <- $Binary.Add(z, PYCInt (1))
-                  z <- n2
+                  n2 <- $Binary.Add(z(PyIR.Fast), PYCInt (1))
+                  z(PyIR.Fast) <- n2
                   jmp b6
 
 
                 #b2 .label:
-                  n3 <- $Binary.Add(z, PYCInt (1))
-                  z <- n3
-                  n4 <- dummy.coin()
+                  n3 <- $Binary.Add(z(PyIR.Fast), PYCInt (1))
+                  z(PyIR.Fast) <- n3
+                  n4 <- coin(PyIR.Global)()
                   if n4 then jmp b7 else jmp b8
 
 
@@ -488,20 +488,20 @@ def f(x, y):
 
 
                 #b8 .label:
-                  z <- y
+                  z(PyIR.Fast) <- y(PyIR.Fast)
                   jmp b6
 
 
                 #b6 .label:
-                  return z
+                  return z(PyIR.Fast)
 
 
 
 
 
             functions:
-              coin -> dummy.coin
-              f -> dummy.f |}]
+              coin -> coin
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -519,14 +519,14 @@ def f(x):
         object dummy:
           code:
             #b0 .label:
-              dummy.foo <- $FuncObj(foo, dummy.foo, {})
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              foo(PyIR.Name) <- $FuncObj(foo, foo, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.foo:
+            object foo:
               code:
                 #b0 .label:
                   return PYCNone
@@ -534,10 +534,10 @@ def f(x):
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  if x then jmp b1(dummy.foo) else jmp b2(dummy.foo)
+                  if x(PyIR.Fast) then jmp b1(foo(PyIR.Global)) else jmp b2(foo(PyIR.Global))
 
 
                 #b1(n0) .label:
@@ -557,8 +557,8 @@ def f(x):
 
 
             functions:
-              f -> dummy.f
-              foo -> dummy.foo |}]
+              f -> f
+              foo -> foo |}]
 
 
     let%expect_test _ =
@@ -573,7 +573,7 @@ for x in range(10):
         object dummy:
           code:
             #b0 .label:
-              n0 <- range(PYCInt (10))
+              n0 <- range(PyIR.Name)(PYCInt (10))
               n1 <- $GetIter(n0)
               jmp b1(n1)
 
@@ -586,8 +586,8 @@ for x in range(10):
 
             #b2 .label:
               n5 <- $IterData(n3)
-              dummy.x <- n5
-              n6 <- print(dummy.x)
+              x(PyIR.Name) <- n5
+              n6 <- print(PyIR.Name)(x(PyIR.Name))
               jmp b1(n2)
 
 
@@ -613,16 +613,16 @@ def f(x, y, l, bar, toto):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(l)
+                  n0 <- $GetIter(l(PyIR.Fast))
                   jmp b1(n0)
 
 
@@ -634,13 +634,13 @@ def f(x, y, l, bar, toto):
 
                 #b2 .label:
                   n4 <- $IterData(n2)
-                  x <- n4
-                  n5 <- bar()
+                  x(PyIR.Fast) <- n4
+                  n5 <- bar(PyIR.Fast)()
                   n6 <- $LoadMethod(n5, __enter__)()
-                  n9 <- toto()
+                  n9 <- toto(PyIR.Fast)()
                   n10 <- $LoadMethod(n9, __enter__)()
-                  obj <- n10
-                  if y then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
+                  obj(PyIR.Fast) <- n10
+                  if y(PyIR.Fast) then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
                   jmp b7(CM(n9).__exit__, CM(n5).__exit__, n1)
 
 
@@ -659,7 +659,7 @@ def f(x, y, l, bar, toto):
 
 
                 #b7(n19, n18, n17) .label:
-                  n28 <- print(PYCString ("nop"))
+                  n28 <- print(PyIR.Global)(PYCString ("nop"))
                   jmp b5(n19, n18, n17)
 
 
@@ -681,7 +681,7 @@ def f(x, y, l, bar, toto):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -697,9 +697,9 @@ l[0:2:1]
         object dummy:
           code:
             #b0 .label:
-              dummy.l <- [PYCInt (0), PYCInt (1), PYCInt (2), PYCInt (3), PYCInt (4), PYCInt (5)]
-              n0 <- dummy.l[[PYCInt (0):PYCInt (2)]]
-              n1 <- dummy.l[[PYCInt (0):PYCInt (2):PYCInt (1)]]
+              l(PyIR.Name) <- [PYCInt (0), PYCInt (1), PYCInt (2), PYCInt (3), PYCInt (4), PYCInt (5)]
+              n0 <- l(PyIR.Name)[[PYCInt (0):PYCInt (2)]]
+              n1 <- l(PyIR.Name)[[PYCInt (0):PYCInt (2):PYCInt (1)]]
               return PYCNone |}]
 
 
@@ -724,27 +724,27 @@ def f(x):
         object dummy:
           code:
             #b0 .label:
-              n0 <- print(PYCInt (42))
-              dummy.print <- $FuncObj(print, dummy.print, {})
-              n1 <- dummy.print(PYCInt (42))
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              n0 <- print(PyIR.Name)(PYCInt (42))
+              print(PyIR.Name) <- $FuncObj(print, print, {})
+              n1 <- print(PyIR.Name)(PYCInt (42))
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.print:
+            object print:
               code:
                 #b0 .label:
-                  return x
+                  return x(PyIR.Fast)
 
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- dummy.print(x)
+                  n0 <- print(PyIR.Global)(x(PyIR.Fast))
                   return PYCNone
 
 
@@ -752,8 +752,8 @@ def f(x):
 
 
             functions:
-              f -> dummy.f
-              print -> dummy.print |}]
+              f -> f
+              print -> print |}]
 
 
     let%expect_test _ =
@@ -773,14 +773,14 @@ def f1(x, y:str) -> bool:
         object dummy:
           code:
             #b0 .label:
-              dummy.f0 <- $FuncObj(f0, dummy.f0, {})
-              dummy.f1 <- $FuncObj(f1, dummy.f1, {})
+              f0(PyIR.Name) <- $FuncObj(f0, f0, {})
+              f1(PyIR.Name) <- $FuncObj(f1, f1, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f0:
+            object f0:
               code:
                 #b0 .label:
                   return PYCNone
@@ -788,7 +788,7 @@ def f1(x, y:str) -> bool:
 
 
 
-            object dummy.f1:
+            object f1:
               code:
                 #b0 .label:
                   return PYCNone
@@ -798,8 +798,8 @@ def f1(x, y:str) -> bool:
 
 
             functions:
-              f0 -> dummy.f0
-              f1 -> dummy.f1 |}]
+              f0 -> f0
+              f1 -> f1 |}]
 
 
     let%expect_test _ =
@@ -821,16 +821,16 @@ expect_int(get())
         object dummy:
           code:
             #b0 .label:
-              dummy.expect_int <- $FuncObj(expect_int, dummy.expect_int, {})
-              dummy.get <- $FuncObj(get, dummy.get, {})
-              n0 <- dummy.get()
-              n1 <- dummy.expect_int(n0)
+              expect_int(PyIR.Name) <- $FuncObj(expect_int, expect_int, {})
+              get(PyIR.Name) <- $FuncObj(get, get, {})
+              n0 <- get(PyIR.Name)()
+              n1 <- expect_int(PyIR.Name)(n0)
               return PYCNone
 
 
 
           objects:
-            object dummy.expect_int:
+            object expect_int:
               code:
                 #b0 .label:
                   return PYCNone
@@ -838,7 +838,7 @@ expect_int(get())
 
 
 
-            object dummy.get:
+            object get:
               code:
                 #b0 .label:
                   return PYCInt (42)
@@ -848,8 +848,8 @@ expect_int(get())
 
 
             functions:
-              expect_int -> dummy.expect_int
-              get -> dummy.get |}]
+              expect_int -> expect_int
+              get -> get |}]
 
 
     let%expect_test _ =
@@ -871,16 +871,16 @@ expect(get())
         object dummy:
           code:
             #b0 .label:
-              dummy.expect <- $FuncObj(expect, dummy.expect, {})
-              dummy.get <- $FuncObj(get, dummy.get, {})
-              n0 <- dummy.get()
-              n1 <- dummy.expect(n0)
+              expect(PyIR.Name) <- $FuncObj(expect, expect, {})
+              get(PyIR.Name) <- $FuncObj(get, get, {})
+              n0 <- get(PyIR.Name)()
+              n1 <- expect(PyIR.Name)(n0)
               return PYCNone
 
 
 
           objects:
-            object dummy.expect:
+            object expect:
               code:
                 #b0 .label:
                   return PYCNone
@@ -888,7 +888,7 @@ expect(get())
 
 
 
-            object dummy.get:
+            object get:
               code:
                 #b0 .label:
                   return PYCInt (42)
@@ -898,8 +898,8 @@ expect(get())
 
 
             functions:
-              expect -> dummy.expect
-              get -> dummy.get |}]
+              expect -> expect
+              get -> get |}]
 
 
     let%expect_test _ =
@@ -929,53 +929,53 @@ c.set(42)
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- dummy.C(PYCInt (0), PYCString ("a"))
-              dummy.c <- n1
-              n2 <- dummy.c.x
-              n3 <- $CallMethod($LoadMethod(dummy.c, get), )
-              n4 <- $CallMethod($LoadMethod(dummy.c, set), PYCInt (42))
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- C(PyIR.Name)(PYCInt (0), PYCString ("a"))
+              c(PyIR.Name) <- n1
+              n2 <- c(PyIR.Name).x
+              n3 <- $CallMethod($LoadMethod(c(PyIR.Name), get), )
+              n4 <- $CallMethod($LoadMethod(c(PyIR.Name), set), PYCInt (42))
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  dummy.C.__init__ <- $FuncObj(__init__, dummy.C.__init__, {})
-                  dummy.C.get <- $FuncObj(get, dummy.C.get, {})
-                  dummy.C.set <- $FuncObj(set, dummy.C.set, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  __init__(PyIR.Name) <- $FuncObj(__init__, C.__init__, {})
+                  get(PyIR.Name) <- $FuncObj(get, C.get, {})
+                  set(PyIR.Name) <- $FuncObj(set, C.set, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.__init__:
+                object __init__:
                   code:
                     #b0 .label:
-                      self.x <- x
-                      self.y <- y
+                      self(PyIR.Fast).x <- x(PyIR.Fast)
+                      self(PyIR.Fast).y <- y(PyIR.Fast)
                       return PYCNone
 
 
 
 
-                object dummy.C.get:
+                object get:
                   code:
                     #b0 .label:
-                      return self.x
+                      return self(PyIR.Fast).x
 
 
 
 
-                object dummy.C.set:
+                object set:
                   code:
                     #b0 .label:
-                      self.x <- x
+                      self(PyIR.Fast).x <- x(PyIR.Fast)
                       return PYCNone
 
 
@@ -983,13 +983,13 @@ c.set(42)
 
 
                 functions:
-                  __init__ -> dummy.C.__init__
-                  get -> dummy.C.get
-                  set -> dummy.C.set
+                  __init__ -> C.__init__
+                  get -> C.get
+                  set -> C.set
 
 
                 functions:
-                  C -> dummy.C |}]
+                  C -> C |}]
 
 
     let%expect_test _ =
@@ -1037,67 +1037,67 @@ print(c.z)
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(IntBox, dummy.IntBox, {}), PYCString ("IntBox"))
-              dummy.IntBox <- n0
-              dummy.getX <- $FuncObj(getX, dummy.getX, {})
-              n1 <- dummy.IntBox(PYCInt (10))
-              dummy.c <- n1
-              n2 <- dummy.c.x
-              dummy.c.z <- PYCInt (10)
-              n3 <- $CallMethod($LoadMethod(dummy.c, get), )
-              n4 <- $CallMethod($LoadMethod(dummy.c, set), PYCInt (42))
-              n5 <- $CallMethod($LoadMethod(dummy.c, run), )
-              n6 <- print(dummy.c.z)
+              n0 <- $BuildClass($FuncObj(IntBox, IntBox, {}), PYCString ("IntBox"))
+              IntBox(PyIR.Name) <- n0
+              getX(PyIR.Name) <- $FuncObj(getX, getX, {})
+              n1 <- IntBox(PyIR.Name)(PYCInt (10))
+              c(PyIR.Name) <- n1
+              n2 <- c(PyIR.Name).x
+              c(PyIR.Name).z <- PYCInt (10)
+              n3 <- $CallMethod($LoadMethod(c(PyIR.Name), get), )
+              n4 <- $CallMethod($LoadMethod(c(PyIR.Name), set), PYCInt (42))
+              n5 <- $CallMethod($LoadMethod(c(PyIR.Name), run), )
+              n6 <- print(PyIR.Name)(c(PyIR.Name).z)
               return PYCNone
 
 
 
           objects:
-            object dummy.IntBox:
+            object IntBox:
               code:
                 #b0 .label:
-                  dummy.IntBox.__module__ <- __name__
-                  dummy.IntBox.__qualname__ <- PYCString ("IntBox")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("IntBox")
                   $SETUP_ANNOTATIONS
-                  dummy.IntBox.__annotations__[PYCString ("x")] <- int
-                  dummy.IntBox.__init__ <- $FuncObj(__init__, dummy.IntBox.__init__, {})
-                  dummy.IntBox.get <- $FuncObj(get, dummy.IntBox.get, {})
-                  dummy.IntBox.set <- $FuncObj(set, dummy.IntBox.set, {})
-                  dummy.IntBox.run <- $FuncObj(run, dummy.IntBox.run, {})
-                  n0 <- staticmethod($FuncObj(id, dummy.IntBox.id, {}))
-                  dummy.IntBox.id <- n0
+                  __annotations__(PyIR.Name)[PYCString ("x")] <- int(PyIR.Name)
+                  __init__(PyIR.Name) <- $FuncObj(__init__, IntBox.__init__, {})
+                  get(PyIR.Name) <- $FuncObj(get, IntBox.get, {})
+                  set(PyIR.Name) <- $FuncObj(set, IntBox.set, {})
+                  run(PyIR.Name) <- $FuncObj(run, IntBox.run, {})
+                  n0 <- staticmethod(PyIR.Name)($FuncObj(id, IntBox.id, {}))
+                  id(PyIR.Name) <- n0
                   return PYCNone
 
 
 
               objects:
-                object dummy.IntBox.__init__:
+                object __init__:
                   code:
                     #b0 .label:
-                      self.x <- x
+                      self(PyIR.Fast).x <- x(PyIR.Fast)
                       return PYCNone
 
 
 
 
-                object dummy.IntBox.get:
+                object get:
                   code:
                     #b0 .label:
-                      return self.x
+                      return self(PyIR.Fast).x
 
 
 
 
-                object dummy.IntBox.set:
+                object set:
                   code:
                     #b0 .label:
-                      self.x <- x
+                      self(PyIR.Fast).x <- x(PyIR.Fast)
                       return PYCNone
 
 
 
 
-                object dummy.IntBox.run:
+                object run:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -1105,26 +1105,26 @@ print(c.z)
 
 
 
-                object dummy.IntBox.id:
+                object id:
                   code:
                     #b0 .label:
-                      return x
+                      return x(PyIR.Fast)
 
 
 
 
 
                 functions:
-                  __init__ -> dummy.IntBox.__init__
-                  get -> dummy.IntBox.get
-                  id -> dummy.IntBox.id
-                  run -> dummy.IntBox.run
-                  set -> dummy.IntBox.set
+                  __init__ -> IntBox.__init__
+                  get -> IntBox.get
+                  id -> IntBox.id
+                  run -> IntBox.run
+                  set -> IntBox.set
 
-                object dummy.getX:
+                object getX:
                   code:
                     #b0 .label:
-                      n0 <- $CallMethod($LoadMethod(box, get), )
+                      n0 <- $CallMethod($LoadMethod(box(PyIR.Fast), get), )
                       return n0
 
 
@@ -1132,8 +1132,8 @@ print(c.z)
 
 
                 functions:
-                  IntBox -> dummy.IntBox
-                  getX -> dummy.getX |}]
+                  IntBox -> IntBox
+                  getX -> getX |}]
 
 
     let%expect_test _ =
@@ -1159,30 +1159,30 @@ class D(C):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), PYCString ("D"), dummy.C)
-              dummy.D <- n1
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"), C(PyIR.Name))
+              D(PyIR.Name) <- n1
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  n0 <- staticmethod($FuncObj(f, dummy.C.f, {}))
-                  dummy.C.f <- n0
-                  n1 <- staticmethod($FuncObj(typed_f, dummy.C.typed_f, {}))
-                  dummy.C.typed_f <- n1
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  n0 <- staticmethod(PyIR.Name)($FuncObj(f, C.f, {}))
+                  f(PyIR.Name) <- n0
+                  n1 <- staticmethod(PyIR.Name)($FuncObj(typed_f, C.typed_f, {}))
+                  typed_f(PyIR.Name) <- n1
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.f:
+                object f:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -1190,24 +1190,24 @@ class D(C):
 
 
 
-                object dummy.C.typed_f:
+                object typed_f:
                   code:
                     #b0 .label:
-                      return x
+                      return x(PyIR.Fast)
 
 
 
 
 
                 functions:
-                  f -> dummy.C.f
-                  typed_f -> dummy.C.typed_f
+                  f -> C.f
+                  typed_f -> C.typed_f
 
-                object dummy.D:
+                object D:
                   code:
                     #b0 .label:
-                      dummy.D.__module__ <- __name__
-                      dummy.D.__qualname__ <- PYCString ("D")
+                      __module__(PyIR.Name) <- __name__(PyIR.Name)
+                      __qualname__(PyIR.Name) <- PYCString ("D")
                       return PYCNone
 
 
@@ -1215,8 +1215,8 @@ class D(C):
 
 
                 functions:
-                  C -> dummy.C
-                  D -> dummy.D |}]
+                  C -> C
+                  D -> D |}]
 
 
     let%expect_test _ =
@@ -1235,27 +1235,27 @@ C.f()
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- $CallMethod($LoadMethod(dummy.C, f), )
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- $CallMethod($LoadMethod(C(PyIR.Name), f), )
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  n0 <- staticmethod($FuncObj(f, dummy.C.f, {}))
-                  dummy.C.f <- n0
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  n0 <- staticmethod(PyIR.Name)($FuncObj(f, C.f, {}))
+                  f(PyIR.Name) <- n0
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.f:
+                object f:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -1265,11 +1265,11 @@ C.f()
 
 
                 functions:
-                  f -> dummy.C.f
+                  f -> C.f
 
 
             functions:
-              C -> dummy.C |}]
+              C -> C |}]
 
 
     let%expect_test _ =
@@ -1294,28 +1294,28 @@ def g(c: C) -> None:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(A, dummy.A, {}), PYCString ("A"))
-              dummy.A <- n0
-              n1 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n1
-              dummy.g <- $FuncObj(g, dummy.g, {})
+              n0 <- $BuildClass($FuncObj(A, A, {}), PYCString ("A"))
+              A(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n1
+              g(PyIR.Name) <- $FuncObj(g, g, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.A:
+            object A:
               code:
                 #b0 .label:
-                  dummy.A.__module__ <- __name__
-                  dummy.A.__qualname__ <- PYCString ("A")
-                  dummy.A.f <- $FuncObj(f, dummy.A.f, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("A")
+                  f(PyIR.Name) <- $FuncObj(f, A.f, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.A.f:
+                object f:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -1325,25 +1325,25 @@ def g(c: C) -> None:
 
 
                 functions:
-                  f -> dummy.A.f
+                  f -> A.f
 
-              object dummy.C:
+              object C:
                 code:
                   #b0 .label:
-                    dummy.C.__module__ <- __name__
-                    dummy.C.__qualname__ <- PYCString ("C")
+                    __module__(PyIR.Name) <- __name__(PyIR.Name)
+                    __qualname__(PyIR.Name) <- PYCString ("C")
                     $SETUP_ANNOTATIONS
-                    dummy.C.__annotations__[PYCString ("a")] <- dummy.A
+                    __annotations__(PyIR.Name)[PYCString ("a")] <- A(PyIR.Name)
                     return PYCNone
 
 
 
 
-              object dummy.g:
+              object g:
                 code:
                   #b0 .label:
-                    n0 <- $CallMethod($LoadMethod(c.a, f), )
-                    n1 <- print(n0)
+                    n0 <- $CallMethod($LoadMethod(c(PyIR.Fast).a, f), )
+                    n1 <- print(PyIR.Global)(n0)
                     return PYCNone
 
 
@@ -1351,9 +1351,9 @@ def g(c: C) -> None:
 
 
               functions:
-                A -> dummy.A
-                C -> dummy.C
-                g -> dummy.g |}]
+                A -> A
+                C -> C
+                g -> g |}]
 
 
     let%expect_test _ =
@@ -1376,42 +1376,42 @@ class C(A, B):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(A, dummy.A, {}), PYCString ("A"))
-              dummy.A <- n0
-              n1 <- $BuildClass($FuncObj(B, dummy.B, {}), PYCString ("B"))
-              dummy.B <- n1
-              n2 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"), dummy.A, dummy.B)
-              dummy.C <- n2
+              n0 <- $BuildClass($FuncObj(A, A, {}), PYCString ("A"))
+              A(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(B, B, {}), PYCString ("B"))
+              B(PyIR.Name) <- n1
+              n2 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), A(PyIR.Name), B(PyIR.Name))
+              C(PyIR.Name) <- n2
               return PYCNone
 
 
 
           objects:
-            object dummy.A:
+            object A:
               code:
                 #b0 .label:
-                  dummy.A.__module__ <- __name__
-                  dummy.A.__qualname__ <- PYCString ("A")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("A")
                   return PYCNone
 
 
 
 
-            object dummy.B:
+            object B:
               code:
                 #b0 .label:
-                  dummy.B.__module__ <- __name__
-                  dummy.B.__qualname__ <- PYCString ("B")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("B")
                   return PYCNone
 
 
 
 
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
@@ -1419,9 +1419,9 @@ class C(A, B):
 
 
             functions:
-              A -> dummy.A
-              B -> dummy.B
-              C -> dummy.C |}]
+              A -> A
+              B -> B
+              C -> C |}]
 
 
     let%expect_test _ =
@@ -1446,32 +1446,32 @@ cs[0].x
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              dummy.build <- $FuncObj(build, dummy.build, {})
-              n1 <- dummy.build()
-              dummy.cs <- n1
-              n2 <- dummy.cs[PYCInt (0)].x
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              build(PyIR.Name) <- $FuncObj(build, build, {})
+              n1 <- build(PyIR.Name)()
+              cs(PyIR.Name) <- n1
+              n2 <- cs(PyIR.Name)[PYCInt (0)].x
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  dummy.C.__init__ <- $FuncObj(__init__, dummy.C.__init__, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  __init__(PyIR.Name) <- $FuncObj(__init__, C.__init__, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.__init__:
+                object __init__:
                   code:
                     #b0 .label:
-                      self.x <- PYCInt (0)
+                      self(PyIR.Fast).x <- PYCInt (0)
                       return PYCNone
 
 
@@ -1479,12 +1479,12 @@ cs[0].x
 
 
                 functions:
-                  __init__ -> dummy.C.__init__
+                  __init__ -> C.__init__
 
-              object dummy.build:
+              object build:
                 code:
                   #b0 .label:
-                    n0 <- dummy.C()
+                    n0 <- C(PyIR.Global)()
                     return [n0]
 
 
@@ -1492,8 +1492,8 @@ cs[0].x
 
 
               functions:
-                C -> dummy.C
-                build -> dummy.build |}]
+                C -> C
+                build -> build |}]
 
 
     let%expect_test _ =
@@ -1519,67 +1519,67 @@ f()
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f()
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)()
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $BuildClass($FuncObj(A, dummy.A, {}), PYCString ("A"))
-                  A <- n0
-                  n1 <- A()
-                  a <- n1
-                  n2 <- $CallMethod($LoadMethod(a, get), )
+                  n0 <- $BuildClass($FuncObj(A, A, {}), PYCString ("A"))
+                  A(PyIR.Fast) <- n0
+                  n1 <- A(PyIR.Fast)()
+                  a(PyIR.Fast) <- n1
+                  n2 <- $CallMethod($LoadMethod(a(PyIR.Fast), get), )
                   return n2
 
 
 
               objects:
-                object dummy.f.A:
+                object A:
                   code:
                     #b0 .label:
-                      dummy.f.A.__module__ <- __name__
-                      dummy.f.A.__qualname__ <- PYCString ("f.<locals>.A")
-                      dummy.f.A.__init__ <- $FuncObj(__init__, dummy.f.<locals>.A.__init__, {})
-                      dummy.f.A.get <- $FuncObj(get, dummy.f.<locals>.A.get, {})
+                      __module__(PyIR.Name) <- __name__(PyIR.Name)
+                      __qualname__(PyIR.Name) <- PYCString ("f.<locals>.A")
+                      __init__(PyIR.Name) <- $FuncObj(__init__, f.<locals>.A.__init__, {})
+                      get(PyIR.Name) <- $FuncObj(get, f.<locals>.A.get, {})
                       return PYCNone
 
 
 
                   objects:
-                    object dummy.f.A.__init__:
+                    object __init__:
                       code:
                         #b0 .label:
-                          self.x <- PYCInt (0)
+                          self(PyIR.Fast).x <- PYCInt (0)
                           return PYCNone
 
 
 
 
-                    object dummy.f.A.get:
+                    object get:
                       code:
                         #b0 .label:
-                          return self.x
+                          return self(PyIR.Fast).x
 
 
 
 
 
                     functions:
-                      __init__ -> dummy.f.<locals>.A.__init__
-                      get -> dummy.f.<locals>.A.get
+                      __init__ -> f.<locals>.A.__init__
+                      get -> f.<locals>.A.get
 
 
                   functions:
-                    A -> dummy.A
+                    A -> A
 
 
                 functions:
-                  f -> dummy.f |}]
+                  f -> f |}]
 
 
     let%expect_test _ =
@@ -1599,10 +1599,10 @@ base.f(0)
           code:
             #b0 .label:
               $ImportName(base, from_list= [])
-              dummy.base <- $ImportName(base, from_list= [])
+              base(PyIR.Name) <- $ImportName(base, from_list= [])
               $ImportName(base, from_list= [])
-              dummy.base <- $ImportName(base, from_list= [])
-              n0 <- $CallMethod($LoadMethod(base, f), PYCInt (0))
+              base(PyIR.Name) <- $ImportName(base, from_list= [])
+              n0 <- $CallMethod($LoadMethod(base(PyIR.Name), f), PYCInt (0))
               return PYCNone |}]
 
 
@@ -1629,22 +1629,22 @@ g()
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f()
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)()
               $ImportName(base, from_list= [f, g])
-              dummy.f <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
-              dummy.g <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
-              n1 <- base.f()
+              f(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
+              g(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
+              n1 <- f(PyIR.Name)()
               $ImportName(base, from_list= [f, g])
-              dummy.f <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
-              dummy.g <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
-              n2 <- base.g()
+              f(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
+              g(PyIR.Name) <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
+              n2 <- g(PyIR.Name)()
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   return PYCNone
@@ -1654,7 +1654,7 @@ g()
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -1672,19 +1672,19 @@ class MyTest(unittest.TestCase):
           code:
             #b0 .label:
               $ImportName(unittest, from_list= [])
-              dummy.unittest <- $ImportName(unittest, from_list= [])
-              n0 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), PYCString ("MyTest"), unittest.TestCase)
-              dummy.MyTest <- n0
+              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
+              n0 <- $BuildClass($FuncObj(MyTest, MyTest, {}), PYCString ("MyTest"), unittest(PyIR.Name).TestCase)
+              MyTest(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.MyTest:
+            object MyTest:
               code:
                 #b0 .label:
-                  dummy.MyTest.__module__ <- __name__
-                  dummy.MyTest.__qualname__ <- PYCString ("MyTest")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("MyTest")
                   return PYCNone
 
 
@@ -1692,7 +1692,7 @@ class MyTest(unittest.TestCase):
 
 
             functions:
-              MyTest -> dummy.MyTest |}]
+              MyTest -> MyTest |}]
 
 
     (* Extracted from Cinder's test suite. Currently amended to avoid unsupported opcodes *)
@@ -1739,19 +1739,19 @@ if __name__ == '__main__':
           code:
             #b0 .label:
               $ImportName(os, from_list= [])
-              dummy.os <- $ImportName(os, from_list= [])
+              os(PyIR.Name) <- $ImportName(os, from_list= [])
               $ImportName(sys, from_list= [])
-              dummy.sys <- $ImportName(sys, from_list= [])
+              sys(PyIR.Name) <- $ImportName(sys, from_list= [])
               $ImportName(test.libregrtest, from_list= [main])
-              dummy.main <- $ImportFrom($ImportName(test.libregrtest, from_list= [main]), name= main)
-              dummy.main_in_temp_cwd <- test.libregrtest.main
-              dummy._main <- $FuncObj(_main, dummy._main, {})
-              n0 <- $Compare.eq(__name__, PYCString ("__main__"))
+              main(PyIR.Name) <- $ImportFrom($ImportName(test.libregrtest, from_list= [main]), name= main)
+              main_in_temp_cwd(PyIR.Name) <- main(PyIR.Name)
+              _main(PyIR.Name) <- $FuncObj(_main, _main, {})
+              n0 <- $Compare.eq(__name__(PyIR.Name), PYCString ("__main__"))
               if n0 then jmp b1 else jmp b2
 
 
             #b1 .label:
-              n1 <- dummy._main()
+              n1 <- _main(PyIR.Name)()
               jmp b2
 
 
@@ -1761,28 +1761,30 @@ if __name__ == '__main__':
 
 
           objects:
-            object dummy._main:
+            object _main:
               code:
                 #b0 .label:
-                  n0 <- $CallMethod($LoadMethod(os.path, dirname), sys.argv[PYCInt (0)])
-                  n1 <- $CallMethod($LoadMethod(os.path, normpath), n0)
-                  n2 <- $CallMethod($LoadMethod(os.path, abspath), n1)
-                  mydir <- n2
-                  n3 <- len(sys.path)
+                  n0 <- $CallMethod($LoadMethod(os(PyIR.Global).path, dirname),
+                    sys(PyIR.Global).argv[PYCInt (0)])
+                  n1 <- $CallMethod($LoadMethod(os(PyIR.Global).path, normpath), n0)
+                  n2 <- $CallMethod($LoadMethod(os(PyIR.Global).path, abspath), n1)
+                  mydir(PyIR.Fast) <- n2
+                  n3 <- len(PyIR.Global)(sys(PyIR.Global).path)
                   n4 <- $Binary.Subtract(n3, PYCInt (1))
-                  i <- n4
+                  i(PyIR.Fast) <- n4
                   jmp b1
 
 
                 #b1 .label:
-                  n5 <- $Compare.ge(i, PYCInt (0))
+                  n5 <- $Compare.ge(i(PyIR.Fast), PYCInt (0))
                   if n5 then jmp b2 else jmp b3
 
 
                 #b2 .label:
-                  n6 <- $CallMethod($LoadMethod(os.path, normpath), sys.path[i])
-                  n7 <- $CallMethod($LoadMethod(os.path, abspath), n6)
-                  n8 <- $Compare.eq(n7, mydir)
+                  n6 <- $CallMethod($LoadMethod(os(PyIR.Global).path, normpath),
+                    sys(PyIR.Global).path[i(PyIR.Fast)])
+                  n7 <- $CallMethod($LoadMethod(os(PyIR.Global).path, abspath), n6)
+                  n8 <- $Compare.eq(n7, mydir(PyIR.Fast))
                   if n8 then jmp b4 else jmp b5
 
 
@@ -1791,15 +1793,15 @@ if __name__ == '__main__':
 
 
                 #b5 .label:
-                  n9 <- $Inplace.Subtract(i, PYCInt (1))
-                  i <- n9
+                  n9 <- $Inplace.Subtract(i(PyIR.Fast), PYCInt (1))
+                  i(PyIR.Fast) <- n9
                   jmp b1
 
 
                 #b3 .label:
-                  n10 <- $CallMethod($LoadMethod(os.path, abspath), __file__)
-                  dummy.__file__ <- n10
-                  n11 <- test.libregrtest.main()
+                  n10 <- $CallMethod($LoadMethod(os(PyIR.Global).path, abspath), __file__(PyIR.Global))
+                  __file__(PyIR.Global) <- n10
+                  n11 <- main(PyIR.Global)()
                   return PYCNone
 
 
@@ -1807,7 +1809,7 @@ if __name__ == '__main__':
 
 
             functions:
-              _main -> dummy._main |}]
+              _main -> _main |}]
 
 
     let%expect_test _ =
@@ -1829,22 +1831,21 @@ path.X()
       [%expect
         {|
         module
-        object some.long.path.dummy:
+        object some/long/path/dummy:
           code:
             #b0 .label:
               $ImportName(A, from_list= [X])
-              some.long.path.dummy.X <- $ImportFrom($ImportName(A, from_list= [X]), name= X)
-              n0 <- A.X()
-              $ImportName(some.long.path.B, from_list= [X])
-              some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.path.B, from_list= [X]), name= X)
-              n1 <- some.long.path.B.X()
-              $ImportName(some.long.C, from_list= [X])
-              some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.C, from_list= [X]), name= X)
-              n2 <- some.long.C.X()
-              $ImportName(some.long, from_list= [path])
-              some.long.path.dummy.path <- $ImportFrom($ImportName(some.long, from_list= [path]),
-                name= path)
-              n3 <- $CallMethod($LoadMethod(some.long.path, X), )
+              X(PyIR.Name) <- $ImportFrom($ImportName(A, from_list= [X]), name= X)
+              n0 <- X(PyIR.Name)()
+              $ImportName(B, from_list= [X])
+              X(PyIR.Name) <- $ImportFrom($ImportName(B, from_list= [X]), name= X)
+              n1 <- X(PyIR.Name)()
+              $ImportName(C, from_list= [X])
+              X(PyIR.Name) <- $ImportFrom($ImportName(C, from_list= [X]), name= X)
+              n2 <- X(PyIR.Name)()
+              $ImportName(, from_list= [path])
+              path(PyIR.Name) <- $ImportFrom($ImportName(, from_list= [path]), name= path)
+              n3 <- $CallMethod($LoadMethod(path(PyIR.Name), X), )
               return PYCNone |}]
 
 
@@ -1872,21 +1873,21 @@ tata()
           code:
             #b0 .label:
               $ImportName(x, from_list= [y, a])
-              dummy.z <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
-              dummy.b <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
+              z(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
+              b(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
               $ImportName(x, from_list= [y, a])
-              dummy.z <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
-              dummy.b <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
-              n0 <- x.y()
-              n1 <- x.a()
+              z(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
+              b(PyIR.Name) <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
+              n0 <- z(PyIR.Name)()
+              n1 <- b(PyIR.Name)()
               $ImportName(foo, from_list= [toto, tata])
-              dummy.toto <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
-              dummy.tata <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
+              toto(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
+              tata(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
               $ImportName(foo, from_list= [toto, tata])
-              dummy.toto <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
-              dummy.tata <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
-              n2 <- foo.toto()
-              n3 <- foo.tata()
+              toto(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
+              tata(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
+              n2 <- toto(PyIR.Name)()
+              n3 <- tata(PyIR.Name)()
               return PYCNone |}]
 
 
@@ -1903,8 +1904,8 @@ import xml.etree.ElementTree as ET
           code:
             #b0 .label:
               $ImportName(xml.etree.ElementTree, from_list= [])
-              dummy.ET <- $ImportFrom($ImportName(xml.etree.ElementTree, from_list= []),
-                name= etree.ElementTree)
+              ET(PyIR.Name) <- $ImportFrom($ImportName(xml.etree.ElementTree, from_list= []),
+                name= ElementTree)
               return PYCNone |}]
 
 
@@ -1923,30 +1924,30 @@ class D(C):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), PYCString ("D"), dummy.C)
-              dummy.D <- n1
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"), C(PyIR.Name))
+              D(PyIR.Name) <- n1
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
 
 
-            object dummy.D:
+            object D:
               code:
                 #b0 .label:
-                  dummy.D.__module__ <- __name__
-                  dummy.D.__qualname__ <- PYCString ("D")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("D")
                   return PYCNone
 
 
@@ -1954,8 +1955,8 @@ class D(C):
 
 
             functions:
-              C -> dummy.C
-              D -> dummy.D |}]
+              C -> C
+              D -> D |}]
 
 
     let%expect_test _ =
@@ -1984,45 +1985,45 @@ class D0(C0):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- $BuildClass($FuncObj(D, dummy.D, {}), PYCString ("D"), dummy.C)
-              dummy.D <- n1
-              n2 <- $BuildClass($FuncObj(C0, dummy.C0, {}), PYCString ("C0"))
-              dummy.C0 <- n2
-              n3 <- $BuildClass($FuncObj(D0, dummy.D0, {}), PYCString ("D0"), dummy.C0)
-              dummy.D0 <- n3
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"), C(PyIR.Name))
+              D(PyIR.Name) <- n1
+              n2 <- $BuildClass($FuncObj(C0, C0, {}), PYCString ("C0"))
+              C0(PyIR.Name) <- n2
+              n3 <- $BuildClass($FuncObj(D0, D0, {}), PYCString ("D0"), C0(PyIR.Name))
+              D0(PyIR.Name) <- n3
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
 
 
-            object dummy.D:
+            object D:
               code:
                 #b0 .label:
-                  dummy.D.__module__ <- __name__
-                  dummy.D.__qualname__ <- PYCString ("D")
-                  dummy.D.__init__ <- $FuncObj(__init__, dummy.D.__init__, {})
-                  dummy.D.__classcell__ <- $Ref(__class__)
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("D")
+                  __init__(PyIR.Name) <- $FuncObj(__init__, D.__init__, {})
+                  __classcell__(PyIR.Name) <- $Ref(__class__)
                   return $Ref(__class__)
 
 
 
               objects:
-                object dummy.D.__init__:
+                object __init__:
                   code:
                     #b0 .label:
-                      n0 <- super()
+                      n0 <- super(PyIR.Global)()
                       n1 <- $CallMethod($LoadMethod(n0, __init__), )
                       return PYCNone
 
@@ -2031,23 +2032,23 @@ class D0(C0):
 
 
                 functions:
-                  __init__ -> dummy.D.__init__
+                  __init__ -> D.__init__
 
-              object dummy.C0:
+              object C0:
                 code:
                   #b0 .label:
-                    dummy.C0.__module__ <- __name__
-                    dummy.C0.__qualname__ <- PYCString ("C0")
-                    dummy.C0.__init__ <- $FuncObj(__init__, dummy.C0.__init__, {})
+                    __module__(PyIR.Name) <- __name__(PyIR.Name)
+                    __qualname__(PyIR.Name) <- PYCString ("C0")
+                    __init__(PyIR.Name) <- $FuncObj(__init__, C0.__init__, {})
                     return PYCNone
 
 
 
                 objects:
-                  object dummy.C0.__init__:
+                  object __init__:
                     code:
                       #b0 .label:
-                        foo.x <- x
+                        foo(PyIR.Fast).x <- x(PyIR.Fast)
                         return PYCNone
 
 
@@ -2055,24 +2056,24 @@ class D0(C0):
 
 
                   functions:
-                    __init__ -> dummy.C0.__init__
+                    __init__ -> C0.__init__
 
-                object dummy.D0:
+                object D0:
                   code:
                     #b0 .label:
-                      dummy.D0.__module__ <- __name__
-                      dummy.D0.__qualname__ <- PYCString ("D0")
-                      dummy.D0.__init__ <- $FuncObj(__init__, dummy.D0.__init__, {})
-                      dummy.D0.__classcell__ <- $Ref(__class__)
+                      __module__(PyIR.Name) <- __name__(PyIR.Name)
+                      __qualname__(PyIR.Name) <- PYCString ("D0")
+                      __init__(PyIR.Name) <- $FuncObj(__init__, D0.__init__, {})
+                      __classcell__(PyIR.Name) <- $Ref(__class__)
                       return $Ref(__class__)
 
 
 
                   objects:
-                    object dummy.D0.__init__:
+                    object __init__:
                       code:
                         #b0 .label:
-                          n0 <- super()
+                          n0 <- super(PyIR.Global)()
                           n1 <- $CallMethod($LoadMethod(n0, __init__), PYCInt (42))
                           return PYCNone
 
@@ -2081,14 +2082,14 @@ class D0(C0):
 
 
                     functions:
-                      __init__ -> dummy.D0.__init__
+                      __init__ -> D0.__init__
 
 
                 functions:
-                  C -> dummy.C
-                  C0 -> dummy.C0
-                  D -> dummy.D
-                  D0 -> dummy.D0 |}]
+                  C -> C
+                  C0 -> C0
+                  D -> D
+                  D0 -> D0 |}]
 
 
     let%expect_test _ =
@@ -2109,31 +2110,31 @@ class C(foo.D):
           code:
             #b0 .label:
               $ImportName(foo, from_list= [])
-              dummy.foo <- $ImportName(foo, from_list= [])
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"), foo.D)
-              dummy.C <- n0
+              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), foo(PyIR.Name).D)
+              C(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  dummy.C.__init__ <- $FuncObj(__init__, dummy.C.__init__, {})
-                  dummy.C.__classcell__ <- $Ref(__class__)
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  __init__(PyIR.Name) <- $FuncObj(__init__, C.__init__, {})
+                  __classcell__(PyIR.Name) <- $Ref(__class__)
                   return $Ref(__class__)
 
 
 
               objects:
-                object dummy.C.__init__:
+                object __init__:
                   code:
                     #b0 .label:
-                      n0 <- super()
-                      n1 <- $CallMethod($LoadMethod(n0, __init__), x)
+                      n0 <- super(PyIR.Global)()
+                      n1 <- $CallMethod($LoadMethod(n0, __init__), x(PyIR.Fast))
                       return PYCNone
 
 
@@ -2141,11 +2142,11 @@ class C(foo.D):
 
 
                 functions:
-                  __init__ -> dummy.C.__init__
+                  __init__ -> C.__init__
 
 
             functions:
-              C -> dummy.C |}]
+              C -> C |}]
 
 
     let%expect_test _ =
@@ -2160,16 +2161,16 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $Compare.eq(x, y)
+                  n0 <- $Compare.eq(x(PyIR.Fast), y(PyIR.Fast))
                   return n0
 
 
@@ -2177,7 +2178,7 @@ def f(x, y):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2205,28 +2206,28 @@ def f(x, y, z, t):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  if x then jmp b1 else jmp b2
+                  if x(PyIR.Fast) then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  if $Not(y) then jmp b2 else jmp b3(y)
+                  if $Not(y(PyIR.Fast)) then jmp b2 else jmp b3(y(PyIR.Fast))
 
 
                 #b2 .label:
-                  if z then jmp b4 else jmp b3(z)
+                  if z(PyIR.Fast) then jmp b4 else jmp b3(z(PyIR.Fast))
 
 
                 #b4 .label:
-                  jmp b3(t)
+                  jmp b3(t(PyIR.Fast))
 
 
                 #b3(n1) .label:
@@ -2237,7 +2238,7 @@ def f(x, y, z, t):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2252,16 +2253,16 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $Compare.gt(x, y)
+                  n0 <- $Compare.gt(x(PyIR.Fast), y(PyIR.Fast))
                   return n0
 
 
@@ -2269,7 +2270,7 @@ def f(x, y):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2284,16 +2285,16 @@ def f(x, y):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $Compare.le(x, y)
+                  n0 <- $Compare.le(x(PyIR.Fast), y(PyIR.Fast))
                   return n0
 
 
@@ -2301,7 +2302,7 @@ def f(x, y):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2327,46 +2328,46 @@ def in_not_check(x, l):
         object dummy:
           code:
             #b0 .label:
-              dummy.is_check <- $FuncObj(is_check, dummy.is_check, {})
-              dummy.is_not_check <- $FuncObj(is_not_check, dummy.is_not_check, {})
-              dummy.in_check <- $FuncObj(in_check, dummy.in_check, {})
-              dummy.in_not_check <- $FuncObj(in_not_check, dummy.in_not_check, {})
+              is_check(PyIR.Name) <- $FuncObj(is_check, is_check, {})
+              is_not_check(PyIR.Name) <- $FuncObj(is_not_check, is_not_check, {})
+              in_check(PyIR.Name) <- $FuncObj(in_check, in_check, {})
+              in_not_check(PyIR.Name) <- $FuncObj(in_not_check, in_not_check, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.is_check:
+            object is_check:
               code:
                 #b0 .label:
-                  n0 <- $Compare.is(x, PYCNone)
+                  n0 <- $Compare.is(x(PyIR.Fast), PYCNone)
                   return n0
 
 
 
 
-            object dummy.is_not_check:
+            object is_not_check:
               code:
                 #b0 .label:
-                  n0 <- $Compare.is_not(x, PYCNone)
+                  n0 <- $Compare.is_not(x(PyIR.Fast), PYCNone)
                   return n0
 
 
 
 
-            object dummy.in_check:
+            object in_check:
               code:
                 #b0 .label:
-                  n0 <- $Compare.in(x, l)
+                  n0 <- $Compare.in(x(PyIR.Fast), l(PyIR.Fast))
                   return n0
 
 
 
 
-            object dummy.in_not_check:
+            object in_not_check:
               code:
                 #b0 .label:
-                  n0 <- $Compare.not_in(x, l)
+                  n0 <- $Compare.not_in(x(PyIR.Fast), l(PyIR.Fast))
                   return n0
 
 
@@ -2374,10 +2375,10 @@ def in_not_check(x, l):
 
 
             functions:
-              in_check -> dummy.in_check
-              in_not_check -> dummy.in_not_check
-              is_check -> dummy.is_check
-              is_not_check -> dummy.is_not_check |}]
+              in_check -> in_check
+              in_not_check -> in_not_check
+              is_check -> is_check
+              is_not_check -> is_not_check |}]
 
 
     let%expect_test _ =
@@ -2409,35 +2410,35 @@ class C(ABC):
           code:
             #b0 .label:
               $ImportName(abc, from_list= [ABC, abstractmethod])
-              dummy.ABC <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]), name= ABC)
-              dummy.abstractmethod <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]),
+              ABC(PyIR.Name) <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]), name= ABC)
+              abstractmethod(PyIR.Name) <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]),
                 name= abstractmethod)
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"), abc.ABC)
-              dummy.C <- n0
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), ABC(PyIR.Name))
+              C(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  n0 <- abc.abstractmethod($FuncObj(get, dummy.C.get, {}))
-                  dummy.C.get <- n0
-                  n1 <- staticmethod($FuncObj(get_static0, dummy.C.get_static0, {}))
-                  n2 <- abc.abstractmethod(n1)
-                  dummy.C.get_static0 <- n2
-                  n3 <- abc.abstractmethod($FuncObj(get_static1, dummy.C.get_static1, {}))
-                  n4 <- staticmethod(n3)
-                  dummy.C.get_static1 <- n4
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  n0 <- abstractmethod(PyIR.Name)($FuncObj(get, C.get, {}))
+                  get(PyIR.Name) <- n0
+                  n1 <- staticmethod(PyIR.Name)($FuncObj(get_static0, C.get_static0, {}))
+                  n2 <- abstractmethod(PyIR.Name)(n1)
+                  get_static0(PyIR.Name) <- n2
+                  n3 <- abstractmethod(PyIR.Name)($FuncObj(get_static1, C.get_static1, {}))
+                  n4 <- staticmethod(PyIR.Name)(n3)
+                  get_static1(PyIR.Name) <- n4
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.get:
+                object get:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -2445,7 +2446,7 @@ class C(ABC):
 
 
 
-                object dummy.C.get_static0:
+                object get_static0:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -2453,7 +2454,7 @@ class C(ABC):
 
 
 
-                object dummy.C.get_static1:
+                object get_static1:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -2463,13 +2464,13 @@ class C(ABC):
 
 
                 functions:
-                  get -> dummy.C.get
-                  get_static0 -> dummy.C.get_static0
-                  get_static1 -> dummy.C.get_static1
+                  get -> C.get
+                  get_static0 -> C.get_static0
+                  get_static1 -> C.get_static1
 
 
                 functions:
-                  C -> dummy.C |}]
+                  C -> C |}]
 
 
     let%expect_test _ =
@@ -2484,8 +2485,8 @@ print(l[0])
         object dummy:
           code:
             #b0 .label:
-              dummy.l <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-              n0 <- print(dummy.l[PYCInt (0)])
+              l(PyIR.Name) <- [PYCInt (1), PYCInt (2), PYCInt (3)]
+              n0 <- print(PyIR.Name)(l(PyIR.Name)[PYCInt (0)])
               return PYCNone |}]
 
 
@@ -2502,9 +2503,9 @@ l[x] = 10
         object dummy:
           code:
             #b0 .label:
-              dummy.l <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-              dummy.x <- PYCInt (0)
-              dummy.l[dummy.x] <- PYCInt (10)
+              l(PyIR.Name) <- [PYCInt (1), PYCInt (2), PYCInt (3)]
+              x(PyIR.Name) <- PYCInt (0)
+              l(PyIR.Name)[x(PyIR.Name)] <- PYCInt (10)
               return PYCNone |}]
 
 
@@ -2523,24 +2524,24 @@ def f(x, y, z):
         object dummy:
           code:
             #b0 .label:
-              dummy.t <- PYCTuple ([|PYCInt (1); PYCInt (2); PYCInt (3)|])
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              t(PyIR.Name) <- PYCTuple ([|PYCInt (1); PYCInt (2); PYCInt (3)|])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  return (x, y, z)
+                  return (x(PyIR.Fast), y(PyIR.Fast), z(PyIR.Fast))
 
 
 
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2554,7 +2555,7 @@ s = {1, 2, 3}
         object dummy:
           code:
             #b0 .label:
-              dummy.s <- {PYCInt (1), PYCInt (2), PYCInt (3)}
+              s(PyIR.Name) <- {PYCInt (1), PYCInt (2), PYCInt (3)}
               return PYCNone |}]
 
 
@@ -2573,15 +2574,15 @@ def build_list():
         object dummy:
           code:
             #b0 .label:
-              dummy.l <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-              n0 <- print(dummy.l)
-              dummy.build_list <- $FuncObj(build_list, dummy.build_list, {})
+              l(PyIR.Name) <- [PYCInt (1), PYCInt (2), PYCInt (3)]
+              n0 <- print(PyIR.Name)(l(PyIR.Name))
+              build_list(PyIR.Name) <- $FuncObj(build_list, build_list, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.build_list:
+            object build_list:
               code:
                 #b0 .label:
                   return [PYCInt (1), PYCInt (2), PYCInt (3)]
@@ -2591,7 +2592,7 @@ def build_list():
 
 
             functions:
-              build_list -> dummy.build_list |}]
+              build_list -> build_list |}]
 
 
     let%expect_test _ =
@@ -2619,13 +2620,14 @@ d = { 0x78: "abc", # 1-n decoding mapping
         object dummy:
           code:
             #b0 .label:
-              dummy.x <- PYCString ("1")
-              dummy.s <- {|dummy.x, PYCInt (1), PYCString ("2"), PYCInt (2)|}
-              n0 <- print(dummy.s)
-              dummy.s <- {PYCString ("a"): PYCInt (42), PYCString ("b"): PYCInt (1664), }
-              n1 <- print(dummy.s[PYCString ("1")])
-              dummy.d <- {PYCInt (1): PYCNone, PYCInt (120): PYCString ("abc"),
-                          PYCInt (121): PYCString (""), PYCBytes ("abc"): PYCInt (120), }
+              x(PyIR.Name) <- PYCString ("1")
+              s(PyIR.Name) <- {|x(PyIR.Name), PYCInt (1), PYCString ("2"), PYCInt (2)|}
+              n0 <- print(PyIR.Name)(s(PyIR.Name))
+              s(PyIR.Name) <- {PYCString ("a"): PYCInt (42), PYCString ("b"): PYCInt (1664), }
+              n1 <- print(PyIR.Name)(s(PyIR.Name)[PYCString ("1")])
+              d(PyIR.Name) <- {PYCInt (1): PYCNone, PYCInt (120): PYCString ("abc"),
+                               PYCInt (121): PYCString (""), PYCBytes ("abc"):
+                               PYCInt (120), }
               return PYCNone |xxx}]
 
 
@@ -2648,24 +2650,25 @@ class Test(unittest.TestCase):
           code:
             #b0 .label:
               $ImportName(unittest, from_list= [])
-              dummy.unittest <- $ImportName(unittest, from_list= [])
+              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
               $ImportName(signal, from_list= [])
-              dummy.signal <- $ImportName(signal, from_list= [])
-              n0 <- hasattr(signal, PYCString ("setitimer"))
-              n1 <- $CallMethod($LoadMethod(unittest, skipUnless), n0, PYCString ("requires setitimer()"))
-              n2 <- $BuildClass($FuncObj(Test, dummy.Test, {}), PYCString ("Test"), unittest.TestCase)
+              signal(PyIR.Name) <- $ImportName(signal, from_list= [])
+              n0 <- hasattr(PyIR.Name)(signal(PyIR.Name), PYCString ("setitimer"))
+              n1 <- $CallMethod($LoadMethod(unittest(PyIR.Name), skipUnless),
+                n0, PYCString ("requires setitimer()"))
+              n2 <- $BuildClass($FuncObj(Test, Test, {}), PYCString ("Test"), unittest(PyIR.Name).TestCase)
               n3 <- n1(n2)
-              dummy.Test <- n3
+              Test(PyIR.Name) <- n3
               return PYCNone
 
 
 
           objects:
-            object dummy.Test:
+            object Test:
               code:
                 #b0 .label:
-                  dummy.Test.__module__ <- __name__
-                  dummy.Test.__qualname__ <- PYCString ("Test")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("Test")
                   return PYCNone
 
 
@@ -2673,7 +2676,7 @@ class Test(unittest.TestCase):
 
 
             functions:
-              Test -> dummy.Test |}]
+              Test -> Test |}]
 
 
     let%expect_test _ =
@@ -2697,30 +2700,30 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  n0 <- $unknown.foo($unknown.x, $unknown.y, $unknown.z)
-                  n1 <- n0($FuncObj(f, dummy.C.f, {}))
-                  dummy.C.f <- n1
-                  n2 <- $CallMethod($LoadMethod($unknown.foo, bar), $unknown.x, $unknown.y, $unknown.z)
-                  n3 <- n2($FuncObj(g, dummy.C.g, {}))
-                  dummy.C.g <- n3
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  n0 <- foo(PyIR.Name)(x(PyIR.Name), y(PyIR.Name), z(PyIR.Name))
+                  n1 <- n0($FuncObj(f, C.f, {}))
+                  f(PyIR.Name) <- n1
+                  n2 <- $CallMethod($LoadMethod(foo(PyIR.Name), bar), x(PyIR.Name), y(PyIR.Name), z(PyIR.Name))
+                  n3 <- n2($FuncObj(g, C.g, {}))
+                  g(PyIR.Name) <- n3
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.f:
+                object f:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -2728,7 +2731,7 @@ class C:
 
 
 
-                object dummy.C.g:
+                object g:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -2738,12 +2741,12 @@ class C:
 
 
                 functions:
-                  f -> dummy.C.f
-                  g -> dummy.C.g
+                  f -> C.f
+                  g -> C.g
 
 
               functions:
-                C -> dummy.C |}]
+                C -> C |}]
 
 
     let%expect_test _ =
@@ -2765,31 +2768,31 @@ class PwdTest(unittest.TestCase):
           code:
             #b0 .label:
               $ImportName(unittest, from_list= [])
-              dummy.unittest <- $ImportName(unittest, from_list= [])
-              n0 <- $BuildClass($FuncObj(PwdTest, dummy.PwdTest, {}), PYCString ("PwdTest"), unittest.TestCase)
-              dummy.PwdTest <- n0
+              unittest(PyIR.Name) <- $ImportName(unittest, from_list= [])
+              n0 <- $BuildClass($FuncObj(PwdTest, PwdTest, {}), PYCString ("PwdTest"), unittest(PyIR.Name).TestCase)
+              PwdTest(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.PwdTest:
+            object PwdTest:
               code:
                 #b0 .label:
-                  dummy.PwdTest.__module__ <- __name__
-                  dummy.PwdTest.__qualname__ <- PYCString ("PwdTest")
-                  dummy.PwdTest.test_values <- $FuncObj(test_values, dummy.PwdTest.test_values, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("PwdTest")
+                  test_values(PyIR.Name) <- $FuncObj(test_values, PwdTest.test_values, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.PwdTest.test_values:
+                object test_values:
                   code:
                     #b0 .label:
-                      n0 <- type(e.pw_gecos)
-                      n1 <- type(PYCNone)
-                      n2 <- $CallMethod($LoadMethod(self, assertIn), n0, (str, n1))
+                      n0 <- type(PyIR.Global)(e(PyIR.Fast).pw_gecos)
+                      n1 <- type(PyIR.Global)(PYCNone)
+                      n2 <- $CallMethod($LoadMethod(self(PyIR.Fast), assertIn), n0, (str(PyIR.Global), n1))
                       return PYCNone
 
 
@@ -2797,11 +2800,11 @@ class PwdTest(unittest.TestCase):
 
 
                 functions:
-                  test_values -> dummy.PwdTest.test_values
+                  test_values -> PwdTest.test_values
 
 
             functions:
-              PwdTest -> dummy.PwdTest |}]
+              PwdTest -> PwdTest |}]
 
 
     let%expect_test _ =
@@ -2816,9 +2819,9 @@ fp.write("yolo")
         object dummy:
           code:
             #b0 .label:
-              n0 <- open(PYCString ("foo.txt"), PYCString ("wt"))
-              dummy.fp <- n0
-              n1 <- $CallMethod($LoadMethod(dummy.fp, write), PYCString ("yolo"))
+              n0 <- open(PyIR.Name)(PYCString ("foo.txt"), PYCString ("wt"))
+              fp(PyIR.Name) <- n0
+              n1 <- $CallMethod($LoadMethod(fp(PyIR.Name), write), PYCString ("yolo"))
               return PYCNone |}]
 
 
@@ -2834,10 +2837,10 @@ with open("foo.txt", "wt") as fp:
         object dummy:
           code:
             #b0 .label:
-              n0 <- open(PYCString ("foo.txt"), PYCString ("wt"))
+              n0 <- open(PyIR.Name)(PYCString ("foo.txt"), PYCString ("wt"))
               n1 <- $LoadMethod(n0, __enter__)()
-              dummy.fp <- n1
-              n3 <- $CallMethod($LoadMethod(dummy.fp, write), PYCString ("yolo"))
+              fp(PyIR.Name) <- n1
+              n3 <- $CallMethod($LoadMethod(fp(PyIR.Name), write), PYCString ("yolo"))
               jmp b1(CM(n0).__exit__)
 
 
@@ -2865,28 +2868,28 @@ def f(foo, bar):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- foo()
+                  n0 <- foo(PyIR.Fast)()
                   n1 <- $LoadMethod(n0, __enter__)()
-                  foo0 <- n1
-                  n3 <- bar()
+                  foo0(PyIR.Fast) <- n1
+                  n3 <- bar(PyIR.Fast)()
                   n4 <- $LoadMethod(n3, __enter__)()
-                  bar0 <- n4
-                  n7 <- print(bar0)
+                  bar0(PyIR.Fast) <- n4
+                  n7 <- print(PyIR.Global)(bar0(PyIR.Fast))
                   jmp b2(CM(n3).__exit__, CM(n0).__exit__)
 
 
                 #b2(n6, n5) .finally:
                   n10 <- n6(PYCNone, PYCNone, PYCNone)
-                  n11 <- print(foo0)
+                  n11 <- print(PyIR.Global)(foo0(PyIR.Fast))
                   jmp b3(n5)
 
 
@@ -2904,7 +2907,7 @@ def f(foo, bar):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -2923,12 +2926,12 @@ finally:
         object dummy:
           code:
             #b0 .label:
-              n0 <- print(PYCString ("TRY BLOCK"))
+              n0 <- print(PyIR.Name)(PYCString ("TRY BLOCK"))
               jmp b1
 
 
             #b1 .finally:
-              n1 <- print(PYCString ("FINALLY BLOCK"))
+              n1 <- print(PyIR.Name)(PYCString ("FINALLY BLOCK"))
               return PYCNone |}]
 
 
@@ -2953,27 +2956,27 @@ print("END")
         object dummy:
           code:
             #b0 .label:
-              n0 <- print(PYCString ("TRY BLOCK"))
+              n0 <- print(PyIR.Name)(PYCString ("TRY BLOCK"))
               jmp b1
 
 
             #b1 .finally:
-              if $unknown.foo then jmp b2 else jmp b3
+              if foo(PyIR.Name) then jmp b2 else jmp b3
 
 
             #b2 .label:
-              n1 <- print(PYCString ("X"))
+              n1 <- print(PyIR.Name)(PYCString ("X"))
               jmp b4
 
 
             #b3 .label:
-              n2 <- print(PYCString ("Y"))
+              n2 <- print(PyIR.Name)(PYCString ("Y"))
               jmp b4
 
 
             #b4 .label:
-              n3 <- print(PYCString ("FINALLY BLOCK"))
-              n4 <- print(PYCString ("END"))
+              n3 <- print(PyIR.Name)(PYCString ("FINALLY BLOCK"))
+              n4 <- print(PyIR.Name)(PYCString ("END"))
               return PYCNone |}]
 
 
@@ -2991,16 +2994,16 @@ def f():
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f()
-              dummy.a <- n0[PYCInt (0)]
-              dummy.b <- n0[PYCInt (1)]
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)()
+              a(PyIR.Name) <- n0[PYCInt (0)]
+              b(PyIR.Name) <- n0[PYCInt (1)]
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   return PYCNone
@@ -3010,7 +3013,7 @@ def f():
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3028,16 +3031,16 @@ def f(**kwargs):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $CallMethod($LoadMethod(kwargs, items), )
+                  n0 <- $CallMethod($LoadMethod(kwargs(PyIR.Fast), items), )
                   n1 <- $GetIter(n0)
                   jmp b1(n1)
 
@@ -3050,9 +3053,9 @@ def f(**kwargs):
 
                 #b2 .label:
                   n5 <- $IterData(n3)
-                  k <- n5[PYCInt (0)]
-                  v <- n5[PYCInt (1)]
-                  n6 <- print(k, v)
+                  k(PyIR.Fast) <- n5[PYCInt (0)]
+                  v(PyIR.Fast) <- n5[PYCInt (1)]
+                  n6 <- print(PyIR.Global)(k(PyIR.Fast), v(PyIR.Fast))
                   jmp b1(n2)
 
 
@@ -3064,7 +3067,7 @@ def f(**kwargs):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3081,14 +3084,14 @@ f(0, y=2, x=1)
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f(PYCInt (0), y= PYCInt (2), x= PYCInt (1))
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)(PYCInt (0), y= PYCInt (2), x= PYCInt (1))
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   return PYCNone
@@ -3098,7 +3101,7 @@ f(0, y=2, x=1)
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3121,37 +3124,37 @@ def g():
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"), $unknown.Exception)
-              dummy.C <- n0
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.g <- $FuncObj(g, dummy.g, {})
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"), Exception(PyIR.Name))
+              C(PyIR.Name) <- n0
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              g(PyIR.Name) <- $FuncObj(g, g, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  throw dummy.C
+                  throw C(PyIR.Global)
 
 
 
 
-            object dummy.g:
+            object g:
               code:
                 #b0 .label:
-                  n0 <- dummy.C()
+                  n0 <- C(PyIR.Global)()
                   throw n0
 
 
@@ -3159,9 +3162,9 @@ def g():
 
 
             functions:
-              C -> dummy.C
-              f -> dummy.f
-              g -> dummy.g |}]
+              C -> C
+              f -> f
+              g -> g |}]
 
 
     let%expect_test _ =
@@ -3179,17 +3182,17 @@ def f():
           code:
             #b0 .label:
               $ImportName(foo, from_list= [])
-              dummy.foo <- $ImportName(foo, from_list= [])
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $CallMethod($LoadMethod(foo, bar), PYCInt (42))
+                  n0 <- $CallMethod($LoadMethod(foo(PyIR.Global), bar), PYCInt (42))
                   throw n0
 
 
@@ -3197,7 +3200,7 @@ def f():
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3221,27 +3224,27 @@ def f(ok):
           code:
             #b0 .label:
               $ImportName(foo, from_list= [])
-              dummy.foo <- $ImportName(foo, from_list= [])
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $CallMethod($LoadMethod(foo, bar), )
+                  n0 <- $CallMethod($LoadMethod(foo(PyIR.Global), bar), )
                   jmp b2
 
 
                 #b1(n6, n5, n4, n3, n2, n1) .except:
-                  n7 <- $Compare.exception(n6, OverflowError)
+                  n7 <- $Compare.exception(n6, OverflowError(PyIR.Global))
                   if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
 
 
                 #b3(n13, n12, n11, n10, n9, n8) .label:
-                  if $Not(ok) then jmp b5(n10, n9, n8) else jmp b6(n10, n9, n8)
+                  if $Not(ok(PyIR.Fast)) then jmp b5(n10, n9, n8) else jmp b6(n10, n9, n8)
 
 
                 #b5(n22, n21, n20) .label:
@@ -3269,7 +3272,7 @@ def f(ok):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3289,33 +3292,33 @@ def f(m, a, b, c):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $Compare.not_in((a, b), m)
+                  n0 <- $Compare.not_in((a(PyIR.Fast), b(PyIR.Fast)), m(PyIR.Fast))
                   if n0 then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  n1 <- $Inplace.Subtract(b, PYCInt (1))
-                  b <- n1
+                  n1 <- $Inplace.Subtract(b(PyIR.Fast), PYCInt (1))
+                  b(PyIR.Fast) <- n1
                   jmp b0
 
 
                 #b2 .label:
-                  n2 <- $Compare.not_in((a, c), m)
+                  n2 <- $Compare.not_in((a(PyIR.Fast), c(PyIR.Fast)), m(PyIR.Fast))
                   if n2 then jmp b3 else jmp b4
 
 
                 #b3 .label:
-                  n3 <- $Inplace.Add(c, PYCInt (1))
-                  c <- n3
+                  n3 <- $Inplace.Add(c(PyIR.Fast), PYCInt (1))
+                  c(PyIR.Fast) <- n3
                   jmp b2
 
 
@@ -3327,7 +3330,7 @@ def f(m, a, b, c):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3354,30 +3357,29 @@ f(0, 0, 0, "toto")
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              dummy.f <- $FuncObj(f, dummy.f, {(s, PYCString ("zuck")); (y, PYCInt (1)); (z,
-                PYCInt (2)); })
-              n1 <- dummy.f(PYCInt (0))
-              n2 <- dummy.f(PYCInt (10), PYCInt (100))
-              n3 <- dummy.f(PYCInt (100), PYCInt (1000), PYCInt (0))
-              n4 <- dummy.f(PYCInt (0), PYCInt (0), PYCInt (0), PYCString ("toto"))
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              f(PyIR.Name) <- $FuncObj(f, f, {(s, PYCString ("zuck")); (y, PYCInt (1)); (z, PYCInt (2)); })
+              n1 <- f(PyIR.Name)(PYCInt (0))
+              n2 <- f(PyIR.Name)(PYCInt (10), PYCInt (100))
+              n3 <- f(PyIR.Name)(PYCInt (100), PYCInt (1000), PYCInt (0))
+              n4 <- f(PyIR.Name)(PYCInt (0), PYCInt (0), PYCInt (0), PYCString ("toto"))
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   return PYCNone
@@ -3387,8 +3389,8 @@ f(0, 0, 0, "toto")
 
 
             functions:
-              C -> dummy.C
-              f -> dummy.f |}]
+              C -> C
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3407,25 +3409,25 @@ class TestHook:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(TestHook, dummy.TestHook, {}), PYCString ("TestHook"))
-              dummy.TestHook <- n0
+              n0 <- $BuildClass($FuncObj(TestHook, TestHook, {}), PYCString ("TestHook"))
+              TestHook(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.TestHook:
+            object TestHook:
               code:
                 #b0 .label:
-                  dummy.TestHook.__module__ <- __name__
-                  dummy.TestHook.__qualname__ <- PYCString ("TestHook")
-                  dummy.TestHook.__init__ <- $FuncObj(__init__, dummy.TestHook.__init__, {(exc_type, RuntimeError); (raise_on_events, PYCNone); })
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("TestHook")
+                  __init__(PyIR.Name) <- $FuncObj(__init__, TestHook.__init__, {(exc_type, RuntimeError(PyIR.Name)); (raise_on_events, PYCNone); })
                   return PYCNone
 
 
 
               objects:
-                object dummy.TestHook.__init__:
+                object __init__:
                   code:
                     #b0 .label:
                       return PYCNone
@@ -3435,11 +3437,11 @@ class TestHook:
 
 
                 functions:
-                  __init__ -> dummy.TestHook.__init__
+                  __init__ -> TestHook.__init__
 
 
             functions:
-              TestHook -> dummy.TestHook |}]
+              TestHook -> TestHook |}]
 
 
     let%expect_test _ =
@@ -3462,34 +3464,34 @@ c.f(0, 1, 2)
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- dummy.C()
-              dummy.c <- n1
-              n2 <- $CallMethod($LoadMethod(dummy.c, f), PYCInt (0))
-              n3 <- $CallMethod($LoadMethod(dummy.c, f), PYCInt (0), PYCInt (1))
-              n4 <- $CallMethod($LoadMethod(dummy.c, f), PYCInt (0), PYCInt (1), PYCInt (2))
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- C(PyIR.Name)()
+              c(PyIR.Name) <- n1
+              n2 <- $CallMethod($LoadMethod(c(PyIR.Name), f), PYCInt (0))
+              n3 <- $CallMethod($LoadMethod(c(PyIR.Name), f), PYCInt (0), PYCInt (1))
+              n4 <- $CallMethod($LoadMethod(c(PyIR.Name), f), PYCInt (0), PYCInt (1), PYCInt (2))
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  dummy.C.f <- $FuncObj(f, dummy.C.f, {(y, PYCInt (1)); (z, PYCInt (10)); })
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  f(PyIR.Name) <- $FuncObj(f, C.f, {(y, PYCInt (1)); (z, PYCInt (10)); })
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.f:
+                object f:
                   code:
                     #b0 .label:
-                      n0 <- $Binary.Add(x, y)
-                      n1 <- $Binary.Add(n0, z)
+                      n0 <- $Binary.Add(x(PyIR.Fast), y(PyIR.Fast))
+                      n1 <- $Binary.Add(n0, z(PyIR.Fast))
                       return n1
 
 
@@ -3497,11 +3499,11 @@ c.f(0, 1, 2)
 
 
                 functions:
-                  f -> dummy.C.f
+                  f -> C.f
 
 
             functions:
-              C -> dummy.C |}]
+              C -> C |}]
 
 
     let%expect_test _ =
@@ -3516,21 +3518,21 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   $SETUP_ANNOTATIONS
-                  dummy.C.x <- PYCInt (0)
-                  dummy.C.__annotations__[PYCString ("x")] <- int
+                  x(PyIR.Name) <- PYCInt (0)
+                  __annotations__(PyIR.Name)[PYCString ("x")] <- int(PyIR.Name)
                   return PYCNone
 
 
@@ -3538,7 +3540,7 @@ class C:
 
 
             functions:
-              C -> dummy.C |}]
+              C -> C |}]
 
 
     let%expect_test _ =
@@ -3555,17 +3557,17 @@ def f(co, s):
           code:
             #b0 .label:
               $ImportName(dis, from_list= [])
-              dummy.dis <- $ImportName(dis, from_list= [])
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              dis(PyIR.Name) <- $ImportName(dis, from_list= [])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- dis.dis(co, file= s)
+                  n0 <- dis(PyIR.Global).dis(co(PyIR.Fast), file= s(PyIR.Fast))
                   return PYCNone
 
 
@@ -3573,7 +3575,7 @@ def f(co, s):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3593,32 +3595,32 @@ def test_arguments(x, y, width):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.test_arguments <- $FuncObj(test_arguments, dummy.test_arguments, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              test_arguments(PyIR.Name) <- $FuncObj(test_arguments, test_arguments, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $FormatFn.repr(name)
+                  n0 <- $FormatFn.repr(name(PyIR.Fast))
                   n1 <- $Format(n0, PYCNone)
-                  n2 <- $FormatFn.str(name)
+                  n2 <- $FormatFn.str(name(PyIR.Fast))
                   n3 <- $Format(n2, PYCNone)
-                  n4 <- $FormatFn.ascii(name)
+                  n4 <- $FormatFn.ascii(name(PyIR.Fast))
                   n5 <- $Format(n4, PYCNone)
                   return $Concat(PYCString ("foo."), n1, n3, n5)
 
 
 
 
-            object dummy.test_arguments:
+            object test_arguments:
               code:
                 #b0 .label:
-                  n0 <- $Binary.Multiply(x, y)
-                  n1 <- $Format(width, PYCNone)
+                  n0 <- $Binary.Multiply(x(PyIR.Fast), y(PyIR.Fast))
+                  n1 <- $Format(width(PyIR.Fast), PYCNone)
                   n2 <- $Format(n0, n1)
                   return $Concat(PYCString ("x="), n2)
 
@@ -3627,8 +3629,8 @@ def test_arguments(x, y, width):
 
 
             functions:
-              f -> dummy.f
-              test_arguments -> dummy.test_arguments |}]
+              f -> f
+              test_arguments -> test_arguments |}]
 
 
     let%expect_test _ =
@@ -3655,15 +3657,15 @@ def test_format_specifier_expressions(self):
           code:
             #b0 .label:
               $ImportName(decimal, from_list= [])
-              dummy.decimal <- $ImportName(decimal, from_list= [])
-              dummy.assertEqual <- $FuncObj(assertEqual, dummy.assertEqual, {})
-              dummy.test_format_specifier_expressions <- $FuncObj(test_format_specifier_expressions, dummy.test_format_specifier_expressions, {})
+              decimal(PyIR.Name) <- $ImportName(decimal, from_list= [])
+              assertEqual(PyIR.Name) <- $FuncObj(assertEqual, assertEqual, {})
+              test_format_specifier_expressions(PyIR.Name) <- $FuncObj(test_format_specifier_expressions, test_format_specifier_expressions, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.assertEqual:
+            object assertEqual:
               code:
                 #b0 .label:
                   return PYCNone
@@ -3671,17 +3673,17 @@ def test_format_specifier_expressions(self):
 
 
 
-            object dummy.test_format_specifier_expressions:
+            object test_format_specifier_expressions:
               code:
                 #b0 .label:
-                  width <- PYCInt (10)
-                  precision <- PYCInt (4)
-                  n0 <- $CallMethod($LoadMethod(decimal, Decimal), PYCString ("12.34567"))
-                  value <- n0
-                  n1 <- $Format(width, PYCNone)
-                  n2 <- $Format(precision, PYCNone)
-                  n3 <- $Format(value, $Concat(n1, PYCString ("."), n2))
-                  n4 <- dummy.assertEqual($Concat(PYCString ("result: "), n3))
+                  width(PyIR.Fast) <- PYCInt (10)
+                  precision(PyIR.Fast) <- PYCInt (4)
+                  n0 <- $CallMethod($LoadMethod(decimal(PyIR.Global), Decimal), PYCString ("12.34567"))
+                  value(PyIR.Fast) <- n0
+                  n1 <- $Format(width(PyIR.Fast), PYCNone)
+                  n2 <- $Format(precision(PyIR.Fast), PYCNone)
+                  n3 <- $Format(value(PyIR.Fast), $Concat(n1, PYCString ("."), n2))
+                  n4 <- assertEqual(PyIR.Global)($Concat(PYCString ("result: "), n3))
                   return PYCNone
 
 
@@ -3689,8 +3691,8 @@ def test_format_specifier_expressions(self):
 
 
             functions:
-              assertEqual -> dummy.assertEqual
-              test_format_specifier_expressions -> dummy.test_format_specifier_expressions |}]
+              assertEqual -> assertEqual
+              test_format_specifier_expressions -> test_format_specifier_expressions |}]
 
 
     let%expect_test _ =
@@ -3716,46 +3718,46 @@ def inv(x):
         object dummy:
           code:
             #b0 .label:
-              dummy.pos <- $FuncObj(pos, dummy.pos, {})
-              dummy.neg <- $FuncObj(neg, dummy.neg, {})
-              dummy.test_not <- $FuncObj(test_not, dummy.test_not, {})
-              dummy.inv <- $FuncObj(inv, dummy.inv, {})
+              pos(PyIR.Name) <- $FuncObj(pos, pos, {})
+              neg(PyIR.Name) <- $FuncObj(neg, neg, {})
+              test_not(PyIR.Name) <- $FuncObj(test_not, test_not, {})
+              inv(PyIR.Name) <- $FuncObj(inv, inv, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.pos:
+            object pos:
               code:
                 #b0 .label:
-                  n0 <- $Unary.Positive(x)
+                  n0 <- $Unary.Positive(x(PyIR.Fast))
                   return n0
 
 
 
 
-            object dummy.neg:
+            object neg:
               code:
                 #b0 .label:
-                  n0 <- $Unary.Negative(x)
+                  n0 <- $Unary.Negative(x(PyIR.Fast))
                   return n0
 
 
 
 
-            object dummy.test_not:
+            object test_not:
               code:
                 #b0 .label:
-                  n0 <- $Unary.Not(x)
+                  n0 <- $Unary.Not(x(PyIR.Fast))
                   return n0
 
 
 
 
-            object dummy.inv:
+            object inv:
               code:
                 #b0 .label:
-                  n0 <- $Unary.Invert(x)
+                  n0 <- $Unary.Invert(x(PyIR.Fast))
                   return n0
 
 
@@ -3763,10 +3765,10 @@ def inv(x):
 
 
             functions:
-              inv -> dummy.inv
-              neg -> dummy.neg
-              pos -> dummy.pos
-              test_not -> dummy.test_not |}]
+              inv -> inv
+              neg -> neg
+              pos -> pos
+              test_not -> test_not |}]
 
 
     let%expect_test _ =
@@ -3797,25 +3799,25 @@ def f():
           code:
             #b0 .label:
               $SETUP_ANNOTATIONS
-              dummy.__annotations__[PYCString ("x")] <- int
-              dummy.x <- PYCInt (0)
-              dummy.y <- PYCString ("zuck")
-              dummy.__annotations__[PYCString ("y")] <- str
+              __annotations__(PyIR.Name)[PYCString ("x")] <- int(PyIR.Name)
+              x(PyIR.Name) <- PYCInt (0)
+              y(PyIR.Name) <- PYCString ("zuck")
+              __annotations__(PyIR.Name)[PYCString ("y")] <- str(PyIR.Name)
               $ImportName(C, from_list= [])
-              dummy.C <- $ImportName(C, from_list= [])
-              dummy.z <- PYCInt (42)
-              dummy.__annotations__[PYCString ("z")] <- C.T
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              C(PyIR.Name) <- $ImportName(C, from_list= [])
+              z(PyIR.Name) <- PYCInt (42)
+              __annotations__(PyIR.Name)[PYCString ("z")] <- C(PyIR.Name).T
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  u <- PYCInt (0)
-                  v <- PYCString ("tata")
+                  u(PyIR.Fast) <- PYCInt (0)
+                  v(PyIR.Fast) <- PYCString ("tata")
                   return PYCNone
 
 
@@ -3823,7 +3825,7 @@ def f():
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3842,16 +3844,16 @@ def f(match, it, n):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(match)
+                  n0 <- $GetIter(match(PyIR.Fast))
                   jmp b1(n0)
 
 
@@ -3863,18 +3865,18 @@ def f(match, it, n):
 
                 #b2 .label:
                   n4 <- $IterData(n2)
-                  item <- n4
-                  n5 <- $Compare.eq(it[n], item)
+                  item(PyIR.Fast) <- n4
+                  n5 <- $Compare.eq(it(PyIR.Fast)[n(PyIR.Fast)], item(PyIR.Fast))
                   if $Not(n5) then jmp b4(n1) else jmp b5(n1)
 
 
                 #b4(n6) .label:
-                  throw AssertionError
+                  throw AssertionError(PyIR.Global)
 
 
                 #b5(n7) .label:
-                  n8 <- $Inplace.Add(n, PYCInt (1))
-                  n <- n8
+                  n8 <- $Inplace.Add(n(PyIR.Fast), PYCInt (1))
+                  n(PyIR.Fast) <- n8
                   jmp b1(n7)
 
 
@@ -3886,7 +3888,7 @@ def f(match, it, n):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3905,16 +3907,16 @@ def f(foo):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(foo)
+                  n0 <- $GetIter(foo(PyIR.Fast))
                   jmp b1(n0)
 
 
@@ -3926,8 +3928,8 @@ def f(foo):
 
                 #b2 .label:
                   n4 <- $IterData(n2)
-                  path <- n4
-                  if path then jmp b4(n1) else jmp b1(n1)
+                  path(PyIR.Fast) <- n4
+                  if path(PyIR.Fast) then jmp b4(n1) else jmp b1(n1)
 
 
                 #b4(n5) .label:
@@ -3942,7 +3944,7 @@ def f(foo):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -3962,12 +3964,12 @@ print("END")
         object dummy:
           code:
             #b0 .label:
-              n0 <- print(PYCString ("TRY BLOCK"))
+              n0 <- print(PyIR.Name)(PYCString ("TRY BLOCK"))
               jmp b2
 
 
             #b1(n6, n5, n4, n3, n2, n1) .except:
-              n7 <- print(PYCString ("EXCEPT BLOCK"))
+              n7 <- print(PyIR.Name)(PYCString ("EXCEPT BLOCK"))
               jmp b3
 
 
@@ -3976,7 +3978,7 @@ print("END")
 
 
             #b2 .label:
-              n8 <- print(PYCString ("END"))
+              n8 <- print(PyIR.Name)(PYCString ("END"))
               return PYCNone |}]
 
 
@@ -4003,30 +4005,30 @@ except (ValueError, AttributeError):
           code:
             #b0 .label:
               $ImportName(os, from_list= [])
-              dummy.os <- $ImportName(os, from_list= [])
-              n0 <- $CallMethod($LoadMethod(os, sysconf), PYCString ("SC_PAGESIZE"))
-              dummy.page_size <- n0
+              os(PyIR.Name) <- $ImportName(os, from_list= [])
+              n0 <- $CallMethod($LoadMethod(os(PyIR.Name), sysconf), PYCString ("SC_PAGESIZE"))
+              page_size(PyIR.Name) <- n0
               jmp b2
 
 
             #b1(n6, n5, n4, n3, n2, n1) .except:
-              n7 <- $Compare.exception(n6, (ValueError, AttributeError))
+              n7 <- $Compare.exception(n6, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
               if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
 
 
             #b3(n13, n12, n11, n10, n9, n8) .label:
-              dummy.page_size <- PYCInt (0)
+              page_size(PyIR.Name) <- PYCInt (0)
               jmp b6(n10, n9, n8)
 
 
             #b5(n31, n30, n29, n28, n27, n26, n22, n21, n20) .except:
-              n32 <- $Compare.exception(n31, (ValueError, AttributeError))
+              n32 <- $Compare.exception(n31, (ValueError(PyIR.Name), AttributeError(PyIR.Name)))
               if n32 then jmp b7(n31, n30, n29, n28, n27, n26, n22, n21, n20) else
               jmp b8(n31, n30, n29, n28, n27, n26, n22, n21, n20)
 
 
             #b7(n41, n40, n39, n38, n37, n36, n35, n34, n33) .label:
-              dummy.page_size <- PYCInt (4096)
+              page_size(PyIR.Name) <- PYCInt (4096)
               jmp b9(n35, n34, n33)
 
 
@@ -4076,17 +4078,17 @@ def f(x):
           code:
             #b0 .label:
               $ImportName(foo, from_list= [])
-              dummy.foo <- $ImportName(foo, from_list= [])
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              foo(PyIR.Name) <- $ImportName(foo, from_list= [])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(x)
+                  n0 <- $GetIter(x(PyIR.Fast))
                   jmp b1(n0)
 
 
@@ -4098,15 +4100,15 @@ def f(x):
 
                 #b2 .label:
                   n4 <- $IterData(n2)
-                  i <- n4
-                  n5 <- $CallMethod($LoadMethod(foo, Foo), )
-                  e <- n5
-                  n7 <- print(PYCString ("yolo"))
+                  i(PyIR.Fast) <- n4
+                  n5 <- $CallMethod($LoadMethod(foo(PyIR.Global), Foo), )
+                  e(PyIR.Fast) <- n5
+                  n7 <- print(PyIR.Global)(PYCString ("yolo"))
                   jmp b4(n1)
 
 
                 #b4(n6) .finally:
-                  n9 <- $CallMethod($LoadMethod(e, bar), )
+                  n9 <- $CallMethod($LoadMethod(e(PyIR.Fast), bar), )
                   jmp b1(n6)
 
 
@@ -4118,7 +4120,7 @@ def f(x):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -4144,11 +4146,11 @@ with open("foo", "r") as fp:
           code:
             #b0 .label:
               $ImportName(foo, from_list= [ERROR])
-              dummy.ERROR <- $ImportFrom($ImportName(foo, from_list= [ERROR]), name= ERROR)
-              n0 <- open(PYCString ("foo"), PYCString ("r"))
+              ERROR(PyIR.Name) <- $ImportFrom($ImportName(foo, from_list= [ERROR]), name= ERROR)
+              n0 <- open(PyIR.Name)(PYCString ("foo"), PYCString ("r"))
               n1 <- $LoadMethod(n0, __enter__)()
-              dummy.fp <- n1
-              n3 <- $GetIter(dummy.fp)
+              fp(PyIR.Name) <- n1
+              n3 <- $GetIter(fp(PyIR.Name))
               jmp b2(n3, CM(n0).__exit__)
 
 
@@ -4160,19 +4162,19 @@ with open("foo", "r") as fp:
 
             #b3(n8) .label:
               n10 <- $IterData(n6)
-              dummy.line <- n10
-              n13 <- print(PYCString ("TRY"))
+              line(PyIR.Name) <- n10
+              n13 <- print(PyIR.Name)(PYCString ("TRY"))
               jmp b6(n5, n8)
 
 
             #b5(n21, n20, n19, n18, n17, n16, n12, n11) .except:
-              n22 <- $Compare.exception(n21, foo.ERROR)
+              n22 <- $Compare.exception(n21, ERROR(PyIR.Name))
               if n22 then jmp b7(n21, n20, n19, n18, n17, n16, n12, n11) else
               jmp b8(n21, n20, n19, n18, n17, n16, n12, n11)
 
 
             #b7(n30, n29, n28, n27, n26, n25, n24, n23) .label:
-              n39 <- print(PYCString ("EXCEPT"))
+              n39 <- print(PyIR.Name)(PYCString ("EXCEPT"))
               jmp b9(n24, n23)
 
 
@@ -4185,7 +4187,7 @@ with open("foo", "r") as fp:
 
 
             #b6(n15, n14) .label:
-              n44 <- print(PYCString ("ELSE"))
+              n44 <- print(PyIR.Name)(PYCString ("ELSE"))
               jmp b2(n15, n14)
 
 
@@ -4220,19 +4222,19 @@ def subhelper():
         object dummy:
           code:
             #b0 .label:
-              dummy.TICKS <- PYCInt (0)
-              dummy.subhelper <- $FuncObj(subhelper, dummy.subhelper, {})
+              TICKS(PyIR.Global) <- PYCInt (0)
+              subhelper(PyIR.Name) <- $FuncObj(subhelper, subhelper, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.subhelper:
+            object subhelper:
               code:
                 #b0 .label:
-                  n0 <- $Inplace.Add(dummy.TICKS, PYCInt (2))
-                  dummy.TICKS <- n0
-                  n1 <- range(PYCInt (2))
+                  n0 <- $Inplace.Add(TICKS(PyIR.Global), PYCInt (2))
+                  TICKS(PyIR.Global) <- n0
+                  n1 <- range(PyIR.Global)(PYCInt (2))
                   n2 <- $GetIter(n1)
                   jmp b1(n2)
 
@@ -4245,20 +4247,20 @@ def subhelper():
 
                 #b2 .label:
                   n6 <- $IterData(n4)
-                  i <- n6
-                  n8 <- print(PYCString ("foo"))
+                  i(PyIR.Fast) <- n6
+                  n8 <- print(PyIR.Global)(PYCString ("foo"))
                   jmp b1(n3)
 
 
                 #b4(n15, n14, n13, n12, n11, n10, n7) .except:
-                  n16 <- $Compare.exception(n15, AttributeError)
+                  n16 <- $Compare.exception(n15, AttributeError(PyIR.Global))
                   if n16 then jmp b5(n15, n14, n13, n12, n11, n10, n7) else jmp b6(
                                                                             n15, n14, n13, n12, n11, n10, n7)
 
 
                 #b5(n23, n22, n21, n20, n19, n18, n17) .label:
-                  n31 <- $Inplace.Add(dummy.TICKS, PYCInt (3))
-                  dummy.TICKS <- n31
+                  n31 <- $Inplace.Add(TICKS(PyIR.Global), PYCInt (3))
+                  TICKS(PyIR.Global) <- n31
                   jmp b7(n17)
 
 
@@ -4278,7 +4280,7 @@ def subhelper():
 
 
             functions:
-              subhelper -> dummy.subhelper |}]
+              subhelper -> subhelper |}]
 
 
     let%expect_test _ =
@@ -4299,37 +4301,37 @@ class defaultdict:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(defaultdict, dummy.defaultdict, {}), PYCString ("defaultdict"))
-              dummy.defaultdict <- n0
+              n0 <- $BuildClass($FuncObj(defaultdict, defaultdict, {}), PYCString ("defaultdict"))
+              defaultdict(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.defaultdict:
+            object defaultdict:
               code:
                 #b0 .label:
-                  dummy.defaultdict.__module__ <- __name__
-                  dummy.defaultdict.__qualname__ <- PYCString ("defaultdict")
-                  dummy.defaultdict.__getitem__ <- $FuncObj(__getitem__, dummy.defaultdict.__getitem__, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("defaultdict")
+                  __getitem__(PyIR.Name) <- $FuncObj(__getitem__, defaultdict.__getitem__, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.defaultdict.__getitem__:
+                object __getitem__:
                   code:
                     #b0 .label:
                       return PYCInt (42)
 
 
                     #b1(n5, n4, n3, n2, n1, n0) .except:
-                      n6 <- $Compare.exception(n5, KeyError)
+                      n6 <- $Compare.exception(n5, KeyError(PyIR.Global))
                       if n6 then jmp b2(n5, n4, n3, n2, n1, n0) else jmp b3(n5, n4, n3, n2, n1, n0)
 
 
                     #b2(n12, n11, n10, n9, n8, n7) .label:
-                      jmp b4(self.default)
+                      jmp b4(self(PyIR.Fast).default)
 
 
                     #b4(n19) .label:
@@ -4344,11 +4346,11 @@ class defaultdict:
 
 
                 functions:
-                  __getitem__ -> dummy.defaultdict.__getitem__
+                  __getitem__ -> defaultdict.__getitem__
 
 
             functions:
-              defaultdict -> dummy.defaultdict |}]
+              defaultdict -> defaultdict |}]
 
 
     let%expect_test _ =
@@ -4370,24 +4372,24 @@ except C as c:
         object dummy:
           code:
             #b0 .label:
-              dummy.foo <- $FuncObj(foo, dummy.foo, {})
-              n0 <- dummy.foo()
+              foo(PyIR.Name) <- $FuncObj(foo, foo, {})
+              n0 <- foo(PyIR.Name)()
               jmp b2
 
 
             #b1(n6, n5, n4, n3, n2, n1) .except:
-              n7 <- $Compare.exception(n6, $unknown.C)
+              n7 <- $Compare.exception(n6, C(PyIR.Name))
               if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
 
 
             #b3(n13, n12, n11, n10, n9, n8) .label:
-              dummy.c <- n12
-              n23 <- print(dummy.c)
+              c(PyIR.Name) <- n12
+              n23 <- print(PyIR.Name)(c(PyIR.Name))
               jmp b5(n10, n9, n8)
 
 
             #b5(n22, n21, n20) .finally:
-              dummy.c <- PYCNone
+              c(PyIR.Name) <- PYCNone
               n27 <- $DeletePyIR.Name(c)()
               jmp b6
 
@@ -4406,7 +4408,7 @@ except C as c:
 
 
           objects:
-            object dummy.foo:
+            object foo:
               code:
                 #b0 .label:
                   return PYCNone
@@ -4416,7 +4418,7 @@ except C as c:
 
 
             functions:
-              foo -> dummy.foo |}]
+              foo -> foo |}]
 
 
     let%expect_test _ =
@@ -4452,50 +4454,50 @@ print(g()) # prints 2
         object dummy:
           code:
             #b0 .label:
-              dummy.gx <- PYCInt (100)
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f(PYCInt (42))
-              dummy.g <- n0
-              n1 <- dummy.g()
-              n2 <- print(n1)
+              gx(PyIR.Global) <- PYCInt (100)
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)(PYCInt (42))
+              g(PyIR.Name) <- n0
+              n1 <- g(PyIR.Name)()
+              n2 <- print(PyIR.Name)(n1)
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  $Deref(lx) <- PYCInt (1000)
-                  inner <- $FuncObj(inner, dummy.f.<locals>.inner, {})
-                  $Deref(lx) <- PYCInt (1664)
-                  return inner
+                  lx(PyIR.Deref) <- PYCInt (1000)
+                  inner(PyIR.Fast) <- $FuncObj(inner, f.<locals>.inner, {})
+                  lx(PyIR.Deref) <- PYCInt (1664)
+                  return inner(PyIR.Fast)
 
 
 
               objects:
-                object dummy.f.inner:
+                object inner:
                   code:
                     #b0 .label:
-                      ix <- PYCInt (20)
-                      n0 <- print(dummy.gx)
-                      n1 <- print($Deref(ax))
-                      n2 <- print($Deref(lx))
-                      n3 <- print(ix)
-                      dummy.gx <- PYCInt (10)
-                      $Deref(lx) <- PYCInt (2)
-                      return $Deref(lx)
+                      ix(PyIR.Fast) <- PYCInt (20)
+                      n0 <- print(PyIR.Global)(gx(PyIR.Global))
+                      n1 <- print(PyIR.Global)(ax(PyIR.Deref))
+                      n2 <- print(PyIR.Global)(lx(PyIR.Deref))
+                      n3 <- print(PyIR.Global)(ix(PyIR.Fast))
+                      gx(PyIR.Global) <- PYCInt (10)
+                      lx(PyIR.Deref) <- PYCInt (2)
+                      return lx(PyIR.Deref)
 
 
 
 
 
                 functions:
-                  inner -> dummy.f.<locals>.inner
+                  inner -> f.<locals>.inner
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -4519,12 +4521,12 @@ print(result)
         object dummy:
           code:
             #b0 .label:
-              dummy.values <- [PYCInt (1), PYCInt (2), [PYCInt (3), PYCInt (4)], PYCInt (5)]
-              dummy.values2 <- PYCTuple ([|PYCString ("a"); PYCString ("b")|])
-              dummy.result <- (packed)($Packed([PYCInt (10), PYCInt (100)]), $Packed(dummy.values), $Packed(dummy.values2))
-              n0 <- print(dummy.result)
-              dummy.result <- (packed)[$Packed(dummy.values), $Packed(dummy.values2)]
-              n1 <- print(dummy.result)
+              values(PyIR.Name) <- [PYCInt (1), PYCInt (2), [PYCInt (3), PYCInt (4)], PYCInt (5)]
+              values2(PyIR.Name) <- PYCTuple ([|PYCString ("a"); PYCString ("b")|])
+              result(PyIR.Name) <- (packed)($Packed([PYCInt (10), PYCInt (100)]), $Packed(values(PyIR.Name)), $Packed(values2(PyIR.Name)))
+              n0 <- print(PyIR.Name)(result(PyIR.Name))
+              result(PyIR.Name) <- (packed)[$Packed(values(PyIR.Name)), $Packed(values2(PyIR.Name))]
+              n1 <- print(PyIR.Name)(result(PyIR.Name))
               return PYCNone |}]
 
 
@@ -4561,23 +4563,23 @@ start()
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.g <- $FuncObj(g, dummy.g, {})
-              dummy.start <- $FuncObj(start, dummy.start, {})
-              n0 <- dummy.start()
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              g(PyIR.Name) <- $FuncObj(g, g, {})
+              start(PyIR.Name) <- $FuncObj(start, start, {})
+              n0 <- start(PyIR.Name)()
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- print(PYCString ("dummy = "), dummy)
-                  n1 <- print(PYCString ("dummy2= "), dummy2)
-                  n2 <- print(PYCString ("dummy3= "), dummy3)
-                  n3 <- print(PYCString ("dummy4= "), dummy4)
-                  n4 <- $CallMethod($LoadMethod(dummyA, items), )
+                  n0 <- print(PyIR.Global)(PYCString ("dummy = "), dummy(PyIR.Fast))
+                  n1 <- print(PyIR.Global)(PYCString ("dummy2= "), dummy2(PyIR.Fast))
+                  n2 <- print(PyIR.Global)(PYCString ("dummy3= "), dummy3(PyIR.Fast))
+                  n3 <- print(PyIR.Global)(PYCString ("dummy4= "), dummy4(PyIR.Fast))
+                  n4 <- $CallMethod($LoadMethod(dummyA(PyIR.Fast), items), )
                   n5 <- $GetIter(n4)
                   jmp b1(n5)
 
@@ -4590,10 +4592,11 @@ start()
 
                 #b2 .label:
                   n9 <- $IterData(n7)
-                  k <- n9[PYCInt (0)]
-                  v <- n9[PYCInt (1)]
-                  n10 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), k, v)
-                  n11 <- print(n10)
+                  k(PyIR.Fast) <- n9[PYCInt (0)]
+                  v(PyIR.Fast) <- n9[PYCInt (1)]
+                  n10 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format),
+                    k(PyIR.Fast), v(PyIR.Fast))
+                  n11 <- print(PyIR.Global)(n10)
                   jmp b1(n6)
 
 
@@ -4603,28 +4606,28 @@ start()
 
 
 
-            object dummy.g:
+            object g:
               code:
                 #b0 .label:
-                  n0 <- print(PYCString ("dummy = "), dummy)
-                  n1 <- print(PYCString ("dummy2= "), dummy2)
-                  n2 <- print(PYCString ("dummy3= "), dummy3)
-                  n3 <- print(PYCString ("dummy4= "), dummy4)
+                  n0 <- print(PyIR.Global)(PYCString ("dummy = "), dummy(PyIR.Fast))
+                  n1 <- print(PyIR.Global)(PYCString ("dummy2= "), dummy2(PyIR.Fast))
+                  n2 <- print(PyIR.Global)(PYCString ("dummy3= "), dummy3(PyIR.Fast))
+                  n3 <- print(PyIR.Global)(PYCString ("dummy4= "), dummy4(PyIR.Fast))
                   return PYCNone
 
 
 
 
-            object dummy.start:
+            object start:
               code:
                 #b0 .label:
-                  x <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
-                  n0 <- dummy.f($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x))), $PackedMap({|
-                                PYCString ("test"), PYCInt (42)|})) !packed
-                  n1 <- dummy.f($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
-                                                 PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
-                                PYCString ("test"), PYCInt (42)|})) !packed
-                  n2 <- dummy.g($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x)))) !packed
+                  x(PyIR.Fast) <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
+                  n0 <- f(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x(PyIR.Fast)))), $PackedMap({|
+                                       PYCString ("test"), PYCInt (42)|})) !packed
+                  n1 <- f(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
+                                                        PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
+                                       PYCString ("test"), PYCInt (42)|})) !packed
+                  n2 <- g(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x(PyIR.Fast))))) !packed
                   return PYCNone
 
 
@@ -4632,9 +4635,9 @@ start()
 
 
             functions:
-              f -> dummy.f
-              g -> dummy.g
-              start -> dummy.start |xxx}]
+              f -> f
+              g -> g
+              start -> start |xxx}]
 
 
     let%expect_test _ =
@@ -4659,22 +4662,22 @@ def f(foo, a, b, c):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $CallMethod($LoadMethod(foo, f), a)
-                  n1 <- foo.f($Packed(b)) !packed
-                  n2 <- foo.f($Packed((packed)($Packed((a)), $Packed(b)))) !packed
-                  n3 <- foo.f($Packed(()), $PackedMap(c)) !packed
-                  n4 <- foo.f($Packed(b), $PackedMap(c)) !packed
-                  n5 <- foo.f($Packed((a)), $PackedMap(c)) !packed
-                  n6 <- foo.f($Packed((packed)($Packed((a)), $Packed(b))), $PackedMap(c)) !packed
+                  n0 <- $CallMethod($LoadMethod(foo(PyIR.Fast), f), a(PyIR.Fast))
+                  n1 <- foo(PyIR.Fast).f($Packed(b(PyIR.Fast))) !packed
+                  n2 <- foo(PyIR.Fast).f($Packed((packed)($Packed((a(PyIR.Fast))), $Packed(b(PyIR.Fast))))) !packed
+                  n3 <- foo(PyIR.Fast).f($Packed(()), $PackedMap(c(PyIR.Fast))) !packed
+                  n4 <- foo(PyIR.Fast).f($Packed(b(PyIR.Fast)), $PackedMap(c(PyIR.Fast))) !packed
+                  n5 <- foo(PyIR.Fast).f($Packed((a(PyIR.Fast))), $PackedMap(c(PyIR.Fast))) !packed
+                  n6 <- foo(PyIR.Fast).f($Packed((packed)($Packed((a(PyIR.Fast))), $Packed(b(PyIR.Fast)))), $PackedMap(c(PyIR.Fast))) !packed
                   return PYCNone
 
 
@@ -4682,7 +4685,7 @@ def f(foo, a, b, c):
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -4709,25 +4712,25 @@ f(**d1, x=42)
         object dummy:
           code:
             #b0 .label:
-              dummy.d0 <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
-              dummy.d1 <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-              dummy.x <- (packed){|$Packed(dummy.d0), $Packed(dummy.d1)|}
-              n0 <- print(dummy.x)
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.d1 <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-              n1 <- dummy.f($Packed(()), $PackedMap((packed){|$Packed(dummy.d1), $Packed({|
-                                                              PYCString ("x"),
-                                                              PYCInt (42)|})|})) !packed
+              d0(PyIR.Name) <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
+              d1(PyIR.Name) <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+              x(PyIR.Name) <- (packed){|$Packed(d0(PyIR.Name)), $Packed(d1(PyIR.Name))|}
+              n0 <- print(PyIR.Name)(x(PyIR.Name))
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              d1(PyIR.Name) <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+              n1 <- f(PyIR.Name)($Packed(()), $PackedMap((packed){|$Packed(d1(PyIR.Name)), $Packed({|
+                                                                   PYCString ("x"),
+                                                                   PYCInt (42)|})|})) !packed
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- print(x)
-                  n1 <- $CallMethod($LoadMethod(kwargs, items), )
+                  n0 <- print(PyIR.Global)(x(PyIR.Fast))
+                  n1 <- $CallMethod($LoadMethod(kwargs(PyIR.Fast), items), )
                   n2 <- $GetIter(n1)
                   jmp b1(n2)
 
@@ -4740,9 +4743,9 @@ f(**d1, x=42)
 
                 #b2 .label:
                   n6 <- $IterData(n4)
-                  k <- n6[PYCInt (0)]
-                  v <- n6[PYCInt (1)]
-                  n7 <- print(k, v)
+                  k(PyIR.Fast) <- n6[PYCInt (0)]
+                  v(PyIR.Fast) <- n6[PYCInt (1)]
+                  n7 <- print(PyIR.Global)(k(PyIR.Fast), v(PyIR.Fast))
                   jmp b1(n3)
 
 
@@ -4754,7 +4757,7 @@ f(**d1, x=42)
 
 
             functions:
-              f -> dummy.f |xxx}]
+              f -> f |xxx}]
 
 
     let%expect_test _ =
@@ -4774,25 +4777,25 @@ print(lst) # [2, 3, 4, 5, 6]
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- dummy.f()
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- f(PyIR.Name)()
               n1 <- $UnpackEx(PYCInt (2), PYCInt (3), n0)
-              dummy.a <- n1[PYCInt (0)]
-              dummy.b <- n1[PYCInt (1)]
-              dummy.lst <- n1[PYCInt (2)]
-              dummy.x <- n1[PYCInt (3)]
-              dummy.y <- n1[PYCInt (4)]
-              dummy.z <- n1[PYCInt (5)]
-              n2 <- print(dummy.lst)
+              a(PyIR.Name) <- n1[PYCInt (0)]
+              b(PyIR.Name) <- n1[PYCInt (1)]
+              lst(PyIR.Name) <- n1[PYCInt (2)]
+              x(PyIR.Name) <- n1[PYCInt (3)]
+              y(PyIR.Name) <- n1[PYCInt (4)]
+              z(PyIR.Name) <- n1[PYCInt (5)]
+              n2 <- print(PyIR.Name)(lst(PyIR.Name))
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- range(PYCInt (10))
+                  n0 <- range(PyIR.Global)(PYCInt (10))
                   return n0
 
 
@@ -4800,7 +4803,7 @@ print(lst) # [2, 3, 4, 5, 6]
 
 
             functions:
-              f -> dummy.f |}]
+              f -> f |}]
 
 
     let%expect_test _ =
@@ -4829,18 +4832,17 @@ def powerset(s):
           code:
             #b0 .label:
               $ImportName(itertools, from_list= [])
-              dummy.itertools <- $ImportName(itertools, from_list= [])
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              n0 <- $BuildClass($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}),
-                                PYCString ("AsyncYieldFrom"))
-              dummy.AsyncYieldFrom <- n0
-              dummy.powerset <- $FuncObj(powerset, dummy.powerset, {})
+              itertools(PyIR.Name) <- $ImportName(itertools, from_list= [])
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              n0 <- $BuildClass($FuncObj(AsyncYieldFrom, AsyncYieldFrom, {}), PYCString ("AsyncYieldFrom"))
+              AsyncYieldFrom(PyIR.Name) <- n0
+              powerset(PyIR.Name) <- $FuncObj(powerset, powerset, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   n0 <- $Yield(PYCInt (42))
@@ -4849,21 +4851,21 @@ def powerset(s):
 
 
 
-            object dummy.AsyncYieldFrom:
+            object AsyncYieldFrom:
               code:
                 #b0 .label:
-                  dummy.AsyncYieldFrom.__module__ <- __name__
-                  dummy.AsyncYieldFrom.__qualname__ <- PYCString ("AsyncYieldFrom")
-                  dummy.AsyncYieldFrom.__await__ <- $FuncObj(__await__, dummy.AsyncYieldFrom.__await__, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("AsyncYieldFrom")
+                  __await__(PyIR.Name) <- $FuncObj(__await__, AsyncYieldFrom.__await__, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.AsyncYieldFrom.__await__:
+                object __await__:
                   code:
                     #b0 .label:
-                      n0 <- $GetYieldFromIter(self.obj)
+                      n0 <- $GetYieldFromIter(self(PyIR.Fast).obj)
                       n1 <- $YieldFrom(n0, PYCNone)
                       return PYCNone
 
@@ -4872,14 +4874,14 @@ def powerset(s):
 
 
                 functions:
-                  __await__ -> dummy.AsyncYieldFrom.__await__
+                  __await__ -> AsyncYieldFrom.__await__
 
-              object dummy.powerset:
+              object powerset:
                 code:
                   #b0 .label:
-                    n0 <- len(s)
+                    n0 <- len(PyIR.Global)(s(PyIR.Fast))
                     n1 <- $Binary.Add(n0, PYCInt (1))
-                    n2 <- range(n1)
+                    n2 <- range(PyIR.Global)(n1)
                     n3 <- $GetIter(n2)
                     jmp b1(n3)
 
@@ -4892,9 +4894,10 @@ def powerset(s):
 
                   #b2 .label:
                     n7 <- $IterData(n5)
-                    i <- n7
-                    n8 <- $CallMethod($LoadMethod(itertools, combinations), s, i)
-                    n9 <- map(frozenset, n8)
+                    i(PyIR.Fast) <- n7
+                    n8 <- $CallMethod($LoadMethod(itertools(PyIR.Global), combinations),
+                      s(PyIR.Fast), i(PyIR.Fast))
+                    n9 <- map(PyIR.Global)(frozenset(PyIR.Global), n8)
                     n10 <- $GetYieldFromIter(n9)
                     n11 <- $YieldFrom(n10, PYCNone)
                     jmp b1(n4)
@@ -4908,9 +4911,9 @@ def powerset(s):
 
 
               functions:
-                AsyncYieldFrom -> dummy.AsyncYieldFrom
-                f -> dummy.f
-                powerset -> dummy.powerset |}]
+                AsyncYieldFrom -> AsyncYieldFrom
+                f -> f
+                powerset -> powerset |}]
 
 
     let%expect_test _ =
@@ -4935,24 +4938,24 @@ def f(l):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $GetIter($unknown.l)
-              n1 <- $FuncObj(<listcomp-2>, dummy.<listcomp-2>, {})(n0)
-              dummy.g <- n1
-              n2 <- $GetIter($unknown.l)
-              n3 <- $FuncObj(<listcomp-3>, dummy.<listcomp-3>, {})(n2)
-              dummy.g0 <- n3
-              n4 <- print(dummy.g)
-              n5 <- print(dummy.g0)
-              dummy.f <- $FuncObj(f, dummy.f, {})
+              n0 <- $GetIter(l(PyIR.Name))
+              n1 <- $FuncObj(<listcomp>, <listcomp>, {})(n0)
+              g(PyIR.Name) <- n1
+              n2 <- $GetIter(l(PyIR.Name))
+              n3 <- $FuncObj(<listcomp>, <listcomp>, {})(n2)
+              g0(PyIR.Name) <- n3
+              n4 <- print(PyIR.Name)(g(PyIR.Name))
+              n5 <- print(PyIR.Name)(g0(PyIR.Name))
+              f(PyIR.Name) <- $FuncObj(f, f, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.<listcomp-2>:
+            object <listcomp>:
               code:
                 #b0 .label:
-                  jmp b1(.0, [])
+                  jmp b1(.0(PyIR.Fast), [])
 
 
                 #b1(n1, n0) .label:
@@ -4963,8 +4966,8 @@ def f(l):
 
                 #b2(n4) .label:
                   n6 <- $IterData(n2)
-                  x <- n6
-                  n7 <- $Binary.Add(x, PYCInt (1))
+                  x(PyIR.Fast) <- n6
+                  n7 <- $Binary.Add(x(PyIR.Fast), PYCInt (1))
                   n8 <- $ListAppend(n4, n7)
                   jmp b1(n1, n4)
 
@@ -4975,10 +4978,10 @@ def f(l):
 
 
 
-            object dummy.<listcomp-3>:
+            object <listcomp>:
               code:
                 #b0 .label:
-                  jmp b1(.0, [])
+                  jmp b1(.0(PyIR.Fast), [])
 
 
                 #b1(n1, n0) .label:
@@ -4989,8 +4992,8 @@ def f(l):
 
                 #b2(n4) .label:
                   n6 <- $IterData(n2)
-                  x <- n6
-                  n7 <- $Binary.Add(x, PYCInt (2))
+                  x(PyIR.Fast) <- n6
+                  n7 <- $Binary.Add(x(PyIR.Fast), PYCInt (2))
                   n8 <- $ListAppend(n4, n7)
                   jmp b1(n1, n4)
 
@@ -5001,26 +5004,26 @@ def f(l):
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(l)
-                  n1 <- $FuncObj(<listcomp-8>, dummy.f.<locals>.<listcomp-8>, {})(n0)
-                  r <- n1
-                  n2 <- $GetIter(l)
-                  n3 <- $FuncObj(<listcomp-9>, dummy.f.<locals>.<listcomp-9>, {})(n2)
-                  r0 <- n3
-                  n4 <- print(r)
-                  n5 <- print(r0)
+                  n0 <- $GetIter(l(PyIR.Fast))
+                  n1 <- $FuncObj(<listcomp>, f.<locals>.<listcomp>, {})(n0)
+                  r(PyIR.Fast) <- n1
+                  n2 <- $GetIter(l(PyIR.Fast))
+                  n3 <- $FuncObj(<listcomp>, f.<locals>.<listcomp>, {})(n2)
+                  r0(PyIR.Fast) <- n3
+                  n4 <- print(PyIR.Global)(r(PyIR.Fast))
+                  n5 <- print(PyIR.Global)(r0(PyIR.Fast))
                   return PYCNone
 
 
 
               objects:
-                object dummy.f.<locals>.<listcomp-8>:
+                object <listcomp>:
                   code:
                     #b0 .label:
-                      jmp b1(.0, [])
+                      jmp b1(.0(PyIR.Fast), [])
 
 
                     #b1(n1, n0) .label:
@@ -5031,8 +5034,8 @@ def f(l):
 
                     #b2(n4) .label:
                       n6 <- $IterData(n2)
-                      x <- n6
-                      n7 <- $Binary.Add(x, PYCInt (1))
+                      x(PyIR.Fast) <- n6
+                      n7 <- $Binary.Add(x(PyIR.Fast), PYCInt (1))
                       n8 <- $ListAppend(n4, n7)
                       jmp b1(n1, n4)
 
@@ -5043,10 +5046,10 @@ def f(l):
 
 
 
-                object dummy.f.<locals>.<listcomp-9>:
+                object <listcomp>:
                   code:
                     #b0 .label:
-                      jmp b1(.0, [])
+                      jmp b1(.0(PyIR.Fast), [])
 
 
                     #b1(n1, n0) .label:
@@ -5057,8 +5060,8 @@ def f(l):
 
                     #b2(n4) .label:
                       n6 <- $IterData(n2)
-                      x <- n6
-                      n7 <- $Binary.Add(x, PYCInt (2))
+                      x(PyIR.Fast) <- n6
+                      n7 <- $Binary.Add(x(PyIR.Fast), PYCInt (2))
                       n8 <- $ListAppend(n4, n7)
                       jmp b1(n1, n4)
 
@@ -5071,14 +5074,12 @@ def f(l):
 
 
                 functions:
-                  <listcomp-8> -> dummy.f.<locals>.<listcomp-8>
-                  <listcomp-9> -> dummy.f.<locals>.<listcomp-9>
+                  <listcomp> -> f.<locals>.<listcomp>
 
 
               functions:
-                <listcomp-2> -> dummy.<listcomp-2>
-                <listcomp-3> -> dummy.<listcomp-3>
-                f -> dummy.f |}]
+                <listcomp> -> <listcomp>
+                f -> f |}]
 
 
     let%expect_test _ =
@@ -5101,28 +5102,28 @@ def g(l):
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.g <- $FuncObj(g, dummy.g, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              g(PyIR.Name) <- $FuncObj(g, g, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
-                  n0 <- $GetIter(l)
-                  n1 <- $FuncObj(<setcomp-3>, dummy.f.<locals>.<setcomp-3>, {})(n0)
-                  r <- n1
-                  return r
+                  n0 <- $GetIter(l(PyIR.Fast))
+                  n1 <- $FuncObj(<setcomp>, f.<locals>.<setcomp>, {})(n0)
+                  r(PyIR.Fast) <- n1
+                  return r(PyIR.Fast)
 
 
 
               objects:
-                object dummy.f.<locals>.<setcomp-3>:
+                object <setcomp>:
                   code:
                     #b0 .label:
-                      jmp b1(.0, {})
+                      jmp b1(.0(PyIR.Fast), {})
 
 
                     #b1(n1, n0) .label:
@@ -5133,8 +5134,8 @@ def g(l):
 
                     #b2(n4) .label:
                       n6 <- $IterData(n2)
-                      x <- n6
-                      n7 <- $Binary.Add(x, PYCInt (1))
+                      x(PyIR.Fast) <- n6
+                      n7 <- $Binary.Add(x(PyIR.Fast), PYCInt (1))
                       n8 <- $SetAdd(n4, n7)
                       jmp b1(n1, n4)
 
@@ -5147,23 +5148,23 @@ def g(l):
 
 
                 functions:
-                  <setcomp-3> -> dummy.f.<locals>.<setcomp-3>
+                  <setcomp> -> f.<locals>.<setcomp>
 
-              object dummy.g:
+              object g:
                 code:
                   #b0 .label:
-                    n0 <- $GetIter(l)
-                    n1 <- $FuncObj(<dictcomp-8>, dummy.g.<locals>.<dictcomp-8>, {})(n0)
-                    squared_dict <- n1
-                    return $unknown.r
+                    n0 <- $GetIter(l(PyIR.Fast))
+                    n1 <- $FuncObj(<dictcomp>, g.<locals>.<dictcomp>, {})(n0)
+                    squared_dict(PyIR.Fast) <- n1
+                    return r(PyIR.Global)
 
 
 
                 objects:
-                  object dummy.g.<locals>.<dictcomp-8>:
+                  object <dictcomp>:
                     code:
                       #b0 .label:
-                        jmp b1(.0, {||})
+                        jmp b1(.0(PyIR.Fast), {||})
 
 
                       #b1(n1, n0) .label:
@@ -5174,9 +5175,9 @@ def g(l):
 
                       #b2(n4) .label:
                         n6 <- $IterData(n2)
-                        num <- n6
-                        n7 <- $Binary.Power(num, PYCInt (2))
-                        n8 <- $DictSetItem(n4, num, n7)
+                        num(PyIR.Fast) <- n6
+                        n7 <- $Binary.Power(num(PyIR.Fast), PYCInt (2))
+                        n8 <- $DictSetItem(n4, num(PyIR.Fast), n7)
                         jmp b1(n1, n4)
 
 
@@ -5188,12 +5189,12 @@ def g(l):
 
 
                   functions:
-                    <dictcomp-8> -> dummy.g.<locals>.<dictcomp-8>
+                    <dictcomp> -> g.<locals>.<dictcomp>
 
 
               functions:
-                f -> dummy.f
-                g -> dummy.g |xxx}]
+                f -> f
+                g -> g |xxx}]
 
 
     let%expect_test _ =
@@ -5230,44 +5231,44 @@ def g(a, b):
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
-              n1 <- dummy.C()
-              dummy.c <- n1
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
+              n1 <- C(PyIR.Name)()
+              c(PyIR.Name) <- n1
               n2 <- $DeletePyIR.Name(c)()
-              n3 <- dummy.C()
-              dummy.c0 <- n3
-              n4 <- $DeleteAttr(foo)(dummy.c0)
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.g <- $FuncObj(g, dummy.g, {})
+              n3 <- C(PyIR.Name)()
+              c0(PyIR.Global) <- n3
+              n4 <- $DeleteAttr(foo)(c0(PyIR.Global))
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              g(PyIR.Name) <- $FuncObj(g, g, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
                   return PYCNone
 
 
 
 
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   n0 <- $DeletePyIR.Global(c0)()
                   n1 <- $DeletePyIR.Fast(x)()
-                  $Deref(z) <- PYCInt (0)
-                  inner <- $FuncObj(inner, dummy.f.<locals>.inner, {})
+                  z(PyIR.Deref) <- PYCInt (0)
+                  inner(PyIR.Fast) <- $FuncObj(inner, f.<locals>.inner, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.f.inner:
+                object inner:
                   code:
                     #b0 .label:
                       n0 <- $DeletePyIR.Deref(z)()
@@ -5278,12 +5279,12 @@ def g(a, b):
 
 
                 functions:
-                  inner -> dummy.f.<locals>.inner
+                  inner -> f.<locals>.inner
 
-              object dummy.g:
+              object g:
                 code:
                   #b0 .label:
-                    n0 <- $DeleteSubscr(a, b)
+                    n0 <- $DeleteSubscr(a(PyIR.Fast), b(PyIR.Fast))
                     return PYCNone
 
 
@@ -5291,9 +5292,9 @@ def g(a, b):
 
 
               functions:
-                C -> dummy.C
-                f -> dummy.f
-                g -> dummy.g |}]
+                C -> C
+                f -> f
+                g -> g |}]
 
 
     let%expect_test _ =
@@ -5316,14 +5317,14 @@ async def g():
         object dummy:
           code:
             #b0 .label:
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.g <- $FuncObj(g, dummy.g, {})
+              f(PyIR.Name) <- $FuncObj(f, f, {})
+              g(PyIR.Name) <- $FuncObj(g, g, {})
               return PYCNone
 
 
 
           objects:
-            object dummy.f:
+            object f:
               code:
                 #b0 .label:
                   return PYCBool (true)
@@ -5331,22 +5332,22 @@ async def g():
 
 
 
-            object dummy.g:
+            object g:
               code:
                 #b0 .label:
-                  n0 <- dummy.f()
+                  n0 <- f(PyIR.Global)()
                   n1 <- $GetAwaitable(n0)
                   n2 <- $YieldFrom(n1, PYCNone)
                   if n1 then jmp b1 else jmp b2
 
 
                 #b1 .label:
-                  n3 <- print(PYCInt (0))
+                  n3 <- print(PyIR.Global)(PYCInt (0))
                   jmp b3
 
 
                 #b2 .label:
-                  n4 <- print(PYCInt (1))
+                  n4 <- print(PyIR.Global)(PYCInt (1))
                   jmp b3
 
 
@@ -5358,8 +5359,8 @@ async def g():
 
 
             functions:
-              f -> dummy.f
-              g -> dummy.g |}]
+              f -> f
+              g -> g |}]
 
 
     let%expect_test _ =
@@ -5381,48 +5382,48 @@ class C:
         object dummy:
           code:
             #b0 .label:
-              n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
-              dummy.C <- n0
+              n0 <- $BuildClass($FuncObj(C, C, {}), PYCString ("C"))
+              C(PyIR.Name) <- n0
               return PYCNone
 
 
 
           objects:
-            object dummy.C:
+            object C:
               code:
                 #b0 .label:
-                  dummy.C.__module__ <- __name__
-                  dummy.C.__qualname__ <- PYCString ("C")
-                  dummy.C.f <- $FuncObj(f, dummy.C.f, {})
+                  __module__(PyIR.Name) <- __name__(PyIR.Name)
+                  __qualname__(PyIR.Name) <- PYCString ("C")
+                  f(PyIR.Name) <- $FuncObj(f, C.f, {})
                   return PYCNone
 
 
 
               objects:
-                object dummy.C.f:
+                object f:
                   code:
                     #b0 .label:
                       $ImportName(binascii, from_list= [])
-                      $Deref(binascii) <- $ImportName(binascii, from_list= [])
-                      n0 <- $BuildClass($FuncObj(D, dummy.D, {}), PYCString ("D"))
-                      D <- n0
+                      binascii(PyIR.Deref) <- $ImportName(binascii, from_list= [])
+                      n0 <- $BuildClass($FuncObj(D, D, {}), PYCString ("D"))
+                      D(PyIR.Fast) <- n0
                       return PYCNone
 
 
 
                   objects:
-                    object dummy.C.f.D:
+                    object D:
                       code:
                         #b0 .label:
-                          dummy.C.f.D.__module__ <- __name__
-                          dummy.C.f.D.__qualname__ <- PYCString ("C.f.<locals>.D")
-                          dummy.C.f.D.g <- $FuncObj(g, dummy.C.f.<locals>.D.g, {(unhexlify, $Deref(binascii).unhexlify); })
+                          __module__(PyIR.Name) <- __name__(PyIR.Name)
+                          __qualname__(PyIR.Name) <- PYCString ("C.f.<locals>.D")
+                          g(PyIR.Name) <- $FuncObj(g, C.f.<locals>.D.g, {(unhexlify, binascii(PyIR.Deref).unhexlify); })
                           return PYCNone
 
 
 
                       objects:
-                        object dummy.C.f.D.g:
+                        object g:
                           code:
                             #b0 .label:
                               return PYCNone
@@ -5432,17 +5433,17 @@ class C:
 
 
                         functions:
-                          g -> dummy.C.f.<locals>.D.g
+                          g -> C.f.<locals>.D.g
 
 
                     functions:
-                      D -> dummy.D
+                      D -> D
 
 
                   functions:
-                    f -> dummy.C.f
+                    f -> C.f
 
 
                 functions:
-                  C -> dummy.C |}]
+                  C -> C |}]
   end )

@@ -33,46 +33,18 @@ end
 
 module ConstMap = Caml.Map.Make (Const)
 
-module Ident = struct
-  (** An identifier is a sequence of strings, a qualified name. We only keep track of some shallow
-      source: an identifier can be [Imported], a [Builtin], or a [Normal] identifier otherwise *)
+module Ident : sig
+  type t
 
-  type kind = Builtin | Imported | Normal
+  val mk : string -> t
 
-  (* An identifier is never empty, hence the [root] field. Then we mostly add
-     or remove qualifier at the end of the path, so [path] is a reversed list
-     of the attribute access on [root] *)
-  type t = {root: string; path: string list; kind: kind}
+  val pp : F.formatter -> t -> unit
+end = struct
+  type t = string
 
-  let pp fmt {root; path} =
-    if List.is_empty path then F.pp_print_string fmt root
-    else F.fprintf fmt "%s.%a" root (Pp.seq ~sep:"." F.pp_print_string) (List.rev path)
+  let pp fmt ident = F.pp_print_string fmt ident
 
-
-  let mk ?(kind = Normal) root = {root; path= []; kind}
-
-  let from_string ?(kind = Normal) ~on s =
-    let l = String.split ~on s in
-    match l with
-    | [] ->
-        L.die ExternalError "Ident.from_string with an empty string"
-    | hd :: tl ->
-        {root= hd; path= List.rev tl; kind}
-
-
-  let extend {root; path; kind} attr = {root; path= attr :: path; kind}
-
-  let append {root; path; kind} attrs = {root; path= List.rev_append attrs path; kind}
-
-  let concat {root; path; kind} {root= root2; path= path2} =
-    {root; path= path2 @ (root2 :: path); kind}
-
-
-  let pop {root; path; kind} = match path with [] -> None | _ :: path -> Some {root; path; kind}
-
-  let length {path} = 1 + List.length path
-
-  let root {root; kind} = {root; path= []; kind}
+  let mk ident = ident
 end
 
 module SSA = struct
@@ -242,8 +214,7 @@ module Exp = struct
       the CFG of the program, lost during Python compilation *)
   type t =
     | Const of Const.t
-    | Var of Ident.t  (** Non ambiguous name for variables, imports, functions, classes, ... *)
-    | LocalVar of string
+    | Var of {scope: name_scope; ident: Ident.t}
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
     | Collection of {kind: collection; values: t list; packed: bool}
@@ -261,7 +232,6 @@ module Exp = struct
     | ImportName of import_name  (** [IMPORT_NAME] *)
     | ImportFrom of {from: import_name; names: Ident.t}  (** [IMPORT_FROM] *)
     | Ref of string  (** [LOAD_CLOSURE] *)
-    | Deref of Ident.t  (** [LOAD_DEREF] [STORE_DEREF] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
@@ -275,8 +245,6 @@ module Exp = struct
         "Const"
     | Var _ ->
         "Var"
-    | LocalVar _ ->
-        "LocalVar"
     | Temp _ ->
         "Temp"
     | Subscript _ ->
@@ -297,8 +265,6 @@ module Exp = struct
         "ImportFrom"
     | Ref _ ->
         "Ref"
-    | Deref _ ->
-        "Deref"
     | Not _ ->
         "Not"
     | BuiltinCaller _ ->
@@ -315,10 +281,8 @@ module Exp = struct
   let rec pp fmt = function
     | Const c ->
         Const.pp fmt c
-    | Var id ->
-        Ident.pp fmt id
-    | LocalVar s ->
-        F.pp_print_string fmt s
+    | Var {scope; ident} ->
+        F.fprintf fmt "%a(%s)" Ident.pp ident (show_name_scope scope)
     | Temp i ->
         SSA.pp fmt i
     | Subscript {exp; index} ->
@@ -356,8 +320,6 @@ module Exp = struct
         F.fprintf fmt "$ImportFrom(%a,@ name= %a)" pp_import_name from Ident.pp names
     | Ref s ->
         F.fprintf fmt "$Ref(%s)" s
-    | Deref id ->
-        F.fprintf fmt "$Deref(%a)" Ident.pp id
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
@@ -395,7 +357,6 @@ module Error = struct
     | ImportNameFromList of (string * Exp.t)
     | ImportNameLevel of (string * Exp.t)
     | ImportNameLevelOverflow of (string * Z.t)
-    | ImportNameDepth of (Ident.t * int)
     | ImportFrom of (string * Exp.t)
     | CompareOp of int
     | UnpackSequence of int
@@ -429,10 +390,6 @@ module Error = struct
         F.fprintf fmt "IMPORT_NAME(%s): expected int but got %a" name Exp.pp arg
     | ImportNameLevelOverflow (name, level) ->
         F.fprintf fmt "IMPORT_NAME(%s): level is too big: %s" name (Z.to_string level)
-    | ImportNameDepth (module_name, depth) ->
-        F.fprintf fmt
-          "IMPORT_NAME: module path %a is not deep enough for relative import with level %d"
-          Ident.pp module_name depth
     | ImportFrom (name, from) ->
         F.fprintf fmt "IMPORT_FROM(%s): expected an `import` but got %a" name Exp.pp from
     | CompareOp n ->
@@ -785,41 +742,6 @@ module State = struct
     ; functions: Ident.t SMap.t
     ; names: Ident.t SMap.t  (** Translation cache for local names *) }
 
-  let known_global_names =
-    let builtins =
-      [ "print"
-      ; "range"
-      ; "open"
-      ; "len"
-      ; "map"
-      ; "frozenset"
-      ; "type"
-      ; "str"
-      ; "int"
-      ; "float"
-      ; "bool"
-      ; "object"
-      ; "super"
-      ; "hasattr"
-      ; "__name__"
-      ; "__file__"
-      ; "AssertionError"
-      ; "AttributeError"
-      ; "KeyError"
-      ; "OverflowError"
-      ; "RuntimeError"
-      ; "ValueError" ]
-    in
-    List.fold builtins ~init:SMap.empty ~f:(fun names name ->
-        SMap.add name (Ident.mk ~kind:Builtin name) names )
-
-
-  let known_local_names =
-    let locals = ["__name__"; "staticmethod"; "classmethod"] in
-    List.fold locals ~init:SMap.empty ~f:(fun names name ->
-        SMap.add name (Ident.mk ~kind:Builtin name) names )
-
-
   let empty ~debug ~loc module_name =
     let p = if debug then Debug.todo else Debug.p in
     let block_stack = Stack.push Stack.empty (Block.mk Normal) in
@@ -828,14 +750,14 @@ module State = struct
     ; debug
     ; loc
     ; cfg= CFG.empty (* ; exn_handlers= [] *)
-    ; global_names= known_global_names
+    ; global_names= SMap.empty
     ; stack= Stack.empty
     ; block_stack
     ; stmts= []
     ; fresh_id= 0
     ; classes= SSet.empty
     ; functions= SMap.empty
-    ; names= known_local_names }
+    ; names= SMap.empty }
 
 
   let debug {debug} = if debug then Debug.todo else Debug.p
@@ -851,45 +773,6 @@ module State = struct
   let fresh_id ({fresh_id} as st) =
     let st = {st with fresh_id= SSA.next fresh_id} in
     (fresh_id, st)
-
-
-  let is_toplevel {module_name} = Int.equal 1 (Ident.length module_name)
-
-  let resolve_local_name names global_names name =
-    match SMap.find_opt name names with
-    | Some id ->
-        Some id
-    | None ->
-        SMap.find_opt name global_names
-
-
-  (** Python can look up names in the current namespace, or directly in the global namespace, which
-      is why we keep them separated *)
-  let resolve_name ~global ({names; global_names} as st) name =
-    let global = global || is_toplevel st in
-    debug st "resolve_name global= %b name= %s" global name ;
-    let res =
-      if global then SMap.find_opt name global_names else resolve_local_name names global_names name
-    in
-    match res with
-    | Some id ->
-        debug st " -> %a@\n" Ident.pp id ;
-        id
-    | None ->
-        debug st " -> Not found@\n" ;
-        let prefix = Ident.mk "$unknown" in
-        Ident.extend prefix name
-
-
-  let register_name ~global ({names; global_names} as st) name id =
-    let global = global || is_toplevel st in
-    debug st "register_name global= %b name= %s id= %a@\n" global name Ident.pp id ;
-    if global then
-      let global_names = SMap.add name id global_names in
-      {st with global_names}
-    else
-      let names = SMap.add name id names in
-      {st with names}
 
 
   let push ({stack} as st) exp =
@@ -1143,23 +1026,6 @@ let named_argument_zip opname argc ~f ~init data tags =
   zip 0 data tags
 
 
-(** Patch the name of a list/set/dict comprehension objects.
-
-    List comprehensions generate code blocks all named [<listcomp>], so we need to tell them apart.
-    We use their location to distinguish them. Same thing happens for [<setcomp>] and [<dictcomp>] *)
-let patch_comp_name {FFI.Code.co_name; co_firstlineno} id =
-  if String.equal "<listcomp>" co_name then
-    let name = sprintf "<listcomp-%d>" co_firstlineno in
-    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
-  else if String.equal "<setcomp>" co_name then
-    let name = sprintf "<setcomp-%d>" co_firstlineno in
-    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
-  else if String.equal "<dictcomp>" co_name then
-    let name = sprintf "<dictcomp-%d>" co_firstlineno in
-    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
-  else (co_name, id)
-
-
 let make_function st flags =
   let open IResult.Let_syntax in
   let* qualname, st = State.pop st in
@@ -1171,10 +1037,7 @@ let make_function st flags =
        non ambiguous identifier *)
     match (qualname : Exp.t) with
     | Const (PYCString s) ->
-        let {State.module_name} = st in
-        let root = Ident.root module_name in
-        let lnames = String.split ~on:'.' s in
-        Ok (Ident.append root lnames)
+        Ok (Ident.mk s)
     | _ ->
         internal_error st (Error.MakeFunction ("a qualified named", qualname))
   in
@@ -1186,7 +1049,7 @@ let make_function st flags =
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
-  let short_name, qualname = patch_comp_name code qualname in
+  let short_name = code.FFI.Code.co_name in
   let* st =
     if flags land 0x08 <> 0 then
       (* TODO: closure *)
@@ -1326,7 +1189,7 @@ let call_function_ex st flags =
 
 let import_name st name =
   let open IResult.Let_syntax in
-  let {State.module_name; loc} = st in
+  let {State.module_name= _; loc} = st in
   let* fromlist, st = State.pop st in
   let* fromlist =
     let error = (L.ExternalError, loc, Error.ImportNameFromList (name, fromlist)) in
@@ -1337,7 +1200,7 @@ let import_name st name =
         Error error
   in
   let* level, st = State.pop st in
-  let* level =
+  let* _level =
     match (level : Exp.t) with
     | Const (PYCInt z) -> (
       try Ok (Z.to_int z)
@@ -1345,35 +1208,9 @@ let import_name st name =
     | _ ->
         external_error st (Error.ImportNameLevel (name, level))
   in
-  let id = Ident.from_string ~kind:Imported ~on:'.' name in
-  let* import_path =
-    match level with
-    | 0 ->
-        (* Absolute path *)
-        Ok id
-    | _ -> (
-        (* Relative path *)
-        let rec pop_levels n id =
-          match (n, id) with
-          | 0, None ->
-              Some `Root
-          | 0, Some id ->
-              Some (`Path id)
-          | _, None ->
-              None
-          | _, Some id ->
-              let next_id = Ident.pop id in
-              pop_levels (n - 1) next_id
-        in
-        let prefix = pop_levels level (Some module_name) in
-        match prefix with
-        | Some `Root ->
-            Ok id
-        | Some (`Path prefix) ->
-            if String.is_empty name then Ok prefix else Ok (Ident.extend prefix name)
-        | None ->
-            external_error st (Error.ImportNameDepth (module_name, level)) )
-  in
+  let id = Ident.mk name in
+  (* will desappear soon *)
+  let import_path = id in
   let import_name = {Exp.id= import_path; fromlist} in
   let exp = Exp.ImportName import_name in
   let st = State.push st exp in
@@ -1388,7 +1225,7 @@ let import_from st name =
   (* Does not pop the top of stack, which should be the result of an IMPORT_NAME *)
   let* from = State.peek st in
   State.debug st "import_from(%s): %a@\n" name Exp.pp from ;
-  let* from, names =
+  let* from, _names =
     match (from : Exp.t) with
     | ImportName from ->
         Ok (from, None)
@@ -1397,25 +1234,10 @@ let import_from st name =
     | _ ->
         external_error st (Error.ImportFrom (name, from))
   in
-  let names =
-    match names with None -> Ident.mk ~kind:Imported name | Some id -> Ident.extend id name
-  in
+  let names = Ident.mk name in
   let exp = Exp.ImportFrom {from; names} in
   let st = State.push st exp in
   Ok (st, None)
-
-
-let target_of_import ~default exp =
-  let target =
-    match (exp : Exp.t) with
-    | ImportName {id} ->
-        Some id
-    | ImportFrom {from= {id}; names} ->
-        Some (Ident.concat id names)
-    | _ ->
-        None
-  in
-  Option.value ~default target
 
 
 let unpack_sequence st count =
@@ -1654,12 +1476,6 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
   if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
 
 
-let deref code arg =
-  let cell = get_cell_name code arg in
-  let target = Ident.mk cell in
-  Exp.Deref target
-
-
 let build_collection_unpack st count collection =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
@@ -1667,12 +1483,6 @@ let build_collection_unpack st count collection =
   let exp = Exp.Collection {kind= collection; values; packed= true} in
   let st = State.push st exp in
   Ok (st, None)
-
-
-let get_name st co_names arg ~global =
-  let name = co_names.(arg) in
-  let target = State.resolve_name ~global st name in
-  Exp.Var target
 
 
 let collection_add st opname arg ?(map = false) builtin =
@@ -1723,16 +1533,15 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_NAME" ->
-      let exp = get_name st co_names arg ~global:false in
+      let exp = Exp.Var {scope= Name; ident= Ident.mk co_names.(arg)} in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_GLOBAL" ->
-      let exp = get_name st co_names arg ~global:true in
+      let exp = Exp.Var {scope= Global; ident= Ident.mk co_names.(arg)} in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_FAST" ->
-      let name = co_varnames.(arg) in
-      let exp = Exp.LocalVar name in
+      let exp = Exp.Var {scope= Fast; ident= Ident.mk co_varnames.(arg)} in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_ATTR" ->
@@ -1742,39 +1551,24 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_CLASSDEREF" | "LOAD_DEREF" ->
-      (* It is unclear if extra information needs to be stored for * [LOAD_CLASSDEREF] vs
-         [LOAD_DEREF]. Our tests so far suggests our name lookup strategy is compatible with both.
-         I'm leaving this comment in case some ["$unknwon"] strings start to appear in Textual
-         code *)
-      let exp = deref code arg in
+      let name = get_cell_name code arg in
+      let exp = Exp.Var {scope= Deref; ident= Ident.mk name} in
       let st = State.push st exp in
       Ok (st, None)
   | "STORE_NAME" ->
-      let name = co_names.(arg) in
-      let {State.module_name} = st in
-      let target = Ident.extend module_name name in
-      let lhs = Exp.Var target in
+      let lhs = Exp.Var {scope= Name; ident= Ident.mk co_names.(arg)} in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
-      let target = target_of_import rhs ~default:target in
-      let st = State.register_name ~global:false st name target in
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_GLOBAL" ->
-      let name = co_names.(arg) in
-      let {State.module_name} = st in
-      let root = Ident.root module_name in
-      let target = Ident.extend root name in
-      let lhs = Exp.Var target in
+      let lhs = Exp.Var {scope= Global; ident= Ident.mk co_names.(arg)} in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
-      let target = target_of_import rhs ~default:target in
-      let st = State.register_name ~global:true st name target in
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_FAST" ->
-      let name = co_varnames.(arg) in
-      let lhs = Exp.LocalVar name in
+      let lhs = Exp.Var {scope= Fast; ident= Ident.mk co_varnames.(arg)} in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
@@ -1797,7 +1591,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_DEREF" ->
-      let lhs = deref code arg in
+      let name = get_cell_name code arg in
+      let lhs = Exp.Var {scope= Deref; ident= Ident.mk name} in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
@@ -1948,9 +1743,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "SETUP_ANNOTATIONS" ->
-      let {State.module_name} = st in
-      let annotations = Ident.extend module_name PyCommon.annotations in
-      let st = State.register_name ~global:false st PyCommon.annotations annotations in
       let st = State.push_stmt st SetupAnnotations in
       Ok (st, None)
   | "IMPORT_NAME" ->
@@ -2507,23 +2299,6 @@ module Module = struct
   let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
 end
 
-(** Patch the name of a list/set/dict comprehension objects.
-
-    List comprehensions generate code blocks all named [<listcomp>], so we need to tell them apart.
-    We use their location to distinguish them. Also, their [code] object might not have the
-    [<local>] prefix we see during the process of [MAKE_FUNCTION].
-
-    Same things happen for [<setcomp>] and [<dictcomp>] *)
-let patch_comp_object_name st {FFI.Code.co_name; co_firstlineno} =
-  if String.equal "<listcomp>" co_name then
-    sprintf "%s<listcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
-  else if String.equal "<setcomp>" co_name then
-    sprintf "%s<setcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
-  else if String.equal "<dictcomp>" co_name then
-    sprintf "%s<dictcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
-  else co_name
-
-
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
@@ -2534,8 +2309,7 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
         match constant with
         | FFI.Constant.PYCCode code ->
-            let name = patch_comp_object_name st code in
-            let module_name = Ident.extend module_name name in
+            let module_name = Ident.mk code.FFI.Code.co_name in
             let loc = Location.of_code code in
             let st = State.enter st ~loc module_name in
             let* obj = mk_object st code in
@@ -2556,7 +2330,7 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
     else co_filename
   in
   let file_path = Stdlib.Filename.remove_extension file_path in
-  let module_name = Ident.from_string ~on:'/' file_path in
+  let module_name = Ident.mk file_path in
   let loc = Location.of_code code in
   let empty = State.empty ~debug ~loc module_name in
   let* _, obj = mk_object empty code in
