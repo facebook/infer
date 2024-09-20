@@ -815,7 +815,7 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
     | Some astate_pre ->
         exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map
     | None ->
-        L.internal_error "Could not compute the pre of a node in %a\@n" Procname.pp
+        L.internal_error "Could not compute the pre of a node in %a@\n" Procname.pp
           (Procdesc.Node.get_proc_name (Node.underlying_node node)) ;
         (inv_map, DidNotReachFixPoint)
 
