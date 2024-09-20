@@ -510,6 +510,35 @@ module InjectTraitInterfaceConstinit = struct
       ~f:(fun () -> inject_trait_interface_constinit tenv pdesc)
 end
 
+(** pre-analysis to remove nodes unreachable from start node *)
+module RemoveDeadNodes = struct
+  let process proc_desc =
+    let visited = Procdesc.NodeHashSet.create 11 in
+    let queue = Queue.create ~capacity:(Procdesc.size proc_desc) () in
+    let visit n = Procdesc.NodeHashSet.add n visited in
+    let enqueue n = Queue.enqueue queue n in
+    enqueue (Procdesc.get_start_node proc_desc) ;
+    let rec bfs () =
+      match Queue.dequeue queue with
+      | None ->
+          ()
+      | Some n when Procdesc.NodeHashSet.mem visited n ->
+          bfs ()
+      | Some n ->
+          visit n ;
+          Procdesc.Node.get_succs n @ Procdesc.Node.get_exn n |> List.iter ~f:enqueue ;
+          bfs ()
+    in
+    bfs () ;
+    (* do not remove the exit/exn nodes *)
+    Procdesc.get_exit_node proc_desc |> visit ;
+    Procdesc.get_exn_sink proc_desc |> Option.iter ~f:visit ;
+    (* remove unvisited nodes *)
+    Procdesc.get_nodes proc_desc
+    |> List.filter ~f:(fun n -> not (Procdesc.NodeHashSet.mem visited n))
+    |> List.iter ~f:(Procdesc.remove_node proc_desc)
+end
+
 let do_preanalysis tenv pdesc =
   if not Config.preanalysis_html then NodePrinter.print_html := false ;
   let proc_name = Procdesc.get_proc_name pdesc in
@@ -524,5 +553,6 @@ let do_preanalysis tenv pdesc =
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
   NoReturn.process tenv pdesc ;
+  RemoveDeadNodes.process pdesc ;
   NodePrinter.print_html := true ;
   ()
