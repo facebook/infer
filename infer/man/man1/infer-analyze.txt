@@ -574,6 +574,9 @@ CLANG OPTIONS
            [{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}]
            
 
+       --pulse-model-unreachable +string
+           Methods to be modeled as unreachable.
+
        --pulse-unsafe-malloc
            Activates: Assume that malloc(3) never returns null. (Conversely:
            --no-pulse-unsafe-malloc)

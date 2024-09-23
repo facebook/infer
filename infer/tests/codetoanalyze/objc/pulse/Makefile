@@ -17,6 +17,7 @@ INFER_OPTIONS = \
   --dynamic-dispatch-json-file-path taint/dispatch.json \
   --pulse-model-return-first-arg "release\\|.*release:\\|release_fst\\|ModelClass.bridge:" \
   --pulse-model-return-this "ModelClass.initWith:" \
+  --pulse-model-unreachable "handle_failure" \
 
 INFERPRINT_OPTIONS = --issues-tests
 

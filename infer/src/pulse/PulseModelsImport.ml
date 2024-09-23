@@ -162,6 +162,8 @@ module Basic = struct
         [err]
 
 
+  let unreachable : model_no_non_disj = fun _ _astate -> []
+
   let return_int ~desc : Int64.t -> model_no_non_disj =
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
@@ -425,6 +427,9 @@ module Basic = struct
           let s = Procname.to_string proc_name in
           Str.string_match r s 0 )
     in
+    let match_list config (_tenv, proc_name) _ =
+      List.mem ~equal:String.equal config (Procname.to_string proc_name)
+    in
     let match_taint_source flag (tenv, proc_name) _ =
       if flag then PulseTaintOperations.procedure_matches_source tenv proc_name else false
     in
@@ -443,6 +448,7 @@ module Basic = struct
     ; +match_regexp_opt Config.pulse_model_return_this
       &::.*++> return_this
                  ~desc:"modelled as returning `this` or `self` due to configuration option"
+    ; +match_list Config.pulse_model_unreachable <>--> unreachable
     ; +match_regexp_opt Config.pulse_model_return_first_arg
       &::.*++> id_first_arg_from_list
                  ~desc:"modelled as returning the first argument due to configuration option"
