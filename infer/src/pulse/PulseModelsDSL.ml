@@ -680,6 +680,12 @@ module Syntax = struct
     ret (addr_res, hist)
 
 
+  let unop unop (addr, hist) : aval model_monad =
+    let addr_res = AbstractValue.mk_fresh () in
+    let* addr_res = PulseArithmetic.eval_unop addr_res unop addr |> exec_partial_operation in
+    ret (addr_res, hist)
+
+
   let data_dependency dest sources =
     let* {path; location} = get_data in
     let* desc = get_desc in

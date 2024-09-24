@@ -397,6 +397,107 @@ include struct
     start_model @@ fun () -> check_valid stream @@> (write stream ptr size |> lift_to_monad)
 end
 
+(** Reference: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+
+    Model these atomic operations as just their regular, non-concurrency-aware version. *)
+module Atomic = struct
+  open DSL.Syntax
+
+  let atomic_load_n ptr = start_model @@ fun () -> load (to_aval ptr) >>= assign_ret
+
+  let atomic_load ptr ret = start_model @@ fun () -> load (to_aval ptr) >>= store ~ref:(to_aval ret)
+
+  let atomic_store_n ref obj = start_model @@ fun () -> store ~ref:(to_aval ref) (to_aval obj)
+
+  let atomic_store ref obj =
+    start_model @@ fun () -> load (to_aval obj) >>= store ~ref:(to_aval ref)
+
+
+  (** This built-in function implements an atomic exchange operation. It writes val into *ptr, and
+      returns the previous contents of *ptr. *)
+  let atomic_exchange_n ptr val_ =
+    let ptr = to_aval ptr in
+    let val_ = to_aval val_ in
+    start_model
+    @@ fun () ->
+    let* prev_ptr = load ptr in
+    store ~ref:ptr val_ @@> assign_ret prev_ptr
+
+
+  (** This is the generic version of an atomic exchange. It stores the contents of *val into *ptr.
+      The original value of *ptr is copied into *ret. *)
+  let atomic_exchange ptr val_ ret =
+    let ptr = to_aval ptr in
+    let val_ = to_aval val_ in
+    let ret = to_aval ret in
+    start_model
+    @@ fun () ->
+    let* prev_ptr = load ptr in
+    (store ~ref:ptr @= load val_) @@> store ~ref:ret prev_ptr
+
+
+  (** pretend this always succeeds since we don't model parallelism *)
+  let atomic_compare_exchange_n ptr expected desired =
+    let ptr = to_aval ptr in
+    let desired = to_aval desired in
+    start_model @@ fun () -> check_valid expected @@> store ~ref:ptr desired @@> assign_ret @= int 1
+
+
+  (** The function is virtually identical to __atomic_compare_exchange_n, except the desired value
+      is also a pointer. *)
+  let atomic_compare_exchange ptr expected desired =
+    let ptr = to_aval ptr in
+    let desired = to_aval desired in
+    start_model
+    @@ fun () -> check_valid expected @@> (store ~ref:ptr @= load desired) @@> assign_ret @= int 1
+
+
+  let do_atomic_op op v1 v2 =
+    match op with
+    | `Add ->
+        binop (PlusA None) v1 v2
+    | `Sub ->
+        binop (MinusA None) v1 v2
+    | `And ->
+        binop BAnd v1 v2
+    | `Xor ->
+        binop BXor v1 v2
+    | `Or ->
+        binop BOr v1 v2
+    | `Nand ->
+        unop Neg @= binop BAnd v1 v2
+
+
+  let atomic_op_fetch pre_or_post op ptr val_ =
+    let ptr = to_aval ptr in
+    let val_ = to_aval val_ in
+    start_model
+    @@ fun () ->
+    let* pre = load ptr in
+    let* result = do_atomic_op op pre val_ in
+    store ~ref:ptr result @@> assign_ret @@ match pre_or_post with `Pre -> pre | `Post -> result
+
+
+  (** This built-in function performs an atomic test-and-set operation on the byte at *ptr. The byte
+      is set to some implementation defined nonzero "set" value and the return value is true if and
+      only if the previous contents were "set". It should be only used for operands of type bool or
+      char. For other types only part of the value may be set. *)
+  let atomic_test_and_set ptr =
+    let ptr = to_aval ptr in
+    start_model
+    @@ fun () ->
+    let* set = fresh () in
+    let* () = prune_gt set @= int 0 in
+    store ~ref:ptr set
+
+
+  (** This built-in function performs an atomic clear operation on *ptr. After the operation, *ptr
+      contains 0. *)
+  let atomic_clear ptr =
+    let ptr = to_aval ptr in
+    start_model @@ fun () -> store ~ref:ptr @= int 0
+end
+
 module Glib = struct
   open DSL.Syntax
 
@@ -457,6 +558,45 @@ let matchers : matcher list =
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"asctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
+  ; -"__atomic_load_n" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_load_n
+  ; -"__atomic_load" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> Atomic.atomic_load
+  ; -"__atomic_store_n" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_store_n
+  ; -"__atomic_store" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> Atomic.atomic_store
+  ; -"__atomic_exchange_n" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_exchange_n
+  ; -"__atomic_exchange" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_exchange
+  ; -"__atomic_compare_exchange" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $+ any_arg $+ any_arg $+ any_arg $--> Atomic.atomic_compare_exchange
+  ; -"__atomic_compare_exchange_n" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $+ any_arg $+ any_arg $+ any_arg $--> Atomic.atomic_compare_exchange_n
+  ; -"__atomic_add_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `Add
+  ; -"__atomic_sub_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `Sub
+  ; -"__atomic_and_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `And
+  ; -"__atomic_xor_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `Xor
+  ; -"__atomic_or_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `Or
+  ; -"__atomic_nand_fetch" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Post `Nand
+  ; -"__atomic_fetch_add" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `Add
+  ; -"__atomic_fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `Sub
+  ; -"__atomic_fetch_and" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `And
+  ; -"__atomic_fetch_xor" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `Xor
+  ; -"__atomic_fetch_or" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `Or
+  ; -"__atomic_fetch_nand" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
+    $--> Atomic.atomic_op_fetch `Pre `Nand
+  ; -"__atomic_test_and_set" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_test_and_set
+  ; -"__atomic_clear" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_clear
   ; -"clearerr" <>$ capt_arg_payload $--> valid_arg
   ; -"close" <>$ capt_arg $--> close
   ; -"closedir" <>$ capt_arg $--> closedir

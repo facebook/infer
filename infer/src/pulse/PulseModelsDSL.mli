@@ -133,6 +133,8 @@ module Syntax : sig
 
   val binop_int : Binop.t -> aval -> IntLit.t -> aval model_monad
 
+  val unop : Unop.t -> aval -> aval model_monad
+
   val read : Exp.t -> aval model_monad [@@warning "-unused-value-declaration"]
 
   val int : ?hist:ValueHistory.t -> int -> aval model_monad
