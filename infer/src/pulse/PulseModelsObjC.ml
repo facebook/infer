@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -20,33 +19,6 @@ module CoreFoundation = struct
     let astate = PulseOperations.write_id ret_id access astate in
     PulseOperations.remove_allocation_attr (fst access) astate |> Basic.ok_continue
 end
-
-let call args : model =
- (* [call \[args...; Closure _\]] models a call to the closure. It is similar to a
-    dispatch function. *)
- fun {path; analysis_data; location; ret} astate non_disj ->
-  match List.last args with
-  | Some {ProcnameDispatcher.Call.FuncArg.exp= Closure c} when Procname.is_objc_block c.name ->
-      (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
-         case for objc dispatch models with a bit of [Pulse.interprocedural_call]. Maybe refactor
-         it? *)
-      PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-      let actuals = [] in
-      let get_pvar_formals pname =
-        IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
-      in
-      let formals_opt = get_pvar_formals c.name in
-      let call_kind = `Closure c.captured_vars in
-      let r, non_disj, _contradiction, _ =
-        PulseCallOperations.call analysis_data path location c.name ~ret ~actuals ~formals_opt
-          ~call_kind astate non_disj
-      in
-      PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-      (r, non_disj)
-  | _ ->
-      (* Nothing to call *)
-      (Basic.ok_continue astate, non_disj)
-
 
 let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc :
     model_no_non_disj =
@@ -333,9 +305,11 @@ let matchers : matcher list =
     Procname.get_objc_class_name proc_name |> Option.exists ~f:(String.is_prefix ~prefix)
   in
   let map_context_tenv f (x, _) = f x in
-  ( [ -"dispatch_sync" <>$ any_arg $++$--> call
+  ( [ -"dispatch_sync" <>$ any_arg $+ capt_arg $++$--> call_objc_block
+    ; -"dispatch_async" <>$ any_arg $+ capt_arg $++$--> call_objc_block
+    ; -"dispatch_once" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
-      &:: "performAsCurrentTraitCollection:" <>$ any_arg $++$--> call
+      &:: "performAsCurrentTraitCollection:" $ capt_arg $++$--> call_objc_block
     ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @ ( [ +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
