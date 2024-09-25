@@ -7,6 +7,8 @@
 
 // The test is not compatible with clang-12.
 #include <coroutine>
+#include <optional>
+#include <string>
 
 namespace coro {
 
@@ -83,6 +85,14 @@ Task<Request*> co_get_something(Request* request) {
 Task<Request*> makeRequestToSink_bad() {
   auto request = co_await makeRequest();
   co_return co_await co_get_something(request);
+}
+
+Task<std::string> optional_co_return_ok_FP() {
+  std::optional<std::string> optional_field = std::nullopt;
+  if (!optional_field.has_value()) {
+    co_return "abc";
+  }
+  co_return optional_field->c_str();
 }
 
 } // namespace coro
