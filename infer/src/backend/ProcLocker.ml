@@ -19,23 +19,10 @@ let record_time_of ~f ~log_f =
 
 let locks_dir = ResultsDir.get_path ProcnamesLocks
 
-let locks_target = locks_dir ^/ "locks_target"
-
-let use_symlinks =
-  match Config.os_type with
-  | Cygwin | Win32 ->
-      false (* symlinks are likely too slow under Cygwin *)
-  | Unix ->
-      (* Symlinks may not be supported on crippled filesystems, such as VMs, etc. *)
-      Caml_unix.has_symlink ()
-
-
-let create_file filename = Unix.openfile ~mode:[O_CREAT; O_RDONLY] filename |> Unix.close
-
 let setup () =
   Utils.rmtree locks_dir ;
   Utils.create_dir locks_dir ;
-  if use_symlinks then create_file locks_target
+  ()
 
 
 let lock_of_filename filename = locks_dir ^/ filename
@@ -50,8 +37,7 @@ let unlock pname =
 
 
 let try_taking_lock filename =
-  if use_symlinks then Unix.symlink ~target:locks_target ~link_name:filename
-  else Unix.openfile ~mode:[O_CREAT; O_RDONLY; O_EXCL] filename |> Unix.close
+  Unix.openfile ~mode:[O_CREAT; O_RDONLY; O_EXCL] filename |> Unix.close
 
 
 let try_lock pname =
