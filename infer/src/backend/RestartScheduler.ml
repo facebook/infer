@@ -17,6 +17,8 @@ let read_procs_to_analyze () =
 
 type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_filename: string}
 
+let restart_count = ref 0
+
 let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
   let remaining = ref (Queue.length ready) in
   let blocked = Queue.create () in
@@ -25,8 +27,12 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
   let finished ~result target =
     match result with
     | None | Some Ok ->
-        decr remaining
+        decr remaining ;
+        if is_empty () then (
+          ScubaLogging.log_count ~label:"analysis_restarts" ~value:!restart_count ;
+          L.debug Analysis Quiet "restart count: %d@\n" !restart_count )
     | Some (RaceOn {dependency_filename}) ->
+        incr restart_count ;
         Queue.enqueue blocked {target; dependency_filename}
   in
   let rec check_for_readiness n =
