@@ -28,6 +28,9 @@ class Uninit {
    public:
     int i;
     int j;
+
+    MyClass() {}
+    MyClass(int x, int y) : i(x), j(y) {}
   };
 
   void init_by_store(MyClass* x) {
@@ -121,6 +124,8 @@ class Uninit2 {
   int f1;
   int f2;
 
+  Uninit2() {}
+
   void may_read_f1_empty(std::string s) {
     if (s.empty()) {
       int x = f1;
@@ -209,4 +214,36 @@ int dummy_func(int);
 void comma_operator_ok() {
   int i, j;
   i = ({ dummy_func(42); }), j = ({ dummy_func(i); });
+}
+
+class UninitUserProvided {
+ private:
+  int p;
+
+ public:
+  int x;
+  int y = 42;
+
+  UninitUserProvided() {}
+};
+
+int uninit_user_provided_bad() {
+  UninitUserProvided a{};
+  return a.x;
+}
+
+class UninitDefault {
+ private:
+  int p;
+
+ public:
+  int x;
+  int y = 42;
+
+  UninitDefault() = default;
+};
+
+int uninit_default_ok() {
+  UninitDefault a{}; // a.x is initialized by the value-initialization rule.
+  return a.x;
 }

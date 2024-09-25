@@ -87,7 +87,7 @@ digraph cfg {
 "zero_init_record#init_list#736416.8baaea62666796dc_2" [label="2: Exit init_list::zero_init_record \n  " color=yellow style=filled]
 	
 
-"zero_init_record#init_list#736416.8baaea62666796dc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 34, column 3]\n  n$0=_fun_init_list::C::C(&c:init_list::C*) [line 34, column 5]\n " shape="box"]
+"zero_init_record#init_list#736416.8baaea62666796dc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(c:init_list::C); [line 34, column 3]\n  *&c.z:int=0 [line 34, column 5]\n  n$0=_fun_init_list::C::C(&c:init_list::C*) [line 34, column 5]\n " shape="box"]
 	
 
 	 "zero_init_record#init_list#736416.8baaea62666796dc_3" -> "zero_init_record#init_list#736416.8baaea62666796dc_2" ;

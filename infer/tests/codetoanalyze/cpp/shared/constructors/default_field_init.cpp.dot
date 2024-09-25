@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "Y#Y#{16769433076588921314}.5334d541bfbc1a71_5" -> "Y#Y#{16769433076588921314}.5334d541bfbc1a71_6" ;
-"Y#Y#{16769433076588921314}.5334d541bfbc1a71_6" [label="6:  Constructor Init \n   n$4=_fun_X::X(n$3.x2:X*) [line 19, column 7]\n " shape="box"]
+"Y#Y#{16769433076588921314}.5334d541bfbc1a71_6" [label="6:  Constructor Init \n   *n$3.x2.a:int=0 [line 19, column 7]\n  *n$3.x2.b:int=0 [line 19, column 7]\n  *n$3.x2.c:int=0 [line 19, column 7]\n  *n$3.x2.d:int=0 [line 19, column 7]\n  n$4=_fun_X::X(n$3.x2:X*) [line 19, column 7]\n " shape="box"]
 	
 
 	 "Y#Y#{16769433076588921314}.5334d541bfbc1a71_6" -> "Y#Y#{16769433076588921314}.5334d541bfbc1a71_3" ;

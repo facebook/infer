@@ -1735,8 +1735,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ~is_injected_destructor:false ~is_cpp_call_virtual None ~is_inherited_ctor:false
 
 
-  and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info ~is_inherited_ctor =
-    let context = trans_state.context in
+  and cxxConstructExpr_trans
+      ({context= {translation_unit_context= {source_file}; tenv} as context} as trans_state) si
+      params_stmt ei ({Clang_ast_t.xcei_requires_zero_initialization} as cxx_constr_info)
+      ~is_inherited_ctor =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
     let var_exp, class_type =
@@ -1756,8 +1758,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       mk_trans_result (var_exp, this_type) {empty_control with initd_exps= [var_exp]}
     in
     let tmp_res_trans = mk_trans_result (var_exp, class_type) empty_control in
-    let res_trans_callee =
+    let ({method_name} as res_trans_callee) =
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
+    in
+    let field_init_instrs =
+      if xcei_requires_zero_initialization then
+        let ( let* ) x f = Option.value_map x ~default:[] ~f in
+        let* constructor = method_name in
+        let* tname = Procname.get_class_type_name constructor in
+        let* {Struct.fields} = Tenv.lookup tenv tname in
+        let loc = CLocation.location_of_stmt_info source_file si in
+        List.filter_map fields ~f:(fun {Struct.name; typ} ->
+            (* Note: This supports primitive types only for now. *)
+            Option.map (Exp.zero_of_type typ) ~f:(fun zero_exp ->
+                let field_exp = Exp.Lfield (var_exp, name, this_type) in
+                Sil.Store {e1= field_exp; typ; e2= zero_exp; loc} ) )
+      else []
+    in
+    let res_trans_callee =
+      let instrs = field_init_instrs @ res_trans_callee.control.instrs in
+      {res_trans_callee with control= {res_trans_callee.control with instrs}}
     in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
