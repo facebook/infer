@@ -192,6 +192,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
                  recursive_callees ) ) ;
     let summary = Summary.OnDisk.store analysis_req summary in
     remove_active {proc_name= callee_pname; specialization} ;
+    if Option.is_some specialization then Stats.incr_summary_specializations () ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
     summary
