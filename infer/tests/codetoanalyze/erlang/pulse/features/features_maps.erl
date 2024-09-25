@@ -34,7 +34,9 @@
     test_to_list3_Ok/0,
     test_to_list4_Bad/0,
     fp_test_to_list5_Ok/0,
-    fn_test_to_list6_Bad/0
+    fn_test_to_list6_Bad/0,
+    test_record_unpack_Latent/1,
+    fpl_test_record_unpack_Ok/1
 ]).
 
 test_is_key_Ok() ->
@@ -125,7 +127,8 @@ test_key_checked_Ok(M) ->
                 true -> maps:get(key, M);
                 _ -> nope
             end;
-        true -> nope
+        true ->
+            nope
     end.
 
 test_update_exact1_Ok() ->
@@ -160,3 +163,28 @@ fp_test_to_list5_Ok() ->
 % Known limitation due to recency abstraction
 fn_test_to_list6_Bad() ->
     ?CRASH_IF_EQUAL([{1, 2}, {3, 4}], maps:to_list(#{1 => 2, 3 => 4})).
+
+%%% Tests for maps-as-record uses
+
+-type ab() :: #{a => atom(), b => integer()}.
+
+-spec test_record_unpack_Latent(ab()) -> ok.
+test_record_unpack_Latent(X) ->
+    #{a := A, b := B} = X,
+    case A == B of
+        % This should cause a latent issue, as it is certainly possible for A and B to be distinct
+        false -> ?EXPECTED_CRASH;
+        true -> ok
+    end.
+
+% The two latent issues have different causes:
+%  - not using the map spec
+%  - encoding of equality prunning confuses the prover
+-spec fpl_test_record_unpack_Ok(ab()) -> ok.
+fpl_test_record_unpack_Ok(X) ->
+    #{a := A, b := B} = X,
+    case A == B of
+        false -> ok;
+        % An atom cannot equal an integer
+        true -> ?UNEXPECTED_CRASH
+    end.
