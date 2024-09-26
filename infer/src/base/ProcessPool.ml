@@ -276,6 +276,32 @@ let send_work_to_idle_children pool =
     with NoMoreWork -> ()
 
 
+let process_update pool = function
+  | UpdateStatus (slot, t, status) ->
+      TaskBar.update_status pool.task_bar ~slot t status
+  | UpdateHeapWords (slot, heap_words) ->
+      TaskBar.update_heap_words pool.task_bar ~slot heap_words
+  | Crash slot ->
+      (* NOTE: the workers only send this message if {!Config.keep_going} is not [true] so if
+         we receive it we know we should fail hard *)
+      let {pid} = pool.slots.(slot) in
+      (* clean crash, give the child process a chance to cleanup *)
+      Unix.wait (`Pid pid) |> ignore ;
+      one_child_died pool ~slot "see backtrace above"
+  | Ready {worker= slot; heap_words; result} ->
+      ( match pool.children_states.(slot) with
+      | Initializing ->
+          ()
+      | Processing (work, finish) ->
+          finish () ;
+          pool.tasks.finished ~result work
+      | Idle ->
+          L.die InternalError "Received a Ready message from an idle worker@." ) ;
+      TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
+      TaskBar.update_status pool.task_bar ~slot (Some (Mtime_clock.now ())) ?heap_words "idle" ;
+      pool.children_states.(slot) <- Idle
+
+
 (** main dispatch function that responds to messages from worker processes and updates the taskbar
     periodically *)
 let process_updates pool buffer =
@@ -283,31 +309,7 @@ let process_updates pool buffer =
   has_dead_child pool
   |> Option.iter ~f:(fun (slot, status) ->
          one_child_died pool ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
-  wait_for_updates pool buffer
-  |> List.iter ~f:(function
-       | UpdateStatus (slot, t, status) ->
-           TaskBar.update_status pool.task_bar ~slot t status
-       | UpdateHeapWords (slot, heap_words) ->
-           TaskBar.update_heap_words pool.task_bar ~slot heap_words
-       | Crash slot ->
-           (* NOTE: the workers only send this message if {!Config.keep_going} is not [true] so if
-              we receive it we know we should fail hard *)
-           let {pid} = pool.slots.(slot) in
-           (* clean crash, give the child process a chance to cleanup *)
-           Unix.wait (`Pid pid) |> ignore ;
-           one_child_died pool ~slot "see backtrace above"
-       | Ready {worker= slot; heap_words; result} ->
-           ( match pool.children_states.(slot) with
-           | Initializing ->
-               ()
-           | Processing (work, finish) ->
-               finish () ;
-               pool.tasks.finished ~result work
-           | Idle ->
-               L.die InternalError "Received a Ready message from an idle worker@." ) ;
-           TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
-           TaskBar.update_status pool.task_bar ~slot (Some (Mtime_clock.now ())) ?heap_words "idle" ;
-           pool.children_states.(slot) <- Idle ) ;
+  wait_for_updates pool buffer |> List.iter ~f:(fun update -> process_update pool update) ;
   if not (pool.tasks.is_empty ()) then send_work_to_idle_children pool
 
 
