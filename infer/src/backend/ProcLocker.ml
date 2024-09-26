@@ -37,7 +37,11 @@ let unlock pname =
 
 
 let try_taking_lock filename =
-  Unix.openfile ~mode:[O_CREAT; O_RDONLY; O_EXCL] filename |> Unix.close
+  (* Writing the contents is not atomic but at least we prevent two processes from writing at the
+     same time. This causes complications when reading out the contents as one could read an empty
+     file. We assume it's not possible to read a partially-written PID given the small size. YOLO. *)
+  Utils.with_file_out ~fail_if_exists:true filename ~f:(fun out_c ->
+      Out_channel.output_binary_int out_c (Pid.to_int (ProcessPoolState.get_pid ())) )
 
 
 let try_lock pname =
@@ -45,7 +49,7 @@ let try_lock pname =
       try
         try_taking_lock (lock_of_procname pname) ;
         true
-      with Unix.Unix_error ((EEXIST | EACCES), _, _) -> false )
+      with Unix.Unix_error ((EEXIST | EACCES), _, _) | Sys_error _ -> false )
 
 
 let is_locked ~proc_filename =

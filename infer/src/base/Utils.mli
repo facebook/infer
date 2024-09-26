@@ -68,7 +68,7 @@ val read_json_file : string -> (Yojson.Safe.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
-val with_file_out : ?append:bool -> string -> f:(Out_channel.t -> 'a) -> 'a
+val with_file_out : ?append:bool -> ?fail_if_exists:bool -> string -> f:(Out_channel.t -> 'a) -> 'a
 
 val with_intermediate_temp_file_out : ?retry:bool -> string -> f:(Out_channel.t -> 'a) -> 'a
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid
