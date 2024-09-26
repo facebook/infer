@@ -227,16 +227,6 @@ let child_is_idle = function Idle -> true | _ -> false
 
 let all_children_idle pool = Array.for_all pool.children_states ~f:child_is_idle
 
-let send_work_to_child pool slot =
-  assert (child_is_idle pool.children_states.(slot)) ;
-  let child_pid = pool.slots.(slot).pid in
-  pool.tasks.next {child_slot= slot; child_pid}
-  |> Option.iter ~f:(fun (x, finish) ->
-         let {down_pipe} = pool.slots.(slot) in
-         pool.children_states.(slot) <- Processing (x, finish) ;
-         marshal_to_pipe down_pipe (Do x) )
-
-
 (* this should not be called in any other arch than Linux *)
 let should_throttle =
   let currently_throttled = ref false in
@@ -261,9 +251,29 @@ let should_throttle =
     !currently_throttled
 
 
-let send_work_to_child pool slot =
+(** try to schedule more work if there are idle workers, stop as soon as there is no more work *)
+let send_work_to_idle_children pool =
+  let exception NoMoreWork in
+  let send_work_to_child pool slot =
+    let child_pid = pool.slots.(slot).pid in
+    match pool.tasks.next {child_slot= slot; child_pid} with
+    | None ->
+        raise_notrace NoMoreWork
+    | Some (x, finish) ->
+        let {down_pipe} = pool.slots.(slot) in
+        pool.children_states.(slot) <- Processing (x, finish) ;
+        marshal_to_pipe down_pipe (Do x)
+  in
   let throttled = Option.exists Config.oom_threshold ~f:should_throttle in
-  if not throttled then send_work_to_child pool slot
+  if not throttled then
+    try
+      Array.iteri pool.children_states ~f:(fun slot state ->
+          match state with
+          | Idle ->
+              send_work_to_child pool slot
+          | Initializing | Processing _ ->
+              () )
+    with NoMoreWork -> ()
 
 
 (** main dispatch function that responds to messages from worker processes and updates the taskbar
@@ -298,10 +308,7 @@ let process_updates pool buffer =
            TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
            TaskBar.update_status pool.task_bar ~slot (Some (Mtime_clock.now ())) ?heap_words "idle" ;
            pool.children_states.(slot) <- Idle ) ;
-  (* try to schedule more work if there are idle workers *)
-  if not (pool.tasks.is_empty ()) then
-    Array.iteri pool.children_states ~f:(fun slot state ->
-        match state with Idle -> send_work_to_child pool slot | Initializing | Processing _ -> () )
+  if not (pool.tasks.is_empty ()) then send_work_to_idle_children pool
 
 
 type 'a final_worker_message = Finished of int * 'a option | FinalCrash of int
