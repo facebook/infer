@@ -10,8 +10,7 @@ open! IStd
 val setup : unit -> unit
 (** This should be called once before trying to lock Anything. *)
 
-val try_lock : Procname.t -> bool
-(** true = the lock belongs to the calling process. false = the lock belongs to a different worker *)
+val try_lock : Procname.t -> [`AlreadyLockedByUs | `LockedByAnotherProcess | `LockAcquired]
 
 val unlock : Procname.t -> unit
 (** This will work as a cleanup function because after calling unlock all the workers that need an

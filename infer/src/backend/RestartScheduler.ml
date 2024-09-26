@@ -92,16 +92,6 @@ type locked_proc = {start: ExecutionDuration.counter; mutable callees_useful: Ex
 
 let locked_procs = Stack.create ()
 
-let lock_exn pname =
-  if ProcLocker.try_lock pname then
-    Stack.push locked_procs
-      {start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero}
-  else
-    raise
-      (RestartSchedulerException.ProcnameAlreadyLocked
-         {dependency_filename= Procname.to_filename pname} )
-
-
 let unlock ~after_exn pname =
   match Stack.pop locked_procs with
   | None ->
@@ -126,13 +116,22 @@ let with_lock ~f pname =
       f ()
   | Restart when Int.equal Config.jobs 1 ->
       f ()
-  | Restart ->
-      lock_exn pname ;
-      let res =
-        try f () with exn -> IExn.reraise_after ~f:(fun () -> unlock ~after_exn:true pname) exn
-      in
-      unlock ~after_exn:false pname ;
-      res
+  | Restart -> (
+    match ProcLocker.try_lock pname with
+    | `AlreadyLockedByUs ->
+        f ()
+    | `LockAcquired ->
+        Stack.push locked_procs
+          {start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero} ;
+        let res =
+          try f () with exn -> IExn.reraise_after ~f:(fun () -> unlock ~after_exn:true pname) exn
+        in
+        unlock ~after_exn:false pname ;
+        res
+    | `LockedByAnotherProcess ->
+        raise
+          (RestartSchedulerException.ProcnameAlreadyLocked
+             {dependency_filename= Procname.to_filename pname} ) )
 
 
 let finish result task = match result with None | Some Ok -> None | Some (RaceOn _) -> Some task

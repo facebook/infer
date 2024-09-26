@@ -44,12 +44,28 @@ let try_taking_lock filename =
       Out_channel.output_binary_int out_c (Pid.to_int (ProcessPoolState.get_pid ())) )
 
 
+let read_lock_value filename = Utils.with_file_in filename ~f:In_channel.input_binary_int
+
+let rec do_try_lock filename =
+  try
+    try_taking_lock filename ;
+    (* the lock file did not exist and we were the first to create it, i.e. lock it *)
+    `LockAcquired
+  with Unix.Unix_error ((EEXIST | EACCES), _, _) | Sys_error _ -> (
+    (* the lock file already existed; now to figure which process locked it in case it was us *)
+    match read_lock_value filename with
+    | Some owner_pid ->
+        if ProcessPoolState.get_pid () |> Pid.to_int |> Int.equal owner_pid then `AlreadyLockedByUs
+        else `LockedByAnotherProcess
+    | None | (exception (Sys_error _ | Unix.Unix_error ((ENOENT | EINVAL), _, _) | End_of_file)) ->
+        (* the lock file went away, opportunistically try taking the lock for ourselves again *)
+        do_try_lock filename )
+
+
 let try_lock pname =
   record_time_of ~log_f:log_lock_time ~f:(fun () ->
-      try
-        try_taking_lock (lock_of_procname pname) ;
-        true
-      with Unix.Unix_error ((EEXIST | EACCES), _, _) | Sys_error _ -> false )
+      let filename = lock_of_procname pname in
+      do_try_lock filename )
 
 
 let is_locked ~proc_filename =

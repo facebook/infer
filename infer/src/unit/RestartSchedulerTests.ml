@@ -19,8 +19,8 @@ let tests_wrapper _test_ctxt =
     setup () ;
     (* When tries to lock a Procname that was already locked it fails *)
     try_lock a_pname |> ignore ;
-    assert_bool "Should not be able to lock a Procname that's already locked."
-      (not (try_lock a_pname)) ;
+    assert_equal ~msg:"Should not be able to lock a Procname that's already locked."
+      (try_lock a_pname) `AlreadyLockedByUs ;
     unlock a_pname ;
     (* When successives locks/unlocks are performed in the right order they succeed *)
     try_lock a_pname |> ignore ;
