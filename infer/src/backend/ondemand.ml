@@ -350,6 +350,31 @@ let is_in_block_list =
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name) )
 
 
+let is_summary_already_computed ~lazy_payloads (analysis_req : AnalysisRequest.t) callee_pname
+    specialization =
+  match (Summary.OnDisk.get ~lazy_payloads analysis_req callee_pname, specialization) with
+  | Some ({is_complete_result= true} as summary), None ->
+      `SummaryReady summary
+  | Some ({payloads; is_complete_result= false} as summary), None -> (
+    match analysis_req with
+    | One payload_id when Payloads.has_payload payload_id payloads ->
+        `SummaryReady summary
+    | All | One _ | CheckerWithoutPayload _ ->
+        `ComputeDefaultSummary )
+  | None, Some specialization' ->
+      `ComputeDefaultSummaryThenSpecialize specialization'
+  | Some summary, Some specialization ->
+      if Callbacks.is_specialized_for specialization summary then
+        (* the current summary is specialized enough for this request *)
+        `SummaryReady summary
+      else if procedure_is_defined callee_pname then
+        (* the current summary is not suitable for this specialization request *)
+        `AddNewSpecialization (summary, specialization)
+      else (* can we even get there? *) `UnknownProcedure
+  | None, None ->
+      if procedure_is_defined callee_pname then `ComputeDefaultSummary else `UnknownProcedure
+
+
 let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
     ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
   let cycle_detected =
@@ -386,39 +411,27 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
                   None ) )
             ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
     in
-    let analyze_specialization_none () =
-      let res = analyze_callee_aux None in
-      Option.iter res ~f:(set_complete_result analysis_req) ;
-      analysis_result_of_option res
-    in
-    match (Summary.OnDisk.get ~lazy_payloads analysis_req callee_pname, specialization) with
-    | Some ({is_complete_result= true} as summary), None ->
+    match is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization with
+    | `SummaryReady summary ->
         Ok summary
-    | Some ({payloads; is_complete_result= false} as summary), None -> (
-      match analysis_req with
-      | One payload_id when Payloads.has_payload payload_id payloads ->
-          Ok summary
-      | All | One _ | CheckerWithoutPayload _ ->
-          analyze_specialization_none () )
-    | None, Some specialization' -> (
-      match analyze_specialization_none () with
-      | Ok _ ->
-          analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
-            ~from_file_analysis callee_pname
-      | _ ->
-          L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp callee_pname
-            Specialization.pp specialization' )
-    | Some summary, Some specialization ->
-        if Callbacks.is_specialized_for specialization summary then
-          (* the current summary is specialized enough for this request *)
-          Ok summary
-        else if procedure_is_defined callee_pname then
-          (* the current summary is not suitable for this specialization request *)
-          analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
-        else (* can we even get there? *) Error UnknownProcedure
-    | None, None ->
-        if procedure_is_defined callee_pname then analyze_specialization_none ()
-        else Error UnknownProcedure
+    | (`ComputeDefaultSummary | `ComputeDefaultSummaryThenSpecialize _) as summary_status -> (
+        let default_summary = analyze_callee_aux None in
+        Option.iter default_summary ~f:(set_complete_result analysis_req) ;
+        match summary_status with
+        | `ComputeDefaultSummary ->
+            analysis_result_of_option default_summary
+        | `ComputeDefaultSummaryThenSpecialize specialization' -> (
+          match default_summary with
+          | None ->
+              L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp
+                callee_pname Specialization.pp specialization'
+          | Some _summary ->
+              analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
+                ~from_file_analysis callee_pname ) )
+    | `AddNewSpecialization (summary, specialization) ->
+        analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
+    | `UnknownProcedure ->
+        Error UnknownProcedure
 
 
 let analyze_proc_name exe_env analysis_req ?specialization ~caller_summary callee_pname =
