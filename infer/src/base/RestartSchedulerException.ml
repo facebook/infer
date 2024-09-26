@@ -8,6 +8,6 @@ open! IStd
 
 (** for the Restart scheduler: raise when a worker tries to analyze a procedure already being
     analyzed by another process *)
-exception ProcnameAlreadyLocked of {dependency_filename: string}
+exception ProcnameAlreadyLocked of {dependency_filenames: string list}
 
 let is_not_restart_exception = function ProcnameAlreadyLocked _ -> false | _ -> true

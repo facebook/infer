@@ -62,8 +62,8 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
       f () ;
       Some Ok
     with
-    | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
-        Some (RaceOn {dependency_filename})
+    | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filenames} ->
+        Some (RaceOn {dependency_filenames})
     | MissingDependencyException.MissingDependencyException ->
         Some Ok
   in

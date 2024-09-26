@@ -8,7 +8,7 @@ open! IStd
 
 (** for the Restart scheduler: raise when a worker tries to analyze a procedure already being
     analyzed by another process *)
-exception ProcnameAlreadyLocked of {dependency_filename: string}
+exception ProcnameAlreadyLocked of {dependency_filenames: string list}
 
 val is_not_restart_exception : exn -> bool
 (** check if the exception passed is the one defined above *)

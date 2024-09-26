@@ -12,6 +12,7 @@ type target =
 
 type analysis_result =
   | Ok  (** Analysis finished normally. *)
-  | RaceOn of {dependency_filename: string}
+  | RaceOn of {dependency_filenames: string list}
       (** Analysis stopped when trying to access the summary of a callee and that callee is being
-          analyzed by another worker. [dependency_filename] is the path to the callee's lock file. *)
+          analyzed by another worker. [dependency_filenames] are in the path to the callee's lock
+          file. *)

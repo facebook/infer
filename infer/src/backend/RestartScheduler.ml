@@ -15,7 +15,7 @@ let read_procs_to_analyze () =
       In_channel.read_all index |> Parsexp.Single.parse_string_exn |> NodeSet.t_of_sexp )
 
 
-type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_filename: string}
+type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_filenames: string list}
 
 let restart_count = ref 0
 
@@ -31,16 +31,19 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
         if is_empty () then (
           ScubaLogging.log_count ~label:"analysis_restarts" ~value:!restart_count ;
           L.debug Analysis Quiet "restart count: %d@\n" !restart_count )
-    | Some (RaceOn {dependency_filename}) ->
+    | Some (RaceOn {dependency_filenames}) ->
         incr restart_count ;
-        Queue.enqueue blocked {target; dependency_filename}
+        Queue.enqueue blocked {target; dependency_filenames}
   in
   let rec check_for_readiness n =
     (* check the next [n] items in [blocked] for whether their dependencies are satisfied and
        they can be moved to the [ready] queue *)
     if n > 0 then (
       let w = Queue.dequeue_exn blocked in
-      if ProcLocker.is_locked ~proc_filename:w.dependency_filename then Queue.enqueue blocked w
+      if
+        List.exists w.dependency_filenames ~f:(fun proc_filename ->
+            ProcLocker.is_locked ~proc_filename )
+      then Queue.enqueue blocked w
       else Queue.enqueue ready w.target ;
       check_for_readiness (n - 1) )
   in
@@ -110,7 +113,7 @@ let unlock ~after_exn pname =
       ProcLocker.unlock pname
 
 
-let with_lock ~f pname =
+let with_lock ~get_actives ~f pname =
   match Config.scheduler with
   | File | SyntacticCallGraph ->
       f ()
@@ -127,9 +130,13 @@ let with_lock ~f pname =
         unlock ~after_exn:false pname ;
         res
     | `LockedByAnotherProcess ->
-        raise
-          (RestartSchedulerException.ProcnameAlreadyLocked
-             {dependency_filename= Procname.to_filename pname} ) )
+        let dependency_filenames =
+          Procname.to_filename pname
+          :: ( get_actives ()
+             |> List.map ~f:(fun {SpecializedProcname.proc_name} -> Procname.to_filename proc_name)
+             )
+        in
+        raise (RestartSchedulerException.ProcnameAlreadyLocked {dependency_filenames}) )
 
 
 let finish result task = match result with None | Some Ok -> None | Some (RaceOn _) -> Some task

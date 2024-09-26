@@ -34,6 +34,8 @@ module ActiveProcedures : sig
   val remove : active -> unit
 
   val clear : unit -> unit
+
+  val get_all : unit -> active list
 end = struct
   type active = SpecializedProcname.t
 
@@ -56,6 +58,8 @@ end = struct
   let remove analysis_target = AnalysisTargets.remove analysis_target currently_analyzed
 
   let clear () = AnalysisTargets.clear currently_analyzed
+
+  let get_all () = AnalysisTargets.seq currently_analyzed |> Seq.fold_left (Fn.flip List.cons) []
 end
 
 (** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
@@ -366,7 +370,7 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
       error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
       Procdesc.load callee_pname
       >>= fun callee_pdesc ->
-      RestartScheduler.with_lock callee_pname ~f:(fun () ->
+      RestartScheduler.with_lock ~get_actives:ActiveProcedures.get_all callee_pname ~f:(fun () ->
           let previous_global_state = AnalysisGlobalState.save () in
           protect
             ~f:(fun () ->
