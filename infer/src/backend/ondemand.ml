@@ -23,7 +23,8 @@ let max_nesting_to_print = 8
 (** keep track of the "call stack" of procedures we are currently analyzing; used to break mutual
     recursion cycles in a naive way: if we are already analyzing a procedure and another one (whose
     summary we transitively need to analyze the original procedure) asks for its summary, return no
-    summary instead of triggering a recursive analysis of the original procedure *)
+    summary instead of triggering a recursive analysis of the original procedure (unless it is a
+    different specialization of the same procedure) *)
 module ActiveProcedures : sig
   type active = SpecializedProcname.t
 
@@ -40,14 +41,7 @@ end = struct
   type active = SpecializedProcname.t
 
   (* can be switched to a [HashQueue] if we ever need to keep track of the order as well *)
-  module AnalysisTargets = HashSet.Make (struct
-    (* temporary: record [SpecializedProcname.t] but only compare by their proc names, ignoring specialization *)
-    type t = SpecializedProcname.t = {proc_name: Procname.t; specialization: Specialization.t option}
-
-    let equal {proc_name= proc_name1} {proc_name= proc_name2} = Procname.equal proc_name1 proc_name2
-
-    let hash {proc_name} = Procname.hash proc_name
-  end)
+  module AnalysisTargets = HashSet.Make (SpecializedProcname)
 
   let currently_analyzed = AnalysisTargets.create 0
 
