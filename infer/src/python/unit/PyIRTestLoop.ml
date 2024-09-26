@@ -23,20 +23,23 @@ for x in range(10):
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[range](PYCInt (10))
-          n1 <- $GetIter(n0)
-          jmp b1(n1)
+          n0 <- TOPLEVEL[range]
+          n1 <- n0(PYCInt (10))
+          n2 <- $GetIter(n1)
+          jmp b1(n2)
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n3)
-          if n4 then jmp b2 else jmp b3
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n4)
+          if n5 then jmp b2 else jmp b3
 
         b2:
-          n5 <- $IterData(n3)
-          TOPLEVEL[x] <- n5
-          n6 <- TOPLEVEL[print](TOPLEVEL[x])
-          jmp b1(n2)
+          n6 <- $IterData(n4)
+          TOPLEVEL[x] <- n6
+          n7 <- TOPLEVEL[print]
+          n8 <- TOPLEVEL[x]
+          n9 <- n7(n8)
+          jmp b1(n3)
 
         b3:
           return PYCNone |}]
@@ -66,50 +69,55 @@ def f(x, y, l, bar, toto):
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[l])
-          jmp b1(n0)
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0)
+          jmp b1(n1)
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2 else jmp b3
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          n4 <- $IterData(n2)
-          LOCAL[x] <- n4
-          n5 <- LOCAL[bar]()
-          n6 <- $LoadMethod(n5, __enter__)()
-          n9 <- LOCAL[toto]()
-          n10 <- $LoadMethod(n9, __enter__)()
-          LOCAL[obj] <- n10
-          if LOCAL[y] then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
-          jmp b7(CM(n9).__exit__, CM(n5).__exit__, n1)
+          n5 <- $IterData(n3)
+          LOCAL[x] <- n5
+          n6 <- LOCAL[bar]
+          n7 <- n6()
+          n8 <- $LoadMethod(n7, __enter__)()
+          n11 <- LOCAL[toto]
+          n12 <- n11()
+          n13 <- $LoadMethod(n12, __enter__)()
+          LOCAL[obj] <- n13
+          n17 <- LOCAL[y]
+          if n17 then jmp b6(CM(n12).__exit__, CM(n7).__exit__, n2) else
+          jmp b7(CM(n12).__exit__, CM(n7).__exit__, n2)
 
         b3:
           return PYCNone
 
         b4:
-          n35 <- n8(PYCNone, PYCNone, PYCNone)
-          jmp b1(n7)
+          n40 <- n10(PYCNone, PYCNone, PYCNone)
+          jmp b1(n9)
 
         b5:
-          n32 <- n13(PYCNone, PYCNone, PYCNone)
-          jmp b4(n12, n11)
+          n37 <- n16(PYCNone, PYCNone, PYCNone)
+          jmp b4(n15, n14)
 
         b6:
-          jmp b8(n16, n15, n14)
+          jmp b8(n20, n19, n18)
 
         b7:
-          n28 <- GLOBAL[print](PYCString ("nop"))
-          jmp b5(n19, n18, n17)
+          n32 <- GLOBAL[print]
+          n33 <- n32(PYCString ("nop"))
+          jmp b5(n23, n22, n21)
 
         b8:
-          n23 <- n22(PYCNone, PYCNone, PYCNone)
-          jmp b9(n21, n20)
+          n27 <- n26(PYCNone, PYCNone, PYCNone)
+          jmp b9(n25, n24)
 
         b9:
-          n26 <- n25(PYCNone, PYCNone, PYCNone)
-          jmp b1(n24) |}]
+          n30 <- n29(PYCNone, PYCNone, PYCNone)
+          jmp b1(n28) |}]
 
 
 let%expect_test _ =
@@ -134,30 +142,37 @@ def f(match, it, n):
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[match])
-          jmp b1(n0)
+          n0 <- LOCAL[match]
+          n1 <- $GetIter(n0)
+          jmp b1(n1)
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2 else jmp b3
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          n4 <- $IterData(n2)
-          LOCAL[item] <- n4
-          n5 <- $Compare.eq(LOCAL[it][LOCAL[n]], LOCAL[item])
-          if $Not(n5) then jmp b4(n1) else jmp b5(n1)
+          n5 <- $IterData(n3)
+          LOCAL[item] <- n5
+          n6 <- LOCAL[it]
+          n7 <- LOCAL[n]
+          n8 <- n6[n7]
+          n9 <- LOCAL[item]
+          n10 <- $Compare.eq(n8, n9)
+          if $Not(n10) then jmp b4(n2) else jmp b5(n2)
 
         b3:
           return PYCNone
 
         b4:
-          throw GLOBAL[AssertionError]
+          n13 <- GLOBAL[AssertionError]
+          throw n13
 
         b5:
-          n8 <- $Inplace.Add(LOCAL[n], PYCInt (1))
-          LOCAL[n] <- n8
-          jmp b1(n7) |}]
+          n14 <- LOCAL[n]
+          n15 <- $Inplace.Add(n14, PYCInt (1))
+          LOCAL[n] <- n15
+          jmp b1(n12) |}]
 
 
 let%expect_test _ =
@@ -182,18 +197,20 @@ def f(foo):
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[foo])
-          jmp b1(n0)
+          n0 <- LOCAL[foo]
+          n1 <- $GetIter(n0)
+          jmp b1(n1)
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2 else jmp b3
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          n4 <- $IterData(n2)
-          LOCAL[path] <- n4
-          if LOCAL[path] then jmp b4(n1) else jmp b1(n1)
+          n5 <- $IterData(n3)
+          LOCAL[path] <- n5
+          n6 <- LOCAL[path]
+          if n6 then jmp b4(n2) else jmp b1(n2)
 
         b3:
           return PYCNone

@@ -32,21 +32,25 @@ def f(**kwargs):
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(LOCAL[kwargs], items), )
-          n1 <- $GetIter(n0)
-          jmp b1(n1)
+          n0 <- LOCAL[kwargs]
+          n1 <- $CallMethod($LoadMethod(n0, items), )
+          n2 <- $GetIter(n1)
+          jmp b1(n2)
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n3)
-          if n4 then jmp b2 else jmp b3
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n4)
+          if n5 then jmp b2 else jmp b3
 
         b2:
-          n5 <- $IterData(n3)
-          LOCAL[k] <- n5[PYCInt (0)]
-          LOCAL[v] <- n5[PYCInt (1)]
-          n6 <- GLOBAL[print](LOCAL[k], LOCAL[v])
-          jmp b1(n2)
+          n6 <- $IterData(n4)
+          LOCAL[k] <- n6[PYCInt (0)]
+          LOCAL[v] <- n6[PYCInt (1)]
+          n7 <- GLOBAL[print]
+          n8 <- LOCAL[k]
+          n9 <- LOCAL[v]
+          n10 <- n7(n8, n9)
+          jmp b1(n3)
 
         b3:
           return PYCNone |}]
@@ -88,32 +92,45 @@ start()
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
           TOPLEVEL[start] <- $FuncObj(start, dummy.start, {})
-          n0 <- TOPLEVEL[start]()
+          n0 <- TOPLEVEL[start]
+          n1 <- n0()
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- GLOBAL[print](PYCString ("dummy = "), LOCAL[dummy])
-          n1 <- GLOBAL[print](PYCString ("dummy2= "), LOCAL[dummy2])
-          n2 <- GLOBAL[print](PYCString ("dummy3= "), LOCAL[dummy3])
-          n3 <- GLOBAL[print](PYCString ("dummy4= "), LOCAL[dummy4])
-          n4 <- $CallMethod($LoadMethod(LOCAL[dummyA], items), )
-          n5 <- $GetIter(n4)
-          jmp b1(n5)
+          n0 <- GLOBAL[print]
+          n1 <- LOCAL[dummy]
+          n2 <- n0(PYCString ("dummy = "), n1)
+          n3 <- GLOBAL[print]
+          n4 <- LOCAL[dummy2]
+          n5 <- n3(PYCString ("dummy2= "), n4)
+          n6 <- GLOBAL[print]
+          n7 <- LOCAL[dummy3]
+          n8 <- n6(PYCString ("dummy3= "), n7)
+          n9 <- GLOBAL[print]
+          n10 <- LOCAL[dummy4]
+          n11 <- n9(PYCString ("dummy4= "), n10)
+          n12 <- LOCAL[dummyA]
+          n13 <- $CallMethod($LoadMethod(n12, items), )
+          n14 <- $GetIter(n13)
+          jmp b1(n14)
 
         b1:
-          n7 <- $NextIter(n6)
-          n8 <- $HasNextIter(n7)
-          if n8 then jmp b2 else jmp b3
+          n16 <- $NextIter(n15)
+          n17 <- $HasNextIter(n16)
+          if n17 then jmp b2 else jmp b3
 
         b2:
-          n9 <- $IterData(n7)
-          LOCAL[k] <- n9[PYCInt (0)]
-          LOCAL[v] <- n9[PYCInt (1)]
-          n10 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), LOCAL[k], LOCAL[v])
-          n11 <- GLOBAL[print](n10)
-          jmp b1(n6)
+          n18 <- $IterData(n16)
+          LOCAL[k] <- n18[PYCInt (0)]
+          LOCAL[v] <- n18[PYCInt (1)]
+          n19 <- GLOBAL[print]
+          n20 <- LOCAL[k]
+          n21 <- LOCAL[v]
+          n22 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), n20, n21)
+          n23 <- n19(n22)
+          jmp b1(n15)
 
         b3:
           return PYCNone
@@ -121,22 +138,35 @@ start()
 
       dummy.g:
         b0:
-          n0 <- GLOBAL[print](PYCString ("dummy = "), LOCAL[dummy])
-          n1 <- GLOBAL[print](PYCString ("dummy2= "), LOCAL[dummy2])
-          n2 <- GLOBAL[print](PYCString ("dummy3= "), LOCAL[dummy3])
-          n3 <- GLOBAL[print](PYCString ("dummy4= "), LOCAL[dummy4])
+          n0 <- GLOBAL[print]
+          n1 <- LOCAL[dummy]
+          n2 <- n0(PYCString ("dummy = "), n1)
+          n3 <- GLOBAL[print]
+          n4 <- LOCAL[dummy2]
+          n5 <- n3(PYCString ("dummy2= "), n4)
+          n6 <- GLOBAL[print]
+          n7 <- LOCAL[dummy3]
+          n8 <- n6(PYCString ("dummy3= "), n7)
+          n9 <- GLOBAL[print]
+          n10 <- LOCAL[dummy4]
+          n11 <- n9(PYCString ("dummy4= "), n10)
           return PYCNone
 
 
       dummy.start:
         b0:
           LOCAL[x] <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
-          n0 <- GLOBAL[f]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(LOCAL[x]))), $PackedMap({|
-                          PYCString ("test"), PYCInt (42)|})) !packed
-          n1 <- GLOBAL[f]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
-                                           PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
-                          PYCString ("test"), PYCInt (42)|})) !packed
-          n2 <- GLOBAL[g]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(LOCAL[x])))) !packed
+          n0 <- GLOBAL[f]
+          n1 <- LOCAL[x]
+          n2 <- n0($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(n1))), $PackedMap({|
+                   PYCString ("test"), PYCInt (42)|})) !packed
+          n3 <- GLOBAL[f]
+          n4 <- n3($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
+                                    PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
+                   PYCString ("test"), PYCInt (42)|})) !packed
+          n5 <- GLOBAL[g]
+          n6 <- LOCAL[x]
+          n7 <- n5($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(n6)))) !packed
           return PYCNone |xxx}]
 
 
@@ -168,13 +198,38 @@ def f(foo, a, b, c):
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(LOCAL[foo], f), LOCAL[a])
-          n1 <- LOCAL[foo].f($Packed(LOCAL[b])) !packed
-          n2 <- LOCAL[foo].f($Packed((packed)($Packed((LOCAL[a])), $Packed(LOCAL[b])))) !packed
-          n3 <- LOCAL[foo].f($Packed(()), $PackedMap(LOCAL[c])) !packed
-          n4 <- LOCAL[foo].f($Packed(LOCAL[b]), $PackedMap(LOCAL[c])) !packed
-          n5 <- LOCAL[foo].f($Packed((LOCAL[a])), $PackedMap(LOCAL[c])) !packed
-          n6 <- LOCAL[foo].f($Packed((packed)($Packed((LOCAL[a])), $Packed(LOCAL[b]))), $PackedMap(LOCAL[c])) !packed
+          n0 <- LOCAL[foo]
+          n1 <- LOCAL[a]
+          n2 <- $CallMethod($LoadMethod(n0, f), n1)
+          n3 <- LOCAL[foo]
+          n4 <- n3.f
+          n5 <- LOCAL[b]
+          n6 <- n4($Packed(n5)) !packed
+          n7 <- LOCAL[foo]
+          n8 <- n7.f
+          n9 <- LOCAL[a]
+          n10 <- LOCAL[b]
+          n11 <- n8($Packed((packed)($Packed((n9)), $Packed(n10)))) !packed
+          n12 <- LOCAL[foo]
+          n13 <- n12.f
+          n14 <- LOCAL[c]
+          n15 <- n13($Packed(()), $PackedMap(n14)) !packed
+          n16 <- LOCAL[foo]
+          n17 <- n16.f
+          n18 <- LOCAL[b]
+          n19 <- LOCAL[c]
+          n20 <- n17($Packed(n18), $PackedMap(n19)) !packed
+          n21 <- LOCAL[foo]
+          n22 <- n21.f
+          n23 <- LOCAL[a]
+          n24 <- LOCAL[c]
+          n25 <- n22($Packed((n23)), $PackedMap(n24)) !packed
+          n26 <- LOCAL[foo]
+          n27 <- n26.f
+          n28 <- LOCAL[a]
+          n29 <- LOCAL[b]
+          n30 <- LOCAL[c]
+          n31 <- n27($Packed((packed)($Packed((n28)), $Packed(n29))), $PackedMap(n30)) !packed
           return PYCNone |}]
 
 
@@ -204,34 +259,45 @@ f(**d1, x=42)
         b0:
           TOPLEVEL[d0] <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
           TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-          TOPLEVEL[x] <- (packed){|$Packed(TOPLEVEL[d0]), $Packed(TOPLEVEL[d1])|}
-          n0 <- TOPLEVEL[print](TOPLEVEL[x])
+          n0 <- TOPLEVEL[d0]
+          n1 <- TOPLEVEL[d1]
+          TOPLEVEL[x] <- (packed){|$Packed(n0), $Packed(n1)|}
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[x]
+          n4 <- n2(n3)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-          n1 <- TOPLEVEL[f]($Packed(()), $PackedMap((packed){|$Packed(TOPLEVEL[d1]), $Packed({|
-                                                              PYCString ("x"),
-                                                              PYCInt (42)|})|})) !packed
+          n5 <- TOPLEVEL[f]
+          n6 <- TOPLEVEL[d1]
+          n7 <- n5($Packed(()), $PackedMap((packed){|$Packed(n6), $Packed({|
+                                                     PYCString ("x"), PYCInt (42)|})|})) !packed
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- GLOBAL[print](LOCAL[x])
-          n1 <- $CallMethod($LoadMethod(LOCAL[kwargs], items), )
-          n2 <- $GetIter(n1)
-          jmp b1(n2)
+          n0 <- GLOBAL[print]
+          n1 <- LOCAL[x]
+          n2 <- n0(n1)
+          n3 <- LOCAL[kwargs]
+          n4 <- $CallMethod($LoadMethod(n3, items), )
+          n5 <- $GetIter(n4)
+          jmp b1(n5)
 
         b1:
-          n4 <- $NextIter(n3)
-          n5 <- $HasNextIter(n4)
-          if n5 then jmp b2 else jmp b3
+          n7 <- $NextIter(n6)
+          n8 <- $HasNextIter(n7)
+          if n8 then jmp b2 else jmp b3
 
         b2:
-          n6 <- $IterData(n4)
-          LOCAL[k] <- n6[PYCInt (0)]
-          LOCAL[v] <- n6[PYCInt (1)]
-          n7 <- GLOBAL[print](LOCAL[k], LOCAL[v])
-          jmp b1(n3)
+          n9 <- $IterData(n7)
+          LOCAL[k] <- n9[PYCInt (0)]
+          LOCAL[v] <- n9[PYCInt (1)]
+          n10 <- GLOBAL[print]
+          n11 <- LOCAL[k]
+          n12 <- LOCAL[v]
+          n13 <- n10(n11, n12)
+          jmp b1(n6)
 
         b3:
           return PYCNone |xxx}]
@@ -255,19 +321,23 @@ print(lst) # [2, 3, 4, 5, 6]
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]()
-          n1 <- $UnpackEx(PYCInt (2), PYCInt (3), n0)
-          TOPLEVEL[a] <- n1[PYCInt (0)]
-          TOPLEVEL[b] <- n1[PYCInt (1)]
-          TOPLEVEL[lst] <- n1[PYCInt (2)]
-          TOPLEVEL[x] <- n1[PYCInt (3)]
-          TOPLEVEL[y] <- n1[PYCInt (4)]
-          TOPLEVEL[z] <- n1[PYCInt (5)]
-          n2 <- TOPLEVEL[print](TOPLEVEL[lst])
+          n0 <- TOPLEVEL[f]
+          n1 <- n0()
+          n2 <- $UnpackEx(PYCInt (2), PYCInt (3), n1)
+          TOPLEVEL[a] <- n2[PYCInt (0)]
+          TOPLEVEL[b] <- n2[PYCInt (1)]
+          TOPLEVEL[lst] <- n2[PYCInt (2)]
+          TOPLEVEL[x] <- n2[PYCInt (3)]
+          TOPLEVEL[y] <- n2[PYCInt (4)]
+          TOPLEVEL[z] <- n2[PYCInt (5)]
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[lst]
+          n5 <- n3(n4)
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- GLOBAL[range](PYCInt (10))
-          return n0 |}]
+          n0 <- GLOBAL[range]
+          n1 <- n0(PYCInt (10))
+          return n1 |}]

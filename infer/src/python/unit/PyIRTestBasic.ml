@@ -37,7 +37,9 @@ print(x)
       toplevel:
         b0:
           TOPLEVEL[x] <- PYCInt (42)
-          n0 <- TOPLEVEL[print](TOPLEVEL[x])
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[x]
+          n2 <- n0(n1)
           return PYCNone |}]
 
 
@@ -56,8 +58,11 @@ print(x + y)
         b0:
           TOPLEVEL[x] <- PYCInt (42)
           TOPLEVEL[y] <- PYCInt (10)
-          n0 <- $Binary.Add(TOPLEVEL[x], TOPLEVEL[y])
-          n1 <- TOPLEVEL[print](n0)
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[x]
+          n2 <- TOPLEVEL[y]
+          n3 <- $Binary.Add(n1, n2)
+          n4 <- n0(n3)
           return PYCNone |}]
 
 
@@ -76,8 +81,11 @@ print(x - y)
         b0:
           TOPLEVEL[x] <- PYCInt (42)
           TOPLEVEL[y] <- PYCInt (10)
-          n0 <- $Binary.Subtract(TOPLEVEL[x], TOPLEVEL[y])
-          n1 <- TOPLEVEL[print](n0)
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[x]
+          n2 <- TOPLEVEL[y]
+          n3 <- $Binary.Subtract(n1, n2)
+          n4 <- n0(n3)
           return PYCNone |}]
 
 
@@ -95,9 +103,12 @@ print(x)
       toplevel:
         b0:
           TOPLEVEL[x] <- PYCInt (42)
-          n0 <- $Inplace.Add(TOPLEVEL[x], PYCInt (10))
-          TOPLEVEL[x] <- n0
-          n1 <- TOPLEVEL[print](TOPLEVEL[x])
+          n0 <- TOPLEVEL[x]
+          n1 <- $Inplace.Add(n0, PYCInt (10))
+          TOPLEVEL[x] <- n1
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[x]
+          n4 <- n2(n3)
           return PYCNone |}]
 
 
@@ -115,9 +126,12 @@ print(x)
       toplevel:
         b0:
           TOPLEVEL[x] <- PYCInt (42)
-          n0 <- $Inplace.Subtract(TOPLEVEL[x], PYCInt (10))
-          TOPLEVEL[x] <- n0
-          n1 <- TOPLEVEL[print](TOPLEVEL[x])
+          n0 <- TOPLEVEL[x]
+          n1 <- $Inplace.Subtract(n0, PYCInt (10))
+          TOPLEVEL[x] <- n1
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[x]
+          n4 <- n2(n3)
           return PYCNone |}]
 
 
@@ -165,8 +179,10 @@ l[0:2:1]
       toplevel:
         b0:
           TOPLEVEL[l] <- [PYCInt (0), PYCInt (1), PYCInt (2), PYCInt (3), PYCInt (4), PYCInt (5)]
-          n0 <- TOPLEVEL[l][[PYCInt (0):PYCInt (2)]]
-          n1 <- TOPLEVEL[l][[PYCInt (0):PYCInt (2):PYCInt (1)]]
+          n0 <- TOPLEVEL[l]
+          n1 <- n0[[PYCInt (0):PYCInt (2)]]
+          n2 <- TOPLEVEL[l]
+          n3 <- n2[[PYCInt (0):PYCInt (2):PYCInt (1)]]
           return PYCNone |}]
 
 
@@ -196,7 +212,10 @@ print(l[0])
       toplevel:
         b0:
           TOPLEVEL[l] <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-          n0 <- TOPLEVEL[print](TOPLEVEL[l][PYCInt (0)])
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[l]
+          n2 <- n1[PYCInt (0)]
+          n3 <- n0(n2)
           return PYCNone |}]
 
 
@@ -215,7 +234,9 @@ l[x] = 10
         b0:
           TOPLEVEL[l] <- [PYCInt (1), PYCInt (2), PYCInt (3)]
           TOPLEVEL[x] <- PYCInt (0)
-          TOPLEVEL[l][TOPLEVEL[x]] <- PYCInt (10)
+          n0 <- TOPLEVEL[l]
+          n1 <- TOPLEVEL[x]
+          n0[n1] <- PYCInt (10)
           return PYCNone |}]
 
 
@@ -260,10 +281,16 @@ d = { 0x78: "abc", # 1-n decoding mapping
       toplevel:
         b0:
           TOPLEVEL[x] <- PYCString ("1")
-          TOPLEVEL[s] <- {|TOPLEVEL[x], PYCInt (1), PYCString ("2"), PYCInt (2)|}
-          n0 <- TOPLEVEL[print](TOPLEVEL[s])
+          n0 <- TOPLEVEL[x]
+          TOPLEVEL[s] <- {|n0, PYCInt (1), PYCString ("2"), PYCInt (2)|}
+          n1 <- TOPLEVEL[print]
+          n2 <- TOPLEVEL[s]
+          n3 <- n1(n2)
           TOPLEVEL[s] <- {PYCString ("a"): PYCInt (42), PYCString ("b"): PYCInt (1664), }
-          n1 <- TOPLEVEL[print](TOPLEVEL[s][PYCString ("1")])
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[s]
+          n6 <- n5[PYCString ("1")]
+          n7 <- n4(n6)
           TOPLEVEL[d] <- {PYCInt (1): PYCNone, PYCInt (120): PYCString ("abc"),
                           PYCInt (121): PYCString (""), PYCBytes ("abc"):
                           PYCInt (120), }
@@ -282,9 +309,11 @@ fp.write("yolo")
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[open](PYCString ("foo.txt"), PYCString ("wt"))
-          TOPLEVEL[fp] <- n0
-          n1 <- $CallMethod($LoadMethod(TOPLEVEL[fp], write), PYCString ("yolo"))
+          n0 <- TOPLEVEL[open]
+          n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
+          TOPLEVEL[fp] <- n1
+          n2 <- TOPLEVEL[fp]
+          n3 <- $CallMethod($LoadMethod(n2, write), PYCString ("yolo"))
           return PYCNone |}]
 
 
@@ -300,14 +329,16 @@ with open("foo.txt", "wt") as fp:
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[open](PYCString ("foo.txt"), PYCString ("wt"))
-          n1 <- $LoadMethod(n0, __enter__)()
-          TOPLEVEL[fp] <- n1
-          n3 <- $CallMethod($LoadMethod(TOPLEVEL[fp], write), PYCString ("yolo"))
-          jmp b1(CM(n0).__exit__)
+          n0 <- TOPLEVEL[open]
+          n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
+          n2 <- $LoadMethod(n1, __enter__)()
+          TOPLEVEL[fp] <- n2
+          n4 <- TOPLEVEL[fp]
+          n5 <- $CallMethod($LoadMethod(n4, write), PYCString ("yolo"))
+          jmp b1(CM(n1).__exit__)
 
         b1:
-          n5 <- n2(PYCNone, PYCNone, PYCNone)
+          n7 <- n3(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 
@@ -334,10 +365,18 @@ print(result)
         b0:
           TOPLEVEL[values] <- [PYCInt (1), PYCInt (2), [PYCInt (3), PYCInt (4)], PYCInt (5)]
           TOPLEVEL[values2] <- PYCTuple ([|PYCString ("a"); PYCString ("b")|])
-          TOPLEVEL[result] <- (packed)($Packed([PYCInt (10), PYCInt (100)]), $Packed(TOPLEVEL[values]), $Packed(TOPLEVEL[values2]))
-          n0 <- TOPLEVEL[print](TOPLEVEL[result])
-          TOPLEVEL[result] <- (packed)[$Packed(TOPLEVEL[values]), $Packed(TOPLEVEL[values2])]
-          n1 <- TOPLEVEL[print](TOPLEVEL[result])
+          n0 <- TOPLEVEL[values]
+          n1 <- TOPLEVEL[values2]
+          TOPLEVEL[result] <- (packed)($Packed([PYCInt (10), PYCInt (100)]), $Packed(n0), $Packed(n1))
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[result]
+          n4 <- n2(n3)
+          n5 <- TOPLEVEL[values]
+          n6 <- TOPLEVEL[values2]
+          TOPLEVEL[result] <- (packed)[$Packed(n5), $Packed(n6)]
+          n7 <- TOPLEVEL[print]
+          n8 <- TOPLEVEL[result]
+          n9 <- n7(n8)
           return PYCNone |}]
 
 
@@ -348,7 +387,6 @@ x = x + (x := 0)
 print(x) # will print 1
           |} in
   PyIR.test source ;
-  (* THIS TRANSLATION IS CURRENTLY WRONG. It prints 0 instead of 1 *)
   [%expect
     {|
     module dummy:
@@ -356,8 +394,11 @@ print(x) # will print 1
       toplevel:
         b0:
           TOPLEVEL[x] <- PYCInt (1)
+          n0 <- TOPLEVEL[x]
           TOPLEVEL[x] <- PYCInt (0)
-          n0 <- $Binary.Add(TOPLEVEL[x], PYCInt (0))
-          TOPLEVEL[x] <- n0
-          n1 <- TOPLEVEL[print](TOPLEVEL[x])
+          n1 <- $Binary.Add(n0, PYCInt (0))
+          TOPLEVEL[x] <- n1
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[x]
+          n4 <- n2(n3)
           return PYCNone |}]

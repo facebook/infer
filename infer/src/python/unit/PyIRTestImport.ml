@@ -31,7 +31,8 @@ base.f(0)
           TOPLEVEL[base] <- n0
           n1 <- $ImportName(base)(PYCNone, PYCInt (0))
           TOPLEVEL[base] <- n1
-          n2 <- $CallMethod($LoadMethod(TOPLEVEL[base], f), PYCInt (0))
+          n2 <- TOPLEVEL[base]
+          n3 <- $CallMethod($LoadMethod(n2, f), PYCInt (0))
           return PYCNone |}]
 
 
@@ -59,19 +60,22 @@ g()
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]()
-          n1 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
-          n2 <- $ImportFrom(f)(n1)
-          TOPLEVEL[f] <- n2
-          n3 <- $ImportFrom(g)(n1)
-          TOPLEVEL[g] <- n3
-          n4 <- TOPLEVEL[f]()
-          n5 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
-          n6 <- $ImportFrom(f)(n5)
-          TOPLEVEL[f] <- n6
-          n7 <- $ImportFrom(g)(n5)
-          TOPLEVEL[g] <- n7
-          n8 <- TOPLEVEL[g]()
+          n0 <- TOPLEVEL[f]
+          n1 <- n0()
+          n2 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
+          n3 <- $ImportFrom(f)(n2)
+          TOPLEVEL[f] <- n3
+          n4 <- $ImportFrom(g)(n2)
+          TOPLEVEL[g] <- n4
+          n5 <- TOPLEVEL[f]
+          n6 <- n5()
+          n7 <- $ImportName(base)(PYCTuple ([|PYCString ("f"); PYCString ("g")|]), PYCInt (0))
+          n8 <- $ImportFrom(f)(n7)
+          TOPLEVEL[f] <- n8
+          n9 <- $ImportFrom(g)(n7)
+          TOPLEVEL[g] <- n9
+          n10 <- TOPLEVEL[g]
+          n11 <- n10()
           return PYCNone
 
 
@@ -96,14 +100,17 @@ class MyTest(unittest.TestCase):
         b0:
           n0 <- $ImportName(unittest)(PYCNone, PYCInt (0))
           TOPLEVEL[unittest] <- n0
-          n1 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), PYCString ("MyTest"), TOPLEVEL[unittest].TestCase)
-          TOPLEVEL[MyTest] <- n1
+          n1 <- TOPLEVEL[unittest]
+          n2 <- n1.TestCase
+          n3 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), PYCString ("MyTest"), n2)
+          TOPLEVEL[MyTest] <- n3
           return PYCNone
 
 
       dummy.MyTest:
         b0:
-          TOPLEVEL[__module__] <- TOPLEVEL[__name__]
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("MyTest")
           return PYCNone |}]
 
@@ -158,13 +165,16 @@ if __name__ == '__main__':
           n2 <- $ImportName(test.libregrtest)(PYCTuple ([|PYCString ("main")|]), PYCInt (0))
           n3 <- $ImportFrom(main)(n2)
           TOPLEVEL[main] <- n3
-          TOPLEVEL[main_in_temp_cwd] <- TOPLEVEL[main]
+          n4 <- TOPLEVEL[main]
+          TOPLEVEL[main_in_temp_cwd] <- n4
           TOPLEVEL[_main] <- $FuncObj(_main, dummy._main, {})
-          n4 <- $Compare.eq(TOPLEVEL[__name__], PYCString ("__main__"))
-          if n4 then jmp b1 else jmp b2
+          n5 <- TOPLEVEL[__name__]
+          n6 <- $Compare.eq(n5, PYCString ("__main__"))
+          if n6 then jmp b1 else jmp b2
 
         b1:
-          n5 <- TOPLEVEL[_main]()
+          n7 <- TOPLEVEL[_main]
+          n8 <- n7()
           jmp b2
 
         b2:
@@ -173,37 +183,64 @@ if __name__ == '__main__':
 
       dummy._main:
         b0:
-          n0 <- $CallMethod($LoadMethod(GLOBAL[os].path, dirname), GLOBAL[sys].argv[PYCInt (0)])
-          n1 <- $CallMethod($LoadMethod(GLOBAL[os].path, normpath), n0)
-          n2 <- $CallMethod($LoadMethod(GLOBAL[os].path, abspath), n1)
-          LOCAL[mydir] <- n2
-          n3 <- GLOBAL[len](GLOBAL[sys].path)
-          n4 <- $Binary.Subtract(n3, PYCInt (1))
-          LOCAL[i] <- n4
+          n0 <- GLOBAL[os]
+          n1 <- n0.path
+          n2 <- GLOBAL[os]
+          n3 <- n2.path
+          n4 <- GLOBAL[os]
+          n5 <- n4.path
+          n6 <- GLOBAL[sys]
+          n7 <- n6.argv
+          n8 <- n7[PYCInt (0)]
+          n9 <- $CallMethod($LoadMethod(n5, dirname), n8)
+          n10 <- $CallMethod($LoadMethod(n3, normpath), n9)
+          n11 <- $CallMethod($LoadMethod(n1, abspath), n10)
+          LOCAL[mydir] <- n11
+          n12 <- GLOBAL[len]
+          n13 <- GLOBAL[sys]
+          n14 <- n13.path
+          n15 <- n12(n14)
+          n16 <- $Binary.Subtract(n15, PYCInt (1))
+          LOCAL[i] <- n16
           jmp b1
 
         b1:
-          n5 <- $Compare.ge(LOCAL[i], PYCInt (0))
-          if n5 then jmp b2 else jmp b3
+          n17 <- LOCAL[i]
+          n18 <- $Compare.ge(n17, PYCInt (0))
+          if n18 then jmp b2 else jmp b3
 
         b2:
-          n6 <- $CallMethod($LoadMethod(GLOBAL[os].path, normpath), GLOBAL[sys].path[LOCAL[i]])
-          n7 <- $CallMethod($LoadMethod(GLOBAL[os].path, abspath), n6)
-          n8 <- $Compare.eq(n7, LOCAL[mydir])
-          if n8 then jmp b4 else jmp b5
+          n19 <- GLOBAL[os]
+          n20 <- n19.path
+          n21 <- GLOBAL[os]
+          n22 <- n21.path
+          n23 <- GLOBAL[sys]
+          n24 <- n23.path
+          n25 <- LOCAL[i]
+          n26 <- n24[n25]
+          n27 <- $CallMethod($LoadMethod(n22, normpath), n26)
+          n28 <- $CallMethod($LoadMethod(n20, abspath), n27)
+          n29 <- LOCAL[mydir]
+          n30 <- $Compare.eq(n28, n29)
+          if n30 then jmp b4 else jmp b5
 
         b3:
-          n10 <- $CallMethod($LoadMethod(GLOBAL[os].path, abspath), GLOBAL[__file__])
-          GLOBAL[__file__] <- n10
-          n11 <- GLOBAL[main]()
+          n33 <- GLOBAL[os]
+          n34 <- n33.path
+          n35 <- GLOBAL[__file__]
+          n36 <- $CallMethod($LoadMethod(n34, abspath), n35)
+          GLOBAL[__file__] <- n36
+          n37 <- GLOBAL[main]
+          n38 <- n37()
           return PYCNone
 
         b4:
           jmp b1
 
         b5:
-          n9 <- $Inplace.Subtract(LOCAL[i], PYCInt (1))
-          LOCAL[i] <- n9
+          n31 <- LOCAL[i]
+          n32 <- $Inplace.Subtract(n31, PYCInt (1))
+          LOCAL[i] <- n32
           jmp b1 |}]
 
 
@@ -232,19 +269,23 @@ path.X()
           n0 <- $ImportName(A)(PYCTuple ([|PYCString ("X")|]), PYCInt (0))
           n1 <- $ImportFrom(X)(n0)
           TOPLEVEL[X] <- n1
-          n2 <- TOPLEVEL[X]()
-          n3 <- $ImportName(B)(PYCTuple ([|PYCString ("X")|]), PYCInt (1))
-          n4 <- $ImportFrom(X)(n3)
-          TOPLEVEL[X] <- n4
-          n5 <- TOPLEVEL[X]()
-          n6 <- $ImportName(C)(PYCTuple ([|PYCString ("X")|]), PYCInt (2))
-          n7 <- $ImportFrom(X)(n6)
-          TOPLEVEL[X] <- n7
-          n8 <- TOPLEVEL[X]()
-          n9 <- $ImportName()(PYCTuple ([|PYCString ("path")|]), PYCInt (2))
-          n10 <- $ImportFrom(path)(n9)
-          TOPLEVEL[path] <- n10
-          n11 <- $CallMethod($LoadMethod(TOPLEVEL[path], X), )
+          n2 <- TOPLEVEL[X]
+          n3 <- n2()
+          n4 <- $ImportName(B)(PYCTuple ([|PYCString ("X")|]), PYCInt (1))
+          n5 <- $ImportFrom(X)(n4)
+          TOPLEVEL[X] <- n5
+          n6 <- TOPLEVEL[X]
+          n7 <- n6()
+          n8 <- $ImportName(C)(PYCTuple ([|PYCString ("X")|]), PYCInt (2))
+          n9 <- $ImportFrom(X)(n8)
+          TOPLEVEL[X] <- n9
+          n10 <- TOPLEVEL[X]
+          n11 <- n10()
+          n12 <- $ImportName()(PYCTuple ([|PYCString ("path")|]), PYCInt (2))
+          n13 <- $ImportFrom(path)(n12)
+          TOPLEVEL[path] <- n13
+          n14 <- TOPLEVEL[path]
+          n15 <- $CallMethod($LoadMethod(n14, X), )
           return PYCNone |}]
 
 
@@ -281,20 +322,24 @@ tata()
           TOPLEVEL[z] <- n4
           n5 <- $ImportFrom(a)(n3)
           TOPLEVEL[b] <- n5
-          n6 <- TOPLEVEL[z]()
-          n7 <- TOPLEVEL[b]()
-          n8 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
-          n9 <- $ImportFrom(toto)(n8)
-          TOPLEVEL[toto] <- n9
-          n10 <- $ImportFrom(tata)(n8)
-          TOPLEVEL[tata] <- n10
-          n11 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
-          n12 <- $ImportFrom(toto)(n11)
-          TOPLEVEL[toto] <- n12
-          n13 <- $ImportFrom(tata)(n11)
-          TOPLEVEL[tata] <- n13
-          n14 <- TOPLEVEL[toto]()
-          n15 <- TOPLEVEL[tata]()
+          n6 <- TOPLEVEL[z]
+          n7 <- n6()
+          n8 <- TOPLEVEL[b]
+          n9 <- n8()
+          n10 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
+          n11 <- $ImportFrom(toto)(n10)
+          TOPLEVEL[toto] <- n11
+          n12 <- $ImportFrom(tata)(n10)
+          TOPLEVEL[tata] <- n12
+          n13 <- $ImportName(foo)(PYCTuple ([|PYCString ("toto"); PYCString ("tata")|]), PYCInt (0))
+          n14 <- $ImportFrom(toto)(n13)
+          TOPLEVEL[toto] <- n14
+          n15 <- $ImportFrom(tata)(n13)
+          TOPLEVEL[tata] <- n15
+          n16 <- TOPLEVEL[toto]
+          n17 <- n16()
+          n18 <- TOPLEVEL[tata]
+          n19 <- n18()
           return PYCNone |}]
 
 
@@ -339,18 +384,23 @@ class Test(unittest.TestCase):
           TOPLEVEL[unittest] <- n0
           n1 <- $ImportName(signal)(PYCNone, PYCInt (0))
           TOPLEVEL[signal] <- n1
-          n2 <- TOPLEVEL[hasattr](TOPLEVEL[signal], PYCString ("setitimer"))
-          n3 <- $CallMethod($LoadMethod(TOPLEVEL[unittest], skipUnless),
-            n2, PYCString ("requires setitimer()"))
-          n4 <- $BuildClass($FuncObj(Test, dummy.Test, {}), PYCString ("Test"), TOPLEVEL[unittest].TestCase)
-          n5 <- n3(n4)
-          TOPLEVEL[Test] <- n5
+          n2 <- TOPLEVEL[unittest]
+          n3 <- TOPLEVEL[hasattr]
+          n4 <- TOPLEVEL[signal]
+          n5 <- n3(n4, PYCString ("setitimer"))
+          n6 <- $CallMethod($LoadMethod(n2, skipUnless), n5, PYCString ("requires setitimer()"))
+          n7 <- TOPLEVEL[unittest]
+          n8 <- n7.TestCase
+          n9 <- $BuildClass($FuncObj(Test, dummy.Test, {}), PYCString ("Test"), n8)
+          n10 <- n6(n9)
+          TOPLEVEL[Test] <- n10
           return PYCNone
 
 
       dummy.Test:
         b0:
-          TOPLEVEL[__module__] <- TOPLEVEL[__name__]
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("Test")
           return PYCNone |}]
 
@@ -377,8 +427,9 @@ def f():
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(GLOBAL[foo], bar), PYCInt (42))
-          throw n0 |}]
+          n0 <- GLOBAL[foo]
+          n1 <- $CallMethod($LoadMethod(n0, bar), PYCInt (42))
+          throw n1 |}]
 
 
 let%expect_test _ =
@@ -409,25 +460,28 @@ def f(ok):
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(GLOBAL[foo], bar), )
+          n0 <- GLOBAL[foo]
+          n1 <- $CallMethod($LoadMethod(n0, bar), )
           jmp b2
 
         b1:
-          n7 <- $Compare.exception(n6, GLOBAL[OverflowError])
-          if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
+          n8 <- GLOBAL[OverflowError]
+          n9 <- $Compare.exception(n7, n8)
+          if n9 then jmp b3(n7, n6, n5, n4, n3, n2) else jmp b4(n7, n6, n5, n4, n3, n2)
 
         b2:
           return PYCNone
 
         b3:
-          if $Not(LOCAL[ok]) then jmp b5(n10, n9, n8) else jmp b6(n10, n9, n8)
+          n22 <- LOCAL[ok]
+          if $Not(n22) then jmp b5(n12, n11, n10) else jmp b6(n12, n11, n10)
 
         b4:
           jmp b2
 
         b5:
-          n26 <- GetPreviousException()
-          throw n26
+          n29 <- GetPreviousException()
+          throw n29
 
         b6:
           jmp b7
@@ -475,12 +529,17 @@ def test_format_specifier_expressions(self):
         b0:
           LOCAL[width] <- PYCInt (10)
           LOCAL[precision] <- PYCInt (4)
-          n0 <- $CallMethod($LoadMethod(GLOBAL[decimal], Decimal), PYCString ("12.34567"))
-          LOCAL[value] <- n0
-          n1 <- $Format(LOCAL[width], PYCNone)
-          n2 <- $Format(LOCAL[precision], PYCNone)
-          n3 <- $Format(LOCAL[value], $Concat(n1, PYCString ("."), n2))
-          n4 <- GLOBAL[assertEqual]($Concat(PYCString ("result: "), n3))
+          n0 <- GLOBAL[decimal]
+          n1 <- $CallMethod($LoadMethod(n0, Decimal), PYCString ("12.34567"))
+          LOCAL[value] <- n1
+          n2 <- GLOBAL[assertEqual]
+          n3 <- LOCAL[value]
+          n4 <- LOCAL[width]
+          n5 <- $Format(n4, PYCNone)
+          n6 <- LOCAL[precision]
+          n7 <- $Format(n6, PYCNone)
+          n8 <- $Format(n3, $Concat(n5, PYCString ("."), n7))
+          n9 <- n2($Concat(PYCString ("result: "), n8))
           return PYCNone |}]
 
 
@@ -512,14 +571,21 @@ def f():
       toplevel:
         b0:
           $SETUP_ANNOTATIONS
-          TOPLEVEL[__annotations__][PYCString ("x")] <- TOPLEVEL[int]
+          n0 <- TOPLEVEL[int]
+          n1 <- TOPLEVEL[__annotations__]
+          n1[PYCString ("x")] <- n0
           TOPLEVEL[x] <- PYCInt (0)
           TOPLEVEL[y] <- PYCString ("zuck")
-          TOPLEVEL[__annotations__][PYCString ("y")] <- TOPLEVEL[str]
-          n0 <- $ImportName(C)(PYCNone, PYCInt (0))
-          TOPLEVEL[C] <- n0
+          n2 <- TOPLEVEL[str]
+          n3 <- TOPLEVEL[__annotations__]
+          n3[PYCString ("y")] <- n2
+          n4 <- $ImportName(C)(PYCNone, PYCInt (0))
+          TOPLEVEL[C] <- n4
           TOPLEVEL[z] <- PYCInt (42)
-          TOPLEVEL[__annotations__][PYCString ("z")] <- TOPLEVEL[C].T
+          n5 <- TOPLEVEL[C]
+          n6 <- n5.T
+          n7 <- TOPLEVEL[__annotations__]
+          n7[PYCString ("z")] <- n6
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 

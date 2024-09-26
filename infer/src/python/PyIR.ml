@@ -288,40 +288,6 @@ module Exp = struct
     | Packed of {exp: t; is_map: bool}
     | Yield of t
 
-  let show = function
-    | Const _ ->
-        "Const"
-    | Var _ ->
-        "Var"
-    | Temp _ ->
-        "Temp"
-    | Subscript _ ->
-        "Subscript"
-    | Collection _ ->
-        "Collection"
-    | ConstMap _ ->
-        "ConstMap"
-    | Function _ ->
-        "Function"
-    | GetAttr _ ->
-        "GetAttr"
-    | LoadMethod _ ->
-        "LoadMethod"
-    | Ref _ ->
-        "Ref"
-    | Not _ ->
-        "Not"
-    | BuiltinCaller _ ->
-        "BuiltinCaller"
-    | ContextManagerExit _ ->
-        "ContextManagerExit"
-    | Packed _ ->
-        "Packed"
-    | Yield _ ->
-        "Yield"
-  [@@warning "-unused-value-declaration"]
-
-
   let rec pp fmt = function
     | Const c ->
         Const.pp fmt c
@@ -1512,6 +1478,29 @@ let collection_add st opname arg ?(map = false) builtin =
   Ok (st, None)
 
 
+let assign_to_temp_and_push st rhs =
+  let id, st = State.fresh_id st in
+  let exp = Exp.Temp id in
+  let stmt = Stmt.Assign {lhs= Exp.Temp id; rhs} in
+  let st = State.push_stmt st stmt in
+  let st = State.push st exp in
+  Ok (st, None)
+
+
+let load st scope name =
+  let rhs = Exp.Var {scope; ident= Ident.mk name} in
+  assign_to_temp_and_push st rhs
+
+
+let store st scope name =
+  let open IResult.Let_syntax in
+  let lhs = Exp.Var {scope; ident= Ident.mk name} in
+  let* rhs, st = State.pop st in
+  let stmt = Stmt.Assign {lhs; rhs} in
+  let st = State.push_stmt st stmt in
+  Ok (st, None)
+
+
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
     {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
   let open IResult.Let_syntax in
@@ -1532,46 +1521,25 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_NAME" ->
-      let exp = Exp.Var {scope= Name; ident= Ident.mk co_names.(arg)} in
-      let st = State.push st exp in
-      Ok (st, None)
+      load st Name co_names.(arg)
   | "LOAD_GLOBAL" ->
-      let exp = Exp.Var {scope= Global; ident= Ident.mk co_names.(arg)} in
-      let st = State.push st exp in
-      Ok (st, None)
+      load st Global co_names.(arg)
   | "LOAD_FAST" ->
-      let exp = Exp.Var {scope= Fast; ident= Ident.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-      Ok (st, None)
+      load st Fast co_varnames.(arg)
   | "LOAD_ATTR" ->
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
       let exp = Exp.GetAttr (tos, name) in
-      let st = State.push st exp in
-      Ok (st, None)
+      assign_to_temp_and_push st exp
   | "LOAD_CLASSDEREF" | "LOAD_DEREF" ->
       let name = get_cell_name code arg in
-      let exp = Exp.Var {scope= Deref; ident= Ident.mk name} in
-      let st = State.push st exp in
-      Ok (st, None)
+      load st Deref name
   | "STORE_NAME" ->
-      let lhs = Exp.Var {scope= Name; ident= Ident.mk co_names.(arg)} in
-      let* rhs, st = State.pop st in
-      let stmt = Stmt.Assign {lhs; rhs} in
-      let st = State.push_stmt st stmt in
-      Ok (st, None)
+      store st Name co_names.(arg)
   | "STORE_GLOBAL" ->
-      let lhs = Exp.Var {scope= Global; ident= Ident.mk co_names.(arg)} in
-      let* rhs, st = State.pop st in
-      let stmt = Stmt.Assign {lhs; rhs} in
-      let st = State.push_stmt st stmt in
-      Ok (st, None)
+      store st Global co_names.(arg)
   | "STORE_FAST" ->
-      let lhs = Exp.Var {scope= Fast; ident= Ident.mk co_varnames.(arg)} in
-      let* rhs, st = State.pop st in
-      let stmt = Stmt.Assign {lhs; rhs} in
-      let st = State.push_stmt st stmt in
-      Ok (st, None)
+      store st Fast co_varnames.(arg)
   | "STORE_ATTR" ->
       let name = co_names.(arg) in
       let* root, st = State.pop st in
@@ -1591,11 +1559,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "STORE_DEREF" ->
       let name = get_cell_name code arg in
-      let lhs = Exp.Var {scope= Deref; ident= Ident.mk name} in
-      let* rhs, st = State.pop st in
-      let stmt = Stmt.Assign {lhs; rhs} in
-      let st = State.push_stmt st stmt in
-      Ok (st, None)
+      store st Deref name
   | "RETURN_VALUE" ->
       let* ret, st = State.pop st in
       Ok (st, Some (Jump.Return ret))
@@ -1717,8 +1681,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* index, st = State.pop st in
       let* exp, st = State.pop st in
       let exp = Exp.Subscript {exp; index} in
-      let st = State.push st exp in
-      Ok (st, None)
+      assign_to_temp_and_push st exp
   | "LOAD_BUILD_CLASS" ->
       let st = State.push st (BuiltinCaller BuildClass) in
       Ok (st, None)

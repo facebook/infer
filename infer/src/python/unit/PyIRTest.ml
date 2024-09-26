@@ -35,19 +35,30 @@ print(z)
         b0:
           TOPLEVEL[my_fun] <- $FuncObj(my_fun, dummy.my_fun, {})
           TOPLEVEL[a] <- PYCInt (10)
-          n0 <- TOPLEVEL[my_fun](PYCInt (42), TOPLEVEL[a])
-          TOPLEVEL[z] <- n0
-          n1 <- TOPLEVEL[print](TOPLEVEL[z])
+          n0 <- TOPLEVEL[my_fun]
+          n1 <- TOPLEVEL[a]
+          n2 <- n0(PYCInt (42), n1)
+          TOPLEVEL[z] <- n2
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[z]
+          n5 <- n3(n4)
           return PYCNone
 
 
       dummy.my_fun:
         b0:
-          n0 <- GLOBAL[print](LOCAL[x])
-          n1 <- GLOBAL[print](LOCAL[y])
-          n2 <- $Binary.Add(LOCAL[x], LOCAL[y])
-          LOCAL[z] <- n2
-          return LOCAL[z] |}]
+          n0 <- GLOBAL[print]
+          n1 <- LOCAL[x]
+          n2 <- n0(n1)
+          n3 <- GLOBAL[print]
+          n4 <- LOCAL[y]
+          n5 <- n3(n4)
+          n6 <- LOCAL[x]
+          n7 <- LOCAL[y]
+          n8 <- $Binary.Add(n6, n7)
+          LOCAL[z] <- n8
+          n9 <- LOCAL[z]
+          return n9 |}]
 
 
 let%expect_test _ =
@@ -72,15 +83,19 @@ print(z)
         b0:
           TOPLEVEL[update_global] <- $FuncObj(update_global, dummy.update_global, {})
           GLOBAL[z] <- PYCInt (0)
-          n0 <- TOPLEVEL[update_global]()
-          n1 <- TOPLEVEL[print](GLOBAL[z])
+          n0 <- TOPLEVEL[update_global]
+          n1 <- n0()
+          n2 <- TOPLEVEL[print]
+          n3 <- GLOBAL[z]
+          n4 <- n2(n3)
           return PYCNone
 
 
       dummy.update_global:
         b0:
-          n0 <- $Binary.Add(GLOBAL[z], PYCInt (1))
-          GLOBAL[z] <- n0
+          n0 <- GLOBAL[z]
+          n1 <- $Binary.Add(n0, PYCInt (1))
+          GLOBAL[z] <- n1
           return PYCNone |}]
 
 
@@ -116,14 +131,17 @@ def f(x, y):
 
       dummy.f:
         b0:
-          n0 <- GLOBAL[coin]()
-          if n0 then jmp b1 else jmp b2
+          n0 <- GLOBAL[coin]
+          n1 <- n0()
+          if n1 then jmp b1 else jmp b2
 
         b1:
-          return LOCAL[x]
+          n2 <- LOCAL[x]
+          return n2
 
         b2:
-          return LOCAL[y] |}]
+          n3 <- LOCAL[y]
+          return n3 |}]
 
 
 let%expect_test _ =
@@ -161,19 +179,23 @@ def f(x, y):
       dummy.f:
         b0:
           LOCAL[z] <- PYCInt (0)
-          n0 <- GLOBAL[coin]()
-          if n0 then jmp b1 else jmp b2
+          n0 <- GLOBAL[coin]
+          n1 <- n0()
+          if n1 then jmp b1 else jmp b2
 
         b1:
-          LOCAL[z] <- LOCAL[x]
+          n2 <- LOCAL[x]
+          LOCAL[z] <- n2
           jmp b3
 
         b2:
-          LOCAL[z] <- LOCAL[y]
+          n3 <- LOCAL[y]
+          LOCAL[z] <- n3
           jmp b3
 
         b3:
-          return LOCAL[z] |}]
+          n4 <- LOCAL[z]
+          return n4 |}]
 
 
 let%expect_test _ =
@@ -219,39 +241,47 @@ def f(x, y):
       dummy.f:
         b0:
           LOCAL[z] <- PYCInt (0)
-          n0 <- GLOBAL[coin]()
-          if n0 then jmp b1 else jmp b2
+          n0 <- GLOBAL[coin]
+          n1 <- n0()
+          if n1 then jmp b1 else jmp b2
 
         b1:
-          n1 <- GLOBAL[coin]()
-          if n1 then jmp b3 else jmp b4
+          n2 <- GLOBAL[coin]
+          n3 <- n2()
+          if n3 then jmp b3 else jmp b4
 
         b2:
-          n3 <- $Binary.Add(LOCAL[z], PYCInt (1))
-          LOCAL[z] <- n3
-          n4 <- GLOBAL[coin]()
-          if n4 then jmp b7 else jmp b8
+          n7 <- LOCAL[z]
+          n8 <- $Binary.Add(n7, PYCInt (1))
+          LOCAL[z] <- n8
+          n9 <- GLOBAL[coin]
+          n10 <- n9()
+          if n10 then jmp b7 else jmp b8
 
         b3:
-          LOCAL[z] <- LOCAL[x]
+          n4 <- LOCAL[x]
+          LOCAL[z] <- n4
           jmp b5
 
         b4:
           return PYCInt (1664)
 
         b5:
-          n2 <- $Binary.Add(LOCAL[z], PYCInt (1))
-          LOCAL[z] <- n2
+          n5 <- LOCAL[z]
+          n6 <- $Binary.Add(n5, PYCInt (1))
+          LOCAL[z] <- n6
           jmp b6
 
         b6:
-          return LOCAL[z]
+          n12 <- LOCAL[z]
+          return n12
 
         b7:
           return PYCInt (42)
 
         b8:
-          LOCAL[z] <- LOCAL[y]
+          n11 <- LOCAL[y]
+          LOCAL[z] <- n11
           jmp b6 |}]
 
 
@@ -277,16 +307,18 @@ def f(x):
 
       dummy.f:
         b0:
-          if LOCAL[x] then jmp b1(GLOBAL[foo]) else jmp b2(GLOBAL[foo])
+          n0 <- GLOBAL[foo]
+          n1 <- LOCAL[x]
+          if n1 then jmp b1(n0) else jmp b2(n0)
 
         b1:
-          jmp b3(PYCInt (1), n0)
+          jmp b3(PYCInt (1), n2)
 
         b2:
-          jmp b3(PYCInt (0), n1)
+          jmp b3(PYCInt (0), n3)
 
         b3:
-          n4 <- n2(n3)
+          n6 <- n4(n5)
           return PYCNone
 
 
@@ -307,20 +339,23 @@ for x in range(10):
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[range](PYCInt (10))
-          n1 <- $GetIter(n0)
-          jmp b1(n1)
+          n0 <- TOPLEVEL[range]
+          n1 <- n0(PYCInt (10))
+          n2 <- $GetIter(n1)
+          jmp b1(n2)
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n3)
-          if n4 then jmp b2 else jmp b3
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n4)
+          if n5 then jmp b2 else jmp b3
 
         b2:
-          n5 <- $IterData(n3)
-          TOPLEVEL[x] <- n5
-          n6 <- TOPLEVEL[print](TOPLEVEL[x])
-          jmp b1(n2)
+          n6 <- $IterData(n4)
+          TOPLEVEL[x] <- n6
+          n7 <- TOPLEVEL[print]
+          n8 <- TOPLEVEL[x]
+          n9 <- n7(n8)
+          jmp b1(n3)
 
         b3:
           return PYCNone |}]
@@ -350,50 +385,55 @@ def f(x, y, l, bar, toto):
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[l])
-          jmp b1(n0)
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0)
+          jmp b1(n1)
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2 else jmp b3
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          n4 <- $IterData(n2)
-          LOCAL[x] <- n4
-          n5 <- LOCAL[bar]()
-          n6 <- $LoadMethod(n5, __enter__)()
-          n9 <- LOCAL[toto]()
-          n10 <- $LoadMethod(n9, __enter__)()
-          LOCAL[obj] <- n10
-          if LOCAL[y] then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
-          jmp b7(CM(n9).__exit__, CM(n5).__exit__, n1)
+          n5 <- $IterData(n3)
+          LOCAL[x] <- n5
+          n6 <- LOCAL[bar]
+          n7 <- n6()
+          n8 <- $LoadMethod(n7, __enter__)()
+          n11 <- LOCAL[toto]
+          n12 <- n11()
+          n13 <- $LoadMethod(n12, __enter__)()
+          LOCAL[obj] <- n13
+          n17 <- LOCAL[y]
+          if n17 then jmp b6(CM(n12).__exit__, CM(n7).__exit__, n2) else
+          jmp b7(CM(n12).__exit__, CM(n7).__exit__, n2)
 
         b3:
           return PYCNone
 
         b4:
-          n35 <- n8(PYCNone, PYCNone, PYCNone)
-          jmp b1(n7)
+          n40 <- n10(PYCNone, PYCNone, PYCNone)
+          jmp b1(n9)
 
         b5:
-          n32 <- n13(PYCNone, PYCNone, PYCNone)
-          jmp b4(n12, n11)
+          n37 <- n16(PYCNone, PYCNone, PYCNone)
+          jmp b4(n15, n14)
 
         b6:
-          jmp b8(n16, n15, n14)
+          jmp b8(n20, n19, n18)
 
         b7:
-          n28 <- GLOBAL[print](PYCString ("nop"))
-          jmp b5(n19, n18, n17)
+          n32 <- GLOBAL[print]
+          n33 <- n32(PYCString ("nop"))
+          jmp b5(n23, n22, n21)
 
         b8:
-          n23 <- n22(PYCNone, PYCNone, PYCNone)
-          jmp b9(n21, n20)
+          n27 <- n26(PYCNone, PYCNone, PYCNone)
+          jmp b9(n25, n24)
 
         b9:
-          n26 <- n25(PYCNone, PYCNone, PYCNone)
-          jmp b1(n24) |}]
+          n30 <- n29(PYCNone, PYCNone, PYCNone)
+          jmp b1(n28) |}]
 
 
 let%expect_test _ =
@@ -417,22 +457,27 @@ def f(x):
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[print](PYCInt (42))
+          n0 <- TOPLEVEL[print]
+          n1 <- n0(PYCInt (42))
           TOPLEVEL[print] <- $FuncObj(print, dummy.print, {})
-          n1 <- TOPLEVEL[print](PYCInt (42))
+          n2 <- TOPLEVEL[print]
+          n3 <- n2(PYCInt (42))
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- GLOBAL[print](LOCAL[x])
+          n0 <- GLOBAL[print]
+          n1 <- LOCAL[x]
+          n2 <- n0(n1)
           return PYCNone
 
 
       dummy.print:
         b0:
-          return LOCAL[x] |}]
+          n0 <- LOCAL[x]
+          return n0 |}]
 
 
 let%expect_test _ =
@@ -452,7 +497,11 @@ def f1(x, y:str) -> bool:
 
       toplevel:
         b0:
+          n0 <- TOPLEVEL[int]
+          n1 <- TOPLEVEL[float]
           TOPLEVEL[f0] <- $FuncObj(f0, dummy.f0, {})
+          n2 <- TOPLEVEL[str]
+          n3 <- TOPLEVEL[bool]
           TOPLEVEL[f1] <- $FuncObj(f1, dummy.f1, {})
           return PYCNone
 
@@ -486,10 +535,14 @@ expect_int(get())
 
       toplevel:
         b0:
+          n0 <- TOPLEVEL[int]
           TOPLEVEL[expect_int] <- $FuncObj(expect_int, dummy.expect_int, {})
+          n1 <- TOPLEVEL[int]
           TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
-          n0 <- TOPLEVEL[get]()
-          n1 <- TOPLEVEL[expect_int](n0)
+          n2 <- TOPLEVEL[expect_int]
+          n3 <- TOPLEVEL[get]
+          n4 <- n3()
+          n5 <- n2(n4)
           return PYCNone
 
 
@@ -522,10 +575,14 @@ expect(get())
 
       toplevel:
         b0:
+          n0 <- TOPLEVEL[object]
           TOPLEVEL[expect] <- $FuncObj(expect, dummy.expect, {})
+          n1 <- TOPLEVEL[int]
           TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
-          n0 <- TOPLEVEL[get]()
-          n1 <- TOPLEVEL[expect](n0)
+          n2 <- TOPLEVEL[expect]
+          n3 <- TOPLEVEL[get]
+          n4 <- n3()
+          n5 <- n2(n4)
           return PYCNone
 
 
@@ -557,8 +614,10 @@ def f(x, y):
 
       dummy.f:
         b0:
-          n0 <- $Compare.eq(LOCAL[x], LOCAL[y])
-          return n0 |}]
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[y]
+          n2 <- $Compare.eq(n0, n1)
+          return n2 |}]
 
 
 let%expect_test _ =
@@ -592,19 +651,23 @@ def f(x, y, z, t):
 
       dummy.f:
         b0:
-          if LOCAL[x] then jmp b1 else jmp b2
+          n0 <- LOCAL[x]
+          if n0 then jmp b1 else jmp b2
 
         b1:
-          if $Not(LOCAL[y]) then jmp b2 else jmp b3(LOCAL[y])
+          n1 <- LOCAL[y]
+          if $Not(n1) then jmp b2 else jmp b3(n1)
 
         b2:
-          if LOCAL[z] then jmp b4 else jmp b3(LOCAL[z])
+          n4 <- LOCAL[z]
+          if n4 then jmp b4 else jmp b3(n4)
 
         b3:
-          return n1
+          return n3
 
         b4:
-          jmp b3(LOCAL[t]) |}]
+          n7 <- LOCAL[t]
+          jmp b3(n7) |}]
 
 
 let%expect_test _ =
@@ -625,8 +688,10 @@ def f(x, y):
 
       dummy.f:
         b0:
-          n0 <- $Compare.gt(LOCAL[x], LOCAL[y])
-          return n0 |}]
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[y]
+          n2 <- $Compare.gt(n0, n1)
+          return n2 |}]
 
 
 let%expect_test _ =
@@ -647,8 +712,10 @@ def f(x, y):
 
       dummy.f:
         b0:
-          n0 <- $Compare.le(LOCAL[x], LOCAL[y])
-          return n0 |}]
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[y]
+          n2 <- $Compare.le(n0, n1)
+          return n2 |}]
 
 
 let%expect_test _ =
@@ -683,26 +750,32 @@ def in_not_check(x, l):
 
       dummy.in_check:
         b0:
-          n0 <- $Compare.in(LOCAL[x], LOCAL[l])
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[l]
+          n2 <- $Compare.in(n0, n1)
+          return n2
 
 
       dummy.in_not_check:
         b0:
-          n0 <- $Compare.not_in(LOCAL[x], LOCAL[l])
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[l]
+          n2 <- $Compare.not_in(n0, n1)
+          return n2
 
 
       dummy.is_check:
         b0:
-          n0 <- $Compare.is(LOCAL[x], PYCNone)
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- $Compare.is(n0, PYCNone)
+          return n1
 
 
       dummy.is_not_check:
         b0:
-          n0 <- $Compare.is_not(LOCAL[x], PYCNone)
-          return n0 |}]
+          n0 <- LOCAL[x]
+          n1 <- $Compare.is_not(n0, PYCNone)
+          return n1 |}]
 
 
 let%expect_test _ =
@@ -727,7 +800,10 @@ def f(x, y, z):
 
       dummy.f:
         b0:
-          return (LOCAL[x], LOCAL[y], LOCAL[z]) |}]
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[y]
+          n2 <- LOCAL[z]
+          return (n0, n1, n2) |}]
 
 
 let%expect_test _ =
@@ -746,7 +822,9 @@ def build_list():
       toplevel:
         b0:
           TOPLEVEL[l] <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-          n0 <- TOPLEVEL[print](TOPLEVEL[l])
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[l]
+          n2 <- n0(n1)
           TOPLEVEL[build_list] <- $FuncObj(build_list, dummy.build_list, {})
           return PYCNone
 
@@ -781,26 +859,32 @@ def f(foo, bar):
 
       dummy.f:
         b0:
-          n0 <- LOCAL[foo]()
-          n1 <- $LoadMethod(n0, __enter__)()
-          LOCAL[foo0] <- n1
-          n3 <- LOCAL[bar]()
-          n4 <- $LoadMethod(n3, __enter__)()
-          LOCAL[bar0] <- n4
-          n7 <- GLOBAL[print](LOCAL[bar0])
-          jmp b2(CM(n3).__exit__, CM(n0).__exit__)
+          n0 <- LOCAL[foo]
+          n1 <- n0()
+          n2 <- $LoadMethod(n1, __enter__)()
+          LOCAL[foo0] <- n2
+          n4 <- LOCAL[bar]
+          n5 <- n4()
+          n6 <- $LoadMethod(n5, __enter__)()
+          LOCAL[bar0] <- n6
+          n9 <- GLOBAL[print]
+          n10 <- LOCAL[bar0]
+          n11 <- n9(n10)
+          jmp b2(CM(n5).__exit__, CM(n1).__exit__)
 
         b1:
-          n14 <- n2(PYCNone, PYCNone, PYCNone)
+          n20 <- n3(PYCNone, PYCNone, PYCNone)
           return PYCNone
 
         b2:
-          n10 <- n6(PYCNone, PYCNone, PYCNone)
-          n11 <- GLOBAL[print](LOCAL[foo0])
-          jmp b3(n5)
+          n14 <- n8(PYCNone, PYCNone, PYCNone)
+          n15 <- GLOBAL[print]
+          n16 <- LOCAL[foo0]
+          n17 <- n15(n16)
+          jmp b3(n7)
 
         b3:
-          n13 <- n12(PYCNone, PYCNone, PYCNone)
+          n19 <- n18(PYCNone, PYCNone, PYCNone)
           return PYCInt (42) |}]
 
 
@@ -819,9 +903,10 @@ def f():
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]()
-          TOPLEVEL[a] <- n0[PYCInt (0)]
-          TOPLEVEL[b] <- n0[PYCInt (1)]
+          n0 <- TOPLEVEL[f]
+          n1 <- n0()
+          TOPLEVEL[a] <- n1[PYCInt (0)]
+          TOPLEVEL[b] <- n1[PYCInt (1)]
           return PYCNone
 
 
@@ -845,7 +930,8 @@ f(0, y=2, x=1)
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f](PYCInt (0), y= PYCInt (2), x= PYCInt (1))
+          n0 <- TOPLEVEL[f]
+          n1 <- n0(PYCInt (0), y= PYCInt (2), x= PYCInt (1))
           return PYCNone
 
 
@@ -877,21 +963,29 @@ def f(m, a, b, c):
 
       dummy.f:
         b0:
-          n0 <- $Compare.not_in((LOCAL[a], LOCAL[b]), LOCAL[m])
-          if n0 then jmp b1 else jmp b2
+          n0 <- LOCAL[a]
+          n1 <- LOCAL[b]
+          n2 <- LOCAL[m]
+          n3 <- $Compare.not_in((n0, n1), n2)
+          if n3 then jmp b1 else jmp b2
 
         b1:
-          n1 <- $Inplace.Subtract(LOCAL[b], PYCInt (1))
-          LOCAL[b] <- n1
+          n4 <- LOCAL[b]
+          n5 <- $Inplace.Subtract(n4, PYCInt (1))
+          LOCAL[b] <- n5
           jmp b0
 
         b2:
-          n2 <- $Compare.not_in((LOCAL[a], LOCAL[c]), LOCAL[m])
-          if n2 then jmp b3 else jmp b4
+          n6 <- LOCAL[a]
+          n7 <- LOCAL[c]
+          n8 <- LOCAL[m]
+          n9 <- $Compare.not_in((n6, n7), n8)
+          if n9 then jmp b3 else jmp b4
 
         b3:
-          n3 <- $Inplace.Add(LOCAL[c], PYCInt (1))
-          LOCAL[c] <- n3
+          n10 <- LOCAL[c]
+          n11 <- $Inplace.Add(n10, PYCInt (1))
+          LOCAL[c] <- n11
           jmp b2
 
         b4:
@@ -922,21 +1016,27 @@ def test_arguments(x, y, width):
 
       dummy.f:
         b0:
-          n0 <- $FormatFn.repr(LOCAL[name])
-          n1 <- $Format(n0, PYCNone)
-          n2 <- $FormatFn.str(LOCAL[name])
-          n3 <- $Format(n2, PYCNone)
-          n4 <- $FormatFn.ascii(LOCAL[name])
+          n0 <- LOCAL[name]
+          n1 <- $FormatFn.repr(n0)
+          n2 <- $Format(n1, PYCNone)
+          n3 <- LOCAL[name]
+          n4 <- $FormatFn.str(n3)
           n5 <- $Format(n4, PYCNone)
-          return $Concat(PYCString ("foo."), n1, n3, n5)
+          n6 <- LOCAL[name]
+          n7 <- $FormatFn.ascii(n6)
+          n8 <- $Format(n7, PYCNone)
+          return $Concat(PYCString ("foo."), n2, n5, n8)
 
 
       dummy.test_arguments:
         b0:
-          n0 <- $Binary.Multiply(LOCAL[x], LOCAL[y])
-          n1 <- $Format(LOCAL[width], PYCNone)
-          n2 <- $Format(n0, n1)
-          return $Concat(PYCString ("x="), n2) |}]
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[y]
+          n2 <- $Binary.Multiply(n0, n1)
+          n3 <- LOCAL[width]
+          n4 <- $Format(n3, PYCNone)
+          n5 <- $Format(n2, n4)
+          return $Concat(PYCString ("x="), n5) |}]
 
 
 let%expect_test _ =
@@ -971,26 +1071,30 @@ def inv(x):
 
       dummy.inv:
         b0:
-          n0 <- $Unary.Invert(LOCAL[x])
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- $Unary.Invert(n0)
+          return n1
 
 
       dummy.neg:
         b0:
-          n0 <- $Unary.Negative(LOCAL[x])
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- $Unary.Negative(n0)
+          return n1
 
 
       dummy.pos:
         b0:
-          n0 <- $Unary.Positive(LOCAL[x])
-          return n0
+          n0 <- LOCAL[x]
+          n1 <- $Unary.Positive(n0)
+          return n1
 
 
       dummy.test_not:
         b0:
-          n0 <- $Unary.Not(LOCAL[x])
-          return n0 |}]
+          n0 <- LOCAL[x]
+          n1 <- $Unary.Not(n0)
+          return n1 |}]
 
 
 let%expect_test _ =
@@ -1028,10 +1132,13 @@ print(g()) # prints 2
         b0:
           GLOBAL[gx] <- PYCInt (100)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f](PYCInt (42))
-          TOPLEVEL[g] <- n0
-          n1 <- TOPLEVEL[g]()
-          n2 <- TOPLEVEL[print](n1)
+          n0 <- TOPLEVEL[f]
+          n1 <- n0(PYCInt (42))
+          TOPLEVEL[g] <- n1
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[g]
+          n4 <- n3()
+          n5 <- n2(n4)
           return PYCNone
 
 
@@ -1040,19 +1147,29 @@ print(g()) # prints 2
           DEREF[lx] <- PYCInt (1000)
           LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
           DEREF[lx] <- PYCInt (1664)
-          return LOCAL[inner]
+          n0 <- LOCAL[inner]
+          return n0
 
 
       dummy.f.inner:
         b0:
           LOCAL[ix] <- PYCInt (20)
-          n0 <- GLOBAL[print](GLOBAL[gx])
-          n1 <- GLOBAL[print](DEREF[ax])
-          n2 <- GLOBAL[print](DEREF[lx])
-          n3 <- GLOBAL[print](LOCAL[ix])
+          n0 <- GLOBAL[print]
+          n1 <- GLOBAL[gx]
+          n2 <- n0(n1)
+          n3 <- GLOBAL[print]
+          n4 <- DEREF[ax]
+          n5 <- n3(n4)
+          n6 <- GLOBAL[print]
+          n7 <- DEREF[lx]
+          n8 <- n6(n7)
+          n9 <- GLOBAL[print]
+          n10 <- LOCAL[ix]
+          n11 <- n9(n10)
           GLOBAL[gx] <- PYCInt (10)
           DEREF[lx] <- PYCInt (2)
-          return DEREF[lx] |}]
+          n12 <- DEREF[lx]
+          return n12 |}]
 
 
 let%expect_test _ =
@@ -1077,68 +1194,84 @@ def f(l):
 
       toplevel:
         b0:
-          n0 <- $GetIter(TOPLEVEL[l])
-          n1 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n0)
-          TOPLEVEL[g] <- n1
-          n2 <- $GetIter(TOPLEVEL[l])
-          n3 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n2)
-          TOPLEVEL[g0] <- n3
-          n4 <- TOPLEVEL[print](TOPLEVEL[g])
-          n5 <- TOPLEVEL[print](TOPLEVEL[g0])
+          n0 <- TOPLEVEL[l]
+          n1 <- $GetIter(n0)
+          n2 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n1)
+          TOPLEVEL[g] <- n2
+          n3 <- TOPLEVEL[l]
+          n4 <- $GetIter(n3)
+          n5 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n4)
+          TOPLEVEL[g0] <- n5
+          n6 <- TOPLEVEL[print]
+          n7 <- TOPLEVEL[g]
+          n8 <- n6(n7)
+          n9 <- TOPLEVEL[print]
+          n10 <- TOPLEVEL[g0]
+          n11 <- n9(n10)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.<listcomp>:
         b0:
-          jmp b1(LOCAL[.0], [])
+          n0 <- LOCAL[.0]
+          jmp b1(n0, [])
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2(n0) else jmp b3(n0)
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2(n1) else jmp b3(n1)
 
         b2:
-          n6 <- $IterData(n2)
-          LOCAL[x] <- n6
-          n7 <- $Binary.Add(LOCAL[x], PYCInt (2))
-          n8 <- $ListAppend(n4, n7)
-          jmp b1(n1, n4)
+          n7 <- $IterData(n3)
+          LOCAL[x] <- n7
+          n8 <- LOCAL[x]
+          n9 <- $Binary.Add(n8, PYCInt (2))
+          n10 <- $ListAppend(n5, n9)
+          jmp b1(n2, n5)
 
         b3:
-          return n5
+          return n6
 
 
       dummy.f.<listcomp>:
         b0:
-          jmp b1(LOCAL[.0], [])
+          n0 <- LOCAL[.0]
+          jmp b1(n0, [])
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2(n0) else jmp b3(n0)
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2(n1) else jmp b3(n1)
 
         b2:
-          n6 <- $IterData(n2)
-          LOCAL[x] <- n6
-          n7 <- $Binary.Add(LOCAL[x], PYCInt (2))
-          n8 <- $ListAppend(n4, n7)
-          jmp b1(n1, n4)
+          n7 <- $IterData(n3)
+          LOCAL[x] <- n7
+          n8 <- LOCAL[x]
+          n9 <- $Binary.Add(n8, PYCInt (2))
+          n10 <- $ListAppend(n5, n9)
+          jmp b1(n2, n5)
 
         b3:
-          return n5
+          return n6
 
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[l])
-          n1 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n0)
-          LOCAL[r] <- n1
-          n2 <- $GetIter(LOCAL[l])
-          n3 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n2)
-          LOCAL[r0] <- n3
-          n4 <- GLOBAL[print](LOCAL[r])
-          n5 <- GLOBAL[print](LOCAL[r0])
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0)
+          n2 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n1)
+          LOCAL[r] <- n2
+          n3 <- LOCAL[l]
+          n4 <- $GetIter(n3)
+          n5 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n4)
+          LOCAL[r0] <- n5
+          n6 <- GLOBAL[print]
+          n7 <- LOCAL[r]
+          n8 <- n6(n7)
+          n9 <- GLOBAL[print]
+          n10 <- LOCAL[r0]
+          n11 <- n9(n10)
           return PYCNone |}]
 
 
@@ -1169,58 +1302,67 @@ def g(l):
 
       dummy.g.<dictcomp>:
         b0:
-          jmp b1(LOCAL[.0], {||})
+          n0 <- LOCAL[.0]
+          jmp b1(n0, {||})
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2(n0) else jmp b3(n0)
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2(n1) else jmp b3(n1)
 
         b2:
-          n6 <- $IterData(n2)
-          LOCAL[num] <- n6
-          n7 <- $Binary.Power(LOCAL[num], PYCInt (2))
-          n8 <- $DictSetItem(n4, LOCAL[num], n7)
-          jmp b1(n1, n4)
+          n7 <- $IterData(n3)
+          LOCAL[num] <- n7
+          n8 <- LOCAL[num]
+          n9 <- LOCAL[num]
+          n10 <- $Binary.Power(n9, PYCInt (2))
+          n11 <- $DictSetItem(n5, n8, n10)
+          jmp b1(n2, n5)
 
         b3:
-          return n5
+          return n6
 
 
       dummy.f.<setcomp>:
         b0:
-          jmp b1(LOCAL[.0], {})
+          n0 <- LOCAL[.0]
+          jmp b1(n0, {})
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n2)
-          if n3 then jmp b2(n0) else jmp b3(n0)
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2(n1) else jmp b3(n1)
 
         b2:
-          n6 <- $IterData(n2)
-          LOCAL[x] <- n6
-          n7 <- $Binary.Add(LOCAL[x], PYCInt (1))
-          n8 <- $SetAdd(n4, n7)
-          jmp b1(n1, n4)
+          n7 <- $IterData(n3)
+          LOCAL[x] <- n7
+          n8 <- LOCAL[x]
+          n9 <- $Binary.Add(n8, PYCInt (1))
+          n10 <- $SetAdd(n5, n9)
+          jmp b1(n2, n5)
 
         b3:
-          return n5
+          return n6
 
 
       dummy.f:
         b0:
-          n0 <- $GetIter(LOCAL[l])
-          n1 <- $FuncObj(<setcomp>, dummy.f.<setcomp>, {})(n0)
-          LOCAL[r] <- n1
-          return LOCAL[r]
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0)
+          n2 <- $FuncObj(<setcomp>, dummy.f.<setcomp>, {})(n1)
+          LOCAL[r] <- n2
+          n3 <- LOCAL[r]
+          return n3
 
 
       dummy.g:
         b0:
-          n0 <- $GetIter(LOCAL[l])
-          n1 <- $FuncObj(<dictcomp>, dummy.g.<dictcomp>, {})(n0)
-          LOCAL[squared_dict] <- n1
-          return GLOBAL[r] |xxx}]
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0)
+          n2 <- $FuncObj(<dictcomp>, dummy.g.<dictcomp>, {})(n1)
+          LOCAL[squared_dict] <- n2
+          n3 <- GLOBAL[r]
+          return n3 |xxx}]
 
 
 let%expect_test _ =
@@ -1255,17 +1397,20 @@ async def g():
 
       dummy.g:
         b0:
-          n0 <- GLOBAL[f]()
-          n1 <- $GetAwaitable(n0)
-          n2 <- $YieldFrom(n1, PYCNone)
-          if n1 then jmp b1 else jmp b2
+          n0 <- GLOBAL[f]
+          n1 <- n0()
+          n2 <- $GetAwaitable(n1)
+          n3 <- $YieldFrom(n2, PYCNone)
+          if n2 then jmp b1 else jmp b2
 
         b1:
-          n3 <- GLOBAL[print](PYCInt (0))
+          n4 <- GLOBAL[print]
+          n5 <- n4(PYCInt (0))
           jmp b3
 
         b2:
-          n4 <- GLOBAL[print](PYCInt (1))
+          n6 <- GLOBAL[print]
+          n7 <- n6(PYCInt (1))
           jmp b3
 
         b3:
