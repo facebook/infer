@@ -35,21 +35,24 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
         incr restart_count ;
         Queue.enqueue blocked {target; dependency_filenames}
   in
-  let rec check_for_readiness n =
+  let rec check_for_readiness child_pid n =
     (* check the next [n] items in [blocked] for whether their dependencies are satisfied and
        they can be moved to the [ready] queue *)
     if n > 0 then (
-      let w = Queue.dequeue_exn blocked in
-      if
-        List.exists w.dependency_filenames ~f:(fun proc_filename ->
-            ProcLocker.is_locked ~proc_filename )
-      then Queue.enqueue blocked w
-      else Queue.enqueue ready w.target ;
-      check_for_readiness (n - 1) )
+      let w = Queue.peek_exn blocked in
+      ( match ProcLocker.lock_all child_pid w.dependency_filenames with
+      | `LocksAcquired locks ->
+          Queue.dequeue blocked |> ignore ;
+          Queue.enqueue ready (w.target, fun () -> ProcLocker.unlock_all locks)
+      | `FailedToLockAll ->
+          (* Queue.dequeue blocked |> ignore ;
+             Queue.enqueue blocked w ; *)
+          () ) ;
+      check_for_readiness child_pid (n - 1) )
   in
-  let next _ =
-    if Queue.is_empty ready then check_for_readiness (Queue.length blocked) ;
-    Option.map (Queue.dequeue ready) ~f:(fun work -> (work, Fn.id))
+  let next {ProcessPool.TaskGenerator.child_pid} =
+    if Queue.is_empty ready then check_for_readiness child_pid (Queue.length blocked) ;
+    Queue.dequeue ready
   in
   {remaining_tasks; is_empty; finished; next}
 
@@ -58,7 +61,7 @@ let make sources =
   let target_count = ref 0 in
   let cons_procname_work acc ~specialization proc_name =
     incr target_count ;
-    Procname {proc_name; specialization} :: acc
+    (Procname {proc_name; specialization}, Fn.id) :: acc
   in
   let procs_to_analyze_targets =
     NodeSet.fold
@@ -72,7 +75,7 @@ let make sources =
   in
   let make_file_work file =
     incr target_count ;
-    TaskSchedulerTypes.File file
+    (TaskSchedulerTypes.File file, Fn.id)
   in
   let file_targets = List.rev_map sources ~f:make_file_work in
   let queue = Queue.create ~capacity:!target_count () in

@@ -16,4 +16,6 @@ val unlock : Procname.t -> unit
 (** This will work as a cleanup function because after calling unlock all the workers that need an
     unlocked Proc should find it's summary already Cached. Throws if the lock had not been taken. *)
 
-val is_locked : proc_filename:string -> bool
+val lock_all : Pid.t -> string list -> [> `FailedToLockAll | `LocksAcquired of string list]
+
+val unlock_all : string list -> unit
