@@ -399,9 +399,12 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
               Timer.time Preanalysis
                 ~f:(fun () ->
                   let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                  Some
-                    (run_proc_analysis exe_env tenv analysis_req specialization_context
-                       ?caller_pname callee_pdesc ) )
+                  let summary =
+                    run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_pname
+                      callee_pdesc
+                  in
+                  set_complete_result analysis_req summary ;
+                  Some summary )
                 ~on_timeout:(fun span ->
                   L.debug Analysis Quiet
                     "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
@@ -414,20 +417,19 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
     match is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization with
     | `SummaryReady summary ->
         Ok summary
-    | (`ComputeDefaultSummary | `ComputeDefaultSummaryThenSpecialize _) as summary_status -> (
-        let default_summary = analyze_callee_aux None in
-        Option.iter default_summary ~f:(set_complete_result analysis_req) ;
-        match summary_status with
-        | `ComputeDefaultSummary ->
-            analysis_result_of_option default_summary
-        | `ComputeDefaultSummaryThenSpecialize specialization' -> (
-          match default_summary with
-          | None ->
-              L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp
-                callee_pname Specialization.pp specialization'
-          | Some _summary ->
-              analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
-                ~from_file_analysis callee_pname ) )
+    | `ComputeDefaultSummary ->
+        analyze_callee_aux None |> analysis_result_of_option
+    | `ComputeDefaultSummaryThenSpecialize specialization -> (
+      (* recursive call so that we detect mutual recursion on the unspecialized summary *)
+      match
+        analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:None ?caller_summary
+          ~from_file_analysis callee_pname
+      with
+      | Error _ ->
+          L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp callee_pname
+            Specialization.pp specialization
+      | Ok summary ->
+          analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
     | `AddNewSpecialization (summary, specialization) ->
         analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
     | `UnknownProcedure ->
