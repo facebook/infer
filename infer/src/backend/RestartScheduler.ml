@@ -114,8 +114,6 @@ let with_lock ~f pname =
   match Config.scheduler with
   | File | SyntacticCallGraph ->
       f ()
-  | Restart when Int.equal Config.jobs 1 ->
-      f ()
   | Restart -> (
     match ProcLocker.try_lock pname with
     | `AlreadyLockedByUs ->
