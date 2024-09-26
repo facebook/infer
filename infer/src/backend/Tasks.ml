@@ -52,7 +52,9 @@ let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
        TaskBar.refresh task_bar ) ;
   TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
   TaskBar.tasks_done_reset task_bar ;
-  let for_child_info = {ProcessPool.TaskGenerator.child_slot= -1; child_pid= Unix.getpid ()} in
+  let for_child_info =
+    {ProcessPool.TaskGenerator.child_slot= -1; child_pid= Unix.getpid (); is_first_update= true}
+  in
   let rec run_tasks () =
     if not (task_generator.is_empty ()) then (
       Option.iter (task_generator.next for_child_info) ~f:(fun (t, finish) ->

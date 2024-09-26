@@ -8,7 +8,7 @@
 open! IStd
 
 module TaskGenerator : sig
-  type for_child_info = {child_slot: int; child_pid: Pid.t}
+  type for_child_info = {child_slot: int; child_pid: Pid.t; is_first_update: bool}
 
   (** abstraction for generating jobs *)
   type ('a, 'b) t =

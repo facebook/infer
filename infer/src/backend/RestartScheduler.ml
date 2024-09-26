@@ -21,9 +21,13 @@ let restart_count = ref 0
 
 let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
   let remaining = ref (Queue.length ready) in
-  let blocked = Queue.create () in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
+  (* jobs that had to restart get placed in the [blocked] queue while waiting to be retried *)
+  let blocked = Queue.create () in
+  (* a ref to avoid checking if the same first job in the [blocked] queue is blocked multiple times
+     for different idle workers in the same process pool update cycle *)
+  let waiting_for_blocked_target = ref false in
   let finished ~result target =
     match result with
     | None | Some Ok ->
@@ -35,24 +39,38 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
         incr restart_count ;
         Queue.enqueue blocked {target; dependency_filenames}
   in
-  let rec check_for_readiness child_pid n =
-    (* check the next [n] items in [blocked] for whether their dependencies are satisfied and
-       they can be moved to the [ready] queue *)
-    if n > 0 then (
-      let w = Queue.peek_exn blocked in
-      ( match ProcLocker.lock_all child_pid w.dependency_filenames with
+  let dequeue_from_blocked child_pid =
+    match Queue.peek blocked with
+    | Some w when not !waiting_for_blocked_target -> (
+      (* see if we can acquire the locks needed by this job *)
+      match ProcLocker.lock_all child_pid w.dependency_filenames with
       | `LocksAcquired locks ->
-          Queue.dequeue blocked |> ignore ;
-          Queue.enqueue ready (w.target, fun () -> ProcLocker.unlock_all locks)
+          (* success! remove the job from [blocked] since we only [peek]ed before *)
+          Queue.dequeue_exn blocked |> ignore ;
+          (* the scheduler will need to unlock the locks we acquired on behalf of the child once it
+             is done with this work packet *)
+          Some (w.target, fun () -> ProcLocker.unlock_all locks)
       | `FailedToLockAll ->
-          (* Queue.dequeue blocked |> ignore ;
-             Queue.enqueue blocked w ; *)
-          () ) ;
-      check_for_readiness child_pid (n - 1) )
+          (* failure; leave the job at the head of the queue and set the flag to avoid checking
+             again for a while. This is better (perf wise) than trying to run jobs further down the
+             queue, possibly because if we are here there is already too much contention so
+             decreasing contention by not scheduling any more tasks for this round is beneficial. *)
+          waiting_for_blocked_target := true ;
+          None )
+    | _ ->
+        None
   in
-  let next {ProcessPool.TaskGenerator.child_pid} =
-    if Queue.is_empty ready then check_for_readiness child_pid (Queue.length blocked) ;
-    Queue.dequeue ready
+  let next {ProcessPool.TaskGenerator.child_pid; is_first_update} =
+    if is_first_update then
+      (* new update cycle, worth checking if the first job in the queue is still blocked again *)
+      waiting_for_blocked_target := false ;
+    match dequeue_from_blocked child_pid with
+    | Some _ as some_result ->
+        some_result
+    | None ->
+        (* if there are no blocked jobs available to be run, continue with the original queue or
+           wait for the next update if it's empty *)
+        Queue.dequeue ready |> Option.map ~f:(fun target -> (target, Fn.id))
   in
   {remaining_tasks; is_empty; finished; next}
 
@@ -61,7 +79,7 @@ let make sources =
   let target_count = ref 0 in
   let cons_procname_work acc ~specialization proc_name =
     incr target_count ;
-    (Procname {proc_name; specialization}, Fn.id) :: acc
+    Procname {proc_name; specialization} :: acc
   in
   let procs_to_analyze_targets =
     NodeSet.fold
@@ -75,13 +93,13 @@ let make sources =
   in
   let make_file_work file =
     incr target_count ;
-    (TaskSchedulerTypes.File file, Fn.id)
+    TaskSchedulerTypes.File file
   in
   let file_targets = List.rev_map sources ~f:make_file_work in
   let queue = Queue.create ~capacity:!target_count () in
   let permute_and_enqueue targets =
     List.permute targets ~random_state:(Random.State.make (Array.create ~len:1 0))
-    |> List.iter ~f:(Queue.enqueue queue)
+    |> List.iter ~f:(fun target -> Queue.enqueue queue target)
   in
   permute_and_enqueue pname_targets ;
   permute_and_enqueue file_targets ;

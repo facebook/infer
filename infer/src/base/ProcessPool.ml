@@ -11,7 +11,7 @@ module CLOpt = CommandLineOption
 module L = Logging
 
 module TaskGenerator = struct
-  type for_child_info = {child_slot: int; child_pid: Pid.t}
+  type for_child_info = {child_slot: int; child_pid: Pid.t; is_first_update: bool}
 
   type ('a, 'b) t =
     { remaining_tasks: unit -> int
@@ -254,9 +254,12 @@ let should_throttle =
 (** try to schedule more work if there are idle workers, stop as soon as there is no more work *)
 let send_work_to_idle_children pool =
   let exception NoMoreWork in
+  let is_first_update_ref = ref true in
   let send_work_to_child pool slot =
     let child_pid = pool.slots.(slot).pid in
-    match pool.tasks.next {child_slot= slot; child_pid} with
+    let is_first_update = !is_first_update_ref in
+    is_first_update_ref := false ;
+    match pool.tasks.next {child_slot= slot; child_pid; is_first_update} with
     | None ->
         raise_notrace NoMoreWork
     | Some (x, finish) ->
