@@ -20,4 +20,6 @@ module Error : sig
 end
 
 val to_module : sourcefile:Textual.SourceFile.t -> FFI.Code.t -> (Textual.Module.t, Error.t) result
+[@@warning "-unused-value-declaration"]
+
 (** Translate a Python code object into its Textual counter part *)

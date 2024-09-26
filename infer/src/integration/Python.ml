@@ -40,7 +40,6 @@ let process_file ~is_binary file =
   let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
   let* _ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
   let _ = PyTrans.to_module in
-  (* let module = PyTrans.to_module ~sourcefile code *)
   Ok ()
 
 
@@ -56,60 +55,17 @@ let _dump_file ~next_to_source pyc module_ =
   TextualSil.dump_module ~filename module_
 
 
-let capture_file ~is_binary file =
-  let open TextualParser in
-  let open IResult.Let_syntax in
-  let _sourcefile = Textual.SourceFile.create file in
-  (* let* module_ = process_file ~is_binary file in *)
-  let* () = process_file ~is_binary file in
-  (* if Config.dump_textual then dump_file ~next_to_source:true file module_ ; *)
-  (* let trans = TextualFile.translate_module sourcefile module_ in *)
-  let _ = TextualFile.translate_module in
-  (* let log_error sourcefile error = *)
-  (*   if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error *)
-  (*   else L.external_error "%a@\n" (pp_error sourcefile) error *)
-  (* in *)
-  (* let res = *)
-  (*   match trans with *)
-  (*   | Ok sil -> *)
-  (*       TextualFile.capture ~use_global_tenv:true sil ; *)
-  (*       Ok sil.tenv *)
-  (*   | Error (sourcefile, errs) -> *)
-  (*       List.iter errs ~f:(log_error sourcefile) ; *)
-  (*       Error (PyTrans.Error.textual_parser sourcefile) *)
-  (* in *)
-  (* if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ; *)
-  (* res *)
-  Ok ()
-
-
-let load_textual_model filename =
-  let acc_tenv = Tenv.create () in
-  L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
-  ( match TextualParser.TextualFile.translate (StandaloneFile filename) with
-  | Ok sil ->
-      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
-      Tenv.merge ~src:sil.tenv ~dst:acc_tenv
-  | Error (sourcefile, errs) ->
-      List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile)) ) ;
-  acc_tenv
-
+let capture_file ~is_binary file = process_file ~is_binary file
 
 let capture_files ~is_binary files =
-  let builtins = Config.python_builtin_models in
   let n_files = List.length files in
   let child_action, child_prologue, child_epilogue =
     let child_tenv = Tenv.create () in
-    (* TODO: is this the best place to do so ? *)
-    let builtin_model = load_textual_model builtins in
-    Tenv.merge ~src:builtin_model ~dst:child_tenv ;
     let child_action file =
       let t0 = Mtime_clock.now () in
       !ProcessPoolState.update_status (Some t0) file ;
       match capture_file ~is_binary file with
       | Ok () ->
-          (* | Ok file_tenv -> *)
-          (*     Tenv.merge ~src:file_tenv ~dst:child_tenv ; *)
           None
       | Error err ->
           Error.format_error file err ;
@@ -128,7 +84,7 @@ let capture_files ~is_binary files =
     (child_action, child_prologue, child_epilogue)
   in
   L.progress "Expecting to capture %d files@\n" n_files ;
-  (* TODO(vsiles) keep try of the number of success / failures like Hack *)
+  (* TODO(vsiles) keep track of the number of success / failures like Hack *)
   let tasks () =
     ProcessPool.TaskGenerator.of_list files ~finish:(fun result _ ->
         match result with Some () | None -> None )

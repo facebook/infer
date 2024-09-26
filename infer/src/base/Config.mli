@@ -734,8 +734,6 @@ val pure_by_default : bool
 
 val pyc_file : string list
 
-val python_builtin_models : string
-
 val qualified_cpp_name_block_list : string list
 
 val quiet : bool

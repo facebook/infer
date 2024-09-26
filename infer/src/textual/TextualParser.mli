@@ -31,9 +31,6 @@ module TextualFile : sig
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
-  val translate_module :
-    Textual.SourceFile.t -> Textual.Module.t -> (sil, Textual.SourceFile.t * error list) result
-
   val translate : t -> (sil, Textual.SourceFile.t * error list) result
 
   val capture : use_global_tenv:bool -> sil -> unit

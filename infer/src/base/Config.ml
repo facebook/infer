@@ -372,9 +372,6 @@ let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 (** Path to the textual file with Hack models *)
 let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
-(** Path to the textual file with Python models *)
-let default_python_builtin_models = lib_dir ^/ "python" ^/ "models.sil"
-
 let pulse_default_taint_config = config_dir ^/ "taint"
 
 (* Normalize the path *)
@@ -2946,11 +2943,6 @@ and pure_by_default =
 
 and pyc_file = CLOpt.mk_path_list ~long:"pyc-file" "Collection of compiled Python files (byte-code)"
 
-and python_builtin_models =
-  CLOpt.mk_string ~long:"python-builtin-models" ~default:default_python_builtin_models
-    "Specify .sil file to use as Python builtin models (uses bundled models by default)"
-
-
 and qualified_cpp_name_block_list =
   CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4631,8 +4623,6 @@ and pulse_widen_threshold = !pulse_widen_threshold
 and pure_by_default = !pure_by_default
 
 and pyc_file = RevList.to_list !pyc_file
-
-and python_builtin_models = !python_builtin_models
 
 and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 
