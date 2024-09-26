@@ -77,17 +77,7 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
         if Config.write_html then Printer.write_all_html_files source_file ;
         result )
   in
-  (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
-     The default roughly reflects the average number of procedures in a C++ file. *)
-  let per_procedure_logging_granularity = 200 in
-  (* [procs_left] is set to 1 so that we log the first procedure sent to us. *)
-  let procs_left = ref 1 in
   let analyze_proc_name exe_env ~specialization proc_name =
-    decr procs_left ;
-    if Int.( <= ) !procs_left 0 then (
-      L.log_task "Analysing block of %d procs, starting with %a@." per_procedure_logging_granularity
-        Procname.pp proc_name ;
-      procs_left := per_procedure_logging_granularity ) ;
     run_and_interpret_result ~f:(fun () ->
         Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all ~specialization proc_name )
   in

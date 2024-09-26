@@ -8,6 +8,20 @@
 open! IStd
 module L = Logging
 
+let log =
+  (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
+     The default roughly reflects the average number of procedures in a C++ file. *)
+  let per_procedure_logging_granularity = 200 in
+  (* [procs_left] is set to 1 so that we log the first procedure sent to us. *)
+  let procs_left = ref 1 in
+  fun proc_name ->
+    decr procs_left ;
+    if !procs_left <= 0 then (
+      L.log_task "Analyzing %a, next logging in %d procedures@." Procname.pp proc_name
+        per_procedure_logging_granularity ;
+      procs_left := per_procedure_logging_granularity )
+
+
 (* How it works:
 
    - the queue [pending] contains the currently-known items of work, which are all the nodes at the
@@ -64,6 +78,7 @@ let bottom_up call_graph =
         next for_child
     | Some n ->
         incr scheduled ;
+        log n.pname ;
         CallGraph.Node.set_flag n ;
         Some (Procname {proc_name= n.pname; specialization= None}, Fn.id)
   in
