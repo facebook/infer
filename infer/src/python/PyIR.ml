@@ -435,15 +435,24 @@ module Stmt = struct
   let unnamed_call_args args = List.map ~f:unnamed_call_arg args
 
   type t =
-    | Assign of {lhs: Exp.t; rhs: Exp.t}
+    | Let of {lhs: SSA.t; rhs: Exp.t}
+    | SetAttr of {lhs: Exp.t; attr: string; rhs: Exp.t}
+    | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
+    | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
     | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
     | SetupAnnotations
 
   let pp fmt = function
-    | Assign {lhs; rhs} ->
-        F.fprintf fmt "%a <- %a" Exp.pp lhs Exp.pp rhs
+    | Let {lhs; rhs} ->
+        F.fprintf fmt "%a <- %a" SSA.pp lhs Exp.pp rhs
+    | SetAttr {lhs; attr; rhs} ->
+        F.fprintf fmt "%a.%s <- %a" Exp.pp lhs attr Exp.pp rhs
+    | Store {lhs; rhs} ->
+        F.fprintf fmt "%a <- %a" ScopedIdent.pp lhs Exp.pp rhs
+    | StoreSubscript {lhs; index; rhs} ->
+        F.fprintf fmt "%a[%a] <- %a" Exp.pp lhs Exp.pp index Exp.pp rhs
     | Call {lhs; exp; args; packed} ->
         F.fprintf fmt "%a <- %a(@[%a@])%s" SSA.pp lhs Exp.pp exp (Pp.seq ~sep:", " pp_call_arg) args
           (if packed then " !packed" else "")
@@ -1481,7 +1490,7 @@ let collection_add st opname arg ?(map = false) builtin =
 let assign_to_temp_and_push st rhs =
   let id, st = State.fresh_id st in
   let exp = Exp.Temp id in
-  let stmt = Stmt.Assign {lhs= Exp.Temp id; rhs} in
+  let stmt = Stmt.Let {lhs= id; rhs} in
   let st = State.push_stmt st stmt in
   let st = State.push st exp in
   Ok (st, None)
@@ -1494,9 +1503,9 @@ let load st scope name =
 
 let store st scope name =
   let open IResult.Let_syntax in
-  let lhs = Exp.Var {scope; ident= Ident.mk name} in
+  let lhs = {ScopedIdent.scope; ident= Ident.mk name} in
   let* rhs, st = State.pop st in
-  let stmt = Stmt.Assign {lhs; rhs} in
+  let stmt = Stmt.Store {lhs; rhs} in
   let st = State.push_stmt st stmt in
   Ok (st, None)
 
@@ -1541,20 +1550,18 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "STORE_FAST" ->
       store st Fast co_varnames.(arg)
   | "STORE_ATTR" ->
-      let name = co_names.(arg) in
-      let* root, st = State.pop st in
+      let attr = co_names.(arg) in
+      let* lhs, st = State.pop st in
       let* rhs, st = State.pop st in
-      let lhs = Exp.GetAttr (root, name) in
-      let stmt = Stmt.Assign {lhs; rhs} in
+      let stmt = Stmt.SetAttr {lhs; attr; rhs} in
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_SUBSCR" ->
       (* Implements TOS1[TOS] = TOS2.  *)
       let* index, st = State.pop st in
-      let* exp, st = State.pop st in
+      let* lhs, st = State.pop st in
       let* rhs, st = State.pop st in
-      let lhs = Exp.Subscript {exp; index} in
-      let stmt = Stmt.Assign {lhs; rhs} in
+      let stmt = Stmt.StoreSubscript {lhs; index; rhs} in
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_DEREF" ->
@@ -1579,7 +1586,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
           Ok (st, None)
       | _ ->
           let id, st = State.fresh_id st in
-          let stmt = Stmt.Assign {lhs= Exp.Temp id; rhs} in
+          let stmt = Stmt.Let {lhs= id; rhs} in
           let st = State.push_stmt st stmt in
           Ok (st, None) )
   | "BINARY_ADD" ->
