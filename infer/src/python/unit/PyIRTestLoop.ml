@@ -23,7 +23,7 @@ for x in range(10):
 
       toplevel:
         b0:
-          n0 <- range(PyIR.Name)(PYCInt (10))
+          n0 <- TOPLEVEL[range](PYCInt (10))
           n1 <- $GetIter(n0)
           jmp b1(n1)
 
@@ -34,8 +34,8 @@ for x in range(10):
 
         b2:
           n5 <- $IterData(n3)
-          x(PyIR.Name) <- n5
-          n6 <- print(PyIR.Name)(x(PyIR.Name))
+          TOPLEVEL[x] <- n5
+          n6 <- TOPLEVEL[print](TOPLEVEL[x])
           jmp b1(n2)
 
         b3:
@@ -60,13 +60,13 @@ def f(x, y, l, bar, toto):
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- $GetIter(l(PyIR.Fast))
+          n0 <- $GetIter(LOCAL[l])
           jmp b1(n0)
 
         b1:
@@ -76,13 +76,13 @@ def f(x, y, l, bar, toto):
 
         b2:
           n4 <- $IterData(n2)
-          x(PyIR.Fast) <- n4
-          n5 <- bar(PyIR.Fast)()
+          LOCAL[x] <- n4
+          n5 <- LOCAL[bar]()
           n6 <- $LoadMethod(n5, __enter__)()
-          n9 <- toto(PyIR.Fast)()
+          n9 <- LOCAL[toto]()
           n10 <- $LoadMethod(n9, __enter__)()
-          obj(PyIR.Fast) <- n10
-          if y(PyIR.Fast) then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
+          LOCAL[obj] <- n10
+          if LOCAL[y] then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
           jmp b7(CM(n9).__exit__, CM(n5).__exit__, n1)
 
         b3:
@@ -100,7 +100,7 @@ def f(x, y, l, bar, toto):
           jmp b8(n16, n15, n14)
 
         b7:
-          n28 <- print(PyIR.Global)(PYCString ("nop"))
+          n28 <- GLOBAL[print](PYCString ("nop"))
           jmp b5(n19, n18, n17)
 
         b8:
@@ -128,13 +128,13 @@ def f(match, it, n):
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- $GetIter(match(PyIR.Fast))
+          n0 <- $GetIter(LOCAL[match])
           jmp b1(n0)
 
         b1:
@@ -144,19 +144,19 @@ def f(match, it, n):
 
         b2:
           n4 <- $IterData(n2)
-          item(PyIR.Fast) <- n4
-          n5 <- $Compare.eq(it(PyIR.Fast)[n(PyIR.Fast)], item(PyIR.Fast))
+          LOCAL[item] <- n4
+          n5 <- $Compare.eq(LOCAL[it][LOCAL[n]], LOCAL[item])
           if $Not(n5) then jmp b4(n1) else jmp b5(n1)
 
         b3:
           return PYCNone
 
         b4:
-          throw AssertionError(PyIR.Global)
+          throw GLOBAL[AssertionError]
 
         b5:
-          n8 <- $Inplace.Add(n(PyIR.Fast), PYCInt (1))
-          n(PyIR.Fast) <- n8
+          n8 <- $Inplace.Add(LOCAL[n], PYCInt (1))
+          LOCAL[n] <- n8
           jmp b1(n7) |}]
 
 
@@ -176,13 +176,13 @@ def f(foo):
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- $GetIter(foo(PyIR.Fast))
+          n0 <- $GetIter(LOCAL[foo])
           jmp b1(n0)
 
         b1:
@@ -192,8 +192,8 @@ def f(foo):
 
         b2:
           n4 <- $IterData(n2)
-          path(PyIR.Fast) <- n4
-          if path(PyIR.Fast) then jmp b4(n1) else jmp b1(n1)
+          LOCAL[path] <- n4
+          if LOCAL[path] then jmp b4(n1) else jmp b1(n1)
 
         b3:
           return PYCNone

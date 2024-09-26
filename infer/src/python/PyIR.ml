@@ -31,6 +31,23 @@ end = struct
   let mk ident = ident
 end
 
+module ScopedIdent = struct
+  type scope = Global | Fast | Name | Deref
+
+  type t = {scope: scope; ident: Ident.t}
+
+  let pp fmt {scope; ident} =
+    match scope with
+    | Global ->
+        F.fprintf fmt "GLOBAL[%a]" Ident.pp ident
+    | Fast ->
+        F.fprintf fmt "LOCAL[%a]" Ident.pp ident
+    | Name ->
+        F.fprintf fmt "TOPLEVEL[%a]" Ident.pp ident
+    | Deref ->
+        F.fprintf fmt "DEREF[%a]" Ident.pp ident
+end
+
 module QualName : sig
   type t
 
@@ -92,9 +109,6 @@ module SSA = struct
 
   let next n = 1 + n
 end
-
-(* we reuse here the same scope convention as in the bytecode spec *)
-type name_scope = Global | Fast | Name | Deref [@@deriving show]
 
 module BuiltinCaller = struct
   type format_function = Str | Repr | Ascii
@@ -161,7 +175,7 @@ module BuiltinCaller = struct
     | ListAppend  (** [LIST_APPEND] *)
     | SetAdd  (** [SET_ADD] *)
     | DictSetItem  (** [MAP_ADD] *)
-    | Delete of {scope: name_scope; name: string}  (** [DELETE_FAST] & cie *)
+    | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
     | DeleteAttr of string
     | DeleteSubscr
     | YieldFrom  (** [YIELD_FROM] *)
@@ -207,8 +221,8 @@ module BuiltinCaller = struct
         "$SetAdd"
     | DictSetItem ->
         "$DictSetItem"
-    | Delete {scope; name} ->
-        sprintf "$Delete%s(%s)" (show_name_scope scope) name
+    | Delete ident ->
+        F.asprintf "$Delete(%a)" ScopedIdent.pp ident
     | DeleteAttr name ->
         sprintf "$DeleteAttr(%s)" name
     | DeleteSubscr ->
@@ -250,7 +264,7 @@ module Exp = struct
       the CFG of the program, lost during Python compilation *)
   type t =
     | Const of Const.t
-    | Var of {scope: name_scope; ident: Ident.t}
+    | Var of ScopedIdent.t
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
     | Collection of {kind: collection; values: t list; packed: bool}
@@ -311,8 +325,8 @@ module Exp = struct
   let rec pp fmt = function
     | Const c ->
         Const.pp fmt c
-    | Var {scope; ident} ->
-        F.fprintf fmt "%a(%s)" Ident.pp ident (show_name_scope scope)
+    | Var scope_ident ->
+        ScopedIdent.pp fmt scope_ident
     | Temp i ->
         SSA.pp fmt i
     | Subscript {exp; index} ->
@@ -2050,16 +2064,16 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "MAP_ADD" ->
       collection_add st opname arg ~map:true DictSetItem
   | "DELETE_NAME" ->
-      let name = co_names.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Name; name}) [] in
+      let ident = Ident.mk co_names.(arg) in
+      let _id, st = call_builtin_function st (Delete {scope= Name; ident}) [] in
       Ok (st, None)
   | "DELETE_GLOBAL" ->
-      let name = co_names.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Global; name}) [] in
+      let ident = Ident.mk co_names.(arg) in
+      let _id, st = call_builtin_function st (Delete {scope= Global; ident}) [] in
       Ok (st, None)
   | "DELETE_FAST" ->
-      let name = co_varnames.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Fast; name}) [] in
+      let ident = Ident.mk co_varnames.(arg) in
+      let _id, st = call_builtin_function st (Delete {scope= Fast; ident}) [] in
       Ok (st, None)
   | "DELETE_ATTR" ->
       let name = co_names.(arg) in
@@ -2067,8 +2081,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let _id, st = call_builtin_function st (DeleteAttr name) [tos] in
       Ok (st, None)
   | "DELETE_DEREF" ->
-      let name = get_cell_name code arg in
-      let _id, st = call_builtin_function st (Delete {scope= Deref; name}) [] in
+      let ident = get_cell_name code arg |> Ident.mk in
+      let _id, st = call_builtin_function st (Delete {scope= Deref; ident}) [] in
       Ok (st, None)
   | "DELETE_SUBSCR" ->
       let* index, st = State.pop st in

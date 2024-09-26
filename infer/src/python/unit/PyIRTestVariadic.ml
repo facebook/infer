@@ -26,13 +26,13 @@ def f(**kwargs):
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(kwargs(PyIR.Fast), items), )
+          n0 <- $CallMethod($LoadMethod(LOCAL[kwargs], items), )
           n1 <- $GetIter(n0)
           jmp b1(n1)
 
@@ -43,9 +43,9 @@ def f(**kwargs):
 
         b2:
           n5 <- $IterData(n3)
-          k(PyIR.Fast) <- n5[PYCInt (0)]
-          v(PyIR.Fast) <- n5[PYCInt (1)]
-          n6 <- print(PyIR.Global)(k(PyIR.Fast), v(PyIR.Fast))
+          LOCAL[k] <- n5[PYCInt (0)]
+          LOCAL[v] <- n5[PYCInt (1)]
+          n6 <- GLOBAL[print](LOCAL[k], LOCAL[v])
           jmp b1(n2)
 
         b3:
@@ -85,20 +85,20 @@ start()
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
-          g(PyIR.Name) <- $FuncObj(g, dummy.g, {})
-          start(PyIR.Name) <- $FuncObj(start, dummy.start, {})
-          n0 <- start(PyIR.Name)()
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
+          TOPLEVEL[start] <- $FuncObj(start, dummy.start, {})
+          n0 <- TOPLEVEL[start]()
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- print(PyIR.Global)(PYCString ("dummy = "), dummy(PyIR.Fast))
-          n1 <- print(PyIR.Global)(PYCString ("dummy2= "), dummy2(PyIR.Fast))
-          n2 <- print(PyIR.Global)(PYCString ("dummy3= "), dummy3(PyIR.Fast))
-          n3 <- print(PyIR.Global)(PYCString ("dummy4= "), dummy4(PyIR.Fast))
-          n4 <- $CallMethod($LoadMethod(dummyA(PyIR.Fast), items), )
+          n0 <- GLOBAL[print](PYCString ("dummy = "), LOCAL[dummy])
+          n1 <- GLOBAL[print](PYCString ("dummy2= "), LOCAL[dummy2])
+          n2 <- GLOBAL[print](PYCString ("dummy3= "), LOCAL[dummy3])
+          n3 <- GLOBAL[print](PYCString ("dummy4= "), LOCAL[dummy4])
+          n4 <- $CallMethod($LoadMethod(LOCAL[dummyA], items), )
           n5 <- $GetIter(n4)
           jmp b1(n5)
 
@@ -109,10 +109,10 @@ start()
 
         b2:
           n9 <- $IterData(n7)
-          k(PyIR.Fast) <- n9[PYCInt (0)]
-          v(PyIR.Fast) <- n9[PYCInt (1)]
-          n10 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), k(PyIR.Fast), v(PyIR.Fast))
-          n11 <- print(PyIR.Global)(n10)
+          LOCAL[k] <- n9[PYCInt (0)]
+          LOCAL[v] <- n9[PYCInt (1)]
+          n10 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), LOCAL[k], LOCAL[v])
+          n11 <- GLOBAL[print](n10)
           jmp b1(n6)
 
         b3:
@@ -121,22 +121,22 @@ start()
 
       dummy.g:
         b0:
-          n0 <- print(PyIR.Global)(PYCString ("dummy = "), dummy(PyIR.Fast))
-          n1 <- print(PyIR.Global)(PYCString ("dummy2= "), dummy2(PyIR.Fast))
-          n2 <- print(PyIR.Global)(PYCString ("dummy3= "), dummy3(PyIR.Fast))
-          n3 <- print(PyIR.Global)(PYCString ("dummy4= "), dummy4(PyIR.Fast))
+          n0 <- GLOBAL[print](PYCString ("dummy = "), LOCAL[dummy])
+          n1 <- GLOBAL[print](PYCString ("dummy2= "), LOCAL[dummy2])
+          n2 <- GLOBAL[print](PYCString ("dummy3= "), LOCAL[dummy3])
+          n3 <- GLOBAL[print](PYCString ("dummy4= "), LOCAL[dummy4])
           return PYCNone
 
 
       dummy.start:
         b0:
-          x(PyIR.Fast) <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
-          n0 <- f(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x(PyIR.Fast)))), $PackedMap({|
-                               PYCString ("test"), PYCInt (42)|})) !packed
-          n1 <- f(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
-                                                PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
-                               PYCString ("test"), PYCInt (42)|})) !packed
-          n2 <- g(PyIR.Global)($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(x(PyIR.Fast))))) !packed
+          LOCAL[x] <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
+          n0 <- GLOBAL[f]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(LOCAL[x]))), $PackedMap({|
+                          PYCString ("test"), PYCInt (42)|})) !packed
+          n1 <- GLOBAL[f]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
+                                           PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
+                          PYCString ("test"), PYCInt (42)|})) !packed
+          n2 <- GLOBAL[g]($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(LOCAL[x])))) !packed
           return PYCNone |xxx}]
 
 
@@ -162,19 +162,19 @@ def f(foo, a, b, c):
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- $CallMethod($LoadMethod(foo(PyIR.Fast), f), a(PyIR.Fast))
-          n1 <- foo(PyIR.Fast).f($Packed(b(PyIR.Fast))) !packed
-          n2 <- foo(PyIR.Fast).f($Packed((packed)($Packed((a(PyIR.Fast))), $Packed(b(PyIR.Fast))))) !packed
-          n3 <- foo(PyIR.Fast).f($Packed(()), $PackedMap(c(PyIR.Fast))) !packed
-          n4 <- foo(PyIR.Fast).f($Packed(b(PyIR.Fast)), $PackedMap(c(PyIR.Fast))) !packed
-          n5 <- foo(PyIR.Fast).f($Packed((a(PyIR.Fast))), $PackedMap(c(PyIR.Fast))) !packed
-          n6 <- foo(PyIR.Fast).f($Packed((packed)($Packed((a(PyIR.Fast))), $Packed(b(PyIR.Fast)))), $PackedMap(c(PyIR.Fast))) !packed
+          n0 <- $CallMethod($LoadMethod(LOCAL[foo], f), LOCAL[a])
+          n1 <- LOCAL[foo].f($Packed(LOCAL[b])) !packed
+          n2 <- LOCAL[foo].f($Packed((packed)($Packed((LOCAL[a])), $Packed(LOCAL[b])))) !packed
+          n3 <- LOCAL[foo].f($Packed(()), $PackedMap(LOCAL[c])) !packed
+          n4 <- LOCAL[foo].f($Packed(LOCAL[b]), $PackedMap(LOCAL[c])) !packed
+          n5 <- LOCAL[foo].f($Packed((LOCAL[a])), $PackedMap(LOCAL[c])) !packed
+          n6 <- LOCAL[foo].f($Packed((packed)($Packed((LOCAL[a])), $Packed(LOCAL[b]))), $PackedMap(LOCAL[c])) !packed
           return PYCNone |}]
 
 
@@ -202,22 +202,22 @@ f(**d1, x=42)
 
       toplevel:
         b0:
-          d0(PyIR.Name) <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
-          d1(PyIR.Name) <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-          x(PyIR.Name) <- (packed){|$Packed(d0(PyIR.Name)), $Packed(d1(PyIR.Name))|}
-          n0 <- print(PyIR.Name)(x(PyIR.Name))
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
-          d1(PyIR.Name) <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
-          n1 <- f(PyIR.Name)($Packed(()), $PackedMap((packed){|$Packed(d1(PyIR.Name)), $Packed({|
-                                                               PYCString ("x"),
-                                                               PYCInt (42)|})|})) !packed
+          TOPLEVEL[d0] <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
+          TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+          TOPLEVEL[x] <- (packed){|$Packed(TOPLEVEL[d0]), $Packed(TOPLEVEL[d1])|}
+          n0 <- TOPLEVEL[print](TOPLEVEL[x])
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+          n1 <- TOPLEVEL[f]($Packed(()), $PackedMap((packed){|$Packed(TOPLEVEL[d1]), $Packed({|
+                                                              PYCString ("x"),
+                                                              PYCInt (42)|})|})) !packed
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- print(PyIR.Global)(x(PyIR.Fast))
-          n1 <- $CallMethod($LoadMethod(kwargs(PyIR.Fast), items), )
+          n0 <- GLOBAL[print](LOCAL[x])
+          n1 <- $CallMethod($LoadMethod(LOCAL[kwargs], items), )
           n2 <- $GetIter(n1)
           jmp b1(n2)
 
@@ -228,9 +228,9 @@ f(**d1, x=42)
 
         b2:
           n6 <- $IterData(n4)
-          k(PyIR.Fast) <- n6[PYCInt (0)]
-          v(PyIR.Fast) <- n6[PYCInt (1)]
-          n7 <- print(PyIR.Global)(k(PyIR.Fast), v(PyIR.Fast))
+          LOCAL[k] <- n6[PYCInt (0)]
+          LOCAL[v] <- n6[PYCInt (1)]
+          n7 <- GLOBAL[print](LOCAL[k], LOCAL[v])
           jmp b1(n3)
 
         b3:
@@ -254,20 +254,20 @@ print(lst) # [2, 3, 4, 5, 6]
 
       toplevel:
         b0:
-          f(PyIR.Name) <- $FuncObj(f, dummy.f, {})
-          n0 <- f(PyIR.Name)()
+          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- TOPLEVEL[f]()
           n1 <- $UnpackEx(PYCInt (2), PYCInt (3), n0)
-          a(PyIR.Name) <- n1[PYCInt (0)]
-          b(PyIR.Name) <- n1[PYCInt (1)]
-          lst(PyIR.Name) <- n1[PYCInt (2)]
-          x(PyIR.Name) <- n1[PYCInt (3)]
-          y(PyIR.Name) <- n1[PYCInt (4)]
-          z(PyIR.Name) <- n1[PYCInt (5)]
-          n2 <- print(PyIR.Name)(lst(PyIR.Name))
+          TOPLEVEL[a] <- n1[PYCInt (0)]
+          TOPLEVEL[b] <- n1[PYCInt (1)]
+          TOPLEVEL[lst] <- n1[PYCInt (2)]
+          TOPLEVEL[x] <- n1[PYCInt (3)]
+          TOPLEVEL[y] <- n1[PYCInt (4)]
+          TOPLEVEL[z] <- n1[PYCInt (5)]
+          n2 <- TOPLEVEL[print](TOPLEVEL[lst])
           return PYCNone
 
 
       dummy.f:
         b0:
-          n0 <- range(PyIR.Global)(PYCInt (10))
+          n0 <- GLOBAL[range](PYCInt (10))
           return n0 |}]
