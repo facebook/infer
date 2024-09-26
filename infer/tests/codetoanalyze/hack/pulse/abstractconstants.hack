@@ -28,7 +28,7 @@ class E extends C {
 }
 
 class Tester {
-  public static function constant_from_interface_FP(): void {
+  public static function constant_from_interface_OK(): void {
     D::MyC;
   }
 

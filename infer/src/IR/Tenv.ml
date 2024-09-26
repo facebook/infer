@@ -137,10 +137,14 @@ let resolve_field_info tenv name fieldname =
 
 
 let resolve_fieldname tenv name fieldname_str =
+  let find ~f =
+    find_map_supers ~ignore_require_extends:true tenv name ~f:(fun name str_opt ->
+        Option.bind str_opt ~f:(fun {Struct.fields} ->
+            if List.exists fields ~f then Some name else None ) )
+  in
   let is_fld {Struct.name} = String.equal (Fieldname.get_field_name name) fieldname_str in
-  find_map_supers ~ignore_require_extends:true tenv name ~f:(fun name str_opt ->
-      Option.bind str_opt ~f:(fun {Struct.fields} ->
-          if List.exists fields ~f:is_fld then Some name else None ) )
+  let is_non_abstract_fld ({Struct.annot} as x) = is_fld x && not (Annot.Item.is_abstract annot) in
+  (match find ~f:is_non_abstract_fld with Some _ as fld -> fld | None -> find ~f:is_fld)
   |> Option.map ~f:(fun name -> Fieldname.make name fieldname_str)
 
 
