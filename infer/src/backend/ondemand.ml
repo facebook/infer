@@ -20,29 +20,43 @@ let () = AnalysisGlobalState.register_ref nesting ~init:(fun () -> -1)
 
 let max_nesting_to_print = 8
 
-(* can be switched to a [HashQueue] if we ever need to keep track of the order as well *)
-module AnalysisTargetsHashSet = HashSet.Make (struct
-  (* temporary: record [SpecializedProcname.t] but only compare by their proc names, ignoring specialization *)
-  type t = SpecializedProcname.t = {proc_name: Procname.t; specialization: Specialization.t option}
+(** keep track of the "call stack" of procedures we are currently analyzing; used to break mutual
+    recursion cycles in a naive way: if we are already analyzing a procedure and another one (whose
+    summary we transitively need to analyze the original procedure) asks for its summary, return no
+    summary instead of triggering a recursive analysis of the original procedure *)
+module ActiveProcedures : sig
+  type active = SpecializedProcname.t
 
-  let equal {proc_name= proc_name1} {proc_name= proc_name2} = Procname.equal proc_name1 proc_name2
+  val mem : active -> bool
 
-  let hash {proc_name} = Procname.hash proc_name
-end)
+  val add : active -> unit
 
-(* keep track of the "call stack" of procedures we are currently analyzing; used to break mutual
-   recursion cycles in a naive way: if we are already analyzing a procedure and another one (whose
-   summary we transitively need to analyze the original procedure) asks for its summary, return no
-   summary instead of triggering a recursive analysis of the original procedure. *)
-let is_active, add_active, remove_active, clear_actives =
-  let open AnalysisTargetsHashSet in
-  let currently_analyzed = create 0 in
-  let is_active analysis_target = mem currently_analyzed analysis_target in
-  let add_active analysis_target = add analysis_target currently_analyzed in
-  let remove_active analysis_target = remove analysis_target currently_analyzed in
-  let clear_actives () = clear currently_analyzed in
-  (is_active, add_active, remove_active, clear_actives)
+  val remove : active -> unit
 
+  val clear : unit -> unit
+end = struct
+  type active = SpecializedProcname.t
+
+  (* can be switched to a [HashQueue] if we ever need to keep track of the order as well *)
+  module AnalysisTargets = HashSet.Make (struct
+    (* temporary: record [SpecializedProcname.t] but only compare by their proc names, ignoring specialization *)
+    type t = SpecializedProcname.t = {proc_name: Procname.t; specialization: Specialization.t option}
+
+    let equal {proc_name= proc_name1} {proc_name= proc_name2} = Procname.equal proc_name1 proc_name2
+
+    let hash {proc_name} = Procname.hash proc_name
+  end)
+
+  let currently_analyzed = AnalysisTargets.create 0
+
+  let mem analysis_target = AnalysisTargets.mem currently_analyzed analysis_target
+
+  let add analysis_target = AnalysisTargets.add analysis_target currently_analyzed
+
+  let remove analysis_target = AnalysisTargets.remove analysis_target currently_analyzed
+
+  let clear () = AnalysisTargets.clear currently_analyzed
+end
 
 (** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
     where [is_active] caused ondemand to return an empty summary to avoid a recursive analysis in
@@ -59,7 +73,7 @@ let in_mutual_recursion_cycle ~caller_summary ~callee specialization =
       Procname.Map.find_opt proc_name edges_to_ignore
       |> Option.exists ~f:(fun recursive_callees -> Procname.Set.mem callee recursive_callees)
   | None, _ | _, None ->
-      is_active {proc_name= callee; specialization}
+      ActiveProcedures.mem {proc_name= callee; specialization}
 
 
 let procedure_is_defined proc_name =
@@ -176,7 +190,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
       | Some (current_summary, _) ->
           current_summary
     in
-    add_active {proc_name= callee_pname; specialization} ;
+    ActiveProcedures.add {proc_name= callee_pname; specialization} ;
     initial_callee_summary
   in
   let postprocess summary =
@@ -191,7 +205,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
                    Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
                  recursive_callees ) ) ;
     let summary = Summary.OnDisk.store analysis_req summary in
-    remove_active {proc_name= callee_pname; specialization} ;
+    ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     if Option.is_some specialization then Stats.incr_summary_specializations () ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -211,7 +225,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     in
     let new_summary = {summary with stats; payloads} in
     let new_summary = Summary.OnDisk.store analysis_req new_summary in
-    remove_active {proc_name= callee_pname; specialization} ;
+    ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     log_elapsed_time () ;
     new_summary
   in
@@ -232,7 +246,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
         match exn with
         | RestartSchedulerException.ProcnameAlreadyLocked _
         | MissingDependencyException.MissingDependencyException ->
-            clear_actives () ;
+            ActiveProcedures.clear () ;
             true
         | exn ->
             if not !logged_error then (
