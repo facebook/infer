@@ -339,3 +339,25 @@ print(result)
           TOPLEVEL[result] <- (packed)[$Packed(TOPLEVEL[values]), $Packed(TOPLEVEL[values2])]
           n1 <- TOPLEVEL[print](TOPLEVEL[result])
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+x = 1
+x = x + (x := 0)
+print(x) # will print 1
+          |} in
+  PyIR.test source ;
+  (* THIS TRANSLATION IS CURRENTLY WRONG. It prints 0 instead of 1 *)
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[x] <- PYCInt (1)
+          TOPLEVEL[x] <- PYCInt (0)
+          n0 <- $Binary.Add(TOPLEVEL[x], PYCInt (0))
+          TOPLEVEL[x] <- n0
+          n1 <- TOPLEVEL[print](TOPLEVEL[x])
+          return PYCNone |}]
