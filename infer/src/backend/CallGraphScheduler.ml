@@ -55,17 +55,17 @@ let bottom_up call_graph =
         totally_empty := true ) ) ;
     !totally_empty
   in
-  let rec next () =
+  let rec next for_child =
     match Queue.dequeue pending with
     | None ->
         fill_queue () ;
-        if Queue.is_empty pending then None else next ()
+        if Queue.is_empty pending then None else next for_child
     | Some n when n.flag || not (CallGraph.mem call_graph n.id) ->
-        next ()
+        next for_child
     | Some n ->
         incr scheduled ;
         CallGraph.Node.set_flag n ;
-        Some (Procname {proc_name= n.pname; specialization= None})
+        Some (Procname {proc_name= n.pname; specialization= None}, Fn.id)
   in
   let finished ~result:_ = function
     | Procname {proc_name} ->

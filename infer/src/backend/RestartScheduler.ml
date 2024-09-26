@@ -47,9 +47,9 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
       else Queue.enqueue ready w.target ;
       check_for_readiness (n - 1) )
   in
-  let next () =
+  let next _ =
     if Queue.is_empty ready then check_for_readiness (Queue.length blocked) ;
-    Queue.dequeue ready
+    Option.map (Queue.dequeue ready) ~f:(fun work -> (work, Fn.id))
   in
   {remaining_tasks; is_empty; finished; next}
 

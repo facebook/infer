@@ -11,11 +11,13 @@ module CLOpt = CommandLineOption
 module L = Logging
 
 module TaskGenerator = struct
+  type for_child_info = {child_slot: int; child_pid: Pid.t}
+
   type ('a, 'b) t =
     { remaining_tasks: unit -> int
     ; is_empty: unit -> bool
     ; finished: result:'b option -> 'a -> unit
-    ; next: unit -> 'a option }
+    ; next: for_child_info -> ('a * (unit -> unit)) option }
 
   let chain (gen1 : ('a, 'b) t) (gen2 : ('a, 'b) t) : ('a, 'b) t =
     let remaining_tasks () = gen1.remaining_tasks () + gen2.remaining_tasks () in
@@ -28,7 +30,9 @@ module TaskGenerator = struct
     let finished ~result work_item =
       if gen1_is_empty () then gen2.finished ~result work_item else gen1.finished ~result work_item
     in
-    let next x = if gen1_is_empty () then gen2.next x else gen1.next x in
+    let next for_child_info =
+      if gen1_is_empty () then gen2.next for_child_info else gen1.next for_child_info
+    in
     {remaining_tasks; is_empty; finished; next}
 
 
@@ -44,13 +48,13 @@ module TaskGenerator = struct
       | Some task ->
           content := task :: !content
     in
-    let next () =
+    let next _for_child_info =
       match !content with
       | [] ->
           None
       | x :: xs ->
           content := xs ;
-          Some x
+          Some (x, Fn.id)
     in
     {remaining_tasks; is_empty; finished; next}
 
@@ -68,8 +72,9 @@ type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
     - [Initializing] is the state a newly-forked worker is in.
     - [Idle] is the state a worker goes to after it finishes initializing, or finishes processing a
       work item.
-    - [Processing x] means the worker is currently processing [x]. *)
-type 'a child_state = Initializing | Idle | Processing of 'a
+    - [Processing (x, finalizer)] means the worker is currently processing [x] and we should run
+      [finalizer] when the worker has finished. *)
+type 'a child_state = Initializing | Idle | Processing of 'a * (unit -> unit)
 
 (** the state of the pool *)
 type ('work, 'final, 'result) t =
@@ -224,10 +229,11 @@ let all_children_idle pool = Array.for_all pool.children_states ~f:child_is_idle
 
 let send_work_to_child pool slot =
   assert (child_is_idle pool.children_states.(slot)) ;
-  pool.tasks.next ()
-  |> Option.iter ~f:(fun x ->
+  let child_pid = pool.slots.(slot).pid in
+  pool.tasks.next {child_slot= slot; child_pid}
+  |> Option.iter ~f:(fun (x, finish) ->
          let {down_pipe} = pool.slots.(slot) in
-         pool.children_states.(slot) <- Processing x ;
+         pool.children_states.(slot) <- Processing (x, finish) ;
          marshal_to_pipe down_pipe (Do x) )
 
 
@@ -284,7 +290,8 @@ let process_updates pool buffer =
            ( match pool.children_states.(slot) with
            | Initializing ->
                ()
-           | Processing work ->
+           | Processing (work, finish) ->
+               finish () ;
                pool.tasks.finished ~result work
            | Idle ->
                L.die InternalError "Received a Ready message from an idle worker@." ) ;
