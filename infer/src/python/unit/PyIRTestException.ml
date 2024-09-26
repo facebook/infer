@@ -142,7 +142,7 @@ except (ValueError, AttributeError):
           n0 <- $ImportName(os)(PYCNone, PYCInt (0))
           TOPLEVEL[os] <- n0
           n1 <- TOPLEVEL[os]
-          n2 <- $CallMethod($LoadMethod(n1, sysconf), PYCString ("SC_PAGESIZE"))
+          n2 <- n1.sysconf(PYCString ("SC_PAGESIZE"))
           TOPLEVEL[page_size] <- n2
           jmp b2
 
@@ -228,7 +228,7 @@ def f(x):
           n5 <- $IterData(n3)
           LOCAL[i] <- n5
           n6 <- GLOBAL[foo]
-          n7 <- $CallMethod($LoadMethod(n6, Foo), )
+          n7 <- n6.Foo()
           LOCAL[e] <- n7
           n9 <- GLOBAL[print]
           n10 <- n9(PYCString ("yolo"))
@@ -239,7 +239,7 @@ def f(x):
 
         b4:
           n12 <- LOCAL[e]
-          n13 <- $CallMethod($LoadMethod(n12, bar), )
+          n13 <- n12.bar()
           jmp b1(n8) |}]
 
 

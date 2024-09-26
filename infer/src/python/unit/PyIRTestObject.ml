@@ -46,9 +46,9 @@ c.set(42)
           n3 <- TOPLEVEL[c]
           n4 <- n3.x
           n5 <- TOPLEVEL[c]
-          n6 <- $CallMethod($LoadMethod(n5, get), )
+          n6 <- n5.get()
           n7 <- TOPLEVEL[c]
-          n8 <- $CallMethod($LoadMethod(n7, set), PYCInt (42))
+          n8 <- n7.set(PYCInt (42))
           return PYCNone
 
 
@@ -147,11 +147,11 @@ print(c.z)
           n7 <- TOPLEVEL[c]
           n7.z <- PYCInt (10)
           n8 <- TOPLEVEL[c]
-          n9 <- $CallMethod($LoadMethod(n8, get), )
+          n9 <- n8.get()
           n10 <- TOPLEVEL[c]
-          n11 <- $CallMethod($LoadMethod(n10, set), PYCInt (42))
+          n11 <- n10.set(PYCInt (42))
           n12 <- TOPLEVEL[c]
-          n13 <- $CallMethod($LoadMethod(n12, run), )
+          n13 <- n12.run()
           n14 <- TOPLEVEL[print]
           n15 <- TOPLEVEL[c]
           n16 <- n15.z
@@ -201,7 +201,7 @@ print(c.z)
       dummy.getX:
         b0:
           n0 <- LOCAL[box]
-          n1 <- $CallMethod($LoadMethod(n0, get), )
+          n1 <- n0.get()
           return n1
 
 
@@ -309,7 +309,7 @@ C.f()
           n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- $CallMethod($LoadMethod(n1, f), )
+          n2 <- n1.f()
           return PYCNone
 
 
@@ -391,7 +391,7 @@ def g(c: C) -> None:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[c]
           n2 <- n1.a
-          n3 <- $CallMethod($LoadMethod(n2, f), )
+          n3 <- n2.f()
           n4 <- n0(n3)
           return PYCNone |}]
 
@@ -562,7 +562,7 @@ f()
           n2 <- n1()
           LOCAL[a] <- n2
           n3 <- LOCAL[a]
-          n4 <- $CallMethod($LoadMethod(n3, get), )
+          n4 <- n3.get()
           return n4
 
 
@@ -700,7 +700,7 @@ class D0(C0):
         b0:
           n0 <- GLOBAL[super]
           n1 <- n0()
-          n2 <- $CallMethod($LoadMethod(n1, __init__), )
+          n2 <- n1.__init__()
           return PYCNone
 
 
@@ -708,7 +708,7 @@ class D0(C0):
         b0:
           n0 <- GLOBAL[super]
           n1 <- n0()
-          n2 <- $CallMethod($LoadMethod(n1, __init__), PYCInt (42))
+          n2 <- n1.__init__(PYCInt (42))
           return PYCNone |}]
 
 
@@ -753,7 +753,7 @@ class C(foo.D):
           n0 <- GLOBAL[super]
           n1 <- n0()
           n2 <- LOCAL[x]
-          n3 <- $CallMethod($LoadMethod(n1, __init__), n2)
+          n3 <- n1.__init__(n2)
           return PYCNone |}]
 
 
@@ -875,7 +875,7 @@ class C:
           n8 <- TOPLEVEL[x]
           n9 <- TOPLEVEL[y]
           n10 <- TOPLEVEL[z]
-          n11 <- $CallMethod($LoadMethod(n7, bar), n8, n9, n10)
+          n11 <- n7.bar(n8, n9, n10)
           n12 <- n11($FuncObj(g, dummy.C.g, {}))
           TOPLEVEL[g] <- n12
           return PYCNone
@@ -937,7 +937,7 @@ class PwdTest(unittest.TestCase):
           n5 <- GLOBAL[str]
           n6 <- GLOBAL[type]
           n7 <- n6(PYCNone)
-          n8 <- $CallMethod($LoadMethod(n0, assertIn), n4, (n5, n7))
+          n8 <- n0.assertIn(n4, (n5, n7))
           return PYCNone |}]
 
 
@@ -1104,11 +1104,11 @@ c.f(0, 1, 2)
           n2 <- n1()
           TOPLEVEL[c] <- n2
           n3 <- TOPLEVEL[c]
-          n4 <- $CallMethod($LoadMethod(n3, f), PYCInt (0))
+          n4 <- n3.f(PYCInt (0))
           n5 <- TOPLEVEL[c]
-          n6 <- $CallMethod($LoadMethod(n5, f), PYCInt (0), PYCInt (1))
+          n6 <- n5.f(PYCInt (0), PYCInt (1))
           n7 <- TOPLEVEL[c]
-          n8 <- $CallMethod($LoadMethod(n7, f), PYCInt (0), PYCInt (1), PYCInt (2))
+          n8 <- n7.f(PYCInt (0), PYCInt (1), PYCInt (2))
           return PYCNone
 
 
@@ -1297,7 +1297,7 @@ def powerset(s):
           n13 <- GLOBAL[itertools]
           n14 <- LOCAL[s]
           n15 <- LOCAL[i]
-          n16 <- $CallMethod($LoadMethod(n13, combinations), n14, n15)
+          n16 <- n13.combinations(n14, n15)
           n17 <- n11(n12, n16)
           n18 <- $GetYieldFromIter(n17)
           n19 <- $YieldFrom(n18, PYCNone)

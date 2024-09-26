@@ -360,6 +360,7 @@ module Error = struct
     | MakeFunction of string * Exp.t
     | BuildConstKeyMapLength of int * int
     | BuildConstKeyMapKeys of Exp.t
+    | LoadMethodExpected of Exp.t
     | CompareOp of int
     | CodeWithoutQualifiedName of FFI.Code.t
     | UnpackSequence of int
@@ -396,6 +397,8 @@ module Error = struct
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | FormatValueSpec exp ->
         F.fprintf fmt "FORMAT_VALUE: expected string literal or temporary, got %a" Exp.pp exp
+    | LoadMethodExpected exp ->
+        F.fprintf fmt "LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got %a" Exp.pp exp
     | NextOffsetMissing ->
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingBackEdge (from, to_) ->
@@ -440,7 +443,7 @@ module Stmt = struct
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
-    | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
+    | CallMethod of {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list}
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
     | SetupAnnotations
 
@@ -456,8 +459,8 @@ module Stmt = struct
     | Call {lhs; exp; args; packed} ->
         F.fprintf fmt "%a <- %a(@[%a@])%s" SSA.pp lhs Exp.pp exp (Pp.seq ~sep:", " pp_call_arg) args
           (if packed then " !packed" else "")
-    | CallMethod {lhs; call; args} ->
-        F.fprintf fmt "%a <- $CallMethod(%a, @[%a@])" SSA.pp lhs Exp.pp call
+    | CallMethod {lhs; name; self_if_needed; args} ->
+        F.fprintf fmt "%a <- %a.%s(@[%a@])" SSA.pp lhs Exp.pp self_if_needed name
           (Pp.seq ~sep:", " Exp.pp) args
     | BuiltinCall {lhs; call; args} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
@@ -1701,8 +1704,15 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "CALL_METHOD" ->
       let* args, st = State.pop_n st arg in
       let* call, st = State.pop st in
+      let* self_if_needed, name =
+        match call with
+        | Exp.LoadMethod (self_if_needed, name) ->
+            Ok (self_if_needed, name)
+        | _ ->
+            internal_error st (Error.LoadMethodExpected call)
+      in
       let lhs, st = State.fresh_id st in
-      let stmt = Stmt.CallMethod {lhs; call; args} in
+      let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args} in
       let st = State.push_stmt st stmt in
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)

@@ -1415,3 +1415,141 @@ async def g():
 
         b3:
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+def m(self, x, y, test):
+    return foo(self, x if test else y)
+|} in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          return PYCNone
+
+
+      dummy.m:
+        b0:
+          n0 <- GLOBAL[foo]
+          n1 <- LOCAL[self]
+          n2 <- LOCAL[test]
+          if n2 then jmp b1(n1, n0) else jmp b2(n1, n0)
+
+        b1:
+          n7 <- LOCAL[x]
+          jmp b3(n7, n4, n3)
+
+        b2:
+          n11 <- LOCAL[y]
+          jmp b3(n11, n6, n5)
+
+        b3:
+          n12 <- n8(n9, n10)
+          return n12 |}]
+
+
+let%expect_test _ =
+  let source = {|
+def m(self, x, y, test):
+    return self.foo(x if test else y)
+|} in
+  PyIR.test source ;
+  [%expect {| IR error: LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got n5 |}]
+
+
+let%expect_test _ =
+  let source = {|
+def m(x, y, test):
+    return (x if test else y).foo()
+|} in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          return PYCNone
+
+
+      dummy.m:
+        b0:
+          n0 <- LOCAL[test]
+          if n0 then jmp b1 else jmp b2
+
+        b1:
+          n1 <- LOCAL[x]
+          jmp b3(n1)
+
+        b2:
+          n3 <- LOCAL[y]
+          jmp b3(n3)
+
+        b3:
+          n4 <- n2.foo()
+          return n4 |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+class C:
+    def foo(self):
+        print('I am foo')
+
+o = C()
+o.foo()
+o.foo = lambda : print('I am not foo')
+o.foo()
+#I am foo
+#I am not foo
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"))
+          TOPLEVEL[C] <- n0
+          n1 <- TOPLEVEL[C]
+          n2 <- n1()
+          TOPLEVEL[o] <- n2
+          n3 <- TOPLEVEL[o]
+          n4 <- n3.foo()
+          n5 <- TOPLEVEL[o]
+          n5.foo <- $FuncObj(<lambda>, dummy.<lambda>, {})
+          n6 <- TOPLEVEL[o]
+          n7 <- n6.foo()
+          return PYCNone
+
+
+      dummy.<lambda>:
+        b0:
+          n0 <- GLOBAL[print]
+          n1 <- n0(PYCString ("I am not foo"))
+          return n1
+
+
+      dummy.C:
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- PYCString ("C")
+          TOPLEVEL[foo] <- $FuncObj(foo, dummy.C.foo, {})
+          return PYCNone
+
+
+      dummy.C.foo:
+        b0:
+          n0 <- GLOBAL[print]
+          n1 <- n0(PYCString ("I am foo"))
+          return PYCNone |}]

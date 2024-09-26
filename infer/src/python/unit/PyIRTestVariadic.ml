@@ -33,7 +33,7 @@ def f(**kwargs):
       dummy.f:
         b0:
           n0 <- LOCAL[kwargs]
-          n1 <- $CallMethod($LoadMethod(n0, items), )
+          n1 <- n0.items()
           n2 <- $GetIter(n1)
           jmp b1(n2)
 
@@ -112,7 +112,7 @@ start()
           n10 <- LOCAL[dummy4]
           n11 <- n9(PYCString ("dummy4= "), n10)
           n12 <- LOCAL[dummyA]
-          n13 <- $CallMethod($LoadMethod(n12, items), )
+          n13 <- n12.items()
           n14 <- $GetIter(n13)
           jmp b1(n14)
 
@@ -128,7 +128,7 @@ start()
           n19 <- GLOBAL[print]
           n20 <- LOCAL[k]
           n21 <- LOCAL[v]
-          n22 <- $CallMethod($LoadMethod(PYCString ("{} = {}"), format), n20, n21)
+          n22 <- PYCString ("{} = {}").format(n20, n21)
           n23 <- n19(n22)
           jmp b1(n15)
 
@@ -200,7 +200,7 @@ def f(foo, a, b, c):
         b0:
           n0 <- LOCAL[foo]
           n1 <- LOCAL[a]
-          n2 <- $CallMethod($LoadMethod(n0, f), n1)
+          n2 <- n0.f(n1)
           n3 <- LOCAL[foo]
           n4 <- n3.f
           n5 <- LOCAL[b]
@@ -280,7 +280,7 @@ f(**d1, x=42)
           n1 <- LOCAL[x]
           n2 <- n0(n1)
           n3 <- LOCAL[kwargs]
-          n4 <- $CallMethod($LoadMethod(n3, items), )
+          n4 <- n3.items()
           n5 <- $GetIter(n4)
           jmp b1(n5)
 

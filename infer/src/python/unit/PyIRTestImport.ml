@@ -32,7 +32,7 @@ base.f(0)
           n1 <- $ImportName(base)(PYCNone, PYCInt (0))
           TOPLEVEL[base] <- n1
           n2 <- TOPLEVEL[base]
-          n3 <- $CallMethod($LoadMethod(n2, f), PYCInt (0))
+          n3 <- n2.f(PYCInt (0))
           return PYCNone |}]
 
 
@@ -192,9 +192,9 @@ if __name__ == '__main__':
           n6 <- GLOBAL[sys]
           n7 <- n6.argv
           n8 <- n7[PYCInt (0)]
-          n9 <- $CallMethod($LoadMethod(n5, dirname), n8)
-          n10 <- $CallMethod($LoadMethod(n3, normpath), n9)
-          n11 <- $CallMethod($LoadMethod(n1, abspath), n10)
+          n9 <- n5.dirname(n8)
+          n10 <- n3.normpath(n9)
+          n11 <- n1.abspath(n10)
           LOCAL[mydir] <- n11
           n12 <- GLOBAL[len]
           n13 <- GLOBAL[sys]
@@ -218,8 +218,8 @@ if __name__ == '__main__':
           n24 <- n23.path
           n25 <- LOCAL[i]
           n26 <- n24[n25]
-          n27 <- $CallMethod($LoadMethod(n22, normpath), n26)
-          n28 <- $CallMethod($LoadMethod(n20, abspath), n27)
+          n27 <- n22.normpath(n26)
+          n28 <- n20.abspath(n27)
           n29 <- LOCAL[mydir]
           n30 <- $Compare.eq(n28, n29)
           if n30 then jmp b4 else jmp b5
@@ -228,7 +228,7 @@ if __name__ == '__main__':
           n33 <- GLOBAL[os]
           n34 <- n33.path
           n35 <- GLOBAL[__file__]
-          n36 <- $CallMethod($LoadMethod(n34, abspath), n35)
+          n36 <- n34.abspath(n35)
           GLOBAL[__file__] <- n36
           n37 <- GLOBAL[main]
           n38 <- n37()
@@ -285,7 +285,7 @@ path.X()
           n13 <- $ImportFrom(path)(n12)
           TOPLEVEL[path] <- n13
           n14 <- TOPLEVEL[path]
-          n15 <- $CallMethod($LoadMethod(n14, X), )
+          n15 <- n14.X()
           return PYCNone |}]
 
 
@@ -388,7 +388,7 @@ class Test(unittest.TestCase):
           n3 <- TOPLEVEL[hasattr]
           n4 <- TOPLEVEL[signal]
           n5 <- n3(n4, PYCString ("setitimer"))
-          n6 <- $CallMethod($LoadMethod(n2, skipUnless), n5, PYCString ("requires setitimer()"))
+          n6 <- n2.skipUnless(n5, PYCString ("requires setitimer()"))
           n7 <- TOPLEVEL[unittest]
           n8 <- n7.TestCase
           n9 <- $BuildClass($FuncObj(Test, dummy.Test, {}), PYCString ("Test"), n8)
@@ -428,7 +428,7 @@ def f():
       dummy.f:
         b0:
           n0 <- GLOBAL[foo]
-          n1 <- $CallMethod($LoadMethod(n0, bar), PYCInt (42))
+          n1 <- n0.bar(PYCInt (42))
           throw n1 |}]
 
 
@@ -461,7 +461,7 @@ def f(ok):
       dummy.f:
         b0:
           n0 <- GLOBAL[foo]
-          n1 <- $CallMethod($LoadMethod(n0, bar), )
+          n1 <- n0.bar()
           jmp b2
 
         b1:
@@ -530,7 +530,7 @@ def test_format_specifier_expressions(self):
           LOCAL[width] <- PYCInt (10)
           LOCAL[precision] <- PYCInt (4)
           n0 <- GLOBAL[decimal]
-          n1 <- $CallMethod($LoadMethod(n0, Decimal), PYCString ("12.34567"))
+          n1 <- n0.Decimal(PYCString ("12.34567"))
           LOCAL[value] <- n1
           n2 <- GLOBAL[assertEqual]
           n3 <- LOCAL[value]

@@ -313,7 +313,7 @@ fp.write("yolo")
           n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
           TOPLEVEL[fp] <- n1
           n2 <- TOPLEVEL[fp]
-          n3 <- $CallMethod($LoadMethod(n2, write), PYCString ("yolo"))
+          n3 <- n2.write(PYCString ("yolo"))
           return PYCNone |}]
 
 
@@ -334,7 +334,7 @@ with open("foo.txt", "wt") as fp:
           n2 <- $LoadMethod(n1, __enter__)()
           TOPLEVEL[fp] <- n2
           n4 <- TOPLEVEL[fp]
-          n5 <- $CallMethod($LoadMethod(n4, write), PYCString ("yolo"))
+          n5 <- n4.write(PYCString ("yolo"))
           jmp b1(CM(n1).__exit__)
 
         b1:
