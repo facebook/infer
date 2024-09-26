@@ -441,17 +441,12 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
         Ok summary
     | `ComputeDefaultSummary ->
         analyze_callee_aux None |> analysis_result_of_option
-    | `ComputeDefaultSummaryThenSpecialize specialization -> (
-      (* recursive call so that we detect mutual recursion on the unspecialized summary *)
-      match
+    | `ComputeDefaultSummaryThenSpecialize specialization ->
+        (* recursive call so that we detect mutual recursion on the unspecialized summary *)
         analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:None ?caller_summary
           ~from_file_analysis callee_pname
-      with
-      | Error _ ->
-          L.die InternalError "Failed to analyze %a with specialization %a" Procname.pp callee_pname
-            Specialization.pp specialization
-      | Ok summary ->
-          analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
+        |> Result.bind ~f:(fun summary ->
+               analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
     | `AddNewSpecialization (summary, specialization) ->
         analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
     | `UnknownProcedure ->
