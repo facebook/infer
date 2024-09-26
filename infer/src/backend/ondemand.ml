@@ -375,6 +375,20 @@ let is_summary_already_computed ~lazy_payloads (analysis_req : AnalysisRequest.t
       if procedure_is_defined callee_pname then `ComputeDefaultSummary else `UnknownProcedure
 
 
+let double_lock_for_restart ~lazy_payloads analysis_req callee_pname specialization =
+  match Config.scheduler with
+  | File | SyntacticCallGraph ->
+      `NoSummary
+  | Restart -> (
+    match is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization with
+    | `SummaryReady summary ->
+        `YesSummary summary
+    | `UnknownProcedure ->
+        assert false
+    | `ComputeDefaultSummary | `ComputeDefaultSummaryThenSpecialize _ | `AddNewSpecialization _ ->
+        `NoSummary )
+
+
 let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
     ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
   let cycle_detected =
@@ -387,32 +401,40 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
   else
     let analyze_callee_aux specialization_context =
       error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
-      Procdesc.load callee_pname
-      >>= fun callee_pdesc ->
       RestartScheduler.with_lock ~get_actives:ActiveProcedures.get_all callee_pname ~f:(fun () ->
-          let previous_global_state = AnalysisGlobalState.save () in
-          protect
-            ~f:(fun () ->
-              (* preload tenv to avoid tainting preanalysis timing with IO *)
-              let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
-              AnalysisGlobalState.initialize callee_pdesc tenv ;
-              Timer.time Preanalysis
+          (* the restart scheduler wants to avoid duplicated work, but between checking for a
+             summary and taking the lock on computing it someone else might have finished computing
+             the summary we want *)
+          match double_lock_for_restart ~lazy_payloads analysis_req callee_pname specialization with
+          | `YesSummary summary ->
+              Stats.incr_ondemand_double_analysis_prevented () ;
+              Some summary
+          | `NoSummary ->
+              Procdesc.load callee_pname
+              >>= fun callee_pdesc ->
+              let previous_global_state = AnalysisGlobalState.save () in
+              protect
                 ~f:(fun () ->
-                  let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                  let summary =
-                    run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_pname
-                      callee_pdesc
-                  in
-                  set_complete_result analysis_req summary ;
-                  Some summary )
-                ~on_timeout:(fun span ->
-                  L.debug Analysis Quiet
-                    "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
-                     (pre-analysis timeout?)@\n"
-                    span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
-                    Procname.pp callee_pname ;
-                  None ) )
-            ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
+                  (* preload tenv to avoid tainting preanalysis timing with IO *)
+                  let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
+                  AnalysisGlobalState.initialize callee_pdesc tenv ;
+                  Timer.time Preanalysis
+                    ~f:(fun () ->
+                      let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
+                      let summary =
+                        run_proc_analysis exe_env tenv analysis_req specialization_context
+                          ?caller_pname callee_pdesc
+                      in
+                      set_complete_result analysis_req summary ;
+                      Some summary )
+                    ~on_timeout:(fun span ->
+                      L.debug Analysis Quiet
+                        "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
+                         (pre-analysis timeout?)@\n"
+                        span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
+                        Procname.pp callee_pname ;
+                      None ) )
+                ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
     in
     match is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization with
     | `SummaryReady summary ->
