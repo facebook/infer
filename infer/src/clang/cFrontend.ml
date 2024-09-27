@@ -46,6 +46,7 @@ let do_objc_preanalyses cfg tenv =
   CAddImplicitGettersSetters.process cfg tenv ;
   CReplaceDynamicDispatch.process cfg ;
   CViewControllerLifecycle.process cfg tenv ;
+  if not Config.preanalysis_html then NodePrinter.print_html := false ;
   Timer.time Preanalysis
     ~f:(fun () -> ComputeCapturedInfo.process cfg)
     ~on_timeout:(fun span ->
