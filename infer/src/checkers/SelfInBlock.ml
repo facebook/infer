@@ -98,10 +98,10 @@ end
 module CheckedForNull = struct
   type t = {checked: bool; loc: Location.t; reported: bool} [@@deriving compare]
 
-  let pp fmt {checked; reported} =
+  let pp fmt {checked; reported; loc} =
     let s = match checked with true -> "Checked" | false -> "NotChecked" in
     let s' = match reported with true -> "Reported" | false -> "NotReported" in
-    F.fprintf fmt "%s, %s" s s'
+    F.fprintf fmt "%s, %s, %a" s s' Location.pp loc
 
 
   let join {checked= elem1; loc= loc1; reported= reported1}
@@ -201,7 +201,24 @@ module Mem = struct
             (Pvar.pp Pp.text) pvar var_use Location.pp loc
         in
         let ltr = make_trace_unchecked_strongself astate in
-        Reporting.log_issue proc_desc err_log ~ltr ~loc SelfInBlock
+        let attributes = Procdesc.get_attributes proc_desc in
+        let return_typ = attributes.ProcAttributes.ret_type in
+        let autofix =
+          match StrongEqualToWeakCapturedVars.find_opt pvar astate.strongVars with
+          | Some {loc} when Typ.is_void return_typ ->
+              let strong_self_line = loc.line in
+              let replacement =
+                F.asprintf "\n if (!%s) { return; }" (Mangled.to_string (Pvar.get_name pvar))
+              in
+              Some
+                { Jsonbug_t.original= None
+                ; replacement= None
+                ; additional=
+                    Some [{Jsonbug_t.line= strong_self_line; col= 0; original= ""; replacement}] }
+          | _ ->
+              None
+        in
+        Reporting.log_issue proc_desc err_log ~ltr ~loc SelfInBlock ?autofix
           IssueType.strong_self_not_checked message ;
         let strongVars =
           StrongEqualToWeakCapturedVars.add pvar
@@ -546,7 +563,9 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
   let autofix =
     Option.map
       ~f:(fun strongSelf ->
-        {Jsonbug_j.original= to_string self.DomainData.pvar; replacement= to_string strongSelf} )
+        { Jsonbug_j.original= Some (to_string self.DomainData.pvar)
+        ; replacement= Some (to_string strongSelf)
+        ; additional= None } )
       strongSelf_opt
   in
   Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc ?autofix SelfInBlock

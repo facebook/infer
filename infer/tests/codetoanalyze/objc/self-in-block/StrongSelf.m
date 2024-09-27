@@ -96,7 +96,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
 
 - (void)strongSelfCheckOnce_bad {
   __weak __typeof(self) weakSelf = self;
-  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+  void (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
     if (strongSelf) {
       [strongSelf foo];
@@ -106,7 +106,6 @@ void m2(_Nullable SelfInBlockTest* obj) {}
       [strongSelf foo]; // no bug here
       m(strongSelf); // no bug here because of dedup
     }
-    return 0;
   };
 }
 

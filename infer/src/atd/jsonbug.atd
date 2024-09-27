@@ -63,9 +63,17 @@ type extra = {
   ~transitive_missed_captures: missed_capture list;
 }
 
-type autofix = {
+type additional_autofix = {
+  line: int;
+  col: int;
   original: string;
   replacement: string;
+}
+
+type autofix = {
+  ?original: string option;
+  ?replacement: string option;
+  ?additional: additional_autofix list option;
 }
 
 type jsonbug = {
