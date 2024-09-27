@@ -931,8 +931,9 @@ let get_autofix pdesc diagnostic =
         when Procname.is_constructor (Procdesc.get_proc_name pdesc) && is_formal pvar ->
           let param = Pvar.to_string pvar in
           Some
-            { Jsonbug_t.original= F.asprintf "%a(%s)" Fieldname.pp field param
-            ; replacement= F.asprintf "%a(std::move(%s))" Fieldname.pp field param }
+            { Jsonbug_t.original= Some (F.asprintf "%a(%s)" Fieldname.pp field param)
+            ; replacement= Some (F.asprintf "%a(std::move(%s))" Fieldname.pp field param)
+            ; additional= None }
       | _ ->
           None )
   | _ ->
