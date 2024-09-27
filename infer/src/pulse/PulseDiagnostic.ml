@@ -918,6 +918,27 @@ let get_message_and_suggestion diagnostic =
           , Some (get_suggestion_msg source_opt) ) )
 
 
+let get_autofix pdesc diagnostic =
+  match diagnostic with
+  | UnnecessaryCopy {copied_into; source_opt; copied_location= None} -> (
+      let is_formal pvar =
+        let pvar_name = Pvar.get_name pvar in
+        List.exists (Procdesc.get_formals pdesc) ~f:(fun (formal, _, _) ->
+            Mangled.equal pvar_name formal )
+      in
+      match (copied_into, source_opt) with
+      | IntoField {field}, Some (DecompilerExpr.PVar pvar, [Dereference])
+        when Procname.is_constructor (Procdesc.get_proc_name pdesc) && is_formal pvar ->
+          let param = Pvar.to_string pvar in
+          Some
+            { Jsonbug_t.original= F.asprintf "%a(%s)" Fieldname.pp field param
+            ; replacement= F.asprintf "%a(std::move(%s))" Fieldname.pp field param }
+      | _ ->
+          None )
+  | _ ->
+      None
+
+
 let add_errlog_header ~nesting ~title location errlog =
   let tags = [] in
   Errlog.make_trace_element nesting location title tags :: errlog
