@@ -148,12 +148,18 @@ class Vec {
     // when checking for modifications, we need to check that arr is propagated
     // from my_list which is modified
   }
+
+  const std::vector<int>& get_const_ref() const { return vec; }
 };
 
 void copy_own_vec_bad() {
   Vec vec;
   auto copied_own_vec = vec; // copy
 }
+
+void call_get_const_ref_ok(const Vec& v) { auto& x = v.get_const_ref(); }
+
+void call_get_const_ref_bad(const Vec& v) { auto x = v.get_const_ref(); }
 
 // copy created only in one branch
 void loop_via_copy_bad(std::vector<std::string>& namesOfTheEntirePopulation) {

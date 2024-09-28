@@ -495,6 +495,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_bad, 0, PULSE_CONST_REFAB
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_mod_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter vec with type `std::vector<int,std::allocator<int>>`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_own_vec_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Vec&`)]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, call_get_const_ref_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>> const &`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, loop_via_copy_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::basic_string<char,std::char_traits<char>,std::allocator<char>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_branch_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Arr&`)]

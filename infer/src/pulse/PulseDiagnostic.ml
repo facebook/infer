@@ -945,6 +945,12 @@ let get_autofix pdesc diagnostic =
             { Jsonbug_t.original= Some (F.asprintf "%a = %s;" Fieldname.pp field param)
             ; replacement= Some (F.asprintf "%a = std::move(%s);" Fieldname.pp field param)
             ; additional= None }
+      | IntoVar {copied_var= ProgramVar pvar}, Some (DecompilerExpr.PVar _, [MethodCall _]) ->
+          let tgt = Pvar.to_string pvar in
+          Some
+            { Jsonbug_t.original= Some (F.asprintf "auto %s = " tgt)
+            ; replacement= Some (F.asprintf "auto& %s = " tgt)
+            ; additional= None }
       | _ ->
           None )
   | _ ->
