@@ -18,6 +18,7 @@ type access =
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
   | Dereference
+  | MethodCall of CallEvent.t
 
 and source_expr = base * access list [@@deriving compare, equal]
 

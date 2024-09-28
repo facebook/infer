@@ -366,6 +366,14 @@ module ObjC_Cpp = struct
 
   let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
+  let is_cpp_method {kind} =
+    match kind with
+    | CPPMethod _ ->
+        true
+    | CPPConstructor _ | CPPDestructor _ | ObjCClassMethod | ObjCInstanceMethod ->
+        false
+
+
   let pp_verbose_kind fmt = function
     | CPPMethod mangled | CPPDestructor mangled ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
@@ -926,6 +934,14 @@ let is_objc_block = function Block _ -> true | _ -> false
 (** Return whether the procname is a cpp lambda procname. *)
 let is_cpp_lambda t =
   match t with ObjC_Cpp cpp_pname when ObjC_Cpp.is_cpp_lambda cpp_pname -> true | _ -> false
+
+
+let is_cpp_method t =
+  match t with
+  | ObjC_Cpp cpp_pname ->
+      ObjC_Cpp.is_cpp_method cpp_pname
+  | C _ | Erlang _ | Hack _ | Block _ | Java _ | CSharp _ | Python _ ->
+      false
 
 
 (** Return the language of the procedure. *)

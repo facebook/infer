@@ -138,7 +138,8 @@ module Syntax = struct
       | None ->
           desc
       | Some more ->
-          CallEvent.Model (Format.asprintf "%a %s" CallEvent.pp_name_only desc more)
+          CallEvent.Model
+            (Format.asprintf "%a %s" (CallEvent.pp_name_only ~with_class:true) desc more)
     in
     ValueHistory.Call
       {f= desc; location= data.location; in_call= ValueHistory.epoch; timestamp= data.path.timestamp}

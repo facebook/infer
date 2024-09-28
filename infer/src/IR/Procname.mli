@@ -353,6 +353,9 @@ val is_objc_block : t -> bool
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
 
+val is_cpp_method : t -> bool
+(** Return whether the procname is a cpp method. *)
+
 val is_objc_dealloc : t -> bool
 (** Return whether the dealloc method of an Objective-C class. *)
 

@@ -18,6 +18,7 @@ type access =
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
   | Dereference
+  | MethodCall of CallEvent.t
 
 (* TODO: could add more kinds of operations too to show "x + y" or "x + 4", or even "x +
    sizeof(struct x)". At the moment the memory model doesn't do anything useful with those though so
@@ -34,6 +35,8 @@ type access_expr =
   | Deref of access_expr
   | ArrowField of access_expr * Fieldname.t
   | DotField of access_expr * Fieldname.t
+  | ArrowMethod of access_expr * CallEvent.t
+  | DotMethod of access_expr * CallEvent.t
   | Array of access_expr * access_expr option
   | Parens of access_expr
 
@@ -47,6 +50,23 @@ let rec pp_access_expr fmt access_expr =
           pp_access_expr fmt access_expr
     in
     F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep Fieldname.pp field
+  in
+  let pp_call ~with_class fmt call =
+    let java_or_objc =
+      match (call : CallEvent.t) with
+      | Call procname | ModelName procname | SkippedKnownCall procname -> (
+          Procname.is_java procname || Procname.is_objc_method procname
+          ||
+          match Attributes.load procname with
+          | Some {objc_accessor= Some (Objc_getter _)} ->
+              true
+          | _ ->
+              false )
+      | Model _ | SkippedUnknownCall _ ->
+          false
+    in
+    if java_or_objc then CallEvent.pp_name_only ~with_class fmt call
+    else F.fprintf fmt "%a()" (CallEvent.pp_name_only ~with_class) call
   in
   match access_expr with
   | ProgramVar pvar when Language.curr_language_is Language.Clang ->
@@ -62,27 +82,17 @@ let rec pp_access_expr fmt access_expr =
       in
       F.fprintf fmt "block defined in %s" block
   | Call call ->
-      let java_or_objc =
-        match call with
-        | Call procname | ModelName procname | SkippedKnownCall procname -> (
-            Procname.is_java procname || Procname.is_objc_method procname
-            ||
-            match Attributes.load procname with
-            | Some {objc_accessor= Some (Objc_getter _)} ->
-                true
-            | _ ->
-                false )
-        | Model _ | SkippedUnknownCall _ ->
-            false
-      in
-      if java_or_objc then CallEvent.pp_name_only fmt call
-      else F.fprintf fmt "%a()" CallEvent.pp_name_only call
+      pp_call ~with_class:true fmt call
   | Capture (access_expr, captured_var) ->
       F.fprintf fmt "%s captured by %a" captured_var pp_access_expr access_expr
   | ArrowField (access_expr, field) ->
       pp_field_acces_expr fmt access_expr "->" field
   | DotField (access_expr, field) ->
       pp_field_acces_expr fmt access_expr "." field
+  | ArrowMethod (access_expr, call) ->
+      F.fprintf fmt "%a->%a" pp_access_expr access_expr (pp_call ~with_class:false) call
+  | DotMethod (access_expr, call) ->
+      F.fprintf fmt "%a.%a" pp_access_expr access_expr (pp_call ~with_class:false) call
   | Array (access_expr, index) ->
       let pp_index fmt index =
         match index with
@@ -116,13 +126,18 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
   let deref_if b access_expr =
     if b then
       match access_expr with
-      | ProgramVar _ | Deref _ | ArrowField _ | DotField _ ->
+      | ProgramVar _ | Deref _ | ArrowField _ | DotField _ | ArrowMethod _ | DotMethod _ ->
           (Deref access_expr, true)
       | ProgramVarAddress pvar ->
           (ProgramVar pvar, true)
       | ((ProgramBlock _ | Call _ | Capture _ | Array _) as access_expr) | Parens access_expr ->
           (Deref (Parens access_expr), true)
     else (access_expr, true)
+  in
+  let check_arrow_or_dot ~prev_is_deref ~prev_is_capture access_expr =
+    let needs_parens = match access_expr with Deref _ -> true | _ -> false in
+    let access_expr = if needs_parens then Parens access_expr else access_expr in
+    if prev_is_deref || prev_is_capture then `Arrow access_expr else `Dot access_expr
   in
   let rec aux ~prev_is_deref ~prev_is_capture access_expr accesses =
     match (accesses, base) with
@@ -137,16 +152,26 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
           accesses'
     | FieldAccess field :: accesses', _ ->
         let access_expr' =
-          let needs_parens = match access_expr with Deref _ -> true | _ -> false in
-          let access_expr = if needs_parens then Parens access_expr else access_expr in
-          if prev_is_deref || prev_is_capture then ArrowField (access_expr, field)
-          else DotField (access_expr, field)
+          match check_arrow_or_dot ~prev_is_deref ~prev_is_capture access_expr with
+          | `Arrow access_expr ->
+              ArrowField (access_expr, field)
+          | `Dot access_expr ->
+              DotField (access_expr, field)
         in
         aux ~prev_is_deref:false ~prev_is_capture:false access_expr' accesses'
     | ArrayAccess index :: accesses', _ ->
         aux ~prev_is_deref:false ~prev_is_capture:false
           (Array (access_expr, Option.map index ~f:access_expr_of_source_expr))
           accesses'
+    | MethodCall call :: accesses', _ ->
+        let access_expr' =
+          match check_arrow_or_dot ~prev_is_deref ~prev_is_capture access_expr with
+          | `Arrow access_expr ->
+              ArrowMethod (access_expr, call)
+          | `Dot access_expr ->
+              DotMethod (access_expr, call)
+        in
+        aux ~prev_is_deref:false ~prev_is_capture:false access_expr' accesses'
   in
   aux ~prev_is_deref ~prev_is_capture:false base_expr accesses
 

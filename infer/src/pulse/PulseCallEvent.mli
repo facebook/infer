@@ -20,6 +20,6 @@ val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit
 
-val pp_name_only : F.formatter -> t -> unit
+val pp_name_only : with_class:bool -> F.formatter -> t -> unit
 
 val to_name_only : t -> string

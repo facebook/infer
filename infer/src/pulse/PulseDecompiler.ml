@@ -144,10 +144,20 @@ let add_call_source v (call : CallEvent.t) actuals decompiler =
   let+ decompiler in
   match call with
   | Call procname | SkippedKnownCall procname -> (
-    match Attributes.load procname with
-    | Some {objc_accessor= Some (Objc_getter _)} ->
+    match (Attributes.load procname, actuals) with
+    | Some {objc_accessor= Some (Objc_getter _)}, _ ->
         replace_getter_call_with_property_access procname v call actuals decompiler
-    | _ ->
+    | Some {formals= (first_formal, _, _) :: _}, ((this_v, _), _) :: _
+      when Procname.is_cpp_method procname && Mangled.is_this first_formal ->
+        let source_expr =
+          match Map.find this_v decompiler with
+          | SourceExpr ((base, (Dereference :: access | access)), _) ->
+              (base, DecompilerExpr.MethodCall call :: access)
+          | Unknown _ ->
+              (DecompilerExpr.ReturnValue call, [])
+        in
+        Map.add v source_expr decompiler
+    | _, _ ->
         Map.add v (ReturnValue call, []) decompiler )
   | Model _ | ModelName _ | SkippedUnknownCall _ ->
       Map.add v (ReturnValue call, []) decompiler

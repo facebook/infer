@@ -141,3 +141,13 @@ void call_value_or2_bad(const MyValueOr2<A>& c) {
   const static A f{};
   A g = c.value_or(f);
 }
+
+class Vec {
+ public:
+  const std::vector<int>& get_const_ref() const { return vec; }
+
+ private:
+  std::vector<int> vec;
+};
+
+void call_get_const_ref_bad(const Vec& v) { auto x = v.get_const_ref(); }

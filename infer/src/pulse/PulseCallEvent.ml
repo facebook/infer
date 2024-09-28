@@ -34,13 +34,14 @@ let pp = pp_config ~verbose:true
 
 let describe = pp_config ~verbose:false
 
-let pp_name_only fmt = function
+let pp_name_only ~with_class fmt = function
   | Call proc_name | ModelName proc_name | SkippedKnownCall proc_name ->
-      Procname.pp_without_templates fmt proc_name
+      if with_class then Procname.pp_without_templates fmt proc_name
+      else F.pp_print_string fmt (Procname.get_method proc_name)
   | Model model ->
       F.fprintf fmt "%s" model
   | SkippedUnknownCall call_exp ->
       Exp.pp fmt call_exp
 
 
-let to_name_only call_event = F.asprintf "%a" pp_name_only call_event
+let to_name_only call_event = F.asprintf "%a" (pp_name_only ~with_class:true) call_event
