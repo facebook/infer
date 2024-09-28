@@ -926,6 +926,11 @@ let get_autofix pdesc diagnostic =
         List.exists (Procdesc.get_formals pdesc) ~f:(fun (formal, _, _) ->
             Mangled.equal pvar_name formal )
       in
+      let is_local pvar =
+        let pvar_name = Pvar.get_name pvar in
+        List.exists (Procdesc.get_locals pdesc) ~f:(fun ProcAttributes.{name= local} ->
+            Mangled.equal pvar_name local )
+      in
       match (copied_into, source_opt) with
       | IntoField {field}, Some (DecompilerExpr.PVar pvar, [Dereference])
         when Procname.is_constructor (Procdesc.get_proc_name pdesc) && is_formal pvar ->
@@ -933,6 +938,12 @@ let get_autofix pdesc diagnostic =
           Some
             { Jsonbug_t.original= Some (F.asprintf "%a(%s)" Fieldname.pp field param)
             ; replacement= Some (F.asprintf "%a(std::move(%s))" Fieldname.pp field param)
+            ; additional= None }
+      | IntoField {field}, Some (DecompilerExpr.PVar pvar, []) when is_local pvar ->
+          let param = Pvar.to_string pvar in
+          Some
+            { Jsonbug_t.original= Some (F.asprintf "%a = %s;" Fieldname.pp field param)
+            ; replacement= Some (F.asprintf "%a = std::move(%s);" Fieldname.pp field param)
             ; additional= None }
       | _ ->
           None )
