@@ -1188,22 +1188,6 @@ class defaultdict:
         b0:
           return PYCInt (42)
 
-        b1:
-          n6 <- GLOBAL[KeyError]
-          n7 <- $Compare.exception(n5, n6)
-          if n7 then jmp b2(n5, n4, n3, n2, n1, n0) else jmp b3(n5, n4, n3, n2, n1, n0)
-
-        b2:
-          n20 <- LOCAL[self]
-          n21 <- n20.default
-          jmp b4(n21)
-
-        b3:
-          return PYCNone
-
-        b4:
-          return n22
-
 
       dummy.defaultdict:
         b0:
@@ -1284,24 +1268,23 @@ def powerset(s):
           n6 <- $GetIter(n5)
           jmp b1(n6)
 
-        b1:
+        b1(n7):
           n8 <- $NextIter(n7)
           n9 <- $HasNextIter(n8)
-          if n9 then jmp b2 else jmp b3
+          if n9 then jmp b2(n10, n7) else jmp b3
 
-        b2:
-          n10 <- $IterData(n8)
-          LOCAL[i] <- n10
-          n11 <- GLOBAL[map]
-          n12 <- GLOBAL[frozenset]
-          n13 <- GLOBAL[itertools]
-          n14 <- LOCAL[s]
-          n15 <- LOCAL[i]
-          n16 <- n13.combinations(n14, n15)
-          n17 <- n11(n12, n16)
-          n18 <- $GetYieldFromIter(n17)
-          n19 <- $YieldFrom(n18, PYCNone)
-          jmp b1(n7)
+        b2(n11, n12):
+          LOCAL[i] <- n12
+          n13 <- GLOBAL[map]
+          n14 <- GLOBAL[frozenset]
+          n15 <- GLOBAL[itertools]
+          n16 <- LOCAL[s]
+          n17 <- LOCAL[i]
+          n18 <- n15.combinations(n16, n17)
+          n19 <- n13(n14, n18)
+          n20 <- $GetYieldFromIter(n19)
+          n21 <- $YieldFrom(n20, PYCNone)
+          jmp b1(n11)
 
         b3:
           return PYCNone |}]

@@ -333,12 +333,12 @@ with open("foo.txt", "wt") as fp:
           n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
           n2 <- n1.__enter__()
           TOPLEVEL[fp] <- n2
-          n4 <- TOPLEVEL[fp]
-          n5 <- n4.write(PYCString ("yolo"))
-          jmp b1(CM(n1).__exit__)
+          n3 <- TOPLEVEL[fp]
+          n4 <- n3.write(PYCString ("yolo"))
+          jmp b1(PYCNone, CM(n1).__exit__)
 
-        b1:
-          n7 <- n3(PYCNone, PYCNone, PYCNone)
+        b1(n5, n6):
+          n7 <- n6(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 

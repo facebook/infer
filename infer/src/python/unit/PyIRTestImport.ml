@@ -207,7 +207,7 @@ if __name__ == '__main__':
         b1:
           n17 <- LOCAL[i]
           n18 <- $Compare.ge(n17, PYCInt (0))
-          if n18 then jmp b2 else jmp b3
+          if n18 then jmp b2 else jmp b5
 
         b2:
           n19 <- GLOBAL[os]
@@ -222,9 +222,18 @@ if __name__ == '__main__':
           n28 <- n20.abspath(n27)
           n29 <- LOCAL[mydir]
           n30 <- $Compare.eq(n28, n29)
-          if n30 then jmp b4 else jmp b5
+          if n30 then jmp b3 else jmp b4
 
         b3:
+          jmp b1
+
+        b4:
+          n31 <- LOCAL[i]
+          n32 <- $Inplace.Subtract(n31, PYCInt (1))
+          LOCAL[i] <- n32
+          jmp b1
+
+        b5:
           n33 <- GLOBAL[os]
           n34 <- n33.path
           n35 <- GLOBAL[__file__]
@@ -232,16 +241,7 @@ if __name__ == '__main__':
           GLOBAL[__file__] <- n36
           n37 <- GLOBAL[main]
           n38 <- n37()
-          return PYCNone
-
-        b4:
-          jmp b1
-
-        b5:
-          n31 <- LOCAL[i]
-          n32 <- $Inplace.Subtract(n31, PYCInt (1))
-          LOCAL[i] <- n32
-          jmp b1 |}]
+          return PYCNone |}]
 
 
 let%expect_test _ =
@@ -462,32 +462,10 @@ def f(ok):
         b0:
           n0 <- GLOBAL[foo]
           n1 <- n0.bar()
-          jmp b2
-
-        b1:
-          n8 <- GLOBAL[OverflowError]
-          n9 <- $Compare.exception(n7, n8)
-          if n9 then jmp b3(n7, n6, n5, n4, n3, n2) else jmp b4(n7, n6, n5, n4, n3, n2)
-
-        b2:
-          return PYCNone
-
-        b3:
-          n22 <- LOCAL[ok]
-          if $Not(n22) then jmp b5(n12, n11, n10) else jmp b6(n12, n11, n10)
-
-        b4:
-          jmp b2
-
-        b5:
-          n29 <- GetPreviousException()
-          throw n29
+          jmp b6
 
         b6:
-          jmp b7
-
-        b7:
-          jmp b2 |}]
+          return PYCNone |}]
 
 
 let%expect_test _ =

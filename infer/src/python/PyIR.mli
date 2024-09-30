@@ -123,7 +123,7 @@ module Stmt : sig
 end
 
 module Terminator : sig
-  type node_call = {label: string; ssa_args: Exp.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
     | Return of Exp.t
@@ -132,16 +132,17 @@ module Terminator : sig
     | Throw of Exp.t
 end
 
-module CFG : sig
-  module Node : sig
-    type t =
-      { name: NodeName.t
-      ; first_loc: Location.t
-      ; last_loc: Location.t
-      ; stmts: (Location.t * Stmt.t) list
-      ; last: Terminator.t }
-  end
+module Node : sig
+  type t =
+    { name: NodeName.t
+    ; first_loc: Location.t
+    ; last_loc: Location.t
+    ; ssa_parameters: SSA.t list
+    ; stmts: (Location.t * Stmt.t) list
+    ; last: Terminator.t }
+end
 
+module CFG : sig
   type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t}
 end
 
