@@ -421,8 +421,6 @@ module Error = struct
 end
 
 module Stmt = struct
-  (** Statements are an extension of Textual's statements: we still keep some specific Python
-      behavior around, like the difference between [CALL_FUNCTION] and [CALL_METHOD] *)
   type call_arg = {name: string option; value: Exp.t}
 
   let pp_call_arg fmt {name; value} =
