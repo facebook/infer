@@ -331,7 +331,7 @@ with open("foo.txt", "wt") as fp:
         b0:
           n0 <- TOPLEVEL[open]
           n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
-          n2 <- $LoadMethod(n1, __enter__)()
+          n2 <- n1.__enter__()
           TOPLEVEL[fp] <- n2
           n4 <- TOPLEVEL[fp]
           n5 <- n4.write(PYCString ("yolo"))

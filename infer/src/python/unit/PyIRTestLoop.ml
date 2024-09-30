@@ -83,10 +83,10 @@ def f(x, y, l, bar, toto):
           LOCAL[x] <- n5
           n6 <- LOCAL[bar]
           n7 <- n6()
-          n8 <- $LoadMethod(n7, __enter__)()
+          n8 <- n7.__enter__()
           n11 <- LOCAL[toto]
           n12 <- n11()
-          n13 <- $LoadMethod(n12, __enter__)()
+          n13 <- n12.__enter__()
           LOCAL[obj] <- n13
           n17 <- LOCAL[y]
           if n17 then jmp b6(CM(n12).__exit__, CM(n7).__exit__, n2) else

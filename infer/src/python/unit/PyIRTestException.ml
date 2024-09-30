@@ -270,7 +270,7 @@ with open("foo", "r") as fp:
           TOPLEVEL[ERROR] <- n1
           n2 <- TOPLEVEL[open]
           n3 <- n2(PYCString ("foo"), PYCString ("r"))
-          n4 <- $LoadMethod(n3, __enter__)()
+          n4 <- n3.__enter__()
           TOPLEVEL[fp] <- n4
           n6 <- TOPLEVEL[fp]
           n7 <- $GetIter(n6)

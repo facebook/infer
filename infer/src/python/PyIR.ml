@@ -1854,8 +1854,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let offset = next_offset + arg in
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
-      let exp = Exp.LoadMethod (context_manager, PyCommon.enter) in
-      let lhs, st = call_function_with_unnamed_args st exp [] in
+      let lhs, st = State.fresh_id st in
+      let stmt =
+        Stmt.CallMethod {lhs; name= PyCommon.enter; self_if_needed= context_manager; args= []}
+      in
+      let st = State.push_stmt st stmt in
       State.debug st "setup-with: current block size: %d@\n" (State.size st) ;
       let arity = State.size st in
       let ssa_parameters, st = State.mk_ssa_parameters st arity in
