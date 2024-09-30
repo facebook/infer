@@ -26,6 +26,7 @@ type t =
   | TaintExtra
   | TransitiveCalleesExtra
   | Suppressed
+  | Autofix
 [@@deriving equal]
 
 let all_symbols =
@@ -46,4 +47,5 @@ let all_symbols =
   ; ("qualifier_contains_potential_exception_note", QualifierContainsPotentialExceptionNote)
   ; ("taint_extra", TaintExtra)
   ; ("transitive_callees_extra", TransitiveCalleesExtra)
-  ; ("suppressed", Suppressed) ]
+  ; ("suppressed", Suppressed)
+  ; ("autofix", Autofix) ]

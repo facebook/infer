@@ -15,7 +15,9 @@ INFER_OPTIONS = \
   --pulse-model-transfer-ownership "ABFBridgingRelease" \
   --pulse-taint-config taint_config_objcpp.json
 
-INFERPRINT_OPTIONS = --issues-tests
+INFERPRINT_OPTIONS = \
+  --issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
+  --issues-tests
 
 SOURCES = $(wildcard *.mm)
 

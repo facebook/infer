@@ -11,7 +11,10 @@ INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
   --report-suppress-errors SENSITIVE_DATA_FLOW --report-suppress-errors DATA_FLOW_TO_SINK
-INFERPRINT_OPTIONS = --issues-tests
+INFERPRINT_OPTIONS = \
+  --issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
+  --issues-tests
+
 
 SOURCES = $(wildcard *.cpp taint/*.cpp)
 

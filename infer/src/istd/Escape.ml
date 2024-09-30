@@ -124,6 +124,8 @@ let escape_json s = escape_map (function '"' -> Some "\\\"" | '\\' -> Some "\\\\
 
 let escape_double_quotes s = escape_map (function '"' -> Some "\\\"" | _ -> None) s
 
+let escape_line_space s = escape_map (function '\n' -> Some "\\n" | _ -> None) s
+
 let escape_in_single_quotes s =
   Printf.sprintf "'%s'" (escape_map (function '\'' -> Some "'\\''" | _ -> None) s)
 

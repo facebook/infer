@@ -29,6 +29,9 @@ val escape_double_quotes : string -> string
 val escape_in_single_quotes : string -> string
 (** put the string inside single quotes and escape the single quotes within that string *)
 
+val escape_line_space : string -> string
+(** replaces a line space with backslash n *)
+
 val escape_shell : string -> string
 (** escape the string so it can be passed to the shell without remorse *)
 

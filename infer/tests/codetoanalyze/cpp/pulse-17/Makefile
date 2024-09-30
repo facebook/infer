@@ -10,7 +10,9 @@ CLANG_OPTIONS = -x c++ -std=c++17 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ 
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --no-pulse-force-continue --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests
-INFERPRINT_OPTIONS = --issues-tests
+INFERPRINT_OPTIONS = \
+  --issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
+  --issues-tests
 
 SOURCES = $(wildcard *.cpp)
 

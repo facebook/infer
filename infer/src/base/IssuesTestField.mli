@@ -26,6 +26,7 @@ type t =
   | TaintExtra
   | TransitiveCalleesExtra
   | Suppressed
+  | Autofix
 [@@deriving equal]
 
 val all_symbols : (string * t) list
