@@ -2103,6 +2103,188 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       internal_error st (Error.UnsupportedOpcode opname)
 
 
+let get_successors_offset {FFI.Instruction.opname; arg} =
+  match opname with
+  | "LOAD_CONST"
+  | "LOAD_NAME"
+  | "LOAD_GLOBAL"
+  | "LOAD_FAST"
+  | "LOAD_ATTR"
+  | "LOAD_CLASSDEREF"
+  | "LOAD_DEREF"
+  | "STORE_NAME"
+  | "STORE_GLOBAL"
+  | "STORE_FAST"
+  | "STORE_ATTR"
+  | "STORE_SUBSCR"
+  | "STORE_DEREF"
+  | "CALL_FUNCTION"
+  | "CALL_FUNCTION_KW"
+  | "CALL_FUNCTION_EX"
+  | "POP_TOP"
+  | "BINARY_ADD"
+  | "BINARY_SUBTRACT"
+  | "BINARY_AND"
+  | "BINARY_FLOOR_DIVIDE"
+  | "BINARY_LSHIFT"
+  | "BINARY_MATRIX_MULTIPLY"
+  | "BINARY_MODULO"
+  | "BINARY_MULTIPLY"
+  | "BINARY_OR"
+  | "BINARY_POWER"
+  | "BINARY_RSHIFT"
+  | "BINARY_TRUE_DIVIDE"
+  | "BINARY_XOR"
+  | "INPLACE_ADD"
+  | "INPLACE_SUBTRACT"
+  | "INPLACE_AND"
+  | "INPLACE_FLOOR_DIVIDE"
+  | "INPLACE_LSHIFT"
+  | "INPLACE_MATRIX_MULTIPLY"
+  | "INPLACE_MODULO"
+  | "INPLACE_MULTIPLY"
+  | "INPLACE_OR"
+  | "INPLACE_POWER"
+  | "INPLACE_RSHIFT"
+  | "INPLACE_TRUE_DIVIDE"
+  | "INPLACE_XOR"
+  | "UNARY_POSITIVE"
+  | "UNARY_NEGATIVE"
+  | "UNARY_NOT"
+  | "UNARY_INVERT"
+  | "MAKE_FUNCTION"
+  | "BUILD_CONST_KEY_MAP"
+  | "BUILD_LIST"
+  | "BUILD_SET"
+  | "BUILD_TUPLE"
+  | "BUILD_SLICE"
+  | "BUILD_STRING"
+  | "BUILD_MAP"
+  | "BINARY_SUBSCR"
+  | "LOAD_BUILD_CLASS"
+  | "LOAD_METHOD"
+  | "CALL_METHOD"
+  | "SETUP_ANNOTATIONS"
+  | "IMPORT_NAME"
+  | "IMPORT_FROM"
+  | "COMPARE_OP"
+  | "LOAD_CLOSURE"
+  | "DUP_TOP"
+  | "UNPACK_SEQUENCE"
+  | "FORMAT_VALUE"
+  | "GET_ITER"
+  | "DUP_TOP_TWO"
+  | "EXTENDED_ARG"
+  | "POP_BLOCK"
+  | "ROT_TWO"
+  | "ROT_THREE"
+  | "ROT_FOUR"
+  | "SETUP_WITH"
+  | "BEGIN_FINALLY"
+  | "SETUP_FINALLY"
+  | "END_FINALLY"
+  | "POP_FINALLY"
+  | "WITH_CLEANUP_START"
+  | "WITH_CLEANUP_FINISH"
+  | "POP_EXCEPT"
+  | "BUILD_TUPLE_UNPACK_WITH_CALL"
+  | "BUILD_TUPLE_UNPACK"
+  | "BUILD_LIST_UNPACK"
+  | "BUILD_SET_UNPACK"
+  | "BUILD_MAP_UNPACK_WITH_CALL"
+  | "BUILD_MAP_UNPACK"
+  | "YIELD_VALUE"
+  | "YIELD_FROM"
+  | "GET_YIELD_FROM_ITER"
+  | "LIST_APPEND"
+  | "SET_ADD"
+  | "MAP_ADD"
+  | "DELETE_NAME"
+  | "DELETE_GLOBAL"
+  | "DELETE_FAST"
+  | "DELETE_ATTR"
+  | "DELETE_DEREF"
+  | "DELETE_SUBSCR"
+  | "GET_AWAITABLE"
+  | "UNPACK_EX" ->
+      `NextInstrOnly
+  | "RETURN_VALUE" ->
+      `Return
+  | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" | "JUMP_IF_TRUE_OR_POP" | "JUMP_IF_FALSE_OR_POP" ->
+      `NextInstrOrAbsolute arg
+  | "FOR_ITER" ->
+      `NextInstrOrRelative arg
+  | "JUMP_FORWARD" ->
+      `Relative arg
+  | "JUMP_ABSOLUTE" ->
+      `Absolute arg
+  | "RAISE_VARARGS" ->
+      `Throw
+  | _ ->
+      `UnsupportedOpcode
+
+
+let build_cfg_skeleton {FFI.Code.instructions} =
+  let open IResult.Let_syntax in
+  let process_instr map action next_offset_opt next_is_jump_target
+      ({FFI.Instruction.opname; starts_line; offset} as instr) instructions =
+    let get_next_offset () =
+      Result.of_option
+        ~error:(L.InternalError, starts_line, Error.NextOffsetMissing)
+        next_offset_opt
+    in
+    let current_node_offset, current_instructions, action =
+      match action with
+      | `StartNewOne ->
+          (offset, instructions, `InNodeStartingAt (offset, instructions))
+      | `InNodeStartingAt (current_node_offset, current_instructions) ->
+          (current_node_offset, current_instructions, action)
+    in
+    let register_current_node successors =
+      Ok (IMap.add current_node_offset (successors, current_instructions) map, `StartNewOne)
+    in
+    match get_successors_offset instr with
+    | `NextInstrOnly when not next_is_jump_target ->
+        Ok (map, action)
+    | `NextInstrOnly ->
+        let* next_offset = get_next_offset () in
+        register_current_node [next_offset]
+    | `Throw | `Return ->
+        register_current_node []
+    | `NextInstrOrAbsolute other_offset ->
+        let* next_offset = get_next_offset () in
+        register_current_node [next_offset; other_offset]
+    | `NextInstrOrRelative delta ->
+        let* next_offset = get_next_offset () in
+        register_current_node [next_offset; next_offset + delta]
+    | `Relative delta ->
+        let* next_offset = get_next_offset () in
+        register_current_node [next_offset + delta]
+    | `Absolute offset ->
+        register_current_node [offset]
+    | `UnsupportedOpcode ->
+        Error (L.InternalError, starts_line, Error.UnsupportedOpcode opname)
+  in
+  let lookup_remaining = function
+    | [] ->
+        (None, false)
+    | {FFI.Instruction.offset; is_jump_target} :: _ ->
+        (Some offset, is_jump_target)
+  in
+  let rec loop map action instructions =
+    match instructions with
+    | [] ->
+        Ok map
+    | instr :: remaining ->
+        let next_offset_opt, next_is_jump_target = lookup_remaining remaining in
+        let* map, action =
+          process_instr map action next_offset_opt next_is_jump_target instr instructions
+        in
+        loop map action remaining
+  in
+  loop IMap.empty `StartNewOne instructions
+
+
 let rec parse_bytecode_until_terminator ({State.loc} as st) code instructions =
   let open IResult.Let_syntax in
   let label_info, st = State.starts_with_jump_target st instructions in
@@ -2336,3 +2518,24 @@ let test ?(filename = "dummy.py") ?(debug = false) source =
       F.printf "%a" Module.pp module_
   | exception (Py.E _ as e) ->
       L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)
+
+
+let test_cfg_skeleton ?(filename = "dummy.py") source =
+  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
+  let code =
+    match FFI.from_string ~source ~filename with
+    | Error (kind, err) ->
+        L.die kind "FFI error: %a@\n" FFI.Error.pp_kind err
+    | Ok code ->
+        code
+  in
+  Py.finalize () ;
+  match build_cfg_skeleton code with
+  | Error (_, _, err) ->
+      L.internal_error "IR error: %a@\n" Error.pp_kind err
+  | Ok map ->
+      F.printf "%a@\n" FFI.Code.pp_instructions code ;
+      IMap.iter
+        (fun offset (succs, _) ->
+          F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " F.pp_print_int) succs )
+        map

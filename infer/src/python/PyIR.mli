@@ -153,3 +153,5 @@ val mk : debug:bool -> FFI.Code.t -> (Module.t, Error.t) result
 
 val test : ?filename:string -> ?debug:bool -> string -> unit [@@warning "-unused-value-declaration"]
 (* takes a Python source program as string argument, convert it into PyIR and print the result *)
+
+val test_cfg_skeleton : ?filename:string -> string -> unit [@@warning "-unused-value-declaration"]

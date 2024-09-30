@@ -334,6 +334,22 @@ module Code = struct
 
   let pp fmt code = F.pp_print_string fmt code.co_name
 
+  let pp_instructions fmt code =
+    let last_line = ref None in
+    List.iter code.instructions ~f:(fun {opname; arg; offset; starts_line; is_jump_target} ->
+        F.fprintf fmt "%s %s %4d %s %4d@\n"
+          (let default = "     " in
+           Option.value_map starts_line ~default ~f:(fun line ->
+               match !last_line with
+               | Some last_line when Int.equal last_line line ->
+                   default
+               | Some _ | None ->
+                   last_line := Some line ;
+                   F.asprintf "%5d" line ) )
+          (if is_jump_target then ">>>" else "   ")
+          offset opname arg )
+
+
   let is_closure {co_freevars; co_cellvars} =
     Array.length co_freevars + Array.length co_cellvars <> 0
 

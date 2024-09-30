@@ -89,6 +89,8 @@ and Code : sig
   val get_arguments : t -> string array
 
   val get_locals : t -> string array
+
+  val pp_instructions : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 and Instruction : sig
