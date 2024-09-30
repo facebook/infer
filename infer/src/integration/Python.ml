@@ -118,5 +118,16 @@ let capture input =
   | Files {prog; args} ->
       if not (String.equal prog "python3") then
         L.die UserError "python3 should be explicitly used instead of %s." prog ;
-      capture_files ~is_binary:false args ;
+      let files =
+        match Config.python_files_index with
+        | Some f -> (
+          match Utils.read_file f with
+          | Ok lines ->
+              lines @ args
+          | Error error ->
+              L.die UserError "Error reading the python input files index '%s': %s@." f error )
+        | None ->
+            args
+      in
+      capture_files ~is_binary:false files ;
       L.progress "Finished capture.@\n"

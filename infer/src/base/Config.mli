@@ -734,6 +734,8 @@ val pure_by_default : bool
 
 val pyc_file : string list
 
+val python_files_index : string option
+
 val qualified_cpp_name_block_list : string list
 
 val quiet : bool
