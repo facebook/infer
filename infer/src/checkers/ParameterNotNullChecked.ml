@@ -140,7 +140,7 @@ module Mem = struct
             match Config.objc_block_execution_macro with
             | Some objc_block_execution_macro ->
                 let original = Some (F.asprintf "%s(" (Mangled.to_string name)) in
-                let comma = if List.is_empty args then "" else "," in
+                let comma = if List.is_empty args then "" else ", " in
                 let replacement =
                   Some
                     (F.asprintf "%s(%s%s" objc_block_execution_macro (Mangled.to_string name) comma)
