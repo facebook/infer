@@ -65,7 +65,7 @@ type extra = {
 
 type additional_autofix = {
   line: int;
-  col: int;
+  column: int;
   original: string;
   replacement: string;
 }

@@ -127,8 +127,8 @@ let pp_custom_of_report fmt report fields =
               F.pp_print_string fmt (comma_separator index) ;
               pp_autofix_opt fmt (original, replacement) ;
               Option.iter additional ~f:(fun additional ->
-                  List.iter additional ~f:(fun {line; col; original; replacement} ->
-                      F.fprintf fmt "+%a@%d:%d" pp_autofix (original, replacement) line col ) ) )
+                  List.iter additional ~f:(fun {line; column; original; replacement} ->
+                      F.fprintf fmt "+%a@%d:%d" pp_autofix (original, replacement) line column ) ) )
     in
     List.iteri ~f:pp_field fields ;
     F.fprintf fmt "@."
