@@ -92,6 +92,8 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
+  | Pk_objc_nullable_block  (** Obj-C block annotated with nullable *)
+  | Pk_objc_nonnull_block  (** Obj-C block annotated with nonnull *)
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let ptr_kind_string = function
@@ -107,6 +109,10 @@ let ptr_kind_string = function
       "__unsafe_unretained *"
   | Pk_objc_autoreleasing ->
       "__autoreleasing *"
+  | Pk_objc_nonnull_block ->
+      "_Nonnull *"
+  | Pk_objc_nullable_block ->
+      "_Nullable *"
 
 
 (* Note that [is_trivially_copyable] is ignored when compare/equal-ing, since it can be

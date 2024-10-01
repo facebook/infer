@@ -47,6 +47,8 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
+  | Pk_objc_nullable_block  (** Obj-C block annotated with nullable *)
+  | Pk_objc_nonnull_block  (** Obj-C block annotated with nonnull *)
 [@@deriving compare]
 
 val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
