@@ -129,10 +129,13 @@ typedef void (^MyBlock1)(int x);
   }];
 }
 
-typedef void (^AnnotateBlock)(const char* key, id value);
-typedef void (^AnnotateSyncBlock)(AnnotateBlock annotate);
+typedef void (^_Nonnull AnnotateBlock)(const char* key, id value);
+
+typedef void (^AnnotateSyncBlock)(AnnotateBlock _Nonnull annotate);
+typedef void (^AnnotateSyncBlock1)(AnnotateBlock annotate);
 
 void AnnotateSync(id flowId, NS_NOESCAPE AnnotateSyncBlock block) {}
+void AnnotateSync1(id flowId, NS_NOESCAPE AnnotateSyncBlock1 block) {}
 
 + (void)startWithSessionOk:(id)session video:(id)video {
   NSString* const videoID = @"";
@@ -143,6 +146,13 @@ void AnnotateSync(id flowId, NS_NOESCAPE AnnotateSyncBlock block) {}
   AnnotateSync(flowId, ^(AnnotateBlock _Nonnull annotate) {
     annotate("entry_point_type", entryPointType);
     annotate("media_id", videoID);
+  });
+}
+
++ (void)startWithSessionOk_FP:(NSString*)composerSessionID {
+  NSString* const flowId = @"";
+  AnnotateSync1(flowId, ^(AnnotateBlock annotate) {
+    annotate("entry_point_type", composerSessionID);
   });
 }
 
