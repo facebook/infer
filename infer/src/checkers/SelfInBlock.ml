@@ -398,14 +398,7 @@ module Domain = struct
     map (Mem.store attributes pvar id pvar_typ loc) astate
 end
 
-type report_issues_result =
-  { reported_captured_strong_self: Pvar.Set.t
-  ; reported_weak_self_in_noescape_block: Pvar.Set.t
-  ; selfList: DomainData.t list
-  ; weakSelfList: DomainData.t list
-  ; reported_cxx_ref: Pvar.Set.t
-  ; reported_cxx_string: Pvar.Set.t
-  ; reported_self_in_block_passed_to_init: Pvar.Set.t }
+type report_issues_result = {selfList: DomainData.t list; weakSelfList: DomainData.t list}
 
 module TransferFunctions = struct
   module Domain = Domain
@@ -574,24 +567,18 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
 
 
 let report_weakself_in_no_escape_block_issues proc_desc err_log domain (weakSelf : DomainData.t)
-    procname reported_weak_self_in_noescape_block =
-  if not (Pvar.Set.mem weakSelf.pvar reported_weak_self_in_noescape_block) then (
-    let reported_weak_self_in_noescape_block =
-      Pvar.Set.add weakSelf.pvar reported_weak_self_in_noescape_block
-    in
-    let message =
-      F.asprintf
-        "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
-         method `%s` in a position annotated with NS_NOESCAPE."
-        (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
-        (Procname.to_simplified_string procname)
-    in
-    let suggestion = "Use `self` instead." in
-    let ltr = make_trace_use_self_weakself domain in
-    Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
-      IssueType.weak_self_in_noescape_block message ;
-    reported_weak_self_in_noescape_block )
-  else reported_weak_self_in_noescape_block
+    procname =
+  let message =
+    F.asprintf
+      "This block uses `%a` at %a. This is probably not needed since the block is passed to the \
+       method `%s` in a position annotated with NS_NOESCAPE."
+      (Pvar.pp Pp.text) weakSelf.pvar Location.pp weakSelf.loc
+      (Procname.to_simplified_string procname)
+  in
+  let suggestion = "Use `self` instead." in
+  let ltr = make_trace_use_self_weakself domain in
+  Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:weakSelf.loc SelfInBlock
+    IssueType.weak_self_in_noescape_block message
 
 
 let report_weakself_multiple_issue proc_desc err_log domain (weakSelf1 : DomainData.t)
@@ -610,8 +597,7 @@ let report_weakself_multiple_issue proc_desc err_log domain (weakSelf1 : DomainD
     IssueType.multiple_weakself message
 
 
-let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSelf : DomainData.t)
-    report_captured_strongself =
+let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSelf : DomainData.t) =
   let attributes = Procdesc.get_attributes proc_desc in
   let passed_as_noescape_block =
     Option.value_map
@@ -619,13 +605,7 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
         passed_as_noescape_block )
       ~default:false attributes.block_as_arg_attributes
   in
-  if
-    (not passed_as_noescape_block)
-    && not (Pvar.Set.mem capturedStrongSelf.pvar report_captured_strongself)
-  then (
-    let report_captured_strongself =
-      Pvar.Set.add capturedStrongSelf.pvar report_captured_strongself
-    in
+  if not passed_as_noescape_block then
     let message =
       F.asprintf
         "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \
@@ -635,13 +615,12 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
     let suggestion = "Use a local strong pointer or a captured weak pointer instead." in
     let ltr = make_trace_captured domain capturedStrongSelf.pvar in
     Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
-      IssueType.captured_strong_self message ;
-    report_captured_strongself )
-  else report_captured_strongself
+      IssueType.captured_strong_self message
+  else ()
 
 
 let report_self_in_block_passed_to_init_issue proc_desc err_log domain (capturedSelf : DomainData.t)
-    reported_self_in_init_block_param =
+    =
   let attributes = Procdesc.get_attributes proc_desc in
   let passed_to_init =
     Option.bind
@@ -651,23 +630,17 @@ let report_self_in_block_passed_to_init_issue proc_desc err_log domain (captured
   in
   match passed_to_init with
   | Some passed_to_init ->
-      if not (Pvar.Set.mem capturedSelf.pvar reported_self_in_init_block_param) then (
-        let reported_self_in_init_block_param =
-          Pvar.Set.add capturedSelf.pvar reported_self_in_init_block_param
-        in
-        let message =
-          F.asprintf
-            "`self` is captured in the block at %a. The block is passed to the initializer `%a`. \
-             This could lead to retain cycles or unexpected behavior."
-            Location.pp capturedSelf.loc Procname.pp passed_to_init
-        in
-        let ltr = make_trace_captured domain capturedSelf.pvar in
-        Reporting.log_issue proc_desc err_log ~ltr ~loc:capturedSelf.loc SelfInBlock
-          IssueType.self_in_block_passed_to_init message ;
-        reported_self_in_init_block_param )
-      else reported_self_in_init_block_param
+      let message =
+        F.asprintf
+          "`self` is captured in the block at %a. The block is passed to the initializer `%a`. \
+           This could lead to retain cycles or unexpected behavior."
+          Location.pp capturedSelf.loc Procname.pp passed_to_init
+      in
+      let ltr = make_trace_captured domain capturedSelf.pvar in
+      Reporting.log_issue proc_desc err_log ~ltr ~loc:capturedSelf.loc SelfInBlock
+        IssueType.self_in_block_passed_to_init message
   | None ->
-      reported_self_in_init_block_param
+      ()
 
 
 let noescaping_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.noescaping_function_list
@@ -690,13 +663,9 @@ let init_trace_captured_var data captured_definition_loc =
 
 
 let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
-    reported_cxx_ref captured_definition_loc =
+    captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
-  if
-    (not (should_ignore_cxx_captured attributes))
-    && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref)
-  then (
-    let reported_cxx_ref = Pvar.Set.add cxx_ref.pvar reported_cxx_ref in
+  if not (should_ignore_cxx_captured attributes) then
     let message =
       F.asprintf
         "The variable `%a` is a C++ reference and it's captured in the block. This can lead to \
@@ -706,19 +675,14 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
     let init_trace_elem = init_trace_captured_var cxx_ref captured_definition_loc in
     let ltr = init_trace_elem :: make_trace_captured domain cxx_ref.pvar in
     Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_ref.loc SelfInBlock
-      IssueType.cxx_ref_captured_in_block message ;
-    reported_cxx_ref )
-  else reported_cxx_ref
+      IssueType.cxx_ref_captured_in_block message
+  else ()
 
 
 let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
-    reported_cxx_string captured_definition_loc =
+    captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
-  if
-    (not (should_ignore_cxx_captured attributes))
-    && not (Pvar.Set.mem cxx_string.pvar reported_cxx_string)
-  then (
-    let reported_cxx_string = Pvar.Set.add cxx_string.pvar reported_cxx_string in
+  if not (should_ignore_cxx_captured attributes) then
     let message =
       F.asprintf
         "The local variable `%a` is of type std::string and it's captured in the block. This can \
@@ -728,68 +692,47 @@ let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : D
     let init_trace_elem = init_trace_captured_var cxx_string captured_definition_loc in
     let ltr = init_trace_elem :: make_trace_captured domain cxx_string.pvar in
     Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_string.loc SelfInBlock
-      IssueType.cxx_string_captured_in_block message ;
-    reported_cxx_string )
-  else reported_cxx_string
+      IssueType.cxx_string_captured_in_block message
+  else ()
 
 
 let report_issues proc_desc err_log domain =
   let process_domain_item (result : report_issues_result) (_, (domain_data : DomainData.t)) =
     match domain_data.kind with
     | DomainData.CAPTURED_STRONG_SELF ->
-        let reported_captured_strong_self =
-          report_captured_strongself_issue proc_desc err_log domain domain_data
-            result.reported_captured_strong_self
-        in
-        {result with reported_captured_strong_self}
+        report_captured_strongself_issue proc_desc err_log domain domain_data ;
+        result
     | DomainData.CXX_REF captured_definition_loc ->
-        let reported_cxx_ref =
-          report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
-            result.reported_cxx_ref captured_definition_loc
-        in
-        {result with reported_cxx_ref}
+        report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
+          captured_definition_loc ;
+        result
     | DomainData.LOCAL_CXX_STRING captured_definition_loc ->
-        let reported_cxx_string =
-          report_cxx_string_captured_in_block proc_desc err_log domain domain_data
-            result.reported_cxx_string captured_definition_loc
-        in
-        {result with reported_cxx_string}
+        report_cxx_string_captured_in_block proc_desc err_log domain domain_data
+          captured_definition_loc ;
+        result
     | DomainData.WEAK_SELF ->
-        let reported_weak_self_in_noescape_block =
+        let _ =
           let attributes = Procdesc.get_attributes proc_desc in
           match attributes.ProcAttributes.block_as_arg_attributes with
           | Some {passed_to= procname; passed_as_noescape_block= true} ->
               report_weakself_in_no_escape_block_issues proc_desc err_log domain domain_data
-                procname result.reported_weak_self_in_noescape_block
+                procname
           | _ ->
-              result.reported_weak_self_in_noescape_block
+              ()
         in
-        { result with
-          reported_weak_self_in_noescape_block
-        ; weakSelfList= domain_data :: result.weakSelfList }
+        {result with weakSelfList= domain_data :: result.weakSelfList}
     | DomainData.SELF ->
-        let reported_self_in_block_passed_to_init =
-          report_self_in_block_passed_to_init_issue proc_desc err_log domain domain_data
-            result.reported_self_in_block_passed_to_init
-        in
-        {result with selfList= domain_data :: result.selfList; reported_self_in_block_passed_to_init}
+        report_self_in_block_passed_to_init_issue proc_desc err_log domain domain_data ;
+        {result with selfList= domain_data :: result.selfList}
     | _ ->
         result
-  in
-  let report_issues_result_empty =
-    { reported_captured_strong_self= Pvar.Set.empty
-    ; reported_weak_self_in_noescape_block= Pvar.Set.empty
-    ; selfList= []
-    ; weakSelfList= []
-    ; reported_cxx_ref= Pvar.Set.empty
-    ; reported_cxx_string= Pvar.Set.empty
-    ; reported_self_in_block_passed_to_init= Pvar.Set.empty }
   in
   let domain_bindings =
     Vars.bindings domain
     |> List.sort ~compare:(fun (_, {DomainData.loc= loc1}) (_, {DomainData.loc= loc2}) ->
            Location.compare loc1 loc2 )
   in
+  let report_issues_result_empty = {selfList= []; weakSelfList= []} in
   let {weakSelfList; selfList} =
     List.fold_left ~f:process_domain_item ~init:report_issues_result_empty domain_bindings
   in

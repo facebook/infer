@@ -237,7 +237,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     if (strongSelf) {
       int (^my_block)() = ^() {
         int x = strongSelf->x; // bug here
-        x = strongSelf->x; // no bug here because of dedup
+        x = strongSelf->x; // bug here
         return 0;
       };
       int x = strongSelf->x;

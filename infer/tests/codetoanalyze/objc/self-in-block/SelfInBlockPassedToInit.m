@@ -16,7 +16,7 @@
 - (ContextManager*)mutualContextManager_bad {
   return [[ContextManager alloc] initWithLoggingHandler:^{
     [self log]; // reports SELF_IN_BLOCK_PASSED_TO_INIT
-    [self log]; // only one occurrence gets reported
+    [self log]; // reports SELF_IN_BLOCK_PASSED_TO_INIT
   }];
 }
 
