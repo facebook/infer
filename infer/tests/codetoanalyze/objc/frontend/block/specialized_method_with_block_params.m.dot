@@ -55,14 +55,14 @@ digraph cfg {
 	
 
 	 "objc_block_specialized_method_wit.982152dd64690368_3" -> "objc_block_specialized_method_wit.982152dd64690368_2" ;
-"foo.acbd18db4cc2f85c_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
+"foo.acbd18db4cc2f85c_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(_Nullable *) <_Nullable> my_block2:_fn_(_Nullable *) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo.acbd18db4cc2f85c_1" -> "foo.acbd18db4cc2f85c_3" ;
 "foo.acbd18db4cc2f85c_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo.acbd18db4cc2f85c_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(*) [line 16, column 3]\n  n$1=_fun___call_objc_block(n$0:_fn_,22:int) objc_block [line 16, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85c_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(_Nullable *) [line 16, column 3]\n  n$1=_fun___call_objc_block(n$0:_fn_,22:int) objc_block [line 16, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85c_3" -> "foo.acbd18db4cc2f85c_2" ;
@@ -123,7 +123,7 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#[instance].8e6cfff8b86359b6_7" -> "bar:#A(class A)#[instance].8e6cfff8b86359b6_6" ;
-"call_foo_with_same_param#A#[insta.0f7e046192340a49_1" [label="1: Start A.call_foo_with_same_param\nFormals:  self:A*\nLocals:  b:_fn_(*) \n  " color=yellow style=filled]
+"call_foo_with_same_param#A#[insta.0f7e046192340a49_1" [label="1: Start A.call_foo_with_same_param\nFormals:  self:A*\nLocals:  b:_fn_(_Nullable *) \n  " color=yellow style=filled]
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_1" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_7" ;
@@ -138,15 +138,15 @@ digraph cfg {
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_4" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_2" ;
-"call_foo_with_same_param#A#[insta.0f7e046192340a49_5" [label="5:  Call _fun_foo \n   n$22=*&b:_fn_(*) [line 55, column 7]\n  n$23=*&b:_fn_(*) [line 55, column 10]\n  n$24=*&self:A* [line 55, column 13]\n  n$25=_fun_foo(n$22:_fn_(*),n$23:_fn_(*),n$24:A*) [line 55, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#[insta.0f7e046192340a49_5" [label="5:  Call _fun_foo \n   n$22=*&b:_fn_(_Nullable *) [line 55, column 7]\n  n$23=*&b:_fn_(_Nullable *) [line 55, column 10]\n  n$24=*&self:A* [line 55, column 13]\n  n$25=_fun_foo(n$22:_fn_(_Nullable *),n$23:_fn_(_Nullable *),n$24:A*) [line 55, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_5" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_3" ;
-"call_foo_with_same_param#A#[insta.0f7e046192340a49_6" [label="6:  Call _fun_foo \n   n$26=*&b:_fn_(*) [line 54, column 7]\n  n$27=*&b:_fn_(*) [line 54, column 10]\n  n$28=*&self:A* [line 54, column 13]\n  n$29=_fun_foo(n$26:_fn_(*),n$27:_fn_(*),n$28:A*) [line 54, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#[insta.0f7e046192340a49_6" [label="6:  Call _fun_foo \n   n$26=*&b:_fn_(_Nullable *) [line 54, column 7]\n  n$27=*&b:_fn_(_Nullable *) [line 54, column 10]\n  n$28=*&self:A* [line 54, column 13]\n  n$29=_fun_foo(n$26:_fn_(_Nullable *),n$27:_fn_(_Nullable *),n$28:A*) [line 54, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_6" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_5" ;
-"call_foo_with_same_param#A#[insta.0f7e046192340a49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_block_specialized_method_with_block_params.m:51,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#[insta.0f7e046192340a49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(_Nullable *)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_block_specialized_method_with_block_params.m:51,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_7" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_6" ;

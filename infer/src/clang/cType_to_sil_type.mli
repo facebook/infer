@@ -12,4 +12,8 @@ val get_builtin_objc_typename : [< `ObjCClass | `ObjCId] -> Typ.Name.t
 val type_of_builtin_type_kind : ?is_const:bool -> Clang_ast_t.builtin_type_kind -> Typ.t
 
 val qual_type_to_sil_type :
-  (Tenv.t -> Clang_ast_t.decl -> Typ.desc) -> Tenv.t -> Clang_ast_t.qual_type -> Typ.t
+     ?attr_info:Clang_ast_t.attr_type_info
+  -> (Tenv.t -> Clang_ast_t.decl -> Typ.desc)
+  -> Tenv.t
+  -> Clang_ast_t.qual_type
+  -> Typ.t
