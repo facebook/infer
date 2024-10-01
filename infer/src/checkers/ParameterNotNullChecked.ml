@@ -244,11 +244,12 @@ let get_captured_formals attributes =
 let init_block_params
     (formals_attributes : ((Mangled.t * Typ.t * Annot.Item.t) * ProcAttributes.t * bool) list) =
   let add_nullable_block (blockParams, traceInfo)
-      ((formal, _, annotation), attributes, is_checked_for_null) =
+      ((formal, typ, annotation), attributes, is_checked_for_null) =
     if
       is_block_param formals_attributes formal
       && (not (Annotations.ia_is_nonnull annotation))
-      && not is_checked_for_null
+      && (not is_checked_for_null)
+      && not (Typ.is_block_nonnull_pointer typ)
     then
       let procname = attributes.ProcAttributes.proc_name in
       let blockParams = BlockParams.add formal {checked= false} blockParams in

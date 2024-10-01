@@ -149,14 +149,14 @@ void AnnotateSync1(id flowId, NS_NOESCAPE AnnotateSyncBlock1 block) {}
   });
 }
 
-+ (void)startWithSessionOk_FP:(NSString*)composerSessionID {
++ (void)startWithSessionOk:(NSString*)composerSessionID {
   NSString* const flowId = @"";
   AnnotateSync1(flowId, ^(AnnotateBlock annotate) {
     annotate("entry_point_type", composerSessionID);
   });
 }
 
-+ (void)startWithSessionBad:(id)session video:(id)video {
++ (void)startWithSession2Ok:(id)session video:(id)video {
   NSString* const videoID = @"";
   NSString* const flowId = @"";
 

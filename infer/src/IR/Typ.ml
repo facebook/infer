@@ -361,6 +361,10 @@ let is_weak_pointer t =
   match t.desc with Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) -> true | _ -> false
 
 
+let is_block_nonnull_pointer t =
+  match t.desc with Tptr (_, Pk_objc_nonnull_block) -> true | _ -> false
+
+
 let is_strong_pointer t = match t.desc with Tptr (_, Pk_pointer) -> true | _ -> false
 
 let mk ?default ?quals desc : t =

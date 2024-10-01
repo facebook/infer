@@ -148,6 +148,8 @@ val size_t : ikind
 
 val is_weak_pointer : t -> bool
 
+val is_block_nonnull_pointer : t -> bool
+
 val is_strong_pointer : t -> bool
 
 module Name : sig
