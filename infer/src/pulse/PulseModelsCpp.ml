@@ -397,11 +397,12 @@ module BasicString = struct
 end
 
 module Function = struct
-  let operator_call FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
+  let operator_call ~deref_lambda_ptr FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
    fun {path; analysis_data; location; ret= (ret_id, _) as ret} astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (lambda, _) =
-      PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
+      (if deref_lambda_ptr then PulseOperations.eval_deref_access else PulseOperations.eval_access)
+        path Read location lambda_ptr_hist Dereference astate
     in
     let<*> astate = PulseOperations.Closures.check_captured_addresses path location lambda astate in
     let callee_proc_name_opt =
@@ -1124,7 +1125,14 @@ let simple_matchers =
     ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"std::function::function"
       |> with_non_disj
-    ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
+    ; -"folly" &:: "Function" &:: "Function" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"folly::Function::Function"
+      |> with_non_disj
+    ; -"folly" &:: "Function" &:: "~Function" &--> Basic.skip |> with_non_disj
+    ; -"std" &:: "function" &:: "operator()" $ capt_arg
+      $++$--> Function.operator_call ~deref_lambda_ptr:false
+    ; -"folly" &:: "detail" &:: "function" &:: "FunctionTraits" &:: "operator()" $ capt_arg
+      $++$--> Function.operator_call ~deref_lambda_ptr:true
     ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"std::function::operator="
       |> with_non_disj
