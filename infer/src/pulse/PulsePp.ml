@@ -560,6 +560,6 @@ let pp (pp_kind : Pp.print_kind) path_opt fmt astate =
     let pp_path_opt fmt path_opt =
       Option.iter path_opt ~f:(fun path -> F.fprintf fmt "@\n%a" PulsePathContext.pp path)
     in
-    F.fprintf fmt "%a%a" AbductiveDomain.pp astate pp_path_opt path_opt
+    F.fprintf fmt "%a%a" (Pp.escape_xml AbductiveDomain.pp pp_kind) astate pp_path_opt path_opt
   in
   Pp.html_collapsible_block ~name:"Raw state" pp_kind pp_raw_state fmt ()
