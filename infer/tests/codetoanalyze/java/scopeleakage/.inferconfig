@@ -26,6 +26,9 @@
           {
             "classname": "InnerScope",
             "methods": ["getBox"]
+          },
+          {
+            "return_types": ["Box"]
           }
         ]
       }

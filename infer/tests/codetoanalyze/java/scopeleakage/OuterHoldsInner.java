@@ -17,6 +17,9 @@ public class OuterHoldsInner<T> {
   // An error that requires recognizing scope generating methods.
   public final Box<InnerScopedClass> l_bad = InnerScope.getBox(InnerScopedClass.class);
 
+  // An error that requires recognizing scope generating methods via return types.
+  public final Box<InnerScopedClass> l_bad_2 = InnerScope.getAnotherBox(InnerScopedClass.class);
+
   // An error that requires analyzing the code in the constructor.
   public final Object o_bad = OuterHoldsInner.getMethod();
 

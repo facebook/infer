@@ -9,4 +9,8 @@ public class InnerScope {
   public static <T> Box<T> getBox(Class<?> c) {
     return new Box<T>(c.getName());
   }
+
+  public static <T> Box<T> getAnotherBox(Class<?> c) {
+    return new Box<T>(c.getName());
+  }
 }
