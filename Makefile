@@ -100,15 +100,16 @@ endif
 endif
 endif
 
-ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += \
-  buck_block_list \
-  buck-clang-db \
-  buck_flavors \
-  buck_flavors_diff \
-  buck_flavors_run \
-  buck_flavors_deterministic
-endif
+# ifneq ($(BUCK),no)
+# TODO convert to buck2
+# BUILD_SYSTEMS_TESTS += \
+#   buck_block_list \
+#   buck-clang-db \
+#   buck_flavors \
+#   buck_flavors_diff \
+#   buck_flavors_run \
+#   buck_flavors_deterministic
+# endif
 
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig inferconfig_not_strict
@@ -285,9 +286,10 @@ endif
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
-ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck_java_flavor
-endif
+# ifneq ($(BUCK),no)
+# TODO: convert to buck2
+# BUILD_SYSTEMS_TESTS += buck_java_flavor
+# endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += \
 	mvn \
