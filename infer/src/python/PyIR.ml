@@ -1894,6 +1894,23 @@ let build_cfg_skeleton {FFI.Code.instructions} =
 
 module ISet = IInt.Set
 
+let build_topological_order cfg_skeleton =
+  (* weakly topological order *)
+  let rec visit ((seen, post_visited) as acc) (offset, _) =
+    if ISet.mem offset seen then acc
+    else
+      let succs, _instructions =
+        IMap.find_opt offset cfg_skeleton |> Option.value ~default:([], [])
+      in
+      let seen = ISet.add offset seen in
+      let seen, post_visited = List.fold succs ~f:visit ~init:(seen, post_visited) in
+      let post_visited = offset :: post_visited in
+      (seen, post_visited)
+  in
+  let _, post_visited = visit (ISet.empty, []) (0, 0) in
+  post_visited
+
+
 let process_node st code ~offset ~arity instructions =
   let open IResult.Let_syntax in
   let* name = State.get_node_name st offset in
@@ -1930,6 +1947,7 @@ let build_cfg ~debug ~code_qual_name code =
   let open IResult.Let_syntax in
   let loc = Location.of_code code in
   let* cfg_skeleton = build_cfg_skeleton code in
+  let topological_order = build_topological_order cfg_skeleton in
   let get_info offset =
     match IMap.find_opt offset cfg_skeleton with
     | None ->
@@ -1937,18 +1955,25 @@ let build_cfg ~debug ~code_qual_name code =
     | Some l ->
         Ok l
   in
-  let rec visit (st, seen) (offset, arity_delta) ~arity =
-    if ISet.mem offset seen then Ok (st, seen)
-    else
-      let* successors, instructions = get_info offset in
-      let arity = arity + arity_delta in
-      let* st = process_node st code ~offset ~arity instructions in
-      let seen = ISet.add offset seen in
-      let arity = State.size st in
-      List.fold_result successors ~init:(st, seen) ~f:(visit ~arity)
+  let visit (st, arity_map) offset =
+    let* successors, instructions = get_info offset in
+    let* arity =
+      match IMap.find_opt offset arity_map with
+      | Some arity ->
+          Ok arity
+      | None ->
+          internal_error st (Error.MissingNodeInformation offset)
+    in
+    let* st = process_node st code ~offset ~arity instructions in
+    let arity = State.size st in
+    let arity_map =
+      List.fold successors ~init:arity_map ~f:(fun arity_map (succ, delta) ->
+          if IMap.mem succ arity_map then arity_map else IMap.add succ (arity + delta) arity_map )
+    in
+    Ok (st, arity_map)
   in
   let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton in
-  let* st, _ = visit (st, ISet.empty) (0, 0) ~arity:0 in
+  let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
   let cfg = CFG.of_builder st.State.cfg in
   let* qual_name = read_code_qual_name st code in
   Ok (qual_name, cfg)
@@ -1997,7 +2022,9 @@ let test_cfg_skeleton code =
       IMap.iter
         (fun offset (succs, _) ->
           F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " pp_succ_and_delta) succs )
-        map
+        map ;
+      let topological_order = build_topological_order map in
+      F.printf "topological order: %a@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 
 let build_cfgs ~debug ~code_qual_name co_consts =

@@ -90,23 +90,23 @@ def f(x, y, l, bar, toto):
           if n13 then jmp b3(n5, CM(n8).__exit__, CM(n11).__exit__) else
           jmp b4(n5, CM(n8).__exit__, CM(n11).__exit__)
 
-        b3(n14, n15, n16):
-          n17 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          n18 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          jmp b1(n14, n15, n16)
+        b3(n28, n29, n30):
+          n31 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n32 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b1(n28, n29, n30)
 
-        b4(n19, n20, n21):
-          n22 <- GLOBAL[print]
-          n23 <- n22(PYCString ("nop"))
-          jmp b5(n19, n20, n21, PYCNone)
+        b4(n14, n15, n16):
+          n17 <- GLOBAL[print]
+          n18 <- n17(PYCString ("nop"))
+          jmp b5(n14, n15, n16, PYCNone)
 
-        b5(n24, n25, n26, n27):
-          n28 <- n27(PYCNone, PYCNone, PYCNone)
-          jmp b6(n24, n25, PYCNone)
+        b5(n19, n20, n21, n22):
+          n23 <- n22(PYCNone, PYCNone, PYCNone)
+          jmp b6(n19, n20, PYCNone)
 
-        b6(n29, n30, n31):
-          n32 <- n31(PYCNone, PYCNone, PYCNone)
-          jmp b1(n29)
+        b6(n24, n25, n26):
+          n27 <- n26(PYCNone, PYCNone, PYCNone)
+          jmp b1(n24)
 
         b7:
           return PYCNone |}]
@@ -152,15 +152,15 @@ def f(match, it, n):
           n11 <- $Compare.eq(n9, n10)
           if $Not(n11) then jmp b3(n5) else jmp b4(n5)
 
-        b3(n12):
-          n13 <- GLOBAL[AssertionError]
-          throw n13
+        b3(n15):
+          n16 <- GLOBAL[AssertionError]
+          throw n16
 
-        b4(n14):
-          n15 <- LOCAL[n]
-          n16 <- $Inplace.Add(n15, PYCInt (1))
-          LOCAL[n] <- n16
-          jmp b1(n14)
+        b4(n12):
+          n13 <- LOCAL[n]
+          n14 <- $Inplace.Add(n13, PYCInt (1))
+          LOCAL[n] <- n14
+          jmp b1(n12)
 
         b5:
           return PYCNone |}]

@@ -210,37 +210,37 @@ if __name__ == '__main__':
           if n18 then jmp b2 else jmp b5
 
         b2:
-          n19 <- GLOBAL[os]
-          n20 <- n19.path
-          n21 <- GLOBAL[os]
-          n22 <- n21.path
-          n23 <- GLOBAL[sys]
-          n24 <- n23.path
-          n25 <- LOCAL[i]
-          n26 <- n24[n25]
-          n27 <- n22.normpath(n26)
-          n28 <- n20.abspath(n27)
-          n29 <- LOCAL[mydir]
-          n30 <- $Compare.eq(n28, n29)
-          if n30 then jmp b3 else jmp b4
+          n25 <- GLOBAL[os]
+          n26 <- n25.path
+          n27 <- GLOBAL[os]
+          n28 <- n27.path
+          n29 <- GLOBAL[sys]
+          n30 <- n29.path
+          n31 <- LOCAL[i]
+          n32 <- n30[n31]
+          n33 <- n28.normpath(n32)
+          n34 <- n26.abspath(n33)
+          n35 <- LOCAL[mydir]
+          n36 <- $Compare.eq(n34, n35)
+          if n36 then jmp b3 else jmp b4
 
         b3:
           jmp b1
 
         b4:
-          n31 <- LOCAL[i]
-          n32 <- $Inplace.Subtract(n31, PYCInt (1))
-          LOCAL[i] <- n32
+          n37 <- LOCAL[i]
+          n38 <- $Inplace.Subtract(n37, PYCInt (1))
+          LOCAL[i] <- n38
           jmp b1
 
         b5:
-          n33 <- GLOBAL[os]
-          n34 <- n33.path
-          n35 <- GLOBAL[__file__]
-          n36 <- n34.abspath(n35)
-          GLOBAL[__file__] <- n36
-          n37 <- GLOBAL[main]
-          n38 <- n37()
+          n19 <- GLOBAL[os]
+          n20 <- n19.path
+          n21 <- GLOBAL[__file__]
+          n22 <- n20.abspath(n21)
+          GLOBAL[__file__] <- n22
+          n23 <- GLOBAL[main]
+          n24 <- n23()
           return PYCNone |}]
 
 

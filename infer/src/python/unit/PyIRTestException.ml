@@ -64,21 +64,21 @@ print("END")
           n3 <- TOPLEVEL[foo]
           if n3 then jmp b2(n2) else jmp b3(n2)
 
-        b2(n4):
+        b2(n7):
+          n8 <- TOPLEVEL[print]
+          n9 <- n8(PYCString ("X"))
+          jmp b4(n7)
+
+        b3(n4):
           n5 <- TOPLEVEL[print]
-          n6 <- n5(PYCString ("X"))
+          n6 <- n5(PYCString ("Y"))
           jmp b4(n4)
 
-        b3(n12):
+        b4(n10):
+          n11 <- TOPLEVEL[print]
+          n12 <- n11(PYCString ("FINALLY BLOCK"))
           n13 <- TOPLEVEL[print]
-          n14 <- n13(PYCString ("Y"))
-          jmp b4(n12)
-
-        b4(n7):
-          n8 <- TOPLEVEL[print]
-          n9 <- n8(PYCString ("FINALLY BLOCK"))
-          n10 <- TOPLEVEL[print]
-          n11 <- n10(PYCString ("END"))
+          n14 <- n13(PYCString ("END"))
           return PYCNone |}]
 
 
@@ -236,22 +236,22 @@ with open("foo", "r") as fp:
           n10 <- $HasNextIter(n8)
           if n10 then jmp b2(n7, n8, n9) else jmp b7(n7)
 
-        b2(n11, n12, n13):
-          TOPLEVEL[line] <- n13
-          n14 <- TOPLEVEL[print]
-          n15 <- n14(PYCString ("TRY"))
-          jmp b6(n11, n12)
-
-        b6(n16, n17):
+        b2(n15, n16, n17):
+          TOPLEVEL[line] <- n17
           n18 <- TOPLEVEL[print]
-          n19 <- n18(PYCString ("ELSE"))
-          jmp b1(n16, n17)
+          n19 <- n18(PYCString ("TRY"))
+          jmp b6(n15, n16)
 
-        b7(n20):
-          jmp b8(n20, PYCNone)
+        b6(n20, n21):
+          n22 <- TOPLEVEL[print]
+          n23 <- n22(PYCString ("ELSE"))
+          jmp b1(n20, n21)
 
-        b8(n21, n22):
-          n23 <- n22(PYCNone, PYCNone, PYCNone)
+        b7(n11):
+          jmp b8(n11, PYCNone)
+
+        b8(n12, n13):
+          n14 <- n13(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 
