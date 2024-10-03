@@ -379,3 +379,78 @@ async def async_with(filename):
             n14 <- $GetAwaitable(n13)
             n15 <- $YieldFrom(n14, PYCNone)
             return PYCNone |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def call_finally():
+    try:
+        read()
+    except Exception as e:
+        return
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+      module dummy:
+
+        toplevel:
+          b0:
+            TOPLEVEL[call_finally] <- $FuncObj(call_finally, dummy.call_finally, {})
+            return PYCNone
+
+
+        dummy.call_finally:
+          b0:
+            n0 <- GLOBAL[read]
+            n1 <- n0()
+            jmp b6
+
+          b6:
+            return PYCNone |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def call_finally_with_break():
+    for i in range(100):
+        try:
+            read()
+        except Exception as e:
+            break
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+      module dummy:
+
+        toplevel:
+          b0:
+            TOPLEVEL[call_finally_with_break] <- $FuncObj(call_finally_with_break, dummy.call_finally_with_break, {})
+            return PYCNone
+
+
+        dummy.call_finally_with_break:
+          b0:
+            n0 <- GLOBAL[range]
+            n1 <- n0(PYCInt (100))
+            n2 <- $GetIter(n1)
+            jmp b1(n2)
+
+          b1(n3):
+            n4 <- $NextIter(n3)
+            n5 <- $HasNextIter(n4)
+            if n5 then jmp b2(n6, n3) else jmp b9
+
+          b2(n7, n8):
+            LOCAL[i] <- n8
+            n9 <- GLOBAL[read]
+            n10 <- n9()
+            jmp b1(n7)
+
+          b9:
+            return PYCNone |}]

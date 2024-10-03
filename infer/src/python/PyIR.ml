@@ -1560,6 +1560,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "END_FINALLY" ->
       let* _, st = State.pop st in
       Ok (st, None)
+  | "CALL_FINALLY" ->
+      let {State.loc} = st in
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let jump_offset = next_offset + arg in
+      let st = State.push st (Exp.Const (Const.of_int jump_offset)) in
+      let* label = State.get_node_name st jump_offset in
+      let {State.stack} = st in
+      Ok (st, Some (Terminator.mk_jump label stack))
   | "POP_FINALLY" ->
       let* return_value, st =
         if arg <> 0 then
@@ -1829,7 +1837,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
       `NextInstrWithPopOrAbsolute arg
   | "FOR_ITER" ->
       `NextInstrOrRelativeWith2Pop arg
-  | "JUMP_FORWARD" ->
+  | "CALL_FINALLY" | "JUMP_FORWARD" ->
       `Relative arg
   | "JUMP_ABSOLUTE" ->
       `Absolute arg
