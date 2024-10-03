@@ -39,17 +39,17 @@ def f(**kwargs):
 
         b1(n3):
           n4 <- $NextIter(n3)
-          n5 <- $HasNextIter(n4)
-          if n5 then jmp b2(n6, n3) else jmp b3
+          n5 <- $HasNextIter(n3)
+          if n5 then jmp b2(n3, n4) else jmp b3
 
-        b2(n7, n8):
-          LOCAL[k] <- n8[PYCInt (0)]
-          LOCAL[v] <- n8[PYCInt (1)]
-          n9 <- GLOBAL[print]
-          n10 <- LOCAL[k]
-          n11 <- LOCAL[v]
-          n12 <- n9(n10, n11)
-          jmp b1(n7)
+        b2(n6, n7):
+          LOCAL[k] <- n7[PYCInt (0)]
+          LOCAL[v] <- n7[PYCInt (1)]
+          n8 <- GLOBAL[print]
+          n9 <- LOCAL[k]
+          n10 <- LOCAL[v]
+          n11 <- n8(n9, n10)
+          jmp b1(n6)
 
         b3:
           return PYCNone |}]
@@ -117,18 +117,18 @@ start()
 
         b1(n15):
           n16 <- $NextIter(n15)
-          n17 <- $HasNextIter(n16)
-          if n17 then jmp b2(n18, n15) else jmp b3
+          n17 <- $HasNextIter(n15)
+          if n17 then jmp b2(n15, n16) else jmp b3
 
-        b2(n19, n20):
-          LOCAL[k] <- n20[PYCInt (0)]
-          LOCAL[v] <- n20[PYCInt (1)]
-          n21 <- GLOBAL[print]
-          n22 <- LOCAL[k]
-          n23 <- LOCAL[v]
-          n24 <- PYCString ("{} = {}").format(n22, n23)
-          n25 <- n21(n24)
-          jmp b1(n19)
+        b2(n18, n19):
+          LOCAL[k] <- n19[PYCInt (0)]
+          LOCAL[v] <- n19[PYCInt (1)]
+          n20 <- GLOBAL[print]
+          n21 <- LOCAL[k]
+          n22 <- LOCAL[v]
+          n23 <- PYCString ("{} = {}").format(n21, n22)
+          n24 <- n20(n23)
+          jmp b1(n18)
 
         b3:
           return PYCNone
@@ -284,17 +284,17 @@ f(**d1, x=42)
 
         b1(n6):
           n7 <- $NextIter(n6)
-          n8 <- $HasNextIter(n7)
-          if n8 then jmp b2(n9, n6) else jmp b3
+          n8 <- $HasNextIter(n6)
+          if n8 then jmp b2(n6, n7) else jmp b3
 
-        b2(n10, n11):
-          LOCAL[k] <- n11[PYCInt (0)]
-          LOCAL[v] <- n11[PYCInt (1)]
-          n12 <- GLOBAL[print]
-          n13 <- LOCAL[k]
-          n14 <- LOCAL[v]
-          n15 <- n12(n13, n14)
-          jmp b1(n10)
+        b2(n9, n10):
+          LOCAL[k] <- n10[PYCInt (0)]
+          LOCAL[v] <- n10[PYCInt (1)]
+          n11 <- GLOBAL[print]
+          n12 <- LOCAL[k]
+          n13 <- LOCAL[v]
+          n14 <- n11(n12, n13)
+          jmp b1(n9)
 
         b3:
           return PYCNone |xxx}]

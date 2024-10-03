@@ -177,22 +177,22 @@ def f(x):
 
         b1(n2):
           n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n3)
-          if n4 then jmp b2(n5, n2) else jmp b4
+          n4 <- $HasNextIter(n2)
+          if n4 then jmp b2(n2, n3) else jmp b4
 
-        b2(n6, n7):
-          LOCAL[i] <- n7
-          n8 <- GLOBAL[foo]
-          n9 <- n8.Foo()
-          LOCAL[e] <- n9
-          n10 <- GLOBAL[print]
-          n11 <- n10(PYCString ("yolo"))
-          jmp b3(PYCNone, n6)
+        b2(n5, n6):
+          LOCAL[i] <- n6
+          n7 <- GLOBAL[foo]
+          n8 <- n7.Foo()
+          LOCAL[e] <- n8
+          n9 <- GLOBAL[print]
+          n10 <- n9(PYCString ("yolo"))
+          jmp b3(n5, PYCNone)
 
-        b3(n12, n13):
-          n14 <- LOCAL[e]
-          n15 <- n14.bar()
-          jmp b1(n12)
+        b3(n11, n12):
+          n13 <- LOCAL[e]
+          n14 <- n13.bar()
+          jmp b1(n11)
 
         b4:
           return PYCNone |}]
@@ -229,29 +229,29 @@ with open("foo", "r") as fp:
           TOPLEVEL[fp] <- n4
           n5 <- TOPLEVEL[fp]
           n6 <- $GetIter(n5)
-          jmp b1(n6, CM(n3).__exit__)
+          jmp b1(CM(n3).__exit__, n6)
 
         b1(n7, n8):
           n9 <- $NextIter(n8)
-          n10 <- $HasNextIter(n9)
-          if n10 then jmp b2(n11, n8, n7) else jmp b7(n7)
+          n10 <- $HasNextIter(n8)
+          if n10 then jmp b2(n7, n8, n9) else jmp b7(n7)
 
-        b2(n12, n13, n14):
-          TOPLEVEL[line] <- n14
-          n15 <- TOPLEVEL[print]
-          n16 <- n15(PYCString ("TRY"))
-          jmp b6(n13, n12)
+        b2(n11, n12, n13):
+          TOPLEVEL[line] <- n13
+          n14 <- TOPLEVEL[print]
+          n15 <- n14(PYCString ("TRY"))
+          jmp b6(n11, n12)
 
-        b6(n17, n18):
-          n19 <- TOPLEVEL[print]
-          n20 <- n19(PYCString ("ELSE"))
-          jmp b1(n18, n17)
+        b6(n16, n17):
+          n18 <- TOPLEVEL[print]
+          n19 <- n18(PYCString ("ELSE"))
+          jmp b1(n16, n17)
 
-        b7(n21):
-          jmp b8(PYCNone, n21)
+        b7(n20):
+          jmp b8(n20, PYCNone)
 
-        b8(n22, n23):
-          n24 <- n23(PYCNone, PYCNone, PYCNone)
+        b8(n21, n22):
+          n23 <- n22(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 
@@ -294,14 +294,14 @@ def subhelper():
 
         b1(n5):
           n6 <- $NextIter(n5)
-          n7 <- $HasNextIter(n6)
-          if n7 then jmp b2(n8, n5) else jmp b6
+          n7 <- $HasNextIter(n5)
+          if n7 then jmp b2(n5, n6) else jmp b6
 
-        b2(n9, n10):
-          LOCAL[i] <- n10
-          n11 <- GLOBAL[print]
-          n12 <- n11(PYCString ("foo"))
-          jmp b1(n9)
+        b2(n8, n9):
+          LOCAL[i] <- n9
+          n10 <- GLOBAL[print]
+          n11 <- n10(PYCString ("foo"))
+          jmp b1(n8)
 
         b6:
           return PYCNone |}]
@@ -372,7 +372,7 @@ async def async_with(filename):
             n7 <- n6.read()
             n8 <- $GetAwaitable(n7)
             n9 <- $YieldFrom(n8, PYCNone)
-            jmp b1(PYCNone, CM(n2).__exit__, n2)
+            jmp b1(n2, CM(n2).__exit__, PYCNone)
 
           b1(n10, n11, n12):
             n13 <- n12(PYCNone, PYCNone, PYCNone)
@@ -443,14 +443,14 @@ def call_finally_with_break():
 
           b1(n3):
             n4 <- $NextIter(n3)
-            n5 <- $HasNextIter(n4)
-            if n5 then jmp b2(n6, n3) else jmp b9
+            n5 <- $HasNextIter(n3)
+            if n5 then jmp b2(n3, n4) else jmp b9
 
-          b2(n7, n8):
-            LOCAL[i] <- n8
-            n9 <- GLOBAL[read]
-            n10 <- n9()
-            jmp b1(n7)
+          b2(n6, n7):
+            LOCAL[i] <- n7
+            n8 <- GLOBAL[read]
+            n9 <- n8()
+            jmp b1(n6)
 
           b9:
             return PYCNone |}]

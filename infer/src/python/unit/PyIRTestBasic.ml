@@ -335,7 +335,7 @@ with open("foo.txt", "wt") as fp:
           TOPLEVEL[fp] <- n2
           n3 <- TOPLEVEL[fp]
           n4 <- n3.write(PYCString ("yolo"))
-          jmp b1(PYCNone, CM(n1).__exit__)
+          jmp b1(CM(n1).__exit__, PYCNone)
 
         b1(n5, n6):
           n7 <- n6(PYCNone, PYCNone, PYCNone)

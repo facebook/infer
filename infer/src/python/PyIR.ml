@@ -370,7 +370,6 @@ module Error = struct
     | FormatValueSpec of Exp.t
     | NextOffsetMissing
     | MissingNodeInformation of int
-    | NodeShouldNotExistYet of string
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
@@ -406,8 +405,6 @@ module Error = struct
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingNodeInformation offset ->
         F.fprintf fmt "No information about offset %d" offset
-    | NodeShouldNotExistYet name ->
-        F.fprintf fmt "Node %s should not already exist" name
     | CallKeywordNotString0 cst ->
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" Const.pp cst
     | CallKeywordNotString1 exp ->
@@ -509,7 +506,7 @@ module Terminator = struct
     | If of {exp: Exp.t; then_: t; else_: t}
     | Throw of Exp.t
 
-  let mk_jump label exps = Jump [{label; ssa_args= exps}]
+  let mk_jump label exps = Jump [{label; ssa_args= List.rev exps}]
 
   let rec pp fmt = function
     | Return exp ->
@@ -555,8 +552,6 @@ module CFGBuilder = struct
     (NodeName.mk fresh, cfg)
 
 
-  let mem {nodes} node_name = NodeName.Map.mem node_name nodes
-
   let add name ~first_loc ~last_loc ssa_parameters stmts last {nodes; fresh_label} =
     let node = {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} in
     {nodes= NodeName.Map.add name node nodes; fresh_label}
@@ -578,7 +573,6 @@ module State = struct
     { debug: bool
     ; code_qual_name: FFI.Code.t -> QualName.t option
     ; get_node_name: Offset.t -> (NodeName.t, Error.t) result
-    ; needs_prelude: Stmt.t IMap.t
     ; loc: Location.t
     ; cfg: CFGBuilder.t
     ; stack: Exp.t Stack.t
@@ -611,7 +605,6 @@ module State = struct
     { debug
     ; code_qual_name
     ; get_node_name
-    ; needs_prelude= IMap.empty
     ; loc
     ; cfg
     ; stack= Stack.empty
@@ -630,15 +623,6 @@ module State = struct
 
 
   let get_node_name {get_node_name} offset = get_node_name offset
-
-  let register_prelude ({needs_prelude; cfg; loc} as st) offset stmt =
-    let open IResult.Let_syntax in
-    let* name = get_node_name st offset in
-    if CFGBuilder.mem cfg name then
-      let name = F.asprintf "%a" NodeName.pp name in
-      Error (L.InternalError, loc, Error.NodeShouldNotExistYet name)
-    else Ok {st with needs_prelude= IMap.add offset stmt needs_prelude}
-
 
   let fresh_id ({fresh_id} as st) =
     let st = {st with fresh_id= SSA.next fresh_id} in
@@ -1058,20 +1042,16 @@ let for_iter st delta next_offset_opt =
   let open IResult.Let_syntax in
   let {State.loc} = st in
   let* iter, st = State.pop st in
-  let id, st = call_builtin_function st NextIter [iter] in
-  let has_item, st = call_builtin_function st HasNextIter [Exp.Temp id] in
   let {State.stack= other_stack} = st in
+  let id, st = call_builtin_function st NextIter [iter] in
+  let has_item, st = call_builtin_function st HasNextIter [iter] in
   let condition = Exp.Temp has_item in
   (* In the next branch, we know the iterator has an item available. Let's fetch it and
      push it on the stack. *)
   let* next_offset = Offset.get ~loc next_offset_opt in
   (* The iterator object stays on the stack while in the for loop, let's push it back *)
   let st = State.push st iter in
-  (* The result of calling [__next__] is also pushed on the stack *)
-  let next, st = State.fresh_id st in
-  let stmt = Stmt.BuiltinCall {lhs= next; call= IterData; args= [Exp.Temp id]} in
-  let st = State.push st (Exp.Temp next) in
-  let* st = State.register_prelude st next_offset stmt in
+  let st = State.push st (Exp.Temp id) in
   let* next_label = State.get_node_name st next_offset in
   let {State.stack= next_stack} = st in
   let other_offset = delta + next_offset in
