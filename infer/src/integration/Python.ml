@@ -85,9 +85,16 @@ let capture_files ~is_binary files =
   in
   L.progress "Expecting to capture %d files@\n" n_files ;
   (* TODO(vsiles) keep track of the number of success / failures like Hack *)
+  let n_captured, n_error = (ref 0, ref 0) in
   let tasks () =
     ProcessPool.TaskGenerator.of_list files ~finish:(fun result _ ->
-        match result with Some () | None -> None )
+        match result with
+        | Some () ->
+            incr n_error ;
+            None
+        | None ->
+            incr n_captured ;
+            None )
   in
   let jobs =
     let per_worker = 100 in
@@ -105,6 +112,8 @@ let capture_files ~is_binary files =
         | None ->
             L.die ExternalError "Child %d did't return a path to its tenv" child_num )
   in
+  L.progress "Success: %d files@\n" !n_captured ;
+  L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
   MergeCapture.merge_global_tenv ~normalize:true (Array.to_list child_tenv_paths) ;
   Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
