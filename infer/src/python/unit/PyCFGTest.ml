@@ -47,12 +47,20 @@ else:
           >>>   44 LOAD_CONST    4
                 46 RETURN_VALUE    0
 
+    CFG successors:
        0: 12 22
       12: 44
       22: 26
       26: 34 44
       34: 26
       44:
+    CFG predecessors:
+       0:
+      12: 0
+      22: 0
+      26: 34 22
+      34: 26
+      44: 26 12
     topological order: 0 22 26 34 12 44 |}]
 
 
@@ -121,6 +129,7 @@ done()
                 84 LOAD_CONST    1
                 86 RETURN_VALUE    0
 
+    CFG successors:
        0: 10
       10: 12 78(-2)
       12: 56
@@ -130,4 +139,14 @@ done()
       62: 66
       66: 10
       78:
+    CFG predecessors:
+       0:
+      10: 66 0
+      12: 10
+      38:
+      54:
+      56: 54 12
+      62: 56 38
+      66: 62
+      78: 10
     topological order: 0 10 78 12 56 62 66 |}]
