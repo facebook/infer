@@ -203,11 +203,17 @@ val init__ : string
 val new__ : string
 (** Name of the Python instantiation method *)
 
+val aiter : string
+(** Name of the Python [__aiter__] method *)
+
+val anext : string
+(** Name of the Python [__anext__] method *)
+
 val exit : string
-(** Name of the Python context exit method *)
+(** Name of the Python [__exit__] method *)
 
 val enter : string
-(** Name of the Python context enter method *)
+(** Name of the Python [__enter__] method *)
 
 val return : string
 (** Name of the binding name of return types of functions / methods *)

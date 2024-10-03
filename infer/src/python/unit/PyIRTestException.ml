@@ -338,3 +338,44 @@ except C as c:
       dummy.foo:
         b0:
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+async def async_with(filename):
+    async with open(filename, 'r') as f:
+        await f.read()
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+      module dummy:
+
+        toplevel:
+          b0:
+            TOPLEVEL[async_with] <- $FuncObj(async_with, dummy.async_with, {})
+            return PYCNone
+
+
+        dummy.async_with:
+          b0:
+            n0 <- GLOBAL[open]
+            n1 <- LOCAL[filename]
+            n2 <- n0(n1, PYCString ("r"))
+            n3 <- n2.__enter__()
+            n4 <- $GetAwaitable(n3)
+            n5 <- $YieldFrom(n4, PYCNone)
+            LOCAL[f] <- n4
+            n6 <- LOCAL[f]
+            n7 <- n6.read()
+            n8 <- $GetAwaitable(n7)
+            n9 <- $YieldFrom(n8, PYCNone)
+            jmp b1(PYCNone, CM(n2).__exit__, n2)
+
+          b1(n10, n11, n12):
+            n13 <- n12(PYCNone, PYCNone, PYCNone)
+            n14 <- $GetAwaitable(n13)
+            n15 <- $YieldFrom(n14, PYCNone)
+            return PYCNone |}]

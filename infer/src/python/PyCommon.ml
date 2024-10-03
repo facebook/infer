@@ -373,6 +373,10 @@ let exit = "__exit__"
 
 let enter = "__enter__"
 
+let aiter = "__aiter__"
+
+let anext = "__anext__"
+
 let class__ = "__class__"
 
 let classcell = "__classcell__"

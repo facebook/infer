@@ -65,6 +65,7 @@ module BuiltinCaller : sig
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
+    | GetAIter
     | GetIter
     | NextIter
     | HasNextIter

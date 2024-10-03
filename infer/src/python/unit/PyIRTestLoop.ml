@@ -207,3 +207,80 @@ def f(foo):
 
         b5:
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+async def async_loop1():
+    async for doc in get_docs():
+        foo(doc)
+|} in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[async_loop1] <- $FuncObj(async_loop1, dummy.async_loop1, {})
+          return PYCNone
+
+
+      dummy.async_loop1:
+        b0:
+          n0 <- GLOBAL[get_docs]
+          n1 <- n0()
+          n2 <- n1.__aiter__()
+          jmp b1(n2)
+
+        b1(n3):
+          n4 <- n3.__anext__()
+          n5 <- $GetAwaitable(n4)
+          n6 <- $YieldFrom(n5, PYCNone)
+          LOCAL[doc] <- n5
+          n7 <- GLOBAL[foo]
+          n8 <- LOCAL[doc]
+          n9 <- n7(n8)
+          jmp b1(n3) |}]
+
+
+let%expect_test _ =
+  let source = {|
+async def async_loop2():
+    [ x async for x in read() ]
+|} in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[async_loop2] <- $FuncObj(async_loop2, dummy.async_loop2, {})
+          return PYCNone
+
+
+      dummy.async_loop2.<listcomp>:
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1(n0, [])
+
+        b1(n1, n2):
+          n3 <- n2.__anext__()
+          n4 <- $GetAwaitable(n3)
+          n5 <- $YieldFrom(n4, PYCNone)
+          LOCAL[x] <- n4
+          n6 <- LOCAL[x]
+          n7 <- $ListAppend(n1, n6)
+          jmp b1(n2, n1)
+
+
+      dummy.async_loop2:
+        b0:
+          n0 <- GLOBAL[read]
+          n1 <- n0()
+          n2 <- n1.__aiter__()
+          n3 <- $FuncObj(<listcomp>, dummy.async_loop2.<listcomp>, {})(n2)
+          n4 <- $GetAwaitable(n3)
+          n5 <- $YieldFrom(n4, PYCNone)
+          return PYCNone |}]

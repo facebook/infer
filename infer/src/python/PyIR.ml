@@ -167,6 +167,7 @@ module BuiltinCaller = struct
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
+    | GetAIter  (** [GET_AITER] *)
     | GetIter  (** [GET_ITER] *)
     | NextIter  (** [FOR_ITER] *)
     | HasNextIter  (** [FOR_ITER] *)
@@ -207,6 +208,8 @@ module BuiltinCaller = struct
         sprintf "$Compare.%s" (Builtin.Compare.to_string op)
     | GetIter ->
         "$GetIter"
+    | GetAIter ->
+        "$GetAIter"
     | NextIter ->
         "$NextIter"
     | HasNextIter ->
@@ -734,6 +737,13 @@ let call_function_with_unnamed_args st ?(packed = false) exp args =
 let call_builtin_function st call args =
   let lhs, st = State.fresh_id st in
   let stmt = Stmt.BuiltinCall {lhs; call; args} in
+  let st = State.push_stmt st stmt in
+  (lhs, st)
+
+
+let call_method st name self_if_needed args =
+  let lhs, st = State.fresh_id st in
+  let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args} in
   let st = State.push_stmt st stmt in
   (lhs, st)
 
@@ -1414,10 +1424,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
         | _ ->
             internal_error st (Error.LoadMethodExpected call)
       in
-      let lhs, st = State.fresh_id st in
-      let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args} in
-      let st = State.push_stmt st stmt in
-      let st = State.push st (Exp.Temp lhs) in
+      let id, st = call_method st name self_if_needed args in
+      let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "SETUP_ANNOTATIONS" ->
       let st = State.push_stmt st SetupAnnotations in
@@ -1487,6 +1495,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let exp = Exp.Temp id in
       let st = State.push st exp in
       Ok (st, None)
+  | "GET_AITER" ->
+      let* tos, st = State.pop st in
+      let id, st = call_method st PyCommon.aiter tos [] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "FOR_ITER" ->
       for_iter st arg next_offset_opt
   | "JUMP_IF_TRUE_OR_POP" ->
@@ -1533,15 +1546,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "SETUP_WITH" ->
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
-      let lhs, st = State.fresh_id st in
-      let stmt =
-        Stmt.CallMethod {lhs; name= PyCommon.enter; self_if_needed= context_manager; args= []}
-      in
-      let st = State.push_stmt st stmt in
+      let id, st = call_method st PyCommon.enter context_manager [] in
+      let st = State.push st (Exp.Temp id) in
       State.debug st "setup-with: current block size: %d@\n" (State.size st) ;
       (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
          to be on the stack *)
-      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "BEGIN_FINALLY" ->
       let st = State.push st (Exp.Const Const.none) in
@@ -1651,6 +1660,30 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let id, st = call_builtin_function st GetAwaitable [tos] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
+  | "GET_ANEXT" ->
+      let* tos = State.peek st in
+      let id, st = call_method st PyCommon.anext tos [] in
+      let id, st = call_builtin_function st GetAwaitable [Exp.Temp id] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
+  | "BEFORE_ASYNC_WITH" ->
+      let* tos = State.peek st in
+      let st = State.push st (ContextManagerExit tos) in
+      let id, st = call_method st PyCommon.enter tos [] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
+  | "SETUP_ASYNC_WITH" ->
+      (* This is nope operation until we translate exceptino throwing *)
+      Ok (st, None)
+  | "END_ASYNC_FOR" ->
+      (* This instructions designates the end of an async for loop. Such a loop
+         always ends with an exception.
+         https://quentin.pradet.me/blog/using-asynchronous-for-loops-in-python.html
+         https://superfastpython.com/asyncio-async-for/
+         We model it like a throwing exception for now. This offset will not be reached
+         by our DFS anyway since we don't model exceptionnal edges yet.
+      *)
+      Ok (st, Some (Terminator.Throw (Exp.Const Const.none)))
   | "UNPACK_EX" ->
       (* The low byte of counts is the number of values before the list value, the high byte of
          counts the number of values after it. *)
@@ -1748,6 +1781,8 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "DUP_TOP"
   | "UNPACK_SEQUENCE"
   | "FORMAT_VALUE"
+  | "GET_AITER"
+  | "GET_ANEXT"
   | "GET_ITER"
   | "DUP_TOP_TWO"
   | "EXTENDED_ARG"
@@ -1782,6 +1817,8 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "DELETE_DEREF"
   | "DELETE_SUBSCR"
   | "GET_AWAITABLE"
+  | "BEFORE_ASYNC_WITH"
+  | "SETUP_ASYNC_WITH"
   | "UNPACK_EX" ->
       `NextInstrOnly
   | "RETURN_VALUE" ->
@@ -1796,7 +1833,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
       `Relative arg
   | "JUMP_ABSOLUTE" ->
       `Absolute arg
-  | "RAISE_VARARGS" ->
+  | "END_ASYNC_FOR" | "RAISE_VARARGS" ->
       `Throw
   | _ ->
       `UnsupportedOpcode
@@ -1960,6 +1997,21 @@ let build_code_object_unique_name file_path code =
   fun code -> CodeMap.find_opt code map
 
 
+let test_cfg_skeleton code =
+  match build_cfg_skeleton code with
+  | Error (_, _, err) ->
+      L.internal_error "IR error: %a@\n" Error.pp_kind err
+  | Ok map ->
+      F.printf "%a@\n" FFI.Code.pp_instructions code ;
+      let pp_succ_and_delta fmt (succ, delta) =
+        if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
+      in
+      IMap.iter
+        (fun offset (succs, _) ->
+          F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " pp_succ_and_delta) succs )
+        map
+
+
 let build_cfgs ~debug ~code_qual_name co_consts =
   let rec visit cfg_map = function
     | FFI.Constant.PYCCode ({FFI.Code.co_consts} as code) ->
@@ -2024,15 +2076,4 @@ let test_cfg_skeleton ?(filename = "dummy.py") source =
         code
   in
   Py.finalize () ;
-  match build_cfg_skeleton code with
-  | Error (_, _, err) ->
-      L.internal_error "IR error: %a@\n" Error.pp_kind err
-  | Ok map ->
-      F.printf "%a@\n" FFI.Code.pp_instructions code ;
-      let pp_succ_and_delta fmt (succ, delta) =
-        if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
-      in
-      IMap.iter
-        (fun offset (succs, _) ->
-          F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " pp_succ_and_delta) succs )
-        map
+  test_cfg_skeleton code
