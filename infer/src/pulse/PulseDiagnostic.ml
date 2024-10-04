@@ -926,7 +926,7 @@ let get_message_and_suggestion diagnostic =
           , Some (get_suggestion_msg source_opt) ) )
 
 
-let make_autofix {Location.file; line; col} ~original ~replacement =
+let make_autofix {Location.file; line; col} candidates =
   let open IOption.Let_syntax in
   let* line_str =
     let file_path = SourceFile.to_abs_path file in
@@ -943,13 +943,14 @@ let make_autofix {Location.file; line; col} ~original ~replacement =
                 if Int.equal line_number line then Stop (Some line_str)
                 else Continue (line_number + 1) ) )
   in
-  if String.is_substring_at line_str ~pos:(col - 1) ~substring:original then
-    Some {Jsonbug_t.original= Some original; replacement= Some replacement; additional= None}
-  else
-    Option.map (String.substr_index line_str ~pattern:original) ~f:(fun idx ->
-        { Jsonbug_t.original= None
-        ; replacement= None
-        ; additional= Some [{line; column= idx + 1; original; replacement}] } )
+  List.find_map candidates ~f:(fun (original, replacement) ->
+      if String.is_substring_at line_str ~pos:(col - 1) ~substring:original then
+        Some {Jsonbug_t.original= Some original; replacement= Some replacement; additional= None}
+      else
+        Option.map (String.substr_index line_str ~pattern:original) ~f:(fun idx ->
+            { Jsonbug_t.original= None
+            ; replacement= None
+            ; additional= Some [{line; column= idx + 1; original; replacement}] } ) )
 
 
 let get_autofix pdesc diagnostic =
@@ -970,17 +971,22 @@ let get_autofix pdesc diagnostic =
         when Procname.is_constructor (Procdesc.get_proc_name pdesc) && is_formal pvar ->
           let param = Pvar.to_string pvar in
           make_autofix location
-            ~original:(F.asprintf "%a(%s)" Fieldname.pp field param)
-            ~replacement:(F.asprintf "%a(std::move(%s))" Fieldname.pp field param)
+            [ ( F.asprintf "%a(%s)" Fieldname.pp field param
+              , F.asprintf "%a(std::move(%s))" Fieldname.pp field param )
+            ; ( F.asprintf "%a{%s}" Fieldname.pp field param
+              , F.asprintf "%a{std::move(%s)}" Fieldname.pp field param )
+            ; ( F.asprintf "%a = %s;" Fieldname.pp field param
+              , F.asprintf "%a = std::move(%s);" Fieldname.pp field param ) ]
       | IntoField {field}, Some (DecompilerExpr.PVar pvar, []) when is_local pvar ->
           let param = Pvar.to_string pvar in
           make_autofix location
-            ~original:(F.asprintf "%a = %s;" Fieldname.pp field param)
-            ~replacement:(F.asprintf "%a = std::move(%s);" Fieldname.pp field param)
+            [ ( F.asprintf "%a = %s;" Fieldname.pp field param
+              , F.asprintf "%a = std::move(%s);" Fieldname.pp field param )
+            ; ( F.asprintf ".%a = %s," Fieldname.pp field param
+              , F.asprintf ".%a = std::move(%s)," Fieldname.pp field param ) ]
       | IntoVar {copied_var= ProgramVar pvar}, Some (DecompilerExpr.PVar _, [MethodCall _]) ->
           let tgt = Pvar.to_string pvar in
-          make_autofix location ~original:(F.asprintf "auto %s = " tgt)
-            ~replacement:(F.asprintf "auto& %s = " tgt)
+          make_autofix location [(F.asprintf "auto %s = " tgt, F.asprintf "auto& %s = " tgt)]
       | _ ->
           None )
   | _ ->

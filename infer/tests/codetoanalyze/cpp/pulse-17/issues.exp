@@ -1,5 +1,5 @@
 codetoanalyze/cpp/pulse-17/closures.cpp, generic_lambda_ok_FP, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
-codetoanalyze/cpp/pulse-17/make_shared.cpp, make_shared_ptr::SharedPtr::SharedPtr, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `std::shared_ptr<int>&`)]
+codetoanalyze/cpp/pulse-17/make_shared.cpp, make_shared_ptr::SharedPtr::SharedPtr, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `std::shared_ptr<int>&`)], "s_ptr0 = _s_ptr;"=>"s_ptr0 = std::move(_s_ptr);"
 codetoanalyze/cpp/pulse-17/make_shared.cpp, make_shared_ptr::SharedPtr::SharedPtr, 0, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here (with type `std::shared_ptr<float>&`)], "s_ptr1(_s_ptr)"=>"s_ptr1(std::move(_s_ptr))"
 codetoanalyze/cpp/pulse-17/make_shared.cpp, make_shared_ptr::make_shared0_bad, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse-17/make_shared.cpp, make_shared_ptr::make_shared1_bad, 7, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
