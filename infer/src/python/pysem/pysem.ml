@@ -30,6 +30,9 @@ and mval =
 
 and dictionary = pval StringHashtble.t [@@deriving sexp]
 
+type code_object =
+  {free_var_names: string list; arg_var_names: string list; code: dictionary -> pval}
+
 let write_binding v1 key data =
   let d = v1.dict in
   StringHashtble.set d ~key ~data
@@ -73,13 +76,32 @@ let builtin_get_attr obj attr_name =
               pval_as_list mrov (* throws if not list *) )
         | Builtin ->
             []
+        (* says builtin types don't have attributes, clearly wrong and needs fixing *)
       in
-      (* says builtin types don't have attributes, clearly wrong *)
       builtin_get_attr_mro_list mro_list attr_name
 
 
-let mk_closure qname code =
-  let f = {clas= Builtin; mval= Closure code; dict= newbindings ()} in
+let makelocalbindings namelist valuelist =
+  let alist = List.zip_exn namelist valuelist in
+  StringHashtble.of_alist_exn alist
+
+
+let extendslocalbindings locals namelist valuelist =
+  let alist = List.zip_exn namelist valuelist in
+  List.iter alist ~f:(fun (key, data) -> StringHashtble.set locals ~key ~data)
+
+
+let mk_closure qname code_obj local_values =
+  let dict = makelocalbindings code_obj.free_var_names local_values in
+  let f =
+    { clas= Builtin
+    ; mval=
+        Closure
+          (fun argvals ->
+            extendslocalbindings dict code_obj.arg_var_names argvals ;
+            code_obj.code dict )
+    ; dict }
+  in
   write_binding f "__qualname__" qname ;
   f
 
@@ -87,6 +109,8 @@ let mk_closure qname code =
 let mk_int n = {clas= Builtin; mval= Int n; dict= newbindings ()}
 
 let mk_string s = {clas= Builtin; mval= String s; dict= newbindings ()}
+
+let mk_list l = {clas= Builtin; mval= List l; dict= newbindings ()}
 
 let mk_cell v =
   { clas= Builtin
@@ -159,54 +183,63 @@ let load_classderef locals s =
 let store_global globals v s = Hashtbl.set globals ~key:s ~data:v
 
 (* MAKE_FUNCTION (simplified version)
-   returns a function object
-   takes as args a qualified name, a code object (which will be an OCaml function expecting locals and globals) and
-   in the real bytecode a tuple of values, but in our version is the initial locals map of string names to values
-   when we call MAKE_FUNCTION we copy the current globals into the function object's globals field
-   Oh, we can do that with partial application if the Ocaml function takes globals first
-   (and we don't write globals itself, or access __globals__ (which we actually do in some bits of fbcode))
-   Oh, no, let's just have the Ocaml code extend locals in its preamble, so it always takes a list of values, corresponding
-   let mypythonfun globalsmap localvaluelist arglist
-     let locals = makelocalbindings ["x", "y", "z"] (localvaluelist ++ arglist) where makelocalbindings creates a new hashtable
-     in
-   and we do make_function localvaluelist mypythonfunction name = mk_closure name (mypythonfunction globals localvaluelist)
 *)
 
 let make_function globals localvaluelist mypythonfunction name =
-  mk_closure name (mypythonfunction globals localvaluelist)
-
-
-let makelocalbindings namelist valuelist =
-  let alist = List.zip_exn namelist valuelist in
-  Hashtbl.of_alist_exn (module String) alist
+  mk_closure name (mypythonfunction globals) localvaluelist
 
 
 let call_function funcobj arglist =
   match funcobj with {mval= Closure code} -> code arglist | _ -> raise RuntimeError
 
 
-(* use in function preamble to create cell variables that are accessed before being written *)
+(* use in function preamble to create cell variables that are accessed before being written
+   TODO: remove from code stream in favour of another list in the original code object
+   that are added when calling
+*)
 let add_cell_variables locals varnames =
   List.iter varnames ~f:(fun v -> Hashtbl.set locals ~key:v ~data:(mk_cell mk_undef))
 
 
 let python_print_function =
-  mk_closure (mk_string "print") (fun args ->
-      match args with
-      | [x] ->
-          sexp_of_pval x |> Sexplib.Sexp.to_string |> printf "%s\n" ;
-          mk_int 0
-      | _ ->
-          raise RuntimeError )
+  mk_closure (mk_string "print")
+    { free_var_names= []
+    ; arg_var_names= ["x"]
+    ; code=
+        (fun argdict ->
+          let x_val = load_fast argdict "x" in
+          sexp_of_pval x_val |> Sexplib.Sexp.to_string |> printf "%s\n" ;
+          mk_int 0 ) }
+    []
 
 
-(*let python_build_class_function =
-  mk_closure (mk_string "build_class") (fun args ->
-    match args with
-    | class_initialiser::class_name::supers ->
-
-    | _ -> raise RuntimeError)
+(*
+to build a class, we get a closure and a name
+we run the closure, which may have side effects etc, and also use do various store_names to write e.g. method definitions
+we want to return a new class object, which is itself callable to create new instances (including calling the __init__ method)
 *)
+
+(* we don't make a closure out of this so that it can be called with a normal call_function
+   instead the translation of the codestream LOAD_BUILD_CLASS ... CALL_FUNCTION n is just ... build_class theclosure name supers
+   note that the mro *)
+let build_class _globals closure name supers =
+  let _ = call_function closure [] in
+  let class_dict = closure.dict in
+  (* should mro include name? *)
+  let mro = mk_list supers in
+  (* TODO use supers to correctly calculate mro, call __init__ on the newly created object *)
+  (* also note fancy recursive value *)
+  let rec theclass =
+    { clas= Builtin
+    ; mval= Closure (fun _argvals -> {clas= Classobj theclass; mval= MetaNone; dict= newbindings ()})
+    ; dict= class_dict }
+  in
+  write_binding theclass "__qualname__" name ;
+  write_binding theclass "__mro__" mro ;
+  theclass
+
+
+(* *)
 
 (* EXAMPLES *)
 
@@ -236,20 +269,22 @@ Disassembly of <code object f at 0x7f4c61a1dd90, file "/tmp/ipykernel_732192/296
 
 *)
 
-let f_code _globals localvalues arglist =
-  let locals = makelocalbindings ["x"] (localvalues @ arglist) in
-  load_fast locals "x"
+let f_code _globals =
+  {free_var_names= []; arg_var_names= ["x"]; code= (fun locals -> load_fast locals "x")}
 
 
-let wrapper_code globals localvalues arglist =
-  let locals = makelocalbindings [] (localvalues @ arglist) in
-  let f = make_function globals [] f_code (mk_string "wrapper.<locals>.f") in
-  let _ = store_fast locals f "f" in
-  let f = load_fast locals "f" in
-  let res = call_function f [mk_int 3] in
-  let print = load_global globals "print" in
-  let _ = call_function print [res] in
-  mk_int 0
+let wrapper_code globals =
+  { free_var_names= []
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let f = make_function globals [] f_code (mk_string "wrapper.<locals>.f") in
+        let _ = store_fast locals f "f" in
+        let f = load_fast locals "f" in
+        let res = call_function f [mk_int 3] in
+        let print = load_global globals "print" in
+        let _ = call_function print [res] in
+        mk_int 0 ) }
 
 
 (*
@@ -307,39 +342,48 @@ Disassembly of <code object g at 0x7f4c61a1f550, file "/tmp/ipykernel_732192/260
              10 RETURN_VALUE
 *)
 
-let g_code globals localvalues arglist =
-  let locals = makelocalbindings ["a"] (localvalues @ arglist) in
-  let print = load_global globals "print" in
-  let a = load_deref locals "a" in
-  let _ = call_function print [a] in
-  mk_int 0
+let g_code globals =
+  { free_var_names= ["a"]
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let print = load_global globals "print" in
+        let a = load_deref locals "a" in
+        let _ = call_function print [a] in
+        mk_int 0 ) }
 
 
-let f_code globals localvalues arglist =
-  let locals = makelocalbindings [] (localvalues @ arglist) in
-  (* note that cell variables aren't reflected directly in the instruction stream but in the co_cellvars of the code object
-     we could first-class code objects a little more, but this seems the right level for textual translation
-  *)
-  let _ = add_cell_variables locals ["a"] in
-  let a = load_closure locals "a" in
-  let g = make_function globals [a] g_code (mk_string "wrapper2.<locals>.f.<locals>.g") in
-  let _ = store_fast locals g "g" in
-  let _ = store_deref locals (mk_string "assigned") "a" in
-  let g = load_fast locals "g" in
-  let _ = call_function g [] in
-  let _ = store_deref locals (mk_string "reassigned") "a" in
-  let g = load_fast locals "g" in
-  let _ = call_function g [] in
-  mk_int 0
+let f_code globals =
+  { free_var_names= []
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        (* note that cell variables aren't reflected directly in the instruction stream but in the co_cellvars of the code object
+           we could first-class code objects a little more, but this seems the right level for textual translation
+        *)
+        let _ = add_cell_variables locals ["a"] in
+        let a = load_closure locals "a" in
+        let g = make_function globals [a] g_code (mk_string "wrapper2.<locals>.f.<locals>.g") in
+        let _ = store_fast locals g "g" in
+        let _ = store_deref locals (mk_string "assigned") "a" in
+        let g = load_fast locals "g" in
+        let _ = call_function g [] in
+        let _ = store_deref locals (mk_string "reassigned") "a" in
+        let g = load_fast locals "g" in
+        let _ = call_function g [] in
+        mk_int 0 ) }
 
 
-let wrapper2_code globals localvalues arglist =
-  let locals = makelocalbindings [] (localvalues @ arglist) in
-  let f = make_function globals [] f_code (mk_string "wrapper2.<locals>.f") in
-  let _ = store_fast locals f "f" in
-  let f = load_fast locals "f" in
-  let _ = call_function f [] in
-  mk_int 0
+let wrapper2_code globals =
+  { free_var_names= []
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let f = make_function globals [] f_code (mk_string "wrapper2.<locals>.f") in
+        let _ = store_fast locals f "f" in
+        let f = load_fast locals "f" in
+        let _ = call_function f [] in
+        mk_int 0 ) }
 
 
 (*
@@ -399,37 +443,46 @@ Disassembly of <code object g at 0x7f4c61afbcd0, file "/tmp/ipykernel_732192/336
               6 RETURN_VALUE
 *)
 
-let g_code _globals localvalues arglist =
-  let locals = makelocalbindings ["a"] (localvalues @ arglist) in
-  let _ = store_deref locals (mk_string "reassigned") "a" in
-  mk_int 0
+let g_code _globals =
+  { free_var_names= ["a"]
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let _ = store_deref locals (mk_string "reassigned") "a" in
+        mk_int 0 ) }
 
 
-let f_code globals localvalues arglist =
-  let locals = makelocalbindings [] (localvalues @ arglist) in
-  let _ = add_cell_variables locals ["a"] in
-  let a = load_closure locals "a" in
-  let g = make_function globals [a] g_code (mk_string "wrapper3.<locals>.f.<locals>.g") in
-  let _ = store_fast locals g "g" in
-  let _ = store_deref locals (mk_string "assigned") "a" in
-  let print = load_global globals "print" in
-  let a = load_deref locals "a" in
-  let _ = call_function print [a] in
-  let g = load_fast locals "g" in
-  let _ = call_function g [] in
-  let print = load_global globals "print" in
-  let a = load_deref locals "a" in
-  let _ = call_function print [a] in
-  mk_int 0
+let f_code globals =
+  { free_var_names= []
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let _ = add_cell_variables locals ["a"] in
+        let a = load_closure locals "a" in
+        let g = make_function globals [a] g_code (mk_string "wrapper3.<locals>.f.<locals>.g") in
+        let _ = store_fast locals g "g" in
+        let _ = store_deref locals (mk_string "assigned") "a" in
+        let print = load_global globals "print" in
+        let a = load_deref locals "a" in
+        let _ = call_function print [a] in
+        let g = load_fast locals "g" in
+        let _ = call_function g [] in
+        let print = load_global globals "print" in
+        let a = load_deref locals "a" in
+        let _ = call_function print [a] in
+        mk_int 0 ) }
 
 
-let wrapper3_code globals localvalues arglist =
-  let locals = makelocalbindings [] (localvalues @ arglist) in
-  let f = make_function globals [] f_code (mk_string "wrapper3.<locals>.f") in
-  let _ = store_fast locals f "f" in
-  let f = load_fast locals "f" in
-  let _ = call_function f [] in
-  mk_int 0
+let wrapper3_code globals =
+  { free_var_names= []
+  ; arg_var_names= []
+  ; code=
+      (fun locals ->
+        let f = make_function globals [] f_code (mk_string "wrapper3.<locals>.f") in
+        let _ = store_fast locals f "f" in
+        let f = load_fast locals "f" in
+        let _ = call_function f [] in
+        mk_int 0 ) }
 
 
 (* default outer globals map - or should this be in builtins? *)
@@ -441,7 +494,8 @@ let globals =
 
 (* test some code with no args or free variables and print the result *)
 let test wrapper =
-  let res = wrapper globals [] [] in
+  let code_obj = wrapper globals in
+  let res = code_obj.code (newbindings ()) in
   sexp_of_pval res |> Sexplib.Sexp.to_string |> printf "%s\n"
 
 
