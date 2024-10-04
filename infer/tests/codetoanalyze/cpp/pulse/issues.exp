@@ -163,7 +163,7 @@ codetoanalyze/cpp/pulse/path.cpp, FP_only_bad_on_42_latent, 2, NULLPTR_DEREFEREN
 codetoanalyze/cpp/pulse/path.cpp, FN_faulty_call_bad, 0, NULLPTR_DEREFERENCE, no_bucket, ERROR, [when calling `FP_only_bad_on_42_latent` here,in call to `may_return_null`,is assigned to the null pointer,returned,return from call to `may_return_null`,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, read_shared_ptr_param_bad, 0, PULSE_READONLY_SHARED_PTR_PARAM, no_bucket, ERROR, [Parameter x with type `std::shared_ptr<int>`,used]
 codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, read_shared_ptr_param_cond_bad, 0, PULSE_READONLY_SHARED_PTR_PARAM, no_bucket, ERROR, [Parameter x with type `std::shared_ptr<int>`,used,used]
-codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, SharedPtrField1_Bad::SharedPtrField1_Bad, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `std::shared_ptr<int>&`)], "field(x)"=>"field(std::move(x))"
+codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, SharedPtrField1_Bad::SharedPtrField1_Bad, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `std::shared_ptr<int>&`)]
 codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, copy_raw_ptr_to_global_bad, 0, PULSE_READONLY_SHARED_PTR_PARAM, no_bucket, ERROR, [Parameter x with type `std::shared_ptr<int>`,used]
 codetoanalyze/cpp/pulse/readonly_shared_ptr_param.cpp, copy_shared_ptr_to_global_bad, 1, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `std::shared_ptr<int>&`)]
 codetoanalyze/cpp/pulse/reference_stability.cpp, folly_fastmap_bad, 9, PULSE_REFERENCE_STABILITY, no_bucket, ERROR, [invalidation part of the trace starts here,variable `map` declared here,in call to `folly::F14FastMap::emplace` (modelled),was potentially invalidated by `folly::F14FastMap::emplace`,use-after-lifetime part of the trace starts here,variable `map` declared here,in call to `folly::F14FastMap::begin` (modelled),in call to `folly::f14::detail::ValueContainerIterator::operator->` (modelled),assigned,invalid access occurs here]
@@ -480,7 +480,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_bad, 0, PULSE_CONST_REFAB
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_mod_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter vec with type `std::vector<int,std::allocator<int>>`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_own_vec_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Vec&`)]
-codetoanalyze/cpp/pulse/unnecessary_copy.cpp, call_get_const_ref_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>> const &`)], "auto x = "=>"auto& x = "
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, call_get_const_ref_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>> const &`)], +"auto x = "=>"auto& x = "@162:45
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, loop_via_copy_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::basic_string<char,std::char_traits<char>,std::allocator<char>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_branch_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Arr&`)]
@@ -521,7 +521,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, ClassWithoutConstructDef::field_se
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, foo, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter my_vec with type `std::vector<int,std::allocator<int>>`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, foo, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [macro expanded here,copied here (with type `std::vector<int,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, CopiedToField1_Bad::CopiedToField1_Bad, 0, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here (with type `Arr&`)], "field(a)"=>"field(std::move(a))"
-codetoanalyze/cpp/pulse/unnecessary_copy.cpp, CopiedToField2_Bad::CopiedToField2_Bad, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `Arr&`)], "field(a)"=>"field(std::move(a))"
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, CopiedToField2_Bad::CopiedToField2_Bad, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, CopiedToField3_Last_Bad::CopiedToField3_Last_Bad, 2, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, PassedToUnknown_Bad::PassedToUnknown_Bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter a with type `Arr`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, PassedToUnknown_Bad::PassedToUnknown_Bad, 0, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here (with type `Arr&`)]
