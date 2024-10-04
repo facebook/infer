@@ -179,7 +179,7 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path ret
-      callee_pname call_exp func_args call_loc astate non_disj =
+      ~unresolved_reason callee_pname call_exp func_args call_loc astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
@@ -196,8 +196,8 @@ module PulseTransferFunctions = struct
     let eval_args_and_call callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
-      PulseCallOperations.call ~disjunct_limit analysis_data path call_loc callee_pname ~ret
-        ~actuals ~formals_opt ~call_kind astate non_disj
+      PulseCallOperations.call ~disjunct_limit analysis_data path call_loc ?unresolved_reason
+        callee_pname ~ret ~actuals ~formals_opt ~call_kind astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
@@ -351,7 +351,7 @@ module PulseTransferFunctions = struct
         | ResolvedTo method_info ->
             L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
             (Some (method_info, `ExactDevirtualization), no_missed_captures)
-        | Unresolved missed_captures ->
+        | Unresolved {missed_captures} ->
             (None, missed_captures) )
     | None ->
         let opt_proc_name, missed_captures =
@@ -363,7 +363,7 @@ module PulseTransferFunctions = struct
                    match tenv_resolve_method tenv type_name proc_name with
                    | ResolvedTo method_info ->
                        (Some method_info, no_missed_captures)
-                   | Unresolved missed_captures ->
+                   | Unresolved {missed_captures} ->
                        (None, missed_captures) )
           else (Some (Tenv.MethodInfo.mk_class proc_name), no_missed_captures)
         in
@@ -417,13 +417,13 @@ module PulseTransferFunctions = struct
       let method_exists proc_name methods = List.mem ~equal methods proc_name in
       if is_already_resolved proc_name then (
         L.d_printfln "always_implemented %a" Procname.pp proc_name ;
-        (Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
+        (None, Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
       else
         match Tenv.resolve_method ~method_exists tenv type_name proc_name with
         | ResolvedTo method_info ->
-            (Some method_info, Typ.Name.Set.empty)
-        | Unresolved missed_captures ->
-            (None, missed_captures)
+            (None, Some method_info, Typ.Name.Set.empty)
+        | Unresolved {missed_captures; unresolved_reason} ->
+            (unresolved_reason, None, missed_captures)
     in
     (* In a Hack trait, try to replace [__self__$static] with the static class name where the
        [use] of the trait was located. This information is stored in the additional [self]
@@ -467,16 +467,18 @@ module PulseTransferFunctions = struct
       astate
     in
     (* Similar to IOption.Let_syntax but threading [astate] along the way *)
-    let ( let* ) (opt, env) f = match opt with None -> (None, env) | Some v -> f (v, env) in
+    let ( let* ) (opt, env) f = match opt with None -> (None, None, env) | Some v -> f (v, env) in
     let* callee_pname, astate = (opt_callee_pname, astate) in
     match Procname.get_class_type_name callee_pname with
     | None ->
-        (Some (Tenv.MethodInfo.mk_class callee_pname), astate)
+        (None, Some (Tenv.MethodInfo.mk_class callee_pname), astate)
     | Some static_class_name ->
         let* static_class_name, astate = trait_resolution astate static_class_name in
         L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
           Typ.Name.pp static_class_name ;
-        let opt_callee, missed_captures = resolve_method tenv static_class_name callee_pname in
+        let unresolved_reason, opt_callee, missed_captures =
+          resolve_method tenv static_class_name callee_pname
+        in
         let astate =
           match opt_callee with
           | None ->
@@ -485,7 +487,7 @@ module PulseTransferFunctions = struct
               record_call_resolution ResolvedUsingStaticType astate
         in
         let astate = AbductiveDomain.add_missed_captures missed_captures astate in
-        (opt_callee, astate)
+        (unresolved_reason, opt_callee, astate)
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =
@@ -589,7 +591,7 @@ module PulseTransferFunctions = struct
     match get_receiver callee_pname func_args with
     | None ->
         L.internal_error "No receiver on virtual call@\n" ;
-        (default_info, astate)
+        (None, default_info, astate)
     | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver} -> (
       match
         improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
@@ -597,33 +599,30 @@ module PulseTransferFunctions = struct
       with
       | Some (info, `HackFunctionReference, missed_captures) ->
           let callee = Tenv.MethodInfo.get_procname info in
-          let info, astate =
-            match resolve_hack_static_method path call_loc astate tenv caller (Some callee) with
-            | Some info, astate ->
-                (info, astate)
-            | None, _ ->
-                (info, astate)
+          let unresolved_reason, info_opt, astate =
+            resolve_hack_static_method path call_loc astate tenv caller (Some callee)
           in
+          let info = Option.value ~default:info info_opt in
           let astate =
             record_call_resolution_if_closure ResolvedUsingDynamicType astate
             |> AbductiveDomain.add_missed_captures missed_captures
           in
-          (Some info, astate)
+          (unresolved_reason, Some info, astate)
       | Some (info, `ExactDevirtualization, missed_captures) ->
           let astate =
             record_call_resolution_if_closure ResolvedUsingDynamicType astate
             |> AbductiveDomain.add_missed_captures missed_captures
           in
-          (Some info, astate)
+          (None, Some info, astate)
       | Some (info, `ApproxDevirtualization, missed_captures) ->
           let astate =
             record_call_resolution_if_closure Unresolved astate
             |> AbductiveDomain.add_missed_captures missed_captures
           in
-          (Some info, need_dynamic_type_specialization astate (ValueOrigin.value receiver))
+          (None, Some info, need_dynamic_type_specialization astate (ValueOrigin.value receiver))
       | None ->
           let astate = record_call_resolution_if_closure Unresolved astate in
-          (None, astate) )
+          (None, None, astate) )
 
 
   (** Check whether a Python class was declared with an explicit constructor, or if it was left
@@ -733,7 +732,7 @@ module PulseTransferFunctions = struct
            constructor, so we'll provide a new [callee_pname] too *)
         let callee_pname = Procname.mk_python_init callee_pname in
         (* We know [__init__] will be in a parent class, so let virtual lookup do its job *)
-        let method_info, astate =
+        let _, method_info, astate =
           lookup_virtual_method_info analysis_data path func_args call_loc astate
             (Some callee_pname) default_info
         in
@@ -753,7 +752,7 @@ module PulseTransferFunctions = struct
         let has_implicit_constructor = is_python_class_with_implicit_init tenv class_name in
         if not has_implicit_constructor then return default_info astate
         else
-          let info, astate =
+          let _, info, astate =
             lookup_virtual_method_info analysis_data path func_args call_loc astate callee_pname
               default_info
           in
@@ -830,30 +829,33 @@ module PulseTransferFunctions = struct
     let actuals =
       List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
     in
-    let method_info, ret, actuals, func_args, astate =
+    let unresolved_reason, method_info, ret, actuals, func_args, astate =
       let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
       if flags.CallFlags.cf_virtual then
-        let method_info, astate =
+        let unresolved_reason, method_info, astate =
           lookup_virtual_method_info analysis_data path func_args call_loc astate callee_pname
             default_info
         in
-        (method_info, ret, actuals, func_args, astate)
+        (unresolved_reason, method_info, ret, actuals, func_args, astate)
       else if Language.curr_language_is Hack then
         (* In Hack, a static method can be inherited.
            TODO(vsiles) this is the case for Python too, update this when the time is right *)
         let proc_name = Procdesc.get_proc_name proc_desc in
-        let info, astate =
+        let unresolved_reason, info, astate =
           resolve_hack_static_method path call_loc astate tenv proc_name callee_pname
         in
         (* Don't drop the initial [callee_pname]: even though we couldn't refine it, we can still
            use it to match against taint configs and such. *)
-        (Option.first_some info default_info, ret, actuals, func_args, astate)
+        (unresolved_reason, Option.first_some info default_info, ret, actuals, func_args, astate)
       else if Language.curr_language_is Python then
         (* In Python, we need to be careful about implicit class constructors *)
-        dispatch_python_constructor_and_init
-          (dispatch_call_eval_args disjunct_limit)
-          analysis_data path ret actuals func_args call_loc astate callee_pname default_info
-      else (default_info, ret, actuals, func_args, astate)
+        let info, ret, actuals, func_args, astate =
+          dispatch_python_constructor_and_init
+            (dispatch_call_eval_args disjunct_limit)
+            analysis_data path ret actuals func_args call_loc astate callee_pname default_info
+        in
+        (None, info, ret, actuals, func_args, astate)
+      else (None, default_info, ret, actuals, func_args, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
     let astate =
@@ -973,8 +975,8 @@ module PulseTransferFunctions = struct
       | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
-            interprocedural_call disjunct_limit analysis_data path ret callee_pname call_exp
-              func_args call_loc astate non_disj
+            interprocedural_call disjunct_limit analysis_data path ret ~unresolved_reason
+              callee_pname call_exp func_args call_loc astate non_disj
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r

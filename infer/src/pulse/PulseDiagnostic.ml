@@ -222,6 +222,7 @@ type t =
       ; call_trace: Trace.t
       ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
       ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
+  | UninitMethod of {callee: Procname.t; history: ValueHistory.t; location: Location.t}
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
@@ -299,6 +300,9 @@ let pp fmt diagnostic =
         (fun fmt ->
           if Typ.Name.Set.is_empty transitive_missed_captures then ()
           else Typ.Name.Set.pp fmt transitive_missed_captures )
+  | UninitMethod {callee; history; location} ->
+      F.fprintf fmt "UninitMethod {@[callee:%a;@;history:%a;@;location:%a@]}" Procname.pp callee
+        ValueHistory.pp history Location.pp location
   | UnnecessaryCopy
       {copied_into; source_typ; source_opt; location; copied_location; from; location_instantiated}
     ->
@@ -366,6 +370,7 @@ let get_location = function
   | RetainCycle {location}
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
+  | UninitMethod {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -417,6 +422,7 @@ let aborts_execution = function
   | StackVariableAddressEscape _
   | TaintFlow _
   | TransitiveAccess _
+  | UninitMethod _
   | UnnecessaryCopy _ ->
       false
 
@@ -828,6 +834,8 @@ let get_message_and_suggestion diagnostic =
               location
       in
       F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
+  | UninitMethod {callee} ->
+      F.asprintf "The method %a is uninitialized." Procname.pp callee |> no_suggestion
   | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       ( F.asprintf
@@ -1174,6 +1182,10 @@ let get_trace = function
       Trace.add_to_errlog ~nesting:1
         ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
         call_trace []
+  | UninitMethod {history; location} ->
+      let nesting = 0 in
+      ValueHistory.add_to_errlog ~nesting history
+      @@ [Errlog.make_trace_element nesting location "method call here" []]
   | UnnecessaryCopy {location; source_typ; copied_location= None; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -1263,6 +1275,8 @@ let get_issue_type ~latent issue_type =
       IssueType.sensitive_data_flow
   | TransitiveAccess _, false ->
       IssueType.pulse_transitive_access
+  | UninitMethod _, false ->
+      IssueType.pulse_uninitialized_method
   | UnnecessaryCopy {copied_location= Some _}, false ->
       IssueType.unnecessary_copy_return_pulse
   | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment Normal}, false
@@ -1298,6 +1312,7 @@ let get_issue_type ~latent issue_type =
       | RetainCycle _
       | StackVariableAddressEscape _
       | TransitiveAccess _
+      | UninitMethod _
       | UnnecessaryCopy _ )
     , true ) ->
       L.die InternalError "Issue type cannot be latent"

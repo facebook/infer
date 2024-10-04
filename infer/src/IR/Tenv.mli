@@ -121,7 +121,11 @@ module MethodInfo : sig
   val get_hack_kind : t -> Hack.kind option
 end
 
-type resolution_result = ResolvedTo of MethodInfo.t | Unresolved of Typ.Name.Set.t
+type unresolved_reason = MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel
+
+type resolution_result =
+  | ResolvedTo of MethodInfo.t
+  | Unresolved of {missed_captures: Typ.Name.Set.t; unresolved_reason: unresolved_reason option}
 
 val resolve_method :
      method_exists:(Procname.t -> Procname.t list -> bool)

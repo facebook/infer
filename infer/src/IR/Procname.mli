@@ -509,3 +509,5 @@ val is_hack_async_name : t -> bool
 (* Checks if the function name starts with "gen", which is a (lint-checked) convention for it being async at Meta *)
 
 val is_hack_construct : t -> bool
+
+val is_hack_xinit : t -> bool

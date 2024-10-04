@@ -407,7 +407,16 @@ module MethodInfo = struct
   let get_hack_kind = function HackInfo {kind} -> Some kind | _ -> None
 end
 
-type resolution_result = ResolvedTo of MethodInfo.t | Unresolved of Typ.Name.Set.t
+type unresolved_reason = MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel
+
+type resolution_result =
+  | ResolvedTo of MethodInfo.t
+  | Unresolved of {missed_captures: Typ.Name.Set.t; unresolved_reason: unresolved_reason option}
+
+let is_hack_model source_file =
+  let source_file = SourceFile.to_abs_path source_file in
+  List.exists Config.hack_models ~f:(fun hack_model -> String.equal source_file hack_model)
+
 
 let resolve_method ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
@@ -415,11 +424,16 @@ let resolve_method ~method_exists tenv class_name proc_name =
      we will only visit traits from now on *)
   let last_class_visited = ref None in
   let missed_capture_types = ref Typ.Name.Set.empty in
+  let visited_hack_model = ref false in
   let rec resolve_name (class_name : Typ.Name.t) =
     if Typ.Name.Set.mem class_name !visited || not (Typ.Name.is_class class_name) then None
     else (
       visited := Typ.Name.Set.add class_name !visited ;
-      match lookup tenv class_name with
+      let struct_opt = lookup tenv class_name in
+      Option.iter struct_opt ~f:(fun {Struct.source_file} ->
+          Option.iter source_file ~f:(fun source_file ->
+              if is_hack_model source_file then visited_hack_model := true ) ) ;
+      match struct_opt with
       | None | Some {dummy= true} ->
           if Language.curr_language_is Hack then
             missed_capture_types := Typ.Name.Set.add class_name !missed_capture_types ;
@@ -476,9 +490,14 @@ let resolve_method ~method_exists tenv class_name proc_name =
   in
   match resolve_name class_name with
   | _ when not (Typ.Name.Set.is_empty !missed_capture_types) ->
-      Unresolved !missed_capture_types
+      Unresolved
+        { missed_captures= !missed_capture_types
+        ; unresolved_reason= Some MaybeMissingDueToMissedCapture }
   | None ->
-      Unresolved !missed_capture_types
+      let unresolved_reason =
+        if !visited_hack_model then Some MaybeMissingDueToIncompleteModel else None
+      in
+      Unresolved {missed_captures= !missed_capture_types; unresolved_reason}
   | Some method_info ->
       ResolvedTo method_info
 

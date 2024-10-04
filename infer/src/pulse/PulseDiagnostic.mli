@@ -113,6 +113,7 @@ type t =
       ; call_trace: Trace.t
       ; transitive_callees: TransitiveInfo.Callees.t
       ; transitive_missed_captures: Typ.Name.Set.t }
+  | UninitMethod of {callee: Procname.t; history: ValueHistory.t; location: Location.t}
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option

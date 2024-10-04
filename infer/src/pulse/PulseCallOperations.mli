@@ -14,6 +14,7 @@ val call :
   -> PulseSummary.t InterproceduralAnalysis.t
   -> PathContext.t
   -> Location.t
+  -> ?unresolved_reason:Tenv.unresolved_reason
   -> Procname.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list

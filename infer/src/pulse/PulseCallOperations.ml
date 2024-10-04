@@ -640,9 +640,56 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
   astate
 
 
+let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_loc callee_pname
+    actuals astate =
+  let is_this v =
+    (* We ignore the method call of `static::foo`, since it can be safe depending on call context.
+       When `static::` is resolved, the first actual is `$this` in general. *)
+    match Decompiler.find v astate with
+    | SourceExpr ((PVar pvar, [Dereference]), _) ->
+        Pvar.is_this pvar
+    | _ ->
+        false
+  in
+  let is_HH_classname typ =
+    match (typ : Typ.name) with
+    | HackClass hack_typ ->
+        String.equal "HH::classname" (HackClassName.classname hack_typ)
+    | _ ->
+        false
+  in
+  let is_type_constant typ =
+    (* TODO: For now, the checker handles type constant only, which means it cannot do
+       inter-procedural reasoning where type variable is used.  We will work on this soon. *)
+    (not (is_HH_classname typ)) && Tenv.mem_supers tenv typ ~f:(fun typ _ -> is_HH_classname typ)
+  in
+  let has_method typ =
+    match Tenv.lookup tenv typ with
+    | None | Some {Struct.dummy= true} ->
+        (* When unknown, we do not report the issue with assuming there is a method initialized. *)
+        true
+    | Some {Struct.methods} ->
+        let callee_name = Procname.get_method callee_pname in
+        List.exists methods ~f:(fun method_name ->
+            String.equal callee_name (Procname.get_method method_name) )
+  in
+  let skip_special_pname pname =
+    not (Procname.is_hack_construct pname || Procname.is_hack_xinit pname)
+  in
+  if skip_special_pname callee_pname then
+    match actuals with
+    | ((first_actual, history), _) :: _ when not (is_this first_actual) ->
+        Option.iter (Procname.get_class_type_name callee_pname) ~f:(fun typ ->
+            if is_type_constant typ && not (has_method typ) then
+              PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+                (UninitMethod {callee= callee_pname; history; location= call_loc}) )
+    | _ ->
+        ()
+
+
 let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analysis_data) path
-    call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
-    ?call_flags non_disj_caller =
+    call_loc ?unresolved_reason callee_pname ~ret ~actuals ~formals_opt ~call_kind
+    (astate : AbductiveDomain.t) ?call_flags non_disj_caller =
   let has_continue_program results =
     let f one_result =
       match one_result with
@@ -848,6 +895,11 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in
+      ( match (unresolved_reason : Tenv.unresolved_reason option) with
+      | Some (MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel) ->
+          ()
+      | None ->
+          check_uninit_method analysis_data call_loc callee_pname actuals astate ) ;
       let res, (non_disj, contradiction) =
         call_aux_unknown disjunct_limit analysis_data path call_loc callee_pname ~ret ~actuals
           ~formals_opt ~call_kind astate ?call_flags non_disj_caller

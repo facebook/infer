@@ -314,6 +314,8 @@ val pulse_unfinished_builder : t
 
 val pulse_uninitialized_const : t
 
+val pulse_uninitialized_method : t
+
 val pure_function : t
 
 val readonly_shared_ptr_param : t

@@ -882,6 +882,12 @@ let pulse_uninitialized_const =
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_CONST.md"]
 
 
+let pulse_uninitialized_method =
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_UNINITIALIZED_METHOD" Error Pulse
+    ~hum:"Uninitialized Method"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_METHOD.md"]
+
+
 let pure_function =
   register ~category:NoCategory ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]

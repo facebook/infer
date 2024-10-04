@@ -1036,6 +1036,8 @@ let is_hack_construct = function
       false
 
 
+let is_hack_xinit = function Hack classname -> Hack.is_xinit classname | _ -> false
+
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
 let get_global_name_of_initializer t =
