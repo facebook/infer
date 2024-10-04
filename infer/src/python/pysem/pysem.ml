@@ -25,25 +25,20 @@ and mval =
   | Cell
   | Int of int
   | String of string
-  | Closure of (pval list -> pval)
+  | Closure of locals * (pval list -> pval)
   | List of pval list
 
 and dictionary = pval StringHashtble.t [@@deriving sexp]
 
-(* co_varnames includes all variables
-   arguments names are the first co_argcount elements of co_varnames
-   co_freevars are the ones that are set when constructing a closure
-   if a freevar is a cellvar, it'll be passed in in a cell already
-   if an argument is a cellvar we need to put it into a cell before binding
-   variables that are neither freevars nor arguments but are cellvars need their cells creating on entry
-*)
+and locals = {fastlocals: dictionary; locals: dictionary}
+
 type code_object =
   { co_freevars: string list
   ; co_varnames: string list
   ; co_cellvars: string list
   ; co_names: string list
   ; co_argcount: int
-  ; code: dictionary -> pval }
+  ; code: locals -> pval }
 
 let write_binding v1 key data =
   let d = v1.dict in
@@ -128,41 +123,43 @@ let extendslocalbindings locals cellvarlist namelist valuelist =
 
 let mk_closure qname code_obj local_values =
   (* I *think* free vars are never in cellvars so this is the right thing to do *)
-  let dict = makelocalbindings code_obj.co_freevars local_values in
+  let fastlocals = makelocalbindings code_obj.co_freevars local_values in
+  let locals = {fastlocals; locals= newbindings ()} in
   let f =
     { clas= Builtin
     ; mval=
         Closure
-          (fun argvals ->
-            (* now the first co_argcount members of co_varnames are the function arguments
-                When we bind them, we check if they're in co_cellvars - if not we bind the
-               name to the value, else we bind the name to a cell containing the value
-                The remainder are local names that we initialise with None or Cell(None)
-                as appropriate *)
-            let argument_names, _local_names =
-              List.split_n code_obj.co_varnames code_obj.co_argcount
-            in
-            extendslocalbindings dict code_obj.co_cellvars argument_names argvals ;
-            (* List.iter local_names ~f:(fun name ->
-                if List.mem code_obj.co_cellvars name ~equal:String.equal then
-                  Hashtbl.set dict ~key:name ~data:(mk_cell mk_undef) ) ;*)
-            List.iter code_obj.co_cellvars ~f:(fun name ->
-                if List.mem argument_names name ~equal:String.equal then ()
-                  (* already initialised *)
-                else Hashtbl.set dict ~key:name ~data:(mk_cell mk_undef) ) ;
-            code_obj.code dict )
-    ; dict }
+          ( locals
+          , fun argvals ->
+              (* now the first co_argcount members of co_varnames are the function arguments
+                  When we bind them, we check if they're in co_cellvars - if not we bind the
+                 name to the value, else we bind the name to a cell containing the value
+                  The remainder are local names that we initialise with None or Cell(None)
+                  as appropriate *)
+              let argument_names, _local_names =
+                List.split_n code_obj.co_varnames code_obj.co_argcount
+              in
+              extendslocalbindings fastlocals code_obj.co_cellvars argument_names argvals ;
+              (* List.iter local_names ~f:(fun name ->
+                  if List.mem code_obj.co_cellvars name ~equal:String.equal then
+                    Hashtbl.set dict ~key:name ~data:(mk_cell mk_undef) ) ;*)
+              List.iter code_obj.co_cellvars ~f:(fun name ->
+                  if List.mem argument_names name ~equal:String.equal then ()
+                    (* already initialised *)
+                  else Hashtbl.set fastlocals ~key:name ~data:(mk_cell mk_undef) ) ;
+              code_obj.code locals )
+    ; dict= locals.locals }
   in
   write_binding f "__qualname__" qname ;
   f
 
 
-let store_fast locals v s = Hashtbl.set locals ~key:s ~data:v
+let store_fast {fastlocals} v s = Hashtbl.set fastlocals ~key:s ~data:v
 
 (* see https://tenthousandmeters.com/blog/python-behind-the-scenes-5-how-variables-are-implemented-in-cpython/ *)
-let store_name = store_fast
+let store_name {locals} v s = Hashtbl.set locals ~key:s ~data:v
 
-let load_name locals globals s =
+let load_name {locals} globals s =
   match Hashtbl.find locals s with
   | None -> (
     match Hashtbl.find globals s with
@@ -174,20 +171,21 @@ let load_name locals globals s =
       v
 
 
-let store_deref locals v s =
-  match Hashtbl.find locals s with
+let store_deref {fastlocals} v s =
+  match Hashtbl.find fastlocals s with
   | None ->
-      Hashtbl.set locals ~key:s ~data:(mk_cell v)
+      Hashtbl.set fastlocals ~key:s ~data:(mk_cell v)
+      (* reading the source, I think this shouldn't happen *)
   | Some cell_object ->
       write_binding cell_object "contents" v
 
 
-let load_fast locals s =
-  match Hashtbl.find locals s with None -> raise (LocalNotFound s) | Some v -> v
+let load_fast {fastlocals} s =
+  match Hashtbl.find fastlocals s with None -> raise (LocalNotFound s) | Some v -> v
 
 
-let load_deref locals s =
-  match Hashtbl.find locals s with
+let load_deref {fastlocals} s =
+  match Hashtbl.find fastlocals s with
   | None ->
       raise (LocalNotFound s)
   | Some cell_object -> (
@@ -210,16 +208,20 @@ let load_global globals s =
       v
 
 
-(* this seems questionable - docs say "checks locals before the cell" but I'm putting the cell *in* the locals
-   so not convinced this is right *)
-let load_classderef locals s =
+let load_classderef {fastlocals; locals} s =
   match Hashtbl.find locals s with
-  | None ->
-      raise RuntimeError
-  | Some ({mval= Cell} as cell_object) -> (
-    match get_binding cell_object "contents" with None -> raise RuntimeError | Some v -> v )
   | Some v ->
       v
+  | None -> (
+    match Hashtbl.find fastlocals s with
+    | Some ({mval= Cell} as cell_object) -> (
+      match get_binding cell_object "contents" with None -> raise RuntimeError | Some v -> v )
+    | Some _v ->
+        printf "found non-cell for %s in classderef" s ;
+        raise RuntimeError
+    | _ ->
+        printf "failed to find binding in load classderef on %s\n" s ;
+        raise RuntimeError )
 
 
 let store_global globals v s = Hashtbl.set globals ~key:s ~data:v
@@ -232,7 +234,11 @@ let make_function globals localvaluelist mypythonfunction name =
 
 
 let call_function funcobj arglist =
-  match funcobj with {mval= Closure code} -> code arglist | _ -> raise RuntimeError
+  match funcobj with {mval= Closure (_, code)} -> code arglist | _ -> raise RuntimeError
+
+
+let get_locals_of_closure closure =
+  match closure with {mval= Closure (locals, _code)} -> locals | _ -> raise RuntimeError
 
 
 (* use in function preamble to create cell variables that are accessed before being written
@@ -268,13 +274,15 @@ we want to return a new class object, which is itself callable to create new ins
    note that the mro *)
 let build_class closure name supers =
   let _ = call_function closure [] in
-  let class_dict = closure.dict in
+  let locals = get_locals_of_closure closure in
   (* TODO use supers to correctly calculate mro, call __init__ on the newly created object *)
   (* also note fancy recursive value *)
   let rec theclass =
     { clas= Builtin
-    ; mval= Closure (fun _argvals -> {clas= Classobj theclass; mval= MetaNone; dict= newbindings ()})
-    ; dict= class_dict }
+    ; mval=
+        Closure
+          (locals, fun _argvals -> {clas= Classobj theclass; mval= MetaNone; dict= newbindings ()})
+    ; dict= locals.locals }
   in
   let mro = mk_list (theclass :: supers) in
   write_binding theclass "__name__" name ;
@@ -844,6 +852,8 @@ let f_code globals =
         let y = load_deref locals "y" in
         (* load_deref 1 with similar *)
         let _ = call_function print [y] in
+        let x = load_closure locals "x" in
+        let y = load_closure locals "y" in
         let c_clos = make_function globals [x; y] c_code (mk_string "c") in
         let c = build_class c_clos (mk_string "c") [] in
         let _ = store_fast locals c "c" in
@@ -879,7 +889,7 @@ let globals =
 (* test some code with no args or free variables and print the result *)
 let test wrapper =
   let code_obj = wrapper globals in
-  let res = code_obj.code (newbindings ()) in
+  let res = code_obj.code {fastlocals= newbindings (); locals= newbindings ()} in
   sexp_of_pval res |> Sexplib.Sexp.to_string |> printf "%s\n"
 
 
