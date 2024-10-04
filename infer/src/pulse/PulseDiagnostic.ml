@@ -776,7 +776,7 @@ let get_message_and_suggestion diagnostic =
           F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
             pp_access_path pp_location )
       |> no_suggestion
-  | ResourceLeak {resource; location; allocation_trace} ->
+  | ResourceLeak {resource; location; allocation_trace} -> (
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
         line
@@ -789,10 +789,16 @@ let get_message_and_suggestion diagnostic =
             F.fprintf fmt "by %a, indirectly via call to %a on line %d" describe_allocation resource
               CallEvent.describe f allocation_line
       in
-      F.asprintf "%s dynamically allocated %a is not %s after the last access at %a"
-        (resource_type_s resource |> String.capitalize)
-        pp_allocation_trace allocation_trace (resource_closed_s resource) Location.pp location
-      |> no_suggestion
+      ( F.asprintf "%s dynamically allocated %a is not %s after the last access at %a"
+          (resource_type_s resource |> String.capitalize)
+          pp_allocation_trace allocation_trace (resource_closed_s resource) Location.pp location
+      , match resource with
+        | HackAsync ->
+            Some
+              "Unawaited asynchronous computations can lead to SEVs. Please ensure there is an \
+               await on all code paths, even if the result value is not needed."
+        | _ ->
+            None ) )
   | RetainCycle {location; values} ->
       F.asprintf "Retain cycle found at %a between the following objects: %a" Location.pp location
         pp_retain_cycle values
