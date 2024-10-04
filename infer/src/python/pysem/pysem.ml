@@ -8,11 +8,15 @@
 open! IStd
 (* open Core *)
 
-module SMap = String.Map
+module StringHashtble = String.Table
+
+type tt = (string, string, string) Hashtbl_intf.create_options_without_hashable
+
+let newbindings () = StringHashtble.create ()
 
 (* following monty paper, we hardwire clas instead of having a __class__ attribute in the dictionary - correct?
    note that it's spelled clas because typing the other word makes vscode ocaml crash :-( *)
-type pval = {clas: pclass; mval: mval; dict: dictionary ref}
+type pval = {clas: pclass; mval: mval; dict: dictionary}
 
 and pclass = Builtin | Classobj of pval
 
@@ -24,17 +28,16 @@ and mval =
   | Closure of (pval list -> pval)
   | List of pval list
 
-and dictionary = pval SMap.t [@@deriving sexp]
+and dictionary = pval StringHashtble.t [@@deriving sexp]
 
 let write_binding v1 key data =
-  let d = !(v1.dict) in
-  let newd = SMap.set d ~key ~data in
-  v1.dict := newd
+  let d = v1.dict in
+  StringHashtble.set d ~key ~data
 
 
 let get_binding v key =
-  let d = !(v.dict) in
-  SMap.find d key
+  let d = v.dict in
+  StringHashtble.find d key
 
 
 exception RuntimeError
@@ -76,20 +79,25 @@ let builtin_get_attr obj attr_name =
 
 
 let mk_closure qname code =
-  let f = {clas= Builtin; mval= Closure code; dict= ref SMap.empty} in
+  let f = {clas= Builtin; mval= Closure code; dict= newbindings ()} in
   write_binding f "__qualname__" qname ;
   f
 
 
-let mk_int n = {clas= Builtin; mval= Int n; dict= ref SMap.empty}
+let mk_int n = {clas= Builtin; mval= Int n; dict= newbindings ()}
 
-let mk_string s = {clas= Builtin; mval= String s; dict= ref SMap.empty}
+let mk_string s = {clas= Builtin; mval= String s; dict= newbindings ()}
 
-let mk_cell v = {clas= Builtin; mval= Cell; dict= ref (SMap.set SMap.empty ~key:"contents" ~data:v)}
+let mk_cell v =
+  { clas= Builtin
+  ; mval= Cell
+  ; dict=
+      (let d = newbindings () in
+       StringHashtble.set d ~key:"contents" ~data:v ;
+       d ) }
 
-let mk_undef = {clas= Builtin; mval= MetaNone; dict= ref SMap.empty}
 
-let newbindings () = Hashtbl.create (module String)
+let mk_undef = {clas= Builtin; mval= MetaNone; dict= newbindings ()}
 
 let store_fast locals v s = Hashtbl.set locals ~key:s ~data:v
 
@@ -191,6 +199,16 @@ let python_print_function =
       | _ ->
           raise RuntimeError )
 
+
+(*let python_build_class_function =
+  mk_closure (mk_string "build_class") (fun args ->
+    match args with
+    | class_initialiser::class_name::supers ->
+
+    | _ -> raise RuntimeError)
+*)
+
+(* EXAMPLES *)
 
 (*
 def f(x):
