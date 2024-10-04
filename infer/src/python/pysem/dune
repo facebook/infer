@@ -1,0 +1,22 @@
+(executable
+ (public_name pysem)
+ (name pysem)
+ (modes byte_complete exe)
+ (flags
+  (:standard -warn-error -A -open Core -open IStdlib -open IStd))
+ (libraries core zarith ppx_sexp_conv IStdlib)
+ (preprocess
+  (pps ppx_sexp_conv)))
+
+(rule
+ (action
+  (copy pysem.exe pysem))
+ (mode
+  (promote
+   (until-clean)
+   (into ../../../bin))))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A))))
