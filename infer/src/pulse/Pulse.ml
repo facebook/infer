@@ -1850,6 +1850,10 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
   log_number_of_unreachable_nodes proc_desc invariant_map ;
   if CallGlobalForStats.is_one_call_stuck () then Stats.incr_pulse_summaries_unsat_for_caller () ;
   let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
+  let has_0_continue_program {PulseSummary.pre_post_list} =
+    let f one_result = match one_result with ContinueProgram _astate -> false | _ -> true in
+    List.for_all pre_post_list ~f
+  in
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->
@@ -1882,8 +1886,11 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
         if Config.pulse_transitive_access_enabled then
           PulseTransitiveAccessChecker.report_errors analysis_data summary ;
         report_topl_errors analysis_data summary.pre_post_list ;
-        report_unnecessary_copies analysis_data non_disj_astate ;
-        report_unnecessary_parameter_copies analysis_data non_disj_astate ;
+        if not (has_0_continue_program summary) then (
+          (* Do not report unnecessary copy issue when no continue program, because it may have
+             missed the statements that modify copied objects. *)
+          report_unnecessary_copies analysis_data non_disj_astate ;
+          report_unnecessary_parameter_copies analysis_data non_disj_astate ) ;
         summary
     | None ->
         PulseSummary.empty
@@ -1896,12 +1903,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
         (Procdesc.get_proc_name proc_desc) ;
     let summary_count = List.length summary.PulseSummary.pre_post_list in
     Stats.add_pulse_summaries_count summary_count ;
-    let has_0_continue_program results =
-      let f one_result = match one_result with ContinueProgram _astate -> false | _ -> true in
-      List.for_all results ~f
-    in
-    if has_0_continue_program summary.PulseSummary.pre_post_list then
-      Stats.incr_pulse_summaries_count_0_continue_program () ;
+    if has_0_continue_program summary then Stats.incr_pulse_summaries_count_0_continue_program () ;
     if Config.pulse_log_summary_count then
       log_summary_count proc_name summary.PulseSummary.pre_post_list ;
     (* needed to record the stats corresponding to the metadata *)
