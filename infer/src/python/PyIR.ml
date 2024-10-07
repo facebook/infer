@@ -765,7 +765,14 @@ let read_code_qual_name st c =
 let call_function_with_unnamed_args st ?(packed = false) exp args =
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.Call {lhs; exp; args; packed} in
+  let stmt =
+    match exp with
+    | Exp.BuiltinCaller call ->
+        let args = List.map args ~f:(fun {Stmt.value} -> value) in
+        Stmt.BuiltinCall {lhs; call; args}
+    | exp ->
+        Stmt.Call {lhs; exp; args; packed}
+  in
   let st = State.push_stmt st stmt in
   (lhs, st)
 
