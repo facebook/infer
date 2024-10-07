@@ -2283,11 +2283,13 @@ let fold_all_inner_codes_and_build_map ~code_qual_name ~(f : FFI.Code.t -> 'a py
   fold_codes QualName.Map.empty code.FFI.Code.co_consts
 
 
-let test_cfg_skeleton code =
+let test_cfg_skeleton ~code_qual_name code =
   match build_cfg_skeleton_without_predecessors code with
   | Error (_, _, err) ->
       L.internal_error "IR error: %a@\n" Error.pp_kind err
   | Ok map ->
+      let qual_name = code_qual_name code |> Option.value_exn in
+      F.printf "%a@\n" QualName.pp qual_name ;
       let topological_order, map = build_topological_order map in
       F.printf "%a@\n" FFI.Code.pp_instructions code ;
       let pp_succ_and_delta fmt (succ, delta) =
@@ -2303,18 +2305,22 @@ let test_cfg_skeleton code =
         (fun offset {predecessors} ->
           F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " F.pp_print_int) predecessors )
         map ;
-      F.printf "topological order: %a@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
+      F.printf "topological order: %a@\n@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 
-let mk ~debug ({FFI.Code.co_filename} as code) =
-  let open IResult.Let_syntax in
+let file_path {FFI.Code.co_filename} =
+  let sz = String.length co_filename in
   let file_path =
-    let sz = String.length co_filename in
     if sz >= 2 && String.equal "./" (String.sub co_filename ~pos:0 ~len:2) then
       String.sub co_filename ~pos:2 ~len:(sz - 2)
     else co_filename
   in
-  let file_path = Stdlib.Filename.remove_extension file_path in
+  Stdlib.Filename.remove_extension file_path
+
+
+let mk ~debug code =
+  let open IResult.Let_syntax in
+  let file_path = file_path code in
   let code_qual_name = build_code_object_unique_name file_path code in
   let name = Ident.mk file_path in
   let f = build_cfg ~debug ~code_qual_name in
@@ -2323,7 +2329,7 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   Ok {Module.name; toplevel; functions}
 
 
-let test ?(filename = "dummy.py") ?(debug = false) source =
+let test_generator ~filename ~f source =
   if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
   let code =
     match FFI.from_string ~source ~filename with
@@ -2333,7 +2339,7 @@ let test ?(filename = "dummy.py") ?(debug = false) source =
         code
   in
   Py.finalize () ;
-  match mk ~debug code with
+  match f code with
   | Error (kind, _loc, err) -> (
     match kind with
     | L.InternalError ->
@@ -2342,20 +2348,29 @@ let test ?(filename = "dummy.py") ?(debug = false) source =
         L.user_error "IR error: %a@\n" Error.pp_kind err
     | L.ExternalError ->
         L.external_error "IR error: %a@\n" Error.pp_kind err )
-  | Ok module_ ->
-      F.printf "%a" Module.pp module_
+  | Ok () ->
+      ()
   | exception (Py.E _ as e) ->
       L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)
 
 
-let test_cfg_skeleton ?(filename = "dummy.py") source =
-  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
-  let code =
-    match FFI.from_string ~source ~filename with
-    | Error (kind, err) ->
-        L.die kind "FFI error: %a@\n" FFI.Error.pp_kind err
-    | Ok code ->
-        code
+let test ?(filename = "dummy.py") ?(debug = false) source =
+  let open IResult.Let_syntax in
+  let f code =
+    let+ module_ = mk ~debug code in
+    F.printf "%a" Module.pp module_
   in
-  Py.finalize () ;
-  test_cfg_skeleton code
+  test_generator ~filename ~f source
+
+
+let test_cfg_skeleton ?(filename = "dummy.py") source =
+  let open IResult.Let_syntax in
+  let f code =
+    let file_path = file_path code in
+    let code_qual_name = build_code_object_unique_name file_path code in
+    test_cfg_skeleton ~code_qual_name code ;
+    let f code = Ok (test_cfg_skeleton ~code_qual_name code) in
+    let* _ = fold_all_inner_codes_and_build_map code ~code_qual_name ~f in
+    Ok ()
+  in
+  test_generator ~filename ~f source
