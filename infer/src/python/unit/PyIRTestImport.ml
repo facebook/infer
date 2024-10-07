@@ -580,4 +580,12 @@ let%expect_test _ =
 from foo import *
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: IMPORT_STAR |}]
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          n0 <- $ImportName(foo)(PYCTuple ([|PYCString ("*")|]), PYCInt (0))
+          n1 <- $ImportStar(n0)
+          return PYCNone |}]

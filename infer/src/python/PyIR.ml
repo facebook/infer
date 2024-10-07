@@ -164,6 +164,7 @@ module BuiltinCaller = struct
     | Inplace of Builtin.binary_op
     | ImportName of string
     | ImportFrom of string
+    | ImportStar
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
@@ -196,6 +197,8 @@ module BuiltinCaller = struct
         sprintf "$ImportName(%s)" name
     | ImportFrom name ->
         sprintf "$ImportFrom(%s)" name
+    | ImportStar ->
+        sprintf "$ImportStar"
     | Binary op ->
         let op = show_binary op in
         sprintf "$Binary.%s" op
@@ -1469,6 +1472,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let id, st = call_builtin_function st (ImportName name) [fromlist; level] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
+  | "IMPORT_STAR" ->
+      let* module_object, st = State.pop st in
+      let id, st = call_builtin_function st ImportStar [module_object] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "IMPORT_FROM" ->
       let name = co_names.(arg) in
       let* module_obj = State.peek st in
@@ -1816,6 +1824,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "SETUP_ANNOTATIONS"
   | "IMPORT_NAME"
   | "IMPORT_FROM"
+  | "IMPORT_STAR"
   | "COMPARE_OP"
   | "LOAD_CLOSURE"
   | "DUP_TOP"

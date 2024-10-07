@@ -62,6 +62,7 @@ module BuiltinCaller : sig
     | Inplace of Builtin.binary_op
     | ImportName of string
     | ImportFrom of string
+    | ImportStar
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
