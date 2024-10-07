@@ -177,9 +177,7 @@ test_record_unpack_Latent(X) ->
         true -> ok
     end.
 
-% The two latent issues have different causes:
-%  - not using the map spec
-%  - encoding of equality prunning confuses the prover
+% The latent issue is caused by not using the map spec.
 -spec fpl_test_record_unpack_Ok(ab()) -> ok.
 fpl_test_record_unpack_Ok(X) ->
     #{a := A, b := B} = X,
