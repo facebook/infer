@@ -1447,4 +1447,21 @@ class C(metaclass=m):
     pass
         |} in
   PyIR.test source ;
-  [%expect {| IR error: UNEXPECTED_EXPRESSION: BUILTIN_CALLER($BuildClass) |}]
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          n0 <- TOPLEVEL[m]
+          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), PYCString ("C"), metaclass= n0)
+          TOPLEVEL[C] <- n1
+          return PYCNone
+
+
+      dummy.C:
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- PYCString ("C")
+          return PYCNone |}]

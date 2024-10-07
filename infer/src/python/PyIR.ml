@@ -494,7 +494,7 @@ module Stmt = struct
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
     | CallMethod of {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list}
-    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list}
     | SetupAnnotations
 
   let pp fmt = function
@@ -514,7 +514,7 @@ module Stmt = struct
           (Pp.seq ~sep:", " Exp.pp) args
     | BuiltinCall {lhs; call; args} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
-          (Pp.seq ~sep:", " Exp.pp) args
+          (Pp.seq ~sep:", " pp_call_arg) args
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 
@@ -540,7 +540,7 @@ module Stmt = struct
         let* () = Exp.check self_if_needed in
         List.fold_result args ~init:() ~f:(fun () -> Exp.check)
     | BuiltinCall {args} ->
-        List.fold_result args ~init:() ~f:(fun () -> Exp.check)
+        List.fold_result args ~init:() ~f:(fun () {value} -> Exp.check value)
     | SetupAnnotations ->
         Ok ()
 end
@@ -853,7 +853,6 @@ let call_function_with_unnamed_args st ?(packed = false) exp args =
   let stmt =
     match exp with
     | Exp.BuiltinCaller call ->
-        let args = List.map args ~f:(fun {Stmt.value} -> value) in
         Stmt.BuiltinCall {lhs; call; args}
     | exp ->
         Stmt.Call {lhs; exp; args; packed}
@@ -865,6 +864,7 @@ let call_function_with_unnamed_args st ?(packed = false) exp args =
 let call_builtin_function st call args =
   let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
+  let args = Stmt.unnamed_call_args args in
   let stmt = Stmt.BuiltinCall {lhs; call; args} in
   let* st = State.push_stmt st stmt in
   Ok (lhs, st)
@@ -1053,7 +1053,13 @@ let call_function_kw st argc =
   let args = partial_zip args arg_names in
   let* exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.Call {lhs; exp; args; packed= false} in
+  let stmt =
+    match exp with
+    | Exp.BuiltinCaller call ->
+        Stmt.BuiltinCall {lhs; call; args}
+    | exp ->
+        Stmt.Call {lhs; exp; args; packed= false}
+  in
   let* st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
