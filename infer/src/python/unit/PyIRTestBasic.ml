@@ -338,7 +338,7 @@ with open("foo.txt", "wt") as fp:
           jmp b1
 
         b1:
-          n5 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n5 <- n1.__enter__(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 

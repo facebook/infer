@@ -214,45 +214,8 @@ with open("foo", "r") as fp:
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      toplevel:
-        b0:
-          n0 <- $ImportName(foo)(PYCTuple ([|PYCString ("ERROR")|]), PYCInt (0))
-          n1 <- $ImportFrom(ERROR)(n0)
-          TOPLEVEL[ERROR] <- n1
-          n2 <- TOPLEVEL[open]
-          n3 <- n2(PYCString ("foo"), PYCString ("r"))
-          n4 <- n3.__enter__()
-          TOPLEVEL[fp] <- n4
-          n5 <- TOPLEVEL[fp]
-          n6 <- $GetIter(n5)
-          jmp b1(CM(n3).__exit__, n6)
-
-        b1(n7, n8):
-          n9 <- $NextIter(n8)
-          n10 <- $HasNextIter(n8)
-          if n10 then jmp b2 else jmp b7
-
-        b2:
-          TOPLEVEL[line] <- n9
-          n12 <- TOPLEVEL[print]
-          n13 <- n12(PYCString ("TRY"))
-          jmp b6
-
-        b6:
-          n14 <- TOPLEVEL[print]
-          n15 <- n14(PYCString ("ELSE"))
-          jmp b1(n7, n8)
-
-        b7:
-          jmp b8
-
-        b8:
-          n11 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          return PYCNone |}]
+  [%expect {|
+    IR error: WITH_CLEANUP_START/TODO: unsupported scenario with n7 |}]
 
 
 let%expect_test _ =
@@ -375,7 +338,7 @@ async def async_with(filename):
           jmp b1
 
         b1:
-          n10 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n10 <- n2.__enter__(PYCNone, PYCNone, PYCNone)
           n11 <- $GetAwaitable(n10)
           n12 <- $YieldFrom(n11, PYCNone)
           return PYCNone |}]

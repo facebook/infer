@@ -406,9 +406,9 @@ def f(x, y, l, bar, toto):
           if n11 then jmp b3 else jmp b4
 
         b3:
-          n16 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          n17 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          jmp b1(n2, CM(n6).__exit__, CM(n9).__exit__)
+          n16 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
+          n17 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2)
 
         b4:
           n12 <- GLOBAL[print]
@@ -416,11 +416,11 @@ def f(x, y, l, bar, toto):
           jmp b5
 
         b5:
-          n14 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n14 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
           jmp b6
 
         b6:
-          n15 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n15 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
           jmp b1(n2)
 
         b7:
@@ -864,11 +864,11 @@ def f(foo, bar):
           jmp b1
 
         b1:
-          n9 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n9 <- n4.__enter__(PYCNone, PYCNone, PYCNone)
           n10 <- GLOBAL[print]
           n11 <- LOCAL[foo0]
           n12 <- n10(n11)
-          n13 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n13 <- n1.__enter__(PYCNone, PYCNone, PYCNone)
           return PYCInt (42) |}]
 
 
@@ -1593,5 +1593,43 @@ async def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
+          return PYCNone
+
+
+      dummy.foo:
+        b0:
+          n0 <- GLOBAL[range]
+          n1 <- GLOBAL[num]
+          n2 <- n0(n1)
+          n3 <- $GetIter(n2)
+          jmp b1
+
+        b1:
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n3)
+          if n5 then jmp b2 else jmp b4
+
+        b2:
+          LOCAL[i] <- n4
+          n6 <- GLOBAL[read]
+          n7 <- n6()
+          n8 <- $GetAwaitable(n7)
+          n9 <- $YieldFrom(n8, PYCNone)
+          n10 <- n8.__enter__()
+          n11 <- $GetAwaitable(n10)
+          n12 <- $YieldFrom(n11, PYCNone)
+          LOCAL[f] <- n11
+          n13 <- n8.__enter__(PYCNone, PYCNone, PYCNone)
+          n14 <- $GetAwaitable(n13)
+          n15 <- $YieldFrom(n14, PYCNone)
+          return PYCNone
+
+        b4:
+          return PYCNone |}]

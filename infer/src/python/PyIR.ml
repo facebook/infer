@@ -427,6 +427,7 @@ module Error = struct
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
+    | WithCleanupStart of Exp.t
     | WithCleanupFinish of Exp.t
     | RaiseExceptionInvalid of int
 
@@ -466,6 +467,8 @@ module Error = struct
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
     | MakeFunctionInvalidDefaults exp ->
         F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
+    | WithCleanupStart exp ->
+        F.fprintf fmt "WITH_CLEANUP_START/TODO: unsupported scenario with %a" Exp.pp exp
     | WithCleanupFinish exp ->
         F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp exp
     | RaiseExceptionInvalid n ->
@@ -571,6 +574,10 @@ module Stack = struct
         None
     | elt :: rest ->
         if Int.equal 0 n then Some elt else peek (n - 1) rest
+
+
+  let pp ~pp fmt list = F.fprintf fmt "[%a]" (Pp.semicolon_seq pp) (List.rev list)
+  [@@warning "-unused-value-declaration"]
 end
 
 module Terminator = struct
@@ -1219,34 +1226,32 @@ let for_iter st delta next_offset_opt =
            ; else_= Terminator.mk_jump other_label other_stack } ) )
 
 
-(** Extract from Python3.8 specification:
-
-    Starts cleaning up the stack when a with statement block exits. At the top of the stack are
-    either [NULL] (pushed by [BEGIN_FINALLY]) or 6 values pushed if an exception has been raised in
-    the with block. Below is the context manager’s [__exit__()] or [__aexit__()] bound method.
-
-    If top-of-stack is [NULL], calls [SECOND(None, None, None)], removes the function from the
-    stack, leaving top-of-stack, and pushes [NULL] to the stack. Otherwise calls
-    [SEVENTH(TOP, SECOND, THIRD)], shifts the bottom 3 values of the stack down, replaces the empty
-    spot with [NULL] and pushes top-of-stack. Finally pushes the result of the call.
-
-    vsiles notes:
-
-    - the doc is quite confusing. Here is my source of truth
-      https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300
-    - we only support the first case with [NULL]
-    - we only support [__exit__].
-    - TODO: learn how [__aexit__] works
-    - TODO: duplicate the handler to deal with the except case *)
+(* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300 *)
 let with_cleanup_start st =
   let open IResult.Let_syntax in
+  let* tos, st = State.pop st in
+  let* () =
+    match (tos : Exp.t) with
+    | Const PYCNone ->
+        Ok ()
+    | _ ->
+        internal_error st (Error.WithCleanupStart tos)
+  in
   let* context_manager_exit, st = State.pop st in
-  let* lhs, st =
-    call_function_with_unnamed_args st context_manager_exit
+  let* context_manager =
+    match context_manager_exit with
+    | Exp.ContextManagerExit exp ->
+        Ok exp
+    | exp ->
+        internal_error st (Error.WithCleanupStart exp)
+  in
+  let* id, st =
+    call_method st PyCommon.enter context_manager
       [Const Const.none; Const Const.none; Const Const.none]
   in
   let st = State.push st (Const Const.none) in
-  let st = State.push st (Exp.Temp lhs) in
+  let st = State.push st (Const Const.none) in
+  let st = State.push st (Temp id) in
   Ok (st, None)
 
 
@@ -1721,16 +1726,17 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let {State.stack} = st in
       Ok (st, Some (Terminator.mk_jump label stack))
   | "POP_FINALLY" ->
-      let* return_value, st =
+      (* see https://github.com/python/cpython/blob/3.8/Python/ceval.c#L2129 *)
+      let* st =
         if arg <> 0 then
           let* ret, st = State.pop st in
-          Ok (Some ret, st)
-        else Ok (None, st)
+          let* _, st = State.pop st in
+          let st = State.push st ret in
+          Ok st
+        else
+          let* _, st = State.pop st in
+          Ok st
       in
-      (* MUST BE FINALLY BLOCK *)
-      (* TODO: insert popping of tos when CALL_FINALLY is supported. Right now
-         we didn't push anything on the stack so we don't pop anything *)
-      let st = match return_value with Some ret -> State.push st ret | None -> st in
       Ok (st, None)
   | "WITH_CLEANUP_START" ->
       with_cleanup_start st

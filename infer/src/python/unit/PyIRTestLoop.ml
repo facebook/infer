@@ -90,9 +90,9 @@ def f(x, y, l, bar, toto):
           if n11 then jmp b3 else jmp b4
 
         b3:
-          n16 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          n17 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          jmp b1(n2, CM(n6).__exit__, CM(n9).__exit__)
+          n16 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
+          n17 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2)
 
         b4:
           n12 <- GLOBAL[print]
@@ -100,11 +100,11 @@ def f(x, y, l, bar, toto):
           jmp b5
 
         b5:
-          n14 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n14 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
           jmp b6
 
         b6:
-          n15 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n15 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
           jmp b1(n2)
 
         b7:
