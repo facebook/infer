@@ -309,16 +309,16 @@ def f(x):
         b0:
           n0 <- GLOBAL[foo]
           n1 <- LOCAL[x]
-          if n1 then jmp b1(n0) else jmp b2(n0)
+          if n1 then jmp b1 else jmp b2
 
-        b1(n3):
-          jmp b3(n3, PYCInt (1))
+        b1:
+          jmp b3(PYCInt (1))
 
-        b2(n2):
-          jmp b3(n2, PYCInt (0))
+        b2:
+          jmp b3(PYCInt (0))
 
-        b3(n4, n5):
-          n6 <- n4(n5)
+        b3(n2):
+          n3 <- n0(n2)
           return PYCNone
 
 
@@ -347,14 +347,14 @@ for x in range(10):
         b1(n3):
           n4 <- $NextIter(n3)
           n5 <- $HasNextIter(n3)
-          if n5 then jmp b2(n3, n4) else jmp b3
+          if n5 then jmp b2 else jmp b3
 
-        b2(n6, n7):
-          TOPLEVEL[x] <- n7
-          n8 <- TOPLEVEL[print]
-          n9 <- TOPLEVEL[x]
-          n10 <- n8(n9)
-          jmp b1(n6)
+        b2:
+          TOPLEVEL[x] <- n4
+          n6 <- TOPLEVEL[print]
+          n7 <- TOPLEVEL[x]
+          n8 <- n6(n7)
+          jmp b1(n3)
 
         b3:
           return PYCNone |}]
@@ -391,38 +391,37 @@ def f(x, y, l, bar, toto):
         b1(n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n2, n3) else jmp b7
+          if n4 then jmp b2 else jmp b7
 
-        b2(n5, n6):
-          LOCAL[x] <- n6
-          n7 <- LOCAL[bar]
-          n8 <- n7()
-          n9 <- n8.__enter__()
-          n10 <- LOCAL[toto]
-          n11 <- n10()
-          n12 <- n11.__enter__()
-          LOCAL[obj] <- n12
-          n13 <- LOCAL[y]
-          if n13 then jmp b3(n5, CM(n8).__exit__, CM(n11).__exit__) else
-          jmp b4(n5, CM(n8).__exit__, CM(n11).__exit__)
+        b2:
+          LOCAL[x] <- n3
+          n5 <- LOCAL[bar]
+          n6 <- n5()
+          n7 <- n6.__enter__()
+          n8 <- LOCAL[toto]
+          n9 <- n8()
+          n10 <- n9.__enter__()
+          LOCAL[obj] <- n10
+          n11 <- LOCAL[y]
+          if n11 then jmp b3 else jmp b4
 
-        b3(n28, n29, n30):
-          n31 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          n32 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          jmp b1(n28, n29, n30)
+        b3:
+          n16 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n17 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2, CM(n6).__exit__, CM(n9).__exit__)
 
-        b4(n14, n15, n16):
-          n17 <- GLOBAL[print]
-          n18 <- n17(PYCString ("nop"))
-          jmp b5(n14, n15, n16, PYCNone)
+        b4:
+          n12 <- GLOBAL[print]
+          n13 <- n12(PYCString ("nop"))
+          jmp b5
 
-        b5(n19, n20, n21, n22):
-          n23 <- n22(PYCNone, PYCNone, PYCNone)
-          jmp b6(n19, n20, PYCNone)
+        b5:
+          n14 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b6
 
-        b6(n24, n25, n26):
-          n27 <- n26(PYCNone, PYCNone, PYCNone)
-          jmp b1(n24)
+        b6:
+          n15 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2)
 
         b7:
           return PYCNone |}]
@@ -862,14 +861,14 @@ def f(foo, bar):
           n6 <- GLOBAL[print]
           n7 <- LOCAL[bar0]
           n8 <- n6(n7)
-          jmp b1(CM(n1).__exit__, CM(n4).__exit__, PYCNone)
+          jmp b1
 
-        b1(n9, n10, n11):
-          n12 <- n11(PYCNone, PYCNone, PYCNone)
-          n13 <- GLOBAL[print]
-          n14 <- LOCAL[foo0]
-          n15 <- n13(n14)
-          n16 <- PYCNone(PYCNone, PYCNone, PYCNone)
+        b1:
+          n9 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n10 <- GLOBAL[print]
+          n11 <- LOCAL[foo0]
+          n12 <- n10(n11)
+          n13 <- PYCNone(PYCNone, PYCNone, PYCNone)
           return PYCInt (42) |}]
 
 
@@ -1205,17 +1204,17 @@ def f(l):
         b1(n1, n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n1, n2, n3) else jmp b3(n1)
+          if n4 then jmp b2 else jmp b3
 
-        b2(n6, n7, n8):
-          LOCAL[x] <- n8
-          n9 <- LOCAL[x]
-          n10 <- $Binary.Add(n9, PYCInt (2))
-          n11 <- $ListAppend(n6, n10)
-          jmp b1(n6, n7)
+        b2:
+          LOCAL[x] <- n3
+          n5 <- LOCAL[x]
+          n6 <- $Binary.Add(n5, PYCInt (2))
+          n7 <- $ListAppend(n1, n6)
+          jmp b1(n1, n2)
 
-        b3(n5):
-          return n5
+        b3:
+          return n1
 
 
       dummy.f.<listcomp>:
@@ -1226,17 +1225,17 @@ def f(l):
         b1(n1, n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n1, n2, n3) else jmp b3(n1)
+          if n4 then jmp b2 else jmp b3
 
-        b2(n6, n7, n8):
-          LOCAL[x] <- n8
-          n9 <- LOCAL[x]
-          n10 <- $Binary.Add(n9, PYCInt (2))
-          n11 <- $ListAppend(n6, n10)
-          jmp b1(n6, n7)
+        b2:
+          LOCAL[x] <- n3
+          n5 <- LOCAL[x]
+          n6 <- $Binary.Add(n5, PYCInt (2))
+          n7 <- $ListAppend(n1, n6)
+          jmp b1(n1, n2)
 
-        b3(n5):
-          return n5
+        b3:
+          return n1
 
 
       dummy.f:
@@ -1291,18 +1290,18 @@ def g(l):
         b1(n1, n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n1, n2, n3) else jmp b3(n1)
+          if n4 then jmp b2 else jmp b3
 
-        b2(n6, n7, n8):
-          LOCAL[num] <- n8
-          n9 <- LOCAL[num]
-          n10 <- LOCAL[num]
-          n11 <- $Binary.Power(n10, PYCInt (2))
-          n12 <- $DictSetItem(n6, n9, n11)
-          jmp b1(n6, n7)
+        b2:
+          LOCAL[num] <- n3
+          n5 <- LOCAL[num]
+          n6 <- LOCAL[num]
+          n7 <- $Binary.Power(n6, PYCInt (2))
+          n8 <- $DictSetItem(n1, n5, n7)
+          jmp b1(n1, n2)
 
-        b3(n5):
-          return n5
+        b3:
+          return n1
 
 
       dummy.f.<setcomp>:
@@ -1313,17 +1312,17 @@ def g(l):
         b1(n1, n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n1, n2, n3) else jmp b3(n1)
+          if n4 then jmp b2 else jmp b3
 
-        b2(n6, n7, n8):
-          LOCAL[x] <- n8
-          n9 <- LOCAL[x]
-          n10 <- $Binary.Add(n9, PYCInt (1))
-          n11 <- $SetAdd(n6, n10)
-          jmp b1(n6, n7)
+        b2:
+          LOCAL[x] <- n3
+          n5 <- LOCAL[x]
+          n6 <- $Binary.Add(n5, PYCInt (1))
+          n7 <- $SetAdd(n1, n6)
+          jmp b1(n1, n2)
 
-        b3(n5):
-          return n5
+        b3:
+          return n1
 
 
       dummy.f:
@@ -1419,19 +1418,19 @@ def m(self, x, y, test):
           n0 <- GLOBAL[foo]
           n1 <- LOCAL[self]
           n2 <- LOCAL[test]
-          if n2 then jmp b1(n0, n1) else jmp b2(n0, n1)
+          if n2 then jmp b1 else jmp b2
 
-        b1(n6, n7):
-          n8 <- LOCAL[x]
-          jmp b3(n6, n7, n8)
+        b1:
+          n4 <- LOCAL[x]
+          jmp b3(n4)
 
-        b2(n3, n4):
-          n5 <- LOCAL[y]
-          jmp b3(n3, n4, n5)
+        b2:
+          n3 <- LOCAL[y]
+          jmp b3(n3)
 
-        b3(n9, n10, n11):
-          n12 <- n9(n10, n11)
-          return n12 |}]
+        b3(n5):
+          n6 <- n0(n1, n5)
+          return n6 |}]
 
 
 let%expect_test _ =
@@ -1440,8 +1439,33 @@ def m(self, x, y, test):
     return self.foo(x if test else y)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got n6 |}]
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          return PYCNone
+
+
+      dummy.m:
+        b0:
+          n0 <- LOCAL[self]
+          n1 <- LOCAL[test]
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n3 <- LOCAL[x]
+          jmp b3(n3)
+
+        b2:
+          n2 <- LOCAL[y]
+          jmp b3(n2)
+
+        b3(n4):
+          n5 <- n0.foo(n4)
+          return n5 |}]
 
 
 let%expect_test _ =
@@ -1535,3 +1559,35 @@ o.foo()
           n0 <- GLOBAL[print]
           n1 <- n0(PYCString ("I am foo"))
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+res = dict.attr(0 if not False else 1)
+|} in
+  PyIR.test_cfg_skeleton source ;
+  (* TODO(dpichardie): node 8 is dead and blocks the constant folding
+     optimization *)
+  PyIR.test source ;
+  [%expect
+    {|
+        2        0 LOAD_NAME    0
+                 2 LOAD_METHOD    1
+                 4 LOAD_CONST    1
+                 6 JUMP_FORWARD    2
+                 8 LOAD_CONST    2
+          >>>   10 CALL_METHOD    1
+                12 STORE_NAME    2
+                14 LOAD_CONST    3
+                16 RETURN_VALUE    0
+
+    CFG successors:
+       0: 10
+       8: 10
+      10:
+    CFG predecessors:
+       0:
+       8:
+      10: 8 0
+    topological order: 0 10
+    IR error: LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got n1 |}]

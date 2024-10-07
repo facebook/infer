@@ -31,14 +31,14 @@ for x in range(10):
         b1(n3):
           n4 <- $NextIter(n3)
           n5 <- $HasNextIter(n3)
-          if n5 then jmp b2(n3, n4) else jmp b3
+          if n5 then jmp b2 else jmp b3
 
-        b2(n6, n7):
-          TOPLEVEL[x] <- n7
-          n8 <- TOPLEVEL[print]
-          n9 <- TOPLEVEL[x]
-          n10 <- n8(n9)
-          jmp b1(n6)
+        b2:
+          TOPLEVEL[x] <- n4
+          n6 <- TOPLEVEL[print]
+          n7 <- TOPLEVEL[x]
+          n8 <- n6(n7)
+          jmp b1(n3)
 
         b3:
           return PYCNone |}]
@@ -75,38 +75,37 @@ def f(x, y, l, bar, toto):
         b1(n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n2, n3) else jmp b7
+          if n4 then jmp b2 else jmp b7
 
-        b2(n5, n6):
-          LOCAL[x] <- n6
-          n7 <- LOCAL[bar]
-          n8 <- n7()
-          n9 <- n8.__enter__()
-          n10 <- LOCAL[toto]
-          n11 <- n10()
-          n12 <- n11.__enter__()
-          LOCAL[obj] <- n12
-          n13 <- LOCAL[y]
-          if n13 then jmp b3(n5, CM(n8).__exit__, CM(n11).__exit__) else
-          jmp b4(n5, CM(n8).__exit__, CM(n11).__exit__)
+        b2:
+          LOCAL[x] <- n3
+          n5 <- LOCAL[bar]
+          n6 <- n5()
+          n7 <- n6.__enter__()
+          n8 <- LOCAL[toto]
+          n9 <- n8()
+          n10 <- n9.__enter__()
+          LOCAL[obj] <- n10
+          n11 <- LOCAL[y]
+          if n11 then jmp b3 else jmp b4
 
-        b3(n28, n29, n30):
-          n31 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          n32 <- PYCNone(PYCNone, PYCNone, PYCNone)
-          jmp b1(n28, n29, n30)
+        b3:
+          n16 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n17 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2, CM(n6).__exit__, CM(n9).__exit__)
 
-        b4(n14, n15, n16):
-          n17 <- GLOBAL[print]
-          n18 <- n17(PYCString ("nop"))
-          jmp b5(n14, n15, n16, PYCNone)
+        b4:
+          n12 <- GLOBAL[print]
+          n13 <- n12(PYCString ("nop"))
+          jmp b5
 
-        b5(n19, n20, n21, n22):
-          n23 <- n22(PYCNone, PYCNone, PYCNone)
-          jmp b6(n19, n20, PYCNone)
+        b5:
+          n14 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b6
 
-        b6(n24, n25, n26):
-          n27 <- n26(PYCNone, PYCNone, PYCNone)
-          jmp b1(n24)
+        b6:
+          n15 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          jmp b1(n2)
 
         b7:
           return PYCNone |}]
@@ -141,26 +140,26 @@ def f(match, it, n):
         b1(n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n2, n3) else jmp b5
+          if n4 then jmp b2 else jmp b5
 
-        b2(n5, n6):
-          LOCAL[item] <- n6
-          n7 <- LOCAL[it]
-          n8 <- LOCAL[n]
-          n9 <- n7[n8]
-          n10 <- LOCAL[item]
-          n11 <- $Compare.eq(n9, n10)
-          if $Not(n11) then jmp b3(n5) else jmp b4(n5)
+        b2:
+          LOCAL[item] <- n3
+          n5 <- LOCAL[it]
+          n6 <- LOCAL[n]
+          n7 <- n5[n6]
+          n8 <- LOCAL[item]
+          n9 <- $Compare.eq(n7, n8)
+          if $Not(n9) then jmp b3 else jmp b4
 
-        b3(n15):
-          n16 <- GLOBAL[AssertionError]
-          throw n16
+        b3:
+          n12 <- GLOBAL[AssertionError]
+          throw n12
 
-        b4(n12):
-          n13 <- LOCAL[n]
-          n14 <- $Inplace.Add(n13, PYCInt (1))
-          LOCAL[n] <- n14
-          jmp b1(n12)
+        b4:
+          n10 <- LOCAL[n]
+          n11 <- $Inplace.Add(n10, PYCInt (1))
+          LOCAL[n] <- n11
+          jmp b1(n2)
 
         b5:
           return PYCNone |}]
@@ -195,14 +194,14 @@ def f(foo):
         b1(n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n2, n3) else jmp b5
+          if n4 then jmp b2 else jmp b5
 
-        b2(n5, n6):
-          LOCAL[path] <- n6
-          n7 <- LOCAL[path]
-          if n7 then jmp b3(n5) else jmp b1(n5)
+        b2:
+          LOCAL[path] <- n3
+          n5 <- LOCAL[path]
+          if n5 then jmp b3 else jmp b1(n2)
 
-        b3(n8):
+        b3:
           return PYCNone
 
         b5:

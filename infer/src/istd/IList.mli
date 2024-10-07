@@ -77,3 +77,9 @@ val move_last_to_first : 'a list -> 'a list
 val traverse_opt : 'a list -> f:('a -> 'b option) -> 'b list option
 (** Applies [f] to the elements of the list and returns [None] if any application results in [None]
     otherwise returns [Some list']. *)
+
+val k_first_columns_same_cell : equal:('a -> 'a -> bool) -> 'a list list -> int
+(** [k_first_columns_same_cell ~equal lines] returns an integer [k] such that
+    - 0 <= k <= length lines
+    - forall i such that 0 <= i < k, forall j such that 0 <= j < length lines, lines[j][i] =
+      lines[j][0] *)

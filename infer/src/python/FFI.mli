@@ -34,7 +34,7 @@ module rec Constant : sig
     | PYCFrozenSet of t list
     | PYCCode of Code.t
     | PYCNone
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val show : ?full:bool -> t -> string
   [@@warning "-unused-value-declaration"]
@@ -80,7 +80,7 @@ and Code : sig
           (** A tuple containing the literals used by the bytecode. By experience, it is only [int],
               [string], [tuple]s, [None] or [code] objects *)
     ; instructions: Instruction.t list }
-  [@@deriving show, compare]
+  [@@deriving show, compare, equal]
 
   val full_show : t -> string [@@warning "-unused-value-declaration"]
 

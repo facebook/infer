@@ -9,7 +9,7 @@ open! IStd
 
 module Compare : sig
   type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
-  [@@deriving compare, enumerate]
+  [@@deriving compare, enumerate, equal]
 
   val to_string : t -> string
 
@@ -30,9 +30,9 @@ type binary_op =
   | Subtract
   | TrueDivide
   | Xor
-[@@deriving compare]
+[@@deriving compare, equal]
 
-type unary_op = Positive | Negative | Not | Invert [@@deriving compare]
+type unary_op = Positive | Negative | Not | Invert [@@deriving compare, equal]
 
 type builder = List | Set | Tuple | Map | String | Slice [@@deriving compare]
 

@@ -237,3 +237,25 @@ let traverse_opt xs ~f =
       | _ ->
           Continue_or_stop.Stop None )
     ~finish:(fun acc -> Some (List.rev acc))
+
+
+let hd_all_equals ~equal line0 other_lines =
+  match line0 with
+  | [] ->
+      true
+  | hd0 :: _ ->
+      List.for_all other_lines ~f:(function [] -> true | hd :: _ -> equal hd0 hd)
+
+
+let k_first_columns_same_cell ~equal lines =
+  match lines with
+  | [] ->
+      0
+  | line0 :: other_lines ->
+      let rec loop line0 other_lines counter =
+        if List.is_empty line0 || List.exists other_lines ~f:List.is_empty then counter
+        else if hd_all_equals ~equal line0 other_lines then
+          loop (List.tl_exn line0) (List.map ~f:List.tl_exn other_lines) (counter + 1)
+        else counter
+      in
+      loop line0 other_lines 0

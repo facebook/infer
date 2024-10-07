@@ -83,6 +83,7 @@ and pyCode =
   ; co_consts: pyConstant array
   ; (* Instead of keeping [co_code], they are translated into Python's [Instruction] *)
     instructions: pyInstruction list }
+[@@deriving equal]
 
 and pyInstruction =
   { (* TODO: make opname static ? list all names somewhere *)
@@ -313,20 +314,20 @@ module Code = struct
     { co_name: string
     ; co_firstlineno: int
     ; co_filename: string
-    ; co_flags: int [@compare.ignore]
-    ; co_cellvars: string array [@compare.ignore]
-    ; co_freevars: string array [@compare.ignore]
-    ; co_names: string array [@compare.ignore]
-    ; co_varnames: string array [@compare.ignore]
-    ; co_nlocals: int [@compare.ignore]
-    ; co_argcount: int [@compare.ignore]
-    ; co_posonlyargcount: int [@compare.ignore]
-    ; co_stacksize: int [@compare.ignore]
-    ; co_kwonlyargcount: int [@compare.ignore]
-    ; co_lnotab: char array [@compare.ignore]
-    ; co_consts: pyConstant array [@compare.ignore]
-    ; instructions: pyInstruction list [@compare.ignore] }
-  [@@deriving show, compare]
+    ; co_flags: int [@compare.ignore] [@equal.ignore]
+    ; co_cellvars: string array [@compare.ignore] [@equal.ignore]
+    ; co_freevars: string array [@compare.ignore] [@equal.ignore]
+    ; co_names: string array [@compare.ignore] [@equal.ignore]
+    ; co_varnames: string array [@compare.ignore] [@equal.ignore]
+    ; co_nlocals: int [@compare.ignore] [@equal.ignore]
+    ; co_argcount: int [@compare.ignore] [@equal.ignore]
+    ; co_posonlyargcount: int [@compare.ignore] [@equal.ignore]
+    ; co_stacksize: int [@compare.ignore] [@equal.ignore]
+    ; co_kwonlyargcount: int [@compare.ignore] [@equal.ignore]
+    ; co_lnotab: char array [@compare.ignore] [@equal.ignore]
+    ; co_consts: pyConstant array [@compare.ignore] [@equal.ignore]
+    ; instructions: pyInstruction list [@compare.ignore] [@equal.ignore] }
+  [@@deriving show, compare, equal]
 
   let full_show = show
 
@@ -376,7 +377,7 @@ module Constant = struct
     | PYCFrozenSet of t list
     | PYCCode of Code.t
     | PYCNone
-  [@@deriving show, compare]
+  [@@deriving show, compare, equal]
 
   let show ?(full = false) c = if full then full_show c else show c
 

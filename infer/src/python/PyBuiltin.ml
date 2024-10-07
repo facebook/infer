@@ -15,7 +15,7 @@ module Builtin = struct
   (* Some interesting source of information: https://docs.python.org/3/library/operator.html *)
   module Compare = struct
     type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
-    [@@deriving compare, enumerate]
+    [@@deriving compare, enumerate, equal]
 
     let to_string = function
       | Lt ->
@@ -61,7 +61,7 @@ module Builtin = struct
     | Subtract
     | TrueDivide
     | Xor
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let binary_op_to_string = function
     | Add ->
@@ -92,7 +92,7 @@ module Builtin = struct
         "xor"
 
 
-  type unary_op = Positive | Negative | Not | Invert [@@deriving compare]
+  type unary_op = Positive | Negative | Not | Invert [@@deriving compare, equal]
 
   let unary_op_to_string = function
     | Positive ->

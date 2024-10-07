@@ -1271,20 +1271,20 @@ def powerset(s):
         b1(n7):
           n8 <- $NextIter(n7)
           n9 <- $HasNextIter(n7)
-          if n9 then jmp b2(n7, n8) else jmp b3
+          if n9 then jmp b2 else jmp b3
 
-        b2(n10, n11):
-          LOCAL[i] <- n11
-          n12 <- GLOBAL[map]
-          n13 <- GLOBAL[frozenset]
-          n14 <- GLOBAL[itertools]
-          n15 <- LOCAL[s]
-          n16 <- LOCAL[i]
-          n17 <- n14.combinations(n15, n16)
-          n18 <- n12(n13, n17)
-          n19 <- $GetYieldFromIter(n18)
-          n20 <- $YieldFrom(n19, PYCNone)
-          jmp b1(n10)
+        b2:
+          LOCAL[i] <- n8
+          n10 <- GLOBAL[map]
+          n11 <- GLOBAL[frozenset]
+          n12 <- GLOBAL[itertools]
+          n13 <- LOCAL[s]
+          n14 <- LOCAL[i]
+          n15 <- n12.combinations(n13, n14)
+          n16 <- n10(n11, n15)
+          n17 <- $GetYieldFromIter(n16)
+          n18 <- $YieldFrom(n17, PYCNone)
+          jmp b1(n7)
 
         b3:
           return PYCNone |}]

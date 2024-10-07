@@ -27,11 +27,11 @@ finally:
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- n0(PYCString ("TRY BLOCK"))
-          jmp b1(PYCNone)
+          jmp b1
 
-        b1(n2):
-          n3 <- TOPLEVEL[print]
-          n4 <- n3(PYCString ("FINALLY BLOCK"))
+        b1:
+          n2 <- TOPLEVEL[print]
+          n3 <- n2(PYCString ("FINALLY BLOCK"))
           return PYCNone |}]
 
 
@@ -58,27 +58,27 @@ print("END")
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- n0(PYCString ("TRY BLOCK"))
-          jmp b1(PYCNone)
+          jmp b1
 
-        b1(n2):
-          n3 <- TOPLEVEL[foo]
-          if n3 then jmp b2(n2) else jmp b3(n2)
+        b1:
+          n2 <- TOPLEVEL[foo]
+          if n2 then jmp b2 else jmp b3
 
-        b2(n7):
-          n8 <- TOPLEVEL[print]
-          n9 <- n8(PYCString ("X"))
-          jmp b4(n7)
-
-        b3(n4):
+        b2:
           n5 <- TOPLEVEL[print]
-          n6 <- n5(PYCString ("Y"))
-          jmp b4(n4)
+          n6 <- n5(PYCString ("X"))
+          jmp b4
 
-        b4(n10):
-          n11 <- TOPLEVEL[print]
-          n12 <- n11(PYCString ("FINALLY BLOCK"))
-          n13 <- TOPLEVEL[print]
-          n14 <- n13(PYCString ("END"))
+        b3:
+          n3 <- TOPLEVEL[print]
+          n4 <- n3(PYCString ("Y"))
+          jmp b4
+
+        b4:
+          n7 <- TOPLEVEL[print]
+          n8 <- n7(PYCString ("FINALLY BLOCK"))
+          n9 <- TOPLEVEL[print]
+          n10 <- n9(PYCString ("END"))
           return PYCNone |}]
 
 
@@ -178,21 +178,21 @@ def f(x):
         b1(n2):
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2(n2, n3) else jmp b4
+          if n4 then jmp b2 else jmp b4
 
-        b2(n5, n6):
-          LOCAL[i] <- n6
-          n7 <- GLOBAL[foo]
-          n8 <- n7.Foo()
-          LOCAL[e] <- n8
-          n9 <- GLOBAL[print]
-          n10 <- n9(PYCString ("yolo"))
-          jmp b3(n5, PYCNone)
+        b2:
+          LOCAL[i] <- n3
+          n5 <- GLOBAL[foo]
+          n6 <- n5.Foo()
+          LOCAL[e] <- n6
+          n7 <- GLOBAL[print]
+          n8 <- n7(PYCString ("yolo"))
+          jmp b3
 
-        b3(n11, n12):
-          n13 <- LOCAL[e]
-          n14 <- n13.bar()
-          jmp b1(n11)
+        b3:
+          n9 <- LOCAL[e]
+          n10 <- n9.bar()
+          jmp b1(n2)
 
         b4:
           return PYCNone |}]
@@ -234,24 +234,24 @@ with open("foo", "r") as fp:
         b1(n7, n8):
           n9 <- $NextIter(n8)
           n10 <- $HasNextIter(n8)
-          if n10 then jmp b2(n7, n8, n9) else jmp b7(n7)
+          if n10 then jmp b2 else jmp b7
 
-        b2(n15, n16, n17):
-          TOPLEVEL[line] <- n17
-          n18 <- TOPLEVEL[print]
-          n19 <- n18(PYCString ("TRY"))
-          jmp b6(n15, n16)
+        b2:
+          TOPLEVEL[line] <- n9
+          n12 <- TOPLEVEL[print]
+          n13 <- n12(PYCString ("TRY"))
+          jmp b6(n7, n8)
 
-        b6(n20, n21):
-          n22 <- TOPLEVEL[print]
-          n23 <- n22(PYCString ("ELSE"))
-          jmp b1(n20, n21)
+        b6(n14, n15):
+          n16 <- TOPLEVEL[print]
+          n17 <- n16(PYCString ("ELSE"))
+          jmp b1(n14, n15)
 
-        b7(n11):
-          jmp b8(n11, PYCNone)
+        b7:
+          jmp b8
 
-        b8(n12, n13):
-          n14 <- n13(PYCNone, PYCNone, PYCNone)
+        b8:
+          n11 <- PYCNone(PYCNone, PYCNone, PYCNone)
           return PYCNone |}]
 
 
@@ -295,13 +295,13 @@ def subhelper():
         b1(n5):
           n6 <- $NextIter(n5)
           n7 <- $HasNextIter(n5)
-          if n7 then jmp b2(n5, n6) else jmp b6
+          if n7 then jmp b2 else jmp b6
 
-        b2(n8, n9):
-          LOCAL[i] <- n9
-          n10 <- GLOBAL[print]
-          n11 <- n10(PYCString ("foo"))
-          jmp b1(n8)
+        b2:
+          LOCAL[i] <- n6
+          n8 <- GLOBAL[print]
+          n9 <- n8(PYCString ("foo"))
+          jmp b1(n5)
 
         b6:
           return PYCNone |}]
@@ -351,34 +351,34 @@ async def async_with(filename):
   PyIR.test source ;
   [%expect
     {|
-      module dummy:
+    module dummy:
 
-        toplevel:
-          b0:
-            TOPLEVEL[async_with] <- $FuncObj(async_with, dummy.async_with, {})
-            return PYCNone
+      toplevel:
+        b0:
+          TOPLEVEL[async_with] <- $FuncObj(async_with, dummy.async_with, {})
+          return PYCNone
 
 
-        dummy.async_with:
-          b0:
-            n0 <- GLOBAL[open]
-            n1 <- LOCAL[filename]
-            n2 <- n0(n1, PYCString ("r"))
-            n3 <- n2.__enter__()
-            n4 <- $GetAwaitable(n3)
-            n5 <- $YieldFrom(n4, PYCNone)
-            LOCAL[f] <- n4
-            n6 <- LOCAL[f]
-            n7 <- n6.read()
-            n8 <- $GetAwaitable(n7)
-            n9 <- $YieldFrom(n8, PYCNone)
-            jmp b1(n2, CM(n2).__exit__, PYCNone)
+      dummy.async_with:
+        b0:
+          n0 <- GLOBAL[open]
+          n1 <- LOCAL[filename]
+          n2 <- n0(n1, PYCString ("r"))
+          n3 <- n2.__enter__()
+          n4 <- $GetAwaitable(n3)
+          n5 <- $YieldFrom(n4, PYCNone)
+          LOCAL[f] <- n4
+          n6 <- LOCAL[f]
+          n7 <- n6.read()
+          n8 <- $GetAwaitable(n7)
+          n9 <- $YieldFrom(n8, PYCNone)
+          jmp b1
 
-          b1(n10, n11, n12):
-            n13 <- n12(PYCNone, PYCNone, PYCNone)
-            n14 <- $GetAwaitable(n13)
-            n15 <- $YieldFrom(n14, PYCNone)
-            return PYCNone |}]
+        b1:
+          n10 <- PYCNone(PYCNone, PYCNone, PYCNone)
+          n11 <- $GetAwaitable(n10)
+          n12 <- $YieldFrom(n11, PYCNone)
+          return PYCNone |}]
 
 
 let%expect_test _ =
@@ -394,22 +394,22 @@ def call_finally():
   PyIR.test source ;
   [%expect
     {|
-      module dummy:
+    module dummy:
 
-        toplevel:
-          b0:
-            TOPLEVEL[call_finally] <- $FuncObj(call_finally, dummy.call_finally, {})
-            return PYCNone
+      toplevel:
+        b0:
+          TOPLEVEL[call_finally] <- $FuncObj(call_finally, dummy.call_finally, {})
+          return PYCNone
 
 
-        dummy.call_finally:
-          b0:
-            n0 <- GLOBAL[read]
-            n1 <- n0()
-            jmp b6
+      dummy.call_finally:
+        b0:
+          n0 <- GLOBAL[read]
+          n1 <- n0()
+          jmp b6
 
-          b6:
-            return PYCNone |}]
+        b6:
+          return PYCNone |}]
 
 
 let%expect_test _ =
@@ -426,31 +426,31 @@ def call_finally_with_break():
   PyIR.test source ;
   [%expect
     {|
-      module dummy:
+    module dummy:
 
-        toplevel:
-          b0:
-            TOPLEVEL[call_finally_with_break] <- $FuncObj(call_finally_with_break, dummy.call_finally_with_break, {})
-            return PYCNone
+      toplevel:
+        b0:
+          TOPLEVEL[call_finally_with_break] <- $FuncObj(call_finally_with_break, dummy.call_finally_with_break, {})
+          return PYCNone
 
 
-        dummy.call_finally_with_break:
-          b0:
-            n0 <- GLOBAL[range]
-            n1 <- n0(PYCInt (100))
-            n2 <- $GetIter(n1)
-            jmp b1(n2)
+      dummy.call_finally_with_break:
+        b0:
+          n0 <- GLOBAL[range]
+          n1 <- n0(PYCInt (100))
+          n2 <- $GetIter(n1)
+          jmp b1(n2)
 
-          b1(n3):
-            n4 <- $NextIter(n3)
-            n5 <- $HasNextIter(n3)
-            if n5 then jmp b2(n3, n4) else jmp b9
+        b1(n3):
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n3)
+          if n5 then jmp b2 else jmp b9
 
-          b2(n6, n7):
-            LOCAL[i] <- n7
-            n8 <- GLOBAL[read]
-            n9 <- n8()
-            jmp b1(n6)
+        b2:
+          LOCAL[i] <- n4
+          n6 <- GLOBAL[read]
+          n7 <- n6()
+          jmp b1(n3)
 
-          b9:
-            return PYCNone |}]
+        b9:
+          return PYCNone |}]

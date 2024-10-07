@@ -53,4 +53,24 @@ let traverse_test =
   ; "traverse_opt_some" >:: test_some ]
 
 
-let tests = "IList_tests" >::: inter_tests @ traverse_test
+let k_last_columns_same_cell_test =
+  let f = IList.k_first_columns_same_cell ~equal:Int.equal in
+  let test_1_1_1 _ = assert_equal 1 (f [[0]]) in
+  let test_1_2_1 _ = assert_equal 2 (f [[0; 1]]) in
+  let test_1_3_1 _ = assert_equal 3 (f [[0; 2; 3]]) in
+  let test_1_1_2 _ = assert_equal 1 (f [[0]; [0]]) in
+  let test_0_3_3 _ = assert_equal 0 (f [[0; 1; 2]; [4; 1; 2]; [0; 1; 2]]) in
+  let test_1_3_3 _ = assert_equal 1 (f [[0; 1; 2]; [0; 1; 2]; [0; 4; 2]]) in
+  let test_2_3_3 _ = assert_equal 2 (f [[0; 1; 2]; [0; 1; 4]; [0; 1; 2]]) in
+  let test_3_3_3 _ = assert_equal 3 (f [[0; 1; 2]; [0; 1; 2]; [0; 1; 2]]) in
+  [ "test_1_1_1" >:: test_1_1_1
+  ; "test_1_2_1" >:: test_1_2_1
+  ; "test_1_3_1" >:: test_1_3_1
+  ; "test_1_1_2" >:: test_1_1_2
+  ; "test_0_3_3" >:: test_0_3_3
+  ; "test_1_3_3" >:: test_1_3_3
+  ; "test_2_3_3" >:: test_2_3_3
+  ; "test_3_3_3" >:: test_3_3_3 ]
+
+
+let tests = "IList_tests" >::: inter_tests @ traverse_test @ k_last_columns_same_cell_test

@@ -18,13 +18,13 @@ module Const = FFI.Constant
 module ConstMap = Caml.Map.Make (Const)
 
 module Ident : sig
-  type t
+  type t [@@deriving equal]
 
   val mk : string -> t
 
   val pp : F.formatter -> t -> unit
 end = struct
-  type t = string
+  type t = string [@@deriving equal]
 
   let pp fmt ident = F.pp_print_string fmt ident
 
@@ -32,9 +32,9 @@ end = struct
 end
 
 module ScopedIdent = struct
-  type scope = Global | Fast | Name | Deref
+  type scope = Global | Fast | Name | Deref [@@deriving equal]
 
-  type t = {scope: scope; ident: Ident.t}
+  type t = {scope: scope; ident: Ident.t} [@@deriving equal]
 
   let pp fmt {scope; ident} =
     match scope with
@@ -49,7 +49,7 @@ module ScopedIdent = struct
 end
 
 module QualName : sig
-  type t
+  type t [@@deriving equal]
 
   val from_qualified_string : sep:char -> string -> t
 
@@ -59,7 +59,7 @@ module QualName : sig
 
   module Map : Caml.Map.S with type key = t
 end = struct
-  type t = {root: string; path: string list} [@@deriving compare]
+  type t = {root: string; path: string list} [@@deriving compare, equal]
 
   let pp fmt {root; path} =
     if List.is_empty path then F.pp_print_string fmt root
@@ -85,7 +85,7 @@ end = struct
 end
 
 module NodeName : sig
-  type t
+  type t [@@deriving equal]
 
   val mk : string -> t
 
@@ -93,7 +93,7 @@ module NodeName : sig
 
   module Map : Caml.Map.S with type key = t
 end = struct
-  type t = string
+  type t = string [@@deriving equal]
 
   let pp fmt ident = F.pp_print_string fmt ident
 
@@ -103,7 +103,7 @@ end = struct
 end
 
 module SSA = struct
-  type t = int
+  type t = int [@@deriving equal]
 
   let pp fmt i = F.fprintf fmt "n%d" i
 
@@ -111,7 +111,7 @@ module SSA = struct
 end
 
 module BuiltinCaller = struct
-  type format_function = Str | Repr | Ascii
+  type format_function = Str | Repr | Ascii [@@deriving equal]
 
   let show_format_function = function Str -> "str" | Repr -> "repr" | Ascii -> "ascii"
 
@@ -183,6 +183,7 @@ module BuiltinCaller = struct
     | GetAwaitable  (** [GET_AWAITABLE] *)
     | UnpackEx  (** [UNPACK_EX] *)
     | GetPreviousException  (** [RAISE_VARARGS] *)
+  [@@deriving equal]
 
   let show = function
     | BuildClass ->
@@ -241,7 +242,7 @@ module BuiltinCaller = struct
 end
 
 module Exp = struct
-  type collection = List | Set | Tuple | Slice | Map | String
+  type collection = List | Set | Tuple | Slice | Map | String [@@deriving equal]
 
   let show_collection = function
     | List ->
@@ -290,6 +291,7 @@ module Exp = struct
        Maybe consider removing it *)
     | Packed of {exp: t; is_map: bool}
     | Yield of t
+  [@@deriving equal]
 
   let rec pp fmt = function
     | Const c ->
@@ -671,6 +673,56 @@ module State = struct
     {st with cfg= CFGBuilder.add name ~first_loc ~last_loc ssa_parameters stmts last cfg}
 
 
+  let get_terminal_node ({cfg= {CFGBuilder.nodes}} as st) offset succ_name =
+    let open IResult.Let_syntax in
+    let+ name = get_node_name st offset in
+    match NodeName.Map.find_opt name nodes with
+    | Some {last} -> (
+      match last with
+      | Jump [{ssa_args}] ->
+          `AlreadyThere (name, ssa_args)
+      | If {then_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+          `AlreadyThere (name, ssa_args)
+      | If {else_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+          `AlreadyThere (name, ssa_args)
+      | _ ->
+          `NotADirectJump name )
+    | None ->
+        `NotYetThere name
+
+
+  let drop_first_args_terminal_node ({cfg} as st) ~pred_name ~succ_name k =
+    (* 0 <= k <= size *)
+    (* drop elements k, ..., size-1 *)
+    let nodes = cfg.CFGBuilder.nodes in
+    match NodeName.Map.find_opt pred_name nodes with
+    | Some ({last} as node) ->
+        let opt_new_last =
+          match last with
+          | Jump [{label; ssa_args}] ->
+              let ssa_args = List.drop ssa_args k in
+              let last = Terminator.Jump [{label; ssa_args}] in
+              Some last
+          | If {exp; then_= Jump [{label; ssa_args}]; else_} when NodeName.equal label succ_name ->
+              let ssa_args = List.drop ssa_args k in
+              let then_ = Terminator.Jump [{label; ssa_args}] in
+              Some (Terminator.If {exp; then_; else_})
+          | If {exp; then_; else_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+              let ssa_args = List.drop ssa_args k in
+              let else_ = Terminator.Jump [{label; ssa_args}] in
+              Some (Terminator.If {exp; then_; else_})
+          | _ ->
+              None
+        in
+        Option.value_map opt_new_last ~default:st ~f:(fun last ->
+            let node = {node with last} in
+            let nodes = NodeName.Map.add pred_name node nodes in
+            let cfg = {cfg with nodes} in
+            {st with cfg} )
+    | None ->
+        st
+
+
   let mk_ssa_parameters st arity =
     let rec mk st acc n =
       if n > 0 then
@@ -681,10 +733,10 @@ module State = struct
     mk st [] arity
 
 
-  let enter_node st ~offset ~arity =
+  let enter_node st ~offset ~arity bottom_stack =
     debug st "enter-node at offset %d@\n" offset ;
-    let st = {st with stmts= []; stack= []} in
-    let ssa_parameters, st = mk_ssa_parameters st arity in
+    let st = {st with stmts= []; stack= bottom_stack} in
+    let ssa_parameters, st = mk_ssa_parameters st (arity - List.length bottom_stack) in
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
     let st = {st with ssa_parameters} in
     debug st "> current stack size: %d\n" (size st) ;
@@ -1935,10 +1987,59 @@ let build_topological_order cfg_skeleton =
   post_visited
 
 
-let process_node st code ~offset ~arity instructions =
+let constant_folding_ssa_params st succ_name {predecessors} =
+  let open IResult.Let_syntax in
+  let* predecessors_stacks =
+    List.fold_result predecessors
+      ~init:(`AllAvailable ([], []))
+      ~f:(fun acc predecessor ->
+        match acc with
+        | `AllAvailable (predecessors, stacks) -> (
+            let* last_of_predecessor = State.get_terminal_node st predecessor succ_name in
+            match last_of_predecessor with
+            | `NotYetThere predecessor_name ->
+                Ok (`AtLeastOneNotAvailable predecessor_name)
+            | `NotADirectJump predecessor_name ->
+                Ok (`AtLeastOneNotADirectJump predecessor_name)
+            | `AlreadyThere (predecessor_name, args) ->
+                Ok (`AllAvailable (predecessor_name :: predecessors, args :: stacks)) )
+        | _ ->
+            Ok acc )
+  in
+  let st, bottom_stack =
+    match predecessors_stacks with
+    | `AtLeastOneNotAvailable _pred_name ->
+        (st, [])
+    | `AtLeastOneNotADirectJump _pred_name ->
+        (st, [])
+    | `AllAvailable (predecessors, _) when List.length predecessors <= 0 ->
+        (st, [])
+    | `AllAvailable (predecessors, stacks) ->
+        let stack0 =
+          match stacks with
+          | [] ->
+              L.die InternalError "there should be at least one predecessor"
+          | stack :: _ ->
+              stack
+        in
+        let k = IList.k_first_columns_same_cell ~equal:Exp.equal stacks in
+        (* for all 0 <= i < k-1, forall 0 < j < n_preds, stacks[j][i]=stacks[0][i]
+           with n_preds = List.length stacks *)
+        let st =
+          List.fold predecessors ~init:st ~f:(fun st pred_name ->
+              State.drop_first_args_terminal_node st ~pred_name ~succ_name k )
+        in
+        let bottom_stack = List.take stack0 k |> List.rev in
+        (st, bottom_stack)
+  in
+  Ok (st, bottom_stack)
+
+
+let process_node st code ~offset ~arity ({instructions} as info) =
   let open IResult.Let_syntax in
   let* name = State.get_node_name st offset in
-  let ({State.loc= first_loc} as st) = State.enter_node st ~offset ~arity in
+  let* st, bottom_stack = constant_folding_ssa_params st name info in
+  let ({State.loc= first_loc} as st) = State.enter_node st ~offset ~arity bottom_stack in
   let ssa_parameters = State.get_ssa_parameters st in
   let rec loop st = function
     | [] ->
@@ -1980,7 +2081,7 @@ let build_cfg ~debug ~code_qual_name code =
         Ok l
   in
   let visit (st, arity_map) offset =
-    let* {successors; instructions} = get_info offset in
+    let* ({successors} as info) = get_info offset in
     let* arity =
       match IMap.find_opt offset arity_map with
       | Some arity ->
@@ -1988,7 +2089,7 @@ let build_cfg ~debug ~code_qual_name code =
       | None ->
           internal_error st (Error.MissingNodeInformation offset)
     in
-    let* st = process_node st code ~offset ~arity instructions in
+    let* st = process_node st code ~offset ~arity info in
     let arity = State.size st in
     let arity_map =
       List.fold successors ~init:arity_map ~f:(fun arity_map (succ, delta) ->
