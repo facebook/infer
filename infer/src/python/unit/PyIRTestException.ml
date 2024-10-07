@@ -454,3 +454,13 @@ def call_finally_with_break():
 
         b9:
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+def raise_from(e):
+    raise IndexError from e
+|} in
+  PyIR.test source ;
+  [%expect {|
+    IR error: RAISE_VARARGS/TODO: Unsupported argc = 2 |}]
