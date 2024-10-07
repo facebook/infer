@@ -462,5 +462,19 @@ def raise_from(e):
     raise IndexError from e
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: RAISE_VARARGS/TODO: Unsupported argc = 2 |}]
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[raise_from] <- $FuncObj(raise_from, dummy.raise_from, {})
+          return PYCNone
+
+
+      dummy.raise_from:
+        b0:
+          n0 <- GLOBAL[IndexError]
+          n1 <- LOCAL[e]
+          n0.__cause__ <- n1
+          throw n0 |}]

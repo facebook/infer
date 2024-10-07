@@ -379,7 +379,6 @@ module Error = struct
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
     | WithCleanupFinish of Exp.t
-    | RaiseException of int
     | RaiseExceptionInvalid of int
 
   type t = L.error * Location.t * kind
@@ -418,8 +417,6 @@ module Error = struct
         F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
     | WithCleanupFinish exp ->
         F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp exp
-    | RaiseException n ->
-        F.fprintf fmt "RAISE_VARARGS/TODO: Unsupported argc = %d" n
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
 end
@@ -1192,7 +1189,11 @@ let raise_varargs st argc =
       let throw = Terminator.Throw tos in
       Ok (st, Some throw)
   | 2 ->
-      internal_error st (Error.RaiseException argc)
+      let* rhs, st = State.pop st in
+      let* lhs, st = State.pop st in
+      let st = State.push_stmt st (Stmt.SetAttr {lhs; attr= "__cause__"; rhs}) in
+      let throw = Terminator.Throw lhs in
+      Ok (st, Some throw)
   | _ ->
       external_error st (Error.RaiseExceptionInvalid argc)
 
