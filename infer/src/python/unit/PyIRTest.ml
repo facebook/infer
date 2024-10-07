@@ -1565,29 +1565,17 @@ let%expect_test _ =
   let source = {|
 res = dict.attr(0 if not False else 1)
 |} in
-  PyIR.test_cfg_skeleton source ;
-  (* TODO(dpichardie): node 8 is dead and blocks the constant folding
-     optimization *)
   PyIR.test source ;
   [%expect
     {|
-        2        0 LOAD_NAME    0
-                 2 LOAD_METHOD    1
-                 4 LOAD_CONST    1
-                 6 JUMP_FORWARD    2
-                 8 LOAD_CONST    2
-          >>>   10 CALL_METHOD    1
-                12 STORE_NAME    2
-                14 LOAD_CONST    3
-                16 RETURN_VALUE    0
+    module dummy:
 
-    CFG successors:
-       0: 10
-       8: 10
-      10:
-    CFG predecessors:
-       0:
-       8:
-      10: 8 0
-    topological order: 0 10
-    IR error: LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got n1 |}]
+      toplevel:
+        b0:
+          n0 <- TOPLEVEL[dict]
+          jmp b2
+
+        b2:
+          n1 <- n0.attr(PYCInt (0))
+          TOPLEVEL[res] <- n1
+          return PYCNone |}]

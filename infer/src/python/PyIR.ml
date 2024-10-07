@@ -1903,7 +1903,8 @@ type cfg_info =
 
 let dummy_cfg_info = {successors= []; predecessors= []; instructions= []}
 
-let build_cfg_skeleton {FFI.Code.instructions} : (cfg_info IMap.t, Error.t) result =
+let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
+    (cfg_info IMap.t, Error.t) result =
   let open IResult.Let_syntax in
   let process_instr map action next_offset_opt next_is_jump_target
       ({FFI.Instruction.opname; starts_line; offset} as instr) instructions =
@@ -1964,37 +1965,36 @@ let build_cfg_skeleton {FFI.Code.instructions} : (cfg_info IMap.t, Error.t) resu
         in
         loop map action remaining
   in
-  let* map = loop IMap.empty `StartNewOne instructions in
-  let map =
-    IMap.fold
-      (fun offset {successors} map ->
-        List.fold successors ~init:map ~f:(fun map (succ_offset, _) ->
-            let ({predecessors} as info) =
-              IMap.find_opt succ_offset map |> Option.value ~default:dummy_cfg_info
-            in
-            IMap.add succ_offset {info with predecessors= offset :: predecessors} map ) )
-      map map
-  in
-  Ok map
+  loop IMap.empty `StartNewOne instructions
 
 
 module ISet = IInt.Set
 
-let build_topological_order cfg_skeleton =
+let set_predecessors offset successors map =
+  List.fold successors ~init:map ~f:(fun map (succ_offset, _) ->
+      let ({predecessors} as info) =
+        IMap.find_opt succ_offset map |> Option.value ~default:dummy_cfg_info
+      in
+      IMap.add succ_offset {info with predecessors= offset :: predecessors} map )
+
+
+let build_topological_order cfg_skeleton_without_predecessors =
   (* weakly topological order *)
-  let rec visit ((seen, post_visited) as acc) (offset, _) =
+  let rec visit ((seen, map, post_visited) as acc) (offset, _) =
     if ISet.mem offset seen then acc
     else
       let {successors} =
-        IMap.find_opt offset cfg_skeleton |> Option.value ~default:dummy_cfg_info
+        IMap.find_opt offset cfg_skeleton_without_predecessors
+        |> Option.value ~default:dummy_cfg_info
       in
       let seen = ISet.add offset seen in
-      let seen, post_visited = List.fold successors ~f:visit ~init:(seen, post_visited) in
+      let seen, map, post_visited = List.fold successors ~f:visit ~init:(seen, map, post_visited) in
+      let map = set_predecessors offset successors map in
       let post_visited = offset :: post_visited in
-      (seen, post_visited)
+      (seen, map, post_visited)
   in
-  let _, post_visited = visit (ISet.empty, []) (0, 0) in
-  post_visited
+  let _, cfg, post_visited = visit (ISet.empty, cfg_skeleton_without_predecessors, []) (0, 0) in
+  (post_visited, cfg)
 
 
 let constant_folding_ssa_params st succ_name {predecessors} =
@@ -2081,8 +2081,8 @@ let process_node st code ~offset ~arity ({instructions} as info) =
 let build_cfg ~debug ~code_qual_name code =
   let open IResult.Let_syntax in
   let loc = Location.of_code code in
-  let* cfg_skeleton = build_cfg_skeleton code in
-  let topological_order = build_topological_order cfg_skeleton in
+  let* cfg_skeleton_without_predecessors = build_cfg_skeleton_without_predecessors code in
+  let topological_order, cfg_skeleton = build_topological_order cfg_skeleton_without_predecessors in
   let get_info offset =
     match IMap.find_opt offset cfg_skeleton with
     | None ->
@@ -2146,10 +2146,11 @@ let build_code_object_unique_name file_path code =
 
 
 let test_cfg_skeleton code =
-  match build_cfg_skeleton code with
+  match build_cfg_skeleton_without_predecessors code with
   | Error (_, _, err) ->
       L.internal_error "IR error: %a@\n" Error.pp_kind err
   | Ok map ->
+      let topological_order, map = build_topological_order map in
       F.printf "%a@\n" FFI.Code.pp_instructions code ;
       let pp_succ_and_delta fmt (succ, delta) =
         if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
@@ -2164,7 +2165,6 @@ let test_cfg_skeleton code =
         (fun offset {predecessors} ->
           F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " F.pp_print_int) predecessors )
         map ;
-      let topological_order = build_topological_order map in
       F.printf "topological order: %a@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 

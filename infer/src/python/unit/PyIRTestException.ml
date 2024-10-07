@@ -240,12 +240,12 @@ with open("foo", "r") as fp:
           TOPLEVEL[line] <- n9
           n12 <- TOPLEVEL[print]
           n13 <- n12(PYCString ("TRY"))
-          jmp b6(n7, n8)
+          jmp b6
 
-        b6(n14, n15):
-          n16 <- TOPLEVEL[print]
-          n17 <- n16(PYCString ("ELSE"))
-          jmp b1(n14, n15)
+        b6:
+          n14 <- TOPLEVEL[print]
+          n15 <- n14(PYCString ("ELSE"))
+          jmp b1(n7, n8)
 
         b7:
           jmp b8
