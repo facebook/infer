@@ -472,6 +472,8 @@ module Error = struct
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
 end
 
+type 'a pyresult = ('a, Error.t) result
+
 module Stmt = struct
   type call_arg = {name: string option; value: Exp.t}
 
@@ -651,7 +653,7 @@ module State = struct
   type t =
     { debug: bool
     ; code_qual_name: FFI.Code.t -> QualName.t option
-    ; get_node_name: Offset.t -> (NodeName.t, Error.t) result
+    ; get_node_name: Offset.t -> NodeName.t pyresult
     ; loc: Location.t
     ; cfg: CFGBuilder.t
     ; stack: Exp.t Stack.t
@@ -2221,8 +2223,7 @@ let build_cfg ~debug ~code_qual_name code =
   let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton in
   let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
   let cfg = CFG.of_builder st.State.cfg in
-  let* qual_name = read_code_qual_name st code in
-  Ok (qual_name, cfg)
+  Ok cfg
 
 
 module Module = struct
@@ -2256,6 +2257,32 @@ let build_code_object_unique_name file_path code =
   fun code -> CodeMap.find_opt code map
 
 
+let fold_all_inner_codes_and_build_map ~code_qual_name ~(f : FFI.Code.t -> 'a pyresult) code :
+    'a QualName.Map.t pyresult =
+  let open IResult.Let_syntax in
+  let read_code_qual_name code =
+    let loc = Location.of_code code in
+    match code_qual_name code with
+    | Some qual_name ->
+        Ok qual_name
+    | None ->
+        Error (L.InternalError, loc, Error.CodeWithoutQualifiedName code)
+  in
+  let fold_codes map co_consts =
+    let rec visit map = function
+      | FFI.Constant.PYCCode ({FFI.Code.co_consts} as code) ->
+          let* qual_name = read_code_qual_name code in
+          let* elt = f code in
+          let map = QualName.Map.add qual_name elt map in
+          Array.fold_result co_consts ~init:map ~f:visit
+      | _ ->
+          Ok map
+    in
+    Array.fold_result co_consts ~init:map ~f:visit
+  in
+  fold_codes QualName.Map.empty code.FFI.Code.co_consts
+
+
 let test_cfg_skeleton code =
   match build_cfg_skeleton_without_predecessors code with
   | Error (_, _, err) ->
@@ -2279,19 +2306,6 @@ let test_cfg_skeleton code =
       F.printf "topological order: %a@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 
-let build_cfgs ~debug ~code_qual_name co_consts =
-  let rec visit cfg_map = function
-    | FFI.Constant.PYCCode ({FFI.Code.co_consts} as code) ->
-        let open IResult.Let_syntax in
-        let* qual_name, cfg = build_cfg ~debug ~code_qual_name code in
-        let cfg_map = QualName.Map.add qual_name cfg cfg_map in
-        Array.fold_result co_consts ~init:cfg_map ~f:visit
-    | _ ->
-        Ok cfg_map
-  in
-  Array.fold_result co_consts ~init:QualName.Map.empty ~f:visit
-
-
 let mk ~debug ({FFI.Code.co_filename} as code) =
   let open IResult.Let_syntax in
   let file_path =
@@ -2303,8 +2317,9 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   let file_path = Stdlib.Filename.remove_extension file_path in
   let code_qual_name = build_code_object_unique_name file_path code in
   let name = Ident.mk file_path in
-  let* _, toplevel = build_cfg ~debug ~code_qual_name code in
-  let* functions = build_cfgs ~debug ~code_qual_name code.FFI.Code.co_consts in
+  let f = build_cfg ~debug ~code_qual_name in
+  let* toplevel = f code in
+  let* functions = fold_all_inner_codes_and_build_map code ~code_qual_name ~f in
   Ok {Module.name; toplevel; functions}
 
 
