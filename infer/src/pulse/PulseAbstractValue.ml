@@ -39,14 +39,6 @@ let pp f v = if is_restricted v then F.fprintf f "a%d" (-v) else F.fprintf f "v%
 
 let yojson_of_t l = `String (F.asprintf "%a" pp l)
 
-let compare_unrestricted_first v1 v2 =
-  if is_restricted v1 then
-    if is_restricted v2 then (* compare absolute values *) compare v2 v1
-    else (* unrestricted [v2] first *) 1
-  else if is_restricted v2 then (* unrestricted [v1] first *) -1
-  else compare v1 v2
-
-
 module PPKey = struct
   type nonrec t = t [@@deriving compare]
 
