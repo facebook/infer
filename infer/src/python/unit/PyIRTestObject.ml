@@ -1439,3 +1439,12 @@ class C:
       dummy.C.f.D.g:
         b0:
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+class C(metaclass=m):
+    pass
+        |} in
+  PyIR.test source ;
+  [%expect {| IR error: UNEXPECTED_EXPRESSION: BUILTIN_CALLER($BuildClass) |}]

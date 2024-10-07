@@ -1581,3 +1581,17 @@ res = dict.attr(0 if not False else 1)
           n1 <- n0.attr(PYCInt (0))
           TOPLEVEL[res] <- n1
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+async def foo():
+    for i in range(num):
+        async with await read() as f:
+            return
+|}
+  in
+  PyIR.test source ;
+  [%expect {|
+    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]

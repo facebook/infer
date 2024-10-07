@@ -308,6 +308,44 @@ module Exp = struct
     | Yield of t
   [@@deriving equal]
 
+  let rec check exp =
+    let open IResult.Let_syntax in
+    let list_iter_result l ~f = List.fold_result l ~init:() ~f:(fun () -> f) in
+    match exp with
+    | Const _ ->
+        Ok ()
+    | Var _ ->
+        Ok ()
+    | Temp _ ->
+        Ok ()
+    | Subscript {exp; index} ->
+        let* () = check exp in
+        check index
+    | Collection {values} ->
+        list_iter_result ~f:check values
+    | ConstMap map ->
+        ConstMap.bindings map |> list_iter_result ~f:(fun (_, exp) -> check exp)
+    | Function {default_values; annotations} ->
+        let* () =
+          ConstMap.bindings annotations |> list_iter_result ~f:(fun (_, exp) -> check exp)
+        in
+        SMap.bindings default_values |> list_iter_result ~f:(fun (_, exp) -> check exp)
+    | GetAttr (t, _name) ->
+        check t
+    | LoadMethod (_self, _meth) ->
+        Error exp
+    | Not _exp ->
+        Error exp
+    | BuiltinCaller _bc ->
+        Error exp
+    | ContextManagerExit _exp ->
+        Error exp
+    | Packed {exp} ->
+        check exp
+    | Yield exp ->
+        check exp
+
+
   let rec pp fmt = function
     | Const c ->
         Const.pp fmt c
@@ -347,7 +385,7 @@ module Exp = struct
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
-        F.pp_print_string fmt (BuiltinCaller.show bc)
+        F.fprintf fmt "BUILTIN_CALLER(%s)" (BuiltinCaller.show bc)
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
     | Packed {exp; is_map} ->
@@ -382,6 +420,7 @@ module Error = struct
     | CompareOp of int
     | CodeWithoutQualifiedName of FFI.Code.t
     | UnpackSequence of int
+    | UnexpectedExpression of Exp.t
     | FormatValueSpec of Exp.t
     | NextOffsetMissing
     | MissingNodeInformation of int
@@ -411,6 +450,8 @@ module Error = struct
           co_filename
     | UnpackSequence n ->
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
+    | UnexpectedExpression exp ->
+        F.fprintf fmt "UNEXPECTED_EXPRESSION: %a" Exp.pp exp
     | FormatValueSpec exp ->
         F.fprintf fmt "FORMAT_VALUE: expected string literal or temporary, got %a" Exp.pp exp
     | LoadMethodExpected exp ->
@@ -476,6 +517,32 @@ module Stmt = struct
           (Pp.seq ~sep:", " Exp.pp) args
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
+
+
+  let check stmt =
+    let open IResult.Let_syntax in
+    match stmt with
+    | Let {rhs} ->
+        Exp.check rhs
+    | SetAttr {lhs; rhs} ->
+        let* () = Exp.check lhs in
+        Exp.check rhs
+    | Store {rhs} ->
+        Exp.check rhs
+    | StoreSubscript {lhs; index; rhs} ->
+        let* () = Exp.check lhs in
+        let* () = Exp.check index in
+        Exp.check rhs
+    | Call {exp; args} ->
+        let* () = Exp.check exp in
+        List.fold_result args ~init:() ~f:(fun () {value} -> Exp.check value)
+    | CallMethod {self_if_needed; args} ->
+        let* () = Exp.check self_if_needed in
+        List.fold_result args ~init:() ~f:(fun () -> Exp.check)
+    | BuiltinCall {args} ->
+        List.fold_result args ~init:() ~f:(fun () -> Exp.check)
+    | SetupAnnotations ->
+        Ok ()
 end
 
 module Offset = struct
@@ -675,7 +742,14 @@ module State = struct
 
 
   (* TODO: use the [exn_handlers] info to mark statement that can possibly raise * something *)
-  let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
+  let push_stmt ({stmts; loc} as st) stmt =
+    let open IResult.Let_syntax in
+    let* () =
+      Stmt.check stmt
+      |> Result.map_error ~f:(fun exp -> (L.InternalError, loc, Error.UnexpectedExpression exp))
+    in
+    Ok {st with stmts= (loc, stmt) :: stmts}
+
 
   let size {stack} = Stack.size stack
 
@@ -773,6 +847,7 @@ let read_code_qual_name st c =
 
 
 let call_function_with_unnamed_args st ?(packed = false) exp args =
+  let open IResult.Let_syntax in
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
   let stmt =
@@ -783,21 +858,23 @@ let call_function_with_unnamed_args st ?(packed = false) exp args =
     | exp ->
         Stmt.Call {lhs; exp; args; packed}
   in
-  let st = State.push_stmt st stmt in
-  (lhs, st)
+  let* st = State.push_stmt st stmt in
+  Ok (lhs, st)
 
 
 let call_builtin_function st call args =
+  let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
   let stmt = Stmt.BuiltinCall {lhs; call; args} in
-  let st = State.push_stmt st stmt in
-  (lhs, st)
+  let* st = State.push_stmt st stmt in
+  Ok (lhs, st)
 
 
 let call_method st name self_if_needed args =
+  let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
   let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args} in
-  let st = State.push_stmt st stmt in
+  let+ st = State.push_stmt st stmt in
   (lhs, st)
 
 
@@ -805,7 +882,7 @@ let call_method st name self_if_needed args =
 let parse_op st call n =
   let open IResult.Let_syntax in
   let* args, st = State.pop_n st n in
-  let lhs, st = call_builtin_function st call args in
+  let* lhs, st = call_builtin_function st call args in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
@@ -937,7 +1014,7 @@ let call_function st arg =
   let open IResult.Let_syntax in
   let* args, st = State.pop_n st arg in
   let* fun_exp, st = State.pop st in
-  let id, st = call_function_with_unnamed_args st fun_exp args in
+  let* id, st = call_function_with_unnamed_args st fun_exp args in
   let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
@@ -977,7 +1054,7 @@ let call_function_kw st argc =
   let* exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
   let stmt = Stmt.Call {lhs; exp; args; packed= false} in
-  let st = State.push_stmt st stmt in
+  let* st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
@@ -995,7 +1072,7 @@ let call_function_ex st flags =
     match (packed_arg : Exp.t) with Packed _ -> packed_arg | exp -> Exp.Packed {is_map= false; exp}
   in
   let* call, st = State.pop st in
-  let id, st = call_function_with_unnamed_args st call ~packed:true (packed_arg :: opt_args) in
+  let* id, st = call_function_with_unnamed_args st call ~packed:true (packed_arg :: opt_args) in
   let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
@@ -1052,15 +1129,15 @@ let format_value st flags =
   in
   let* exp, st = State.pop st in
   let conv_fn = mk_conv flags in
-  let exp, st =
+  let* exp, st =
     match conv_fn with
     | None ->
-        (exp, st)
+        Ok (exp, st)
     | Some conv_fn ->
-        let id, st = call_builtin_function st (FormatFn conv_fn) [exp] in
+        let+ id, st = call_builtin_function st (FormatFn conv_fn) [exp] in
         (Exp.Temp id, st)
   in
-  let id, st = call_builtin_function st Format [exp; fmt_spec] in
+  let* id, st = call_builtin_function st Format [exp; fmt_spec] in
   let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
@@ -1112,8 +1189,8 @@ let for_iter st delta next_offset_opt =
   let {State.loc} = st in
   let* iter, st = State.pop st in
   let {State.stack= other_stack} = st in
-  let id, st = call_builtin_function st NextIter [iter] in
-  let has_item, st = call_builtin_function st HasNextIter [iter] in
+  let* id, st = call_builtin_function st NextIter [iter] in
+  let* has_item, st = call_builtin_function st HasNextIter [iter] in
   let condition = Exp.Temp has_item in
   (* In the next branch, we know the iterator has an item available. Let's fetch it and
      push it on the stack. *)
@@ -1156,7 +1233,7 @@ let for_iter st delta next_offset_opt =
 let with_cleanup_start st =
   let open IResult.Let_syntax in
   let* context_manager_exit, st = State.pop st in
-  let lhs, st =
+  let* lhs, st =
     call_function_with_unnamed_args st context_manager_exit
       [Const Const.none; Const Const.none; Const Const.none]
   in
@@ -1198,7 +1275,7 @@ let raise_varargs st argc =
          point, leftovers from the 6 values pushed on the exception entry
          point. We should use them to compute the right "previous" exception,
          but this logic is left TODO *)
-      let id, st = call_builtin_function st GetPreviousException [] in
+      let* id, st = call_builtin_function st GetPreviousException [] in
       let throw = Terminator.Throw (Exp.Temp id) in
       Ok (st, Some throw)
   | 1 ->
@@ -1208,7 +1285,7 @@ let raise_varargs st argc =
   | 2 ->
       let* rhs, st = State.pop st in
       let* lhs, st = State.pop st in
-      let st = State.push_stmt st (Stmt.SetAttr {lhs; attr= "__cause__"; rhs}) in
+      let* st = State.push_stmt st (Stmt.SetAttr {lhs; attr= "__cause__"; rhs}) in
       let throw = Terminator.Throw lhs in
       Ok (st, Some throw)
   | _ ->
@@ -1253,15 +1330,16 @@ let collection_add st opname arg ?(map = false) builtin =
       Ok ([elt], st)
   in
   let* tos1 = State.peek st ~depth:(arg - 1) in
-  let _id, st = call_builtin_function st builtin (tos1 :: args) in
+  let* _id, st = call_builtin_function st builtin (tos1 :: args) in
   Ok (st, None)
 
 
 let assign_to_temp_and_push st rhs =
+  let open IResult.Let_syntax in
   let id, st = State.fresh_id st in
   let exp = Exp.Temp id in
   let stmt = Stmt.Let {lhs= id; rhs} in
-  let st = State.push_stmt st stmt in
+  let* st = State.push_stmt st stmt in
   let st = State.push st exp in
   Ok (st, None)
 
@@ -1276,7 +1354,7 @@ let store st scope name =
   let lhs = {ScopedIdent.scope; ident= Ident.mk name} in
   let* rhs, st = State.pop st in
   let stmt = Stmt.Store {lhs; rhs} in
-  let st = State.push_stmt st stmt in
+  let* st = State.push_stmt st stmt in
   Ok (st, None)
 
 
@@ -1311,12 +1389,12 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       assign_to_temp_and_push st exp
   | "LOAD_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let id, st = call_builtin_function st (LoadDeref {slot= arg; name}) [] in
+      let* id, st = call_builtin_function st (LoadDeref {slot= arg; name}) [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LOAD_CLASSDEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let id, st = call_builtin_function st (LoadClassDeref {slot= arg; name}) [] in
+      let* id, st = call_builtin_function st (LoadClassDeref {slot= arg; name}) [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "STORE_NAME" ->
@@ -1330,7 +1408,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* lhs, st = State.pop st in
       let* rhs, st = State.pop st in
       let stmt = Stmt.SetAttr {lhs; attr; rhs} in
-      let st = State.push_stmt st stmt in
+      let* st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_SUBSCR" ->
       (* Implements TOS1[TOS] = TOS2.  *)
@@ -1338,12 +1416,12 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* lhs, st = State.pop st in
       let* rhs, st = State.pop st in
       let stmt = Stmt.StoreSubscript {lhs; index; rhs} in
-      let st = State.push_stmt st stmt in
+      let* st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
       let* rhs, st = State.pop st in
-      let _id, st = call_builtin_function st (StoreDeref {name; slot= arg}) [rhs] in
+      let* _id, st = call_builtin_function st (StoreDeref {name; slot= arg}) [rhs] in
       Ok (st, None)
   | "RETURN_VALUE" ->
       let* ret, st = State.pop st in
@@ -1365,7 +1443,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       | _ ->
           let id, st = State.fresh_id st in
           let stmt = Stmt.Let {lhs= id; rhs} in
-          let st = State.push_stmt st stmt in
+          let* st = State.push_stmt st stmt in
           Ok (st, None) )
   | "BINARY_ADD" ->
       parse_op st (Binary Add) 2
@@ -1486,28 +1564,28 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
         | _ ->
             internal_error st (Error.LoadMethodExpected call)
       in
-      let id, st = call_method st name self_if_needed args in
+      let* id, st = call_method st name self_if_needed args in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "SETUP_ANNOTATIONS" ->
-      let st = State.push_stmt st SetupAnnotations in
+      let* st = State.push_stmt st SetupAnnotations in
       Ok (st, None)
   | "IMPORT_NAME" ->
       let name = co_names.(arg) in
       let* fromlist, st = State.pop st in
       let* level, st = State.pop st in
-      let id, st = call_builtin_function st (ImportName name) [fromlist; level] in
+      let* id, st = call_builtin_function st (ImportName name) [fromlist; level] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "IMPORT_STAR" ->
       let* module_object, st = State.pop st in
-      let id, st = call_builtin_function st ImportStar [module_object] in
+      let* id, st = call_builtin_function st ImportStar [module_object] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "IMPORT_FROM" ->
       let name = co_names.(arg) in
       let* module_obj = State.peek st in
-      let id, st = call_builtin_function st (ImportFrom name) [module_obj] in
+      let* id, st = call_builtin_function st (ImportFrom name) [module_obj] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "COMPARE_OP" ->
@@ -1520,12 +1598,12 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       in
       let* rhs, st = State.pop st in
       let* lhs, st = State.pop st in
-      let id, st = call_builtin_function st (Compare cmp_op) [lhs; rhs] in
+      let* id, st = call_builtin_function st (Compare cmp_op) [lhs; rhs] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LOAD_CLOSURE" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let id, st = call_builtin_function st (LoadClosure {slot= arg; name}) [] in
+      let* id, st = call_builtin_function st (LoadClosure {slot= arg; name}) [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "DUP_TOP" ->
@@ -1557,13 +1635,13 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, Some jump)
   | "GET_ITER" ->
       let* tos, st = State.pop st in
-      let id, st = call_builtin_function st GetIter [tos] in
+      let* id, st = call_builtin_function st GetIter [tos] in
       let exp = Exp.Temp id in
       let st = State.push st exp in
       Ok (st, None)
   | "GET_AITER" ->
       let* tos, st = State.pop st in
-      let id, st = call_method st PyCommon.aiter tos [] in
+      let* id, st = call_method st PyCommon.aiter tos [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "FOR_ITER" ->
@@ -1612,7 +1690,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "SETUP_WITH" ->
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
-      let id, st = call_method st PyCommon.enter context_manager [] in
+      let* id, st = call_method st PyCommon.enter context_manager [] in
       let st = State.push st (Exp.Temp id) in
       State.debug st "setup-with: current block size: %d@\n" (State.size st) ;
       (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
@@ -1687,14 +1765,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* receiver = State.peek st in
       (* TODO: it seems that sometimes the TOS is changed from receiver to exp
          at this point. Check C code and try to understand it better *)
-      let _, st = call_builtin_function st YieldFrom [receiver; exp] in
+      let* _, st = call_builtin_function st YieldFrom [receiver; exp] in
       Ok (st, None)
   | "GET_YIELD_FROM_ITER" ->
       (* TODO: it is quite uncertain how we'll deal with these in textual.
          At the moment this seems to correctly model the stack life-cycle, so
          I'm happy. We might change/improve things in the future *)
       let* tos, st = State.pop st in
-      let id, st = call_builtin_function st GetYieldFromIter [tos] in
+      let* id, st = call_builtin_function st GetYieldFromIter [tos] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LIST_APPEND" ->
@@ -1705,45 +1783,45 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       collection_add st opname arg ~map:true DictSetItem
   | "DELETE_NAME" ->
       let ident = Ident.mk co_names.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Name; ident}) [] in
+      let* _id, st = call_builtin_function st (Delete {scope= Name; ident}) [] in
       Ok (st, None)
   | "DELETE_GLOBAL" ->
       let ident = Ident.mk co_names.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Global; ident}) [] in
+      let* _id, st = call_builtin_function st (Delete {scope= Global; ident}) [] in
       Ok (st, None)
   | "DELETE_FAST" ->
       let ident = Ident.mk co_varnames.(arg) in
-      let _id, st = call_builtin_function st (Delete {scope= Fast; ident}) [] in
+      let* _id, st = call_builtin_function st (Delete {scope= Fast; ident}) [] in
       Ok (st, None)
   | "DELETE_ATTR" ->
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
-      let _id, st = call_builtin_function st (DeleteAttr name) [tos] in
+      let* _id, st = call_builtin_function st (DeleteAttr name) [tos] in
       Ok (st, None)
   | "DELETE_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let _id, st = call_builtin_function st (DeleteDeref {name; slot= arg}) [] in
+      let* _id, st = call_builtin_function st (DeleteDeref {name; slot= arg}) [] in
       Ok (st, None)
   | "DELETE_SUBSCR" ->
       let* index, st = State.pop st in
       let* exp, st = State.pop st in
-      let _id, st = call_builtin_function st DeleteSubscr [exp; index] in
+      let* _id, st = call_builtin_function st DeleteSubscr [exp; index] in
       Ok (st, None)
   | "GET_AWAITABLE" ->
       let* tos, st = State.pop st in
-      let id, st = call_builtin_function st GetAwaitable [tos] in
+      let* id, st = call_builtin_function st GetAwaitable [tos] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "GET_ANEXT" ->
       let* tos = State.peek st in
-      let id, st = call_method st PyCommon.anext tos [] in
-      let id, st = call_builtin_function st GetAwaitable [Exp.Temp id] in
+      let* id, st = call_method st PyCommon.anext tos [] in
+      let* id, st = call_builtin_function st GetAwaitable [Exp.Temp id] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BEFORE_ASYNC_WITH" ->
       let* tos = State.peek st in
       let st = State.push st (ContextManagerExit tos) in
-      let id, st = call_method st PyCommon.enter tos [] in
+      let* id, st = call_method st PyCommon.enter tos [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "SETUP_ASYNC_WITH" ->
@@ -1771,7 +1849,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          - the rest stays into an iterable collection.
          We'll consider it returns a tuple of the right size that we can index
          to populate the stack *)
-      let res_id, st = call_builtin_function st UnpackEx [to_int nr_before; to_int nr_after; tos] in
+      let* res_id, st =
+        call_builtin_function st UnpackEx [to_int nr_before; to_int nr_after; tos]
+      in
       let res = Exp.Temp res_id in
       let rec push st nr =
         if nr > 0 then
