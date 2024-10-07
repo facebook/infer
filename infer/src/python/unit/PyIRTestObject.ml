@@ -673,9 +673,11 @@ class D0(C0):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("D")
+          n1 <- $LoadClosure[0,"__class__"]()
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.D.__init__, {})
-          TOPLEVEL[__classcell__] <- $Ref(__class__)
-          return $Ref(__class__)
+          n2 <- $LoadClosure[0,"__class__"]()
+          TOPLEVEL[__classcell__] <- n2
+          return n2
 
 
       dummy.D0:
@@ -683,9 +685,11 @@ class D0(C0):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("D0")
+          n1 <- $LoadClosure[0,"__class__"]()
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.D0.__init__, {})
-          TOPLEVEL[__classcell__] <- $Ref(__class__)
-          return $Ref(__class__)
+          n2 <- $LoadClosure[0,"__class__"]()
+          TOPLEVEL[__classcell__] <- n2
+          return n2
 
 
       dummy.C0.__init__:
@@ -743,9 +747,11 @@ class C(foo.D):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("C")
+          n1 <- $LoadClosure[0,"__class__"]()
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.C.__init__, {})
-          TOPLEVEL[__classcell__] <- $Ref(__class__)
-          return $Ref(__class__)
+          n2 <- $LoadClosure[0,"__class__"]()
+          TOPLEVEL[__classcell__] <- n2
+          return n2
 
 
       dummy.C.__init__:
@@ -1311,6 +1317,7 @@ def f(x):
         z = 0
         def inner():
           nonlocal z
+          print(z)
           del z
 
 def g(a, b):
@@ -1352,7 +1359,8 @@ def g(a, b):
         b0:
           n0 <- $Delete(GLOBAL[c0])()
           n1 <- $Delete(LOCAL[x])()
-          DEREF[z] <- PYCInt (0)
+          n2 <- $StoreDeref[0,"z"](PYCInt (0))
+          n3 <- $LoadClosure[0,"z"]()
           LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
           return PYCNone
 
@@ -1367,7 +1375,10 @@ def g(a, b):
 
       dummy.f.inner:
         b0:
-          n0 <- $Delete(DEREF[z])()
+          n0 <- GLOBAL[print]
+          n1 <- $LoadDeref[0,"z"]()
+          n2 <- n0(n1)
+          n3 <- $DeleteDeref[0,"z")()
           return PYCNone |}]
 
 
@@ -1409,7 +1420,7 @@ class C:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- PYCString ("C.f.<locals>.D")
-          n1 <- DEREF[binascii]
+          n1 <- $LoadClassDeref[0,"binascii"]()
           n2 <- n1.unhexlify
           TOPLEVEL[g] <- $FuncObj(g, dummy.C.f.D.g, {(unhexlify, n2); })
           return PYCNone
@@ -1418,9 +1429,10 @@ class C:
       dummy.C.f:
         b0:
           n0 <- $ImportName(binascii)(PYCNone, PYCInt (0))
-          DEREF[binascii] <- n0
-          n1 <- $BuildClass($FuncObj(D, dummy.C.f.D, {}), PYCString ("D"))
-          LOCAL[D] <- n1
+          n1 <- $StoreDeref[0,"binascii"](n0)
+          n2 <- $LoadClosure[0,"binascii"]()
+          n3 <- $BuildClass($FuncObj(D, dummy.C.f.D, {}), PYCString ("D"))
+          LOCAL[D] <- n3
           return PYCNone
 
 

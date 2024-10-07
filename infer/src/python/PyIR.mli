@@ -35,7 +35,7 @@ module Ident : sig
 end
 
 module ScopedIdent : sig
-  type scope = Global | Fast | Name | Deref
+  type scope = Global | Fast | Name
 
   type t = {scope: scope; ident: Ident.t}
 end
@@ -66,6 +66,10 @@ module BuiltinCaller : sig
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
+    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
+    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
+    | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
     | GetAIter
     | GetIter
     | NextIter
@@ -76,6 +80,7 @@ module BuiltinCaller : sig
     | SetAdd
     | DictSetItem
     | Delete of ScopedIdent.t
+    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of string
     | DeleteSubscr
     | YieldFrom
@@ -102,7 +107,6 @@ module Exp : sig
         ; annotations: t ConstMap.t }
     | GetAttr of (t * string)
     | LoadMethod of (t * string)
-    | Ref of string
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t

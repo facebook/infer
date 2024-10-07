@@ -1128,11 +1128,13 @@ print(g()) # prints 2
 
       dummy.f:
         b0:
-          DEREF[lx] <- PYCInt (1000)
+          n0 <- $StoreDeref[1,"lx"](PYCInt (1000))
+          n1 <- $LoadClosure[0,"ax"]()
+          n2 <- $LoadClosure[1,"lx"]()
           LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
-          DEREF[lx] <- PYCInt (1664)
-          n0 <- LOCAL[inner]
-          return n0
+          n3 <- $StoreDeref[1,"lx"](PYCInt (1664))
+          n4 <- LOCAL[inner]
+          return n4
 
 
       dummy.f.inner:
@@ -1142,18 +1144,18 @@ print(g()) # prints 2
           n1 <- GLOBAL[gx]
           n2 <- n0(n1)
           n3 <- GLOBAL[print]
-          n4 <- DEREF[ax]
+          n4 <- $LoadDeref[0,"ax"]()
           n5 <- n3(n4)
           n6 <- GLOBAL[print]
-          n7 <- DEREF[lx]
+          n7 <- $LoadDeref[1,"lx"]()
           n8 <- n6(n7)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[ix]
           n11 <- n9(n10)
           GLOBAL[gx] <- PYCInt (10)
-          DEREF[lx] <- PYCInt (2)
-          n12 <- DEREF[lx]
-          return n12 |}]
+          n12 <- $StoreDeref[1,"lx"](PYCInt (2))
+          n13 <- $LoadDeref[1,"lx"]()
+          return n13 |}]
 
 
 let%expect_test _ =

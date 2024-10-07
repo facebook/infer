@@ -32,7 +32,7 @@ end = struct
 end
 
 module ScopedIdent = struct
-  type scope = Global | Fast | Name | Deref [@@deriving equal]
+  type scope = Global | Fast | Name [@@deriving equal]
 
   type t = {scope: scope; ident: Ident.t} [@@deriving equal]
 
@@ -44,8 +44,6 @@ module ScopedIdent = struct
         F.fprintf fmt "LOCAL[%a]" Ident.pp ident
     | Name ->
         F.fprintf fmt "TOPLEVEL[%a]" Ident.pp ident
-    | Deref ->
-        F.fprintf fmt "DEREF[%a]" Ident.pp ident
 end
 
 module QualName : sig
@@ -168,6 +166,10 @@ module BuiltinCaller = struct
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
+    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
+    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
+    | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
     | GetAIter  (** [GET_AITER] *)
     | GetIter  (** [GET_ITER] *)
     | NextIter  (** [FOR_ITER] *)
@@ -178,6 +180,7 @@ module BuiltinCaller = struct
     | SetAdd  (** [SET_ADD] *)
     | DictSetItem  (** [MAP_ADD] *)
     | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
+    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of string
     | DeleteSubscr
     | YieldFrom  (** [YIELD_FROM] *)
@@ -210,6 +213,14 @@ module BuiltinCaller = struct
         sprintf "$Unary.%s" op
     | Compare op ->
         sprintf "$Compare.%s" (Builtin.Compare.to_string op)
+    | LoadClosure {name; slot} ->
+        F.asprintf "$LoadClosure[%d,\"%a\"]" slot Ident.pp name
+    | LoadDeref {name; slot} ->
+        F.asprintf "$LoadDeref[%d,\"%a\"]" slot Ident.pp name
+    | LoadClassDeref {name; slot} ->
+        F.asprintf "$LoadClassDeref[%d,\"%a\"]" slot Ident.pp name
+    | StoreDeref {name; slot} ->
+        F.asprintf "$StoreDeref[%d,\"%a\"]" slot Ident.pp name
     | GetIter ->
         "$GetIter"
     | GetAIter ->
@@ -230,6 +241,8 @@ module BuiltinCaller = struct
         "$DictSetItem"
     | Delete ident ->
         F.asprintf "$Delete(%a)" ScopedIdent.pp ident
+    | DeleteDeref {name; slot} ->
+        F.asprintf "$DeleteDeref[%d,\"%a\")" slot Ident.pp name
     | DeleteAttr name ->
         sprintf "$DeleteAttr(%s)" name
     | DeleteSubscr ->
@@ -286,7 +299,6 @@ module Exp = struct
         ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
-    | Ref of string  (** [LOAD_CLOSURE] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
@@ -332,8 +344,6 @@ module Exp = struct
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
         F.fprintf fmt "$LoadMethod(%a, %s)" pp self meth
-    | Ref s ->
-        F.fprintf fmt "$Ref(%s)" s
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
@@ -1299,9 +1309,16 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* tos, st = State.pop st in
       let exp = Exp.GetAttr (tos, name) in
       assign_to_temp_and_push st exp
-  | "LOAD_CLASSDEREF" | "LOAD_DEREF" ->
-      let name = get_cell_name code arg in
-      load st Deref name
+  | "LOAD_DEREF" ->
+      let name = get_cell_name code arg |> Ident.mk in
+      let id, st = call_builtin_function st (LoadDeref {slot= arg; name}) [] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
+  | "LOAD_CLASSDEREF" ->
+      let name = get_cell_name code arg |> Ident.mk in
+      let id, st = call_builtin_function st (LoadClassDeref {slot= arg; name}) [] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "STORE_NAME" ->
       store st Name co_names.(arg)
   | "STORE_GLOBAL" ->
@@ -1324,8 +1341,10 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_DEREF" ->
-      let name = get_cell_name code arg in
-      store st Deref name
+      let name = get_cell_name code arg |> Ident.mk in
+      let* rhs, st = State.pop st in
+      let _id, st = call_builtin_function st (StoreDeref {name; slot= arg}) [rhs] in
+      Ok (st, None)
   | "RETURN_VALUE" ->
       let* ret, st = State.pop st in
       Ok (st, Some (Terminator.Return ret))
@@ -1505,10 +1524,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LOAD_CLOSURE" ->
-      let cell = get_cell_name code arg in
-      (* We currently do nothing. It will be up to the IR -> Textual step to deal with these *)
-      let exp = Exp.Ref cell in
-      let st = State.push st exp in
+      let name = get_cell_name code arg |> Ident.mk in
+      let id, st = call_builtin_function st (LoadClosure {slot= arg; name}) [] in
+      let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "DUP_TOP" ->
       let* tos = State.peek st in
@@ -1703,8 +1721,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let _id, st = call_builtin_function st (DeleteAttr name) [tos] in
       Ok (st, None)
   | "DELETE_DEREF" ->
-      let ident = get_cell_name code arg |> Ident.mk in
-      let _id, st = call_builtin_function st (Delete {scope= Deref; ident}) [] in
+      let name = get_cell_name code arg |> Ident.mk in
+      let _id, st = call_builtin_function st (DeleteDeref {name; slot= arg}) [] in
       Ok (st, None)
   | "DELETE_SUBSCR" ->
       let* index, st = State.pop st in
