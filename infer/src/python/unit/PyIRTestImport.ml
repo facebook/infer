@@ -573,3 +573,11 @@ def f():
           LOCAL[u] <- PYCInt (0)
           LOCAL[v] <- PYCString ("tata")
           return PYCNone |}]
+
+
+let%expect_test _ =
+  let source = {|
+from foo import *
+|} in
+  PyIR.test source ;
+  [%expect {| IR error: Unsupported opcode: IMPORT_STAR |}]
