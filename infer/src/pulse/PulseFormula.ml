@@ -3019,7 +3019,7 @@ module Formula = struct
 
 
     and add_linear_eq_and_solve_new_eq_opt ~fuel new_eqs v l phi =
-      Debug.p "add_linear_eq_and_merge_new_eq_opt %a->%a@\n" Var.pp v (LinArith.pp Var.pp) l ;
+      Debug.p "add_linear_eq_and_solve_new_eq_opt %a->%a@\n" Var.pp v (LinArith.pp Var.pp) l ;
       let phi, new_eq_opt = add_linear_eq v l phi in
       discharge_new_eq_opt ~fuel new_eqs v new_eq_opt phi
 
@@ -3361,7 +3361,7 @@ module Formula = struct
     and propagate_in_term_eqs ~fuel (tx : Term.t) x ((phi, new_eqs) as phi_new_eqs) =
       match subst_target_of_term phi tx with
       | LinSubst _ | NonLinearTermSubst _ ->
-          Debug.p "prop in term eqs tx=%a, x=%a being ignored" (Term.pp Var.pp) tx Var.pp x ;
+          Debug.p "prop in term eqs tx=%a, x=%a being ignored@\n" (Term.pp Var.pp) tx Var.pp x ;
           Sat phi_new_eqs
       | (VarSubst _ | QSubst _ | ConstantSubst _) as subst_target_x -> (
         match Var.Map.find_opt x phi.term_eqs_occurrences with
@@ -3674,7 +3674,7 @@ module Formula = struct
        or is [normalize_atom] already just as strong? *)
     and normalize_atom phi (atom : Atom.t) =
       let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
-      Debug.p "Normalizer.mormalize_atom atom'=%a" (Atom.pp_with_pp_var Var.pp) atom' ;
+      Debug.p "Normalizer.normalize_atom atom'=%a@\n" (Atom.pp_with_pp_var Var.pp) atom' ;
       Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
 
 
@@ -4010,7 +4010,7 @@ let and_equal_string_concat v x y formula =
 
 let prune_atom ~depth atom (formula, new_eqs) =
   (* Use [phi] to normalize [atom] here to take previous [prune]s into account. *)
-  Debug.p "prune atom %a" (Atom.pp_with_pp_var Var.pp) atom ;
+  Debug.p "prune atom %a in %a@\n" (Atom.pp_with_pp_var Var.pp) atom pp formula ;
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
   let* phi, new_eqs =
     Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms
@@ -4068,7 +4068,7 @@ module DynamicTypes = struct
     if is_known_zero formula v then Some (Term.of_bool nullable)
     else
       let known_non_zero = Formula.is_neq_zero formula.phi (Var v) in
-      Debug.p "known non zero of %a is %b\n" Var.pp v known_non_zero ;
+      Debug.p "known non zero of %a is %b@\n" Var.pp v known_non_zero ;
       match Var.Map.find_opt v formula.phi.type_constraints with
       | None ->
           None
