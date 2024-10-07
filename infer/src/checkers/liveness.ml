@@ -411,7 +411,7 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
     Procdesc.is_non_structured_binding_local_or_formal proc_desc pvar
     && not
          ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-         || is_constexpr_or_unused pvar
+         || Pvar.is_artificial pvar || is_constexpr_or_unused pvar
          || VarSet.mem (Var.of_pvar pvar) passed_by_ref_vars
          || ExtendedDomain.mem (Var.of_pvar pvar) live_vars
          || is_scope_guard typ

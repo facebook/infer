@@ -7,6 +7,7 @@
 
 // make tests compatible with clang-12 for the moment
 #include <coroutine>
+#include <exception>
 
 namespace coro {
 
@@ -30,6 +31,11 @@ Task<void> dummy(const int&);
 Task<void> use_live_var_ok(int x) {
   const auto& live_var = x;
   co_return co_await dummy(live_var);
+}
+
+Task<void> always_throw_ok(std::exception_ptr ep) {
+  std::rethrow_exception(ep);
+  co_return;
 }
 
 } // namespace coro
