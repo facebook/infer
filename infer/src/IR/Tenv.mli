@@ -135,11 +135,12 @@ val resolve_method :
   -> resolution_result
 (** [resolve_method ~method_exists tenv class_name procname] returns either [ResolvedTo info] where
     [info] resolves [procname] to a method in [class_name] or its super-classes, that is non-virtual
-    (non-Java-interface method); or, it returns [Unresolved missed_captures] where [missed_captures]
-    is the set of classnames for which the hierarchy traversal needs to examine its members but
-    which have not been captured. [method_exists adapted_procname methods] should check if
-    [adapted_procname] ([procname] but with its class potentially changed to some [other_class]) is
-    among the [methods] of [other_class]. *)
+    (non-Java-interface method); or, it returns [Unresolved {missed_captures; unresolved_reason}]
+    where [missed_captures] is the set of classnames for which the hierarchy traversal needs to
+    examine its members but which have not been captured and [unresolved_reason] is an additional
+    information about the unresolved reasons which are for suppressing FP issues.
+    [method_exists adapted_procname methods] should check if [adapted_procname] ([procname] but with
+    its class potentially changed to some [other_class]) is among the [methods] of [other_class]. *)
 
 val resolve_field_info : t -> Typ.Name.t -> Fieldname.t -> Struct.field_info option
 (** [resolve_field_info tenv class_name field] tries to find the first field declaration that
