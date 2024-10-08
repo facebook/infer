@@ -152,16 +152,19 @@ module AnnotationSpec = struct
   type predicate = Tenv.t -> Procname.t -> bool
 
   type t =
-    { description: string  (** for debugging *)
+    { kind: string  (** for debugging *)
     ; sink_predicate: predicate  (** decide if something is a sink *)
     ; sanitizer_predicate: predicate  (** decide if something is a sanitizer *)
     ; sink_annotation: Annot.t  (** used as key in the domain (sink -> procedure -> callsite) *)
     ; source_annotation_list: Annot.t list  (** decide if something is a source *)
+    ; description: string  (** Extra description to be added to the issue report *)
     ; issue_type: IssueType.t
     ; models: Str.regexp list IStd.String.Map.t  (** model functions as if they were annotated *)
     ; pre_check: Domain.t InterproceduralAnalysis.t -> unit
           (** additional check before reporting *) }
 end
+
+let prepend_if_not_empty str prefix = if String.equal str "" then "" else prefix ^ str
 
 let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} src
     (spec : AnnotationSpec.t) loc trace snk_pname =
@@ -205,20 +208,21 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
   let snk_annot_str = snk.Annot.class_name in
   let src_annot_str = src.Annot.class_name in
   let access_or_call = if is_dummy_field_pname snk_pname then "accesses" else "calls" in
+  let spec_description = prepend_if_not_empty spec.description ". " in
   let description =
     if is_dummy_constructor snk then
       let constr_str = str_of_pname ~withclass:true snk_pname in
-      Format.asprintf "Method %a annotated with %a allocates %a via %a" MF.pp_monospaced
+      Format.asprintf "Method %a annotated with %a allocates %a via %a%s" MF.pp_monospaced
         (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str
-        MF.pp_monospaced ("new " ^ constr_str)
+        MF.pp_monospaced ("new " ^ constr_str) spec_description
     else
-      Format.asprintf "Method %a (%s %a%s%s) %s %a (%s %a%s%s)" MF.pp_monospaced
+      Format.asprintf "Method %a (%s %a%s%s) %s %a (%s %a%s%s)%s" MF.pp_monospaced
         (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
         (get_details src src_pname) (get_class_details src src_pname) access_or_call
         MF.pp_monospaced
         (str_of_pname ~withclass:true snk_pname)
         (get_kind snk snk_pname) MF.pp_monospaced ("@" ^ snk_annot_str) (get_details snk snk_pname)
-        (get_class_details snk snk_pname)
+        (get_class_details snk snk_pname) spec_description
   in
   Reporting.log_issue proc_desc err_log ~loc ~ltr:trace AnnotationReachability spec.issue_type
     description
@@ -304,10 +308,12 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
 let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} src (spec : AnnotationSpec.t) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
+  let spec_description = prepend_if_not_empty spec.description ". " in
   let description =
-    Format.asprintf "Method %a is annotated with both %a and %a" MF.pp_monospaced
+    Format.asprintf "Method %a is annotated with both %a and %a%s" MF.pp_monospaced
       (str_of_pname proc_name) MF.pp_monospaced ("@" ^ src.Annot.class_name) MF.pp_monospaced
       ("@" ^ spec.sink_annotation.class_name)
+      spec_description
   in
   Reporting.log_issue proc_desc err_log ~loc ~ltr:[] AnnotationReachability spec.issue_type
     description
@@ -332,18 +338,19 @@ let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analys
 
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots models =
+  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots description models =
     let src_list = List.map str_src_annots ~f:annotation_of_str in
     let sanitizer_annots = List.map str_sanitizer_annots ~f:annotation_of_str in
     let snk = annotation_of_str str_snk_annot in
     let open AnnotationSpec in
-    { description= "StandardAnnotationSpec"
+    { kind= "StandardAnnotationSpec"
     ; sink_predicate= (fun tenv pname -> method_overrides_annot snk models tenv pname)
     ; sanitizer_predicate=
         (fun tenv pname ->
           List.exists sanitizer_annots ~f:(fun s -> method_overrides_annot s models tenv pname) )
     ; sink_annotation= snk
     ; source_annotation_list= src_list
+    ; description
     ; issue_type= IssueType.checkers_annotation_reachability_error
     ; models
     ; pre_check= (fun _ -> ()) }
@@ -354,12 +361,13 @@ module NoAllocationAnnotationSpec = struct
 
   let spec =
     let open AnnotationSpec in
-    { description= "NoAllocationAnnotationSpec"
+    { kind= "NoAllocationAnnotationSpec"
     ; sink_predicate= (fun tenv pname -> is_allocator tenv pname)
     ; sanitizer_predicate=
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
     ; sink_annotation= dummy_constructor_annot
     ; source_annotation_list= [no_allocation_annot]
+    ; description= ""
     ; issue_type= IssueType.checkers_allocates_memory
     ; models= String.Map.empty
     ; pre_check= (fun _ -> ()) }
@@ -391,7 +399,7 @@ module ExpensiveAnnotationSpec = struct
 
   let spec =
     let open AnnotationSpec in
-    { description= "ExpensiveAnnotationSpec"
+    { kind= "ExpensiveAnnotationSpec"
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
@@ -399,6 +407,7 @@ module ExpensiveAnnotationSpec = struct
     ; sanitizer_predicate= (fun _ _ -> false)
     ; sink_annotation= expensive_annot
     ; source_annotation_list= [performance_critical_annot]
+    ; description= ""
     ; issue_type= IssueType.checkers_calls_expensive_method
     ; models= String.Map.empty
     ; pre_check=
@@ -428,7 +437,7 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
   let check_call tenv ~caller_pname ~callee_pname call_site_info astate specs =
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
         if is_sink tenv spec ~caller_pname ~callee_pname then (
-          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.description Procname.pp caller_pname
+          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.kind Procname.pp caller_pname
             Procname.pp callee_pname ;
           Domain.add_call_site spec.sink_annotation callee_pname call_site_info astate )
         else astate )
@@ -451,9 +460,8 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
             let caller_pname = Procdesc.get_proc_name proc_desc in
             List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
                 if is_sink tenv spec ~caller_pname ~callee_pname:sink then (
-                  L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n"
-                    spec.description Procname.pp callee_pname Procname.pp caller_pname Procname.pp
-                    sink ;
+                  L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n" spec.kind
+                    Procname.pp callee_pname Procname.pp caller_pname Procname.pp sink ;
                   Domain.add_call_site annot sink call_site_info astate )
                 else astate )
         in
@@ -494,16 +502,20 @@ module TransferFunctions = MakeTransferFunctions (ProcCfg.Exceptional)
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
 type custom_spec =
-  {sources: string list; sinks: string list; sanitizers: string list [@yojson.default []]}
+  { sources: string list
+  ; sinks: string list
+  ; sanitizers: string list [@yojson.default []]
+  ; description: string [@yojson.default ""] }
 [@@deriving of_yojson]
 
 type custom_specs = custom_spec list [@@deriving of_yojson]
 
 let parse_custom_specs () =
   let models = parse_custom_models () in
-  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers} =
+  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers; description} =
     List.map
-      ~f:(fun sink -> StandardAnnotationSpec.from_annotations sources sink sanitizers models)
+      ~f:(fun sink ->
+        StandardAnnotationSpec.from_annotations sources sink sanitizers description models )
       sinks
   in
   let custom_specs =
