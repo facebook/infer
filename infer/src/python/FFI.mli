@@ -36,10 +36,6 @@ module rec Constant : sig
     | PYCNone
   [@@deriving compare, equal]
 
-  val show : ?full:bool -> t -> string
-  [@@warning "-unused-value-declaration"]
-  (** Only shows the name of a [PYCCode] constant if [full] is [false]. Otherwise, shows everything. *)
-
   val pp : Format.formatter -> t -> unit
 
   val as_code : t -> Code.t option
@@ -82,15 +78,11 @@ and Code : sig
     ; instructions: Instruction.t list }
   [@@deriving show, compare, equal]
 
-  val full_show : t -> string [@@warning "-unused-value-declaration"]
-
   val is_closure : t -> bool
 
   val get_arguments : t -> string array
 
   val get_locals : t -> string array
-
-  val pp_instructions : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 and Instruction : sig
@@ -103,7 +95,9 @@ and Instruction : sig
     ; offset: int
     ; starts_line: int option
     ; is_jump_target: bool }
-  [@@deriving show, compare]
+  [@@deriving compare]
+
+  val pp : ?code:Code.t -> Format.formatter -> t -> unit
 end
 
 val from_string : source:string -> filename:string -> (Code.t, Error.t) result

@@ -27,7 +27,7 @@ def f(**kwargs):
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -43,8 +43,8 @@ def f(**kwargs):
           if n5 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n4[PYCInt (0)]
-          LOCAL[v] <- n4[PYCInt (1)]
+          LOCAL[k] <- n4[0]
+          LOCAL[v] <- n4[1]
           n6 <- GLOBAL[print]
           n7 <- LOCAL[k]
           n8 <- LOCAL[v]
@@ -52,7 +52,7 @@ def f(**kwargs):
           jmp b1(n3)
 
         b3:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -93,23 +93,23 @@ start()
           TOPLEVEL[start] <- $FuncObj(start, dummy.start, {})
           n0 <- TOPLEVEL[start]
           n1 <- n0()
-          return PYCNone
+          return None
 
 
       dummy.f:
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
-          n2 <- n0(PYCString ("dummy = "), n1)
+          n2 <- n0("dummy = ", n1)
           n3 <- GLOBAL[print]
           n4 <- LOCAL[dummy2]
-          n5 <- n3(PYCString ("dummy2= "), n4)
+          n5 <- n3("dummy2= ", n4)
           n6 <- GLOBAL[print]
           n7 <- LOCAL[dummy3]
-          n8 <- n6(PYCString ("dummy3= "), n7)
+          n8 <- n6("dummy3= ", n7)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[dummy4]
-          n11 <- n9(PYCString ("dummy4= "), n10)
+          n11 <- n9("dummy4= ", n10)
           n12 <- LOCAL[dummyA]
           n13 <- n12.items()
           n14 <- $GetIter(n13)
@@ -121,51 +121,48 @@ start()
           if n17 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n16[PYCInt (0)]
-          LOCAL[v] <- n16[PYCInt (1)]
+          LOCAL[k] <- n16[0]
+          LOCAL[v] <- n16[1]
           n18 <- GLOBAL[print]
           n19 <- LOCAL[k]
           n20 <- LOCAL[v]
-          n21 <- PYCString ("{} = {}").format(n19, n20)
+          n21 <- "{} = {}".format(n19, n20)
           n22 <- n18(n21)
           jmp b1(n15)
 
         b3:
-          return PYCNone
+          return None
 
 
       dummy.g:
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
-          n2 <- n0(PYCString ("dummy = "), n1)
+          n2 <- n0("dummy = ", n1)
           n3 <- GLOBAL[print]
           n4 <- LOCAL[dummy2]
-          n5 <- n3(PYCString ("dummy2= "), n4)
+          n5 <- n3("dummy2= ", n4)
           n6 <- GLOBAL[print]
           n7 <- LOCAL[dummy3]
-          n8 <- n6(PYCString ("dummy3= "), n7)
+          n8 <- n6("dummy3= ", n7)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[dummy4]
-          n11 <- n9(PYCString ("dummy4= "), n10)
-          return PYCNone
+          n11 <- n9("dummy4= ", n10)
+          return None
 
 
       dummy.start:
         b0:
-          LOCAL[x] <- PYCTuple ([|PYCInt (3); PYCInt (4)|])
+          LOCAL[x] <- (3,4)
           n0 <- GLOBAL[f]
           n1 <- LOCAL[x]
-          n2 <- n0($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(n1))), $PackedMap({|
-                   PYCString ("test"), PYCInt (42)|})) !packed
+          n2 <- n0($Packed((packed)($Packed((1,2)), $Packed(n1))), $PackedMap({|"test", 42|})) !packed
           n3 <- GLOBAL[f]
-          n4 <- n3($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(
-                                    PYCTuple ([|PYCString ("a"); PYCString ("b")|])))), $PackedMap({|
-                   PYCString ("test"), PYCInt (42)|})) !packed
+          n4 <- n3($Packed((packed)($Packed((1,2)), $Packed(("a","b")))), $PackedMap({|"test", 42|})) !packed
           n5 <- GLOBAL[g]
           n6 <- LOCAL[x]
-          n7 <- n5($Packed((packed)($Packed(PYCTuple ([|PYCInt (1); PYCInt (2)|])), $Packed(n6)))) !packed
-          return PYCNone |xxx}]
+          n7 <- n5($Packed((packed)($Packed((1,2)), $Packed(n6)))) !packed
+          return None |xxx}]
 
 
 let%expect_test _ =
@@ -191,7 +188,7 @@ def f(foo, a, b, c):
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -228,7 +225,7 @@ def f(foo, a, b, c):
           n29 <- LOCAL[b]
           n30 <- LOCAL[c]
           n31 <- n27($Packed((packed)($Packed((n28)), $Packed(n29))), $PackedMap(n30)) !packed
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -255,8 +252,8 @@ f(**d1, x=42)
 
       toplevel:
         b0:
-          TOPLEVEL[d0] <- {PYCInt (0): PYCInt (0), PYCInt (1): PYCInt (1), }
-          TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+          TOPLEVEL[d0] <- {0: 0, 1: 1, }
+          TOPLEVEL[d1] <- {"a": 0, "b": 1, }
           n0 <- TOPLEVEL[d0]
           n1 <- TOPLEVEL[d1]
           TOPLEVEL[x] <- (packed){|$Packed(n0), $Packed(n1)|}
@@ -264,12 +261,11 @@ f(**d1, x=42)
           n3 <- TOPLEVEL[x]
           n4 <- n2(n3)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          TOPLEVEL[d1] <- {PYCString ("a"): PYCInt (0), PYCString ("b"): PYCInt (1), }
+          TOPLEVEL[d1] <- {"a": 0, "b": 1, }
           n5 <- TOPLEVEL[f]
           n6 <- TOPLEVEL[d1]
-          n7 <- n5($Packed(()), $PackedMap((packed){|$Packed(n6), $Packed({|
-                                                     PYCString ("x"), PYCInt (42)|})|})) !packed
-          return PYCNone
+          n7 <- n5($Packed(()), $PackedMap((packed){|$Packed(n6), $Packed({|"x", 42|})|})) !packed
+          return None
 
 
       dummy.f:
@@ -288,8 +284,8 @@ f(**d1, x=42)
           if n8 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n7[PYCInt (0)]
-          LOCAL[v] <- n7[PYCInt (1)]
+          LOCAL[k] <- n7[0]
+          LOCAL[v] <- n7[1]
           n9 <- GLOBAL[print]
           n10 <- LOCAL[k]
           n11 <- LOCAL[v]
@@ -297,7 +293,7 @@ f(**d1, x=42)
           jmp b1(n6)
 
         b3:
-          return PYCNone |xxx}]
+          return None |xxx}]
 
 
 let%expect_test _ =
@@ -320,21 +316,21 @@ print(lst) # [2, 3, 4, 5, 6]
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
           n1 <- n0()
-          n2 <- $UnpackEx(PYCInt (2), PYCInt (3), n1)
-          TOPLEVEL[a] <- n2[PYCInt (0)]
-          TOPLEVEL[b] <- n2[PYCInt (1)]
-          TOPLEVEL[lst] <- n2[PYCInt (2)]
-          TOPLEVEL[x] <- n2[PYCInt (3)]
-          TOPLEVEL[y] <- n2[PYCInt (4)]
-          TOPLEVEL[z] <- n2[PYCInt (5)]
+          n2 <- $UnpackEx(2, 3, n1)
+          TOPLEVEL[a] <- n2[0]
+          TOPLEVEL[b] <- n2[1]
+          TOPLEVEL[lst] <- n2[2]
+          TOPLEVEL[x] <- n2[3]
+          TOPLEVEL[y] <- n2[4]
+          TOPLEVEL[z] <- n2[5]
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[lst]
           n5 <- n3(n4)
-          return PYCNone
+          return None
 
 
       dummy.f:
         b0:
           n0 <- GLOBAL[range]
-          n1 <- n0(PYCInt (10))
+          n1 <- n0(10)
           return n1 |}]

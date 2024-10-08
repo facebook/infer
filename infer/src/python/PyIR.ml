@@ -553,8 +553,6 @@ end
 module Offset = struct
   type t = int
 
-  let pp fmt n = F.pp_print_int fmt n
-
   let get ~loc opt = Result.of_option ~error:(L.InternalError, loc, Error.NextOffsetMissing) opt
 end
 
@@ -687,8 +685,6 @@ module State = struct
 
 
   let empty ~debug ~code_qual_name ~loc ~cfg_skeleton =
-    let p = if debug then Debug.todo else Debug.p in
-    p "State.empty@\n" ;
     let cfg, get_node_name = build_get_node_name loc cfg_skeleton in
     { debug
     ; code_qual_name
@@ -706,8 +702,10 @@ module State = struct
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
-  let enter ~debug ~code_qual_name ~loc ~cfg_skeleton =
-    empty ~debug ~code_qual_name ~loc ~cfg_skeleton
+  let enter ~debug:d ~code_qual_name ~loc ~cfg_skeleton qual_name =
+    let st = empty ~debug:d ~code_qual_name ~loc ~cfg_skeleton in
+    Option.iter qual_name ~f:(debug st "Translating %a...@\n" QualName.pp) ;
+    st
 
 
   let get_node_name {get_node_name} offset = get_node_name offset
@@ -827,12 +825,17 @@ module State = struct
 
 
   let enter_node st ~offset ~arity bottom_stack =
-    debug st "enter-node at offset %d@\n" offset ;
     let st = {st with stmts= []; stack= bottom_stack} in
     let ssa_parameters, st = mk_ssa_parameters st (arity - List.length bottom_stack) in
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
     let st = {st with ssa_parameters} in
-    debug st "> current stack size: %d\n" (size st) ;
+    let pp_ssa_parameters fmt =
+      if List.is_empty ssa_parameters then F.fprintf fmt ""
+      else
+        F.fprintf fmt " with params (%a)" (Pp.comma_seq F.pp_print_string)
+          (List.map ssa_parameters ~f:(fun i -> sprintf "n%d" i))
+    in
+    debug st "Building a new node, starting from offset %d%t@\n" offset pp_ssa_parameters ;
     st
 
 
@@ -1372,17 +1375,10 @@ let store st scope name =
 
 
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
-    {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
+    ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
   let open IResult.Let_syntax in
-  let st =
-    if Option.is_some starts_line then (
-      State.debug st "@\n" ;
-      State.debug st ".line %d@\n" (Option.value_exn starts_line) ;
-      {st with State.loc= starts_line} )
-    else st
-  in
-  State.debug st "%a: %s %d (0x%x) - STACK_SIZE %d @\n" Offset.pp instr_offset opname arg arg
-    (State.size st) ;
+  let st = if Option.is_some starts_line then {st with State.loc= starts_line} else st in
+  State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
@@ -1449,7 +1445,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* TODO: rethink this in the future.
          Keep the popped values around in case their construction involves side effects *)
       let* rhs, st = State.pop st in
-      State.debug st "popping %a@\n" Exp.pp rhs ;
       match (rhs : Exp.t) with
       | Temp _ ->
           Ok (st, None)
@@ -1705,9 +1700,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (ContextManagerExit context_manager) in
       let* id, st = call_method st PyCommon.enter context_manager [] in
       let st = State.push st (Exp.Temp id) in
-      State.debug st "setup-with: current block size: %d@\n" (State.size st) ;
-      (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
-         to be on the stack *)
       Ok (st, None)
   | "BEGIN_FINALLY" ->
       let st = State.push st (Exp.Const Const.none) in
@@ -2164,12 +2156,18 @@ let constant_folding_ssa_params st succ_name {predecessors} =
   Ok (st, bottom_stack)
 
 
-let process_node st code ~offset ~arity ({instructions} as info) =
+let process_node st code ~offset ~arity ({instructions; successors} as info) =
   let open IResult.Let_syntax in
   let* name = State.get_node_name st offset in
   let* st, bottom_stack = constant_folding_ssa_params st name info in
   let ({State.loc= first_loc} as st) = State.enter_node st ~offset ~arity bottom_stack in
   let ssa_parameters = State.get_ssa_parameters st in
+  let {State.stack} = st in
+  State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp) stack ;
+  let show_completion () =
+    State.debug st "Successors: %a@\n" (Pp.comma_seq F.pp_print_int) (List.map successors ~f:fst) ;
+    State.debug st "@\n"
+  in
   let rec loop st = function
     | [] ->
         let {State.loc} = st in
@@ -2177,11 +2175,14 @@ let process_node st code ~offset ~arity ({instructions} as info) =
     | instr :: remaining -> (
         let next_offset_opt, next_is_jump_target = lookup_remaining remaining in
         let* st, opt_terminator = parse_bytecode st code instr next_offset_opt in
+        let {State.stack} = st in
+        State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp) stack ;
         match opt_terminator with
         | Some last ->
             let {State.loc= last_loc} = st in
             let stmts = State.get_stmts st in
             let st = State.add_new_node st name ~first_loc ~last_loc ssa_parameters stmts last in
+            show_completion () ;
             Ok st
         | None when next_is_jump_target ->
             let {State.loc= last_loc; stack} = st in
@@ -2190,6 +2191,7 @@ let process_node st code ~offset ~arity ({instructions} as info) =
             let* next_name = State.get_node_name st next_offset in
             let last = Terminator.mk_jump next_name stack in
             let st = State.add_new_node st name ~first_loc ~last_loc ssa_parameters stmts last in
+            show_completion () ;
             Ok st
         | None ->
             loop st remaining )
@@ -2226,7 +2228,8 @@ let build_cfg ~debug ~code_qual_name code =
     in
     Ok (st, arity_map)
   in
-  let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton in
+  let qual_name = code_qual_name code in
+  let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton qual_name in
   let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
   let cfg = CFG.of_builder st.State.cfg in
   Ok cfg
@@ -2297,7 +2300,7 @@ let test_cfg_skeleton ~code_qual_name code =
       let qual_name = code_qual_name code |> Option.value_exn in
       F.printf "%a@\n" QualName.pp qual_name ;
       let topological_order, map = build_topological_order map in
-      F.printf "%a@\n" FFI.Code.pp_instructions code ;
+      List.iter code.FFI.Code.instructions ~f:(F.printf "%a@\n" (FFI.Instruction.pp ~code)) ;
       let pp_succ_and_delta fmt (succ, delta) =
         if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
       in

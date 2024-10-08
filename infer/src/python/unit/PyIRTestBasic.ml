@@ -20,8 +20,8 @@ let%expect_test _ =
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
-          return PYCNone |}]
+          TOPLEVEL[x] <- 42
+          return None |}]
 
 
 let%expect_test _ =
@@ -36,11 +36,11 @@ print(x)
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
+          TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- n0(n1)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -56,14 +56,14 @@ print(x + y)
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
-          TOPLEVEL[y] <- PYCInt (10)
+          TOPLEVEL[x] <- 42
+          TOPLEVEL[y] <- 10
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- TOPLEVEL[y]
           n3 <- $Binary.Add(n1, n2)
           n4 <- n0(n3)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -79,14 +79,14 @@ print(x - y)
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
-          TOPLEVEL[y] <- PYCInt (10)
+          TOPLEVEL[x] <- 42
+          TOPLEVEL[y] <- 10
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- TOPLEVEL[y]
           n3 <- $Binary.Subtract(n1, n2)
           n4 <- n0(n3)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -102,14 +102,14 @@ print(x)
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
+          TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
-          n1 <- $Inplace.Add(n0, PYCInt (10))
+          n1 <- $Inplace.Add(n0, 10)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
           n4 <- n2(n3)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -125,14 +125,14 @@ print(x)
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (42)
+          TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
-          n1 <- $Inplace.Subtract(n0, PYCInt (10))
+          n1 <- $Inplace.Subtract(n0, 10)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
           n4 <- n2(n3)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -146,8 +146,8 @@ pi = 3.14
 
       toplevel:
         b0:
-          TOPLEVEL[pi] <- PYCFloat (3.14)
-          return PYCNone |}]
+          TOPLEVEL[pi] <- 3.14
+          return None |}]
 
 
 let%expect_test _ =
@@ -161,8 +161,8 @@ byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
 
       toplevel:
         b0:
-          TOPLEVEL[byte_data] <- PYCBytes ("Hello")
-          return PYCNone |}]
+          TOPLEVEL[byte_data] <- "Hello"
+          return None |}]
 
 
 let%expect_test _ =
@@ -178,12 +178,12 @@ l[0:2:1]
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [PYCInt (0), PYCInt (1), PYCInt (2), PYCInt (3), PYCInt (4), PYCInt (5)]
+          TOPLEVEL[l] <- [0, 1, 2, 3, 4, 5]
           n0 <- TOPLEVEL[l]
-          n1 <- n0[[PYCInt (0):PYCInt (2)]]
+          n1 <- n0[[0:2]]
           n2 <- TOPLEVEL[l]
-          n3 <- n2[[PYCInt (0):PYCInt (2):PYCInt (1)]]
-          return PYCNone |}]
+          n3 <- n2[[0:2:1]]
+          return None |}]
 
 
 let%expect_test _ =
@@ -195,8 +195,8 @@ let%expect_test _ =
 
       toplevel:
         b0:
-          n0 <- $Compare.neq(PYCBool (true), PYCBool (false))
-          return PYCNone |}]
+          n0 <- $Compare.neq(true, false)
+          return None |}]
 
 
 let%expect_test _ =
@@ -211,12 +211,12 @@ print(l[0])
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [PYCInt (1), PYCInt (2), PYCInt (3)]
+          TOPLEVEL[l] <- [1, 2, 3]
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[l]
-          n2 <- n1[PYCInt (0)]
+          n2 <- n1[0]
           n3 <- n0(n2)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -232,12 +232,12 @@ l[x] = 10
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [PYCInt (1), PYCInt (2), PYCInt (3)]
-          TOPLEVEL[x] <- PYCInt (0)
+          TOPLEVEL[l] <- [1, 2, 3]
+          TOPLEVEL[x] <- 0
           n0 <- TOPLEVEL[l]
           n1 <- TOPLEVEL[x]
-          n0[n1] <- PYCInt (10)
-          return PYCNone |}]
+          n0[n1] <- 10
+          return None |}]
 
 
 let%expect_test _ =
@@ -251,8 +251,8 @@ s = {1, 2, 3}
 
       toplevel:
         b0:
-          TOPLEVEL[s] <- {PYCInt (1), PYCInt (2), PYCInt (3)}
-          return PYCNone |}]
+          TOPLEVEL[s] <- {1, 2, 3}
+          return None |}]
 
 
 let%expect_test _ =
@@ -280,21 +280,19 @@ d = { 0x78: "abc", # 1-n decoding mapping
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCString ("1")
+          TOPLEVEL[x] <- "1"
           n0 <- TOPLEVEL[x]
-          TOPLEVEL[s] <- {|n0, PYCInt (1), PYCString ("2"), PYCInt (2)|}
+          TOPLEVEL[s] <- {|n0, 1, "2", 2|}
           n1 <- TOPLEVEL[print]
           n2 <- TOPLEVEL[s]
           n3 <- n1(n2)
-          TOPLEVEL[s] <- {PYCString ("a"): PYCInt (42), PYCString ("b"): PYCInt (1664), }
+          TOPLEVEL[s] <- {"a": 42, "b": 1664, }
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[s]
-          n6 <- n5[PYCString ("1")]
+          n6 <- n5["1"]
           n7 <- n4(n6)
-          TOPLEVEL[d] <- {PYCInt (1): PYCNone, PYCInt (120): PYCString ("abc"),
-                          PYCInt (121): PYCString (""), PYCBytes ("abc"):
-                          PYCInt (120), }
-          return PYCNone |xxx}]
+          TOPLEVEL[d] <- {1: None, 120: "abc", 121: "", "abc": 120, }
+          return None |xxx}]
 
 
 let%expect_test _ =
@@ -310,11 +308,11 @@ fp.write("yolo")
       toplevel:
         b0:
           n0 <- TOPLEVEL[open]
-          n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
+          n1 <- n0("foo.txt", "wt")
           TOPLEVEL[fp] <- n1
           n2 <- TOPLEVEL[fp]
-          n3 <- n2.write(PYCString ("yolo"))
-          return PYCNone |}]
+          n3 <- n2.write("yolo")
+          return None |}]
 
 
 let%expect_test _ =
@@ -330,16 +328,16 @@ with open("foo.txt", "wt") as fp:
       toplevel:
         b0:
           n0 <- TOPLEVEL[open]
-          n1 <- n0(PYCString ("foo.txt"), PYCString ("wt"))
+          n1 <- n0("foo.txt", "wt")
           n2 <- n1.__enter__()
           TOPLEVEL[fp] <- n2
           n3 <- TOPLEVEL[fp]
-          n4 <- n3.write(PYCString ("yolo"))
+          n4 <- n3.write("yolo")
           jmp b1
 
         b1:
-          n5 <- n1.__enter__(PYCNone, PYCNone, PYCNone)
-          return PYCNone |}]
+          n5 <- n1.__enter__(None, None, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -363,11 +361,11 @@ print(result)
 
       toplevel:
         b0:
-          TOPLEVEL[values] <- [PYCInt (1), PYCInt (2), [PYCInt (3), PYCInt (4)], PYCInt (5)]
-          TOPLEVEL[values2] <- PYCTuple ([|PYCString ("a"); PYCString ("b")|])
+          TOPLEVEL[values] <- [1, 2, [3, 4], 5]
+          TOPLEVEL[values2] <- ("a","b")
           n0 <- TOPLEVEL[values]
           n1 <- TOPLEVEL[values2]
-          TOPLEVEL[result] <- (packed)($Packed([PYCInt (10), PYCInt (100)]), $Packed(n0), $Packed(n1))
+          TOPLEVEL[result] <- (packed)($Packed([10, 100]), $Packed(n0), $Packed(n1))
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[result]
           n4 <- n2(n3)
@@ -377,7 +375,7 @@ print(result)
           n7 <- TOPLEVEL[print]
           n8 <- TOPLEVEL[result]
           n9 <- n7(n8)
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -393,12 +391,12 @@ print(x) # will print 1
 
       toplevel:
         b0:
-          TOPLEVEL[x] <- PYCInt (1)
+          TOPLEVEL[x] <- 1
           n0 <- TOPLEVEL[x]
-          TOPLEVEL[x] <- PYCInt (0)
-          n1 <- $Binary.Add(n0, PYCInt (0))
+          TOPLEVEL[x] <- 0
+          n1 <- $Binary.Add(n0, 0)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
           n4 <- n2(n3)
-          return PYCNone |}]
+          return None |}]

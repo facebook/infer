@@ -24,7 +24,7 @@ for x in range(10):
       toplevel:
         b0:
           n0 <- TOPLEVEL[range]
-          n1 <- n0(PYCInt (10))
+          n1 <- n0(10)
           n2 <- $GetIter(n1)
           jmp b1(n2)
 
@@ -41,7 +41,7 @@ for x in range(10):
           jmp b1(n3)
 
         b3:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -63,7 +63,7 @@ def f(x, y, l, bar, toto):
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -90,25 +90,25 @@ def f(x, y, l, bar, toto):
           if n11 then jmp b3 else jmp b4
 
         b3:
-          n16 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
-          n17 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
+          n16 <- n9.__enter__(None, None, None)
+          n17 <- n6.__enter__(None, None, None)
           jmp b1(n2)
 
         b4:
           n12 <- GLOBAL[print]
-          n13 <- n12(PYCString ("nop"))
+          n13 <- n12("nop")
           jmp b5
 
         b5:
-          n14 <- n9.__enter__(PYCNone, PYCNone, PYCNone)
+          n14 <- n9.__enter__(None, None, None)
           jmp b6
 
         b6:
-          n15 <- n6.__enter__(PYCNone, PYCNone, PYCNone)
+          n15 <- n6.__enter__(None, None, None)
           jmp b1(n2)
 
         b7:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -128,7 +128,7 @@ def f(match, it, n):
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -157,12 +157,12 @@ def f(match, it, n):
 
         b4:
           n10 <- LOCAL[n]
-          n11 <- $Inplace.Add(n10, PYCInt (1))
+          n11 <- $Inplace.Add(n10, 1)
           LOCAL[n] <- n11
           jmp b1(n2)
 
         b5:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -182,7 +182,7 @@ def f(foo):
       toplevel:
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -202,10 +202,10 @@ def f(foo):
           if n5 then jmp b3 else jmp b1(n2)
 
         b3:
-          return PYCNone
+          return None
 
         b5:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -222,7 +222,7 @@ async def async_loop1():
       toplevel:
         b0:
           TOPLEVEL[async_loop1] <- $FuncObj(async_loop1, dummy.async_loop1, {})
-          return PYCNone
+          return None
 
 
       dummy.async_loop1:
@@ -235,7 +235,7 @@ async def async_loop1():
         b1(n3):
           n4 <- n3.__anext__()
           n5 <- $GetAwaitable(n4)
-          n6 <- $YieldFrom(n5, PYCNone)
+          n6 <- $YieldFrom(n5, None)
           LOCAL[doc] <- n5
           n7 <- GLOBAL[foo]
           n8 <- LOCAL[doc]
@@ -256,7 +256,7 @@ async def async_loop2():
       toplevel:
         b0:
           TOPLEVEL[async_loop2] <- $FuncObj(async_loop2, dummy.async_loop2, {})
-          return PYCNone
+          return None
 
 
       dummy.async_loop2.<listcomp>:
@@ -267,7 +267,7 @@ async def async_loop2():
         b1(n1, n2):
           n3 <- n2.__anext__()
           n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, PYCNone)
+          n5 <- $YieldFrom(n4, None)
           LOCAL[x] <- n4
           n6 <- LOCAL[x]
           n7 <- $ListAppend(n1, n6)
@@ -281,5 +281,5 @@ async def async_loop2():
           n2 <- n1.__aiter__()
           n3 <- $FuncObj(<listcomp>, dummy.async_loop2.<listcomp>, {})(n2)
           n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, PYCNone)
-          return PYCNone |}]
+          n5 <- $YieldFrom(n4, None)
+          return None |}]

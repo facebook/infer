@@ -26,13 +26,13 @@ finally:
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0(PYCString ("TRY BLOCK"))
+          n1 <- n0("TRY BLOCK")
           jmp b1
 
         b1:
           n2 <- TOPLEVEL[print]
-          n3 <- n2(PYCString ("FINALLY BLOCK"))
-          return PYCNone |}]
+          n3 <- n2("FINALLY BLOCK")
+          return None |}]
 
 
 let%expect_test _ =
@@ -57,7 +57,7 @@ print("END")
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0(PYCString ("TRY BLOCK"))
+          n1 <- n0("TRY BLOCK")
           jmp b1
 
         b1:
@@ -66,20 +66,20 @@ print("END")
 
         b2:
           n5 <- TOPLEVEL[print]
-          n6 <- n5(PYCString ("X"))
+          n6 <- n5("X")
           jmp b4
 
         b3:
           n3 <- TOPLEVEL[print]
-          n4 <- n3(PYCString ("Y"))
+          n4 <- n3("Y")
           jmp b4
 
         b4:
           n7 <- TOPLEVEL[print]
-          n8 <- n7(PYCString ("FINALLY BLOCK"))
+          n8 <- n7("FINALLY BLOCK")
           n9 <- TOPLEVEL[print]
-          n10 <- n9(PYCString ("END"))
-          return PYCNone |}]
+          n10 <- n9("END")
+          return None |}]
 
 
 let%expect_test _ =
@@ -100,13 +100,13 @@ print("END")
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0(PYCString ("TRY BLOCK"))
+          n1 <- n0("TRY BLOCK")
           jmp b3
 
         b3:
           n2 <- TOPLEVEL[print]
-          n3 <- n2(PYCString ("END"))
-          return PYCNone |}]
+          n3 <- n2("END")
+          return None |}]
 
 
 let%expect_test _ =
@@ -131,15 +131,15 @@ except (ValueError, AttributeError):
 
       toplevel:
         b0:
-          n0 <- $ImportName(os)(PYCNone, PYCInt (0))
+          n0 <- $ImportName(os)(None, 0)
           TOPLEVEL[os] <- n0
           n1 <- TOPLEVEL[os]
-          n2 <- n1.sysconf(PYCString ("SC_PAGESIZE"))
+          n2 <- n1.sysconf("SC_PAGESIZE")
           TOPLEVEL[page_size] <- n2
           jmp b8
 
         b8:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -163,10 +163,10 @@ def f(x):
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(PYCNone, PYCInt (0))
+          n0 <- $ImportName(foo)(None, 0)
           TOPLEVEL[foo] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          return PYCNone
+          return None
 
 
       dummy.f:
@@ -186,7 +186,7 @@ def f(x):
           n6 <- n5.Foo()
           LOCAL[e] <- n6
           n7 <- GLOBAL[print]
-          n8 <- n7(PYCString ("yolo"))
+          n8 <- n7("yolo")
           jmp b3
 
         b3:
@@ -195,7 +195,7 @@ def f(x):
           jmp b1(n2)
 
         b4:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -213,8 +213,59 @@ with open("foo", "r") as fp:
             print("ELSE")
         |}
   in
-  PyIR.test source ;
-  [%expect {|
+  PyIR.test ~debug:true source ;
+  [%expect
+    {|
+    Translating dummy...
+    Building a new node, starting from offset 0
+                  []
+       2        0 LOAD_CONST                        0 (0)
+                  [0]
+                2 LOAD_CONST                        1 (("ERROR"))
+                  [0; ("ERROR")]
+                4 IMPORT_NAME                       0 (foo)
+                  [n0]
+                6 IMPORT_FROM                       1 (ERROR)
+                  [n0; n1]
+                8 STORE_NAME                        1 (ERROR)
+                  [n0]
+               10 POP_TOP                           0
+                  []
+       4       12 LOAD_NAME                         2 (open)
+                  [n2]
+               14 LOAD_CONST                        2 ("foo")
+                  [n2; "foo"]
+               16 LOAD_CONST                        3 ("r")
+                  [n2; "foo"; "r"]
+               18 CALL_FUNCTION                     2
+                  [n3]
+               20 SETUP_WITH                       66
+                  [CM(n3).__exit__; n4]
+               22 STORE_NAME                        3 (fp)
+                  [CM(n3).__exit__]
+       5       24 LOAD_NAME                         3 (fp)
+                  [CM(n3).__exit__; n5]
+               26 GET_ITER                          0
+                  [CM(n3).__exit__; n6]
+    Successors: 28
+
+    Building a new node, starting from offset 28 with params (n8,n7)
+                  [n7; n8]
+         >>>   28 FOR_ITER                         54 (to +54)
+                  [n7; n8; n9]
+    Successors: 30,84
+
+    Building a new node, starting from offset 84
+                  [n7]
+         >>>   84 POP_BLOCK                         0
+                  [n7]
+               86 BEGIN_FINALLY                     0
+                  [n7; None]
+    Successors: 88
+
+    Building a new node, starting from offset 88
+                  [n7; None]
+         >>>   88 WITH_CLEANUP_START                0
     IR error: WITH_CLEANUP_START/TODO: unsupported scenario with n7 |}]
 
 
@@ -240,18 +291,18 @@ def subhelper():
 
       toplevel:
         b0:
-          GLOBAL[TICKS] <- PYCInt (0)
+          GLOBAL[TICKS] <- 0
           TOPLEVEL[subhelper] <- $FuncObj(subhelper, dummy.subhelper, {})
-          return PYCNone
+          return None
 
 
       dummy.subhelper:
         b0:
           n0 <- GLOBAL[TICKS]
-          n1 <- $Inplace.Add(n0, PYCInt (2))
+          n1 <- $Inplace.Add(n0, 2)
           GLOBAL[TICKS] <- n1
           n2 <- GLOBAL[range]
-          n3 <- n2(PYCInt (2))
+          n3 <- n2(2)
           n4 <- $GetIter(n3)
           jmp b1(n4)
 
@@ -263,11 +314,11 @@ def subhelper():
         b2:
           LOCAL[i] <- n6
           n8 <- GLOBAL[print]
-          n9 <- n8(PYCString ("foo"))
+          n9 <- n8("foo")
           jmp b1(n5)
 
         b6:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -295,12 +346,12 @@ except C as c:
           jmp b5
 
         b5:
-          return PYCNone
+          return None
 
 
       dummy.foo:
         b0:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -319,29 +370,29 @@ async def async_with(filename):
       toplevel:
         b0:
           TOPLEVEL[async_with] <- $FuncObj(async_with, dummy.async_with, {})
-          return PYCNone
+          return None
 
 
       dummy.async_with:
         b0:
           n0 <- GLOBAL[open]
           n1 <- LOCAL[filename]
-          n2 <- n0(n1, PYCString ("r"))
+          n2 <- n0(n1, "r")
           n3 <- n2.__enter__()
           n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, PYCNone)
+          n5 <- $YieldFrom(n4, None)
           LOCAL[f] <- n4
           n6 <- LOCAL[f]
           n7 <- n6.read()
           n8 <- $GetAwaitable(n7)
-          n9 <- $YieldFrom(n8, PYCNone)
+          n9 <- $YieldFrom(n8, None)
           jmp b1
 
         b1:
-          n10 <- n2.__enter__(PYCNone, PYCNone, PYCNone)
+          n10 <- n2.__enter__(None, None, None)
           n11 <- $GetAwaitable(n10)
-          n12 <- $YieldFrom(n11, PYCNone)
-          return PYCNone |}]
+          n12 <- $YieldFrom(n11, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -362,7 +413,7 @@ def call_finally():
       toplevel:
         b0:
           TOPLEVEL[call_finally] <- $FuncObj(call_finally, dummy.call_finally, {})
-          return PYCNone
+          return None
 
 
       dummy.call_finally:
@@ -372,7 +423,7 @@ def call_finally():
           jmp b6
 
         b6:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -394,13 +445,13 @@ def call_finally_with_break():
       toplevel:
         b0:
           TOPLEVEL[call_finally_with_break] <- $FuncObj(call_finally_with_break, dummy.call_finally_with_break, {})
-          return PYCNone
+          return None
 
 
       dummy.call_finally_with_break:
         b0:
           n0 <- GLOBAL[range]
-          n1 <- n0(PYCInt (100))
+          n1 <- n0(100)
           n2 <- $GetIter(n1)
           jmp b1(n2)
 
@@ -416,7 +467,7 @@ def call_finally_with_break():
           jmp b1(n3)
 
         b9:
-          return PYCNone |}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -432,7 +483,7 @@ def raise_from(e):
       toplevel:
         b0:
           TOPLEVEL[raise_from] <- $FuncObj(raise_from, dummy.raise_from, {})
-          return PYCNone
+          return None
 
 
       dummy.raise_from:
