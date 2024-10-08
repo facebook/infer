@@ -182,3 +182,23 @@ void AnnotateSync1(id flowId, NS_NOESCAPE AnnotateSyncBlock1 block) {}
 }
 
 @end
+
+#ifdef __clang__
+#pragma clang assume_nonnull begin
+#endif
+
+typedef void (^NewAnnotateBlock)(const char* _Nullable key, id _Nullable value);
+typedef void (^_Nullable NewAnnotateSyncBlock)(
+    _Nonnull NewAnnotateBlock annotate);
+
+#ifdef __clang__
+#pragma clang assume_nonnull end
+#endif
+
+void MarkerAnnotateSync(NS_NOESCAPE _Nullable NewAnnotateSyncBlock block) {}
+
+void LoadAndAnnotateOk_FP(NSString* composerSessionID) {
+  MarkerAnnotateSync(^(NewAnnotateBlock annotate) {
+    annotate("composer_session_id", composerSessionID);
+  });
+}
