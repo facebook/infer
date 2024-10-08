@@ -342,19 +342,19 @@ for x in range(10):
           n0 <- TOPLEVEL[range]
           n1 <- n0(10)
           n2 <- $GetIter(n1)
-          jmp b1(n2)
+          jmp b1
 
-        b1(n3):
-          n4 <- $NextIter(n3)
-          n5 <- $HasNextIter(n3)
-          if n5 then jmp b2 else jmp b3
+        b1:
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n2)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          TOPLEVEL[x] <- n4
-          n6 <- TOPLEVEL[print]
-          n7 <- TOPLEVEL[x]
-          n8 <- n6(n7)
-          jmp b1(n3)
+          TOPLEVEL[x] <- n3
+          n5 <- TOPLEVEL[print]
+          n6 <- TOPLEVEL[x]
+          n7 <- n5(n6)
+          jmp b1
 
         b3:
           return None |}]
@@ -386,42 +386,42 @@ def f(x, y, l, bar, toto):
         b0:
           n0 <- LOCAL[l]
           n1 <- $GetIter(n0)
-          jmp b1(n1)
+          jmp b1
 
-        b1(n2):
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b7
+        b1:
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n1)
+          if n3 then jmp b2 else jmp b7
 
         b2:
-          LOCAL[x] <- n3
-          n5 <- LOCAL[bar]
-          n6 <- n5()
-          n7 <- n6.__enter__()
-          n8 <- LOCAL[toto]
-          n9 <- n8()
-          n10 <- n9.__enter__()
-          LOCAL[obj] <- n10
-          n11 <- LOCAL[y]
-          if n11 then jmp b3 else jmp b4
+          LOCAL[x] <- n2
+          n4 <- LOCAL[bar]
+          n5 <- n4()
+          n6 <- n5.__enter__()
+          n7 <- LOCAL[toto]
+          n8 <- n7()
+          n9 <- n8.__enter__()
+          LOCAL[obj] <- n9
+          n10 <- LOCAL[y]
+          if n10 then jmp b3 else jmp b4
 
         b3:
-          n16 <- n9.__enter__(None, None, None)
-          n17 <- n6.__enter__(None, None, None)
-          jmp b1(n2)
+          n15 <- n8.__enter__(None, None, None)
+          n16 <- n5.__enter__(None, None, None)
+          jmp b1
 
         b4:
-          n12 <- GLOBAL[print]
-          n13 <- n12("nop")
+          n11 <- GLOBAL[print]
+          n12 <- n11("nop")
           jmp b5
 
         b5:
-          n14 <- n9.__enter__(None, None, None)
+          n13 <- n8.__enter__(None, None, None)
           jmp b6
 
         b6:
-          n15 <- n6.__enter__(None, None, None)
-          jmp b1(n2)
+          n14 <- n5.__enter__(None, None, None)
+          jmp b1
 
         b7:
           return None |}]
@@ -1201,43 +1201,43 @@ def f(l):
       dummy.<listcomp>:
         b0:
           n0 <- LOCAL[.0]
-          jmp b1([], n0)
+          jmp b1
 
-        b1(n1, n2):
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b3
+        b1:
+          n1 <- $NextIter(n0)
+          n2 <- $HasNextIter(n0)
+          if n2 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[x] <- n3
-          n5 <- LOCAL[x]
-          n6 <- $Binary.Add(n5, 2)
-          n7 <- $ListAppend(n1, n6)
-          jmp b1(n1, n2)
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 2)
+          n5 <- $ListAppend([], n4)
+          jmp b1
 
         b3:
-          return n1
+          return []
 
 
       dummy.f.<listcomp>:
         b0:
           n0 <- LOCAL[.0]
-          jmp b1([], n0)
+          jmp b1
 
-        b1(n1, n2):
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b3
+        b1:
+          n1 <- $NextIter(n0)
+          n2 <- $HasNextIter(n0)
+          if n2 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[x] <- n3
-          n5 <- LOCAL[x]
-          n6 <- $Binary.Add(n5, 2)
-          n7 <- $ListAppend(n1, n6)
-          jmp b1(n1, n2)
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 2)
+          n5 <- $ListAppend([], n4)
+          jmp b1
 
         b3:
-          return n1
+          return []
 
 
       dummy.f:
@@ -1287,44 +1287,44 @@ def g(l):
       dummy.g.<dictcomp>:
         b0:
           n0 <- LOCAL[.0]
-          jmp b1({||}, n0)
+          jmp b1
 
-        b1(n1, n2):
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b3
+        b1:
+          n1 <- $NextIter(n0)
+          n2 <- $HasNextIter(n0)
+          if n2 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[num] <- n3
-          n5 <- LOCAL[num]
-          n6 <- LOCAL[num]
-          n7 <- $Binary.Power(n6, 2)
-          n8 <- $DictSetItem(n1, n5, n7)
-          jmp b1(n1, n2)
+          LOCAL[num] <- n1
+          n3 <- LOCAL[num]
+          n4 <- LOCAL[num]
+          n5 <- $Binary.Power(n4, 2)
+          n6 <- $DictSetItem({||}, n3, n5)
+          jmp b1
 
         b3:
-          return n1
+          return {||}
 
 
       dummy.f.<setcomp>:
         b0:
           n0 <- LOCAL[.0]
-          jmp b1({}, n0)
+          jmp b1
 
-        b1(n1, n2):
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b3
+        b1:
+          n1 <- $NextIter(n0)
+          n2 <- $HasNextIter(n0)
+          if n2 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[x] <- n3
-          n5 <- LOCAL[x]
-          n6 <- $Binary.Add(n5, 1)
-          n7 <- $SetAdd(n1, n6)
-          jmp b1(n1, n2)
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 1)
+          n5 <- $SetAdd({}, n4)
+          jmp b1
 
         b3:
-          return n1
+          return {}
 
 
       dummy.f:

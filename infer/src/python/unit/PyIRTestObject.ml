@@ -1269,25 +1269,25 @@ def powerset(s):
           n4 <- $Binary.Add(n3, 1)
           n5 <- n0(n4)
           n6 <- $GetIter(n5)
-          jmp b1(n6)
+          jmp b1
 
-        b1(n7):
-          n8 <- $NextIter(n7)
-          n9 <- $HasNextIter(n7)
-          if n9 then jmp b2 else jmp b3
+        b1:
+          n7 <- $NextIter(n6)
+          n8 <- $HasNextIter(n6)
+          if n8 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[i] <- n8
-          n10 <- GLOBAL[map]
-          n11 <- GLOBAL[frozenset]
-          n12 <- GLOBAL[itertools]
-          n13 <- LOCAL[s]
-          n14 <- LOCAL[i]
-          n15 <- n12.combinations(n13, n14)
-          n16 <- n10(n11, n15)
-          n17 <- $GetYieldFromIter(n16)
-          n18 <- $YieldFrom(n17, None)
-          jmp b1(n7)
+          LOCAL[i] <- n7
+          n9 <- GLOBAL[map]
+          n10 <- GLOBAL[frozenset]
+          n11 <- GLOBAL[itertools]
+          n12 <- LOCAL[s]
+          n13 <- LOCAL[i]
+          n14 <- n11.combinations(n12, n13)
+          n15 <- n9(n10, n14)
+          n16 <- $GetYieldFromIter(n15)
+          n17 <- $YieldFrom(n16, None)
+          jmp b1
 
         b3:
           return None |}]

@@ -85,19 +85,27 @@ end
 module NodeName : sig
   type t [@@deriving equal]
 
-  val mk : string -> t
+  val mk : offset:int -> string -> t
+
+  val get_offset : t -> int
 
   val pp : F.formatter -> t -> unit
 
   module Map : Caml.Map.S with type key = t
 end = struct
-  type t = string [@@deriving equal]
+  type t = {name: string; offset: int [@compare.ignore] [@equal.ignore]} [@@deriving equal, compare]
 
-  let pp fmt ident = F.pp_print_string fmt ident
+  let pp fmt {name} = F.pp_print_string fmt name
 
-  let mk ident = ident
+  let mk ~offset name = {name; offset}
 
-  module Map = SMap
+  let get_offset {offset} = offset
+
+  module Map = Caml.Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
 end
 
 module SSA = struct
@@ -422,6 +430,8 @@ module Error = struct
     | UnpackSequence of int
     | UnexpectedExpression of Exp.t
     | FormatValueSpec of Exp.t
+    | FixpointComputationHeaderReachedTwice of int
+    | FixpointComputationNotReached of {src: int; dest: int}
     | NextOffsetMissing
     | MissingNodeInformation of int
     | CallKeywordNotString0 of Const.t
@@ -455,6 +465,14 @@ module Error = struct
         F.fprintf fmt "UNEXPECTED_EXPRESSION: %a" Exp.pp exp
     | FormatValueSpec exp ->
         F.fprintf fmt "FORMAT_VALUE: expected string literal or temporary, got %a" Exp.pp exp
+    | FixpointComputationHeaderReachedTwice offset ->
+        F.fprintf fmt "FIXPOINT_COMPUTATION: loop header %d is already assigned a symbolic stack"
+          offset
+    | FixpointComputationNotReached {src; dest} ->
+        F.fprintf fmt
+          "FIXPOINT_COMPUTATION: loop header invariant at %d is not compatible with stack obtained \
+           at predecessor %d"
+          dest src
     | LoadMethodExpected exp ->
         F.fprintf fmt "LOAD_METHOD_EXPECTED: expected a LOAD_METHOD result but got %a" Exp.pp exp
     | NextOffsetMissing ->
@@ -635,10 +653,10 @@ module CFGBuilder = struct
 
   let label_of_int i = sprintf "b%d" i
 
-  let fresh_node_name ({fresh_label} as cfg) =
+  let fresh_node_name ({fresh_label} as cfg) offset =
     let fresh = label_of_int fresh_label in
     let cfg = {cfg with fresh_label= fresh_label + 1} in
-    (NodeName.mk fresh, cfg)
+    (NodeName.mk fresh ~offset, cfg)
 
 
   let add name ~first_loc ~last_loc ssa_parameters stmts last {nodes; fresh_label} =
@@ -652,7 +670,8 @@ module CFG = struct
   let pp fmt {nodes} = NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
 
   let of_builder {CFGBuilder.nodes} =
-    let entry = CFGBuilder.label_of_int CFGBuilder.fresh_start |> NodeName.mk in
+    let offset = 0 in
+    let entry = CFGBuilder.label_of_int CFGBuilder.fresh_start |> NodeName.mk ~offset in
     {nodes; entry}
 end
 
@@ -667,13 +686,14 @@ module State = struct
     ; stack: Exp.t Stack.t
     ; stmts: (Location.t * Stmt.t) list
     ; ssa_parameters: SSA.t list
+    ; stack_at_loop_headers: Exp.t Stack.t IMap.t
     ; fresh_id: SSA.t }
 
   let build_get_node_name loc cfg_skeleton =
     let map, cfg =
       IMap.fold
         (fun offset _ (map, cfg) ->
-          let name, cfg = CFGBuilder.fresh_node_name cfg in
+          let name, cfg = CFGBuilder.fresh_node_name cfg offset in
           (IMap.add offset name map, cfg) )
         cfg_skeleton (IMap.empty, CFGBuilder.empty)
     in
@@ -697,6 +717,7 @@ module State = struct
     ; stack= Stack.empty
     ; stmts= []
     ; ssa_parameters= []
+    ; stack_at_loop_headers= IMap.empty
     ; fresh_id= 0 }
 
 
@@ -767,6 +788,41 @@ module State = struct
     {st with cfg= CFGBuilder.add name ~first_loc ~last_loc ssa_parameters stmts last cfg}
 
 
+  let record_stack_at_loop_header ({loc; stack; stack_at_loop_headers} as st) header_name =
+    let offset = NodeName.get_offset header_name in
+    if IMap.mem offset stack_at_loop_headers then
+      Error (L.InternalError, loc, Error.FixpointComputationHeaderReachedTwice offset)
+    else Ok {st with stack_at_loop_headers= IMap.add offset stack stack_at_loop_headers}
+
+
+  let check_stack_if_at_back_edge {loc; stack; stack_at_loop_headers} src
+      ({Terminator.label} as dest_call_node) =
+    let dest = NodeName.get_offset label in
+    if IMap.mem dest stack_at_loop_headers then
+      (* [dest] is a loop header *)
+      if List.equal Exp.equal stack (IMap.find dest stack_at_loop_headers) then
+        Ok {Terminator.label; ssa_args= []}
+      else Error (L.InternalError, loc, Error.FixpointComputationNotReached {src; dest})
+    else Ok dest_call_node
+
+
+  let check_terminator_if_back_edge st offset terminator =
+    let open IResult.Let_syntax in
+    let src = offset in
+    match (terminator : Terminator.t) with
+    | Jump call_node ->
+        let+ new_call_node = check_stack_if_at_back_edge st src call_node in
+        if phys_equal call_node new_call_node then None else Some (Terminator.Jump new_call_node)
+    | If {exp; then_; else_} ->
+        let* new_then = check_stack_if_at_back_edge st src then_ in
+        let+ new_else = check_stack_if_at_back_edge st src else_ in
+        if (not (phys_equal then_ new_then)) || not (phys_equal else_ new_else) then
+          Some (Terminator.If {exp; then_= new_then; else_= new_else})
+        else None
+    | _ ->
+        Ok None
+
+
   let get_terminal_node ({cfg= {CFGBuilder.nodes}} as st) offset succ_name =
     let open IResult.Let_syntax in
     let+ name = get_node_name st offset in
@@ -779,8 +835,10 @@ module State = struct
           `AlreadyThere (name, ssa_args)
       | If {else_= {label; ssa_args}} when NodeName.equal label succ_name ->
           `AlreadyThere (name, ssa_args)
-      | _ ->
-          `NotADirectJump name )
+      | Return _ | Throw _ | If _ ->
+          (* we should only call [get_terminal_node] from a successor, but we
+             can not find it there *)
+          L.die InternalError "invalid predecessor" )
     | None ->
         `NotYetThere name
 
@@ -2114,31 +2172,37 @@ let build_topological_order cfg_skeleton_without_predecessors =
 let constant_folding_ssa_params st succ_name {predecessors} =
   let open IResult.Let_syntax in
   let* predecessors_stacks =
-    List.fold_result predecessors
-      ~init:(`AllAvailable ([], []))
-      ~f:(fun acc predecessor ->
-        match acc with
-        | `AllAvailable (predecessors, stacks) -> (
+    List.fold_result predecessors ~init:(st, `AllAvailable, [], [])
+      ~f:(fun ((st, status, predecessors, stacks) as acc) predecessor ->
+        match status with
+        | `AllAvailable -> (
             let* last_of_predecessor = State.get_terminal_node st predecessor succ_name in
             match last_of_predecessor with
-            | `NotYetThere predecessor_name ->
-                Ok (`AtLeastOneNotAvailable predecessor_name)
-            | `NotADirectJump predecessor_name ->
-                Ok (`AtLeastOneNotADirectJump predecessor_name)
+            | `NotYetThere _predecessor_name ->
+                (* Because we use a topological order, if we reach a node with a predecessor
+                   that has not been reached yet, it implies we are considering a back edge
+                   in the DFS *)
+                let* st = State.record_stack_at_loop_header st succ_name in
+                Ok (st, `AtLeastOneNotAvailable, predecessors, stacks)
             | `AlreadyThere (predecessor_name, args) ->
-                Ok (`AllAvailable (predecessor_name :: predecessors, args :: stacks)) )
+                Ok (st, `AllAvailable, predecessor_name :: predecessors, args :: stacks) )
         | _ ->
             Ok acc )
   in
   let st, bottom_stack =
-    match predecessors_stacks with
-    | `AtLeastOneNotAvailable _pred_name ->
+    let st, status, predecessors, stacks = predecessors_stacks in
+    match status with
+    | `AtLeastOneNotAvailable ->
+        let {State.stack} = st in
+        let arity = List.length stack in
+        let st =
+          List.fold predecessors ~init:st ~f:(fun st pred_name ->
+              State.drop_first_args_terminal_node st ~pred_name ~succ_name arity )
+        in
+        (st, stack)
+    | `AllAvailable when List.length predecessors <= 0 ->
         (st, [])
-    | `AtLeastOneNotADirectJump _pred_name ->
-        (st, [])
-    | `AllAvailable (predecessors, _) when List.length predecessors <= 0 ->
-        (st, [])
-    | `AllAvailable (predecessors, stacks) ->
+    | `AllAvailable ->
         let stack0 =
           match stacks with
           | [] ->
@@ -2182,6 +2246,9 @@ let process_node st code ~offset ~arity ({instructions; successors} as info) =
         State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp) stack ;
         match opt_terminator with
         | Some last ->
+            let {FFI.Instruction.offset} = instr in
+            let* new_last = State.check_terminator_if_back_edge st offset last in
+            let last = Option.value new_last ~default:last in
             let {State.loc= last_loc} = st in
             let stmts = State.get_stmts st in
             let st = State.add_new_node st name ~first_loc ~last_loc ssa_parameters stmts last in

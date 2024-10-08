@@ -35,21 +35,21 @@ def f(**kwargs):
           n0 <- LOCAL[kwargs]
           n1 <- n0.items()
           n2 <- $GetIter(n1)
-          jmp b1(n2)
+          jmp b1
 
-        b1(n3):
-          n4 <- $NextIter(n3)
-          n5 <- $HasNextIter(n3)
-          if n5 then jmp b2 else jmp b3
+        b1:
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n2)
+          if n4 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n4[0]
-          LOCAL[v] <- n4[1]
-          n6 <- GLOBAL[print]
-          n7 <- LOCAL[k]
-          n8 <- LOCAL[v]
-          n9 <- n6(n7, n8)
-          jmp b1(n3)
+          LOCAL[k] <- n3[0]
+          LOCAL[v] <- n3[1]
+          n5 <- GLOBAL[print]
+          n6 <- LOCAL[k]
+          n7 <- LOCAL[v]
+          n8 <- n5(n6, n7)
+          jmp b1
 
         b3:
           return None |}]
@@ -113,22 +113,22 @@ start()
           n12 <- LOCAL[dummyA]
           n13 <- n12.items()
           n14 <- $GetIter(n13)
-          jmp b1(n14)
+          jmp b1
 
-        b1(n15):
-          n16 <- $NextIter(n15)
-          n17 <- $HasNextIter(n15)
-          if n17 then jmp b2 else jmp b3
+        b1:
+          n15 <- $NextIter(n14)
+          n16 <- $HasNextIter(n14)
+          if n16 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n16[0]
-          LOCAL[v] <- n16[1]
-          n18 <- GLOBAL[print]
-          n19 <- LOCAL[k]
-          n20 <- LOCAL[v]
-          n21 <- "{} = {}".format(n19, n20)
-          n22 <- n18(n21)
-          jmp b1(n15)
+          LOCAL[k] <- n15[0]
+          LOCAL[v] <- n15[1]
+          n17 <- GLOBAL[print]
+          n18 <- LOCAL[k]
+          n19 <- LOCAL[v]
+          n20 <- "{} = {}".format(n18, n19)
+          n21 <- n17(n20)
+          jmp b1
 
         b3:
           return None
@@ -276,21 +276,21 @@ f(**d1, x=42)
           n3 <- LOCAL[kwargs]
           n4 <- n3.items()
           n5 <- $GetIter(n4)
-          jmp b1(n5)
+          jmp b1
 
-        b1(n6):
-          n7 <- $NextIter(n6)
-          n8 <- $HasNextIter(n6)
-          if n8 then jmp b2 else jmp b3
+        b1:
+          n6 <- $NextIter(n5)
+          n7 <- $HasNextIter(n5)
+          if n7 then jmp b2 else jmp b3
 
         b2:
-          LOCAL[k] <- n7[0]
-          LOCAL[v] <- n7[1]
-          n9 <- GLOBAL[print]
-          n10 <- LOCAL[k]
-          n11 <- LOCAL[v]
-          n12 <- n9(n10, n11)
-          jmp b1(n6)
+          LOCAL[k] <- n6[0]
+          LOCAL[v] <- n6[1]
+          n8 <- GLOBAL[print]
+          n9 <- LOCAL[k]
+          n10 <- LOCAL[v]
+          n11 <- n8(n9, n10)
+          jmp b1
 
         b3:
           return None |xxx}]
