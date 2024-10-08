@@ -588,19 +588,22 @@ module Terminator = struct
 
   type t =
     | Return of Exp.t
-    | Jump of node_call list  (** non empty list *)
-    | If of {exp: Exp.t; then_: t; else_: t}
+    | Jump of node_call
+    | If of {exp: Exp.t; then_: node_call; else_: node_call}
     | Throw of Exp.t
 
-  let mk_jump label exps = Jump [{label; ssa_args= List.rev exps}]
+  let mk_node_call label exps = {label; ssa_args= List.rev exps}
 
-  let rec pp fmt = function
+  let mk_jump label exps = Jump (mk_node_call label exps)
+
+  let pp fmt = function
     | Return exp ->
         F.fprintf fmt "return %a" Exp.pp exp
-    | Jump lst ->
-        F.fprintf fmt "jmp %a" (Pp.seq ~sep:", " pp_node_call) lst
+    | Jump node_call ->
+        F.fprintf fmt "jmp %a" pp_node_call node_call
     | If {exp; then_; else_} ->
-        F.fprintf fmt "if %a then @[%a@] else @[%a@]" Exp.pp exp pp then_ pp else_
+        F.fprintf fmt "if %a then jmp %a else jmp %a" Exp.pp exp pp_node_call then_ pp_node_call
+          else_
     | Throw exp ->
         F.fprintf fmt "throw %a" Exp.pp exp
 end
@@ -770,11 +773,11 @@ module State = struct
     match NodeName.Map.find_opt name nodes with
     | Some {last} -> (
       match last with
-      | Jump [{ssa_args}] ->
+      | Jump {ssa_args} ->
           `AlreadyThere (name, ssa_args)
-      | If {then_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+      | If {then_= {label; ssa_args}} when NodeName.equal label succ_name ->
           `AlreadyThere (name, ssa_args)
-      | If {else_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+      | If {else_= {label; ssa_args}} when NodeName.equal label succ_name ->
           `AlreadyThere (name, ssa_args)
       | _ ->
           `NotADirectJump name )
@@ -790,17 +793,17 @@ module State = struct
     | Some ({last} as node) ->
         let opt_new_last =
           match last with
-          | Jump [{label; ssa_args}] ->
+          | Jump {label; ssa_args} ->
               let ssa_args = List.drop ssa_args k in
-              let last = Terminator.Jump [{label; ssa_args}] in
+              let last = Terminator.Jump {label; ssa_args} in
               Some last
-          | If {exp; then_= Jump [{label; ssa_args}]; else_} when NodeName.equal label succ_name ->
+          | If {exp; then_= {label; ssa_args}; else_} when NodeName.equal label succ_name ->
               let ssa_args = List.drop ssa_args k in
-              let then_ = Terminator.Jump [{label; ssa_args}] in
+              let then_ = {Terminator.label; ssa_args} in
               Some (Terminator.If {exp; then_; else_})
-          | If {exp; then_; else_= Jump [{label; ssa_args}]} when NodeName.equal label succ_name ->
+          | If {exp; then_; else_= {label; ssa_args}} when NodeName.equal label succ_name ->
               let ssa_args = List.drop ssa_args k in
-              let else_ = Terminator.Jump [{label; ssa_args}] in
+              let else_ = {Terminator.label; ssa_args} in
               Some (Terminator.If {exp; then_; else_})
           | _ ->
               None
@@ -1175,8 +1178,8 @@ let pop_jump_if ~next_is st target next_offset_opt =
     , Some
         (Terminator.If
            { exp= condition
-           ; then_= Terminator.mk_jump next_label stack
-           ; else_= Terminator.mk_jump other_label stack } ) )
+           ; then_= Terminator.mk_node_call next_label stack
+           ; else_= Terminator.mk_node_call other_label stack } ) )
 
 
 let jump_if_or_pop st ~jump_if target next_offset_opt =
@@ -1198,8 +1201,8 @@ let jump_if_or_pop st ~jump_if target next_offset_opt =
     , Some
         (Terminator.If
            { exp= condition
-           ; then_= Terminator.mk_jump next_label next_stack
-           ; else_= Terminator.mk_jump other_label stack } ) )
+           ; then_= Terminator.mk_node_call next_label next_stack
+           ; else_= Terminator.mk_node_call other_label stack } ) )
 
 
 let for_iter st delta next_offset_opt =
@@ -1225,8 +1228,8 @@ let for_iter st delta next_offset_opt =
     , Some
         (Terminator.If
            { exp= condition
-           ; then_= Terminator.mk_jump next_label next_stack
-           ; else_= Terminator.mk_jump other_label other_stack } ) )
+           ; then_= Terminator.mk_node_call next_label next_stack
+           ; else_= Terminator.mk_node_call other_label other_stack } ) )
 
 
 (* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300 *)

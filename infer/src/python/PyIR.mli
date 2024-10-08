@@ -133,8 +133,8 @@ module Terminator : sig
 
   type t =
     | Return of Exp.t
-    | Jump of node_call list
-    | If of {exp: Exp.t; then_: t; else_: t}
+    | Jump of node_call
+    | If of {exp: Exp.t; then_: node_call; else_: node_call}
     | Throw of Exp.t
 end
 
