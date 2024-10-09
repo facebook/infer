@@ -247,7 +247,7 @@ let%test_module "normalization" =
       test (x < y) ;
       [%expect
         {|
-        conditions: (empty) phi: linear_eqs: y = a1 +x +1 && term_eqs: [a1 +x +1]=y|}]
+        conditions: (empty) phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x|}]
 
 
     let%expect_test _ =
@@ -315,8 +315,8 @@ let%test_module "normalization" =
       [%expect
         {|
         conditions: (empty)
-        phi: linear_eqs: v7 = x +v6 ∧ v8 = x +v6 +1 ∧ v10 = 0
-             && term_eqs: 0=v10∧[x +v6]=v7∧[x +v6 +1]=v8∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
+        phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
+             && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
              && intervals: v10=0|}]
 
 
@@ -327,8 +327,8 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: v8=v9=v10
-             && linear_eqs: y = -1/3·x -1/3 ∧ v6 = -x -1 ∧ v7 = -1 ∧ v8 = 0
-             && term_eqs: (-1)=v7∧0=v8∧[-x -1]=v6∧[-1/3·x -1/3]=y∧[12·x +36·y +12]=v8
+             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
+             && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
              && intervals: v8=0|}]
 
 
@@ -339,10 +339,9 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: v8=v9=v10
-             && linear_eqs: y = -1/3·x -1/3 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v6 = -x -1
+             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3
                              ∧ v7 = -1 ∧ v8 = 0
-             && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-x -1]=v6∧[-1/3·x -1/3]=y
-                          ∧[12·x +36·y +12]=v8
+             && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
              && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0|}]
 
 
@@ -353,10 +352,10 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: z=v7
-             && linear_eqs: x = 2 ∧ y = -42 ∧ w = z -2 ∧ v6 = 4
-             && term_eqs: (-42)=y∧2=x∧4=v6∧[z -2]=w
+             && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
+             && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
              && intervals: y=-42 ∧ v6=4
-             && atoms: {is_int(z) = 1}
+             && atoms: {is_int([w +2]) = 1}
 |}]
 
 
@@ -420,11 +419,11 @@ let%test_module "variable elimination" =
           Formula:
             conditions: (empty)
             phi: var_eqs: x=v6 ∧ z=w=v7 ∧ v=v8
-                 && linear_eqs: y = x +1 ∧ z = -1 ∧ v = 0
-                 && term_eqs: (-1)=z∧0=v∧[x +1]=y
+                 && linear_eqs: x = y -1 ∧ z = -1 ∧ v = 0
+                 && term_eqs: (-1)=z∧0=v∧[y -1]=x
                  && intervals: v=0
           Result: changed
-            conditions: (empty) phi: term_eqs: (-1)=z∧[x +1]=y|}]
+            conditions: (empty) phi: term_eqs: (-1)=z∧[y -1]=x|}]
 
 
     let%expect_test _ =
@@ -434,11 +433,11 @@ let%test_module "variable elimination" =
           Formula:
             conditions: (empty)
             phi: var_eqs: x=v6 ∧ v=v9
-                 && linear_eqs: z = x -y ∧ w = -x -y ∧ v = -x -y +1 ∧ v7 = -y ∧ v8 = 0
-                 && term_eqs: 0=v8∧[-x -y]=w∧[x -y]=z∧[-y]=v7∧[-x -y +1]=v
+                 && linear_eqs: x = -v +v7 +1 ∧ y = -v7 ∧ z = -v +2·v7 +1 ∧ w = v -1 ∧ v8 = 0
+                 && term_eqs: 0=v8∧[v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z
                  && intervals: v8=0
           Result: changed
-            conditions: (empty) phi: term_eqs: [-x -y]=w∧[x -y]=z∧[-y]=v7∧[-x -y +1]=v|}]
+            conditions: (empty) phi: term_eqs: [v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z|}]
 
 
     let%expect_test _ =
@@ -446,9 +445,9 @@ let%test_module "variable elimination" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: y = x -4 && term_eqs: [x -4]=y
+          conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: x = y +4 && term_eqs: [y +4]=x
         Result: changed
-          conditions: (empty) phi: term_eqs: [x -4]=y|}]
+          conditions: (empty) phi: term_eqs: [y +4]=x|}]
   end )
 
 
@@ -481,8 +480,8 @@ let%test_module "non-linear simplifications" =
         {|
           conditions: (empty)
           phi: var_eqs: z=v8 ∧ w=v7
-               && linear_eqs: y = 2 ∧ z = 2·x ∧ w = 4·x -3 ∧ v6 = 4·x
-               && term_eqs: 2=y∧[4·x -3]=w∧[2·x]=z∧[4·x]=v6
+               && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
+               && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
                && intervals: y=2|}]
   end )
 
@@ -505,8 +504,8 @@ let%test_module "inequalities" =
         {|
         conditions: (empty)
         phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
-             && linear_eqs: a2 = a5 +a3 +3 ∧ a1 = -a5 +a4 -a3 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
-             && term_eqs: [-a5 -3]=v7∧[-a5 +a4 -a3 -1]=a1∧[a4 +2]=v6∧[a5 +a3 +3]=a2
+             && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
+             && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
              && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3 |}]
 
 
