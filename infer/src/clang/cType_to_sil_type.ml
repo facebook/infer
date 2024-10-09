@@ -186,7 +186,7 @@ and type_desc_of_c_type ?attr_info translate_decl tenv c_type : Typ.desc =
   | ConstantArrayType (_, {arti_element_type; arti_stride}, n) ->
       build_array_type ?attr_info translate_decl tenv arti_element_type (Some n) arti_stride
   | FunctionProtoType _ | FunctionNoProtoType _ ->
-      Typ.Tfun
+      Typ.Tfun None
   | ParenType (_, qual_type) ->
       (qual_type_to_sil_type ?attr_info translate_decl tenv qual_type).Typ.desc
   | DecayedType (_, qual_type) ->

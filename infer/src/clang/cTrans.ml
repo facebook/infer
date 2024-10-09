@@ -283,7 +283,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let call_instr =
       match function_sil with
       | Exp.Var _ ->
-          let closure_param = (function_sil, Typ.mk Typ.Tfun) in
+          let closure_param = (function_sil, Typ.mk (Typ.Tfun None)) in
           let builtin =
             if call_flags.CallFlags.cf_is_objc_block then BuiltinDecl.__call_objc_block
             else BuiltinDecl.__call_c_function_ptr
@@ -816,7 +816,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 IntLit.gt n (IntLit.of_int Config.clang_compound_literal_init_limit)
             | Tint _ | Tfloat _ | Tptr _ ->
                 false
-            | Tfun | Tvoid | Tarray _ | TVar _ ->
+            | Tfun _ | Tvoid | Tarray _ | TVar _ ->
                 true
           in
           if init_with_builtin then
@@ -857,7 +857,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let zero_exp = Exp.zero_of_type_exn typ in
                 let instrs = [Sil.Store {e1= exp; typ; e2= zero_exp; loc= sil_loc}] in
                 mk_trans_result (exp, typ) {empty_control with instrs}
-            | Tfun | Tvoid | Tarray _ | TVar _ ->
+            | Tfun _ | Tvoid | Tarray _ | TVar _ ->
                 CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
                   "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
         in

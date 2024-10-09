@@ -603,11 +603,11 @@ module Val = struct
       | Tint (IBool | IChar | ISChar | IUChar | IUShort) ->
           let v = itv_val ~non_int:is_java in
           if is_java then set_itv_updated_by_unknown v else set_itv_updated_by_addition v
-      | Tfloat _ | Tfun | TVar _ ->
+      | Tfloat _ | Tfun _ | TVar _ ->
           itv_val ~non_int:true |> set_itv_updated_by_unknown
       | Tint _ | Tvoid ->
           itv_val ~non_int:false |> set_itv_updated_by_addition
-      | Tptr ({desc= Tfun}, _) ->
+      | Tptr ({desc= Tfun _}, _) ->
           of_func_ptrs (FuncPtr.Set.of_path path)
       | Tptr ({desc= Tstruct name}, _)
         when PatternMatch.is_subtype tenv name StdTyp.Name.Objc.ns_enumerator ->

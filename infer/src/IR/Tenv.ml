@@ -536,7 +536,7 @@ let rec is_trivially_copyable tenv {Typ.desc} =
       true
   | Tarray {elt} ->
       is_trivially_copyable tenv elt
-  | Tfun | TVar _ ->
+  | Tfun _ | TVar _ ->
       false
 
 

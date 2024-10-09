@@ -128,11 +128,14 @@ type type_quals =
 (** types for sil (structured) expressions *)
 type t = {desc: desc; quals: type_quals}
 
+and function_prototype = {params_type: t list; return_type: t}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
 and desc =
   | Tint of ikind  (** integer type *)
   | Tfloat of fkind  (** float type *)
   | Tvoid  (** void type *)
-  | Tfun  (** function type *)
+  | Tfun of function_prototype option  (** function type *)
   | Tptr of t * ptr_kind  (** pointer type *)
   | Tstruct of name  (** structured value type name *)
   | TVar of string  (** type variable (ie. C++ template variables) *)
@@ -187,6 +190,12 @@ let rec pp_full pe f typ =
   F.fprintf f "%a%a" (pp_desc pe) typ.desc pp_quals typ
 
 
+and pp_function_prototype pe f prototype =
+  F.fprintf f "[%a] -> %a"
+    (Pp.comma_seq (pp_full pe))
+    prototype.params_type (pp_full pe) prototype.return_type
+
+
 and pp_desc pe f desc =
   match desc with
   | Tstruct tname ->
@@ -199,9 +208,13 @@ and pp_desc pe f desc =
       F.pp_print_string f (fkind_to_string fk)
   | Tvoid ->
       F.pp_print_string f "void"
-  | Tfun ->
-      F.pp_print_string f "_fn_"
-  | Tptr (({desc= Tarray _ | Tfun} as typ), pk) ->
+  | Tfun prototype_opt -> (
+    match prototype_opt with
+    | Some prototype ->
+        F.fprintf f "(_fn_ %a)" (pp_function_prototype pe) prototype
+    | None ->
+        F.pp_print_string f "_fn_" )
+  | Tptr (({desc= Tarray _ | Tfun _} as typ), pk) ->
       F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
   | Tptr (typ, pk) ->
       F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
@@ -278,7 +291,7 @@ and equal_desc_ignore_quals d1 d2 =
       equal_ikind ikind1 ikind2
   | Tfloat fkind1, Tfloat fkind2 ->
       equal_fkind fkind1 fkind2
-  | Tvoid, Tvoid | Tfun, Tfun ->
+  | Tvoid, Tvoid | Tfun _, Tfun _ ->
       true
   | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
       equal_ptr_kind ptr_kind1 ptr_kind2 && equal_ignore_quals t1 t2
@@ -318,7 +331,7 @@ let rec strict_compatible_match formal actual =
       equal_ikind ikind1 ikind2
   | Tfloat fkind1, Tfloat fkind2 ->
       equal_fkind fkind1 fkind2
-  | Tvoid, Tvoid | Tfun, Tfun ->
+  | Tvoid, Tvoid | Tfun _, Tfun _ ->
       true
   | Tstruct name1, Tstruct name2 ->
       equal_name name1 name2 || (is_std_function formal && is_cpp_lambda actual)
@@ -822,7 +835,7 @@ let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false
 
-let is_pointer_to_function typ = match typ.desc with Tptr ({desc= Tfun}, _) -> true | _ -> false
+let is_pointer_to_function typ = match typ.desc with Tptr ({desc= Tfun _}, _) -> true | _ -> false
 
 let is_int typ = match typ.desc with Tint _ -> true | _ -> false
 

@@ -240,7 +240,7 @@ module TypBridge = struct
         Float
     | Tvoid ->
         Void
-    | Tfun ->
+    | Tfun _ ->
         L.die InternalError "Textual conversion: Tfun type does not appear in Java"
     | Tptr (t, Pk_pointer) ->
         Ptr (of_sil t)

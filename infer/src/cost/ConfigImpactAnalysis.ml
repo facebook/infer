@@ -800,7 +800,7 @@ module Dom = struct
       | Tptr ({desc= Tstruct name}, _) ->
           let s = Typ.Name.name name in
           List.exists number_types ~f:(String.equal s)
-      | Tvoid | Tfun | TVar _ | Tarray _ | Tstruct _ | Tptr _ ->
+      | Tvoid | Tfun _ | TVar _ | Tarray _ | Tstruct _ | Tptr _ ->
           false
 
 

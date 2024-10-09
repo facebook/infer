@@ -158,10 +158,10 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
             (Predicates.Aeq (e, e') :: atoms', se, res_t)
         | Predicates.Off_fld _ :: _ ->
             assert false )
-    | Tint _, [] | Tfloat _, [] | Tvoid, [] | Tfun, [] | Tptr _, [] | TVar _, [] ->
+    | Tint _, [] | Tfloat _, [] | Tvoid, [] | Tfun _, [] | Tptr _, [] | TVar _, [] ->
         let id = new_id () in
         ([], Predicates.Eexp (Exp.Var id, inst), t)
-    | (Tint _ | Tfloat _ | Tvoid | Tfun | Tptr _ | TVar _), Off_index e :: off' ->
+    | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), Off_index e :: off' ->
         (* In this case, we lift t to the t array. *)
         let t', mk_typ_f =
           match t.Typ.desc with
@@ -179,7 +179,7 @@ let rec create_struct_values analysis_data pname tenv orig_prop footprint_part k
         let se = Predicates.Earray (len, [(e', se')], inst) in
         let res_t = mk_typ_f (Tarray {elt= res_t'; length= None; stride= None}) in
         (Predicates.Aeq (e, e') :: atoms', se, res_t)
-    | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun, _ | Tptr _, _ | TVar _, _ ->
+    | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ | TVar _, _ ->
         fail t off __POS__
   in
   if Config.biabduction_trace_rearrange then (
@@ -265,7 +265,7 @@ let rec strexp_extend_values_ analysis_data pname tenv orig_prop footprint_part 
         raise (Exceptions.Missing_fld (f, __POS__)) )
   | Off_fld _ :: _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
-  | Off_index _ :: _, Predicates.Eexp _, (Tint _ | Tfloat _ | Tvoid | Tfun | Tptr _)
+  | Off_index _ :: _, Predicates.Eexp _, (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _)
   | Off_index _ :: _, Predicates.Estruct _, Tstruct _ ->
       (* L.d_strln ~color:Orange "turn into an array"; *)
       let len =
@@ -492,14 +492,14 @@ let mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) max_st
   in
   let create_ptsto footprint_part off0 =
     match (root, off0, typ.Typ.desc) with
-    | Exp.Lvar pvar, [], Typ.Tfun ->
+    | Exp.Lvar pvar, [], Typ.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Exp.Const (Const.Cfun fun_name) in
         ( []
         , Prop.mk_ptsto tenv root
             (Predicates.Eexp (fun_exp, inst))
             (Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype; nullable= false}) )
-    | _, [], Typ.Tfun ->
+    | _, [], Typ.Tfun _ ->
         let atoms, se, typ =
           create_struct_values analysis_data pname tenv orig_prop footprint_part Ident.kfootprint
             max_stamp typ off0 inst

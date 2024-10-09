@@ -17,7 +17,7 @@ let objc_classname_of_desc desc =
   match (desc : Typ.desc) with
   | Tstruct name ->
       name
-  | Tfun ->
+  | Tfun _ ->
       Typ.Name.Objc.from_string CFrontend_config.objc_object
   | _ ->
       L.(debug Capture Verbose)

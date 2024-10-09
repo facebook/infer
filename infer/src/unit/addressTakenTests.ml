@@ -14,7 +14,7 @@ let tests =
   let assert_empty = invariant "{ }" in
   let int_typ = Typ.mk (Tint IInt) in
   let int_ptr_typ = Typ.mk (Tptr (int_typ, Pk_pointer)) in
-  let fun_ptr_typ = Typ.mk (Tptr (Typ.mk Tfun, Pk_pointer)) in
+  let fun_ptr_typ = Typ.mk (Tptr (Typ.mk (Tfun None), Pk_pointer)) in
   let closure_exp captureds =
     let mk_captured_var str =
       ( Exp.Var (ident_of_str str)

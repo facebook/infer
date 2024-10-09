@@ -73,11 +73,14 @@ val is_volatile : type_quals -> bool
 (** types for sil (structured) expressions *)
 type t = {desc: desc; quals: type_quals}
 
+and function_prototype = {params_type: t list; return_type: t}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
 and desc =
   | Tint of ikind  (** integer type *)
   | Tfloat of fkind  (** float type *)
   | Tvoid  (** void type *)
-  | Tfun  (** function type *)
+  | Tfun of function_prototype option  (** function type *)
   | Tptr of t * ptr_kind  (** pointer type *)
   | Tstruct of name  (** structured value type name *)
   | TVar of string  (** type variable (ie. C++ template variables) *)

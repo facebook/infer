@@ -1416,7 +1416,7 @@ let rec fold_pointer_targets tenv timestamp src typ location ?(fields_prefix = R
               fold_pointer_targets tenv timestamp
                 (`Malloc (field_addr, history))
                 field_typ location ~fields_prefix:fields astate ~f ~filter_name ~filter_struct ) )
-  | Tarray _ | Tvoid | Tfun | TVar _ ->
+  | Tarray _ | Tvoid | Tfun _ | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
       astate
 

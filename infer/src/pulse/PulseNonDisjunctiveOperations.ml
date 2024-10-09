@@ -184,7 +184,7 @@ let rec get_fixed_size integer_widths tenv name =
                 Some (match fkind with FFloat -> 32 | FDouble -> 64 | FLongDouble -> 128)
             | Tstruct name ->
                 get_fixed_size integer_widths tenv name
-            | Tvoid | Tfun | Tptr _ | TVar _ | Tarray _ ->
+            | Tvoid | Tfun _ | Tptr _ | TVar _ | Tarray _ ->
                 None
           in
           acc + size )
