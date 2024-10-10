@@ -41,6 +41,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
 
 @implementation SelfInBlockTest {
   int x;
+  NSString* _name;
 }
 
 - (void)foo {
@@ -340,6 +341,18 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     if (strongSelf) {
       [strongSelf foo];
       MY_LOG(@"%@ async load asset completed.", self);
+    }
+    return 0;
+  };
+}
+
+- (void)mixSelfWeakSelf_bad_wrong_autofix_implicit_self {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf foo];
+      _name = @"Dulma";
     }
     return 0;
   };
