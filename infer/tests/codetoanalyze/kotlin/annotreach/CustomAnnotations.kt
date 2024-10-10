@@ -18,6 +18,7 @@ annotation class UserDefinedSink
 @Retention(AnnotationRetention.RUNTIME)
 annotation class UserDefinedSanitizer
 
+// Testing when Kotlin and Java annotations are used in Kotlin code
 class CustomAnnotations {
   @UserDefinedSink fun sink(): Unit {}
 
