@@ -211,20 +211,6 @@ let of_posts analysis_data specialization location posts non_disj =
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )
-    |> List.sort ~compare:(fun x y ->
-           let id = function
-             | ContinueProgram _ ->
-                 0
-             | ExceptionRaised _ ->
-                 1
-             | ExitProgram _
-             | AbortProgram _
-             | LatentAbortProgram _
-             | LatentInvalidAccess _
-             | LatentSpecializedTypeIssue _ ->
-                 2
-           in
-           id x - id y )
   in
   {pre_post_list; non_disj= NonDisjDomain.make_summary non_disj}
 
