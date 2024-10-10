@@ -272,4 +272,17 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     return 0;
   };
 }
+
+- (void)mixSelfWeakSelf_super_good_FP {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf foo];
+      id copy = [super copy]; // bug here
+      [copy foo];
+    }
+    return 0;
+  };
+}
 @end
