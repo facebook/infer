@@ -331,4 +331,18 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+#define MY_LOG(format, ...) NSLog(format, ##__VA_ARGS__)
+
+- (void)mixSelfWeakSelf_bad_wrong_autofix_column {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf foo];
+      MY_LOG(@"%@ async load asset completed.", self);
+    }
+    return 0;
+  };
+}
+
 @end
