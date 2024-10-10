@@ -15,3 +15,4 @@ codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:224, 2, M
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:238, 1, CAPTURED_STRONG_SELF, no_bucket, ERROR, [Using captured &strongSelf,Using captured &strongSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:238, 2, CAPTURED_STRONG_SELF, no_bucket, ERROR, [Using captured &strongSelf,Using captured &strongSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:278, 4, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &self], "self"=>"strongSelf"
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:291, 1, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &self,Using &weakSelf], "self"=>"strongSelf"
