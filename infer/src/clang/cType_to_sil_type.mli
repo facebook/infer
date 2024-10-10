@@ -13,6 +13,7 @@ val type_of_builtin_type_kind : ?is_const:bool -> Clang_ast_t.builtin_type_kind 
 
 val qual_type_to_sil_type :
      ?attr_info:Clang_ast_t.attr_type_info
+  -> ?from_block:bool
   -> (Tenv.t -> Clang_ast_t.decl -> Typ.desc)
   -> Tenv.t
   -> Clang_ast_t.qual_type

@@ -82,7 +82,7 @@ digraph cfg {
 	
 
 	 "test2:#NonnullAnnot(class Nonnull.e479988e9efecc2c_5" -> "test2:#NonnullAnnot(class Nonnull.e479988e9efecc2c_3" ;
-"test3:#NonnullAnnot#[instance].0e0a10b544f9cece_1" [label="1: Start NonnullAnnot.test3:\nFormals:  self:NonnullAnnot* successBlock:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
+"test3:#NonnullAnnot#[instance].0e0a10b544f9cece_1" [label="1: Start NonnullAnnot.test3:\nFormals:  self:NonnullAnnot* successBlock:(_fn_ [NSString*] -> void)(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_1" -> "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_4" ;
@@ -93,11 +93,11 @@ digraph cfg {
 	
 
 	 "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_3" -> "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_2" ;
-"test3:#NonnullAnnot#[instance].0e0a10b544f9cece_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 34, column 3]\n  n$10=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=_fun___call_objc_block(n$9:_fn_,n$10:NSString*) objc_block [line 34, column 3]\n " shape="box"]
+"test3:#NonnullAnnot#[instance].0e0a10b544f9cece_4" [label="4:  Call n$9 \n   n$9=*&successBlock:(_fn_ [NSString*] -> void)(*) [line 34, column 3]\n  n$10=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 34, column 16]\n  n$11=_fun___call_objc_block(n$9:_fn_,n$10:NSString*) objc_block [line 34, column 3]\n " shape="box"]
 	
 
 	 "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_4" -> "test3:#NonnullAnnot#[instance].0e0a10b544f9cece_3" ;
-"test4:#NonnullAnnot#[instance].4dee71de0c7397a3_1" [label="1: Start NonnullAnnot.test4:\nFormals:  self:NonnullAnnot* <_Nonnull> successBlock:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
+"test4:#NonnullAnnot#[instance].4dee71de0c7397a3_1" [label="1: Start NonnullAnnot.test4:\nFormals:  self:NonnullAnnot* <_Nonnull> successBlock:(_fn_ [NSString*] -> void)(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_1" -> "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_4" ;
@@ -108,7 +108,7 @@ digraph cfg {
 	
 
 	 "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_3" -> "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_2" ;
-"test4:#NonnullAnnot#[instance].4dee71de0c7397a3_4" [label="4:  Call n$12 \n   n$12=*&successBlock:_fn_(*) [line 39, column 3]\n  n$13=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=_fun___call_objc_block(n$12:_fn_,n$13:NSString*) objc_block [line 39, column 3]\n " shape="box"]
+"test4:#NonnullAnnot#[instance].4dee71de0c7397a3_4" [label="4:  Call n$12 \n   n$12=*&successBlock:(_fn_ [NSString*] -> void)(*) [line 39, column 3]\n  n$13=_fun_NSString.stringWithUTF8String:(\"Yay\":char* const ) [line 39, column 16]\n  n$14=_fun___call_objc_block(n$12:_fn_,n$13:NSString*) objc_block [line 39, column 3]\n " shape="box"]
 	
 
 	 "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_4" -> "test4:#NonnullAnnot#[instance].4dee71de0c7397a3_3" ;

@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_7" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_3" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:(_fn_ [int] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_1" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_13" ;
@@ -59,12 +59,12 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_8" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_5" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" [label="9:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=_fun___call_objc_block(n$6:_fn_,n$7:int) objc_block [line 27, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" [label="9:  Call n$6 \n   n$6=*&b:(_fn_ [int] -> void)(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=_fun___call_objc_block(n$6:_fn_,n$7:int) objc_block [line 27, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_6" ;
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_7" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_block_release.m:23,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:(_fn_ [int] -> void)(*)=(_fun_objc_block_block_release.m:23,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:(_fn_ [int] -> void)(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" ;

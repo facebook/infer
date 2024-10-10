@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_1" [label="1: Start objc_block_block.m:16\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  [by value]&x:int \n  " color=yellow style=filled]
+"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_1" [label="1: Start objc_block_block.m:16\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:(_fn_ [int] -> int)(*)\nCaptured:  [by value]&x:int \n  " color=yellow style=filled]
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_1" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_7" ;
@@ -15,11 +15,11 @@ digraph cfg {
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_4" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_2" ;
-"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 25, column 12]\n  n$14=_fun___call_objc_block(n$13:_fn_,1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
+"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:(_fn_ [int] -> int)(*) [line 25, column 12]\n  n$14=_fun___call_objc_block(n$13:_fn_,1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_3" ;
-"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_6" [label="6:  Compound statement \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_block_block.m:21,([by value]n$15 &x:int),([by value]n$16 &bla:int)) [line 21, column 5]\n  n$21=*&addblock2:_fn_(*) [line 21, column 5]\n " shape="box"]
+"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_6" [label="6:  Compound statement \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:(_fn_ [int] -> int)(*)=(_fun_objc_block_block.m:21,([by value]n$15 &x:int),([by value]n$16 &bla:int)) [line 21, column 5]\n  n$21=*&addblock2:(_fn_ [int] -> int)(*) [line 21, column 5]\n " shape="box"]
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_6" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" ;
@@ -72,7 +72,7 @@ digraph cfg {
 	
 
 	 "BlockMain.116013dceff96297_4" -> "BlockMain.116013dceff96297_2" ;
-"main1.38f534a9576db7ec_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:_fn_(*) add2:int add1:int x:int \n  " color=yellow style=filled]
+"main1.38f534a9576db7ec_1" [label="1: Start main1\nFormals:  y:int\nLocals:  addblock:(_fn_ [int,int] -> int)(*) add2:int add1:int x:int \n  " color=yellow style=filled]
 	
 
 	 "main1.38f534a9576db7ec_1" -> "main1.38f534a9576db7ec_10" ;
@@ -91,19 +91,19 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec_5" -> "main1.38f534a9576db7ec_3" ;
-"main1.38f534a9576db7ec_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&addblock:_fn_(*) [line 35, column 10]\n  n$4=_fun___call_objc_block(n$3:_fn_,3:int,2:int) objc_block [line 35, column 10]\n  *&add2:int=n$4 [line 35, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&addblock:(_fn_ [int,int] -> int)(*) [line 35, column 10]\n  n$4=_fun___call_objc_block(n$3:_fn_,3:int,2:int) objc_block [line 35, column 10]\n  *&add2:int=n$4 [line 35, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_6" -> "main1.38f534a9576db7ec_5" ;
-"main1.38f534a9576db7ec_7" [label="7:  BinaryOperatorStmt: Assign \n   *&addblock:_fn_(*)=(_fun_objc_block_block.m:31) [line 31, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_7" [label="7:  BinaryOperatorStmt: Assign \n   *&addblock:(_fn_ [int,int] -> int)(*)=(_fun_objc_block_block.m:31) [line 31, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_7" -> "main1.38f534a9576db7ec_6" ;
-"main1.38f534a9576db7ec_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&addblock:_fn_(*) [line 29, column 10]\n  n$8=_fun___call_objc_block(n$7:_fn_,1:int,2:int) objc_block [line 29, column 10]\n  *&add1:int=n$8 [line 29, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&addblock:(_fn_ [int,int] -> int)(*) [line 29, column 10]\n  n$8=_fun___call_objc_block(n$7:_fn_,1:int,2:int) objc_block [line 29, column 10]\n  *&add1:int=n$8 [line 29, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_8" -> "main1.38f534a9576db7ec_7" ;
-"main1.38f534a9576db7ec_9" [label="9:  Compound statement \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_block_block.m:16,([by value]n$9 &x:int)) [line 16, column 3]\n  n$22=*&addblock:_fn_(*) [line 16, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_9" [label="9:  Compound statement \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:(_fn_ [int,int] -> int)(*)=(_fun_objc_block_block.m:16,([by value]n$9 &x:int)) [line 16, column 3]\n  n$22=*&addblock:(_fn_ [int,int] -> int)(*) [line 16, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_9" -> "main1.38f534a9576db7ec_8" ;

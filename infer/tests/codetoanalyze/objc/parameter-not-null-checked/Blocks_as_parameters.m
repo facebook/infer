@@ -197,7 +197,7 @@ typedef void (^_Nullable NewAnnotateSyncBlock)(
 
 void MarkerAnnotateSync(NS_NOESCAPE _Nullable NewAnnotateSyncBlock block) {}
 
-void LoadAndAnnotateOk_FP(NSString* composerSessionID) {
+void LoadAndAnnotateOk(NSString* composerSessionID) {
   MarkerAnnotateSync(^(NewAnnotateBlock annotate) {
     annotate("composer_session_id", composerSessionID);
   });

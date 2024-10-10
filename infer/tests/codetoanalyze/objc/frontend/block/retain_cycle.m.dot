@@ -56,7 +56,7 @@ digraph cfg {
 "capture#A#[instance].ca0ec9307f9d5110_2" [label="2: Exit A.capture \n  " color=yellow style=filled]
 	
 
-"capture#A#[instance].ca0ec9307f9d5110_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_block_retain_cycle.m:45,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
+"capture#A#[instance].ca0ec9307f9d5110_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_block_retain_cycle.m:45,([by value]n$0 &self:A*)):(_fn_ [D*] -> void)(*)) virtual [line 45, column 3]\n " shape="box"]
 	
 
 	 "capture#A#[instance].ca0ec9307f9d5110_3" -> "capture#A#[instance].ca0ec9307f9d5110_2" ;
@@ -78,14 +78,14 @@ digraph cfg {
 "dealloc#B#[instance].62d516b6d74de70c_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
 	
 
-"sHandler:#B#[instance].2c9d8ca3b6059922_1" [label="1: Start B.sHandler:\nFormals:  self:B* h:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
+"sHandler:#B#[instance].2c9d8ca3b6059922_1" [label="1: Start B.sHandler:\nFormals:  self:B* h:(_fn_ [D*] -> void)(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "sHandler:#B#[instance].2c9d8ca3b6059922_1" -> "sHandler:#B#[instance].2c9d8ca3b6059922_3" ;
 "sHandler:#B#[instance].2c9d8ca3b6059922_2" [label="2: Exit B.sHandler: \n  " color=yellow style=filled]
 	
 
-"sHandler:#B#[instance].2c9d8ca3b6059922_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&h:_fn_(*) [line 28, column 14]\n  n$0=*&self:B* [line 28, column 3]\n  *n$0._h:_fn_(*)=n$1 [line 28, column 3]\n " shape="box"]
+"sHandler:#B#[instance].2c9d8ca3b6059922_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&h:(_fn_ [D*] -> void)(*) [line 28, column 14]\n  n$0=*&self:B* [line 28, column 3]\n  *n$0._h:(_fn_ [D*] -> void)(*)=n$1 [line 28, column 3]\n " shape="box"]
 	
 
 	 "sHandler:#B#[instance].2c9d8ca3b6059922_3" -> "sHandler:#B#[instance].2c9d8ca3b6059922_2" ;
