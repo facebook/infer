@@ -298,4 +298,37 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+#define _UNWRAP_STRONG_VARIABLE(nullable_ptr)                         \
+  ({                                                                  \
+    _Pragma("clang diagnostic push");                                 \
+    _Pragma("clang diagnostic ignored \"-Wvoid-ptr-dereference\"");   \
+    __typeof(*(nullable_ptr))* null_unspecified_ptr = (nullable_ptr); \
+    __typeof(null_unspecified_ptr) _Nonnull nonnull_ptr =             \
+        null_unspecified_ptr;                                         \
+    _Pragma("clang diagnostic pop");                                  \
+    nonnull_ptr;                                                      \
+  })
+
+#define WEAK_SELF __weak __typeof(*self)* _Nullable weakSelf = self
+
+#define STRONG_VARIABLE_OR_RETURN(weakVariable, strongVariable) \
+  __typeof(*weakVariable)* _Nonnull(strongVariable) =           \
+      _UNWRAP_STRONG_VARIABLE(weakVariable);                    \
+  do {                                                          \
+    if (!(strongVariable)) {                                    \
+      return;                                                   \
+    }                                                           \
+  } while (0)
+
+#define STRONG_SELF_OR_RETURN STRONG_VARIABLE_OR_RETURN(weakSelf, strongSelf)
+
+- (void)mixSelfWeakSelf_bad_wrong_autofix_macro {
+  __weak __typeof(self) weakSelf = self;
+  void (^my_block)() = ^() {
+    STRONG_SELF_OR_RETURN;
+    [strongSelf foo];
+    [self foo];
+  };
+}
+
 @end
