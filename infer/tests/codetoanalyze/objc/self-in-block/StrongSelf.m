@@ -23,7 +23,13 @@
 
 @end
 
-@interface SelfInBlockTest : NSObject
+@interface SelfInBlockTestSuper : NSObject
+
+@property(nonatomic, weak) NSString* userSession;
+
+@end
+
+@interface SelfInBlockTest : SelfInBlockTestSuper
 
 @property(nonatomic, weak) SelfInBlockTestUser* user;
 
@@ -353,6 +359,18 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     if (strongSelf) {
       [strongSelf foo];
       _name = @"Dulma";
+    }
+    return 0;
+  };
+}
+
+- (void)mixSelfWeakSelf_bad_wrong_autofix_super_property {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)() = ^() {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf) {
+      [strongSelf foo];
+      NSString* s = super.userSession;
     }
     return 0;
   };
