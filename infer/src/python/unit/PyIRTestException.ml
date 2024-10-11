@@ -32,6 +32,9 @@ finally:
         b1:
           n2 <- TOPLEVEL[print]
           n3 <- n2("FINALLY BLOCK")
+          jmp b2
+
+        b2:
           return None |}]
 
 
@@ -77,6 +80,9 @@ print("END")
         b4:
           n7 <- TOPLEVEL[print]
           n8 <- n7("FINALLY BLOCK")
+          jmp b5
+
+        b5:
           n9 <- TOPLEVEL[print]
           n10 <- n9("END")
           return None |}]
@@ -178,7 +184,7 @@ def f(x):
         b1:
           n2 <- $NextIter(n1)
           n3 <- $HasNextIter(n1)
-          if n3 then jmp b2 else jmp b4
+          if n3 then jmp b2 else jmp b5
 
         b2:
           LOCAL[i] <- n2
@@ -192,9 +198,12 @@ def f(x):
         b3:
           n8 <- LOCAL[e]
           n9 <- n8.bar()
-          jmp b1
+          jmp b4
 
         b4:
+          jmp b1
+
+        b5:
           return None |}]
 
 
@@ -270,6 +279,10 @@ with open("foo", "r") as fp:
                90 WITH_CLEANUP_FINISH               0
                   [None]
                92 END_FINALLY                       0
+                  []
+    Successors: 94
+
+    Building a new node, starting from offset 94
                   []
                94 LOAD_CONST                        7 (None)
                   [None]
@@ -348,6 +361,9 @@ with open("foo", "r") as fp:
 
         b8:
           n9 <- n3.__enter__(None, None, None)
+          jmp b9
+
+        b9:
           return None |}]
 
 
@@ -391,7 +407,7 @@ def subhelper():
         b1:
           n5 <- $NextIter(n4)
           n6 <- $HasNextIter(n4)
-          if n6 then jmp b2 else jmp b6
+          if n6 then jmp b2 else jmp b7
 
         b2:
           LOCAL[i] <- n5
@@ -399,7 +415,7 @@ def subhelper():
           n8 <- n7("foo")
           jmp b1
 
-        b6:
+        b7:
           return None |}]
 
 
@@ -425,9 +441,9 @@ except C as c:
           TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
           n0 <- TOPLEVEL[foo]
           n1 <- n0()
-          jmp b5
+          jmp b6
 
-        b5:
+        b6:
           return None
 
 
@@ -474,6 +490,9 @@ async def async_with(filename):
           n10 <- n2.__enter__(None, None, None)
           n11 <- $GetAwaitable(n10)
           n12 <- $YieldFrom(n11, None)
+          jmp b2
+
+        b2:
           return None |}]
 
 
@@ -502,9 +521,9 @@ def call_finally():
         b0:
           n0 <- GLOBAL[read]
           n1 <- n0()
-          jmp b6
+          jmp b7
 
-        b6:
+        b7:
           return None |}]
 
 
@@ -540,16 +559,16 @@ def call_finally_with_break():
         b1:
           n3 <- $NextIter(n2)
           n4 <- $HasNextIter(n2)
-          if n4 then jmp b2 else jmp b9
+          if n4 then jmp b2 else jmp b11
+
+        b11:
+          return None
 
         b2:
           LOCAL[i] <- n3
           n5 <- GLOBAL[read]
           n6 <- n5()
-          jmp b1
-
-        b9:
-          return None |}]
+          jmp b1 |}]
 
 
 let%expect_test _ =
@@ -622,15 +641,24 @@ async def foo():
           jmp b2
 
         b2:
-          n18 <- n6.__enter__(None, None, None)
-          n19 <- $GetAwaitable(n18)
-          n20 <- $YieldFrom(n19, None)
           jmp b3
 
         b3:
+          n18 <- n6.__enter__(None, None, None)
+          n19 <- $GetAwaitable(n18)
+          n20 <- $YieldFrom(n19, None)
+          jmp b4
+
+        b4:
+          jmp b5
+
+        b5:
           n21 <- n1.__enter__(None, None, None)
           n22 <- $GetAwaitable(n21)
           n23 <- $YieldFrom(n22, None)
+          jmp b6
+
+        b6:
           return None |}]
 
 
@@ -647,6 +675,151 @@ async def foo():
             do_finally()
 |}
   in
+  PyIR.test_cfg_skeleton source ;
+  PyIR.test source ;
+  [%expect
+    {|
+    dummy
+       2        0 LOAD_CONST                        0 (<code object foo>)
+                2 LOAD_CONST                        1 ("foo")
+                4 MAKE_FUNCTION                     0
+                6 STORE_NAME                        0 (foo)
+                8 LOAD_CONST                        2 (None)
+               10 RETURN_VALUE                      0
+    CFG successors:
+       0:
+    CFG predecessors:
+       0:
+    topological order: 0
+
+    dummy.foo
+       3        0 LOAD_GLOBAL                       0 (read1)
+                2 CALL_FUNCTION                     0
+                4 SETUP_WITH                       66
+                6 POP_TOP                           0
+       4        8 SETUP_FINALLY                    50
+       5       10 LOAD_GLOBAL                       2 (read2)
+               12 CALL_FUNCTION                     0
+               14 SETUP_WITH                       18
+               16 POP_TOP                           0
+       6       18 LOAD_GLOBAL                       3 (get)
+               20 CALL_FUNCTION                     0
+               22 GET_AWAITABLE                     0
+               24 LOAD_CONST                        0 (None)
+               26 YIELD_FROM                        0
+               28 STORE_FAST                        0 (res)
+               30 POP_BLOCK                         0
+               32 BEGIN_FINALLY                     0
+         >>>   34 WITH_CLEANUP_START                0
+               36 WITH_CLEANUP_FINISH               0
+               38 END_FINALLY                       0
+       7       40 LOAD_FAST                         0 (res)
+               42 POP_BLOCK                         0
+               44 CALL_FINALLY                     14
+               46 POP_BLOCK                         0
+               48 ROT_TWO                           0
+               50 BEGIN_FINALLY                     0
+               52 WITH_CLEANUP_START                0
+               54 WITH_CLEANUP_FINISH               0
+               56 POP_FINALLY                       0
+               58 RETURN_VALUE                      0
+       9 >>>   60 LOAD_GLOBAL                       1 (do_finally)
+               62 CALL_FUNCTION                     0
+               64 POP_TOP                           0
+               66 END_FINALLY                       0
+               68 POP_BLOCK                         0
+               70 BEGIN_FINALLY                     0
+         >>>   72 WITH_CLEANUP_START                0
+               74 WITH_CLEANUP_FINISH               0
+               76 END_FINALLY                       0
+               78 LOAD_CONST                        0 (None)
+               80 RETURN_VALUE                      0
+    CFG successors:
+       0: 34
+      34: 40
+      40: 60
+      46: 52
+      52:
+      60: 46
+      68: 72
+      72: 78
+      78:
+    CFG predecessors:
+       0:
+      34: 0
+      40: 34
+      46: 60
+      52: 46
+      60: 40
+      68:
+      72:
+      78:
+    topological order: 0 34 40 60 46 52
+
+    module dummy:
+
+      toplevel:
+        b0:
+          TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
+          return None
+
+
+      dummy.foo:
+        b0:
+          n0 <- GLOBAL[read1]
+          n1 <- n0()
+          n2 <- n1.__enter__()
+          n3 <- GLOBAL[read2]
+          n4 <- n3()
+          n5 <- n4.__enter__()
+          n6 <- GLOBAL[get]
+          n7 <- n6()
+          n8 <- $GetAwaitable(n7)
+          n9 <- $YieldFrom(n8, None)
+          LOCAL[res] <- n8
+          jmp b1
+
+        b1:
+          n10 <- n4.__enter__(None, None, None)
+          jmp b2
+
+        b2:
+          n11 <- LOCAL[res]
+          jmp b5
+
+        b3:
+          jmp b4
+
+        b4:
+          n14 <- n1.__enter__(None, None, None)
+          return n11
+
+        b5:
+          n12 <- GLOBAL[do_finally]
+          n13 <- n12()
+          jmp b3 |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def foo():
+    num_attempts = 25
+    while num_attempts > 0:
+        try:
+            should_stop, output = stop_conditionx()
+            if should_stop:
+                return output
+        except Exception:
+            if retry_on_failure and num_attempts > 1:
+                continue
+            else:
+                raise
+        finally:
+            num_attempts = num_attempts - 1
+    return
+|}
+  in
   PyIR.test source ;
   [%expect {|
-    IR error: WITH_CLEANUP_START/TODO: unsupported scenario with n11 |}]
+    IR error: Cannot pop, stack is empty |}]

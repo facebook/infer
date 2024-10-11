@@ -337,6 +337,9 @@ with open("foo.txt", "wt") as fp:
 
         b1:
           n5 <- n1.__enter__(None, None, None)
+          jmp b2
+
+        b2:
           return None |}]
 
 

@@ -391,7 +391,13 @@ def f(x, y, l, bar, toto):
         b1:
           n2 <- $NextIter(n1)
           n3 <- $HasNextIter(n1)
-          if n3 then jmp b2 else jmp b7
+          if n3 then jmp b2 else jmp b11
+
+        b10:
+          jmp b1
+
+        b11:
+          return None
 
         b2:
           LOCAL[x] <- n2
@@ -403,28 +409,34 @@ def f(x, y, l, bar, toto):
           n9 <- n8.__enter__()
           LOCAL[obj] <- n9
           n10 <- LOCAL[y]
-          if n10 then jmp b3 else jmp b4
+          if n10 then jmp b3 else jmp b6
 
         b3:
-          n15 <- n8.__enter__(None, None, None)
-          n16 <- n5.__enter__(None, None, None)
-          jmp b1
+          jmp b4
 
         b4:
-          n11 <- GLOBAL[print]
-          n12 <- n11("nop")
+          n15 <- n8.__enter__(None, None, None)
           jmp b5
 
         b5:
-          n13 <- n8.__enter__(None, None, None)
-          jmp b6
-
-        b6:
-          n14 <- n5.__enter__(None, None, None)
+          n16 <- n5.__enter__(None, None, None)
           jmp b1
 
+        b6:
+          n11 <- GLOBAL[print]
+          n12 <- n11("nop")
+          jmp b7
+
         b7:
-          return None |}]
+          n13 <- n8.__enter__(None, None, None)
+          jmp b8
+
+        b8:
+          jmp b9
+
+        b9:
+          n14 <- n5.__enter__(None, None, None)
+          jmp b10 |}]
 
 
 let%expect_test _ =
@@ -865,9 +877,15 @@ def f(foo, bar):
 
         b1:
           n9 <- n4.__enter__(None, None, None)
+          jmp b2
+
+        b2:
           n10 <- GLOBAL[print]
           n11 <- LOCAL[foo0]
           n12 <- n10(n11)
+          jmp b3
+
+        b3:
           n13 <- n1.__enter__(None, None, None)
           return 42 |}]
 
@@ -1614,7 +1632,7 @@ async def foo():
         b1:
           n4 <- $NextIter(n3)
           n5 <- $HasNextIter(n3)
-          if n5 then jmp b2 else jmp b4
+          if n5 then jmp b2 else jmp b6
 
         b2:
           LOCAL[i] <- n4
@@ -1626,10 +1644,13 @@ async def foo():
           n11 <- $GetAwaitable(n10)
           n12 <- $YieldFrom(n11, None)
           LOCAL[f] <- n11
+          jmp b3
+
+        b3:
           n13 <- n8.__enter__(None, None, None)
           n14 <- $GetAwaitable(n13)
           n15 <- $YieldFrom(n14, None)
           return None
 
-        b4:
+        b6:
           return None |}]

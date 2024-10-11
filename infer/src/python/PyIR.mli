@@ -109,6 +109,7 @@ module Exp : sig
     | LoadMethod of (t * string)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
+    | CallFinallyReturn of {offset: int}
     | ContextManagerExit of t
     | Packed of {exp: t; is_map: bool}
     | Yield of t

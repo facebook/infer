@@ -95,7 +95,11 @@ module NodeName : sig
 end = struct
   type t = {name: string; offset: int [@compare.ignore] [@equal.ignore]} [@@deriving equal, compare]
 
-  let pp fmt {name} = F.pp_print_string fmt name
+  let pp ~debug fmt {name; offset} =
+    if debug then F.fprintf fmt "%s@%d" name offset else F.pp_print_string fmt name
+
+
+  let pp = pp ~debug:false
 
   let mk ~offset name = {name; offset}
 
@@ -309,6 +313,7 @@ module Exp = struct
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
+    | CallFinallyReturn of {offset: int}
     | ContextManagerExit of t
     (* TODO: maybe this one is not useful, but at least it is not harmful :)
        Maybe consider removing it *)
@@ -347,6 +352,8 @@ module Exp = struct
     | BuiltinCaller _bc ->
         Error exp
     | ContextManagerExit _exp ->
+        Error exp
+    | CallFinallyReturn _ ->
         Error exp
     | Packed {exp} ->
         check exp
@@ -396,6 +403,8 @@ module Exp = struct
         F.fprintf fmt "BUILTIN_CALLER(%s)" (BuiltinCaller.show bc)
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
+    | CallFinallyReturn {offset} ->
+        F.fprintf fmt "CFR(%d)" offset
     | Packed {exp; is_map} ->
         F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
     | Yield exp ->
@@ -440,6 +449,7 @@ module Error = struct
     | WithCleanupStart of Exp.t
     | WithCleanupFinish of Exp.t
     | RaiseExceptionInvalid of int
+    | SubroutineEmptyStack of int
 
   type t = L.error * Location.t * kind
 
@@ -491,6 +501,8 @@ module Error = struct
         F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp exp
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
+    | SubroutineEmptyStack offset ->
+        F.fprintf fmt "SUBROUTINE_EMPTY_STACK: Invalid subroutine call stack at offset %d" offset
 end
 
 type 'a pyresult = ('a, Error.t) result
@@ -1750,18 +1762,31 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BEGIN_FINALLY" ->
+      let {State.loc} = st in
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let* label = State.get_node_name st next_offset in
       let st = State.push st (Exp.Const Const.none) in
-      Ok (st, None)
+      let {State.stack} = st in
+      let jump = Terminator.mk_jump label stack in
+      Ok (st, Some jump)
   | "SETUP_FINALLY" ->
       Ok (st, None)
   | "END_FINALLY" ->
-      let* _, st = State.pop st in
-      Ok (st, None)
+      let {State.loc} = st in
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let* ret, st = State.pop st in
+      let {State.stack} = st in
+      let label_offset =
+        match ret with Exp.CallFinallyReturn {offset} -> offset | _ -> next_offset
+      in
+      let* label = State.get_node_name st label_offset in
+      let jump = Terminator.mk_jump label stack in
+      Ok (st, Some jump)
   | "CALL_FINALLY" ->
       let {State.loc} = st in
       let* next_offset = Offset.get ~loc next_offset_opt in
       let jump_offset = next_offset + arg in
-      let st = State.push st (Exp.Const (Const.of_int jump_offset)) in
+      let st = State.push st (Exp.CallFinallyReturn {offset= next_offset}) in
       let* label = State.get_node_name st jump_offset in
       let {State.stack} = st in
       Ok (st, Some (Terminator.mk_jump label stack))
@@ -2002,9 +2027,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "ROT_THREE"
   | "ROT_FOUR"
   | "SETUP_WITH"
-  | "BEGIN_FINALLY"
   | "SETUP_FINALLY"
-  | "END_FINALLY"
   | "POP_FINALLY"
   | "WITH_CLEANUP_START"
   | "WITH_CLEANUP_FINISH"
@@ -2040,8 +2063,14 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
       `NextInstrWithPopOrAbsolute arg
   | "FOR_ITER" ->
       `NextInstrOrRelativeWith2Pop arg
-  | "CALL_FINALLY" | "JUMP_FORWARD" ->
+  | "JUMP_FORWARD" ->
       `Relative arg
+  | "CALL_FINALLY" ->
+      `CallFinallyRelative arg
+  | "BEGIN_FINALLY" ->
+      `BeginFinally
+  | "END_FINALLY" ->
+      `EndFinally
   | "JUMP_ABSOLUTE" ->
       `Absolute arg
   | "END_ASYNC_FOR" | "RAISE_VARARGS" ->
@@ -2057,8 +2086,44 @@ let lookup_remaining = function
       (Some offset, is_jump_target)
 
 
+module Subroutine = struct
+  (* We keep track of the subroutine call stack during CFG dfs.
+     Then, we hit a END_FINALLY, the current frame is either [None]
+     or [Some offset] and we can make a decision.
+     This approach is rather fragile because a the order of return
+     adresses in the real operand stack could **in theory** be messed
+     up by some stack operaion like ROT_TWO, ROT_THREE and so one.
+     We do not try to detect such a strange situation for now.
+  *)
+
+  type call_stack = int option list (* stack of return offsets *)
+
+  type edge =
+    | Call of {return: int}  (** CALL_FINALLY *)
+    | Tailcall  (** BEGIN_FINALLY *)
+    | Return of {from: int}  (** END_FINALLY *)
+    | Nop  (** No action on subroutines *)
+
+  let exec dest stack edge =
+    match edge with
+    | Call {return} ->
+        Ok (None, Some return :: stack)
+    | Tailcall ->
+        Ok (None, None :: stack)
+    | Return {from} -> (
+      match stack with
+      | [] ->
+          Error (L.InternalError, None, Error.SubroutineEmptyStack dest)
+      | None :: stack ->
+          Ok (None, stack)
+      | Some return_offset :: stack ->
+          Ok (Some (from, return_offset), stack) )
+    | Nop ->
+        Ok (None, stack)
+end
+
 type cfg_info =
-  { successors: (Offset.t * int) list
+  { successors: (Offset.t * int * Subroutine.edge) list
   ; predecessors: Offset.t list
   ; instructions: FFI.Instruction.t list }
 
@@ -2095,23 +2160,34 @@ let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
         Ok (map, action)
     | `NextInstrOnly ->
         let* next_offset = get_next_offset () in
-        register_current_node [(next_offset, 0)]
+        register_current_node [(next_offset, 0, Nop)]
     | `Throw | `Return ->
         register_current_node []
     | `NextInstrWithPopOrAbsolute other_offset ->
         let* next_offset = get_next_offset () in
-        register_current_node [(next_offset, -1); (other_offset, 0)]
+        register_current_node [(next_offset, -1, Nop); (other_offset, 0, Nop)]
     | `NextInstrOrAbsolute other_offset ->
         let* next_offset = get_next_offset () in
-        register_current_node [(next_offset, 0); (other_offset, 0)]
+        register_current_node [(next_offset, 0, Nop); (other_offset, 0, Nop)]
     | `NextInstrOrRelativeWith2Pop delta ->
         let* next_offset = get_next_offset () in
-        register_current_node [(next_offset, 0); (next_offset + delta, -2)]
+        register_current_node [(next_offset, 0, Nop); (next_offset + delta, -2, Nop)]
     | `Relative delta ->
         let* next_offset = get_next_offset () in
-        register_current_node [(next_offset + delta, 0)]
+        register_current_node [(next_offset + delta, 0, Nop)]
+    | `BeginFinally ->
+        let* next_offset = get_next_offset () in
+        register_current_node [(next_offset, 0, Tailcall)]
+    | `CallFinallyRelative delta ->
+        let* next_offset = get_next_offset () in
+        let absolute_target = next_offset + delta in
+        register_current_node [(absolute_target, 0, Call {return= next_offset})]
+    | `EndFinally ->
+        let* next_offset = get_next_offset () in
+        (* we may modify these successors later *)
+        register_current_node [(next_offset, 0, Return {from= current_node_offset})]
     | `Absolute offset ->
-        register_current_node [(offset, 0)]
+        register_current_node [(offset, 0, Nop)]
     | `UnsupportedOpcode ->
         Error (L.InternalError, starts_line, Error.UnsupportedOpcode opname)
   in
@@ -2131,30 +2207,54 @@ let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
 
 module ISet = IInt.Set
 
-let set_predecessors offset successors map =
-  List.fold successors ~init:map ~f:(fun map (succ_offset, _) ->
-      let ({predecessors} as info) =
-        IMap.find_opt succ_offset map |> Option.value ~default:dummy_cfg_info
-      in
-      IMap.add succ_offset {info with predecessors= offset :: predecessors} map )
+let set_predecessor ~pred ~succ map =
+  let ({predecessors} as info) = IMap.find_opt succ map |> Option.value ~default:dummy_cfg_info in
+  IMap.add succ {info with predecessors= pred :: predecessors} map
+
+
+let optionally_set_predecessor ~from ~offset map =
+  Option.value_map from ~default:map ~f:(fun from -> set_predecessor ~pred:from ~succ:offset map)
+
+
+let change_successors_because_of_subroutine_return ~from ~return map =
+  IMap.find_opt from map
+  |> Option.value_map ~default:map ~f:(fun {instructions} ->
+         IMap.add from {successors= [(return, 0, Nop)]; instructions; predecessors= []} map )
 
 
 let build_topological_order cfg_skeleton_without_predecessors =
   (* weakly topological order *)
-  let rec visit ((seen, map, post_visited) as acc) (offset, _) =
-    if ISet.mem offset seen then acc
+  let open IResult.Let_syntax in
+  let rec visit ?from (call_stack : Subroutine.call_stack) (seen, map, post_visited)
+      (offset, _, subroutine_edge) =
+    if ISet.mem offset seen then
+      let map = optionally_set_predecessor ~from ~offset map in
+      Ok (seen, map, post_visited)
     else
-      let {successors} =
-        IMap.find_opt offset cfg_skeleton_without_predecessors
-        |> Option.value ~default:dummy_cfg_info
-      in
-      let seen = ISet.add offset seen in
-      let seen, map, post_visited = List.fold successors ~f:visit ~init:(seen, map, post_visited) in
-      let map = set_predecessors offset successors map in
-      let post_visited = offset :: post_visited in
-      (seen, map, post_visited)
+      let* opt_succ, call_stack = Subroutine.exec offset call_stack subroutine_edge in
+      match opt_succ with
+      | None ->
+          (* regular case *)
+          let {successors} =
+            IMap.find_opt offset cfg_skeleton_without_predecessors
+            |> Option.value ~default:dummy_cfg_info
+          in
+          let seen = ISet.add offset seen in
+          let* seen, map, post_visited =
+            List.fold_result successors ~f:(visit ~from:offset call_stack)
+              ~init:(seen, map, post_visited)
+          in
+          let map = optionally_set_predecessor ~from ~offset map in
+          let post_visited = offset :: post_visited in
+          Ok (seen, map, post_visited)
+      | Some (from, return) ->
+          (* this a subroutine indirect return edge: we need to change route *)
+          let map = change_successors_because_of_subroutine_return ~from ~return map in
+          visit ~from call_stack (seen, map, post_visited) (return, 0, Subroutine.Nop)
   in
-  let _, cfg, post_visited = visit (ISet.empty, cfg_skeleton_without_predecessors, []) (0, 0) in
+  let+ _, cfg, post_visited =
+    visit [] (ISet.empty, cfg_skeleton_without_predecessors, []) (0, 0, Nop)
+  in
   (post_visited, cfg)
 
 
@@ -2221,7 +2321,7 @@ let process_node st code ~offset ~arity ({instructions; successors} as info) =
   let {State.stack} = st in
   State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp) stack ;
   let show_completion () =
-    State.debug st "Successors: %a@\n" (Pp.comma_seq F.pp_print_int) (List.map successors ~f:fst) ;
+    State.debug st "Successors: %a@\n" (Pp.comma_seq F.pp_print_int) (List.map successors ~f:fst3) ;
     State.debug st "@\n"
   in
   let rec loop st = function
@@ -2262,7 +2362,9 @@ let build_cfg ~debug ~code_qual_name code =
   let open IResult.Let_syntax in
   let loc = Location.of_code code in
   let* cfg_skeleton_without_predecessors = build_cfg_skeleton_without_predecessors code in
-  let topological_order, cfg_skeleton = build_topological_order cfg_skeleton_without_predecessors in
+  let* topological_order, cfg_skeleton =
+    build_topological_order cfg_skeleton_without_predecessors
+  in
   let get_info offset =
     match IMap.find_opt offset cfg_skeleton with
     | None ->
@@ -2282,7 +2384,7 @@ let build_cfg ~debug ~code_qual_name code =
     let* st = process_node st code ~offset ~arity info in
     let arity = State.size st in
     let arity_map =
-      List.fold successors ~init:arity_map ~f:(fun arity_map (succ, delta) ->
+      List.fold successors ~init:arity_map ~f:(fun arity_map (succ, delta, _) ->
           if IMap.mem succ arity_map then arity_map else IMap.add succ (arity + delta) arity_map )
     in
     Ok (st, arity_map)
@@ -2352,15 +2454,19 @@ let fold_all_inner_codes_and_build_map ~code_qual_name ~(f : FFI.Code.t -> 'a py
 
 
 let test_cfg_skeleton ~code_qual_name code =
-  match build_cfg_skeleton_without_predecessors code with
+  let test =
+    let open IResult.Let_syntax in
+    let* map = build_cfg_skeleton_without_predecessors code in
+    build_topological_order map
+  in
+  match test with
   | Error (_, _, err) ->
       L.internal_error "IR error: %a@\n" Error.pp_kind err
-  | Ok map ->
+  | Ok (topological_order, map) ->
       let qual_name = code_qual_name code |> Option.value_exn in
       F.printf "%a@\n" QualName.pp qual_name ;
-      let topological_order, map = build_topological_order map in
       List.iter code.FFI.Code.instructions ~f:(F.printf "%a@\n" (FFI.Instruction.pp ~code)) ;
-      let pp_succ_and_delta fmt (succ, delta) =
+      let pp_succ_and_delta fmt (succ, delta, _) =
         if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
       in
       F.printf "CFG successors:@\n" ;
