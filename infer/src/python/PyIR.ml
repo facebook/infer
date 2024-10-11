@@ -1319,20 +1319,7 @@ let with_cleanup_start st =
   Ok (st, None)
 
 
-(** Extract from Python3.8 specification:
-
-    Finishes cleaning up the stack when a with statement block exits. top-of-stack is result of
-    [__exit__()] or [__aexit__()] function call pushed by [WITH_CLEANUP_START]. [SECOND] is [None]
-    or an exception type (pushed when an exception has been raised).
-
-    Pops two values from the stack. If [SECOND] is not [NULL] and top-of-stack is true unwinds the
-    [EXCEPT_HANDLER] block which was created when the exception was caught and pushes [NULL] to the
-    stack.
-
-    Note: we only support the [None] case for the moment. See
-    https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373.
-
-    TODO: duplicate the node and deal with the EXCEPT_HANDLER case *)
+(** See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373 *)
 let with_cleanup_finish st =
   let open IResult.Let_syntax in
   let* _exit_res, st = State.pop st in
@@ -1886,12 +1873,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BEFORE_ASYNC_WITH" ->
-      let* tos = State.peek st in
+      (* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3237 *)
+      let* tos, st = State.pop st in
       let st = State.push st (ContextManagerExit tos) in
       let* id, st = call_method st PyCommon.enter tos [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "SETUP_ASYNC_WITH" ->
+      (* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3261 *)
       (* This is nope operation until we translate exceptino throwing *)
       Ok (st, None)
   | "END_ASYNC_FOR" ->

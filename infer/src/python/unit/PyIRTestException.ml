@@ -585,122 +585,68 @@ async def foo():
             await action()
 |}
   in
-  PyIR.test ~debug:true source ;
+  PyIR.test source ;
   [%expect
     {|
-    Translating dummy...
-    Building a new node, starting from offset 0
-                  []
-       2        0 LOAD_CONST                        0 (<code object foo>)
-                  [<code object foo>]
-                2 LOAD_CONST                        1 ("foo")
-                  [<code object foo>; "foo"]
-                4 MAKE_FUNCTION                     0
-                  [$FuncObj(foo, dummy.foo, {})]
-                6 STORE_NAME                        0 (foo)
-                  []
-                8 LOAD_CONST                        2 (None)
-                  [None]
-               10 RETURN_VALUE                      0
-                  []
-    Successors:
+    module dummy:
 
-    Translating dummy.foo...
-    Building a new node, starting from offset 0
-                  []
-       3        0 LOAD_GLOBAL                       0 (read1)
-                  [n0]
-                2 CALL_FUNCTION                     0
-                  [n1]
-                4 BEFORE_ASYNC_WITH                 0
-                  [n1; CM(n1).__exit__; n2]
-                6 GET_AWAITABLE                     0
-                  [n1; CM(n1).__exit__; n3]
-                8 LOAD_CONST                        0 (None)
-                  [n1; CM(n1).__exit__; n3; None]
-               10 YIELD_FROM                        0
-                  [n1; CM(n1).__exit__; n3]
-               12 SETUP_ASYNC_WITH                 68
-                  [n1; CM(n1).__exit__; n3]
-               14 POP_TOP                           0
-                  [n1; CM(n1).__exit__]
-               16 LOAD_GLOBAL                       1 (read2)
-                  [n1; CM(n1).__exit__; n5]
-               18 CALL_FUNCTION                     0
-                  [n1; CM(n1).__exit__; n6]
-               20 BEFORE_ASYNC_WITH                 0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n7]
-               22 GET_AWAITABLE                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n8]
-               24 LOAD_CONST                        0 (None)
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n8; None]
-               26 YIELD_FROM                        0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n8]
-               28 SETUP_ASYNC_WITH                 36
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n8]
-               30 POP_TOP                           0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__]
-       4       32 LOAD_GLOBAL                       2 (read3)
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n10]
-               34 CALL_FUNCTION                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; n11]
-               36 SETUP_WITH                       18
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n12]
-               38 POP_TOP                           0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__]
-       5       40 LOAD_GLOBAL                       3 (action)
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n13]
-               42 CALL_FUNCTION                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n14]
-               44 GET_AWAITABLE                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n15]
-               46 LOAD_CONST                        0 (None)
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n15; None]
-               48 YIELD_FROM                        0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; n15]
-               50 POP_TOP                           0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__]
-               52 POP_BLOCK                         0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__]
-               54 BEGIN_FINALLY                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; None]
-    Successors: 56
+      toplevel:
+        b0:
+          TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
+          return None
 
-    Building a new node, starting from offset 56
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; CM(n11).__exit__; None]
-         >>>   56 WITH_CLEANUP_START                0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; None; None; n17]
-               58 WITH_CLEANUP_FINISH               0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; None]
-               60 END_FINALLY                       0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__]
-               62 POP_BLOCK                         0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__]
-               64 BEGIN_FINALLY                     0
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; None]
-    Successors: 66
 
-    Building a new node, starting from offset 66
-                  [n1; CM(n1).__exit__; n6; CM(n6).__exit__; None]
-         >>>   66 WITH_CLEANUP_START                0
-                  [n1; CM(n1).__exit__; n6; None; None; n18]
-               68 GET_AWAITABLE                     0
-                  [n1; CM(n1).__exit__; n6; None; None; n19]
-               70 LOAD_CONST                        0 (None)
-                  [n1; CM(n1).__exit__; n6; None; None; n19; None]
-               72 YIELD_FROM                        0
-                  [n1; CM(n1).__exit__; n6; None; None; n19]
-               74 WITH_CLEANUP_FINISH               0
-                  [n1; CM(n1).__exit__; n6; None]
-               76 END_FINALLY                       0
-                  [n1; CM(n1).__exit__; n6]
-               78 POP_BLOCK                         0
-                  [n1; CM(n1).__exit__; n6]
-               80 BEGIN_FINALLY                     0
-                  [n1; CM(n1).__exit__; n6; None]
-    Successors: 82
+      dummy.foo:
+        b0:
+          n0 <- GLOBAL[read1]
+          n1 <- n0()
+          n2 <- n1.__enter__()
+          n3 <- $GetAwaitable(n2)
+          n4 <- $YieldFrom(n3, None)
+          n5 <- GLOBAL[read2]
+          n6 <- n5()
+          n7 <- n6.__enter__()
+          n8 <- $GetAwaitable(n7)
+          n9 <- $YieldFrom(n8, None)
+          n10 <- GLOBAL[read3]
+          n11 <- n10()
+          n12 <- n11.__enter__()
+          n13 <- GLOBAL[action]
+          n14 <- n13()
+          n15 <- $GetAwaitable(n14)
+          n16 <- $YieldFrom(n15, None)
+          jmp b1
 
-    Building a new node, starting from offset 82
-                  [n1; CM(n1).__exit__; n6; None]
-         >>>   82 WITH_CLEANUP_START                0
-    IR error: WITH_CLEANUP_START/TODO: unsupported scenario with n6 |}]
+        b1:
+          n17 <- n11.__enter__(None, None, None)
+          jmp b2
+
+        b2:
+          n18 <- n6.__enter__(None, None, None)
+          n19 <- $GetAwaitable(n18)
+          n20 <- $YieldFrom(n19, None)
+          jmp b3
+
+        b3:
+          n21 <- n1.__enter__(None, None, None)
+          n22 <- $GetAwaitable(n21)
+          n23 <- $YieldFrom(n22, None)
+          return None |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+async def foo():
+    with read1():
+        try:
+            with read2():
+                res = await get()
+            return res
+        finally:
+            do_finally()
+|}
+  in
+  PyIR.test source ;
+  [%expect {|
+    IR error: WITH_CLEANUP_START/TODO: unsupported scenario with n11 |}]
