@@ -369,7 +369,13 @@ module Mem = struct
     let strongVars =
       try
         let {DomainData.pvar= binding_for_id} = Vars.find id astate.vars in
-        if is_captured_weak_self attributes binding_for_id && Typ.is_strong_pointer pvar_typ then
+        let strong_pvar_opt =
+          StrongEqualToWeakCapturedVars.find_opt binding_for_id astate.strongVars
+        in
+        if
+          (is_captured_weak_self attributes binding_for_id && Typ.is_strong_pointer pvar_typ)
+          || Option.is_some strong_pvar_opt
+        then
           StrongEqualToWeakCapturedVars.add pvar
             {checked= false; loc; reported= false}
             astate.strongVars
@@ -539,7 +545,9 @@ let find_strong_self domain =
   Vars.fold
     (fun _ {pvar; kind; loc} pvar_opt ->
       match kind with
-      | UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF ->
+      | (UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF)
+        when String.is_substring ~substring:(Mangled.to_string Mangled.self)
+               (String.lowercase (Mangled.to_string (Pvar.get_name pvar))) ->
           Some (pvar, loc)
       | _ ->
           pvar_opt )

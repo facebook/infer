@@ -334,7 +334,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
 
 #define STRONG_SELF_OR_RETURN STRONG_VARIABLE_OR_RETURN(weakSelf, strongSelf)
 
-- (void)mixSelfWeakSelf_bad_wrong_autofix_macro {
+- (void)mixSelfWeakSelf_bad_correct_autofix_macro {
   __weak __typeof(self) weakSelf = self;
   void (^my_block)() = ^() {
     STRONG_SELF_OR_RETURN;
