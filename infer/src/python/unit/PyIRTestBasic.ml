@@ -500,3 +500,43 @@ x = o.f(0, *args1, *args2, **d1, **d2)
           TOPLEVEL[x] <- n49
           return None
 |xxx}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def main(arg):
+    def f(x: int, y: str = "ok", z: float = 0.0, *l, key=None):
+        return arg
+
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      toplevel:
+        b0:
+          n0 <- $MakeFunction["main", "dummy.main"](None, None, None, None, None)
+          TOPLEVEL[main] <- n0
+          return None
+
+
+      dummy.main.f:
+        b0:
+          n0 <- $LoadDeref[0,"arg"](None)
+          return n0
+
+
+      dummy.main:
+        b0:
+          n0 <- GLOBAL[int]
+          n1 <- GLOBAL[str]
+          n2 <- GLOBAL[float]
+          n3 <- $LoadClosure[0,"arg"](None)
+          n4 <- $MakeFunction["f", "dummy.main.f"](("ok",0.), {"key": None, }, {
+                                                   "x": n0, "y": n1, "z": n2, }, (unpacked)(
+                                                   n3), None)
+          LOCAL[f] <- n4
+          return None |}]

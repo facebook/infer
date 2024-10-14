@@ -26,7 +26,8 @@ def f(**kwargs):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -88,11 +89,14 @@ start()
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
-          TOPLEVEL[start] <- $FuncObj(start, dummy.start, {})
-          n0 <- TOPLEVEL[start]
-          n1 <- $Call(n0, None)
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["g", "dummy.g"](None, None, None, None, None)
+          TOPLEVEL[g] <- n1
+          n2 <- $MakeFunction["start", "dummy.start"](None, None, None, None, None)
+          TOPLEVEL[start] <- n2
+          n3 <- TOPLEVEL[start]
+          n4 <- $Call(n3, None)
           return None
 
 
@@ -188,7 +192,8 @@ def f(foo, a, b, c):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -261,11 +266,12 @@ f(**d1, x=42)
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
           n4 <- $Call(n2, n3, None)
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n5 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n5
           TOPLEVEL[d1] <- {"a": 0, "b": 1, }
-          n5 <- TOPLEVEL[f]
-          n6 <- TOPLEVEL[d1]
-          n7 <- $CallFunctionEx(n5, (unpacked)(), {|$Packed(n6), $Packed((unpacked){|"x", 42|})|}, None)
+          n6 <- TOPLEVEL[f]
+          n7 <- TOPLEVEL[d1]
+          n8 <- $CallFunctionEx(n6, (unpacked)(), {|$Packed(n7), $Packed((unpacked){|"x", 42|})|}, None)
           return None
 
 
@@ -314,19 +320,20 @@ print(lst) # [2, 3, 4, 5, 6]
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, None)
-          n2 <- $UnpackEx(2, 3, n1, None)
-          TOPLEVEL[a] <- n2[0]
-          TOPLEVEL[b] <- n2[1]
-          TOPLEVEL[lst] <- n2[2]
-          TOPLEVEL[x] <- n2[3]
-          TOPLEVEL[y] <- n2[4]
-          TOPLEVEL[z] <- n2[5]
-          n3 <- TOPLEVEL[print]
-          n4 <- TOPLEVEL[lst]
-          n5 <- $Call(n3, n4, None)
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- TOPLEVEL[f]
+          n2 <- $Call(n1, None)
+          n3 <- $UnpackEx(2, 3, n2, None)
+          TOPLEVEL[a] <- n3[0]
+          TOPLEVEL[b] <- n3[1]
+          TOPLEVEL[lst] <- n3[2]
+          TOPLEVEL[x] <- n3[3]
+          TOPLEVEL[y] <- n3[4]
+          TOPLEVEL[z] <- n3[5]
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[lst]
+          n6 <- $Call(n4, n5, None)
           return None
 
 

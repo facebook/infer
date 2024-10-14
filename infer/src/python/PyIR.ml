@@ -9,7 +9,6 @@ module F = Format
 module L = Logging
 module Debug = PyDebug
 module Builtin = PyBuiltin
-module SMap = PyCommon.SMap
 module IMap = PyCommon.IMap
 module Const = FFI.Constant
 
@@ -183,6 +182,7 @@ module BuiltinCaller = struct
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
     | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
+    | Function of {qual_name: QualName.t; short_name: Ident.t}  (** [MAKE_FUNCTION] *)
     | GetAIter  (** [GET_AITER] *)
     | GetIter  (** [GET_ITER] *)
     | NextIter  (** [FOR_ITER] *)
@@ -236,6 +236,8 @@ module BuiltinCaller = struct
         F.asprintf "$LoadClassDeref[%d,\"%a\"]" slot Ident.pp name
     | StoreDeref {name; slot} ->
         F.asprintf "$StoreDeref[%d,\"%a\"]" slot Ident.pp name
+    | Function {qual_name; short_name} ->
+        F.asprintf "$MakeFunction[\"%a\", \"%a\"]" Ident.pp short_name QualName.pp qual_name
     | GetIter ->
         "$GetIter"
     | GetAIter ->
@@ -306,12 +308,6 @@ module Exp = struct
         (** Helper for [BUILD_LIST] and other builder opcodes *)
     (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
     | ConstMap of t ConstMap.t
-    | Function of
-        { qual_name: QualName.t
-        ; short_name: Ident.t
-        ; code: FFI.Code.t
-        ; default_values: t SMap.t
-        ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | Not of t
@@ -341,11 +337,6 @@ module Exp = struct
         list_iter_result ~f:check values
     | ConstMap map ->
         ConstMap.bindings map |> list_iter_result ~f:(fun (_, exp) -> check exp)
-    | Function {default_values; annotations} ->
-        let* () =
-          ConstMap.bindings annotations |> list_iter_result ~f:(fun (_, exp) -> check exp)
-        in
-        SMap.bindings default_values |> list_iter_result ~f:(fun (_, exp) -> check exp)
     | GetAttr (t, _name) ->
         check t
     | LoadMethod (_self, _meth) ->
@@ -392,10 +383,6 @@ module Exp = struct
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
         F.fprintf fmt "@]}"
-    | Function {qual_name; short_name; default_values} ->
-        F.fprintf fmt "$FuncObj(%a, %a, {" Ident.pp short_name QualName.pp qual_name ;
-        SMap.iter (fun key value -> F.fprintf fmt "(%s, %a); " key pp value) default_values ;
-        F.pp_print_string fmt "})"
     | GetAttr (t, name) ->
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
@@ -446,7 +433,6 @@ module Error = struct
     | FixpointComputationNotReached of {src: int; dest: int}
     | NextOffsetMissing
     | MissingNodeInformation of int
-    | MakeFunctionInvalidDefaults of Exp.t
     | WithCleanupStart of Exp.t
     | WithCleanupFinish of Exp.t
     | RaiseExceptionInvalid of int
@@ -490,8 +476,6 @@ module Error = struct
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingNodeInformation offset ->
         F.fprintf fmt "No information about offset %d" offset
-    | MakeFunctionInvalidDefaults exp ->
-        F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
     | WithCleanupStart exp ->
         F.fprintf fmt "WITH_CLEANUP_START/TODO: unsupported scenario with %a" Exp.pp exp
     | WithCleanupFinish exp ->
@@ -976,37 +960,6 @@ let build_collection st kind count =
   Ok (st, None)
 
 
-(** In Python, named arguments are always "at the end":
-
-    - when a function call has named arguments, any positional argument must come first
-    - when a function definition has a default value for any argument, then all arguments on its
-      right must have a default value too. For this purpose, we implement a special "zip" function
-      that takes data and tags, and will correctly zip them depending on their "positional" vs
-      "named" status.
-
-    [argc] is the _total_ number of arguments (both positional and named). [f] is a function to
-    build the resulting type from the positional or named data. *)
-let named_argument_zip opname argc ~f ~init data tags =
-  let nr_positional = argc - List.length tags in
-  let rec zip pos data tags =
-    match (data, tags) with
-    | [], [] ->
-        init
-    | [], _ :: _ ->
-        L.die InternalError "%s: less data than tags" opname
-    | _ :: _, [] ->
-        L.die InternalError "%s: not enough tags" opname
-    | data :: remaining_data, tag :: remaining_tags ->
-        if pos < nr_positional then
-          let tl = zip (1 + pos) remaining_data tags in
-          f (`Positional data) tl
-        else
-          let tl = zip (1 + pos) remaining_data remaining_tags in
-          f (`Named (data, tag)) tl
-  in
-  zip 0 data tags
-
-
 let make_function st flags =
   let open IResult.Let_syntax in
   let* _qual_name, st = State.pop st in
@@ -1021,72 +974,24 @@ let make_function st flags =
   in
   let* qual_name = read_code_qual_name st code in
   let short_name = Ident.mk code.FFI.Code.co_name in
-  let* st =
-    if flags land 0x08 <> 0 then
-      (* TODO: closure *)
-      let* _cells_for_closure, st = State.pop st in
-      Ok st
-    else Ok st
+  let* cells_for_closure, st =
+    if flags land 0x08 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
   in
   let* annotations, st =
-    if flags land 0x04 <> 0 then
-      let* annotations, st = State.pop st in
-      let* annotations =
-        match (annotations : Exp.t) with
-        | ConstMap map ->
-            Ok map
-        | _ ->
-            internal_error st (Error.MakeFunction ("some type annotations", annotations))
-      in
-      Ok (annotations, st)
-    else Ok (ConstMap.empty, st)
+    if flags land 0x04 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
   in
-  let* st =
-    if flags land 0x02 <> 0 then
-      (* TODO: kw defaults *)
-      let* _kw_defaults, st = State.pop st in
-      Ok st
-    else Ok st
+  let* default_values_kw, st =
+    if flags land 0x02 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
   in
   let* default_values, st =
-    if flags land 0x01 <> 0 then
-      let* defaults, st = State.pop st in
-      match (defaults : Exp.t) with
-      | Const (PYCTuple defaults) ->
-          let fn_args = FFI.Code.get_arguments code |> Array.to_list in
-          let argc = List.length fn_args in
-          let defaults = Array.to_list defaults in
-          let defaults =
-            named_argument_zip "MAKE_FUNCTION" argc ~init:SMap.empty
-              ~f:(fun hd tl ->
-                match hd with
-                | `Positional _ ->
-                    tl
-                | `Named (argname, const) ->
-                    SMap.add argname (Exp.Const const) tl )
-              fn_args defaults
-          in
-          Ok (defaults, st)
-      | Collection {kind= Tuple; values} ->
-          let fn_args = FFI.Code.get_arguments code |> Array.to_list in
-          let argc = List.length fn_args in
-          let defaults =
-            named_argument_zip "MAKE_FUNCTION" argc ~init:SMap.empty
-              ~f:(fun hd tl ->
-                match hd with
-                | `Positional _ ->
-                    tl
-                | `Named (argname, const) ->
-                    SMap.add argname const tl )
-              fn_args values
-          in
-          Ok (defaults, st)
-      | _ ->
-          external_error st (Error.MakeFunctionInvalidDefaults defaults)
-    else Ok (SMap.empty, st)
+    if flags land 0x01 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
   in
-  let exp = Exp.Function {annotations; short_name; default_values; qual_name; code} in
-  let st = State.push st exp in
+  let lhs, st = State.fresh_id st in
+  let call = BuiltinCaller.Function {short_name; qual_name} in
+  let args = [default_values; default_values_kw; annotations; cells_for_closure] in
+  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.Const Const.none} in
+  let* st = State.push_stmt st stmt in
+  let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
 

@@ -46,7 +46,6 @@ module QualName : sig
   module Map : Caml.Map.S with type key = t
 end
 
-module SMap = PyCommon.SMap
 module Builtin = PyBuiltin
 module Const = FFI.Constant
 
@@ -71,6 +70,7 @@ module BuiltinCaller : sig
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
     | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
+    | Function of {qual_name: QualName.t; short_name: Ident.t}
     | GetAIter
     | GetIter
     | NextIter
@@ -100,12 +100,6 @@ module Exp : sig
     | Subscript of {exp: t; index: t}
     | Collection of {kind: collection; values: t list; packed: bool}
     | ConstMap of t ConstMap.t
-    | Function of
-        { qual_name: QualName.t
-        ; short_name: Ident.t
-        ; code: FFI.Code.t
-        ; default_values: t SMap.t
-        ; annotations: t ConstMap.t }
     | GetAttr of (t * string)
     | LoadMethod of (t * string)
     | Not of t

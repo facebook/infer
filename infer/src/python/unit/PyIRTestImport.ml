@@ -59,23 +59,24 @@ g()
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, None)
-          n2 <- $ImportName(base)(("f","g"), 0, None)
-          n3 <- $ImportFrom(f)(n2, None)
-          TOPLEVEL[f] <- n3
-          n4 <- $ImportFrom(g)(n2, None)
-          TOPLEVEL[g] <- n4
-          n5 <- TOPLEVEL[f]
-          n6 <- $Call(n5, None)
-          n7 <- $ImportName(base)(("f","g"), 0, None)
-          n8 <- $ImportFrom(f)(n7, None)
-          TOPLEVEL[f] <- n8
-          n9 <- $ImportFrom(g)(n7, None)
-          TOPLEVEL[g] <- n9
-          n10 <- TOPLEVEL[g]
-          n11 <- $Call(n10, None)
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- TOPLEVEL[f]
+          n2 <- $Call(n1, None)
+          n3 <- $ImportName(base)(("f","g"), 0, None)
+          n4 <- $ImportFrom(f)(n3, None)
+          TOPLEVEL[f] <- n4
+          n5 <- $ImportFrom(g)(n3, None)
+          TOPLEVEL[g] <- n5
+          n6 <- TOPLEVEL[f]
+          n7 <- $Call(n6, None)
+          n8 <- $ImportName(base)(("f","g"), 0, None)
+          n9 <- $ImportFrom(f)(n8, None)
+          TOPLEVEL[f] <- n9
+          n10 <- $ImportFrom(g)(n8, None)
+          TOPLEVEL[g] <- n10
+          n11 <- TOPLEVEL[g]
+          n12 <- $Call(n11, None)
           return None
 
 
@@ -100,10 +101,11 @@ class MyTest(unittest.TestCase):
         b0:
           n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
-          n1 <- TOPLEVEL[unittest]
-          n2 <- n1.TestCase
-          n3 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", n2, None)
-          TOPLEVEL[MyTest] <- n3
+          n1 <- $MakeFunction["MyTest", "dummy.MyTest"](None, None, None, None, None)
+          n2 <- TOPLEVEL[unittest]
+          n3 <- n2.TestCase
+          n4 <- $BuildClass(n1, "MyTest", n3, None)
+          TOPLEVEL[MyTest] <- n4
           return None
 
 
@@ -167,14 +169,15 @@ if __name__ == '__main__':
           TOPLEVEL[main] <- n3
           n4 <- TOPLEVEL[main]
           TOPLEVEL[main_in_temp_cwd] <- n4
-          TOPLEVEL[_main] <- $FuncObj(_main, dummy._main, {})
-          n5 <- TOPLEVEL[__name__]
-          n6 <- $Compare.eq(n5, "__main__", None)
-          if n6 then jmp b1 else jmp b2
+          n5 <- $MakeFunction["_main", "dummy._main"](None, None, None, None, None)
+          TOPLEVEL[_main] <- n5
+          n6 <- TOPLEVEL[__name__]
+          n7 <- $Compare.eq(n6, "__main__", None)
+          if n7 then jmp b1 else jmp b2
 
         b1:
-          n7 <- TOPLEVEL[_main]
-          n8 <- $Call(n7, None)
+          n8 <- TOPLEVEL[_main]
+          n9 <- $Call(n8, None)
           jmp b2
 
         b2:
@@ -389,11 +392,12 @@ class Test(unittest.TestCase):
           n4 <- TOPLEVEL[signal]
           n5 <- $Call(n3, n4, "setitimer", None)
           n6 <- $CallMethod[skipUnless](n2, n5, "requires setitimer()", None)
-          n7 <- TOPLEVEL[unittest]
-          n8 <- n7.TestCase
-          n9 <- $BuildClass($FuncObj(Test, dummy.Test, {}), "Test", n8, None)
-          n10 <- $Call(n6, n9, None)
-          TOPLEVEL[Test] <- n10
+          n7 <- $MakeFunction["Test", "dummy.Test"](None, None, None, None, None)
+          n8 <- TOPLEVEL[unittest]
+          n9 <- n8.TestCase
+          n10 <- $BuildClass(n7, "Test", n9, None)
+          n11 <- $Call(n6, n10, None)
+          TOPLEVEL[Test] <- n11
           return None
 
 
@@ -421,7 +425,8 @@ def f():
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -454,7 +459,8 @@ def f(ok):
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -493,8 +499,11 @@ def test_format_specifier_expressions(self):
         b0:
           n0 <- $ImportName(decimal)(None, 0, None)
           TOPLEVEL[decimal] <- n0
-          TOPLEVEL[assertEqual] <- $FuncObj(assertEqual, dummy.assertEqual, {})
-          TOPLEVEL[test_format_specifier_expressions] <- $FuncObj(test_format_specifier_expressions, dummy.test_format_specifier_expressions, {})
+          n1 <- $MakeFunction["assertEqual", "dummy.assertEqual"](None, None, None, None, None)
+          TOPLEVEL[assertEqual] <- n1
+          n2 <- $MakeFunction["test_format_specifier_expressions", "dummy.test_format_specifier_expressions"](
+            None, None, None, None, None)
+          TOPLEVEL[test_format_specifier_expressions] <- n2
           return None
 
 
@@ -564,7 +573,8 @@ def f():
           n6 <- n5.T
           n7 <- TOPLEVEL[__annotations__]
           n7["z"] <- n6
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n8 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n8
           return None
 
 

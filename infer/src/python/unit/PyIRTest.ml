@@ -33,15 +33,16 @@ print(z)
 
       toplevel:
         b0:
-          TOPLEVEL[my_fun] <- $FuncObj(my_fun, dummy.my_fun, {})
+          n0 <- $MakeFunction["my_fun", "dummy.my_fun"](None, None, None, None, None)
+          TOPLEVEL[my_fun] <- n0
           TOPLEVEL[a] <- 10
-          n0 <- TOPLEVEL[my_fun]
-          n1 <- TOPLEVEL[a]
-          n2 <- $Call(n0, 42, n1, None)
-          TOPLEVEL[z] <- n2
-          n3 <- TOPLEVEL[print]
-          n4 <- TOPLEVEL[z]
-          n5 <- $Call(n3, n4, None)
+          n1 <- TOPLEVEL[my_fun]
+          n2 <- TOPLEVEL[a]
+          n3 <- $Call(n1, 42, n2, None)
+          TOPLEVEL[z] <- n3
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[z]
+          n6 <- $Call(n4, n5, None)
           return None
 
 
@@ -81,13 +82,14 @@ print(z)
 
       toplevel:
         b0:
-          TOPLEVEL[update_global] <- $FuncObj(update_global, dummy.update_global, {})
+          n0 <- $MakeFunction["update_global", "dummy.update_global"](None, None, None, None, None)
+          TOPLEVEL[update_global] <- n0
           GLOBAL[z] <- 0
-          n0 <- TOPLEVEL[update_global]
-          n1 <- $Call(n0, None)
-          n2 <- TOPLEVEL[print]
-          n3 <- GLOBAL[z]
-          n4 <- $Call(n2, n3, None)
+          n1 <- TOPLEVEL[update_global]
+          n2 <- $Call(n1, None)
+          n3 <- TOPLEVEL[print]
+          n4 <- GLOBAL[z]
+          n5 <- $Call(n3, n4, None)
           return None
 
 
@@ -119,8 +121,10 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[coin] <- $FuncObj(coin, dummy.coin, {})
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -166,8 +170,10 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[coin] <- $FuncObj(coin, dummy.coin, {})
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -228,8 +234,10 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[coin] <- $FuncObj(coin, dummy.coin, {})
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -300,8 +308,10 @@ def f(x):
 
       toplevel:
         b0:
-          TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          TOPLEVEL[foo] <- n0
+          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n1
           return None
 
 
@@ -378,7 +388,8 @@ def f(x, y, l, bar, toto):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -462,10 +473,12 @@ def f(x):
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- $Call(n0, 42, None)
-          TOPLEVEL[print] <- $FuncObj(print, dummy.print, {})
-          n2 <- TOPLEVEL[print]
-          n3 <- $Call(n2, 42, None)
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n2 <- $MakeFunction["print", "dummy.print"](None, None, None, None, None)
+          TOPLEVEL[print] <- n2
+          n3 <- TOPLEVEL[print]
+          n4 <- $Call(n3, 42, None)
+          n5 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n5
           return None
 
 
@@ -502,10 +515,12 @@ def f1(x, y:str) -> bool:
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- TOPLEVEL[float]
-          TOPLEVEL[f0] <- $FuncObj(f0, dummy.f0, {})
-          n2 <- TOPLEVEL[str]
-          n3 <- TOPLEVEL[bool]
-          TOPLEVEL[f1] <- $FuncObj(f1, dummy.f1, {})
+          n2 <- $MakeFunction["f0", "dummy.f0"](None, None, {"x": n0, "z": n1, }, None, None)
+          TOPLEVEL[f0] <- n2
+          n3 <- TOPLEVEL[str]
+          n4 <- TOPLEVEL[bool]
+          n5 <- $MakeFunction["f1", "dummy.f1"](None, None, {"return": n4, "y": n3, }, None, None)
+          TOPLEVEL[f1] <- n5
           return None
 
 
@@ -539,13 +554,15 @@ expect_int(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[int]
-          TOPLEVEL[expect_int] <- $FuncObj(expect_int, dummy.expect_int, {})
-          n1 <- TOPLEVEL[int]
-          TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
-          n2 <- TOPLEVEL[expect_int]
-          n3 <- TOPLEVEL[get]
-          n4 <- $Call(n3, None)
-          n5 <- $Call(n2, n4, None)
+          n1 <- $MakeFunction["expect_int", "dummy.expect_int"](None, None, {"x": n0, }, None, None)
+          TOPLEVEL[expect_int] <- n1
+          n2 <- TOPLEVEL[int]
+          n3 <- $MakeFunction["get", "dummy.get"](None, None, {"return": n2, }, None, None)
+          TOPLEVEL[get] <- n3
+          n4 <- TOPLEVEL[expect_int]
+          n5 <- TOPLEVEL[get]
+          n6 <- $Call(n5, None)
+          n7 <- $Call(n4, n6, None)
           return None
 
 
@@ -579,13 +596,15 @@ expect(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[object]
-          TOPLEVEL[expect] <- $FuncObj(expect, dummy.expect, {})
-          n1 <- TOPLEVEL[int]
-          TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
-          n2 <- TOPLEVEL[expect]
-          n3 <- TOPLEVEL[get]
-          n4 <- $Call(n3, None)
-          n5 <- $Call(n2, n4, None)
+          n1 <- $MakeFunction["expect", "dummy.expect"](None, None, {"return": None, "x": n0, }, None, None)
+          TOPLEVEL[expect] <- n1
+          n2 <- TOPLEVEL[int]
+          n3 <- $MakeFunction["get", "dummy.get"](None, None, {"return": n2, }, None, None)
+          TOPLEVEL[get] <- n3
+          n4 <- TOPLEVEL[expect]
+          n5 <- TOPLEVEL[get]
+          n6 <- $Call(n5, None)
+          n7 <- $Call(n4, n6, None)
           return None
 
 
@@ -611,7 +630,8 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -648,7 +668,8 @@ def f(x, y, z, t):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -685,7 +706,8 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -709,7 +731,8 @@ def f(x, y):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -744,10 +767,14 @@ def in_not_check(x, l):
 
       toplevel:
         b0:
-          TOPLEVEL[is_check] <- $FuncObj(is_check, dummy.is_check, {})
-          TOPLEVEL[is_not_check] <- $FuncObj(is_not_check, dummy.is_not_check, {})
-          TOPLEVEL[in_check] <- $FuncObj(in_check, dummy.in_check, {})
-          TOPLEVEL[in_not_check] <- $FuncObj(in_not_check, dummy.in_not_check, {})
+          n0 <- $MakeFunction["is_check", "dummy.is_check"](None, None, None, None, None)
+          TOPLEVEL[is_check] <- n0
+          n1 <- $MakeFunction["is_not_check", "dummy.is_not_check"](None, None, None, None, None)
+          TOPLEVEL[is_not_check] <- n1
+          n2 <- $MakeFunction["in_check", "dummy.in_check"](None, None, None, None, None)
+          TOPLEVEL[in_check] <- n2
+          n3 <- $MakeFunction["in_not_check", "dummy.in_not_check"](None, None, None, None, None)
+          TOPLEVEL[in_not_check] <- n3
           return None
 
 
@@ -797,7 +824,8 @@ def f(x, y, z):
       toplevel:
         b0:
           TOPLEVEL[t] <- (1,2,3)
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -832,12 +860,13 @@ def build_list():
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[l]
           n2 <- $Call(n0, n1, None)
-          TOPLEVEL[build_list] <- $FuncObj(build_list, dummy.build_list, {})
-          n3 <- TOPLEVEL[build_list]
-          n4 <- $Call(n3, None)
-          TOPLEVEL[x] <- n4[0]
-          TOPLEVEL[y] <- n4[1]
-          TOPLEVEL[z] <- n4[2]
+          n3 <- $MakeFunction["build_list", "dummy.build_list"](None, None, None, None, None)
+          TOPLEVEL[build_list] <- n3
+          n4 <- TOPLEVEL[build_list]
+          n5 <- $Call(n4, None)
+          TOPLEVEL[x] <- n5[0]
+          TOPLEVEL[y] <- n5[1]
+          TOPLEVEL[z] <- n5[2]
           return None
 
 
@@ -865,7 +894,8 @@ def f(foo, bar):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -913,11 +943,12 @@ def f():
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, None)
-          TOPLEVEL[a] <- n1[0]
-          TOPLEVEL[b] <- n1[1]
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- TOPLEVEL[f]
+          n2 <- $Call(n1, None)
+          TOPLEVEL[a] <- n2[0]
+          TOPLEVEL[b] <- n2[1]
           return None
 
 
@@ -940,9 +971,10 @@ f(0, y=2, x=1)
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, 0, 2, 1, ("y","x"))
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- TOPLEVEL[f]
+          n2 <- $Call(n1, 0, 2, 1, ("y","x"))
           return None
 
 
@@ -968,7 +1000,8 @@ def f(m, a, b, c):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
           return None
 
 
@@ -1020,8 +1053,10 @@ def test_arguments(x, y, width):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          TOPLEVEL[test_arguments] <- $FuncObj(test_arguments, dummy.test_arguments, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["test_arguments", "dummy.test_arguments"](None, None, None, None, None)
+          TOPLEVEL[test_arguments] <- n1
           return None
 
 
@@ -1073,10 +1108,14 @@ def inv(x):
 
       toplevel:
         b0:
-          TOPLEVEL[pos] <- $FuncObj(pos, dummy.pos, {})
-          TOPLEVEL[neg] <- $FuncObj(neg, dummy.neg, {})
-          TOPLEVEL[test_not] <- $FuncObj(test_not, dummy.test_not, {})
-          TOPLEVEL[inv] <- $FuncObj(inv, dummy.inv, {})
+          n0 <- $MakeFunction["pos", "dummy.pos"](None, None, None, None, None)
+          TOPLEVEL[pos] <- n0
+          n1 <- $MakeFunction["neg", "dummy.neg"](None, None, None, None, None)
+          TOPLEVEL[neg] <- n1
+          n2 <- $MakeFunction["test_not", "dummy.test_not"](None, None, None, None, None)
+          TOPLEVEL[test_not] <- n2
+          n3 <- $MakeFunction["inv", "dummy.inv"](None, None, None, None, None)
+          TOPLEVEL[inv] <- n3
           return None
 
 
@@ -1142,14 +1181,15 @@ print(g()) # prints 2
       toplevel:
         b0:
           GLOBAL[gx] <- 100
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, 42, None)
-          TOPLEVEL[g] <- n1
-          n2 <- TOPLEVEL[print]
-          n3 <- TOPLEVEL[g]
-          n4 <- $Call(n3, None)
-          n5 <- $Call(n2, n4, None)
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- TOPLEVEL[f]
+          n2 <- $Call(n1, 42, None)
+          TOPLEVEL[g] <- n2
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[g]
+          n5 <- $Call(n4, None)
+          n6 <- $Call(n3, n5, None)
           return None
 
 
@@ -1158,10 +1198,11 @@ print(g()) # prints 2
           n0 <- $StoreDeref[1,"lx"](1000, None)
           n1 <- $LoadClosure[0,"ax"](None)
           n2 <- $LoadClosure[1,"lx"](None)
-          LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
-          n3 <- $StoreDeref[1,"lx"](1664, None)
-          n4 <- LOCAL[inner]
-          return n4
+          n3 <- $MakeFunction["inner", "dummy.f.inner"](None, None, None, (unpacked)(n1, n2), None)
+          LOCAL[inner] <- n3
+          n4 <- $StoreDeref[1,"lx"](1664, None)
+          n5 <- LOCAL[inner]
+          return n5
 
 
       dummy.f.inner:
@@ -1207,21 +1248,24 @@ def f(l):
 
       toplevel:
         b0:
-          n0 <- TOPLEVEL[l]
-          n1 <- $GetIter(n0, None)
-          n2 <- $Call($FuncObj(<listcomp>, dummy.<listcomp>, {}), n1, None)
-          TOPLEVEL[g] <- n2
-          n3 <- TOPLEVEL[l]
-          n4 <- $GetIter(n3, None)
-          n5 <- $Call($FuncObj(<listcomp>, dummy.<listcomp>, {}), n4, None)
-          TOPLEVEL[g0] <- n5
-          n6 <- TOPLEVEL[print]
-          n7 <- TOPLEVEL[g]
-          n8 <- $Call(n6, n7, None)
-          n9 <- TOPLEVEL[print]
-          n10 <- TOPLEVEL[g0]
-          n11 <- $Call(n9, n10, None)
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
+          n0 <- $MakeFunction["<listcomp>", "dummy.<listcomp>"](None, None, None, None, None)
+          n1 <- TOPLEVEL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          TOPLEVEL[g] <- n3
+          n4 <- $MakeFunction["<listcomp>", "dummy.<listcomp>"](None, None, None, None, None)
+          n5 <- TOPLEVEL[l]
+          n6 <- $GetIter(n5, None)
+          n7 <- $Call(n4, n6, None)
+          TOPLEVEL[g0] <- n7
+          n8 <- TOPLEVEL[print]
+          n9 <- TOPLEVEL[g]
+          n10 <- $Call(n8, n9, None)
+          n11 <- TOPLEVEL[print]
+          n12 <- TOPLEVEL[g0]
+          n13 <- $Call(n11, n12, None)
+          n14 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n14
           return None
 
 
@@ -1269,20 +1313,22 @@ def f(l):
 
       dummy.f:
         b0:
-          n0 <- LOCAL[l]
-          n1 <- $GetIter(n0, None)
-          n2 <- $Call($FuncObj(<listcomp>, dummy.f.<listcomp>, {}), n1, None)
-          LOCAL[r] <- n2
-          n3 <- LOCAL[l]
-          n4 <- $GetIter(n3, None)
-          n5 <- $Call($FuncObj(<listcomp>, dummy.f.<listcomp>, {}), n4, None)
-          LOCAL[r0] <- n5
-          n6 <- GLOBAL[print]
-          n7 <- LOCAL[r]
-          n8 <- $Call(n6, n7, None)
-          n9 <- GLOBAL[print]
-          n10 <- LOCAL[r0]
-          n11 <- $Call(n9, n10, None)
+          n0 <- $MakeFunction["<listcomp>", "dummy.f.<listcomp>"](None, None, None, None, None)
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[r] <- n3
+          n4 <- $MakeFunction["<listcomp>", "dummy.f.<listcomp>"](None, None, None, None, None)
+          n5 <- LOCAL[l]
+          n6 <- $GetIter(n5, None)
+          n7 <- $Call(n4, n6, None)
+          LOCAL[r0] <- n7
+          n8 <- GLOBAL[print]
+          n9 <- LOCAL[r]
+          n10 <- $Call(n8, n9, None)
+          n11 <- GLOBAL[print]
+          n12 <- LOCAL[r0]
+          n13 <- $Call(n11, n12, None)
           return None |}]
 
 
@@ -1306,8 +1352,10 @@ def g(l):
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["g", "dummy.g"](None, None, None, None, None)
+          TOPLEVEL[g] <- n1
           return None
 
 
@@ -1356,22 +1404,24 @@ def g(l):
 
       dummy.f:
         b0:
-          n0 <- LOCAL[l]
-          n1 <- $GetIter(n0, None)
-          n2 <- $Call($FuncObj(<setcomp>, dummy.f.<setcomp>, {}), n1, None)
-          LOCAL[r] <- n2
-          n3 <- LOCAL[r]
-          return n3
+          n0 <- $MakeFunction["<setcomp>", "dummy.f.<setcomp>"](None, None, None, None, None)
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[r] <- n3
+          n4 <- LOCAL[r]
+          return n4
 
 
       dummy.g:
         b0:
-          n0 <- LOCAL[l]
-          n1 <- $GetIter(n0, None)
-          n2 <- $Call($FuncObj(<dictcomp>, dummy.g.<dictcomp>, {}), n1, None)
-          LOCAL[squared_dict] <- n2
-          n3 <- GLOBAL[r]
-          return n3 |xxx}]
+          n0 <- $MakeFunction["<dictcomp>", "dummy.g.<dictcomp>"](None, None, None, None, None)
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[squared_dict] <- n3
+          n4 <- GLOBAL[r]
+          return n4 |xxx}]
 
 
 let%expect_test _ =
@@ -1394,8 +1444,10 @@ async def g():
 
       toplevel:
         b0:
-          TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
+          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["g", "dummy.g"](None, None, None, None, None)
+          TOPLEVEL[g] <- n1
           return None
 
 
@@ -1438,7 +1490,8 @@ def m(self, x, y, test):
 
       toplevel:
         b0:
-          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
+          TOPLEVEL[m] <- n0
           return None
 
 
@@ -1474,7 +1527,8 @@ def m(self, x, y, test):
 
       toplevel:
         b0:
-          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
+          TOPLEVEL[m] <- n0
           return None
 
 
@@ -1509,7 +1563,8 @@ def m(x, y, test):
 
       toplevel:
         b0:
-          TOPLEVEL[m] <- $FuncObj(m, dummy.m, {})
+          n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
+          TOPLEVEL[m] <- n0
           return None
 
 
@@ -1553,17 +1608,19 @@ o.foo()
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
-          TOPLEVEL[C] <- n0
-          n1 <- TOPLEVEL[C]
-          n2 <- $Call(n1, None)
-          TOPLEVEL[o] <- n2
-          n3 <- TOPLEVEL[o]
-          n4 <- $CallMethod[foo](n3, None)
-          n5 <- TOPLEVEL[o]
-          n5.foo <- $FuncObj(<lambda>, dummy.<lambda>, {})
-          n6 <- TOPLEVEL[o]
-          n7 <- $CallMethod[foo](n6, None)
+          n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
+          n1 <- $BuildClass(n0, "C", None)
+          TOPLEVEL[C] <- n1
+          n2 <- TOPLEVEL[C]
+          n3 <- $Call(n2, None)
+          TOPLEVEL[o] <- n3
+          n4 <- TOPLEVEL[o]
+          n5 <- $CallMethod[foo](n4, None)
+          n6 <- $MakeFunction["<lambda>", "dummy.<lambda>"](None, None, None, None, None)
+          n7 <- TOPLEVEL[o]
+          n7.foo <- n6
+          n8 <- TOPLEVEL[o]
+          n9 <- $CallMethod[foo](n8, None)
           return None
 
 
@@ -1579,7 +1636,8 @@ o.foo()
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
-          TOPLEVEL[foo] <- $FuncObj(foo, dummy.C.foo, {})
+          n1 <- $MakeFunction["foo", "dummy.C.foo"](None, None, None, None, None)
+          TOPLEVEL[foo] <- n1
           return None
 
 
@@ -1626,7 +1684,8 @@ async def foo():
 
       toplevel:
         b0:
-          TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
+          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          TOPLEVEL[foo] <- n0
           return None
 
 
