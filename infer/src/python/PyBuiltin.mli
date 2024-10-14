@@ -11,8 +11,6 @@ module Compare : sig
   type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
   [@@deriving compare, enumerate, equal]
 
-  val to_string : t -> string
-
   val pp : Format.formatter -> t -> unit
 end
 

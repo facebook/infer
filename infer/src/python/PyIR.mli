@@ -46,24 +46,49 @@ module QualName : sig
   module Map : Caml.Map.S with type key = t
 end
 
-module Builtin = PyBuiltin
+module UnaryOp : sig
+  type t = Positive | Negative | Not | Invert
+end
+
+module BinaryOp : sig
+  type t =
+    | Add
+    | And
+    | FloorDivide
+    | LShift
+    | MatrixMultiply
+    | Modulo
+    | Multiply
+    | Or
+    | Power
+    | RShift
+    | Subtract
+    | TrueDivide
+    | Xor
+end
+
+module CompareOp : sig
+  type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
+end
+
+module FormatFunction : sig
+  type t = Str | Repr | Ascii
+end
 
 module BuiltinCaller : sig
-  type format_function = Str | Repr | Ascii
-
   type t =
     | BuildClass
     | BuildConstKeyMap
     | Format
-    | FormatFn of format_function
-    | CallFunctionEx
-    | Inplace of Builtin.binary_op
+    | FormatFn of FormatFunction.t
+    | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
+    | Inplace of BinaryOp.t
     | ImportName of string
     | ImportFrom of string
     | ImportStar
-    | Binary of Builtin.binary_op
-    | Unary of Builtin.unary_op
-    | Compare of Builtin.Compare.t
+    | Binary of BinaryOp.t
+    | Unary of UnaryOp.t
+    | Compare of CompareOp.t
     | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)

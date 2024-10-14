@@ -8,7 +8,6 @@ open! IStd
 module F = Format
 module L = Logging
 module Debug = PyDebug
-module Builtin = PyBuiltin
 module IMap = PyCommon.IMap
 
 module Ident : sig
@@ -129,13 +128,72 @@ module SSA = struct
   let next n = 1 + n
 end
 
-module BuiltinCaller = struct
-  type format_function = Str | Repr | Ascii [@@deriving equal]
+module CompareOp = struct
+  (* Some interesting source of information: https://docs.python.org/3/library/operator.html *)
+  type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
+  [@@deriving compare, enumerate, equal]
 
-  let show_format_function = function Str -> "str" | Repr -> "repr" | Ascii -> "ascii"
+  let to_string = function
+    | Lt ->
+        "lt"
+    | Le ->
+        "le"
+    | Eq ->
+        "eq"
+    | Neq ->
+        "neq"
+    | Gt ->
+        "gt"
+    | Ge ->
+        "ge"
+    | In ->
+        "in"
+    | NotIn ->
+        "not_in"
+    | Is ->
+        "is"
+    | IsNot ->
+        "is_not"
+    | Exception ->
+        "exception"
+    | BAD ->
+        "bad"
+end
 
-  let show_binary op =
-    match (op : Builtin.binary_op) with
+module UnaryOp = struct
+  type t = Positive | Negative | Not | Invert [@@deriving compare, equal]
+
+  let to_string op =
+    match op with
+    | Positive ->
+        "Positive"
+    | Negative ->
+        "Negative"
+    | Not ->
+        "Not"
+    | Invert ->
+        "Invert"
+end
+
+module BinaryOp = struct
+  type t =
+    | Add
+    | And
+    | FloorDivide
+    | LShift
+    | MatrixMultiply
+    | Modulo
+    | Multiply
+    | Or
+    | Power
+    | RShift
+    | Subtract
+    | TrueDivide
+    | Xor
+  [@@deriving compare, equal]
+
+  let to_string op =
+    match op with
     | Add ->
         "Add"
     | And ->
@@ -162,33 +220,28 @@ module BuiltinCaller = struct
         "TrueDivide"
     | Xor ->
         "Xor"
+end
 
+module FormatFunction = struct
+  type t = Str | Repr | Ascii [@@deriving equal]
 
-  let show_unary op =
-    match (op : Builtin.unary_op) with
-    | Positive ->
-        "Positive"
-    | Negative ->
-        "Negative"
-    | Not ->
-        "Not"
-    | Invert ->
-        "Invert"
+  let to_string = function Str -> "str" | Repr -> "repr" | Ascii -> "ascii"
+end
 
-
+module BuiltinCaller = struct
   type t =
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
     | BuildConstKeyMap  (** [BUILD_CONST_KEY_MAP] *)
     | Format
-    | FormatFn of format_function
+    | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
-    | Inplace of Builtin.binary_op
+    | Inplace of BinaryOp.t
     | ImportName of string
     | ImportFrom of string
     | ImportStar
-    | Binary of Builtin.binary_op
-    | Unary of Builtin.unary_op
-    | Compare of Builtin.Compare.t
+    | Binary of BinaryOp.t
+    | Unary of UnaryOp.t
+    | Compare of CompareOp.t
     | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
@@ -221,7 +274,7 @@ module BuiltinCaller = struct
     | Format ->
         "$Format"
     | FormatFn fn ->
-        sprintf "$FormatFn.%s" (show_format_function fn)
+        sprintf "$FormatFn.%s" (FormatFunction.to_string fn)
     | CallFunctionEx ->
         "$CallFunctionEx"
     | ImportName name ->
@@ -231,16 +284,16 @@ module BuiltinCaller = struct
     | ImportStar ->
         sprintf "$ImportStar"
     | Binary op ->
-        let op = show_binary op in
+        let op = BinaryOp.to_string op in
         sprintf "$Binary.%s" op
     | Inplace op ->
-        let op = show_binary op in
+        let op = BinaryOp.to_string op in
         sprintf "$Inplace.%s" op
     | Unary op ->
-        let op = show_unary op in
+        let op = UnaryOp.to_string op in
         sprintf "$Unary.%s" op
     | Compare op ->
-        sprintf "$Compare.%s" (Builtin.Compare.to_string op)
+        sprintf "$Compare.%s" (CompareOp.to_string op)
     | LoadClosure {name; slot} ->
         F.asprintf "$LoadClosure[%d,\"%a\"]" slot Ident.pp name
     | LoadDeref {name; slot} ->
@@ -1109,11 +1162,11 @@ let format_value st flags =
     | 0x00 ->
         None
     | 0x01 ->
-        Some BuiltinCaller.Str
+        Some FormatFunction.Str
     | 0x02 ->
-        Some BuiltinCaller.Repr
+        Some FormatFunction.Repr
     | 0x03 ->
-        Some BuiltinCaller.Ascii
+        Some FormatFunction.Ascii
     | _ ->
         L.die InternalError "FORMAT_VALUE: unreachable"
   in
@@ -1588,7 +1641,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "COMPARE_OP" ->
       let* cmp_op =
-        match List.nth Builtin.Compare.all arg with
+        match List.nth CompareOp.all arg with
         | Some op ->
             Ok op
         | None ->
