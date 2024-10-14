@@ -24,14 +24,28 @@ module NodeName : sig
   type t
 
   module Map : Caml.Map.S with type key = t
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module SSA : sig
   type t
+
+  val pp : Format.formatter -> t -> unit
+
+  module Hashtbl : Caml.Hashtbl.S with type key = t
 end
 
 module Ident : sig
   type t
+
+  val pp : Format.formatter -> t -> unit
+
+  module Hashtbl : Caml.Hashtbl.S with type key = t
+
+  module Special : sig
+    val print : t
+  end
 end
 
 module ScopedIdent : sig
@@ -186,7 +200,8 @@ end
 
 val mk : debug:bool -> FFI.Code.t -> (Module.t, Error.t) result
 
-val test : ?filename:string -> ?debug:bool -> string -> unit [@@warning "-unused-value-declaration"]
+val test : ?filename:string -> ?debug:bool -> ?run:(Module.t -> unit) -> string -> unit
+[@@warning "-unused-value-declaration"]
 (* takes a Python source program as string argument, convert it into PyIR and print the result *)
 
 val test_cfg_skeleton : ?filename:string -> string -> unit [@@warning "-unused-value-declaration"]

@@ -22,9 +22,13 @@ module Ident : sig
     val anext : t
 
     val enter : t
+
+    val print : t
   end
+
+  module Hashtbl : Caml.Hashtbl.S with type key = t
 end = struct
-  type t = string [@@deriving equal]
+  type t = string [@@deriving equal, hash]
 
   let pp fmt ident = F.pp_print_string fmt ident
 
@@ -36,7 +40,17 @@ end = struct
     let anext = "__anext__"
 
     let enter = "__enter__"
+
+    let print = "print"
   end
+
+  module Hashtbl = Caml.Hashtbl.Make (struct
+    type nonrec t = t
+
+    let equal = equal
+
+    let hash = hash
+  end)
 end
 
 module ScopedIdent = struct
@@ -136,11 +150,19 @@ end = struct
 end
 
 module SSA = struct
-  type t = int [@@deriving equal]
+  type t = int [@@deriving equal, hash]
 
   let pp fmt i = F.fprintf fmt "n%d" i
 
   let next n = 1 + n
+
+  module Hashtbl = Caml.Hashtbl.Make (struct
+    type nonrec t = t
+
+    let equal = equal
+
+    let hash = hash
+  end)
 end
 
 module CompareOp = struct
@@ -2533,11 +2555,12 @@ let test_generator ~filename ~f source =
       L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)
 
 
-let test ?(filename = "dummy.py") ?(debug = false) source =
+let test ?(filename = "dummy.py") ?(debug = false) ?run source =
   let open IResult.Let_syntax in
   let f code =
     let+ module_ = mk ~debug code in
-    F.printf "%a" Module.pp module_
+    let run = Option.value run ~default:(F.printf "%a" Module.pp) in
+    run module_
   in
   test_generator ~filename ~f source
 

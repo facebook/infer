@@ -1992,6 +1992,12 @@ OPTIONS
            See also infer-analyze(1), infer-capture(1), infer-explore(1),
            infer-report(1), and infer-run(1).
 
+       --run-python-interpreter
+           Activates: Capture all .py files, transform them into internal
+           PyIR form and run the PyIR interpreter on them. (Conversely:
+           --no-run-python-interpreter)
+           See also infer-capture(1).
+
        --sarif
            Activates: Output issues in SARIF (Static Analysis Results
            Interchange Format) in infer-out/report.sarif (Conversely:

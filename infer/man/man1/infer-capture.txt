@@ -130,6 +130,11 @@ OPTIONS
        --results-dir,-o dir
            Write results and internal files in the specified directory
 
+       --run-python-interpreter
+           Activates: Capture all .py files, transform them into internal
+           PyIR form and run the PyIR interpreter on them. (Conversely:
+           --no-run-python-interpreter)
+
        --skip-analysis-in-path +regex
            Ignore files whose path matches a given regex (can be specified
            multiple times, but you must make sure each regex is properly

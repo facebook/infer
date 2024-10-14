@@ -38,7 +38,8 @@ let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let _sourcefile = Textual.SourceFile.create file in
   let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
-  let* _ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
+  let* ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
+  if Config.run_python_interpreter then PyIRExec.run ir ;
   Ok ()
 
 

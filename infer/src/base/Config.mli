@@ -790,6 +790,8 @@ val results_dir : string
 
 val run_as_child : int option
 
+val run_python_interpreter : bool
+
 val sarif : bool
 
 val scheduler : scheduler

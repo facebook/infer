@@ -3618,6 +3618,14 @@ and xcpretty =
      to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`)."
 
 
+let run_python_interpreter =
+  CLOpt.mk_bool_group ~default:false ~long:"run-python-interpreter"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Capture all .py files, transform them into internal PyIR form and run the PyIR interpreter on \
+     them."
+    [quiet] []
+
+
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 
@@ -4687,6 +4695,8 @@ and reports_include_ml_loc = !reports_include_ml_loc
 and results_dir = !results_dir
 
 and run_as_child = !run_as_child
+
+and run_python_interpreter = !run_python_interpreter
 
 and sarif = !sarif
 
