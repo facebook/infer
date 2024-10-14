@@ -569,7 +569,11 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
   let autofix =
     Option.bind
       ~f:(fun (strongSelf, strongSelfLoc) ->
-        if strongSelfLoc.Location.line < self.loc.line && Pvar.is_syntactic self.pvar then
+        if
+          strongSelfLoc.Location.line < self.loc.line
+          && Pvar.is_syntactic self.pvar
+          && Option.is_none self.loc.Location.macro_file_opt
+        then
           Some
             { Jsonbug_j.original= Some (to_string self.DomainData.pvar)
             ; replacement= Some (to_string strongSelf)

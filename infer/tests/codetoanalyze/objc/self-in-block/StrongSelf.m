@@ -345,7 +345,10 @@ void m2(_Nullable SelfInBlockTest* obj) {}
 
 #define MY_LOG(format, ...) NSLog(format, ##__VA_ARGS__)
 
-- (void)mixSelfWeakSelf_bad_wrong_autofix_column {
+// When the code comes from a macro expansion we can't tell what
+// the syntactical line and column is precisely, so we avoid computing autofixes
+// in that case.
+- (void)mixSelfWeakSelf_bad_no_autofix_macro {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
