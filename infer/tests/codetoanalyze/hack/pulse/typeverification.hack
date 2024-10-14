@@ -58,7 +58,7 @@ class Unsafe {
     \Level1\taintSink($taint);
   }
 
-  public function callMaybeBogusStringBad(bool $b): void {
+  public function callMaybeBogusStringBad_FN(bool $b): void {
     $maybe_ret = $this->maybeBogusString($b);
     $taint = \Level1\taintSource();
     \Level1\taintSink($taint);
