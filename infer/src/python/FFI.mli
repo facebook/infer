@@ -35,12 +35,6 @@ module rec Constant : sig
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare, equal]
-
-  val pp : Format.formatter -> t -> unit
-
-  val as_code : t -> Code.t option
-
-  val as_name : t -> string option
 end
 
 and Code : sig
@@ -73,12 +67,6 @@ and Code : sig
               [string], [tuple]s, [None] or [code] objects *)
     ; instructions: Instruction.t list }
   [@@deriving show, compare, equal]
-
-  val is_closure : t -> bool
-
-  val get_arguments : t -> string array
-
-  val get_locals : t -> string array
 end
 
 and Instruction : sig

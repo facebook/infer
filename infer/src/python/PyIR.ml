@@ -7,7 +7,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module Debug = PyDebug
 module IMap = IInt.Map
 
 module Ident : sig
@@ -821,7 +820,11 @@ module State = struct
     ; fresh_id= 0 }
 
 
-  let debug {debug} = if debug then Debug.todo else Debug.p
+  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+
+  let debug {debug} =
+    if debug then F.kasprintf (fun s -> F.printf "%s" s) else F.ifprintf dummy_formatter
+
 
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local

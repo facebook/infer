@@ -397,16 +397,6 @@ module Code = struct
     ; co_consts: pyConstant array [@compare.ignore] [@equal.ignore]
     ; instructions: pyInstruction list [@compare.ignore] [@equal.ignore] }
   [@@deriving show, compare, equal]
-
-  let is_closure {co_freevars; co_cellvars} =
-    Array.length co_freevars + Array.length co_cellvars <> 0
-
-
-  let get_arguments {co_varnames; co_argcount} = Array.sub co_varnames ~pos:0 ~len:co_argcount
-
-  let get_locals {co_varnames; co_argcount} =
-    let nr_varnames = Array.length co_varnames in
-    Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount)
 end
 
 module Constant = struct
@@ -423,41 +413,6 @@ module Constant = struct
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare, equal]
-
-  let pp = pp_pyConstant
-
-  let as_code = function
-    | PYCCode c ->
-        Some c
-    | PYCBool _
-    | PYCInt _
-    | PYCString _
-    | PYCInvalidUnicode _
-    | PYCTuple _
-    | PYCFrozenSet _
-    | PYCNone
-    | PYCFloat _
-    | PYCComplex _
-    | PYCBytes _ ->
-        None
-
-
-  let as_name = function
-    | PYCString name ->
-        Some name
-    (* TODO: not sure if we should do that. Experience will tell *)
-    | PYCBytes bs ->
-        Some (Bytes.to_string bs)
-    | PYCInvalidUnicode _
-    | PYCBool _
-    | PYCInt _
-    | PYCCode _
-    | PYCTuple _
-    | PYCFrozenSet _
-    | PYCNone
-    | PYCFloat _
-    | PYCComplex _ ->
-        None
 end
 
 module Instruction = struct

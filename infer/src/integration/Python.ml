@@ -39,7 +39,6 @@ let process_file ~is_binary file =
   let _sourcefile = Textual.SourceFile.create file in
   let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
   let* _ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
-  let _ = PyTrans.to_module in
   Ok ()
 
 

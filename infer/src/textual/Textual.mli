@@ -56,8 +56,6 @@ end
 
 module FieldName : NAME (* field names, without their enclosing types *)
 
-val builtin_allocate : string
-
 module NodeName : NAME (* node names, also called labels *)
 
 module TypeName : sig
