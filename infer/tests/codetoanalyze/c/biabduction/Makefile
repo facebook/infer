@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
 INFER_OPTIONS = \
-  --biabduction-only --report-custom-error --developer-mode --no-filtering --debug-exceptions \
+  --biabduction-only --biabduction-seconds-per-iteration 200 --report-custom-error --developer-mode --no-filtering --debug-exceptions \
   --project-root $(TESTS_DIR) \
 
 # we need to disable traces in C tests because assertions/assertion_failure.c has different traces
