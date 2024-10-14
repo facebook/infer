@@ -6,13 +6,10 @@
  *)
 
 open! IStd
-(* open Core *)
+module F = Format
+module StringHashtble = Caml.Hashtbl.Make (String)
 
-module StringHashtble = String.Table
-
-type tt = (string, string, string) Hashtbl_intf.create_options_without_hashable
-
-let newbindings () = StringHashtble.create ()
+let newbindings () = StringHashtble.create 17
 
 (* following monty paper, we hardwire clas instead of having a __class__ attribute in the dictionary - correct?
    note that it's spelled clas because typing the other word makes vscode ocaml crash :-( *)
@@ -28,9 +25,41 @@ and mval =
   | Closure of locals * (pval list -> pval)
   | List of pval list
 
-and dictionary = pval StringHashtble.t [@@deriving sexp]
+and dictionary = pval StringHashtble.t
 
 and locals = {fastlocals: dictionary; locals: dictionary}
+
+let rec pp_pval fmt {clas; mval; dict} =
+  F.fprintf fmt "[class=%a; mval=%a; dict=%a]" pp_pclass clas pp_mval mval pp_dictionnary dict
+
+
+and pp_mval fmt = function
+  | MetaNone ->
+      F.pp_print_string fmt "None"
+  | Cell ->
+      F.pp_print_string fmt "Cell"
+  | Int i ->
+      F.pp_print_int fmt i
+  | String s ->
+      Format.pp_print_string fmt s
+  | Closure _ ->
+      F.pp_print_string fmt "Closure"
+  | List l ->
+      F.fprintf fmt "[%a]" (Pp.comma_seq pp_pval) l
+
+
+and pp_pclass fmt = function
+  | Builtin ->
+      F.pp_print_string fmt "Builtin"
+  | Classobj v ->
+      pp_pval fmt v
+
+
+and pp_dictionnary fmt dict =
+  StringHashtble.to_seq dict |> ListLabels.of_seq
+  |> PrettyPrintable.pp_collection fmt ~pp_item:(fun fmt (key, v) ->
+         F.fprintf fmt "%s: %a" key pp_pval v )
+
 
 type code_object =
   { co_freevars: string list
@@ -42,12 +71,12 @@ type code_object =
 
 let write_binding v1 key data =
   let d = v1.dict in
-  StringHashtble.set d ~key ~data
+  StringHashtble.replace d key data
 
 
 let get_binding v key =
   let d = v.dict in
-  StringHashtble.find d key
+  StringHashtble.find_opt d key
 
 
 exception RuntimeError
@@ -92,7 +121,7 @@ let builtin_get_attr obj attr_name =
 
 let makelocalbindings namelist valuelist =
   let alist = List.zip_exn namelist valuelist in
-  StringHashtble.of_alist_exn alist
+  ListLabels.to_seq alist |> StringHashtble.of_seq
 
 
 let mk_int n = {clas= Builtin; mval= Int n; dict= newbindings ()}
@@ -108,7 +137,7 @@ let mk_cell v =
   ; mval= Cell
   ; dict=
       (let d = newbindings () in
-       StringHashtble.set d ~key:"contents" ~data:v ;
+       StringHashtble.replace d "contents" v ;
        d ) }
 
 
@@ -118,7 +147,7 @@ let extendslocalbindings locals cellvarlist namelist valuelist =
       let data =
         if List.mem cellvarlist key ~equal:String.equal then mk_cell rawdata else rawdata
       in
-      StringHashtble.set locals ~key ~data )
+      StringHashtble.replace locals key data )
 
 
 let mk_closure qname code_obj local_values =
@@ -146,7 +175,7 @@ let mk_closure qname code_obj local_values =
               List.iter code_obj.co_cellvars ~f:(fun name ->
                   if List.mem argument_names name ~equal:String.equal then ()
                     (* already initialised *)
-                  else Hashtbl.set fastlocals ~key:name ~data:(mk_cell mk_undef) ) ;
+                  else StringHashtble.replace fastlocals name (mk_cell mk_undef) ) ;
               code_obj.code locals )
     ; dict= locals.locals }
   in
@@ -154,15 +183,15 @@ let mk_closure qname code_obj local_values =
   f
 
 
-let store_fast {fastlocals} v s = Hashtbl.set fastlocals ~key:s ~data:v
+let store_fast {fastlocals} v s = StringHashtble.replace fastlocals s v
 
 (* see https://tenthousandmeters.com/blog/python-behind-the-scenes-5-how-variables-are-implemented-in-cpython/ *)
-let store_name {locals} v s = Hashtbl.set locals ~key:s ~data:v
+let store_name {locals} v s = StringHashtble.replace locals s v
 
 let load_name {locals} globals s =
-  match Hashtbl.find locals s with
+  match StringHashtble.find_opt locals s with
   | None -> (
-    match Hashtbl.find globals s with
+    match StringHashtble.find_opt globals s with
     | None ->
         raise RuntimeError (* should go to builtins here *)
     | Some v ->
@@ -172,27 +201,26 @@ let load_name {locals} globals s =
 
 
 let store_deref {fastlocals} v s =
-  match Hashtbl.find fastlocals s with
+  match StringHashtble.find_opt fastlocals s with
   | None ->
-      Hashtbl.set fastlocals ~key:s ~data:(mk_cell v)
+      StringHashtble.replace fastlocals s (mk_cell v)
       (* reading the source, I think this shouldn't happen *)
   | Some cell_object ->
       write_binding cell_object "contents" v
 
 
 let load_fast {fastlocals} s =
-  match Hashtbl.find fastlocals s with None -> raise (LocalNotFound s) | Some v -> v
+  match StringHashtble.find_opt fastlocals s with None -> raise (LocalNotFound s) | Some v -> v
 
 
 let load_deref {fastlocals} s =
-  match Hashtbl.find fastlocals s with
+  match StringHashtble.find_opt fastlocals s with
   | None ->
       raise (LocalNotFound s)
   | Some cell_object -> (
     match get_binding cell_object "contents" with
     | None ->
-        printf "got binding that should be a cell, it's %s"
-          (sexp_of_pval cell_object |> Sexplib.Sexp.to_string) ;
+        F.printf "got binding that should be a cell, it's %a" pp_pval cell_object ;
         raise (AttributeNotFound "cell contents")
     | Some v ->
         v )
@@ -201,7 +229,7 @@ let load_deref {fastlocals} s =
 let load_closure = load_fast
 
 let load_global globals s =
-  match Hashtbl.find globals s with
+  match StringHashtble.find_opt globals s with
   | None ->
       raise RuntimeError (* should go to builtins *)
   | Some v ->
@@ -209,11 +237,11 @@ let load_global globals s =
 
 
 let load_classderef {fastlocals; locals} s =
-  match Hashtbl.find locals s with
+  match StringHashtble.find_opt locals s with
   | Some v ->
       v
   | None -> (
-    match Hashtbl.find fastlocals s with
+    match StringHashtble.find_opt fastlocals s with
     | Some ({mval= Cell} as cell_object) -> (
       match get_binding cell_object "contents" with None -> raise RuntimeError | Some v -> v )
     | Some _v ->
@@ -224,7 +252,7 @@ let load_classderef {fastlocals; locals} s =
         raise RuntimeError )
 
 
-let store_global globals v s = Hashtbl.set globals ~key:s ~data:v
+let store_global globals v s = StringHashtble.replace globals s v
 
 (* MAKE_FUNCTION (simplified version)
 *)
@@ -245,7 +273,7 @@ let get_locals_of_closure closure =
       should now be redundant as added to the calling convention and co_cellvars list in code objects
 
    let add_cell_variables locals varnames =
-     List.iter varnames ~f:(fun v -> Hashtbl.set locals ~key:v ~data:(mk_cell mk_undef))
+     List.iter varnames ~f:(fun v -> StringHashtble.set locals ~key:v ~data:(mk_cell mk_undef))
 *)
 
 let python_print_function =
@@ -258,7 +286,7 @@ let python_print_function =
     ; code=
         (fun argdict ->
           let x_val = load_fast argdict "x" in
-          sexp_of_pval x_val |> Sexplib.Sexp.to_string |> printf "%s\n" ;
+          F.printf "%a@\n" pp_pval x_val ;
           mk_int 0 ) }
     []
 
@@ -882,7 +910,7 @@ let wrapper0_code globals =
 (* default outer globals map - or should this be in builtins? *)
 let globals =
   let bindings = newbindings () in
-  Hashtbl.set bindings ~key:"print" ~data:python_print_function ;
+  StringHashtble.replace bindings "print" python_print_function ;
   bindings
 
 
@@ -890,10 +918,10 @@ let globals =
 let test wrapper =
   let code_obj = wrapper globals in
   let res = code_obj.code {fastlocals= newbindings (); locals= newbindings ()} in
-  sexp_of_pval res |> Sexplib.Sexp.to_string |> printf "%s\n"
+  F.printf "%a@\n" pp_pval res
 
 
-let () =
+let%expect_test _ =
   printf "pysem\n" ;
   test wrapper_code ;
   printf "wrapper2\n" ;
@@ -903,4 +931,28 @@ let () =
   printf "wrapper5\n" ;
   test wrapper5_code ;
   printf "wrapper0 from full monty paper\n" ;
-  test wrapper0_code
+  test wrapper0_code ;
+  [%expect
+    {|
+      pysem
+      wrapper2
+      [class=Builtin; mval=3; dict={ }]
+      [class=Builtin; mval=0; dict={ }]
+      [class=Builtin; mval=assigned; dict={ }]
+      [class=Builtin; mval=reassigned; dict={ }]
+      [class=Builtin; mval=0; dict={ }]
+      wrapper3
+      [class=Builtin; mval=assigned; dict={ }]
+      [class=Builtin; mval=reassigned; dict={ }]
+      [class=Builtin; mval=0; dict={ }]
+      wrapper5
+      [class=Builtin; mval=3; dict={ }]
+      [class=Builtin; mval=0; dict={ }]
+      wrapper0 from full monty paper
+      [class=Builtin; mval=0; dict={ }]
+      [class=Builtin; mval=1; dict={ }]
+      [class=Builtin; mval=4; dict={ }]
+      [class=Builtin; mval=1; dict={ }]
+      [class=Builtin; mval=0; dict={ }]
+      [class=Builtin; mval=1; dict={ }]
+      [class=Builtin; mval=0; dict={ }] |}]
