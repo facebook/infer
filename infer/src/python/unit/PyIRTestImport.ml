@@ -25,7 +25,7 @@ base.f(0)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(base)(None, 0, None)
           TOPLEVEL[base] <- n0
@@ -57,7 +57,7 @@ g()
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -80,7 +80,7 @@ g()
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           return None |}]
 
@@ -97,7 +97,7 @@ class MyTest(unittest.TestCase):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
@@ -109,7 +109,7 @@ class MyTest(unittest.TestCase):
           return None
 
 
-      dummy.MyTest:
+      function dummy.MyTest():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(os)(None, 0, None)
           TOPLEVEL[os] <- n0
@@ -184,7 +184,7 @@ if __name__ == '__main__':
           return None
 
 
-      dummy._main:
+      function dummy._main(mydir, i):
         b0:
           n0 <- GLOBAL[os]
           n1 <- n0.path
@@ -267,7 +267,7 @@ path.X()
     {|
     module some/long/path/dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(A)($BuildTuple("X"), 0, None)
           n1 <- $ImportFrom(X)(n0, None)
@@ -313,7 +313,7 @@ tata()
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(x)($BuildTuple("y", "a"), 0, None)
           n1 <- $ImportFrom(y)(n0, None)
@@ -356,7 +356,7 @@ import xml.etree.ElementTree as ET
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(xml.etree.ElementTree)(None, 0, None)
           n1 <- $ImportFrom(etree)(n0, None)
@@ -381,7 +381,7 @@ class Test(unittest.TestCase):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
@@ -401,7 +401,7 @@ class Test(unittest.TestCase):
           return None
 
 
-      dummy.Test:
+      function dummy.Test():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -421,7 +421,7 @@ def f():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
@@ -430,7 +430,7 @@ def f():
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           n0 <- GLOBAL[foo]
           n1 <- $CallMethod[bar](n0, 42, None)
@@ -455,7 +455,7 @@ def f(ok):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
@@ -464,7 +464,7 @@ def f(ok):
           return None
 
 
-      dummy.f:
+      function dummy.f(ok):
         b0:
           n0 <- GLOBAL[foo]
           n1 <- $CallMethod[bar](n0, None)
@@ -495,7 +495,7 @@ def test_format_specifier_expressions(self):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(decimal)(None, 0, None)
           TOPLEVEL[decimal] <- n0
@@ -507,12 +507,12 @@ def test_format_specifier_expressions(self):
           return None
 
 
-      dummy.assertEqual:
+      function dummy.assertEqual(x):
         b0:
           return None
 
 
-      dummy.test_format_specifier_expressions:
+      function dummy.test_format_specifier_expressions(self):
         b0:
           LOCAL[width] <- 10
           LOCAL[precision] <- 4
@@ -555,7 +555,7 @@ def f():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           $SETUP_ANNOTATIONS
           n0 <- TOPLEVEL[int]
@@ -578,7 +578,7 @@ def f():
           return None
 
 
-      dummy.f:
+      function dummy.f(u, v):
         b0:
           LOCAL[u] <- 0
           LOCAL[v] <- "tata"
@@ -594,7 +594,7 @@ from foo import *
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)($BuildTuple("*"), 0, None)
           n1 <- $ImportStar(n0, None)

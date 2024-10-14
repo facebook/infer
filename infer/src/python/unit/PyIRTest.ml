@@ -31,7 +31,7 @@ print(z)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["my_fun", "dummy.my_fun"](None, None, None, None, None)
           TOPLEVEL[my_fun] <- n0
@@ -46,7 +46,7 @@ print(z)
           return None
 
 
-      dummy.my_fun:
+      function dummy.my_fun(x, y):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
@@ -80,7 +80,7 @@ print(z)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["update_global", "dummy.update_global"](None, None, None, None, None)
           TOPLEVEL[update_global] <- n0
@@ -93,7 +93,7 @@ print(z)
           return None
 
 
-      dummy.update_global:
+      function dummy.update_global():
         b0:
           n0 <- GLOBAL[z]
           n1 <- $Binary.Add(n0, 1, None)
@@ -119,7 +119,7 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
           TOPLEVEL[coin] <- n0
@@ -128,12 +128,12 @@ def f(x, y):
           return None
 
 
-      dummy.coin:
+      function dummy.coin():
         b0:
           return false
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           n0 <- GLOBAL[coin]
           n1 <- $Call(n0, None)
@@ -168,7 +168,7 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
           TOPLEVEL[coin] <- n0
@@ -177,12 +177,12 @@ def f(x, y):
           return None
 
 
-      dummy.coin:
+      function dummy.coin():
         b0:
           return false
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           LOCAL[z] <- 0
           n0 <- GLOBAL[coin]
@@ -232,7 +232,7 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["coin", "dummy.coin"](None, None, None, None, None)
           TOPLEVEL[coin] <- n0
@@ -241,12 +241,12 @@ def f(x, y):
           return None
 
 
-      dummy.coin:
+      function dummy.coin():
         b0:
           return false
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           LOCAL[z] <- 0
           n0 <- GLOBAL[coin]
@@ -306,7 +306,7 @@ def f(x):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
@@ -315,7 +315,7 @@ def f(x):
           return None
 
 
-      dummy.f:
+      function dummy.f(x):
         b0:
           n0 <- GLOBAL[foo]
           n1 <- LOCAL[x]
@@ -332,7 +332,7 @@ def f(x):
           return None
 
 
-      dummy.foo:
+      function dummy.foo(x):
         b0:
           return None |}]
 
@@ -347,7 +347,7 @@ for x in range(10):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[range]
           n1 <- $Call(n0, 10, None)
@@ -386,14 +386,14 @@ def f(x, y, l, bar, toto):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y, l, bar, toto):
         b0:
           n0 <- LOCAL[l]
           n1 <- $GetIter(n0, None)
@@ -469,7 +469,7 @@ def f(x):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- $Call(n0, 42, None)
@@ -482,7 +482,7 @@ def f(x):
           return None
 
 
-      dummy.f:
+      function dummy.f(x):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
@@ -490,7 +490,7 @@ def f(x):
           return None
 
 
-      dummy.print:
+      function dummy.print(x):
         b0:
           n0 <- LOCAL[x]
           return n0 |}]
@@ -511,7 +511,7 @@ def f1(x, y:str) -> bool:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- TOPLEVEL[float]
@@ -526,12 +526,12 @@ def f1(x, y:str) -> bool:
           return None
 
 
-      dummy.f0:
+      function dummy.f0(x, y, z):
         b0:
           return None
 
 
-      dummy.f1:
+      function dummy.f1(x, y):
         b0:
           return None |}]
 
@@ -553,7 +553,7 @@ expect_int(get())
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- $BuildConstKeyMap($BuildTuple("x"), n0, None)
@@ -570,12 +570,12 @@ expect_int(get())
           return None
 
 
-      dummy.expect_int:
+      function dummy.expect_int(x):
         b0:
           return None
 
 
-      dummy.get:
+      function dummy.get():
         b0:
           return 42 |}]
 
@@ -597,7 +597,7 @@ expect(get())
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[object]
           n1 <- $BuildConstKeyMap($BuildTuple("x", "return"), n0, None, None)
@@ -614,12 +614,12 @@ expect(get())
           return None
 
 
-      dummy.expect:
+      function dummy.expect(x):
         b0:
           return None
 
 
-      dummy.get:
+      function dummy.get():
         b0:
           return 42 |}]
 
@@ -634,14 +634,14 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -656,7 +656,7 @@ let%expect_test _ =
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $Compare.neq(true, false, None)
           return None |}]
@@ -672,14 +672,14 @@ def f(x, y, z, t):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y, z, t):
         b0:
           n0 <- LOCAL[x]
           if n0 then jmp b1 else jmp b2
@@ -710,14 +710,14 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -735,14 +735,14 @@ def f(x, y):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -771,7 +771,7 @@ def in_not_check(x, l):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["is_check", "dummy.is_check"](None, None, None, None, None)
           TOPLEVEL[is_check] <- n0
@@ -784,7 +784,7 @@ def in_not_check(x, l):
           return None
 
 
-      dummy.in_check:
+      function dummy.in_check(x, l):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[l]
@@ -792,7 +792,7 @@ def in_not_check(x, l):
           return n2
 
 
-      dummy.in_not_check:
+      function dummy.in_not_check(x, l):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[l]
@@ -800,14 +800,14 @@ def in_not_check(x, l):
           return n2
 
 
-      dummy.is_check:
+      function dummy.is_check(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Compare.is(n0, None, None)
           return n1
 
 
-      dummy.is_not_check:
+      function dummy.is_not_check(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Compare.is_not(n0, None, None)
@@ -827,7 +827,7 @@ def f(x, y, z):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[t] <- $BuildTuple(1, 2, 3)
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
@@ -835,7 +835,7 @@ def f(x, y, z):
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y, z):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -860,7 +860,7 @@ def build_list():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[l] <- $BuildList(1, 2, 3)
           n0 <- TOPLEVEL[print]
@@ -876,7 +876,7 @@ def build_list():
           return None
 
 
-      dummy.build_list:
+      function dummy.build_list():
         b0:
           return $BuildList(1, 2, 3) |}]
 
@@ -898,14 +898,14 @@ def f(foo, bar):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(foo, bar):
         b0:
           n0 <- LOCAL[foo]
           n1 <- $Call(n0, None)
@@ -947,7 +947,7 @@ def f():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -958,7 +958,7 @@ def f():
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           return None |}]
 
@@ -975,7 +975,7 @@ f(0, y=2, x=1)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -984,7 +984,7 @@ f(0, y=2, x=1)
           return None
 
 
-      dummy.f:
+      function dummy.f(z, x, y):
         b0:
           return None |}]
 
@@ -1004,14 +1004,14 @@ def f(m, a, b, c):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(m, a, b, c):
         b0:
           n0 <- LOCAL[a]
           n1 <- LOCAL[b]
@@ -1057,7 +1057,7 @@ def test_arguments(x, y, width):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -1066,7 +1066,7 @@ def test_arguments(x, y, width):
           return None
 
 
-      dummy.f:
+      function dummy.f(name, args):
         b0:
           n0 <- LOCAL[name]
           n1 <- $FormatFn.repr(n0, None)
@@ -1080,7 +1080,7 @@ def test_arguments(x, y, width):
           return $BuildString("foo.", n2, n5, n8)
 
 
-      dummy.test_arguments:
+      function dummy.test_arguments(x, y, width):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -1112,7 +1112,7 @@ def inv(x):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["pos", "dummy.pos"](None, None, None, None, None)
           TOPLEVEL[pos] <- n0
@@ -1125,28 +1125,28 @@ def inv(x):
           return None
 
 
-      dummy.inv:
+      function dummy.inv(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Unary.Invert(n0, None)
           return n1
 
 
-      dummy.neg:
+      function dummy.neg(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Unary.Negative(n0, None)
           return n1
 
 
-      dummy.pos:
+      function dummy.pos(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Unary.Positive(n0, None)
           return n1
 
 
-      dummy.test_not:
+      function dummy.test_not(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $Unary.Not(n0, None)
@@ -1184,7 +1184,7 @@ print(g()) # prints 2
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           GLOBAL[gx] <- 100
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
@@ -1199,7 +1199,7 @@ print(g()) # prints 2
           return None
 
 
-      dummy.f:
+      function dummy.f(ax):
         b0:
           n0 <- $StoreDeref[1,"lx"](1000, None)
           n1 <- $LoadClosure[0,"ax"](None)
@@ -1211,7 +1211,7 @@ print(g()) # prints 2
           return n5
 
 
-      dummy.f.inner:
+      function dummy.f.inner(ix):
         b0:
           LOCAL[ix] <- 20
           n0 <- GLOBAL[print]
@@ -1252,7 +1252,7 @@ def f(l):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["<listcomp>", "dummy.<listcomp>"](None, None, None, None, None)
           n1 <- TOPLEVEL[l]
@@ -1275,7 +1275,7 @@ def f(l):
           return None
 
 
-      dummy.<listcomp>:
+      function dummy.<listcomp>(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1296,7 +1296,7 @@ def f(l):
           return $BuildList()
 
 
-      dummy.f.<listcomp>:
+      function dummy.f.<listcomp>(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1317,7 +1317,7 @@ def f(l):
           return $BuildList()
 
 
-      dummy.f:
+      function dummy.f(l):
         b0:
           n0 <- $MakeFunction["<listcomp>", "dummy.f.<listcomp>"](None, None, None, None, None)
           n1 <- LOCAL[l]
@@ -1356,7 +1356,7 @@ def g(l):
     {xxx|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -1365,7 +1365,7 @@ def g(l):
           return None
 
 
-      dummy.g.<dictcomp>:
+      function dummy.g.<dictcomp>(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1387,7 +1387,7 @@ def g(l):
           return $BuildMap()
 
 
-      dummy.f.<setcomp>:
+      function dummy.f.<setcomp>(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1408,7 +1408,7 @@ def g(l):
           return $BuildSet()
 
 
-      dummy.f:
+      function dummy.f(l):
         b0:
           n0 <- $MakeFunction["<setcomp>", "dummy.f.<setcomp>"](None, None, None, None, None)
           n1 <- LOCAL[l]
@@ -1419,7 +1419,7 @@ def g(l):
           return n4
 
 
-      dummy.g:
+      function dummy.g(l):
         b0:
           n0 <- $MakeFunction["<dictcomp>", "dummy.g.<dictcomp>"](None, None, None, None, None)
           n1 <- LOCAL[l]
@@ -1448,7 +1448,7 @@ async def g():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -1457,12 +1457,12 @@ async def g():
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           return true
 
 
-      dummy.g:
+      function dummy.g():
         b0:
           n0 <- GLOBAL[f]
           n1 <- $Call(n0, None)
@@ -1494,14 +1494,14 @@ def m(self, x, y, test):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
           TOPLEVEL[m] <- n0
           return None
 
 
-      dummy.m:
+      function dummy.m(self, x, y, test):
         b0:
           n0 <- GLOBAL[foo]
           n1 <- LOCAL[self]
@@ -1531,14 +1531,14 @@ def m(self, x, y, test):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
           TOPLEVEL[m] <- n0
           return None
 
 
-      dummy.m:
+      function dummy.m(self, x, y, test):
         b0:
           n0 <- LOCAL[self]
           n1 <- LOCAL[test]
@@ -1567,14 +1567,14 @@ def m(x, y, test):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["m", "dummy.m"](None, None, None, None, None)
           TOPLEVEL[m] <- n0
           return None
 
 
-      dummy.m:
+      function dummy.m(x, y, test):
         b0:
           n0 <- LOCAL[test]
           if n0 then jmp b1 else jmp b2
@@ -1612,7 +1612,7 @@ o.foo()
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1630,14 +1630,14 @@ o.foo()
           return None
 
 
-      dummy.<lambda>:
+      function dummy.<lambda>():
         b0:
           n0 <- GLOBAL[print]
           n1 <- $Call(n0, "I am not foo", None)
           return n1
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1647,7 +1647,7 @@ o.foo()
           return None
 
 
-      dummy.C.foo:
+      function dummy.C.foo(self):
         b0:
           n0 <- GLOBAL[print]
           n1 <- $Call(n0, "I am foo", None)
@@ -1663,7 +1663,7 @@ res = dict.attr(0 if not False else 1)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[dict]
           jmp b2
@@ -1688,14 +1688,14 @@ async def foo():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
           return None
 
 
-      dummy.foo:
+      function dummy.foo(i, f):
         b0:
           n0 <- GLOBAL[range]
           n1 <- GLOBAL[num]

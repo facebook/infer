@@ -24,14 +24,14 @@ def f(**kwargs):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(kwargs, k, v):
         b0:
           n0 <- LOCAL[kwargs]
           n1 <- $CallMethod[items](n0, None)
@@ -87,7 +87,7 @@ start()
     {xxx|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -100,7 +100,7 @@ start()
           return None
 
 
-      dummy.f:
+      function dummy.f(dummy, dummy2, dummy3, dummy4):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
@@ -138,7 +138,7 @@ start()
           return None
 
 
-      dummy.g:
+      function dummy.g(dummy, dummy2, dummy3, dummy4):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
@@ -155,7 +155,7 @@ start()
           return None
 
 
-      dummy.start:
+      function dummy.start(x):
         b0:
           LOCAL[x] <- $BuildTuple(3, 4)
           n0 <- GLOBAL[f]
@@ -189,14 +189,14 @@ def f(foo, a, b, c):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
 
 
-      dummy.f:
+      function dummy.f(foo, a, b, c):
         b0:
           n0 <- LOCAL[foo]
           n1 <- LOCAL[a]
@@ -255,7 +255,7 @@ f(**d1, x=42)
     {xxx|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $BuildConstKeyMap($BuildTuple(0, 1), 0, 1, None)
           TOPLEVEL[d0] <- n0
@@ -277,7 +277,7 @@ f(**d1, x=42)
           return None
 
 
-      dummy.f:
+      function dummy.f(x):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
@@ -320,7 +320,7 @@ print(lst) # [2, 3, 4, 5, 6]
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -339,7 +339,7 @@ print(lst) # [2, 3, 4, 5, 6]
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           n0 <- GLOBAL[range]
           n1 <- $Call(n0, 10, None)

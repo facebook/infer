@@ -23,7 +23,7 @@ finally:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- $Call(n0, "TRY BLOCK", None)
@@ -57,7 +57,7 @@ print("END")
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- $Call(n0, "TRY BLOCK", None)
@@ -103,7 +103,7 @@ print("END")
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[print]
           n1 <- $Call(n0, "TRY BLOCK", None)
@@ -135,7 +135,7 @@ except (ValueError, AttributeError):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(os)(None, 0, None)
           TOPLEVEL[os] <- n0
@@ -167,7 +167,7 @@ def f(x):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
@@ -176,7 +176,7 @@ def f(x):
           return None
 
 
-      dummy.f:
+      function dummy.f(x):
         b0:
           n0 <- LOCAL[x]
           n1 <- $GetIter(n0, None)
@@ -328,7 +328,7 @@ with open("foo", "r") as fp:
 
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)($BuildTuple("ERROR"), 0, None)
           n1 <- $ImportFrom(ERROR)(n0, None)
@@ -388,7 +388,7 @@ def subhelper():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           GLOBAL[TICKS] <- 0
           n0 <- $MakeFunction["subhelper", "dummy.subhelper"](None, None, None, None, None)
@@ -396,7 +396,7 @@ def subhelper():
           return None
 
 
-      dummy.subhelper:
+      function dummy.subhelper(i):
         b0:
           n0 <- GLOBAL[TICKS]
           n1 <- $Inplace.Add(n0, 2, None)
@@ -438,7 +438,7 @@ except C as c:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
@@ -450,7 +450,7 @@ except C as c:
           return None
 
 
-      dummy.foo:
+      function dummy.foo():
         b0:
           return None |}]
 
@@ -468,14 +468,14 @@ async def async_with(filename):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["async_with", "dummy.async_with"](None, None, None, None, None)
           TOPLEVEL[async_with] <- n0
           return None
 
 
-      dummy.async_with:
+      function dummy.async_with(filename):
         b0:
           n0 <- GLOBAL[open]
           n1 <- LOCAL[filename]
@@ -515,14 +515,14 @@ def call_finally():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["call_finally", "dummy.call_finally"](None, None, None, None, None)
           TOPLEVEL[call_finally] <- n0
           return None
 
 
-      dummy.call_finally:
+      function dummy.call_finally(e):
         b0:
           n0 <- GLOBAL[read]
           n1 <- $Call(n0, None)
@@ -548,7 +548,7 @@ def call_finally_with_break():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["call_finally_with_break", "dummy.call_finally_with_break"](
             None, None, None, None, None)
@@ -556,7 +556,7 @@ def call_finally_with_break():
           return None
 
 
-      dummy.call_finally_with_break:
+      function dummy.call_finally_with_break(i, e):
         b0:
           n0 <- GLOBAL[range]
           n1 <- $Call(n0, 100, None)
@@ -588,14 +588,14 @@ def raise_from(e):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["raise_from", "dummy.raise_from"](None, None, None, None, None)
           TOPLEVEL[raise_from] <- n0
           return None
 
 
-      dummy.raise_from:
+      function dummy.raise_from(e):
         b0:
           n0 <- GLOBAL[IndexError]
           n1 <- LOCAL[e]
@@ -617,14 +617,14 @@ async def foo():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
           return None
 
 
-      dummy.foo:
+      function dummy.foo():
         b0:
           n0 <- GLOBAL[read1]
           n1 <- $Call(n0, None)
@@ -767,14 +767,14 @@ async def foo():
 
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
           return None
 
 
-      dummy.foo:
+      function dummy.foo(res):
         b0:
           n0 <- GLOBAL[read1]
           n1 <- $Call(n0, None)

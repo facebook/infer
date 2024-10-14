@@ -190,8 +190,24 @@ module Node : sig
     ; last: Terminator.t }
 end
 
+module CodeInfo : sig
+  type t =
+    { co_name: string
+    ; co_nlocals: int
+    ; co_argcount: int
+    ; co_posonlyargcount: int
+    ; co_kwonlyargcount: int
+    ; co_cellvars: string array
+    ; co_freevars: string array
+    ; co_names: string array
+    ; co_varnames: string array
+    ; has_star_arguments: bool
+    ; has_star_keywords: bool
+    ; is_generator: bool }
+end
+
 module CFG : sig
-  type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t}
+  type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t; code_info: CodeInfo.t}
 end
 
 module Module : sig

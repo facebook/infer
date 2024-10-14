@@ -778,12 +778,59 @@ module CFGBuilder = struct
     {nodes= NodeName.Map.add name (node, last) nodes; fresh_label}
 end
 
+module CodeInfo = struct
+  type t =
+    { (* see https://docs.python.org/3.8/reference/datamodel.html#index-55 *)
+      co_name: string
+    ; co_nlocals: int
+    ; co_argcount: int
+    ; co_posonlyargcount: int
+    ; co_kwonlyargcount: int
+    ; co_cellvars: string array
+    ; co_freevars: string array
+    ; co_names: string array
+    ; co_varnames: string array
+    ; has_star_arguments: bool
+    ; has_star_keywords: bool
+    ; is_generator: bool }
+
+  let of_code
+      { FFI.Code.co_name
+      ; co_flags
+      ; co_nlocals
+      ; co_argcount
+      ; co_posonlyargcount
+      ; co_kwonlyargcount
+      ; co_cellvars
+      ; co_freevars
+      ; co_names
+      ; co_varnames } =
+    { co_name
+    ; has_star_arguments= co_flags land 0x04 <> 0
+    ; has_star_keywords= co_flags land 0x08 <> 0
+    ; is_generator= co_flags land 0x20 <> 0
+    ; co_nlocals
+    ; co_argcount
+    ; co_posonlyargcount
+    ; co_kwonlyargcount
+    ; co_cellvars
+    ; co_freevars
+    ; co_names
+    ; co_varnames }
+end
+
 module CFG = struct
-  type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t}
+  type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t; code_info: CodeInfo.t}
 
-  let pp fmt {nodes} = NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
+  let pp ?name fmt {nodes; code_info= {co_name; co_varnames; co_argcount}} =
+    let name = Option.value ~default:co_name name in
+    F.fprintf fmt "function %s(%a):@\n" name
+      (Pp.seq ~sep:", " F.pp_print_string)
+      (Array.slice co_varnames 0 co_argcount |> Array.to_list) ;
+    NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
 
-  let of_builder {CFGBuilder.nodes} =
+
+  let of_builder {CFGBuilder.nodes} code =
     let open IResult.Let_syntax in
     let offset = 0 in
     let entry = CFGBuilder.label_of_int CFGBuilder.fresh_start |> NodeName.mk ~offset in
@@ -793,7 +840,7 @@ module CFG = struct
           let+ last = Terminator.of_builder ~loc last in
           {node with Node.last} )
     in
-    {nodes; entry}
+    {nodes; entry; code_info= CodeInfo.of_code code}
 end
 
 module State = struct
@@ -2419,7 +2466,7 @@ let build_cfg ~debug ~code_qual_name code =
   let qual_name = code_qual_name code in
   let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton qual_name in
   let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
-  let* cfg = CFG.of_builder st.State.cfg in
+  let* cfg = CFG.of_builder st.State.cfg code in
   Ok cfg
 
 
@@ -2428,9 +2475,11 @@ module Module = struct
 
   let pp fmt {name; toplevel; functions} =
     F.fprintf fmt "@[<hv2>module %a:@\n@\n" Ident.pp name ;
-    F.fprintf fmt "@[<hv2>toplevel:@\n%a@]@\n" CFG.pp toplevel ;
+    F.fprintf fmt "@[<hv2>%a@]@\n" (CFG.pp ~name:"toplevel") toplevel ;
     QualName.Map.iter
-      (fun name cfg -> F.fprintf fmt "@[<hv2>%a:@\n%a@]@\n" QualName.pp name CFG.pp cfg)
+      (fun qual_name cfg ->
+        let name = F.asprintf "%a" QualName.pp qual_name in
+        F.fprintf fmt "@[<hv2>%a@]@\n" (CFG.pp ~name) cfg )
       functions ;
     F.fprintf fmt "@]@\n"
 end

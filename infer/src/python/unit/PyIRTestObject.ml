@@ -36,7 +36,7 @@ c.set(42)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -53,7 +53,7 @@ c.set(42)
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -67,7 +67,7 @@ c.set(42)
           return None
 
 
-      dummy.C.__init__:
+      function dummy.C.__init__(self, x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[self]
@@ -78,14 +78,14 @@ c.set(42)
           return None
 
 
-      dummy.C.get:
+      function dummy.C.get(self):
         b0:
           n0 <- LOCAL[self]
           n1 <- n0.x
           return n1
 
 
-      dummy.C.set:
+      function dummy.C.set(self, x):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[self]
@@ -136,7 +136,7 @@ print(c.z)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["IntBox", "dummy.IntBox"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "IntBox", None)
@@ -166,7 +166,7 @@ print(c.z)
           return None
 
 
-      dummy.IntBox:
+      function dummy.IntBox():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -200,7 +200,7 @@ print(c.z)
           return None
 
 
-      dummy.IntBox.__init__:
+      function dummy.IntBox.__init__(self, x):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[self]
@@ -208,32 +208,32 @@ print(c.z)
           return None
 
 
-      dummy.IntBox.get:
+      function dummy.IntBox.get(self):
         b0:
           n0 <- LOCAL[self]
           n1 <- n0.x
           return n1
 
 
-      dummy.getX:
+      function dummy.getX(box):
         b0:
           n0 <- LOCAL[box]
           n1 <- $CallMethod[get](n0, None)
           return n1
 
 
-      dummy.IntBox.id:
+      function dummy.IntBox.id(x):
         b0:
           n0 <- LOCAL[x]
           return n0
 
 
-      dummy.IntBox.run:
+      function dummy.IntBox.run(self):
         b0:
           return None
 
 
-      dummy.IntBox.set:
+      function dummy.IntBox.set(self, x):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[self]
@@ -262,7 +262,7 @@ class D(C):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -274,7 +274,7 @@ class D(C):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -293,7 +293,7 @@ class D(C):
           return None
 
 
-      dummy.D:
+      function dummy.D():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -301,12 +301,12 @@ class D(C):
           return None
 
 
-      dummy.C.f:
+      function dummy.C.f():
         b0:
           return None
 
 
-      dummy.C.typed_f:
+      function dummy.C.typed_f(x):
         b0:
           n0 <- LOCAL[x]
           return n0 |}]
@@ -326,7 +326,7 @@ C.f()
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -336,7 +336,7 @@ C.f()
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -348,7 +348,7 @@ C.f()
           return None
 
 
-      dummy.C.f:
+      function dummy.C.f():
         b0:
           return None |}]
 
@@ -373,7 +373,7 @@ def g(c: C) -> None:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["A", "dummy.A"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "A", None)
@@ -388,7 +388,7 @@ def g(c: C) -> None:
           return None
 
 
-      dummy.A:
+      function dummy.A():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -398,7 +398,7 @@ def g(c: C) -> None:
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -410,12 +410,12 @@ def g(c: C) -> None:
           return None
 
 
-      dummy.A.f:
+      function dummy.A.f(self):
         b0:
           return None
 
 
-      dummy.g:
+      function dummy.g(c):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[c]
@@ -443,7 +443,7 @@ class C(A, B):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["A", "dummy.A"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "A", None)
@@ -459,7 +459,7 @@ class C(A, B):
           return None
 
 
-      dummy.A:
+      function dummy.A():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -467,7 +467,7 @@ class C(A, B):
           return None
 
 
-      dummy.B:
+      function dummy.B():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -475,7 +475,7 @@ class C(A, B):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -503,7 +503,7 @@ cs[0].x
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -519,7 +519,7 @@ cs[0].x
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -529,14 +529,14 @@ cs[0].x
           return None
 
 
-      dummy.C.__init__:
+      function dummy.C.__init__(self):
         b0:
           n0 <- LOCAL[self]
           n0.x <- 0
           return None
 
 
-      dummy.build:
+      function dummy.build():
         b0:
           n0 <- GLOBAL[C]
           n1 <- $Call(n0, None)
@@ -564,7 +564,7 @@ f()
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
@@ -573,7 +573,7 @@ f()
           return None
 
 
-      dummy.f.A:
+      function dummy.f.A():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -585,14 +585,14 @@ f()
           return None
 
 
-      dummy.f.A.__init__:
+      function dummy.f.A.__init__(self):
         b0:
           n0 <- LOCAL[self]
           n0.x <- 0
           return None
 
 
-      dummy.f:
+      function dummy.f(A, a):
         b0:
           n0 <- $MakeFunction["A", "dummy.f.A"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "A", None)
@@ -605,7 +605,7 @@ f()
           return n5
 
 
-      dummy.f.A.get:
+      function dummy.f.A.get(self):
         b0:
           n0 <- LOCAL[self]
           n1 <- n0.x
@@ -625,7 +625,7 @@ class D(C):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -637,7 +637,7 @@ class D(C):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -645,7 +645,7 @@ class D(C):
           return None
 
 
-      dummy.D:
+      function dummy.D():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -677,7 +677,7 @@ class D0(C0):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -696,7 +696,7 @@ class D0(C0):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -704,7 +704,7 @@ class D0(C0):
           return None
 
 
-      dummy.C0:
+      function dummy.C0():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -714,7 +714,7 @@ class D0(C0):
           return None
 
 
-      dummy.D:
+      function dummy.D():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -727,7 +727,7 @@ class D0(C0):
           return n3
 
 
-      dummy.D0:
+      function dummy.D0():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -740,7 +740,7 @@ class D0(C0):
           return n3
 
 
-      dummy.C0.__init__:
+      function dummy.C0.__init__(foo, x):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[foo]
@@ -748,7 +748,7 @@ class D0(C0):
           return None
 
 
-      dummy.D.__init__:
+      function dummy.D.__init__(self):
         b0:
           n0 <- GLOBAL[super]
           n1 <- $Call(n0, None)
@@ -756,7 +756,7 @@ class D0(C0):
           return None
 
 
-      dummy.D0.__init__:
+      function dummy.D0.__init__(bar):
         b0:
           n0 <- GLOBAL[super]
           n1 <- $Call(n0, None)
@@ -779,7 +779,7 @@ class C(foo.D):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
@@ -791,7 +791,7 @@ class C(foo.D):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -804,7 +804,7 @@ class C(foo.D):
           return n3
 
 
-      dummy.C.__init__:
+      function dummy.C.__init__(self, x):
         b0:
           n0 <- GLOBAL[super]
           n1 <- $Call(n0, None)
@@ -839,7 +839,7 @@ class C(ABC):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(abc)($BuildTuple("ABC", "abstractmethod"), 0, None)
           n1 <- $ImportFrom(ABC)(n0, None)
@@ -853,7 +853,7 @@ class C(ABC):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -880,17 +880,17 @@ class C(ABC):
           return None
 
 
-      dummy.C.get:
+      function dummy.C.get(self):
         b0:
           return None
 
 
-      dummy.C.get_static0:
+      function dummy.C.get_static0():
         b0:
           return None
 
 
-      dummy.C.get_static1:
+      function dummy.C.get_static1():
         b0:
           return None |}]
 
@@ -914,7 +914,7 @@ class C:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -922,7 +922,7 @@ class C:
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -946,12 +946,12 @@ class C:
           return None
 
 
-      dummy.C.f:
+      function dummy.C.f(self):
         b0:
           return None
 
 
-      dummy.C.g:
+      function dummy.C.g(self):
         b0:
           return None |}]
 
@@ -972,7 +972,7 @@ class PwdTest(unittest.TestCase):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
@@ -984,7 +984,7 @@ class PwdTest(unittest.TestCase):
           return None
 
 
-      dummy.PwdTest:
+      function dummy.PwdTest():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -994,7 +994,7 @@ class PwdTest(unittest.TestCase):
           return None
 
 
-      dummy.PwdTest.test_values:
+      function dummy.PwdTest.test_values(self, e):
         b0:
           n0 <- LOCAL[self]
           n1 <- GLOBAL[type]
@@ -1026,7 +1026,7 @@ def g():
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- TOPLEVEL[Exception]
@@ -1039,7 +1039,7 @@ def g():
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1047,13 +1047,13 @@ def g():
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           n0 <- GLOBAL[C]
           throw n0
 
 
-      dummy.g:
+      function dummy.g():
         b0:
           n0 <- GLOBAL[C]
           n1 <- $Call(n0, None)
@@ -1082,7 +1082,7 @@ f(0, 0, 0, "toto")
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1100,7 +1100,7 @@ f(0, 0, 0, "toto")
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1108,7 +1108,7 @@ f(0, 0, 0, "toto")
           return None
 
 
-      dummy.f:
+      function dummy.f(x, y, z, s):
         b0:
           return None |}]
 
@@ -1127,7 +1127,7 @@ class TestHook:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["TestHook", "dummy.TestHook"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "TestHook", None)
@@ -1135,7 +1135,7 @@ class TestHook:
           return None
 
 
-      dummy.TestHook:
+      function dummy.TestHook():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1146,7 +1146,7 @@ class TestHook:
           return None
 
 
-      dummy.TestHook.__init__:
+      function dummy.TestHook.__init__(self, raise_on_events, exc_type):
         b0:
           return None |}]
 
@@ -1169,7 +1169,7 @@ c.f(0, 1, 2)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1186,7 +1186,7 @@ c.f(0, 1, 2)
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1196,7 +1196,7 @@ c.f(0, 1, 2)
           return None
 
 
-      dummy.C.f:
+      function dummy.C.f(self, x, y, z):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
@@ -1216,7 +1216,7 @@ class C:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1224,7 +1224,7 @@ class C:
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1253,7 +1253,7 @@ class defaultdict:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["defaultdict", "dummy.defaultdict"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "defaultdict", None)
@@ -1261,12 +1261,12 @@ class defaultdict:
           return None
 
 
-      dummy.defaultdict.__getitem__:
+      function dummy.defaultdict.__getitem__(self, key):
         b0:
           return 42
 
 
-      dummy.defaultdict:
+      function dummy.defaultdict():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1300,7 +1300,7 @@ def powerset(s):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $ImportName(itertools)(None, 0, None)
           TOPLEVEL[itertools] <- n0
@@ -1314,7 +1314,7 @@ def powerset(s):
           return None
 
 
-      dummy.AsyncYieldFrom:
+      function dummy.AsyncYieldFrom():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1325,7 +1325,7 @@ def powerset(s):
           return None
 
 
-      dummy.AsyncYieldFrom.__await__:
+      function dummy.AsyncYieldFrom.__await__(self):
         b0:
           n0 <- LOCAL[self]
           n1 <- n0.obj
@@ -1334,13 +1334,13 @@ def powerset(s):
           return None
 
 
-      dummy.f:
+      function dummy.f():
         b0:
           n0 <- $Yield(42)
           return None
 
 
-      dummy.powerset:
+      function dummy.powerset(s):
         b0:
           n0 <- GLOBAL[range]
           n1 <- GLOBAL[len]
@@ -1406,7 +1406,7 @@ def g(a, b):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1427,7 +1427,7 @@ def g(a, b):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1435,7 +1435,7 @@ def g(a, b):
           return None
 
 
-      dummy.f:
+      function dummy.f(x):
         b0:
           n0 <- $Delete(GLOBAL[c0])(None)
           n1 <- $Delete(LOCAL[x])(None)
@@ -1446,7 +1446,7 @@ def g(a, b):
           return None
 
 
-      dummy.g:
+      function dummy.g(a, b):
         b0:
           n0 <- LOCAL[a]
           n1 <- LOCAL[b]
@@ -1454,7 +1454,7 @@ def g(a, b):
           return None
 
 
-      dummy.f.inner:
+      function dummy.f.inner():
         b0:
           n0 <- GLOBAL[print]
           n1 <- $LoadDeref[0,"z"](None)
@@ -1480,7 +1480,7 @@ class C:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- $BuildClass(n0, "C", None)
@@ -1488,7 +1488,7 @@ class C:
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1498,7 +1498,7 @@ class C:
           return None
 
 
-      dummy.C.f.D:
+      function dummy.C.f.D():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
@@ -1510,7 +1510,7 @@ class C:
           return None
 
 
-      dummy.C.f:
+      function dummy.C.f(self):
         b0:
           n0 <- $ImportName(binascii)(None, 0, None)
           n1 <- $StoreDeref[0,"binascii"](n0, None)
@@ -1521,7 +1521,7 @@ class C:
           return None
 
 
-      dummy.C.f.D.g:
+      function dummy.C.f.D.g(self, unhexlify):
         b0:
           return None |}]
 
@@ -1536,7 +1536,7 @@ class C(metaclass=m):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
           n1 <- TOPLEVEL[m]
@@ -1545,7 +1545,7 @@ class C(metaclass=m):
           return None
 
 
-      dummy.C:
+      function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0

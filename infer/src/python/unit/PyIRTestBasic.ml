@@ -18,7 +18,7 @@ let%expect_test _ =
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           return None |}]
@@ -35,7 +35,7 @@ print(x)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[print]
@@ -59,7 +59,7 @@ print(x + y)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           TOPLEVEL[y] <- 10
@@ -82,7 +82,7 @@ print(x - y)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           TOPLEVEL[y] <- 10
@@ -105,7 +105,7 @@ print(x)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
@@ -128,7 +128,7 @@ print(x)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
@@ -149,7 +149,7 @@ pi = 3.14
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[pi] <- 3.14
           return None |}]
@@ -164,7 +164,7 @@ byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[byte_data] <- "Hello"
           return None |}]
@@ -181,7 +181,7 @@ l[0:2:1]
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[l] <- $BuildList(0, 1, 2, 3, 4, 5)
           n0 <- TOPLEVEL[l]
@@ -198,7 +198,7 @@ let%expect_test _ =
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $Compare.neq(true, false, None)
           return None |}]
@@ -214,7 +214,7 @@ print(l[0])
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[l] <- $BuildList(1, 2, 3)
           n0 <- TOPLEVEL[print]
@@ -235,7 +235,7 @@ l[x] = 10
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[l] <- $BuildList(1, 2, 3)
           TOPLEVEL[x] <- 0
@@ -254,7 +254,7 @@ s = {1, 2, 3}
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[s] <- $BuildSet(1, 2, 3)
           return None |}]
@@ -283,7 +283,7 @@ d = { 0x78: "abc", # 1-n decoding mapping
     {xxx|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- "1"
           n0 <- TOPLEVEL[x]
@@ -312,7 +312,7 @@ fp.write("yolo")
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[open]
           n1 <- $Call(n0, "foo.txt", "wt", None)
@@ -332,7 +332,7 @@ with open("foo.txt", "wt") as fp:
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[open]
           n1 <- $Call(n0, "foo.txt", "wt", None)
@@ -369,7 +369,7 @@ print(result)
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[values] <- $BuildList(1, 2, $BuildList(3, 4), 5)
           TOPLEVEL[values2] <- $BuildTuple("a", "b")
@@ -399,7 +399,7 @@ print(x) # will print 1
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           TOPLEVEL[x] <- 1
           n0 <- TOPLEVEL[x]
@@ -437,7 +437,7 @@ x = o.f(0, *args1, *args2, **d1, **d2)
     {xxx|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- TOPLEVEL[f]
           n1 <- $Call(n0, 0, 1, None)
@@ -521,20 +521,20 @@ def main(arg):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["main", "dummy.main"](None, None, None, None, None)
           TOPLEVEL[main] <- n0
           return None
 
 
-      dummy.main.f:
+      function dummy.main.f(x, y, z):
         b0:
           n0 <- $LoadDeref[0,"arg"](None)
           return n0
 
 
-      dummy.main:
+      function dummy.main(arg):
         b0:
           n0 <- $BuildConstKeyMap($BuildTuple("key"), None, None)
           n1 <- GLOBAL[int]
@@ -557,14 +557,14 @@ def foo(n):
     {|
     module dummy:
 
-      toplevel:
+      function toplevel():
         b0:
           n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
           TOPLEVEL[foo] <- n0
           return None
 
 
-      dummy.foo:
+      function dummy.foo(n):
         b0:
           n0 <- GLOBAL[o]
           n1 <- LOCAL[n]
