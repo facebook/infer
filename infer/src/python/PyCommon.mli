@@ -9,8 +9,6 @@ open! IStd
 
 module SMap : Caml.Map.S with type key = string
 
-module IMap : Caml.Map.S with type key = int
-
 val proc_name : ?loc:Textual.Location.t -> string -> Textual.ProcName.t
 
 val var_name : ?loc:Textual.Location.t -> string -> Textual.VarName.t
@@ -202,12 +200,6 @@ val init__ : string
 
 val new__ : string
 (** Name of the Python instantiation method *)
-
-val aiter : string
-(** Name of the Python [__aiter__] method *)
-
-val anext : string
-(** Name of the Python [__anext__] method *)
 
 val exit : string
 (** Name of the Python [__exit__] method *)

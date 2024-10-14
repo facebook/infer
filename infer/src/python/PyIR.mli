@@ -151,7 +151,7 @@ module Stmt : sig
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
     | CallMethod of
-        {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
+        {lhs: SSA.t; name: Ident.t; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
     | SetupAnnotations
 end

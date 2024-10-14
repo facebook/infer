@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module L = Logging
 module Debug = PyDebug
-module IMap = PyCommon.IMap
+module IMap = IInt.Map
 
 module Ident : sig
   type t [@@deriving equal]
@@ -16,12 +16,28 @@ module Ident : sig
   val mk : string -> t
 
   val pp : F.formatter -> t -> unit
+
+  module Special : sig
+    val aiter : t
+
+    val anext : t
+
+    val enter : t
+  end
 end = struct
   type t = string [@@deriving equal]
 
   let pp fmt ident = F.pp_print_string fmt ident
 
   let mk ident = ident
+
+  module Special = struct
+    let aiter = "__aiter__"
+
+    let anext = "__anext__"
+
+    let enter = "__enter__"
+  end
 end
 
 module ScopedIdent = struct
@@ -403,7 +419,7 @@ module Exp = struct
   type opstack_symbol =
     | Exp of t
     | Code of FFI.Code.t
-    | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
+    | LoadMethod of (t * Ident.t)  (** [LOAD_METHOD] *)
     | BuiltinCaller of BuiltinCaller.t
     | CallFinallyReturn of {offset: int}
     | ContextManagerExit of t
@@ -444,7 +460,7 @@ module Exp = struct
     | Code {FFI.Code.co_name} ->
         F.fprintf fmt "<%s>" co_name
     | LoadMethod (self, meth) ->
-        F.fprintf fmt "$LoadMethod(%a, %s)" pp self meth
+        F.fprintf fmt "$LoadMethod(%a, %a)" pp self Ident.pp meth
     | BuiltinCaller bc ->
         F.fprintf fmt "BUILTIN_CALLER(%s)" (BuiltinCaller.show bc)
     | ContextManagerExit exp ->
@@ -550,7 +566,7 @@ module Stmt = struct
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
     | CallMethod of
-        {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
+        {lhs: SSA.t; name: Ident.t; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
     | SetupAnnotations
 
@@ -567,7 +583,8 @@ module Stmt = struct
         F.fprintf fmt "%a <- $Call(@[%a@])" SSA.pp lhs (Pp.seq ~sep:", " pp_call_arg)
           ((exp :: args) @ [arg_names])
     | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
-        F.fprintf fmt "%a <- $CallMethod[%s](@[%a@])" SSA.pp lhs name (Pp.seq ~sep:", " Exp.pp)
+        F.fprintf fmt "%a <- $CallMethod[%a](@[%a@])" SSA.pp lhs Ident.pp name
+          (Pp.seq ~sep:", " Exp.pp)
           ((self_if_needed :: args) @ [arg_names])
     | BuiltinCall {lhs; call; args; arg_names} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
@@ -1281,7 +1298,7 @@ let with_cleanup_start st =
     | exp ->
         internal_error st (Error.WithCleanupStart exp)
   in
-  let id, st = call_method st PyCommon.enter context_manager [Exp.none; Exp.none; Exp.none] in
+  let id, st = call_method st Ident.Special.enter context_manager [Exp.none; Exp.none; Exp.none] in
   let st = State.push st Exp.none in
   let st = State.push st Exp.none in
   let st = State.push st (Temp id) in
@@ -1599,7 +1616,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_symbol st (BuiltinCaller BuildClass) in
       Ok (st, None)
   | "LOAD_METHOD" ->
-      let name = co_names.(arg) in
+      let name = co_names.(arg) |> Ident.mk in
       let* tos, st = State.pop_and_cast st in
       let exp = Exp.LoadMethod (tos, name) in
       let st = State.push_symbol st exp in
@@ -1692,7 +1709,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "GET_AITER" ->
       let* tos, st = State.pop_and_cast st in
-      let id, st = call_method st PyCommon.aiter tos [] in
+      let id, st = call_method st Ident.Special.aiter tos [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "FOR_ITER" ->
@@ -1741,7 +1758,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "SETUP_WITH" ->
       let* context_manager, st = State.pop_and_cast st in
       let st = State.push_symbol st (ContextManagerExit context_manager) in
-      let id, st = call_method st PyCommon.enter context_manager [] in
+      let id, st = call_method st Ident.Special.enter context_manager [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BEGIN_FINALLY" ->
@@ -1878,7 +1895,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "GET_ANEXT" ->
       let* tos = State.peek st in
       let* tos = State.cast_exp st tos in
-      let id, st = call_method st PyCommon.anext tos [] in
+      let id, st = call_method st Ident.Special.anext tos [] in
       let* id, st = call_builtin_function st GetAwaitable [Exp.Temp id] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
@@ -1886,7 +1903,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3237 *)
       let* tos, st = State.pop_and_cast st in
       let st = State.push_symbol st (ContextManagerExit tos) in
-      let id, st = call_method st PyCommon.enter tos [] in
+      let id, st = call_method st Ident.Special.enter tos [] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "SETUP_ASYNC_WITH" ->

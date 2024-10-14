@@ -8,7 +8,6 @@
 open! IStd
 module T = Textual
 module SMap = Caml.Map.Make (String)
-module IMap = IInt.Map
 
 let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
 
@@ -372,10 +371,6 @@ let new__ = "__new__"
 let exit = "__exit__"
 
 let enter = "__enter__"
-
-let aiter = "__aiter__"
-
-let anext = "__anext__"
 
 let class__ = "__class__"
 
