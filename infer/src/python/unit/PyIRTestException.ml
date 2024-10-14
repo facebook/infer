@@ -232,7 +232,7 @@ with open("foo", "r") as fp:
        2        0 LOAD_CONST                        0 (0)
                   [0]
                 2 LOAD_CONST                        1 (("ERROR"))
-                  [0; ("ERROR")]
+                  [0; $BuildTuple("ERROR")]
                 4 IMPORT_NAME                       0 (foo)
                   [n0]
                 6 IMPORT_FROM                       1 (ERROR)
@@ -330,7 +330,7 @@ with open("foo", "r") as fp:
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(("ERROR"), 0, None)
+          n0 <- $ImportName(foo)($BuildTuple("ERROR"), 0, None)
           n1 <- $ImportFrom(ERROR)(n0, None)
           TOPLEVEL[ERROR] <- n1
           n2 <- TOPLEVEL[open]

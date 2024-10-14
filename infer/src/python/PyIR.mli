@@ -47,7 +47,6 @@ module QualName : sig
 end
 
 module Builtin = PyBuiltin
-module Const = FFI.Constant
 
 module BuiltinCaller : sig
   type format_function = Str | Repr | Ascii
@@ -89,22 +88,37 @@ module BuiltinCaller : sig
     | GetPreviousException
 end
 
+module Const : sig
+  type t =
+    | Bool of bool
+    | Int of Z.t
+    | Float of float
+    | Complex of {real: float; imag: float}
+    | String of string
+    | InvalidUnicode of int array
+    | Bytes of bytes
+    | None
+end
+
 module Exp : sig
-  type collection = List | Set | Tuple | Slice | Map | String
+  type collection = List | Set | Tuple | Map
 
   type t =
     | Const of Const.t
+    | Code of FFI.Code.t
     | Var of ScopedIdent.t
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}
-    | Collection of {kind: collection; values: t list; packed: bool}
+    | BuildSlice of t list
+    | BuildString of t list
+    | BuildFrozenSet of t list
+    | Collection of {kind: collection; values: t list; unpack: bool}
     | GetAttr of (t * string)
     | LoadMethod of (t * string)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | CallFinallyReturn of {offset: int}
     | ContextManagerExit of t
-    | Packed of {exp: t; is_map: bool}
     | Yield of t
 end
 

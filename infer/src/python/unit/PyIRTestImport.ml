@@ -63,14 +63,14 @@ g()
           TOPLEVEL[f] <- n0
           n1 <- TOPLEVEL[f]
           n2 <- $Call(n1, None)
-          n3 <- $ImportName(base)(("f","g"), 0, None)
+          n3 <- $ImportName(base)($BuildTuple("f", "g"), 0, None)
           n4 <- $ImportFrom(f)(n3, None)
           TOPLEVEL[f] <- n4
           n5 <- $ImportFrom(g)(n3, None)
           TOPLEVEL[g] <- n5
           n6 <- TOPLEVEL[f]
           n7 <- $Call(n6, None)
-          n8 <- $ImportName(base)(("f","g"), 0, None)
+          n8 <- $ImportName(base)($BuildTuple("f", "g"), 0, None)
           n9 <- $ImportFrom(f)(n8, None)
           TOPLEVEL[f] <- n9
           n10 <- $ImportFrom(g)(n8, None)
@@ -164,7 +164,7 @@ if __name__ == '__main__':
           TOPLEVEL[os] <- n0
           n1 <- $ImportName(sys)(None, 0, None)
           TOPLEVEL[sys] <- n1
-          n2 <- $ImportName(test.libregrtest)(("main"), 0, None)
+          n2 <- $ImportName(test.libregrtest)($BuildTuple("main"), 0, None)
           n3 <- $ImportFrom(main)(n2, None)
           TOPLEVEL[main] <- n3
           n4 <- TOPLEVEL[main]
@@ -269,22 +269,22 @@ path.X()
 
       toplevel:
         b0:
-          n0 <- $ImportName(A)(("X"), 0, None)
+          n0 <- $ImportName(A)($BuildTuple("X"), 0, None)
           n1 <- $ImportFrom(X)(n0, None)
           TOPLEVEL[X] <- n1
           n2 <- TOPLEVEL[X]
           n3 <- $Call(n2, None)
-          n4 <- $ImportName(B)(("X"), 1, None)
+          n4 <- $ImportName(B)($BuildTuple("X"), 1, None)
           n5 <- $ImportFrom(X)(n4, None)
           TOPLEVEL[X] <- n5
           n6 <- TOPLEVEL[X]
           n7 <- $Call(n6, None)
-          n8 <- $ImportName(C)(("X"), 2, None)
+          n8 <- $ImportName(C)($BuildTuple("X"), 2, None)
           n9 <- $ImportFrom(X)(n8, None)
           TOPLEVEL[X] <- n9
           n10 <- TOPLEVEL[X]
           n11 <- $Call(n10, None)
-          n12 <- $ImportName()(("path"), 2, None)
+          n12 <- $ImportName()($BuildTuple("path"), 2, None)
           n13 <- $ImportFrom(path)(n12, None)
           TOPLEVEL[path] <- n13
           n14 <- TOPLEVEL[path]
@@ -315,12 +315,12 @@ tata()
 
       toplevel:
         b0:
-          n0 <- $ImportName(x)(("y","a"), 0, None)
+          n0 <- $ImportName(x)($BuildTuple("y", "a"), 0, None)
           n1 <- $ImportFrom(y)(n0, None)
           TOPLEVEL[z] <- n1
           n2 <- $ImportFrom(a)(n0, None)
           TOPLEVEL[b] <- n2
-          n3 <- $ImportName(x)(("y","a"), 0, None)
+          n3 <- $ImportName(x)($BuildTuple("y", "a"), 0, None)
           n4 <- $ImportFrom(y)(n3, None)
           TOPLEVEL[z] <- n4
           n5 <- $ImportFrom(a)(n3, None)
@@ -329,12 +329,12 @@ tata()
           n7 <- $Call(n6, None)
           n8 <- TOPLEVEL[b]
           n9 <- $Call(n8, None)
-          n10 <- $ImportName(foo)(("toto","tata"), 0, None)
+          n10 <- $ImportName(foo)($BuildTuple("toto", "tata"), 0, None)
           n11 <- $ImportFrom(toto)(n10, None)
           TOPLEVEL[toto] <- n11
           n12 <- $ImportFrom(tata)(n10, None)
           TOPLEVEL[tata] <- n12
-          n13 <- $ImportName(foo)(("toto","tata"), 0, None)
+          n13 <- $ImportName(foo)($BuildTuple("toto", "tata"), 0, None)
           n14 <- $ImportFrom(toto)(n13, None)
           TOPLEVEL[toto] <- n14
           n15 <- $ImportFrom(tata)(n13, None)
@@ -525,8 +525,8 @@ def test_format_specifier_expressions(self):
           n5 <- $Format(n4, None, None)
           n6 <- LOCAL[precision]
           n7 <- $Format(n6, None, None)
-          n8 <- $Format(n3, $Concat(unpacked)(n5, ".", n7), None)
-          n9 <- $Call(n2, $Concat(unpacked)("result: ", n8), None)
+          n8 <- $Format(n3, $BuildString(n5, ".", n7), None)
+          n9 <- $Call(n2, $BuildString("result: ", n8), None)
           return None |}]
 
 
@@ -596,6 +596,6 @@ from foo import *
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(("*"), 0, None)
+          n0 <- $ImportName(foo)($BuildTuple("*"), 0, None)
           n1 <- $ImportStar(n0, None)
           return None |}]

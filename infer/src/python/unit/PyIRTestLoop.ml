@@ -287,7 +287,7 @@ async def async_loop2():
           n3 <- $YieldFrom(n2, None, None)
           LOCAL[x] <- n2
           n4 <- LOCAL[x]
-          n5 <- $ListAppend((unpacked)[], n4, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
           jmp b1
 
 

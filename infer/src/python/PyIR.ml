@@ -10,7 +10,6 @@ module L = Logging
 module Debug = PyDebug
 module Builtin = PyBuiltin
 module IMap = PyCommon.IMap
-module Const = FFI.Constant
 
 module Ident : sig
   type t [@@deriving equal]
@@ -273,22 +272,41 @@ module BuiltinCaller = struct
         "GetPreviousException"
 end
 
-module Exp = struct
-  type collection = List | Set | Tuple | Slice | Map | String [@@deriving equal]
+module Const = struct
+  type t =
+    | Bool of bool
+    | Int of Z.t
+    | Float of float
+    | Complex of {real: float; imag: float}
+    | String of string
+    | InvalidUnicode of int array
+    | Bytes of bytes
+    | None
+  [@@deriving equal]
 
-  let show_collection = function
-    | List ->
-        "list"
-    | Set ->
-        "set"
-    | Tuple ->
-        "tuple"
-    | Slice ->
-        "slice"
-    | Map ->
-        "map"
-    | String ->
-        "string"
+  let pp fmt = function
+    | Bool b ->
+        F.pp_print_bool fmt b
+    | Int i ->
+        F.pp_print_string fmt (Z.to_string i)
+    | Float f ->
+        F.pp_print_float fmt f
+    | Complex {real; imag} ->
+        F.fprintf fmt "Complex[real:%f; imag:%f ]" real imag
+    | String s ->
+        F.fprintf fmt "\"%s\"" s
+    | InvalidUnicode _ ->
+        F.pp_print_string fmt "InvalidUnicode"
+    | Bytes bytes ->
+        Bytes.pp fmt bytes
+    | None ->
+        F.pp_print_string fmt "None"
+end
+
+module Exp = struct
+  type collection = List | Set | Tuple | Map [@@deriving equal]
+
+  let show_collection = function List -> "List" | Set -> "Set" | Tuple -> "Tuple" | Map -> "Map"
   [@@warning "-unused-value-declaration"]
 
 
@@ -300,23 +318,29 @@ module Exp = struct
       the CFG of the program, lost during Python compilation *)
   type t =
     | Const of Const.t
+    | Code of FFI.Code.t
     | Var of ScopedIdent.t
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
-    | Collection of {kind: collection; values: t list; packed: bool}
-        (** Helper for [BUILD_LIST] and other builder opcodes *)
-    (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
+    | BuildSlice of t list (* 2 < length <= 3 *)
+    | BuildString of t list
+    | BuildFrozenSet of t list
+    | Collection of {kind: collection; values: t list; unpack: bool}
+        (** Helper for [BUILD_LIST/SET/TUPLE/MAP] opcodes *)
+    (* [unpack=true] if the arguments in [values] are collections that must be
+       unpack and flatten all together to create a unique collection *)
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | CallFinallyReturn of {offset: int}
     | ContextManagerExit of t
-    (* TODO: maybe this one is not useful, but at least it is not harmful :)
-       Maybe consider removing it *)
-    | Packed of {exp: t; is_map: bool}
     | Yield of t
   [@@deriving equal]
+
+  let none = Const Const.None
+
+  let of_int i = Const (Int (Z.of_int i))
 
   let rec check exp =
     let open IResult.Let_syntax in
@@ -324,6 +348,8 @@ module Exp = struct
     match exp with
     | Const _ ->
         Ok ()
+    | Code _ ->
+        Error exp
     | Var _ ->
         Ok ()
     | Temp _ ->
@@ -331,7 +357,7 @@ module Exp = struct
     | Subscript {exp; index} ->
         let* () = check exp in
         check index
-    | Collection {values} ->
+    | BuildSlice values | BuildString values | BuildFrozenSet values | Collection {values} ->
         list_iter_result ~f:check values
     | GetAttr (t, _name) ->
         check t
@@ -345,8 +371,6 @@ module Exp = struct
         Error exp
     | CallFinallyReturn _ ->
         Error exp
-    | Packed {exp} ->
-        check exp
     | Yield exp ->
         check exp
 
@@ -354,27 +378,24 @@ module Exp = struct
   let rec pp fmt = function
     | Const c ->
         Const.pp fmt c
+    | Code {FFI.Code.co_name} ->
+        F.fprintf fmt "<%s>" co_name
     | Var scope_ident ->
         ScopedIdent.pp fmt scope_ident
     | Temp i ->
         SSA.pp fmt i
     | Subscript {exp; index} ->
         F.fprintf fmt "%a[@[%a@]]" pp exp pp index
-    | Collection {kind; values; packed} -> (
-        let packed = if packed then "" else "(unpacked)" in
-        match kind with
-        | List ->
-            F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:", " pp) values
-        | Set ->
-            F.fprintf fmt "%s{@[%a@]}" packed (Pp.seq ~sep:", " pp) values
-        | Map ->
-            F.fprintf fmt "%s{|@[%a@]|}" packed (Pp.seq ~sep:", " pp) values
-        | Tuple ->
-            F.fprintf fmt "%s(@[%a@])" packed (Pp.seq ~sep:", " pp) values
-        | String ->
-            F.fprintf fmt "$Concat%s(%a)" packed (Pp.seq ~sep:", " pp) values
-        | Slice ->
-            F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:":" pp) values )
+    | BuildSlice values ->
+        F.fprintf fmt "$BuildSlice(%a)" (Pp.seq ~sep:", " pp) values
+    | BuildString values ->
+        F.fprintf fmt "$BuildString(%a)" (Pp.seq ~sep:", " pp) values
+    | BuildFrozenSet values ->
+        F.fprintf fmt "$BuildFrozenSet(%a)" (Pp.seq ~sep:", " pp) values
+    | Collection {kind; values; unpack} ->
+        F.fprintf fmt "$Build%s%s(%a)" (show_collection kind)
+          (if unpack then "Unpack" else "")
+          (Pp.seq ~sep:", " pp) values
     | GetAttr (t, name) ->
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
@@ -387,8 +408,6 @@ module Exp = struct
         F.fprintf fmt "CM(%a).__exit__" pp exp
     | CallFinallyReturn {offset} ->
         F.fprintf fmt "CFR(%d)" offset
-    | Packed {exp; is_map} ->
-        F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
 end
@@ -418,7 +437,6 @@ module Error = struct
     | CodeWithoutQualifiedName of FFI.Code.t
     | UnpackSequence of int
     | UnexpectedExpression of Exp.t
-    | FormatValueSpec of Exp.t
     | FixpointComputationHeaderReachedTwice of int
     | FixpointComputationNotReached of {src: int; dest: int}
     | NextOffsetMissing
@@ -446,8 +464,6 @@ module Error = struct
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | UnexpectedExpression exp ->
         F.fprintf fmt "UNEXPECTED_EXPRESSION: %a" Exp.pp exp
-    | FormatValueSpec exp ->
-        F.fprintf fmt "FORMAT_VALUE: expected string literal or temporary, got %a" Exp.pp exp
     | FixpointComputationHeaderReachedTwice offset ->
         F.fprintf fmt "FIXPOINT_COMPUTATION: loop header %d is already assigned a symbolic stack"
           offset
@@ -897,7 +913,7 @@ let call_function_with_unnamed_args st ?arg_names exp args =
   let open IResult.Let_syntax in
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let arg_names = Option.value arg_names ~default:Exp.none in
   let stmt =
     match exp with
     | Exp.BuiltinCaller call ->
@@ -913,7 +929,7 @@ let call_builtin_function st ?arg_names call args =
   let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
   let args = Stmt.unnamed_call_args args in
-  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let arg_names = Option.value arg_names ~default:Exp.none in
   let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names} in
   let* st = State.push_stmt st stmt in
   Ok (lhs, st)
@@ -922,7 +938,7 @@ let call_builtin_function st ?arg_names call args =
 let call_method st name ?arg_names self_if_needed args =
   let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let arg_names = Option.value arg_names ~default:Exp.none in
   let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args; arg_names} in
   let+ st = State.push_stmt st stmt in
   (lhs, st)
@@ -937,15 +953,6 @@ let parse_op st call n =
   Ok (st, None)
 
 
-(** Helper to compile the BUILD_ opcodes into IR *)
-let build_collection st kind count =
-  let open IResult.Let_syntax in
-  let* values, st = State.pop_n st count in
-  let exp = Exp.Collection {kind; values; packed= false} in
-  let st = State.push st exp in
-  Ok (st, None)
-
-
 let make_function st flags =
   let open IResult.Let_syntax in
   let* _qual_name, st = State.pop st in
@@ -953,29 +960,21 @@ let make_function st flags =
   let* codeobj, st = State.pop st in
   let* code =
     match (codeobj : Exp.t) with
-    | Const (PYCCode c) ->
+    | Code c ->
         Ok c
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
   let* qual_name = read_code_qual_name st code in
   let short_name = Ident.mk code.FFI.Code.co_name in
-  let* cells_for_closure, st =
-    if flags land 0x08 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
-  in
-  let* annotations, st =
-    if flags land 0x04 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
-  in
-  let* default_values_kw, st =
-    if flags land 0x02 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
-  in
-  let* default_values, st =
-    if flags land 0x01 <> 0 then State.pop st else Ok (Exp.Const Const.none, st)
-  in
+  let* cells_for_closure, st = if flags land 0x08 <> 0 then State.pop st else Ok (Exp.none, st) in
+  let* annotations, st = if flags land 0x04 <> 0 then State.pop st else Ok (Exp.none, st) in
+  let* default_values_kw, st = if flags land 0x02 <> 0 then State.pop st else Ok (Exp.none, st) in
+  let* default_values, st = if flags land 0x01 <> 0 then State.pop st else Ok (Exp.none, st) in
   let lhs, st = State.fresh_id st in
   let call = BuiltinCaller.Function {short_name; qual_name} in
   let args = [default_values; default_values_kw; annotations; cells_for_closure] in
-  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.Const Const.none} in
+  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.none} in
   let* st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
@@ -998,7 +997,7 @@ let call_function_kw st argc =
   let* args, st = State.pop_n st argc in
   let* exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let arg_names = Option.value arg_names ~default:Exp.none in
   let stmt =
     match exp with
     | Exp.BuiltinCaller call ->
@@ -1015,14 +1014,12 @@ let call_function_ex st flags =
   let open IResult.Let_syntax in
   let with_keyword_args = flags land 1 <> 0 in
   let call = BuiltinCaller.CallFunctionEx in
-  let* keyword_args, st =
-    if with_keyword_args then State.pop st else Ok (Exp.Const Const.none, st)
-  in
+  let* keyword_args, st = if with_keyword_args then State.pop st else Ok (Exp.none, st) in
   let* tuple, st = State.pop st in
   let* callee, st = State.pop st in
   let args = [callee; tuple; keyword_args] in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.Const Const.none} in
+  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.none} in
   let* st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
@@ -1034,7 +1031,7 @@ let unpack_sequence st count =
   let rec unpack st n =
     if n < 0 then Ok st
     else
-      let index = Exp.Const (Const.of_int n) in
+      let index = Exp.of_int n in
       let exp = Exp.Subscript {exp= tos; index} in
       let st = State.push st exp in
       unpack st (n - 1)
@@ -1062,21 +1059,7 @@ let format_value st flags =
   in
   let* fmt_spec, st =
     (* fmt_spec must be a concatenation of string literals *)
-    if has_fmt_spec flags then
-      let* fmt_spec, st = State.pop st in
-      match (fmt_spec : Exp.t) with
-      | Const (PYCString _) ->
-          Ok (fmt_spec, st)
-      | Collection {kind= String; values= _} ->
-          Ok (fmt_spec, st)
-      | Temp _ ->
-          (* Usually it will be string literals, but it can also be the
-             return value of a format function, so we have to allow
-             temporaries too *)
-          Ok (fmt_spec, st)
-      | _ ->
-          external_error st (Error.FormatValueSpec fmt_spec)
-    else Ok (Exp.Const Const.none, st)
+    if has_fmt_spec flags then State.pop st else Ok (Exp.none, st)
   in
   let* exp, st = State.pop st in
   let conv_fn = mk_conv flags in
@@ -1168,7 +1151,7 @@ let with_cleanup_start st =
   let* tos, st = State.pop st in
   let* () =
     match (tos : Exp.t) with
-    | Const PYCNone ->
+    | Const None ->
         Ok ()
     | _ ->
         internal_error st (Error.WithCleanupStart tos)
@@ -1181,12 +1164,9 @@ let with_cleanup_start st =
     | exp ->
         internal_error st (Error.WithCleanupStart exp)
   in
-  let* id, st =
-    call_method st PyCommon.enter context_manager
-      [Const Const.none; Const Const.none; Const Const.none]
-  in
-  let st = State.push st (Const Const.none) in
-  let st = State.push st (Const Const.none) in
+  let* id, st = call_method st PyCommon.enter context_manager [Exp.none; Exp.none; Exp.none] in
+  let st = State.push st Exp.none in
+  let st = State.push st Exp.none in
   let st = State.push st (Temp id) in
   Ok (st, None)
 
@@ -1197,7 +1177,7 @@ let with_cleanup_finish st =
   let* _exit_res, st = State.pop st in
   let* tos, st = State.pop st in
   match (tos : Exp.t) with
-  | Const PYCNone ->
+  | Const None ->
       Ok (st, None)
   | _ ->
       internal_error st (Error.WithCleanupFinish tos)
@@ -1233,11 +1213,10 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
   if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
 
 
-let build_collection_unpack st count collection =
+let build_collection st count ~f =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
-  let values = List.map ~f:(fun exp -> Exp.Packed {exp; is_map= false}) values in
-  let exp = Exp.Collection {kind= collection; values; packed= true} in
+  let exp = f values in
   let st = State.push st exp in
   Ok (st, None)
 
@@ -1294,6 +1273,33 @@ let store st scope name =
   Ok (st, None)
 
 
+let rec convert_ffi_const (const : FFI.Constant.t) : Exp.t =
+  match const with
+  | PYCBool b ->
+      Const (Bool b)
+  | PYCInt i ->
+      Const (Int i)
+  | PYCFloat f ->
+      Const (Float f)
+  | PYCComplex {real; imag} ->
+      Const (Complex {real; imag})
+  | PYCString s ->
+      Const (String s)
+  | PYCInvalidUnicode arg ->
+      Const (InvalidUnicode arg)
+  | PYCBytes bytes ->
+      Const (Bytes bytes)
+  | PYCTuple array ->
+      Collection
+        {kind= Tuple; values= Array.to_list array |> List.map ~f:convert_ffi_const; unpack= false}
+  | PYCFrozenSet list ->
+      BuildFrozenSet (List.map ~f:convert_ffi_const list)
+  | PYCCode c ->
+      Code c
+  | PYCNone ->
+      Exp.none
+
+
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
     ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
   let open IResult.Let_syntax in
@@ -1301,8 +1307,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
   match opname with
   | "LOAD_CONST" ->
-      let c = co_consts.(arg) in
-      let exp = Exp.Const c in
+      let exp : Exp.t = convert_ffi_const co_consts.(arg) in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_NAME" ->
@@ -1442,17 +1447,19 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BUILD_LIST" ->
-      build_collection st List arg
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= List; values; unpack= false})
   | "BUILD_SET" ->
-      build_collection st Set arg
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= Set; values; unpack= false})
   | "BUILD_TUPLE" ->
-      build_collection st Tuple arg
+      build_collection st arg ~f:(fun values ->
+          Exp.Collection {kind= Tuple; values; unpack= false} )
   | "BUILD_SLICE" ->
-      build_collection st Slice arg
+      build_collection st arg ~f:(fun values -> Exp.BuildSlice values)
   | "BUILD_STRING" ->
-      build_collection st String arg
+      build_collection st arg ~f:(fun values -> Exp.BuildString values)
   | "BUILD_MAP" ->
-      build_collection st Map (2 * arg)
+      build_collection st (2 * arg) ~f:(fun values ->
+          Exp.Collection {kind= Map; values; unpack= false} )
   | "BINARY_SUBSCR" ->
       let* index, st = State.pop st in
       let* exp, st = State.pop st in
@@ -1610,7 +1617,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let {State.loc} = st in
       let* next_offset = Offset.get ~loc next_offset_opt in
       let* label = State.get_node_name st next_offset in
-      let st = State.push st (Exp.Const Const.none) in
+      let st = State.push st Exp.none in
       let {State.stack} = st in
       let jump = Terminator.mk_jump label stack in
       Ok (st, Some jump)
@@ -1660,15 +1667,15 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
     (* No real difference betwen the two but in case of an error, which shouldn't happen since
        the code is known to compile *)
   | "BUILD_TUPLE_UNPACK" ->
-      build_collection_unpack st arg Tuple
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= Tuple; values; unpack= true})
   | "BUILD_LIST_UNPACK" ->
-      build_collection_unpack st arg List
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= List; values; unpack= true})
   | "BUILD_SET_UNPACK" ->
-      build_collection_unpack st arg Set
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= Set; values; unpack= true})
   | "BUILD_MAP_UNPACK_WITH_CALL" | "BUILD_MAP_UNPACK" ->
       (* No real difference betwen the two but in case of an error, which shouldn't happen since
          the code is known to compile *)
-      build_collection_unpack st arg Map
+      build_collection st arg ~f:(fun values -> Exp.Collection {kind= Map; values; unpack= true})
   | "YIELD_VALUE" ->
       (* TODO: it is quite uncertain how we'll deal with these in textual.
          At the moment this seems to correctly model the stack life-cycle, so
@@ -1761,11 +1768,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          We model it like a throwing exception for now. This offset will not be reached
          by our DFS anyway since we don't model exceptionnal edges yet.
       *)
-      Ok (st, Some (Terminator.Throw (Exp.Const Const.none)))
+      Ok (st, Some (Terminator.Throw Exp.none))
   | "UNPACK_EX" ->
       (* The low byte of counts is the number of values before the list value, the high byte of
          counts the number of values after it. *)
-      let to_int i = Exp.Const (Const.of_int i) in
+      let to_int i = Exp.of_int i in
       let nr_before = arg land 0xff in
       let nr_after = (arg lsr 8) land 0xff in
       let* tos, st = State.pop st in

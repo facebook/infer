@@ -515,12 +515,12 @@ def f1(x, y:str) -> bool:
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- TOPLEVEL[float]
-          n2 <- $BuildConstKeyMap(("x","z"), n0, n1, None)
+          n2 <- $BuildConstKeyMap($BuildTuple("x", "z"), n0, n1, None)
           n3 <- $MakeFunction["f0", "dummy.f0"](None, None, n2, None, None)
           TOPLEVEL[f0] <- n3
           n4 <- TOPLEVEL[str]
           n5 <- TOPLEVEL[bool]
-          n6 <- $BuildConstKeyMap(("y","return"), n4, n5, None)
+          n6 <- $BuildConstKeyMap($BuildTuple("y", "return"), n4, n5, None)
           n7 <- $MakeFunction["f1", "dummy.f1"](None, None, n6, None, None)
           TOPLEVEL[f1] <- n7
           return None
@@ -556,11 +556,11 @@ expect_int(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[int]
-          n1 <- $BuildConstKeyMap(("x"), n0, None)
+          n1 <- $BuildConstKeyMap($BuildTuple("x"), n0, None)
           n2 <- $MakeFunction["expect_int", "dummy.expect_int"](None, None, n1, None, None)
           TOPLEVEL[expect_int] <- n2
           n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap(("return"), n3, None)
+          n4 <- $BuildConstKeyMap($BuildTuple("return"), n3, None)
           n5 <- $MakeFunction["get", "dummy.get"](None, None, n4, None, None)
           TOPLEVEL[get] <- n5
           n6 <- TOPLEVEL[expect_int]
@@ -600,11 +600,11 @@ expect(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[object]
-          n1 <- $BuildConstKeyMap(("x","return"), n0, None, None)
+          n1 <- $BuildConstKeyMap($BuildTuple("x", "return"), n0, None, None)
           n2 <- $MakeFunction["expect", "dummy.expect"](None, None, n1, None, None)
           TOPLEVEL[expect] <- n2
           n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap(("return"), n3, None)
+          n4 <- $BuildConstKeyMap($BuildTuple("return"), n3, None)
           n5 <- $MakeFunction["get", "dummy.get"](None, None, n4, None, None)
           TOPLEVEL[get] <- n5
           n6 <- TOPLEVEL[expect]
@@ -829,7 +829,7 @@ def f(x, y, z):
 
       toplevel:
         b0:
-          TOPLEVEL[t] <- (1,2,3)
+          TOPLEVEL[t] <- $BuildTuple(1, 2, 3)
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           return None
@@ -840,7 +840,7 @@ def f(x, y, z):
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
           n2 <- LOCAL[z]
-          return (unpacked)(n0, n1, n2) |}]
+          return $BuildTuple(n0, n1, n2) |}]
 
 
 let%expect_test _ =
@@ -862,7 +862,7 @@ def build_list():
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- (unpacked)[1, 2, 3]
+          TOPLEVEL[l] <- $BuildList(1, 2, 3)
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[l]
           n2 <- $Call(n0, n1, None)
@@ -878,7 +878,7 @@ def build_list():
 
       dummy.build_list:
         b0:
-          return (unpacked)[1, 2, 3] |}]
+          return $BuildList(1, 2, 3) |}]
 
 
 let%expect_test _ =
@@ -980,7 +980,7 @@ f(0, y=2, x=1)
           n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n0
           n1 <- TOPLEVEL[f]
-          n2 <- $Call(n1, 0, 2, 1, ("y","x"))
+          n2 <- $Call(n1, 0, 2, 1, $BuildTuple("y", "x"))
           return None
 
 
@@ -1016,7 +1016,7 @@ def f(m, a, b, c):
           n0 <- LOCAL[a]
           n1 <- LOCAL[b]
           n2 <- LOCAL[m]
-          n3 <- $Compare.not_in((unpacked)(n0, n1), n2, None)
+          n3 <- $Compare.not_in($BuildTuple(n0, n1), n2, None)
           if n3 then jmp b1 else jmp b2
 
         b1:
@@ -1029,7 +1029,7 @@ def f(m, a, b, c):
           n4 <- LOCAL[a]
           n5 <- LOCAL[c]
           n6 <- LOCAL[m]
-          n7 <- $Compare.not_in((unpacked)(n4, n5), n6, None)
+          n7 <- $Compare.not_in($BuildTuple(n4, n5), n6, None)
           if n7 then jmp b3 else jmp b4
 
         b3:
@@ -1077,7 +1077,7 @@ def test_arguments(x, y, width):
           n6 <- LOCAL[name]
           n7 <- $FormatFn.ascii(n6, None)
           n8 <- $Format(n7, None, None)
-          return $Concat(unpacked)("foo.", n2, n5, n8)
+          return $BuildString("foo.", n2, n5, n8)
 
 
       dummy.test_arguments:
@@ -1088,7 +1088,7 @@ def test_arguments(x, y, width):
           n3 <- LOCAL[width]
           n4 <- $Format(n3, None, None)
           n5 <- $Format(n2, n4, None)
-          return $Concat(unpacked)("x=", n5) |}]
+          return $BuildString("x=", n5) |}]
 
 
 let%expect_test _ =
@@ -1204,7 +1204,7 @@ print(g()) # prints 2
           n0 <- $StoreDeref[1,"lx"](1000, None)
           n1 <- $LoadClosure[0,"ax"](None)
           n2 <- $LoadClosure[1,"lx"](None)
-          n3 <- $MakeFunction["inner", "dummy.f.inner"](None, None, None, (unpacked)(n1, n2), None)
+          n3 <- $MakeFunction["inner", "dummy.f.inner"](None, None, None, $BuildTuple(n1, n2), None)
           LOCAL[inner] <- n3
           n4 <- $StoreDeref[1,"lx"](1664, None)
           n5 <- LOCAL[inner]
@@ -1289,11 +1289,11 @@ def f(l):
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
           n4 <- $Binary.Add(n3, 2, None)
-          n5 <- $ListAppend((unpacked)[], n4, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
           jmp b1
 
         b3:
-          return (unpacked)[]
+          return $BuildList()
 
 
       dummy.f.<listcomp>:
@@ -1310,11 +1310,11 @@ def f(l):
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
           n4 <- $Binary.Add(n3, 2, None)
-          n5 <- $ListAppend((unpacked)[], n4, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
           jmp b1
 
         b3:
-          return (unpacked)[]
+          return $BuildList()
 
 
       dummy.f:
@@ -1380,11 +1380,11 @@ def g(l):
           n3 <- LOCAL[num]
           n4 <- LOCAL[num]
           n5 <- $Binary.Power(n4, 2, None)
-          n6 <- $DictSetItem((unpacked){||}, n3, n5, None)
+          n6 <- $DictSetItem($BuildMap(), n3, n5, None)
           jmp b1
 
         b3:
-          return (unpacked){||}
+          return $BuildMap()
 
 
       dummy.f.<setcomp>:
@@ -1401,11 +1401,11 @@ def g(l):
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
           n4 <- $Binary.Add(n3, 1, None)
-          n5 <- $SetAdd((unpacked){}, n4, None)
+          n5 <- $SetAdd($BuildSet(), n4, None)
           jmp b1
 
         b3:
-          return (unpacked){}
+          return $BuildSet()
 
 
       dummy.f:

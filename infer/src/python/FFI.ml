@@ -458,11 +458,6 @@ module Constant = struct
     | PYCFloat _
     | PYCComplex _ ->
         None
-
-
-  let of_int i = PYCInt (Z.of_int i)
-
-  let none = PYCNone
 end
 
 module Instruction = struct

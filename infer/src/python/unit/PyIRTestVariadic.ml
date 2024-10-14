@@ -157,16 +157,15 @@ start()
 
       dummy.start:
         b0:
-          LOCAL[x] <- (3,4)
+          LOCAL[x] <- $BuildTuple(3, 4)
           n0 <- GLOBAL[f]
           n1 <- LOCAL[x]
-          n2 <- $CallFunctionEx(n0, ($Packed((1,2)), $Packed(n1)), (unpacked){|"test", 42|}, None)
+          n2 <- $CallFunctionEx(n0, $BuildTupleUnpack($BuildTuple(1, 2), n1), $BuildMap("test", 42), None)
           n3 <- GLOBAL[f]
-          n4 <- $CallFunctionEx(n3, ($Packed((1,2)), $Packed(("a","b"))), (unpacked){|
-                                "test", 42|}, None)
+          n4 <- $CallFunctionEx(n3, $BuildTupleUnpack($BuildTuple(1, 2), $BuildTuple("a", "b")), $BuildMap("test", 42), None)
           n5 <- GLOBAL[g]
           n6 <- LOCAL[x]
-          n7 <- $CallFunctionEx(n5, ($Packed((1,2)), $Packed(n6)), None, None)
+          n7 <- $CallFunctionEx(n5, $BuildTupleUnpack($BuildTuple(1, 2), n6), None, None)
           return None |xxx}]
 
 
@@ -210,11 +209,11 @@ def f(foo, a, b, c):
           n8 <- n7.f
           n9 <- LOCAL[a]
           n10 <- LOCAL[b]
-          n11 <- $CallFunctionEx(n8, ($Packed((unpacked)(n9)), $Packed(n10)), None, None)
+          n11 <- $CallFunctionEx(n8, $BuildTupleUnpack($BuildTuple(n9), n10), None, None)
           n12 <- LOCAL[foo]
           n13 <- n12.f
           n14 <- LOCAL[c]
-          n15 <- $CallFunctionEx(n13, (unpacked)(), n14, None)
+          n15 <- $CallFunctionEx(n13, $BuildTuple(), n14, None)
           n16 <- LOCAL[foo]
           n17 <- n16.f
           n18 <- LOCAL[b]
@@ -224,13 +223,13 @@ def f(foo, a, b, c):
           n22 <- n21.f
           n23 <- LOCAL[a]
           n24 <- LOCAL[c]
-          n25 <- $CallFunctionEx(n22, (unpacked)(n23), n24, None)
+          n25 <- $CallFunctionEx(n22, $BuildTuple(n23), n24, None)
           n26 <- LOCAL[foo]
           n27 <- n26.f
           n28 <- LOCAL[a]
           n29 <- LOCAL[b]
           n30 <- LOCAL[c]
-          n31 <- $CallFunctionEx(n27, ($Packed((unpacked)(n28)), $Packed(n29)), n30, None)
+          n31 <- $CallFunctionEx(n27, $BuildTupleUnpack($BuildTuple(n28), n29), n30, None)
           return None |}]
 
 
@@ -258,23 +257,23 @@ f(**d1, x=42)
 
       toplevel:
         b0:
-          n0 <- $BuildConstKeyMap((0,1), 0, 1, None)
+          n0 <- $BuildConstKeyMap($BuildTuple(0, 1), 0, 1, None)
           TOPLEVEL[d0] <- n0
-          n1 <- $BuildConstKeyMap(("a","b"), 0, 1, None)
+          n1 <- $BuildConstKeyMap($BuildTuple("a", "b"), 0, 1, None)
           TOPLEVEL[d1] <- n1
           n2 <- TOPLEVEL[d0]
           n3 <- TOPLEVEL[d1]
-          TOPLEVEL[x] <- {|$Packed(n2), $Packed(n3)|}
+          TOPLEVEL[x] <- $BuildMapUnpack(n2, n3)
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[x]
           n6 <- $Call(n4, n5, None)
           n7 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
           TOPLEVEL[f] <- n7
-          n8 <- $BuildConstKeyMap(("a","b"), 0, 1, None)
+          n8 <- $BuildConstKeyMap($BuildTuple("a", "b"), 0, 1, None)
           TOPLEVEL[d1] <- n8
           n9 <- TOPLEVEL[f]
           n10 <- TOPLEVEL[d1]
-          n11 <- $CallFunctionEx(n9, (unpacked)(), {|$Packed(n10), $Packed((unpacked){|"x", 42|})|}, None)
+          n11 <- $CallFunctionEx(n9, $BuildTuple(), $BuildMapUnpack(n10, $BuildMap("x", 42)), None)
           return None
 
 
