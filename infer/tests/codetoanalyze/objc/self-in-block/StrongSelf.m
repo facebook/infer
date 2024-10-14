@@ -293,7 +293,9 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)mixSelfWeakSelf_bad_wrong_autofix {
+// No autofix because self is used before strongSelf is defined.
+// The developer needs to move the use of self to a different line.
+- (void)mixSelfWeakSelf_bad_no_autofix {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     [self foo];

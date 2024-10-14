@@ -537,8 +537,12 @@ let make_trace_captured domain var =
 
 let find_strong_self domain =
   Vars.fold
-    (fun _ {pvar; kind} pvar_opt ->
-      match kind with UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF -> Some pvar | _ -> pvar_opt )
+    (fun _ {pvar; kind; loc} pvar_opt ->
+      match kind with
+      | UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF ->
+          Some (pvar, loc)
+      | _ ->
+          pvar_opt )
     domain None
 
 
@@ -555,11 +559,14 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
   let to_string pvar = Mangled.to_string (Pvar.get_name pvar) in
   let strongSelf_opt = find_strong_self domain in
   let autofix =
-    Option.map
-      ~f:(fun strongSelf ->
-        { Jsonbug_j.original= Some (to_string self.DomainData.pvar)
-        ; replacement= Some (to_string strongSelf)
-        ; additional= None } )
+    Option.bind
+      ~f:(fun (strongSelf, strongSelfLoc) ->
+        if strongSelfLoc.Location.line < self.loc.line then
+          Some
+            { Jsonbug_j.original= Some (to_string self.DomainData.pvar)
+            ; replacement= Some (to_string strongSelf)
+            ; additional= None }
+        else None )
       strongSelf_opt
   in
   Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc ?autofix SelfInBlock
