@@ -163,7 +163,7 @@ def f(match, it, n):
           n6 <- n4[n5]
           n7 <- LOCAL[item]
           n8 <- $Compare.eq(n6, n7, None)
-          if $Not(n8) then jmp b3 else jmp b4
+          if n8 then jmp b4 else jmp b3
 
         b3:
           n11 <- GLOBAL[AssertionError]

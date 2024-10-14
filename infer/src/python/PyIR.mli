@@ -105,7 +105,6 @@ module Exp : sig
 
   type t =
     | Const of Const.t
-    | Code of FFI.Code.t
     | Var of ScopedIdent.t
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}
@@ -114,12 +113,9 @@ module Exp : sig
     | BuildFrozenSet of t list
     | Collection of {kind: collection; values: t list; unpack: bool}
     | GetAttr of (t * string)
-    | LoadMethod of (t * string)
-    | Not of t
-    | BuiltinCaller of BuiltinCaller.t
-    | CallFinallyReturn of {offset: int}
-    | ContextManagerExit of t
     | Yield of t
+
+  type opstack_symbol
 end
 
 module Stmt : sig
@@ -138,7 +134,7 @@ module Stmt : sig
 end
 
 module Terminator : sig
-  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.opstack_symbol list}
 
   type t =
     | Return of Exp.t

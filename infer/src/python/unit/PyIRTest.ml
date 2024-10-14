@@ -686,7 +686,7 @@ def f(x, y, z, t):
 
         b1:
           n1 <- LOCAL[y]
-          if $Not(n1) then jmp b2 else jmp b4(n1)
+          if n1 then jmp b4(n1) else jmp b2
 
         b2:
           n2 <- LOCAL[z]
