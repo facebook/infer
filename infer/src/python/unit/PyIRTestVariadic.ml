@@ -258,20 +258,23 @@ f(**d1, x=42)
 
       toplevel:
         b0:
-          TOPLEVEL[d0] <- {0: 0, 1: 1, }
-          TOPLEVEL[d1] <- {"a": 0, "b": 1, }
-          n0 <- TOPLEVEL[d0]
-          n1 <- TOPLEVEL[d1]
-          TOPLEVEL[x] <- {|$Packed(n0), $Packed(n1)|}
-          n2 <- TOPLEVEL[print]
-          n3 <- TOPLEVEL[x]
-          n4 <- $Call(n2, n3, None)
-          n5 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
-          TOPLEVEL[f] <- n5
-          TOPLEVEL[d1] <- {"a": 0, "b": 1, }
-          n6 <- TOPLEVEL[f]
-          n7 <- TOPLEVEL[d1]
-          n8 <- $CallFunctionEx(n6, (unpacked)(), {|$Packed(n7), $Packed((unpacked){|"x", 42|})|}, None)
+          n0 <- $BuildConstKeyMap((0,1), 0, 1, None)
+          TOPLEVEL[d0] <- n0
+          n1 <- $BuildConstKeyMap(("a","b"), 0, 1, None)
+          TOPLEVEL[d1] <- n1
+          n2 <- TOPLEVEL[d0]
+          n3 <- TOPLEVEL[d1]
+          TOPLEVEL[x] <- {|$Packed(n2), $Packed(n3)|}
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[x]
+          n6 <- $Call(n4, n5, None)
+          n7 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          TOPLEVEL[f] <- n7
+          n8 <- $BuildConstKeyMap(("a","b"), 0, 1, None)
+          TOPLEVEL[d1] <- n8
+          n9 <- TOPLEVEL[f]
+          n10 <- TOPLEVEL[d1]
+          n11 <- $CallFunctionEx(n9, (unpacked)(), {|$Packed(n10), $Packed((unpacked){|"x", 42|})|}, None)
           return None
 
 

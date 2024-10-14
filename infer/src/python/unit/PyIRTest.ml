@@ -515,12 +515,14 @@ def f1(x, y:str) -> bool:
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- TOPLEVEL[float]
-          n2 <- $MakeFunction["f0", "dummy.f0"](None, None, {"x": n0, "z": n1, }, None, None)
-          TOPLEVEL[f0] <- n2
-          n3 <- TOPLEVEL[str]
-          n4 <- TOPLEVEL[bool]
-          n5 <- $MakeFunction["f1", "dummy.f1"](None, None, {"return": n4, "y": n3, }, None, None)
-          TOPLEVEL[f1] <- n5
+          n2 <- $BuildConstKeyMap(("x","z"), n0, n1, None)
+          n3 <- $MakeFunction["f0", "dummy.f0"](None, None, n2, None, None)
+          TOPLEVEL[f0] <- n3
+          n4 <- TOPLEVEL[str]
+          n5 <- TOPLEVEL[bool]
+          n6 <- $BuildConstKeyMap(("y","return"), n4, n5, None)
+          n7 <- $MakeFunction["f1", "dummy.f1"](None, None, n6, None, None)
+          TOPLEVEL[f1] <- n7
           return None
 
 
@@ -554,15 +556,17 @@ expect_int(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[int]
-          n1 <- $MakeFunction["expect_int", "dummy.expect_int"](None, None, {"x": n0, }, None, None)
-          TOPLEVEL[expect_int] <- n1
-          n2 <- TOPLEVEL[int]
-          n3 <- $MakeFunction["get", "dummy.get"](None, None, {"return": n2, }, None, None)
-          TOPLEVEL[get] <- n3
-          n4 <- TOPLEVEL[expect_int]
-          n5 <- TOPLEVEL[get]
-          n6 <- $Call(n5, None)
-          n7 <- $Call(n4, n6, None)
+          n1 <- $BuildConstKeyMap(("x"), n0, None)
+          n2 <- $MakeFunction["expect_int", "dummy.expect_int"](None, None, n1, None, None)
+          TOPLEVEL[expect_int] <- n2
+          n3 <- TOPLEVEL[int]
+          n4 <- $BuildConstKeyMap(("return"), n3, None)
+          n5 <- $MakeFunction["get", "dummy.get"](None, None, n4, None, None)
+          TOPLEVEL[get] <- n5
+          n6 <- TOPLEVEL[expect_int]
+          n7 <- TOPLEVEL[get]
+          n8 <- $Call(n7, None)
+          n9 <- $Call(n6, n8, None)
           return None
 
 
@@ -596,15 +600,17 @@ expect(get())
       toplevel:
         b0:
           n0 <- TOPLEVEL[object]
-          n1 <- $MakeFunction["expect", "dummy.expect"](None, None, {"return": None, "x": n0, }, None, None)
-          TOPLEVEL[expect] <- n1
-          n2 <- TOPLEVEL[int]
-          n3 <- $MakeFunction["get", "dummy.get"](None, None, {"return": n2, }, None, None)
-          TOPLEVEL[get] <- n3
-          n4 <- TOPLEVEL[expect]
-          n5 <- TOPLEVEL[get]
-          n6 <- $Call(n5, None)
-          n7 <- $Call(n4, n6, None)
+          n1 <- $BuildConstKeyMap(("x","return"), n0, None, None)
+          n2 <- $MakeFunction["expect", "dummy.expect"](None, None, n1, None, None)
+          TOPLEVEL[expect] <- n2
+          n3 <- TOPLEVEL[int]
+          n4 <- $BuildConstKeyMap(("return"), n3, None)
+          n5 <- $MakeFunction["get", "dummy.get"](None, None, n4, None, None)
+          TOPLEVEL[get] <- n5
+          n6 <- TOPLEVEL[expect]
+          n7 <- TOPLEVEL[get]
+          n8 <- $Call(n7, None)
+          n9 <- $Call(n6, n8, None)
           return None
 
 

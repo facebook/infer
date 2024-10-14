@@ -49,13 +49,12 @@ end
 module Builtin = PyBuiltin
 module Const = FFI.Constant
 
-module ConstMap : Caml.Map.S with type key = Const.t
-
 module BuiltinCaller : sig
   type format_function = Str | Repr | Ascii
 
   type t =
     | BuildClass
+    | BuildConstKeyMap
     | Format
     | FormatFn of format_function
     | CallFunctionEx
@@ -99,7 +98,6 @@ module Exp : sig
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}
     | Collection of {kind: collection; values: t list; packed: bool}
-    | ConstMap of t ConstMap.t
     | GetAttr of (t * string)
     | LoadMethod of (t * string)
     | Not of t

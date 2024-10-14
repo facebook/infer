@@ -143,25 +143,26 @@ print(c.z)
           TOPLEVEL[IntBox] <- n1
           n2 <- TOPLEVEL[IntBox]
           n3 <- TOPLEVEL[int]
-          n4 <- $MakeFunction["getX", "dummy.getX"](None, None, {"box": n2, "return": n3, }, None, None)
-          TOPLEVEL[getX] <- n4
-          n5 <- TOPLEVEL[IntBox]
-          n6 <- $Call(n5, 10, None)
-          TOPLEVEL[c] <- n6
-          n7 <- TOPLEVEL[c]
-          n8 <- n7.x
-          n9 <- TOPLEVEL[c]
-          n9.z <- 10
+          n4 <- $BuildConstKeyMap(("box","return"), n2, n3, None)
+          n5 <- $MakeFunction["getX", "dummy.getX"](None, None, n4, None, None)
+          TOPLEVEL[getX] <- n5
+          n6 <- TOPLEVEL[IntBox]
+          n7 <- $Call(n6, 10, None)
+          TOPLEVEL[c] <- n7
+          n8 <- TOPLEVEL[c]
+          n9 <- n8.x
           n10 <- TOPLEVEL[c]
-          n11 <- $CallMethod[get](n10, None)
-          n12 <- TOPLEVEL[c]
-          n13 <- $CallMethod[set](n12, 42, None)
-          n14 <- TOPLEVEL[c]
-          n15 <- $CallMethod[run](n14, None)
-          n16 <- TOPLEVEL[print]
-          n17 <- TOPLEVEL[c]
-          n18 <- n17.z
-          n19 <- $Call(n16, n18, None)
+          n10.z <- 10
+          n11 <- TOPLEVEL[c]
+          n12 <- $CallMethod[get](n11, None)
+          n13 <- TOPLEVEL[c]
+          n14 <- $CallMethod[set](n13, 42, None)
+          n15 <- TOPLEVEL[c]
+          n16 <- $CallMethod[run](n15, None)
+          n17 <- TOPLEVEL[print]
+          n18 <- TOPLEVEL[c]
+          n19 <- n18.z
+          n20 <- $Call(n17, n19, None)
           return None
 
 
@@ -175,23 +176,27 @@ print(c.z)
           n2 <- TOPLEVEL[__annotations__]
           n2["x"] <- n1
           n3 <- TOPLEVEL[int]
-          n4 <- $MakeFunction["__init__", "dummy.IntBox.__init__"](None, None, {
-                                                                   "return": None, "x": n3, }, None, None)
-          TOPLEVEL[__init__] <- n4
-          n5 <- TOPLEVEL[int]
-          n6 <- $MakeFunction["get", "dummy.IntBox.get"](None, None, {"return": n5, }, None, None)
-          TOPLEVEL[get] <- n6
-          n7 <- TOPLEVEL[int]
-          n8 <- $MakeFunction["set", "dummy.IntBox.set"](None, None, {"return": None, "x": n7, }, None, None)
-          TOPLEVEL[set] <- n8
-          n9 <- $MakeFunction["run", "dummy.IntBox.run"](None, None, {"return": None, }, None, None)
-          TOPLEVEL[run] <- n9
-          n10 <- TOPLEVEL[staticmethod]
-          n11 <- TOPLEVEL[int]
-          n12 <- TOPLEVEL[int]
-          n13 <- $MakeFunction["id", "dummy.IntBox.id"](None, None, {"return": n12, "x": n11, }, None, None)
-          n14 <- $Call(n10, n13, None)
-          TOPLEVEL[id] <- n14
+          n4 <- $BuildConstKeyMap(("x","return"), n3, None, None)
+          n5 <- $MakeFunction["__init__", "dummy.IntBox.__init__"](None, None, n4, None, None)
+          TOPLEVEL[__init__] <- n5
+          n6 <- TOPLEVEL[int]
+          n7 <- $BuildConstKeyMap(("return"), n6, None)
+          n8 <- $MakeFunction["get", "dummy.IntBox.get"](None, None, n7, None, None)
+          TOPLEVEL[get] <- n8
+          n9 <- TOPLEVEL[int]
+          n10 <- $BuildConstKeyMap(("x","return"), n9, None, None)
+          n11 <- $MakeFunction["set", "dummy.IntBox.set"](None, None, n10, None, None)
+          TOPLEVEL[set] <- n11
+          n12 <- $BuildConstKeyMap(("return"), None, None)
+          n13 <- $MakeFunction["run", "dummy.IntBox.run"](None, None, n12, None, None)
+          TOPLEVEL[run] <- n13
+          n14 <- TOPLEVEL[staticmethod]
+          n15 <- TOPLEVEL[int]
+          n16 <- TOPLEVEL[int]
+          n17 <- $BuildConstKeyMap(("x","return"), n15, n16, None)
+          n18 <- $MakeFunction["id", "dummy.IntBox.id"](None, None, n17, None, None)
+          n19 <- $Call(n14, n18, None)
+          TOPLEVEL[id] <- n19
           return None
 
 
@@ -281,10 +286,10 @@ class D(C):
           n4 <- TOPLEVEL[staticmethod]
           n5 <- TOPLEVEL[int]
           n6 <- TOPLEVEL[int]
-          n7 <- $MakeFunction["typed_f", "dummy.C.typed_f"](None, None, {
-                                                            "return": n6, "x": n5, }, None, None)
-          n8 <- $Call(n4, n7, None)
-          TOPLEVEL[typed_f] <- n8
+          n7 <- $BuildConstKeyMap(("x","return"), n5, n6, None)
+          n8 <- $MakeFunction["typed_f", "dummy.C.typed_f"](None, None, n7, None, None)
+          n9 <- $Call(n4, n8, None)
+          TOPLEVEL[typed_f] <- n9
           return None
 
 
@@ -377,8 +382,9 @@ def g(c: C) -> None:
           n3 <- $BuildClass(n2, "C", None)
           TOPLEVEL[C] <- n3
           n4 <- TOPLEVEL[C]
-          n5 <- $MakeFunction["g", "dummy.g"](None, None, {"c": n4, "return": None, }, None, None)
-          TOPLEVEL[g] <- n5
+          n5 <- $BuildConstKeyMap(("c","return"), n4, None, None)
+          n6 <- $MakeFunction["g", "dummy.g"](None, None, n5, None, None)
+          TOPLEVEL[g] <- n6
           return None
 
 
@@ -853,23 +859,24 @@ class C(ABC):
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
           n1 <- TOPLEVEL[abstractmethod]
-          n2 <- $MakeFunction["get", "dummy.C.get"](None, None, {"return": None, }, None, None)
-          n3 <- $Call(n1, n2, None)
-          TOPLEVEL[get] <- n3
-          n4 <- TOPLEVEL[abstractmethod]
-          n5 <- TOPLEVEL[staticmethod]
-          n6 <- $MakeFunction["get_static0", "dummy.C.get_static0"](None, None, {
-                                                                    "return": None, }, None, None)
-          n7 <- $Call(n5, n6, None)
-          n8 <- $Call(n4, n7, None)
-          TOPLEVEL[get_static0] <- n8
-          n9 <- TOPLEVEL[staticmethod]
-          n10 <- TOPLEVEL[abstractmethod]
-          n11 <- $MakeFunction["get_static1", "dummy.C.get_static1"](None, None, {
-                                                                     "return": None, }, None, None)
-          n12 <- $Call(n10, n11, None)
-          n13 <- $Call(n9, n12, None)
-          TOPLEVEL[get_static1] <- n13
+          n2 <- $BuildConstKeyMap(("return"), None, None)
+          n3 <- $MakeFunction["get", "dummy.C.get"](None, None, n2, None, None)
+          n4 <- $Call(n1, n3, None)
+          TOPLEVEL[get] <- n4
+          n5 <- TOPLEVEL[abstractmethod]
+          n6 <- TOPLEVEL[staticmethod]
+          n7 <- $BuildConstKeyMap(("return"), None, None)
+          n8 <- $MakeFunction["get_static0", "dummy.C.get_static0"](None, None, n7, None, None)
+          n9 <- $Call(n6, n8, None)
+          n10 <- $Call(n5, n9, None)
+          TOPLEVEL[get_static0] <- n10
+          n11 <- TOPLEVEL[staticmethod]
+          n12 <- TOPLEVEL[abstractmethod]
+          n13 <- $BuildConstKeyMap(("return"), None, None)
+          n14 <- $MakeFunction["get_static1", "dummy.C.get_static1"](None, None, n13, None, None)
+          n15 <- $Call(n12, n14, None)
+          n16 <- $Call(n11, n15, None)
+          TOPLEVEL[get_static1] <- n16
           return None
 
 

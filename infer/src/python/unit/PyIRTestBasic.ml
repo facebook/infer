@@ -286,12 +286,14 @@ d = { 0x78: "abc", # 1-n decoding mapping
           n1 <- TOPLEVEL[print]
           n2 <- TOPLEVEL[s]
           n3 <- $Call(n1, n2, None)
-          TOPLEVEL[s] <- {"a": 42, "b": 1664, }
-          n4 <- TOPLEVEL[print]
-          n5 <- TOPLEVEL[s]
-          n6 <- n5["1"]
-          n7 <- $Call(n4, n6, None)
-          TOPLEVEL[d] <- {1: None, 120: "abc", 121: "", "abc": 120, }
+          n4 <- $BuildConstKeyMap(("a","b"), 42, 1664, None)
+          TOPLEVEL[s] <- n4
+          n5 <- TOPLEVEL[print]
+          n6 <- TOPLEVEL[s]
+          n7 <- n6["1"]
+          n8 <- $Call(n5, n7, None)
+          n9 <- $BuildConstKeyMap((120,"abc",1,121), "abc", 120, None, "", None)
+          TOPLEVEL[d] <- n9
           return None |xxx}]
 
 
@@ -531,12 +533,12 @@ def main(arg):
 
       dummy.main:
         b0:
-          n0 <- GLOBAL[int]
-          n1 <- GLOBAL[str]
-          n2 <- GLOBAL[float]
-          n3 <- $LoadClosure[0,"arg"](None)
-          n4 <- $MakeFunction["f", "dummy.main.f"](("ok",0.), {"key": None, }, {
-                                                   "x": n0, "y": n1, "z": n2, }, (unpacked)(
-                                                   n3), None)
-          LOCAL[f] <- n4
+          n0 <- $BuildConstKeyMap(("key"), None, None)
+          n1 <- GLOBAL[int]
+          n2 <- GLOBAL[str]
+          n3 <- GLOBAL[float]
+          n4 <- $BuildConstKeyMap(("x","y","z"), n1, n2, n3, None)
+          n5 <- $LoadClosure[0,"arg"](None)
+          n6 <- $MakeFunction["f", "dummy.main.f"](("ok",0.), n0, n4, (unpacked)(n5), None)
+          LOCAL[f] <- n6
           return None |}]

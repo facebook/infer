@@ -12,10 +12,6 @@ module Builtin = PyBuiltin
 module IMap = PyCommon.IMap
 module Const = FFI.Constant
 
-(* will probably disappear in a next diff *)
-
-module ConstMap = Caml.Map.Make (Const)
-
 module Ident : sig
   type t [@@deriving equal]
 
@@ -168,6 +164,7 @@ module BuiltinCaller = struct
 
   type t =
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
+    | BuildConstKeyMap  (** [BUILD_CONST_KEY_MAP] *)
     | Format
     | FormatFn of format_function
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
@@ -205,6 +202,8 @@ module BuiltinCaller = struct
   let show = function
     | BuildClass ->
         "$BuildClass"
+    | BuildConstKeyMap ->
+        "$BuildConstKeyMap"
     | Format ->
         "$Format"
     | FormatFn fn ->
@@ -307,7 +306,6 @@ module Exp = struct
     | Collection of {kind: collection; values: t list; packed: bool}
         (** Helper for [BUILD_LIST] and other builder opcodes *)
     (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
-    | ConstMap of t ConstMap.t
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | Not of t
@@ -335,8 +333,6 @@ module Exp = struct
         check index
     | Collection {values} ->
         list_iter_result ~f:check values
-    | ConstMap map ->
-        ConstMap.bindings map |> list_iter_result ~f:(fun (_, exp) -> check exp)
     | GetAttr (t, _name) ->
         check t
     | LoadMethod (_self, _meth) ->
@@ -379,10 +375,6 @@ module Exp = struct
             F.fprintf fmt "$Concat%s(%a)" packed (Pp.seq ~sep:", " pp) values
         | Slice ->
             F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:":" pp) values )
-    | ConstMap map ->
-        F.fprintf fmt "{@[" ;
-        ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
-        F.fprintf fmt "@]}"
     | GetAttr (t, name) ->
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
@@ -421,8 +413,6 @@ module Error = struct
     | EmptyStack of string
     | UnsupportedOpcode of string
     | MakeFunction of string * Exp.t
-    | BuildConstKeyMapLength of int * int
-    | BuildConstKeyMapKeys of Exp.t
     | LoadMethodExpected of Exp.t
     | CompareOp of int
     | CodeWithoutQualifiedName of FFI.Code.t
@@ -447,10 +437,6 @@ module Error = struct
         F.fprintf fmt "Unsupported opcode: %s" s
     | MakeFunction (kind, exp) ->
         F.fprintf fmt "MAKE_FUNCTION: expected %s but got %a" kind Exp.pp exp
-    | BuildConstKeyMapLength (m, n) ->
-        F.fprintf fmt "BUILD_CONST_KEY_MAP: expected %d keys but got %d" m n
-    | BuildConstKeyMapKeys exp ->
-        F.fprintf fmt "BUILD_CONST_KEY_MAP: expect constant set of keys but got %a" Exp.pp exp
     | CompareOp n ->
         F.fprintf fmt "COMPARE_OP(%d): invalid operation" n
     | CodeWithoutQualifiedName {FFI.Code.co_name; co_firstlineno; co_filename} ->
@@ -1451,24 +1437,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       make_function st arg
   | "BUILD_CONST_KEY_MAP" ->
       let* keys, st = State.pop st in
-      let* keys =
-        match (keys : Exp.t) with
-        | Const (PYCTuple keys) ->
-            Ok keys
-        | _ ->
-            internal_error st (Error.BuildConstKeyMapKeys keys)
-      in
-      let nr_keys = Array.length keys in
       let* tys, st = State.pop_n st arg in
-      let* () =
-        if Int.equal nr_keys arg then Ok ()
-        else internal_error st (Error.BuildConstKeyMapLength (arg, nr_keys))
-      in
-      let keys = Array.to_list keys in
-      let map =
-        List.fold2_exn ~init:ConstMap.empty ~f:(fun map key ty -> ConstMap.add key ty map) keys tys
-      in
-      let st = State.push st (Exp.ConstMap map) in
+      let* id, st = call_builtin_function st BuildConstKeyMap (keys :: tys) in
+      let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "BUILD_LIST" ->
       build_collection st List arg
