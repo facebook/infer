@@ -114,8 +114,6 @@ module Exp : sig
     | Collection of {kind: collection; values: t list; unpack: bool}
     | GetAttr of (t * string)
     | Yield of t
-
-  type opstack_symbol
 end
 
 module Stmt : sig
@@ -134,7 +132,7 @@ module Stmt : sig
 end
 
 module Terminator : sig
-  type node_call = {label: NodeName.t; ssa_args: Exp.opstack_symbol list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
     | Return of Exp.t

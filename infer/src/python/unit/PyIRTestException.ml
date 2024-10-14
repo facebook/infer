@@ -833,3 +833,87 @@ def foo():
   PyIR.test source ;
   [%expect {|
     IR error: Cannot pop, stack is empty |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def foo(test):
+    try:
+        if test:
+            return 0
+        return 1
+    except Exception:
+        return 2
+    finally:
+        return 3
+|}
+  in
+  PyIR.test ~debug:true source ;
+  [%expect
+    {|
+    Translating dummy...
+    Building a new node, starting from offset 0
+                  []
+       2        0 LOAD_CONST                        0 (<code object foo>)
+                  [<foo>]
+                2 LOAD_CONST                        1 ("foo")
+                  [<foo>; "foo"]
+                4 MAKE_FUNCTION                     0
+                  [n0]
+                6 STORE_NAME                        0 (foo)
+                  []
+                8 LOAD_CONST                        2 (None)
+                  [None]
+               10 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    Translating dummy.foo...
+    Building a new node, starting from offset 0
+                  []
+       3        0 LOAD_CONST                        0 (None)
+                  [None]
+                2 SETUP_FINALLY                    62
+                  [None]
+                4 SETUP_FINALLY                    28
+                  [None]
+       4        6 LOAD_FAST                         0 (test)
+                  [None; n0]
+                8 POP_JUMP_IF_FALSE                22 (to 22)
+                  [None]
+    Successors: 10,22
+
+    Building a new node, starting from offset 22
+                  [None]
+       6 >>>   22 POP_BLOCK                         0
+                  [None]
+               24 POP_BLOCK                         0
+                  [None]
+               26 CALL_FINALLY                     38
+                  [None; CFR(28)]
+    Successors: 66
+
+    Building a new node, starting from offset 10
+                  [None]
+       5       10 POP_BLOCK                         0
+                  [None]
+               12 POP_BLOCK                         0
+                  [None]
+               14 CALL_FINALLY                     50
+                  [None; CFR(16)]
+    Successors: 66
+
+    Building a new node, starting from offset 66 with params (n1)
+                  [None; n1]
+      10 >>>   66 POP_FINALLY                       0
+                  [None]
+               68 POP_TOP                           0
+                  []
+               70 LOAD_CONST                        1 (3)
+                  [3]
+               72 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    IR error: UNEXPECTED_EXPRESSION: CFR(16) |}]

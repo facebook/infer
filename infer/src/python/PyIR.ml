@@ -85,7 +85,11 @@ module NodeName : sig
 
   val pp : F.formatter -> t -> unit
 
-  module Map : Caml.Map.S with type key = t
+  module Map : sig
+    include Caml.Map.S with type key = t
+
+    val map_result : f:(key -> 'a -> ('b, 'c) result) -> 'a t -> ('b t, 'c) result
+  end
 end = struct
   type t = {name: string; offset: int [@compare.ignore] [@equal.ignore]} [@@deriving equal, compare]
 
@@ -99,11 +103,22 @@ end = struct
 
   let get_offset {offset} = offset
 
-  module Map = Caml.Map.Make (struct
-    type nonrec t = t
+  module Map = struct
+    include Caml.Map.Make (struct
+      type nonrec t = t
 
-    let compare = compare
-  end)
+      let compare = compare
+    end)
+
+    let map_result ~f map =
+      let open IResult.Let_syntax in
+      fold
+        (fun key elt acc ->
+          let* map = acc in
+          let+ elt = f key elt in
+          add key elt map )
+        map (Ok empty)
+  end
 end
 
 module SSA = struct
@@ -508,6 +523,20 @@ module Stmt = struct
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
 
+let cast_exp ~loc = function
+  | Exp.Exp exp ->
+      Ok exp
+  | exp ->
+      Error (L.InternalError, loc, Error.UnexpectedExpression exp)
+
+
+let cast_exps ~loc exps =
+  let open IResult.Let_syntax in
+  List.fold_result (List.rev exps) ~init:[] ~f:(fun l exp ->
+      let+ exp = cast_exp ~loc exp in
+      exp :: l )
+
+
 module Offset = struct
   type t = int
 
@@ -536,9 +565,10 @@ module Stack = struct
   [@@warning "-unused-value-declaration"]
 end
 
-module Terminator = struct
+module TerminatorBuilder = struct
+  (** This is a terminator in a tempory state. We will cast the [ssa_args] when finalizing the
+      consrtruction *)
   type node_call = {label: NodeName.t; ssa_args: Exp.opstack_symbol list}
-  (* we will put Exp.t in a later diff *)
 
   let pp_node_call fmt {label; ssa_args} =
     NodeName.pp fmt label ;
@@ -566,6 +596,55 @@ module Terminator = struct
           else_
     | Throw exp ->
         F.fprintf fmt "throw %a" Exp.pp exp
+  [@@warning "-unused-value-declaration"]
+end
+
+module Terminator = struct
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
+
+  let pp_node_call fmt {label; ssa_args} =
+    NodeName.pp fmt label ;
+    if not (List.is_empty ssa_args) then F.fprintf fmt "(@[%a@])" (Pp.seq ~sep:", " Exp.pp) ssa_args
+
+
+  type t =
+    | Return of Exp.t
+    | Jump of node_call
+    | If of {exp: Exp.t; then_: node_call; else_: node_call}
+    | Throw of Exp.t
+
+  let pp fmt = function
+    | Return exp ->
+        F.fprintf fmt "return %a" Exp.pp exp
+    | Jump node_call ->
+        F.fprintf fmt "jmp %a" pp_node_call node_call
+    | If {exp; then_; else_} ->
+        F.fprintf fmt "if %a then jmp %a else jmp %a" Exp.pp exp pp_node_call then_ pp_node_call
+          else_
+    | Throw exp ->
+        F.fprintf fmt "throw %a" Exp.pp exp
+
+
+  let cast_node_call ~loc {TerminatorBuilder.label; ssa_args} =
+    let open IResult.Let_syntax in
+    let+ ssa_args = cast_exps ~loc ssa_args in
+    {label; ssa_args}
+
+
+  let of_builder ~loc terminator =
+    let open IResult.Let_syntax in
+    match (terminator : TerminatorBuilder.t) with
+    | Return exp ->
+        Ok (Return exp)
+    | Jump node_call ->
+        let+ node_call = cast_node_call ~loc node_call in
+        Jump node_call
+    | If {exp; then_; else_} ->
+        let* then_ = cast_node_call ~loc then_ in
+        let+ else_ = cast_node_call ~loc else_ in
+        If {exp; then_; else_}
+    | Throw exp ->
+        Ok (Throw exp)
 end
 
 module Node = struct
@@ -587,7 +666,9 @@ module Node = struct
 end
 
 module CFGBuilder = struct
-  type t = {nodes: Node.t NodeName.Map.t; fresh_label: int}
+  (** For each (node, terminator) pair, the terminator node.last is not finalized yet, terminator is
+      the ground truth instead *)
+  type t = {nodes: (Node.t * TerminatorBuilder.t) NodeName.Map.t; fresh_label: int}
 
   let fresh_start = 0
 
@@ -602,8 +683,8 @@ module CFGBuilder = struct
 
 
   let add name ~first_loc ~last_loc ssa_parameters stmts last {nodes; fresh_label} =
-    let node = {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} in
-    {nodes= NodeName.Map.add name node nodes; fresh_label}
+    let node = {Node.name; first_loc; last_loc; ssa_parameters; stmts; last= Return Exp.none} in
+    {nodes= NodeName.Map.add name (node, last) nodes; fresh_label}
 end
 
 module CFG = struct
@@ -612,8 +693,15 @@ module CFG = struct
   let pp fmt {nodes} = NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
 
   let of_builder {CFGBuilder.nodes} =
+    let open IResult.Let_syntax in
     let offset = 0 in
     let entry = CFGBuilder.label_of_int CFGBuilder.fresh_start |> NodeName.mk ~offset in
+    let+ nodes =
+      NodeName.Map.map_result nodes ~f:(fun _name (node, last) ->
+          let loc = node.Node.last_loc in
+          let+ last = Terminator.of_builder ~loc last in
+          {node with Node.last} )
+    in
     {nodes; entry}
 end
 
@@ -681,19 +769,9 @@ module State = struct
     (fresh_id, st)
 
 
-  let cast_exp st = function
-    | Exp.Exp exp ->
-        Ok exp
-    | exp ->
-        Error (L.InternalError, st.loc, Error.UnexpectedExpression exp)
+  let cast_exp st = cast_exp ~loc:st.loc
 
-
-  let cast_exps st exps =
-    let open IResult.Let_syntax in
-    List.fold_result (List.rev exps) ~init:[] ~f:(fun l exp ->
-        let+ exp = cast_exp st exp in
-        exp :: l )
-
+  let cast_exps st = cast_exps ~loc:st.loc
 
   let push ({stack} as st) exp =
     let stack = Stack.push stack (Exp.Exp exp) in
@@ -760,12 +838,12 @@ module State = struct
 
 
   let check_stack_if_at_back_edge {loc; stack; stack_at_loop_headers} src
-      ({Terminator.label} as dest_call_node) =
+      ({TerminatorBuilder.label} as dest_call_node) =
     let dest = NodeName.get_offset label in
     if IMap.mem dest stack_at_loop_headers then
       (* [dest] is a loop header *)
       if List.equal Exp.equal_opstack_symbol stack (IMap.find dest stack_at_loop_headers) then
-        Ok {Terminator.label; ssa_args= []}
+        Ok {TerminatorBuilder.label; ssa_args= []}
       else Error (L.InternalError, loc, Error.FixpointComputationNotReached {src; dest})
     else Ok dest_call_node
 
@@ -773,15 +851,16 @@ module State = struct
   let check_terminator_if_back_edge st offset terminator =
     let open IResult.Let_syntax in
     let src = offset in
-    match (terminator : Terminator.t) with
+    match (terminator : TerminatorBuilder.t) with
     | Jump call_node ->
         let+ new_call_node = check_stack_if_at_back_edge st src call_node in
-        if phys_equal call_node new_call_node then None else Some (Terminator.Jump new_call_node)
+        if phys_equal call_node new_call_node then None
+        else Some (TerminatorBuilder.Jump new_call_node)
     | If {exp; then_; else_} ->
         let* new_then = check_stack_if_at_back_edge st src then_ in
         let+ new_else = check_stack_if_at_back_edge st src else_ in
         if (not (phys_equal then_ new_then)) || not (phys_equal else_ new_else) then
-          Some (Terminator.If {exp; then_= new_then; else_= new_else})
+          Some (TerminatorBuilder.If {exp; then_= new_then; else_= new_else})
         else None
     | _ ->
         Ok None
@@ -791,7 +870,7 @@ module State = struct
     let open IResult.Let_syntax in
     let+ name = get_node_name st offset in
     match NodeName.Map.find_opt name nodes with
-    | Some {last} -> (
+    | Some (_, last) -> (
       match last with
       | Jump {ssa_args} ->
           `AlreadyThere (name, ssa_args)
@@ -812,27 +891,26 @@ module State = struct
     (* drop elements k, ..., size-1 *)
     let nodes = cfg.CFGBuilder.nodes in
     match NodeName.Map.find_opt pred_name nodes with
-    | Some ({last} as node) ->
+    | Some (node, last) ->
         let opt_new_last =
           match last with
           | Jump {label; ssa_args} ->
               let ssa_args = List.drop ssa_args k in
-              let last = Terminator.Jump {label; ssa_args} in
+              let last = TerminatorBuilder.Jump {label; ssa_args} in
               Some last
           | If {exp; then_= {label; ssa_args}; else_} when NodeName.equal label succ_name ->
               let ssa_args = List.drop ssa_args k in
-              let then_ = {Terminator.label; ssa_args} in
-              Some (Terminator.If {exp; then_; else_})
+              let then_ = {TerminatorBuilder.label; ssa_args} in
+              Some (TerminatorBuilder.If {exp; then_; else_})
           | If {exp; then_; else_= {label; ssa_args}} when NodeName.equal label succ_name ->
               let ssa_args = List.drop ssa_args k in
-              let else_ = {Terminator.label; ssa_args} in
-              Some (Terminator.If {exp; then_; else_})
+              let else_ = {TerminatorBuilder.label; ssa_args} in
+              Some (TerminatorBuilder.If {exp; then_; else_})
           | _ ->
               None
         in
         Option.value_map opt_new_last ~default:st ~f:(fun last ->
-            let node = {node with last} in
-            let nodes = NodeName.Map.add pred_name node nodes in
+            let nodes = NodeName.Map.add pred_name (node, last) nodes in
             let cfg = {cfg with nodes} in
             {st with cfg} )
     | None ->
@@ -1059,7 +1137,8 @@ let format_value st flags =
 
 
 let mk_if b exp then_ else_ =
-  if b then Terminator.If {exp; then_; else_} else Terminator.If {exp; then_= else_; else_= then_}
+  if b then TerminatorBuilder.If {exp; then_; else_}
+  else TerminatorBuilder.If {exp; then_= else_; else_= then_}
 
 
 let pop_jump_if ~next_is st target next_offset_opt =
@@ -1076,8 +1155,8 @@ let pop_jump_if ~next_is st target next_offset_opt =
     ( st
     , Some
         (mk_if
-           (Terminator.mk_node_call next_label stack)
-           (Terminator.mk_node_call other_label stack) ) )
+           (TerminatorBuilder.mk_node_call next_label stack)
+           (TerminatorBuilder.mk_node_call other_label stack) ) )
 
 
 let jump_if_or_pop st ~jump_if target next_offset_opt =
@@ -1099,8 +1178,8 @@ let jump_if_or_pop st ~jump_if target next_offset_opt =
     ( st
     , Some
         (mk_if
-           (Terminator.mk_node_call next_label next_stack)
-           (Terminator.mk_node_call other_label stack) ) )
+           (TerminatorBuilder.mk_node_call next_label next_stack)
+           (TerminatorBuilder.mk_node_call other_label stack) ) )
 
 
 let for_iter st delta next_offset_opt =
@@ -1124,10 +1203,10 @@ let for_iter st delta next_offset_opt =
   Ok
     ( st
     , Some
-        (Terminator.If
+        (TerminatorBuilder.If
            { exp= condition
-           ; then_= Terminator.mk_node_call next_label next_stack
-           ; else_= Terminator.mk_node_call other_label other_stack } ) )
+           ; then_= TerminatorBuilder.mk_node_call next_label next_stack
+           ; else_= TerminatorBuilder.mk_node_call other_label other_stack } ) )
 
 
 (* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300 *)
@@ -1177,17 +1256,17 @@ let raise_varargs st argc =
          point. We should use them to compute the right "previous" exception,
          but this logic is left TODO *)
       let* id, st = call_builtin_function st GetPreviousException [] in
-      let throw = Terminator.Throw (Exp.Temp id) in
+      let throw = TerminatorBuilder.Throw (Exp.Temp id) in
       Ok (st, Some throw)
   | 1 ->
       let* tos, st = State.pop_and_cast st in
-      let throw = Terminator.Throw tos in
+      let throw = TerminatorBuilder.Throw tos in
       Ok (st, Some throw)
   | 2 ->
       let* rhs, st = State.pop_and_cast st in
       let* lhs, st = State.pop_and_cast st in
       let st = State.push_stmt st (Stmt.SetAttr {lhs; attr= "__cause__"; rhs}) in
-      let throw = Terminator.Throw lhs in
+      let throw = TerminatorBuilder.Throw lhs in
       Ok (st, Some throw)
   | _ ->
       external_error st (Error.RaiseExceptionInvalid argc)
@@ -1354,7 +1433,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "RETURN_VALUE" ->
       let* ret, st = State.pop_and_cast st in
-      Ok (st, Some (Terminator.Return ret))
+      Ok (st, Some (TerminatorBuilder.Return ret))
   | "CALL_FUNCTION" ->
       call_function st arg
   | "CALL_FUNCTION_KW" ->
@@ -1545,12 +1624,12 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let offset = next_offset + arg in
       let* label = State.get_node_name st offset in
       let {State.stack} = st in
-      let jump = Terminator.mk_jump label stack in
+      let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
   | "JUMP_ABSOLUTE" ->
       let* label = State.get_node_name st arg in
       let {State.stack} = st in
-      let jump = Terminator.mk_jump label stack in
+      let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
   | "GET_ITER" ->
       let* tos, st = State.pop_and_cast st in
@@ -1618,7 +1697,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* label = State.get_node_name st next_offset in
       let st = State.push st Exp.none in
       let {State.stack} = st in
-      let jump = Terminator.mk_jump label stack in
+      let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
   | "SETUP_FINALLY" ->
       Ok (st, None)
@@ -1631,7 +1710,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
         match ret with Exp.CallFinallyReturn {offset} -> offset | _ -> next_offset
       in
       let* label = State.get_node_name st label_offset in
-      let jump = Terminator.mk_jump label stack in
+      let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
   | "CALL_FINALLY" ->
       let {State.loc} = st in
@@ -1640,7 +1719,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_symbol st (Exp.CallFinallyReturn {offset= next_offset}) in
       let* label = State.get_node_name st jump_offset in
       let {State.stack} = st in
-      Ok (st, Some (Terminator.mk_jump label stack))
+      Ok (st, Some (TerminatorBuilder.mk_jump label stack))
   | "POP_FINALLY" ->
       (* see https://github.com/python/cpython/blob/3.8/Python/ceval.c#L2129 *)
       let* st =
@@ -1769,7 +1848,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          We model it like a throwing exception for now. This offset will not be reached
          by our DFS anyway since we don't model exceptionnal edges yet.
       *)
-      Ok (st, Some (Terminator.Throw Exp.none))
+      Ok (st, Some (TerminatorBuilder.Throw Exp.none))
   | "UNPACK_EX" ->
       (* The low byte of counts is the number of values before the list value, the high byte of
          counts the number of values after it. *)
@@ -2201,7 +2280,7 @@ let process_node st code ~offset ~arity ({instructions; successors} as info) =
             let stmts = State.get_stmts st in
             let* next_offset = Offset.get ~loc:last_loc next_offset_opt in
             let* next_name = State.get_node_name st next_offset in
-            let last = Terminator.mk_jump next_name stack in
+            let last = TerminatorBuilder.mk_jump next_name stack in
             let st = State.add_new_node st name ~first_loc ~last_loc ssa_parameters stmts last in
             show_completion () ;
             Ok st
@@ -2245,7 +2324,7 @@ let build_cfg ~debug ~code_qual_name code =
   let qual_name = code_qual_name code in
   let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton qual_name in
   let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
-  let cfg = CFG.of_builder st.State.cfg in
+  let* cfg = CFG.of_builder st.State.cfg in
   Ok cfg
 
 
