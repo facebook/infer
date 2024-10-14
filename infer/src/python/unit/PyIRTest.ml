@@ -37,11 +37,11 @@ print(z)
           TOPLEVEL[a] <- 10
           n0 <- TOPLEVEL[my_fun]
           n1 <- TOPLEVEL[a]
-          n2 <- n0(42, n1)
+          n2 <- $Call(n0, 42, n1, None)
           TOPLEVEL[z] <- n2
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[z]
-          n5 <- n3(n4)
+          n5 <- $Call(n3, n4, None)
           return None
 
 
@@ -49,13 +49,13 @@ print(z)
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           n3 <- GLOBAL[print]
           n4 <- LOCAL[y]
-          n5 <- n3(n4)
+          n5 <- $Call(n3, n4, None)
           n6 <- LOCAL[x]
           n7 <- LOCAL[y]
-          n8 <- $Binary.Add(n6, n7)
+          n8 <- $Binary.Add(n6, n7, None)
           LOCAL[z] <- n8
           n9 <- LOCAL[z]
           return n9 |}]
@@ -84,17 +84,17 @@ print(z)
           TOPLEVEL[update_global] <- $FuncObj(update_global, dummy.update_global, {})
           GLOBAL[z] <- 0
           n0 <- TOPLEVEL[update_global]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           n2 <- TOPLEVEL[print]
           n3 <- GLOBAL[z]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           return None
 
 
       dummy.update_global:
         b0:
           n0 <- GLOBAL[z]
-          n1 <- $Binary.Add(n0, 1)
+          n1 <- $Binary.Add(n0, 1, None)
           GLOBAL[z] <- n1
           return None |}]
 
@@ -132,7 +132,7 @@ def f(x, y):
       dummy.f:
         b0:
           n0 <- GLOBAL[coin]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           if n1 then jmp b1 else jmp b2
 
         b1:
@@ -180,7 +180,7 @@ def f(x, y):
         b0:
           LOCAL[z] <- 0
           n0 <- GLOBAL[coin]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           if n1 then jmp b1 else jmp b2
 
         b1:
@@ -242,12 +242,12 @@ def f(x, y):
         b0:
           LOCAL[z] <- 0
           n0 <- GLOBAL[coin]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           if n1 then jmp b1 else jmp b5
 
         b1:
           n7 <- GLOBAL[coin]
-          n8 <- n7()
+          n8 <- $Call(n7, None)
           if n8 then jmp b2 else jmp b3
 
         b2:
@@ -260,16 +260,16 @@ def f(x, y):
 
         b4:
           n10 <- LOCAL[z]
-          n11 <- $Binary.Add(n10, 1)
+          n11 <- $Binary.Add(n10, 1, None)
           LOCAL[z] <- n11
           jmp b8
 
         b5:
           n2 <- LOCAL[z]
-          n3 <- $Binary.Add(n2, 1)
+          n3 <- $Binary.Add(n2, 1, None)
           LOCAL[z] <- n3
           n4 <- GLOBAL[coin]
-          n5 <- n4()
+          n5 <- $Call(n4, None)
           if n5 then jmp b6 else jmp b7
 
         b6:
@@ -318,7 +318,7 @@ def f(x):
           jmp b3(0)
 
         b3(n2):
-          n3 <- n0(n2)
+          n3 <- $Call(n0, n2, None)
           return None
 
 
@@ -340,20 +340,20 @@ for x in range(10):
       toplevel:
         b0:
           n0 <- TOPLEVEL[range]
-          n1 <- n0(10)
-          n2 <- $GetIter(n1)
+          n1 <- $Call(n0, 10, None)
+          n2 <- $GetIter(n1, None)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
           if n4 then jmp b2 else jmp b3
 
         b2:
           TOPLEVEL[x] <- n3
           n5 <- TOPLEVEL[print]
           n6 <- TOPLEVEL[x]
-          n7 <- n5(n6)
+          n7 <- $Call(n5, n6, None)
           jmp b1
 
         b3:
@@ -385,12 +385,12 @@ def f(x, y, l, bar, toto):
       dummy.f:
         b0:
           n0 <- LOCAL[l]
-          n1 <- $GetIter(n0)
+          n1 <- $GetIter(n0, None)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n1)
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
           if n3 then jmp b2 else jmp b11
 
         b10:
@@ -402,11 +402,11 @@ def f(x, y, l, bar, toto):
         b2:
           LOCAL[x] <- n2
           n4 <- LOCAL[bar]
-          n5 <- n4()
-          n6 <- n5.__enter__()
+          n5 <- $Call(n4, None)
+          n6 <- $CallMethod[__enter__](n5, None)
           n7 <- LOCAL[toto]
-          n8 <- n7()
-          n9 <- n8.__enter__()
+          n8 <- $Call(n7, None)
+          n9 <- $CallMethod[__enter__](n8, None)
           LOCAL[obj] <- n9
           n10 <- LOCAL[y]
           if n10 then jmp b3 else jmp b6
@@ -415,27 +415,27 @@ def f(x, y, l, bar, toto):
           jmp b4
 
         b4:
-          n15 <- n8.__enter__(None, None, None)
+          n15 <- $CallMethod[__enter__](n8, None, None, None, None)
           jmp b5
 
         b5:
-          n16 <- n5.__enter__(None, None, None)
+          n16 <- $CallMethod[__enter__](n5, None, None, None, None)
           jmp b1
 
         b6:
           n11 <- GLOBAL[print]
-          n12 <- n11("nop")
+          n12 <- $Call(n11, "nop", None)
           jmp b7
 
         b7:
-          n13 <- n8.__enter__(None, None, None)
+          n13 <- $CallMethod[__enter__](n8, None, None, None, None)
           jmp b8
 
         b8:
           jmp b9
 
         b9:
-          n14 <- n5.__enter__(None, None, None)
+          n14 <- $CallMethod[__enter__](n5, None, None, None, None)
           jmp b10 |}]
 
 
@@ -461,10 +461,10 @@ def f(x):
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0(42)
+          n1 <- $Call(n0, 42, None)
           TOPLEVEL[print] <- $FuncObj(print, dummy.print, {})
           n2 <- TOPLEVEL[print]
-          n3 <- n2(42)
+          n3 <- $Call(n2, 42, None)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return None
 
@@ -473,7 +473,7 @@ def f(x):
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           return None
 
 
@@ -544,8 +544,8 @@ expect_int(get())
           TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
           n2 <- TOPLEVEL[expect_int]
           n3 <- TOPLEVEL[get]
-          n4 <- n3()
-          n5 <- n2(n4)
+          n4 <- $Call(n3, None)
+          n5 <- $Call(n2, n4, None)
           return None
 
 
@@ -584,8 +584,8 @@ expect(get())
           TOPLEVEL[get] <- $FuncObj(get, dummy.get, {})
           n2 <- TOPLEVEL[expect]
           n3 <- TOPLEVEL[get]
-          n4 <- n3()
-          n5 <- n2(n4)
+          n4 <- $Call(n3, None)
+          n5 <- $Call(n2, n4, None)
           return None
 
 
@@ -619,7 +619,7 @@ def f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
-          n2 <- $Compare.eq(n0, n1)
+          n2 <- $Compare.eq(n0, n1, None)
           return n2 |}]
 
 
@@ -632,7 +632,7 @@ let%expect_test _ =
 
       toplevel:
         b0:
-          n0 <- $Compare.neq(true, false)
+          n0 <- $Compare.neq(true, false, None)
           return None |}]
 
 
@@ -693,7 +693,7 @@ def f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
-          n2 <- $Compare.gt(n0, n1)
+          n2 <- $Compare.gt(n0, n1, None)
           return n2 |}]
 
 
@@ -717,7 +717,7 @@ def f(x, y):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
-          n2 <- $Compare.le(n0, n1)
+          n2 <- $Compare.le(n0, n1, None)
           return n2 |}]
 
 
@@ -755,7 +755,7 @@ def in_not_check(x, l):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[l]
-          n2 <- $Compare.in(n0, n1)
+          n2 <- $Compare.in(n0, n1, None)
           return n2
 
 
@@ -763,21 +763,21 @@ def in_not_check(x, l):
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[l]
-          n2 <- $Compare.not_in(n0, n1)
+          n2 <- $Compare.not_in(n0, n1, None)
           return n2
 
 
       dummy.is_check:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Compare.is(n0, None)
+          n1 <- $Compare.is(n0, None, None)
           return n1
 
 
       dummy.is_not_check:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Compare.is_not(n0, None)
+          n1 <- $Compare.is_not(n0, None, None)
           return n1 |}]
 
 
@@ -806,17 +806,21 @@ def f(x, y, z):
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
           n2 <- LOCAL[z]
-          return (n0, n1, n2) |}]
+          return (unpacked)(n0, n1, n2) |}]
 
 
 let%expect_test _ =
-  let source = {|
+  let source =
+    {|
 l = [1, 2, 3]
 print(l)
 
 def build_list():
           return [1, 2, 3]
-|} in
+
+[x, y, z] = build_list()
+|}
+  in
   PyIR.test source ;
   [%expect
     {|
@@ -824,17 +828,22 @@ def build_list():
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [1, 2, 3]
+          TOPLEVEL[l] <- (unpacked)[1, 2, 3]
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[l]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           TOPLEVEL[build_list] <- $FuncObj(build_list, dummy.build_list, {})
+          n3 <- TOPLEVEL[build_list]
+          n4 <- $Call(n3, None)
+          TOPLEVEL[x] <- n4[0]
+          TOPLEVEL[y] <- n4[1]
+          TOPLEVEL[z] <- n4[2]
           return None
 
 
       dummy.build_list:
         b0:
-          return [1, 2, 3] |}]
+          return (unpacked)[1, 2, 3] |}]
 
 
 let%expect_test _ =
@@ -863,30 +872,30 @@ def f(foo, bar):
       dummy.f:
         b0:
           n0 <- LOCAL[foo]
-          n1 <- n0()
-          n2 <- n1.__enter__()
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
           LOCAL[foo0] <- n2
           n3 <- LOCAL[bar]
-          n4 <- n3()
-          n5 <- n4.__enter__()
+          n4 <- $Call(n3, None)
+          n5 <- $CallMethod[__enter__](n4, None)
           LOCAL[bar0] <- n5
           n6 <- GLOBAL[print]
           n7 <- LOCAL[bar0]
-          n8 <- n6(n7)
+          n8 <- $Call(n6, n7, None)
           jmp b1
 
         b1:
-          n9 <- n4.__enter__(None, None, None)
+          n9 <- $CallMethod[__enter__](n4, None, None, None, None)
           jmp b2
 
         b2:
           n10 <- GLOBAL[print]
           n11 <- LOCAL[foo0]
-          n12 <- n10(n11)
+          n12 <- $Call(n10, n11, None)
           jmp b3
 
         b3:
-          n13 <- n1.__enter__(None, None, None)
+          n13 <- $CallMethod[__enter__](n1, None, None, None, None)
           return 42 |}]
 
 
@@ -906,7 +915,7 @@ def f():
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           TOPLEVEL[a] <- n1[0]
           TOPLEVEL[b] <- n1[1]
           return None
@@ -933,7 +942,7 @@ f(0, y=2, x=1)
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0(0, y= 2, x= 1)
+          n1 <- $Call(n0, 0, 2, 1, ("y","x"))
           return None
 
 
@@ -968,12 +977,12 @@ def f(m, a, b, c):
           n0 <- LOCAL[a]
           n1 <- LOCAL[b]
           n2 <- LOCAL[m]
-          n3 <- $Compare.not_in((n0, n1), n2)
+          n3 <- $Compare.not_in((unpacked)(n0, n1), n2, None)
           if n3 then jmp b1 else jmp b2
 
         b1:
           n10 <- LOCAL[b]
-          n11 <- $Inplace.Subtract(n10, 1)
+          n11 <- $Inplace.Subtract(n10, 1, None)
           LOCAL[b] <- n11
           jmp b0
 
@@ -981,12 +990,12 @@ def f(m, a, b, c):
           n4 <- LOCAL[a]
           n5 <- LOCAL[c]
           n6 <- LOCAL[m]
-          n7 <- $Compare.not_in((n4, n5), n6)
+          n7 <- $Compare.not_in((unpacked)(n4, n5), n6, None)
           if n7 then jmp b3 else jmp b4
 
         b3:
           n8 <- LOCAL[c]
-          n9 <- $Inplace.Add(n8, 1)
+          n9 <- $Inplace.Add(n8, 1, None)
           LOCAL[c] <- n9
           jmp b2
 
@@ -1019,26 +1028,26 @@ def test_arguments(x, y, width):
       dummy.f:
         b0:
           n0 <- LOCAL[name]
-          n1 <- $FormatFn.repr(n0)
-          n2 <- $Format(n1, None)
+          n1 <- $FormatFn.repr(n0, None)
+          n2 <- $Format(n1, None, None)
           n3 <- LOCAL[name]
-          n4 <- $FormatFn.str(n3)
-          n5 <- $Format(n4, None)
+          n4 <- $FormatFn.str(n3, None)
+          n5 <- $Format(n4, None, None)
           n6 <- LOCAL[name]
-          n7 <- $FormatFn.ascii(n6)
-          n8 <- $Format(n7, None)
-          return $Concat("foo.", n2, n5, n8)
+          n7 <- $FormatFn.ascii(n6, None)
+          n8 <- $Format(n7, None, None)
+          return $Concat(unpacked)("foo.", n2, n5, n8)
 
 
       dummy.test_arguments:
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
-          n2 <- $Binary.Multiply(n0, n1)
+          n2 <- $Binary.Multiply(n0, n1, None)
           n3 <- LOCAL[width]
-          n4 <- $Format(n3, None)
-          n5 <- $Format(n2, n4)
-          return $Concat("x=", n5) |}]
+          n4 <- $Format(n3, None, None)
+          n5 <- $Format(n2, n4, None)
+          return $Concat(unpacked)("x=", n5) |}]
 
 
 let%expect_test _ =
@@ -1074,28 +1083,28 @@ def inv(x):
       dummy.inv:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Unary.Invert(n0)
+          n1 <- $Unary.Invert(n0, None)
           return n1
 
 
       dummy.neg:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Unary.Negative(n0)
+          n1 <- $Unary.Negative(n0, None)
           return n1
 
 
       dummy.pos:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Unary.Positive(n0)
+          n1 <- $Unary.Positive(n0, None)
           return n1
 
 
       dummy.test_not:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $Unary.Not(n0)
+          n1 <- $Unary.Not(n0, None)
           return n1 |}]
 
 
@@ -1135,22 +1144,22 @@ print(g()) # prints 2
           GLOBAL[gx] <- 100
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0(42)
+          n1 <- $Call(n0, 42, None)
           TOPLEVEL[g] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[g]
-          n4 <- n3()
-          n5 <- n2(n4)
+          n4 <- $Call(n3, None)
+          n5 <- $Call(n2, n4, None)
           return None
 
 
       dummy.f:
         b0:
-          n0 <- $StoreDeref[1,"lx"](1000)
-          n1 <- $LoadClosure[0,"ax"]()
-          n2 <- $LoadClosure[1,"lx"]()
+          n0 <- $StoreDeref[1,"lx"](1000, None)
+          n1 <- $LoadClosure[0,"ax"](None)
+          n2 <- $LoadClosure[1,"lx"](None)
           LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
-          n3 <- $StoreDeref[1,"lx"](1664)
+          n3 <- $StoreDeref[1,"lx"](1664, None)
           n4 <- LOCAL[inner]
           return n4
 
@@ -1160,19 +1169,19 @@ print(g()) # prints 2
           LOCAL[ix] <- 20
           n0 <- GLOBAL[print]
           n1 <- GLOBAL[gx]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           n3 <- GLOBAL[print]
-          n4 <- $LoadDeref[0,"ax"]()
-          n5 <- n3(n4)
+          n4 <- $LoadDeref[0,"ax"](None)
+          n5 <- $Call(n3, n4, None)
           n6 <- GLOBAL[print]
-          n7 <- $LoadDeref[1,"lx"]()
-          n8 <- n6(n7)
+          n7 <- $LoadDeref[1,"lx"](None)
+          n8 <- $Call(n6, n7, None)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[ix]
-          n11 <- n9(n10)
+          n11 <- $Call(n9, n10, None)
           GLOBAL[gx] <- 10
-          n12 <- $StoreDeref[1,"lx"](2)
-          n13 <- $LoadDeref[1,"lx"]()
+          n12 <- $StoreDeref[1,"lx"](2, None)
+          n13 <- $LoadDeref[1,"lx"](None)
           return n13 |}]
 
 
@@ -1199,19 +1208,19 @@ def f(l):
       toplevel:
         b0:
           n0 <- TOPLEVEL[l]
-          n1 <- $GetIter(n0)
-          n2 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n1)
+          n1 <- $GetIter(n0, None)
+          n2 <- $Call($FuncObj(<listcomp>, dummy.<listcomp>, {}), n1, None)
           TOPLEVEL[g] <- n2
           n3 <- TOPLEVEL[l]
-          n4 <- $GetIter(n3)
-          n5 <- $FuncObj(<listcomp>, dummy.<listcomp>, {})(n4)
+          n4 <- $GetIter(n3, None)
+          n5 <- $Call($FuncObj(<listcomp>, dummy.<listcomp>, {}), n4, None)
           TOPLEVEL[g0] <- n5
           n6 <- TOPLEVEL[print]
           n7 <- TOPLEVEL[g]
-          n8 <- n6(n7)
+          n8 <- $Call(n6, n7, None)
           n9 <- TOPLEVEL[print]
           n10 <- TOPLEVEL[g0]
-          n11 <- n9(n10)
+          n11 <- $Call(n9, n10, None)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return None
 
@@ -1222,19 +1231,19 @@ def f(l):
           jmp b1
 
         b1:
-          n1 <- $NextIter(n0)
-          n2 <- $HasNextIter(n0)
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
           if n2 then jmp b2 else jmp b3
 
         b2:
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 2)
-          n5 <- $ListAppend([], n4)
+          n4 <- $Binary.Add(n3, 2, None)
+          n5 <- $ListAppend((unpacked)[], n4, None)
           jmp b1
 
         b3:
-          return []
+          return (unpacked)[]
 
 
       dummy.f.<listcomp>:
@@ -1243,37 +1252,37 @@ def f(l):
           jmp b1
 
         b1:
-          n1 <- $NextIter(n0)
-          n2 <- $HasNextIter(n0)
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
           if n2 then jmp b2 else jmp b3
 
         b2:
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 2)
-          n5 <- $ListAppend([], n4)
+          n4 <- $Binary.Add(n3, 2, None)
+          n5 <- $ListAppend((unpacked)[], n4, None)
           jmp b1
 
         b3:
-          return []
+          return (unpacked)[]
 
 
       dummy.f:
         b0:
           n0 <- LOCAL[l]
-          n1 <- $GetIter(n0)
-          n2 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n1)
+          n1 <- $GetIter(n0, None)
+          n2 <- $Call($FuncObj(<listcomp>, dummy.f.<listcomp>, {}), n1, None)
           LOCAL[r] <- n2
           n3 <- LOCAL[l]
-          n4 <- $GetIter(n3)
-          n5 <- $FuncObj(<listcomp>, dummy.f.<listcomp>, {})(n4)
+          n4 <- $GetIter(n3, None)
+          n5 <- $Call($FuncObj(<listcomp>, dummy.f.<listcomp>, {}), n4, None)
           LOCAL[r0] <- n5
           n6 <- GLOBAL[print]
           n7 <- LOCAL[r]
-          n8 <- n6(n7)
+          n8 <- $Call(n6, n7, None)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[r0]
-          n11 <- n9(n10)
+          n11 <- $Call(n9, n10, None)
           return None |}]
 
 
@@ -1308,20 +1317,20 @@ def g(l):
           jmp b1
 
         b1:
-          n1 <- $NextIter(n0)
-          n2 <- $HasNextIter(n0)
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
           if n2 then jmp b2 else jmp b3
 
         b2:
           LOCAL[num] <- n1
           n3 <- LOCAL[num]
           n4 <- LOCAL[num]
-          n5 <- $Binary.Power(n4, 2)
-          n6 <- $DictSetItem({||}, n3, n5)
+          n5 <- $Binary.Power(n4, 2, None)
+          n6 <- $DictSetItem((unpacked){||}, n3, n5, None)
           jmp b1
 
         b3:
-          return {||}
+          return (unpacked){||}
 
 
       dummy.f.<setcomp>:
@@ -1330,26 +1339,26 @@ def g(l):
           jmp b1
 
         b1:
-          n1 <- $NextIter(n0)
-          n2 <- $HasNextIter(n0)
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
           if n2 then jmp b2 else jmp b3
 
         b2:
           LOCAL[x] <- n1
           n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 1)
-          n5 <- $SetAdd({}, n4)
+          n4 <- $Binary.Add(n3, 1, None)
+          n5 <- $SetAdd((unpacked){}, n4, None)
           jmp b1
 
         b3:
-          return {}
+          return (unpacked){}
 
 
       dummy.f:
         b0:
           n0 <- LOCAL[l]
-          n1 <- $GetIter(n0)
-          n2 <- $FuncObj(<setcomp>, dummy.f.<setcomp>, {})(n1)
+          n1 <- $GetIter(n0, None)
+          n2 <- $Call($FuncObj(<setcomp>, dummy.f.<setcomp>, {}), n1, None)
           LOCAL[r] <- n2
           n3 <- LOCAL[r]
           return n3
@@ -1358,8 +1367,8 @@ def g(l):
       dummy.g:
         b0:
           n0 <- LOCAL[l]
-          n1 <- $GetIter(n0)
-          n2 <- $FuncObj(<dictcomp>, dummy.g.<dictcomp>, {})(n1)
+          n1 <- $GetIter(n0, None)
+          n2 <- $Call($FuncObj(<dictcomp>, dummy.g.<dictcomp>, {}), n1, None)
           LOCAL[squared_dict] <- n2
           n3 <- GLOBAL[r]
           return n3 |xxx}]
@@ -1398,19 +1407,19 @@ async def g():
       dummy.g:
         b0:
           n0 <- GLOBAL[f]
-          n1 <- n0()
-          n2 <- $GetAwaitable(n1)
-          n3 <- $YieldFrom(n2, None)
+          n1 <- $Call(n0, None)
+          n2 <- $GetAwaitable(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
           if n2 then jmp b1 else jmp b2
 
         b1:
           n6 <- GLOBAL[print]
-          n7 <- n6(0)
+          n7 <- $Call(n6, 0, None)
           jmp b3
 
         b2:
           n4 <- GLOBAL[print]
-          n5 <- n4(1)
+          n5 <- $Call(n4, 1, None)
           jmp b3
 
         b3:
@@ -1449,7 +1458,7 @@ def m(self, x, y, test):
           jmp b3(n3)
 
         b3(n5):
-          n6 <- n0(n1, n5)
+          n6 <- $Call(n0, n1, n5, None)
           return n6 |}]
 
 
@@ -1484,7 +1493,7 @@ def m(self, x, y, test):
           jmp b3(n2)
 
         b3(n4):
-          n5 <- n0.foo(n4)
+          n5 <- $CallMethod[foo](n0, n4, None)
           return n5 |}]
 
 
@@ -1518,7 +1527,7 @@ def m(x, y, test):
           jmp b3(n1)
 
         b3(n3):
-          n4 <- n3.foo()
+          n4 <- $CallMethod[foo](n3, None)
           return n4 |}]
 
 
@@ -1544,24 +1553,24 @@ o.foo()
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- n1()
+          n2 <- $Call(n1, None)
           TOPLEVEL[o] <- n2
           n3 <- TOPLEVEL[o]
-          n4 <- n3.foo()
+          n4 <- $CallMethod[foo](n3, None)
           n5 <- TOPLEVEL[o]
           n5.foo <- $FuncObj(<lambda>, dummy.<lambda>, {})
           n6 <- TOPLEVEL[o]
-          n7 <- n6.foo()
+          n7 <- $CallMethod[foo](n6, None)
           return None
 
 
       dummy.<lambda>:
         b0:
           n0 <- GLOBAL[print]
-          n1 <- n0("I am not foo")
+          n1 <- $Call(n0, "I am not foo", None)
           return n1
 
 
@@ -1577,7 +1586,7 @@ o.foo()
       dummy.C.foo:
         b0:
           n0 <- GLOBAL[print]
-          n1 <- n0("I am foo")
+          n1 <- $Call(n0, "I am foo", None)
           return None |}]
 
 
@@ -1596,7 +1605,7 @@ res = dict.attr(0 if not False else 1)
           jmp b2
 
         b2:
-          n1 <- n0.attr(0)
+          n1 <- $CallMethod[attr](n0, 0, None)
           TOPLEVEL[res] <- n1
           return None |}]
 
@@ -1625,31 +1634,31 @@ async def foo():
         b0:
           n0 <- GLOBAL[range]
           n1 <- GLOBAL[num]
-          n2 <- n0(n1)
-          n3 <- $GetIter(n2)
+          n2 <- $Call(n0, n1, None)
+          n3 <- $GetIter(n2, None)
           jmp b1
 
         b1:
-          n4 <- $NextIter(n3)
-          n5 <- $HasNextIter(n3)
+          n4 <- $NextIter(n3, None)
+          n5 <- $HasNextIter(n3, None)
           if n5 then jmp b2 else jmp b6
 
         b2:
           LOCAL[i] <- n4
           n6 <- GLOBAL[read]
-          n7 <- n6()
-          n8 <- $GetAwaitable(n7)
-          n9 <- $YieldFrom(n8, None)
-          n10 <- n8.__enter__()
-          n11 <- $GetAwaitable(n10)
-          n12 <- $YieldFrom(n11, None)
+          n7 <- $Call(n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
+          n10 <- $CallMethod[__enter__](n8, None)
+          n11 <- $GetAwaitable(n10, None)
+          n12 <- $YieldFrom(n11, None, None)
           LOCAL[f] <- n11
           jmp b3
 
         b3:
-          n13 <- n8.__enter__(None, None, None)
-          n14 <- $GetAwaitable(n13)
-          n15 <- $YieldFrom(n14, None)
+          n13 <- $CallMethod[__enter__](n8, None, None, None, None)
+          n14 <- $GetAwaitable(n13, None)
+          n15 <- $YieldFrom(n14, None, None)
           return None
 
         b6:

@@ -24,20 +24,20 @@ for x in range(10):
       toplevel:
         b0:
           n0 <- TOPLEVEL[range]
-          n1 <- n0(10)
-          n2 <- $GetIter(n1)
+          n1 <- $Call(n0, 10, None)
+          n2 <- $GetIter(n1, None)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
           if n4 then jmp b2 else jmp b3
 
         b2:
           TOPLEVEL[x] <- n3
           n5 <- TOPLEVEL[print]
           n6 <- TOPLEVEL[x]
-          n7 <- n5(n6)
+          n7 <- $Call(n5, n6, None)
           jmp b1
 
         b3:
@@ -69,12 +69,12 @@ def f(x, y, l, bar, toto):
       dummy.f:
         b0:
           n0 <- LOCAL[l]
-          n1 <- $GetIter(n0)
+          n1 <- $GetIter(n0, None)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n1)
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
           if n3 then jmp b2 else jmp b11
 
         b10:
@@ -86,11 +86,11 @@ def f(x, y, l, bar, toto):
         b2:
           LOCAL[x] <- n2
           n4 <- LOCAL[bar]
-          n5 <- n4()
-          n6 <- n5.__enter__()
+          n5 <- $Call(n4, None)
+          n6 <- $CallMethod[__enter__](n5, None)
           n7 <- LOCAL[toto]
-          n8 <- n7()
-          n9 <- n8.__enter__()
+          n8 <- $Call(n7, None)
+          n9 <- $CallMethod[__enter__](n8, None)
           LOCAL[obj] <- n9
           n10 <- LOCAL[y]
           if n10 then jmp b3 else jmp b6
@@ -99,27 +99,27 @@ def f(x, y, l, bar, toto):
           jmp b4
 
         b4:
-          n15 <- n8.__enter__(None, None, None)
+          n15 <- $CallMethod[__enter__](n8, None, None, None, None)
           jmp b5
 
         b5:
-          n16 <- n5.__enter__(None, None, None)
+          n16 <- $CallMethod[__enter__](n5, None, None, None, None)
           jmp b1
 
         b6:
           n11 <- GLOBAL[print]
-          n12 <- n11("nop")
+          n12 <- $Call(n11, "nop", None)
           jmp b7
 
         b7:
-          n13 <- n8.__enter__(None, None, None)
+          n13 <- $CallMethod[__enter__](n8, None, None, None, None)
           jmp b8
 
         b8:
           jmp b9
 
         b9:
-          n14 <- n5.__enter__(None, None, None)
+          n14 <- $CallMethod[__enter__](n5, None, None, None, None)
           jmp b10 |}]
 
 
@@ -146,12 +146,12 @@ def f(match, it, n):
       dummy.f:
         b0:
           n0 <- LOCAL[match]
-          n1 <- $GetIter(n0)
+          n1 <- $GetIter(n0, None)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n1)
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
           if n3 then jmp b2 else jmp b5
 
         b2:
@@ -160,7 +160,7 @@ def f(match, it, n):
           n5 <- LOCAL[n]
           n6 <- n4[n5]
           n7 <- LOCAL[item]
-          n8 <- $Compare.eq(n6, n7)
+          n8 <- $Compare.eq(n6, n7, None)
           if $Not(n8) then jmp b3 else jmp b4
 
         b3:
@@ -169,7 +169,7 @@ def f(match, it, n):
 
         b4:
           n9 <- LOCAL[n]
-          n10 <- $Inplace.Add(n9, 1)
+          n10 <- $Inplace.Add(n9, 1, None)
           LOCAL[n] <- n10
           jmp b1
 
@@ -200,12 +200,12 @@ def f(foo):
       dummy.f:
         b0:
           n0 <- LOCAL[foo]
-          n1 <- $GetIter(n0)
+          n1 <- $GetIter(n0, None)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n1)
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
           if n3 then jmp b2 else jmp b5
 
         b2:
@@ -240,18 +240,18 @@ async def async_loop1():
       dummy.async_loop1:
         b0:
           n0 <- GLOBAL[get_docs]
-          n1 <- n0()
-          n2 <- n1.__aiter__()
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__aiter__](n1, None)
           jmp b1
 
         b1:
-          n3 <- n2.__anext__()
-          n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, None)
+          n3 <- $CallMethod[__anext__](n2, None)
+          n4 <- $GetAwaitable(n3, None)
+          n5 <- $YieldFrom(n4, None, None)
           LOCAL[doc] <- n4
           n6 <- GLOBAL[foo]
           n7 <- LOCAL[doc]
-          n8 <- n6(n7)
+          n8 <- $Call(n6, n7, None)
           jmp b1 |}]
 
 
@@ -277,21 +277,21 @@ async def async_loop2():
           jmp b1
 
         b1:
-          n1 <- n0.__anext__()
-          n2 <- $GetAwaitable(n1)
-          n3 <- $YieldFrom(n2, None)
+          n1 <- $CallMethod[__anext__](n0, None)
+          n2 <- $GetAwaitable(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
           LOCAL[x] <- n2
           n4 <- LOCAL[x]
-          n5 <- $ListAppend([], n4)
+          n5 <- $ListAppend((unpacked)[], n4, None)
           jmp b1
 
 
       dummy.async_loop2:
         b0:
           n0 <- GLOBAL[read]
-          n1 <- n0()
-          n2 <- n1.__aiter__()
-          n3 <- $FuncObj(<listcomp>, dummy.async_loop2.<listcomp>, {})(n2)
-          n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, None)
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__aiter__](n1, None)
+          n3 <- $Call($FuncObj(<listcomp>, dummy.async_loop2.<listcomp>, {}), n2, None)
+          n4 <- $GetAwaitable(n3, None)
+          n5 <- $YieldFrom(n4, None, None)
           return None |}]

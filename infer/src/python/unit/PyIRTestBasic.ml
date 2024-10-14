@@ -39,7 +39,7 @@ print(x)
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           return None |}]
 
 
@@ -61,8 +61,8 @@ print(x + y)
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- TOPLEVEL[y]
-          n3 <- $Binary.Add(n1, n2)
-          n4 <- n0(n3)
+          n3 <- $Binary.Add(n1, n2, None)
+          n4 <- $Call(n0, n3, None)
           return None |}]
 
 
@@ -84,8 +84,8 @@ print(x - y)
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- TOPLEVEL[y]
-          n3 <- $Binary.Subtract(n1, n2)
-          n4 <- n0(n3)
+          n3 <- $Binary.Subtract(n1, n2, None)
+          n4 <- $Call(n0, n3, None)
           return None |}]
 
 
@@ -104,11 +104,11 @@ print(x)
         b0:
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
-          n1 <- $Inplace.Add(n0, 10)
+          n1 <- $Inplace.Add(n0, 10, None)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           return None |}]
 
 
@@ -127,11 +127,11 @@ print(x)
         b0:
           TOPLEVEL[x] <- 42
           n0 <- TOPLEVEL[x]
-          n1 <- $Inplace.Subtract(n0, 10)
+          n1 <- $Inplace.Subtract(n0, 10, None)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           return None |}]
 
 
@@ -178,11 +178,11 @@ l[0:2:1]
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [0, 1, 2, 3, 4, 5]
+          TOPLEVEL[l] <- (unpacked)[0, 1, 2, 3, 4, 5]
           n0 <- TOPLEVEL[l]
-          n1 <- n0[[0:2]]
+          n1 <- n0[(unpacked)[0:2]]
           n2 <- TOPLEVEL[l]
-          n3 <- n2[[0:2:1]]
+          n3 <- n2[(unpacked)[0:2:1]]
           return None |}]
 
 
@@ -195,7 +195,7 @@ let%expect_test _ =
 
       toplevel:
         b0:
-          n0 <- $Compare.neq(true, false)
+          n0 <- $Compare.neq(true, false, None)
           return None |}]
 
 
@@ -211,11 +211,11 @@ print(l[0])
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [1, 2, 3]
+          TOPLEVEL[l] <- (unpacked)[1, 2, 3]
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[l]
           n2 <- n1[0]
-          n3 <- n0(n2)
+          n3 <- $Call(n0, n2, None)
           return None |}]
 
 
@@ -232,7 +232,7 @@ l[x] = 10
 
       toplevel:
         b0:
-          TOPLEVEL[l] <- [1, 2, 3]
+          TOPLEVEL[l] <- (unpacked)[1, 2, 3]
           TOPLEVEL[x] <- 0
           n0 <- TOPLEVEL[l]
           n1 <- TOPLEVEL[x]
@@ -251,7 +251,7 @@ s = {1, 2, 3}
 
       toplevel:
         b0:
-          TOPLEVEL[s] <- {1, 2, 3}
+          TOPLEVEL[s] <- (unpacked){1, 2, 3}
           return None |}]
 
 
@@ -282,15 +282,15 @@ d = { 0x78: "abc", # 1-n decoding mapping
         b0:
           TOPLEVEL[x] <- "1"
           n0 <- TOPLEVEL[x]
-          TOPLEVEL[s] <- {|n0, 1, "2", 2|}
+          TOPLEVEL[s] <- (unpacked){|n0, 1, "2", 2|}
           n1 <- TOPLEVEL[print]
           n2 <- TOPLEVEL[s]
-          n3 <- n1(n2)
+          n3 <- $Call(n1, n2, None)
           TOPLEVEL[s] <- {"a": 42, "b": 1664, }
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[s]
           n6 <- n5["1"]
-          n7 <- n4(n6)
+          n7 <- $Call(n4, n6, None)
           TOPLEVEL[d] <- {1: None, 120: "abc", 121: "", "abc": 120, }
           return None |xxx}]
 
@@ -308,10 +308,10 @@ fp.write("yolo")
       toplevel:
         b0:
           n0 <- TOPLEVEL[open]
-          n1 <- n0("foo.txt", "wt")
+          n1 <- $Call(n0, "foo.txt", "wt", None)
           TOPLEVEL[fp] <- n1
           n2 <- TOPLEVEL[fp]
-          n3 <- n2.write("yolo")
+          n3 <- $CallMethod[write](n2, "yolo", None)
           return None |}]
 
 
@@ -328,15 +328,15 @@ with open("foo.txt", "wt") as fp:
       toplevel:
         b0:
           n0 <- TOPLEVEL[open]
-          n1 <- n0("foo.txt", "wt")
-          n2 <- n1.__enter__()
+          n1 <- $Call(n0, "foo.txt", "wt", None)
+          n2 <- $CallMethod[__enter__](n1, None)
           TOPLEVEL[fp] <- n2
           n3 <- TOPLEVEL[fp]
-          n4 <- n3.write("yolo")
+          n4 <- $CallMethod[write](n3, "yolo", None)
           jmp b1
 
         b1:
-          n5 <- n1.__enter__(None, None, None)
+          n5 <- $CallMethod[__enter__](n1, None, None, None, None)
           jmp b2
 
         b2:
@@ -364,20 +364,20 @@ print(result)
 
       toplevel:
         b0:
-          TOPLEVEL[values] <- [1, 2, [3, 4], 5]
+          TOPLEVEL[values] <- (unpacked)[1, 2, (unpacked)[3, 4], 5]
           TOPLEVEL[values2] <- ("a","b")
           n0 <- TOPLEVEL[values]
           n1 <- TOPLEVEL[values2]
-          TOPLEVEL[result] <- (packed)($Packed([10, 100]), $Packed(n0), $Packed(n1))
+          TOPLEVEL[result] <- ($Packed((unpacked)[10, 100]), $Packed(n0), $Packed(n1))
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[result]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           n5 <- TOPLEVEL[values]
           n6 <- TOPLEVEL[values2]
-          TOPLEVEL[result] <- (packed)[$Packed(n5), $Packed(n6)]
+          TOPLEVEL[result] <- [$Packed(n5), $Packed(n6)]
           n7 <- TOPLEVEL[print]
           n8 <- TOPLEVEL[result]
-          n9 <- n7(n8)
+          n9 <- $Call(n7, n8, None)
           return None |}]
 
 
@@ -397,9 +397,106 @@ print(x) # will print 1
           TOPLEVEL[x] <- 1
           n0 <- TOPLEVEL[x]
           TOPLEVEL[x] <- 0
-          n1 <- $Binary.Add(n0, 0)
+          n1 <- $Binary.Add(n0, 0, None)
           TOPLEVEL[x] <- n1
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           return None |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+x = f(0, 1)
+x = f(0, b=1)
+x = f(a=0, b=1)
+x = f(0, *args)
+x = f(0, **d)
+x = f(0, *args, **d)
+x = f(0, *args1, *args2, **d1, **d2)
+x = o.f(0, 1)
+# Python3.8 compile all other method calls without CALL_METHOD!
+x = o.f(0, b=1)
+x = o.f(a=0, b=1)
+x = o.f(0, *args)
+x = o.f(0, **d)
+x = o.f(0, *args, **d)
+x = o.f(0, *args1, *args2, **d1, **d2)
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {xxx|
+    module dummy:
+
+      toplevel:
+        b0:
+          n0 <- TOPLEVEL[f]
+          n1 <- $Call(n0, 0, 1, None)
+          TOPLEVEL[x] <- n1
+          n2 <- TOPLEVEL[f]
+          n3 <- $Call(n2, 0, 1, ("b"))
+          TOPLEVEL[x] <- n3
+          n4 <- TOPLEVEL[f]
+          n5 <- $Call(n4, 0, 1, ("a","b"))
+          TOPLEVEL[x] <- n5
+          n6 <- TOPLEVEL[f]
+          n7 <- TOPLEVEL[args]
+          n8 <- $CallFunctionEx(n6, ($Packed((0)), $Packed(n7)), None, None)
+          TOPLEVEL[x] <- n8
+          n9 <- TOPLEVEL[f]
+          n10 <- TOPLEVEL[d]
+          n11 <- $CallFunctionEx(n9, (0), n10, None)
+          TOPLEVEL[x] <- n11
+          n12 <- TOPLEVEL[f]
+          n13 <- TOPLEVEL[args]
+          n14 <- TOPLEVEL[d]
+          n15 <- $CallFunctionEx(n12, ($Packed((0)), $Packed(n13)), n14, None)
+          TOPLEVEL[x] <- n15
+          n16 <- TOPLEVEL[f]
+          n17 <- TOPLEVEL[args1]
+          n18 <- TOPLEVEL[args2]
+          n19 <- TOPLEVEL[d1]
+          n20 <- TOPLEVEL[d2]
+          n21 <- $CallFunctionEx(n16, ($Packed((0)), $Packed(n17), $Packed(n18)), {|
+                                 $Packed(n19), $Packed(n20)|}, None)
+          TOPLEVEL[x] <- n21
+          n22 <- TOPLEVEL[o]
+          n23 <- $CallMethod[f](n22, 0, 1, None)
+          TOPLEVEL[x] <- n23
+          n24 <- TOPLEVEL[o]
+          n25 <- n24.f
+          n26 <- $Call(n25, 0, 1, ("b"))
+          TOPLEVEL[x] <- n26
+          n27 <- TOPLEVEL[o]
+          n28 <- n27.f
+          n29 <- $Call(n28, 0, 1, ("a","b"))
+          TOPLEVEL[x] <- n29
+          n30 <- TOPLEVEL[o]
+          n31 <- n30.f
+          n32 <- TOPLEVEL[args]
+          n33 <- $CallFunctionEx(n31, ($Packed((0)), $Packed(n32)), None, None)
+          TOPLEVEL[x] <- n33
+          n34 <- TOPLEVEL[o]
+          n35 <- n34.f
+          n36 <- TOPLEVEL[d]
+          n37 <- $CallFunctionEx(n35, (0), n36, None)
+          TOPLEVEL[x] <- n37
+          n38 <- TOPLEVEL[o]
+          n39 <- n38.f
+          n40 <- TOPLEVEL[args]
+          n41 <- TOPLEVEL[d]
+          n42 <- $CallFunctionEx(n39, ($Packed((0)), $Packed(n40)), n41, None)
+          TOPLEVEL[x] <- n42
+          n43 <- TOPLEVEL[o]
+          n44 <- n43.f
+          n45 <- TOPLEVEL[args1]
+          n46 <- TOPLEVEL[args2]
+          n47 <- TOPLEVEL[d1]
+          n48 <- TOPLEVEL[d2]
+          n49 <- $CallFunctionEx(n44, ($Packed((0)), $Packed(n45), $Packed(n46)), {|
+                                 $Packed(n47), $Packed(n48)|}, None)
+          TOPLEVEL[x] <- n49
+          return None
+|xxx}]

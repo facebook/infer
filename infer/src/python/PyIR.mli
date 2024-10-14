@@ -59,6 +59,7 @@ module BuiltinCaller : sig
     | BuildClass
     | Format
     | FormatFn of format_function
+    | CallFunctionEx
     | Inplace of Builtin.binary_op
     | ImportName of string
     | ImportFrom of string
@@ -116,16 +117,17 @@ module Exp : sig
 end
 
 module Stmt : sig
-  type call_arg = {name: string option; value: Exp.t}
+  type call_arg = Exp.t
 
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: string; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
-    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
-    | CallMethod of {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list}
-    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list}
+    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
+    | CallMethod of
+        {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
     | SetupAnnotations
 end
 

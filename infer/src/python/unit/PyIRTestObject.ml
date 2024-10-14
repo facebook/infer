@@ -38,17 +38,17 @@ c.set(42)
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- n1(0, "a")
+          n2 <- $Call(n1, 0, "a", None)
           TOPLEVEL[c] <- n2
           n3 <- TOPLEVEL[c]
           n4 <- n3.x
           n5 <- TOPLEVEL[c]
-          n6 <- n5.get()
+          n6 <- $CallMethod[get](n5, None)
           n7 <- TOPLEVEL[c]
-          n8 <- n7.set(42)
+          n8 <- $CallMethod[set](n7, 42, None)
           return None
 
 
@@ -134,28 +134,28 @@ print(c.z)
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(IntBox, dummy.IntBox, {}), "IntBox")
+          n0 <- $BuildClass($FuncObj(IntBox, dummy.IntBox, {}), "IntBox", None)
           TOPLEVEL[IntBox] <- n0
           n1 <- TOPLEVEL[IntBox]
           n2 <- TOPLEVEL[int]
           TOPLEVEL[getX] <- $FuncObj(getX, dummy.getX, {})
           n3 <- TOPLEVEL[IntBox]
-          n4 <- n3(10)
+          n4 <- $Call(n3, 10, None)
           TOPLEVEL[c] <- n4
           n5 <- TOPLEVEL[c]
           n6 <- n5.x
           n7 <- TOPLEVEL[c]
           n7.z <- 10
           n8 <- TOPLEVEL[c]
-          n9 <- n8.get()
+          n9 <- $CallMethod[get](n8, None)
           n10 <- TOPLEVEL[c]
-          n11 <- n10.set(42)
+          n11 <- $CallMethod[set](n10, 42, None)
           n12 <- TOPLEVEL[c]
-          n13 <- n12.run()
+          n13 <- $CallMethod[run](n12, None)
           n14 <- TOPLEVEL[print]
           n15 <- TOPLEVEL[c]
           n16 <- n15.z
-          n17 <- n14(n16)
+          n17 <- $Call(n14, n16, None)
           return None
 
 
@@ -178,7 +178,7 @@ print(c.z)
           n6 <- TOPLEVEL[staticmethod]
           n7 <- TOPLEVEL[int]
           n8 <- TOPLEVEL[int]
-          n9 <- n6($FuncObj(id, dummy.IntBox.id, {}))
+          n9 <- $Call(n6, $FuncObj(id, dummy.IntBox.id, {}), None)
           TOPLEVEL[id] <- n9
           return None
 
@@ -201,7 +201,7 @@ print(c.z)
       dummy.getX:
         b0:
           n0 <- LOCAL[box]
-          n1 <- n0.get()
+          n1 <- $CallMethod[get](n0, None)
           return n1
 
 
@@ -247,10 +247,10 @@ class D(C):
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1)
+          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1, None)
           TOPLEVEL[D] <- n2
           return None
 
@@ -261,12 +261,12 @@ class D(C):
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
           n1 <- TOPLEVEL[staticmethod]
-          n2 <- n1($FuncObj(f, dummy.C.f, {}))
+          n2 <- $Call(n1, $FuncObj(f, dummy.C.f, {}), None)
           TOPLEVEL[f] <- n2
           n3 <- TOPLEVEL[staticmethod]
           n4 <- TOPLEVEL[int]
           n5 <- TOPLEVEL[int]
-          n6 <- n3($FuncObj(typed_f, dummy.C.typed_f, {}))
+          n6 <- $Call(n3, $FuncObj(typed_f, dummy.C.typed_f, {}), None)
           TOPLEVEL[typed_f] <- n6
           return None
 
@@ -306,10 +306,10 @@ C.f()
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- n1.f()
+          n2 <- $CallMethod[f](n1, None)
           return None
 
 
@@ -319,7 +319,7 @@ C.f()
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
           n1 <- TOPLEVEL[staticmethod]
-          n2 <- n1($FuncObj(f, dummy.C.f, {}))
+          n2 <- $Call(n1, $FuncObj(f, dummy.C.f, {}), None)
           TOPLEVEL[f] <- n2
           return None
 
@@ -351,9 +351,9 @@ def g(c: C) -> None:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A")
+          n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A", None)
           TOPLEVEL[A] <- n0
-          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n1
           n2 <- TOPLEVEL[C]
           TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
@@ -391,8 +391,8 @@ def g(c: C) -> None:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[c]
           n2 <- n1.a
-          n3 <- n2.f()
-          n4 <- n0(n3)
+          n3 <- $CallMethod[f](n2, None)
+          n4 <- $Call(n0, n3, None)
           return None |}]
 
 
@@ -416,13 +416,13 @@ class C(A, B):
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A")
+          n0 <- $BuildClass($FuncObj(A, dummy.A, {}), "A", None)
           TOPLEVEL[A] <- n0
-          n1 <- $BuildClass($FuncObj(B, dummy.B, {}), "B")
+          n1 <- $BuildClass($FuncObj(B, dummy.B, {}), "B", None)
           TOPLEVEL[B] <- n1
           n2 <- TOPLEVEL[A]
           n3 <- TOPLEVEL[B]
-          n4 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n2, n3)
+          n4 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n2, n3, None)
           TOPLEVEL[C] <- n4
           return None
 
@@ -473,11 +473,11 @@ cs[0].x
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           TOPLEVEL[build] <- $FuncObj(build, dummy.build, {})
           n1 <- TOPLEVEL[build]
-          n2 <- n1()
+          n2 <- $Call(n1, None)
           TOPLEVEL[cs] <- n2
           n3 <- TOPLEVEL[cs]
           n4 <- n3[0]
@@ -504,8 +504,8 @@ cs[0].x
       dummy.build:
         b0:
           n0 <- GLOBAL[C]
-          n1 <- n0()
-          return [n1] |}]
+          n1 <- $Call(n0, None)
+          return (unpacked)[n1] |}]
 
 
 let%expect_test _ =
@@ -533,7 +533,7 @@ f()
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           return None
 
 
@@ -556,13 +556,13 @@ f()
 
       dummy.f:
         b0:
-          n0 <- $BuildClass($FuncObj(A, dummy.f.A, {}), "A")
+          n0 <- $BuildClass($FuncObj(A, dummy.f.A, {}), "A", None)
           LOCAL[A] <- n0
           n1 <- LOCAL[A]
-          n2 <- n1()
+          n2 <- $Call(n1, None)
           LOCAL[a] <- n2
           n3 <- LOCAL[a]
-          n4 <- n3.get()
+          n4 <- $CallMethod[get](n3, None)
           return n4
 
 
@@ -588,10 +588,10 @@ class D(C):
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1)
+          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1, None)
           TOPLEVEL[D] <- n2
           return None
 
@@ -638,15 +638,15 @@ class D0(C0):
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1)
+          n2 <- $BuildClass($FuncObj(D, dummy.D, {}), "D", n1, None)
           TOPLEVEL[D] <- n2
-          n3 <- $BuildClass($FuncObj(C0, dummy.C0, {}), "C0")
+          n3 <- $BuildClass($FuncObj(C0, dummy.C0, {}), "C0", None)
           TOPLEVEL[C0] <- n3
           n4 <- TOPLEVEL[C0]
-          n5 <- $BuildClass($FuncObj(D0, dummy.D0, {}), "D0", n4)
+          n5 <- $BuildClass($FuncObj(D0, dummy.D0, {}), "D0", n4, None)
           TOPLEVEL[D0] <- n5
           return None
 
@@ -673,9 +673,9 @@ class D0(C0):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "D"
-          n1 <- $LoadClosure[0,"__class__"]()
+          n1 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.D.__init__, {})
-          n2 <- $LoadClosure[0,"__class__"]()
+          n2 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__classcell__] <- n2
           return n2
 
@@ -685,9 +685,9 @@ class D0(C0):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "D0"
-          n1 <- $LoadClosure[0,"__class__"]()
+          n1 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.D0.__init__, {})
-          n2 <- $LoadClosure[0,"__class__"]()
+          n2 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__classcell__] <- n2
           return n2
 
@@ -703,16 +703,16 @@ class D0(C0):
       dummy.D.__init__:
         b0:
           n0 <- GLOBAL[super]
-          n1 <- n0()
-          n2 <- n1.__init__()
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__init__](n1, None)
           return None
 
 
       dummy.D0.__init__:
         b0:
           n0 <- GLOBAL[super]
-          n1 <- n0()
-          n2 <- n1.__init__(42)
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__init__](n1, 42, None)
           return None |}]
 
 
@@ -733,11 +733,11 @@ class C(foo.D):
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(None, 0)
+          n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
           n1 <- TOPLEVEL[foo]
           n2 <- n1.D
-          n3 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n2)
+          n3 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n2, None)
           TOPLEVEL[C] <- n3
           return None
 
@@ -747,9 +747,9 @@ class C(foo.D):
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
-          n1 <- $LoadClosure[0,"__class__"]()
+          n1 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__init__] <- $FuncObj(__init__, dummy.C.__init__, {})
-          n2 <- $LoadClosure[0,"__class__"]()
+          n2 <- $LoadClosure[0,"__class__"](None)
           TOPLEVEL[__classcell__] <- n2
           return n2
 
@@ -757,9 +757,9 @@ class C(foo.D):
       dummy.C.__init__:
         b0:
           n0 <- GLOBAL[super]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           n2 <- LOCAL[x]
-          n3 <- n1.__init__(n2)
+          n3 <- $CallMethod[__init__](n1, n2, None)
           return None |}]
 
 
@@ -791,13 +791,13 @@ class C(ABC):
 
       toplevel:
         b0:
-          n0 <- $ImportName(abc)(("ABC","abstractmethod"), 0)
-          n1 <- $ImportFrom(ABC)(n0)
+          n0 <- $ImportName(abc)(("ABC","abstractmethod"), 0, None)
+          n1 <- $ImportFrom(ABC)(n0, None)
           TOPLEVEL[ABC] <- n1
-          n2 <- $ImportFrom(abstractmethod)(n0)
+          n2 <- $ImportFrom(abstractmethod)(n0, None)
           TOPLEVEL[abstractmethod] <- n2
           n3 <- TOPLEVEL[ABC]
-          n4 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n3)
+          n4 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n3, None)
           TOPLEVEL[C] <- n4
           return None
 
@@ -808,17 +808,17 @@ class C(ABC):
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
           n1 <- TOPLEVEL[abstractmethod]
-          n2 <- n1($FuncObj(get, dummy.C.get, {}))
+          n2 <- $Call(n1, $FuncObj(get, dummy.C.get, {}), None)
           TOPLEVEL[get] <- n2
           n3 <- TOPLEVEL[abstractmethod]
           n4 <- TOPLEVEL[staticmethod]
-          n5 <- n4($FuncObj(get_static0, dummy.C.get_static0, {}))
-          n6 <- n3(n5)
+          n5 <- $Call(n4, $FuncObj(get_static0, dummy.C.get_static0, {}), None)
+          n6 <- $Call(n3, n5, None)
           TOPLEVEL[get_static0] <- n6
           n7 <- TOPLEVEL[staticmethod]
           n8 <- TOPLEVEL[abstractmethod]
-          n9 <- n8($FuncObj(get_static1, dummy.C.get_static1, {}))
-          n10 <- n7(n9)
+          n9 <- $Call(n8, $FuncObj(get_static1, dummy.C.get_static1, {}), None)
+          n10 <- $Call(n7, n9, None)
           TOPLEVEL[get_static1] <- n10
           return None
 
@@ -859,7 +859,7 @@ class C:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           return None
 
@@ -873,15 +873,15 @@ class C:
           n2 <- TOPLEVEL[x]
           n3 <- TOPLEVEL[y]
           n4 <- TOPLEVEL[z]
-          n5 <- n1(n2, n3, n4)
-          n6 <- n5($FuncObj(f, dummy.C.f, {}))
+          n5 <- $Call(n1, n2, n3, n4, None)
+          n6 <- $Call(n5, $FuncObj(f, dummy.C.f, {}), None)
           TOPLEVEL[f] <- n6
           n7 <- TOPLEVEL[foo]
           n8 <- TOPLEVEL[x]
           n9 <- TOPLEVEL[y]
           n10 <- TOPLEVEL[z]
-          n11 <- n7.bar(n8, n9, n10)
-          n12 <- n11($FuncObj(g, dummy.C.g, {}))
+          n11 <- $CallMethod[bar](n7, n8, n9, n10, None)
+          n12 <- $Call(n11, $FuncObj(g, dummy.C.g, {}), None)
           TOPLEVEL[g] <- n12
           return None
 
@@ -914,11 +914,11 @@ class PwdTest(unittest.TestCase):
 
       toplevel:
         b0:
-          n0 <- $ImportName(unittest)(None, 0)
+          n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
           n1 <- TOPLEVEL[unittest]
           n2 <- n1.TestCase
-          n3 <- $BuildClass($FuncObj(PwdTest, dummy.PwdTest, {}), "PwdTest", n2)
+          n3 <- $BuildClass($FuncObj(PwdTest, dummy.PwdTest, {}), "PwdTest", n2, None)
           TOPLEVEL[PwdTest] <- n3
           return None
 
@@ -938,11 +938,11 @@ class PwdTest(unittest.TestCase):
           n1 <- GLOBAL[type]
           n2 <- LOCAL[e]
           n3 <- n2.pw_gecos
-          n4 <- n1(n3)
+          n4 <- $Call(n1, n3, None)
           n5 <- GLOBAL[str]
           n6 <- GLOBAL[type]
-          n7 <- n6(None)
-          n8 <- n0.assertIn(n4, (n5, n7))
+          n7 <- $Call(n6, None, None)
+          n8 <- $CallMethod[assertIn](n0, n4, (unpacked)(n5, n7), None)
           return None |}]
 
 
@@ -967,7 +967,7 @@ def g():
       toplevel:
         b0:
           n0 <- TOPLEVEL[Exception]
-          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n0)
+          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n0, None)
           TOPLEVEL[C] <- n1
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
@@ -991,7 +991,7 @@ def g():
       dummy.g:
         b0:
           n0 <- GLOBAL[C]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           throw n1 |}]
 
 
@@ -1019,17 +1019,17 @@ f(0, 0, 0, "toto")
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {(s, "zuck"); (y, 1); (z, 2); })
           n1 <- TOPLEVEL[f]
-          n2 <- n1(0)
+          n2 <- $Call(n1, 0, None)
           n3 <- TOPLEVEL[f]
-          n4 <- n3(10, 100)
+          n4 <- $Call(n3, 10, 100, None)
           n5 <- TOPLEVEL[f]
-          n6 <- n5(100, 1000, 0)
+          n6 <- $Call(n5, 100, 1000, 0, None)
           n7 <- TOPLEVEL[f]
-          n8 <- n7(0, 0, 0, "toto")
+          n8 <- $Call(n7, 0, 0, 0, "toto", None)
           return None
 
 
@@ -1062,7 +1062,7 @@ class TestHook:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(TestHook, dummy.TestHook, {}), "TestHook")
+          n0 <- $BuildClass($FuncObj(TestHook, dummy.TestHook, {}), "TestHook", None)
           TOPLEVEL[TestHook] <- n0
           return None
 
@@ -1102,17 +1102,17 @@ c.f(0, 1, 2)
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- n1()
+          n2 <- $Call(n1, None)
           TOPLEVEL[c] <- n2
           n3 <- TOPLEVEL[c]
-          n4 <- n3.f(0)
+          n4 <- $CallMethod[f](n3, 0, None)
           n5 <- TOPLEVEL[c]
-          n6 <- n5.f(0, 1)
+          n6 <- $CallMethod[f](n5, 0, 1, None)
           n7 <- TOPLEVEL[c]
-          n8 <- n7.f(0, 1, 2)
+          n8 <- $CallMethod[f](n7, 0, 1, 2, None)
           return None
 
 
@@ -1129,9 +1129,9 @@ c.f(0, 1, 2)
         b0:
           n0 <- LOCAL[x]
           n1 <- LOCAL[y]
-          n2 <- $Binary.Add(n0, n1)
+          n2 <- $Binary.Add(n0, n1, None)
           n3 <- LOCAL[z]
-          n4 <- $Binary.Add(n2, n3)
+          n4 <- $Binary.Add(n2, n3, None)
           return n4 |}]
 
 
@@ -1147,7 +1147,7 @@ class C:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           return None
 
@@ -1183,7 +1183,7 @@ class defaultdict:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(defaultdict, dummy.defaultdict, {}), "defaultdict")
+          n0 <- $BuildClass($FuncObj(defaultdict, dummy.defaultdict, {}), "defaultdict", None)
           TOPLEVEL[defaultdict] <- n0
           return None
 
@@ -1227,10 +1227,10 @@ def powerset(s):
 
       toplevel:
         b0:
-          n0 <- $ImportName(itertools)(None, 0)
+          n0 <- $ImportName(itertools)(None, 0, None)
           TOPLEVEL[itertools] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
-          n1 <- $BuildClass($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom")
+          n1 <- $BuildClass($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom", None)
           TOPLEVEL[AsyncYieldFrom] <- n1
           TOPLEVEL[powerset] <- $FuncObj(powerset, dummy.powerset, {})
           return None
@@ -1249,8 +1249,8 @@ def powerset(s):
         b0:
           n0 <- LOCAL[self]
           n1 <- n0.obj
-          n2 <- $GetYieldFromIter(n1)
-          n3 <- $YieldFrom(n2, None)
+          n2 <- $GetYieldFromIter(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
           return None
 
 
@@ -1265,15 +1265,15 @@ def powerset(s):
           n0 <- GLOBAL[range]
           n1 <- GLOBAL[len]
           n2 <- LOCAL[s]
-          n3 <- n1(n2)
-          n4 <- $Binary.Add(n3, 1)
-          n5 <- n0(n4)
-          n6 <- $GetIter(n5)
+          n3 <- $Call(n1, n2, None)
+          n4 <- $Binary.Add(n3, 1, None)
+          n5 <- $Call(n0, n4, None)
+          n6 <- $GetIter(n5, None)
           jmp b1
 
         b1:
-          n7 <- $NextIter(n6)
-          n8 <- $HasNextIter(n6)
+          n7 <- $NextIter(n6, None)
+          n8 <- $HasNextIter(n6, None)
           if n8 then jmp b2 else jmp b3
 
         b2:
@@ -1283,10 +1283,10 @@ def powerset(s):
           n11 <- GLOBAL[itertools]
           n12 <- LOCAL[s]
           n13 <- LOCAL[i]
-          n14 <- n11.combinations(n12, n13)
-          n15 <- n9(n10, n14)
-          n16 <- $GetYieldFromIter(n15)
-          n17 <- $YieldFrom(n16, None)
+          n14 <- $CallMethod[combinations](n11, n12, n13, None)
+          n15 <- $Call(n9, n10, n14, None)
+          n16 <- $GetYieldFromIter(n15, None)
+          n17 <- $YieldFrom(n16, None, None)
           jmp b1
 
         b3:
@@ -1328,17 +1328,17 @@ def g(a, b):
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           n1 <- TOPLEVEL[C]
-          n2 <- n1()
+          n2 <- $Call(n1, None)
           TOPLEVEL[c] <- n2
-          n3 <- $Delete(TOPLEVEL[c])()
+          n3 <- $Delete(TOPLEVEL[c])(None)
           n4 <- TOPLEVEL[C]
-          n5 <- n4()
+          n5 <- $Call(n4, None)
           GLOBAL[c0] <- n5
           n6 <- GLOBAL[c0]
-          n7 <- $DeleteAttr(foo)(n6)
+          n7 <- $DeleteAttr(foo)(n6, None)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
           return None
@@ -1354,10 +1354,10 @@ def g(a, b):
 
       dummy.f:
         b0:
-          n0 <- $Delete(GLOBAL[c0])()
-          n1 <- $Delete(LOCAL[x])()
-          n2 <- $StoreDeref[0,"z"](0)
-          n3 <- $LoadClosure[0,"z"]()
+          n0 <- $Delete(GLOBAL[c0])(None)
+          n1 <- $Delete(LOCAL[x])(None)
+          n2 <- $StoreDeref[0,"z"](0, None)
+          n3 <- $LoadClosure[0,"z"](None)
           LOCAL[inner] <- $FuncObj(inner, dummy.f.inner, {})
           return None
 
@@ -1366,16 +1366,16 @@ def g(a, b):
         b0:
           n0 <- LOCAL[a]
           n1 <- LOCAL[b]
-          n2 <- $DeleteSubscr(n0, n1)
+          n2 <- $DeleteSubscr(n0, n1, None)
           return None
 
 
       dummy.f.inner:
         b0:
           n0 <- GLOBAL[print]
-          n1 <- $LoadDeref[0,"z"]()
-          n2 <- n0(n1)
-          n3 <- $DeleteDeref[0,"z")()
+          n1 <- $LoadDeref[0,"z"](None)
+          n2 <- $Call(n0, n1, None)
+          n3 <- $DeleteDeref[0,"z")(None)
           return None |}]
 
 
@@ -1398,7 +1398,7 @@ class C:
 
       toplevel:
         b0:
-          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C")
+          n0 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", None)
           TOPLEVEL[C] <- n0
           return None
 
@@ -1417,7 +1417,7 @@ class C:
           n0 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C.f.<locals>.D"
-          n1 <- $LoadClassDeref[0,"binascii"]()
+          n1 <- $LoadClassDeref[0,"binascii"](None)
           n2 <- n1.unhexlify
           TOPLEVEL[g] <- $FuncObj(g, dummy.C.f.D.g, {(unhexlify, n2); })
           return None
@@ -1425,10 +1425,10 @@ class C:
 
       dummy.C.f:
         b0:
-          n0 <- $ImportName(binascii)(None, 0)
-          n1 <- $StoreDeref[0,"binascii"](n0)
-          n2 <- $LoadClosure[0,"binascii"]()
-          n3 <- $BuildClass($FuncObj(D, dummy.C.f.D, {}), "D")
+          n0 <- $ImportName(binascii)(None, 0, None)
+          n1 <- $StoreDeref[0,"binascii"](n0, None)
+          n2 <- $LoadClosure[0,"binascii"](None)
+          n3 <- $BuildClass($FuncObj(D, dummy.C.f.D, {}), "D", None)
           LOCAL[D] <- n3
           return None
 
@@ -1451,7 +1451,7 @@ class C(metaclass=m):
       toplevel:
         b0:
           n0 <- TOPLEVEL[m]
-          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", metaclass= n0)
+          n1 <- $BuildClass($FuncObj(C, dummy.C, {}), "C", n0, ("metaclass"))
           TOPLEVEL[C] <- n1
           return None
 

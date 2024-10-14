@@ -33,13 +33,13 @@ def f(**kwargs):
       dummy.f:
         b0:
           n0 <- LOCAL[kwargs]
-          n1 <- n0.items()
-          n2 <- $GetIter(n1)
+          n1 <- $CallMethod[items](n0, None)
+          n2 <- $GetIter(n1, None)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
           if n4 then jmp b2 else jmp b3
 
         b2:
@@ -48,7 +48,7 @@ def f(**kwargs):
           n5 <- GLOBAL[print]
           n6 <- LOCAL[k]
           n7 <- LOCAL[v]
-          n8 <- n5(n6, n7)
+          n8 <- $Call(n5, n6, n7, None)
           jmp b1
 
         b3:
@@ -92,7 +92,7 @@ start()
           TOPLEVEL[g] <- $FuncObj(g, dummy.g, {})
           TOPLEVEL[start] <- $FuncObj(start, dummy.start, {})
           n0 <- TOPLEVEL[start]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           return None
 
 
@@ -100,24 +100,24 @@ start()
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
-          n2 <- n0("dummy = ", n1)
+          n2 <- $Call(n0, "dummy = ", n1, None)
           n3 <- GLOBAL[print]
           n4 <- LOCAL[dummy2]
-          n5 <- n3("dummy2= ", n4)
+          n5 <- $Call(n3, "dummy2= ", n4, None)
           n6 <- GLOBAL[print]
           n7 <- LOCAL[dummy3]
-          n8 <- n6("dummy3= ", n7)
+          n8 <- $Call(n6, "dummy3= ", n7, None)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[dummy4]
-          n11 <- n9("dummy4= ", n10)
+          n11 <- $Call(n9, "dummy4= ", n10, None)
           n12 <- LOCAL[dummyA]
-          n13 <- n12.items()
-          n14 <- $GetIter(n13)
+          n13 <- $CallMethod[items](n12, None)
+          n14 <- $GetIter(n13, None)
           jmp b1
 
         b1:
-          n15 <- $NextIter(n14)
-          n16 <- $HasNextIter(n14)
+          n15 <- $NextIter(n14, None)
+          n16 <- $HasNextIter(n14, None)
           if n16 then jmp b2 else jmp b3
 
         b2:
@@ -126,8 +126,8 @@ start()
           n17 <- GLOBAL[print]
           n18 <- LOCAL[k]
           n19 <- LOCAL[v]
-          n20 <- "{} = {}".format(n18, n19)
-          n21 <- n17(n20)
+          n20 <- $CallMethod[format]("{} = {}", n18, n19, None)
+          n21 <- $Call(n17, n20, None)
           jmp b1
 
         b3:
@@ -138,16 +138,16 @@ start()
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[dummy]
-          n2 <- n0("dummy = ", n1)
+          n2 <- $Call(n0, "dummy = ", n1, None)
           n3 <- GLOBAL[print]
           n4 <- LOCAL[dummy2]
-          n5 <- n3("dummy2= ", n4)
+          n5 <- $Call(n3, "dummy2= ", n4, None)
           n6 <- GLOBAL[print]
           n7 <- LOCAL[dummy3]
-          n8 <- n6("dummy3= ", n7)
+          n8 <- $Call(n6, "dummy3= ", n7, None)
           n9 <- GLOBAL[print]
           n10 <- LOCAL[dummy4]
-          n11 <- n9("dummy4= ", n10)
+          n11 <- $Call(n9, "dummy4= ", n10, None)
           return None
 
 
@@ -156,12 +156,13 @@ start()
           LOCAL[x] <- (3,4)
           n0 <- GLOBAL[f]
           n1 <- LOCAL[x]
-          n2 <- n0($Packed((packed)($Packed((1,2)), $Packed(n1))), $PackedMap({|"test", 42|})) !packed
+          n2 <- $CallFunctionEx(n0, ($Packed((1,2)), $Packed(n1)), (unpacked){|"test", 42|}, None)
           n3 <- GLOBAL[f]
-          n4 <- n3($Packed((packed)($Packed((1,2)), $Packed(("a","b")))), $PackedMap({|"test", 42|})) !packed
+          n4 <- $CallFunctionEx(n3, ($Packed((1,2)), $Packed(("a","b"))), (unpacked){|
+                                "test", 42|}, None)
           n5 <- GLOBAL[g]
           n6 <- LOCAL[x]
-          n7 <- n5($Packed((packed)($Packed((1,2)), $Packed(n6)))) !packed
+          n7 <- $CallFunctionEx(n5, ($Packed((1,2)), $Packed(n6)), None, None)
           return None |xxx}]
 
 
@@ -195,36 +196,36 @@ def f(foo, a, b, c):
         b0:
           n0 <- LOCAL[foo]
           n1 <- LOCAL[a]
-          n2 <- n0.f(n1)
+          n2 <- $CallMethod[f](n0, n1, None)
           n3 <- LOCAL[foo]
           n4 <- n3.f
           n5 <- LOCAL[b]
-          n6 <- n4($Packed(n5)) !packed
+          n6 <- $CallFunctionEx(n4, n5, None, None)
           n7 <- LOCAL[foo]
           n8 <- n7.f
           n9 <- LOCAL[a]
           n10 <- LOCAL[b]
-          n11 <- n8($Packed((packed)($Packed((n9)), $Packed(n10)))) !packed
+          n11 <- $CallFunctionEx(n8, ($Packed((unpacked)(n9)), $Packed(n10)), None, None)
           n12 <- LOCAL[foo]
           n13 <- n12.f
           n14 <- LOCAL[c]
-          n15 <- n13($Packed(()), $PackedMap(n14)) !packed
+          n15 <- $CallFunctionEx(n13, (unpacked)(), n14, None)
           n16 <- LOCAL[foo]
           n17 <- n16.f
           n18 <- LOCAL[b]
           n19 <- LOCAL[c]
-          n20 <- n17($Packed(n18), $PackedMap(n19)) !packed
+          n20 <- $CallFunctionEx(n17, n18, n19, None)
           n21 <- LOCAL[foo]
           n22 <- n21.f
           n23 <- LOCAL[a]
           n24 <- LOCAL[c]
-          n25 <- n22($Packed((n23)), $PackedMap(n24)) !packed
+          n25 <- $CallFunctionEx(n22, (unpacked)(n23), n24, None)
           n26 <- LOCAL[foo]
           n27 <- n26.f
           n28 <- LOCAL[a]
           n29 <- LOCAL[b]
           n30 <- LOCAL[c]
-          n31 <- n27($Packed((packed)($Packed((n28)), $Packed(n29))), $PackedMap(n30)) !packed
+          n31 <- $CallFunctionEx(n27, ($Packed((unpacked)(n28)), $Packed(n29)), n30, None)
           return None |}]
 
 
@@ -256,15 +257,15 @@ f(**d1, x=42)
           TOPLEVEL[d1] <- {"a": 0, "b": 1, }
           n0 <- TOPLEVEL[d0]
           n1 <- TOPLEVEL[d1]
-          TOPLEVEL[x] <- (packed){|$Packed(n0), $Packed(n1)|}
+          TOPLEVEL[x] <- {|$Packed(n0), $Packed(n1)|}
           n2 <- TOPLEVEL[print]
           n3 <- TOPLEVEL[x]
-          n4 <- n2(n3)
+          n4 <- $Call(n2, n3, None)
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           TOPLEVEL[d1] <- {"a": 0, "b": 1, }
           n5 <- TOPLEVEL[f]
           n6 <- TOPLEVEL[d1]
-          n7 <- n5($Packed(()), $PackedMap((packed){|$Packed(n6), $Packed({|"x", 42|})|})) !packed
+          n7 <- $CallFunctionEx(n5, (unpacked)(), {|$Packed(n6), $Packed((unpacked){|"x", 42|})|}, None)
           return None
 
 
@@ -272,15 +273,15 @@ f(**d1, x=42)
         b0:
           n0 <- GLOBAL[print]
           n1 <- LOCAL[x]
-          n2 <- n0(n1)
+          n2 <- $Call(n0, n1, None)
           n3 <- LOCAL[kwargs]
-          n4 <- n3.items()
-          n5 <- $GetIter(n4)
+          n4 <- $CallMethod[items](n3, None)
+          n5 <- $GetIter(n4, None)
           jmp b1
 
         b1:
-          n6 <- $NextIter(n5)
-          n7 <- $HasNextIter(n5)
+          n6 <- $NextIter(n5, None)
+          n7 <- $HasNextIter(n5, None)
           if n7 then jmp b2 else jmp b3
 
         b2:
@@ -289,7 +290,7 @@ f(**d1, x=42)
           n8 <- GLOBAL[print]
           n9 <- LOCAL[k]
           n10 <- LOCAL[v]
-          n11 <- n8(n9, n10)
+          n11 <- $Call(n8, n9, n10, None)
           jmp b1
 
         b3:
@@ -315,8 +316,8 @@ print(lst) # [2, 3, 4, 5, 6]
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0()
-          n2 <- $UnpackEx(2, 3, n1)
+          n1 <- $Call(n0, None)
+          n2 <- $UnpackEx(2, 3, n1, None)
           TOPLEVEL[a] <- n2[0]
           TOPLEVEL[b] <- n2[1]
           TOPLEVEL[lst] <- n2[2]
@@ -325,12 +326,12 @@ print(lst) # [2, 3, 4, 5, 6]
           TOPLEVEL[z] <- n2[5]
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[lst]
-          n5 <- n3(n4)
+          n5 <- $Call(n3, n4, None)
           return None
 
 
       dummy.f:
         b0:
           n0 <- GLOBAL[range]
-          n1 <- n0(10)
+          n1 <- $Call(n0, 10, None)
           return n1 |}]

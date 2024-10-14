@@ -27,12 +27,12 @@ base.f(0)
 
       toplevel:
         b0:
-          n0 <- $ImportName(base)(None, 0)
+          n0 <- $ImportName(base)(None, 0, None)
           TOPLEVEL[base] <- n0
-          n1 <- $ImportName(base)(None, 0)
+          n1 <- $ImportName(base)(None, 0, None)
           TOPLEVEL[base] <- n1
           n2 <- TOPLEVEL[base]
-          n3 <- n2.f(0)
+          n3 <- $CallMethod[f](n2, 0, None)
           return None |}]
 
 
@@ -61,21 +61,21 @@ g()
         b0:
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           n0 <- TOPLEVEL[f]
-          n1 <- n0()
-          n2 <- $ImportName(base)(("f","g"), 0)
-          n3 <- $ImportFrom(f)(n2)
+          n1 <- $Call(n0, None)
+          n2 <- $ImportName(base)(("f","g"), 0, None)
+          n3 <- $ImportFrom(f)(n2, None)
           TOPLEVEL[f] <- n3
-          n4 <- $ImportFrom(g)(n2)
+          n4 <- $ImportFrom(g)(n2, None)
           TOPLEVEL[g] <- n4
           n5 <- TOPLEVEL[f]
-          n6 <- n5()
-          n7 <- $ImportName(base)(("f","g"), 0)
-          n8 <- $ImportFrom(f)(n7)
+          n6 <- $Call(n5, None)
+          n7 <- $ImportName(base)(("f","g"), 0, None)
+          n8 <- $ImportFrom(f)(n7, None)
           TOPLEVEL[f] <- n8
-          n9 <- $ImportFrom(g)(n7)
+          n9 <- $ImportFrom(g)(n7, None)
           TOPLEVEL[g] <- n9
           n10 <- TOPLEVEL[g]
-          n11 <- n10()
+          n11 <- $Call(n10, None)
           return None
 
 
@@ -98,11 +98,11 @@ class MyTest(unittest.TestCase):
 
       toplevel:
         b0:
-          n0 <- $ImportName(unittest)(None, 0)
+          n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
           n1 <- TOPLEVEL[unittest]
           n2 <- n1.TestCase
-          n3 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", n2)
+          n3 <- $BuildClass($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", n2, None)
           TOPLEVEL[MyTest] <- n3
           return None
 
@@ -158,23 +158,23 @@ if __name__ == '__main__':
 
       toplevel:
         b0:
-          n0 <- $ImportName(os)(None, 0)
+          n0 <- $ImportName(os)(None, 0, None)
           TOPLEVEL[os] <- n0
-          n1 <- $ImportName(sys)(None, 0)
+          n1 <- $ImportName(sys)(None, 0, None)
           TOPLEVEL[sys] <- n1
-          n2 <- $ImportName(test.libregrtest)(("main"), 0)
-          n3 <- $ImportFrom(main)(n2)
+          n2 <- $ImportName(test.libregrtest)(("main"), 0, None)
+          n3 <- $ImportFrom(main)(n2, None)
           TOPLEVEL[main] <- n3
           n4 <- TOPLEVEL[main]
           TOPLEVEL[main_in_temp_cwd] <- n4
           TOPLEVEL[_main] <- $FuncObj(_main, dummy._main, {})
           n5 <- TOPLEVEL[__name__]
-          n6 <- $Compare.eq(n5, "__main__")
+          n6 <- $Compare.eq(n5, "__main__", None)
           if n6 then jmp b1 else jmp b2
 
         b1:
           n7 <- TOPLEVEL[_main]
-          n8 <- n7()
+          n8 <- $Call(n7, None)
           jmp b2
 
         b2:
@@ -192,21 +192,21 @@ if __name__ == '__main__':
           n6 <- GLOBAL[sys]
           n7 <- n6.argv
           n8 <- n7[0]
-          n9 <- n5.dirname(n8)
-          n10 <- n3.normpath(n9)
-          n11 <- n1.abspath(n10)
+          n9 <- $CallMethod[dirname](n5, n8, None)
+          n10 <- $CallMethod[normpath](n3, n9, None)
+          n11 <- $CallMethod[abspath](n1, n10, None)
           LOCAL[mydir] <- n11
           n12 <- GLOBAL[len]
           n13 <- GLOBAL[sys]
           n14 <- n13.path
-          n15 <- n12(n14)
-          n16 <- $Binary.Subtract(n15, 1)
+          n15 <- $Call(n12, n14, None)
+          n16 <- $Binary.Subtract(n15, 1, None)
           LOCAL[i] <- n16
           jmp b1
 
         b1:
           n17 <- LOCAL[i]
-          n18 <- $Compare.ge(n17, 0)
+          n18 <- $Compare.ge(n17, 0, None)
           if n18 then jmp b2 else jmp b5
 
         b2:
@@ -218,10 +218,10 @@ if __name__ == '__main__':
           n30 <- n29.path
           n31 <- LOCAL[i]
           n32 <- n30[n31]
-          n33 <- n28.normpath(n32)
-          n34 <- n26.abspath(n33)
+          n33 <- $CallMethod[normpath](n28, n32, None)
+          n34 <- $CallMethod[abspath](n26, n33, None)
           n35 <- LOCAL[mydir]
-          n36 <- $Compare.eq(n34, n35)
+          n36 <- $Compare.eq(n34, n35, None)
           if n36 then jmp b3 else jmp b4
 
         b3:
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 
         b4:
           n37 <- LOCAL[i]
-          n38 <- $Inplace.Subtract(n37, 1)
+          n38 <- $Inplace.Subtract(n37, 1, None)
           LOCAL[i] <- n38
           jmp b1
 
@@ -237,10 +237,10 @@ if __name__ == '__main__':
           n19 <- GLOBAL[os]
           n20 <- n19.path
           n21 <- GLOBAL[__file__]
-          n22 <- n20.abspath(n21)
+          n22 <- $CallMethod[abspath](n20, n21, None)
           GLOBAL[__file__] <- n22
           n23 <- GLOBAL[main]
-          n24 <- n23()
+          n24 <- $Call(n23, None)
           return None |}]
 
 
@@ -266,26 +266,26 @@ path.X()
 
       toplevel:
         b0:
-          n0 <- $ImportName(A)(("X"), 0)
-          n1 <- $ImportFrom(X)(n0)
+          n0 <- $ImportName(A)(("X"), 0, None)
+          n1 <- $ImportFrom(X)(n0, None)
           TOPLEVEL[X] <- n1
           n2 <- TOPLEVEL[X]
-          n3 <- n2()
-          n4 <- $ImportName(B)(("X"), 1)
-          n5 <- $ImportFrom(X)(n4)
+          n3 <- $Call(n2, None)
+          n4 <- $ImportName(B)(("X"), 1, None)
+          n5 <- $ImportFrom(X)(n4, None)
           TOPLEVEL[X] <- n5
           n6 <- TOPLEVEL[X]
-          n7 <- n6()
-          n8 <- $ImportName(C)(("X"), 2)
-          n9 <- $ImportFrom(X)(n8)
+          n7 <- $Call(n6, None)
+          n8 <- $ImportName(C)(("X"), 2, None)
+          n9 <- $ImportFrom(X)(n8, None)
           TOPLEVEL[X] <- n9
           n10 <- TOPLEVEL[X]
-          n11 <- n10()
-          n12 <- $ImportName()(("path"), 2)
-          n13 <- $ImportFrom(path)(n12)
+          n11 <- $Call(n10, None)
+          n12 <- $ImportName()(("path"), 2, None)
+          n13 <- $ImportFrom(path)(n12, None)
           TOPLEVEL[path] <- n13
           n14 <- TOPLEVEL[path]
-          n15 <- n14.X()
+          n15 <- $CallMethod[X](n14, None)
           return None |}]
 
 
@@ -312,34 +312,34 @@ tata()
 
       toplevel:
         b0:
-          n0 <- $ImportName(x)(("y","a"), 0)
-          n1 <- $ImportFrom(y)(n0)
+          n0 <- $ImportName(x)(("y","a"), 0, None)
+          n1 <- $ImportFrom(y)(n0, None)
           TOPLEVEL[z] <- n1
-          n2 <- $ImportFrom(a)(n0)
+          n2 <- $ImportFrom(a)(n0, None)
           TOPLEVEL[b] <- n2
-          n3 <- $ImportName(x)(("y","a"), 0)
-          n4 <- $ImportFrom(y)(n3)
+          n3 <- $ImportName(x)(("y","a"), 0, None)
+          n4 <- $ImportFrom(y)(n3, None)
           TOPLEVEL[z] <- n4
-          n5 <- $ImportFrom(a)(n3)
+          n5 <- $ImportFrom(a)(n3, None)
           TOPLEVEL[b] <- n5
           n6 <- TOPLEVEL[z]
-          n7 <- n6()
+          n7 <- $Call(n6, None)
           n8 <- TOPLEVEL[b]
-          n9 <- n8()
-          n10 <- $ImportName(foo)(("toto","tata"), 0)
-          n11 <- $ImportFrom(toto)(n10)
+          n9 <- $Call(n8, None)
+          n10 <- $ImportName(foo)(("toto","tata"), 0, None)
+          n11 <- $ImportFrom(toto)(n10, None)
           TOPLEVEL[toto] <- n11
-          n12 <- $ImportFrom(tata)(n10)
+          n12 <- $ImportFrom(tata)(n10, None)
           TOPLEVEL[tata] <- n12
-          n13 <- $ImportName(foo)(("toto","tata"), 0)
-          n14 <- $ImportFrom(toto)(n13)
+          n13 <- $ImportName(foo)(("toto","tata"), 0, None)
+          n14 <- $ImportFrom(toto)(n13, None)
           TOPLEVEL[toto] <- n14
-          n15 <- $ImportFrom(tata)(n13)
+          n15 <- $ImportFrom(tata)(n13, None)
           TOPLEVEL[tata] <- n15
           n16 <- TOPLEVEL[toto]
-          n17 <- n16()
+          n17 <- $Call(n16, None)
           n18 <- TOPLEVEL[tata]
-          n19 <- n18()
+          n19 <- $Call(n18, None)
           return None |}]
 
 
@@ -355,9 +355,9 @@ import xml.etree.ElementTree as ET
 
       toplevel:
         b0:
-          n0 <- $ImportName(xml.etree.ElementTree)(None, 0)
-          n1 <- $ImportFrom(etree)(n0)
-          n2 <- $ImportFrom(ElementTree)(n1)
+          n0 <- $ImportName(xml.etree.ElementTree)(None, 0, None)
+          n1 <- $ImportFrom(etree)(n0, None)
+          n2 <- $ImportFrom(ElementTree)(n1, None)
           TOPLEVEL[ET] <- n2
           return None |}]
 
@@ -380,19 +380,19 @@ class Test(unittest.TestCase):
 
       toplevel:
         b0:
-          n0 <- $ImportName(unittest)(None, 0)
+          n0 <- $ImportName(unittest)(None, 0, None)
           TOPLEVEL[unittest] <- n0
-          n1 <- $ImportName(signal)(None, 0)
+          n1 <- $ImportName(signal)(None, 0, None)
           TOPLEVEL[signal] <- n1
           n2 <- TOPLEVEL[unittest]
           n3 <- TOPLEVEL[hasattr]
           n4 <- TOPLEVEL[signal]
-          n5 <- n3(n4, "setitimer")
-          n6 <- n2.skipUnless(n5, "requires setitimer()")
+          n5 <- $Call(n3, n4, "setitimer", None)
+          n6 <- $CallMethod[skipUnless](n2, n5, "requires setitimer()", None)
           n7 <- TOPLEVEL[unittest]
           n8 <- n7.TestCase
-          n9 <- $BuildClass($FuncObj(Test, dummy.Test, {}), "Test", n8)
-          n10 <- n6(n9)
+          n9 <- $BuildClass($FuncObj(Test, dummy.Test, {}), "Test", n8, None)
+          n10 <- $Call(n6, n9, None)
           TOPLEVEL[Test] <- n10
           return None
 
@@ -419,7 +419,7 @@ def f():
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(None, 0)
+          n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return None
@@ -428,7 +428,7 @@ def f():
       dummy.f:
         b0:
           n0 <- GLOBAL[foo]
-          n1 <- n0.bar(42)
+          n1 <- $CallMethod[bar](n0, 42, None)
           throw n1 |}]
 
 
@@ -452,7 +452,7 @@ def f(ok):
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(None, 0)
+          n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return None
@@ -461,7 +461,7 @@ def f(ok):
       dummy.f:
         b0:
           n0 <- GLOBAL[foo]
-          n1 <- n0.bar()
+          n1 <- $CallMethod[bar](n0, None)
           jmp b6
 
         b6:
@@ -491,7 +491,7 @@ def test_format_specifier_expressions(self):
 
       toplevel:
         b0:
-          n0 <- $ImportName(decimal)(None, 0)
+          n0 <- $ImportName(decimal)(None, 0, None)
           TOPLEVEL[decimal] <- n0
           TOPLEVEL[assertEqual] <- $FuncObj(assertEqual, dummy.assertEqual, {})
           TOPLEVEL[test_format_specifier_expressions] <- $FuncObj(test_format_specifier_expressions, dummy.test_format_specifier_expressions, {})
@@ -508,16 +508,16 @@ def test_format_specifier_expressions(self):
           LOCAL[width] <- 10
           LOCAL[precision] <- 4
           n0 <- GLOBAL[decimal]
-          n1 <- n0.Decimal("12.34567")
+          n1 <- $CallMethod[Decimal](n0, "12.34567", None)
           LOCAL[value] <- n1
           n2 <- GLOBAL[assertEqual]
           n3 <- LOCAL[value]
           n4 <- LOCAL[width]
-          n5 <- $Format(n4, None)
+          n5 <- $Format(n4, None, None)
           n6 <- LOCAL[precision]
-          n7 <- $Format(n6, None)
-          n8 <- $Format(n3, $Concat(n5, ".", n7))
-          n9 <- n2($Concat("result: ", n8))
+          n7 <- $Format(n6, None, None)
+          n8 <- $Format(n3, $Concat(unpacked)(n5, ".", n7), None)
+          n9 <- $Call(n2, $Concat(unpacked)("result: ", n8), None)
           return None |}]
 
 
@@ -557,7 +557,7 @@ def f():
           n2 <- TOPLEVEL[str]
           n3 <- TOPLEVEL[__annotations__]
           n3["y"] <- n2
-          n4 <- $ImportName(C)(None, 0)
+          n4 <- $ImportName(C)(None, 0, None)
           TOPLEVEL[C] <- n4
           TOPLEVEL[z] <- 42
           n5 <- TOPLEVEL[C]
@@ -586,6 +586,6 @@ from foo import *
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(("*"), 0)
-          n1 <- $ImportStar(n0)
+          n0 <- $ImportName(foo)(("*"), 0, None)
+          n1 <- $ImportStar(n0, None)
           return None |}]

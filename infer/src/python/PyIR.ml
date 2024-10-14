@@ -171,6 +171,7 @@ module BuiltinCaller = struct
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
     | Format
     | FormatFn of format_function
+    | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of Builtin.binary_op
     | ImportName of string
     | ImportFrom of string
@@ -208,6 +209,8 @@ module BuiltinCaller = struct
         "$Format"
     | FormatFn fn ->
         sprintf "$FormatFn.%s" (show_format_function fn)
+    | CallFunctionEx ->
+        "$CallFunctionEx"
     | ImportName name ->
         sprintf "$ImportName(%s)" name
     | ImportFrom name ->
@@ -371,7 +374,7 @@ module Exp = struct
     | Subscript {exp; index} ->
         F.fprintf fmt "%a[@[%a@]]" pp exp pp index
     | Collection {kind; values; packed} -> (
-        let packed = if packed then "(packed)" else "" in
+        let packed = if packed then "" else "(unpacked)" in
         match kind with
         | List ->
             F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:", " pp) values
@@ -443,8 +446,6 @@ module Error = struct
     | FixpointComputationNotReached of {src: int; dest: int}
     | NextOffsetMissing
     | MissingNodeInformation of int
-    | CallKeywordNotString0 of Const.t
-    | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
     | WithCleanupStart of Exp.t
     | WithCleanupFinish of Exp.t
@@ -489,10 +490,6 @@ module Error = struct
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingNodeInformation offset ->
         F.fprintf fmt "No information about offset %d" offset
-    | CallKeywordNotString0 cst ->
-        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" Const.pp cst
-    | CallKeywordNotString1 exp ->
-        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
     | MakeFunctionInvalidDefaults exp ->
         F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
     | WithCleanupStart exp ->
@@ -508,17 +505,11 @@ end
 type 'a pyresult = ('a, Error.t) result
 
 module Stmt = struct
-  type call_arg = {name: string option; value: Exp.t}
+  type call_arg = Exp.t
 
-  let pp_call_arg fmt {name; value} =
-    match name with
-    | None ->
-        Exp.pp fmt value
-    | Some name ->
-        F.fprintf fmt "%s= %a" name Exp.pp value
+  let pp_call_arg fmt value = Exp.pp fmt value
 
-
-  let unnamed_call_arg value = {name= None; value}
+  let unnamed_call_arg value = value
 
   let unnamed_call_args args = List.map ~f:unnamed_call_arg args
 
@@ -527,9 +518,10 @@ module Stmt = struct
     | SetAttr of {lhs: Exp.t; attr: string; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
-    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
-    | CallMethod of {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list}
-    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list}
+    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
+    | CallMethod of
+        {lhs: SSA.t; name: string; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
     | SetupAnnotations
 
   let pp fmt = function
@@ -541,15 +533,15 @@ module Stmt = struct
         F.fprintf fmt "%a <- %a" ScopedIdent.pp lhs Exp.pp rhs
     | StoreSubscript {lhs; index; rhs} ->
         F.fprintf fmt "%a[%a] <- %a" Exp.pp lhs Exp.pp index Exp.pp rhs
-    | Call {lhs; exp; args; packed} ->
-        F.fprintf fmt "%a <- %a(@[%a@])%s" SSA.pp lhs Exp.pp exp (Pp.seq ~sep:", " pp_call_arg) args
-          (if packed then " !packed" else "")
-    | CallMethod {lhs; name; self_if_needed; args} ->
-        F.fprintf fmt "%a <- %a.%s(@[%a@])" SSA.pp lhs Exp.pp self_if_needed name
-          (Pp.seq ~sep:", " Exp.pp) args
-    | BuiltinCall {lhs; call; args} ->
+    | Call {lhs; exp; args; arg_names} ->
+        F.fprintf fmt "%a <- $Call(@[%a@])" SSA.pp lhs (Pp.seq ~sep:", " pp_call_arg)
+          ((exp :: args) @ [arg_names])
+    | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
+        F.fprintf fmt "%a <- $CallMethod[%s](@[%a@])" SSA.pp lhs name (Pp.seq ~sep:", " Exp.pp)
+          ((self_if_needed :: args) @ [arg_names])
+    | BuiltinCall {lhs; call; args; arg_names} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
-          (Pp.seq ~sep:", " pp_call_arg) args
+          (Pp.seq ~sep:", " pp_call_arg) (args @ [arg_names])
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 
@@ -570,12 +562,12 @@ module Stmt = struct
         Exp.check rhs
     | Call {exp; args} ->
         let* () = Exp.check exp in
-        List.fold_result args ~init:() ~f:(fun () {value} -> Exp.check value)
+        List.fold_result args ~init:() ~f:(fun () value -> Exp.check value)
     | CallMethod {self_if_needed; args} ->
         let* () = Exp.check self_if_needed in
         List.fold_result args ~init:() ~f:(fun () -> Exp.check)
     | BuiltinCall {args} ->
-        List.fold_result args ~init:() ~f:(fun () {value} -> Exp.check value)
+        List.fold_result args ~init:() ~f:(fun () value -> Exp.check value)
     | SetupAnnotations ->
         Ok ()
 end
@@ -931,34 +923,37 @@ let read_code_qual_name st c =
       internal_error st (Error.CodeWithoutQualifiedName c)
 
 
-let call_function_with_unnamed_args st ?(packed = false) exp args =
+let call_function_with_unnamed_args st ?arg_names exp args =
   let open IResult.Let_syntax in
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
+  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
   let stmt =
     match exp with
     | Exp.BuiltinCaller call ->
-        Stmt.BuiltinCall {lhs; call; args}
+        Stmt.BuiltinCall {lhs; call; args; arg_names}
     | exp ->
-        Stmt.Call {lhs; exp; args; packed}
+        Stmt.Call {lhs; exp; args; arg_names}
   in
   let* st = State.push_stmt st stmt in
   Ok (lhs, st)
 
 
-let call_builtin_function st call args =
+let call_builtin_function st ?arg_names call args =
   let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
   let args = Stmt.unnamed_call_args args in
-  let stmt = Stmt.BuiltinCall {lhs; call; args} in
+  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names} in
   let* st = State.push_stmt st stmt in
   Ok (lhs, st)
 
 
-let call_method st name self_if_needed args =
+let call_method st name ?arg_names self_if_needed args =
   let open IResult.Let_syntax in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args} in
+  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
+  let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args; arg_names} in
   let+ st = State.push_stmt st stmt in
   (lhs, st)
 
@@ -1106,44 +1101,19 @@ let call_function st arg =
 
 let call_function_kw st argc =
   let open IResult.Let_syntax in
-  let extract_kw_names st arg_names =
-    match (arg_names : Exp.t) with
-    | Const (PYCTuple tuple) ->
-        (* kw names should be constant tuple of strings, so we directly access them *)
-        Array.fold_right tuple ~init:(Ok []) ~f:(fun const acc ->
-            let* acc in
-            match Const.as_name const with
-            | Some name ->
-                Ok (name :: acc)
-            | None ->
-                external_error st (Error.CallKeywordNotString0 const) )
-    | _ ->
-        external_error st (Error.CallKeywordNotString1 arg_names)
-  in
-  let partial_zip args kwnames =
-    named_argument_zip "CALL_FUNCTION_KW" argc ~init:[]
-      ~f:(fun hd tl ->
-        match hd with
-        | `Positional value ->
-            let hd = Stmt.unnamed_call_arg value in
-            hd :: tl
-        | `Named (value, name) ->
-            let hd = {Stmt.name= Some name; value} in
-            hd :: tl )
-      args kwnames
-  in
   let* arg_names, st = State.pop st in
-  let* arg_names = extract_kw_names st arg_names in
+  let arg_names = Some arg_names in
+  (* a tuple containing the arguments names *)
   let* args, st = State.pop_n st argc in
-  let args = partial_zip args arg_names in
   let* exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
+  let arg_names = Option.value arg_names ~default:(Exp.Const Const.none) in
   let stmt =
     match exp with
     | Exp.BuiltinCaller call ->
-        Stmt.BuiltinCall {lhs; call; args}
+        Stmt.BuiltinCall {lhs; call; args; arg_names}
     | exp ->
-        Stmt.Call {lhs; exp; args; packed= false}
+        Stmt.Call {lhs; exp; args; arg_names}
   in
   let* st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
@@ -1152,19 +1122,18 @@ let call_function_kw st argc =
 
 let call_function_ex st flags =
   let open IResult.Let_syntax in
-  let* opt_args, st =
-    if flags land 1 <> 0 then
-      let* exp, st = State.pop st in
-      Ok ([Exp.Packed {exp; is_map= true}], st)
-    else Ok ([], st)
+  let with_keyword_args = flags land 1 <> 0 in
+  let call = BuiltinCaller.CallFunctionEx in
+  let* keyword_args, st =
+    if with_keyword_args then State.pop st else Ok (Exp.Const Const.none, st)
   in
-  let* packed_arg, st = State.pop st in
-  let packed_arg =
-    match (packed_arg : Exp.t) with Packed _ -> packed_arg | exp -> Exp.Packed {is_map= false; exp}
-  in
-  let* call, st = State.pop st in
-  let* id, st = call_function_with_unnamed_args st call ~packed:true (packed_arg :: opt_args) in
-  let st = State.push st (Exp.Temp id) in
+  let* tuple, st = State.pop st in
+  let* callee, st = State.pop st in
+  let args = [callee; tuple; keyword_args] in
+  let lhs, st = State.fresh_id st in
+  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.Const Const.none} in
+  let* st = State.push_stmt st stmt in
+  let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
 

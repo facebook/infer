@@ -26,12 +26,12 @@ finally:
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0("TRY BLOCK")
+          n1 <- $Call(n0, "TRY BLOCK", None)
           jmp b1
 
         b1:
           n2 <- TOPLEVEL[print]
-          n3 <- n2("FINALLY BLOCK")
+          n3 <- $Call(n2, "FINALLY BLOCK", None)
           jmp b2
 
         b2:
@@ -60,7 +60,7 @@ print("END")
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0("TRY BLOCK")
+          n1 <- $Call(n0, "TRY BLOCK", None)
           jmp b1
 
         b1:
@@ -69,22 +69,22 @@ print("END")
 
         b2:
           n5 <- TOPLEVEL[print]
-          n6 <- n5("X")
+          n6 <- $Call(n5, "X", None)
           jmp b4
 
         b3:
           n3 <- TOPLEVEL[print]
-          n4 <- n3("Y")
+          n4 <- $Call(n3, "Y", None)
           jmp b4
 
         b4:
           n7 <- TOPLEVEL[print]
-          n8 <- n7("FINALLY BLOCK")
+          n8 <- $Call(n7, "FINALLY BLOCK", None)
           jmp b5
 
         b5:
           n9 <- TOPLEVEL[print]
-          n10 <- n9("END")
+          n10 <- $Call(n9, "END", None)
           return None |}]
 
 
@@ -106,12 +106,12 @@ print("END")
       toplevel:
         b0:
           n0 <- TOPLEVEL[print]
-          n1 <- n0("TRY BLOCK")
+          n1 <- $Call(n0, "TRY BLOCK", None)
           jmp b3
 
         b3:
           n2 <- TOPLEVEL[print]
-          n3 <- n2("END")
+          n3 <- $Call(n2, "END", None)
           return None |}]
 
 
@@ -137,10 +137,10 @@ except (ValueError, AttributeError):
 
       toplevel:
         b0:
-          n0 <- $ImportName(os)(None, 0)
+          n0 <- $ImportName(os)(None, 0, None)
           TOPLEVEL[os] <- n0
           n1 <- TOPLEVEL[os]
-          n2 <- n1.sysconf("SC_PAGESIZE")
+          n2 <- $CallMethod[sysconf](n1, "SC_PAGESIZE", None)
           TOPLEVEL[page_size] <- n2
           jmp b8
 
@@ -169,7 +169,7 @@ def f(x):
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(None, 0)
+          n0 <- $ImportName(foo)(None, 0, None)
           TOPLEVEL[foo] <- n0
           TOPLEVEL[f] <- $FuncObj(f, dummy.f, {})
           return None
@@ -178,26 +178,26 @@ def f(x):
       dummy.f:
         b0:
           n0 <- LOCAL[x]
-          n1 <- $GetIter(n0)
+          n1 <- $GetIter(n0, None)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1)
-          n3 <- $HasNextIter(n1)
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
           if n3 then jmp b2 else jmp b5
 
         b2:
           LOCAL[i] <- n2
           n4 <- GLOBAL[foo]
-          n5 <- n4.Foo()
+          n5 <- $CallMethod[Foo](n4, None)
           LOCAL[e] <- n5
           n6 <- GLOBAL[print]
-          n7 <- n6("yolo")
+          n7 <- $Call(n6, "yolo", None)
           jmp b3
 
         b3:
           n8 <- LOCAL[e]
-          n9 <- n8.bar()
+          n9 <- $CallMethod[bar](n8, None)
           jmp b4
 
         b4:
@@ -329,38 +329,38 @@ with open("foo", "r") as fp:
 
       toplevel:
         b0:
-          n0 <- $ImportName(foo)(("ERROR"), 0)
-          n1 <- $ImportFrom(ERROR)(n0)
+          n0 <- $ImportName(foo)(("ERROR"), 0, None)
+          n1 <- $ImportFrom(ERROR)(n0, None)
           TOPLEVEL[ERROR] <- n1
           n2 <- TOPLEVEL[open]
-          n3 <- n2("foo", "r")
-          n4 <- n3.__enter__()
+          n3 <- $Call(n2, "foo", "r", None)
+          n4 <- $CallMethod[__enter__](n3, None)
           TOPLEVEL[fp] <- n4
           n5 <- TOPLEVEL[fp]
-          n6 <- $GetIter(n5)
+          n6 <- $GetIter(n5, None)
           jmp b1
 
         b1:
-          n7 <- $NextIter(n6)
-          n8 <- $HasNextIter(n6)
+          n7 <- $NextIter(n6, None)
+          n8 <- $HasNextIter(n6, None)
           if n8 then jmp b2 else jmp b7
 
         b2:
           TOPLEVEL[line] <- n7
           n10 <- TOPLEVEL[print]
-          n11 <- n10("TRY")
+          n11 <- $Call(n10, "TRY", None)
           jmp b6
 
         b6:
           n12 <- TOPLEVEL[print]
-          n13 <- n12("ELSE")
+          n13 <- $Call(n12, "ELSE", None)
           jmp b1
 
         b7:
           jmp b8
 
         b8:
-          n9 <- n3.__enter__(None, None, None)
+          n9 <- $CallMethod[__enter__](n3, None, None, None, None)
           jmp b9
 
         b9:
@@ -397,22 +397,22 @@ def subhelper():
       dummy.subhelper:
         b0:
           n0 <- GLOBAL[TICKS]
-          n1 <- $Inplace.Add(n0, 2)
+          n1 <- $Inplace.Add(n0, 2, None)
           GLOBAL[TICKS] <- n1
           n2 <- GLOBAL[range]
-          n3 <- n2(2)
-          n4 <- $GetIter(n3)
+          n3 <- $Call(n2, 2, None)
+          n4 <- $GetIter(n3, None)
           jmp b1
 
         b1:
-          n5 <- $NextIter(n4)
-          n6 <- $HasNextIter(n4)
+          n5 <- $NextIter(n4, None)
+          n6 <- $HasNextIter(n4, None)
           if n6 then jmp b2 else jmp b7
 
         b2:
           LOCAL[i] <- n5
           n7 <- GLOBAL[print]
-          n8 <- n7("foo")
+          n8 <- $Call(n7, "foo", None)
           jmp b1
 
         b7:
@@ -440,7 +440,7 @@ except C as c:
         b0:
           TOPLEVEL[foo] <- $FuncObj(foo, dummy.foo, {})
           n0 <- TOPLEVEL[foo]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           jmp b6
 
         b6:
@@ -475,21 +475,21 @@ async def async_with(filename):
         b0:
           n0 <- GLOBAL[open]
           n1 <- LOCAL[filename]
-          n2 <- n0(n1, "r")
-          n3 <- n2.__enter__()
-          n4 <- $GetAwaitable(n3)
-          n5 <- $YieldFrom(n4, None)
+          n2 <- $Call(n0, n1, "r", None)
+          n3 <- $CallMethod[__enter__](n2, None)
+          n4 <- $GetAwaitable(n3, None)
+          n5 <- $YieldFrom(n4, None, None)
           LOCAL[f] <- n4
           n6 <- LOCAL[f]
-          n7 <- n6.read()
-          n8 <- $GetAwaitable(n7)
-          n9 <- $YieldFrom(n8, None)
+          n7 <- $CallMethod[read](n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
           jmp b1
 
         b1:
-          n10 <- n2.__enter__(None, None, None)
-          n11 <- $GetAwaitable(n10)
-          n12 <- $YieldFrom(n11, None)
+          n10 <- $CallMethod[__enter__](n2, None, None, None, None)
+          n11 <- $GetAwaitable(n10, None)
+          n12 <- $YieldFrom(n11, None, None)
           jmp b2
 
         b2:
@@ -520,7 +520,7 @@ def call_finally():
       dummy.call_finally:
         b0:
           n0 <- GLOBAL[read]
-          n1 <- n0()
+          n1 <- $Call(n0, None)
           jmp b7
 
         b7:
@@ -552,13 +552,13 @@ def call_finally_with_break():
       dummy.call_finally_with_break:
         b0:
           n0 <- GLOBAL[range]
-          n1 <- n0(100)
-          n2 <- $GetIter(n1)
+          n1 <- $Call(n0, 100, None)
+          n2 <- $GetIter(n1, None)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2)
-          n4 <- $HasNextIter(n2)
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
           if n4 then jmp b2 else jmp b11
 
         b11:
@@ -567,7 +567,7 @@ def call_finally_with_break():
         b2:
           LOCAL[i] <- n3
           n5 <- GLOBAL[read]
-          n6 <- n5()
+          n6 <- $Call(n5, None)
           jmp b1 |}]
 
 
@@ -618,44 +618,44 @@ async def foo():
       dummy.foo:
         b0:
           n0 <- GLOBAL[read1]
-          n1 <- n0()
-          n2 <- n1.__enter__()
-          n3 <- $GetAwaitable(n2)
-          n4 <- $YieldFrom(n3, None)
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
+          n3 <- $GetAwaitable(n2, None)
+          n4 <- $YieldFrom(n3, None, None)
           n5 <- GLOBAL[read2]
-          n6 <- n5()
-          n7 <- n6.__enter__()
-          n8 <- $GetAwaitable(n7)
-          n9 <- $YieldFrom(n8, None)
+          n6 <- $Call(n5, None)
+          n7 <- $CallMethod[__enter__](n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
           n10 <- GLOBAL[read3]
-          n11 <- n10()
-          n12 <- n11.__enter__()
+          n11 <- $Call(n10, None)
+          n12 <- $CallMethod[__enter__](n11, None)
           n13 <- GLOBAL[action]
-          n14 <- n13()
-          n15 <- $GetAwaitable(n14)
-          n16 <- $YieldFrom(n15, None)
+          n14 <- $Call(n13, None)
+          n15 <- $GetAwaitable(n14, None)
+          n16 <- $YieldFrom(n15, None, None)
           jmp b1
 
         b1:
-          n17 <- n11.__enter__(None, None, None)
+          n17 <- $CallMethod[__enter__](n11, None, None, None, None)
           jmp b2
 
         b2:
           jmp b3
 
         b3:
-          n18 <- n6.__enter__(None, None, None)
-          n19 <- $GetAwaitable(n18)
-          n20 <- $YieldFrom(n19, None)
+          n18 <- $CallMethod[__enter__](n6, None, None, None, None)
+          n19 <- $GetAwaitable(n18, None)
+          n20 <- $YieldFrom(n19, None, None)
           jmp b4
 
         b4:
           jmp b5
 
         b5:
-          n21 <- n1.__enter__(None, None, None)
-          n22 <- $GetAwaitable(n21)
-          n23 <- $YieldFrom(n22, None)
+          n21 <- $CallMethod[__enter__](n1, None, None, None, None)
+          n22 <- $GetAwaitable(n21, None)
+          n23 <- $YieldFrom(n22, None, None)
           jmp b6
 
         b6:
@@ -767,20 +767,20 @@ async def foo():
       dummy.foo:
         b0:
           n0 <- GLOBAL[read1]
-          n1 <- n0()
-          n2 <- n1.__enter__()
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
           n3 <- GLOBAL[read2]
-          n4 <- n3()
-          n5 <- n4.__enter__()
+          n4 <- $Call(n3, None)
+          n5 <- $CallMethod[__enter__](n4, None)
           n6 <- GLOBAL[get]
-          n7 <- n6()
-          n8 <- $GetAwaitable(n7)
-          n9 <- $YieldFrom(n8, None)
+          n7 <- $Call(n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
           LOCAL[res] <- n8
           jmp b1
 
         b1:
-          n10 <- n4.__enter__(None, None, None)
+          n10 <- $CallMethod[__enter__](n4, None, None, None, None)
           jmp b2
 
         b2:
@@ -791,12 +791,12 @@ async def foo():
           jmp b4
 
         b4:
-          n14 <- n1.__enter__(None, None, None)
+          n14 <- $CallMethod[__enter__](n1, None, None, None, None)
           return n11
 
         b5:
           n12 <- GLOBAL[do_finally]
-          n13 <- n12()
+          n13 <- $Call(n12, None)
           jmp b3 |}]
 
 
