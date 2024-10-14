@@ -113,7 +113,7 @@ val is_block_pvar : t -> bool
 val get_tmp_id : t -> Ident.t option
 (** In case of a temporary variable, returns the id used to create it, or None otherwise. *)
 
-val mk : Mangled.t -> Procname.t -> t
+val mk : ?is_syntactic:bool -> Mangled.t -> Procname.t -> t
 (** [mk name proc_name] creates a program var with the given function name *)
 
 val mk_abduced_ref_param : Procname.t -> int -> Location.t -> t
@@ -179,6 +179,8 @@ val is_ice : t -> bool
 val is_pod : t -> bool
 (** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
     [true] for non-globals. *)
+
+val is_syntactic : t -> bool
 
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)

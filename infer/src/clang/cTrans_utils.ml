@@ -721,7 +721,10 @@ module Self = struct
           CType.add_pointer_to_typ
             (Typ.mk (Tstruct (CContext.get_curr_class_typename stmt_info context)))
         in
-        let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
+        let e =
+          Exp.Lvar
+            (Pvar.mk ~is_syntactic:false (Mangled.from_string CFrontend_config.self) procname)
+        in
         let id = Ident.create_fresh Ident.knormal in
         (t', Exp.Var id, [Sil.Load {id; e; typ= t'; loc}])
       in

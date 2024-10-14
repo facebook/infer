@@ -35,7 +35,12 @@ type pvar_kind =
 [@@deriving compare, equal, sexp, hash, normalize]
 
 (** Names for program variables. *)
-type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option [@ignore]}
+type t =
+  { pv_hash: int
+  ; pv_name: Mangled.t
+  ; pv_kind: pvar_kind
+  ; pv_tmp_id: Ident.t option [@ignore]
+  ; pv_is_syntactic: bool [@ignore] }
 [@@deriving compare, equal, sexp, hash, normalize]
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
@@ -260,11 +265,17 @@ let to_callee pname pvar =
 let name_hash (name : Mangled.t) = Mangled.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
-let mk_with_tmp_id ~tmp_id (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name; pv_tmp_id= tmp_id}
+let mk_with_tmp_id ?(is_syntactic = true) ~tmp_id (name : Mangled.t) (proc_name : Procname.t) : t =
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_kind= Local_var proc_name
+  ; pv_tmp_id= tmp_id
+  ; pv_is_syntactic= is_syntactic }
 
 
-let mk (name : Mangled.t) (proc_name : Procname.t) : t = mk_with_tmp_id ~tmp_id:None name proc_name
+let mk ?(is_syntactic = true) (name : Mangled.t) (proc_name : Procname.t) : t =
+  mk_with_tmp_id ~is_syntactic ~tmp_id:None name proc_name
+
 
 let get_ret_pvar pname = mk Ident.name_return pname
 
@@ -273,7 +284,11 @@ let get_ret_param_pvar pname = mk Mangled.return_param pname
 (** [mk_callee name proc_name] creates a program var for a callee function with the given function
     name *)
 let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name; pv_tmp_id= None}
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_kind= Callee_var proc_name
+  ; pv_tmp_id= None
+  ; pv_is_syntactic= false }
 
 
 (** create a global variable with the given name *)
@@ -283,6 +298,7 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_tmp_id= None
+  ; pv_is_syntactic= true
   ; pv_kind=
       Global_var
         { translation_unit
@@ -306,7 +322,11 @@ let mk_tmp name pname =
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 let mk_abduced_ret (proc_name : Procname.t) (loc : Location.t) : t =
   let name = Mangled.from_string (F.asprintf "$RET_%a" Procname.pp_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc); pv_tmp_id= None}
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_kind= Abduced_retvar (proc_name, loc)
+  ; pv_tmp_id= None
+  ; pv_is_syntactic= false }
 
 
 let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.t) : t =
@@ -314,7 +334,8 @@ let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_kind= Abduced_ref_param (proc_name, index, loc)
-  ; pv_tmp_id= None }
+  ; pv_tmp_id= None
+  ; pv_is_syntactic= false }
 
 
 let get_translation_unit pvar =
@@ -370,6 +391,8 @@ let is_objc_static_local_of_proc_name pname pvar =
 let is_block_pvar pvar =
   String.is_prefix (Mangled.to_string (get_name pvar)) ~prefix:Config.anonymous_block_prefix
 
+
+let is_syntactic pvar = pvar.pv_is_syntactic
 
 module Set = PrettyPrintable.MakePPSet (struct
   type nonrec t = t [@@deriving compare]

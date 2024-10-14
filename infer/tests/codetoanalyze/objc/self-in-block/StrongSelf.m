@@ -280,7 +280,10 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)mixSelfWeakSelf_super_good_FP {
+// Super is actually self but using it means find the method in the super class.
+// So using weakSelf and super is still the same problem, but the fix is less
+// clear, so we produce no autofix.
+- (void)mixSelfWeakSelf_super_bad_no_autofix {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -366,7 +369,10 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)mixSelfWeakSelf_bad_wrong_autofix_super_property {
+// Super is actually self but using it means find the method in the super class.
+// So using weakSelf and super is still the same problem, but the fix is less
+// clear, so we produce no autofix.
+- (void)mixSelfWeakSelf_bad_no_autofix_super_property {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
