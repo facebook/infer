@@ -33,21 +33,35 @@ let format_method pname =
 
 let report_warning proc_desc err_log class_name fld fld_typ =
   let pp_m = MarkupFormatter.pp_monospaced in
+  let field_name = Fieldname.get_field_name fld in
   let description =
     Format.asprintf
       "Fragment %a does not nullify View field %a (type %a) in %a. If this Fragment is placed on \
        the back stack, a reference to this (probably dead) View will be retained."
-      pp_m (Typ.Name.name class_name) pp_m (Fieldname.get_field_name fld) pp_m (format_typ fld_typ)
-      pp_m
+      pp_m (Typ.Name.name class_name) pp_m field_name pp_m (format_typ fld_typ) pp_m
       (format_method (Procdesc.get_proc_name proc_desc))
   in
   let suggestion =
     Format.asprintf
-      "In general, it is a good idea to initialize View's in %a, then nullify them in %a." pp_m
-      on_create_view pp_m on_destroy_view
+      "In general, it is a good idea to initialize View's in %a, then nullify them in %a. Note \
+       that you also need to make sure they are not being used afterwards."
+      pp_m on_create_view pp_m on_destroy_view
   in
-  Reporting.log_issue ~suggestion proc_desc err_log ~loc:(Procdesc.get_loc proc_desc)
-    FragmentRetainsView IssueType.checkers_fragment_retain_view description
+  let loc = Procdesc.get_loc proc_desc in
+  let autofix =
+    let replacement =
+      Format.asprintf "\n %s = null%s" field_name
+        (if String.is_suffix ~suffix:".java" (SourceFile.to_string loc.file) then ";" else "")
+    in
+    Some
+      { Jsonbug_t.original= None
+      ; replacement=
+          None
+          (* Add one to the line because we expect a call to super to be the first line in the function. *)
+      ; additional= Some [{Jsonbug_t.line= loc.line + 1; column= 0; original= ""; replacement}] }
+  in
+  Reporting.log_issue ~suggestion proc_desc err_log ~loc FragmentRetainsView ?autofix
+    IssueType.checkers_fragment_retain_view description
 
 
 let callback_fragment_retains_view_java {IntraproceduralAnalysis.proc_desc; tenv; err_log}
