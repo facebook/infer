@@ -360,7 +360,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)mixSelfWeakSelf_bad_wrong_autofix_implicit_self {
+- (void)mixSelfWeakSelf_bad_autofix_implicit_self {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;

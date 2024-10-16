@@ -69,7 +69,12 @@ module DomainData = struct
             pp_self_pointer_kind kind1 pp_self_pointer_kind kind2
 
 
-  type t = {pvar: Pvar.t; typ: Typ.t [@compare.ignore]; loc: Location.t; kind: self_pointer_kind}
+  type t =
+    { pvar: Pvar.t
+    ; typ: Typ.t [@compare.ignore]
+    ; loc: Location.t
+    ; kind: self_pointer_kind
+    ; is_implicit: bool }
   [@@deriving compare]
 
   let pp fmt {pvar; typ; loc; kind} =
@@ -339,30 +344,48 @@ module Mem = struct
 
   let load attributes id pvar loc typ astate =
     let vars =
-      if is_captured_self attributes pvar then Vars.add id {pvar; typ; loc; kind= SELF} astate.vars
+      if is_captured_self attributes pvar then
+        Vars.add id {pvar; typ; loc; kind= SELF; is_implicit= false} astate.vars
       else if is_captured_strong_self attributes pvar then
-        Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
+        Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF; is_implicit= false} astate.vars
       else if is_captured_weak_self attributes pvar then
-        Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
+        Vars.add id {pvar; typ; loc; kind= WEAK_SELF; is_implicit= false} astate.vars
       else
         match get_captured_ref_loc attributes pvar with
         | Some captured_definition_loc ->
-            Vars.add id {pvar; typ; loc; kind= CXX_REF captured_definition_loc} astate.vars
+            Vars.add id
+              {pvar; typ; loc; kind= CXX_REF captured_definition_loc; is_implicit= false}
+              astate.vars
         | None -> (
           match get_captured_local_cpp_std_string_loc attributes pvar with
           | Some captured_definition_loc ->
               Vars.add id
-                {pvar; typ; loc; kind= LOCAL_CXX_STRING captured_definition_loc}
+                {pvar; typ; loc; kind= LOCAL_CXX_STRING captured_definition_loc; is_implicit= false}
                 astate.vars
           | _ -> (
             try
               let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
               if not isChecked.checked then
-                Vars.add id {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF} astate.vars
+                Vars.add id
+                  {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF; is_implicit= false}
+                  astate.vars
               else astate.vars
             with Caml.Not_found -> astate.vars ) )
     in
     {astate with vars}
+
+
+  let process_exp exp astate =
+    match exp with
+    | Exp.Lfield ({exp= Exp.Var id; is_implicit}, _, _) -> (
+      match Vars.find_opt id astate.vars with
+      | Some ivars_data when is_implicit ->
+          let vars = Vars.add id {ivars_data with is_implicit} astate.vars in
+          {astate with vars}
+      | _ ->
+          astate )
+    | _ ->
+        astate
 
 
   let store attributes pvar id pvar_typ loc astate =
@@ -399,6 +422,8 @@ module Domain = struct
 
 
   let load attributes id pvar loc typ astate = map (Mem.load attributes id pvar loc typ) astate
+
+  let process_exp exp astate = map (Mem.process_exp exp) astate
 
   let store attributes pvar id pvar_typ loc astate =
     map (Mem.store attributes pvar id pvar_typ loc) astate
@@ -492,8 +517,13 @@ module TransferFunctions = struct
     match instr with
     | Load {id; e= Lvar pvar; loc; typ} ->
         Domain.load attributes id pvar loc typ astate
+    | Load {e} ->
+        Domain.process_exp e astate
     | Store {e1= Lvar pvar; e2= Var id; typ= pvar_typ; loc} ->
         Domain.store attributes pvar id pvar_typ loc astate
+    | Store {e1; e2} ->
+        let astate = Domain.process_exp e1 astate in
+        Domain.process_exp e2 astate
     | Prune (Var id, _, _, _) ->
         Domain.exec_null_check_id id astate
     (* If (strongSelf != nil) or equivalent else branch *)
@@ -502,6 +532,9 @@ module TransferFunctions = struct
     | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, _) ->
         if Exp.is_null_literal e then Domain.exec_null_check_id id astate else astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
+        let astate =
+          List.fold ~init:astate ~f:(fun astate (exp, _) -> Domain.process_exp exp astate) args
+        in
         report_unchecked_strongself_issues_on_args proc_desc err_log astate callee_pn args
     | _ ->
         astate
@@ -574,10 +607,11 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
           && Pvar.is_syntactic self.pvar
           && Option.is_none self.loc.Location.macro_file_opt
         then
-          Some
-            { Jsonbug_j.original= Some (to_string self.DomainData.pvar)
-            ; replacement= Some (to_string strongSelf)
-            ; additional= None }
+          let original, replacement =
+            if self.is_implicit then ("", F.asprintf "%s->" (to_string strongSelf))
+            else (to_string self.DomainData.pvar, to_string strongSelf)
+          in
+          Some {Jsonbug_j.original= Some original; replacement= Some replacement; additional= None}
         else None )
       strongSelf_opt
   in
