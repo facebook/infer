@@ -482,8 +482,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ?method_signature:callee_ms_opt empty_control
 
 
-  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
-      ~is_member_of_const =
+  let field_deref_trans trans_state ?(is_implicit_self = false) stmt_info pre_trans_result decl_ref
+      ~is_constructor_init ~is_member_of_const =
     let open CContext in
     let context = trans_state.context in
     let sil_loc =
@@ -532,7 +532,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             fieldname_no_weak_info
       else fieldname_no_weak_info
     in
-    let field_exp = Exp.Lfield ({exp= obj_sil; is_implicit= false}, field_name, class_typ) in
+    let field_exp =
+      Exp.Lfield ({exp= obj_sil; is_implicit= is_implicit_self}, field_name, class_typ)
+    in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
     (* 1. Class is not a pointer type - it means that it's rvalue struct most likely coming from*)
@@ -939,8 +941,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     res_trans
 
 
-  and decl_ref_trans ?(is_constructor_init = false) ?(is_member_of_const = false) ~context
-      trans_state stmt_info decl_ref =
+  and decl_ref_trans ?(is_constructor_init = false) ?(is_member_of_const = false)
+      ?(is_implicit_self = false) ~context trans_state stmt_info decl_ref =
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match (decl_kind, context) with
     | `EnumConstant, _ ->
@@ -953,8 +955,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
         (* a field outside of constructor initialization is probably a pointer to member, which we
            do not support *)
-        field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
-          ~is_member_of_const
+        field_deref_trans trans_state ~is_implicit_self stmt_info pre_trans_result decl_ref
+          ~is_constructor_init ~is_member_of_const
     | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
         method_deref_trans trans_state ~context decl_ref stmt_info decl_kind
     | _ ->
@@ -3447,7 +3449,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
-  and do_memb_ivar_ref_exp ~is_member_of_const trans_state stmt_info stmt_list decl_ref =
+  and do_memb_ivar_ref_exp ~is_member_of_const ?(is_implicit_self = false) trans_state stmt_info
+      stmt_list decl_ref =
     let exp_stmt =
       extract_stmt_from_singleton stmt_list stmt_info.Clang_ast_t.si_source_range
         "in MemberExpr there must be only one stmt defining its expression."
@@ -3457,13 +3460,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* int p = X(1).field; *)
     let trans_state' = {trans_state with var_exp_typ= None} in
     let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
-    decl_ref_trans ~is_member_of_const ~context:(MemberOrIvar result_trans_exp_stmt) trans_state
-      stmt_info decl_ref
+    decl_ref_trans ~is_member_of_const ~is_implicit_self
+      ~context:(MemberOrIvar result_trans_exp_stmt) trans_state stmt_info decl_ref
 
 
   and objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-    do_memb_ivar_ref_exp ~is_member_of_const:false trans_state stmt_info stmt_list decl_ref
+    let start_loc_column = (fst stmt_info.Clang_ast_t.si_source_range).Clang_ast_t.sl_column in
+    let end_loc_column = (snd stmt_info.Clang_ast_t.si_source_range).Clang_ast_t.sl_column in
+    let is_implicit_self =
+      match (start_loc_column, end_loc_column) with
+      | Some start_col, Some end_col ->
+          Int.equal start_col end_col
+      | _ ->
+          false
+    in
+    do_memb_ivar_ref_exp ~is_member_of_const:false ~is_implicit_self trans_state stmt_info stmt_list
+      decl_ref
 
 
   and memberExpr_trans trans_state stmt_info stmt_list expr_info member_expr_info =
