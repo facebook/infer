@@ -1172,7 +1172,6 @@ int ASTExporter<ATDWriter>::NamespaceDeclTupleSize() {
 //@atd #define namespace_decl_tuple named_decl_tuple * decl_context_tuple * namespace_decl_info
 //@atd type namespace_decl_info = {
 //@atd   ~is_inline : bool;
-//@atd   ?original_namespace : decl_ref option;
 //@atd } <ocaml field_prefix="ndi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *D) {
@@ -1180,14 +1179,9 @@ void ASTExporter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *D) {
   VisitDeclContext(D);
 
   bool IsInline = D->isInline();
-  bool IsOriginalNamespace = D->isOriginalNamespace();
-  ObjectScope Scope(OF, 0 + IsInline + !IsOriginalNamespace);
+  ObjectScope Scope(OF, 0 + IsInline);
 
   OF.emitFlag("is_inline", IsInline);
-  if (!IsOriginalNamespace) {
-    OF.emitTag("original_namespace");
-    dumpDeclRef(*D->getOriginalNamespace());
-  }
 }
 
 template <class ATDWriter>
@@ -3450,7 +3444,6 @@ int ASTExporter<ATDWriter>::UnresolvedLookupExprTupleSize() {
 //@atd #define unresolved_lookup_expr_tuple overload_expr_tuple * unresolved_lookup_expr_info
 //@atd type unresolved_lookup_expr_info = {
 //@atd   ~requires_ADL : bool;
-//@atd   ~is_overloaded : bool;
 //@atd   ?naming_class : decl_ref option;
 //@atd } <ocaml field_prefix="ulei_">
 template <class ATDWriter>
@@ -3459,14 +3452,11 @@ void ASTExporter<ATDWriter>::VisitUnresolvedLookupExpr(
   VisitOverloadExpr(Node);
 
   bool RequiresADL = Node->requiresADL();
-  bool IsOverloaded = Node->isOverloaded();
   bool HasNamingClass = Node->getNamingClass();
-  ObjectScope Scope(
-      OF,
-      0 + RequiresADL + IsOverloaded + HasNamingClass); // not covered by tests
+  ObjectScope Scope(OF,
+                    0 + RequiresADL + HasNamingClass); // not covered by tests
 
   OF.emitFlag("requires_ADL", RequiresADL);
-  OF.emitFlag("is_overloaded", IsOverloaded);
   if (HasNamingClass) {
     OF.emitTag("naming_class");
     dumpDeclRef(*Node->getNamingClass());
@@ -3856,7 +3846,7 @@ int ASTExporter<ATDWriter>::AtomicExprTupleSize() {
 //@atd } <ocaml field_prefix="aei_">
 //@atd type atomic_expr_kind = [
 #define ATOMIC_BUILTIN(ID, TYPE, ATTRS) //@atd | AO@@ID
-#include <clang/Basic/Builtins.def>
+#include <clang/Basic/Builtins.inc>
 //@atd ]
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitAtomicExpr(const AtomicExpr *Node) {
@@ -3869,7 +3859,7 @@ void ASTExporter<ATDWriter>::VisitAtomicExpr(const AtomicExpr *Node) {
   case AtomicExpr::AO##ID:              \
     OF.emitSimpleVariant("AO" #ID);     \
     break;
-#include <clang/Basic/Builtins.def>
+#include <clang/Basic/Builtins.inc>
   default:
     llvm_unreachable("Unknown atomic_expr_kind is given!");
   }

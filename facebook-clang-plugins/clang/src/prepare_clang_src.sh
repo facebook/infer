@@ -13,9 +13,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHASUM=${SHASUM:-shasum -a 256}
 PATCH=${PATCH:-patch}
 
-LLVM_VER="18.1.3"
+LLVM_VER="19.1.1"
 LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/llvm-project-${LLVM_VER}.src.tar.xz"
-LLVM_SHA="2929f62d69dec0379e529eb632c40e15191e36f3bd58c2cb2df0413a0dc48651"
+LLVM_SHA="d40e933e2a208ee142898f85d886423a217e991abbcd42dd8211f507c93e1266"
 LLVM_FILE="llvm-project.src.tar.xz"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/err_ret_local_block.patch"

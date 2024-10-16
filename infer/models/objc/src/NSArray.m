@@ -16,7 +16,7 @@ void __infer_assume(bool cond);
 }
 
 - (NSArray*)arrayByAddingObject:(id)anObject {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
   return [NSArray alloc];
 }
 
@@ -25,7 +25,7 @@ void __infer_assume(bool cond);
 }
 
 + (instancetype)arrayWithObject:(id)anObject {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
   return [NSArray alloc];
 }
 

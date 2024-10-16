@@ -42,7 +42,7 @@ class smart_ptr {
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
   }
 
-  void use_shared_ptr1_Bad() {
+  void use_shared_ptr1_Bad_FN() {
     int i = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
   }
@@ -53,7 +53,7 @@ class smart_ptr {
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i, j);
   }
 
-  void use_shared_ptr2_Bad() {
+  void use_shared_ptr2_Bad_FN() {
     int i = 8;
     int j = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i, j);
@@ -65,7 +65,7 @@ class smart_ptr {
     std::shared_ptr<my_class> p = std::make_shared<my_class>(str, i);
   }
 
-  void shared_ptr_with_std_string_Bad() {
+  void shared_ptr_with_std_string_Bad_FN() {
     std::string str = "abc";
     int i = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(str, i);
@@ -76,7 +76,7 @@ class smart_ptr {
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
   }
 
-  void shared_ptr_with_const_int_Bad() {
+  void shared_ptr_with_const_int_Bad_FN() {
     const int i = 8;
     std::shared_ptr<my_class> p = std::make_shared<my_class>(i);
   }

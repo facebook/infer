@@ -163,6 +163,8 @@ test
 operator new
 operator new[]
 operator delete
+operator delete
+operator delete[]
 operator delete[]
 test_c11
 operator new

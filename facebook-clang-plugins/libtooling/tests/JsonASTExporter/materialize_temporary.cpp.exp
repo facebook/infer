@@ -594,47 +594,53 @@
         {
           "pointer" : 67
         },
-        "PseudoObject"
+        "UnresolvedTemplate"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 68
         },
-        "UnknownAny"
+        "PseudoObject"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 69
         },
-        "ARCUnbridgedCast"
+        "UnknownAny"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 70
         },
-        "BuiltinFn"
+        "ARCUnbridgedCast"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 71
         },
-        "ObjCId"
+        "BuiltinFn"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 72
         },
-        "ObjCClass"
+        "ObjCId"
       ]],
       ["BuiltinType" , [
         {
           "pointer" : 73
         },
+        "ObjCClass"
+      ]],
+      ["BuiltinType" , [
+        {
+          "pointer" : 74
+        },
         "ObjCSel"
       ]],
       ["PointerType" , [
         {
-          "pointer" : 74
+          "pointer" : 75
         },
         {
           "type_ptr" : 17
@@ -642,31 +648,31 @@
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 75
+          "pointer" : 76
         },
         "NullPtr"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 76
+          "pointer" : 77
         },
         "Half"
       ]],
       ["BuiltinType" , [
         {
-          "pointer" : 77
+          "pointer" : 78
         },
         "BFloat16"
       ]],
       ["RecordType" , [
         {
-          "pointer" : 78
+          "pointer" : 79
         },
-        79
+        80
       ]],
       ["PointerType" , [
         {
-          "pointer" : 80
+          "pointer" : 81
         },
         {
           "type_ptr" : 14,
@@ -675,7 +681,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 81
+          "pointer" : 82
         },
         {
           "type_ptr" : 19,
@@ -684,7 +690,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 82
+          "pointer" : 83
         },
         {
           "type_ptr" : 19
@@ -692,17 +698,17 @@
       ]],
       ["RecordType" , [
         {
-          "pointer" : 83
+          "pointer" : 84
         },
-        84
+        85
       ]],
       ["ConstantArrayType" , [
         {
-          "pointer" : 85
+          "pointer" : 86
         },
         {
           "element_type" : {
-            "type_ptr" : 83
+            "type_ptr" : 84
           },
           "stride" : 24
         },
@@ -719,40 +725,40 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 86
+          "pointer" : 87
         },
         {
-          "base_type" : 71
+          "base_type" : 72
         }
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 87
+          "pointer" : 88
         },
         {
-          "type_ptr" : 86
+          "type_ptr" : 87
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 88,
-          "desugared_type" : 87
+          "pointer" : 89,
+          "desugared_type" : 88
         },
         {
           "child_type" : {
-            "type_ptr" : 87
+            "type_ptr" : 88
           },
-          "decl_ptr" : 89
+          "decl_ptr" : 90
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 16,
-          "desugared_type" : 87
+          "desugared_type" : 88
         },
         {
           "child_type" : {
-            "type_ptr" : 88
+            "type_ptr" : 89
           },
           "decl_ptr" : 15
         }

@@ -190,17 +190,6 @@
           {
           },
           {
-            "original_namespace" : {
-              "kind" : <"Namespace">,
-              "decl_pointer" : 8,
-              "name" : {
-                "name" : "V",
-                "qual_name" : [
-                  "V",
-                  "Q"
-                ]
-              }
-            }
           }
         )>,
         <"NamespaceDecl" : (
@@ -681,47 +670,53 @@
         {
           "pointer" : 68
         },
-        <"PseudoObject">
+        <"UnresolvedTemplate">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 69
         },
-        <"UnknownAny">
+        <"PseudoObject">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 70
         },
-        <"ARCUnbridgedCast">
+        <"UnknownAny">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 71
         },
-        <"BuiltinFn">
+        <"ARCUnbridgedCast">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 72
         },
-        <"ObjCId">
+        <"BuiltinFn">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 73
         },
-        <"ObjCClass">
+        <"ObjCId">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 74
         },
+        <"ObjCClass">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 75
+        },
         <"ObjCSel">
       )>,
       <"PointerType" : (
         {
-          "pointer" : 75
+          "pointer" : 76
         },
         {
           "type_ptr" : 17
@@ -729,31 +724,31 @@
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 76
+          "pointer" : 77
         },
         <"NullPtr">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 77
+          "pointer" : 78
         },
         <"Half">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 78
+          "pointer" : 79
         },
         <"BFloat16">
       )>,
       <"RecordType" : (
         {
-          "pointer" : 79
+          "pointer" : 80
         },
-        80
+        81
       )>,
       <"PointerType" : (
         {
-          "pointer" : 81
+          "pointer" : 82
         },
         {
           "type_ptr" : 12,
@@ -762,7 +757,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 82
+          "pointer" : 83
         },
         {
           "type_ptr" : 19,
@@ -771,7 +766,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 83
+          "pointer" : 84
         },
         {
           "type_ptr" : 19
@@ -779,17 +774,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 84
+          "pointer" : 85
         },
-        85
+        86
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 86
+          "pointer" : 87
         },
         {
           "element_type" : {
-            "type_ptr" : 84
+            "type_ptr" : 85
           },
           "stride" : 24
         },
@@ -797,40 +792,40 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 87
+          "pointer" : 88
         },
         {
-          "base_type" : 72
+          "base_type" : 73
         }
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 88
+          "pointer" : 89
         },
         {
-          "type_ptr" : 87
+          "type_ptr" : 88
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 89,
-          "desugared_type" : 88
+          "pointer" : 90,
+          "desugared_type" : 89
         },
         {
           "child_type" : {
-            "type_ptr" : 88
+            "type_ptr" : 89
           },
-          "decl_ptr" : 90
+          "decl_ptr" : 91
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 16,
-          "desugared_type" : 88
+          "desugared_type" : 89
         },
         {
           "child_type" : {
-            "type_ptr" : 89
+            "type_ptr" : 90
           },
           "decl_ptr" : 15
         }

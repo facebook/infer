@@ -14,29 +14,29 @@
 @implementation NSMutableArray
 
 - (void)replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
 }
 
 - (void)removeObjectsAtIndexes:(NSIndexSet*)indexes {
-  id a = ((NSObject*)indexes)->isa;
+  id a = object_getClass(indexes);
 }
 
 - (void)replaceObjectsAtIndexes:(NSIndexSet*)indexes
                     withObjects:(NSArray*)objects {
-  id a = ((NSObject*)indexes)->isa;
-  id b = ((NSObject*)objects)->isa;
+  id a = object_getClass(indexes);
+  id b = object_getClass(objects);
 }
 
 - (void)setObject:(id)anObject atIndexedSubscript:(NSUInteger)index {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
 }
 
 - (void)addObject:(id)anObject {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
 }
 
 - (void)insertObject:(id)anObject atIndex:(NSUInteger)index {
-  id a = ((NSObject*)anObject)->isa;
+  id a = object_getClass(anObject);
 }
 
 + (instancetype)array {

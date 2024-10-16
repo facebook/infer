@@ -66,7 +66,7 @@ bool myrand(void);
   NSArray* foo = @[ @"aaa", @"bbb", str ];
 }
 
-- (NSArray*)nilInArrayWithObject {
+- (NSArray*)nilInArrayWithObject_FN {
   NSString* str = nil;
 
   // nil argument in arrayWithObject crashes
@@ -88,6 +88,6 @@ int ArrMain() {
   Arr* a = [Arr alloc];
   [a noProblem];
   [a nilInArrayLiteral0];
-  [a nilInArrayWithObject];
+  [a nilInArrayWithObject_FN];
   return 0;
 }

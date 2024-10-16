@@ -14,16 +14,16 @@
 @implementation NSMutableDictionary
 
 - (void)removeObjectForKey:(id)aKey {
-  id a = ((NSObject*)aKey)->isa;
+  id a = object_getClass(aKey);
 }
 
 - (void)setObject:(id)object forKeyedSubscript:(id<NSCopying>)aKey {
-  id a = ((NSObject*)aKey)->isa;
+  id a = object_getClass(aKey);
 }
 
 - (void)setObject:(id)anObject forKey:(id<NSCopying>)aKey {
-  id a = ((NSObject*)anObject)->isa;
-  id b = ((NSObject*)aKey)->isa;
+  id a = object_getClass(anObject);
+  id b = object_getClass(aKey);
 }
 
 + (instancetype)dictionary {
@@ -31,7 +31,7 @@
 }
 
 + (NSMutableDictionary*)dictionaryWithSharedKeySet:(id)keyset {
-  id a = ((NSObject*)keyset)->isa;
+  id a = object_getClass(keyset);
 }
 
 @end

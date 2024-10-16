@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-void update_dict_with_null() {
+void update_dict_with_null_FN() {
   NSMutableDictionary* mDict =
       [NSMutableDictionary dictionaryWithObjectsAndKeys:@"Matt",
                                                         @"firstName",
@@ -44,7 +44,7 @@ void update_dict_without_null() {
   mDict[@"firstName"] = @"Dulma";
 }
 
-void update_array_with_null() {
+void update_array_with_null_FN() {
   NSMutableArray* array =
       [NSMutableArray arrayWithObjects:@"Dulma", @"Rodriguez", nil];
   NSUInteger idx = 0;
@@ -60,21 +60,21 @@ void update_array_without_null() {
   array[idx] = newObject;
 }
 
-void add_nil_to_array() {
+void add_nil_to_array_FN() {
   NSMutableArray* array =
       [NSMutableArray arrayWithObjects:@"Dulma", @"Rodriguez", nil];
   id str = nil;
   [array addObject:str];
 }
 
-void insert_nil_in_array() {
+void insert_nil_in_array_FN() {
   NSMutableArray* array =
       [NSMutableArray arrayWithObjects:@"Dulma", @"Rodriguez", nil];
   id str = nil;
   [array insertObject:str atIndex:0];
 }
 
-void add_nil_in_dict() {
+void add_nil_in_dict_FN() {
   NSMutableDictionary* mDict =
       [NSMutableDictionary dictionaryWithObjectsAndKeys:@"Matt",
                                                         @"firstName",

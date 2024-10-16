@@ -1,8 +1,8 @@
 --- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
 +++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-@@ -1239,10 +1239,7 @@ void CXXNameMangler::mangleFloatLiteral(
+@@ -1240,10 +1240,7 @@ void CXXNameMangler::mangleFloatLiteral(
  }
-
+ 
  void CXXNameMangler::mangleFixedPointLiteral() {
 -  DiagnosticsEngine &Diags = Context.getDiags();
 -  unsigned DiagID = Diags.getCustomDiagID(
@@ -10,11 +10,11 @@
 -  Diags.Report(DiagID);
 +  Out << "__unhandled_FixedPointLiteral";
  }
-
+ 
  void CXXNameMangler::mangleNullPointer(QualType T) {
-@@ -3812,11 +3809,7 @@ void CXXNameMangler::mangleNeonVectorTyp
+@@ -3822,11 +3819,7 @@ void CXXNameMangler::mangleNeonVectorTyp
  }
-
+ 
  void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
 -  DiagnosticsEngine &Diags = Context.getDiags();
 -  unsigned DiagID = Diags.getCustomDiagID(
@@ -23,9 +23,9 @@
 -  Diags.Report(T->getAttributeLoc(), DiagID);
 +  Out << "__unhandled_NeonVectorType";
  }
-
+ 
  static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
-@@ -3889,11 +3882,7 @@ void CXXNameMangler::mangleAArch64NeonVe
+@@ -3899,11 +3892,7 @@ void CXXNameMangler::mangleAArch64NeonVe
    Out << TypeName.length() << TypeName;
  }
  void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
@@ -36,10 +36,10 @@
 -  Diags.Report(T->getAttributeLoc(), DiagID);
 +  Out << "__unhandled_AArch64NeonVectorType";
  }
-
+ 
  // The AArch64 ACLE specifies that fixed-length SVE vector and predicate types
-@@ -3986,11 +3975,7 @@ void CXXNameMangler::mangleAArch64FixedS
-
+@@ -3996,11 +3985,7 @@ void CXXNameMangler::mangleAArch64FixedS
+ 
  void CXXNameMangler::mangleAArch64FixedSveVectorType(
      const DependentVectorType *T) {
 -  DiagnosticsEngine &Diags = Context.getDiags();
@@ -49,9 +49,9 @@
 -  Diags.Report(T->getAttributeLoc(), DiagID);
 +  Out << "__unhandled_AArch64FixedSveVectorType";
  }
-
+ 
  void CXXNameMangler::mangleRISCVFixedRVVVectorType(const VectorType *T) {
-@@ -4747,12 +4732,7 @@ recurse:
+@@ -4770,12 +4755,7 @@ recurse:
    {
      NotPrimaryExpr();
      if (!NullOut) {
@@ -65,7 +65,7 @@
        return;
      }
      break;
-@@ -4787,12 +4767,7 @@ recurse:
+@@ -4810,12 +4790,7 @@ recurse:
    // Even gcc-4.5 doesn't mangle this.
    case Expr::BinaryConditionalOperatorClass: {
      NotPrimaryExpr();
@@ -78,8 +78,8 @@
 +    Out << "__unhandled_BinaryConditionalOperatorClass";
      return;
    }
-
-@@ -5157,18 +5132,11 @@ recurse:
+ 
+@@ -5188,18 +5163,11 @@ recurse:
        return;
      }
      case UETT_VecStep: {

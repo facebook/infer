@@ -629,7 +629,7 @@ TranslationUnitDecl None:None:None None:None:None
   NamespaceDecl tests/namespace_decl.cpp:17:1 tests/namespace_decl.cpp:19:1
   UsingDirectiveDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
   TypedefDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
-58 98 
+64 98 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -747,6 +747,12 @@ TranslationUnitDecl None:None:None None:None:None
   FunctionDecl tests/new.cpp:34:12 tests/new.cpp:34:12
      ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
   FunctionDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+     ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+     ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+  FunctionDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+     ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+  FunctionDecl tests/new.cpp:34:12 tests/new.cpp:34:12
+     ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
      ParmVarDecl tests/new.cpp:34:12 tests/new.cpp:34:12
   FunctionDecl tests/new.cpp:38:1 tests/new.cpp:43:1
     CompoundStmt

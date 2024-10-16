@@ -1463,47 +1463,53 @@
         {
           "pointer" : 112
         },
-        <"PseudoObject">
+        <"UnresolvedTemplate">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 113
         },
-        <"UnknownAny">
+        <"PseudoObject">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 114
         },
-        <"ARCUnbridgedCast">
+        <"UnknownAny">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 115
         },
-        <"BuiltinFn">
+        <"ARCUnbridgedCast">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 116
         },
-        <"ObjCId">
+        <"BuiltinFn">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 117
         },
-        <"ObjCClass">
+        <"ObjCId">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 118
         },
+        <"ObjCClass">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 119
+        },
         <"ObjCSel">
       )>,
       <"PointerType" : (
         {
-          "pointer" : 119
+          "pointer" : 120
         },
         {
           "type_ptr" : 61
@@ -1511,31 +1517,31 @@
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 120
+          "pointer" : 121
         },
         <"NullPtr">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 121
+          "pointer" : 122
         },
         <"Half">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 122
+          "pointer" : 123
         },
         <"BFloat16">
       )>,
       <"RecordType" : (
         {
-          "pointer" : 123
+          "pointer" : 124
         },
-        124
+        125
       )>,
       <"PointerType" : (
         {
-          "pointer" : 125
+          "pointer" : 126
         },
         {
           "type_ptr" : 13,
@@ -1544,7 +1550,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 126
+          "pointer" : 127
         },
         {
           "type_ptr" : 63,
@@ -1553,7 +1559,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 127
+          "pointer" : 128
         },
         {
           "type_ptr" : 63
@@ -1561,17 +1567,17 @@
       )>,
       <"RecordType" : (
         {
-          "pointer" : 128
+          "pointer" : 129
         },
-        129
+        130
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 130
+          "pointer" : 131
         },
         {
           "element_type" : {
-            "type_ptr" : 128
+            "type_ptr" : 129
           },
           "stride" : 24
         },
@@ -1585,7 +1591,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 131
+          "pointer" : 132
         },
         {
           "type_ptr" : 8
@@ -1634,7 +1640,7 @@
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 132
+          "pointer" : 133
         },
         {
           "type_ptr" : 8,
@@ -1652,7 +1658,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 133
+          "pointer" : 134
         },
         {
           "return_type" : {
@@ -1662,7 +1668,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 132
+              "type_ptr" : 133
             }
           ]
         }
@@ -1686,7 +1692,7 @@
       )>,
       <"RValueReferenceType" : (
         {
-          "pointer" : 134
+          "pointer" : 135
         },
         {
           "type_ptr" : 8
@@ -1702,7 +1708,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 135
+          "pointer" : 136
         },
         {
           "return_type" : {
@@ -1712,7 +1718,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 134
+              "type_ptr" : 135
             }
           ]
         }
@@ -1754,7 +1760,7 @@
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 136
+          "pointer" : 137
         },
         {
           "type_ptr" : 29,
@@ -1772,7 +1778,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 137
+          "pointer" : 138
         },
         {
           "return_type" : {
@@ -1782,7 +1788,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 136
+              "type_ptr" : 137
             }
           ]
         }
@@ -1818,7 +1824,7 @@
       )>,
       <"RValueReferenceType" : (
         {
-          "pointer" : 138
+          "pointer" : 139
         },
         {
           "type_ptr" : 29
@@ -1834,7 +1840,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 139
+          "pointer" : 140
         },
         {
           "return_type" : {
@@ -1844,7 +1850,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 138
+              "type_ptr" : 139
             }
           ]
         }
@@ -1880,15 +1886,15 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 140
+          "pointer" : 141
         },
         {
-          "type_ptr" : 127
+          "type_ptr" : 128
         }
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 141
+          "pointer" : 142
         },
         {
           "type_ptr" : 8
@@ -1896,7 +1902,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 142
+          "pointer" : 143
         },
         {
           "type_ptr" : 29
@@ -1904,7 +1910,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 143
+          "pointer" : 144
         },
         {
           "type_ptr" : 57
@@ -1912,7 +1918,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 144
+          "pointer" : 145
         },
         {
           "return_type" : {
@@ -1946,40 +1952,40 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 145
+          "pointer" : 146
         },
         {
-          "base_type" : 116
+          "base_type" : 117
         }
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 146
+          "pointer" : 147
         },
         {
-          "type_ptr" : 145
+          "type_ptr" : 146
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 147,
-          "desugared_type" : 146
+          "pointer" : 148,
+          "desugared_type" : 147
         },
         {
           "child_type" : {
-            "type_ptr" : 146
+            "type_ptr" : 147
           },
-          "decl_ptr" : 148
+          "decl_ptr" : 149
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 60,
-          "desugared_type" : 146
+          "desugared_type" : 147
         },
         {
           "child_type" : {
-            "type_ptr" : 147
+            "type_ptr" : 148
           },
           "decl_ptr" : 59
         }

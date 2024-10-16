@@ -30,8 +30,8 @@
 }
 
 + (instancetype)dictionaryWithObject:(id)object forKey:(id)key {
-  id a = ((NSObject*)object)->isa;
-  id b = ((NSObject*)key)->isa;
+  id a = object_getClass(object);
+  id b = object_getClass(key);
   return [NSDictionary alloc];
 }
 

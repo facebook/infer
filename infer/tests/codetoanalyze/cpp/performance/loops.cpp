@@ -21,7 +21,7 @@ void nested_do_while(int p) {
   } while (a < 20);
 }
 
-void zeropad_linear(std::string s, std::string p) {
+void zeropad_linear_FN(std::string s, std::string p) {
   while (s == p) {
     p = p + "0";
   }

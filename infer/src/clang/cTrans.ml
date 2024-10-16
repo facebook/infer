@@ -5208,6 +5208,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CoyieldExpr (stmt_info, operand :: _, expr_info) ->
         coroutineSuspendExpr_trans trans_state stmt_info expr_info operand
     | AddrLabelExpr _
+    | ArraySectionExpr _
     | ArrayTypeTraitExpr _
     | AsTypeExpr _
     | CapturedStmt _
@@ -5226,6 +5227,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | DependentScopeDeclRefExpr _
     | DesignatedInitExpr _
     | DesignatedInitUpdateExpr _
+    | EmbedExpr _
     | ExpressionTraitExpr _
     | ExtVectorElementExpr _
     | FunctionParmPackExpr _
@@ -5239,7 +5241,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | NoInitExpr _
     | ObjCIsaExpr _
     | ObjCSubscriptRefExpr _
-    | OMPArraySectionExpr _
     | OMPArrayShapingExpr _
     | OMPAtomicDirective _
     | OMPBarrierDirective _
@@ -5258,6 +5259,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPForDirective _
     | OMPForSimdDirective _
     | OMPGenericLoopDirective _
+    | OMPInterchangeDirective _
     | OMPInteropDirective _
     | OMPIteratorExpr _
     | OMPMaskedDirective _
@@ -5279,6 +5281,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPParallelMasterTaskLoopDirective _
     | OMPParallelMasterTaskLoopSimdDirective _
     | OMPParallelSectionsDirective _
+    | OMPReverseDirective _
     | OMPScanDirective _
     | OMPScopeDirective _
     | OMPSectionDirective _
@@ -5315,7 +5318,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTeamsGenericLoopDirective _
     | OMPTileDirective _
     | OMPUnrollDirective _
+    | OpenACCComputeConstruct _
+    | OpenACCLoopConstruct _
     | PackExpansionExpr _
+    | PackIndexingExpr _
     | ParenListExpr _
     | RecoveryExpr _
     | RequiresExpr _

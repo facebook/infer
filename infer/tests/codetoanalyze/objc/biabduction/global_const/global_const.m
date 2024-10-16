@@ -22,7 +22,7 @@ static NSString* Global = @"A Global!";
   [dict removeObjectForKey:str];
 }
 
-- (void)doSomethingBadWithDict:(NSMutableDictionary*)dict
+- (void)doSomethingBadWithDict_FN:(NSMutableDictionary*)dict
                      andString:(NSString*)input {
   NSString* str = [Global stringByAppendingString:input];
   [dict removeObjectForKey:str];
