@@ -1673,7 +1673,9 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
       ~f:(fun astate {Struct.name= fld; typ= {Typ.quals= fld_quals}; annot} ->
         if Annot.Item.is_abstract annot && Typ.is_const fld_quals then
           match
-            PulseOperations.eval path NoAccess loc (Lfield (Lvar class_global_var, fld, typ)) astate
+            PulseOperations.eval path NoAccess loc
+              (Lfield ({exp= Lvar class_global_var; is_implicit= false}, fld, typ))
+              astate
           with
           | Sat (Ok (astate, (v, _))) ->
               AbductiveDomain.AddressAttributes.add_one v (Uninitialized (Const fld)) astate

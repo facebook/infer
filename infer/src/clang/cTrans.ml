@@ -532,7 +532,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             fieldname_no_weak_info
       else fieldname_no_weak_info
     in
-    let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
+    let field_exp = Exp.Lfield ({exp= obj_sil; is_implicit= false}, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
     (* 1. Class is not a pointer type - it means that it's rvalue struct most likely coming from*)
@@ -837,7 +837,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   match Tenv.lookup tenv tn with
                   | Some {fields} ->
                       List.map fields ~f:(fun {Struct.name= fieldname; typ= fieldtype} ->
-                          (Exp.Lfield (exp, fieldname, typ), fieldtype) )
+                          (Exp.Lfield ({exp; is_implicit= false}, fieldname, typ), fieldtype) )
                   | None ->
                       assert false
                 in
@@ -1771,7 +1771,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         List.filter_map fields ~f:(fun {Struct.name; typ} ->
             (* Note: This supports primitive types only for now. *)
             Option.map (Exp.zero_of_type typ) ~f:(fun zero_exp ->
-                let field_exp = Exp.Lfield (var_exp, name, this_type) in
+                let field_exp = Exp.Lfield ({exp= var_exp; is_implicit= false}, name, this_type) in
                 Sil.Store {e1= field_exp; typ; e2= zero_exp; loc} ) )
       else []
     in
@@ -2033,7 +2033,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                     assert false
               in
               let field_name = Fieldname.make class_tname ni_name in
-              let field_exp = Exp.Lfield (obj_sil, field_name, this_qual_type) in
+              let field_exp =
+                Exp.Lfield ({exp= obj_sil; is_implicit= false}, field_name, this_qual_type)
+              in
               let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
               let this_res_trans_destruct = mk_trans_result (field_exp, field_typ) empty_control in
               get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
@@ -2958,7 +2960,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match Tenv.lookup tenv tname with
       | Some {fields; supers} ->
           ( List.map fields ~f:(fun {Struct.name= fieldname; typ= fieldtype} ->
-                (Exp.Lfield (var_exp, fieldname, init_expr_typ), fieldtype) )
+                ( Exp.Lfield ({exp= var_exp; is_implicit= false}, fieldname, init_expr_typ)
+                , fieldtype ) )
           , supers )
       | None ->
           assert false
@@ -4426,7 +4429,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let field_name = Fieldname.make class_tname "__type_name" in
     let ret_exp = Exp.Var ret_id in
-    let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
+    let field_exp = Exp.Lfield ({exp= ret_exp; is_implicit= false}, field_name, typ) in
     let args =
       type_info_objc :: (field_exp, void_typ)
       :: Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result ->

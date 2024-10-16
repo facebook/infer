@@ -18,7 +18,7 @@ let get_dealloc_call_field (self_var, self_typ) location instrs
       in
       let id_field = Ident.create_fresh Ident.knormal in
       let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
-      let e = Exp.Lfield (Var id_pvar, fieldname, class_typ) in
+      let e = Exp.Lfield ({exp= Var id_pvar; is_implicit= false}, fieldname, class_typ) in
       let load_field_instr = Sil.Load {id= id_field; e; typ= field_typ; loc= location} in
       let ret_id = Ident.create_fresh Ident.knormal in
       let call_instr =

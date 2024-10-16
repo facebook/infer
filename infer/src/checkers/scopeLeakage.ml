@@ -726,7 +726,7 @@ let rec scope_target_var_of_ptr_expr (e : Exp.t) =
       Some (Var.of_id id)
   | Lvar pvar ->
       Some (Var.of_pvar pvar)
-  | Lfield (e, _, _) | Cast (_, e) | Exn e | Lindex (e, _) ->
+  | Lfield ({exp= e}, _, _) | Cast (_, e) | Exn e | Lindex (e, _) ->
       scope_target_var_of_ptr_expr e
   | Const _ | Closure _ | Sizeof _ | UnOp _ | BinOp _ ->
       None
@@ -816,7 +816,7 @@ let exec_instr scope_env tenv analyze_dependency instr =
   | Store {e1= Lvar pvar; typ} when Typ.is_pointer typ ->
       let lhs_var = Var.of_pvar pvar in
       [(lhs_var, Scope.of_type tenv typ)]
-  | Store {e1= Lfield (var_exp, fldname, _); typ; e2; loc} when Typ.is_pointer typ ->
+  | Store {e1= Lfield ({exp= var_exp}, fldname, _); typ; e2; loc} when Typ.is_pointer typ ->
       let lhs_var = Option.value_exn (var_of_ptr_exp var_exp) in
       let rhs_typ_scope = Scope.of_type tenv typ in
       let extended_typ_scope = Scope.extend_with_field_access rhs_typ_scope fldname (Some loc) in
@@ -875,7 +875,8 @@ let report_bad_field_assignments err_log proc_desc scoping =
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with
-      | Store {e1= Lfield (lvar_exp, fldname, lvar_type); e2; loc; typ} when Typ.is_pointer typ -> (
+      | Store {e1= Lfield ({exp= lvar_exp}, fldname, lvar_type); e2; loc; typ}
+        when Typ.is_pointer typ -> (
           let lvar = Option.value_exn (var_of_ptr_exp lvar_exp) in
           match var_of_ptr_exp e2 with
           | Some rvar ->

@@ -939,9 +939,9 @@ let rec exp_sub_ids (f : subst_fun) exp =
       let e1' = exp_sub_ids f e1 in
       let e2' = exp_sub_ids f e2 in
       if phys_equal e1' e1 && phys_equal e2' e2 then exp else Exp.BinOp (op, e1', e2')
-  | Lfield (e, fld, typ) ->
+  | Lfield ({exp= e; is_implicit}, fld, typ) ->
       let e' = exp_sub_ids f e in
-      if phys_equal e' e then exp else Exp.Lfield (e', fld, typ)
+      if phys_equal e' e then exp else Exp.Lfield ({exp= e'; is_implicit}, fld, typ)
   | Lindex (e1, e2) ->
       let e1' = exp_sub_ids f e1 in
       let e2' = exp_sub_ids f e2 in
@@ -988,9 +988,9 @@ let rec exp_replace_exp epairs e =
     | Exp.Cast (ty, e0) ->
         let e0' = exp_replace_exp epairs e0 in
         if phys_equal e0 e0' then e else Exp.Cast (ty, e0')
-    | Exp.Lfield (e0, fname, ty) ->
+    | Exp.Lfield ({exp= e0; is_implicit}, fname, ty) ->
         let e0' = exp_replace_exp epairs e0 in
-        if phys_equal e0 e0' then e else Exp.Lfield (e0', fname, ty)
+        if phys_equal e0 e0' then e else Exp.Lfield ({exp= e0'; is_implicit}, fname, ty)
     | Exp.Lindex (base, index) ->
         let base' = exp_replace_exp epairs base in
         let index' = exp_replace_exp epairs index in
@@ -1103,7 +1103,7 @@ let exp_get_offsets exp =
         f offlist_past l
     | Cast (_, sub_exp) ->
         f offlist_past sub_exp
-    | Lfield (sub_exp, fldname, typ) ->
+    | Lfield ({exp= sub_exp}, fldname, typ) ->
         f (Off_fld (fldname, typ) :: offlist_past) sub_exp
     | Lindex (sub_exp, e) ->
         f (Off_index e :: offlist_past) sub_exp
@@ -1116,7 +1116,7 @@ let exp_add_offsets exp offsets =
     | [] ->
         acc
     | Off_fld (fld, typ) :: offs' ->
-        f (Exp.Lfield (acc, fld, typ)) offs'
+        f (Exp.Lfield ({exp= acc; is_implicit= false}, fld, typ)) offs'
     | Off_index e :: offs' ->
         f (Exp.Lindex (acc, e)) offs'
   in

@@ -1546,7 +1546,7 @@ struct
         Env.State.shape_var state (Var.of_id id)
     | Lvar pvar ->
         Env.State.shape_var state (Var.of_pvar pvar)
-    | Lfield (e, fieldname, _) ->
+    | Lfield ({exp= e}, fieldname, _) ->
         let shape_e = shape_expr e in
         Env.State.shape_record_field state shape_e fieldname
     | Sizeof {dynamic_length= None} ->

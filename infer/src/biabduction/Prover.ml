@@ -641,7 +641,7 @@ let is_root tenv prop base_exp exp =
         if check_equal tenv prop base_exp e then Some offlist_past else None
     | Exp.Cast (_, sub_exp) ->
         f offlist_past sub_exp
-    | Exp.Lfield (sub_exp, fldname, typ) ->
+    | Exp.Lfield ({exp= sub_exp}, fldname, typ) ->
         f (Predicates.Off_fld (fldname, typ) :: offlist_past) sub_exp
     | Exp.Lindex (sub_exp, e) ->
         f (Predicates.Off_index e :: offlist_past) sub_exp
@@ -707,7 +707,7 @@ let check_disequal tenv prop e1 e2 =
         true
     | Exp.UnOp (op1, e1, _), Exp.UnOp (op2, e2, _) ->
         if Unop.equal op1 op2 then check_expr_disequal e1 e2 else false
-    | Exp.Lfield (e1, f1, _), Exp.Lfield (e2, f2, _) ->
+    | Exp.Lfield ({exp= e1}, f1, _), Exp.Lfield ({exp= e2}, f2, _) ->
         if Fieldname.equal f1 f2 then check_expr_disequal e1 e2 else false
     | Exp.Exn e1, Exp.Exn e2 ->
         check_expr_disequal e1 e2
@@ -1432,7 +1432,7 @@ let exp_imply tenv calc_missing (subs : subst2) e1_in e2_in : subst2 =
         raise (IMPL_EXC ("expressions not equal", subs, EXC_FALSE_EXPS (e1, e2)))
     | e1, Exp.Const _ ->
         raise (IMPL_EXC ("lhs not constant", subs, EXC_FALSE_EXPS (e1, e2)))
-    | Exp.Lfield (e1, fd1, _), Exp.Lfield (e2, fd2, _) when Fieldname.equal fd1 fd2 ->
+    | Exp.Lfield ({exp= e1}, fd1, _), Exp.Lfield ({exp= e2}, fd2, _) when Fieldname.equal fd1 fd2 ->
         do_imply subs e1 e2
     | Exp.Lindex (e1, f1), Exp.Lindex (e2, f2) ->
         do_imply (do_imply subs e1 e2) f1 f2
@@ -1453,7 +1453,7 @@ let path_to_id path =
     | Exp.Var id ->
         if Ident.is_footprint id then None
         else Some (Ident.name_to_string (Ident.get_name id) ^ string_of_int (Ident.get_stamp id))
-    | Exp.Lfield (e, fld, _) -> (
+    | Exp.Lfield ({exp= e}, fld, _) -> (
       match f e with None -> None | Some s -> Some (s ^ "_" ^ Fieldname.to_string fld) )
     | Exp.Lindex (e, ind) -> (
       match f e with None -> None | Some s -> Some (s ^ "_" ^ Exp.to_string ind) )
@@ -1580,7 +1580,9 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
     | 0 ->
         let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
         let subs', se_frame, se_missing =
-          sexp_imply tenv (Exp.Lfield (source, f2, typ2)) false calc_missing subs se1 se2 typ'
+          sexp_imply tenv
+            (Exp.Lfield ({exp= source; is_implicit= false}, f2, typ2))
+            false calc_missing subs se1 se2 typ'
         in
         let subs'', fld_frame, fld_missing =
           struct_imply tenv source calc_missing subs' fsel1' fsel2' typ2
@@ -1600,7 +1602,9 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
     | _ ->
         let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
         let subs' =
-          sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
+          sexp_imply_nolhs tenv
+            (Exp.Lfield ({exp= source; is_implicit= false}, f2, typ2))
+            calc_missing subs se2 typ'
         in
         let subs', fld_frame, fld_missing =
           struct_imply tenv source calc_missing subs' fsel1 fsel2' typ2
@@ -1610,7 +1614,9 @@ and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 :
   | [], (f2, se2) :: fsel2' ->
       let typ' = Struct.fld_typ ~lookup ~default:StdTyp.void f2 typ2 in
       let subs' =
-        sexp_imply_nolhs tenv (Exp.Lfield (source, f2, typ2)) calc_missing subs se2 typ'
+        sexp_imply_nolhs tenv
+          (Exp.Lfield ({exp= source; is_implicit= false}, f2, typ2))
+          calc_missing subs se2 typ'
       in
       let subs'', fld_frame, fld_missing =
         struct_imply tenv source calc_missing subs' [] fsel2' typ2
@@ -1712,7 +1718,7 @@ let filter_hpred sub hpred2 hpred1 =
 let hpred_has_primed_lhs sub hpred =
   let rec find_primed e =
     match e with
-    | Exp.Lfield (e, _, _) ->
+    | Exp.Lfield ({exp= e}, _, _) ->
         find_primed e
     | Exp.Lindex (e, _) ->
         find_primed e
@@ -1757,7 +1763,7 @@ let expand_hpred_pointer =
   fun tenv calc_index_frame hpred ->
     let rec expand changed calc_index_frame hpred =
       match hpred with
-      | Predicates.Hpointsto (Lfield (adr_base, fld, adr_typ), cnt, cnt_texp) ->
+      | Predicates.Hpointsto (Lfield ({exp= adr_base}, fld, adr_typ), cnt, cnt_texp) ->
           let cnt_texp' =
             match
               match adr_typ.desc with

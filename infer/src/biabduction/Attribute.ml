@@ -255,7 +255,7 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
         walk e
     | Exp.Lvar _ ->
         ()
-    | Exp.Lfield (e, _, _) ->
+    | Exp.Lfield ({exp= e}, _, _) ->
         walk e
     | Exp.Lindex (e1, e2) ->
         walk e1 ;
@@ -365,7 +365,7 @@ let find_equal_formal_path tenv e prop =
                       | Predicates.Eexp (exp2, _) when Exp.equal exp2 e -> (
                         match find_in_sigma exp1 seen_hpreds with
                         | Some vfs ->
-                            Some (Exp.Lfield (vfs, field, StdTyp.void))
+                            Some (Exp.Lfield ({exp= vfs; is_implicit= false}, field, StdTyp.void))
                         | None ->
                             None )
                       | _ ->

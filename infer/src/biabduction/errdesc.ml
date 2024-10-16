@@ -195,7 +195,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
             | None ->
                 exp_rv_dexp_ tenv seen node' (Exp.Var id) )
         else Some (DExp.Dpvar pvar)
-    | Exp.Lfield (Exp.Var id, f, _) when Ident.is_normal id -> (
+    | Exp.Lfield ({exp= Exp.Var id}, f, _) when Ident.is_normal id -> (
         if verbose then (
           L.d_str "exp_lv_dexp: Lfield with var " ;
           Exp.d_exp (Exp.Var id) ;
@@ -205,7 +205,7 @@ and exp_lv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
             None
         | Some de ->
             Some (DExp.Darrow (de, f)) )
-    | Exp.Lfield (e1, f, _) -> (
+    | Exp.Lfield ({exp= e1}, f, _) -> (
         if verbose then (
           L.d_str "exp_lv_dexp: Lfield " ;
           Exp.d_exp e1 ;
@@ -268,7 +268,7 @@ and exp_rv_dexp_ tenv (seen_ : Exp.Set.t) node e : DExp.t option =
           Exp.d_exp e ;
           L.d_ln () ) ;
         find_normal_variable_load_ tenv seen node id
-    | Exp.Lfield (e1, f, _) -> (
+    | Exp.Lfield ({exp= e1}, f, _) -> (
         if verbose then (
           L.d_str "exp_rv_dexp: Lfield " ;
           Exp.d_exp e1 ;
@@ -844,7 +844,7 @@ let rec find_outermost_dereference tenv node e =
         Exp.d_exp e ;
         L.d_ln () ) ;
       find_normal_variable_load tenv node id
-  | Exp.Lfield (e', _, _) ->
+  | Exp.Lfield ({exp= e'}, _, _) ->
       if verbose then (
         L.d_str "find_outermost_dereference: Lfield " ;
         Exp.d_exp e ;

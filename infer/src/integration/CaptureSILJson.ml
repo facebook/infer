@@ -296,7 +296,7 @@ and parse_exp (json : Safe.t) =
     let e = parse_exp (member "expression" json) in
     let fi = parse_fieldident (member "identifier" json) in
     let t = parse_sil_type_name (member "type" json) in
-    Exp.Lfield (e, fi, t)
+    Exp.Lfield ({exp= e; is_implicit= false}, fi, t)
   else if String.equal ekind "LindexExpression" then
     let e1 = parse_exp (member "array" json) in
     let e2 = parse_exp (member "index" json) in

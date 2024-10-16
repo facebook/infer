@@ -139,7 +139,7 @@ end = struct
       | [] ->
           acc
       | Field (f, t) :: syn_offs' ->
-          let acc' = List.map ~f:(fun e -> Exp.Lfield (e, f, t)) acc in
+          let acc' = List.map ~f:(fun e -> Exp.Lfield ({exp= e; is_implicit= false}, f, t)) acc in
           convert acc' syn_offs'
       | Index idx :: syn_offs' ->
           let acc' = List.map ~f:(fun e -> Exp.Lindex (e, idx)) acc in

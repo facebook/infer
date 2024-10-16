@@ -418,7 +418,7 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     let report_unchecked_strongself_issues_on_exp strongVars (exp : Exp.t) =
       match exp with
-      | Lfield (Var var, _, _) ->
+      | Lfield ({exp= Var var}, _, _) ->
           Domain.report_unchecked_strongself_issues proc_desc err_log "dereferenced" var domain
       | _ ->
           strongVars

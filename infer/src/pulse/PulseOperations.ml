@@ -243,7 +243,7 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
       Sat (Ok (astate, origin))
   | Lvar pvar ->
       Sat (Ok (eval_var_to_value_origin path location pvar astate))
-  | Lfield (exp', field, _) ->
+  | Lfield ({exp= exp'}, field, _) ->
       let+* astate, ((addr, _) as addr_hist) = eval path Read location exp' astate in
       let mode = degrade_mode addr astate mode in
       eval_access_to_value_origin path mode location addr_hist (FieldAccess field) astate
@@ -402,7 +402,7 @@ let prune path location ~condition astate =
 let degrade_mode_exp path location exp astate mode =
   let rec has_unknown_effect exp =
     match (exp : Exp.t) with
-    | Lfield (exp, _, _) | Lindex (exp, _) ->
+    | Lfield ({exp}, _, _) | Lindex (exp, _) ->
         let** astate, (addr, _) = eval path NoAccess location exp astate in
         if AddressAttributes.has_unknown_effect addr astate then Sat (Ok true)
         else has_unknown_effect exp
@@ -503,7 +503,7 @@ let hack_python_propagates_type_on_load tenv path loc rhs_exp addr astate =
          so we redo part of the work ourself *)
       let open IOption.Let_syntax in
       match rhs_exp with
-      | Exp.Lfield (recv, field_name, _) ->
+      | Exp.Lfield ({exp= recv}, field_name, _) ->
           let* _, (base_addr, _) =
             eval path NoAccess loc recv astate |> PulseOperationResult.sat_ok
           in

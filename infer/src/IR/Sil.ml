@@ -199,7 +199,7 @@ let rec exp_equal_structural e e' exp_map =
       exp_equal_structural e e' exp_map &&+ Typ.equal t t'
   | Lvar _, Lvar _ ->
       equal_exps_with_map e e' exp_map
-  | Lfield (e, f, t), Lfield (e', f', t') ->
+  | Lfield ({exp= e}, f, t), Lfield ({exp= e'}, f', t') ->
       exp_equal_structural e e' exp_map &&+ (Fieldname.equal f f' && Typ.equal t t')
   | Lindex (e, f), Lindex (e', f') ->
       exp_equal_structural e e' exp_map &&* exp_equal_structural f f'

@@ -684,7 +684,7 @@ let rec expression (context : JContext.t) pc expr =
       let instrs, sil_expr, _ = expression context pc ex in
       let field_name = get_field_name program false tenv cn fs in
       let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
-      let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
+      let sil_expr = Exp.Lfield ({exp= sil_expr; is_implicit= false}, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
       let lderef_instr = Sil.Load {id= tmp_id; e= sil_expr; typ= type_of_expr; loc} in
       (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
@@ -702,7 +702,7 @@ let rec expression (context : JContext.t) pc expr =
         (* Infer to understand the assert keyword in the expected way *)
         (instrs, Exp.zero, type_of_expr)
       else
-        let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
+        let sil_expr = Exp.Lfield ({exp= sil_expr; is_implicit= false}, field_name, sil_type) in
         let tmp_id = Ident.create_fresh Ident.knormal in
         let lderef_instr = Sil.Load {id= tmp_id; e= sil_expr; typ= type_of_expr; loc} in
         (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
@@ -1066,7 +1066,10 @@ let instruction (context : JContext.t) pc instr : translation =
         let stml2, sil_expr_rhs, rhs_typ = expression context pc e_rhs in
         let field_name = get_field_name program false tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
-        let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
+        let expr_off =
+          Exp.Lfield
+            ({exp= sil_expr_lhs; is_implicit= false}, field_name, type_of_the_surrounding_class)
+        in
         let sil_instr = Sil.Store {e1= expr_off; typ= rhs_typ; e2= sil_expr_rhs; loc} in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
@@ -1081,7 +1084,10 @@ let instruction (context : JContext.t) pc instr : translation =
         let stml2, sil_expr_rhs, rhs_typ = expression context pc e_rhs in
         let field_name = get_field_name program true tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
-        let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
+        let expr_off =
+          Exp.Lfield
+            ({exp= sil_expr_lhs; is_implicit= false}, field_name, type_of_the_surrounding_class)
+        in
         let sil_instr = Sil.Store {e1= expr_off; typ= rhs_typ; e2= sil_expr_rhs; loc} in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in

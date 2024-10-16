@@ -1692,7 +1692,7 @@ module TransferFunctions = struct
           Some (VarPath.make (Var.of_pvar pvar) field_path_acc)
       | Exp.Var id ->
           Some (VarPath.make (Var.of_id id) field_path_acc)
-      | Exp.Lfield (e, fieldname, _) ->
+      | Exp.Lfield ({exp= e}, fieldname, _) ->
           aux (FieldLabel.fieldname fieldname :: field_path_acc) e
       | Exp.UnOp (_, _, _)
       | Exp.BinOp (_, _, _)
@@ -1791,7 +1791,7 @@ module TransferFunctions = struct
       match exp with
       | Var _ | Const _ | Lvar _ | Sizeof _ ->
           astate
-      | UnOp (_, e, _) | Exn e | Cast (_, e) | Lfield (e, _, _) ->
+      | UnOp (_, e, _) | Exn e | Cast (_, e) | Lfield ({exp= e}, _, _) ->
           one_exp astate e
       | BinOp (_, e1, e2) | Lindex (e1, e2) ->
           one_exp (one_exp astate e1) e2

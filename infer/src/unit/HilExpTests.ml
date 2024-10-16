@@ -17,7 +17,7 @@ let tests =
     let var_field _ =
       assert_equal ~printer:(Format.asprintf "%a" HilExp.pp)
         (HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref:true
-           (Exp.Lfield (Exp.Var var_id, fieldname, struct_typ))
+           (Exp.Lfield ({exp= Exp.Var var_id; is_implicit= false}, fieldname, struct_typ))
            StdTyp.void )
         (HilExp.AccessExpression
            (HilExp.AccessExpression.field_offset

@@ -52,7 +52,7 @@ let rec must_alias : Exp.t -> Exp.t -> Mem.t -> bool =
       Typ.equal t1 t2 && must_alias e1' e2' m
   | Exp.Lvar x1, Exp.Lvar x2 ->
       Pvar.equal x1 x2
-  | Exp.Lfield (e1, fld1, _), Exp.Lfield (e2, fld2, _) ->
+  | Exp.Lfield ({exp= e1}, fld1, _), Exp.Lfield ({exp= e2}, fld2, _) ->
       must_alias e1 e2 m && Fieldname.equal fld1 fld2
   | Exp.Lindex (e11, e12), Exp.Lindex (e21, e22) ->
       must_alias e11 e21 m && must_alias e12 e22 m
@@ -182,7 +182,7 @@ let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
           let ikind = Option.value_exn (Typ.get_ikind_opt t) in
           Val.of_itv ~traces:(Val.get_traces v) (Itv.max_of_ikind integer_type_widths ikind)
         else v
-    | Exp.Lfield (e, fn, _) ->
+    | Exp.Lfield ({exp= e}, fn, _) ->
         let v = eval integer_type_widths e mem in
         let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in
         Val.of_pow_loc locs ~traces:(Val.get_traces v)
@@ -294,7 +294,7 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
       eval_locs e mem
   | BinOp _ | Closure _ | Const _ | Exn _ | Sizeof _ | UnOp _ ->
       PowLoc.bot
-  | Lfield (e, fn, _) ->
+  | Lfield ({exp= e}, fn, _) ->
       eval_locs e mem |> PowLoc.append_field ~fn
   | Lindex (((Lfield _ | Lindex _) as e), _) ->
       Mem.find_set (eval_locs e mem) mem |> Val.get_all_locs
@@ -323,7 +323,7 @@ let rec eval_arr : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
   | Exp.Cast (t, e) ->
       let v = eval_arr integer_type_widths e mem in
       set_array_stride integer_type_widths t v
-  | Exp.Lfield (e, fn, _) ->
+  | Exp.Lfield ({exp= e}, fn, _) ->
       let locs = eval_locs e mem |> PowLoc.append_field ~fn in
       Mem.find_set locs mem
   | Exp.Lindex (e, _) ->

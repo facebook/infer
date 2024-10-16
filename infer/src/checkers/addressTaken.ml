@@ -23,7 +23,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match exp with
     | Lvar pvar ->
         Domain.add pvar astate
-    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
+    | Cast (_, e) | UnOp (_, e, _) | Lfield ({exp= e}, _, _) ->
         add_address_taken_pvars e astate
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         add_address_taken_pvars e1 astate |> add_address_taken_pvars e2

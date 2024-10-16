@@ -166,7 +166,7 @@ let check_expr_for_array_access :
              location
     | Exp.BinOp (_, e1, e2) ->
         cond_set |> check_sub_expr e1 |> check_sub_expr e2
-    | Exp.Lfield (e, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e ->
+    | Exp.Lfield ({exp= e}, _, _) | Exp.UnOp (_, e, _) | Exp.Exn e ->
         check_sub_expr e cond_set
     | Exp.Cast (_, e) ->
         check_sub_expr e cond_set
@@ -210,7 +210,7 @@ let rec check_expr_for_integer_overflow integer_type_widths pname exp location m
   match exp with
   | Exp.UnOp (_, e, _)
   | Exp.Exn e
-  | Exp.Lfield (e, _, _)
+  | Exp.Lfield ({exp= e}, _, _)
   | Exp.Cast (_, e)
   | Exp.Sizeof {dynamic_length= Some e} ->
       check_expr_for_integer_overflow integer_type_widths pname e location mem cond_set

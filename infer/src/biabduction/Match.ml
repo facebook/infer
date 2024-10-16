@@ -67,7 +67,8 @@ let rec exp_match e1 sub vars e2 : (Predicates.subst * Ident.t list) option =
       check_equal sub vars e1 e2
   | Exp.Lvar _, _ | _, Exp.Lvar _ ->
       check_equal sub vars e1 e2
-  | Exp.Lfield (e1', fld1, _), Exp.Lfield (e2', fld2, _) when Fieldname.equal fld1 fld2 ->
+  | Exp.Lfield ({exp= e1'}, fld1, _), Exp.Lfield ({exp= e2'}, fld2, _)
+    when Fieldname.equal fld1 fld2 ->
       exp_match e1' sub vars e2'
   | Exp.Lfield _, _ | _, Exp.Lfield _ ->
       None

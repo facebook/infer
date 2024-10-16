@@ -11,7 +11,7 @@ let get_load_self_instr location (self, self_typ) fieldname =
   let id_self = Ident.create_fresh Ident.knormal in
   let load_self_instr = Sil.Load {id= id_self; e= Lvar self; typ= self_typ; loc= location} in
   let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
-  let field_exp = Exp.Lfield (Var id_self, fieldname, class_typ) in
+  let field_exp = Exp.Lfield ({exp= Var id_self; is_implicit= false}, fieldname, class_typ) in
   (field_exp, load_self_instr)
 
 

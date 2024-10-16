@@ -1042,9 +1042,9 @@ module Normalize = struct
           e
       | Lvar _ ->
           e
-      | Lfield (e1, fld, typ) ->
+      | Lfield ({exp= e1; is_implicit}, fld, typ) ->
           let e1' = eval e1 in
-          Lfield (e1', fld, typ)
+          Lfield ({exp= e1'; is_implicit}, fld, typ)
       | Lindex (Lvar pv, e2)
         when false (* removed: it interferes with re-arrangement and error messages *) ->
           (* &x[n]  -->  &x + n *)
@@ -1239,7 +1239,7 @@ module Normalize = struct
       | BinOp (MinusA _, Const (Cint n1), e1), Const (Cint n2) ->
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
-      | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
+      | Lfield ({exp= e1'}, fld1, _), Lfield ({exp= e2'}, fld2, _) ->
           if Fieldname.equal fld1 fld2 then normalize_eq (e1', e2') else eq
       | Lindex (e1', idx1), Lindex (e2', idx2) ->
           if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
@@ -2140,8 +2140,8 @@ let rec exp_captured_ren ren (e : Exp.t) : Exp.t =
       BinOp (op, e1', e2')
   | Lvar id ->
       Lvar id
-  | Lfield (e, fld, typ) ->
-      Lfield (exp_captured_ren ren e, fld, typ)
+  | Lfield ({exp= e; is_implicit}, fld, typ) ->
+      Lfield ({exp= exp_captured_ren ren e; is_implicit}, fld, typ)
   | Lindex (e1, e2) ->
       let e1' = exp_captured_ren ren e1 in
       let e2' = exp_captured_ren ren e2 in

@@ -35,6 +35,8 @@ and captured_var = t * CapturedVar.t
 and sizeof_data =
   {typ: Typ.t; nbytes: int option; dynamic_length: t option; subtype: Subtype.t; nullable: bool}
 
+and lfield_obj_data = {exp: t; is_implicit: bool}
+
 (** Program expressions. *)
 and t =
   | Var of ident_  (** Pure variable: it is not an lvalue *)
@@ -45,7 +47,7 @@ and t =
   | Const of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Lvar of Pvar.t  (** The address of a program variable *)
-  | Lfield of t * Fieldname.t * Typ.t
+  | Lfield of lfield_obj_data * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data
@@ -96,7 +98,7 @@ let rec root_of_lexp lexp =
   | Lvar _ ->
       lexp
   | Lfield (e, _, _) ->
-      root_of_lexp e
+      root_of_lexp e.exp
   | Lindex (e, _) ->
       root_of_lexp e
   | Sizeof _ ->
@@ -107,7 +109,7 @@ let rec root_of_lexp lexp =
     array-indexing expressions such as a[i] only. *)
 let rec pointer_arith = function
   | Lfield (e, _, _) ->
-      pointer_arith e
+      pointer_arith e.exp
   | Lindex _ ->
       true
   | _ ->
@@ -123,7 +125,7 @@ let rec has_local_addr e =
   match (e : t) with
   | Lvar pv ->
       Pvar.is_local pv
-  | UnOp (_, e', _) | Cast (_, e') | Lfield (e', _, _) ->
+  | UnOp (_, e', _) | Cast (_, e') | Lfield ({exp= e'}, _, _) ->
       has_local_addr e'
   | BinOp (_, e0, e1) | Lindex (e0, e1) ->
       has_local_addr e0 || has_local_addr e1
@@ -167,7 +169,11 @@ let lt e1 e2 = BinOp (Lt, e1, e2)
 let fold_captured ~f exp acc =
   let rec fold_captured_ exp captured_acc =
     match exp with
-    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Exn e | Sizeof {dynamic_length= Some e} ->
+    | Cast (_, e)
+    | UnOp (_, e, _)
+    | Lfield ({exp= e}, _, _)
+    | Exn e
+    | Sizeof {dynamic_length= Some e} ->
         fold_captured_ e captured_acc
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         fold_captured_ e1 captured_acc |> fold_captured_ e2
@@ -219,7 +225,7 @@ let rec pp_ pe pp_t f e =
   | Lvar pv ->
       Pvar.pp pe f pv
   | Lfield (e, fld, _) ->
-      F.fprintf f "%a.%a" pp_exp e Fieldname.pp fld
+      F.fprintf f "%a.%a" pp_exp e.exp Fieldname.pp fld
   | Lindex (e1, e2) ->
       F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
   | Sizeof {typ; nbytes; dynamic_length; subtype; nullable} ->
@@ -318,7 +324,8 @@ let rec gen_free_vars =
   function
   | Var id ->
       yield id
-  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+  | Cast (_, e) | Exn e | Lfield ({exp= e}, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _)
+    ->
       gen_free_vars e
   | Closure {captured_vars} ->
       ISequence.gen_sequence_list captured_vars ~f:(fun (e, _) -> gen_free_vars e)
@@ -340,7 +347,8 @@ let rec gen_program_vars =
       yield name
   | Const _ | Var _ | Sizeof {dynamic_length= None} ->
       return ()
-  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+  | Cast (_, e) | Exn e | Lfield ({exp= e}, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _)
+    ->
       gen_program_vars e
   | BinOp (_, e1, e2) | Lindex (e1, e2) ->
       gen_program_vars e1 >>= fun () -> gen_program_vars e2
@@ -357,7 +365,7 @@ let rec gen_closures =
       yield closure
   | Const _ | Lvar _ | Var _ ->
       return ()
-  | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
+  | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield ({exp= e1}, _, _) ->
       gen_closures e1
   | Sizeof {dynamic_length= Some e1} ->
       gen_closures e1
@@ -390,7 +398,7 @@ let rec ignore_integer_cast e =
 
 
 let rec get_java_class_initializer tenv = function
-  | Lfield (Lvar pvar, fn, typ) when Pvar.is_global pvar -> (
+  | Lfield ({exp= Lvar pvar}, fn, typ) when Pvar.is_global pvar -> (
     match Struct.get_field_type_and_annotation ~lookup:(Tenv.lookup tenv) fn typ with
     | Some (field_typ, annot) when Annot.Item.is_final annot ->
         let java_class =
@@ -399,7 +407,7 @@ let rec get_java_class_initializer tenv = function
         Some (Procname.Java (Procname.Java.get_class_initializer java_class), pvar, fn, field_typ)
     | _ ->
         None )
-  | Cast (_, e) | Lfield (e, _, _) ->
+  | Cast (_, e) | Lfield ({exp= e}, _, _) ->
       get_java_class_initializer tenv e
   | Lvar _ | Var _ | UnOp _ | BinOp _ | Exn _ | Closure _ | Const _ | Lindex _ | Sizeof _ ->
       None

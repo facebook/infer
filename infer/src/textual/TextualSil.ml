@@ -559,7 +559,7 @@ module ExpBridge = struct
             let global : Global.t = {name; typ; attributes= []} in
             TextualDecls.declare_global decls global ) ;
         Lvar name
-    | Lfield (e, f, typ) ->
+    | Lfield ({exp= e}, f, typ) ->
         let typ = TypBridge.of_sil typ in
         let fielddecl = FieldDeclBridge.of_sil f typ false in
         let () = declare_struct_from_tenv decls tenv fielddecl.qualified_name.enclosing_class in
@@ -591,13 +591,16 @@ module ExpBridge = struct
       | Field {exp; field} -> (
         match TextualDecls.get_fielddecl decls_env field with
         | None when TypeName.equal field.enclosing_class TypeName.wildcard ->
-            Lfield (aux exp, wildcard_sil_fieldname lang field.name.value, SilTyp.mk SilTyp.Tvoid)
+            Lfield
+              ( {exp= aux exp; is_implicit= false}
+              , wildcard_sil_fieldname lang field.name.value
+              , SilTyp.mk SilTyp.Tvoid )
         | None ->
             L.die InternalError "field %a.%a has not been declared" TypeName.pp
               field.enclosing_class FieldName.pp field.name
         | Some field ->
             Lfield
-              ( aux exp
+              ( {exp= aux exp; is_implicit= false}
               , FieldDeclBridge.to_sil lang field
               , TypBridge.to_sil lang ~attrs:field.attributes field.typ ) )
       | Index (exp1, exp2) ->

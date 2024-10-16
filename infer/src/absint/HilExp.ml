@@ -394,7 +394,7 @@ and access_exprs_of_exp ~include_array_indexes ~f_resolve_id ~add_deref exp0 typ
           if add_deref then AccessExpression.dereference access_expr else access_expr
         in
         add_accesses access_expr' :: acc
-    | Lfield (root_exp, fld, root_exp_typ) ->
+    | Lfield ({exp= root_exp}, fld, root_exp_typ) ->
         let add_field_access_expr access_expr =
           add_accesses (AccessExpression.field_offset access_expr fld)
         in
@@ -495,7 +495,7 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
             closure.captured_vars
         in
         Closure (closure.name, environment)
-    | Lfield (root_exp, fld, root_exp_typ) -> (
+    | Lfield ({exp= root_exp}, fld, root_exp_typ) -> (
       match access_expr_of_lhs_exp ~include_array_indexes ~f_resolve_id ~add_deref exp typ with
       | Some access_expr ->
           AccessExpression access_expr
@@ -503,7 +503,8 @@ and of_sil ~include_array_indexes ~f_resolve_id ~add_deref exp typ =
           (* unsupported field expression: represent with a dummy variable *)
           of_sil_
             (Exp.Lfield
-               ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
+               ( { exp= Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
+                 ; is_implicit= false }
                , fld
                , root_exp_typ ) )
             typ )

@@ -916,9 +916,9 @@ let rec exp_construct_fresh side e =
       e
   | Exp.Lvar _ ->
       e
-  | Exp.Lfield (e1, fld, typ) ->
+  | Exp.Lfield ({exp= e1; is_implicit}, fld, typ) ->
       let e1' = exp_construct_fresh side e1 in
-      Exp.Lfield (e1', fld, typ)
+      Exp.Lfield ({exp= e1'; is_implicit}, fld, typ)
   | Exp.Lindex (e1, e2) ->
       let e1' = exp_construct_fresh side e1 in
       let e2' = exp_construct_fresh side e2 in
@@ -1073,11 +1073,14 @@ let rec exp_partial_join (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
         L.d_strln "failure reason 25" ;
         raise Predicates.JoinFail )
       else e1
-  | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
+  | ( Exp.Lfield ({exp= e1; is_implicit= is_implicit1}, f1, t1)
+    , Exp.Lfield ({exp= e2; is_implicit= is_implicit2}, f2, _) ) ->
       if not (Fieldname.equal f1 f2) then (
         L.d_strln "failure reason 26" ;
         raise Predicates.JoinFail )
-      else Exp.Lfield (exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
+      else
+        Exp.Lfield ({exp= exp_partial_join e1 e2; is_implicit= is_implicit1 || is_implicit2}, f1, t1)
+        (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = exp_partial_join e1' e2' in
@@ -1202,11 +1205,14 @@ let rec exp_partial_meet (e1 : Exp.t) (e2 : Exp.t) : Exp.t =
         L.d_strln "failure reason 35" ;
         raise Predicates.JoinFail )
       else e1
-  | Exp.Lfield (e1, f1, t1), Exp.Lfield (e2, f2, _) ->
+  | ( Exp.Lfield ({exp= e1; is_implicit= is_implicit1}, f1, t1)
+    , Exp.Lfield ({exp= e2; is_implicit= is_implicit2}, f2, _) ) ->
       if not (Fieldname.equal f1 f2) then (
         L.d_strln "failure reason 36" ;
         raise Predicates.JoinFail )
-      else Exp.Lfield (exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
+      else
+        Exp.Lfield ({exp= exp_partial_meet e1 e2; is_implicit= is_implicit1 && is_implicit2}, f1, t1)
+        (* should be t1 = t2 *)
   | Exp.Lindex (e1, e1'), Exp.Lindex (e2, e2') ->
       let e1'' = exp_partial_meet e1 e2 in
       let e2'' = exp_partial_meet e1' e2' in

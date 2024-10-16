@@ -96,7 +96,7 @@ let remove_abduced_retvars tenv p =
       let rec exp_contains = function
         | exp when Exp.Set.mem exp reach_exps ->
             true
-        | Exp.UnOp (_, e, _) | Exp.Cast (_, e) | Exp.Lfield (e, _, _) ->
+        | Exp.UnOp (_, e, _) | Exp.Cast (_, e) | Exp.Lfield ({exp= e}, _, _) ->
             exp_contains e
         | Exp.BinOp (_, e0, e1) | Exp.Lindex (e0, e1) ->
             exp_contains e0 || exp_contains e1

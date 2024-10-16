@@ -28,7 +28,7 @@ let rec exp_pp fmt (expr : Exp.t) =
       F.fprintf fmt "Cast(%a, %a)" (Typ.pp Pp.text) typ exp_pp e
   | Lvar pvar ->
       F.fprintf fmt "Lvar(%a)" (Pvar.pp Pp.text) pvar
-  | Lfield (base, fldname, _) ->
+  | Lfield ({exp= base}, fldname, _) ->
       F.fprintf fmt "Lfield(%a,%s,_)" exp_pp base (Fieldname.to_string fldname)
   | Lindex (base, idx) ->
       F.fprintf fmt "Lindex(%a, %a)" exp_pp base exp_pp idx
@@ -121,7 +121,7 @@ end = struct
         heap_exp exp'
     | BinOp (_, e1, e2) ->
         heap_exp e1 && heap_exp e2
-    | Lfield (exp', _, _) ->
+    | Lfield ({exp= exp'}, _, _) ->
         heap_exp exp'
     | Lindex (base, index) ->
         heap_exp base && heap_exp index
@@ -204,7 +204,7 @@ end = struct
     match instr with
     | Load {id= _; e; typ= _} when is_pure e ->
         true
-    | Load {id= _; e= Lfield (exp', _, _); typ= _} when is_pure exp' ->
+    | Load {id= _; e= Lfield ({exp= exp'}, _, _); typ= _} when is_pure exp' ->
         true
     | Load {id= _; e= Lindex (e1, e2); typ= _} when is_pure e1 && is_pure e2 ->
         true
@@ -212,9 +212,9 @@ end = struct
         true
     | Store {e1= Lvar _; typ= _; e2= Exn (Var _)} ->
         true
-    | Store {e1= Lfield (Var _, _, _); typ= _; e2} ->
+    | Store {e1= Lfield ({exp= Var _}, _, _); typ= _; e2} ->
         is_pure e2
-    | Store {e1= Lfield (Lvar _, _, _); typ= _; e2} ->
+    | Store {e1= Lfield ({exp= Lvar _}, _, _); typ= _; e2} ->
         is_pure e2
     | Store {e1= Lindex (Var _, index); typ= _; e2} ->
         is_pure index && is_pure e2
@@ -269,7 +269,7 @@ end = struct
 
   let instr_conforms (instr : Sil.instr) =
     match instr with
-    | Load {id= _; e= Lfield (exp', _, _); typ= _} when is_pure exp' ->
+    | Load {id= _; e= Lfield ({exp= exp'}, _, _); typ= _} when is_pure exp' ->
         true
     | Load {id= _; e= Lindex (e1, e2); typ= _} when is_pure e1 && is_pure e2 ->
         true
@@ -281,9 +281,9 @@ end = struct
         true
     | Store {e1= Lvar _; typ= _; e2= Exn (Var _)} ->
         true
-    | Store {e1= Lfield (Var _, _, _); typ= _; e2} ->
+    | Store {e1= Lfield ({exp= Var _}, _, _); typ= _; e2} ->
         is_pure e2
-    | Store {e1= Lfield (Lvar _, _, _); typ= _; e2} ->
+    | Store {e1= Lfield ({exp= Lvar _}, _, _); typ= _; e2} ->
         is_pure e2
     | Store {e1= Lindex (Var _, index); typ= _; e2} ->
         is_pure index && is_pure e2

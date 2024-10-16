@@ -28,6 +28,8 @@ type closure = {name: Procname.t; captured_vars: (t * CapturedVar.t) list}
 and sizeof_data =
   {typ: Typ.t; nbytes: int option; dynamic_length: t option; subtype: Subtype.t; nullable: bool}
 
+and lfield_obj_data = {exp: t; is_implicit: bool}
+
 (** Program expressions. *)
 and t =
   | Var of Ident.t  (** Pure variable: it is not an lvalue *)
@@ -38,7 +40,7 @@ and t =
   | Const of Const.t  (** Constants *)
   | Cast of Typ.t * t  (** Type cast *)
   | Lvar of Pvar.t  (** The address of a program variable *)
-  | Lfield of t * Fieldname.t * Typ.t
+  | Lfield of lfield_obj_data * Fieldname.t * Typ.t
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data

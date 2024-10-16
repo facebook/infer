@@ -332,7 +332,7 @@ let override_iter f tenv proc_name =
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Store {e1= Exp.Lfield (Exp.Var lhs, fld, _); e2= rhs}
+    | Sil.Store {e1= Exp.Lfield ({exp= Exp.Var lhs}, fld, _); e2= rhs}
       when Exp.is_null_literal rhs && Ident.Set.mem lhs this_ids ->
         (Fieldname.Set.add fld nullified_flds, this_ids)
     | Sil.Load {id; e= rhs} when Exp.is_this rhs ->

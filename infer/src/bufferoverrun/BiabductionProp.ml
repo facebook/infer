@@ -390,9 +390,9 @@ module Normalize = struct
           e
       | Lvar _ ->
           e
-      | Lfield (e1, fld, typ) ->
+      | Lfield ({exp= e1; is_implicit}, fld, typ) ->
           let e1' = eval e1 in
-          Lfield (e1', fld, typ)
+          Lfield ({exp= e1'; is_implicit}, fld, typ)
       | Lindex (Lvar pv, e2)
         when false (* removed: it interferes with re-arrangement and error messages *) ->
           (* &x[n]  -->  &x + n *)
