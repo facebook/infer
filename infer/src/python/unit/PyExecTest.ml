@@ -151,3 +151,57 @@ print('n =', n)
 
     Running interpreter:
     n = 5 |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def fact(n):
+    if n<=0:
+        return 1
+    else:
+        return n * fact(n-1)
+
+print('fact(5) =', fact(5))
+|}
+  in
+  PyIR.test source ;
+  F.printf "Running interpreter:@\n" ;
+  PyIR.test ~run:PyIRExec.run source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["fact", "dummy.fact"](None, None, None, None, None)
+          TOPLEVEL[fact] <- n0
+          n1 <- TOPLEVEL[print]
+          n2 <- TOPLEVEL[fact]
+          n3 <- $Call(n2, 5, None)
+          n4 <- $Call(n1, "fact(5) =", n3, None)
+          return None
+
+
+      function dummy.fact(n):
+        b0:
+          n0 <- LOCAL[n]
+          n1 <- $Compare.le(n0, 0, None)
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          return 1
+
+        b2:
+          n2 <- LOCAL[n]
+          n3 <- GLOBAL[fact]
+          n4 <- LOCAL[n]
+          n5 <- $Binary.Subtract(n4, 1, None)
+          n6 <- $Call(n3, n5, None)
+          n7 <- $Binary.Multiply(n2, n6, None)
+          return n7
+
+
+
+    Running interpreter:
+    fact(5) = 120 |}]

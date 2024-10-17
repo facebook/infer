@@ -69,6 +69,15 @@ let expect_int ~who ?how = function
         how pp_pval v
 
 
+let expect_bool ~who ?how = function
+  | Bool b ->
+      b
+  | v ->
+      L.die InternalError "%s expects a bool%a and received %a" who
+        (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
+        how pp_pval v
+
+
 let expect_2_args ~who = function
   | [arg1; arg2] ->
       (arg1, arg2)
@@ -206,38 +215,65 @@ let run {Module.name; toplevel; functions} =
       match (stmt : Stmt.t) with
       | Let {lhs; rhs} ->
           ssa_set lhs (eval_exp rhs)
-      | Store {lhs= {scope= Name | Fast; ident}; rhs} ->
+      | Store {lhs= {scope= Fast; ident}; rhs} ->
           locals_set ident (eval_exp rhs)
+      | Store {lhs= {scope= Name; ident}; rhs} ->
+          (* TODO: inside class body / module we will need a different behavior *)
+          globals_set ident (eval_exp rhs)
       | Store {lhs= {scope= Global; ident}; rhs} ->
           globals_set ident (eval_exp rhs)
       | Call {lhs; exp; args} ->
           let f = get_closure (eval_exp exp) in
           let args = List.map ~f:eval_exp args in
           ssa_set lhs (f args)
-      | BuiltinCall {lhs; call= BuiltinCaller.Function {qual_name}; args} ->
+      | BuiltinCall {lhs; call= Function {qual_name}; args} ->
           if not (Int.equal (List.length args) 4) then
             L.die InternalError "$BuiltinCall.Function expects 4 args and reveiced [%a]"
               (Pp.comma_seq Exp.pp) args ;
           let cfg = get_cfg qual_name in
           let eval = exec_cfg cfg in
           ssa_set lhs (Closure eval)
-      | BuiltinCall {lhs; call= BuiltinCaller.Inplace Add; args} ->
+      | BuiltinCall {lhs; call= Inplace Add; args} ->
           let who = "$BuiltinCall.Inplace.Add" in
           let arg1, arg2 = expect_2_args ~who args in
           let i1 = eval_exp arg1 |> expect_int ~who ~how:"as first argument" in
           let i2 = eval_exp arg2 |> expect_int ~who ~how:"as second argument" in
           ssa_set lhs (Int (Z.add i1 i2))
+      | BuiltinCall {lhs; call= Compare Le; args} ->
+          let who = "$BuiltinCall.Compare.Le" in
+          let arg1, arg2 = expect_2_args ~who args in
+          let i1 = eval_exp arg1 |> expect_int ~who ~how:"as first argument" in
+          let i2 = eval_exp arg2 |> expect_int ~who ~how:"as second argument" in
+          ssa_set lhs (Bool (Z.leq i1 i2))
+      | BuiltinCall {lhs; call= Binary Subtract; args} ->
+          let who = "$BuiltinCall.Binary.Subtract" in
+          let arg1, arg2 = expect_2_args ~who args in
+          let i1 = eval_exp arg1 |> expect_int ~who ~how:"as first argument" in
+          let i2 = eval_exp arg2 |> expect_int ~who ~how:"as second argument" in
+          ssa_set lhs (Int (Z.sub i1 i2))
+      | BuiltinCall {lhs; call= Binary Multiply; args} ->
+          let who = "$BuiltinCall.Binary.Subtract" in
+          let arg1, arg2 = expect_2_args ~who args in
+          let i1 = eval_exp arg1 |> expect_int ~who ~how:"as first argument" in
+          let i2 = eval_exp arg2 |> expect_int ~who ~how:"as second argument" in
+          ssa_set lhs (Int (Z.mul i1 i2))
       | SetAttr _ | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
           todo "exec_stmt"
     in
-    let exec_terminator terminator =
+    let rec exec_terminator terminator =
       match (terminator : Terminator.t) with
       | Return exp ->
           eval_exp exp
+      | If {exp; then_; else_} ->
+          let test = eval_exp exp |> expect_bool ~who:"If terminator" in
+          if test then exec_node_call then_ else exec_node_call else_
       | _ ->
           todo "exec_terminator"
-    in
-    let exec_node {Node.ssa_parameters; stmts; last} args =
+    and exec_node_call {Terminator.label; ssa_args} =
+      let node = get_node label in
+      let args = List.map ~f:eval_exp ssa_args in
+      exec_node node args
+    and exec_node {Node.ssa_parameters; stmts; last} args =
       List.iter2_exn ssa_parameters args ~f:(fun ssa v -> ssa_set ssa v) ;
       List.iter stmts ~f:(fun (_loc, stmt) -> exec_stmt stmt) ;
       exec_terminator last

@@ -27,3 +27,13 @@ incr(2)
 no_effect(-1)
 print('n =', n)
 #stdout: n = 5
+
+# recursive function
+def fact(n):
+    if n<=0:
+        return 1
+    else:
+        return n * fact(n-1)
+
+print('fact(5) =', fact(5))
+#stdout: fact(5) = 120
