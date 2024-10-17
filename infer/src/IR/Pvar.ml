@@ -14,7 +14,6 @@ module F = Format
 
 type translation_unit = SourceFile.t option [@@deriving compare, equal, sexp, hash, normalize]
 
-(** Kind of global variables *)
 type pvar_kind =
   | Local_var of Procname.t  (** local variable belonging to a function *)
   | Callee_var of Procname.t  (** local variable belonging to a callee *)
