@@ -353,10 +353,10 @@ module PulseTransferFunctions = struct
           |> Option.value ~default:tenv
         in
         match tenv_resolve_method tenv dynamic_type_name proc_name with
-        | ResolvedTo method_info ->
+        | Ok method_info ->
             L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
             (Some (method_info, ExactDevirtualization), no_missed_captures)
-        | Unresolved {missed_captures} ->
+        | Error {missed_captures} ->
             (None, missed_captures) )
     | None ->
         let opt_proc_name, missed_captures =
@@ -366,9 +366,9 @@ module PulseTransferFunctions = struct
             Procname.get_class_type_name proc_name
             |> Option.value_map ~default:(None, no_missed_captures) ~f:(fun type_name ->
                    match tenv_resolve_method tenv type_name proc_name with
-                   | ResolvedTo method_info ->
+                   | Ok method_info ->
                        (Some method_info, no_missed_captures)
-                   | Unresolved {missed_captures} ->
+                   | Error {missed_captures} ->
                        (None, missed_captures) )
           else (Some (Tenv.MethodInfo.mk_class proc_name), no_missed_captures)
         in
@@ -425,9 +425,9 @@ module PulseTransferFunctions = struct
         (None, Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
       else
         match Tenv.resolve_method ~method_exists tenv type_name proc_name with
-        | ResolvedTo method_info ->
+        | Ok method_info ->
             (None, Some method_info, Typ.Name.Set.empty)
-        | Unresolved {missed_captures; unresolved_reason} ->
+        | Error {missed_captures; unresolved_reason} ->
             (unresolved_reason, None, missed_captures)
     in
     (* In a Hack trait, try to replace [__self__$static] with the static class name where the

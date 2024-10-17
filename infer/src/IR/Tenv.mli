@@ -123,9 +123,9 @@ end
 
 type unresolved_reason = MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel
 
-type resolution_result =
-  | ResolvedTo of MethodInfo.t
-  | Unresolved of {missed_captures: Typ.Name.Set.t; unresolved_reason: unresolved_reason option}
+type unresolved_data = {missed_captures: Typ.Name.Set.t; unresolved_reason: unresolved_reason option}
+
+type resolution_result = (MethodInfo.t, unresolved_data) Result.t
 
 val resolve_method :
      method_exists:(Procname.t -> Procname.t list -> bool)

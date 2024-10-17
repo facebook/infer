@@ -133,10 +133,10 @@ let process pdesc tenv =
             match VDom.get aval with
             | Some dyn_typ -> (
               match resolve_method tenv (Typ.JavaClass dyn_typ) callee_pname with
-              | Unresolved _ ->
+              | Error _ ->
                   L.d_printfln "(unexpected: no resolved method found)" ;
                   instr
-              | ResolvedTo method_info ->
+              | Ok method_info ->
                   (* note: missed captures are only tracked for Hack while this preanalysis is only performed on Java *)
                   let resolved_callee_pname = Tenv.MethodInfo.get_procname method_info in
                   let resolved_call_flags =
