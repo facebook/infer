@@ -206,6 +206,7 @@ endif
 ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
 ifneq ($(PYTHON),no)
 DIRECT_TESTS += \
+  python_exec \
   python_pulse \
 
 endif
