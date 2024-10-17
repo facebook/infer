@@ -12,3 +12,18 @@ print(y, None)
 y = False
 print(y, "hello world")
 #stdout: False hello world
+
+# global scope
+def incr(k):
+    global n
+    n += k
+
+def no_effect(k):
+    n = k
+
+n = 0
+incr(3)
+incr(2)
+no_effect(-1)
+print('n =', n)
+#stdout: n = 5

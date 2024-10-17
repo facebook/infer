@@ -45,6 +45,37 @@ type pval =
   | String of string
   | Closure of (pval list -> pval)
 
+let pp_pval fmt = function
+  | None ->
+      F.pp_print_string fmt "None"
+  | Bool true ->
+      F.pp_print_string fmt "True"
+  | Bool false ->
+      F.pp_print_string fmt "False"
+  | Int i ->
+      F.pp_print_string fmt (Z.to_string i)
+  | String s ->
+      Format.pp_print_string fmt s
+  | Closure _ ->
+      F.pp_print_string fmt "Closure"
+
+
+let expect_int ~who ?how = function
+  | Int i ->
+      i
+  | v ->
+      L.die InternalError "%s expects an integer%a and received %a" who
+        (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
+        how pp_pval v
+
+
+let expect_2_args ~who = function
+  | [arg1; arg2] ->
+      (arg1, arg2)
+  | args ->
+      L.die InternalError "%s expects 2 args and reveiced [%a]" who (Pp.comma_seq Exp.pp) args
+
+
 let get_closure = function Closure f -> f | _ -> L.die InternalError "get_closure failure"
 
 module Builtin = struct
@@ -75,12 +106,24 @@ module Builtin = struct
     get
 end
 
+module Globals = struct
+  let mk_globals_utils ~name =
+    let {IdentEnv.get_opt; set} =
+      let mk_error_msg ident =
+        F.asprintf "in module %a, global variable %a is not bind to any value" Ident.pp name
+          Ident.pp ident
+      in
+      IdentEnv.create ~mk_error_msg ()
+    in
+    (get_opt, set)
+end
+
 module Locals = struct
   let mk_locals_utils ~co_name ~co_varnames ~co_argcount args =
     let {IdentEnv.get; get_opt; set} =
       let mk_error_msg ident =
-        F.asprintf "in cfg %a, local variable %a is not bind to any value in" Ident.pp co_name
-          Ident.pp ident
+        F.asprintf "in cfg %a, local variable %a is not bind to any value" Ident.pp co_name Ident.pp
+          ident
       in
       IdentEnv.create ~mk_error_msg ()
     in
@@ -95,13 +138,14 @@ module Locals = struct
     (get_opt, get, set)
 end
 
-let run {Module.toplevel; functions} =
+let run {Module.name; toplevel; functions} =
   let builtins_get = Builtin.mk_builtins_getter () in
   let get_cfg qual_name =
     QualName.Map.find_opt qual_name functions
     |> Option.value_or_thunk ~default:(fun () ->
            L.die InternalError "exec_cfg: no cfg with name %a" QualName.pp qual_name )
   in
+  let globals_get_opt, globals_set = Globals.mk_globals_utils ~name in
   let rec exec_cfg {CFG.entry; nodes; code_info} args =
     let {CodeInfo.co_name; co_varnames; co_argcount} = code_info in
     let get_node node_name =
@@ -140,11 +184,15 @@ let run {Module.toplevel; functions} =
           eval_const const
       | Var {scope= Fast; ident} ->
           locals_get ident
+      | Var {scope= Global; ident} ->
+          globals_get_opt ident |> Option.value_or_thunk ~default:(fun () -> builtins_get ident)
       | Var {scope= Name; ident} ->
-          locals_get_opt ident |> Option.value_or_thunk ~default:(fun () -> builtins_get ident)
+          locals_get_opt ident
+          |> Option.value_or_thunk ~default:(fun () ->
+                 globals_get_opt ident
+                 |> Option.value_or_thunk ~default:(fun () -> builtins_get ident) )
       | Temp ssa ->
           ssa_get ssa
-      | Var _
       | Subscript _
       | BuildSlice _
       | BuildString _
@@ -158,8 +206,10 @@ let run {Module.toplevel; functions} =
       match (stmt : Stmt.t) with
       | Let {lhs; rhs} ->
           ssa_set lhs (eval_exp rhs)
-      | Store {lhs= {scope= Name; ident}; rhs} ->
+      | Store {lhs= {scope= Name | Fast; ident}; rhs} ->
           locals_set ident (eval_exp rhs)
+      | Store {lhs= {scope= Global; ident}; rhs} ->
+          globals_set ident (eval_exp rhs)
       | Call {lhs; exp; args} ->
           let f = get_closure (eval_exp exp) in
           let args = List.map ~f:eval_exp args in
@@ -171,7 +221,13 @@ let run {Module.toplevel; functions} =
           let cfg = get_cfg qual_name in
           let eval = exec_cfg cfg in
           ssa_set lhs (Closure eval)
-      | Store _ | SetAttr _ | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
+      | BuiltinCall {lhs; call= BuiltinCaller.Inplace Add; args} ->
+          let who = "$BuiltinCall.Inplace.Add" in
+          let arg1, arg2 = expect_2_args ~who args in
+          let i1 = eval_exp arg1 |> expect_int ~who ~how:"as first argument" in
+          let i2 = eval_exp arg2 |> expect_int ~who ~how:"as second argument" in
+          ssa_set lhs (Int (Z.add i1 i2))
+      | SetAttr _ | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
           todo "exec_stmt"
     in
     let exec_terminator terminator =

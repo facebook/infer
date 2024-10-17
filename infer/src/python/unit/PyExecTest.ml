@@ -87,3 +87,67 @@ print("fst(x, y) =", fst(x, y))
 
     Running interpreter:
     fst(x, y) = x |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def incr(k):
+    global n
+    n += k
+
+def no_effect(k):
+    n = k
+
+n = 0
+incr(3)
+incr(2)
+no_effect(-1)
+print('n =', n)
+|}
+  in
+  PyIR.test source ;
+  F.printf "Running interpreter:@\n" ;
+  PyIR.test ~run:PyIRExec.run source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["incr", "dummy.incr"](None, None, None, None, None)
+          TOPLEVEL[incr] <- n0
+          n1 <- $MakeFunction["no_effect", "dummy.no_effect"](None, None, None, None, None)
+          TOPLEVEL[no_effect] <- n1
+          GLOBAL[n] <- 0
+          n2 <- TOPLEVEL[incr]
+          n3 <- $Call(n2, 3, None)
+          n4 <- TOPLEVEL[incr]
+          n5 <- $Call(n4, 2, None)
+          n6 <- TOPLEVEL[no_effect]
+          n7 <- $Call(n6, -1, None)
+          n8 <- TOPLEVEL[print]
+          n9 <- GLOBAL[n]
+          n10 <- $Call(n8, "n =", n9, None)
+          return None
+
+
+      function dummy.incr(k):
+        b0:
+          n0 <- GLOBAL[n]
+          n1 <- LOCAL[k]
+          n2 <- $Inplace.Add(n0, n1, None)
+          GLOBAL[n] <- n2
+          return None
+
+
+      function dummy.no_effect(k):
+        b0:
+          n0 <- LOCAL[k]
+          LOCAL[n] <- n0
+          return None
+
+
+
+    Running interpreter:
+    n = 5 |}]
