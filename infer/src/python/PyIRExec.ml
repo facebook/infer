@@ -12,19 +12,26 @@ open PyIR
 let todo msg = L.die L.InternalError "TODO: %s" msg
 
 module GenericUnsafeHashtbl (H : Caml.Hashtbl.S) = struct
-  type 'a t = {hashtbl: 'a H.t; error_msg: H.key -> string}
-
-  let create error_msg = {hashtbl= H.create 17; error_msg}
-
-  let get {hashtbl; error_msg} key =
+  let get hashtbl mk_error_msg key =
     match H.find_opt hashtbl key with
     | Some v ->
         v
     | None ->
-        L.die L.InternalError "%s" (error_msg key)
+        L.die L.InternalError "%s" (mk_error_msg key)
 
 
-  let set {hashtbl} key v = H.replace hashtbl key v
+  let get_opt hashtbl key = H.find_opt hashtbl key
+
+  let set hashtbl key v = H.replace hashtbl key v
+
+  type 'a t = {get: H.key -> 'a; get_opt: H.key -> 'a option; set: H.key -> 'a -> unit}
+
+  let create ~mk_error_msg () =
+    let hashtbl = H.create 17 in
+    let get = get hashtbl mk_error_msg in
+    let get_opt = get_opt hashtbl in
+    let set = set hashtbl in
+    {get; get_opt; set}
 end
 
 module SSAEnv = GenericUnsafeHashtbl (SSA.Hashtbl)
@@ -35,7 +42,22 @@ type pval = (* very simple for now *)
 
 let get_closure = function Closure f -> f | _ -> L.die L.InternalError "get_closure failure"
 
+module Builtin = struct
+  let print args =
+    let args = List.filter_map args ~f:(function Int i -> Some (Z.to_string i) | _ -> None) in
+    F.printf "%a@\n" (Pp.seq ~sep:" " F.pp_print_string) args ;
+    None
+
+
+  let mk_builtins_getter () =
+    let mk_error_msg ident = F.asprintf "builtin %a not found" Ident.pp ident in
+    let {IdentEnv.get; set} = IdentEnv.create () ~mk_error_msg in
+    set Ident.Special.print (Closure print) ;
+    get
+end
+
 let exec_cfg ~name {CFG.entry; nodes} =
+  let builtins_get = Builtin.mk_builtins_getter () in
   let get_node node_name =
     match NodeName.Map.find_opt node_name nodes with
     | None ->
@@ -44,34 +66,25 @@ let exec_cfg ~name {CFG.entry; nodes} =
         node
   in
   let entry_node = get_node entry in
-  let ssa_env =
-    SSAEnv.create (fun ssa ->
-        F.asprintf "in cfg %s, SSA variable %a is not bind to any value" name SSA.pp ssa )
+  let {SSAEnv.get= ssa_get; set= ssa_set} =
+    let mk_error_msg ssa =
+      F.asprintf "in cfg %s, SSA variable %a is not bind to any value" name SSA.pp ssa
+    in
+    SSAEnv.create ~mk_error_msg ()
   in
-  let ssa_get = SSAEnv.get ssa_env in
-  let ssa_set = SSAEnv.set ssa_env in
-  let env =
-    (* we simplify for now *)
-    IdentEnv.create (fun ident ->
-        F.asprintf "in cfg %s, variable %a is not bind to any value" name Ident.pp ident )
+  let {IdentEnv.get_opt= locals_get_opt; set= locals_set} =
+    let mk_error_msg ident =
+      F.asprintf "in cfg %s, local variable %a is not bind to any value in" name Ident.pp ident
+    in
+    IdentEnv.create ~mk_error_msg ()
   in
-  let get = IdentEnv.get env in
-  let set = IdentEnv.set env in
-  set Ident.Special.print
-    (Closure
-       (fun args ->
-         let args =
-           List.filter_map args ~f:(function Int i -> Some (Z.to_string i) | _ -> None)
-         in
-         F.printf "%a@\n" (Pp.seq ~sep:" " F.pp_print_string) args ;
-         None ) ) ;
   let eval_const const = match (const : Const.t) with Int i -> Int i | _ -> todo "eval_const" in
   let eval_exp exp =
     match (exp : Exp.t) with
     | Const const ->
         eval_const const
     | Var {scope= Name; ident} ->
-        get ident
+        locals_get_opt ident |> Option.value_or_thunk ~default:(fun () -> builtins_get ident)
     | Temp ssa ->
         ssa_get ssa
     | Var _
@@ -89,7 +102,7 @@ let exec_cfg ~name {CFG.entry; nodes} =
     | Let {lhs; rhs} ->
         ssa_set lhs (eval_exp rhs)
     | Store {lhs= {scope= Name; ident}; rhs} ->
-        set ident (eval_exp rhs)
+        locals_set ident (eval_exp rhs)
     | Call {lhs; exp; args} ->
         let f = get_closure (eval_exp exp) in
         let args = List.map ~f:eval_exp args in
