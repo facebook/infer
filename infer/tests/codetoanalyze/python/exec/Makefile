@@ -17,10 +17,13 @@ endef
 
 default: test
 
-eval_with_python.output: main_test.py
+show_print_output: main_test.py
+	python3 script_show_print_output.py main_test.py
+
+eval_with_python.output: main_test.py show_print_output
 	python3 main_test.py > eval_with_python.output
 
-eval_with_infer.output: $(INFER_BIN) main_test.py
+eval_with_infer.output: $(INFER_BIN) main_test.py show_print_output
 	infer --run-python-interpreter -- python3 main_test.py > eval_with_infer.output
 
 .PHONY: test
@@ -32,4 +35,4 @@ replace:
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) eval_with_python.output eval_with_infer.output
+	$(REMOVE_DIR) eval_with_python.output eval_with_infer.output main_test.py.temp
