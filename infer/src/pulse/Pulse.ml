@@ -320,6 +320,11 @@ module PulseTransferFunctions = struct
         None
 
 
+  type devirtualization_status =
+    | ApproxDevirtualization
+    | ExactDevirtualization
+    | HackFunctionReference
+
   let find_override exe_env tenv astate receiver proc_name =
     let tenv_resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
@@ -335,7 +340,7 @@ module PulseTransferFunctions = struct
            let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
            L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
            (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
-           (Tenv.MethodInfo.mk_class proc_name, `HackFunctionReference) )
+           (Tenv.MethodInfo.mk_class proc_name, HackFunctionReference) )
         , no_missed_captures )
     | Some (dynamic_type_name, source_file_opt) -> (
         (* if we have a source file then do the look up in the (local) tenv
@@ -350,7 +355,7 @@ module PulseTransferFunctions = struct
         match tenv_resolve_method tenv dynamic_type_name proc_name with
         | ResolvedTo method_info ->
             L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
-            (Some (method_info, `ExactDevirtualization), no_missed_captures)
+            (Some (method_info, ExactDevirtualization), no_missed_captures)
         | Unresolved {missed_captures} ->
             (None, missed_captures) )
     | None ->
@@ -368,16 +373,16 @@ module PulseTransferFunctions = struct
           else (Some (Tenv.MethodInfo.mk_class proc_name), no_missed_captures)
         in
         ( (let+ proc_name = opt_proc_name in
-           (proc_name, `ApproxDevirtualization) )
+           (proc_name, ApproxDevirtualization) )
         , missed_captures )
 
 
   let string_of_devirtualization_status = function
-    | `ExactDevirtualization ->
+    | ExactDevirtualization ->
         "exactly"
-    | `HackFunctionReference ->
+    | HackFunctionReference ->
         "exactly (through a Hack function reference)"
-    | `ApproxDevirtualization ->
+    | ApproxDevirtualization ->
         "approximately"
 
 
@@ -391,7 +396,7 @@ module PulseTransferFunctions = struct
               Procname.pp_verbose proc_name' ;
             (info, devirtualization_status, missed_captures)
         | None, missed_captures ->
-            (Tenv.MethodInfo.mk_class proc_name, `ApproxDevirtualization, missed_captures) )
+            (Tenv.MethodInfo.mk_class proc_name, ApproxDevirtualization, missed_captures) )
 
 
   let need_dynamic_type_specialization astate receiver_addr =
@@ -597,7 +602,7 @@ module PulseTransferFunctions = struct
         improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
         |> resolve_virtual_call exe_env tenv astate (ValueOrigin.value receiver)
       with
-      | Some (info, `HackFunctionReference, missed_captures) ->
+      | Some (info, HackFunctionReference, missed_captures) ->
           let callee = Tenv.MethodInfo.get_procname info in
           let unresolved_reason, info_opt, astate =
             resolve_hack_static_method path call_loc astate tenv caller (Some callee)
@@ -608,13 +613,13 @@ module PulseTransferFunctions = struct
             |> AbductiveDomain.add_missed_captures missed_captures
           in
           (unresolved_reason, Some info, astate)
-      | Some (info, `ExactDevirtualization, missed_captures) ->
+      | Some (info, ExactDevirtualization, missed_captures) ->
           let astate =
             record_call_resolution_if_closure ResolvedUsingDynamicType astate
             |> AbductiveDomain.add_missed_captures missed_captures
           in
           (None, Some info, astate)
-      | Some (info, `ApproxDevirtualization, missed_captures) ->
+      | Some (info, ApproxDevirtualization, missed_captures) ->
           let astate =
             record_call_resolution_if_closure Unresolved astate
             |> AbductiveDomain.add_missed_captures missed_captures
