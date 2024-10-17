@@ -1073,6 +1073,7 @@ PULSE_TRANSITIVE_ACCESS (enabled by default), <br>
 PULSE_UNAWAITED_AWAITABLE (enabled by default), <br>
 PULSE_UNFINISHED_BUILDER (disabled by default), <br>
 PULSE_UNINITIALIZED_CONST (disabled by default), <br>
+PULSE_UNINITIALIZED_METHOD (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNNECESSARY_COPY (enabled by default), <br>
 PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default), <br>
@@ -1506,7 +1507,7 @@ procedure_start_line | file | bug_trace | key | hash |
 line_offset | <br>
 qualifier_contains_potential_exception_note | taint_extra |
 <br>
-transitive_callees_extra | suppressed }</i></p>
+transitive_callees_extra | suppressed | autofix }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>
@@ -2361,6 +2362,13 @@ are method or namespace::method</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-model-unreachable</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Methods to be modeled as
+unreachable.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-models-for-erlang</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">Provide custom models for
@@ -2754,6 +2762,15 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--python-files-index</b> <i>path</i></p>
+
+<p style="margin-left:17%;">A file containing a list of
+newline-separated Python files to capture. Compatible with
+<b>infer capture -- python3 file1.py file2.py</b> but not
+with <b>--pyc-file</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --qualified-cpp-name-block-list</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Skip analyzing the procedures
@@ -2969,6 +2986,15 @@ files in the specified directory</p>
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
 <b>infer-explore</b>(1), <b><br>
 infer-report</b>(1), and <b>infer-run</b>(1). <b><br>
+--run-python-interpreter</b></p>
+
+<p style="margin-left:17%;">Activates: Capture all .py
+files, transform them into internal PyIR form and run the
+PyIR interpreter on them. (Conversely:
+<b>--no-run-python-interpreter</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --sarif</b></p>
 
 <p style="margin-left:17%;">Activates: Output issues in
