@@ -407,9 +407,18 @@ module MethodInfo = struct
   let get_hack_kind = function HackInfo {kind} -> Some kind | _ -> None
 end
 
-type unresolved_reason = MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel
+type unresolved_reason =
+  | ClassNameNotFound
+  | CurryInfoNotFound
+  | MaybeMissingDueToMissedCapture
+  | MaybeMissingDueToIncompleteModel
+[@@deriving show {with_path= false}]
 
 type unresolved_data = {missed_captures: Typ.Name.Set.t; unresolved_reason: unresolved_reason option}
+
+let mk_unresolved_data ?(missed_captures = Typ.Name.Set.empty) unresolved_reason =
+  {missed_captures; unresolved_reason}
+
 
 type resolution_result = (MethodInfo.t, unresolved_data) Result.t
 

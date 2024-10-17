@@ -896,7 +896,11 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
             astate
       in
       ( match (unresolved_reason : Tenv.unresolved_reason option) with
-      | Some (MaybeMissingDueToMissedCapture | MaybeMissingDueToIncompleteModel) ->
+      | Some
+          ( ClassNameNotFound
+          | CurryInfoNotFound
+          | MaybeMissingDueToMissedCapture
+          | MaybeMissingDueToIncompleteModel ) ->
           ()
       | None ->
           check_uninit_method analysis_data call_loc callee_pname actuals astate ) ;
