@@ -37,14 +37,33 @@ end
 module SSAEnv = GenericUnsafeHashtbl (SSA.Hashtbl)
 module IdentEnv = GenericUnsafeHashtbl (Ident.Hashtbl)
 
-type pval = (* very simple for now *)
-  | None | Int of Z.t | Closure of (pval list -> pval)
+type pval =
+  (* very simple for now *)
+  | None
+  | Bool of bool
+  | Int of Z.t
+  | String of string
+  | Closure of (pval list -> pval)
 
 let get_closure = function Closure f -> f | _ -> L.die L.InternalError "get_closure failure"
 
 module Builtin = struct
   let print args =
-    let args = List.filter_map args ~f:(function Int i -> Some (Z.to_string i) | _ -> None) in
+    let args =
+      List.filter_map args ~f:(function
+        | Bool true ->
+            Some "True"
+        | Bool false ->
+            Some "False"
+        | Int i ->
+            Some (Z.to_string i)
+        | String s ->
+            Some s
+        | None ->
+            Some "None"
+        | Closure _ ->
+            None )
+    in
     F.printf "%a@\n" (Pp.seq ~sep:" " F.pp_print_string) args ;
     None
 
@@ -78,7 +97,20 @@ let exec_cfg ~name {CFG.entry; nodes} =
     in
     IdentEnv.create ~mk_error_msg ()
   in
-  let eval_const const = match (const : Const.t) with Int i -> Int i | _ -> todo "eval_const" in
+  let eval_const const =
+    match (const : Const.t) with
+    | None ->
+        None
+    | Bool b ->
+        Bool b
+    | Int i ->
+        Int i
+    | String s ->
+        String s
+    | Float _ | Complex _ | InvalidUnicode _ | Bytes _ ->
+        (* I don't think it makes sense to deal with this kind of constant in the interpreter *)
+        todo "eval_const"
+  in
   let eval_exp exp =
     match (exp : Exp.t) with
     | Const const ->

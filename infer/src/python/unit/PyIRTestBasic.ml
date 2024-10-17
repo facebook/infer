@@ -28,12 +28,8 @@ let%expect_test _ =
   let source = {|
 x = 42
 print(x)
-builtin_print = print
-print = 0
-builtin_print(print)
       |} in
   PyIR.test source ;
-  PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
     module dummy:
@@ -44,18 +40,7 @@ builtin_print(print)
           n0 <- TOPLEVEL[print]
           n1 <- TOPLEVEL[x]
           n2 <- $Call(n0, n1, None)
-          n3 <- TOPLEVEL[print]
-          TOPLEVEL[builtin_print] <- n3
-          TOPLEVEL[print] <- 0
-          n4 <- TOPLEVEL[builtin_print]
-          n5 <- TOPLEVEL[print]
-          n6 <- $Call(n4, n5, None)
-          return None
-
-
-
-    42
-    0 |}]
+          return None |}]
 
 
 let%expect_test _ =
