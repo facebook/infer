@@ -146,6 +146,7 @@ Issue types in this category:
 - [PULSE_DICT_MISSING_KEY](/docs/next/all-issue-types#pulse_dict_missing_key)
 - [PULSE_DYNAMIC_TYPE_MISMATCH](/docs/next/all-issue-types#pulse_dynamic_type_mismatch)
 - [PULSE_UNINITIALIZED_CONST](/docs/next/all-issue-types#pulse_uninitialized_const)
+- [PULSE_UNINITIALIZED_METHOD](/docs/next/all-issue-types#pulse_uninitialized_method)
 
 ## Sensitive data flow
 
