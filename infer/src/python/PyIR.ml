@@ -781,15 +781,15 @@ end
 module CodeInfo = struct
   type t =
     { (* see https://docs.python.org/3.8/reference/datamodel.html#index-55 *)
-      co_name: string
+      co_name: Ident.t
     ; co_nlocals: int
     ; co_argcount: int
     ; co_posonlyargcount: int
     ; co_kwonlyargcount: int
-    ; co_cellvars: string array
-    ; co_freevars: string array
-    ; co_names: string array
-    ; co_varnames: string array
+    ; co_cellvars: Ident.t array
+    ; co_freevars: Ident.t array
+    ; co_names: Ident.t array
+    ; co_varnames: Ident.t array
     ; has_star_arguments: bool
     ; has_star_keywords: bool
     ; is_generator: bool }
@@ -805,7 +805,7 @@ module CodeInfo = struct
       ; co_freevars
       ; co_names
       ; co_varnames } =
-    { co_name
+    { co_name= Ident.mk co_name
     ; has_star_arguments= co_flags land 0x04 <> 0
     ; has_star_keywords= co_flags land 0x08 <> 0
     ; is_generator= co_flags land 0x20 <> 0
@@ -813,19 +813,17 @@ module CodeInfo = struct
     ; co_argcount
     ; co_posonlyargcount
     ; co_kwonlyargcount
-    ; co_cellvars
-    ; co_freevars
-    ; co_names
-    ; co_varnames }
+    ; co_cellvars= Array.map co_cellvars ~f:Ident.mk
+    ; co_freevars= Array.map co_freevars ~f:Ident.mk
+    ; co_names= Array.map co_names ~f:Ident.mk
+    ; co_varnames= Array.map co_varnames ~f:Ident.mk }
 end
 
 module CFG = struct
   type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t; code_info: CodeInfo.t}
 
-  let pp ?name fmt {nodes; code_info= {co_name; co_varnames; co_argcount}} =
-    let name = Option.value ~default:co_name name in
-    F.fprintf fmt "function %s(%a):@\n" name
-      (Pp.seq ~sep:", " F.pp_print_string)
+  let pp ~name fmt {nodes; code_info= {co_varnames; co_argcount}} =
+    F.fprintf fmt "function %s(%a):@\n" name (Pp.seq ~sep:", " Ident.pp)
       (Array.slice co_varnames 0 co_argcount |> Array.to_list) ;
     NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
 

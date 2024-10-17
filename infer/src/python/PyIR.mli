@@ -57,6 +57,8 @@ end
 module QualName : sig
   type t
 
+  val pp : Format.formatter -> t -> unit
+
   module Map : Caml.Map.S with type key = t
 end
 
@@ -153,6 +155,8 @@ module Exp : sig
     | Collection of {kind: collection; values: t list; unpack: bool}
     | GetAttr of (t * string)
     | Yield of t
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module Stmt : sig
@@ -192,15 +196,15 @@ end
 
 module CodeInfo : sig
   type t =
-    { co_name: string
+    { co_name: Ident.t
     ; co_nlocals: int
     ; co_argcount: int
     ; co_posonlyargcount: int
     ; co_kwonlyargcount: int
-    ; co_cellvars: string array
-    ; co_freevars: string array
-    ; co_names: string array
-    ; co_varnames: string array
+    ; co_cellvars: Ident.t array
+    ; co_freevars: Ident.t array
+    ; co_names: Ident.t array
+    ; co_varnames: Ident.t array
     ; has_star_arguments: bool
     ; has_star_keywords: bool
     ; is_generator: bool }

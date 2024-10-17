@@ -45,3 +45,45 @@ builtin_print(print, None, "hello world", True, False)
     Running interpreter:
     42
     0 None hello world True False |}]
+
+
+let%expect_test _ =
+  let source = {|
+def fst(y, x):
+    return y
+
+x = 'x'
+y = 'y'
+print("fst(x, y) =", fst(x, y))
+|} in
+  PyIR.test source ;
+  F.printf "Running interpreter:@\n" ;
+  PyIR.test ~run:PyIRExec.run source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["fst", "dummy.fst"](None, None, None, None, None)
+          TOPLEVEL[fst] <- n0
+          TOPLEVEL[x] <- "x"
+          TOPLEVEL[y] <- "y"
+          n1 <- TOPLEVEL[print]
+          n2 <- TOPLEVEL[fst]
+          n3 <- TOPLEVEL[x]
+          n4 <- TOPLEVEL[y]
+          n5 <- $Call(n2, n3, n4, None)
+          n6 <- $Call(n1, "fst(x, y) =", n5, None)
+          return None
+
+
+      function dummy.fst(y, x):
+        b0:
+          n0 <- LOCAL[y]
+          return n0
+
+
+
+    Running interpreter:
+    fst(x, y) = x |}]

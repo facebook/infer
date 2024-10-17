@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 open PyIR
 
-let todo msg = L.die L.InternalError "TODO: %s" msg
+let todo msg = L.die InternalError "TODO: %s" msg
 
 module GenericUnsafeHashtbl (H : Caml.Hashtbl.S) = struct
   let get hashtbl mk_error_msg key =
@@ -45,7 +45,7 @@ type pval =
   | String of string
   | Closure of (pval list -> pval)
 
-let get_closure = function Closure f -> f | _ -> L.die L.InternalError "get_closure failure"
+let get_closure = function Closure f -> f | _ -> L.die InternalError "get_closure failure"
 
 module Builtin = struct
   let print args =
@@ -75,78 +75,117 @@ module Builtin = struct
     get
 end
 
-let exec_cfg ~name {CFG.entry; nodes} =
+module Locals = struct
+  let mk_locals_utils ~co_name ~co_varnames ~co_argcount args =
+    let {IdentEnv.get; get_opt; set} =
+      let mk_error_msg ident =
+        F.asprintf "in cfg %a, local variable %a is not bind to any value in" Ident.pp co_name
+          Ident.pp ident
+      in
+      IdentEnv.create ~mk_error_msg ()
+    in
+    let args_length = List.length args in
+    if not (Int.equal args_length co_argcount) then
+      (* TODO: deal with optionals arguments *)
+      L.die InternalError "In cfg %a, %d arguments are expected but %d are given" Ident.pp co_name
+        args_length co_argcount ;
+    List.iteri args ~f:(fun i arg ->
+        let arg_name = co_varnames.(i) in
+        set arg_name arg ) ;
+    (get_opt, get, set)
+end
+
+let run {Module.toplevel; functions} =
   let builtins_get = Builtin.mk_builtins_getter () in
-  let get_node node_name =
-    match NodeName.Map.find_opt node_name nodes with
-    | None ->
-        L.die L.InternalError "exec_cfg: in cfg %s, no node with name %a" name NodeName.pp node_name
-    | Some node ->
-        node
+  let get_cfg qual_name =
+    QualName.Map.find_opt qual_name functions
+    |> Option.value_or_thunk ~default:(fun () ->
+           L.die InternalError "exec_cfg: no cfg with name %a" QualName.pp qual_name )
   in
-  let entry_node = get_node entry in
-  let {SSAEnv.get= ssa_get; set= ssa_set} =
-    let mk_error_msg ssa =
-      F.asprintf "in cfg %s, SSA variable %a is not bind to any value" name SSA.pp ssa
+  let rec exec_cfg {CFG.entry; nodes; code_info} args =
+    let {CodeInfo.co_name; co_varnames; co_argcount} = code_info in
+    let get_node node_name =
+      NodeName.Map.find_opt node_name nodes
+      |> Option.value_or_thunk ~default:(fun () ->
+             L.die InternalError "exec_cfg: in cfg %a, no node with name %a" Ident.pp co_name
+               NodeName.pp node_name )
     in
-    SSAEnv.create ~mk_error_msg ()
-  in
-  let {IdentEnv.get_opt= locals_get_opt; set= locals_set} =
-    let mk_error_msg ident =
-      F.asprintf "in cfg %s, local variable %a is not bind to any value in" name Ident.pp ident
+    let entry_node = get_node entry in
+    let {SSAEnv.get= ssa_get; set= ssa_set} =
+      let mk_error_msg ssa =
+        F.asprintf "in cfg %a, SSA variable %a is not bind to any value" Ident.pp co_name SSA.pp ssa
+      in
+      SSAEnv.create ~mk_error_msg ()
     in
-    IdentEnv.create ~mk_error_msg ()
+    let locals_get_opt, locals_get, locals_set =
+      Locals.mk_locals_utils ~co_name ~co_varnames ~co_argcount args
+    in
+    let eval_const const =
+      match (const : Const.t) with
+      | None ->
+          None
+      | Bool b ->
+          Bool b
+      | Int i ->
+          Int i
+      | String s ->
+          String s
+      | Float _ | Complex _ | InvalidUnicode _ | Bytes _ ->
+          (* I don't think it makes sense to deal with this kind of constant in the interpreter *)
+          todo "eval_const"
+    in
+    let eval_exp exp =
+      match (exp : Exp.t) with
+      | Const const ->
+          eval_const const
+      | Var {scope= Fast; ident} ->
+          locals_get ident
+      | Var {scope= Name; ident} ->
+          locals_get_opt ident |> Option.value_or_thunk ~default:(fun () -> builtins_get ident)
+      | Temp ssa ->
+          ssa_get ssa
+      | Var _
+      | Subscript _
+      | BuildSlice _
+      | BuildString _
+      | BuildFrozenSet _
+      | Collection _
+      | GetAttr _
+      | Yield _ ->
+          todo "eval_exp"
+    in
+    let exec_stmt stmt =
+      match (stmt : Stmt.t) with
+      | Let {lhs; rhs} ->
+          ssa_set lhs (eval_exp rhs)
+      | Store {lhs= {scope= Name; ident}; rhs} ->
+          locals_set ident (eval_exp rhs)
+      | Call {lhs; exp; args} ->
+          let f = get_closure (eval_exp exp) in
+          let args = List.map ~f:eval_exp args in
+          ssa_set lhs (f args)
+      | BuiltinCall {lhs; call= BuiltinCaller.Function {qual_name}; args} ->
+          if not (Int.equal (List.length args) 4) then
+            L.die InternalError "$BuiltinCall.Function expects 4 args and reveiced [%a]"
+              (Pp.comma_seq Exp.pp) args ;
+          let cfg = get_cfg qual_name in
+          let eval = exec_cfg cfg in
+          ssa_set lhs (Closure eval)
+      | Store _ | SetAttr _ | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
+          todo "exec_stmt"
+    in
+    let exec_terminator terminator =
+      match (terminator : Terminator.t) with
+      | Return exp ->
+          eval_exp exp
+      | _ ->
+          todo "exec_terminator"
+    in
+    let exec_node {Node.ssa_parameters; stmts; last} args =
+      List.iter2_exn ssa_parameters args ~f:(fun ssa v -> ssa_set ssa v) ;
+      List.iter stmts ~f:(fun (_loc, stmt) -> exec_stmt stmt) ;
+      exec_terminator last
+    in
+    exec_node entry_node []
   in
-  let eval_const const =
-    match (const : Const.t) with
-    | None ->
-        None
-    | Bool b ->
-        Bool b
-    | Int i ->
-        Int i
-    | String s ->
-        String s
-    | Float _ | Complex _ | InvalidUnicode _ | Bytes _ ->
-        (* I don't think it makes sense to deal with this kind of constant in the interpreter *)
-        todo "eval_const"
-  in
-  let eval_exp exp =
-    match (exp : Exp.t) with
-    | Const const ->
-        eval_const const
-    | Var {scope= Name; ident} ->
-        locals_get_opt ident |> Option.value_or_thunk ~default:(fun () -> builtins_get ident)
-    | Temp ssa ->
-        ssa_get ssa
-    | Var _
-    | Subscript _
-    | BuildSlice _
-    | BuildString _
-    | BuildFrozenSet _
-    | Collection _
-    | GetAttr _
-    | Yield _ ->
-        todo "eval_exp"
-  in
-  let exec_stmt stmt =
-    match (stmt : Stmt.t) with
-    | Let {lhs; rhs} ->
-        ssa_set lhs (eval_exp rhs)
-    | Store {lhs= {scope= Name; ident}; rhs} ->
-        locals_set ident (eval_exp rhs)
-    | Call {lhs; exp; args} ->
-        let f = get_closure (eval_exp exp) in
-        let args = List.map ~f:eval_exp args in
-        ssa_set lhs (f args)
-    | Store _ | SetAttr _ | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
-        todo "exec_stmt"
-  in
-  let exec_node {Node.ssa_parameters; stmts} args =
-    List.iter2_exn ssa_parameters args ~f:(fun ssa v -> ssa_set ssa v) ;
-    List.iter stmts ~f:(fun (_loc, stmt) -> exec_stmt stmt)
-  in
-  exec_node entry_node []
-
-
-let run {Module.toplevel} = exec_cfg ~name:"toplevel" toplevel
+  exec_cfg toplevel [] |> ignore
