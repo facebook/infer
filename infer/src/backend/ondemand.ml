@@ -34,8 +34,6 @@ module ActiveProcedures : sig
 
   val remove : active -> unit
 
-  val clear : unit -> unit
-
   val get_all : unit -> active list
 end = struct
   type active = SpecializedProcname.t
@@ -44,13 +42,27 @@ end = struct
 
   let currently_analyzed = AnalysisTargets.create ()
 
+  let pp_actives fmt =
+    AnalysisTargets.iteri currently_analyzed ~f:(fun ~key:target ~data:_ ->
+        F.fprintf fmt "%a,@," SpecializedProcname.pp target )
+
+
   let mem analysis_target = AnalysisTargets.mem currently_analyzed analysis_target
 
-  let add analysis_target = AnalysisTargets.enqueue_back_exn currently_analyzed analysis_target ()
+  let add analysis_target =
+    if Config.trace_ondemand then L.progress "add %a@." SpecializedProcname.pp analysis_target ;
+    AnalysisTargets.enqueue_back_exn currently_analyzed analysis_target ()
 
-  let remove analysis_target = AnalysisTargets.remove_exn currently_analyzed analysis_target
 
-  let clear () = AnalysisTargets.clear currently_analyzed
+  let remove analysis_target =
+    if Config.trace_ondemand then L.progress "remove %a@." SpecializedProcname.pp analysis_target ;
+    let popped_target, () = AnalysisTargets.dequeue_back_with_key_exn currently_analyzed in
+    if not (SpecializedProcname.equal popped_target analysis_target) then
+      L.die InternalError
+        "Queue structure for ondemand violated: expected to pop %a but got %a instead@\n\
+         Active procedures: %t@\n"
+        SpecializedProcname.pp analysis_target SpecializedProcname.pp popped_target pp_actives
+
 
   let get_all () = AnalysisTargets.keys currently_analyzed
 end
@@ -243,7 +255,8 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
         match exn with
         | RestartSchedulerException.ProcnameAlreadyLocked _
         | MissingDependencyException.MissingDependencyException ->
-            ActiveProcedures.clear () ;
+            decr nesting ;
+            ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
             true
         | exn ->
             if not !logged_error then (
