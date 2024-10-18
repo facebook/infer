@@ -76,13 +76,17 @@ let edges_to_ignore = ref None
 
 (** use either [is_active] or [edges_to_ignore] to determine if we should return an empty summary to
     avoid mutual recursion cycles *)
-let in_mutual_recursion_cycle ~caller_summary ~callee specialization =
+let detect_mutual_recursion_cycle ~caller_summary ~callee specialization =
   match (!edges_to_ignore, caller_summary) with
   | Some edges_to_ignore, Some {Summary.proc_name} ->
-      Procname.Map.find_opt proc_name edges_to_ignore
-      |> Option.exists ~f:(fun recursive_callees -> Procname.Set.mem callee recursive_callees)
+      let is_replay_recursive_callee =
+        Procname.Map.find_opt proc_name edges_to_ignore
+        |> Option.exists ~f:(fun recursive_callees -> Procname.Set.mem callee recursive_callees)
+      in
+      if is_replay_recursive_callee then `ReplayCycleCut else `NotInMutualRecursionCycle
   | None, _ | _, None ->
-      ActiveProcedures.mem {proc_name= callee; specialization}
+      if ActiveProcedures.mem {proc_name= callee; specialization} then `InMutualRecursionCycle
+      else `NotInMutualRecursionCycle
 
 
 let procedure_is_defined proc_name =
@@ -403,66 +407,77 @@ let double_lock_for_restart ~lazy_payloads analysis_req callee_pname specializat
 
 let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
     ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
-  let cycle_detected =
-    in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname specialization
-  in
-  let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed in
-  register_callee ~cycle_detected ?caller_summary callee_pname ;
-  if cycle_detected then Error MutualRecursionCycle
-  else if is_in_block_list callee_pname then Error InBlockList
-  else
-    let analyze_callee_aux specialization_context =
-      error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
-      RestartScheduler.with_lock ~get_actives:ActiveProcedures.get_all callee_pname ~f:(fun () ->
-          (* the restart scheduler wants to avoid duplicated work, but between checking for a
-             summary and taking the lock on computing it someone else might have finished computing
-             the summary we want *)
-          match double_lock_for_restart ~lazy_payloads analysis_req callee_pname specialization with
-          | `YesSummary summary ->
-              Stats.incr_ondemand_double_analysis_prevented () ;
-              Some summary
-          | `NoSummary ->
-              Procdesc.load callee_pname
-              >>= fun callee_pdesc ->
-              let previous_global_state = AnalysisGlobalState.save () in
-              protect
-                ~f:(fun () ->
-                  (* preload tenv to avoid tainting preanalysis timing with IO *)
-                  let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
-                  AnalysisGlobalState.initialize callee_pdesc tenv ;
-                  Timer.time Preanalysis
+  match detect_mutual_recursion_cycle ~caller_summary ~callee:callee_pname specialization with
+  | `InMutualRecursionCycle | `ReplayCycleCut ->
+      register_callee ~cycle_detected:true ?caller_summary callee_pname ;
+      Error MutualRecursionCycle
+  | `NotInMutualRecursionCycle -> (
+      register_callee ~cycle_detected:false ?caller_summary callee_pname ;
+      let analysis_result_of_option opt =
+        Result.of_option opt ~error:AnalysisResult.AnalysisFailed
+      in
+      if is_in_block_list callee_pname then Error InBlockList
+      else
+        let analyze_callee_aux specialization_context =
+          error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
+          RestartScheduler.with_lock ~get_actives:ActiveProcedures.get_all callee_pname
+            ~f:(fun () ->
+              (* the restart scheduler wants to avoid duplicated work, but between checking for a
+                 summary and taking the lock on computing it someone else might have finished computing
+                 the summary we want *)
+              match
+                double_lock_for_restart ~lazy_payloads analysis_req callee_pname specialization
+              with
+              | `YesSummary summary ->
+                  Stats.incr_ondemand_double_analysis_prevented () ;
+                  Some summary
+              | `NoSummary ->
+                  Procdesc.load callee_pname
+                  >>= fun callee_pdesc ->
+                  let previous_global_state = AnalysisGlobalState.save () in
+                  protect
                     ~f:(fun () ->
-                      let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                      let summary =
-                        run_proc_analysis exe_env tenv analysis_req specialization_context
-                          ?caller_pname callee_pdesc
-                      in
-                      set_complete_result analysis_req summary ;
-                      Some summary )
-                    ~on_timeout:(fun span ->
-                      L.debug Analysis Quiet
-                        "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
-                         (pre-analysis timeout?)@\n"
-                        span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
-                        Procname.pp callee_pname ;
-                      None ) )
-                ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
-    in
-    match is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization with
-    | `SummaryReady summary ->
-        Ok summary
-    | `ComputeDefaultSummary ->
-        analyze_callee_aux None |> analysis_result_of_option
-    | `ComputeDefaultSummaryThenSpecialize specialization ->
-        (* recursive call so that we detect mutual recursion on the unspecialized summary *)
-        analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:None ?caller_summary
-          ~from_file_analysis callee_pname
-        |> Result.bind ~f:(fun summary ->
-               analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
-    | `AddNewSpecialization (summary, specialization) ->
-        analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
-    | `UnknownProcedure ->
-        Error UnknownProcedure
+                      (* preload tenv to avoid tainting preanalysis timing with IO *)
+                      let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
+                      AnalysisGlobalState.initialize callee_pdesc tenv ;
+                      Timer.time Preanalysis
+                        ~f:(fun () ->
+                          let caller_pname =
+                            caller_summary >>| fun summ -> summ.Summary.proc_name
+                          in
+                          let summary =
+                            run_proc_analysis exe_env tenv analysis_req specialization_context
+                              ?caller_pname callee_pdesc
+                          in
+                          set_complete_result analysis_req summary ;
+                          Some summary )
+                        ~on_timeout:(fun span ->
+                          L.debug Analysis Quiet
+                            "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any \
+                             checkers (pre-analysis timeout?)@\n"
+                            span SourceFile.pp
+                            (Procdesc.get_attributes callee_pdesc).translation_unit Procname.pp
+                            callee_pname ;
+                          None ) )
+                    ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
+        in
+        match
+          is_summary_already_computed ~lazy_payloads analysis_req callee_pname specialization
+        with
+        | `SummaryReady summary ->
+            Ok summary
+        | `ComputeDefaultSummary ->
+            analyze_callee_aux None |> analysis_result_of_option
+        | `ComputeDefaultSummaryThenSpecialize specialization ->
+            (* recursive call so that we detect mutual recursion on the unspecialized summary *)
+            analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:None ?caller_summary
+              ~from_file_analysis callee_pname
+            |> Result.bind ~f:(fun summary ->
+                   analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
+        | `AddNewSpecialization (summary, specialization) ->
+            analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
+        | `UnknownProcedure ->
+            Error UnknownProcedure )
 
 
 let analyze_proc_name exe_env analysis_req ?specialization ~caller_summary callee_pname =
