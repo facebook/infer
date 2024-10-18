@@ -40,20 +40,19 @@ module ActiveProcedures : sig
 end = struct
   type active = SpecializedProcname.t
 
-  (* can be switched to a [HashQueue] if we ever need to keep track of the order as well *)
-  module AnalysisTargets = HashSet.Make (SpecializedProcname)
+  module AnalysisTargets = Hash_queue.Make (SpecializedProcname)
 
-  let currently_analyzed = AnalysisTargets.create 0
+  let currently_analyzed = AnalysisTargets.create ()
 
   let mem analysis_target = AnalysisTargets.mem currently_analyzed analysis_target
 
-  let add analysis_target = AnalysisTargets.add analysis_target currently_analyzed
+  let add analysis_target = AnalysisTargets.enqueue_back_exn currently_analyzed analysis_target ()
 
-  let remove analysis_target = AnalysisTargets.remove analysis_target currently_analyzed
+  let remove analysis_target = AnalysisTargets.remove_exn currently_analyzed analysis_target
 
   let clear () = AnalysisTargets.clear currently_analyzed
 
-  let get_all () = AnalysisTargets.seq currently_analyzed |> Seq.fold_left (Fn.flip List.cons) []
+  let get_all () = AnalysisTargets.keys currently_analyzed
 end
 
 (** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
