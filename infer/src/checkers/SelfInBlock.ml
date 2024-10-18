@@ -7,6 +7,12 @@
 open! IStd
 module F = Format
 
+(* This will be looking for variables such as "strongSelf" or "weakSelf" *)
+let contains_self pvar =
+  let lowercase_name pvar = String.lowercase (Mangled.to_string (Pvar.get_name pvar)) in
+  String.is_substring ~substring:(Mangled.to_string Mangled.self) (lowercase_name pvar)
+
+
 module DomainData = struct
   type self_pointer_kind =
     | CAPTURED_STRONG_SELF
@@ -198,7 +204,8 @@ module Mem = struct
   let report_unchecked_strongself_issues proc_desc err_log var_use var (astate : t) =
     match find_strong_var var astate with
     | Some ({DomainData.pvar; loc; kind}, strongVarElem)
-      when DomainData.is_unchecked_strong_self kind && not strongVarElem.reported ->
+      when DomainData.is_unchecked_strong_self kind
+           && (not strongVarElem.reported) && contains_self pvar ->
         let message =
           F.asprintf
             "The variable `%a`, equal to a weak pointer to `self`, is %s without a check for null \
@@ -266,24 +273,19 @@ module Mem = struct
          attributes.ProcAttributes.captured
 
 
-  let lowercase_name pvar = String.lowercase (Mangled.to_string (Pvar.get_name pvar))
-
   (* The variable is captured in the block, contains self in the name, is not self, and it's strong. *)
   let is_captured_strong_self attributes pvar =
     (not (Pvar.is_self pvar))
     && List.exists
          ~f:(fun {CapturedVar.pvar= captured; typ} ->
-           Typ.is_strong_pointer typ && pvar_same_name captured pvar
-           && String.is_suffix ~suffix:"self" (lowercase_name captured) )
+           Typ.is_strong_pointer typ && pvar_same_name captured pvar && contains_self pvar )
          attributes.ProcAttributes.captured
 
 
   let is_captured_weak_self attributes pvar =
     List.exists
       ~f:(fun {CapturedVar.pvar= captured; typ} ->
-        pvar_same_name captured pvar
-        && String.is_substring ~substring:"self" (lowercase_name captured)
-        && Typ.is_weak_pointer typ )
+        pvar_same_name captured pvar && contains_self pvar && Typ.is_weak_pointer typ )
       attributes.ProcAttributes.captured
 
 
@@ -578,9 +580,7 @@ let find_strong_self domain =
   Vars.fold
     (fun _ {pvar; kind; loc} pvar_opt ->
       match kind with
-      | (UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF)
-        when String.is_substring ~substring:(Mangled.to_string Mangled.self)
-               (String.lowercase (Mangled.to_string (Pvar.get_name pvar))) ->
+      | (UNCHECKED_STRONG_SELF | CHECKED_STRONG_SELF) when contains_self pvar ->
           Some (pvar, loc)
       | _ ->
           pvar_opt )
