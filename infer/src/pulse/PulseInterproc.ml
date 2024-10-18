@@ -963,24 +963,22 @@ let report_mutual_recursion_cycle
           if is_foreign_procedure then add_errlog inner_call err_log )
 
 
-let report_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) cycles =
-  PulseMutualRecursion.Set.iter
-    (fun cycle ->
-      if
-        Procname.equal
-          (PulseMutualRecursion.get_inner_call cycle)
-          (Procdesc.get_proc_name proc_desc)
-      then report_mutual_recursion_cycle analysis_data cycle )
-    cycles
-
-
-let record_recursive_calls analysis_data callee_proc_name call_loc callee_summary call_state =
+let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) callee_proc_name
+    call_loc callee_summary call_state =
   let callee_recursive_calls =
-    PulseMutualRecursion.Set.map
-      (PulseMutualRecursion.add_call callee_proc_name call_loc)
+    PulseMutualRecursion.Set.filter_map
+      (fun cycle ->
+        let cycle = PulseMutualRecursion.add_call callee_proc_name call_loc cycle in
+        if
+          Procname.equal
+            (PulseMutualRecursion.get_inner_call cycle)
+            (Procdesc.get_proc_name proc_desc)
+        then (
+          report_mutual_recursion_cycle analysis_data cycle ;
+          None )
+        else Some cycle )
       (AbductiveDomain.Summary.get_recursive_calls callee_summary)
   in
-  report_recursive_calls analysis_data callee_recursive_calls ;
   let astate = AbductiveDomain.add_recursive_calls callee_recursive_calls call_state.astate in
   {call_state with astate}
 

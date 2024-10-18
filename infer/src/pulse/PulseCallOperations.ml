@@ -633,11 +633,12 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
 
 let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc callee_pname
     astate =
-  let astate, cycle = AbductiveDomain.add_recursive_call call_loc callee_pname astate in
-  if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then
+  if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then (
     PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-      (MutualRecursionCycle {cycle; location= call_loc}) ;
-  astate
+      (MutualRecursionCycle
+         {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ;
+    astate )
+  else AbductiveDomain.add_recursive_call call_loc callee_pname astate
 
 
 let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_loc callee_pname
