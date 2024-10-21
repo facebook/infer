@@ -107,6 +107,13 @@ let expect_bool ~who ?how = function
         how pp_pval v
 
 
+let expect_1_arg ~who = function
+  | [arg] ->
+      arg
+  | args ->
+      L.die InternalError "%s expects 1 arg and reveiced [%a]" who (Pp.comma_seq Exp.pp) args
+
+
 let expect_2_args ~who = function
   | [arg1; arg2] ->
       (arg1, arg2)
@@ -277,6 +284,9 @@ let run_files modules =
             (* TODO: implement more realistic attribute lookup *)
             let {Dict.get} = eval_exp exp |> expect_dict ~who:"GetAttr" in
             get attr
+        | Collection {kind= Tuple} ->
+            (* TODO: we skip the construction for now *)
+            None
         | Subscript _ | BuildSlice _ | BuildString _ | BuildFrozenSet _ | Collection _ | Yield _ ->
             todo "eval_exp"
       in
@@ -307,6 +317,11 @@ let run_files modules =
               L.die InternalError "$BuiltinCall.ImportName expects 2 args and reveiced [%a]"
                 (Pp.comma_seq Exp.pp) args ;
             ssa_set lhs (exec_module name)
+        | BuiltinCall {lhs; call= ImportFrom name; args} ->
+            let who = "$BuiltinCall.ImportFrom" in
+            let arg = expect_1_arg ~who args in
+            let {Dict.get} = eval_exp arg |> expect_dict ~who in
+            ssa_set lhs (get name)
         | BuiltinCall {lhs; call= Inplace Add; args} ->
             let who = "$BuiltinCall.Inplace.Add" in
             let arg1, arg2 = expect_2_args ~who args in

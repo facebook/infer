@@ -51,3 +51,13 @@ print('module1.f =', module1.get())
 #testing recursive function + import
 print('module1.fact(5) =', module1.fact(5))
 #stdout: module1.fact(5) = 120
+from module1 import get as get1, set, fact as factorial
+set('modified with an imported setter')
+print('module1.f =', get1())
+#stdout: module1.f = modified with an imported setter
+from module1 import f as f_from_module1
+print('module1.f =', f_from_module1)
+#stdout: module1.f = modified with an imported setter
+#testing recursive function + from .. import
+print('factorial(5) =', factorial(5))
+#stdout: factorial(5) = 120

@@ -220,6 +220,12 @@ print('module1.f =', module1.f)
 
 module1.set('modified with a setter')
 print('module1.f =', module1.get())
+
+from module1 import get as get1, set
+set('modified with an imported setter')
+print('module1.f =', get1())
+from module1 import f as f_from_module1
+print('module1.f =', f_from_module1)
 |}
     )
   in
@@ -240,4 +246,6 @@ def set(v):
     {|
     module1.f = module1.f
     module1.f = explicitly modified from main
-    module1.f = modified with a setter |}]
+    module1.f = modified with a setter
+    module1.f = modified with an imported setter
+    module1.f = modified with an imported setter |}]
