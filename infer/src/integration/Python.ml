@@ -34,12 +34,39 @@ module Error = struct
   let ir x = IR x
 end
 
+module Interpreter = struct
+  let process_file file =
+    let open IResult.Let_syntax in
+    let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary:false file in
+    Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code
+
+
+  let process_files files =
+    let open IResult.Let_syntax in
+    let+ modules =
+      List.fold_result (List.rev files) ~init:[] ~f:(fun l file ->
+          let+ ir = process_file file |> Result.map_error ~f:(fun err -> (file, err)) in
+          ir :: l )
+    in
+    PyIRExec.run_files modules
+
+
+  let run files =
+    Py.initialize ~interpreter:Version.python_exe () ;
+    ( match process_files files with
+    | Error (file, err) ->
+        Error.format_error file err ;
+        ()
+    | Ok () ->
+        () ) ;
+    Py.finalize ()
+end
+
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let _sourcefile = Textual.SourceFile.create file in
   let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
-  let* ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
-  if Config.run_python_interpreter then PyIRExec.run ir ;
+  let* _ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
   Ok ()
 
 
@@ -138,5 +165,6 @@ let capture input =
         | None ->
             args
       in
-      capture_files ~is_binary:false files ;
+      if Config.run_python_interpreter then Interpreter.run files
+      else capture_files ~is_binary:false files ;
       L.progress "Finished capture.@\n"

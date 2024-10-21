@@ -37,3 +37,11 @@ def fact(n):
 
 print('fact(5) =', fact(5))
 #stdout: fact(5) = 120
+
+#basic import module
+import module1
+print('module1.f =', module1.f)
+#stdout: module1.f = module1.f
+module1.f = 'explicitly modified from main'
+print('module1.f =', module1.f)
+#stdout: module1.f = explicitly modified from main
