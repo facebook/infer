@@ -45,3 +45,9 @@ print('module1.f =', module1.f)
 module1.f = 'explicitly modified from main'
 print('module1.f =', module1.f)
 #stdout: module1.f = explicitly modified from main
+module1.set('modified with a setter')
+print('module1.f =', module1.get())
+#stdout: module1.f = modified with a setter
+#testing recursive function + import
+print('module1.fact(5) =', module1.fact(5))
+#stdout: module1.fact(5) = 120

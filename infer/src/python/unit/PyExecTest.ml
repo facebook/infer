@@ -217,6 +217,9 @@ print('module1.f =', module1.f)
 
 module1.f = 'explicitly modified from main'
 print('module1.f =', module1.f)
+
+module1.set('modified with a setter')
+print('module1.f =', module1.get())
 |}
     )
   in
@@ -233,6 +236,8 @@ def set(v):
 |})
   in
   PyIR.test_files ~run:PyIRExec.run_files [main; module1] ;
-  [%expect {|
+  [%expect
+    {|
     module1.f = module1.f
-    module1.f = explicitly modified from main |}]
+    module1.f = explicitly modified from main
+    module1.f = modified with a setter |}]

@@ -114,7 +114,12 @@ let expect_2_args ~who = function
       L.die InternalError "%s expects 2 args and reveiced [%a]" who (Pp.comma_seq Exp.pp) args
 
 
-let get_closure = function Closure f -> f | _ -> L.die InternalError "get_closure failure"
+let expect_closure ~who = function
+  | Closure f ->
+      f
+  | v ->
+      L.die InternalError "%s expects a closure and received %a" who pp_pval v
+
 
 module Builtin = struct
   let print args =
@@ -287,7 +292,7 @@ let run_files modules =
         | Store {lhs= {scope= Global; ident}; rhs} ->
             globals_set ident (eval_exp rhs)
         | Call {lhs; exp; args} ->
-            let f = get_closure (eval_exp exp) in
+            let f = expect_closure ~who:"Call" (eval_exp exp) in
             let args = List.map ~f:eval_exp args in
             ssa_set lhs (f args)
         | BuiltinCall {lhs; call= Function {qual_name}; args} ->
@@ -329,7 +334,13 @@ let run_files modules =
         | SetAttr {lhs; attr; rhs} ->
             let {Dict.set} = eval_exp lhs |> expect_dict ~who:"SetAttr" in
             set attr (eval_exp rhs)
-        | StoreSubscript _ | CallMethod _ | BuiltinCall _ | SetupAnnotations ->
+        | CallMethod {lhs; name; self_if_needed; args} ->
+            let {Dict.get} = eval_exp self_if_needed |> expect_dict ~who:"CallMethod" in
+            (* TODO: bind the self parameter for bounded methods *)
+            let f = expect_closure ~who:"CallMethod" (get name) in
+            let args = List.map ~f:eval_exp args in
+            ssa_set lhs (f args)
+        | StoreSubscript _ | BuiltinCall _ | SetupAnnotations ->
             todo "exec_stmt"
       in
       let rec exec_terminator terminator =
