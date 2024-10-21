@@ -2612,6 +2612,18 @@ let test ?(filename = "dummy.py") ?(debug = false) ?run source =
   test_generator ~filename ~f source
 
 
+let test_files ?(debug = false) ?run list =
+  let open IResult.Let_syntax in
+  let units = ref [] in
+  let f code =
+    let+ module_ = mk ~debug code in
+    units := module_ :: !units
+  in
+  List.iter list ~f:(fun (filename, source) -> test_generator ~filename ~f source) ;
+  let run = Option.value run ~default:(List.iter ~f:(F.printf "%a" Module.pp)) in
+  run (List.rev !units)
+
+
 let test_cfg_skeleton ?(filename = "dummy.py") source =
   let open IResult.Let_syntax in
   let f code =
