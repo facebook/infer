@@ -60,7 +60,7 @@ type pval =
   | Bool of bool
   | Int of Z.t
   | String of string
-  | Closure of (pval list -> pval)
+  | Closure of (?locals:pval Dict.t -> pval list -> pval)
   | Dict of pval Dict.t
 
 let rec pp_pval fmt = function
@@ -121,6 +121,14 @@ let expect_2_args ~who = function
       L.die InternalError "%s expects 2 args and reveiced [%a]" who (Pp.comma_seq Exp.pp) args
 
 
+let expect_at_least_2_args ~who = function
+  | arg1 :: arg2 :: args ->
+      (arg1, arg2, args)
+  | args ->
+      L.die InternalError "%s expects at least 2 args and reveiced [%a]" who (Pp.comma_seq Exp.pp)
+        args
+
+
 let expect_closure ~who = function
   | Closure f ->
       f
@@ -129,7 +137,7 @@ let expect_closure ~who = function
 
 
 module Builtin = struct
-  let print args =
+  let print ?locals:_ args =
     let args =
       List.filter_map args ~f:(function
         | Bool true ->
@@ -160,19 +168,16 @@ end
 
 module Globals = struct
   let mk_globals ~name =
-    let ({Dict.get_opt; set} as dict) =
-      let mk_error_msg ident =
-        F.asprintf "in module %a, global variable %a is not bind to any value" Ident.pp name
-          Ident.pp ident
-      in
-      Dict.create ~mk_error_msg ()
+    let mk_error_msg ident =
+      F.asprintf "in module %a, global variable %a is not bind to any value" Ident.pp name Ident.pp
+        ident
     in
-    (get_opt, set, dict)
+    Dict.create ~mk_error_msg ()
 end
 
 module Locals = struct
-  let mk_locals_utils ~co_name ~co_varnames ~co_argcount args =
-    let {Dict.get; get_opt; set} =
+  let mk_locals ~co_name ~co_varnames ~co_argcount args =
+    let ({Dict.set} as dict) =
       let mk_error_msg ident =
         F.asprintf "in cfg %a, local variable %a is not bind to any value" Ident.pp co_name Ident.pp
           ident
@@ -187,7 +192,18 @@ module Locals = struct
     List.iteri args ~f:(fun i arg ->
         let arg_name = co_varnames.(i) in
         set arg_name arg ) ;
-    (get_opt, get, set)
+    dict
+
+
+  let mk_raw_object name =
+    let ({Dict.set} as dict) =
+      let mk_error_msg ident =
+        F.asprintf "key %a is not bind to any value in object %a" Ident.pp ident pp_pval name
+      in
+      Dict.create ~mk_error_msg ()
+    in
+    set Ident.Special.name name ;
+    dict
 end
 
 module Modules = struct
@@ -231,8 +247,8 @@ let run_files modules =
   let builtins_get = Builtin.mk_builtins_getter () in
   let {Modules.get_cfg; get_module_status; mark_as_initialized} = Modules.mk modules in
   let rec exec_module name =
-    let globals_get_opt, globals_set, globals = Globals.mk_globals ~name in
-    let rec exec_cfg {CFG.entry; nodes; code_info} args =
+    let ({Dict.get_opt= globals_get_opt; set= globals_set} as globals) = Globals.mk_globals ~name in
+    let rec exec_cfg {CFG.entry; nodes; code_info} ?locals args =
       let {CodeInfo.co_name; co_varnames; co_argcount} = code_info in
       let get_node node_name =
         NodeName.Map.find_opt node_name nodes
@@ -248,8 +264,9 @@ let run_files modules =
         in
         SSAEnv.create ~mk_error_msg ()
       in
-      let locals_get_opt, locals_get, locals_set =
-        Locals.mk_locals_utils ~co_name ~co_varnames ~co_argcount args
+      let {Dict.get_opt= locals_get_opt; get= locals_get; set= locals_set} =
+        Option.value_or_thunk locals ~default:(fun () ->
+            Locals.mk_locals ~co_name ~co_varnames ~co_argcount args )
       in
       let eval_const const =
         match (const : Const.t) with
@@ -297,14 +314,25 @@ let run_files modules =
         | Store {lhs= {scope= Fast; ident}; rhs} ->
             locals_set ident (eval_exp rhs)
         | Store {lhs= {scope= Name; ident}; rhs} ->
-            (* TODO: inside class body / module we will need a different behavior *)
-            globals_set ident (eval_exp rhs)
+            (* Note 1: inside module body, globals = locals.
+               See https://tenthousandmeters.com/blog/python-behind-the-scenes-5-how-variables-are-implemented-in-cpython/
+               >> module's f_locals and module's f_globals is the same thing *)
+            (* Note 2: inside class body, locals = class object under construction *)
+            locals_set ident (eval_exp rhs)
         | Store {lhs= {scope= Global; ident}; rhs} ->
             globals_set ident (eval_exp rhs)
         | Call {lhs; exp; args} ->
             let f = expect_closure ~who:"Call" (eval_exp exp) in
             let args = List.map ~f:eval_exp args in
             ssa_set lhs (f args)
+        | BuiltinCall {lhs; call= BuildClass; args} ->
+            let who = "$BuildClass" in
+            let body, name, _args = expect_at_least_2_args ~who args in
+            let body = eval_exp body |> expect_closure ~who in
+            let name = eval_exp name in
+            let locals = Locals.mk_raw_object name in
+            body ~locals [] |> ignore ;
+            ssa_set lhs (Dict locals)
         | BuiltinCall {lhs; call= Function {qual_name}; args} ->
             if not (Int.equal (List.length args) 4) then
               L.die InternalError "$BuiltinCall.Function expects 4 args and reveiced [%a]"
@@ -382,7 +410,7 @@ let run_files modules =
     | NotImportedYet cfg ->
         let result = Dict globals in
         mark_as_initialized name result ;
-        exec_cfg cfg [] |> ignore ;
+        exec_cfg ~locals:globals cfg [] |> ignore ;
         result
     | AlreadyImported v ->
         v

@@ -44,6 +44,8 @@ module Ident : sig
   module Hashtbl : Caml.Hashtbl.S with type key = t
 
   module Special : sig
+    val name : t
+
     val print : t
   end
 end

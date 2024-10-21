@@ -249,3 +249,93 @@ def set(v):
     module1.f = modified with a setter
     module1.f = modified with an imported setter
     module1.f = modified with an imported setter |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+x = 'global'
+class C:
+    saved_x = x
+    x = 'local to class body'
+    def get_x():
+      return x
+    def get_C_x():
+      return C.x
+print('x is', C.get_x())
+x = 'assigned by module body'
+print('x is', C.get_x())
+C.x = 'assigned as a class attribute'
+print('x is', C.get_C_x())
+print('saved x is', C.saved_x)
+|}
+  in
+  PyIR.test source ;
+  F.printf "Running interpreter:@\n" ;
+  PyIR.test ~run:PyIRExec.run source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          TOPLEVEL[x] <- "global"
+          n0 <- $MakeFunction["C", "dummy.C"](None, None, None, None, None)
+          n1 <- $BuildClass(n0, "C", None)
+          TOPLEVEL[C] <- n1
+          n2 <- TOPLEVEL[print]
+          n3 <- TOPLEVEL[C]
+          n4 <- $CallMethod[get_x](n3, None)
+          n5 <- $Call(n2, "x is", n4, None)
+          TOPLEVEL[x] <- "assigned by module body"
+          n6 <- TOPLEVEL[print]
+          n7 <- TOPLEVEL[C]
+          n8 <- $CallMethod[get_x](n7, None)
+          n9 <- $Call(n6, "x is", n8, None)
+          n10 <- TOPLEVEL[C]
+          n10.x <- "assigned as a class attribute"
+          n11 <- TOPLEVEL[print]
+          n12 <- TOPLEVEL[C]
+          n13 <- $CallMethod[get_C_x](n12, None)
+          n14 <- $Call(n11, "x is", n13, None)
+          n15 <- TOPLEVEL[print]
+          n16 <- TOPLEVEL[C]
+          n17 <- n16.saved_x
+          n18 <- $Call(n15, "saved x is", n17, None)
+          return None
+
+
+      function dummy.C():
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- "C"
+          n1 <- TOPLEVEL[x]
+          TOPLEVEL[saved_x] <- n1
+          TOPLEVEL[x] <- "local to class body"
+          n2 <- $MakeFunction["get_x", "dummy.C.get_x"](None, None, None, None, None)
+          TOPLEVEL[get_x] <- n2
+          n3 <- $MakeFunction["get_C_x", "dummy.C.get_C_x"](None, None, None, None, None)
+          TOPLEVEL[get_C_x] <- n3
+          return None
+
+
+      function dummy.C.get_C_x():
+        b0:
+          n0 <- GLOBAL[C]
+          n1 <- n0.x
+          return n1
+
+
+      function dummy.C.get_x():
+        b0:
+          n0 <- GLOBAL[x]
+          return n0
+
+
+
+    Running interpreter:
+    x is global
+    x is assigned by module body
+    x is assigned as a class attribute
+    saved x is global |}]

@@ -61,3 +61,25 @@ print('module1.f =', f_from_module1)
 #testing recursive function + from .. import
 print('factorial(5) =', factorial(5))
 #stdout: factorial(5) = 120
+
+#class body scope
+x = 'global'
+class C:
+    saved_x = x
+    x = 'local to class body'
+    def get_x():
+      return x
+    def get_C_x():
+      return C.x
+print('x is', C.get_x())
+#stdout: x is global
+x = 'assigned by module body'
+print('x is', C.get_x())
+#stdout: x is assigned by module body
+C.x = 'assigned as a class attribute'
+print('x is', C.get_C_x())
+#stdout: x is assigned as a class attribute
+print('saved x is', C.saved_x)
+#stdout: saved x is global
+print(C.__name__)
+#stdout: C

@@ -25,6 +25,8 @@ module Ident : sig
 
     val enter : t
 
+    val name : t
+
     val print : t
   end
 
@@ -44,6 +46,8 @@ end = struct
     let cause = "__cause__"
 
     let enter = "__enter__"
+
+    let name = "__name__"
 
     let print = "print"
   end
