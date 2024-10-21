@@ -10,7 +10,7 @@ module L = Logging
 module IMap = IInt.Map
 
 module Ident : sig
-  type t [@@deriving equal]
+  type t [@@deriving equal, compare]
 
   val mk : string -> t
 

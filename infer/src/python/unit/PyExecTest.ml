@@ -339,3 +339,81 @@ print('saved x is', C.saved_x)
     x is assigned by module body
     x is assigned as a class attribute
     saved x is global |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+l = (1, '1', (0, True))
+print(l)
+d = {}
+print(d)
+key1 = 'k1'
+def key2():
+      return 'key2'
+d = {key1: 'val1', key2(): 'val2'}
+print(d)
+d = {'x': 0, 'y': 'something'}
+print(d)
+print(d['x'])
+d['z'] = True
+print(d)
+|}
+  in
+  PyIR.test source ;
+  F.printf "Running interpreter:@\n" ;
+  PyIR.test ~run:PyIRExec.run source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          TOPLEVEL[l] <- $BuildTuple(1, "1", $BuildTuple(0, true))
+          n0 <- TOPLEVEL[print]
+          n1 <- TOPLEVEL[l]
+          n2 <- $Call(n0, n1, None)
+          TOPLEVEL[d] <- $BuildMap()
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[d]
+          n5 <- $Call(n3, n4, None)
+          TOPLEVEL[key1] <- "k1"
+          n6 <- $MakeFunction["key2", "dummy.key2"](None, None, None, None, None)
+          TOPLEVEL[key2] <- n6
+          n7 <- TOPLEVEL[key1]
+          n8 <- TOPLEVEL[key2]
+          n9 <- $Call(n8, None)
+          TOPLEVEL[d] <- $BuildMap(n7, "val1", n9, "val2")
+          n10 <- TOPLEVEL[print]
+          n11 <- TOPLEVEL[d]
+          n12 <- $Call(n10, n11, None)
+          n13 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", None)
+          TOPLEVEL[d] <- n13
+          n14 <- TOPLEVEL[print]
+          n15 <- TOPLEVEL[d]
+          n16 <- $Call(n14, n15, None)
+          n17 <- TOPLEVEL[print]
+          n18 <- TOPLEVEL[d]
+          n19 <- n18["x"]
+          n20 <- $Call(n17, n19, None)
+          n21 <- TOPLEVEL[d]
+          n21["z"] <- true
+          n22 <- TOPLEVEL[print]
+          n23 <- TOPLEVEL[d]
+          n24 <- $Call(n22, n23, None)
+          return None
+
+
+      function dummy.key2():
+        b0:
+          return "key2"
+
+
+
+    Running interpreter:
+    (1, '1', (0, True))
+    {}
+    {'k1': 'val1', 'key2': 'val2'}
+    {'x': 0, 'y': 'something'}
+    0
+    {'x': 0, 'y': 'something', 'z': True} |}]

@@ -24,30 +24,24 @@ module GenericUnsafeHashtbl (H : Caml.Hashtbl.S) = struct
 
   let set hashtbl key v = H.replace hashtbl key v
 
-  let pp hashtbl ~pp_key ~pp fmt =
-    F.fprintf fmt "{%a}"
-      (PrettyPrintable.pp_collection ~pp_item:(fun fmt (key, v) ->
-           F.fprintf fmt "%a: %a" pp_key key pp v ) )
-      (H.to_seq hashtbl |> ListLabels.of_seq)
-
+  let bindings hashtbl = H.to_seq hashtbl |> ListLabels.of_seq
 
   type 'a t =
     { get: H.key -> 'a
     ; get_opt: H.key -> 'a option
     ; set: H.key -> 'a -> unit
-    ; pp:
-           pp_key:(F.formatter -> H.key -> unit)
-        -> pp:(F.formatter -> 'a -> unit)
-        -> F.formatter
-        -> unit }
+    ; bindings: unit -> (H.key * 'a) list }
 
-  let create ~mk_error_msg () =
+  let create ?mk_error_msg () =
     let hashtbl = H.create 17 in
+    let mk_error_msg =
+      Option.value mk_error_msg ~default:(fun _ident -> "key not found in anonymous dictionnary")
+    in
     let get = get hashtbl mk_error_msg in
     let get_opt = get_opt hashtbl in
     let set = set hashtbl in
-    let pp = pp hashtbl in
-    {get; get_opt; set; pp}
+    let bindings () = bindings hashtbl in
+    {get; get_opt; set; bindings}
 end
 
 module SSAEnv = GenericUnsafeHashtbl (SSA.Hashtbl)
@@ -62,22 +56,34 @@ type pval =
   | String of string
   | Closure of (?locals:pval Dict.t -> pval list -> pval)
   | Dict of pval Dict.t
+  | Tuple of pval list
 
-let rec pp_pval fmt = function
-  | None ->
-      F.pp_print_string fmt "None"
-  | Bool true ->
-      F.pp_print_string fmt "True"
-  | Bool false ->
-      F.pp_print_string fmt "False"
-  | Int i ->
-      F.pp_print_string fmt (Z.to_string i)
-  | String s ->
-      Format.pp_print_string fmt s
-  | Closure _ ->
-      F.pp_print_string fmt "Closure"
-  | Dict {pp} ->
-      pp ~pp_key:Ident.pp ~pp:pp_pval fmt
+let pp_pval fmt pval =
+  let rec aux ~inside_collection fmt = function
+    | None ->
+        F.pp_print_string fmt "None"
+    | Bool true ->
+        F.pp_print_string fmt "True"
+    | Bool false ->
+        F.pp_print_string fmt "False"
+    | Int i ->
+        F.pp_print_string fmt (Z.to_string i)
+    | String s when inside_collection ->
+        F.fprintf fmt "'%s'" s
+    | String s ->
+        F.pp_print_string fmt s
+    | Closure _ ->
+        F.pp_print_string fmt "Closure"
+    | Dict {bindings} ->
+        (* Note: we do our best to mimic Python output, but this is fragile *)
+        F.fprintf fmt "{%a}"
+          (Pp.seq ~sep:", " (fun fmt (key, v) ->
+               F.fprintf fmt "'%a': %a" Ident.pp key (aux ~inside_collection:true) v ) )
+          (bindings () |> List.sort ~compare:(fun (key1, _) (key2, _) -> Ident.compare key1 key2))
+    | Tuple l ->
+        F.fprintf fmt "(%a)" (Pp.seq ~sep:", " (aux ~inside_collection:true)) l
+  in
+  aux ~inside_collection:false fmt pval
 
 
 let expect_int ~who ?how = function
@@ -89,11 +95,29 @@ let expect_int ~who ?how = function
         how pp_pval v
 
 
+let expect_string ~who ?how = function
+  | String s ->
+      s
+  | v ->
+      L.die InternalError "%s expects an string%a and received %a" who
+        (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
+        how pp_pval v
+
+
 let expect_dict ~who ?how = function
   | Dict d ->
       d
   | v ->
       L.die InternalError "%s expects a dictionnary%a and received %a" who
+        (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
+        how pp_pval v
+
+
+let expect_tuple ~who ?how = function
+  | Tuple l ->
+      l
+  | v ->
+      L.die InternalError "%s expects a tuple%a and received %a" who
         (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
         how pp_pval v
 
@@ -138,24 +162,7 @@ let expect_closure ~who = function
 
 module Builtin = struct
   let print ?locals:_ args =
-    let args =
-      List.filter_map args ~f:(function
-        | Bool true ->
-            Some "True"
-        | Bool false ->
-            Some "False"
-        | Int i ->
-            Some (Z.to_string i)
-        | String s ->
-            Some s
-        | None ->
-            Some "None"
-        | Closure _ ->
-            None
-        | Dict _ ->
-            None )
-    in
-    F.printf "%a@\n" (Pp.seq ~sep:" " F.pp_print_string) args ;
+    F.printf "%a@\n" (Pp.seq ~sep:" " pp_pval) args ;
     None
 
 
@@ -301,10 +308,29 @@ let run_files modules =
             (* TODO: implement more realistic attribute lookup *)
             let {Dict.get} = eval_exp exp |> expect_dict ~who:"GetAttr" in
             get attr
-        | Collection {kind= Tuple} ->
-            (* TODO: we skip the construction for now *)
-            None
-        | Subscript _ | BuildSlice _ | BuildString _ | BuildFrozenSet _ | Collection _ | Yield _ ->
+        | Collection {kind= Tuple; values} ->
+            Tuple (List.map ~f:eval_exp values)
+        | Collection {kind= Map; values} ->
+            let ({Dict.set} as dict) = Dict.create () in
+            let values = List.map ~f:eval_exp values in
+            if Int.equal (List.length values mod 2) 1 then
+              L.die InternalError "$BuildMap expects a even number of arguments" ;
+            let bindings = List.chunks_of ~length:2 values in
+            let who = "$BuildMap" in
+            List.iter bindings ~f:(function
+              | [key; arg] ->
+                  let key = expect_string ~who ~how:"as key" key |> Ident.mk in
+                  set key arg
+              | _ ->
+                  () ) ;
+            Dict dict
+        | Subscript {exp; index} ->
+            let who = "Subscript" in
+            let {Dict.get} = eval_exp exp |> expect_dict ~who ~how:"as 1st argument" in
+            (* Note: Python dictionnaries may have other type of keys *)
+            let index = eval_exp index |> expect_string ~who ~how:"as index" |> Ident.mk in
+            get index
+        | BuildSlice _ | BuildString _ | BuildFrozenSet _ | Collection _ | Yield _ ->
             todo "eval_exp"
       in
       let exec_stmt stmt =
@@ -333,6 +359,18 @@ let run_files modules =
             let locals = Locals.mk_raw_object name in
             body ~locals [] |> ignore ;
             ssa_set lhs (Dict locals)
+        | BuiltinCall {lhs; call= BuildConstKeyMap; args} ->
+            let who = "$BuildConstKeyMap" in
+            let keys, arg0, args = expect_at_least_2_args ~who args in
+            let args = List.map (arg0 :: args) ~f:eval_exp in
+            let keys = eval_exp keys |> expect_tuple ~who ~how:"as first argument" in
+            if not (Int.equal (List.length args) (List.length keys)) then
+              L.die InternalError "$BuildConstKeyMap keys and values shouds have the same length" ;
+            let ({Dict.set} as dict) = Dict.create () in
+            List.iter2_exn keys args ~f:(fun key arg ->
+                let key = expect_string ~who ~how:"as key" key |> Ident.mk in
+                set key arg ) ;
+            ssa_set lhs (Dict dict)
         | BuiltinCall {lhs; call= Function {qual_name}; args} ->
             if not (Int.equal (List.length args) 4) then
               L.die InternalError "$BuiltinCall.Function expects 4 args and reveiced [%a]"
@@ -383,7 +421,12 @@ let run_files modules =
             let f = expect_closure ~who:"CallMethod" (get name) in
             let args = List.map ~f:eval_exp args in
             ssa_set lhs (f args)
-        | StoreSubscript _ | BuiltinCall _ | SetupAnnotations ->
+        | StoreSubscript {lhs; index; rhs} ->
+            let who = "StoreSubscript" in
+            let {Dict.set} = eval_exp lhs |> expect_dict ~who ~how:"as 1st argument" in
+            let key = eval_exp index |> expect_string ~who ~how:"as 2nd argument" |> Ident.mk in
+            set key (eval_exp rhs)
+        | BuiltinCall _ | SetupAnnotations ->
             todo "exec_stmt"
       in
       let rec exec_terminator terminator =

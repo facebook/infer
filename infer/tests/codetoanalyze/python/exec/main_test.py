@@ -83,3 +83,25 @@ print('saved x is', C.saved_x)
 #stdout: saved x is global
 print(C.__name__)
 #stdout: C
+
+#Tuples
+l = (1, '1', (0, True))
+print(l)
+#stdout: (1, '1', (0, True))
+d = {}
+print(d)
+#stdout: {}
+key1 = 'k1'
+def key2():
+      return 'key2'
+d = {key1: 'val1', key2(): 'val2'}
+print(d)
+#stdout: {'k1': 'val1', 'key2': 'val2'}
+d = {'x': 0, 'y': 'something'}
+print(d)
+#stdout: {'x': 0, 'y': 'something'}
+print(d['x'])
+#stdout: 0
+d['z'] = True
+print(d)
+#stdout: {'x': 0, 'y': 'something', 'z': True}

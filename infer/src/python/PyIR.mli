@@ -37,7 +37,9 @@ module SSA : sig
 end
 
 module Ident : sig
-  type t
+  type t [@@deriving compare]
+
+  val mk : string -> t
 
   val pp : Format.formatter -> t -> unit
 
