@@ -21,6 +21,8 @@ module Ident : sig
 
     val anext : t
 
+    val cause : t
+
     val enter : t
 
     val print : t
@@ -28,7 +30,7 @@ module Ident : sig
 
   module Hashtbl : Caml.Hashtbl.S with type key = t
 end = struct
-  type t = string [@@deriving equal, hash]
+  type t = string [@@deriving equal, compare, hash]
 
   let pp fmt ident = F.pp_print_string fmt ident
 
@@ -38,6 +40,8 @@ end = struct
     let aiter = "__aiter__"
 
     let anext = "__anext__"
+
+    let cause = "__cause__"
 
     let enter = "__enter__"
 
@@ -273,8 +277,8 @@ module BuiltinCaller = struct
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportName of string
-    | ImportFrom of string
+    | ImportName of Ident.t
+    | ImportFrom of Ident.t
     | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
@@ -315,9 +319,9 @@ module BuiltinCaller = struct
     | CallFunctionEx ->
         "$CallFunctionEx"
     | ImportName name ->
-        sprintf "$ImportName(%s)" name
+        F.asprintf "$ImportName(%a)" Ident.pp name
     | ImportFrom name ->
-        sprintf "$ImportFrom(%s)" name
+        F.asprintf "$ImportFrom(%a)" Ident.pp name
     | ImportStar ->
         sprintf "$ImportStar"
     | Binary op ->
@@ -433,7 +437,7 @@ module Exp = struct
         (** Helper for [BUILD_LIST/SET/TUPLE/MAP] opcodes *)
     (* [unpack=true] if the arguments in [values] are collections that must be
        unpack and flatten all together to create a unique collection *)
-    | GetAttr of (t * string) (* foo.bar *)
+    | GetAttr of {exp: t; attr: Ident.t} (* foo.bar *)
     | Yield of t
   [@@deriving equal]
 
@@ -469,8 +473,8 @@ module Exp = struct
         F.fprintf fmt "$Build%s%s(%a)" (show_collection kind)
           (if unpack then "Unpack" else "")
           (Pp.seq ~sep:", " pp) values
-    | GetAttr (t, name) ->
-        F.fprintf fmt "%a.%s" pp t name
+    | GetAttr {exp; attr} ->
+        F.fprintf fmt "%a.%a" pp exp Ident.pp attr
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
 
@@ -582,7 +586,7 @@ module Stmt = struct
 
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
-    | SetAttr of {lhs: Exp.t; attr: string; rhs: Exp.t}
+    | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
@@ -595,7 +599,7 @@ module Stmt = struct
     | Let {lhs; rhs} ->
         F.fprintf fmt "%a <- %a" SSA.pp lhs Exp.pp rhs
     | SetAttr {lhs; attr; rhs} ->
-        F.fprintf fmt "%a.%s <- %a" Exp.pp lhs attr Exp.pp rhs
+        F.fprintf fmt "%a.%a <- %a" Exp.pp lhs Ident.pp attr Exp.pp rhs
     | Store {lhs; rhs} ->
         F.fprintf fmt "%a <- %a" ScopedIdent.pp lhs Exp.pp rhs
     | StoreSubscript {lhs; index; rhs} ->
@@ -1405,7 +1409,7 @@ let raise_varargs st argc =
   | 2 ->
       let* rhs, st = State.pop_and_cast st in
       let* lhs, st = State.pop_and_cast st in
-      let st = State.push_stmt st (Stmt.SetAttr {lhs; attr= "__cause__"; rhs}) in
+      let st = State.push_stmt st (Stmt.SetAttr {lhs; attr= Ident.Special.cause; rhs}) in
       let throw = TerminatorBuilder.Throw lhs in
       Ok (st, Some throw)
   | _ ->
@@ -1531,9 +1535,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "LOAD_FAST" ->
       load st Fast co_varnames.(arg)
   | "LOAD_ATTR" ->
-      let name = co_names.(arg) in
-      let* tos, st = State.pop_and_cast st in
-      let exp = Exp.GetAttr (tos, name) in
+      let attr = co_names.(arg) |> Ident.mk in
+      let* exp, st = State.pop_and_cast st in
+      let exp = Exp.GetAttr {exp; attr} in
       assign_to_temp_and_push st exp
   | "LOAD_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
@@ -1552,7 +1556,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "STORE_FAST" ->
       store st Fast co_varnames.(arg)
   | "STORE_ATTR" ->
-      let attr = co_names.(arg) in
+      let attr = co_names.(arg) |> Ident.mk in
       let* lhs, st = State.pop_and_cast st in
       let* rhs, st = State.pop_and_cast st in
       let stmt = Stmt.SetAttr {lhs; attr; rhs} in
@@ -1708,7 +1712,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_stmt st SetupAnnotations in
       Ok (st, None)
   | "IMPORT_NAME" ->
-      let name = co_names.(arg) in
+      let name = co_names.(arg) |> Ident.mk in
       let* fromlist, st = State.pop_and_cast st in
       let* level, st = State.pop_and_cast st in
       let* id, st = call_builtin_function st (ImportName name) [fromlist; level] in
@@ -1720,7 +1724,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "IMPORT_FROM" ->
-      let name = co_names.(arg) in
+      let name = co_names.(arg) |> Ident.mk in
       let* module_obj = State.peek st in
       let* module_obj = State.cast_exp st module_obj in
       let* id, st = call_builtin_function st (ImportFrom name) [module_obj] in

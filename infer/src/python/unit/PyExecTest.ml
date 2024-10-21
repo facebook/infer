@@ -232,49 +232,7 @@ def set(v):
     f = v
 |})
   in
-  PyIR.test_files [main; module1] ;
-  [%expect
-    {|
-    module main:
-
-      function toplevel():
-        b0:
-          n0 <- $ImportName(module1)(None, 0, None)
-          TOPLEVEL[module1] <- n0
-          n1 <- TOPLEVEL[print]
-          n2 <- TOPLEVEL[module1]
-          n3 <- n2.f
-          n4 <- $Call(n1, "module1.f =", n3, None)
-          n5 <- TOPLEVEL[module1]
-          n5.f <- "explicitly modified from main"
-          n6 <- TOPLEVEL[print]
-          n7 <- TOPLEVEL[module1]
-          n8 <- n7.f
-          n9 <- $Call(n6, "module1.f =", n8, None)
-          return None
-
-
-
-    module module1:
-
-      function toplevel():
-        b0:
-          GLOBAL[f] <- "module1.f"
-          n0 <- $MakeFunction["get", "module1.get"](None, None, None, None, None)
-          TOPLEVEL[get] <- n0
-          n1 <- $MakeFunction["set", "module1.set"](None, None, None, None, None)
-          TOPLEVEL[set] <- n1
-          return None
-
-
-      function module1.get():
-        b0:
-          n0 <- GLOBAL[f]
-          return n0
-
-
-      function module1.set(v):
-        b0:
-          n0 <- LOCAL[v]
-          GLOBAL[f] <- n0
-          return None |}]
+  PyIR.test_files ~run:PyIRExec.run_files [main; module1] ;
+  [%expect {|
+    module1.f = module1.f
+    module1.f = explicitly modified from main |}]

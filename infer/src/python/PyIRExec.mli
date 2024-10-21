@@ -7,3 +7,5 @@
 open! IStd
 
 val run : PyIR.Module.t -> unit
+
+val run_files : PyIR.Module.t list -> unit [@@warning "-unused-value-declaration"]

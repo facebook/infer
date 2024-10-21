@@ -99,8 +99,8 @@ module BuiltinCaller : sig
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportName of string
-    | ImportFrom of string
+    | ImportName of Ident.t
+    | ImportFrom of Ident.t
     | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
@@ -153,7 +153,7 @@ module Exp : sig
     | BuildString of t list
     | BuildFrozenSet of t list
     | Collection of {kind: collection; values: t list; unpack: bool}
-    | GetAttr of (t * string)
+    | GetAttr of {exp: t; attr: Ident.t}
     | Yield of t
 
   val pp : Format.formatter -> t -> unit
@@ -164,7 +164,7 @@ module Stmt : sig
 
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
-    | SetAttr of {lhs: Exp.t; attr: string; rhs: Exp.t}
+    | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
