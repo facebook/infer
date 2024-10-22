@@ -160,7 +160,10 @@ emit(L) when is_list(L) ->
     emit_list(L);
 % tuples
 emit(T) when is_tuple(T) ->
-    emit_list(tuple_to_list(T)).
+    emit_list(tuple_to_list(T));
+% binaries
+emit(B) when is_binary(B) ->
+    emit_string(binary_to_list(B)).
 
 emit_list(L) ->
     emit_array(lists:map(fun(X) -> emit(X) end, L)).
