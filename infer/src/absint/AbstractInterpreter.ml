@@ -344,29 +344,32 @@ struct
 
   let pp_domain = Domain.pp_
 
-  let join_all_disj_astates ~into astates =
+  let join_all_disj_astates ~into:(disjs_into, nd_into) astates =
     let leq ~lhs ~rhs = T.DisjDomain.equal_fast lhs rhs in
-    let rec join_hd res res_n to_join =
-      if res_n >= disjunct_limit then (
-        Fqueue.iter to_join ~f:(fun disjuncts ->
-            DisjunctiveMetadata.add_dropped_disjuncts (List.length disjuncts) ) ;
-        res )
+    let rec join_hd res nd res_n to_join =
+      if res_n >= disjunct_limit then
+        let nd =
+          Fqueue.fold to_join ~init:nd ~f:(fun nd disjuncts ->
+              DisjunctiveMetadata.add_dropped_disjuncts (List.length disjuncts) ;
+              T.remember_dropped_disjuncts disjuncts nd )
+        in
+        (res, nd)
       else
         match Fqueue.dequeue to_join with
         | None ->
-            res
+            (res, nd)
         | Some ([], to_join) ->
-            join_hd res res_n to_join
+            join_hd res nd res_n to_join
         | Some (hd :: tl, to_join) ->
             let res, res_n =
               if has_geq_disj ~leq ~than:hd res then (res, res_n) else (hd :: res, res_n + 1)
             in
-            join_hd res res_n (Fqueue.enqueue to_join tl)
+            join_hd res nd res_n (Fqueue.enqueue to_join tl)
     in
     let to_join =
       List.map astates ~f:(fun (disjuncts, _) -> List.rev disjuncts) |> Fqueue.of_list
     in
-    join_hd into (List.length into) to_join
+    join_hd disjs_into nd_into (List.length disjs_into) to_join
 
 
   let join_all astates ~into =
@@ -376,11 +379,9 @@ struct
     | [astate], None ->
         Some astate
     | _ :: _, _ ->
-        let d_into, nd_into = Option.value into ~default:([], T.NonDisjDomain.bottom) in
-        let d = join_all_disj_astates astates ~into:d_into in
-        let nd =
-          List.fold astates ~init:nd_into ~f:(fun acc (_, nd) -> T.NonDisjDomain.join acc nd)
-        in
+        let into = Option.value into ~default:([], T.NonDisjDomain.bottom) in
+        let d, nd = join_all_disj_astates astates ~into in
+        let nd = List.fold astates ~init:nd ~f:(fun acc (_, nd) -> T.NonDisjDomain.join acc nd) in
         Some (d, nd)
 
 
