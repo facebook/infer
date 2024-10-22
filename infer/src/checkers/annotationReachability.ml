@@ -209,6 +209,8 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
   let src_annot_str = src.Annot.class_name in
   let access_or_call = if is_dummy_field_pname snk_pname then "accesses" else "calls" in
   let spec_description = prepend_if_not_empty spec.description ". " in
+  (* A direct call has a trace of length 3: source def + callsite + sink def *)
+  let transitive = if List.length trace > 3 then "transitively " else "" in
   let description =
     if is_dummy_constructor snk then
       let constr_str = str_of_pname ~withclass:true snk_pname in
@@ -216,9 +218,9 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
         (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str
         MF.pp_monospaced ("new " ^ constr_str) spec_description
     else
-      Format.asprintf "Method %a (%s %a%s%s) %s %a (%s %a%s%s)%s" MF.pp_monospaced
+      Format.asprintf "Method %a (%s %a%s%s) %s%s %a (%s %a%s%s)%s" MF.pp_monospaced
         (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
-        (get_details src src_pname) (get_class_details src src_pname) access_or_call
+        (get_details src src_pname) (get_class_details src src_pname) transitive access_or_call
         MF.pp_monospaced
         (str_of_pname ~withclass:true snk_pname)
         (get_kind snk snk_pname) MF.pp_monospaced ("@" ^ snk_annot_str) (get_details snk snk_pname)
