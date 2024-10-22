@@ -17,6 +17,7 @@ codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_multiple_Bad/0
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_uminus1_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_uminus2_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_arithmetic.erl, test_big_Bad/0, 14, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_binary_attr.erl, test_bad_Bad/0, 0, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_bitwise.erl, test_band1_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_bitwise.erl, test_band2_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_bitwise.erl, test_bor1_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
