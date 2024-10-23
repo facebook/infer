@@ -372,6 +372,8 @@ let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 (** Path to the textual file with Hack models *)
 let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
+let default_hack_builtin_models_rel = "lib" ^/ "hack" ^/ "models.sil"
+
 let pulse_default_taint_config = config_dir ^/ "taint"
 
 (* Normalize the path *)

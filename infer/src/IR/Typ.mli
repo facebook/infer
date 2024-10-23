@@ -233,6 +233,9 @@ module Name : sig
 
     val extract_curry_info : t -> (HackClassName.t * string) option
     (** See {!HackClassName.extract_curry_info} *)
+
+    val is_HH_classname : t -> bool
+    (** Check return true if the typename is [HH::classname] *)
   end
 
   module Java : sig

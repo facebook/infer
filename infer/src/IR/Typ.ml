@@ -667,6 +667,14 @@ module Name = struct
           HackClassName.extract_curry_info class_name
       | _ ->
           None
+
+
+    let is_HH_classname typename =
+      match typename with
+      | HackClass hack_typ ->
+          String.equal "HH::classname" (HackClassName.classname hack_typ)
+      | _ ->
+          false
   end
 
   module Java = struct

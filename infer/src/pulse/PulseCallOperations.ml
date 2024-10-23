@@ -652,17 +652,11 @@ let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_l
     | _ ->
         false
   in
-  let is_HH_classname typ =
-    match (typ : Typ.name) with
-    | HackClass hack_typ ->
-        String.equal "HH::classname" (HackClassName.classname hack_typ)
-    | _ ->
-        false
-  in
   let is_type_constant typ =
     (* TODO: For now, the checker handles type constant only, which means it cannot do
        inter-procedural reasoning where type variable is used.  We will work on this soon. *)
-    (not (is_HH_classname typ)) && Tenv.mem_supers tenv typ ~f:(fun typ _ -> is_HH_classname typ)
+    (not (Typ.Name.Hack.is_HH_classname typ))
+    && Tenv.mem_supers tenv typ ~f:(fun typ _ -> Typ.Name.Hack.is_HH_classname typ)
   in
   let has_method typ =
     match Tenv.lookup tenv typ with

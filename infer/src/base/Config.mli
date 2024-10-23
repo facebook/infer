@@ -341,6 +341,8 @@ val debug_mode : bool
 
 val deduplicate : bool
 
+val default_hack_builtin_models_rel : string
+
 val dependency_mode : bool
 
 val detach_analysis_dependency : bool

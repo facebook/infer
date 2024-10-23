@@ -424,7 +424,9 @@ type resolution_result = (MethodInfo.t, unresolved_data) Result.t
 
 let is_hack_model source_file =
   let source_file = SourceFile.to_abs_path source_file in
-  List.exists Config.hack_models ~f:(fun hack_model -> String.equal source_file hack_model)
+  String.is_suffix source_file ~suffix:Config.default_hack_builtin_models_rel
+  || List.exists (Config.hack_builtin_models :: Config.hack_models) ~f:(fun hack_model ->
+         String.equal source_file hack_model )
 
 
 let resolve_method ~method_exists tenv class_name proc_name =
@@ -439,9 +441,14 @@ let resolve_method ~method_exists tenv class_name proc_name =
     else (
       visited := Typ.Name.Set.add class_name !visited ;
       let struct_opt = lookup tenv class_name in
-      Option.iter struct_opt ~f:(fun {Struct.source_file} ->
-          Option.iter source_file ~f:(fun source_file ->
-              if is_hack_model source_file then visited_hack_model := true ) ) ;
+      (* NOTE: We give an exception on [HH::classname].  The [visited_hack_model] value is to
+         provide a hint "the resolved method may be incorrect".  However, [HH::classname] is just an
+         alias to string, thus there is no method to be incorrect, even if it is defined in the
+         Infer's models. *)
+      if not (Typ.Name.Hack.is_HH_classname class_name) then
+        Option.iter struct_opt ~f:(fun {Struct.source_file} ->
+            Option.iter source_file ~f:(fun source_file ->
+                if is_hack_model source_file then visited_hack_model := true ) ) ;
       match struct_opt with
       | None | Some {dummy= true} ->
           if Language.curr_language_is Hack then
