@@ -518,14 +518,14 @@ def main(arg):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["main", "dummy.main"](None, None, None, None, None)
+          n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
           TOPLEVEL[main] <- n0
           return None
 
 
       function dummy.main.f(x, y, z):
         b0:
-          n0 <- $LoadDeref[0,"arg"](None)
+          n0 <- $LoadDeref(0,"arg")
           return n0
 
 
@@ -536,8 +536,8 @@ def main(arg):
           n2 <- GLOBAL[str]
           n3 <- GLOBAL[float]
           n4 <- $BuildConstKeyMap($BuildTuple("x", "y", "z"), n1, n2, n3, None)
-          n5 <- $LoadClosure[0,"arg"](None)
-          n6 <- $MakeFunction["f", "dummy.main.f"]($BuildTuple("ok", 0.), n0, n4, $BuildTuple(n5), None)
+          n5 <- $LoadClosure(0,"arg")
+          n6 <- $MakeFunction["f", "dummy.main.f", $BuildTuple("ok", 0.), n0, n4, $BuildTuple(n5)]
           LOCAL[f] <- n6
           return None |}]
 
@@ -554,7 +554,7 @@ def foo(n):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
           TOPLEVEL[foo] <- n0
           return None
 

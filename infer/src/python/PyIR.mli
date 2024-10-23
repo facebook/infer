@@ -107,17 +107,10 @@ module BuiltinCaller : sig
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportName of Ident.t
-    | ImportFrom of Ident.t
     | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
-    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
-    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
-    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
-    | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
-    | Function of {qual_name: QualName.t; short_name: Ident.t}
     | GetAIter
     | GetIter
     | NextIter
@@ -127,9 +120,6 @@ module BuiltinCaller : sig
     | ListAppend
     | SetAdd
     | DictSetItem
-    | Delete of ScopedIdent.t
-    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
-    | DeleteAttr of string
     | DeleteSubscr
     | YieldFrom
     | GetAwaitable
@@ -153,32 +143,46 @@ module Exp : sig
   type collection = List | Set | Tuple | Map
 
   type t =
-    | Const of Const.t
-    | Var of ScopedIdent.t
-    | Temp of SSA.t
-    | Subscript of {exp: t; index: t}
+    | BuildFrozenSet of t list
     | BuildSlice of t list
     | BuildString of t list
-    | BuildFrozenSet of t list
     | Collection of {kind: collection; values: t list; unpack: bool}
+    | Const of Const.t
+    | Function of
+        { qual_name: QualName.t
+        ; short_name: Ident.t
+        ; default_values: t
+        ; default_values_kw: t
+        ; annotations: t
+        ; cells_for_closure: t }
     | GetAttr of {exp: t; attr: Ident.t}
+    | ImportFrom of {name: Ident.t; exp: t}
+    | ImportName of {name: Ident.t; fromlist: t; level: t}
+    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
+    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
+    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | Subscript of {exp: t; index: t}
+    | Temp of SSA.t
+    | Var of ScopedIdent.t
     | Yield of t
 
   val pp : Format.formatter -> t -> unit
 end
 
 module Stmt : sig
-  type call_arg = Exp.t
-
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
-    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
+    | Call of {lhs: SSA.t; exp: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | CallMethod of
         {lhs: SSA.t; name: Ident.t; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
-    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list; arg_names: Exp.t}
+    | StoreDeref of {name: Ident.t; slot: int; rhs: Exp.t}  (** [STORE_DEREF] *)
+    | Delete of ScopedIdent.t
+    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
+    | DeleteAttr of {exp: Exp.t; attr: Ident.t}
     | SetupAnnotations
 end
 

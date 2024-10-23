@@ -27,9 +27,9 @@ base.f(0)
 
       function toplevel():
         b0:
-          n0 <- $ImportName(base)(None, 0, None)
+          n0 <- $ImportName(base, None, 0)
           TOPLEVEL[base] <- n0
-          n1 <- $ImportName(base)(None, 0, None)
+          n1 <- $ImportName(base, None, 0)
           TOPLEVEL[base] <- n1
           n2 <- TOPLEVEL[base]
           n3 <- $CallMethod[f](n2, 0, None)
@@ -59,21 +59,21 @@ g()
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           n1 <- TOPLEVEL[f]
           n2 <- $Call(n1, None)
-          n3 <- $ImportName(base)($BuildTuple("f", "g"), 0, None)
-          n4 <- $ImportFrom(f)(n3, None)
+          n3 <- $ImportName(base, $BuildTuple("f", "g"), 0)
+          n4 <- $ImportFrom(f, n3)
           TOPLEVEL[f] <- n4
-          n5 <- $ImportFrom(g)(n3, None)
+          n5 <- $ImportFrom(g, n3)
           TOPLEVEL[g] <- n5
           n6 <- TOPLEVEL[f]
           n7 <- $Call(n6, None)
-          n8 <- $ImportName(base)($BuildTuple("f", "g"), 0, None)
-          n9 <- $ImportFrom(f)(n8, None)
+          n8 <- $ImportName(base, $BuildTuple("f", "g"), 0)
+          n9 <- $ImportFrom(f, n8)
           TOPLEVEL[f] <- n9
-          n10 <- $ImportFrom(g)(n8, None)
+          n10 <- $ImportFrom(g, n8)
           TOPLEVEL[g] <- n10
           n11 <- TOPLEVEL[g]
           n12 <- $Call(n11, None)
@@ -99,9 +99,9 @@ class MyTest(unittest.TestCase):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(unittest)(None, 0, None)
+          n0 <- $ImportName(unittest, None, 0)
           TOPLEVEL[unittest] <- n0
-          n1 <- $MakeFunction["MyTest", "dummy.MyTest"](None, None, None, None, None)
+          n1 <- $MakeFunction["MyTest", "dummy.MyTest", None, None, None, None]
           n2 <- TOPLEVEL[unittest]
           n3 <- n2.TestCase
           n4 <- $BuildClass(n1, "MyTest", n3, None)
@@ -160,16 +160,16 @@ if __name__ == '__main__':
 
       function toplevel():
         b0:
-          n0 <- $ImportName(os)(None, 0, None)
+          n0 <- $ImportName(os, None, 0)
           TOPLEVEL[os] <- n0
-          n1 <- $ImportName(sys)(None, 0, None)
+          n1 <- $ImportName(sys, None, 0)
           TOPLEVEL[sys] <- n1
-          n2 <- $ImportName(test.libregrtest)($BuildTuple("main"), 0, None)
-          n3 <- $ImportFrom(main)(n2, None)
+          n2 <- $ImportName(test.libregrtest, $BuildTuple("main"), 0)
+          n3 <- $ImportFrom(main, n2)
           TOPLEVEL[main] <- n3
           n4 <- TOPLEVEL[main]
           TOPLEVEL[main_in_temp_cwd] <- n4
-          n5 <- $MakeFunction["_main", "dummy._main"](None, None, None, None, None)
+          n5 <- $MakeFunction["_main", "dummy._main", None, None, None, None]
           TOPLEVEL[_main] <- n5
           n6 <- TOPLEVEL[__name__]
           n7 <- $Compare.eq(n6, "__main__", None)
@@ -269,23 +269,23 @@ path.X()
 
       function toplevel():
         b0:
-          n0 <- $ImportName(A)($BuildTuple("X"), 0, None)
-          n1 <- $ImportFrom(X)(n0, None)
+          n0 <- $ImportName(A, $BuildTuple("X"), 0)
+          n1 <- $ImportFrom(X, n0)
           TOPLEVEL[X] <- n1
           n2 <- TOPLEVEL[X]
           n3 <- $Call(n2, None)
-          n4 <- $ImportName(B)($BuildTuple("X"), 1, None)
-          n5 <- $ImportFrom(X)(n4, None)
+          n4 <- $ImportName(B, $BuildTuple("X"), 1)
+          n5 <- $ImportFrom(X, n4)
           TOPLEVEL[X] <- n5
           n6 <- TOPLEVEL[X]
           n7 <- $Call(n6, None)
-          n8 <- $ImportName(C)($BuildTuple("X"), 2, None)
-          n9 <- $ImportFrom(X)(n8, None)
+          n8 <- $ImportName(C, $BuildTuple("X"), 2)
+          n9 <- $ImportFrom(X, n8)
           TOPLEVEL[X] <- n9
           n10 <- TOPLEVEL[X]
           n11 <- $Call(n10, None)
-          n12 <- $ImportName()($BuildTuple("path"), 2, None)
-          n13 <- $ImportFrom(path)(n12, None)
+          n12 <- $ImportName(, $BuildTuple("path"), 2)
+          n13 <- $ImportFrom(path, n12)
           TOPLEVEL[path] <- n13
           n14 <- TOPLEVEL[path]
           n15 <- $CallMethod[X](n14, None)
@@ -315,29 +315,29 @@ tata()
 
       function toplevel():
         b0:
-          n0 <- $ImportName(x)($BuildTuple("y", "a"), 0, None)
-          n1 <- $ImportFrom(y)(n0, None)
+          n0 <- $ImportName(x, $BuildTuple("y", "a"), 0)
+          n1 <- $ImportFrom(y, n0)
           TOPLEVEL[z] <- n1
-          n2 <- $ImportFrom(a)(n0, None)
+          n2 <- $ImportFrom(a, n0)
           TOPLEVEL[b] <- n2
-          n3 <- $ImportName(x)($BuildTuple("y", "a"), 0, None)
-          n4 <- $ImportFrom(y)(n3, None)
+          n3 <- $ImportName(x, $BuildTuple("y", "a"), 0)
+          n4 <- $ImportFrom(y, n3)
           TOPLEVEL[z] <- n4
-          n5 <- $ImportFrom(a)(n3, None)
+          n5 <- $ImportFrom(a, n3)
           TOPLEVEL[b] <- n5
           n6 <- TOPLEVEL[z]
           n7 <- $Call(n6, None)
           n8 <- TOPLEVEL[b]
           n9 <- $Call(n8, None)
-          n10 <- $ImportName(foo)($BuildTuple("toto", "tata"), 0, None)
-          n11 <- $ImportFrom(toto)(n10, None)
+          n10 <- $ImportName(foo, $BuildTuple("toto", "tata"), 0)
+          n11 <- $ImportFrom(toto, n10)
           TOPLEVEL[toto] <- n11
-          n12 <- $ImportFrom(tata)(n10, None)
+          n12 <- $ImportFrom(tata, n10)
           TOPLEVEL[tata] <- n12
-          n13 <- $ImportName(foo)($BuildTuple("toto", "tata"), 0, None)
-          n14 <- $ImportFrom(toto)(n13, None)
+          n13 <- $ImportName(foo, $BuildTuple("toto", "tata"), 0)
+          n14 <- $ImportFrom(toto, n13)
           TOPLEVEL[toto] <- n14
-          n15 <- $ImportFrom(tata)(n13, None)
+          n15 <- $ImportFrom(tata, n13)
           TOPLEVEL[tata] <- n15
           n16 <- TOPLEVEL[toto]
           n17 <- $Call(n16, None)
@@ -358,9 +358,9 @@ import xml.etree.ElementTree as ET
 
       function toplevel():
         b0:
-          n0 <- $ImportName(xml.etree.ElementTree)(None, 0, None)
-          n1 <- $ImportFrom(etree)(n0, None)
-          n2 <- $ImportFrom(ElementTree)(n1, None)
+          n0 <- $ImportName(xml.etree.ElementTree, None, 0)
+          n1 <- $ImportFrom(etree, n0)
+          n2 <- $ImportFrom(ElementTree, n1)
           TOPLEVEL[ET] <- n2
           return None |}]
 
@@ -383,16 +383,16 @@ class Test(unittest.TestCase):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(unittest)(None, 0, None)
+          n0 <- $ImportName(unittest, None, 0)
           TOPLEVEL[unittest] <- n0
-          n1 <- $ImportName(signal)(None, 0, None)
+          n1 <- $ImportName(signal, None, 0)
           TOPLEVEL[signal] <- n1
           n2 <- TOPLEVEL[unittest]
           n3 <- TOPLEVEL[hasattr]
           n4 <- TOPLEVEL[signal]
           n5 <- $Call(n3, n4, "setitimer", None)
           n6 <- $CallMethod[skipUnless](n2, n5, "requires setitimer()", None)
-          n7 <- $MakeFunction["Test", "dummy.Test"](None, None, None, None, None)
+          n7 <- $MakeFunction["Test", "dummy.Test", None, None, None, None]
           n8 <- TOPLEVEL[unittest]
           n9 <- n8.TestCase
           n10 <- $BuildClass(n7, "Test", n9, None)
@@ -423,9 +423,9 @@ def f():
 
       function toplevel():
         b0:
-          n0 <- $ImportName(foo)(None, 0, None)
+          n0 <- $ImportName(foo, None, 0)
           TOPLEVEL[foo] <- n0
-          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n1
           return None
 
@@ -457,9 +457,9 @@ def f(ok):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(foo)(None, 0, None)
+          n0 <- $ImportName(foo, None, 0)
           TOPLEVEL[foo] <- n0
-          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n1
           return None
 
@@ -497,12 +497,11 @@ def test_format_specifier_expressions(self):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(decimal)(None, 0, None)
+          n0 <- $ImportName(decimal, None, 0)
           TOPLEVEL[decimal] <- n0
-          n1 <- $MakeFunction["assertEqual", "dummy.assertEqual"](None, None, None, None, None)
+          n1 <- $MakeFunction["assertEqual", "dummy.assertEqual", None, None, None, None]
           TOPLEVEL[assertEqual] <- n1
-          n2 <- $MakeFunction["test_format_specifier_expressions", "dummy.test_format_specifier_expressions"](
-            None, None, None, None, None)
+          n2 <- $MakeFunction["test_format_specifier_expressions", "dummy.test_format_specifier_expressions", None, None, None, None]
           TOPLEVEL[test_format_specifier_expressions] <- n2
           return None
 
@@ -566,14 +565,14 @@ def f():
           n2 <- TOPLEVEL[str]
           n3 <- TOPLEVEL[__annotations__]
           n3["y"] <- n2
-          n4 <- $ImportName(C)(None, 0, None)
+          n4 <- $ImportName(C, None, 0)
           TOPLEVEL[C] <- n4
           TOPLEVEL[z] <- 42
           n5 <- TOPLEVEL[C]
           n6 <- n5.T
           n7 <- TOPLEVEL[__annotations__]
           n7["z"] <- n6
-          n8 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n8 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n8
           return None
 
@@ -596,6 +595,6 @@ from foo import *
 
       function toplevel():
         b0:
-          n0 <- $ImportName(foo)($BuildTuple("*"), 0, None)
+          n0 <- $ImportName(foo, $BuildTuple("*"), 0)
           n1 <- $ImportStar(n0, None)
           return None |}]

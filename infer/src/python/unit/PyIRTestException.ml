@@ -137,7 +137,7 @@ except (ValueError, AttributeError):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(os)(None, 0, None)
+          n0 <- $ImportName(os, None, 0)
           TOPLEVEL[os] <- n0
           n1 <- TOPLEVEL[os]
           n2 <- $CallMethod[sysconf](n1, "SC_PAGESIZE", None)
@@ -169,9 +169,9 @@ def f(x):
 
       function toplevel():
         b0:
-          n0 <- $ImportName(foo)(None, 0, None)
+          n0 <- $ImportName(foo, None, 0)
           TOPLEVEL[foo] <- n0
-          n1 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n1
           return None
 
@@ -330,8 +330,8 @@ with open("foo", "r") as fp:
 
       function toplevel():
         b0:
-          n0 <- $ImportName(foo)($BuildTuple("ERROR"), 0, None)
-          n1 <- $ImportFrom(ERROR)(n0, None)
+          n0 <- $ImportName(foo, $BuildTuple("ERROR"), 0)
+          n1 <- $ImportFrom(ERROR, n0)
           TOPLEVEL[ERROR] <- n1
           n2 <- TOPLEVEL[open]
           n3 <- $Call(n2, "foo", "r", None)
@@ -391,7 +391,7 @@ def subhelper():
       function toplevel():
         b0:
           GLOBAL[TICKS] <- 0
-          n0 <- $MakeFunction["subhelper", "dummy.subhelper"](None, None, None, None, None)
+          n0 <- $MakeFunction["subhelper", "dummy.subhelper", None, None, None, None]
           TOPLEVEL[subhelper] <- n0
           return None
 
@@ -440,7 +440,7 @@ except C as c:
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
           TOPLEVEL[foo] <- n0
           n1 <- TOPLEVEL[foo]
           n2 <- $Call(n1, None)
@@ -470,7 +470,7 @@ async def async_with(filename):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["async_with", "dummy.async_with"](None, None, None, None, None)
+          n0 <- $MakeFunction["async_with", "dummy.async_with", None, None, None, None]
           TOPLEVEL[async_with] <- n0
           return None
 
@@ -517,7 +517,7 @@ def call_finally():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["call_finally", "dummy.call_finally"](None, None, None, None, None)
+          n0 <- $MakeFunction["call_finally", "dummy.call_finally", None, None, None, None]
           TOPLEVEL[call_finally] <- n0
           return None
 
@@ -550,8 +550,7 @@ def call_finally_with_break():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["call_finally_with_break", "dummy.call_finally_with_break"](
-            None, None, None, None, None)
+          n0 <- $MakeFunction["call_finally_with_break", "dummy.call_finally_with_break", None, None, None, None]
           TOPLEVEL[call_finally_with_break] <- n0
           return None
 
@@ -590,7 +589,7 @@ def raise_from(e):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["raise_from", "dummy.raise_from"](None, None, None, None, None)
+          n0 <- $MakeFunction["raise_from", "dummy.raise_from", None, None, None, None]
           TOPLEVEL[raise_from] <- n0
           return None
 
@@ -619,7 +618,7 @@ async def foo():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
           TOPLEVEL[foo] <- n0
           return None
 
@@ -769,7 +768,7 @@ async def foo():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["foo", "dummy.foo"](None, None, None, None, None)
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
           TOPLEVEL[foo] <- n0
           return None
 

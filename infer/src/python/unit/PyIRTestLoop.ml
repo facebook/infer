@@ -62,7 +62,7 @@ def f(x, y, l, bar, toto):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           return None
 
@@ -140,7 +140,7 @@ def f(match, it, n):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           return None
 
@@ -195,7 +195,7 @@ def f(foo):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           return None
 
@@ -236,7 +236,7 @@ async def async_loop1():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["async_loop1", "dummy.async_loop1"](None, None, None, None, None)
+          n0 <- $MakeFunction["async_loop1", "dummy.async_loop1", None, None, None, None]
           TOPLEVEL[async_loop1] <- n0
           return None
 
@@ -271,7 +271,7 @@ async def async_loop2():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["async_loop2", "dummy.async_loop2"](None, None, None, None, None)
+          n0 <- $MakeFunction["async_loop2", "dummy.async_loop2", None, None, None, None]
           TOPLEVEL[async_loop2] <- n0
           return None
 
@@ -293,8 +293,7 @@ async def async_loop2():
 
       function dummy.async_loop2():
         b0:
-          n0 <- $MakeFunction["<listcomp>", "dummy.async_loop2.<listcomp>"](
-            None, None, None, None, None)
+          n0 <- $MakeFunction["<listcomp>", "dummy.async_loop2.<listcomp>", None, None, None, None]
           n1 <- GLOBAL[read]
           n2 <- $Call(n1, None)
           n3 <- $CallMethod[__aiter__](n2, None)

@@ -131,13 +131,6 @@ let expect_bool ~who ?how = function
         how pp_pval v
 
 
-let expect_1_arg ~who = function
-  | [arg] ->
-      arg
-  | args ->
-      L.die InternalError "%s expects 1 arg and reveiced [%a]" who (Pp.comma_seq Exp.pp) args
-
-
 let expect_2_args ~who = function
   | [arg1; arg2] ->
       (arg1, arg2)
@@ -304,6 +297,12 @@ let run_files modules =
                    |> Option.value_or_thunk ~default:(fun () -> builtins_get ident) )
         | Temp ssa ->
             ssa_get ssa
+        | ImportName {name} ->
+            exec_module name
+        | ImportFrom {name; exp} ->
+            let who = "$BuiltinCall.ImportFrom" in
+            let {Dict.get} = eval_exp exp |> expect_dict ~who in
+            get name
         | GetAttr {exp; attr} ->
             (* TODO: implement more realistic attribute lookup *)
             let {Dict.get} = eval_exp exp |> expect_dict ~who:"GetAttr" in
@@ -324,13 +323,24 @@ let run_files modules =
               | _ ->
                   () ) ;
             Dict dict
+        | Function {qual_name} ->
+            let cfg = get_cfg qual_name in
+            let eval = exec_cfg cfg in
+            Closure eval
         | Subscript {exp; index} ->
             let who = "Subscript" in
             let {Dict.get} = eval_exp exp |> expect_dict ~who ~how:"as 1st argument" in
             (* Note: Python dictionnaries may have other type of keys *)
             let index = eval_exp index |> expect_string ~who ~how:"as index" |> Ident.mk in
             get index
-        | BuildSlice _ | BuildString _ | BuildFrozenSet _ | Collection _ | Yield _ ->
+        | BuildSlice _
+        | BuildString _
+        | BuildFrozenSet _
+        | Collection _
+        | LoadClosure _
+        | LoadDeref _
+        | LoadClassDeref _
+        | Yield _ ->
             todo "eval_exp"
       in
       let exec_stmt stmt =
@@ -371,23 +381,6 @@ let run_files modules =
                 let key = expect_string ~who ~how:"as key" key |> Ident.mk in
                 set key arg ) ;
             ssa_set lhs (Dict dict)
-        | BuiltinCall {lhs; call= Function {qual_name}; args} ->
-            if not (Int.equal (List.length args) 4) then
-              L.die InternalError "$BuiltinCall.Function expects 4 args and reveiced [%a]"
-                (Pp.comma_seq Exp.pp) args ;
-            let cfg = get_cfg qual_name in
-            let eval = exec_cfg cfg in
-            ssa_set lhs (Closure eval)
-        | BuiltinCall {lhs; call= ImportName name; args} ->
-            if not (Int.equal (List.length args) 2) then
-              L.die InternalError "$BuiltinCall.ImportName expects 2 args and reveiced [%a]"
-                (Pp.comma_seq Exp.pp) args ;
-            ssa_set lhs (exec_module name)
-        | BuiltinCall {lhs; call= ImportFrom name; args} ->
-            let who = "$BuiltinCall.ImportFrom" in
-            let arg = expect_1_arg ~who args in
-            let {Dict.get} = eval_exp arg |> expect_dict ~who in
-            ssa_set lhs (get name)
         | BuiltinCall {lhs; call= Inplace Add; args} ->
             let who = "$BuiltinCall.Inplace.Add" in
             let arg1, arg2 = expect_2_args ~who args in
@@ -426,7 +419,8 @@ let run_files modules =
             let {Dict.set} = eval_exp lhs |> expect_dict ~who ~how:"as 1st argument" in
             let key = eval_exp index |> expect_string ~who ~how:"as 2nd argument" |> Ident.mk in
             set key (eval_exp rhs)
-        | BuiltinCall _ | SetupAnnotations ->
+        | BuiltinCall _ | Delete _ | DeleteDeref _ | DeleteAttr _ | StoreDeref _ | SetupAnnotations
+          ->
             todo "exec_stmt"
       in
       let rec exec_terminator terminator =

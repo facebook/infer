@@ -26,7 +26,7 @@ def f(**kwargs):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           return None
 
@@ -89,11 +89,11 @@ start()
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
-          n1 <- $MakeFunction["g", "dummy.g"](None, None, None, None, None)
+          n1 <- $MakeFunction["g", "dummy.g", None, None, None, None]
           TOPLEVEL[g] <- n1
-          n2 <- $MakeFunction["start", "dummy.start"](None, None, None, None, None)
+          n2 <- $MakeFunction["start", "dummy.start", None, None, None, None]
           TOPLEVEL[start] <- n2
           n3 <- TOPLEVEL[start]
           n4 <- $Call(n3, None)
@@ -191,7 +191,7 @@ def f(foo, a, b, c):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           return None
 
@@ -267,7 +267,7 @@ f(**d1, x=42)
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[x]
           n6 <- $Call(n4, n5, None)
-          n7 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n7 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n7
           n8 <- $BuildConstKeyMap($BuildTuple("a", "b"), 0, 1, None)
           TOPLEVEL[d1] <- n8
@@ -322,7 +322,7 @@ print(lst) # [2, 3, 4, 5, 6]
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f"](None, None, None, None, None)
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
           TOPLEVEL[f] <- n0
           n1 <- TOPLEVEL[f]
           n2 <- $Call(n1, None)

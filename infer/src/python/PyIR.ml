@@ -283,17 +283,10 @@ module BuiltinCaller = struct
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportName of Ident.t
-    | ImportFrom of Ident.t
     | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
-    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
-    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
-    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
-    | StoreDeref of {name: Ident.t; slot: int}  (** [STORE_DEREF] *)
-    | Function of {qual_name: QualName.t; short_name: Ident.t}  (** [MAKE_FUNCTION] *)
     | GetAIter  (** [GET_AITER] *)
     | GetIter  (** [GET_ITER] *)
     | NextIter  (** [FOR_ITER] *)
@@ -303,9 +296,6 @@ module BuiltinCaller = struct
     | ListAppend  (** [LIST_APPEND] *)
     | SetAdd  (** [SET_ADD] *)
     | DictSetItem  (** [MAP_ADD] *)
-    | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
-    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
-    | DeleteAttr of string
     | DeleteSubscr
     | YieldFrom  (** [YIELD_FROM] *)
     | GetAwaitable  (** [GET_AWAITABLE] *)
@@ -324,10 +314,6 @@ module BuiltinCaller = struct
         sprintf "$FormatFn.%s" (FormatFunction.to_string fn)
     | CallFunctionEx ->
         "$CallFunctionEx"
-    | ImportName name ->
-        F.asprintf "$ImportName(%a)" Ident.pp name
-    | ImportFrom name ->
-        F.asprintf "$ImportFrom(%a)" Ident.pp name
     | ImportStar ->
         sprintf "$ImportStar"
     | Binary op ->
@@ -341,16 +327,6 @@ module BuiltinCaller = struct
         sprintf "$Unary.%s" op
     | Compare op ->
         sprintf "$Compare.%s" (CompareOp.to_string op)
-    | LoadClosure {name; slot} ->
-        F.asprintf "$LoadClosure[%d,\"%a\"]" slot Ident.pp name
-    | LoadDeref {name; slot} ->
-        F.asprintf "$LoadDeref[%d,\"%a\"]" slot Ident.pp name
-    | LoadClassDeref {name; slot} ->
-        F.asprintf "$LoadClassDeref[%d,\"%a\"]" slot Ident.pp name
-    | StoreDeref {name; slot} ->
-        F.asprintf "$StoreDeref[%d,\"%a\"]" slot Ident.pp name
-    | Function {qual_name; short_name} ->
-        F.asprintf "$MakeFunction[\"%a\", \"%a\"]" Ident.pp short_name QualName.pp qual_name
     | GetIter ->
         "$GetIter"
     | GetAIter ->
@@ -369,12 +345,6 @@ module BuiltinCaller = struct
         "$SetAdd"
     | DictSetItem ->
         "$DictSetItem"
-    | Delete ident ->
-        F.asprintf "$Delete(%a)" ScopedIdent.pp ident
-    | DeleteDeref {name; slot} ->
-        F.asprintf "$DeleteDeref[%d,\"%a\")" slot Ident.pp name
-    | DeleteAttr name ->
-        sprintf "$DeleteAttr(%s)" name
     | DeleteSubscr ->
         "$DeleteSubscr"
     | YieldFrom ->
@@ -432,18 +402,30 @@ module Exp = struct
       In this IR, name resolution is done so naming is not ambiguous. Also, we have reconstructed
       the CFG of the program, lost during Python compilation *)
   type t =
-    | Const of Const.t
-    | Var of ScopedIdent.t
-    | Temp of SSA.t
-    | Subscript of {exp: t; index: t}  (** foo[bar] *)
+    | BuildFrozenSet of t list
     | BuildSlice of t list (* 2 < length <= 3 *)
     | BuildString of t list
-    | BuildFrozenSet of t list
     | Collection of {kind: collection; values: t list; unpack: bool}
         (** Helper for [BUILD_LIST/SET/TUPLE/MAP] opcodes *)
     (* [unpack=true] if the arguments in [values] are collections that must be
        unpack and flatten all together to create a unique collection *)
+    | Const of Const.t
+    | Function of
+        { qual_name: QualName.t
+        ; short_name: Ident.t
+        ; default_values: t
+        ; default_values_kw: t
+        ; annotations: t
+        ; cells_for_closure: t }  (** [MAKE_FUNCTION] *)
     | GetAttr of {exp: t; attr: Ident.t} (* foo.bar *)
+    | ImportFrom of {name: Ident.t; exp: t}
+    | ImportName of {name: Ident.t; fromlist: t; level: t}
+    | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
+    | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
+    | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | Subscript of {exp: t; index: t}  (** foo[bar] *)
+    | Temp of SSA.t
+    | Var of ScopedIdent.t
     | Yield of t
   [@@deriving equal]
 
@@ -467,6 +449,10 @@ module Exp = struct
         ScopedIdent.pp fmt scope_ident
     | Temp i ->
         SSA.pp fmt i
+    | ImportFrom {name; exp} ->
+        F.fprintf fmt "$ImportFrom(%a, %a)" Ident.pp name pp exp
+    | ImportName {name; fromlist; level} ->
+        F.fprintf fmt "$ImportName(%a, %a, %a)" Ident.pp name pp fromlist pp level
     | Subscript {exp; index} ->
         F.fprintf fmt "%a[@[%a@]]" pp exp pp index
     | BuildSlice values ->
@@ -481,6 +467,18 @@ module Exp = struct
           (Pp.seq ~sep:", " pp) values
     | GetAttr {exp; attr} ->
         F.fprintf fmt "%a.%a" pp exp Ident.pp attr
+    | LoadClosure {name; slot} ->
+        F.fprintf fmt "$LoadClosure(%d,\"%a\")" slot Ident.pp name
+    | LoadDeref {name; slot} ->
+        F.fprintf fmt "$LoadDeref(%d,\"%a\")" slot Ident.pp name
+    | LoadClassDeref {name; slot} ->
+        F.fprintf fmt "$LoadClassDeref(%d,\"%a\")" slot Ident.pp name
+    | Function
+        {qual_name; short_name; default_values; default_values_kw; annotations; cells_for_closure}
+      ->
+        F.fprintf fmt "$MakeFunction[\"%a\", \"%a\", %a, %a, %a, %a]" Ident.pp short_name
+          QualName.pp qual_name pp default_values pp default_values_kw pp annotations pp
+          cells_for_closure
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
 
@@ -584,8 +582,6 @@ end
 type 'a pyresult = ('a, Error.t) result
 
 module Stmt = struct
-  type call_arg = Exp.t
-
   let pp_call_arg fmt value = Exp.pp fmt value
 
   let unnamed_call_arg value = value
@@ -597,10 +593,14 @@ module Stmt = struct
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
-    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; arg_names: Exp.t}
+    | Call of {lhs: SSA.t; exp: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | CallMethod of
         {lhs: SSA.t; name: Ident.t; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
-    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: call_arg list; arg_names: Exp.t}
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list; arg_names: Exp.t}
+    | StoreDeref of {name: Ident.t; slot: int; rhs: Exp.t}  (** [STORE_DEREF] *)
+    | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
+    | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
+    | DeleteAttr of {exp: Exp.t; attr: Ident.t}
     | SetupAnnotations
 
   let pp fmt = function
@@ -622,6 +622,14 @@ module Stmt = struct
     | BuiltinCall {lhs; call; args; arg_names} ->
         F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
           (Pp.seq ~sep:", " pp_call_arg) (args @ [arg_names])
+    | StoreDeref {name; slot; rhs} ->
+        F.fprintf fmt "$StoreDeref(%d,\"%a\", %a)" slot Ident.pp name Exp.pp rhs
+    | Delete ident ->
+        F.fprintf fmt "$Delete(%a)" ScopedIdent.pp ident
+    | DeleteDeref {name; slot} ->
+        F.fprintf fmt "$DeleteDeref[%d,\"%a\")" slot Ident.pp name
+    | DeleteAttr {exp; attr} ->
+        F.fprintf fmt "$DeleteAttr(%a, %a)" Exp.pp exp Ident.pp attr
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
@@ -1183,9 +1191,11 @@ let make_function st flags =
     if flags land 0x01 <> 0 then State.pop_and_cast st else Ok (Exp.none, st)
   in
   let lhs, st = State.fresh_id st in
-  let call = BuiltinCaller.Function {short_name; qual_name} in
-  let args = [default_values; default_values_kw; annotations; cells_for_closure] in
-  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.none} in
+  let rhs =
+    Exp.Function
+      {short_name; qual_name; default_values; default_values_kw; annotations; cells_for_closure}
+  in
+  let stmt = Stmt.Let {lhs; rhs} in
   let st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
@@ -1549,13 +1559,19 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       assign_to_temp_and_push st exp
   | "LOAD_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let* id, st = call_builtin_function st (LoadDeref {slot= arg; name}) [] in
-      let st = State.push st (Exp.Temp id) in
+      let rhs = Exp.LoadDeref {slot= arg; name} in
+      let lhs, st = State.fresh_id st in
+      let stmt = Stmt.Let {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "LOAD_CLASSDEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let* id, st = call_builtin_function st (LoadClassDeref {slot= arg; name}) [] in
-      let st = State.push st (Exp.Temp id) in
+      let rhs = Exp.LoadClassDeref {slot= arg; name} in
+      let lhs, st = State.fresh_id st in
+      let stmt = Stmt.Let {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "STORE_NAME" ->
       store st Name co_names.(arg)
@@ -1581,7 +1597,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "STORE_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
       let* rhs, st = State.pop_and_cast st in
-      let* _id, st = call_builtin_function st (StoreDeref {name; slot= arg}) [rhs] in
+      let stmt = Stmt.StoreDeref {name; slot= arg; rhs} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "RETURN_VALUE" ->
       let* ret, st = State.pop_and_cast st in
@@ -1723,8 +1740,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let name = co_names.(arg) |> Ident.mk in
       let* fromlist, st = State.pop_and_cast st in
       let* level, st = State.pop_and_cast st in
-      let* id, st = call_builtin_function st (ImportName name) [fromlist; level] in
-      let st = State.push st (Exp.Temp id) in
+      let lhs, st = State.fresh_id st in
+      let rhs = Exp.ImportName {name; fromlist; level} in
+      let stmt = Stmt.Let {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "IMPORT_STAR" ->
       let* module_object, st = State.pop_and_cast st in
@@ -1733,10 +1753,13 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "IMPORT_FROM" ->
       let name = co_names.(arg) |> Ident.mk in
-      let* module_obj = State.peek st in
-      let* module_obj = State.cast_exp st module_obj in
-      let* id, st = call_builtin_function st (ImportFrom name) [module_obj] in
-      let st = State.push st (Exp.Temp id) in
+      let* exp = State.peek st in
+      let* exp = State.cast_exp st exp in
+      let lhs, st = State.fresh_id st in
+      let rhs = Exp.ImportFrom {name; exp} in
+      let stmt = Stmt.Let {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "COMPARE_OP" ->
       let* cmp_op =
@@ -1753,8 +1776,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "LOAD_CLOSURE" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let* id, st = call_builtin_function st (LoadClosure {slot= arg; name}) [] in
-      let st = State.push st (Exp.Temp id) in
+      let rhs = Exp.LoadClosure {slot= arg; name} in
+      let lhs, st = State.fresh_id st in
+      let stmt = Stmt.Let {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "DUP_TOP" ->
       let* tos = State.peek st in
@@ -1945,24 +1971,29 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       collection_add st opname arg ~map:true DictSetItem
   | "DELETE_NAME" ->
       let ident = Ident.mk co_names.(arg) in
-      let* _id, st = call_builtin_function st (Delete {scope= Name; ident}) [] in
+      let stmt = Stmt.Delete {scope= Name; ident} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "DELETE_GLOBAL" ->
       let ident = Ident.mk co_names.(arg) in
-      let* _id, st = call_builtin_function st (Delete {scope= Global; ident}) [] in
+      let stmt = Stmt.Delete {scope= Global; ident} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "DELETE_FAST" ->
       let ident = Ident.mk co_varnames.(arg) in
-      let* _id, st = call_builtin_function st (Delete {scope= Fast; ident}) [] in
+      let stmt = Stmt.Delete {scope= Fast; ident} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "DELETE_ATTR" ->
-      let name = co_names.(arg) in
-      let* tos, st = State.pop_and_cast st in
-      let* _id, st = call_builtin_function st (DeleteAttr name) [tos] in
+      let attr = co_names.(arg) |> Ident.mk in
+      let* exp, st = State.pop_and_cast st in
+      let stmt = Stmt.DeleteAttr {exp; attr} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "DELETE_DEREF" ->
       let name = get_cell_name code arg |> Ident.mk in
-      let* _id, st = call_builtin_function st (DeleteDeref {name; slot= arg}) [] in
+      let stmt = Stmt.DeleteDeref {name; slot= arg} in
+      let st = State.push_stmt st stmt in
       Ok (st, None)
   | "DELETE_SUBSCR" ->
       let* index, st = State.pop_and_cast st in
