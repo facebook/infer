@@ -52,7 +52,7 @@ module VarNameBridge = struct
   let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
     match lang with
     | Java ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
+        SilPvar.get_name pvar |> Mangled.to_string |> of_string
     | Hack ->
         L.die UserError "of_pvar conversion is not supported in Hack mode"
     | Python ->
@@ -65,7 +65,7 @@ module TypeNameBridge = struct
   let of_sil (tname : SilTyp.Name.t) =
     match tname with
     | JavaClass name ->
-        of_java_name (JavaClassName.to_string name)
+        of_string (JavaClassName.to_string name)
     | _ ->
         L.die InternalError "Textual conversion: only Java expected here"
 
@@ -73,7 +73,7 @@ module TypeNameBridge = struct
   let of_global_pvar (lang : Lang.t) pvar =
     match lang with
     | Java ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
+        SilPvar.get_name pvar |> Mangled.to_string |> of_string
     | Hack ->
         L.die UserError "of_global_pvar conversion is not supported in Hack mode"
     | Python ->
@@ -98,7 +98,7 @@ module TypeNameBridge = struct
 
   let to_sil (lang : Lang.t) {value} = value_to_sil lang value
 
-  let java_lang_object = of_java_name "java.lang.Object"
+  let java_lang_object = of_string "java.lang.Object"
 end
 
 let hack_dict_type_name = SilTyp.HackClass (HackClassName.make "HackDict")
@@ -315,9 +315,9 @@ module ProcDeclBridge = struct
     match pname with
     | Java jpname ->
         let enclosing_class =
-          QualifiedProcName.Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
+          QualifiedProcName.Enclosing (TypeName.of_string (Procname.Java.get_class_name jpname))
         in
-        let name = mangle_java_procname jpname |> ProcName.of_java_name in
+        let name = mangle_java_procname jpname |> ProcName.of_string in
         let qualified_name : QualifiedProcName.t = {enclosing_class; name} in
         let formals_types =
           Procname.Java.get_parameters jpname |> List.map ~f:TypBridge.annotated_of_sil
@@ -361,7 +361,7 @@ module ProcDeclBridge = struct
           TypeNameBridge.to_sil lang
             ( match t.qualified_name.enclosing_class with
             | TopLevel ->
-                TypeName.of_java_name "$TOPLEVEL$CLASS$"
+                TypeName.of_string "$TOPLEVEL$CLASS$"
             | Enclosing tname ->
                 tname )
         in
@@ -432,7 +432,7 @@ module FieldDeclBridge = struct
 
 
   let of_sil f typ is_final =
-    let name = SilFieldname.get_field_name f |> FieldName.of_java_name in
+    let name = SilFieldname.get_field_name f |> FieldName.of_string in
     let enclosing_class = SilFieldname.get_class_name f |> TypeNameBridge.of_sil in
     let qualified_name : qualified_fieldname = {name; enclosing_class} in
     let attributes = if is_final then [Attr.mk_final] else [] in
@@ -1167,7 +1167,7 @@ module ProcDescBridge = struct
     let locals =
       P.get_locals pdesc
       |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
-             let var = Mangled.to_string name |> VarName.of_java_name in
+             let var = Mangled.to_string name |> VarName.of_string in
              let typ =
                if SilTyp.is_void typ then
                  (* the Java frontend gives the void type to some local variables, but it does

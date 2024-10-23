@@ -78,7 +78,7 @@ exception TextualTransformError of transform_error list
 module type NAME = sig
   type t = {value: string; loc: Location.t [@compare.ignore]} [@@deriving compare, equal, hash]
 
-  val of_java_name : string -> t
+  val of_string : string -> t
 
   val pp : F.formatter -> t -> unit
 
@@ -103,7 +103,7 @@ module Name : NAME = struct
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
-  let of_java_name str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
+  let of_string str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
 
   let pp fmt name = F.pp_print_string fmt name.value
 
@@ -319,7 +319,7 @@ module Ident : sig
 end = struct
   type t = int [@@deriving equal]
 
-  let to_ssa_var id = Printf.sprintf "__SSA%d" id |> VarName.of_java_name
+  let to_ssa_var id = Printf.sprintf "__SSA%d" id |> VarName.of_string
 
   let of_int id = id
 

@@ -30,7 +30,8 @@ end
 module type NAME = sig
   type t = {value: string; loc: Location.t} [@@deriving compare, equal, hash]
 
-  val of_java_name : string -> t
+  val of_string : string -> t
+  (** we replace any dot in the string by '::' because dot is a reserved separator in Textual *)
 
   val pp : F.formatter -> t -> unit
 
