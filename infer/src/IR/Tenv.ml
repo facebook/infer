@@ -137,15 +137,25 @@ let resolve_field_info tenv name fieldname =
 
 
 let resolve_fieldname tenv name fieldname_str =
+  (* problem is that it gets dummy, missed capture *)
+  let missed_capture_types = ref Typ.Name.Set.empty in
   let find ~f =
     find_map_supers ~ignore_require_extends:true tenv name ~f:(fun name str_opt ->
-        Option.bind str_opt ~f:(fun {Struct.fields} ->
-            if List.exists fields ~f then Some name else None ) )
+        match str_opt with
+        | None | Some {dummy= true} ->
+            if Language.curr_language_is Hack then
+              missed_capture_types := Typ.Name.Set.add name !missed_capture_types ;
+            None
+        | Some {Struct.fields} ->
+            if List.exists fields ~f then Some name else None )
   in
   let is_fld {Struct.name} = String.equal (Fieldname.get_field_name name) fieldname_str in
   let is_non_abstract_fld ({Struct.annot} as x) = is_fld x && not (Annot.Item.is_abstract annot) in
-  (match find ~f:is_non_abstract_fld with Some _ as fld -> fld | None -> find ~f:is_fld)
-  |> Option.map ~f:(fun name -> Fieldname.make name fieldname_str)
+  let resolved_fld =
+    (match find ~f:is_non_abstract_fld with Some _ as fld -> fld | None -> find ~f:is_fld)
+    |> Option.map ~f:(fun name -> Fieldname.make name fieldname_str)
+  in
+  (resolved_fld, !missed_capture_types)
 
 
 let mem_supers tenv name ~f =

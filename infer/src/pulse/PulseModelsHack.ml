@@ -935,7 +935,7 @@ let hack_array_idx this key default_val : model =
 
 let eval_resolved_field ~model_desc typ_name fld_str =
   let open DSL.Syntax in
-  let* fld_opt = tenv_resolve_fieldname typ_name fld_str in
+  let* fld_opt, unresolved_reason = tenv_resolve_fieldname typ_name fld_str in
   let name, fld =
     match fld_opt with
     | None ->
@@ -945,7 +945,9 @@ let eval_resolved_field ~model_desc typ_name fld_str =
         (Fieldname.get_class_name fld, fld)
   in
   let* class_object = get_static_companion_dsl ~model_desc name in
-  load_access class_object (FieldAccess fld)
+  (* Note: We avoid the MustBeInitialized attribute to be added when the field resolution is
+     incomplete to avoid false positives. *)
+  load_access ~no_access:(Option.is_some unresolved_reason) class_object (FieldAccess fld)
 
 
 let internal_hack_field_get this field : DSL.aval DSL.model_monad =

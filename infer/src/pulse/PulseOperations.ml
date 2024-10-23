@@ -137,7 +137,8 @@ let eval_access path ?must_be_valid_reason mode location addr_hist access astate
 
 
 let eval_deref_access path ?must_be_valid_reason mode location addr_hist access astate =
-  let* astate, addr_hist = eval_access path Read location addr_hist access astate in
+  let ptr_mode = match mode with NoAccess -> NoAccess | Read | Write -> Read in
+  let* astate, addr_hist = eval_access path ptr_mode location addr_hist access astate in
   eval_access path ?must_be_valid_reason mode location addr_hist Dereference astate
 
 

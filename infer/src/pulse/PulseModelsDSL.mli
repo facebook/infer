@@ -145,7 +145,7 @@ module Syntax : sig
 
   val access : access_mode -> aval -> Access.t -> aval model_monad
 
-  val load_access : aval -> Access.t -> aval model_monad
+  val load_access : ?no_access:bool -> aval -> Access.t -> aval model_monad
 
   val load : aval -> aval model_monad
   (** read the Dereference access from the value *)
@@ -231,7 +231,8 @@ module Syntax : sig
 
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
-  val tenv_resolve_fieldname : Typ.name -> string -> Fieldname.t option model_monad
+  val tenv_resolve_fieldname :
+    Typ.name -> string -> (Fieldname.t option * Tenv.unresolved_reason option) model_monad
 
   (** {2 Invalidation operations} *)
 

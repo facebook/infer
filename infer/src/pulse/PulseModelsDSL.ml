@@ -357,9 +357,10 @@ module Syntax = struct
     PulseOperations.eval_deref path location exp |> exec_partial_operation
 
 
-  let load_access aval access : aval model_monad =
+  let load_access ?(no_access = false) aval access : aval model_monad =
     let* {path; location} = get_data in
-    PulseOperations.eval_deref_access path Read location aval access
+    let mode = if no_access then NoAccess else Read in
+    PulseOperations.eval_deref_access path mode location aval access
     >> sat |> exec_partial_operation
 
 
@@ -501,10 +502,16 @@ module Syntax = struct
     ret info data astate
 
 
-  let tenv_resolve_fieldname typ_name name : Fieldname.t option model_monad =
+  let tenv_resolve_fieldname typ_name name :
+      (Fieldname.t option * Tenv.unresolved_reason option) model_monad =
    fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
-    let field_name = Tenv.resolve_fieldname tenv typ_name name in
-    ret field_name data astate
+    (* warning: we skipped missed capture informations here *)
+    let field_name, missed_capture_types = Tenv.resolve_fieldname tenv typ_name name in
+    let unresolved_reason =
+      if Typ.Name.Set.is_empty missed_capture_types then None
+      else Some Tenv.MaybeMissingDueToMissedCapture
+    in
+    ret (field_name, unresolved_reason) data astate
 
 
   let tenv_resolve_method typ_name proc_name : Procname.t option model_monad =
