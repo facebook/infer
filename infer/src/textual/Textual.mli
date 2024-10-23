@@ -295,8 +295,6 @@ module Exp : sig
 
   val allocate_object : TypeName.t -> t
 
-  val null : t
-
   (* logical not ! *)
   val not : t -> t
 

@@ -677,8 +677,6 @@ module Exp = struct
         ProcSig.Other {qualified_name}
 
 
-  let null = Const Const.Null
-
   let not exp = call_non_virtual (ProcDecl.of_unop Unop.LNot) [exp]
 
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
