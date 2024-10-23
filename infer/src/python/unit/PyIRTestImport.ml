@@ -265,7 +265,7 @@ path.X()
   PyIR.test ~filename:"some/long/path/dummy.py" source ;
   [%expect
     {|
-    module some/long/path/dummy:
+    module some::long::path::dummy:
 
       function toplevel():
         b0:
@@ -289,6 +289,20 @@ path.X()
           TOPLEVEL[path] <- n13
           n14 <- TOPLEVEL[path]
           n15 <- $CallMethod[X](n14, None)
+          return None |}]
+
+
+let%expect_test _ =
+  let source = {|
+pass
+|} in
+  PyIR.test ~filename:"./dir1/dir2/script.py" source ;
+  [%expect
+    {|
+    module dir1::dir2::script:
+
+      function toplevel():
+        b0:
           return None |}]
 
 

@@ -2606,7 +2606,7 @@ let file_path {FFI.Code.co_filename} =
       String.sub co_filename ~pos:2 ~len:(sz - 2)
     else co_filename
   in
-  Stdlib.Filename.remove_extension file_path
+  Stdlib.Filename.remove_extension file_path |> String.substr_replace_all ~pattern:"/" ~with_:"::"
 
 
 let mk ~debug code =
