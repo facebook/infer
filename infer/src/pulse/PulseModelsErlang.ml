@@ -143,7 +143,7 @@ let prune_type path location (value, hist) typ astate : AbductiveDomain.t result
      |> PulseResult.ok |> SatUnsat.of_option
    in
    let** astate, instanceof_val = has_erlang_type value typ astate in
-   PulseArithmetic.prune_ne_zero instanceof_val astate )
+   PulseArithmetic.prune_positive instanceof_val astate )
   |> SatUnsat.to_list
 
 
@@ -335,7 +335,7 @@ module Atoms = struct
   (* Converts [bool_value] into true/false, and write it to [addr_atom]. *)
   let of_bool path location bool_value astate =
     let astate_true =
-      let** astate = PulseArithmetic.prune_ne_zero bool_value astate in
+      let** astate = PulseArithmetic.prune_positive bool_value astate in
       of_string location path ErlangTypeName.atom_true astate
     in
     let astate_false :
@@ -434,7 +434,7 @@ module Comparison = struct
     let const_true _x _y _tenv _location _path : value_maker =
      fun astate ->
       let const_true = AbstractValue.mk_fresh () in
-      let++ astate = PulseArithmetic.prune_ne_zero const_true astate in
+      let++ astate = PulseArithmetic.prune_positive const_true astate in
       (astate, const_true)
 
 
@@ -665,7 +665,7 @@ module Comparison = struct
   (** Returns an abstract state that has been pruned on the comparison result being true. *)
   let prune cmp tenv location path x y astate : AbductiveDomain.t AccessResult.t list =
     let> astate, (comparison, _hist) = make_raw cmp tenv location path x y astate in
-    PulseArithmetic.prune_ne_zero comparison astate |> SatUnsat.to_list
+    PulseArithmetic.prune_positive comparison astate |> SatUnsat.to_list
 
 
   (** {1 Specific comparison operators} *)
@@ -965,7 +965,7 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = PulseArithmetic.prune_ne_zero is_empty astate |> SatUnsat.to_list in
+      let> astate = PulseArithmetic.prune_positive is_empty astate |> SatUnsat.to_list in
       let> astate =
         PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate |> SatUnsat.to_list
       in
@@ -1012,7 +1012,7 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = PulseArithmetic.prune_ne_zero is_empty astate |> SatUnsat.to_list in
+      let> astate = PulseArithmetic.prune_positive is_empty astate |> SatUnsat.to_list in
       Errors.badkey data astate
     in
     List.map ~f:Basic.map_continue astate_ok @ astate_badkey @ astate_badmap
@@ -1062,7 +1062,7 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = PulseArithmetic.prune_ne_zero is_empty astate |> SatUnsat.to_list in
+      let> astate = PulseArithmetic.prune_positive is_empty astate |> SatUnsat.to_list in
       let<+> astate, addr_nil = Lists.make_nil_raw location path astate in
       PulseOperations.write_id ret_id addr_nil astate
     in
@@ -1187,13 +1187,13 @@ module BIF = struct
     let astate_is_cons =
       let is_cons = AbstractValue.mk_fresh () in
       let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
-      let<**> astate = PulseArithmetic.prune_ne_zero is_cons astate in
+      let<**> astate = PulseArithmetic.prune_positive is_cons astate in
       Atoms.write_return_from_bool path location is_cons ret_id astate
     in
     let astate_is_nil =
       let is_nil = AbstractValue.mk_fresh () in
       let<**> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
-      let<**> astate = PulseArithmetic.prune_ne_zero is_nil astate in
+      let<**> astate = PulseArithmetic.prune_positive is_nil astate in
       Atoms.write_return_from_bool path location is_nil ret_id astate
     in
     let astate_not_list =
