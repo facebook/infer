@@ -214,6 +214,10 @@ let option_value_map (o : 'a option) ~(none : 'b monad) ~(some : 'a -> 'b monad)
  fun state -> Option.value_map o ~default:(none state) ~f:(fun a -> some a state)
 
 
+let option_iter (o : 'a option) ~(f : 'a -> unit monad) : unit monad =
+  option_value_map o ~none:(ret ()) ~some:f
+
+
 (** state accessors *)
 
 (** add an error and continue normally *)
@@ -682,7 +686,7 @@ let typecheck_instr (instr : Instr.t) : Instr.t monad =
   | Let {id; exp; loc} ->
       let* () = set_location loc in
       let* exp, typ = typeof_exp exp in
-      let+ () = set_ident_type id typ in
+      let+ () = option_iter id ~f:(fun id -> set_ident_type id typ) in
       Instr.Let {id; exp; loc}
 
 

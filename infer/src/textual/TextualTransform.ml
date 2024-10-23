@@ -16,7 +16,11 @@ let collect_ident_defs ({nodes} : ProcDesc.t) : Ident.Set.t =
         List.fold node.ssa_parameters ~init:set ~f:(fun set (id, _) -> Ident.Set.add id set)
       in
       List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
-          match instr with Load {id} | Let {id} -> Ident.Set.add id set | Store _ | Prune _ -> set ) )
+          match instr with
+          | Load {id} | Let {id= Some id} ->
+              Ident.Set.add id set
+          | Store _ | Prune _ | Let _ ->
+              set ) )
 
 
 let module_map_procs ~f (module_ : Module.t) =
@@ -239,7 +243,7 @@ module Subst = struct
     let rev_instrs =
       List.fold node.instrs ~init:[] ~f:(fun rev_instrs (instr : Instr.t) ->
           match instr with
-          | Let {id} when Ident.Map.mem id eqs ->
+          | Let {id= Some id} when Ident.Map.mem id eqs ->
               rev_instrs
           | _ ->
               of_instr instr eqs :: rev_instrs )
@@ -283,7 +287,7 @@ module TransformClosures = struct
 
 
   let closure_building_instrs id loc typename (closure : ProcDesc.t) captured =
-    let alloc : Instr.t = Let {id; loc; exp= Exp.allocate_object typename} in
+    let alloc : Instr.t = Let {id= Some id; loc; exp= Exp.allocate_object typename} in
     let formals =
       Option.value_exn ~message:"implementation always have formals" closure.procdecl.formals_types
     in
@@ -368,9 +372,17 @@ let remove_effects_in_subexprs lang decls_env _module =
         closure_declarations= Struct struct_ :: Proc procdecl :: state.closure_declarations }
 
 
-    let push_instr instr state = {state with instrs_rev= instr :: state.instrs_rev}
-
     let incr_fresh state = {state with fresh_ident= Ident.next state.fresh_ident}
+
+    let push_instr instr state =
+      match instr with
+      | Instr.Let {id= None; exp; loc} ->
+          let fresh = state.fresh_ident in
+          let state = incr_fresh state in
+          let instr = Instr.Let {id= Some fresh; exp; loc} in
+          {state with instrs_rev= instr :: state.instrs_rev}
+      | _ ->
+          {state with instrs_rev= instr :: state.instrs_rev}
   end in
   let rec flatten_exp loc (exp : Exp.t) state : Exp.t * State.t =
     match exp with
@@ -393,7 +405,7 @@ let remove_effects_in_subexprs lang decls_env _module =
         if ProcDecl.is_side_effect_free_sil_expr proc then (Call {proc; args; kind}, state)
         else
           let fresh = state.State.fresh_ident in
-          let new_instr : Instr.t = Let {id= fresh; exp= Call {proc; args; kind}; loc} in
+          let new_instr : Instr.t = Let {id= Some fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Closure {proc; captured; params} ->
         let captured, state = flatten_exp_list loc captured state in
@@ -428,7 +440,7 @@ let remove_effects_in_subexprs lang decls_env _module =
         let args, state = flatten_exp_list loc args state in
         let fresh = state.State.fresh_ident in
         let new_instr : Instr.t =
-          Let {id= fresh; exp= TransformClosures.closure_call_exp loc closure args; loc}
+          Let {id= Some fresh; exp= TransformClosures.closure_call_exp loc closure args; loc}
         in
         (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
   and flatten_exp_list loc exp_list state =
@@ -692,9 +704,11 @@ let let_propagation module_ =
             match instr with
             | Load _ | Store _ | Prune _ ->
                 eqs
+            | Let {id= None} ->
+                L.die InternalError "let_propagation should come after remove_effects_in_subexprs"
             | Let {exp= Call {proc}} when not (ProcDecl.is_side_effect_free_sil_expr proc) ->
                 eqs
-            | Let {id; exp} ->
+            | Let {id= Some id; exp} ->
                 Ident.Map.add id exp eqs ) )
   in
   let compute_dependencies equations : Ident.Set.t Ident.Map.t =

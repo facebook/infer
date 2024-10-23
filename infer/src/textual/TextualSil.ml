@@ -662,7 +662,7 @@ module InstrBridge = struct
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let typ = Typ.Struct (TypeNameBridge.of_sil name) in
         Let
-          { id= IdentBridge.of_sil id
+          { id= Some (IdentBridge.of_sil id)
           ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
           ; loc= Location.Unknown }
     | Call
@@ -670,7 +670,7 @@ module InstrBridge = struct
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
         let typ = TypBridge.of_sil typ in
         Let
-          { id= IdentBridge.of_sil id
+          { id= Some (IdentBridge.of_sil id)
           ; exp=
               Exp.call_non_virtual ProcDecl.allocate_array_name
                 [Typ typ; ExpBridge.of_sil decls tenv exp]
@@ -682,7 +682,7 @@ module InstrBridge = struct
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
         let loc = Location.Unknown in
         let kind = if call_flags.cf_virtual then Exp.Virtual else Exp.NonVirtual in
-        Let {id= IdentBridge.of_sil id; exp= Call {proc; args; kind}; loc}
+        Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc}
     | Call _ ->
         L.die InternalError "Translation of a SIL call that is not const not supported"
     | Metadata _ ->
@@ -712,8 +712,11 @@ module InstrBridge = struct
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         Prune (e, loc, true, Ik_if)
-    | Let {id; exp= Call {proc; args= [Typ typ]}; loc} when ProcDecl.is_allocate_object_builtin proc
-      ->
+    | Let {id= None} ->
+        L.die InternalError
+          "to_sil should come after type transformation remove_effects_in_subexprs"
+    | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
+      when ProcDecl.is_allocate_object_builtin proc ->
         let typ = TypBridge.to_sil lang typ in
         let sizeof =
           SilExp.Sizeof
@@ -725,7 +728,7 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args= target :: Typ typ :: rest}; loc}
+    | Let {id= Some id; exp= Call {proc; args= target :: Typ typ :: rest}; loc}
       when ProcDecl.is_instanceof_builtin proc ->
         let typ = TypBridge.to_sil lang typ in
         let nullable =
@@ -747,7 +750,7 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_instanceof = SilExp.Const (SilConst.Cfun BuiltinDecl.__instanceof) in
         Call ((ret, StdTyp.boolean), builtin_instanceof, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args= Typ element_typ :: exp :: _}; loc}
+    | Let {id= Some id; exp= Call {proc; args= Typ element_typ :: exp :: _}; loc}
       when ProcDecl.is_allocate_array_builtin proc ->
         let element_typ = TypBridge.to_sil lang element_typ in
         let typ = SilTyp.mk_array element_typ in
@@ -763,7 +766,7 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new_array) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args= [Typ typ]}; loc}
+    | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
       when ProcDecl.is_lazy_class_initialize_builtin proc || ProcDecl.is_get_lazy_class_builtin proc
       ->
         let typ = TypBridge.to_sil lang typ in
@@ -784,7 +787,7 @@ module InstrBridge = struct
         in
         (* TODO: we may want to use the class_of_class type here *)
         Call ((ret, class_type), builtin, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args; kind}; loc} ->
+    | Let {id= Some id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
         let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
         let variadic_status, ({formals_types} as callee_procdecl : ProcDecl.t) =

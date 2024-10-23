@@ -63,6 +63,7 @@
 %token TRUE
 %token TYPE
 %token UNREACHABLE
+%token UNDERSCORE
 %token VOID
 
 %token <string> IDENT
@@ -370,8 +371,10 @@ instruction:
     { Instr.Prune {exp; loc=location_of_pos $startpos} }
   | PRUNE NOT exp=expression
     { Instr.Prune {exp=Exp.not exp; loc=location_of_pos $startpos} }
+  | UNDERSCORE EQ exp=expression
+    { Instr.Let { id= None; exp; loc=location_of_pos $startpos } }
   | id=LOCAL EQ exp=expression
-    { Instr.Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
+    { Instr.Let { id= Some (Ident.of_int id); exp; loc=location_of_pos $startpos } }
 
 bool_expression:
   | exp=expression

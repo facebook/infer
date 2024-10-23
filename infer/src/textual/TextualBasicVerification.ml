@@ -215,8 +215,8 @@ let verify_decl ~env errors (decl : Module.decl) =
       List.fold procdesc.nodes ~init:Ident.Set.empty ~f:(fun init node ->
           List.fold node.Node.instrs ~init ~f:(fun idents instr ->
               match instr with
-              | Instr.Let {id; exp= Call {proc}} when ProcDecl.is_generics_constructor_builtin proc
-                ->
+              | Instr.Let {id= Some id; exp= Call {proc}}
+                when ProcDecl.is_generics_constructor_builtin proc ->
                   Ident.Set.add id idents
               | _ ->
                   idents ) )

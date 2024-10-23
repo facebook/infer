@@ -795,7 +795,7 @@ module Instr = struct
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t option; loc: Location.t}
     | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
     | Prune of {exp: Exp.t; loc: Location.t}
-    | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
+    | Let of {id: Ident.t option; exp: Exp.t; loc: Location.t}
 
   let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
 
@@ -810,7 +810,9 @@ module Instr = struct
         F.fprintf fmt "store %a <- %a:%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
     | Prune {exp} ->
         F.fprintf fmt "prune %a" Exp.pp exp
-    | Let {id; exp} ->
+    | Let {id= None; exp} ->
+        F.fprintf fmt "_ = %a" Exp.pp exp
+    | Let {id= Some id; exp} ->
         F.fprintf fmt "%a = %a" Ident.pp id Exp.pp exp
 
 
@@ -994,9 +996,9 @@ module SsaVerification = struct
     in
     let collect_defs_in_instr seen (instr : Instr.t) =
       match instr with
-      | Load {id; loc} | Let {id; loc} ->
+      | Load {id; loc} | Let {id= Some id; loc} ->
           collect seen id loc
-      | Store _ | Prune _ ->
+      | Let _ | Store _ | Prune _ ->
           seen
     in
     let collect_defs_in_node seen (node : Node.t) =

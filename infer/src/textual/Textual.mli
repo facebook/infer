@@ -320,7 +320,7 @@ module Instr : sig
     | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
         (** *exp1 <- exp2 with exp2:typ *)
     | Prune of {exp: Exp.t; loc: Location.t}  (** assume exp *)
-    | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}  (** id = exp *)
+    | Let of {id: Ident.t option; exp: Exp.t; loc: Location.t}  (** id = exp or _ = exp *)
   (* Remark that because Sil operations (add, mult...) are calls, we let the Textual programmer put
      expression in local variables, while SIL forbid that. The to_sil transformation will have to
      inline these definitions. *)

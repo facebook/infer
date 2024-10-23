@@ -61,6 +61,7 @@ let%test_module "remove_effects_in_subexprs transformation" =
               n1:int = load &y
               n3 = __sil_mult_int(g3(n0), m(g1(n0), g2(n1)))
               n4 = m([&x:int], g3([&y]))
+              _ = empty()
               jmp lab1(g1(n3), g3(n0)), lab2(g2(n3), g3(n0))
           #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
@@ -114,24 +115,25 @@ let%test_module "remove_effects_in_subexprs transformation" =
               n17:int = load &y
               n18 = g3(n17)
               n4 = m(n16, n18)
-              n19 = g1(n3)
-              n20 = g3(n0)
-              n21 = g2(n3)
-              n22 = g3(n0)
-              jmp lab1(n19, n20), lab2(n21, n22)
+              n19 = empty()
+              n20 = g1(n3)
+              n21 = g3(n0)
+              n22 = g2(n3)
+              n23 = g3(n0)
+              jmp lab1(n20, n21), lab2(n22, n23)
 
           #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
               jmp lab
 
           #lab2(n10: int, n11: int):
-              n23 = m(n10, n11)
-              n24 = g3(n23)
-              ret n24
+              n24 = m(n10, n11)
+              n25 = g3(n24)
+              ret n25
 
           #lab:
-              n25 = g4(n8)
-              throw n25
+              n26 = g4(n8)
+              throw n26
 
         }
 

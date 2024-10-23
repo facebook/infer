@@ -146,6 +146,8 @@ let build_mainlex keywords =
         SEMICOLON
     | "*" ->
         STAR
+    | "_" ->
+        UNDERSCORE
     | "?" ->
         QUESTION
     | ".handlers " ->
