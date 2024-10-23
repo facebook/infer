@@ -160,6 +160,8 @@ end
 module SSA = struct
   type t = int [@@deriving equal, hash]
 
+  let id x = x
+
   let pp fmt i = F.fprintf fmt "n%d" i
 
   let next n = 1 + n
@@ -511,6 +513,8 @@ module Location = struct
   let of_instructions = function instr :: _ -> of_instruction instr | [] -> None
 
   let of_code {FFI.Code.instructions} = of_instructions instructions
+
+  let line x = x
 end
 
 module Error = struct

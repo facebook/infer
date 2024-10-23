@@ -9,6 +9,8 @@ open! IStd
 module Location : sig
   type t
 
+  val line : t -> int option
+
   val pp : Format.formatter -> t -> unit
 end
 
@@ -30,6 +32,8 @@ end
 
 module SSA : sig
   type t
+
+  val id : t -> int
 
   val pp : Format.formatter -> t -> unit
 
