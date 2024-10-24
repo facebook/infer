@@ -2250,6 +2250,17 @@ and objc_synthesize_dealloc =
      classes corresponding to what the compiler does."
 
 
+and ondemand_recursion_restart_limit =
+  CLOpt.mk_int ~long:"ondemand-recursion-restart-limit" ~default:100
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "In order to make the analysis of mutual recursion cycles deterministic in their output, the \
+     analysis of a cycle of mutually recursive functions may restart the analysis of the entire \
+     cycle from a deterministic place. If the graph of mutual recursion is more complex than a \
+     simple cycle this could potentially result in many restarts before finding the \"right\" \
+     procedure from which to start. This limits the number of restarts before we give up and \
+     analyze the cycle as-is instead."
+
+
 and oom_threshold =
   CLOpt.mk_int_opt ~long:"oom-threshold"
     "Available memory threshold (in MB) below which multi-worker scheduling throttles back work. \
@@ -4359,13 +4370,15 @@ and no_translate_libs = not !headers
 
 and nullable_annotation = !nullable_annotation
 
-and only_cheap_debug = !only_cheap_debug
-
-and oom_threshold = !oom_threshold
-
 and objc_block_execution_macro = !objc_block_execution_macro
 
 and objc_synthesize_dealloc = !objc_synthesize_dealloc
+
+and ondemand_recursion_restart_limit = !ondemand_recursion_restart_limit
+
+and only_cheap_debug = !only_cheap_debug
+
+and oom_threshold = !oom_threshold
 
 and pmd_xml = !pmd_xml
 

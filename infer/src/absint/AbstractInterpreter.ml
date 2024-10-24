@@ -621,6 +621,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           post
       | Error (exn, backtrace, instr) ->
           ( match exn with
+          | RecursiveCycleException.RecursiveCycle _
           | RestartSchedulerException.ProcnameAlreadyLocked _
           | MissingDependencyException.MissingDependencyException
           | Timer.Timeout _ ->

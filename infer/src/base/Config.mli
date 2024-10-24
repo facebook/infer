@@ -562,13 +562,15 @@ val no_translate_libs : bool
 
 val nullable_annotation : string option
 
-val only_cheap_debug : bool
-
-val oom_threshold : int option
-
 val objc_block_execution_macro : string option
 
 val objc_synthesize_dealloc : bool
+
+val ondemand_recursion_restart_limit : int
+
+val only_cheap_debug : bool
+
+val oom_threshold : int option
 
 val pmd_xml : bool
 

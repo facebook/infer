@@ -35,6 +35,11 @@ module ActiveProcedures : sig
   val remove : active -> unit
 
   val get_all : unit -> active list
+
+  val get_cycle_start : active -> active * int * active
+  (** given a target where we detected a recursive call, i.e. that already belongs to the queue,
+      return a triple of where the cycle starts, the length of the cycle, and the first procedure we
+      started to analyze *)
 end = struct
   type active = SpecializedProcname.t
 
@@ -65,6 +70,18 @@ end = struct
 
 
   let get_all () = AnalysisTargets.keys currently_analyzed
+
+  let get_cycle_start recursive =
+    let all = get_all () in
+    (* there is always one target in the queue since [recursive] is in the queue *)
+    let first_active = List.hd_exn all in
+    let cycle =
+      List.drop_while all ~f:(fun target -> not (SpecializedProcname.equal target recursive))
+    in
+    let cycle_length = List.length cycle in
+    (* there is always one target in the cycle which is the previous call to [recursive] *)
+    let cycle_start = List.min_elt ~compare:SpecializedProcname.compare cycle |> Option.value_exn in
+    (cycle_start, cycle_length, first_active)
 end
 
 (** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
@@ -257,6 +274,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
+        | RecursiveCycleException.RecursiveCycle _
         | RestartSchedulerException.ProcnameAlreadyLocked _
         | MissingDependencyException.MissingDependencyException ->
             decr nesting ;
@@ -405,17 +423,44 @@ let double_lock_for_restart ~lazy_payloads analysis_req callee_pname specializat
         `NoSummary )
 
 
-let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t) ~specialization
-    ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t =
+let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed
+
+(** track how many times we restarted the analysis of the current dependency chain to make the
+    analysis of mutual recursion cycles deterministic *)
+let number_of_recursion_restarts = ref 0
+
+let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
+    ~specialization ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t
+    =
   match detect_mutual_recursion_cycle ~caller_summary ~callee:callee_pname specialization with
-  | `InMutualRecursionCycle | `ReplayCycleCut ->
+  | `InMutualRecursionCycle ->
+      let target = {SpecializedProcname.proc_name= callee_pname; specialization} in
+      let cycle_start, cycle_length, first_active = ActiveProcedures.get_cycle_start target in
+      if
+        !number_of_recursion_restarts > Config.ondemand_recursion_restart_limit
+        || SpecializedProcname.equal cycle_start target
+      then (
+        register_callee ~cycle_detected:true ?caller_summary callee_pname ;
+        if Config.trace_ondemand then
+          L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
+        Error MutualRecursionCycle )
+      else (
+        if Config.trace_ondemand then
+          L.progress "Found cycle at %a, first_active= %a; restarting from %a@\nactives: %a@."
+            Procname.pp callee_pname Procname.pp first_active.proc_name Procname.pp
+            cycle_start.proc_name
+            (Pp.seq ~sep:"," SpecializedProcname.pp)
+            (ActiveProcedures.get_all ()) ;
+        (* we want the exception to pop back up to the beginning of the cycle, so we set [ttl= cycle_length] *)
+        incr number_of_recursion_restarts ;
+        raise (RecursiveCycleException.RecursiveCycle {recursive= cycle_start; ttl= cycle_length}) )
+  | `ReplayCycleCut ->
       register_callee ~cycle_detected:true ?caller_summary callee_pname ;
+      if Config.trace_ondemand then
+        L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
       Error MutualRecursionCycle
   | `NotInMutualRecursionCycle -> (
       register_callee ~cycle_detected:false ?caller_summary callee_pname ;
-      let analysis_result_of_option opt =
-        Result.of_option opt ~error:AnalysisResult.AnalysisFailed
-      in
       if is_in_block_list callee_pname then Error InBlockList
       else
         let analyze_callee_aux specialization_context =
@@ -478,6 +523,36 @@ let rec analyze_callee exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
             analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
         | `UnknownProcedure ->
             Error UnknownProcedure )
+
+
+and on_recursive_cycle exe_env ~lazy_payloads analysis_req ?caller_summary:_ ?from_file_analysis
+    ~ttl (cycle_start : SpecializedProcname.t) callee_pname =
+  if ttl > 0 then
+    raise (RecursiveCycleException.RecursiveCycle {recursive= cycle_start; ttl= ttl - 1}) ;
+  analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:cycle_start.specialization
+    ?from_file_analysis cycle_start.proc_name
+  |> ignore ;
+  (* TODO: register caller -> callee relationship, possibly *)
+  Summary.OnDisk.get ~lazy_payloads analysis_req callee_pname |> analysis_result_of_option
+
+
+and analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
+    ?from_file_analysis callee_pname =
+  try
+    analyze_callee_can_raise_recursion exe_env ~lazy_payloads analysis_req ~specialization
+      ?caller_summary ?from_file_analysis callee_pname
+  with RecursiveCycleException.RecursiveCycle {recursive; ttl} ->
+    on_recursive_cycle ~lazy_payloads exe_env analysis_req recursive ~ttl callee_pname
+
+
+let analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
+    ?from_file_analysis callee_pname =
+  (* If [caller_summary] is set then we are analyzing a dependency of another procedure, so we
+     should keep counting restarts within that dependency chain (or cycle). If it's not set then
+     this is a "toplevel" analysis of [callee_pname] so we start fresh. *)
+  if Option.is_none caller_summary then number_of_recursion_restarts := 0 ;
+  analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
+    ?from_file_analysis callee_pname
 
 
 let analyze_proc_name exe_env analysis_req ?specialization ~caller_summary callee_pname =
