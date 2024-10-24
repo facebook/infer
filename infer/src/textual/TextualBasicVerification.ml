@@ -96,7 +96,8 @@ let verify_decl ~env errors (decl : Module.decl) =
     else
       let procsig = Exp.call_sig proc nb_args (TextualDecls.lang env) in
       match TextualDecls.get_procdecl env procsig nb_args with
-      | None when QualifiedProcName.contains_wildcard proc ->
+      | None
+        when QualifiedProcName.contains_wildcard proc || QualifiedProcName.is_python_builtin proc ->
           errors
       | None when nb_generics_args > 0 ->
           (* second try by removing generics args *)

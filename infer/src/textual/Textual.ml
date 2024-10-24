@@ -138,6 +138,8 @@ module TypeName : sig
 
   val hack_builtin : t
 
+  val python_builtin : t
+
   val hack_generics : t
 
   val wildcard : t
@@ -147,6 +149,8 @@ end = struct
   let wildcard = {value= "?"; loc= Location.Unknown}
 
   let hack_builtin = {value= "$builtins"; loc= Location.Unknown}
+
+  let python_builtin = {value= "$builtins"; loc= Location.Unknown}
 
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
 end
@@ -172,6 +176,14 @@ module QualifiedProcName = struct
     match enclosing_class with
     | Enclosing class_name ->
         TypeName.equal class_name TypeName.wildcard
+    | TopLevel ->
+        false
+
+
+  let is_python_builtin {enclosing_class} =
+    match enclosing_class with
+    | Enclosing class_name ->
+        TypeName.equal class_name TypeName.python_builtin
     | TopLevel ->
         false
 

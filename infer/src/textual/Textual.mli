@@ -80,6 +80,8 @@ module QualifiedProcName : sig
 
   val contains_wildcard : t -> bool
 
+  val is_python_builtin : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 end
 

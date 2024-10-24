@@ -10,7 +10,10 @@ module L = Logging
 type kind = Bytecode of {files: string list} | Files of {prog: string; args: string list}
 
 module Error = struct
-  type t = FFI of FFI.Error.t | IR of PyIR.Error.t
+  type t =
+    | FFI of FFI.Error.t
+    | IR of PyIR.Error.t
+    | Textual of (Textual.SourceFile.t * TextualVerification.error list)
 
   let format_error file error =
     let log level =
@@ -27,11 +30,16 @@ module Error = struct
         log level "[python:%s][-1] %a@\n" file FFI.Error.pp_kind err
     | IR (level, loc, err) ->
         log level "[python:%s][%a] %a@\n" file PyIR.Location.pp loc PyIR.Error.pp_kind err
+    | Textual (sourcefile, errs) ->
+        List.iter errs
+          ~f:(L.internal_error "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
 
 
   let ffi x = FFI x
 
   let ir x = IR x
+
+  let textual sourcefile list = Textual (sourcefile, list)
 end
 
 module Interpreter = struct
@@ -62,25 +70,23 @@ module Interpreter = struct
     Py.finalize ()
 end
 
-let process_file ~is_binary file =
-  let open IResult.Let_syntax in
-  let _sourcefile = Textual.SourceFile.create file in
-  let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
-  let* ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
-  let _ = PyIR2Textual.mk_module ir in
-  Ok ()
-
-
-let _dump_file ~next_to_source pyc module_ =
+let dump_textual_file pyc module_ =
   let filename =
-    if next_to_source then
-      let filename = SourceFile.create pyc in
-      Filename.chop_extension (SourceFile.to_abs_path filename) ^ ".sil"
-    else
-      let textual_filename = TextualSil.to_filename pyc in
-      Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
+    let textual_filename = TextualSil.to_filename pyc in
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
   in
   TextualSil.dump_module ~filename module_
+
+
+let process_file ~is_binary file =
+  let open IResult.Let_syntax in
+  let sourcefile = Textual.SourceFile.create file in
+  let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
+  let* pyir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
+  let textual = PyIR2Textual.mk_module pyir in
+  if Config.debug_mode then dump_textual_file file textual ;
+  let* _ = Result.map_error ~f:(Error.textual sourcefile) @@ TextualVerification.verify textual in
+  Ok ()
 
 
 let capture_file ~is_binary file = process_file ~is_binary file
