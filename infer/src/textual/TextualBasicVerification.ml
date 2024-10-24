@@ -35,9 +35,7 @@ let error_loc = function
       loc
 
 
-let pp_error sourcefile fmt error =
-  let loc = error_loc error in
-  F.fprintf fmt "%a, %a: SIL consistency error: " SourceFile.pp sourcefile Location.pp loc ;
+let pp_error fmt error =
   match error with
   | ProcNotImplementedButInClosure {proc} ->
       F.fprintf fmt "function  %a is declared but not implemented: it can not be used in a closure"

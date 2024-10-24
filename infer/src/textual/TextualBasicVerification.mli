@@ -9,6 +9,8 @@ open! IStd
 
 type error
 
-val pp_error : Textual.SourceFile.t -> Format.formatter -> error -> unit
+val pp_error : Format.formatter -> error -> unit
+
+val error_loc : error -> Textual.Location.t
 
 val run : Textual.Module.t -> TextualDecls.t -> error list

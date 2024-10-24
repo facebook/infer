@@ -103,10 +103,7 @@ let error_loc = function
       loc
 
 
-let pp_error sourcefile fmt error =
-  let primary_error_loc = error_loc error in
-  F.fprintf fmt "%a, %a: textual type error: " SourceFile.pp sourcefile Location.pp
-    primary_error_loc ;
+let pp_error fmt error =
   match error with
   | TypeMismatch {exp; typ; expected; _} ->
       F.fprintf fmt "expression %a has type %a, while %a was expected" Exp.pp exp Typ.pp typ

@@ -33,14 +33,8 @@ let remove_effects_in_subexprs lang module_ =
 
 
 let type_check module_ =
-  let errors, decls = TextualDecls.make_decls module_ in
-  let () = List.iter errors ~f:(F.printf "%a@\n" (TextualDecls.pp_error sourcefile)) in
-  let () =
-    TextualBasicVerification.run module_ decls
-    |> List.iter ~f:(F.printf "%a@\n" (TextualBasicVerification.pp_error sourcefile))
-  in
-  match TextualTypeVerification.run module_ decls with
+  match TextualVerification.verify module_ with
   | Ok _ ->
       F.printf "verification succeeded@\n"
-  | Error errors ->
-      List.iter errors ~f:(F.printf "%a@\n" (TextualTypeVerification.pp_error sourcefile))
+  | Error errs ->
+      List.iter errs ~f:(F.printf "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))

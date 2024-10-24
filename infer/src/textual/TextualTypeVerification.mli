@@ -151,7 +151,9 @@ open Textual
 
 type error
 
-val pp_error : SourceFile.t -> Format.formatter -> error -> unit
+val pp_error : Format.formatter -> error -> unit
+
+val error_loc : error -> Location.t
 
 (* typechecks all the module and, if no errors, returns a fresh copy where
    all load/store type annotations are filled now *)

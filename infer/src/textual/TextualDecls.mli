@@ -65,6 +65,6 @@ val get_undefined_types : t -> Textual.TypeName.t Seq.t
 
 type error
 
-val pp_error : Textual.SourceFile.t -> Format.formatter -> error -> unit
+val pp_error : Format.formatter -> error -> unit
 
 val make_decls : Textual.Module.t -> error list * t

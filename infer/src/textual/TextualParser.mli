@@ -10,10 +10,8 @@ module F = Format
 
 type error =
   | SyntaxError of {loc: Textual.Location.t; msg: string}
-  | BasicError of TextualBasicVerification.error
-  | TypeError of TextualTypeVerification.error
+  | VerificationError of TextualVerification.error list
   | TransformError of Textual.transform_error list
-  | DeclaredTwiceError of TextualDecls.error  (** errors related to Textual *)
 
 val pp_error : Textual.SourceFile.t -> F.formatter -> error -> unit
 

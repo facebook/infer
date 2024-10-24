@@ -73,8 +73,7 @@ type error =
   | ProcImplementedTwice of QualifiedProcName.t
   | StructDeclaredTwice of TypeName.t
 
-let pp_error sourcefile fmt err =
-  F.fprintf fmt "%a: SIL consistency error: " SourceFile.pp sourcefile ;
+let pp_error fmt err =
   match err with
   | FieldDeclaredTwice qualified_fieldname ->
       F.fprintf fmt "field %a is declared twice in type %a" FieldName.pp qualified_fieldname.name

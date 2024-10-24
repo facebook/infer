@@ -11,23 +11,18 @@ module L = Logging
 
 type error =
   | SyntaxError of {loc: Textual.Location.t; msg: string}
-  | BasicError of TextualBasicVerification.error
-  | TypeError of TextualTypeVerification.error
+  | VerificationError of TextualVerification.error list
   | TransformError of Textual.transform_error list
-  | DeclaredTwiceError of TextualDecls.error
 
-let pp_error sourcefile fmt = function
+let pp_error sourcefile fmt err =
+  let open Textual in
+  match err with
   | SyntaxError {loc; msg} ->
-      F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
-        Textual.Location.pp loc msg
-  | BasicError err ->
-      TextualBasicVerification.pp_error sourcefile fmt err
-  | TypeError err ->
-      TextualTypeVerification.pp_error sourcefile fmt err
+      F.fprintf fmt "%a, %a: SIL syntax error: %s@\n" SourceFile.pp sourcefile Location.pp loc msg
+  | VerificationError errs ->
+      List.iter errs ~f:(F.printf "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
   | TransformError errs ->
-      List.iter errs ~f:(Textual.pp_transform_error sourcefile fmt)
-  | DeclaredTwiceError err ->
-      TextualDecls.pp_error sourcefile fmt err
+      List.iter errs ~f:(pp_transform_error sourcefile fmt)
 
 
 let error_to_string sourcefile error = Format.asprintf "%a" (pp_error sourcefile) error
@@ -41,21 +36,7 @@ let parse_buf sourcefile filebuf =
     (* the parser needs context to understand ident(args) expression because ident may be
        a variable or a procname *)
     let parsed = TextualTransform.fix_closure_app parsed in
-    let errors, decls_env = TextualDecls.make_decls parsed in
-    let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
-    if List.is_empty errors then
-      let errors =
-        TextualBasicVerification.run parsed decls_env |> List.map ~f:(fun x -> BasicError x)
-      in
-      if List.is_empty errors then
-        match TextualTypeVerification.run parsed decls_env with
-        | Ok module_ ->
-            Ok module_
-        | Error errors ->
-            let errors = List.map ~f:(fun x -> TypeError x) errors in
-            Error errors
-      else Error errors
-    else Error errors
+    TextualVerification.verify parsed |> Result.map_error ~f:(fun err -> [VerificationError err])
   with
   | TextualMenhir.Error ->
       let token = TextualLexer.Lexbuf.lexeme filebuf in
@@ -142,7 +123,7 @@ let capture files =
   let capture_one file =
     match TextualFile.translate file with
     | Error (sourcefile, errs) ->
-        List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
+        List.iter errs ~f:(fun error -> L.external_error "%a" (pp_error sourcefile) error)
     | Ok sil ->
         TextualFile.capture ~use_global_tenv:true sil ;
         Tenv.merge ~src:sil.tenv ~dst:global_tenv
