@@ -28,7 +28,12 @@
             "methods": ["getBox"]
           },
           {
-            "return_types": ["Box"]
+            "return_types": ["ScopedClass"]
+          },
+          {
+            "classname_suffix": "Provider",
+            "methods": ["get"],
+            "scoped_parameter_types": ["ScopedClass"]
           }
         ]
       }

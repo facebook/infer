@@ -18,7 +18,15 @@ public class OuterHoldsInner<T> {
   public final Box<InnerScopedClass> l_bad = InnerScope.getBox(InnerScopedClass.class);
 
   // An error that requires recognizing scope generating methods via return types.
-  public final Box<InnerScopedClass> l_bad_2 = InnerScope.getAnotherBox(InnerScopedClass.class);
+  public final ScopedClass l_bad_2 = InnerScope.getScopedClass();
+
+  // An error that requires recognizing scope generating methods via class suffix + method names +
+  // parameter types
+  public final Box l_bad_3 = BoxProvider.get("foo", new ScopedClass());
+
+  public final Box l_good = BoxProvider.get("foo");
+
+  public final Box l_good_2 = BoxProvider.getBox("foo");
 
   // An error that requires analyzing the code in the constructor.
   public final Object o_bad = OuterHoldsInner.getMethod();

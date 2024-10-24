@@ -10,7 +10,7 @@ public class InnerScope {
     return new Box<T>(c.getName());
   }
 
-  public static <T> Box<T> getAnotherBox(Class<?> c) {
-    return new Box<T>(c.getName());
+  public static ScopedClass getScopedClass() {
+    return new ScopedClass();
   }
 }

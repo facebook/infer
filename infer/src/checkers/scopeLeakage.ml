@@ -40,7 +40,11 @@ module AnalysisConfig : sig
   (** Methods that are known to "generate" a scope. That is, return objects of a known scope. Could
       be specified by either classname/methods pair or by a return type of a method *)
   type generator =
-    {classname: string option; methods: string list option; return_types: string list option}
+    { classname: string option
+    ; methods: string list option
+    ; return_types: string list option
+    ; classname_suffix: string option
+    ; scoped_parameter_types: string list option }
 
   (** Lists of generators for the different types of scopes. *)
   type generators = generator list
@@ -65,7 +69,9 @@ end = struct
   type generator =
     { classname: string option [@yojson.option]
     ; methods: string list option [@yojson.option]
-    ; return_types: string list option [@yojson.option] }
+    ; return_types: string list option [@yojson.option]
+    ; classname_suffix: string option [@yojson.option]
+    ; scoped_parameter_types: string list option [@yojson.option] }
   [@@deriving of_yojson]
 
   type generators = generator list [@@deriving of_yojson]
@@ -84,13 +90,25 @@ end = struct
   let empty = {annotation_classname= ""; scope_defs= []; must_not_hold_pairs= []}
 
   let pp fmt config =
-    let pp_generator fmt {classname; methods; return_types} =
-      F.fprintf fmt {| { "classname": "%a", "methods": [%a], "return_types": [%a] } |}
+    let pp_generator fmt {classname; methods; return_types; classname_suffix; scoped_parameter_types}
+        =
+      F.fprintf fmt
+        {|
+          {
+            "classname": "%a",
+            "methods": [%a],
+            "return_types": [%a],
+            "classname_suffix": %a,
+            "scoped_parameter_types": [%a]
+          }
+        |}
         (Pp.option String.pp) classname
         (Pp.option (Pp.comma_seq String.pp))
         methods
         (Pp.option (Pp.comma_seq String.pp))
-        return_types
+        return_types (Pp.option String.pp) classname_suffix
+        (Pp.option (Pp.comma_seq String.pp))
+        scoped_parameter_types
     in
     let pp_scope fmt {classname; generators} =
       F.fprintf fmt {| { "classname": "%s", "generators": [%a] } |} classname
@@ -129,17 +147,23 @@ end = struct
             held ) ;
     let generators = List.map scope_defs ~f:(fun {generators} -> generators) in
     List.iter generators ~f:(fun generators ->
-        List.iter generators ~f:(fun {classname; methods; return_types} ->
-            if Option.is_none classname && Option.is_none methods && Option.is_none return_types
-            then
-              L.die UserError
-                "Either combination of `classname` and `methods` or `return_types` should be \
-                 specified as a generator while none were specified@\n" ;
-            if Option.is_some classname && Option.is_some methods && Option.is_some return_types
-            then
-              L.die UserError
-                "Either combination of `classname` and `methods` or `return_types` should be \
-                 specified as a generator while all of them were specified@\n" ) )
+        List.iter generators
+          ~f:(fun {classname; methods; return_types; classname_suffix; scoped_parameter_types} ->
+            match (classname, methods, return_types, classname_suffix, scoped_parameter_types) with
+            (* classname and methods is a valid generator combination *)
+            | Some _classname, Some _methods, None, None, None ->
+                ()
+            (* return_types is a valid generator *)
+            | None, None, Some _return_types, None, None ->
+                ()
+            (* methods, classname_suffix and scoped_parameter_types is a valid generator combination *)
+            | None, Some _methods, None, Some _classname_suffix, Some _scoped_parameter_types ->
+                ()
+            | _, _, _, _, _ ->
+                L.die UserError
+                  "Either combination of `classname` and `methods` or `return_types` or \
+                   combination of `classname_suffix`, `methods` and `scoped_parameter_types` \
+                   should be specified as a generator@\n" ) )
 
 
   let parse json =
@@ -585,15 +609,40 @@ end = struct
       in
       let matches_generator = function
         (* Checks whether curr_classname+curr_method exist in the list of generators. *)
-        | {classname= Some classname; methods= Some methods; return_types= None} ->
+        | { classname= Some classname
+          ; methods= Some methods
+          ; return_types= None
+          ; classname_suffix= None
+          ; scoped_parameter_types= None } ->
             Option.exists curr_classname ~f:(fun curr_classname ->
                 String.equal classname curr_classname
                 && List.exists methods ~f:(String.equal curr_method) )
         (* Checks whether curr_method's return type or its supertype exist in the list of generators. *)
-        | {classname= None; methods= None; return_types= Some return_types} ->
+        | { classname= None
+          ; methods= None
+          ; return_types= Some return_types
+          ; classname_suffix= None
+          ; scoped_parameter_types= None } ->
             Option.exists proc_attributes ~f:(fun attrs ->
                 let return_type = attrs.ProcAttributes.ret_type in
                 type_matches tenv return_type return_types )
+        | { classname= None
+          ; methods= Some methods
+          ; return_types= None
+          ; classname_suffix= Some classname_suffix
+          ; scoped_parameter_types= Some scoped_parameter_types } ->
+            let matches_classname_suffix =
+              Option.exists curr_classname ~f:(fun curr_classname ->
+                  String.is_suffix curr_classname ~suffix:classname_suffix )
+            in
+            let matches_curr_method = List.exists methods ~f:(String.equal curr_method) in
+            let matches_parameter_types =
+              Option.exists proc_attributes ~f:(fun attrs ->
+                  let formals = attrs.ProcAttributes.formals in
+                  let types = List.map formals ~f:(fun (_, typ, _) -> typ) in
+                  List.exists types ~f:(fun typ -> type_matches tenv typ scoped_parameter_types) )
+            in
+            matches_classname_suffix && matches_curr_method && matches_parameter_types
         | _ ->
             false
       in
