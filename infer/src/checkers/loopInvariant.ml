@@ -10,7 +10,7 @@ module L = Logging
 module InvariantVars = AbstractDomain.FiniteSet (Var)
 module VarsInLoop = AbstractDomain.FiniteSet (Var)
 module InvalidatedVars = AbstractDomain.FiniteSet (Var)
-module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+module LoopNodes = AbstractDomain.NodeSet
 module VarSet = AbstractDomain.FiniteSet (Var)
 
 let debug fmt = L.(debug Analysis Medium) fmt

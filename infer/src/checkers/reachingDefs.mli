@@ -11,7 +11,7 @@ open! IStd
 
     A definition x :=e, declared at node N, reaches the current node if there is a path from node N
     to the current node such that x is not modified along the path **)
-module Defs : module type of AbstractDomain.FiniteSet (Procdesc.Node)
+module Defs : AbstractDomain.NodeSetS
 
 (** Map var -> its reaching definition *)
 module ReachingDefsMap : module type of AbstractDomain.Map (Var) (Defs)

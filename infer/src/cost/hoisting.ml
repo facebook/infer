@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module InstrCFG = ProcCfg.NormalOneInstrPerNode
 module BasicCost = CostDomain.BasicCost
-module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+module LoopNodes = AbstractDomain.NodeSet
 module HoistCalls = AbstractDomain.FiniteSet (CostInstantiate.Call)
 
 (** Map loop_header -> instrs that can be hoisted out of the loop *)

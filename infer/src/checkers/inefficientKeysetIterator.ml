@@ -7,7 +7,7 @@
 open! IStd
 module F = Format
 module CFG = ProcCfg.Normal
-module LoopNodes = AbstractDomain.FiniteSet (Procdesc.Node)
+module LoopNodes = AbstractDomain.NodeSet
 
 let find_loaded_pvar id = function
   | Sil.Load {id= lhs_id; e= Exp.Lvar rhs_pvar} when Ident.equal lhs_id id ->

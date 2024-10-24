@@ -208,7 +208,7 @@ module NodeHashSet : HashSet.S with type elt = Node.t
 module NodeMap : Caml.Map.S with type key = Node.t
 
 (** Set of nodes. *)
-module NodeSet : Caml.Set.S with type elt = Node.t
+module NodeSet : PrettyPrintable.PPSet with type elt = Node.t
 
 (** procedure descriptions *)
 

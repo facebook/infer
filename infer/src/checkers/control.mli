@@ -12,7 +12,7 @@ module LoopHeads = Procdesc.NodeSet
 (** Map control var -> loop head location *)
 module ControlMap : module type of PrettyPrintable.MakePPMap (Var)
 
-module GuardNodes : module type of AbstractDomain.FiniteSet (Procdesc.Node)
+module GuardNodes : AbstractDomain.NodeSetS
 
 (** Map exit node -> loop head set *)
 module ExitNodeToLoopHeads = Procdesc.NodeMap

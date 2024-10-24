@@ -11,7 +11,7 @@ module InvariantVars : module type of AbstractDomain.FiniteSet (Var)
 
 module VarsInLoop : module type of AbstractDomain.FiniteSet (Var)
 
-module LoopNodes : module type of AbstractDomain.FiniteSet (Procdesc.Node)
+module LoopNodes : AbstractDomain.NodeSetS
 
 module VarSet : module type of AbstractDomain.FiniteSet (Var)
 

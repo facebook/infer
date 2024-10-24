@@ -12,7 +12,7 @@ module NodeCFG = ProcCfg.Normal
 
     A definition x :=e, declared at node N, reaches the current node if there is a path from node N
     to the current node such that x is not modified along the path **)
-module Defs = AbstractDomain.FiniteSet (Procdesc.Node)
+module Defs = AbstractDomain.NodeSet
 
 (* even though we only add singletons (defs), the set is needed for joins *)
 

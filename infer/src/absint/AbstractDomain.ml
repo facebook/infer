@@ -1013,3 +1013,7 @@ module DownwardIntDomain (MaxCount : MaxCount) = struct
 
   let pp = Int.pp
 end
+
+module type NodeSetS = FiniteSetS with type elt = Procdesc.Node.t and type t = Procdesc.NodeSet.t
+
+module NodeSet = FiniteSetOfPPSet (Procdesc.NodeSet)

@@ -382,3 +382,7 @@ module DownwardIntDomain (MaxCount : MaxCount) : sig
   val decrement : t -> t
   (** decrease the count by one if it is greater than 0 *)
 end
+
+module type NodeSetS = FiniteSetS with type elt = Procdesc.Node.t and type t = Procdesc.NodeSet.t
+
+module NodeSet : NodeSetS

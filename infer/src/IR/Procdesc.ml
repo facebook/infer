@@ -173,16 +173,16 @@ module Node = struct
 
   let get_succs node = node.succs
 
-  type node = t
+  type node = t [@@deriving compare]
 
   let pp_id f id = F.pp_print_int f id
 
   let pp f node = pp_id f (get_id node)
 
-  module NodeSet = Caml.Set.Make (struct
-    type t = node
+  module NodeSet = PrettyPrintable.MakePPSet (struct
+    type t = node [@@deriving compare]
 
-    let compare = compare
+    let pp = pp
   end)
 
   module IdMap = PrettyPrintable.MakePPMap (struct
