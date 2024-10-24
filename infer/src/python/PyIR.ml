@@ -9,6 +9,13 @@ module F = Format
 module L = Logging
 module IMap = IInt.Map
 
+let remove_angles str =
+  if String.is_prefix str ~prefix:"<" && String.is_suffix str ~suffix:">" then
+    let str = String.sub str ~pos:1 ~len:(String.length str - 2) in
+    "_$" ^ str
+  else str
+
+
 module Ident : sig
   type t [@@deriving equal, compare]
 
@@ -36,7 +43,7 @@ end = struct
 
   let pp fmt ident = F.pp_print_string fmt ident
 
-  let mk ident = ident
+  let mk ident = remove_angles ident
 
   module Special = struct
     let aiter = "__aiter__"
@@ -100,10 +107,13 @@ end = struct
     | [] ->
         L.die ExternalError "QualName.from_qualified_string with an empty string"
     | hd :: tl ->
-        {root= hd; path= List.rev tl}
+        {root= hd; path= List.rev_map ~f:remove_angles tl}
 
 
-  let extend {root; path} attr = {root; path= attr :: path}
+  let extend {root; path} attr =
+    let attr = remove_angles attr in
+    {root; path= attr :: path}
+
 
   module Map = Caml.Map.Make (struct
     type nonrec t = t

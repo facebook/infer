@@ -276,7 +276,7 @@ async def async_loop2():
           return None
 
 
-      function dummy.async_loop2.<listcomp>(.0):
+      function dummy.async_loop2._$listcomp(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -293,7 +293,7 @@ async def async_loop2():
 
       function dummy.async_loop2():
         b0:
-          n0 <- $MakeFunction["<listcomp>", "dummy.async_loop2.<listcomp>", None, None, None, None]
+          n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
           n1 <- GLOBAL[read]
           n2 <- $Call(n1, None)
           n3 <- $CallMethod[__aiter__](n2, None)

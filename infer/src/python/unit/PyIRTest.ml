@@ -1254,12 +1254,12 @@ def f(l):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["<listcomp>", "dummy.<listcomp>", None, None, None, None]
+          n0 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
           n1 <- TOPLEVEL[l]
           n2 <- $GetIter(n1, None)
           n3 <- $Call(n0, n2, None)
           TOPLEVEL[g] <- n3
-          n4 <- $MakeFunction["<listcomp>", "dummy.<listcomp>", None, None, None, None]
+          n4 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
           n5 <- TOPLEVEL[l]
           n6 <- $GetIter(n5, None)
           n7 <- $Call(n4, n6, None)
@@ -1275,7 +1275,7 @@ def f(l):
           return None
 
 
-      function dummy.<listcomp>(.0):
+      function dummy._$listcomp(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1296,7 +1296,7 @@ def f(l):
           return $BuildList()
 
 
-      function dummy.f.<listcomp>(.0):
+      function dummy.f._$listcomp(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1319,12 +1319,12 @@ def f(l):
 
       function dummy.f(l):
         b0:
-          n0 <- $MakeFunction["<listcomp>", "dummy.f.<listcomp>", None, None, None, None]
+          n0 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
           n1 <- LOCAL[l]
           n2 <- $GetIter(n1, None)
           n3 <- $Call(n0, n2, None)
           LOCAL[r] <- n3
-          n4 <- $MakeFunction["<listcomp>", "dummy.f.<listcomp>", None, None, None, None]
+          n4 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
           n5 <- LOCAL[l]
           n6 <- $GetIter(n5, None)
           n7 <- $Call(n4, n6, None)
@@ -1365,7 +1365,7 @@ def g(l):
           return None
 
 
-      function dummy.g.<dictcomp>(.0):
+      function dummy.g._$dictcomp(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1387,7 +1387,7 @@ def g(l):
           return $BuildMap()
 
 
-      function dummy.f.<setcomp>(.0):
+      function dummy.f._$setcomp(.0):
         b0:
           n0 <- LOCAL[.0]
           jmp b1
@@ -1410,7 +1410,7 @@ def g(l):
 
       function dummy.f(l):
         b0:
-          n0 <- $MakeFunction["<setcomp>", "dummy.f.<setcomp>", None, None, None, None]
+          n0 <- $MakeFunction["_$setcomp", "dummy.f._$setcomp", None, None, None, None]
           n1 <- LOCAL[l]
           n2 <- $GetIter(n1, None)
           n3 <- $Call(n0, n2, None)
@@ -1421,7 +1421,7 @@ def g(l):
 
       function dummy.g(l):
         b0:
-          n0 <- $MakeFunction["<dictcomp>", "dummy.g.<dictcomp>", None, None, None, None]
+          n0 <- $MakeFunction["_$dictcomp", "dummy.g._$dictcomp", None, None, None, None]
           n1 <- LOCAL[l]
           n2 <- $GetIter(n1, None)
           n3 <- $Call(n0, n2, None)
@@ -1622,19 +1622,12 @@ o.foo()
           TOPLEVEL[o] <- n3
           n4 <- TOPLEVEL[o]
           n5 <- $CallMethod[foo](n4, None)
-          n6 <- $MakeFunction["<lambda>", "dummy.<lambda>", None, None, None, None]
+          n6 <- $MakeFunction["_$lambda", "dummy._$lambda", None, None, None, None]
           n7 <- TOPLEVEL[o]
           n7.foo <- n6
           n8 <- TOPLEVEL[o]
           n9 <- $CallMethod[foo](n8, None)
           return None
-
-
-      function dummy.<lambda>():
-        b0:
-          n0 <- GLOBAL[print]
-          n1 <- $Call(n0, "I am not foo", None)
-          return n1
 
 
       function dummy.C():
@@ -1645,6 +1638,13 @@ o.foo()
           n1 <- $MakeFunction["foo", "dummy.C.foo", None, None, None, None]
           TOPLEVEL[foo] <- n1
           return None
+
+
+      function dummy._$lambda():
+        b0:
+          n0 <- GLOBAL[print]
+          n1 <- $Call(n0, "I am not foo", None)
+          return n1
 
 
       function dummy.C.foo(self):
