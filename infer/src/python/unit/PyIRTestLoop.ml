@@ -301,3 +301,63 @@ async def async_loop2():
           n5 <- $GetAwaitable(n4, None)
           n6 <- $YieldFrom(n5, None, None)
           return None |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def main():
+    if test():
+        for i in r():
+            action()
+        while test():
+            action()
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+      module dummy:
+
+        function toplevel():
+          b0:
+            n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
+            TOPLEVEL[main] <- n0
+            return None
+
+
+        function dummy.main(i):
+          b0:
+            n0 <- GLOBAL[test]
+            n1 <- $Call(n0, None)
+            if n1 then jmp b1 else jmp b6
+
+          b1:
+            n2 <- GLOBAL[r]
+            n3 <- $Call(n2, None)
+            n4 <- $GetIter(n3, None)
+            jmp b2
+
+          b2:
+            n5 <- $NextIter(n4, None)
+            n6 <- $HasNextIter(n4, None)
+            if n6 then jmp b3 else jmp b4
+
+          b3:
+            LOCAL[i] <- n5
+            n11 <- GLOBAL[action]
+            n12 <- $Call(n11, None)
+            jmp b2
+
+          b4:
+            n7 <- GLOBAL[test]
+            n8 <- $Call(n7, None)
+            if n8 then jmp b5 else jmp b6(n4, n5)
+
+          b5:
+            n9 <- GLOBAL[action]
+            n10 <- $Call(n9, None)
+            jmp b4
+
+          b6:
+            return None |}]
