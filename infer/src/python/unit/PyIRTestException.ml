@@ -830,8 +830,8 @@ def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+  [%expect
+    {| IR error: bad operand stack: offset 92 is reachable with two stacks of different sizes |}]
 
 
 let%expect_test _ =

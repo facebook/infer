@@ -533,6 +533,7 @@ module Error = struct
     | LoadMethodExpected of Exp.opstack_symbol
     | CompareOp of int
     | CodeWithoutQualifiedName of FFI.Code.t
+    | IllFormedOpstack of int
     | UnpackSequence of int
     | UnexpectedExpression of Exp.opstack_symbol
     | FixpointComputationHeaderReachedTwice of int
@@ -558,6 +559,9 @@ module Error = struct
     | CodeWithoutQualifiedName {FFI.Code.co_name; co_firstlineno; co_filename} ->
         F.fprintf fmt "Unknown code object: %s, at line %d, in %s" co_name co_firstlineno
           co_filename
+    | IllFormedOpstack offset ->
+        F.fprintf fmt "bad operand stack: offset %d is reachable with two stacks of different sizes"
+          offset
     | UnpackSequence n ->
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | UnexpectedExpression exp ->
@@ -2508,9 +2512,15 @@ let build_cfg ~debug ~code_qual_name code =
     in
     let* st = process_node st code ~offset ~arity info in
     let arity = State.size st in
-    let arity_map =
-      List.fold successors ~init:arity_map ~f:(fun arity_map (succ, delta, _) ->
-          if IMap.mem succ arity_map then arity_map else IMap.add succ (arity + delta) arity_map )
+    let* arity_map =
+      List.fold_result successors ~init:arity_map ~f:(fun arity_map (succ, delta, _) ->
+          let succ_arity = arity + delta in
+          if IMap.mem succ arity_map then
+            let current_succ_arity = IMap.find succ arity_map in
+            if not (Int.equal current_succ_arity succ_arity) then
+              internal_error st (Error.IllFormedOpstack succ)
+            else Ok arity_map
+          else Ok (IMap.add succ succ_arity arity_map) )
     in
     Ok (st, arity_map)
   in
