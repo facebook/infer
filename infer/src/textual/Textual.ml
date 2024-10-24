@@ -730,8 +730,8 @@ module Exp = struct
         let captured_and_params =
           captured @ List.map params ~f:(fun varname -> Load {exp= Lvar varname; typ= None})
         in
-        F.fprintf fmt "(%a) -> %a(%a)" (pp_list_with_comma VarName.pp) params QualifiedProcName.pp
-          proc (pp_list_with_comma pp) captured_and_params
+        F.fprintf fmt "fun (%a) -> %a(%a)" (pp_list_with_comma VarName.pp) params
+          QualifiedProcName.pp proc (pp_list_with_comma pp) captured_and_params
     | Typ typ ->
         F.fprintf fmt "<%a>" Typ.pp typ
 

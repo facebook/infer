@@ -742,7 +742,7 @@ let%expect_test "closures" =
       define D.foo(x: int) : void {
         local y: *HackMixed
         #entry:
-            n0 = (p1, p2, p3) -> C.add([&x:int], 1, p1, p2, p3)
+            n0 = fun (p1, p2, p3) -> C.add([&x:int], 1, p1, p2, p3)
             store &y <- n0:*HackMixed
             n1 = [&y:*HackMixed]([&x:int], 1., null)
             n2 = n0([&x:int], 2., null)
