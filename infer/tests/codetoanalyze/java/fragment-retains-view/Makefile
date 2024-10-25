@@ -6,7 +6,9 @@
 TESTS_DIR = ../../..
 
 INFER_OPTIONS = --debug-exceptions --fragment-retains-view-only
-INFERPRINT_OPTIONS = --issues-tests
+INFERPRINT_OPTIONS = \
+	--issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
+	--issues-tests
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

@@ -1,3 +1,3 @@
-codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []
-codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []
-codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, []
+codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, [], +""=>"\n mCustomView = null;"@41:1
+codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, [], +""=>"\n mViewSubclass = null;"@41:1
+codetoanalyze/java/fragment-retains-view/FragmentRetainsViewExample.java, codetoanalyze.java.checkers.FragmentRetainsViewExample.onDestroyView():void, 0, CHECKERS_FRAGMENT_RETAINS_VIEW, no_bucket, WARNING, [], +""=>"\n mView = null;"@41:1

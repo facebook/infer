@@ -58,7 +58,7 @@ let report_warning proc_desc err_log class_name fld fld_typ =
       ; replacement=
           None
           (* Add one to the line because we expect a call to super to be the first line in the function. *)
-      ; additional= Some [{Jsonbug_t.line= loc.line + 1; column= 0; original= ""; replacement}] }
+      ; additional= Some [{Jsonbug_t.line= loc.line + 1; column= 1; original= ""; replacement}] }
   in
   Reporting.log_issue ~suggestion proc_desc err_log ~loc FragmentRetainsView ?autofix
     IssueType.checkers_fragment_retain_view description
