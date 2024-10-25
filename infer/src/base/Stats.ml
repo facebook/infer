@@ -165,6 +165,7 @@ type t =
   ; mutable summary_specializations: IntCounter.t
   ; mutable ondemand_procs_analyzed: IntCounter.t
   ; mutable ondemand_double_analysis_prevented: IntCounter.t
+  ; mutable ondemand_recursion_cycle_restart_limit_hit: IntCounter.t
   ; mutable proc_locker_lock_time: TimeCounter.t
   ; mutable proc_locker_unlock_time: TimeCounter.t
   ; mutable restart_scheduler_useful_time: TimeCounter.t
@@ -261,6 +262,7 @@ let pp fmt stats =
     ~summary_cache_misses:(pp_int_field fmt) ~summary_specializations:(pp_int_field fmt)
     ~ondemand_procs_analyzed:(pp_int_field fmt)
     ~ondemand_double_analysis_prevented:(pp_int_field fmt)
+    ~ondemand_recursion_cycle_restart_limit_hit:(pp_int_field fmt)
     ~proc_locker_lock_time:(pp_time_counter_field fmt)
     ~proc_locker_unlock_time:(pp_time_counter_field fmt) ~process_times:(pp_time_counter_field fmt)
     ~pulse_aliasing_contradictions:(pp_int_field fmt)
@@ -402,6 +404,10 @@ let incr_summary_specializations () = incr Fields.summary_specializations
 let incr_ondemand_procs_analyzed () = incr Fields.ondemand_procs_analyzed
 
 let incr_ondemand_double_analysis_prevented () = incr Fields.ondemand_double_analysis_prevented
+
+let incr_ondemand_recursion_cycle_restart_limit_hit () =
+  incr Fields.ondemand_recursion_cycle_restart_limit_hit
+
 
 let add_to_proc_locker_lock_time execution_duration =
   add_exe_duration Fields.proc_locker_lock_time execution_duration

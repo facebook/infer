@@ -437,12 +437,16 @@ let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req 
       let target = {SpecializedProcname.proc_name= callee_pname; specialization} in
       let cycle_start, cycle_length, first_active = ActiveProcedures.get_cycle_start target in
       if
-        !number_of_recursion_restarts > Config.ondemand_recursion_restart_limit
+        !number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
         || SpecializedProcname.equal cycle_start target
       then (
         register_callee ~cycle_detected:true ?caller_summary callee_pname ;
         if Config.trace_ondemand then
           L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
+        if
+          !number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
+          && not (SpecializedProcname.equal cycle_start target)
+        then Stats.incr_ondemand_recursion_cycle_restart_limit_hit () ;
         Error MutualRecursionCycle )
       else (
         if Config.trace_ondemand then
