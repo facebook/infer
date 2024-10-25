@@ -105,6 +105,23 @@ let is_copy_cted_into_var from copied_into =
       false
 
 
+let is_in_loop_ref = ref (lazy (assert false))
+
+let () =
+  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv is_in_loop_ref ~init:(fun pdesc _ ->
+      lazy
+        (let nodes_in_loop = Procdesc.Loop.compute_loop_nodes pdesc in
+         fun node -> Procdesc.NodeSet.mem node nodes_in_loop ) )
+
+
+let is_unnecessary_copy_intermediate_in_loop node copied_into =
+  match (copied_into : Attribute.CopiedInto.t) with
+  | IntoIntermediate _ ->
+      Lazy.force !is_in_loop_ref node
+  | IntoVar _ | IntoField _ ->
+      false
+
+
 let report_unnecessary_copies ({InterproceduralAnalysis.proc_desc} as analysis_data) non_disj_astate
     =
   let pname = Procdesc.get_proc_name proc_desc in
@@ -113,7 +130,8 @@ let report_unnecessary_copies ({InterproceduralAnalysis.proc_desc} as analysis_d
       ~ref_formals:(Procdesc.get_passed_by_ref_formals proc_desc)
       ~ptr_formals:(Procdesc.get_pointer_formals proc_desc)
       non_disj_astate
-    |> List.iter ~f:(fun (copied_into, source_typ, source_opt, location, copied_location, from) ->
+    |> List.iter
+         ~f:(fun (copied_into, source_typ, source_opt, node, location, copied_location, from) ->
            let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
            let is_suppressed = PulseNonDisjunctiveOperations.has_copy_in copy_name in
            let location_instantiated = get_loc_instantiated pname in
@@ -128,10 +146,11 @@ let report_unnecessary_copies ({InterproceduralAnalysis.proc_desc} as analysis_d
                ; from }
            in
            if
-             is_copy_cted_into_var from copied_into
+             ( is_copy_cted_into_var from copied_into
              || Option.value_map ~default:true
                   ~f:(fun typ -> Typ.is_const_reference_on_source typ |> not)
-                  source_typ
+                  source_typ )
+             && not (is_unnecessary_copy_intermediate_in_loop node copied_into)
            then PulseReport.report analysis_data ~is_suppressed ~latent:false diagnostic )
 
 
@@ -1395,7 +1414,7 @@ module PulseTransferFunctions = struct
 
   let exec_instr_aux limit ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
-      ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) _cfg_node
+      ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _
@@ -1562,8 +1581,8 @@ module PulseTransferFunctions = struct
           let astate_n, astates =
             let pname = Procdesc.get_proc_name proc_desc in
             let integer_type_widths = Exe_env.get_integer_type_widths exe_env pname in
-            PulseNonDisjunctiveOperations.call integer_type_widths tenv proc_desc path loc ~call_exp
-              ~actuals ~astates_before astates astate_n
+            PulseNonDisjunctiveOperations.call integer_type_widths tenv proc_desc cfg_node path loc
+              ~call_exp ~actuals ~astates_before astates astate_n
           in
           let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
           let astate_n =

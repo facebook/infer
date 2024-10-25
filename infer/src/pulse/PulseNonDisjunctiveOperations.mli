@@ -24,6 +24,7 @@ val call :
      IntegerWidths.t
   -> Tenv.t
   -> Procdesc.t
+  -> Procdesc.Node.t
   -> PathContext.t
   -> Location.t
   -> call_exp:Exp.t

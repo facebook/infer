@@ -51,6 +51,7 @@ type copy_spec_t =
   | Copied of
       { source_typ: Typ.t option
       ; source_opt: DecompilerExpr.source_expr option
+      ; node: Procdesc.Node.t
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
@@ -59,6 +60,7 @@ type copy_spec_t =
   | Modified of
       { source_typ: Typ.t option
       ; source_opt: DecompilerExpr.source_expr option
+      ; node: Procdesc.Node.t
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: Attribute.CopyOrigin.t
@@ -331,6 +333,7 @@ module IntraDomElt = struct
             { source_typ
             ; source_opt
             ; from
+            ; node
             ; copied_location
             ; location
             ; heap= copy_heap
@@ -338,7 +341,8 @@ module IntraDomElt = struct
         when is_modified copy_heap copied_timestamp ->
           Logging.d_printfln_escaped "Copy/source modified!" ;
           let modified : copy_spec_t =
-            Modified {source_typ; source_opt; location; copied_location; from; copied_timestamp}
+            Modified
+              {source_typ; source_opt; node; location; copied_location; from; copied_timestamp}
           in
           CopyMap.add copy_var modified copy_map
       | _ ->
@@ -414,14 +418,16 @@ module IntraDomElt = struct
             acc
         | ( (IntoField _ | IntoIntermediate _)
           , ( Copied
-                { location
+                { node
+                ; location
                 ; copied_location
                 ; source_typ
                 ; source_opt= Some (PVar pvar, _) as source_opt
                 ; from
                 ; timestamp= copied_timestamp }
             | Modified
-                { location
+                { node
+                ; location
                 ; copied_location
                 ; source_typ
                 ; source_opt= Some (PVar pvar, _) as source_opt
@@ -438,10 +444,10 @@ module IntraDomElt = struct
                 astate_n
             then
               (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
-              (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
+              (copied_into, source_typ, source_opt, node, location, copied_location, from) :: acc
             else acc
-        | _, Copied {location; copied_location; source_typ; source_opt; from} ->
-            (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
+        | _, Copied {node; location; copied_location; source_typ; source_opt; from} ->
+            (copied_into, source_typ, source_opt, node, location, copied_location, from) :: acc
         | _, Modified _ ->
             acc )
       copy_map []

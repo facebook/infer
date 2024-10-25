@@ -155,6 +155,18 @@ class FullDisjsInLoop {
       arr = x;
     }
   }
+
+  void get_arr(Arr arr) {}
+
+  void full_disjs_in_loop_ok3(int k) {
+    Arr x;
+    get_full_disjs();
+    for (int i = 0; i < k; i++) {
+      // Pulse suppresses the issue when `x` is copied to intermediate in a
+      // loop.
+      get_arr(x);
+    }
+  }
 };
 
 } // namespace max_disjuncts
