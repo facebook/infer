@@ -226,7 +226,8 @@ module Mem = struct
                 { Jsonbug_t.original= None
                 ; replacement= None
                 ; additional=
-                    Some [{Jsonbug_t.line= strong_self_line; column= 1; original= ""; replacement}]
+                    Some
+                      [{Jsonbug_t.line= strong_self_line + 1; column= 1; original= ""; replacement}]
                 }
           | _ ->
               None
