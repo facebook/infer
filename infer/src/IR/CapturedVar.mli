@@ -17,7 +17,8 @@ val is_captured_by_ref : capture_mode -> bool
 type captured_info = {loc: Location.t; is_formal: Procname.t option}
 [@@deriving compare, equal, sexp, hash, normalize]
 
-type context_info = {is_checked_for_null: bool} [@@deriving compare, equal, sexp, hash, normalize]
+type context_info = {is_checked_for_null: bool; is_internal_pointer_of: Typ.t option}
+[@@deriving compare, equal, sexp, hash, normalize]
 
 (** captured_from and context_info only set for captured variables in Objective-C blocks *)
 type t =

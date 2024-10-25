@@ -23,14 +23,24 @@ std::string global_name = "global_name";
 
 - (void)local_string_captured_in_escaping_block_bad {
   std::string fullName;
+  const char* c = fullName.c_str();
   dispatch_async(dispatch_get_main_queue(), ^{
-    const char* c = fullName.c_str();
+    const char* c1 = c;
+  });
+}
+
+- (void)local_string_captured_in_no_escaping_block_good {
+  std::string fullName;
+  const char* c = fullName.c_str();
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    const char* c1 = c;
   });
 }
 
 - (void)formal_string_captured_in_escaping_block_good:(std::string)fullName {
+  const char* c = fullName.c_str();
   dispatch_async(dispatch_get_main_queue(), ^{
-    const char* c = fullName.c_str();
+    const char* c1 = c;
   });
 }
 
@@ -42,8 +52,9 @@ std::string global_name = "global_name";
 }
 
 - (void)global_string_captured_in_escaping_block_good {
+  const char* c = global_name.c_str();
   dispatch_async(dispatch_get_main_queue(), ^{
-    const char* c = global_name.c_str();
+    const char* c1 = c;
   });
 }
 @end

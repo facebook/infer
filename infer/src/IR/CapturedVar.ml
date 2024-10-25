@@ -20,7 +20,8 @@ let is_captured_by_ref captured_mode =
 type captured_info = {loc: Location.t; is_formal: Procname.t option}
 [@@deriving compare, equal, sexp, hash, normalize]
 
-type context_info = {is_checked_for_null: bool} [@@deriving compare, equal, sexp, hash, normalize]
+type context_info = {is_checked_for_null: bool; is_internal_pointer_of: Typ.t option}
+[@@deriving compare, equal, sexp, hash, normalize]
 
 type t =
   { pvar: Pvar.t
@@ -34,8 +35,10 @@ let pp_captured_info fmt {loc; is_formal} =
   F.fprintf fmt "(%a, %a)" (Pp.option Procname.pp) is_formal Location.pp loc
 
 
-let pp_context_info fmt {is_checked_for_null} =
-  F.fprintf fmt "is_checked_for_null=%b" is_checked_for_null
+let pp_context_info fmt {is_checked_for_null; is_internal_pointer_of} =
+  F.fprintf fmt "is_checked_for_null=%b, is_internal_pointer=%a" is_checked_for_null
+    (Pp.option (Typ.pp Pp.text))
+    is_internal_pointer_of
 
 
 let pp fmt {pvar; typ; capture_mode; captured_from; context_info} =

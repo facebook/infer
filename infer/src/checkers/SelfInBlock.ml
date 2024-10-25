@@ -21,7 +21,7 @@ module DomainData = struct
     | UNCHECKED_STRONG_SELF
     | WEAK_SELF
     | CXX_REF of Location.t
-    | LOCAL_CXX_STRING of Location.t
+    | INTERNAL_POINTER of Typ.t * Location.t
   [@@deriving compare]
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
@@ -41,8 +41,8 @@ module DomainData = struct
           "WEAK_SELF"
       | CXX_REF _ ->
           "CXX_REF"
-      | LOCAL_CXX_STRING _ ->
-          "LOCAL_CXX_STRING"
+      | INTERNAL_POINTER _ ->
+          "INTERNAL POINTER"
     in
     F.fprintf fmt "%s" s
 
@@ -307,41 +307,30 @@ module Mem = struct
     Typ.is_reference typ
 
 
-  let std_string_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
-
-  let is_std_string typ capture_mode =
-    let typ = get_captured_var_type typ capture_mode in
-    match typ.Typ.desc with
-    | Tstruct name ->
-        let qual_name = Typ.Name.qual_name name in
-        QualifiedCppName.Match.match_qualifiers std_string_matcher qual_name
-    | _ ->
-        false
-
-
-  let is_local pvar (captured_from : CapturedVar.captured_info option) =
-    (not (Pvar.is_global pvar))
-    && not (match captured_from with Some {is_formal} -> Option.is_some is_formal | None -> false)
-
-
-  let get_captured_of_type_loc is_type ?is_local attributes pvar =
+  let get_captured_of_type_loc is_type attributes pvar =
     List.find_map attributes.ProcAttributes.captured
       ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode; captured_from} ->
         match (captured_from : CapturedVar.captured_info option) with
-        | Some {loc} when pvar_same_name captured pvar && is_type typ capture_mode -> (
-          match is_local with
-          | Some is_local ->
-              if is_local pvar captured_from then Some loc else None
-          | None ->
-              Some loc )
+        | Some {loc} when pvar_same_name captured pvar && is_type typ capture_mode ->
+            Some loc
         | _ ->
             None )
 
 
   let get_captured_ref_loc attributes pvar = get_captured_of_type_loc is_ref attributes pvar
 
-  let get_captured_local_cpp_std_string_loc attributes pvar =
-    get_captured_of_type_loc is_std_string ~is_local attributes pvar
+  let get_captured_internal_pointer_loc attributes pvar =
+    List.find_map attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; captured_from; context_info} ->
+        match ((captured_from : CapturedVar.captured_info option), context_info) with
+        | Some {loc}, Some context_info when pvar_same_name captured pvar -> (
+          match context_info.CapturedVar.is_internal_pointer_of with
+          | Some typ ->
+              Some (typ, loc)
+          | None ->
+              None )
+        | _ ->
+            None )
 
 
   let load attributes id pvar loc typ astate =
@@ -359,10 +348,14 @@ module Mem = struct
               {pvar; typ; loc; kind= CXX_REF captured_definition_loc; is_implicit= false}
               astate.vars
         | None -> (
-          match get_captured_local_cpp_std_string_loc attributes pvar with
-          | Some captured_definition_loc ->
+          match get_captured_internal_pointer_loc attributes pvar with
+          | Some (typ, captured_definition_loc) ->
               Vars.add id
-                {pvar; typ; loc; kind= LOCAL_CXX_STRING captured_definition_loc; is_implicit= false}
+                { pvar
+                ; typ
+                ; loc
+                ; kind= INTERNAL_POINTER (typ, captured_definition_loc)
+                ; is_implicit= false }
                 astate.vars
           | _ -> (
             try
@@ -564,7 +557,7 @@ let make_trace_captured domain var =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | (CAPTURED_STRONG_SELF | CXX_REF _ | SELF | LOCAL_CXX_STRING _) when Pvar.equal pvar var ->
+        | (CAPTURED_STRONG_SELF | CXX_REF _ | SELF | INTERNAL_POINTER _) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -732,15 +725,26 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
   else ()
 
 
-let report_cxx_string_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
-    captured_definition_loc =
+let std_string_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
+
+let is_std_string typ =
+  match typ.Typ.desc with
+  | Tstruct name ->
+      let qual_name = Typ.Name.qual_name name in
+      QualifiedCppName.Match.match_qualifiers std_string_matcher qual_name
+  | _ ->
+      false
+
+
+let report_internal_pointer_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
+    typ_string captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
   if not (should_ignore_cxx_captured attributes) then
     let message =
       F.asprintf
-        "The local variable `%a` is of type std::string and it's captured in the block. This can \
-         lead to crashes if the class is freed before the block's execution."
-        (Pvar.pp Pp.text) cxx_string.pvar
+        "The local variable `%a` is a pointer internal to a `%s` object and it's captured in the \
+         block. This can lead to crashes if the object is freed before the block's execution."
+        (Pvar.pp Pp.text) cxx_string.pvar typ_string
     in
     let init_trace_elem = init_trace_captured_var cxx_string captured_definition_loc in
     let ltr = init_trace_elem :: make_trace_captured domain cxx_string.pvar in
@@ -759,8 +763,8 @@ let report_issues proc_desc err_log domain =
         report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
           captured_definition_loc ;
         result
-    | DomainData.LOCAL_CXX_STRING captured_definition_loc ->
-        report_cxx_string_captured_in_block proc_desc err_log domain domain_data
+    | DomainData.INTERNAL_POINTER (typ, captured_definition_loc) when is_std_string typ ->
+        report_internal_pointer_captured_in_block proc_desc err_log domain domain_data "std::string"
           captured_definition_loc ;
         result
     | DomainData.WEAK_SELF ->
