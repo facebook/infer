@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "f#B#[instance].7d89f0db14025fe6_4" -> "f#B#[instance].7d89f0db14025fe6_2" ;
-"f#B#[instance].7d89f0db14025fe6_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_block_Blocks_as_parameters.m:24,([by value]n$2 &self:B* const )):_fn_(*)) [line 23, column 3]\n " shape="box"]
+"f#B#[instance].7d89f0db14025fe6_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_block_Blocks_as_parameters.m:24,([by value]n$2 &self:B* const )):(_fn_ [] -> void)(*)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "f#B#[instance].7d89f0db14025fe6_5" -> "f#B#[instance].7d89f0db14025fe6_3" ;

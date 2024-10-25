@@ -9,7 +9,7 @@ module IRAttributes = Attributes
 module F = Format
 
 module DomainData = struct
-  type t = {checked: bool} [@@deriving compare]
+  type t = {checked: bool; typ: Typ.t} [@@deriving compare]
 
   let pp fmt {checked} = F.fprintf fmt "checked=%b" checked
 end
@@ -64,11 +64,17 @@ module Mem = struct
 
   let find_block_param id (astate : t) = Vars.find_opt id astate.vars
 
+  let set_checked name ~checked blockParams =
+    BlockParams.update name
+      (fun data -> Option.bind ~f:(fun data -> Some {data with DomainData.checked}) data)
+      blockParams
+
+
   let exec_null_check_id id loc ({vars; blockParams; traceInfo} as astate : t) =
     match find_block_param id astate with
     | Some name ->
         let traceInfo = {TraceData.arg= name; loc; usage= CheckNil} :: traceInfo in
-        let blockParams = BlockParams.add name {checked= true} blockParams in
+        let blockParams = set_checked name ~checked:true blockParams in
         {vars; blockParams; traceInfo}
     | None ->
         astate
@@ -80,10 +86,6 @@ module Mem = struct
       if BlockParams.mem name astate.blockParams then Vars.add id name astate.vars else astate.vars
     in
     {astate with vars}
-
-
-  let set_checked name ~checked blockParams =
-    BlockParams.update name (Option.map ~f:(fun _ -> {DomainData.checked})) blockParams
 
 
   let store pvar e loc ({vars; blockParams; traceInfo} as astate) =
@@ -123,12 +125,20 @@ module Mem = struct
       ~init:[] traceInfo
 
 
+  let get_block_return_type typ =
+    match typ.Typ.desc with
+    | Typ.Tptr ({desc= Tfun (Some {return_type})}, _) ->
+        Some return_type
+    | _ ->
+        None
+
+
   let report_unchecked_block_param_issues proc_desc err_log var args loc
       ({traceInfo; blockParams} as astate : t) =
     match find_block_param var astate with
     | Some name -> (
       match BlockParams.find_opt name blockParams with
-      | Some {checked} when not checked ->
+      | Some {checked; typ} when not checked ->
           let traceInfo = call_trace name loc traceInfo in
           let ltr = make_trace name traceInfo in
           let message =
@@ -136,10 +146,15 @@ module Mem = struct
               "The block `%a` is executed without a check for nil at %a. This could cause a crash."
               Mangled.pp name Location.pp loc
           in
+          let is_void_return_type =
+            Option.value_map ~default:false
+              ~f:(fun return_type -> Typ.is_void return_type)
+              (get_block_return_type typ)
+          in
           let autofix =
             match Config.objc_block_execution_macro with
             | Some objc_block_execution_macro
-              when Option.is_none (Location.get_macro_file_line_opt loc) ->
+              when Option.is_none (Location.get_macro_file_line_opt loc) && is_void_return_type ->
                 let original = Some (F.asprintf "%s(" (Mangled.to_string name)) in
                 let comma = if List.is_empty args then "" else ", " in
                 let replacement =
@@ -253,7 +268,7 @@ let init_block_params
       && not (Typ.is_block_nonnull_pointer typ)
     then
       let procname = attributes.ProcAttributes.proc_name in
-      let blockParams = BlockParams.add formal {checked= false} blockParams in
+      let blockParams = BlockParams.add formal {checked= false; typ} blockParams in
       let usage = TraceData.Parameter procname in
       let traceInfo =
         {TraceData.arg= formal; loc= attributes.ProcAttributes.loc; usage} :: traceInfo

@@ -197,6 +197,14 @@ and type_desc_of_c_type ?attr_info ?from_block translate_decl tenv c_type : Typ.
            ; return_type=
                qual_type_to_sil_type ?from_block translate_decl tenv
                  function_type_info.Clang_ast_t.fti_return_type } )
+  | FunctionNoProtoType (_type_info, function_type_info) when Option.value ~default:false from_block
+    ->
+      Typ.Tfun
+        (Some
+           { Typ.params_type= []
+           ; return_type=
+               qual_type_to_sil_type ?from_block translate_decl tenv
+                 function_type_info.Clang_ast_t.fti_return_type } )
   | FunctionProtoType _ | FunctionNoProtoType _ ->
       Typ.Tfun None
   | ParenType (_, qual_type) ->

@@ -202,3 +202,7 @@ void LoadAndAnnotateOk(NSString* composerSessionID) {
     annotate("composer_session_id", composerSessionID);
   });
 }
+
+typedef int (^_Nonnull AnotherBlock)();
+
+int blockNotCheckedBadNoAutofix(AnotherBlock block) { return block(); }

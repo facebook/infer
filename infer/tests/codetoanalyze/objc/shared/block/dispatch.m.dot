@@ -126,7 +126,7 @@ digraph cfg {
 	
 
 	 "block_attribute#DispatchA#[class].73d115a412667b49_6" -> "block_attribute#DispatchA#[class].73d115a412667b49_5" ;
-"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_1" [label="1: Start DispatchA.dispatch_a_block_variable\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
+"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_1" [label="1: Start DispatchA.dispatch_a_block_variable\nFormals: \nLocals:  initialization_block__:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_1" -> "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_6" ;
@@ -141,15 +141,15 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_4" -> "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_2" ;
-"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_5" [label="5:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:_fn_(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,n$18:_fn_(_Nonnull *)) [line 58, column 3]\n " shape="box"]
+"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_5" [label="5:  Call _fun__dispatch_once \n   n$18=*&initialization_block__:(_fn_ [] -> void)(*) [line 58, column 32]\n  n$19=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable.once_token__:long*,n$18:_fn_(_Nonnull *)) [line 58, column 3]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_5" -> "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_3" ;
-"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:_fn_(*)); [line 54, column 3]\n  *&initialization_block__:_fn_(*)=(_fun_objc_block_dispatch.m:54) [line 54, column 3]\n " shape="box"]
+"dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:(_fn_ [] -> void)(*)); [line 54, column 3]\n  *&initialization_block__:(_fn_ [] -> void)(*)=(_fun_objc_block_dispatch.m:54) [line 54, column 3]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_6" -> "dispatch_a_block_variable#Dispatc.0bd7f33b7fd4c748_5" ;
-"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_1" [label="1: Start DispatchA.dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:_fn_(*) \n  " color=yellow style=filled]
+"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_1" [label="1: Start DispatchA.dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_1" -> "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_5" ;
@@ -160,11 +160,11 @@ digraph cfg {
 	
 
 	 "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_3" -> "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_6" ;
-"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_4" [label="4:  Call _fun__dispatch_once \n   n$23=*&initialization_block__:_fn_(*) [line 69, column 34]\n  n$24=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.once_token__:long*,n$23:_fn_(_Nonnull *)) [line 69, column 5]\n " shape="box"]
+"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_4" [label="4:  Call _fun__dispatch_once \n   n$23=*&initialization_block__:(_fn_ [] -> void)(*) [line 69, column 34]\n  n$24=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA.dispatch_a_block_variable_from_macro.once_token__:long*,n$23:_fn_(_Nonnull *)) [line 69, column 5]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_4" -> "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_3" ;
-"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:_fn_(*)); [line 65, column 5]\n  *&initialization_block__:_fn_(*)=(_fun_objc_block_dispatch.m:65) [line 65, column 5]\n " shape="box"]
+"dispatch_a_block_variable_from_ma.f07f006a3c1fec35_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(initialization_block__:(_fn_ [] -> void)(*)); [line 65, column 5]\n  *&initialization_block__:(_fn_ [] -> void)(*)=(_fun_objc_block_dispatch.m:65) [line 65, column 5]\n " shape="box"]
 	
 
 	 "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_5" -> "dispatch_a_block_variable_from_ma.f07f006a3c1fec35_4" ;
@@ -214,7 +214,7 @@ digraph cfg {
 	
 
 	 "sharedInstance#DispatchA#[class].0794e883a288d834_5" -> "sharedInstance#DispatchA#[class].0794e883a288d834_3" ;
-"trans#DispatchA#[class].c52c322010b9e8d8_1" [label="1: Start DispatchA.trans\nFormals: \nLocals:  dummy_block:_fn_(*) \n  " color=yellow style=filled]
+"trans#DispatchA#[class].c52c322010b9e8d8_1" [label="1: Start DispatchA.trans\nFormals: \nLocals:  dummy_block:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_1" -> "trans#DispatchA#[class].c52c322010b9e8d8_6" ;
@@ -229,11 +229,11 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_4" -> "trans#DispatchA#[class].c52c322010b9e8d8_2" ;
-"trans#DispatchA#[class].c52c322010b9e8d8_5" [label="5:  Call n$13 \n   n$13=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$14=_fun___call_objc_block(n$13:_fn_) objc_block [line 48, column 3]\n " shape="box"]
+"trans#DispatchA#[class].c52c322010b9e8d8_5" [label="5:  Call n$13 \n   n$13=*&dummy_block:(_fn_ [] -> void)(*) [line 48, column 3]\n  n$14=_fun___call_objc_block(n$13:_fn_) objc_block [line 48, column 3]\n " shape="box"]
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_5" -> "trans#DispatchA#[class].c52c322010b9e8d8_3" ;
-"trans#DispatchA#[class].c52c322010b9e8d8_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(dummy_block:_fn_(*)); [line 45, column 3]\n  *&dummy_block:_fn_(*)=(_fun_objc_block_dispatch.m:45) [line 45, column 3]\n " shape="box"]
+"trans#DispatchA#[class].c52c322010b9e8d8_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(dummy_block:(_fn_ [] -> void)(*)); [line 45, column 3]\n  *&dummy_block:(_fn_ [] -> void)(*)=(_fun_objc_block_dispatch.m:45) [line 45, column 3]\n " shape="box"]
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_6" -> "trans#DispatchA#[class].c52c322010b9e8d8_5" ;

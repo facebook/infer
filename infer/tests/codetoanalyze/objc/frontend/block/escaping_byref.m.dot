@@ -55,58 +55,58 @@ digraph cfg {
 	
 
 	 "objc_block_escaping_byref.m:45_de.7ea7024e2e029d54_3" -> "objc_block_escaping_byref.m:45_de.7ea7024e2e029d54_2" ;
-"capture_global_byref#EscapingByre.5627d2435a0b799f_1" [label="1: Start EscapingByref.capture_global_byref\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+"capture_global_byref#EscapingByre.5627d2435a0b799f_1" [label="1: Start EscapingByref.capture_global_byref\nFormals: \nLocals:  closure:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "capture_global_byref#EscapingByre.5627d2435a0b799f_1" -> "capture_global_byref#EscapingByre.5627d2435a0b799f_3" ;
 "capture_global_byref#EscapingByre.5627d2435a0b799f_2" [label="2: Exit EscapingByref.capture_global_byref \n  " color=yellow style=filled]
 	
 
-"capture_global_byref#EscapingByre.5627d2435a0b799f_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 18, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_escaping_byref.m:18) [line 18, column 3]\n " shape="box"]
+"capture_global_byref#EscapingByre.5627d2435a0b799f_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:(_fn_ [] -> void)(*)); [line 18, column 3]\n  *&closure:(_fn_ [] -> void)(*)=(_fun_objc_block_escaping_byref.m:18) [line 18, column 3]\n " shape="box"]
 	
 
 	 "capture_global_byref#EscapingByre.5627d2435a0b799f_3" -> "capture_global_byref#EscapingByre.5627d2435a0b799f_2" ;
-"capture_local_block_byref#Escapin.b31698393681600a_1" [label="1: Start EscapingByref.capture_local_block_byref\nFormals: \nLocals:  closure:_fn_(*) local:int(__block) \n  " color=yellow style=filled]
+"capture_local_block_byref#Escapin.b31698393681600a_1" [label="1: Start EscapingByref.capture_local_block_byref\nFormals: \nLocals:  closure:(_fn_ [] -> void)(*) local:int(__block) \n  " color=yellow style=filled]
 	
 
 	 "capture_local_block_byref#Escapin.b31698393681600a_1" -> "capture_local_block_byref#Escapin.b31698393681600a_3" ;
 "capture_local_block_byref#Escapin.b31698393681600a_2" [label="2: Exit EscapingByref.capture_local_block_byref \n  " color=yellow style=filled]
 	
 
-"capture_local_block_byref#Escapin.b31698393681600a_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 32, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_escaping_byref.m:32,&local) [line 32, column 3]\n " shape="box"]
+"capture_local_block_byref#Escapin.b31698393681600a_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:(_fn_ [] -> void)(*)); [line 32, column 3]\n  *&closure:(_fn_ [] -> void)(*)=(_fun_objc_block_escaping_byref.m:32,&local) [line 32, column 3]\n " shape="box"]
 	
 
 	 "capture_local_block_byref#Escapin.b31698393681600a_3" -> "capture_local_block_byref#Escapin.b31698393681600a_2" ;
-"capture_local_byvalue#EscapingByr.8d045efe006beeea_1" [label="1: Start EscapingByref.capture_local_byvalue\nFormals: \nLocals:  closure:_fn_(*) local:int \n  " color=yellow style=filled]
+"capture_local_byvalue#EscapingByr.8d045efe006beeea_1" [label="1: Start EscapingByref.capture_local_byvalue\nFormals: \nLocals:  closure:(_fn_ [] -> void)(*) local:int \n  " color=yellow style=filled]
 	
 
 	 "capture_local_byvalue#EscapingByr.8d045efe006beeea_1" -> "capture_local_byvalue#EscapingByr.8d045efe006beeea_3" ;
 "capture_local_byvalue#EscapingByr.8d045efe006beeea_2" [label="2: Exit EscapingByref.capture_local_byvalue \n  " color=yellow style=filled]
 	
 
-"capture_local_byvalue#EscapingByr.8d045efe006beeea_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 25, column 3]\n  n$0=*&local:int [line 25, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_escaping_byref.m:25,([by value]n$0 &local:int)) [line 25, column 3]\n " shape="box"]
+"capture_local_byvalue#EscapingByr.8d045efe006beeea_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:(_fn_ [] -> void)(*)); [line 25, column 3]\n  n$0=*&local:int [line 25, column 23]\n  *&closure:(_fn_ [] -> void)(*)=(_fun_objc_block_escaping_byref.m:25,([by value]n$0 &local:int)) [line 25, column 3]\n " shape="box"]
 	
 
 	 "capture_local_byvalue#EscapingByr.8d045efe006beeea_3" -> "capture_local_byvalue#EscapingByr.8d045efe006beeea_2" ;
-"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" [label="1: Start EscapingByref.capture_local_static_byvalue\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" [label="1: Start EscapingByref.capture_local_static_byvalue\nFormals: \nLocals:  closure:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" ;
 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" [label="2: Exit EscapingByref.capture_local_static_byvalue \n  " color=yellow style=filled]
 	
 
-"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 39, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_escaping_byref.m:39) [line 39, column 3]\n " shape="box"]
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:(_fn_ [] -> void)(*)); [line 39, column 3]\n  *&closure:(_fn_ [] -> void)(*)=(_fun_objc_block_escaping_byref.m:39) [line 39, column 3]\n " shape="box"]
 	
 
 	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" ;
-"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" [label="1: Start EscapingByref.capture_param_byvalue:\nFormals:  param:int\nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" [label="1: Start EscapingByref.capture_param_byvalue:\nFormals:  param:int\nLocals:  closure:(_fn_ [] -> void)(*) \n  " color=yellow style=filled]
 	
 
 	 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" -> "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" ;
 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_2" [label="2: Exit EscapingByref.capture_param_byvalue: \n  " color=yellow style=filled]
 	
 
-"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 45, column 3]\n  n$4=*&param:int [line 45, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_escaping_byref.m:45,([by value]n$4 &param:int)) [line 45, column 3]\n " shape="box"]
+"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:(_fn_ [] -> void)(*)); [line 45, column 3]\n  n$4=*&param:int [line 45, column 23]\n  *&closure:(_fn_ [] -> void)(*)=(_fun_objc_block_escaping_byref.m:45,([by value]n$4 &param:int)) [line 45, column 3]\n " shape="box"]
 	
 
 	 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" -> "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_2" ;
