@@ -15,9 +15,6 @@ module LoopNodes : AbstractDomain.NodeSetS
 
 module VarSet : module type of AbstractDomain.FiniteSet (Var)
 
-(** Map loop header node -> all nodes in the loop *)
-module LoopHeadToLoopNodes = Procdesc.NodeMap
-
 (** Map loop head -> invariant vars in loop *)
 module LoopHeadToInvVars = Procdesc.NodeMap
 

@@ -305,13 +305,13 @@ let compute_bound_map tenv proc_desc node_cfg inferbo_invariant_map analyze_depe
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
   (* collect all prune nodes that occur in loop guards, needed for ControlDepAnalyzer *)
-  let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes node_cfg in
+  let loop_head_to_source_nodes = Procdesc.Loop.get_loop_head_to_source_nodes node_cfg in
   let control_maps = Loop_control.get_loop_control_maps loop_head_to_source_nodes in
   (* computes the control dependencies: node -> var set *)
   let control_dep_invariant_map = Control.compute_invariant_map proc_desc control_maps in
   (* compute loop invariant map for control var analysis *)
   let loop_head_to_loop_nodes =
-    Loop_control.get_loop_head_to_loop_nodes loop_head_to_source_nodes
+    Procdesc.Loop.get_loop_head_to_loop_nodes loop_head_to_source_nodes
   in
   let loop_inv_map =
     let get_callee_purity callee_pname =

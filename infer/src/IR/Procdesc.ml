@@ -1041,3 +1041,83 @@ let mark_if_unchanged ~old_pdesc ~new_pdesc =
     let cfg = SQLite.serialize (Some new_pdesc) in
     let callees = get_static_callees new_pdesc |> Procname.SQLiteList.serialize in
     DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis:true )
+
+
+module Loop = struct
+  type edge_type = {source: Node.t; target: Node.t}
+
+  (** Find back-edges by using Tarjan's DFS traversal instead of marking, we keep track of the pred
+      node we came from *)
+  let get_back_edges pdesc =
+    let rec aux visited back_edges wl =
+      match wl with
+      | [] ->
+          back_edges
+      | (n, pred, ancestors) :: wl' ->
+          if NodeSet.mem n visited then
+            if NodeSet.mem n ancestors then
+              let back_edges' =
+                match pred with
+                | Some n_parent ->
+                    {source= n_parent; target= n} :: back_edges
+                | None ->
+                    assert false
+              in
+              aux visited back_edges' wl'
+            else aux visited back_edges wl'
+          else
+            let ancestors = NodeSet.add n ancestors in
+            let works =
+              List.fold ~init:wl' ~f:(fun acc m -> (m, Some n, ancestors) :: acc) (Node.get_succs n)
+            in
+            aux (NodeSet.add n visited) back_edges works
+    in
+    let start_wl = [(get_start_node pdesc, None, NodeSet.empty)] in
+    aux NodeSet.empty [] start_wl
+
+
+  (** Starting from the start_nodes, find all the nodes upwards until the target is reached, i.e
+      picking up predecessors which have not been already added to the found_nodes *)
+  let get_all_nodes_upwards_until target start_nodes =
+    let rec aux found_nodes = function
+      | [] ->
+          found_nodes
+      | node :: wl' ->
+          if NodeSet.mem node found_nodes then aux found_nodes wl'
+          else
+            let preds = Node.get_preds node in
+            aux (NodeSet.add node found_nodes) (List.append preds wl')
+    in
+    aux (NodeSet.singleton target) start_nodes
+
+
+  (** Since there could be multiple back-edges per loop, collect all source nodes per loop head.
+      loop_head (target of back-edges) --> source nodes *)
+  let get_loop_head_to_source_nodes cfg =
+    get_back_edges cfg
+    |> List.fold ~init:NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
+           NodeMap.update target
+             (function Some source_list -> Some (source :: source_list) | None -> Some [source])
+             loop_head_to_source_list )
+
+
+  let get_loop_head_to_loop_nodes loop_head_to_source_nodes_map =
+    NodeMap.fold
+      (fun loop_head source_list acc ->
+        let loop_nodes = get_all_nodes_upwards_until loop_head source_list in
+        NodeMap.update loop_head
+          (function
+            | Some existing_loop_nodes ->
+                Some (NodeSet.union existing_loop_nodes loop_nodes)
+            | None ->
+                Some loop_nodes )
+          acc )
+      loop_head_to_source_nodes_map NodeMap.empty
+
+
+  let compute_loop_nodes cfg =
+    let loop_head_to_source_nodes = get_loop_head_to_source_nodes cfg in
+    let loop_head_to_loop_nodes = get_loop_head_to_loop_nodes loop_head_to_source_nodes in
+    let _, sets = List.unzip (NodeMap.bindings loop_head_to_loop_nodes) in
+    List.fold ~f:NodeSet.union ~init:NodeSet.empty sets
+end

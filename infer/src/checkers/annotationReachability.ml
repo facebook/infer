@@ -533,12 +533,7 @@ let parse_custom_specs () =
 let compute_loop_nodes proc_desc =
   if Config.annotation_reachability_check_loops then
     let cfg = ProcCfg.NormalOneInstrPerNode.from_pdesc proc_desc in
-    let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
-    let loop_head_to_loop_nodes =
-      Loop_control.get_loop_head_to_loop_nodes loop_head_to_source_nodes
-    in
-    let _, sets = List.unzip (Procdesc.NodeMap.bindings loop_head_to_loop_nodes) in
-    List.fold ~f:Control.GuardNodes.union ~init:Control.GuardNodes.empty sets
+    Procdesc.Loop.compute_loop_nodes cfg
   else Control.GuardNodes.empty
 
 

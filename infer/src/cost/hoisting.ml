@@ -57,7 +57,7 @@ let get_hoist_inv_map tenv ~get_callee_purity reaching_defs_invariant_map loop_h
   Procdesc.NodeMap.fold
     (fun loop_head source_nodes inv_map ->
       (* get all the nodes in the loop *)
-      let loop_nodes = Loop_control.get_all_nodes_upwards_until loop_head source_nodes in
+      let loop_nodes = Procdesc.Loop.get_all_nodes_upwards_until loop_head source_nodes in
       let inv_vars_in_loop =
         LoopInvariant.get_inv_vars_in_loop tenv reaching_defs_invariant_map loop_head loop_nodes
           ~is_pure_by_default:Config.pure_by_default ~get_callee_purity
@@ -120,7 +120,7 @@ let checker ({InterproceduralAnalysis.proc_desc; err_log; analyze_dependency; te
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
-  let loop_head_to_source_nodes = Loop_control.get_loop_head_to_source_nodes cfg in
+  let loop_head_to_source_nodes = Procdesc.Loop.get_loop_head_to_source_nodes cfg in
   let extract_cost_if_expensive =
     if Config.hoisting_report_only_expensive then
       CostInstantiate.get_cost_if_expensive analysis_data

@@ -404,3 +404,19 @@ val load_uid : ?capture_only:bool -> string -> t option
 
 val mark_if_unchanged : old_pdesc:t -> new_pdesc:t -> unit
 (** Record the [changed] attribute in-place on [new_pdesc] if it is unchanged wrt [old_pdsec] *)
+
+module Loop : sig
+  val get_all_nodes_upwards_until : Node.t -> Node.t list -> NodeSet.t
+  (** Starting from the start_nodes, find all the nodes upwards until the target is reached, i.e
+      picking up predecessors which have not been already added to the found_nodes *)
+
+  val get_loop_head_to_loop_nodes : Node.t list NodeMap.t -> NodeSet.t NodeMap.t
+  (** Get a map from loop head -> all the nodes included in the corresponding loop *)
+
+  val get_loop_head_to_source_nodes : t -> Node.t list NodeMap.t
+  (** Since there could be multiple back-edges per loop, collect all source nodes per loop head.
+      loop_head (target of back-edges) --> source nodes *)
+
+  val compute_loop_nodes : t -> NodeSet.t
+  (** Get a set of nodes that includes in loops *)
+end
