@@ -894,8 +894,7 @@ end
 
 let folly_co_yield_co_error : model =
   let open PulseModelsDSL.Syntax in
-  start_named_model "folly::coro::detail::TaskPromise::yield_value(folly::coro::co_error)"
-  @@ fun () -> throw
+  start_named_model "folly::coro::detail::*::yield_value(folly::coro::co_error)" @@ fun () -> throw
 
 
 let matchers : matcher list =
@@ -1084,7 +1083,9 @@ let map_matchers =
     |> List.map ~f:with_non_disj
   in
   let folly_coro =
-    [ -"folly" &:: "coro" &:: "detail" &:: "TaskPromise" &:: "yield_value" $ any_arg
+    [ -"folly" &:: "coro" &:: "detail"
+      &::+ (fun _ _ -> true)
+      &:: "yield_value" $ any_arg
       $+ any_arg_of_typ (-"folly" &:: "coro" &:: "co_error")
       $+ any_arg $--> folly_co_yield_co_error ]
   in
