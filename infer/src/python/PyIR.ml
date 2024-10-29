@@ -1038,6 +1038,20 @@ module State = struct
     (exps, st)
 
 
+  let rot_n st n =
+    let {loc; stack} = st in
+    if n <= 0 then L.die InternalError "rot_n need a positive argument"
+    else if List.length stack < n then
+      let msg = F.asprintf "rot_n with n = %d is impossible" n in
+      Error (L.InternalError, loc, Error.EmptyStack msg)
+    else
+      let top_n, rest = List.split_n stack n in
+      let top = List.hd_exn top_n in
+      let top_1_n = List.tl_exn top_n in
+      let stack = top_1_n @ [top] @ rest in
+      Ok {st with stack}
+
+
   (* TODO: use the [exn_handlers] info to mark statement that can possibly raise * something *)
   let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
 
@@ -1899,28 +1913,16 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "POP_BLOCK" ->
       Ok (st, None)
   | "ROT_TWO" ->
-      let* tos0, st = State.pop st in
-      let* tos1, st = State.pop st in
-      let st = State.push_symbol st tos0 in
-      let st = State.push_symbol st tos1 in
+      let* st = State.rot_n st 2 in
       Ok (st, None)
   | "ROT_THREE" ->
-      let* tos0, st = State.pop st in
-      let* tos1, st = State.pop st in
-      let* tos2, st = State.pop st in
-      let st = State.push_symbol st tos0 in
-      let st = State.push_symbol st tos2 in
-      let st = State.push_symbol st tos1 in
+      let* st = State.rot_n st 3 in
       Ok (st, None)
   | "ROT_FOUR" ->
-      let* tos0, st = State.pop st in
-      let* tos1, st = State.pop st in
-      let* tos2, st = State.pop st in
-      let* tos3, st = State.pop st in
-      let st = State.push_symbol st tos0 in
-      let st = State.push_symbol st tos3 in
-      let st = State.push_symbol st tos2 in
-      let st = State.push_symbol st tos1 in
+      let* st = State.rot_n st 4 in
+      Ok (st, None)
+  | "ROT_N" ->
+      let* st = State.rot_n st arg in
       Ok (st, None)
   | "SETUP_WITH" ->
       let* context_manager, st = State.pop_and_cast st in
@@ -2236,6 +2238,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "ROT_TWO"
   | "ROT_THREE"
   | "ROT_FOUR"
+  | "ROT_N"
   | "SETUP_WITH"
   | "SETUP_FINALLY"
   | "POP_FINALLY"

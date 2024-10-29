@@ -721,5 +721,66 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-      IR error: Unsupported opcode: ROT_N |}]
+  [%expect
+    {|
+      module dummy:
+
+        function toplevel():
+          b0:
+            n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
+            TOPLEVEL[main] <- n0
+            return None
+
+
+        function dummy.main(a, b, c):
+          b0:
+            n0 <- GLOBAL[o]
+            if $MatchSequence(n0) then jmp b1 else jmp b9(n0)
+
+          b1:
+            n1 <- $Compare.eq($GetLen(n0), 1, None)
+            if n1 then jmp b2 else jmp b9(n0)
+
+          b2:
+            n2 <- GLOBAL[ast]
+            n3 <- n2.Cons1
+            n4 <- $MatchClass(n0[0], n3, 2, $BuildTuple())
+            if $BoolOfMatchClass(n4) then jmp b3 else jmp b9($AttributesOfMatchClass(n4))
+
+          b3:
+            n5 <- $AttributesOfMatchClass(n4)[1]
+            n6 <- GLOBAL[ast]
+            n7 <- n6.Const2
+            n8 <- $MatchClass(n5, n7, 1, $BuildTuple())
+            if $BoolOfMatchClass(n8) then jmp b4 else jmp b8
+
+          b4:
+            n9 <- $AttributesOfMatchClass(n8)[0]
+            if $MatchSequence(n9) then jmp b5 else jmp b7
+
+          b5:
+            n10 <- $Compare.eq($GetLen(n9), 3, None)
+            if n10 then jmp b6 else jmp b7
+
+          b6:
+            n13 <- $AttributesOfMatchClass(n8)
+            n14 <- $AttributesOfMatchClass(n4)
+            LOCAL[a] <- n9[0]
+            LOCAL[b] <- n9[1]
+            LOCAL[c] <- n9[2]
+            n15 <- GLOBAL[action]
+            n16 <- LOCAL[a]
+            n17 <- LOCAL[b]
+            n18 <- LOCAL[c]
+            n19 <- $Call(n15, n16, n17, n18, None)
+            return None
+
+          b7:
+            jmp b8
+
+          b8:
+            n11 <- $AttributesOfMatchClass(n8)
+            jmp b9($AttributesOfMatchClass(n4))
+
+          b9(n12):
+            return None |}]
