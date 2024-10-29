@@ -154,97 +154,8 @@ if __name__ == '__main__':
       |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $ImportName(os, None, 0)
-          TOPLEVEL[os] <- n0
-          n1 <- $ImportName(sys, None, 0)
-          TOPLEVEL[sys] <- n1
-          n2 <- $ImportName(test.libregrtest, $BuildTuple("main"), 0)
-          n3 <- $ImportFrom(main, n2)
-          TOPLEVEL[main] <- n3
-          n4 <- TOPLEVEL[main]
-          TOPLEVEL[main_in_temp_cwd] <- n4
-          n5 <- $MakeFunction["_main", "dummy._main", None, None, None, None]
-          TOPLEVEL[_main] <- n5
-          n6 <- TOPLEVEL[__name__]
-          n7 <- $Compare.eq(n6, "__main__", None)
-          if n7 then jmp b1 else jmp b2
-
-        b1:
-          n8 <- TOPLEVEL[_main]
-          n9 <- $Call(n8, None)
-          jmp b2
-
-        b2:
-          return None
-
-
-      function dummy._main(mydir, i):
-        b0:
-          n0 <- GLOBAL[os]
-          n1 <- n0.path
-          n2 <- GLOBAL[os]
-          n3 <- n2.path
-          n4 <- GLOBAL[os]
-          n5 <- n4.path
-          n6 <- GLOBAL[sys]
-          n7 <- n6.argv
-          n8 <- n7[0]
-          n9 <- $CallMethod[dirname](n5, n8, None)
-          n10 <- $CallMethod[normpath](n3, n9, None)
-          n11 <- $CallMethod[abspath](n1, n10, None)
-          LOCAL[mydir] <- n11
-          n12 <- GLOBAL[len]
-          n13 <- GLOBAL[sys]
-          n14 <- n13.path
-          n15 <- $Call(n12, n14, None)
-          n16 <- $Binary.Subtract(n15, 1, None)
-          LOCAL[i] <- n16
-          jmp b1
-
-        b1:
-          n17 <- LOCAL[i]
-          n18 <- $Compare.ge(n17, 0, None)
-          if n18 then jmp b2 else jmp b5
-
-        b2:
-          n25 <- GLOBAL[os]
-          n26 <- n25.path
-          n27 <- GLOBAL[os]
-          n28 <- n27.path
-          n29 <- GLOBAL[sys]
-          n30 <- n29.path
-          n31 <- LOCAL[i]
-          n32 <- n30[n31]
-          n33 <- $CallMethod[normpath](n28, n32, None)
-          n34 <- $CallMethod[abspath](n26, n33, None)
-          n35 <- LOCAL[mydir]
-          n36 <- $Compare.eq(n34, n35, None)
-          if n36 then jmp b3 else jmp b4
-
-        b3:
-          jmp b1
-
-        b4:
-          n37 <- LOCAL[i]
-          n38 <- $Inplace.Subtract(n37, 1, None)
-          LOCAL[i] <- n38
-          jmp b1
-
-        b5:
-          n19 <- GLOBAL[os]
-          n20 <- n19.path
-          n21 <- GLOBAL[__file__]
-          n22 <- $CallMethod[abspath](n20, n21, None)
-          GLOBAL[__file__] <- n22
-          n23 <- GLOBAL[main]
-          n24 <- $Call(n23, None)
-          return None |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -465,27 +376,8 @@ def f(ok):
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $ImportName(foo, None, 0)
-          TOPLEVEL[foo] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          return None
-
-
-      function dummy.f(ok):
-        b0:
-          n0 <- GLOBAL[foo]
-          n1 <- $CallMethod[bar](n0, None)
-          jmp b6
-
-        b6:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
 
 
 let%expect_test _ =

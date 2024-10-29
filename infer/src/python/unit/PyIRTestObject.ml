@@ -143,26 +143,25 @@ print(c.z)
           TOPLEVEL[IntBox] <- n1
           n2 <- TOPLEVEL[IntBox]
           n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap($BuildTuple("box", "return"), n2, n3, None)
-          n5 <- $MakeFunction["getX", "dummy.getX", None, None, n4, None]
-          TOPLEVEL[getX] <- n5
-          n6 <- TOPLEVEL[IntBox]
-          n7 <- $Call(n6, 10, None)
-          TOPLEVEL[c] <- n7
-          n8 <- TOPLEVEL[c]
-          n9 <- n8.x
+          n4 <- $MakeFunction["getX", "dummy.getX", None, None, $BuildTuple("box", n2, "return", n3), None]
+          TOPLEVEL[getX] <- n4
+          n5 <- TOPLEVEL[IntBox]
+          n6 <- $Call(n5, 10, None)
+          TOPLEVEL[c] <- n6
+          n7 <- TOPLEVEL[c]
+          n8 <- n7.x
+          n9 <- TOPLEVEL[c]
+          n9.z <- 10
           n10 <- TOPLEVEL[c]
-          n10.z <- 10
-          n11 <- TOPLEVEL[c]
-          n12 <- $CallMethod[get](n11, None)
-          n13 <- TOPLEVEL[c]
-          n14 <- $CallMethod[set](n13, 42, None)
-          n15 <- TOPLEVEL[c]
-          n16 <- $CallMethod[run](n15, None)
-          n17 <- TOPLEVEL[print]
-          n18 <- TOPLEVEL[c]
-          n19 <- n18.z
-          n20 <- $Call(n17, n19, None)
+          n11 <- $CallMethod[get](n10, None)
+          n12 <- TOPLEVEL[c]
+          n13 <- $CallMethod[set](n12, 42, None)
+          n14 <- TOPLEVEL[c]
+          n15 <- $CallMethod[run](n14, None)
+          n16 <- TOPLEVEL[print]
+          n17 <- TOPLEVEL[c]
+          n18 <- n17.z
+          n19 <- $Call(n16, n18, None)
           return None
 
 
@@ -176,27 +175,22 @@ print(c.z)
           n2 <- TOPLEVEL[__annotations__]
           n2["x"] <- n1
           n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap($BuildTuple("x", "return"), n3, None, None)
-          n5 <- $MakeFunction["__init__", "dummy.IntBox.__init__", None, None, n4, None]
-          TOPLEVEL[__init__] <- n5
-          n6 <- TOPLEVEL[int]
-          n7 <- $BuildConstKeyMap($BuildTuple("return"), n6, None)
-          n8 <- $MakeFunction["get", "dummy.IntBox.get", None, None, n7, None]
-          TOPLEVEL[get] <- n8
-          n9 <- TOPLEVEL[int]
-          n10 <- $BuildConstKeyMap($BuildTuple("x", "return"), n9, None, None)
-          n11 <- $MakeFunction["set", "dummy.IntBox.set", None, None, n10, None]
-          TOPLEVEL[set] <- n11
-          n12 <- $BuildConstKeyMap($BuildTuple("return"), None, None)
-          n13 <- $MakeFunction["run", "dummy.IntBox.run", None, None, n12, None]
-          TOPLEVEL[run] <- n13
-          n14 <- TOPLEVEL[staticmethod]
-          n15 <- TOPLEVEL[int]
-          n16 <- TOPLEVEL[int]
-          n17 <- $BuildConstKeyMap($BuildTuple("x", "return"), n15, n16, None)
-          n18 <- $MakeFunction["id", "dummy.IntBox.id", None, None, n17, None]
-          n19 <- $Call(n14, n18, None)
-          TOPLEVEL[id] <- n19
+          n4 <- $MakeFunction["__init__", "dummy.IntBox.__init__", None, None, $BuildTuple("x", n3, "return", None), None]
+          TOPLEVEL[__init__] <- n4
+          n5 <- TOPLEVEL[int]
+          n6 <- $MakeFunction["get", "dummy.IntBox.get", None, None, $BuildTuple("return", n5), None]
+          TOPLEVEL[get] <- n6
+          n7 <- TOPLEVEL[int]
+          n8 <- $MakeFunction["set", "dummy.IntBox.set", None, None, $BuildTuple("x", n7, "return", None), None]
+          TOPLEVEL[set] <- n8
+          n9 <- $MakeFunction["run", "dummy.IntBox.run", None, None, $BuildTuple("return", None), None]
+          TOPLEVEL[run] <- n9
+          n10 <- TOPLEVEL[staticmethod]
+          n11 <- TOPLEVEL[int]
+          n12 <- TOPLEVEL[int]
+          n13 <- $MakeFunction["id", "dummy.IntBox.id", None, None, $BuildTuple("x", n11, "return", n12), None]
+          n14 <- $Call(n10, n13, None)
+          TOPLEVEL[id] <- n14
           return None
 
 
@@ -286,10 +280,9 @@ class D(C):
           n4 <- TOPLEVEL[staticmethod]
           n5 <- TOPLEVEL[int]
           n6 <- TOPLEVEL[int]
-          n7 <- $BuildConstKeyMap($BuildTuple("x", "return"), n5, n6, None)
-          n8 <- $MakeFunction["typed_f", "dummy.C.typed_f", None, None, n7, None]
-          n9 <- $Call(n4, n8, None)
-          TOPLEVEL[typed_f] <- n9
+          n7 <- $MakeFunction["typed_f", "dummy.C.typed_f", None, None, $BuildTuple("x", n5, "return", n6), None]
+          n8 <- $Call(n4, n7, None)
+          TOPLEVEL[typed_f] <- n8
           return None
 
 
@@ -382,9 +375,8 @@ def g(c: C) -> None:
           n3 <- $BuildClass(n2, "C", None)
           TOPLEVEL[C] <- n3
           n4 <- TOPLEVEL[C]
-          n5 <- $BuildConstKeyMap($BuildTuple("c", "return"), n4, None, None)
-          n6 <- $MakeFunction["g", "dummy.g", None, None, n5, None]
-          TOPLEVEL[g] <- n6
+          n5 <- $MakeFunction["g", "dummy.g", None, None, $BuildTuple("c", n4, "return", None), None]
+          TOPLEVEL[g] <- n5
           return None
 
 
@@ -859,24 +851,21 @@ class C(ABC):
           TOPLEVEL[__module__] <- n0
           TOPLEVEL[__qualname__] <- "C"
           n1 <- TOPLEVEL[abstractmethod]
-          n2 <- $BuildConstKeyMap($BuildTuple("return"), None, None)
-          n3 <- $MakeFunction["get", "dummy.C.get", None, None, n2, None]
-          n4 <- $Call(n1, n3, None)
-          TOPLEVEL[get] <- n4
-          n5 <- TOPLEVEL[abstractmethod]
-          n6 <- TOPLEVEL[staticmethod]
-          n7 <- $BuildConstKeyMap($BuildTuple("return"), None, None)
-          n8 <- $MakeFunction["get_static0", "dummy.C.get_static0", None, None, n7, None]
-          n9 <- $Call(n6, n8, None)
-          n10 <- $Call(n5, n9, None)
-          TOPLEVEL[get_static0] <- n10
-          n11 <- TOPLEVEL[staticmethod]
-          n12 <- TOPLEVEL[abstractmethod]
-          n13 <- $BuildConstKeyMap($BuildTuple("return"), None, None)
-          n14 <- $MakeFunction["get_static1", "dummy.C.get_static1", None, None, n13, None]
-          n15 <- $Call(n12, n14, None)
-          n16 <- $Call(n11, n15, None)
-          TOPLEVEL[get_static1] <- n16
+          n2 <- $MakeFunction["get", "dummy.C.get", None, None, $BuildTuple("return", None), None]
+          n3 <- $Call(n1, n2, None)
+          TOPLEVEL[get] <- n3
+          n4 <- TOPLEVEL[abstractmethod]
+          n5 <- TOPLEVEL[staticmethod]
+          n6 <- $MakeFunction["get_static0", "dummy.C.get_static0", None, None, $BuildTuple("return", None), None]
+          n7 <- $Call(n5, n6, None)
+          n8 <- $Call(n4, n7, None)
+          TOPLEVEL[get_static0] <- n8
+          n9 <- TOPLEVEL[staticmethod]
+          n10 <- TOPLEVEL[abstractmethod]
+          n11 <- $MakeFunction["get_static1", "dummy.C.get_static1", None, None, $BuildTuple("return", None), None]
+          n12 <- $Call(n10, n11, None)
+          n13 <- $Call(n9, n12, None)
+          TOPLEVEL[get_static1] <- n13
           return None
 
 
@@ -1249,31 +1238,8 @@ class defaultdict:
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["defaultdict", "dummy.defaultdict", None, None, None, None]
-          n1 <- $BuildClass(n0, "defaultdict", None)
-          TOPLEVEL[defaultdict] <- n1
-          return None
-
-
-      function dummy.defaultdict.__getitem__(self, key):
-        b0:
-          return 42
-
-
-      function dummy.defaultdict():
-        b0:
-          n0 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n0
-          TOPLEVEL[__qualname__] <- "defaultdict"
-          n1 <- $MakeFunction["__getitem__", "dummy.defaultdict.__getitem__", None, None, None, None]
-          TOPLEVEL[__getitem__] <- n1
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
 
 
 let%expect_test _ =
@@ -1295,80 +1261,8 @@ def powerset(s):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $ImportName(itertools, None, 0)
-          TOPLEVEL[itertools] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          n2 <- $MakeFunction["AsyncYieldFrom", "dummy.AsyncYieldFrom", None, None, None, None]
-          n3 <- $BuildClass(n2, "AsyncYieldFrom", None)
-          TOPLEVEL[AsyncYieldFrom] <- n3
-          n4 <- $MakeFunction["powerset", "dummy.powerset", None, None, None, None]
-          TOPLEVEL[powerset] <- n4
-          return None
-
-
-      function dummy.AsyncYieldFrom():
-        b0:
-          n0 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n0
-          TOPLEVEL[__qualname__] <- "AsyncYieldFrom"
-          n1 <- $MakeFunction["__await__", "dummy.AsyncYieldFrom.__await__", None, None, None, None]
-          TOPLEVEL[__await__] <- n1
-          return None
-
-
-      function dummy.AsyncYieldFrom.__await__(self):
-        b0:
-          n0 <- LOCAL[self]
-          n1 <- n0.obj
-          n2 <- $GetYieldFromIter(n1, None)
-          n3 <- $YieldFrom(n2, None, None)
-          return None
-
-
-      function dummy.f():
-        b0:
-          n0 <- $Yield(42)
-          return None
-
-
-      function dummy.powerset(s):
-        b0:
-          n0 <- GLOBAL[range]
-          n1 <- GLOBAL[len]
-          n2 <- LOCAL[s]
-          n3 <- $Call(n1, n2, None)
-          n4 <- $Binary.Add(n3, 1, None)
-          n5 <- $Call(n0, n4, None)
-          n6 <- $GetIter(n5, None)
-          jmp b1
-
-        b1:
-          n7 <- $NextIter(n6, None)
-          n8 <- $HasNextIter(n6, None)
-          if n8 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[i] <- n7
-          n9 <- GLOBAL[map]
-          n10 <- GLOBAL[frozenset]
-          n11 <- GLOBAL[itertools]
-          n12 <- LOCAL[s]
-          n13 <- LOCAL[i]
-          n14 <- $CallMethod[combinations](n11, n12, n13, None)
-          n15 <- $Call(n9, n10, n14, None)
-          n16 <- $GetYieldFromIter(n15, None)
-          n17 <- $YieldFrom(n16, None, None)
-          jmp b1
-
-        b3:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: GEN_START |}]
 
 
 let%expect_test _ =

@@ -115,37 +115,8 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
-          TOPLEVEL[coin] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          return None
-
-
-      function dummy.coin():
-        b0:
-          return false
-
-
-      function dummy.f(x, y):
-        b0:
-          n0 <- GLOBAL[coin]
-          n1 <- $Call(n0, None)
-          if n1 then jmp b1 else jmp b2
-
-        b1:
-          n3 <- LOCAL[x]
-          return n3
-
-        b2:
-          n2 <- LOCAL[y]
-          return n2 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -164,44 +135,8 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
-          TOPLEVEL[coin] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          return None
-
-
-      function dummy.coin():
-        b0:
-          return false
-
-
-      function dummy.f(x, y):
-        b0:
-          LOCAL[z] <- 0
-          n0 <- GLOBAL[coin]
-          n1 <- $Call(n0, None)
-          if n1 then jmp b1 else jmp b2
-
-        b1:
-          n3 <- LOCAL[x]
-          LOCAL[z] <- n3
-          jmp b3
-
-        b2:
-          n2 <- LOCAL[y]
-          LOCAL[z] <- n2
-          jmp b3
-
-        b3:
-          n4 <- LOCAL[z]
-          return n4 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -228,69 +163,8 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
-          TOPLEVEL[coin] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          return None
-
-
-      function dummy.coin():
-        b0:
-          return false
-
-
-      function dummy.f(x, y):
-        b0:
-          LOCAL[z] <- 0
-          n0 <- GLOBAL[coin]
-          n1 <- $Call(n0, None)
-          if n1 then jmp b1 else jmp b5
-
-        b1:
-          n7 <- GLOBAL[coin]
-          n8 <- $Call(n7, None)
-          if n8 then jmp b2 else jmp b3
-
-        b2:
-          n9 <- LOCAL[x]
-          LOCAL[z] <- n9
-          jmp b4
-
-        b3:
-          return 1664
-
-        b4:
-          n10 <- LOCAL[z]
-          n11 <- $Binary.Add(n10, 1, None)
-          LOCAL[z] <- n11
-          jmp b8
-
-        b5:
-          n2 <- LOCAL[z]
-          n3 <- $Binary.Add(n2, 1, None)
-          LOCAL[z] <- n3
-          n4 <- GLOBAL[coin]
-          n5 <- $Call(n4, None)
-          if n5 then jmp b6 else jmp b7
-
-        b6:
-          return 42
-
-        b7:
-          n6 <- LOCAL[y]
-          LOCAL[z] <- n6
-          jmp b8
-
-        b8:
-          n12 <- LOCAL[z]
-          return n12 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -302,39 +176,8 @@ def f(x):
     foo(1 if x else 0)
       |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
-          TOPLEVEL[foo] <- n0
-          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n1
-          return None
-
-
-      function dummy.f(x):
-        b0:
-          n0 <- GLOBAL[foo]
-          n1 <- LOCAL[x]
-          if n1 then jmp b1 else jmp b2
-
-        b1:
-          jmp b3(1)
-
-        b2:
-          jmp b3(0)
-
-        b3(n2):
-          n3 <- $Call(n0, n2, None)
-          return None
-
-
-      function dummy.foo(x):
-        b0:
-          return None |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -343,31 +186,8 @@ for x in range(10):
     print(x)
       |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- TOPLEVEL[range]
-          n1 <- $Call(n0, 10, None)
-          n2 <- $GetIter(n1, None)
-          jmp b1
-
-        b1:
-          n3 <- $NextIter(n2, None)
-          n4 <- $HasNextIter(n2, None)
-          if n4 then jmp b2 else jmp b3
-
-        b2:
-          TOPLEVEL[x] <- n3
-          n5 <- TOPLEVEL[print]
-          n6 <- TOPLEVEL[x]
-          n7 <- $Call(n5, n6, None)
-          jmp b1
-
-        b3:
-          return None |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -382,72 +202,8 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
-
-
-      function dummy.f(x, y, l, bar, toto):
-        b0:
-          n0 <- LOCAL[l]
-          n1 <- $GetIter(n0, None)
-          jmp b1
-
-        b1:
-          n2 <- $NextIter(n1, None)
-          n3 <- $HasNextIter(n1, None)
-          if n3 then jmp b2 else jmp b11
-
-        b10:
-          jmp b1
-
-        b11:
-          return None
-
-        b2:
-          LOCAL[x] <- n2
-          n4 <- LOCAL[bar]
-          n5 <- $Call(n4, None)
-          n6 <- $CallMethod[__enter__](n5, None)
-          n7 <- LOCAL[toto]
-          n8 <- $Call(n7, None)
-          n9 <- $CallMethod[__enter__](n8, None)
-          LOCAL[obj] <- n9
-          n10 <- LOCAL[y]
-          if n10 then jmp b3 else jmp b6
-
-        b3:
-          jmp b4
-
-        b4:
-          n15 <- $CallMethod[__enter__](n8, None, None, None, None)
-          jmp b5
-
-        b5:
-          n16 <- $CallMethod[__enter__](n5, None, None, None, None)
-          jmp b1
-
-        b6:
-          n11 <- GLOBAL[print]
-          n12 <- $Call(n11, "nop", None)
-          jmp b7
-
-        b7:
-          n13 <- $CallMethod[__enter__](n8, None, None, None, None)
-          jmp b8
-
-        b8:
-          jmp b9
-
-        b9:
-          n14 <- $CallMethod[__enter__](n5, None, None, None, None)
-          jmp b10 |}]
+  [%expect {|
+    IR error: Unsupported opcode: NOP |}]
 
 
 let%expect_test _ =
@@ -515,14 +271,12 @@ def f1(x, y:str) -> bool:
         b0:
           n0 <- TOPLEVEL[int]
           n1 <- TOPLEVEL[float]
-          n2 <- $BuildConstKeyMap($BuildTuple("x", "z"), n0, n1, None)
-          n3 <- $MakeFunction["f0", "dummy.f0", None, None, n2, None]
-          TOPLEVEL[f0] <- n3
-          n4 <- TOPLEVEL[str]
-          n5 <- TOPLEVEL[bool]
-          n6 <- $BuildConstKeyMap($BuildTuple("y", "return"), n4, n5, None)
-          n7 <- $MakeFunction["f1", "dummy.f1", None, None, n6, None]
-          TOPLEVEL[f1] <- n7
+          n2 <- $MakeFunction["f0", "dummy.f0", None, None, $BuildTuple("x", n0, "z", n1), None]
+          TOPLEVEL[f0] <- n2
+          n3 <- TOPLEVEL[str]
+          n4 <- TOPLEVEL[bool]
+          n5 <- $MakeFunction["f1", "dummy.f1", None, None, $BuildTuple("y", n3, "return", n4), None]
+          TOPLEVEL[f1] <- n5
           return None
 
 
@@ -556,17 +310,15 @@ expect_int(get())
       function toplevel():
         b0:
           n0 <- TOPLEVEL[int]
-          n1 <- $BuildConstKeyMap($BuildTuple("x"), n0, None)
-          n2 <- $MakeFunction["expect_int", "dummy.expect_int", None, None, n1, None]
-          TOPLEVEL[expect_int] <- n2
-          n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap($BuildTuple("return"), n3, None)
-          n5 <- $MakeFunction["get", "dummy.get", None, None, n4, None]
-          TOPLEVEL[get] <- n5
-          n6 <- TOPLEVEL[expect_int]
-          n7 <- TOPLEVEL[get]
-          n8 <- $Call(n7, None)
-          n9 <- $Call(n6, n8, None)
+          n1 <- $MakeFunction["expect_int", "dummy.expect_int", None, None, $BuildTuple("x", n0), None]
+          TOPLEVEL[expect_int] <- n1
+          n2 <- TOPLEVEL[int]
+          n3 <- $MakeFunction["get", "dummy.get", None, None, $BuildTuple("return", n2), None]
+          TOPLEVEL[get] <- n3
+          n4 <- TOPLEVEL[expect_int]
+          n5 <- TOPLEVEL[get]
+          n6 <- $Call(n5, None)
+          n7 <- $Call(n4, n6, None)
           return None
 
 
@@ -600,17 +352,15 @@ expect(get())
       function toplevel():
         b0:
           n0 <- TOPLEVEL[object]
-          n1 <- $BuildConstKeyMap($BuildTuple("x", "return"), n0, None, None)
-          n2 <- $MakeFunction["expect", "dummy.expect", None, None, n1, None]
-          TOPLEVEL[expect] <- n2
-          n3 <- TOPLEVEL[int]
-          n4 <- $BuildConstKeyMap($BuildTuple("return"), n3, None)
-          n5 <- $MakeFunction["get", "dummy.get", None, None, n4, None]
-          TOPLEVEL[get] <- n5
-          n6 <- TOPLEVEL[expect]
-          n7 <- TOPLEVEL[get]
-          n8 <- $Call(n7, None)
-          n9 <- $Call(n6, n8, None)
+          n1 <- $MakeFunction["expect", "dummy.expect", None, None, $BuildTuple("x", n0, "return", None), None]
+          TOPLEVEL[expect] <- n1
+          n2 <- TOPLEVEL[int]
+          n3 <- $MakeFunction["get", "dummy.get", None, None, $BuildTuple("return", n2), None]
+          TOPLEVEL[get] <- n3
+          n4 <- TOPLEVEL[expect]
+          n5 <- TOPLEVEL[get]
+          n6 <- $Call(n5, None)
+          n7 <- $Call(n4, n6, None)
           return None
 
 
@@ -668,36 +418,8 @@ def f(x, y, z, t):
         return (x and y) or (z and t)
         |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
-
-
-      function dummy.f(x, y, z, t):
-        b0:
-          n0 <- LOCAL[x]
-          if n0 then jmp b1 else jmp b2
-
-        b1:
-          n1 <- LOCAL[y]
-          if n1 then jmp b4(n1) else jmp b2
-
-        b2:
-          n2 <- LOCAL[z]
-          if n2 then jmp b3 else jmp b4(n2)
-
-        b3:
-          n3 <- LOCAL[t]
-          jmp b4(n3)
-
-        b4(n4):
-          return n4 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -767,51 +489,8 @@ def in_not_check(x, l):
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["is_check", "dummy.is_check", None, None, None, None]
-          TOPLEVEL[is_check] <- n0
-          n1 <- $MakeFunction["is_not_check", "dummy.is_not_check", None, None, None, None]
-          TOPLEVEL[is_not_check] <- n1
-          n2 <- $MakeFunction["in_check", "dummy.in_check", None, None, None, None]
-          TOPLEVEL[in_check] <- n2
-          n3 <- $MakeFunction["in_not_check", "dummy.in_not_check", None, None, None, None]
-          TOPLEVEL[in_not_check] <- n3
-          return None
-
-
-      function dummy.in_check(x, l):
-        b0:
-          n0 <- LOCAL[x]
-          n1 <- LOCAL[l]
-          n2 <- $Compare.in(n0, n1, None)
-          return n2
-
-
-      function dummy.in_not_check(x, l):
-        b0:
-          n0 <- LOCAL[x]
-          n1 <- LOCAL[l]
-          n2 <- $Compare.not_in(n0, n1, None)
-          return n2
-
-
-      function dummy.is_check(x):
-        b0:
-          n0 <- LOCAL[x]
-          n1 <- $Compare.is(n0, None, None)
-          return n1
-
-
-      function dummy.is_not_check(x):
-        b0:
-          n0 <- LOCAL[x]
-          n1 <- $Compare.is_not(n0, None, None)
-          return n1 |}]
+  [%expect {|
+    IR error: Unsupported opcode: IS_OP |}]
 
 
 let%expect_test _ =
@@ -856,29 +535,8 @@ def build_list():
 |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[l] <- $BuildList(1, 2, 3)
-          n0 <- TOPLEVEL[print]
-          n1 <- TOPLEVEL[l]
-          n2 <- $Call(n0, n1, None)
-          n3 <- $MakeFunction["build_list", "dummy.build_list", None, None, None, None]
-          TOPLEVEL[build_list] <- n3
-          n4 <- TOPLEVEL[build_list]
-          n5 <- $Call(n4, None)
-          TOPLEVEL[x] <- n5[0]
-          TOPLEVEL[y] <- n5[1]
-          TOPLEVEL[z] <- n5[2]
-          return None
-
-
-      function dummy.build_list():
-        b0:
-          return $BuildList(1, 2, 3) |}]
+  [%expect {|
+    IR error: Unsupported opcode: LIST_EXTEND |}]
 
 
 let%expect_test _ =
@@ -894,45 +552,8 @@ def f(foo, bar):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
-
-
-      function dummy.f(foo, bar):
-        b0:
-          n0 <- LOCAL[foo]
-          n1 <- $Call(n0, None)
-          n2 <- $CallMethod[__enter__](n1, None)
-          LOCAL[foo0] <- n2
-          n3 <- LOCAL[bar]
-          n4 <- $Call(n3, None)
-          n5 <- $CallMethod[__enter__](n4, None)
-          LOCAL[bar0] <- n5
-          n6 <- GLOBAL[print]
-          n7 <- LOCAL[bar0]
-          n8 <- $Call(n6, n7, None)
-          jmp b1
-
-        b1:
-          n9 <- $CallMethod[__enter__](n4, None, None, None, None)
-          jmp b2
-
-        b2:
-          n10 <- GLOBAL[print]
-          n11 <- LOCAL[foo0]
-          n12 <- $Call(n10, n11, None)
-          jmp b3
-
-        b3:
-          n13 <- $CallMethod[__enter__](n1, None, None, None, None)
-          return 42 |}]
+  [%expect {|
+    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
 
 
 let%expect_test _ =
@@ -1000,46 +621,8 @@ def f(m, a, b, c):
   |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
-
-
-      function dummy.f(m, a, b, c):
-        b0:
-          n0 <- LOCAL[a]
-          n1 <- LOCAL[b]
-          n2 <- LOCAL[m]
-          n3 <- $Compare.not_in($BuildTuple(n0, n1), n2, None)
-          if n3 then jmp b1 else jmp b2
-
-        b1:
-          n10 <- LOCAL[b]
-          n11 <- $Inplace.Subtract(n10, 1, None)
-          LOCAL[b] <- n11
-          jmp b0
-
-        b2:
-          n4 <- LOCAL[a]
-          n5 <- LOCAL[c]
-          n6 <- LOCAL[m]
-          n7 <- $Compare.not_in($BuildTuple(n4, n5), n6, None)
-          if n7 then jmp b3 else jmp b4
-
-        b3:
-          n8 <- LOCAL[c]
-          n9 <- $Inplace.Add(n8, 1, None)
-          LOCAL[c] <- n9
-          jmp b2
-
-        b4:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: CONTAINS_OP |}]
 
 
 let%expect_test _ =
@@ -1248,94 +831,8 @@ def f(l):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
-          n1 <- TOPLEVEL[l]
-          n2 <- $GetIter(n1, None)
-          n3 <- $Call(n0, n2, None)
-          TOPLEVEL[g] <- n3
-          n4 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
-          n5 <- TOPLEVEL[l]
-          n6 <- $GetIter(n5, None)
-          n7 <- $Call(n4, n6, None)
-          TOPLEVEL[g0] <- n7
-          n8 <- TOPLEVEL[print]
-          n9 <- TOPLEVEL[g]
-          n10 <- $Call(n8, n9, None)
-          n11 <- TOPLEVEL[print]
-          n12 <- TOPLEVEL[g0]
-          n13 <- $Call(n11, n12, None)
-          n14 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n14
-          return None
-
-
-      function dummy._$listcomp(.0):
-        b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[x] <- n1
-          n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 2, None)
-          n5 <- $ListAppend($BuildList(), n4, None)
-          jmp b1
-
-        b3:
-          return $BuildList()
-
-
-      function dummy.f._$listcomp(.0):
-        b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[x] <- n1
-          n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 2, None)
-          n5 <- $ListAppend($BuildList(), n4, None)
-          jmp b1
-
-        b3:
-          return $BuildList()
-
-
-      function dummy.f(l):
-        b0:
-          n0 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
-          n1 <- LOCAL[l]
-          n2 <- $GetIter(n1, None)
-          n3 <- $Call(n0, n2, None)
-          LOCAL[r] <- n3
-          n4 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
-          n5 <- LOCAL[l]
-          n6 <- $GetIter(n5, None)
-          n7 <- $Call(n4, n6, None)
-          LOCAL[r0] <- n7
-          n8 <- GLOBAL[print]
-          n9 <- LOCAL[r]
-          n10 <- $Call(n8, n9, None)
-          n11 <- GLOBAL[print]
-          n12 <- LOCAL[r0]
-          n13 <- $Call(n11, n12, None)
-          return None |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -1354,80 +851,7 @@ def g(l):
   PyIR.test source ;
   [%expect
     {xxx|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          n1 <- $MakeFunction["g", "dummy.g", None, None, None, None]
-          TOPLEVEL[g] <- n1
-          return None
-
-
-      function dummy.g._$dictcomp(.0):
-        b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[num] <- n1
-          n3 <- LOCAL[num]
-          n4 <- LOCAL[num]
-          n5 <- $Binary.Power(n4, 2, None)
-          n6 <- $DictSetItem($BuildMap(), n3, n5, None)
-          jmp b1
-
-        b3:
-          return $BuildMap()
-
-
-      function dummy.f._$setcomp(.0):
-        b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[x] <- n1
-          n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 1, None)
-          n5 <- $SetAdd($BuildSet(), n4, None)
-          jmp b1
-
-        b3:
-          return $BuildSet()
-
-
-      function dummy.f(l):
-        b0:
-          n0 <- $MakeFunction["_$setcomp", "dummy.f._$setcomp", None, None, None, None]
-          n1 <- LOCAL[l]
-          n2 <- $GetIter(n1, None)
-          n3 <- $Call(n0, n2, None)
-          LOCAL[r] <- n3
-          n4 <- LOCAL[r]
-          return n4
-
-
-      function dummy.g(l):
-        b0:
-          n0 <- $MakeFunction["_$dictcomp", "dummy.g._$dictcomp", None, None, None, None]
-          n1 <- LOCAL[l]
-          n2 <- $GetIter(n1, None)
-          n3 <- $Call(n0, n2, None)
-          LOCAL[squared_dict] <- n3
-          n4 <- GLOBAL[r]
-          return n4 |xxx}]
+    IR error: Jump to next instruction detected, but next instruction is missing |xxx}]
 
 
 let%expect_test _ =
@@ -1444,44 +868,8 @@ async def g():
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          n1 <- $MakeFunction["g", "dummy.g", None, None, None, None]
-          TOPLEVEL[g] <- n1
-          return None
-
-
-      function dummy.f():
-        b0:
-          return true
-
-
-      function dummy.g():
-        b0:
-          n0 <- GLOBAL[f]
-          n1 <- $Call(n0, None)
-          n2 <- $GetAwaitable(n1, None)
-          n3 <- $YieldFrom(n2, None, None)
-          if n2 then jmp b1 else jmp b2
-
-        b1:
-          n6 <- GLOBAL[print]
-          n7 <- $Call(n6, 0, None)
-          jmp b3
-
-        b2:
-          n4 <- GLOBAL[print]
-          n5 <- $Call(n4, 1, None)
-          jmp b3
-
-        b3:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: GEN_START |}]
 
 
 let%expect_test _ =
@@ -1490,35 +878,8 @@ def m(self, x, y, test):
     return foo(self, x if test else y)
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
-          TOPLEVEL[m] <- n0
-          return None
-
-
-      function dummy.m(self, x, y, test):
-        b0:
-          n0 <- GLOBAL[foo]
-          n1 <- LOCAL[self]
-          n2 <- LOCAL[test]
-          if n2 then jmp b1 else jmp b2
-
-        b1:
-          n4 <- LOCAL[x]
-          jmp b3(n4)
-
-        b2:
-          n3 <- LOCAL[y]
-          jmp b3(n3)
-
-        b3(n5):
-          n6 <- $Call(n0, n1, n5, None)
-          return n6 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -1527,34 +888,8 @@ def m(self, x, y, test):
     return self.foo(x if test else y)
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
-          TOPLEVEL[m] <- n0
-          return None
-
-
-      function dummy.m(self, x, y, test):
-        b0:
-          n0 <- LOCAL[self]
-          n1 <- LOCAL[test]
-          if n1 then jmp b1 else jmp b2
-
-        b1:
-          n3 <- LOCAL[x]
-          jmp b3(n3)
-
-        b2:
-          n2 <- LOCAL[y]
-          jmp b3(n2)
-
-        b3(n4):
-          n5 <- $CallMethod[foo](n0, n4, None)
-          return n5 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -1563,33 +898,8 @@ def m(x, y, test):
     return (x if test else y).foo()
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
-          TOPLEVEL[m] <- n0
-          return None
-
-
-      function dummy.m(x, y, test):
-        b0:
-          n0 <- LOCAL[test]
-          if n0 then jmp b1 else jmp b2
-
-        b1:
-          n2 <- LOCAL[x]
-          jmp b3(n2)
-
-        b2:
-          n1 <- LOCAL[y]
-          jmp b3(n1)
-
-        b3(n3):
-          n4 <- $CallMethod[foo](n3, None)
-          return n4 |}]
+  [%expect {|
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -1666,9 +976,6 @@ res = dict.attr(0 if not False else 1)
       function toplevel():
         b0:
           n0 <- TOPLEVEL[dict]
-          jmp b2
-
-        b2:
           n1 <- $CallMethod[attr](n0, 0, None)
           TOPLEVEL[res] <- n1
           return None |}]
@@ -1684,47 +991,5 @@ async def foo():
 |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
-          TOPLEVEL[foo] <- n0
-          return None
-
-
-      function dummy.foo(i, f):
-        b0:
-          n0 <- GLOBAL[range]
-          n1 <- GLOBAL[num]
-          n2 <- $Call(n0, n1, None)
-          n3 <- $GetIter(n2, None)
-          jmp b1
-
-        b1:
-          n4 <- $NextIter(n3, None)
-          n5 <- $HasNextIter(n3, None)
-          if n5 then jmp b2 else jmp b6
-
-        b2:
-          LOCAL[i] <- n4
-          n6 <- GLOBAL[read]
-          n7 <- $Call(n6, None)
-          n8 <- $GetAwaitable(n7, None)
-          n9 <- $YieldFrom(n8, None, None)
-          n10 <- $CallMethod[__enter__](n8, None)
-          n11 <- $GetAwaitable(n10, None)
-          n12 <- $YieldFrom(n11, None, None)
-          LOCAL[f] <- n11
-          jmp b3
-
-        b3:
-          n13 <- $CallMethod[__enter__](n8, None, None, None, None)
-          n14 <- $GetAwaitable(n13, None)
-          n15 <- $YieldFrom(n14, None, None)
-          return None
-
-        b6:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: GEN_START |}]

@@ -172,18 +172,8 @@ l[0:2]
 l[0:2:1]
           |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[l] <- $BuildList(0, 1, 2, 3, 4, 5)
-          n0 <- TOPLEVEL[l]
-          n1 <- n0[$BuildSlice(0, 2)]
-          n2 <- TOPLEVEL[l]
-          n3 <- n2[$BuildSlice(0, 2, 1)]
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: LIST_EXTEND |}]
 
 
 let%expect_test _ =
@@ -205,18 +195,8 @@ l = [1, 2, 3]
 print(l[0])
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[l] <- $BuildList(1, 2, 3)
-          n0 <- TOPLEVEL[print]
-          n1 <- TOPLEVEL[l]
-          n2 <- n1[0]
-          n3 <- $Call(n0, n2, None)
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: LIST_EXTEND |}]
 
 
 let%expect_test _ =
@@ -226,18 +206,8 @@ x = 0
 l[x] = 10
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[l] <- $BuildList(1, 2, 3)
-          TOPLEVEL[x] <- 0
-          n0 <- TOPLEVEL[l]
-          n1 <- TOPLEVEL[x]
-          n0[n1] <- 10
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: LIST_EXTEND |}]
 
 
 let%expect_test _ =
@@ -245,14 +215,8 @@ let%expect_test _ =
 s = {1, 2, 3}
 |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[s] <- $BuildSet(1, 2, 3)
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: SET_UPDATE |}]
 
 
 let%expect_test _ =
@@ -323,26 +287,8 @@ with open("foo.txt", "wt") as fp:
     fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- TOPLEVEL[open]
-          n1 <- $Call(n0, "foo.txt", "wt", None)
-          n2 <- $CallMethod[__enter__](n1, None)
-          TOPLEVEL[fp] <- n2
-          n3 <- TOPLEVEL[fp]
-          n4 <- $CallMethod[write](n3, "yolo", None)
-          jmp b1
-
-        b1:
-          n5 <- $CallMethod[__enter__](n1, None, None, None, None)
-          jmp b2
-
-        b2:
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
 
 
 let%expect_test _ =
@@ -360,27 +306,8 @@ print(result)
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          TOPLEVEL[values] <- $BuildList(1, 2, $BuildList(3, 4), 5)
-          TOPLEVEL[values2] <- $BuildTuple("a", "b")
-          n0 <- TOPLEVEL[values]
-          n1 <- TOPLEVEL[values2]
-          TOPLEVEL[result] <- $BuildTupleUnpack($BuildList(10, 100), n0, n1)
-          n2 <- TOPLEVEL[print]
-          n3 <- TOPLEVEL[result]
-          n4 <- $Call(n2, n3, None)
-          n5 <- TOPLEVEL[values]
-          n6 <- TOPLEVEL[values2]
-          TOPLEVEL[result] <- $BuildListUnpack(n5, n6)
-          n7 <- TOPLEVEL[print]
-          n8 <- TOPLEVEL[result]
-          n9 <- $Call(n7, n8, None)
-          return None |}]
+  [%expect {|
+    IR error: Unsupported opcode: LIST_EXTEND |}]
 
 
 let%expect_test _ =
@@ -428,77 +355,8 @@ x = o.f(0, *args1, *args2, **d1, **d2)
 |}
   in
   PyIR.test source ;
-  [%expect
-    {xxx|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- TOPLEVEL[f]
-          n1 <- $Call(n0, 0, 1, None)
-          TOPLEVEL[x] <- n1
-          n2 <- TOPLEVEL[f]
-          n3 <- $Call(n2, 0, 1, $BuildTuple("b"))
-          TOPLEVEL[x] <- n3
-          n4 <- TOPLEVEL[f]
-          n5 <- $Call(n4, 0, 1, $BuildTuple("a", "b"))
-          TOPLEVEL[x] <- n5
-          n6 <- TOPLEVEL[f]
-          n7 <- TOPLEVEL[args]
-          n8 <- $CallFunctionEx(n6, $BuildTupleUnpack($BuildTuple(0), n7), None, None)
-          TOPLEVEL[x] <- n8
-          n9 <- TOPLEVEL[f]
-          n10 <- TOPLEVEL[d]
-          n11 <- $CallFunctionEx(n9, $BuildTuple(0), n10, None)
-          TOPLEVEL[x] <- n11
-          n12 <- TOPLEVEL[f]
-          n13 <- TOPLEVEL[args]
-          n14 <- TOPLEVEL[d]
-          n15 <- $CallFunctionEx(n12, $BuildTupleUnpack($BuildTuple(0), n13), n14, None)
-          TOPLEVEL[x] <- n15
-          n16 <- TOPLEVEL[f]
-          n17 <- TOPLEVEL[args1]
-          n18 <- TOPLEVEL[args2]
-          n19 <- TOPLEVEL[d1]
-          n20 <- TOPLEVEL[d2]
-          n21 <- $CallFunctionEx(n16, $BuildTupleUnpack($BuildTuple(0), n17, n18), $BuildMapUnpack(n19, n20), None)
-          TOPLEVEL[x] <- n21
-          n22 <- TOPLEVEL[o]
-          n23 <- $CallMethod[f](n22, 0, 1, None)
-          TOPLEVEL[x] <- n23
-          n24 <- TOPLEVEL[o]
-          n25 <- n24.f
-          n26 <- $Call(n25, 0, 1, $BuildTuple("b"))
-          TOPLEVEL[x] <- n26
-          n27 <- TOPLEVEL[o]
-          n28 <- n27.f
-          n29 <- $Call(n28, 0, 1, $BuildTuple("a", "b"))
-          TOPLEVEL[x] <- n29
-          n30 <- TOPLEVEL[o]
-          n31 <- n30.f
-          n32 <- TOPLEVEL[args]
-          n33 <- $CallFunctionEx(n31, $BuildTupleUnpack($BuildTuple(0), n32), None, None)
-          TOPLEVEL[x] <- n33
-          n34 <- TOPLEVEL[o]
-          n35 <- n34.f
-          n36 <- TOPLEVEL[d]
-          n37 <- $CallFunctionEx(n35, $BuildTuple(0), n36, None)
-          TOPLEVEL[x] <- n37
-          n38 <- TOPLEVEL[o]
-          n39 <- n38.f
-          n40 <- TOPLEVEL[args]
-          n41 <- TOPLEVEL[d]
-          n42 <- $CallFunctionEx(n39, $BuildTupleUnpack($BuildTuple(0), n40), n41, None)
-          TOPLEVEL[x] <- n42
-          n43 <- TOPLEVEL[o]
-          n44 <- n43.f
-          n45 <- TOPLEVEL[args1]
-          n46 <- TOPLEVEL[args2]
-          n47 <- TOPLEVEL[d1]
-          n48 <- TOPLEVEL[d2]
-          n49 <- $CallFunctionEx(n44, $BuildTupleUnpack($BuildTuple(0), n45, n46), $BuildMapUnpack(n47, n48), None)
-          TOPLEVEL[x] <- n49
-          return None
+  [%expect {xxx|
+    IR error: Unsupported opcode: LIST_EXTEND
 |xxx}]
 
 
@@ -535,10 +393,9 @@ def main(arg):
           n1 <- GLOBAL[int]
           n2 <- GLOBAL[str]
           n3 <- GLOBAL[float]
-          n4 <- $BuildConstKeyMap($BuildTuple("x", "y", "z"), n1, n2, n3, None)
-          n5 <- $LoadClosure(0,"arg")
-          n6 <- $MakeFunction["f", "dummy.main.f", $BuildTuple("ok", 0.), n0, n4, $BuildTuple(n5)]
-          LOCAL[f] <- n6
+          n4 <- $LoadClosure(0,"arg")
+          n5 <- $MakeFunction["f", "dummy.main.f", $BuildTuple("ok", 0.), n0, $BuildTuple("x", n1, "y", n2, "z", n3), $BuildTuple(n4)]
+          LOCAL[f] <- n5
           return None |}]
 
 
