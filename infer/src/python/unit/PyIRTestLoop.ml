@@ -358,7 +358,7 @@ def main():
           LOCAL[_] <- n3
           n5 <- GLOBAL[test]
           n6 <- $Call(n5, None)
-          if n6 then jmp b3 else jmp b3(n2)
+          if n6 then jmp b3 else jmp b3
 
         b3:
           n7 <- GLOBAL[action]

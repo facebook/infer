@@ -1072,14 +1072,13 @@ module State = struct
               let ssa_args = List.drop ssa_args k in
               let last = TerminatorBuilder.Jump {label; ssa_args} in
               Some last
-          | If {exp; then_= {label; ssa_args}; else_} when NodeName.equal label succ_name ->
-              let ssa_args = List.drop ssa_args k in
-              let then_ = {TerminatorBuilder.label; ssa_args} in
-              Some (TerminatorBuilder.If {exp; then_; else_})
-          | If {exp; then_; else_= {label; ssa_args}} when NodeName.equal label succ_name ->
-              let ssa_args = List.drop ssa_args k in
-              let else_ = {TerminatorBuilder.label; ssa_args} in
-              Some (TerminatorBuilder.If {exp; then_; else_})
+          | If {exp; then_; else_} ->
+              let try_drop ({TerminatorBuilder.label; ssa_args} as node_call) =
+                if NodeName.equal label succ_name then
+                  {node_call with ssa_args= List.drop ssa_args k}
+                else node_call
+              in
+              Some (TerminatorBuilder.If {exp; then_= try_drop then_; else_= try_drop else_})
           | _ ->
               None
         in
@@ -2389,7 +2388,7 @@ let build_topological_order cfg_skeleton_without_predecessors =
 
 let constant_folding_ssa_params st succ_name {predecessors} =
   let open IResult.Let_syntax in
-  let* predecessors_stacks =
+  let* st, status, predecessors, stacks =
     List.fold_result predecessors ~init:(st, `AllAvailable, [], [])
       ~f:(fun ((st, status, predecessors, stacks) as acc) predecessor ->
         match status with
@@ -2408,7 +2407,6 @@ let constant_folding_ssa_params st succ_name {predecessors} =
             Ok acc )
   in
   let st, bottom_stack =
-    let st, status, predecessors, stacks = predecessors_stacks in
     match status with
     | `AtLeastOneNotAvailable ->
         let {State.stack} = st in
