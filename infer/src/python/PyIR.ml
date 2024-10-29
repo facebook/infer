@@ -453,6 +453,11 @@ module Exp = struct
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
     | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | MatchClass of {subject: t; type_: t; count: int; names: t}
+    | BoolOfMatchClass of t
+    | AttributesOfMatchClass of t
+    | MatchSequence of t
+    | GetLen of t
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
     | Temp of SSA.t
     | Var of ScopedIdent.t
@@ -487,6 +492,16 @@ module Exp = struct
         F.fprintf fmt "$ImportName(%a, %a, %a)" Ident.pp name pp fromlist pp level
     | Subscript {exp; index} ->
         F.fprintf fmt "%a[@[%a@]]" pp exp pp index
+    | MatchClass {subject; type_; count; names} ->
+        F.fprintf fmt "$MatchClass(%a, %a, %d, %a)" pp subject pp type_ count pp names
+    | BoolOfMatchClass exp ->
+        F.fprintf fmt "$BoolOfMatchClass(%a)" pp exp
+    | AttributesOfMatchClass exp ->
+        F.fprintf fmt "$AttributesOfMatchClass(%a)" pp exp
+    | MatchSequence exp ->
+        F.fprintf fmt "$MatchSequence(%a)" pp exp
+    | GetLen exp ->
+        F.fprintf fmt "$GetLen(%a)" pp exp
     | BuildSlice values ->
         F.fprintf fmt "$BuildSlice(%a)" (Pp.seq ~sep:", " pp) values
     | BuildString values ->
@@ -2113,6 +2128,26 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       in
       let st = push st (nr_before + nr_after + 1) in
       Ok (st, None)
+  | "MATCH_CLASS" ->
+      let* names, st = State.pop_and_cast st in
+      let* type_, st = State.pop_and_cast st in
+      let* subject, st = State.pop_and_cast st in
+      let lhs, st = State.fresh_id st in
+      let stmt = Stmt.Let {lhs; rhs= MatchClass {subject; type_; count= arg; names}} in
+      let st = State.push_stmt st stmt in
+      let st = State.push st (AttributesOfMatchClass (Temp lhs)) in
+      let st = State.push st (BoolOfMatchClass (Temp lhs)) in
+      Ok (st, None)
+  | "MATCH_SEQUENCE" ->
+      let* tos = State.peek st in
+      let* exp = State.cast_exp st tos in
+      let st = State.push st (MatchSequence exp) in
+      Ok (st, None)
+  | "GET_LEN" ->
+      let* tos = State.peek st in
+      let* exp = State.cast_exp st tos in
+      let st = State.push st (GetLen exp) in
+      Ok (st, None)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
@@ -2233,7 +2268,10 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "SETUP_ASYNC_WITH"
   | "RERAISE"
   | "WITH_EXCEPT_START"
-  | "UNPACK_EX" ->
+  | "UNPACK_EX"
+  | "MATCH_CLASS"
+  | "MATCH_SEQUENCE"
+  | "GET_LEN" ->
       `NextInstrOnly
   | "RETURN_VALUE" ->
       `Return

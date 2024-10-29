@@ -124,6 +124,17 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_import_from" [exp_of_ident_str name; of_exp exp]
   | Temp ssa ->
       Var (mk_ident ssa)
+  | MatchClass {subject; type_; count; names} ->
+      let count = Textual.(Exp.Const (Const.Int (Z.of_int count))) in
+      call_builtin "py_match_class" [of_exp subject; of_exp type_; count; of_exp names]
+  | BoolOfMatchClass exp ->
+      call_builtin "py_bool_of_match_class" [of_exp exp]
+  | AttributesOfMatchClass exp ->
+      call_builtin "py_attributes_of_match_class" [of_exp exp]
+  | MatchSequence exp ->
+      call_builtin "py_match_sequence" [of_exp exp]
+  | GetLen exp ->
+      call_builtin "py_get_len" [of_exp exp]
   | Subscript {exp; index} ->
       call_builtin "py_subscript" [of_exp exp; of_exp index]
   | BuildSlice args ->

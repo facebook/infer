@@ -167,6 +167,11 @@ module Exp : sig
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
     | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | MatchClass of {subject: t; type_: t; count: int; names: t}
+    | BoolOfMatchClass of t
+    | AttributesOfMatchClass of t
+    | MatchSequence of t
+    | GetLen of t
     | Subscript of {exp: t; index: t}
     | Temp of SSA.t
     | Var of ScopedIdent.t

@@ -337,6 +337,11 @@ let run_files modules =
         | BuildSlice _
         | BuildString _
         | BuildFrozenSet _
+        | MatchClass _
+        | BoolOfMatchClass _
+        | AttributesOfMatchClass _
+        | MatchSequence _
+        | GetLen _
         | Collection _
         | LoadClosure _
         | LoadDeref _
