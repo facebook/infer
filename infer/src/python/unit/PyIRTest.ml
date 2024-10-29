@@ -115,8 +115,37 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.coin():
+        b0:
+          return false
+
+
+      function dummy.f(x, y):
+        b0:
+          n0 <- GLOBAL[coin]
+          n1 <- $Call(n0, None)
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n3 <- LOCAL[x]
+          return n3
+
+        b2:
+          n2 <- LOCAL[y]
+          return n2 |}]
 
 
 let%expect_test _ =
@@ -135,8 +164,42 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.coin():
+        b0:
+          return false
+
+
+      function dummy.f(x, y):
+        b0:
+          LOCAL[z] <- 0
+          n0 <- GLOBAL[coin]
+          n1 <- $Call(n0, None)
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n4 <- LOCAL[x]
+          LOCAL[z] <- n4
+          n5 <- LOCAL[z]
+          return n5
+
+        b2:
+          n2 <- LOCAL[y]
+          LOCAL[z] <- n2
+          n3 <- LOCAL[z]
+          return n3 |}]
 
 
 let%expect_test _ =
@@ -163,8 +226,67 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["coin", "dummy.coin", None, None, None, None]
+          TOPLEVEL[coin] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.coin():
+        b0:
+          return false
+
+
+      function dummy.f(x, y):
+        b0:
+          LOCAL[z] <- 0
+          n0 <- GLOBAL[coin]
+          n1 <- $Call(n0, None)
+          if n1 then jmp b1 else jmp b5
+
+        b1:
+          n8 <- GLOBAL[coin]
+          n9 <- $Call(n8, None)
+          if n9 then jmp b2 else jmp b3
+
+        b2:
+          n10 <- LOCAL[x]
+          LOCAL[z] <- n10
+          jmp b4
+
+        b3:
+          return 1664
+
+        b4:
+          n11 <- LOCAL[z]
+          n12 <- $Binary.Add(n11, 1, None)
+          LOCAL[z] <- n12
+          n13 <- LOCAL[z]
+          return n13
+
+        b5:
+          n2 <- LOCAL[z]
+          n3 <- $Binary.Add(n2, 1, None)
+          LOCAL[z] <- n3
+          n4 <- GLOBAL[coin]
+          n5 <- $Call(n4, None)
+          if n5 then jmp b6 else jmp b7
+
+        b6:
+          return 42
+
+        b7:
+          n6 <- LOCAL[y]
+          LOCAL[z] <- n6
+          n7 <- LOCAL[z]
+          return n7 |}]
 
 
 let%expect_test _ =
@@ -176,8 +298,37 @@ def f(x):
     foo(1 if x else 0)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.f(x):
+        b0:
+          n0 <- GLOBAL[foo]
+          n1 <- LOCAL[x]
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n3 <- $Call(n0, 1, None)
+          return None
+
+        b2:
+          n2 <- $Call(n0, 0, None)
+          return None
+
+
+      function dummy.foo(x):
+        b0:
+          return None |}]
 
 
 let%expect_test _ =
@@ -186,8 +337,31 @@ for x in range(10):
     print(x)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[range]
+          n1 <- $Call(n0, 10, None)
+          n2 <- $GetIter(n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
+          if n4 then jmp b2 else jmp b3
+
+        b2:
+          TOPLEVEL[x] <- n3
+          n5 <- TOPLEVEL[print]
+          n6 <- TOPLEVEL[x]
+          n7 <- $Call(n5, n6, None)
+          jmp b1
+
+        b3:
+          return None |}]
 
 
 let%expect_test _ =
@@ -418,8 +592,36 @@ def f(x, y, z, t):
         return (x and y) or (z and t)
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(x, y, z, t):
+        b0:
+          n0 <- LOCAL[x]
+          if n0 then jmp b1 else jmp b2
+
+        b1:
+          n1 <- LOCAL[y]
+          if n1 then jmp b4(n1) else jmp b2
+
+        b2:
+          n2 <- LOCAL[z]
+          if n2 then jmp b3 else jmp b4(n2)
+
+        b3:
+          n3 <- LOCAL[t]
+          jmp b4(n3)
+
+        b4(n4):
+          return n4 |}]
 
 
 let%expect_test _ =
@@ -831,8 +1033,94 @@ def f(l):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
+          n1 <- TOPLEVEL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          TOPLEVEL[g] <- n3
+          n4 <- $MakeFunction["_$listcomp", "dummy._$listcomp", None, None, None, None]
+          n5 <- TOPLEVEL[l]
+          n6 <- $GetIter(n5, None)
+          n7 <- $Call(n4, n6, None)
+          TOPLEVEL[g0] <- n7
+          n8 <- TOPLEVEL[print]
+          n9 <- TOPLEVEL[g]
+          n10 <- $Call(n8, n9, None)
+          n11 <- TOPLEVEL[print]
+          n12 <- TOPLEVEL[g0]
+          n13 <- $Call(n11, n12, None)
+          n14 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n14
+          return None
+
+
+      function dummy._$listcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 2, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
+          jmp b1
+
+        b3:
+          return $BuildList()
+
+
+      function dummy.f._$listcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 2, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
+          jmp b1
+
+        b3:
+          return $BuildList()
+
+
+      function dummy.f(l):
+        b0:
+          n0 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[r] <- n3
+          n4 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
+          n5 <- LOCAL[l]
+          n6 <- $GetIter(n5, None)
+          n7 <- $Call(n4, n6, None)
+          LOCAL[r0] <- n7
+          n8 <- GLOBAL[print]
+          n9 <- LOCAL[r]
+          n10 <- $Call(n8, n9, None)
+          n11 <- GLOBAL[print]
+          n12 <- LOCAL[r0]
+          n13 <- $Call(n11, n12, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -851,7 +1139,80 @@ def g(l):
   PyIR.test source ;
   [%expect
     {xxx|
-    IR error: Jump to next instruction detected, but next instruction is missing |xxx}]
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["g", "dummy.g", None, None, None, None]
+          TOPLEVEL[g] <- n1
+          return None
+
+
+      function dummy.g._$dictcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[num] <- n1
+          n3 <- LOCAL[num]
+          n4 <- LOCAL[num]
+          n5 <- $Binary.Power(n4, 2, None)
+          n6 <- $DictSetItem($BuildMap(), n3, n5, None)
+          jmp b1
+
+        b3:
+          return $BuildMap()
+
+
+      function dummy.f._$setcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 1, None)
+          n5 <- $SetAdd($BuildSet(), n4, None)
+          jmp b1
+
+        b3:
+          return $BuildSet()
+
+
+      function dummy.f(l):
+        b0:
+          n0 <- $MakeFunction["_$setcomp", "dummy.f._$setcomp", None, None, None, None]
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[r] <- n3
+          n4 <- LOCAL[r]
+          return n4
+
+
+      function dummy.g(l):
+        b0:
+          n0 <- $MakeFunction["_$dictcomp", "dummy.g._$dictcomp", None, None, None, None]
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[squared_dict] <- n3
+          n4 <- GLOBAL[r]
+          return n4 |xxx}]
 
 
 let%expect_test _ =
@@ -878,8 +1239,33 @@ def m(self, x, y, test):
     return foo(self, x if test else y)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
+          TOPLEVEL[m] <- n0
+          return None
+
+
+      function dummy.m(self, x, y, test):
+        b0:
+          n0 <- GLOBAL[foo]
+          n1 <- LOCAL[self]
+          n2 <- LOCAL[test]
+          if n2 then jmp b1 else jmp b2
+
+        b1:
+          n5 <- LOCAL[x]
+          n6 <- $Call(n0, n1, n5, None)
+          return n6
+
+        b2:
+          n3 <- LOCAL[y]
+          n4 <- $Call(n0, n1, n3, None)
+          return n4 |}]
 
 
 let%expect_test _ =
@@ -888,8 +1274,32 @@ def m(self, x, y, test):
     return self.foo(x if test else y)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
+          TOPLEVEL[m] <- n0
+          return None
+
+
+      function dummy.m(self, x, y, test):
+        b0:
+          n0 <- LOCAL[self]
+          n1 <- LOCAL[test]
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n4 <- LOCAL[x]
+          n5 <- $CallMethod[foo](n0, n4, None)
+          return n5
+
+        b2:
+          n2 <- LOCAL[y]
+          n3 <- $CallMethod[foo](n0, n2, None)
+          return n3 |}]
 
 
 let%expect_test _ =
@@ -898,8 +1308,31 @@ def m(x, y, test):
     return (x if test else y).foo()
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["m", "dummy.m", None, None, None, None]
+          TOPLEVEL[m] <- n0
+          return None
+
+
+      function dummy.m(x, y, test):
+        b0:
+          n0 <- LOCAL[test]
+          if n0 then jmp b1 else jmp b2
+
+        b1:
+          n3 <- LOCAL[x]
+          n4 <- $CallMethod[foo](n3, None)
+          return n4
+
+        b2:
+          n1 <- LOCAL[y]
+          n2 <- $CallMethod[foo](n1, None)
+          return n2 |}]
 
 
 let%expect_test _ =

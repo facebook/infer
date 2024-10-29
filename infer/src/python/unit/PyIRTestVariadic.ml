@@ -20,8 +20,40 @@ def f(**kwargs):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(kwargs, k, v):
+        b0:
+          n0 <- LOCAL[kwargs]
+          n1 <- $CallMethod[items](n0, None)
+          n2 <- $GetIter(n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
+          if n4 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[k] <- n3[0]
+          LOCAL[v] <- n3[1]
+          n5 <- GLOBAL[print]
+          n6 <- LOCAL[k]
+          n7 <- LOCAL[v]
+          n8 <- $Call(n5, n6, n7, None)
+          jmp b1
+
+        b3:
+          return None |}]
 
 
 let%expect_test _ =
@@ -51,9 +83,8 @@ start()
         |}
   in
   PyIR.test source ;
-  [%expect
-    {xxx|
-    IR error: Jump to next instruction detected, but next instruction is missing |xxx}]
+  [%expect {xxx|
+    IR error: Unsupported opcode: LIST_EXTEND |xxx}]
 
 
 let%expect_test _ =

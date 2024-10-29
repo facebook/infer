@@ -49,7 +49,7 @@ def foo():
        4        4 LOAD_GLOBAL                       0 (x)
                 6 LOAD_GLOBAL                       1 (y)
                 8 COMPARE_OP                        0
-               10 POP_JUMP_IF_FALSE                12 (to 12)
+               10 POP_JUMP_IF_FALSE                12 (to 24)
        5       12 LOAD_GLOBAL                       2 (print)
                14 LOAD_CONST                        2 ("case 1")
                16 CALL_FUNCTION                     1
@@ -61,7 +61,7 @@ def foo():
        8       28 LOAD_FAST                         1 (i)
                30 LOAD_FAST                         0 (N)
                32 COMPARE_OP                        0
-               34 POP_JUMP_IF_FALSE                28 (to 28)
+               34 POP_JUMP_IF_FALSE                28 (to 56)
        9 >>>   36 LOAD_FAST                         1 (i)
                38 LOAD_CONST                        4 (1)
                40 BINARY_ADD                        0
@@ -69,26 +69,26 @@ def foo():
        8       44 LOAD_FAST                         1 (i)
                46 LOAD_FAST                         0 (N)
                48 COMPARE_OP                        0
-               50 POP_JUMP_IF_TRUE                 18 (to 18)
+               50 POP_JUMP_IF_TRUE                 18 (to 36)
                52 LOAD_CONST                        0 (None)
                54 RETURN_VALUE                      0
          >>>   56 LOAD_CONST                        0 (None)
                58 RETURN_VALUE                      0
     CFG successors:
-       0: 12 12
+       0: 12 24
       12:
-      24: 36 28
-      36: 52 18
+      24: 36 56
+      36: 52 36
       52:
       56:
     CFG predecessors:
        0:
-      12: 0 0
-      24:
-      36:
-      52:
-      56:
-    topological order: 0 12
+      12: 0
+      24: 0
+      36: 24 36
+      52: 36
+      56: 24
+    topological order: 0 24 56 36 52 12
 
     dummy.foo
       12        0 LOAD_CONST                        0 (None)

@@ -24,11 +24,11 @@ eval_with_python.output: main_test.py module1.py show_print_output
 	python3 main_test.py > eval_with_python.output
 
 eval_with_infer.output: $(INFER_BIN) main_test.py module1.py show_print_output
-#	$(INFER_BIN) --run-python-interpreter -- python3 main_test.py module1.py > eval_with_infer.output
+	$(INFER_BIN) --run-python-interpreter -- python3 main_test.py module1.py > eval_with_infer.output
 
 .PHONY: test
 test: eval_with_python.output eval_with_infer.output
-#	$(call check_no_diff,eval_with_python.output,eval_with_infer.output)
+	$(call check_no_diff,eval_with_python.output,eval_with_infer.output)
 
 .PHONY: replace
 replace:

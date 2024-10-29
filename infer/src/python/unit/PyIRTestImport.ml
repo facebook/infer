@@ -154,8 +154,99 @@ if __name__ == '__main__':
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(os, None, 0)
+          TOPLEVEL[os] <- n0
+          n1 <- $ImportName(sys, None, 0)
+          TOPLEVEL[sys] <- n1
+          n2 <- $ImportName(test.libregrtest, $BuildTuple("main"), 0)
+          n3 <- $ImportFrom(main, n2)
+          TOPLEVEL[main] <- n3
+          n4 <- TOPLEVEL[main]
+          TOPLEVEL[main_in_temp_cwd] <- n4
+          n5 <- $MakeFunction["_main", "dummy._main", None, None, None, None]
+          TOPLEVEL[_main] <- n5
+          n6 <- TOPLEVEL[__name__]
+          n7 <- $Compare.eq(n6, "__main__", None)
+          if n7 then jmp b1 else jmp b2
+
+        b1:
+          n8 <- TOPLEVEL[_main]
+          n9 <- $Call(n8, None)
+          return None
+
+        b2:
+          return None
+
+
+      function dummy._main(mydir, i):
+        b0:
+          n0 <- GLOBAL[os]
+          n1 <- n0.path
+          n2 <- GLOBAL[os]
+          n3 <- n2.path
+          n4 <- GLOBAL[os]
+          n5 <- n4.path
+          n6 <- GLOBAL[sys]
+          n7 <- n6.argv
+          n8 <- n7[0]
+          n9 <- $CallMethod[dirname](n5, n8, None)
+          n10 <- $CallMethod[normpath](n3, n9, None)
+          n11 <- $CallMethod[abspath](n1, n10, None)
+          LOCAL[mydir] <- n11
+          n12 <- GLOBAL[len]
+          n13 <- GLOBAL[sys]
+          n14 <- n13.path
+          n15 <- $Call(n12, n14, None)
+          n16 <- $Binary.Subtract(n15, 1, None)
+          LOCAL[i] <- n16
+          n17 <- LOCAL[i]
+          n18 <- $Compare.ge(n17, 0, None)
+          if n18 then jmp b1 else jmp b5
+
+        b1:
+          n19 <- GLOBAL[os]
+          n20 <- n19.path
+          n21 <- GLOBAL[os]
+          n22 <- n21.path
+          n23 <- GLOBAL[sys]
+          n24 <- n23.path
+          n25 <- LOCAL[i]
+          n26 <- n24[n25]
+          n27 <- $CallMethod[normpath](n22, n26, None)
+          n28 <- $CallMethod[abspath](n20, n27, None)
+          n29 <- LOCAL[mydir]
+          n30 <- $Compare.eq(n28, n29, None)
+          if n30 then jmp b2 else jmp b3
+
+        b2:
+          jmp b4
+
+        b3:
+          n31 <- LOCAL[i]
+          n32 <- $Inplace.Subtract(n31, 1, None)
+          LOCAL[i] <- n32
+          jmp b4
+
+        b4:
+          n33 <- LOCAL[i]
+          n34 <- $Compare.ge(n33, 0, None)
+          if n34 then jmp b1 else jmp b5
+
+        b5:
+          n35 <- GLOBAL[os]
+          n36 <- n35.path
+          n37 <- GLOBAL[__file__]
+          n38 <- $CallMethod[abspath](n36, n37, None)
+          GLOBAL[__file__] <- n38
+          n39 <- GLOBAL[main]
+          n40 <- $Call(n39, None)
+          return None |}]
 
 
 let%expect_test _ =

@@ -151,9 +151,9 @@ let pp_hint ~code:{co_consts; co_names; co_varnames; co_cellvars; co_freevars} f
   | "JUMP_ABSOLUTE"
   | "JUMP_IF_TRUE_OR_POP"
   | "JUMP_IF_FALSE_OR_POP" ->
-      F.fprintf fmt "(to %d)" arg
+      F.fprintf fmt "(to %d)" (2 * arg)
   | "JUMP_FORWARD" | "FOR_ITER" ->
-      F.fprintf fmt "(to +%d)" arg
+      F.fprintf fmt "(to +%d)" (2 * arg)
   | _ ->
       F.fprintf fmt ""
 

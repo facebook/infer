@@ -53,8 +53,20 @@ print("END")
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[print]
+          n1 <- $Call(n0, "TRY BLOCK", None)
+          jmp b2
+
+        b2:
+          n2 <- TOPLEVEL[print]
+          n3 <- $Call(n2, "END", None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -291,7 +303,8 @@ def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect {|
+    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
 
 
 let%expect_test _ =

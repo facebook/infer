@@ -1804,21 +1804,21 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "FORMAT_VALUE" ->
       format_value st arg
   | "POP_JUMP_IF_TRUE" ->
-      pop_jump_if ~next_is:false st arg next_offset_opt
+      pop_jump_if ~next_is:false st (2 * arg) next_offset_opt
   | "POP_JUMP_IF_FALSE" ->
-      pop_jump_if ~next_is:true st arg next_offset_opt
+      pop_jump_if ~next_is:true st (2 * arg) next_offset_opt
   | "JUMP_FORWARD" ->
       let {State.loc} = st in
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
-      let offset = next_offset + arg in
+      let offset = next_offset + (2 * arg) in
       let* label = State.get_node_name st offset in
       let {State.stack} = st in
       let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
   | "JUMP_ABSOLUTE" ->
-      let* label = State.get_node_name st arg in
+      let* label = State.get_node_name st (2 * arg) in
       let {State.stack} = st in
       let jump = TerminatorBuilder.mk_jump label stack in
       Ok (st, Some jump)
@@ -1834,11 +1834,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "FOR_ITER" ->
-      for_iter st arg next_offset_opt
+      for_iter st (2 * arg) next_offset_opt
   | "JUMP_IF_TRUE_OR_POP" ->
-      jump_if_or_pop ~jump_if:true st arg next_offset_opt
+      jump_if_or_pop ~jump_if:true st (2 * arg) next_offset_opt
   | "JUMP_IF_FALSE_OR_POP" ->
-      jump_if_or_pop ~jump_if:false st arg next_offset_opt
+      jump_if_or_pop ~jump_if:false st (2 * arg) next_offset_opt
   | "DUP_TOP_TWO" ->
       let* tos0, st = State.pop st in
       let* tos1, st = State.pop st in
@@ -2186,13 +2186,13 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "RETURN_VALUE" ->
       `Return
   | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" ->
-      `NextInstrOrAbsolute arg
+      `NextInstrOrAbsolute (2 * arg)
   | "JUMP_IF_TRUE_OR_POP" | "JUMP_IF_FALSE_OR_POP" ->
-      `NextInstrWithPopOrAbsolute arg
+      `NextInstrWithPopOrAbsolute (2 * arg)
   | "FOR_ITER" ->
-      `NextInstrOrRelativeWith2Pop arg
+      `NextInstrOrRelativeWith2Pop (2 * arg)
   | "JUMP_FORWARD" ->
-      `Relative arg
+      `Relative (2 * arg)
   | "CALL_FINALLY" ->
       `CallFinallyRelative arg
   | "BEGIN_FINALLY" ->
@@ -2200,7 +2200,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "END_FINALLY" ->
       `EndFinally
   | "JUMP_ABSOLUTE" ->
-      `Absolute arg
+      `Absolute (2 * arg)
   | "END_ASYNC_FOR" | "RAISE_VARARGS" ->
       `Throw
   | _ ->
