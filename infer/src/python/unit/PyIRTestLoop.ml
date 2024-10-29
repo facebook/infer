@@ -318,3 +318,52 @@ def main():
   [%expect
     {|
     IR error: bad operand stack: offset 38 is reachable with two stacks of different sizes |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+def main():
+    for _ in loop():
+        if test():
+            pass
+        action()
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
+          TOPLEVEL[main] <- n0
+          return None
+
+
+      function dummy.main(_):
+        b0:
+          n0 <- GLOBAL[loop]
+          n1 <- $Call(n0, None)
+          n2 <- $GetIter(n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
+          if n4 then jmp b2 else jmp b4
+
+        b2:
+          LOCAL[_] <- n3
+          n5 <- GLOBAL[test]
+          n6 <- $Call(n5, None)
+          if n6 then jmp b3 else jmp b3(n2)
+
+        b3:
+          n7 <- GLOBAL[action]
+          n8 <- $Call(n7, None)
+          jmp b1
+
+        b4:
+          return None |}]
