@@ -96,12 +96,14 @@ let process_file ~is_binary file =
     TextualVerification.verify textual |> Result.map_error ~f
   in
   if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
-  let* _sil, _tenv, transformed_textual =
+  let* cfg, tenv, transformed_textual =
     let f = Error.textual_transformation sourcefile in
     TextualSil.module_to_sil verified_textual |> Result.map_error ~f
   in
   if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
-  Ok ()
+  let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
+  TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+  Ok tenv
 
 
 let capture_file ~is_binary file = process_file ~is_binary file
@@ -114,7 +116,8 @@ let capture_files ~is_binary files =
       let t0 = Mtime_clock.now () in
       !ProcessPoolState.update_status (Some t0) file ;
       match capture_file ~is_binary file with
-      | Ok () ->
+      | Ok file_tenv ->
+          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
           None
       | Error err ->
           Error.format_error file err ;
