@@ -1273,7 +1273,9 @@ end
 
 let proc_decl_to_sil lang procdecl = ProcDeclBridge.to_sil lang procdecl
 
-let module_to_sil = ModuleBridge.to_sil
+let module_to_sil module_ =
+  try Ok (ModuleBridge.to_sil module_) with Textual.TextualTransformError errors -> Error errors
+
 
 let pp_copyright fmt =
   F.fprintf fmt "// \n" ;

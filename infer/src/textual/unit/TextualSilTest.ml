@@ -10,10 +10,18 @@ module F = Format
 module T = Textual
 open TextualTestHelpers
 
+let module_to_sil_exn module_ =
+  match TextualSil.module_to_sil module_ with
+  | Ok res ->
+      res
+  | Error err ->
+      raise (Textual.TextualTransformError err)
+
+
 let%expect_test _ =
   let no_lang = {|define nothing() : void { #node: ret null }|} in
   let m = parse_module no_lang in
-  try TextualSil.module_to_sil m |> ignore
+  try module_to_sil_exn m |> ignore
   with T.TextualTransformError errs ->
     List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
     [%expect
@@ -40,7 +48,7 @@ let%expect_test "undefined types are included in tenv" =
           |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|
@@ -99,7 +107,7 @@ let%expect_test "final annotation" =
           |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|
@@ -136,7 +144,7 @@ let%expect_test "abstract class" =
           |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|
@@ -182,7 +190,7 @@ let%expect_test "unknown formal calls" =
          |}
   in
   let m = parse_module source in
-  let cfg, _ = TextualSil.module_to_sil m in
+  let cfg, _ = module_to_sil_exn m in
   Cfg.iter_sorted cfg ~f:(fun pdesc ->
       F.printf "%a" (Procdesc.pp_with_instrs ~print_types:true) pdesc ) ;
   [%expect
@@ -226,7 +234,7 @@ let%expect_test "hack extends is ordered" =
       |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   let name = IR.Typ.HackClass (IR.HackClassName.make "A") in
   let supers = Tenv.fold_supers tenv name ~init:[] ~f:(fun name _ acc -> name :: acc) in
   F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
@@ -243,7 +251,7 @@ let%expect_test "overloads in tenv" =
      |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a" Tenv.pp tenv ;
   [%expect
     {|
@@ -301,8 +309,7 @@ let%expect_test "undefined + overloads in merged tenv" =
      |}
   in
   let tenvs =
-    List.map [main_source; dep_source] ~f:(fun x ->
-        parse_module x |> TextualSil.module_to_sil |> snd )
+    List.map [main_source; dep_source] ~f:(fun x -> parse_module x |> module_to_sil_exn |> snd)
   in
   let tenv_merged = Tenv.create () in
   List.iter tenvs ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:tenv_merged) ;
@@ -342,7 +349,7 @@ let%expect_test "instanceof translation" =
      |}
   in
   let m = parse_module source in
-  let cfg, _ = TextualSil.module_to_sil m in
+  let cfg, _ = module_to_sil_exn m in
   Cfg.iter_sorted cfg ~f:(fun pdesc ->
       F.printf "%a" (Procdesc.pp_with_instrs ~print_types:true) pdesc ) ;
   [%expect
@@ -381,7 +388,7 @@ let%expect_test "trait vs class kind" =
     |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|
@@ -420,7 +427,7 @@ let%expect_test "const" =
      |}
   in
   let m = parse_module source in
-  let _, tenv = TextualSil.module_to_sil m in
+  let _, tenv = module_to_sil_exn m in
   F.printf "%a@\n" Tenv.pp tenv ;
   [%expect
     {|

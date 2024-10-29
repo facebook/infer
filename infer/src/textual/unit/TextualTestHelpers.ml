@@ -10,8 +10,15 @@ open Textual
 
 let sourcefile = SourceFile.create "dummy.sil"
 
+let parse_string_and_verify sourcefile text =
+  let open IResult.Let_syntax in
+  let* parsed = TextualParser.parse_string sourcefile text in
+  TextualVerification.verify parsed
+  |> Result.map_error ~f:(fun err -> [TextualParser.VerificationError err])
+
+
 let parse_module text =
-  match TextualParser.parse_string sourcefile text with
+  match parse_string_and_verify sourcefile text with
   | Ok m ->
       m
   | Error es ->
@@ -20,7 +27,7 @@ let parse_module text =
 
 
 let parse_module_print_errors text =
-  match TextualParser.parse_string sourcefile text with
+  match parse_string_and_verify sourcefile text with
   | Ok _ ->
       raise (Failure "Successfuly parsed a module while expected parsing to fail")
   | Error es ->

@@ -35,8 +35,7 @@ let parse_buf sourcefile filebuf =
     in
     (* the parser needs context to understand ident(args) expression because ident may be
        a variable or a procname *)
-    let parsed = TextualTransform.fix_closure_app parsed in
-    TextualVerification.verify parsed |> Result.map_error ~f:(fun err -> [VerificationError err])
+    Ok (TextualTransform.fix_closure_app parsed)
   with
   | TextualMenhir.Error ->
       let token = TextualLexer.Lexbuf.lexeme filebuf in
@@ -77,14 +76,7 @@ module TextualFile = struct
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
-  let translate_module sourcefile module_ =
-    try
-      let cfg, tenv = TextualSil.module_to_sil module_ in
-      Ok {sourcefile; cfg; tenv}
-    with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors])
-
-
-  let translate file =
+  let parse file =
     let sourcefile, parsed =
       match file with
       | StandaloneFile path ->
@@ -98,9 +90,30 @@ module TextualFile = struct
     in
     match parsed with
     | Ok module_ ->
-        translate_module sourcefile module_
+        Ok (sourcefile, module_)
     | Error errs ->
         Error (sourcefile, errs)
+
+
+  let verify sourcefile textual =
+    TextualVerification.verify textual
+    |> Result.map_error ~f:(fun err -> (sourcefile, [VerificationError err]))
+
+
+  let textual_to_sil sourcefile module_ =
+    let open IResult.Let_syntax in
+    let* cfg, tenv =
+      TextualSil.module_to_sil module_
+      |> Result.map_error ~f:(fun errors -> (sourcefile, [TransformError errors]))
+    in
+    Ok {sourcefile; cfg; tenv}
+
+
+  let translate file =
+    let open IResult.Let_syntax in
+    let* sourcefile, textual = parse file in
+    let* textual_verified = verify sourcefile textual in
+    textual_to_sil sourcefile textual_verified
 
 
   let capture ~use_global_tenv {sourcefile; cfg; tenv} =
