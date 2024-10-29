@@ -57,7 +57,7 @@ def f(x, y, l, bar, toto):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: NOP |}]
+    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
 
 
 let%expect_test _ =
@@ -262,5 +262,42 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: NOP |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
+          TOPLEVEL[main] <- n0
+          return None
+
+
+      function dummy.main(_):
+        b0:
+          n0 <- GLOBAL[loop]
+          n1 <- $Call(n0, None)
+          n2 <- $GetIter(n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
+          if n4 then jmp b2 else jmp b5
+
+        b2:
+          LOCAL[_] <- n3
+          n5 <- GLOBAL[test]
+          n6 <- $Call(n5, None)
+          if n6 then jmp b3 else jmp b4
+
+        b3:
+          jmp b4
+
+        b4:
+          n7 <- GLOBAL[action]
+          n8 <- $Call(n7, None)
+          jmp b1
+
+        b5:
+          return None |}]

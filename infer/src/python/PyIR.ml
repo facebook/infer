@@ -1795,6 +1795,22 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_stmt st stmt in
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
+  | "NOP" ->
+      Ok (st, None)
+  | "IS_OP" ->
+      let* rhs, st = State.pop_and_cast st in
+      let* lhs, st = State.pop_and_cast st in
+      let cmp = if Int.equal arg 1 then CompareOp.IsNot else CompareOp.Is in
+      let* id, st = call_builtin_function st (Compare cmp) [lhs; rhs] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
+  | "CONTAINS_OP" ->
+      let* rhs, st = State.pop_and_cast st in
+      let* lhs, st = State.pop_and_cast st in
+      let cmp = if Int.equal arg 1 then CompareOp.NotIn else CompareOp.In in
+      let* id, st = call_builtin_function st (Compare cmp) [lhs; rhs] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "DUP_TOP" ->
       let* tos = State.peek st in
       let st = State.push_symbol st tos in
@@ -2142,6 +2158,9 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "IMPORT_STAR"
   | "COMPARE_OP"
   | "LOAD_CLOSURE"
+  | "NOP"
+  | "IS_OP"
+  | "CONTAINS_OP"
   | "DUP_TOP"
   | "UNPACK_SEQUENCE"
   | "FORMAT_VALUE"

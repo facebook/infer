@@ -377,7 +377,7 @@ def f(x, y, l, bar, toto):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: NOP |}]
+    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
 
 
 let%expect_test _ =
@@ -691,8 +691,51 @@ def in_not_check(x, l):
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: IS_OP |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["is_check", "dummy.is_check", None, None, None, None]
+          TOPLEVEL[is_check] <- n0
+          n1 <- $MakeFunction["is_not_check", "dummy.is_not_check", None, None, None, None]
+          TOPLEVEL[is_not_check] <- n1
+          n2 <- $MakeFunction["in_check", "dummy.in_check", None, None, None, None]
+          TOPLEVEL[in_check] <- n2
+          n3 <- $MakeFunction["in_not_check", "dummy.in_not_check", None, None, None, None]
+          TOPLEVEL[in_not_check] <- n3
+          return None
+
+
+      function dummy.in_check(x, l):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[l]
+          n2 <- $Compare.in(n0, n1, None)
+          return n2
+
+
+      function dummy.in_not_check(x, l):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[l]
+          n2 <- $Compare.not_in(n0, n1, None)
+          return n2
+
+
+      function dummy.is_check(x):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- $Compare.is(n0, None, None)
+          return n1
+
+
+      function dummy.is_not_check(x):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- $Compare.is_not(n0, None, None)
+          return n1 |}]
 
 
 let%expect_test _ =
@@ -823,8 +866,57 @@ def f(m, a, b, c):
   |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CONTAINS_OP |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(m, a, b, c):
+        b0:
+          n0 <- LOCAL[a]
+          n1 <- LOCAL[b]
+          n2 <- LOCAL[m]
+          n3 <- $Compare.not_in($BuildTuple(n0, n1), n2, None)
+          if n3 then jmp b1 else jmp b2
+
+        b1:
+          n4 <- LOCAL[b]
+          n5 <- $Inplace.Subtract(n4, 1, None)
+          LOCAL[b] <- n5
+          n6 <- LOCAL[a]
+          n7 <- LOCAL[b]
+          n8 <- LOCAL[m]
+          n9 <- $Compare.not_in($BuildTuple(n6, n7), n8, None)
+          if n9 then jmp b1 else jmp b2
+
+        b2:
+          n10 <- LOCAL[a]
+          n11 <- LOCAL[c]
+          n12 <- LOCAL[m]
+          n13 <- $Compare.not_in($BuildTuple(n10, n11), n12, None)
+          if n13 then jmp b3 else jmp b5
+
+        b3:
+          n14 <- LOCAL[c]
+          n15 <- $Inplace.Add(n14, 1, None)
+          LOCAL[c] <- n15
+          n16 <- LOCAL[a]
+          n17 <- LOCAL[c]
+          n18 <- LOCAL[m]
+          n19 <- $Compare.not_in($BuildTuple(n16, n17), n18, None)
+          if n19 then jmp b3 else jmp b4
+
+        b4:
+          return None
+
+        b5:
+          return None |}]
 
 
 let%expect_test _ =
