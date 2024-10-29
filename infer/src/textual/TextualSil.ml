@@ -34,10 +34,13 @@ module LocationBridge = struct
           match entry with
           | None ->
               BaseLocation.{line; col; file; macro_file_opt= None; macro_line= -1}
-          (* hackc doesn't output column information yet *)
-          | Some original_line ->
-              BaseLocation.{line= original_line; col= -1; file; macro_file_opt= None; macro_line= -1}
-          ) )
+          | Some {line= original_line; column= original_column} ->
+              BaseLocation.
+                { line= original_line
+                ; col= original_column
+                ; file
+                ; macro_file_opt= None
+                ; macro_line= -1 } ) )
     | Unknown ->
         BaseLocation.none file
 

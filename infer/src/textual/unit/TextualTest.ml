@@ -35,125 +35,164 @@ let%test_module "line map" =
   ( module struct
     let text =
       {|
-          // TEXTUAL UNIT START level1.hack
-          .source_language = "hack"
+// TEXTUAL UNIT START level1.hack
+.source_language = "hack"
 
-          // .file "level1.hack"
-          // .line 6
-          define $root.taintSource(this: *void) : *HackInt {
-          #b0:
-          // .line 7
-            n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
-            n1 = $builtins.hhbc_not(n0)
-            jmp b1, b2
-          #b1:
-            prune $builtins.hack_is_true(n1)
-            n2 = $builtins.hhbc_verify_failed()
-            unreachable
-          #b2:
-            prune ! $builtins.hack_is_true(n1)
-            ret $builtins.hack_int(42)
-          }
+// .file "level1.hack"
+// .line 8
+define $root.Level1::taintSource($this: *void) : .notnull *HackInt {
+#b0:
+// .line 9
+// .column 3
+  n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
+// .line 9
+// .column 3
+  n1 = $builtins.hhbc_verify_type_pred($builtins.hack_int(42), n0)
+// .line 9
+// .column 3
+  ret $builtins.hack_int(42)
+}
 
-          // .file "level1.hack"
-          // .line 10
-          define $root.taintSink(this: *void, $i: *HackInt) : *void {
-          #b0:
-          // .line 11
-            ret $builtins.hack_null()
-          }
+// .file "level1.hack"
+// .line 12
+define $root.Level1::taintSink($this: *void, $args: *HackMixed) : *void {
+#b0:
+// .line 13
+// .column 2
+  ret null
+}
 
-          // .file "level1.hack"
-          // .line 13
-          define $root.FN_basicFlowBad(this: *void) : *void {
-          local $tainted: *void
-          #b0:
-          // .line 14
-            n0 = $root.taintSource(null)
-            store &$tainted <- n0: *Mixed
-          // .line 15
-            n1: *Mixed = load &$tainted
-            n2 = $root.taintSink(null, n1)
-          // .line 16
-            ret $builtins.hack_null()
-          }
+// .file "level1.hack"
+// .line 15
+define $root.Level1::basicFlowBad($this: *void) : *void {
+local $tainted: *void
+#b0:
+// .line 16
+// .column 14
+  n0 = $root.Level1::taintSource(null)
+// .line 16
+// .column 3
+  store &$tainted <- n0: *HackMixed
+// .line 17
+// .column 13
+  n1: *HackMixed = load &$tainted
+// .line 17
+// .column 3
+  n2 = $root.Level1::taintSink(null, n1)
+// .line 18
+// .column 2
+  ret null
+}
 
-          // .file "level1.hack"
-          // .line 18
-          define $root.basicFlowOk(this: *void, $untainted: *HackInt) : *void {
-          #b0:
-          // .line 19
-            n0: *Mixed = load &$untainted
-            n1 = $root.taintSink(null, n0)
-          // .line 20
-            ret $builtins.hack_null()
-          }
-          // TEXTUAL UNIT END level1.hack
-      |}
+// .file "level1.hack"
+// .line 20
+define $root.Level1::basicFlowOk($this: *void, $untainted: .notnull *HackInt) : *void {
+#b0:
+// .line 21
+// .column 13
+  n0: *HackMixed = load &$untainted
+// .line 21
+// .column 3
+  n1 = $root.Level1::taintSink(null, n0)
+// .line 22
+// .column 2
+  ret null
+}
+
+// ----- EXTERNALS -----
+declare $builtins.hhbc_is_type_int(...): *HackMixed
+declare $builtins.hhbc_verify_type_pred(...): *HackMixed
+
+// ----- BUILTIN DECLS STARTS HERE -----
+declare $builtins.hack_int(int): *HackInt
+
+// TEXTUAL UNIT END level1.hack
+|}
 
 
     let%expect_test _ =
       let line_map = LineMap.create text in
       let lines = String.split_lines text in
       List.iteri lines ~f:(fun i text ->
-          let line = LineMap.find line_map i in
-          F.printf "%i: %s\n" (Option.value_exn line) text ) ;
+          Option.iter (LineMap.find line_map i) ~f:(fun {LineMap.line; column} ->
+              let pp_column fmt =
+                if column > 0 then F.fprintf fmt " column:%2i" column
+                else F.pp_print_string fmt "          "
+              in
+              F.printf "line:%2i%t %s\n" line pp_column text ) ) ;
       [%expect
         {|
-        1:
-        1:           // TEXTUAL UNIT START level1.hack
-        1:           .source_language = "hack"
-        1:
-        1:           // .file "level1.hack"
-        1:           // .line 6
-        6:           define $root.taintSource(this: *void) : *HackInt {
-        6:           #b0:
-        6:           // .line 7
-        7:             n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
-        7:             n1 = $builtins.hhbc_not(n0)
-        7:             jmp b1, b2
-        7:           #b1:
-        7:             prune $builtins.hack_is_true(n1)
-        7:             n2 = $builtins.hhbc_verify_failed()
-        7:             unreachable
-        7:           #b2:
-        7:             prune ! $builtins.hack_is_true(n1)
-        7:             ret $builtins.hack_int(42)
-        7:           }
-        7:
-        7:           // .file "level1.hack"
-        7:           // .line 10
-        10:           define $root.taintSink(this: *void, $i: *HackInt) : *void {
-        10:           #b0:
-        10:           // .line 11
-        11:             ret $builtins.hack_null()
-        11:           }
-        11:
-        11:           // .file "level1.hack"
-        11:           // .line 13
-        13:           define $root.FN_basicFlowBad(this: *void) : *void {
-        13:           local $tainted: *void
-        13:           #b0:
-        13:           // .line 14
-        14:             n0 = $root.taintSource(null)
-        14:             store &$tainted <- n0: *Mixed
-        14:           // .line 15
-        15:             n1: *Mixed = load &$tainted
-        15:             n2 = $root.taintSink(null, n1)
-        15:           // .line 16
-        16:             ret $builtins.hack_null()
-        16:           }
-        16:
-        16:           // .file "level1.hack"
-        16:           // .line 18
-        18:           define $root.basicFlowOk(this: *void, $untainted: *HackInt) : *void {
-        18:           #b0:
-        18:           // .line 19
-        19:             n0: *Mixed = load &$untainted
-        19:             n1 = $root.taintSink(null, n0)
-        19:           // .line 20
-        20:             ret $builtins.hack_null()
-        20:           }
-        20:           // TEXTUAL UNIT END level1.hack
-        20: |}]
+        line: 1
+        line: 1           // TEXTUAL UNIT START level1.hack
+        line: 1           .source_language = "hack"
+        line: 1
+        line: 1           // .file "level1.hack"
+        line: 1           // .line 8
+        line: 8           define $root.Level1::taintSource($this: *void) : .notnull *HackInt {
+        line: 8           #b0:
+        line: 8           // .line 9
+        line: 9           // .column 3
+        line: 9 column: 3   n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
+        line: 9 column: 3 // .line 9
+        line: 9           // .column 3
+        line: 9 column: 3   n1 = $builtins.hhbc_verify_type_pred($builtins.hack_int(42), n0)
+        line: 9 column: 3 // .line 9
+        line: 9           // .column 3
+        line: 9 column: 3   ret $builtins.hack_int(42)
+        line: 9 column: 3 }
+        line: 9 column: 3
+        line: 9 column: 3 // .file "level1.hack"
+        line: 9 column: 3 // .line 12
+        line:12           define $root.Level1::taintSink($this: *void, $args: *HackMixed) : *void {
+        line:12           #b0:
+        line:12           // .line 13
+        line:13           // .column 2
+        line:13 column: 2   ret null
+        line:13 column: 2 }
+        line:13 column: 2
+        line:13 column: 2 // .file "level1.hack"
+        line:13 column: 2 // .line 15
+        line:15           define $root.Level1::basicFlowBad($this: *void) : *void {
+        line:15           local $tainted: *void
+        line:15           #b0:
+        line:15           // .line 16
+        line:16           // .column 14
+        line:16 column:14   n0 = $root.Level1::taintSource(null)
+        line:16 column:14 // .line 16
+        line:16           // .column 3
+        line:16 column: 3   store &$tainted <- n0: *HackMixed
+        line:16 column: 3 // .line 17
+        line:17           // .column 13
+        line:17 column:13   n1: *HackMixed = load &$tainted
+        line:17 column:13 // .line 17
+        line:17           // .column 3
+        line:17 column: 3   n2 = $root.Level1::taintSink(null, n1)
+        line:17 column: 3 // .line 18
+        line:18           // .column 2
+        line:18 column: 2   ret null
+        line:18 column: 2 }
+        line:18 column: 2
+        line:18 column: 2 // .file "level1.hack"
+        line:18 column: 2 // .line 20
+        line:20           define $root.Level1::basicFlowOk($this: *void, $untainted: .notnull *HackInt) : *void {
+        line:20           #b0:
+        line:20           // .line 21
+        line:21           // .column 13
+        line:21 column:13   n0: *HackMixed = load &$untainted
+        line:21 column:13 // .line 21
+        line:21           // .column 3
+        line:21 column: 3   n1 = $root.Level1::taintSink(null, n0)
+        line:21 column: 3 // .line 22
+        line:22           // .column 2
+        line:22 column: 2   ret null
+        line:22 column: 2 }
+        line:22 column: 2
+        line:22 column: 2 // ----- EXTERNALS -----
+        line:22 column: 2 declare $builtins.hhbc_is_type_int(...): *HackMixed
+        line:22 column: 2 declare $builtins.hhbc_verify_type_pred(...): *HackMixed
+        line:22 column: 2
+        line:22 column: 2 // ----- BUILTIN DECLS STARTS HERE -----
+        line:22 column: 2 declare $builtins.hack_int(int): *HackInt
+        line:22 column: 2
+        line:22 column: 2 // TEXTUAL UNIT END level1.hack |}]
   end )

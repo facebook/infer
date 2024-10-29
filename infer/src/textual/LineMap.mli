@@ -8,10 +8,12 @@
 open! IStd
 module F = Format
 
+type loc = {line: int; column: int}
+
 type t
 
 val create : string -> t
 
-val find : t -> int -> int option [@@warning "-unused-value-declaration"]
+val find : t -> int -> loc option
 
 val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
