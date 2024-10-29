@@ -102,7 +102,7 @@ module TextualFile = struct
 
   let textual_to_sil sourcefile module_ =
     let open IResult.Let_syntax in
-    let* cfg, tenv =
+    let* cfg, tenv, _ =
       TextualSil.module_to_sil module_
       |> Result.map_error ~f:(fun errors -> (sourcefile, [TransformError errors]))
     in

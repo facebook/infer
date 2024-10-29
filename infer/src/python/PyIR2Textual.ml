@@ -375,7 +375,7 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let {id= None; exp= call_builtin "py_setup_annotations" []; loc}
 
 
-let of_node {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
+let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
   let label = mk_node_name name in
   let label_loc = of_location first_loc in
   let last_loc = of_location last_loc in
@@ -385,6 +385,20 @@ let of_node {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
         let loc = of_location loc in
         of_stmt loc stmt )
   in
+  let instrs =
+    if is_module_body && NodeName.equal name entry then
+      let loc = label_loc in
+      Textual.(
+        Instr.Store
+          {exp1= Lvar Parameter.globals; exp2= call_builtin "py_make_dictionnary" []; typ= None; loc}
+        :: Instr.Store
+             { exp1= Lvar Parameter.locals
+             ; exp2= Load {exp= Lvar Parameter.globals; typ= None}
+             ; typ= None
+             ; loc }
+        :: instrs )
+    else instrs
+  in
   let exn_succs = [] (* TODO *) in
   let ssa_parameters = List.map ssa_parameters ~f:(fun ssa -> (mk_ident ssa, Typ.value)) in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
@@ -392,11 +406,19 @@ let of_node {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
 
 let mk_procdesc proc_kind {CFG.entry; nodes; code_info= _} =
   let procdecl = mk_procdecl proc_kind in
+  let is_module_body = is_module_body proc_kind in
   let nodes_bindings = NodeName.Map.bindings nodes in
-  let nodes = List.map nodes_bindings ~f:(fun (_node_name, node) -> of_node node) in
+  let nodes =
+    List.map nodes_bindings ~f:(fun (_node_name, node) -> of_node is_module_body entry node)
+  in
   let start = mk_node_name entry in
-  let params = if is_module_body proc_kind then [] else [Parameter.globals; Parameter.locals] in
-  let locals = [] in
+  let params = if is_module_body then [] else [Parameter.globals; Parameter.locals] in
+  let locals =
+    if is_module_body then
+      [ (Parameter.globals, Textual.Typ.mk_without_attributes Typ.globals)
+      ; (Parameter.locals, Textual.Typ.mk_without_attributes Typ.locals) ]
+    else []
+  in
   let exit_loc =
     let last_loc =
       List.fold nodes_bindings ~init:None ~f:(fun acc (_, {Node.last_loc}) ->
@@ -419,4 +441,5 @@ let mk_module {Module.name; toplevel; functions} =
         Textual.Module.Proc (mk_procdesc (RegularFunction qual_name) cfg) )
   in
   let decls = Textual.Module.Proc (mk_procdesc (ModuleBody name) toplevel) :: decls in
-  {Textual.Module.attrs= []; decls; sourcefile}
+  let attrs = [Textual.Attr.mk_source_language Python] in
+  {Textual.Module.attrs; decls; sourcefile}

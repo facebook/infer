@@ -10,7 +10,11 @@ open! IStd
 val proc_decl_to_sil : Textual.Lang.t -> Textual.ProcDecl.t -> Procname.t
 [@@warning "-unused-value-declaration"]
 
-val module_to_sil : Textual.Module.t -> (Cfg.t * Tenv.t, Textual.transform_error list) result
+val module_to_sil :
+  Textual.Module.t -> (Cfg.t * Tenv.t * Textual.Module.t, Textual.transform_error list) result
+(** convert a Textual unit into Infer internal representation (cfg + tenv). During the process the
+    textual representation undergoes several transformations. The result is passed as the third
+    element of the returned tuple *)
 
 val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
 (** generate a .sil file with name [filename] containing all the functions in the given cfg *)

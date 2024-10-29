@@ -794,7 +794,9 @@ module InstrBridge = struct
           match TextualDecls.get_procdecl decls_env procsig (List.length args) with
           | Some (variadic_flag, _, procdecl) ->
               (variadic_flag, procdecl)
-          | None when QualifiedProcName.contains_wildcard proc ->
+          | None
+            when QualifiedProcName.contains_wildcard proc
+                 || QualifiedProcName.is_python_builtin proc ->
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
                    return types are *HackMixed/*PyObject respectively. *)
@@ -1247,7 +1249,7 @@ module ModuleBridge = struct
                if is_undefined_type tname then
                  let sil_tname = TypeNameBridge.to_sil lang tname in
                  Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
-        (cfgs, tenv)
+        (cfgs, tenv, module_)
 
 
   let of_sil ~sourcefile ~lang tenv cfg =

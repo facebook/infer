@@ -23,7 +23,7 @@ module Error : sig
 end
 
 module NodeName : sig
-  type t
+  type t [@@deriving equal]
 
   module Map : Caml.Map.S with type key = t
 

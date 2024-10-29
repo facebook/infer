@@ -12,8 +12,8 @@ open TextualTestHelpers
 
 let module_to_sil_exn module_ =
   match TextualSil.module_to_sil module_ with
-  | Ok res ->
-      res
+  | Ok (cfg, tenv, _) ->
+      (cfg, tenv)
   | Error err ->
       raise (Textual.TextualTransformError err)
 

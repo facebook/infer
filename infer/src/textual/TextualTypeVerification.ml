@@ -503,6 +503,15 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (* TODO(T177210383): fix the type declared by hackc in order to deal with
          this case as a regular call *)
       ret (exp, typeof_generics)
+  | Call {proc; args; kind} when Textual.QualifiedProcName.is_python_builtin proc ->
+      let* lang = get_lang in
+      let* loc = get_location in
+      let+ args =
+        mapM args ~f:(fun exp ->
+            let+ exp, _typ = typeof_exp exp in
+            exp )
+      in
+      (Exp.Call {proc; args; kind}, TextualSil.default_return_type lang loc)
   | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc (List.length args) lang in
