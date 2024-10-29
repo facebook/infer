@@ -1344,8 +1344,43 @@ async def g():
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          n1 <- $MakeFunction["g", "dummy.g", None, None, None, None]
+          TOPLEVEL[g] <- n1
+          return None
+
+
+      function dummy.f():
+        b0:
+          $GenStartCoroutine()
+          return true
+
+
+      function dummy.g():
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[f]
+          n1 <- $Call(n0, None)
+          n2 <- $GetAwaitable(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
+          if n2 then jmp b1 else jmp b2
+
+        b1:
+          n6 <- GLOBAL[print]
+          n7 <- $Call(n6, 0, None)
+          return None
+
+        b2:
+          n4 <- GLOBAL[print]
+          n5 <- $Call(n4, 1, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -1538,6 +1573,90 @@ async def foo():
             return
 |}
   in
-  PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+  PyIR.test ~debug:true source ;
+  [%expect
+    {|
+    Translating dummy...
+    Building a new node, starting from offset 0
+                  []
+       2        0 LOAD_CONST                        0 (<code object foo>)
+                  [<foo>]
+                2 LOAD_CONST                        1 ("foo")
+                  [<foo>; "foo"]
+                4 MAKE_FUNCTION                     0
+                  [n0]
+                6 STORE_NAME                        0 (foo)
+                  []
+                8 LOAD_CONST                        2 (None)
+                  [None]
+               10 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    Translating dummy.foo...
+    Building a new node, starting from offset 0
+                  []
+                0 GEN_START                         1
+                  []
+       3        2 LOAD_GLOBAL                       0 (range)
+                  [n0]
+                4 LOAD_GLOBAL                       1 (num)
+                  [n0; n1]
+                6 CALL_FUNCTION                     1
+                  [n2]
+                8 GET_ITER                          0
+                  [n3]
+    Successors: 10
+
+    Building a new node, starting from offset 10
+                  [n3]
+         >>>   10 FOR_ITER                         37 (to +74)
+                  [n3; n4]
+    Successors: 12,86
+
+    Building a new node, starting from offset 86
+                  []
+       3 >>>   86 LOAD_CONST                        0 (None)
+                  [None]
+               88 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    Building a new node, starting from offset 12
+                  [n3; n4]
+               12 STORE_FAST                        0 (i)
+                  [n3]
+       4       14 LOAD_GLOBAL                       2 (read)
+                  [n3; n6]
+               16 CALL_FUNCTION                     0
+                  [n3; n7]
+               18 GET_AWAITABLE                     0
+                  [n3; n8]
+               20 LOAD_CONST                        0 (None)
+                  [n3; n8; None]
+               22 YIELD_FROM                        0
+                  [n3; n8]
+               24 BEFORE_ASYNC_WITH                 0
+                  [n3; CM(n8).__exit__; n10]
+               26 GET_AWAITABLE                     0
+                  [n3; CM(n8).__exit__; n11]
+               28 LOAD_CONST                        0 (None)
+                  [n3; CM(n8).__exit__; n11; None]
+               30 YIELD_FROM                        0
+                  [n3; CM(n8).__exit__; n11]
+               32 SETUP_ASYNC_WITH                 14
+                  [n3; CM(n8).__exit__; n11]
+               34 STORE_FAST                        1 (f)
+                  [n3; CM(n8).__exit__]
+       5       36 NOP                               0
+                  [n3; CM(n8).__exit__]
+       4       38 POP_BLOCK                         0
+                  [n3; CM(n8).__exit__]
+               40 LOAD_CONST                        0 (None)
+                  [n3; CM(n8).__exit__; None]
+               42 DUP_TOP                           0
+                  [n3; CM(n8).__exit__; None; None]
+               44 DUP_TOP                           0
+                  [n3; CM(n8).__exit__; None; None; None]
+               46 CALL_FUNCTION                     3
+    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]

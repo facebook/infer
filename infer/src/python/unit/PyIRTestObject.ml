@@ -1284,8 +1284,83 @@ def powerset(s):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(itertools, None, 0)
+          TOPLEVEL[itertools] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          n2 <- $MakeFunction["AsyncYieldFrom", "dummy.AsyncYieldFrom", None, None, None, None]
+          n3 <- $BuildClass(n2, "AsyncYieldFrom", None)
+          TOPLEVEL[AsyncYieldFrom] <- n3
+          n4 <- $MakeFunction["powerset", "dummy.powerset", None, None, None, None]
+          TOPLEVEL[powerset] <- n4
+          return None
+
+
+      function dummy.AsyncYieldFrom():
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- "AsyncYieldFrom"
+          n1 <- $MakeFunction["__await__", "dummy.AsyncYieldFrom.__await__", None, None, None, None]
+          TOPLEVEL[__await__] <- n1
+          return None
+
+
+      function dummy.AsyncYieldFrom.__await__(self):
+        b0:
+          $GenStartGenerator()
+          n0 <- LOCAL[self]
+          n1 <- n0.obj
+          n2 <- $GetYieldFromIter(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
+          return None
+
+
+      function dummy.f():
+        b0:
+          $GenStartGenerator()
+          n0 <- $Yield(42)
+          return None
+
+
+      function dummy.powerset(s):
+        b0:
+          $GenStartGenerator()
+          n0 <- GLOBAL[range]
+          n1 <- GLOBAL[len]
+          n2 <- LOCAL[s]
+          n3 <- $Call(n1, n2, None)
+          n4 <- $Binary.Add(n3, 1, None)
+          n5 <- $Call(n0, n4, None)
+          n6 <- $GetIter(n5, None)
+          jmp b1
+
+        b1:
+          n7 <- $NextIter(n6, None)
+          n8 <- $HasNextIter(n6, None)
+          if n8 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[i] <- n7
+          n9 <- GLOBAL[map]
+          n10 <- GLOBAL[frozenset]
+          n11 <- GLOBAL[itertools]
+          n12 <- LOCAL[s]
+          n13 <- LOCAL[i]
+          n14 <- $CallMethod[combinations](n11, n12, n13, None)
+          n15 <- $Call(n9, n10, n14, None)
+          n16 <- $GetYieldFromIter(n15, None)
+          n17 <- $YieldFrom(n16, None, None)
+          jmp b1
+
+        b3:
+          return None |}]
 
 
 let%expect_test _ =

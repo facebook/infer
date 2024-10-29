@@ -383,6 +383,17 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let {id= None; exp= call_builtin "py_delete_attr" [of_exp exp; exp_of_ident_str attr]; loc}
   | SetupAnnotations ->
       Let {id= None; exp= call_builtin "py_setup_annotations" []; loc}
+  | GenStart {kind} ->
+      let kind =
+        match kind with
+        | Generator ->
+            "generator"
+        | Coroutine ->
+            "coroutine"
+        | AsyncGenerator ->
+            "async_generator"
+      in
+      Let {id= None; exp= call_builtin ("py_gen_start_" ^ kind) []; loc}
 
 
 let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =

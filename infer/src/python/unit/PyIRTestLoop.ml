@@ -169,8 +169,34 @@ async def async_loop1():
         foo(doc)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["async_loop1", "dummy.async_loop1", None, None, None, None]
+          TOPLEVEL[async_loop1] <- n0
+          return None
+
+
+      function dummy.async_loop1(doc):
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[get_docs]
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__aiter__](n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $CallMethod[__anext__](n2, None)
+          n4 <- $GetAwaitable(n3, None)
+          n5 <- $YieldFrom(n4, None, None)
+          LOCAL[doc] <- n4
+          n6 <- GLOBAL[foo]
+          n7 <- LOCAL[doc]
+          n8 <- $Call(n6, n7, None)
+          jmp b1 |}]
 
 
 let%expect_test _ =
@@ -179,8 +205,44 @@ async def async_loop2():
     [ x async for x in read() ]
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["async_loop2", "dummy.async_loop2", None, None, None, None]
+          TOPLEVEL[async_loop2] <- n0
+          return None
+
+
+      function dummy.async_loop2._$listcomp(.0):
+        b0:
+          $GenStartCoroutine()
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $CallMethod[__anext__](n0, None)
+          n2 <- $GetAwaitable(n1, None)
+          n3 <- $YieldFrom(n2, None, None)
+          LOCAL[x] <- n2
+          n4 <- LOCAL[x]
+          n5 <- $ListAppend($BuildList(), n4, None)
+          jmp b1
+
+
+      function dummy.async_loop2():
+        b0:
+          $GenStartCoroutine()
+          n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
+          n1 <- GLOBAL[read]
+          n2 <- $Call(n1, None)
+          n3 <- $CallMethod[__aiter__](n2, None)
+          n4 <- $Call(n0, n3, None)
+          n5 <- $GetAwaitable(n4, None)
+          n6 <- $YieldFrom(n5, None, None)
+          return None |}]
 
 
 let%expect_test _ =

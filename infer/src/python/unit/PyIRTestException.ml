@@ -355,7 +355,7 @@ async def async_with(filename):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+    IR error: UNEXPECTED_EXPRESSION: CM(n2).__exit__ |}]
 
 
 let%expect_test _ =
@@ -468,7 +468,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: GEN_START |}]
+    IR error: UNEXPECTED_EXPRESSION: CM(n11).__exit__ |}]
 
 
 let%expect_test _ =
@@ -501,8 +501,88 @@ async def foo():
        0:
     topological order: 0
 
-    IR error: Unsupported opcode: GEN_START
-    IR error: Unsupported opcode: GEN_START |}]
+    dummy.foo
+                0 GEN_START                         1
+       3        2 LOAD_GLOBAL                       0 (read1)
+                4 CALL_FUNCTION                     0
+                6 SETUP_WITH                       44
+                8 POP_TOP                           0
+       4       10 SETUP_FINALLY                    38
+       5       12 LOAD_GLOBAL                       1 (read2)
+               14 CALL_FUNCTION                     0
+               16 SETUP_WITH                       14
+               18 POP_TOP                           0
+       6       20 LOAD_GLOBAL                       2 (get)
+               22 CALL_FUNCTION                     0
+               24 GET_AWAITABLE                     0
+               26 LOAD_CONST                        0 (None)
+               28 YIELD_FROM                        0
+               30 STORE_FAST                        0 (res)
+               32 POP_BLOCK                         0
+       5       34 LOAD_CONST                        0 (None)
+               36 DUP_TOP                           0
+               38 DUP_TOP                           0
+               40 CALL_FUNCTION                     3
+               42 POP_TOP                           0
+               44 JUMP_FORWARD                      8 (to +16)
+         >>>   46 WITH_EXCEPT_START                 0
+               48 POP_JUMP_IF_TRUE                 26 (to 52)
+               50 RERAISE                           1
+         >>>   52 POP_TOP                           0
+               54 POP_TOP                           0
+               56 POP_TOP                           0
+               58 POP_EXCEPT                        0
+               60 POP_TOP                           0
+       7 >>>   62 LOAD_FAST                         0 (res)
+               64 POP_BLOCK                         0
+       9       66 LOAD_GLOBAL                       3 (do_finally)
+               68 CALL_FUNCTION                     0
+               70 POP_TOP                           0
+       3       72 POP_BLOCK                         0
+               74 ROT_TWO                           0
+               76 LOAD_CONST                        0 (None)
+               78 DUP_TOP                           0
+               80 DUP_TOP                           0
+               82 CALL_FUNCTION                     3
+               84 POP_TOP                           0
+               86 RETURN_VALUE                      0
+       9 >>>   88 LOAD_GLOBAL                       3 (do_finally)
+               90 CALL_FUNCTION                     0
+               92 POP_TOP                           0
+               94 RERAISE                           0
+       3 >>>   96 WITH_EXCEPT_START                 0
+               98 POP_JUMP_IF_TRUE                 51 (to 102)
+              100 RERAISE                           1
+         >>>  102 POP_TOP                           0
+              104 POP_TOP                           0
+              106 POP_TOP                           0
+              108 POP_EXCEPT                        0
+              110 POP_TOP                           0
+              112 LOAD_CONST                        0 (None)
+              114 RETURN_VALUE                      0
+    CFG successors:
+       0: 62
+      46: 50 52
+      50: 52
+      52: 62
+      62:
+      88: 96
+      96: 100 102
+     100: 102
+     102:
+    CFG predecessors:
+       0:
+      46:
+      50:
+      52:
+      62: 0
+      88:
+      96:
+     100:
+     102:
+    topological order: 0 62
+
+    IR error: UNEXPECTED_EXPRESSION: CM(n4).__exit__ |}]
 
 
 let%expect_test _ =

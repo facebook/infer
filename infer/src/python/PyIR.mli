@@ -175,6 +175,8 @@ module Exp : sig
 end
 
 module Stmt : sig
+  type gen_kind = Generator | Coroutine | AsyncGenerator
+
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
@@ -188,6 +190,7 @@ module Stmt : sig
     | Delete of ScopedIdent.t
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | GenStart of {kind: gen_kind}
     | SetupAnnotations
 end
 

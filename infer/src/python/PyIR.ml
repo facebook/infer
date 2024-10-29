@@ -617,6 +617,8 @@ module Stmt = struct
 
   let unnamed_call_args args = List.map ~f:unnamed_call_arg args
 
+  type gen_kind = Generator | Coroutine | AsyncGenerator
+
   type t =
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
@@ -630,6 +632,7 @@ module Stmt = struct
     | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | GenStart of {kind: gen_kind}
     | SetupAnnotations
 
   let pp fmt = function
@@ -659,6 +662,17 @@ module Stmt = struct
         F.fprintf fmt "$DeleteDeref[%d,\"%a\")" slot Ident.pp name
     | DeleteAttr {exp; attr} ->
         F.fprintf fmt "$DeleteAttr(%a, %a)" Exp.pp exp Ident.pp attr
+    | GenStart {kind} ->
+        let kind =
+          match kind with
+          | Generator ->
+              "Generator"
+          | Coroutine ->
+              "Coroutine"
+          | AsyncGenerator ->
+              "AsyncGenerator"
+        in
+        F.fprintf fmt "$GenStart%s()" kind
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
@@ -1764,6 +1778,26 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "SETUP_ANNOTATIONS" ->
       let st = State.push_stmt st SetupAnnotations in
       Ok (st, None)
+  | "GEN_START" ->
+      (* Note: the spec says we need to pop the stack, but in practice there is nothing to pop.
+         I think there is implicit initialization of the operand stack going on for coroutines.
+         We will investigate later when coroutines will be managed more seriously *)
+      let kind : Stmt.gen_kind =
+        match arg with
+        | 0 ->
+            Generator
+        | 1 ->
+            Coroutine
+        | 2 ->
+            AsyncGenerator
+        | _ ->
+            (* should never happen according to
+               https://github.com/python/cpython/blob/v3.10.9/Python/ceval.c#L2653 *)
+            L.die InternalError "GEN_START wrong arg"
+      in
+      let stmt = Stmt.GenStart {kind} in
+      let st = State.push_stmt st stmt in
+      Ok (st, None)
   | "IMPORT_NAME" ->
       let name = co_names.(arg) |> Ident.mk in
       let* fromlist, st = State.pop_and_cast st in
@@ -2182,6 +2216,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "LOAD_BUILD_CLASS"
   | "LOAD_METHOD"
   | "CALL_METHOD"
+  | "GEN_START"
   | "SETUP_ANNOTATIONS"
   | "IMPORT_NAME"
   | "IMPORT_FROM"
