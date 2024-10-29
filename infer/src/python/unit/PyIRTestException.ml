@@ -19,8 +19,17 @@ finally:
       print("FINALLY BLOCK")
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RERAISE |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[print]
+          n1 <- $Call(n0, "TRY BLOCK", None)
+          n2 <- TOPLEVEL[print]
+          n3 <- $Call(n2, "FINALLY BLOCK", None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -38,8 +47,36 @@ print("END")
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RERAISE |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[print]
+          n1 <- $Call(n0, "TRY BLOCK", None)
+          n2 <- TOPLEVEL[foo]
+          if n2 then jmp b1 else jmp b2
+
+        b1:
+          n5 <- TOPLEVEL[print]
+          n6 <- $Call(n5, "X", None)
+          jmp b3
+
+        b2:
+          n3 <- TOPLEVEL[print]
+          n4 <- $Call(n3, "Y", None)
+          jmp b3
+
+        b3:
+          n7 <- TOPLEVEL[print]
+          n8 <- $Call(n7, "FINALLY BLOCK", None)
+          jmp b8
+
+        b8:
+          n9 <- TOPLEVEL[print]
+          n10 <- $Call(n9, "END", None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -85,8 +122,18 @@ except (ValueError, AttributeError):
                  |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(os, None, 0)
+          TOPLEVEL[os] <- n0
+          n1 <- TOPLEVEL[os]
+          n2 <- $CallMethod[sysconf](n1, "SC_PAGESIZE", None)
+          TOPLEVEL[page_size] <- n2
+          return None |}]
 
 
 let%expect_test _ =
@@ -104,8 +151,43 @@ def f(x):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RERAISE |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(foo, None, 0)
+          TOPLEVEL[foo] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.f(x):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- $GetIter(n0, None)
+          jmp b1
+
+        b1:
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
+          if n3 then jmp b2 else jmp b4
+
+        b2:
+          LOCAL[i] <- n2
+          n4 <- GLOBAL[foo]
+          n5 <- $CallMethod[Foo](n4, None)
+          LOCAL[e] <- n5
+          n6 <- GLOBAL[print]
+          n7 <- $Call(n6, "yolo", None)
+          n8 <- LOCAL[e]
+          n9 <- $CallMethod[bar](n8, None)
+          jmp b1
+
+        b4:
+          return None |}]
 
 
 let%expect_test _ =
@@ -124,8 +206,59 @@ with open("foo", "r") as fp:
         |}
   in
   PyIR.test ~debug:true source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    Translating dummy...
+    Building a new node, starting from offset 0
+                  []
+       2        0 LOAD_CONST                        0 (0)
+                  [0]
+                2 LOAD_CONST                        1 (("ERROR"))
+                  [0; $BuildTuple("ERROR")]
+                4 IMPORT_NAME                       0 (foo)
+                  [n0]
+                6 IMPORT_FROM                       1 (ERROR)
+                  [n0; n1]
+                8 STORE_NAME                        1 (ERROR)
+                  [n0]
+               10 POP_TOP                           0
+                  []
+       4       12 LOAD_NAME                         2 (open)
+                  [n2]
+               14 LOAD_CONST                        2 ("foo")
+                  [n2; "foo"]
+               16 LOAD_CONST                        3 ("r")
+                  [n2; "foo"; "r"]
+               18 CALL_FUNCTION                     2
+                  [n3]
+               20 SETUP_WITH                       38
+                  [CM(n3).__exit__; n4]
+               22 STORE_NAME                        3 (fp)
+                  [CM(n3).__exit__]
+       5       24 LOAD_NAME                         3 (fp)
+                  [CM(n3).__exit__; n5]
+               26 GET_ITER                          0
+                  [CM(n3).__exit__; n6]
+    Successors: 28
+
+    Building a new node, starting from offset 28
+                  [CM(n3).__exit__; n6]
+         >>>   28 FOR_ITER                         26 (to +52)
+                  [CM(n3).__exit__; n6; n7]
+    Successors: 30,82
+
+    Building a new node, starting from offset 82
+                  [CM(n3).__exit__]
+       5 >>>   82 POP_BLOCK                         0
+                  [CM(n3).__exit__]
+       4       84 LOAD_CONST                        7 (None)
+                  [CM(n3).__exit__; None]
+               86 DUP_TOP                           0
+                  [CM(n3).__exit__; None; None]
+               88 DUP_TOP                           0
+                  [CM(n3).__exit__; None; None; None]
+               90 CALL_FUNCTION                     3
+    IR error: UNEXPECTED_EXPRESSION: CM(n3).__exit__ |}]
 
 
 let%expect_test _ =
@@ -144,8 +277,41 @@ def subhelper():
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          GLOBAL[TICKS] <- 0
+          n0 <- $MakeFunction["subhelper", "dummy.subhelper", None, None, None, None]
+          TOPLEVEL[subhelper] <- n0
+          return None
+
+
+      function dummy.subhelper(i):
+        b0:
+          n0 <- GLOBAL[TICKS]
+          n1 <- $Inplace.Add(n0, 2, None)
+          GLOBAL[TICKS] <- n1
+          n2 <- GLOBAL[range]
+          n3 <- $Call(n2, 2, None)
+          n4 <- $GetIter(n3, None)
+          jmp b1
+
+        b1:
+          n5 <- $NextIter(n4, None)
+          n6 <- $HasNextIter(n4, None)
+          if n6 then jmp b2 else jmp b6
+
+        b2:
+          LOCAL[i] <- n5
+          n7 <- GLOBAL[print]
+          n8 <- $Call(n7, "foo", None)
+          jmp b1
+
+        b6:
+          return None |}]
 
 
 let%expect_test _ =
@@ -161,8 +327,22 @@ except C as c:
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          n1 <- TOPLEVEL[foo]
+          n2 <- $Call(n1, None)
+          return None
+
+
+      function dummy.foo():
+        b0:
+          return None |}]
 
 
 let%expect_test _ =
@@ -189,8 +369,22 @@ def call_finally():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["call_finally", "dummy.call_finally", None, None, None, None]
+          TOPLEVEL[call_finally] <- n0
+          return None
+
+
+      function dummy.call_finally(e):
+        b0:
+          n0 <- GLOBAL[read]
+          n1 <- $Call(n0, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -205,8 +399,37 @@ def call_finally_with_break():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["call_finally_with_break", "dummy.call_finally_with_break", None, None, None, None]
+          TOPLEVEL[call_finally_with_break] <- n0
+          return None
+
+
+      function dummy.call_finally_with_break(i, e):
+        b0:
+          n0 <- GLOBAL[range]
+          n1 <- $Call(n0, 100, None)
+          n2 <- $GetIter(n1, None)
+          jmp b1
+
+        b1:
+          n3 <- $NextIter(n2, None)
+          n4 <- $HasNextIter(n2, None)
+          if n4 then jmp b2 else jmp b7
+
+        b2:
+          LOCAL[i] <- n3
+          n5 <- GLOBAL[read]
+          n6 <- $Call(n5, None)
+          jmp b1
+
+        b7:
+          return None |}]
 
 
 let%expect_test _ =
@@ -303,8 +526,58 @@ def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo(num_attempts, should_stop, output):
+        b0:
+          LOCAL[num_attempts] <- 25
+          jmp b1
+
+        b1:
+          n0 <- LOCAL[num_attempts]
+          n1 <- $Compare.gt(n0, 0, None)
+          if n1 then jmp b2 else jmp b14
+
+        b11:
+          n5 <- LOCAL[num_attempts]
+          n6 <- $Binary.Subtract(n5, 1, None)
+          LOCAL[num_attempts] <- n6
+          jmp b13
+
+        b13:
+          n7 <- LOCAL[num_attempts]
+          n8 <- $Compare.gt(n7, 0, None)
+          if n8 then jmp b2 else jmp b14
+
+        b14:
+          return None
+
+        b2:
+          n2 <- GLOBAL[stop_conditionx]
+          n3 <- $Call(n2, None)
+          LOCAL[should_stop] <- n3[0]
+          LOCAL[output] <- n3[1]
+          n4 <- LOCAL[should_stop]
+          if n4 then jmp b3 else jmp b4
+
+        b3:
+          n9 <- LOCAL[output]
+          n10 <- LOCAL[num_attempts]
+          n11 <- $Binary.Subtract(n10, 1, None)
+          LOCAL[num_attempts] <- n11
+          return n9
+
+        b4:
+          jmp b11 |}]
 
 
 let%expect_test _ =
@@ -341,4 +614,60 @@ def foo(test):
                   []
     Successors:
 
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+    Translating dummy.foo...
+    Building a new node, starting from offset 0
+                  []
+       3        0 SETUP_FINALLY                    22
+                  []
+                2 SETUP_FINALLY                    10
+                  []
+       4        4 LOAD_FAST                         0 (test)
+                  [n0]
+                6 POP_JUMP_IF_FALSE                 8 (to 16)
+                  []
+    Successors: 8,16
+
+    Building a new node, starting from offset 16
+                  []
+       6 >>>   16 POP_BLOCK                         0
+                  []
+               18 POP_BLOCK                         0
+                  []
+      10       20 LOAD_CONST                        1 (3)
+                  [3]
+               22 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    Building a new node, starting from offset 8
+                  []
+       5        8 POP_BLOCK                         0
+                  []
+               10 POP_BLOCK                         0
+                  []
+      10       12 LOAD_CONST                        1 (3)
+                  [3]
+               14 RETURN_VALUE                      0
+                  []
+    Successors:
+
+
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo(test):
+        b0:
+          n0 <- LOCAL[test]
+          if n0 then jmp b1 else jmp b2
+
+        b1:
+          return 3
+
+        b2:
+          return 3 |}]

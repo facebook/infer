@@ -2089,6 +2089,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          by our DFS anyway since we don't model exceptionnal edges yet.
       *)
       Ok (st, Some (TerminatorBuilder.Throw Exp.none))
+  | "RERAISE" | "WITH_EXCEPT_START" ->
+      Ok (st, None)
   | "UNPACK_EX" ->
       (* The low byte of counts is the number of values before the list value, the high byte of
          counts the number of values after it. *)
@@ -2233,11 +2235,13 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "GET_AWAITABLE"
   | "BEFORE_ASYNC_WITH"
   | "SETUP_ASYNC_WITH"
+  | "RERAISE"
+  | "WITH_EXCEPT_START"
   | "UNPACK_EX" ->
       `NextInstrOnly
   | "RETURN_VALUE" ->
       `Return
-  | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" ->
+  | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" | "JUMP_IF_NOT_EXC_MATCH" ->
       `NextInstrOrAbsolute (2 * arg)
   | "JUMP_IF_TRUE_OR_POP" | "JUMP_IF_FALSE_OR_POP" ->
       `NextInstrWithPopOrAbsolute (2 * arg)

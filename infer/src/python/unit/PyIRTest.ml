@@ -377,7 +377,7 @@ def f(x, y, l, bar, toto):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
+    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]
 
 
 let%expect_test _ =
@@ -821,7 +821,7 @@ def f(foo, bar):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: WITH_EXCEPT_START |}]
+    IR error: UNEXPECTED_EXPRESSION: CM(n4).__exit__ |}]
 
 
 let%expect_test _ =

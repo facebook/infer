@@ -467,8 +467,24 @@ def f(ok):
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(foo, None, 0)
+          TOPLEVEL[foo] <- n0
+          n1 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n1
+          return None
+
+
+      function dummy.f(ok):
+        b0:
+          n0 <- GLOBAL[foo]
+          n1 <- $CallMethod[bar](n0, None)
+          return None |}]
 
 
 let%expect_test _ =

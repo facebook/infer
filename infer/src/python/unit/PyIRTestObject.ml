@@ -1238,8 +1238,31 @@ class defaultdict:
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_IF_NOT_EXC_MATCH |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["defaultdict", "dummy.defaultdict", None, None, None, None]
+          n1 <- $BuildClass(n0, "defaultdict", None)
+          TOPLEVEL[defaultdict] <- n1
+          return None
+
+
+      function dummy.defaultdict.__getitem__(self, key):
+        b0:
+          return 42
+
+
+      function dummy.defaultdict():
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- "defaultdict"
+          n1 <- $MakeFunction["__getitem__", "dummy.defaultdict.__getitem__", None, None, None, None]
+          TOPLEVEL[__getitem__] <- n1
+          return None |}]
 
 
 let%expect_test _ =

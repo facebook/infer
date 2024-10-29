@@ -118,5 +118,71 @@ done()
 |}
   in
   PyIR.test_cfg_skeleton source ;
-  [%expect {|
-    IR error: Unsupported opcode: RERAISE |}]
+  [%expect
+    {|
+    dummy
+       2        0 LOAD_NAME                         0 (start)
+                2 CALL_FUNCTION                     0
+                4 POP_TOP                           0
+       3        6 LOAD_NAME                         1 (x)
+                8 GET_ITER                          0
+         >>>   10 FOR_ITER                         35 (to +70)
+               12 STORE_NAME                        2 (i)
+       4       14 LOAD_NAME                         3 (foo)
+               16 LOAD_METHOD                       4 (Foo)
+               18 CALL_METHOD                       0
+               20 STORE_NAME                        5 (e)
+       5       22 SETUP_FINALLY                    24
+               24 SETUP_FINALLY                     6
+       6       26 LOAD_NAME                         6 (print)
+               28 LOAD_CONST                        0 ("yolo")
+               30 CALL_FUNCTION                     1
+               32 POP_TOP                           0
+               34 POP_BLOCK                         0
+               36 JUMP_FORWARD                      8 (to +16)
+       7 >>>   38 POP_TOP                           0
+               40 POP_TOP                           0
+               42 POP_TOP                           0
+       8       44 LOAD_NAME                         7 (do)
+               46 CALL_FUNCTION                     0
+               48 POP_TOP                           0
+               50 POP_EXCEPT                        0
+               52 JUMP_FORWARD                      3 (to +6)
+      10 >>>   54 LOAD_NAME                         8 (other_thing)
+               56 CALL_FUNCTION                     0
+               58 POP_TOP                           0
+         >>>   60 POP_BLOCK                         0
+      12       62 LOAD_NAME                         5 (e)
+               64 LOAD_METHOD                       9 (bar)
+               66 CALL_METHOD                       0
+               68 POP_TOP                           0
+               70 JUMP_ABSOLUTE                     5 (to 10)
+         >>>   72 LOAD_NAME                         5 (e)
+               74 LOAD_METHOD                       9 (bar)
+               76 CALL_METHOD                       0
+               78 POP_TOP                           0
+               80 RERAISE                           0
+      13 >>>   82 LOAD_NAME                        10 (done)
+               84 CALL_FUNCTION                     0
+               86 POP_TOP                           0
+               88 LOAD_CONST                        1 (None)
+               90 RETURN_VALUE                      0
+    CFG successors:
+       0: 10
+      10: 12 82(-2)
+      12: 54
+      38: 60
+      54: 60
+      60: 10
+      72: 82
+      82:
+    CFG predecessors:
+       0:
+      10: 0 60
+      12: 10
+      38:
+      54: 12
+      60: 54
+      72:
+      82: 10
+    topological order: 0 10 82 12 54 60 |}]
