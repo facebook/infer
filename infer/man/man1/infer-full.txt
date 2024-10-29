@@ -3224,6 +3224,10 @@ INTERNAL OPTIONS
        --python-files-index-reset
            Cancel the effect of --python-files-index.
 
+       --python-skip-db
+           Activates: Skip the DB writing during Python capture (Conversely:
+           --no-python-skip-db)
+
        --qualified-cpp-name-block-list-reset
            Set --qualified-cpp-name-block-list to the empty list.
 

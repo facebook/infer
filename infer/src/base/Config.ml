@@ -2963,6 +2963,10 @@ and python_files_index =
      $(b,infer capture -- python3 file1.py file2.py) but not with $(b,--pyc-file)."
 
 
+and python_skip_db =
+  CLOpt.mk_bool ~long:"python-skip-db" ~default:false "Skip the DB writing during Python capture"
+
+
 and qualified_cpp_name_block_list =
   CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4655,6 +4659,8 @@ and pure_by_default = !pure_by_default
 and pyc_file = RevList.to_list !pyc_file
 
 and python_files_index = !python_files_index
+
+and python_skip_db = !python_skip_db
 
 and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 

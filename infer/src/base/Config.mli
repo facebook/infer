@@ -740,6 +740,8 @@ val pyc_file : string list
 
 val python_files_index : string option
 
+val python_skip_db : bool
+
 val qualified_cpp_name_block_list : string list
 
 val quiet : bool

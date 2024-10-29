@@ -102,8 +102,10 @@ let process_file ~is_binary file =
   in
   if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
-  TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
-  Ok tenv
+  if Config.python_skip_db then Ok None
+  else (
+    TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+    Ok (Some tenv) )
 
 
 let capture_file ~is_binary file = process_file ~is_binary file
@@ -117,7 +119,7 @@ let capture_files ~is_binary files =
       !ProcessPoolState.update_status (Some t0) file ;
       match capture_file ~is_binary file with
       | Ok file_tenv ->
-          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+          Option.iter file_tenv ~f:(fun file_tenv -> Tenv.merge ~src:file_tenv ~dst:child_tenv) ;
           None
       | Error err ->
           Error.format_error file err ;
@@ -167,7 +169,8 @@ let capture_files ~is_binary files =
   L.progress "Success: %d files@\n" !n_captured ;
   L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
-  MergeCapture.merge_global_tenv ~normalize:true (Array.to_list child_tenv_paths) ;
+  if not Config.python_skip_db then
+    MergeCapture.merge_global_tenv ~normalize:true (Array.to_list child_tenv_paths) ;
   Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
 
 
