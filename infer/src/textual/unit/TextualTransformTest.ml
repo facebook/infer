@@ -757,7 +757,15 @@ let%expect_test "closures" =
 
       define __Closure_C_add_in_D_foo_4.call(__this: *__Closure_C_add_in_D_foo_4, p1: int, p2: float, p3: string) : int {
         #entry:
-            ret C.add([__this.?.x], [__this.?.y], p1, p2, p3)
+            n6:*__Closure_C_add_in_D_foo_4 = load &__this
+            n7:int = load n6.?.x
+            n8:*__Closure_C_add_in_D_foo_4 = load &__this
+            n9:int = load n8.?.y
+            n10:int = load &p1
+            n11:float = load &p2
+            n12:string = load &p3
+            n13 = C.add(n7, n9, n10, n11, n12)
+            ret n13
 
       }
 
@@ -779,15 +787,16 @@ let%expect_test "closures" =
             store n4.?.y <- 1:int
             n0 = n4
             store &y <- n0:*HackMixed
-            n5:*HackMixed = load &y
-            n6:int = load &x
-            n7 = n5.?.call(n6, 1., null)
-            n1 = n7
-            n8:int = load &x
-            n9 = n0.?.call(n8, 2., null)
-            n2 = n9
+            n14:*HackMixed = load &y
+            n15:int = load &x
+            n16 = n14.?.call(n15, 1., null)
+            n1 = n16
+            n17:int = load &x
+            n18 = n0.?.call(n17, 2., null)
+            n2 = n18
             ret __sil_plusa(n1, n2)
 
       } |}] ;
   type_check module_ ;
-  [%expect {| verification succeeded |}]
+  [%expect {|
+      verification succeeded |}]
