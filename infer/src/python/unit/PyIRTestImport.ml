@@ -609,5 +609,36 @@ from foo import *
       function toplevel():
         b0:
           n0 <- $ImportName(foo, $BuildTuple("*"), 0)
-          n1 <- $ImportStar(n0, None)
+          $ImportStart(n0)
+          return None |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+if test():
+    from mod import *
+try:
+    pass
+except Exception as error:
+    pass
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[test]
+          n1 <- $Call(n0, None)
+          if n1 then jmp b1 else jmp b2
+
+        b1:
+          n2 <- $ImportName(mod, $BuildTuple("*"), 0)
+          $ImportStart(n2)
+          jmp b2
+
+        b2:
           return None |}]

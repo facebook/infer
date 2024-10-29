@@ -276,8 +276,6 @@ let builtin_name builtin =
       "py_call_function_ex"
   | Inplace op ->
       F.asprintf "py_inplace_%s" (binary_op_name op)
-  | ImportStar ->
-      "py_import_star"
   | Binary op ->
       F.asprintf "py_binary_%s" (binary_op_name op)
   | Unary op ->
@@ -396,6 +394,8 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let {id= None; exp= call_builtin "py_delete_attr" [of_exp exp; exp_of_ident_str attr]; loc}
   | SetupAnnotations ->
       Let {id= None; exp= call_builtin "py_setup_annotations" []; loc}
+  | ImportStar exp ->
+      Let {id= None; exp= call_builtin "py_import_star" [of_exp exp]; loc}
   | GenStart {kind} ->
       let kind =
         match kind with

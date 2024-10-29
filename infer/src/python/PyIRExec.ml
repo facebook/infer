@@ -431,6 +431,7 @@ let run_files modules =
         | DeleteAttr _
         | StoreDeref _
         | SetupAnnotations
+        | ImportStar _
         | GenStart _ ->
             todo "exec_stmt"
       in

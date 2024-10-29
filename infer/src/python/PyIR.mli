@@ -107,7 +107,6 @@ module BuiltinCaller : sig
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
@@ -196,6 +195,7 @@ module Stmt : sig
     | Delete of ScopedIdent.t
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
 end

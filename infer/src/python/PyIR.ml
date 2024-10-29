@@ -297,7 +297,6 @@ module BuiltinCaller = struct
     | FormatFn of FormatFunction.t
     | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
-    | ImportStar
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
@@ -333,8 +332,6 @@ module BuiltinCaller = struct
         sprintf "$FormatFn.%s" (FormatFunction.to_string fn)
     | CallFunctionEx ->
         "$CallFunctionEx"
-    | ImportStar ->
-        sprintf "$ImportStar"
     | Binary op ->
         let op = BinaryOp.to_string op in
         sprintf "$Binary.%s" op
@@ -646,6 +643,7 @@ module Stmt = struct
     | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
 
@@ -676,6 +674,8 @@ module Stmt = struct
         F.fprintf fmt "$DeleteDeref[%d,\"%a\")" slot Ident.pp name
     | DeleteAttr {exp; attr} ->
         F.fprintf fmt "$DeleteAttr(%a, %a)" Exp.pp exp Ident.pp attr
+    | ImportStar exp ->
+        F.fprintf fmt "$ImportStart(%a)" Exp.pp exp
     | GenStart {kind} ->
         let kind =
           match kind with
@@ -1805,8 +1805,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "IMPORT_STAR" ->
       let* module_object, st = State.pop_and_cast st in
-      let* id, st = call_builtin_function st ImportStar [module_object] in
-      let st = State.push st (Exp.Temp id) in
+      let st = State.push_stmt st (ImportStar module_object) in
       Ok (st, None)
   | "IMPORT_FROM" ->
       let name = co_names.(arg) |> Ident.mk in
