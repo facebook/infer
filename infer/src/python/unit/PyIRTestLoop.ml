@@ -56,8 +56,60 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(x, y, l, bar, toto):
+        b0:
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0, None)
+          jmp b1
+
+        b1:
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
+          if n3 then jmp b2 else jmp b13
+
+        b12:
+          jmp b1
+
+        b13:
+          return None
+
+        b2:
+          LOCAL[x] <- n2
+          n4 <- LOCAL[bar]
+          n5 <- $Call(n4, None)
+          n6 <- $CallMethod[__enter__](n5, None)
+          n7 <- LOCAL[toto]
+          n8 <- $Call(n7, None)
+          n9 <- $CallMethod[__enter__](n8, None)
+          LOCAL[obj] <- n9
+          n10 <- LOCAL[y]
+          if n10 then jmp b3 else jmp b4
+
+        b3:
+          n15 <- $CallMethod[__exit__](n8, None)
+          n16 <- $CallMethod[__exit__](n5, None)
+          jmp b1
+
+        b4:
+          n11 <- GLOBAL[print]
+          n12 <- $Call(n11, "nop", None)
+          n13 <- $CallMethod[__exit__](n8, None)
+          jmp b8
+
+        b8:
+          n14 <- $CallMethod[__exit__](n5, None)
+          jmp b12 |}]
 
 
 let%expect_test _ =

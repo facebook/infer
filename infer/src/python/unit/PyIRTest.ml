@@ -376,8 +376,60 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(x, y, l, bar, toto):
+        b0:
+          n0 <- LOCAL[l]
+          n1 <- $GetIter(n0, None)
+          jmp b1
+
+        b1:
+          n2 <- $NextIter(n1, None)
+          n3 <- $HasNextIter(n1, None)
+          if n3 then jmp b2 else jmp b13
+
+        b12:
+          jmp b1
+
+        b13:
+          return None
+
+        b2:
+          LOCAL[x] <- n2
+          n4 <- LOCAL[bar]
+          n5 <- $Call(n4, None)
+          n6 <- $CallMethod[__enter__](n5, None)
+          n7 <- LOCAL[toto]
+          n8 <- $Call(n7, None)
+          n9 <- $CallMethod[__enter__](n8, None)
+          LOCAL[obj] <- n9
+          n10 <- LOCAL[y]
+          if n10 then jmp b3 else jmp b4
+
+        b3:
+          n15 <- $CallMethod[__exit__](n8, None)
+          n16 <- $CallMethod[__exit__](n5, None)
+          jmp b1
+
+        b4:
+          n11 <- GLOBAL[print]
+          n12 <- $Call(n11, "nop", None)
+          n13 <- $CallMethod[__exit__](n8, None)
+          jmp b8
+
+        b8:
+          n14 <- $CallMethod[__exit__](n5, None)
+          jmp b12 |}]
 
 
 let%expect_test _ =
@@ -820,8 +872,39 @@ def f(foo, bar):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n4).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
+          TOPLEVEL[f] <- n0
+          return None
+
+
+      function dummy.f(foo, bar):
+        b0:
+          n0 <- LOCAL[foo]
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
+          LOCAL[foo0] <- n2
+          n3 <- LOCAL[bar]
+          n4 <- $Call(n3, None)
+          n5 <- $CallMethod[__enter__](n4, None)
+          LOCAL[bar0] <- n5
+          n6 <- GLOBAL[print]
+          n7 <- LOCAL[bar0]
+          n8 <- $Call(n6, n7, None)
+          n9 <- $CallMethod[__exit__](n4, None)
+          jmp b4
+
+        b4:
+          n10 <- GLOBAL[print]
+          n11 <- LOCAL[foo0]
+          n12 <- $Call(n10, n11, None)
+          n13 <- $CallMethod[__exit__](n1, None)
+          return 42 |}]
 
 
 let%expect_test _ =
@@ -1659,4 +1742,61 @@ async def foo():
                44 DUP_TOP                           0
                   [n3; CM(n8).__exit__; None; None; None]
                46 CALL_FUNCTION                     3
-    IR error: UNEXPECTED_EXPRESSION: CM(n8).__exit__ |}]
+                  [n3; n13]
+               48 GET_AWAITABLE                     0
+                  [n3; n14]
+               50 LOAD_CONST                        0 (None)
+                  [n3; n14; None]
+               52 YIELD_FROM                        0
+                  [n3; n14]
+               54 POP_TOP                           0
+                  [n3]
+               56 POP_TOP                           0
+                  []
+               58 LOAD_CONST                        0 (None)
+                  [None]
+               60 RETURN_VALUE                      0
+                  []
+    Successors:
+
+
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo(i, f):
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[range]
+          n1 <- GLOBAL[num]
+          n2 <- $Call(n0, n1, None)
+          n3 <- $GetIter(n2, None)
+          jmp b1
+
+        b1:
+          n4 <- $NextIter(n3, None)
+          n5 <- $HasNextIter(n3, None)
+          if n5 then jmp b2 else jmp b6
+
+        b2:
+          LOCAL[i] <- n4
+          n6 <- GLOBAL[read]
+          n7 <- $Call(n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
+          n10 <- $CallMethod[__enter__](n8, None)
+          n11 <- $GetAwaitable(n10, None)
+          n12 <- $YieldFrom(n11, None, None)
+          LOCAL[f] <- n11
+          n13 <- $CallMethod[__exit__](n8, None)
+          n14 <- $GetAwaitable(n13, None)
+          n15 <- $YieldFrom(n14, None, None)
+          return None
+
+        b6:
+          return None |}]

@@ -258,7 +258,84 @@ with open("foo", "r") as fp:
                88 DUP_TOP                           0
                   [CM(n3).__exit__; None; None; None]
                90 CALL_FUNCTION                     3
-    IR error: UNEXPECTED_EXPRESSION: CM(n3).__exit__ |}]
+                  [n9]
+               92 POP_TOP                           0
+                  []
+               94 LOAD_CONST                        7 (None)
+                  [None]
+               96 RETURN_VALUE                      0
+                  []
+    Successors:
+
+    Building a new node, starting from offset 30
+                  [CM(n3).__exit__; n6; n7]
+               30 STORE_NAME                        4 (line)
+                  [CM(n3).__exit__; n6]
+       6       32 SETUP_FINALLY                     6
+                  [CM(n3).__exit__; n6]
+       7       34 LOAD_NAME                         5 (print)
+                  [CM(n3).__exit__; n6; n10]
+               36 LOAD_CONST                        4 ("TRY")
+                  [CM(n3).__exit__; n6; n10; "TRY"]
+               38 CALL_FUNCTION                     1
+                  [CM(n3).__exit__; n6; n11]
+               40 POP_TOP                           0
+                  [CM(n3).__exit__; n6]
+               42 POP_BLOCK                         0
+                  [CM(n3).__exit__; n6]
+               44 JUMP_FORWARD                     13 (to +26)
+                  [CM(n3).__exit__; n6]
+    Successors: 72
+
+    Building a new node, starting from offset 72
+                  [CM(n3).__exit__; n6]
+      11 >>>   72 LOAD_NAME                         5 (print)
+                  [CM(n3).__exit__; n6; n12]
+               74 LOAD_CONST                        6 ("ELSE")
+                  [CM(n3).__exit__; n6; n12; "ELSE"]
+               76 CALL_FUNCTION                     1
+                  [CM(n3).__exit__; n6; n13]
+               78 POP_TOP                           0
+                  [CM(n3).__exit__; n6]
+               80 JUMP_ABSOLUTE                    14 (to 28)
+                  [CM(n3).__exit__; n6]
+    Successors: 28
+
+
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ImportName(foo, $BuildTuple("ERROR"), 0)
+          n1 <- $ImportFrom(ERROR, n0)
+          TOPLEVEL[ERROR] <- n1
+          n2 <- TOPLEVEL[open]
+          n3 <- $Call(n2, "foo", "r", None)
+          n4 <- $CallMethod[__enter__](n3, None)
+          TOPLEVEL[fp] <- n4
+          n5 <- TOPLEVEL[fp]
+          n6 <- $GetIter(n5, None)
+          jmp b1
+
+        b1:
+          n7 <- $NextIter(n6, None)
+          n8 <- $HasNextIter(n6, None)
+          if n8 then jmp b2 else jmp b7
+
+        b2:
+          TOPLEVEL[line] <- n7
+          n10 <- TOPLEVEL[print]
+          n11 <- $Call(n10, "TRY", None)
+          jmp b6
+
+        b6:
+          n12 <- TOPLEVEL[print]
+          n13 <- $Call(n12, "ELSE", None)
+          jmp b1
+
+        b7:
+          n9 <- $CallMethod[__exit__](n3, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -354,8 +431,35 @@ async def async_with(filename):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n2).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["async_with", "dummy.async_with", None, None, None, None]
+          TOPLEVEL[async_with] <- n0
+          return None
+
+
+      function dummy.async_with(filename):
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[open]
+          n1 <- LOCAL[filename]
+          n2 <- $Call(n0, n1, "r", None)
+          n3 <- $CallMethod[__enter__](n2, None)
+          n4 <- $GetAwaitable(n3, None)
+          n5 <- $YieldFrom(n4, None, None)
+          LOCAL[f] <- n4
+          n6 <- LOCAL[f]
+          n7 <- $CallMethod[read](n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
+          n10 <- $CallMethod[__exit__](n2, None)
+          n11 <- $GetAwaitable(n10, None)
+          n12 <- $YieldFrom(n11, None, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -467,8 +571,51 @@ async def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n11).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo():
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[read1]
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
+          n3 <- $GetAwaitable(n2, None)
+          n4 <- $YieldFrom(n3, None, None)
+          n5 <- GLOBAL[read2]
+          n6 <- $Call(n5, None)
+          n7 <- $CallMethod[__enter__](n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
+          n10 <- GLOBAL[read3]
+          n11 <- $Call(n10, None)
+          n12 <- $CallMethod[__enter__](n11, None)
+          n13 <- GLOBAL[action]
+          n14 <- $Call(n13, None)
+          n15 <- $GetAwaitable(n14, None)
+          n16 <- $YieldFrom(n15, None, None)
+          n17 <- $CallMethod[__exit__](n11, None)
+          jmp b4
+
+        b4:
+          n18 <- $CallMethod[__exit__](n6, None)
+          n19 <- $GetAwaitable(n18, None)
+          n20 <- $YieldFrom(n19, None, None)
+          jmp b8
+
+        b8:
+          n21 <- $CallMethod[__exit__](n1, None)
+          n22 <- $GetAwaitable(n21, None)
+          n23 <- $YieldFrom(n22, None, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -582,7 +729,38 @@ async def foo():
      102:
     topological order: 0 62
 
-    IR error: UNEXPECTED_EXPRESSION: CM(n4).__exit__ |}]
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo(res):
+        b0:
+          $GenStartCoroutine()
+          n0 <- GLOBAL[read1]
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__enter__](n1, None)
+          n3 <- GLOBAL[read2]
+          n4 <- $Call(n3, None)
+          n5 <- $CallMethod[__enter__](n4, None)
+          n6 <- GLOBAL[get]
+          n7 <- $Call(n6, None)
+          n8 <- $GetAwaitable(n7, None)
+          n9 <- $YieldFrom(n8, None, None)
+          LOCAL[res] <- n8
+          n10 <- $CallMethod[__exit__](n4, None)
+          jmp b4
+
+        b4:
+          n11 <- LOCAL[res]
+          n12 <- GLOBAL[do_finally]
+          n13 <- $Call(n12, None)
+          n14 <- $CallMethod[__exit__](n1, None)
+          return n11 |}]
 
 
 let%expect_test _ =

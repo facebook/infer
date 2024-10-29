@@ -327,8 +327,20 @@ with open("foo.txt", "wt") as fp:
     fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: UNEXPECTED_EXPRESSION: CM(n1).__exit__ |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[open]
+          n1 <- $Call(n0, "foo.txt", "wt", None)
+          n2 <- $CallMethod[__enter__](n1, None)
+          TOPLEVEL[fp] <- n2
+          n3 <- TOPLEVEL[fp]
+          n4 <- $CallMethod[write](n3, "yolo", None)
+          n5 <- $CallMethod[__exit__](n1, None)
+          return None |}]
 
 
 let%expect_test _ =

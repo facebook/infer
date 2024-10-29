@@ -32,6 +32,8 @@ module Ident : sig
 
     val enter : t
 
+    val exit : t
+
     val name : t
 
     val print : t
@@ -53,6 +55,8 @@ end = struct
     let cause = "__cause__"
 
     let enter = "__enter__"
+
+    let exit = "__exit__"
 
     let name = "__name__"
 
@@ -555,8 +559,6 @@ module Error = struct
     | FixpointComputationNotReached of {src: int; dest: int}
     | NextOffsetMissing
     | MissingNodeInformation of int
-    | WithCleanupStart of Exp.opstack_symbol
-    | WithCleanupFinish of Exp.opstack_symbol
     | RaiseExceptionInvalid of int
     | SubroutineEmptyStack of int
 
@@ -596,12 +598,6 @@ module Error = struct
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingNodeInformation offset ->
         F.fprintf fmt "No information about offset %d" offset
-    | WithCleanupStart exp ->
-        F.fprintf fmt "WITH_CLEANUP_START/TODO: unsupported scenario with %a" Exp.pp_opstack_symbol
-          exp
-    | WithCleanupFinish exp ->
-        F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp_opstack_symbol
-          exp
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
     | SubroutineEmptyStack offset ->
@@ -1172,6 +1168,9 @@ let call_function_with_unnamed_args st ?arg_names exp args =
     match exp with
     | Exp.BuiltinCaller call ->
         Ok (Stmt.BuiltinCall {lhs; call; args; arg_names})
+    | Exp.ContextManagerExit self_if_needed ->
+        let name = Ident.Special.exit in
+        Ok (Stmt.CallMethod {lhs; name; self_if_needed; args= []; arg_names})
     | exp ->
         let+ exp = State.cast_exp st exp in
         Stmt.Call {lhs; exp; args; arg_names}
@@ -1411,44 +1410,6 @@ let for_iter st delta next_offset_opt =
            { exp= condition
            ; then_= TerminatorBuilder.mk_node_call next_label next_stack
            ; else_= TerminatorBuilder.mk_node_call other_label other_stack } ) )
-
-
-(* See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300 *)
-let with_cleanup_start st =
-  let open IResult.Let_syntax in
-  let* tos, st = State.pop_and_cast st in
-  let* () =
-    match (tos : Exp.t) with
-    | Const None ->
-        Ok ()
-    | _ ->
-        internal_error st (Error.WithCleanupStart (Exp tos))
-  in
-  let* context_manager_exit, st = State.pop st in
-  let* context_manager =
-    match context_manager_exit with
-    | Exp.ContextManagerExit exp ->
-        Ok exp
-    | exp ->
-        internal_error st (Error.WithCleanupStart exp)
-  in
-  let id, st = call_method st Ident.Special.enter context_manager [Exp.none; Exp.none; Exp.none] in
-  let st = State.push st Exp.none in
-  let st = State.push st Exp.none in
-  let st = State.push st (Temp id) in
-  Ok (st, None)
-
-
-(** See https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373 *)
-let with_cleanup_finish st =
-  let open IResult.Let_syntax in
-  let* _exit_res, st = State.pop st in
-  let* tos, st = State.pop st in
-  match (tos : Exp.opstack_symbol) with
-  | Exp (Const None) ->
-      Ok (st, None)
-  | _ ->
-      internal_error st (Error.WithCleanupFinish tos)
 
 
 let raise_varargs st argc =
@@ -1989,10 +1950,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
           Ok st
       in
       Ok (st, None)
-  | "WITH_CLEANUP_START" ->
-      with_cleanup_start st
-  | "WITH_CLEANUP_FINISH" ->
-      with_cleanup_finish st
   | "RAISE_VARARGS" ->
       raise_varargs st arg
   | "POP_EXCEPT" ->
@@ -2241,8 +2198,6 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "SETUP_WITH"
   | "SETUP_FINALLY"
   | "POP_FINALLY"
-  | "WITH_CLEANUP_START"
-  | "WITH_CLEANUP_FINISH"
   | "POP_EXCEPT"
   | "BUILD_TUPLE_UNPACK_WITH_CALL"
   | "BUILD_TUPLE_UNPACK"
