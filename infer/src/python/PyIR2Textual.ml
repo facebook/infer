@@ -102,6 +102,8 @@ let exp_globals = Textual.Exp.(Load {exp= Lvar Parameter.globals; typ= None})
 
 let rec of_exp exp : Textual.Exp.t =
   match (exp : Exp.t) with
+  | AssertionError ->
+      call_builtin "py_load_assertion_error" []
   | Const const ->
       of_const const
   | Var {scope= Global; ident} ->

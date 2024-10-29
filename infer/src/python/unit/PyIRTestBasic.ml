@@ -591,3 +591,33 @@ def foo(n):
           n2 <- $Binary.Multiply("*", n1, None)
           n3 <- $CallMethod[update](n0, $BuildMap("key", n2), None)
           return None |}]
+
+
+let%expect_test _ =
+  let source = {|
+def foo(n):
+    assert(n>0)
+|} in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $MakeFunction["foo", "dummy.foo", None, None, None, None]
+          TOPLEVEL[foo] <- n0
+          return None
+
+
+      function dummy.foo(n):
+        b0:
+          n0 <- LOCAL[n]
+          n1 <- $Compare.gt(n0, 0, None)
+          if n1 then jmp b2 else jmp b1
+
+        b1:
+          throw $AssertionError
+
+        b2:
+          return None |}]

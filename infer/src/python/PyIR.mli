@@ -148,6 +148,7 @@ module Exp : sig
   type collection = List | Set | Tuple | Map
 
   type t =
+    | AssertionError
     | BuildFrozenSet of t list
     | BuildSlice of t list
     | BuildString of t list

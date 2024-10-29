@@ -333,6 +333,7 @@ let run_files modules =
             (* Note: Python dictionnaries may have other type of keys *)
             let index = eval_exp index |> expect_string ~who ~how:"as index" |> Ident.mk in
             get index
+        | AssertionError
         | BuildSlice _
         | BuildString _
         | BuildFrozenSet _

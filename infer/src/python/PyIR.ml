@@ -431,6 +431,7 @@ module Exp = struct
       In this IR, name resolution is done so naming is not ambiguous. Also, we have reconstructed
       the CFG of the program, lost during Python compilation *)
   type t =
+    | AssertionError
     | BuildFrozenSet of t list
     | BuildSlice of t list (* 2 < length <= 3 *)
     | BuildString of t list
@@ -472,6 +473,8 @@ module Exp = struct
   let of_int i = Const (Int (Z.of_int i))
 
   let rec pp fmt = function
+    | AssertionError ->
+        F.fprintf fmt "$AssertionError"
     | Const c ->
         Const.pp fmt c
     | Var scope_ident ->
@@ -1545,6 +1548,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   let st = if Option.is_some starts_line then {st with State.loc= starts_line} else st in
   State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
   match opname with
+  | "LOAD_ASSERTION_ERROR" ->
+      Ok (State.push st Exp.AssertionError, None)
   | "LOAD_CONST" ->
       let* exp = convert_ffi_const st co_consts.(arg) in
       let st = State.push_symbol st exp in
@@ -2114,6 +2119,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
 
 let get_successors_offset {FFI.Instruction.opname; arg} =
   match opname with
+  | "LOAD_ASSERTION_ERROR"
   | "LOAD_CONST"
   | "LOAD_NAME"
   | "LOAD_GLOBAL"
