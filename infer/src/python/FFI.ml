@@ -21,6 +21,7 @@ module Error = struct
     | PymlExn of Pytypes.pyobject * Pytypes.pyobject
     | InvalidMagicNumber of bytes * bytes
     | ShortFile
+    | SyntaxError of string
 
   type t = L.error * kind
 
@@ -43,6 +44,8 @@ module Error = struct
           (pp_array Char.pp) expected (pp_array Char.pp) actual
     | ShortFile ->
         F.pp_print_string fmt "Input file is too small"
+    | SyntaxError msg ->
+        F.pp_print_string fmt msg
 end
 
 module Z = struct
@@ -482,9 +485,11 @@ let from_bytecode filename =
     from_python_object pyobj
 
 
-(* TODO: Revisit when we initialize/finalize the Python interpreter when we'll support
-   more than one file at a time *)
 let from_file ~is_binary filename =
   let open IResult.Let_syntax in
-  let* code = if is_binary then from_bytecode filename else from_source filename in
-  Ok code
+  try
+    let* code = if is_binary then from_bytecode filename else from_source filename in
+    Ok code
+  with Py.E (errtyp, errvalue) ->
+    let msg = F.asprintf "%a, %a" Py.Object.format errtyp Py.Object.format errvalue in
+    Error (L.ExternalError, Error.SyntaxError msg)
