@@ -278,6 +278,8 @@ val no_true_branch_in_if : latent:bool -> t
 
 val no_matching_branch_in_try : latent:bool -> t
 
+val ns_string_captured_in_block : t
+
 val null_argument : latent:bool -> t
 
 val null_dereference : t

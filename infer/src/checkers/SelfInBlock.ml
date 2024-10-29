@@ -692,7 +692,7 @@ let report_self_in_block_passed_to_init_issue proc_desc err_log domain (captured
 
 let noescaping_matcher = QualifiedCppName.Match.of_fuzzy_qual_names Config.noescaping_function_list
 
-let should_ignore_cxx_captured attributes =
+let should_ignore_captured attributes =
   match attributes.ProcAttributes.block_as_arg_attributes with
   | Some {passed_to; passed_as_noescape_block} ->
       passed_as_noescape_block
@@ -712,7 +712,7 @@ let init_trace_captured_var data captured_definition_loc =
 let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
     captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
-  if not (should_ignore_cxx_captured attributes) then
+  if not (should_ignore_captured attributes) then
     let message =
       F.asprintf
         "The variable `%a` is a C++ reference and it's captured in the block. This can lead to \
@@ -728,6 +728,10 @@ let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainD
 
 let std_string_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string"]
 
+let std_string = "std::string"
+
+let nsstring = "NSString"
+
 let is_std_string typ =
   match typ.Typ.desc with
   | Tstruct name ->
@@ -737,20 +741,35 @@ let is_std_string typ =
       false
 
 
-let report_internal_pointer_captured_in_block proc_desc err_log domain (cxx_string : DomainData.t)
+let is_nsstring typ =
+  match typ.Typ.desc with
+  | Tstruct name ->
+      let name_s = Typ.Name.name name in
+      String.equal nsstring name_s
+  | _ ->
+      false
+
+
+let report_internal_pointer_captured_in_block proc_desc err_log domain (string : DomainData.t)
     typ_string captured_definition_loc =
   let attributes = Procdesc.get_attributes proc_desc in
-  if not (should_ignore_cxx_captured attributes) then
+  if not (should_ignore_captured attributes) then
     let message =
       F.asprintf
         "The local variable `%a` is a pointer internal to a `%s` object and it's captured in the \
          block. This can lead to crashes if the object is freed before the block's execution."
-        (Pvar.pp Pp.text) cxx_string.pvar typ_string
+        (Pvar.pp Pp.text) string.pvar typ_string
     in
-    let init_trace_elem = init_trace_captured_var cxx_string captured_definition_loc in
-    let ltr = init_trace_elem :: make_trace_captured domain cxx_string.pvar in
-    Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_string.loc SelfInBlock
-      IssueType.cxx_string_captured_in_block message
+    let init_trace_elem = init_trace_captured_var string captured_definition_loc in
+    let ltr = init_trace_elem :: make_trace_captured domain string.pvar in
+    let issue_type, suggestion =
+      if String.equal typ_string std_string then (IssueType.cxx_string_captured_in_block, None)
+      else
+        ( IssueType.ns_string_captured_in_block
+        , Some "You should copy the C string before using it in the block." )
+    in
+    Reporting.log_issue proc_desc err_log ~ltr ?suggestion ~loc:string.loc SelfInBlock issue_type
+      message
   else ()
 
 
@@ -764,9 +783,13 @@ let report_issues proc_desc err_log domain =
         report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
           captured_definition_loc ;
         result
-    | DomainData.INTERNAL_POINTER (typ, captured_definition_loc) when is_std_string typ ->
-        report_internal_pointer_captured_in_block proc_desc err_log domain domain_data "std::string"
-          captured_definition_loc ;
+    | DomainData.INTERNAL_POINTER (typ, captured_definition_loc) ->
+        if is_std_string typ then
+          report_internal_pointer_captured_in_block proc_desc err_log domain domain_data std_string
+            captured_definition_loc ;
+        if is_nsstring typ then
+          report_internal_pointer_captured_in_block proc_desc err_log domain domain_data nsstring
+            captured_definition_loc ;
         result
     | DomainData.WEAK_SELF ->
         let _ =

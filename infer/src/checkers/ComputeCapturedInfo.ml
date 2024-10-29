@@ -50,36 +50,26 @@ module CheckedForNull = struct
       {astate with vars}
 
 
-    let call args astate =
-      let update_captured_in_closure closure_pname astate (exp, _) =
-        match exp with
-        | Exp.Var id -> (
-          match find_block_param id astate with
-          | Some name ->
-              let pvars =
-                PVars.update name
-                  (fun data_opt ->
-                    match data_opt with
-                    | Some data ->
-                        Some {data with captured_in_closure= Some closure_pname}
-                    | None ->
-                        Some {checked= false; captured_in_closure= Some closure_pname} )
-                  astate.pvars
-              in
-              {astate with pvars}
-          | None ->
-              astate )
-        | _ ->
-            astate
+    let call exp astate =
+      let update_captured_in_closure closure_pname astate (_, captured_var) =
+        let pvars =
+          PVars.update
+            (Pvar.get_name captured_var.CapturedVar.pvar)
+            (fun data_opt ->
+              match data_opt with
+              | Some data ->
+                  Some {data with captured_in_closure= Some closure_pname}
+              | None ->
+                  Some {checked= false; captured_in_closure= Some closure_pname} )
+            astate.pvars
+        in
+        {astate with pvars}
       in
-      let process_arg astate (exp, _) =
-        match exp with
-        | Exp.Closure {name; captured_vars} ->
-            List.fold ~f:(update_captured_in_closure name) captured_vars ~init:astate
-        | _ ->
-            astate
-      in
-      List.fold ~f:process_arg args ~init:astate
+      match exp with
+      | Exp.Closure {name; captured_vars} ->
+          List.fold ~f:(update_captured_in_closure name) captured_vars ~init:astate
+      | _ ->
+          astate
   end
 
   module Domain = struct
@@ -118,7 +108,11 @@ module CheckedForNull = struct
         | _ ->
             astate )
       | Call (_, Exp.Const (Const.Cfun _procname), args, _loc, _call_flags) ->
-          Domain.call args astate
+          List.fold_right ~f:Domain.call (List.map ~f:(fun el -> fst el) args) ~init:astate
+      | Call (_, (Exp.Closure _ as exp), _args, _loc, _call_flags) ->
+          Domain.call exp astate
+      | Store {e2} ->
+          Domain.call e2 astate
       | _ ->
           astate
   end
@@ -151,22 +145,9 @@ module InternalStringPointer = struct
 
     let pp fmt {vars; pvars} = F.fprintf fmt "Vars= %a@\nPVars= %a@\n" Vars.pp vars PVars.pp pvars
 
-    let is_local pvar proc_desc =
-      let attributes = Procdesc.get_attributes proc_desc in
-      let formals = attributes.ProcAttributes.formals in
-      let is_formal name =
-        List.exists
-          ~f:(fun (formal, typ, _) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
-          formals
-      in
-      (not (Pvar.is_global pvar)) && not (is_formal (Pvar.get_name pvar))
-
-
-    let set_internal_pointer var pvar typ proc_desc astate =
-      if is_local pvar proc_desc then
-        let vars = Vars.add var {VarsDomainData.internal_pointer_of= typ} astate.vars in
-        {astate with vars}
-      else astate
+    let set_internal_pointer var typ astate =
+      let vars = Vars.add var {VarsDomainData.internal_pointer_of= typ} astate.vars in
+      {astate with vars}
 
 
     let is_internal_pointer_of pvar astate =
@@ -189,9 +170,7 @@ module InternalStringPointer = struct
   module Domain = struct
     include AbstractDomain.FiniteSet (Mem)
 
-    let set_internal_pointer var pvar typ proc_desc astate =
-      map (Mem.set_internal_pointer var pvar typ proc_desc) astate
-
+    let set_internal_pointer var typ astate : t = map (Mem.set_internal_pointer var typ) astate
 
     let is_internal_pointer_of pvar astate =
       fold
@@ -217,18 +196,45 @@ module InternalStringPointer = struct
       QualifiedCppName.Match.of_fuzzy_qual_names ["std::basic_string::c_str"]
 
 
+    let cstring_using_encoding =
+      QualifiedCppName.Match.of_fuzzy_qual_names ["NSString::cStringUsingEncoding:"]
+
+
+    let utf8string = QualifiedCppName.Match.of_fuzzy_qual_names ["NSString::UTF8String"]
+
+    let is_local pvar proc_desc =
+      let attributes = Procdesc.get_attributes proc_desc in
+      let formals = attributes.ProcAttributes.formals in
+      let is_formal name =
+        List.exists
+          ~f:(fun (formal, typ, _) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
+          formals
+      in
+      (not (Pvar.is_global pvar)) && not (is_formal (Pvar.get_name pvar))
+
+
     let exec_instr (astate : Domain.t) proc_desc _cfg_node _ (instr : Sil.instr) =
       match instr with
       | Store {e1= Lvar pvar; e2= Exp.Var id} ->
           Domain.store pvar id astate
-      | Call ((var, _), Exp.Const (Const.Cfun procname), [(Lvar pvar, typ)], _, _) ->
+      | Call ((var, _), Exp.Const (Const.Cfun procname), [(Lvar pvar, typ)], _, _)
+        when QualifiedCppName.Match.match_qualifiers std_string_c_str_matcher
+               (Procname.get_qualifiers procname) -> (
+        match typ.desc with
+        | Tptr (inside_typ, _) ->
+            if is_local pvar proc_desc then Domain.set_internal_pointer var inside_typ astate
+            else astate
+        | _ ->
+            astate )
+      | Call ((var, _), Exp.Const (Const.Cfun procname), (_, typ) :: _args, _, _) ->
+          let procname_qualifiers = Procname.get_qualifiers procname in
           if
-            QualifiedCppName.Match.match_qualifiers std_string_c_str_matcher
-              (Procname.get_qualifiers procname)
+            QualifiedCppName.Match.match_qualifiers cstring_using_encoding procname_qualifiers
+            || QualifiedCppName.Match.match_qualifiers utf8string procname_qualifiers
           then
             match typ.desc with
             | Tptr (inside_typ, _) ->
-                Domain.set_internal_pointer var pvar inside_typ proc_desc astate
+                Domain.set_internal_pointer var inside_typ astate
             | _ ->
                 astate
           else astate

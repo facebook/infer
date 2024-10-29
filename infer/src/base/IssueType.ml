@@ -793,6 +793,12 @@ let no_matching_branch_in_try =
     ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
+let ns_string_captured_in_block =
+  register ~category:MemoryError ~enabled:false ~id:"NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK"
+    ~hum:"NSString Captured in Block" Error SelfInBlock
+    ~user_documentation:[%blob "./documentation/issues/CXX_STRING_CAPTURED_IN_BLOCK.md"]
+
+
 let null_argument =
   register_with_latent ~category:RuntimeException ~id:"NULL_ARGUMENT" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/NULL_ARGUMENT.md"]
