@@ -118,8 +118,13 @@ module BuiltinCaller : sig
     | IterData
     | GetYieldFromIter
     | ListAppend
+    | ListExtend
+    | ListToTuple
     | SetAdd
+    | SetUpdate
     | DictSetItem
+    | DictUpdate
+    | DictMerge
     | DeleteSubscr
     | YieldFrom
     | GetAwaitable

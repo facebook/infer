@@ -304,8 +304,13 @@ module BuiltinCaller = struct
     | IterData  (** [FOR_ITER] *)
     | GetYieldFromIter  (** [GET_YIELD_FROM_ITER] *)
     | ListAppend  (** [LIST_APPEND] *)
+    | ListExtend  (** [LIST_EXTEND] *)
+    | ListToTuple  (** [LIST_TO_TUPLE] *)
     | SetAdd  (** [SET_ADD] *)
+    | SetUpdate  (** [SET_UPDATE] *)
     | DictSetItem  (** [MAP_ADD] *)
+    | DictUpdate  (** [DICT_UPDATE] *)
+    | DictMerge  (** [DICT_MERGE] *)
     | DeleteSubscr
     | YieldFrom  (** [YIELD_FROM] *)
     | GetAwaitable  (** [GET_AWAITABLE] *)
@@ -351,10 +356,20 @@ module BuiltinCaller = struct
         "$GetYieldFromIter"
     | ListAppend ->
         "$ListAppend"
+    | ListExtend ->
+        "$ListExtend"
+    | ListToTuple ->
+        "$ListToTuple"
     | SetAdd ->
         "$SetAdd"
+    | SetUpdate ->
+        "$SetUpdate"
     | DictSetItem ->
         "$DictSetItem"
+    | DictUpdate ->
+        "$DictUpdate"
+    | DictMerge ->
+        "$DictMerge"
     | DeleteSubscr ->
         "$DeleteSubscr"
     | YieldFrom ->
@@ -1994,10 +2009,23 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, None)
   | "LIST_APPEND" ->
       collection_add st opname arg ListAppend
+  | "LIST_EXTEND" ->
+      collection_add st opname arg ListExtend
+  | "LIST_TO_TUPLE" ->
+      let* tos, st = State.pop_and_cast st in
+      let* id, st = call_builtin_function st ListToTuple [tos] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | "SET_ADD" ->
       collection_add st opname arg SetAdd
+  | "SET_UPDATE" ->
+      collection_add st opname arg SetUpdate
   | "MAP_ADD" ->
       collection_add st opname arg ~map:true DictSetItem
+  | "DICT_UPDATE" ->
+      collection_add st opname arg DictUpdate
+  | "DICT_MERGE" ->
+      collection_add st opname arg DictMerge
   | "DELETE_NAME" ->
       let ident = Ident.mk co_names.(arg) in
       let stmt = Stmt.Delete {scope= Name; ident} in
@@ -2189,8 +2217,13 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "YIELD_FROM"
   | "GET_YIELD_FROM_ITER"
   | "LIST_APPEND"
+  | "LIST_EXTEND"
+  | "LIST_TO_TUPLE"
   | "SET_ADD"
+  | "SET_UPDATE"
   | "MAP_ADD"
+  | "DICT_UPDATE"
+  | "DICT_MERGE"
   | "DELETE_NAME"
   | "DELETE_GLOBAL"
   | "DELETE_FAST"

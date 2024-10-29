@@ -285,10 +285,20 @@ let builtin_name builtin =
       "py_get_yield_from_iter"
   | ListAppend ->
       "py_list_append"
+  | ListExtend ->
+      "py_list_extend"
+  | ListToTuple ->
+      "py_list_to_tuple"
   | SetAdd ->
       "py_set_add"
+  | SetUpdate ->
+      "py_set_update"
   | DictSetItem ->
       "py_dict_set_item"
+  | DictUpdate ->
+      "py_dict_update"
+  | DictMerge ->
+      "py_dict_merge"
   | DeleteSubscr ->
       "py_delete_subscr"
   | YieldFrom ->

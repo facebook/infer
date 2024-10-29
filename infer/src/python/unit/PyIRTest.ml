@@ -780,8 +780,31 @@ def build_list():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LIST_EXTEND |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ListExtend($BuildList(), $BuildTuple(1, 2, 3), None)
+          TOPLEVEL[l] <- $BuildList()
+          n1 <- TOPLEVEL[print]
+          n2 <- TOPLEVEL[l]
+          n3 <- $Call(n1, n2, None)
+          n4 <- $MakeFunction["build_list", "dummy.build_list", None, None, None, None]
+          TOPLEVEL[build_list] <- n4
+          n5 <- TOPLEVEL[build_list]
+          n6 <- $Call(n5, None)
+          TOPLEVEL[x] <- n6[0]
+          TOPLEVEL[y] <- n6[1]
+          TOPLEVEL[z] <- n6[2]
+          return None
+
+
+      function dummy.build_list():
+        b0:
+          n0 <- $ListExtend($BuildList(), $BuildTuple(1, 2, 3), None)
+          return $BuildList() |}]
 
 
 let%expect_test _ =

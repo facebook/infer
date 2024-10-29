@@ -172,8 +172,19 @@ l[0:2]
 l[0:2:1]
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LIST_EXTEND |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ListExtend($BuildList(), $BuildTuple(0, 1, 2, 3, 4, 5), None)
+          TOPLEVEL[l] <- $BuildList()
+          n1 <- TOPLEVEL[l]
+          n2 <- n1[$BuildSlice(0, 2)]
+          n3 <- TOPLEVEL[l]
+          n4 <- n3[$BuildSlice(0, 2, 1)]
+          return None |}]
 
 
 let%expect_test _ =
@@ -195,8 +206,19 @@ l = [1, 2, 3]
 print(l[0])
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LIST_EXTEND |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ListExtend($BuildList(), $BuildTuple(1, 2, 3), None)
+          TOPLEVEL[l] <- $BuildList()
+          n1 <- TOPLEVEL[print]
+          n2 <- TOPLEVEL[l]
+          n3 <- n2[0]
+          n4 <- $Call(n1, n3, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -206,8 +228,19 @@ x = 0
 l[x] = 10
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LIST_EXTEND |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $ListExtend($BuildList(), $BuildTuple(1, 2, 3), None)
+          TOPLEVEL[l] <- $BuildList()
+          TOPLEVEL[x] <- 0
+          n1 <- TOPLEVEL[l]
+          n2 <- TOPLEVEL[x]
+          n1[n2] <- 10
+          return None |}]
 
 
 let%expect_test _ =
@@ -215,8 +248,15 @@ let%expect_test _ =
 s = {1, 2, 3}
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SET_UPDATE |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- $SetUpdate($BuildSet(), $BuildFrozenSet(1, 2, 3), None)
+          TOPLEVEL[s] <- $BuildSet()
+          return None |}]
 
 
 let%expect_test _ =
@@ -306,8 +346,33 @@ print(result)
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LIST_EXTEND |}]
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          TOPLEVEL[values] <- $BuildList(1, 2, $BuildList(3, 4), 5)
+          TOPLEVEL[values2] <- $BuildTuple("a", "b")
+          n0 <- $ListExtend($BuildList(), $BuildList(10, 100), None)
+          n1 <- TOPLEVEL[values]
+          n2 <- $ListExtend($BuildList(), n1, None)
+          n3 <- TOPLEVEL[values2]
+          n4 <- $ListExtend($BuildList(), n3, None)
+          n5 <- $ListToTuple($BuildList(), None)
+          TOPLEVEL[result] <- n5
+          n6 <- TOPLEVEL[print]
+          n7 <- TOPLEVEL[result]
+          n8 <- $Call(n6, n7, None)
+          n9 <- TOPLEVEL[values]
+          n10 <- $ListExtend($BuildList(), n9, None)
+          n11 <- TOPLEVEL[values2]
+          n12 <- $ListExtend($BuildList(), n11, None)
+          TOPLEVEL[result] <- $BuildList()
+          n13 <- TOPLEVEL[print]
+          n14 <- TOPLEVEL[result]
+          n15 <- $Call(n13, n14, None)
+          return None |}]
 
 
 let%expect_test _ =
@@ -355,8 +420,99 @@ x = o.f(0, *args1, *args2, **d1, **d2)
 |}
   in
   PyIR.test source ;
-  [%expect {xxx|
-    IR error: Unsupported opcode: LIST_EXTEND
+  [%expect
+    {xxx|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- TOPLEVEL[f]
+          n1 <- $Call(n0, 0, 1, None)
+          TOPLEVEL[x] <- n1
+          n2 <- TOPLEVEL[f]
+          n3 <- $Call(n2, 0, 1, $BuildTuple("b"))
+          TOPLEVEL[x] <- n3
+          n4 <- TOPLEVEL[f]
+          n5 <- $Call(n4, 0, 1, $BuildTuple("a", "b"))
+          TOPLEVEL[x] <- n5
+          n6 <- TOPLEVEL[f]
+          n7 <- TOPLEVEL[args]
+          n8 <- $ListExtend($BuildList(0), n7, None)
+          n9 <- $ListToTuple($BuildList(0), None)
+          n10 <- $CallFunctionEx(n6, n9, None, None)
+          TOPLEVEL[x] <- n10
+          n11 <- TOPLEVEL[f]
+          n12 <- TOPLEVEL[d]
+          n13 <- $DictMerge($BuildMap(), n12, None)
+          n14 <- $CallFunctionEx(n11, $BuildTuple(0), $BuildMap(), None)
+          TOPLEVEL[x] <- n14
+          n15 <- TOPLEVEL[f]
+          n16 <- TOPLEVEL[args]
+          n17 <- $ListExtend($BuildList(0), n16, None)
+          n18 <- $ListToTuple($BuildList(0), None)
+          n19 <- TOPLEVEL[d]
+          n20 <- $DictMerge($BuildMap(), n19, None)
+          n21 <- $CallFunctionEx(n15, n18, $BuildMap(), None)
+          TOPLEVEL[x] <- n21
+          n22 <- TOPLEVEL[f]
+          n23 <- TOPLEVEL[args1]
+          n24 <- $ListExtend($BuildList(0), n23, None)
+          n25 <- TOPLEVEL[args2]
+          n26 <- $ListExtend($BuildList(0), n25, None)
+          n27 <- $ListToTuple($BuildList(0), None)
+          n28 <- TOPLEVEL[d1]
+          n29 <- $DictMerge($BuildMap(), n28, None)
+          n30 <- TOPLEVEL[d2]
+          n31 <- $DictMerge($BuildMap(), n30, None)
+          n32 <- $CallFunctionEx(n22, n27, $BuildMap(), None)
+          TOPLEVEL[x] <- n32
+          n33 <- TOPLEVEL[o]
+          n34 <- $CallMethod[f](n33, 0, 1, None)
+          TOPLEVEL[x] <- n34
+          n35 <- TOPLEVEL[o]
+          n36 <- n35.f
+          n37 <- $Call(n36, 0, 1, $BuildTuple("b"))
+          TOPLEVEL[x] <- n37
+          n38 <- TOPLEVEL[o]
+          n39 <- n38.f
+          n40 <- $Call(n39, 0, 1, $BuildTuple("a", "b"))
+          TOPLEVEL[x] <- n40
+          n41 <- TOPLEVEL[o]
+          n42 <- n41.f
+          n43 <- TOPLEVEL[args]
+          n44 <- $ListExtend($BuildList(0), n43, None)
+          n45 <- $ListToTuple($BuildList(0), None)
+          n46 <- $CallFunctionEx(n42, n45, None, None)
+          TOPLEVEL[x] <- n46
+          n47 <- TOPLEVEL[o]
+          n48 <- n47.f
+          n49 <- TOPLEVEL[d]
+          n50 <- $DictMerge($BuildMap(), n49, None)
+          n51 <- $CallFunctionEx(n48, $BuildTuple(0), $BuildMap(), None)
+          TOPLEVEL[x] <- n51
+          n52 <- TOPLEVEL[o]
+          n53 <- n52.f
+          n54 <- TOPLEVEL[args]
+          n55 <- $ListExtend($BuildList(0), n54, None)
+          n56 <- $ListToTuple($BuildList(0), None)
+          n57 <- TOPLEVEL[d]
+          n58 <- $DictMerge($BuildMap(), n57, None)
+          n59 <- $CallFunctionEx(n53, n56, $BuildMap(), None)
+          TOPLEVEL[x] <- n59
+          n60 <- TOPLEVEL[o]
+          n61 <- n60.f
+          n62 <- TOPLEVEL[args1]
+          n63 <- $ListExtend($BuildList(0), n62, None)
+          n64 <- TOPLEVEL[args2]
+          n65 <- $ListExtend($BuildList(0), n64, None)
+          n66 <- $ListToTuple($BuildList(0), None)
+          n67 <- TOPLEVEL[d1]
+          n68 <- $DictMerge($BuildMap(), n67, None)
+          n69 <- TOPLEVEL[d2]
+          n70 <- $DictMerge($BuildMap(), n69, None)
+          n71 <- $CallFunctionEx(n61, n66, $BuildMap(), None)
+          TOPLEVEL[x] <- n71
+          return None
 |xxx}]
 
 
