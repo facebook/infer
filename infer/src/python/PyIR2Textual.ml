@@ -144,10 +144,12 @@ let rec of_exp exp : Textual.Exp.t =
       {qual_name; short_name= _; default_values; default_values_kw; annotations; cells_for_closure}
     ->
       let proc = mk_qualified_proc_name (RegularFunction qual_name) in
-      let captured =
-        List.map ~f:of_exp [default_values; default_values_kw; annotations; cells_for_closure]
+      let closure =
+        Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
       in
-      Closure {proc; captured; params= [] (* TODO *)}
+      call_builtin "py_make_function"
+        ( closure
+        :: List.map ~f:of_exp [default_values; default_values_kw; annotations; cells_for_closure] )
   | Yield exp ->
       call_builtin "py_yield" [of_exp exp]
 
