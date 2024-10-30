@@ -17,8 +17,10 @@ OPTIONS
            indirectly, another method annotated with `@B`. Besides the custom
            pairs, it is also possible to enable some built-in checks, such as
            `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation`
-           reaching `new`. See flags starting with
-           `--annotation-reachability`. (Conversely:
+           reaching `new`. It is also possible to model methods as if they
+           were annotated, using regular expressions. This should also work
+           in languages where there are no annotations. See flags starting
+           with `--annotation-reachability`. (Conversely:
            --no-annotation-reachability)
 
        --annotation-reachability-only

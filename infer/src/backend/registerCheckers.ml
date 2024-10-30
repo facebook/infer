@@ -202,7 +202,7 @@ let all_checkers =
         (let annot_reach =
            interprocedural Payloads.Fields.annot_map AnnotationReachability.checker
          in
-         [(annot_reach, Java); (annot_reach, Clang)] ) }
+         [(annot_reach, Erlang); (annot_reach, Java)] ) }
   ; { checker= ConfigImpactAnalysis
     ; callbacks=
         (let checker =

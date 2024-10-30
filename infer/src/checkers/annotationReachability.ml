@@ -93,18 +93,24 @@ let parse_custom_models () =
 
 
 let check_attributes check tenv pname =
-  let proc_has_attribute = Annotations.pname_has_return_annot pname check in
-  let class_has_attribute =
-    ( if Config.annotation_reachability_apply_superclass_annotations then
-        PatternMatch.Java.check_class_attributes
-      else PatternMatch.Java.check_current_class_attributes )
-      check tenv pname
-  in
-  class_has_attribute || proc_has_attribute
+  match pname with
+  | Procname.Java _ ->
+      let proc_has_attribute = Annotations.pname_has_return_annot pname check in
+      let class_has_attribute =
+        ( if Config.annotation_reachability_apply_superclass_annotations then
+            PatternMatch.Java.check_class_attributes
+          else PatternMatch.Java.check_current_class_attributes )
+          check tenv pname
+      in
+      class_has_attribute || proc_has_attribute
+  | _ ->
+      false
 
 
 let check_modeled_annotation models annot pname =
-  let method_name = Procname.to_string ~verbosity:FullNameOnly pname in
+  let method_name =
+    Procname.to_string ~verbosity:(if Procname.is_erlang pname then Verbose else FullNameOnly) pname
+  in
   Option.exists (String.Map.find models annot.Annot.class_name) ~f:(fun methods ->
       List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
 

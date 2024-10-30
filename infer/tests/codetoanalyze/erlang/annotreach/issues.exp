@@ -1,0 +1,2 @@
+codetoanalyze/erlang/annotreach/reach.erl, test_source2_Bad/0, 0, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, [Method test_source2_Bad/0, marked as source @Source,calls sink/0,sink/0 defined here, marked as sink @Sink]
+codetoanalyze/erlang/annotreach/reach.erl, test_source4_Bad/0, 0, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, [Method test_source4_Bad/0, marked as source @Source,calls not_sani_tizer/0,not_sani_tizer/0 defined here,calls sink/0,sink/0 defined here, marked as sink @Sink]

@@ -84,13 +84,15 @@ let config_unsafe checker =
   | AnnotationReachability ->
       { id= "annotation-reachability"
       ; kind= UserFacing {title= "Annotation Reachability"; markdown_body= ""}
-      ; support= mk_support_func ~java:Support ()
+      ; support= mk_support_func ~erlang:Support ~java:Support ()
       ; short_documentation=
           "Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn \
            whenever some method annotated with `@A` calls, directly or indirectly, another method \
            annotated with `@B`. Besides the custom pairs, it is also possible to enable some \
            built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or \
-           `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`."
+           `@NoAllocation` reaching `new`. It is also possible to model methods as if they were \
+           annotated, using regular expressions. This should also work in languages where there \
+           are no annotations. See flags starting with `--annotation-reachability`."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
