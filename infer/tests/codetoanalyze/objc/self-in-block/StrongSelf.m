@@ -367,6 +367,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     if (strongSelf) {
       [strongSelf foo];
       _name = @"Dulma";
+      x = 10;
     }
     return 0;
   };

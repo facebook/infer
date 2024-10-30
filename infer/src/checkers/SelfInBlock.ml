@@ -817,12 +817,15 @@ let report_issues proc_desc err_log domain =
   let {weakSelfList; selfList} =
     List.fold_left ~f:process_domain_item ~init:report_issues_result_empty domain_bindings
   in
-  let weakSelfList = List.rev weakSelfList in
-  let selfList = List.rev selfList in
-  ( match (weakSelfList, selfList) with
-  | weakSelf :: _, self :: _ ->
-      report_mix_self_weakself_issues proc_desc err_log domain weakSelf self
-  | _ ->
+  let weakSelfList =
+    List.sort
+      ~compare:(fun el1 el2 -> Location.compare el1.DomainData.loc el2.DomainData.loc)
+      weakSelfList
+  in
+  ( match List.hd weakSelfList with
+  | Some weakSelf ->
+      List.iter ~f:(report_mix_self_weakself_issues proc_desc err_log domain weakSelf) selfList
+  | None ->
       () ) ;
   match weakSelfList with
   | weakSelf1 :: weakSelf2 :: _ ->
