@@ -24,3 +24,6 @@ codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:353, 4, M
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:365, 4, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &self,Using &self], ""=>"strongSelf->"@369:7
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:365, 5, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &self,Using &self], ""=>"strongSelf->"@370:7
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:381, 4, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &self]
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:393, 3, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null]
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:393, 5, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null]
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:406, 3, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null]

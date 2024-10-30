@@ -388,4 +388,28 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+- (void)strongSelfNoCheck2Instances_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (isTapped) {
+      strongSelf->_name = @"Dulma";
+    } else {
+      strongSelf->_name = @"Alice";
+    }
+    return 0;
+  };
+}
+
+- (void)strongSelfNoCheck2InstancesNoIf_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (isTapped) {
+      strongSelf->_name = @"Dulma";
+      strongSelf->_name = @"Alice";
+    }
+    return 0;
+  };
+}
 @end
