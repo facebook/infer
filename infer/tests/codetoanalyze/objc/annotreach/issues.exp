@@ -1,0 +1,2 @@
+codetoanalyze/objc/annotreach/Reach.m, MyClass.source2_Bad, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, [Method source2_Bad, marked as source @Source,calls sink,sink defined here, marked as sink @Sink]
+codetoanalyze/objc/annotreach/Reach.m, MyClass.source4_Bad, 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, no_bucket, ERROR, [Method source4_Bad, marked as source @Source,calls not_sani_tizer,not_sani_tizer defined here,calls sink,sink defined here, marked as sink @Sink]

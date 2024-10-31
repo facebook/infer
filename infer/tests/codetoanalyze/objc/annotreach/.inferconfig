@@ -1,0 +1,15 @@
+{
+  "annotation-reachability": true,
+  "annotation-reachability-custom-pairs": [
+    {
+      "sources": ["Source"],
+      "sinks": ["Sink"],
+      "sanitizers": ["Sanitizer"]
+    }
+  ],
+  "annotation-reachability-custom-models": {
+    "Source": [".*source.*"],
+    "Sink": [".*sink.*"],
+    "Sanitizer": [".*sanitizer.*"]
+  }
+}
