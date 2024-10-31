@@ -125,35 +125,35 @@ void m2(_Nullable SelfInBlockTest* obj) {}
       int x = strongSelf->x;
     } else {
       m(strongSelf); // bug here
-      int x = strongSelf->x; // no bug here because of dedup
+      int x = strongSelf->x;
     }
     return 0;
   };
 }
 
-- (void)strongSelfCheck6_good {
+- (void)strongSelfCheck6_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
-    m2(strongSelf); // no bug here because of _Nullable annotation
+    m2(strongSelf); // bug here
     return 0;
   };
 }
 
-- (void)strongSelfCheck2_good {
+- (void)strongSelfCheck3_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
     if (!strongSelf) {
       return 0;
     } else {
-      [strongSelf foo];
+      [strongSelf foo]; // no bug here
     }
     return 0;
   };
 }
 
-- (void)strongSelfCheck3_bad {
+- (void)strongSelfCheck4_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -165,7 +165,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck4_bad {
+- (void)strongSelfCheck5_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -174,14 +174,12 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck5_good {
+- (void)strongSelfCheck7_bad {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)() = ^() {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
-    [strongSelf.user
-        use_self_in_block_test_nullable:1
-                                    and:strongSelf]; // no bug here because of
-                                                     // _Nullable annotation
+    [strongSelf.user use_self_in_block_test_nullable:1
+                                                 and:strongSelf]; // bug here
     return 0;
   };
 }
@@ -412,4 +410,28 @@ void m2(_Nullable SelfInBlockTest* obj) {}
     return 0;
   };
 }
+
+- (void)strongSelfCheck10_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf != nil) {
+      [strongSelf foo]; // no bug here
+    }
+    return 0;
+  };
+}
+
+- (void)strongSelfCheck11_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf == nil) {
+      return 0;
+    }
+    [strongSelf foo]; // no bug here
+    return 0;
+  };
+}
+
 @end
