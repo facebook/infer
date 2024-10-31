@@ -1105,7 +1105,8 @@ let simple_matchers =
     ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
       |> with_non_disj
-    ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __infer_skip)
+      &++> Basic.unknown_call "__infer_skip" |> with_non_disj
     ; +BuiltinDecl.(match_builtin __infer_structured_binding)
       <>$ capt_exp $+ capt_arg $--> infer_structured_binding |> with_non_disj
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_

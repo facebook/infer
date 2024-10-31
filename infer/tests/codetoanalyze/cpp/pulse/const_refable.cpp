@@ -200,7 +200,8 @@ void call_modify_string_ok(std::string s) { modify_string(s); }
 
 void void_cast(std::string* s) { (void)s; }
 
-void call_void_cast_bad(std::string s) { void_cast(&s); }
+// FN because now infer_skip is addressed as an unknown call
+void call_void_cast_bad_FN(std::string s) { void_cast(&s); }
 
 int get_lambda(const std::function<int(Arr)>& f, Arr a) {
   return f(std::move(a));
