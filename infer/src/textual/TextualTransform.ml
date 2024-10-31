@@ -456,6 +456,7 @@ let remove_effects_in_subexprs lang decls_env _module =
         in
         let struct_ = TransformClosures.type_declaration typename fields in
         let state = State.incr_fresh state in
+        let loc = if Lang.equal lang Python then Location.decr_line loc else loc in
         let state, call_procdecl =
           TransformClosures.closure_call_procdesc loc typename state closure fields params
         in

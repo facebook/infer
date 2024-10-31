@@ -859,6 +859,7 @@ module CodeInfo = struct
   type t =
     { (* see https://docs.python.org/3.8/reference/datamodel.html#index-55 *)
       co_name: Ident.t
+    ; co_firstlineno: int
     ; co_nlocals: int
     ; co_argcount: int
     ; co_posonlyargcount: int
@@ -873,6 +874,7 @@ module CodeInfo = struct
 
   let of_code
       { FFI.Code.co_name
+      ; co_firstlineno
       ; co_flags
       ; co_nlocals
       ; co_argcount
@@ -883,6 +885,7 @@ module CodeInfo = struct
       ; co_names
       ; co_varnames } =
     { co_name= Ident.mk co_name
+    ; co_firstlineno
     ; has_star_arguments= co_flags land 0x04 <> 0
     ; has_star_keywords= co_flags land 0x08 <> 0
     ; is_generator= co_flags land 0x20 <> 0

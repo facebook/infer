@@ -22,6 +22,8 @@ module Location : sig
 
   val known : line:int -> col:int -> t
 
+  val decr_line : t -> t
+
   val pp : F.formatter -> t -> unit
 
   val pp_line : F.formatter -> t -> unit
@@ -30,7 +32,7 @@ end
 module type NAME = sig
   type t = {value: string; loc: Location.t} [@@deriving compare, equal, hash]
 
-  val of_string : string -> t
+  val of_string : ?loc:Location.t -> string -> t
   (** we replace any dot in the string by '::' because dot is a reserved separator in Textual *)
 
   val pp : F.formatter -> t -> unit

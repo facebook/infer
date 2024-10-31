@@ -37,6 +37,8 @@ module Location = struct
 
   let known ~line ~col = Known {line; col}
 
+  let decr_line = function Unknown -> Unknown | Known {line; col} -> Known {line= line - 1; col}
+
   let pp fmt = function
     | Known {line; col} ->
         F.fprintf fmt "line %d, column %d" line col
@@ -78,7 +80,7 @@ exception TextualTransformError of transform_error list
 module type NAME = sig
   type t = {value: string; loc: Location.t [@compare.ignore]} [@@deriving compare, equal, hash]
 
-  val of_string : string -> t
+  val of_string : ?loc:Location.t -> string -> t
 
   val pp : F.formatter -> t -> unit
 
@@ -103,7 +105,10 @@ module Name : NAME = struct
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
-  let of_string str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
+  let of_string ?loc str =
+    let loc = Option.value loc ~default:Location.Unknown in
+    {value= replace_dot_with_2colons str; loc}
+
 
   let pp fmt name = F.pp_print_string fmt name.value
 

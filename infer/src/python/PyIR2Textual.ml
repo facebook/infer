@@ -35,7 +35,7 @@ type proc_kind = ModuleBody of Ident.t | RegularFunction of QualName.t
 
 let is_module_body = function ModuleBody _ -> true | _ -> false
 
-let mk_qualified_proc_name kind =
+let mk_qualified_proc_name ?loc kind =
   let qual_name_str =
     match kind with
     | ModuleBody name ->
@@ -44,11 +44,11 @@ let mk_qualified_proc_name kind =
         F.asprintf "%a" QualName.pp qual_name
   in
   { Textual.QualifiedProcName.enclosing_class= TopLevel
-  ; name= Textual.ProcName.of_string qual_name_str }
+  ; name= Textual.ProcName.of_string ?loc qual_name_str }
 
 
-let mk_procdecl kind =
-  let qualified_name = mk_qualified_proc_name kind in
+let mk_procdecl ?loc kind =
+  let qualified_name = mk_qualified_proc_name ?loc kind in
   let formals_types =
     if is_module_body kind then Some []
     else
@@ -438,8 +438,9 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc proc_kind {CFG.entry; nodes; code_info= _} =
-  let procdecl = mk_procdecl proc_kind in
+let mk_procdesc proc_kind {CFG.entry; nodes; code_info= {co_firstlineno}} =
+  let loc = Textual.Location.known ~line:co_firstlineno ~col:(-1) in
+  let procdecl = mk_procdecl ~loc proc_kind in
   let is_module_body = is_module_body proc_kind in
   let nodes_bindings = NodeName.Map.bindings nodes in
   let nodes =

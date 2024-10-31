@@ -223,6 +223,7 @@ end
 module CodeInfo : sig
   type t =
     { co_name: Ident.t
+    ; co_firstlineno: int
     ; co_nlocals: int
     ; co_argcount: int
     ; co_posonlyargcount: int
