@@ -195,13 +195,7 @@ module Hack : sig
 end
 
 module Python : sig
-  (* TODO: revamp this once modules are implemented *)
-  type t = private {class_name: PythonClassName.t option; function_name: string; arity: int option}
-
-  type kind =
-    | Fun of PythonClassName.t  (** Toplevel function name, or class constructor *)
-    | Init of PythonClassName.t  (** Initialized of a class, like [C.__init__] *)
-    | Other  (** Other methods *)
+  type t
 end
 
 (** Type of procedure names. *)
@@ -222,13 +216,6 @@ val compare_name : t -> t -> int
 val get_class_type_name : t -> Typ.Name.t option
 
 val get_class_name : t -> string option
-
-val python_classify : t -> Python.kind option
-(** Classify a Python name into a [Python.kind] *)
-
-val mk_python_init : t -> t
-(** Turns a Python **toplevel** name into a valid initializer. E.g. it is used to turn a statement
-    like [x = C(42)] into [C.__init__(x, 42)] *)
 
 val get_parameters : t -> Parameter.t list
 
@@ -334,8 +321,7 @@ val make_objc_copy : Typ.Name.t -> t
 val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
 (** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable. *)
 
-val make_python :
-  class_name:PythonClassName.t option -> function_name:string -> arity:int option -> t
+val make_python : class_name:PythonClassName.t option -> function_name:string -> t
 (** Create a Python procedure name. *)
 
 val empty_block : t

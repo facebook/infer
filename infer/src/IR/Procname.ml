@@ -596,53 +596,17 @@ module Hack = struct
 end
 
 module Python = struct
-  let init_name = "__init__"
-
-  type t = {class_name: PythonClassName.t option; function_name: string; arity: int option}
+  type t = {class_name: PythonClassName.t option; function_name: string}
   [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
 
-  type kind = Fun of PythonClassName.t | Init of PythonClassName.t | Other
-
-  let classify {class_name; function_name} =
-    match class_name with
+  let pp fmt t =
+    match t.class_name with
     | Some class_name ->
-        if String.equal function_name init_name then Init class_name else Other
-    | None ->
-        Fun (PythonClassName.make function_name)
-
-
-  (* This function is used to transform a "constructor" call like [MyClass(x, y)] into a call to
-     the [__init__] function, like [foo.__init__(x, y)]. Therefore must increase arity by 1, to
-     account for [__init__] being a virtual call expecting a [self] argument. *)
-  let mk_init {class_name; function_name; arity} =
-    match class_name with
-    | Some _ ->
-        L.die InternalError "Procname.Python.mk_init expects a top level procname"
-    | None ->
-        let class_name = Some (PythonClassName.make function_name) in
-        let arity = Option.map ~f:(fun n -> 1 + n) arity in
-        {class_name; function_name= init_name; arity}
-
-
-  let pp verbosity fmt t =
-    let pp_arity verbosity fmt =
-      match verbosity with
-      | Verbose -> (
-        match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
-      | Non_verbose | Simple | FullNameOnly | NameOnly ->
-          ()
-    in
-    match verbosity with
-    | NameOnly ->
+        F.fprintf fmt "%a.%s" PythonClassName.pp class_name t.function_name
+    | _ ->
         F.fprintf fmt "%s" t.function_name
-    | FullNameOnly | Simple | Non_verbose | Verbose -> (
-      match t.class_name with
-      | Some class_name ->
-          F.fprintf fmt "%a.%s%t" PythonClassName.pp class_name t.function_name (pp_arity verbosity)
-      | _ ->
-          F.fprintf fmt "%s%t" t.function_name (pp_arity verbosity) )
 end
 
 (** Type of procedure names. *)
@@ -887,15 +851,6 @@ let get_class_name t =
       None
 
 
-let python_classify = function Python p -> Some (Python.classify p) | _ -> None
-
-let mk_python_init = function
-  | Python p ->
-      Python (Python.mk_init p)
-  | _ ->
-      L.die InternalError "Procname.mk_python_init only supports Python names"
-
-
 let is_method_in_objc_protocol t =
   match t with ObjC_Cpp osig -> Typ.Name.is_objc_protocol osig.class_name | _ -> false
 
@@ -1088,7 +1043,7 @@ let pp_unique_id fmt = function
   | Block bsig ->
       Block.pp Verbose fmt bsig
   | Python h ->
-      Python.pp Verbose fmt h
+      Python.pp fmt h
 
 
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
@@ -1110,7 +1065,7 @@ let pp_with_verbosity verbosity fmt = function
   | Block bsig ->
       Block.pp verbosity fmt bsig
   | Python h ->
-      Python.pp verbosity fmt h
+      Python.pp fmt h
 
 
 let pp = pp_with_verbosity Non_verbose
@@ -1149,7 +1104,7 @@ let pp_fullname_only fmt = function
   | Block bsig ->
       Block.pp FullNameOnly fmt bsig
   | Python h ->
-      Python.pp FullNameOnly fmt h
+      Python.pp fmt h
 
 
 let pp_name_only fmt = function
@@ -1168,7 +1123,7 @@ let pp_name_only fmt = function
   | Block bsig ->
       Block.pp NameOnly fmt bsig
   | Python h ->
-      Python.pp NameOnly fmt h
+      Python.pp fmt h
 
 
 let patterns_match patterns proc_name =
@@ -1193,7 +1148,7 @@ let pp_simplified_string ?(withclass = false) fmt = function
   | Block bsig ->
       Block.pp Simple fmt bsig
   | Python h ->
-      Python.pp Simple fmt h
+      Python.pp fmt h
 
 
 let to_simplified_string ?withclass proc_name =
@@ -1370,7 +1325,7 @@ let make_objc_copy name = ObjC_Cpp (ObjC_Cpp.make_copy name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
 
-let make_python ~class_name ~function_name ~arity = Python {class_name; function_name; arity}
+let make_python ~class_name ~function_name = Python {class_name; function_name}
 
 let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 

@@ -390,31 +390,30 @@ module ProcDeclBridge = struct
         SilProcname.make_hack ~class_name ~function_name:method_name ~arity
     | Python ->
         let class_name = python_class_name_to_sil t.qualified_name.enclosing_class in
-        let arity = Option.map t.formals_types ~f:List.length in
-        SilProcname.make_python ~class_name ~function_name:method_name ~arity
+        SilProcname.make_python ~class_name ~function_name:method_name
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
-    let arity = match callsig with Hack {arity} | Python {arity} -> arity | Other _ -> None in
-    (* When we translate function calls in Hack or Python, the ProcDecl we get from TextualDecls may have
-         unknown args. In such case we need to conjure up a procname with the arity matching that
-         of the call site signature. This way we'll be able to match a particular overload of the
-         procname with its definition from a different translation unit during the analysis
-         phase. *)
-    let improved_match name_to_sil make =
-      if Option.is_some t.formals_types then to_sil lang t
-      else
-        let class_name = name_to_sil t.qualified_name.enclosing_class in
-        let function_name = t.qualified_name.name.value in
-        make ~class_name ~function_name ~arity
-    in
     match lang with
     | Java ->
         to_sil lang t
     | Hack ->
+        (* When we translate function calls in Hack, the ProcDecl we get from TextualDecls may have
+           unknown args. In such case we need to conjure up a procname with the arity matching that
+           of the call site signature. This way we'll be able to match a particular overload of the
+           procname with its definition from a different translation unit during the analysis
+           phase. *)
+        let arity = match callsig with Hack {arity} | Python {arity} -> arity | Other _ -> None in
+        let improved_match name_to_sil make =
+          if Option.is_some t.formals_types then to_sil lang t
+          else
+            let class_name = name_to_sil t.qualified_name.enclosing_class in
+            let function_name = t.qualified_name.name.value in
+            make ~class_name ~function_name ~arity
+        in
         improved_match hack_class_name_to_sil Procname.make_hack
     | Python ->
-        improved_match python_class_name_to_sil Procname.make_python
+        to_sil lang t
 end
 
 module GlobalBridge = struct

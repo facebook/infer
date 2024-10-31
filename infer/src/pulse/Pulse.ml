@@ -375,8 +375,8 @@ module PulseTransferFunctions = struct
             L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
             (method_info, ExactDevirtualization) )
     | None ->
-        ( if Language.curr_language_is Hack || Language.curr_language_is Python then
-            (* contrary to the Java frontend, the Hack and Python frontends do not perform
+        ( if Language.curr_language_is Hack then
+            (* contrary to the Java frontend, the Hack frontends do not perform
                static resolution so we have to do it here *)
             match Procname.get_class_type_name proc_name with
             | None ->
@@ -506,7 +506,7 @@ module PulseTransferFunctions = struct
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =
-    if Language.curr_language_is Hack || Language.curr_language_is Python then
+    if Language.curr_language_is Hack then
       let open IOption.Let_syntax in
       let* proc_name = proc_name_opt in
       match AbductiveDomain.AddressAttributes.get_static_type receiver astate with
@@ -643,149 +643,6 @@ module PulseTransferFunctions = struct
           (None, None, astate) )
 
 
-  (** Check whether a Python class was declared with an explicit constructor, or if it was left
-      implicit. *)
-  let is_python_class_with_implicit_init tenv class_name =
-    let is_python_init procname =
-      match Procname.python_classify procname with
-      | None ->
-          false
-      | Some kind -> (
-        match (kind : Procname.Python.kind) with Init _ -> true | Fun _ | Other -> false )
-    in
-    Tenv.lookup tenv (PythonClass class_name)
-    |> Option.for_all ~f:(fun {Struct.methods} -> not (List.exists methods ~f:is_python_init))
-
-
-  (* If a Python class doesn't define a [__init__] method, we have to take over and provide a valid
-     implementation. Consider:
-
-     # file1.py
-     class A:
-     def __init__(self, x):
-       self.x = x
-
-     # file2.py
-     import file1.A
-
-     class B(A):
-     pass # implicit constructor/__init__
-
-     # file3.py
-     b = B(42)
-
-     When looking for [B] to analyze [B(42)], we won't find its definition, but if there is a
-     class with the same name, we can take over and:
-     - allocate a value of type [B]
-     - use normal method resolution to find [A.__init__] and call it on this new value
-
-     TODO(vsiles) if a genuine toplevel function is named like a class (e.g.  [B] in this example),
-     we should not do anything as it will shadow the class constructor. But
-     this is only true if the definition is *after* the class, and this might
-     be tricky to get right. For now, let's do it all the time
-  *)
-  let dispatch_python_constructor dispatch_call_eval_args
-      ({InterproceduralAnalysis.tenv} as analysis_data) path ret actuals func_args call_loc astate
-      callee_pname class_name default_info =
-    let type_name = Typ.PythonClass class_name in
-    let model_data =
-      { PulseModelsImport.analysis_data
-      ; dispatch_call_eval_args
-      ; path
-      ; callee_procname= callee_pname
-      ; location= call_loc
-      ; ret }
-    in
-    let size =
-      Exp.Sizeof
-        { typ= Typ.mk_struct type_name
-        ; nbytes= None
-        ; dynamic_length= None
-        ; subtype= Subtype.exact
-        ; nullable= false }
-    in
-    (* Since the constructor is implicit, we first have to allocate a value of the correct type. *)
-    match
-      PulseModelsImport.Basic.alloc_no_leak_not_null ~desc:"Implicit Python constructor allocation"
-        (Some size) ~initialize:false model_data astate
-      |> PulseOperationResult.sat_ok
-    with
-    | None ->
-        (default_info, ret, actuals, func_args, astate)
-    | Some astate ->
-        (* Now that the newly allocated value is bound to [ret] we have to:
-           - update the function arguments / actuals to insert [ret] as the first (self) argument.
-           - create a new id to bind the return value of [__init__] (which will always be None)
-        *)
-        let astate, self = PulseOperations.eval_ident (fst ret) astate in
-        (* Also register its static type *)
-        let astate =
-          AbductiveDomain.AddressAttributes.add_static_type tenv type_name (fst self) call_loc
-            astate
-        in
-        let self_origin = ValueOrigin.OnStack {var= Var.of_id (fst ret); addr_hist= self} in
-        let ret_exp, ret_ty = ret in
-        (* Actual arguments updated *)
-        let self = (Exp.Var ret_exp, ret_ty) in
-        let actuals = self :: actuals in
-        (* Formal arguments updated *)
-        let self =
-          {ProcnameDispatcher.Call.FuncArg.arg_payload= self_origin; exp= fst self; typ= snd self}
-        in
-        let func_args = self :: func_args in
-        (* Creating a new binding for the return value of [__init__].
-           We never read back the return value of [__init__] as it is [None].
-           However some constructors seem to return a closure (when
-           inheritance is involved). Not sure we will ever do that, just
-           leaving a note in case we need this in the future *)
-        let new_ret = Ident.create_fresh Ident.kprimed in
-        let new_ret_typ =
-          let name = PythonClassName.make "PyNone" in
-          let name = Typ.PythonClass name in
-          let t = Typ.mk_struct name in
-          Typ.mk_ptr t
-        in
-        let new_ret = (new_ret, new_ret_typ) in
-        (* Now, we need to resume method resolution looking for [__init__], not the original
-           constructor, so we'll provide a new [callee_pname] too *)
-        let callee_pname = Procname.mk_python_init callee_pname in
-        (* We know [__init__] will be in a parent class, so let virtual lookup do its job *)
-        let _, method_info, astate =
-          lookup_virtual_method_info analysis_data path func_args call_loc astate
-            (Some callee_pname) default_info
-        in
-        (method_info, new_ret, actuals, func_args, astate)
-
-
-  (* If a Python constructor is missing, we have to correctly dispatch calls to the constructor,
-     but also to the [__init__] methods. *)
-  let dispatch_python_constructor_and_init dispatch_call_eval_args
-      ({InterproceduralAnalysis.tenv} as analysis_data) path ret actuals func_args call_loc astate
-      callee_pname default_info =
-    let return info astate = (info, ret, actuals, func_args, astate) in
-    match Option.bind ~f:Procname.python_classify callee_pname with
-    | Some (Init class_name) ->
-        (* This case might happen when there is an explicit call (like [super().__init__()])
-           to a parent class which didn't have an explicit constructor *)
-        let has_implicit_constructor = is_python_class_with_implicit_init tenv class_name in
-        if not has_implicit_constructor then return default_info astate
-        else
-          let _, info, astate =
-            lookup_virtual_method_info analysis_data path func_args call_loc astate callee_pname
-              default_info
-          in
-          return info astate
-    | Some (Fun class_name) ->
-        let has_implicit_constructor = is_python_class_with_implicit_init tenv class_name in
-        if not has_implicit_constructor then return default_info astate
-        else
-          let callee_pname = Option.value_exn callee_pname in
-          dispatch_python_constructor dispatch_call_eval_args analysis_data path ret actuals
-            func_args call_loc astate callee_pname class_name default_info
-    | Some Other | None ->
-        return default_info astate
-
-
   let rec load_is_hack_variadic_attribute callee_procname =
     let open IOption.Let_syntax in
     match IRAttributes.load callee_procname with
@@ -856,8 +713,7 @@ module PulseTransferFunctions = struct
         in
         (unresolved_reason, method_info, ret, actuals, func_args, astate)
       else if Language.curr_language_is Hack then
-        (* In Hack, a static method can be inherited.
-           TODO(vsiles) this is the case for Python too, update this when the time is right *)
+        (* In Hack, a static method can be inherited. *)
         let proc_name = Procdesc.get_proc_name proc_desc in
         let unresolved_reason, info, astate =
           resolve_hack_static_method path call_loc astate tenv proc_name callee_pname
@@ -865,14 +721,6 @@ module PulseTransferFunctions = struct
         (* Don't drop the initial [callee_pname]: even though we couldn't refine it, we can still
            use it to match against taint configs and such. *)
         (unresolved_reason, Option.first_some info default_info, ret, actuals, func_args, astate)
-      else if Language.curr_language_is Python then
-        (* In Python, we need to be careful about implicit class constructors *)
-        let info, ret, actuals, func_args, astate =
-          dispatch_python_constructor_and_init
-            (dispatch_call_eval_args disjunct_limit)
-            analysis_data path ret actuals func_args call_loc astate callee_pname default_info
-        in
-        (None, info, ret, actuals, func_args, astate)
       else (None, default_info, ret, actuals, func_args, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
