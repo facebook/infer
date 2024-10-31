@@ -4776,9 +4776,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and coreturnStmt_trans trans_state stmt_info operand_opt promise_call_opt =
-    let args = Option.to_list operand_opt @ Option.to_list promise_call_opt in
-    call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_return trans_state
-      stmt_info StdTyp.void args
+    let sil_loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    PriorityNode.force_sequential sil_loc ReturnStmt trans_state stmt_info
+      ~mk_first_opt:(fun trans_state stmt_info ->
+        let args = Option.to_list operand_opt @ Option.to_list promise_call_opt in
+        Some
+          (call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_return
+             trans_state stmt_info StdTyp.void args ) )
+      ~mk_second:(fun trans_state stmt_info ->
+        returnStmt_trans trans_state stmt_info [Clang_ast_t.ReturnStmt (stmt_info, [])] )
+      ~mk_return:(fun ~fst ~snd:_ -> fst.return)
 
 
   and coroutineSuspendExpr_trans trans_state stmt_info expr_info cse_operand =

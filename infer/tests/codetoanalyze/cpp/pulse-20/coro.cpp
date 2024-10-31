@@ -87,7 +87,7 @@ Task<Request*> makeRequestToSink_bad() {
   co_return co_await co_get_something(request);
 }
 
-Task<std::string> optional_co_return_ok_FP() {
+Task<std::string> optional_co_return_ok() {
   std::optional<std::string> optional_field = std::nullopt;
   if (!optional_field.has_value()) {
     co_return "abc";
