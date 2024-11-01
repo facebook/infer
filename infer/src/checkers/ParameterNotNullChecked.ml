@@ -282,9 +282,9 @@ let init_block_params
 let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let attributes = Procdesc.get_attributes proc_desc in
   let captured_formals_attributes = get_captured_formals attributes in
-  let formals_attributes =
-    List.map ~f:(fun formal -> (formal, attributes, false)) attributes.ProcAttributes.formals
-  in
+  let procname = Procdesc.get_proc_name proc_desc in
+  let formals = if Procname.is_objc_block procname then [] else attributes.ProcAttributes.formals in
+  let formals_attributes = List.map ~f:(fun formal -> (formal, attributes, false)) formals in
   let initial_blockParams, initTraceInfo =
     init_block_params (List.append formals_attributes captured_formals_attributes)
   in
