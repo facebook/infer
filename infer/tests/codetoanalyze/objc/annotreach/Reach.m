@@ -7,14 +7,6 @@
 
 #import <Foundation/Foundation.h>
 @interface MyClass : NSObject
-- (void)sink;
-- (void)not_si_nk;
-- (void)sanitizer;
-- (void)not_sani_tizer;
-- (void)source1_Ok;
-- (void)source2_Bad;
-- (void)source3_Ok;
-- (void)source4_Bad;
 @end
 @implementation MyClass
 - (void)sink {
