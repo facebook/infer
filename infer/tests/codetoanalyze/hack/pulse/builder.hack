@@ -101,6 +101,20 @@ class BuilderTester {
     }
   }
 
+  public static function FP_builderWithoutCallsOk(bool $flag): void {
+    $changes_made = false;
+    $b = new MyBuilder(0);
+
+    if ($flag) {
+      $b->setA(42);
+      $changes_made = true;
+    }
+
+    if ($changes_made) {
+      $b->saveX();
+    }
+  }
+
   // now check builders recognised from the .inferconfig file
   public static function testConfigBad(): void {
     $b = new NoBuilderSuffix();
