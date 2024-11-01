@@ -6,6 +6,18 @@
  */
 #import <Foundation/Foundation.h>
 
+typedef void (^NewAnnotateBlock1)(const char* _Nullable key,
+                                  id _Nullable value);
+typedef void (^_Nullable NewAnnotateSyncBlock1)(NewAnnotateBlock1 annotate);
+
+void MarkerAnnotateSync1(NS_NOESCAPE _Nullable NewAnnotateSyncBlock1 block) {}
+
+void testAnnotateOk_FP(NSString* composerSessionID) {
+  MarkerAnnotateSync1(^(NewAnnotateBlock1 annotate) {
+    annotate("composer_session_id", composerSessionID);
+  });
+}
+
 typedef void (^MyBlock)();
 
 typedef void (^MyBlock1)(int x);
