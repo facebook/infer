@@ -185,11 +185,11 @@ def g():
 
     define closure:dummy:1.call(__this: *closure:dummy:1, locals: *PyLocals) : *PyObject {
       #entry:
-          n25:*closure:dummy:1 = load &__this
-          n26:*PyGlobals = load n25.?.globals
-          n27:*PyLocals = load &locals
-          n28 = dummy::g(n26, n27)
-          ret n28
+          n0:*closure:dummy:1 = load &__this
+          n1:*PyGlobals = load n0.?.globals
+          n2:*PyLocals = load &locals
+          n3 = dummy::g(n1, n2)
+          ret n3
 
     }
 
@@ -197,11 +197,11 @@ def g():
 
     define closure:dummy:0.call(__this: *closure:dummy:0, locals: *PyLocals) : *PyObject {
       #entry:
-          n11:*closure:dummy:0 = load &__this
-          n12:*PyGlobals = load n11.?.globals
-          n13:*PyLocals = load &locals
-          n14 = dummy::f(n12, n13)
-          ret n14
+          n0:*closure:dummy:0 = load &__this
+          n1:*PyGlobals = load n0.?.globals
+          n2:*PyLocals = load &locals
+          n3 = dummy::f(n1, n2)
+          ret n3
 
     }
 
@@ -219,27 +219,27 @@ def g():
           n8:*PyGlobals = load &globals
           n9 = __sil_allocate(<closure:dummy:0>)
           store n9.?.globals <- n8:*PyGlobals
-          n15 = $builtins.py_make_none()
-          n16 = $builtins.py_make_none()
-          n17 = $builtins.py_make_none()
-          n18 = $builtins.py_make_none()
-          n0 = $builtins.py_make_function(n9, n15, n16, n17, n18)
-          n19:*PyLocals = load &locals
-          n20:*PyGlobals = load &globals
-          n21 = $builtins.py_store_name("f", n19, n20, n0)
-          n22:*PyGlobals = load &globals
-          n23 = __sil_allocate(<closure:dummy:1>)
-          store n23.?.globals <- n22:*PyGlobals
-          n29 = $builtins.py_make_none()
-          n30 = $builtins.py_make_none()
-          n31 = $builtins.py_make_none()
-          n32 = $builtins.py_make_none()
-          n1 = $builtins.py_make_function(n23, n29, n30, n31, n32)
-          n33:*PyLocals = load &locals
-          n34:*PyGlobals = load &globals
-          n35 = $builtins.py_store_name("g", n33, n34, n1)
-          n36 = $builtins.py_make_none()
-          ret n36
+          n11 = $builtins.py_make_none()
+          n12 = $builtins.py_make_none()
+          n13 = $builtins.py_make_none()
+          n14 = $builtins.py_make_none()
+          n0 = $builtins.py_make_function(n9, n11, n12, n13, n14)
+          n15:*PyLocals = load &locals
+          n16:*PyGlobals = load &globals
+          n17 = $builtins.py_store_name("f", n15, n16, n0)
+          n18:*PyGlobals = load &globals
+          n19 = __sil_allocate(<closure:dummy:1>)
+          store n19.?.globals <- n18:*PyGlobals
+          n21 = $builtins.py_make_none()
+          n22 = $builtins.py_make_none()
+          n23 = $builtins.py_make_none()
+          n24 = $builtins.py_make_none()
+          n1 = $builtins.py_make_function(n19, n21, n22, n23, n24)
+          n25:*PyLocals = load &locals
+          n26:*PyGlobals = load &globals
+          n27 = $builtins.py_store_name("g", n25, n26, n1)
+          n28 = $builtins.py_make_none()
+          ret n28
 
     }
 

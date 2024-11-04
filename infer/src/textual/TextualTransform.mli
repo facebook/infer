@@ -13,7 +13,7 @@ open! IStd
 val fix_closure_app : Textual.Module.t -> Textual.Module.t
 
 val remove_effects_in_subexprs :
-  Textual.Lang.t -> TextualDecls.t -> Textual.Module.t -> Textual.Module.t
+  Textual.Lang.t -> TextualDecls.t -> Textual.Module.t -> Textual.Module.t * bool
 (* generates enough intermediate Let and Load instructions to make the procdesc free
    of side-effect sub-expressions.
    Example:
@@ -22,6 +22,8 @@ val remove_effects_in_subexprs :
      n3 = g3(n1)
      n4 = load:? &a
      n2 = m(n0, n3, n4)
+
+   return the new Textual unit and a boolean true iff new decls where introduced during transformation
 *)
 
 val remove_if_terminator : Textual.Module.t -> Textual.Module.t

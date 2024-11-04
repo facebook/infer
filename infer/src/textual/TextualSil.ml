@@ -1209,12 +1209,17 @@ module ModuleBridge = struct
           L.die InternalError
             "to_sil conversion should not be performed if TextualDecls verification has raised any \
              errors before." ;
-        let module_ =
+        let module_, new_decls_were_added =
           let open TextualTransform in
           (* note: because && and || operators are lazy we must remove them before moving calls *)
-          module_ |> remove_if_terminator
-          |> remove_effects_in_subexprs lang decls_env
-          |> let_propagation |> out_of_ssa
+          module_ |> remove_if_terminator |> remove_effects_in_subexprs lang decls_env
+        in
+        let module_ =
+          let open TextualTransform in
+          module_ |> let_propagation |> out_of_ssa
+        in
+        let decls_env =
+          if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env
         in
         let all_proc_entries, types_used_as_enclosing_but_not_defined =
           TextualDecls.get_proc_entries_by_enclosing_class decls_env

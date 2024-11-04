@@ -358,6 +358,8 @@ module TransformClosures = struct
   let closure_call_procdesc loc typename state (closure : ProcDesc.t) fields params :
       State.t * ProcDesc.t =
     let nb_captured = List.length fields in
+    let save_fresh_ident = state.State.fresh_ident in
+    let state = {state with State.fresh_ident= Ident.of_int 0} in
     let procdecl = closure_call_procdecl loc typename closure nb_captured in
     let start : NodeName.t = {value= "entry"; loc} in
     let this_var : VarName.t = {value= "__this"; loc} in
@@ -396,7 +398,7 @@ module TransformClosures = struct
       ; label_loc= loc }
     in
     let params = this_var :: params in
-    let state = State.incr_fresh state in
+    let state = {state with fresh_ident= save_fresh_ident} in
     (state, {procdecl; nodes= [node]; start; params; locals= []; exit_loc= loc})
 end
 
@@ -538,7 +540,7 @@ let remove_effects_in_subexprs lang decls_env _module =
     ({pdesc with nodes= List.rev rev_nodes}, closure_declarations)
   in
   let module_, closure_declarations = module_fold_procs ~init:[] ~f:flatten_pdesc _module in
-  {module_ with decls= closure_declarations @ module_.decls}
+  ({module_ with decls= closure_declarations @ module_.decls}, List.length closure_declarations > 0)
 
 
 let remove_if_terminator module_ =
