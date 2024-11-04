@@ -17,7 +17,7 @@ module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 type t = Struct.t TypenameHash.t
 
 let pp fmt (tenv : t) =
-  TypenameHash.iter (fun name typ -> Format.fprintf fmt "%a@," (Struct.pp Pp.text name) typ) tenv
+  TypenameHash.iter (fun name typ -> Format.fprintf fmt "%a@\n@," (Struct.pp Pp.text name) typ) tenv
 
 
 let length tenv = TypenameHash.length tenv

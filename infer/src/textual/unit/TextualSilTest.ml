@@ -66,6 +66,7 @@ let%expect_test "undefined types are included in tenv" =
          class_info: {HackClassInfo (Class)}
          dummy: false
          source_file: dummy.sil
+
          hack Quux
          fields: {}
          statics: {}
@@ -76,6 +77,7 @@ let%expect_test "undefined types are included in tenv" =
          annots: {<>}
          class_info: {NoInfo}
          dummy: true
+
          hack Baz
          fields: {}
          statics: {}
@@ -86,6 +88,7 @@ let%expect_test "undefined types are included in tenv" =
          annots: {<>}
          class_info: {NoInfo}
          dummy: true
+
          hack Bar
          fields: {}
          statics: {}
@@ -122,6 +125,7 @@ let%expect_test "final annotation" =
       class_info: {HackClassInfo (Class)}
       dummy: false
       source_file: dummy.sil
+
       hack Bar
       fields: {}
       statics: {}
@@ -159,6 +163,7 @@ let%expect_test "abstract class" =
       class_info: {HackClassInfo (AbstractClass)}
       dummy: false
       source_file: dummy.sil
+
       hack Bar
       fields: {}
       statics: {}
@@ -265,6 +270,7 @@ let%expect_test "overloads in tenv" =
     annots: {<>}
     class_info: {NoInfo}
     dummy: true
+
     hack bool
     fields: {}
     statics: {}
@@ -403,6 +409,7 @@ let%expect_test "trait vs class kind" =
       class_info: {HackClassInfo (Class)}
       dummy: false
       source_file: dummy.sil
+
       hack T
       fields: {}
       statics: {}
@@ -441,6 +448,7 @@ let%expect_test "const" =
     annots: {<>}
     class_info: {NoInfo}
     dummy: true
+
     hack Uninit::A$static
     fields: {
                HackMixed* const  FIELD <>

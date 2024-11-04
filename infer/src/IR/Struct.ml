@@ -99,7 +99,7 @@ let pp pe name f
         F.pp_print_break fmt 0 0
   in
   F.fprintf f
-    "%a@,\
+    "%a @,\
      @[<v>fields: {@[<v>%a@]}@,\
      statics: {@[<v>%a@]}@,\
      supers: {@[<v>%a@]}@,\

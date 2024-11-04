@@ -1995,6 +1995,8 @@ module InstanceOf = struct
 
   let pp_instance_fact fmt inf =
     match inf with
+    | Known {typ} when Language.curr_language_is Python ->
+        F.fprintf fmt "%a" (Typ.pp_full Pp.text) typ
     | Known {typ; source_file} ->
         F.fprintf fmt "%a, SourceFile %a" (Typ.pp_full Pp.text) typ (Pp.option SourceFile.pp)
           source_file
