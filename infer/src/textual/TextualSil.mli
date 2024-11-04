@@ -54,6 +54,10 @@ val hack_root_type_name : Typ.name
 
 val python_dict_type_name : Typ.name
 
+val python_none_type_name : Typ.name
+
+val python_mixed_type_name : Typ.name
+
 val wildcard_sil_fieldname : Textual.Lang.t -> string -> Fieldname.t
 
 val textual_ext : string

@@ -80,7 +80,7 @@ module Syntax : sig
     -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
     -> unit model_monad
 
-  val apply_hack_closure : aval -> aval list -> aval model_monad
+  val apply_closure : Textual.Lang.t -> aval -> aval list -> aval model_monad
 
   val get_data : model_data model_monad
 

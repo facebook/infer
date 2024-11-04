@@ -799,12 +799,27 @@ module Syntax = struct
     |> exec_partial_command
 
 
-  let apply_hack_closure (closure : aval) closure_args : aval model_monad =
-    let typ = Typ.mk_ptr (Typ.mk_struct TextualSil.hack_mixed_type_name) in
+  let apply_closure lang (closure : aval) closure_args : aval model_monad =
+    let mixed_type_name =
+      match (lang : Textual.Lang.t) with
+      | Hack ->
+          TextualSil.hack_mixed_type_name
+      | Python ->
+          TextualSil.python_mixed_type_name
+      | Java ->
+          L.die InternalError "apply_closure is not supported on Java"
+    in
+    let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
     let args = closure :: closure_args in
     let unresolved_pname =
-      Procname.make_hack ~class_name:(Some HackClassName.wildcard) ~function_name:"__invoke"
-        ~arity:(Some (List.length args))
+      match (lang : Textual.Lang.t) with
+      | Hack ->
+          Procname.make_hack ~class_name:(Some HackClassName.wildcard) ~function_name:"__invoke"
+            ~arity:(Some (List.length args))
+      | Python ->
+          Procname.make_python ~class_name:(Some PythonClassName.wildcard) ~function_name:"call"
+      | Java ->
+          L.die InternalError "apply_closure is not supported on Java"
     in
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
     match opt_dynamic_type_data with
