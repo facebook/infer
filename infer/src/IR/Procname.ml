@@ -601,6 +601,8 @@ module Python = struct
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
 
+  let get_class_name_as_a_string {class_name} = Option.map class_name ~f:PythonClassName.classname
+
   let pp fmt t =
     match t.class_name with
     | Some class_name ->

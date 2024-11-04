@@ -730,12 +730,11 @@ module PulseTransferFunctions = struct
       else astate
     in
     let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
-    if caller_is_hack_wrapper then
-      L.d_printfln "caller %a IS a hack wrapper" Procdesc.pp_signature proc_desc
-    else L.d_printfln "caller %a is not a wrapper" Procdesc.pp_signature proc_desc ;
     let ret, ret_and_name_saved_for_hack_async =
       match callee_pname with
-      | Some proc_name when is_hack_async tenv proc_name && not caller_is_hack_wrapper ->
+      | Some proc_name
+        when Language.curr_language_is Hack && is_hack_async tenv proc_name
+             && not caller_is_hack_wrapper ->
           L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp proc_name
             Ident.pp (fst ret) ;
           ((Ident.create_fresh Ident.kprimed, snd ret), Some (ret, proc_name))
@@ -744,7 +743,6 @@ module PulseTransferFunctions = struct
     in
     (* if it's an async call, we're going to wrap the result in an Awaitable, so we need to create a fresh Ident.t
        for the call to return to *)
-    L.d_printfln "return id passed to call is %a" Ident.pp (fst ret) ;
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate, callee_pname, func_args =
       if Language.curr_language_is Hack then

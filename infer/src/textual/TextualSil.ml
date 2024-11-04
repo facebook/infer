@@ -137,6 +137,8 @@ let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
 
 let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject")
 
+let python_dict_type_name = SilTyp.PythonClass (PythonClassName.make "PyDict")
+
 let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
 
 let default_return_type (lang : Lang.t option) loc =

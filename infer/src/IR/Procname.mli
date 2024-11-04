@@ -195,7 +195,9 @@ module Hack : sig
 end
 
 module Python : sig
-  type t
+  type t = private {class_name: PythonClassName.t option; function_name: string}
+
+  val get_class_name_as_a_string : t -> string option
 end
 
 (** Type of procedure names. *)

@@ -31,6 +31,8 @@ type erlang = Procname.Erlang.t
 
 type hack = Procname.Hack.t
 
+type python = Procname.Python.t
+
 type java = Procname.Java.t
 
 type qual_name = QualifiedCppName.t
@@ -72,6 +74,12 @@ let templated_name_of_class_name class_name =
 let templated_name_of_hack hack =
   Option.map (Procname.Hack.get_class_name_as_a_string hack) ~f:(fun class_name ->
       let qual_name = QualifiedCppName.of_list [class_name; hack.Procname.Hack.function_name] in
+      (qual_name, []) )
+
+
+let templated_name_of_python python =
+  Option.map (Procname.Python.get_class_name_as_a_string python) ~f:(fun class_name ->
+      let qual_name = QualifiedCppName.of_list [class_name; python.Procname.Python.function_name] in
       (qual_name, []) )
 
 
@@ -451,6 +459,7 @@ module Call = struct
     { on_objc_cpp: 'context -> 'f_in -> objc_cpp -> 'f_out option
     ; on_c: 'context -> 'f_in -> c -> 'f_out option
     ; on_hack: 'context -> 'f_in -> hack -> 'f_out option
+    ; on_python: 'context -> 'f_in -> python -> 'f_out option
     ; on_java: 'context -> 'f_in -> java -> 'f_out option
     ; on_erlang: 'context -> 'f_in -> erlang -> 'f_out option
     ; on_csharp: 'context -> 'f_in -> csharp -> 'f_out option }
@@ -484,6 +493,7 @@ module Call = struct
     { on_objc_cpp: 'context -> objc_cpp -> 'arg_payload FuncArg.t list -> 'f option
     ; on_c: 'context -> c -> 'arg_payload FuncArg.t list -> 'f option
     ; on_hack: 'context -> hack -> 'arg_payload FuncArg.t list -> 'f option
+    ; on_python: 'context -> python -> 'arg_payload FuncArg.t list -> 'f option
     ; on_java: 'context -> java -> 'arg_payload FuncArg.t list -> 'f option
     ; on_erlang: 'context -> erlang -> 'arg_payload FuncArg.t list -> 'f option
     ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option }
@@ -492,12 +502,14 @@ module Call = struct
     let transform_for_lang lang_matcher ctx lang args =
       lang_matcher ctx lang args |> Option.map ~f
     in
-    let ({on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} : (_, _, _) matcher) =
+    let ({on_objc_cpp; on_c; on_hack; on_python; on_java; on_erlang; on_csharp} : (_, _, _) matcher)
+        =
       matcher
     in
     { on_objc_cpp= transform_for_lang on_objc_cpp
     ; on_c= transform_for_lang on_c
     ; on_hack= transform_for_lang on_hack
+    ; on_python= transform_for_lang on_python
     ; on_java= transform_for_lang on_java
     ; on_erlang= transform_for_lang on_erlang
     ; on_csharp= transform_for_lang on_csharp }
@@ -509,6 +521,7 @@ module Call = struct
     { on_objc_cpp= transform_for_lang matcher.on_objc_cpp
     ; on_c= transform_for_lang matcher.on_c
     ; on_hack= transform_for_lang matcher.on_hack
+    ; on_python= transform_for_lang matcher.on_python
     ; on_java= transform_for_lang matcher.on_java
     ; on_erlang= transform_for_lang matcher.on_erlang
     ; on_csharp= transform_for_lang matcher.on_csharp }
@@ -547,6 +560,12 @@ module Call = struct
            'context
         -> 'f_in
         -> hack
+        -> 'arg_payload FuncArg.t list
+        -> ('context, 'f_out, 'arg_payload) pre_result
+    ; on_python:
+           'context
+        -> 'f_in
+        -> python
         -> 'arg_payload FuncArg.t list
         -> ('context, 'f_out, 'arg_payload) pre_result
     ; on_java:
@@ -588,6 +607,10 @@ module Call = struct
         Option.value_map (templated_name_of_hack hack) ~default:None
           ~f:(on_templated_name context f)
       in
+      let on_python context f (python : python) =
+        Option.value_map (templated_name_of_python python) ~default:None
+          ~f:(on_templated_name context f)
+      in
       let on_erlang context f (erlang : erlang) =
         on_templated_name context f (templated_name_of_erlang erlang)
       in
@@ -595,7 +618,9 @@ module Call = struct
         on_templated_name context f (templated_name_of_csharp csharp)
       in
       let on_objc_cpp context f objc_cpp = on_objc_cpp context f objc_cpp in
-      let on_proc : _ proc_matcher = {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} in
+      let on_proc : _ proc_matcher =
+        {on_objc_cpp; on_c; on_hack; on_python; on_java; on_erlang; on_csharp}
+      in
       {on_proc; on_args}
 
 
@@ -615,12 +640,17 @@ module Call = struct
       -> ('context, 'f_proc_out, 'f_out, 'arg_payload) func_args_end
       -> ('context, 'f_in, 'f_out, 'arg_payload) all_args_matcher =
    fun m func_args_end ->
-    let {on_proc= {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}; on_args} = m in
+    let {on_proc= {on_c; on_hack; on_java; on_python; on_erlang; on_csharp; on_objc_cpp}; on_args} =
+      m
+    in
     let on_c context f c args =
       on_c context f c |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
     let on_hack context f hack args =
       on_hack context f hack |> pre_bind_opt ~f:(func_args_end ~on_args context args)
+    in
+    let on_python context f python args =
+      on_python context f python |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
     let on_java context f java args =
       on_java context f java |> pre_bind_opt ~f:(func_args_end ~on_args context args)
@@ -634,7 +664,7 @@ module Call = struct
     let on_objc_cpp context f objc_cpp args =
       on_objc_cpp context f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
-    {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}
+    {on_c; on_hack; on_python; on_java; on_erlang; on_csharp; on_objc_cpp}
 
 
   let make_matcher :
@@ -642,8 +672,8 @@ module Call = struct
       -> 'f_in
       -> ('context, 'f_out, 'arg_payload) matcher =
    fun m f ->
-    let ({on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp} : (_, _, _, _) all_args_matcher)
-        =
+    let ({on_c; on_hack; on_python; on_java; on_erlang; on_csharp; on_objc_cpp}
+          : (_, _, _, _) all_args_matcher ) =
       m
     in
     let on_objc_cpp context objc_cpp args =
@@ -673,6 +703,15 @@ module Call = struct
       | RetryWith {on_hack} ->
           on_hack context hack args
     in
+    let on_python context python args =
+      match on_python context f python args with
+      | DoesNotMatch ->
+          None
+      | Matches res ->
+          Some res
+      | RetryWith {on_python} ->
+          on_python context python args
+    in
     let on_java context java args =
       match on_java context f java args with
       | DoesNotMatch ->
@@ -700,7 +739,7 @@ module Call = struct
       | RetryWith {on_csharp} ->
           on_csharp context csharp args
     in
-    {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp}
+    {on_objc_cpp; on_c; on_hack; on_python; on_java; on_erlang; on_csharp}
 
 
   (** Simple implementation of a dispatcher, could be optimized later *)
@@ -716,6 +755,9 @@ module Call = struct
     in
     let on_hack context hack args =
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_hack context hack args)
+    in
+    let on_python context python args =
+      List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_python context python args)
     in
     let on_java context java args =
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_java context java args)
@@ -735,6 +777,8 @@ module Call = struct
             on_c context c args
         | Hack hack ->
             on_hack context hack args
+        | Python python ->
+            on_python context python args
         | Java java ->
             on_java context java args
         | Erlang erlang ->
@@ -1003,11 +1047,12 @@ module Call = struct
     in
     let on_c _context c _args = on_procname (C c) in
     let on_hack _context hack _args = on_procname (Hack hack) in
+    let on_python _context python _args = on_procname (Python python) in
     let on_java _context java _args = on_procname (Java java) in
     let on_erlang _context erlang _args = on_procname (Erlang erlang) in
     let on_objc_cpp _context objc_cpp _args = on_procname (ObjC_Cpp objc_cpp) in
     let on_csharp _context csharp _args = on_procname (CSharp csharp) in
-    {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}
+    {on_c; on_hack; on_python; on_java; on_erlang; on_csharp; on_objc_cpp}
 
 
   let ( $! ) path_matcher () = args_begin path_matcher

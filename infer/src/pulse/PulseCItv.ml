@@ -424,8 +424,6 @@ let abduce_binop_constraints ~negated (bop : Binop.t) (a1 : t) (a2 : t) =
 
 
 let abduce_binop_is_true ~negated bop v1 v2 =
-  Logging.d_printfln "abduce_binop_is_true ~negated:%b %s (%a) (%a)" negated (Binop.str Pp.text bop)
-    (Pp.option pp) v1 (Pp.option pp) v2 ;
   match (v1, v2) with
   | None, None ->
       (* two existential variables: no way to express in the non-relational domain *)

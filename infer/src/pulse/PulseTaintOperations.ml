@@ -771,7 +771,7 @@ let should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name =
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t)
     (actuals : ValueOrigin.t FuncArg.t list) astate =
-  L.with_indent "taint operations -> call" ~f:(fun () ->
+  L.with_indent ~collapsible:true "taint operations -> call" ~f:(fun () ->
       match call with
       | First call_exp ->
           L.d_printfln "call to expression [unknown=%b]" call_was_unknown ;
