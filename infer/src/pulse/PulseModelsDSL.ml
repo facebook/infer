@@ -622,7 +622,10 @@ module Syntax = struct
           match Typ.name typ with
           | Some (HackClass hacktypname) when is_hack_builder_in_config tenv hacktypname ->
               let* () = allocation (Attribute.HackBuilderResource hacktypname) new_obj in
-              AddressAttributes.set_hack_builder (fst new_obj) Attribute.Builder.NonDiscardable
+              (* While it makes sense to set initial builder state to NonDiscardable we'd like
+                 to delay that until the first method call to avoid FPs caused by reporting
+                 on builders without any method calls *)
+              AddressAttributes.set_hack_builder (fst new_obj) Attribute.Builder.Discardable
               |> exec_command
           | _ ->
               ret ()

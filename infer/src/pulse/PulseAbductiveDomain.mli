@@ -193,7 +193,6 @@ module AddressAttributes : sig
   val remove_hack_builder : AbstractValue.t -> t -> t [@@warning "-unused-value-declaration"]
 
   val set_hack_builder : AbstractValue.t -> Attribute.Builder.t -> t -> t
-  [@@warning "-unused-value-declaration"]
 
   val get_hack_builder : AbstractValue.t -> t -> Attribute.Builder.t option
   [@@warning "-unused-value-declaration"]

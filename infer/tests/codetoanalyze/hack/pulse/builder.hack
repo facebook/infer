@@ -118,10 +118,6 @@ class BuilderTester {
   // now check builders recognised from the .inferconfig file
   public static function testConfigBad(): void {
     $b = new NoBuilderSuffix();
-  }
-
-  public static function testConfigBad2(): void {
-    $b = new NoBuilderSuffix();
     $b->setFoo(42);
   }
 

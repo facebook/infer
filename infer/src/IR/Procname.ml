@@ -995,6 +995,12 @@ let is_hack_construct = function
 
 let is_hack_xinit = function Hack classname -> Hack.is_xinit classname | _ -> false
 
+let is_hack_internal procname =
+  if is_hack_xinit procname || is_hack_builtins procname || is_hack_construct procname then true
+  else match procname with (* models are implemented as C functions *)
+       | C _ -> true | _ -> false
+
+
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
 let get_global_name_of_initializer t =

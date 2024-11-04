@@ -52,6 +52,17 @@ let is_hack_async tenv pname =
                   Struct.is_hack_interface str ) )
 
 
+let is_hack_builder_procname tenv pname =
+  if Procname.is_hack_internal pname then false
+  else
+    match Procname.get_class_type_name pname with
+    | Some (HackClass _ as tn) ->
+        List.exists Config.hack_builder_patterns ~f:(fun (class_name, _) ->
+            PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name)) )
+    | _ ->
+        false
+
+
 let is_hack_builder_consumer tenv pname =
   match Procname.get_class_type_name pname with
   | Some (HackClass _ as tn) ->
@@ -761,6 +772,12 @@ module PulseTransferFunctions = struct
           L.d_printfln "**it's a builder consumer" ;
           AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
             astate
+      | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+        when is_hack_builder_procname tenv callee_pname ->
+          L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp
+            callee_pname ;
+          AddressAttributes.set_hack_builder (ValueOrigin.value arg)
+            Attribute.Builder.NonDiscardable astate
       | _, _ ->
           astate
     in

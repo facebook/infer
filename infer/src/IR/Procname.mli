@@ -499,3 +499,6 @@ val is_hack_async_name : t -> bool
 val is_hack_construct : t -> bool
 
 val is_hack_xinit : t -> bool
+
+val is_hack_internal : t -> bool
+(* Check if the function is not a model nor one of the internal functions necessary for implementation *)
