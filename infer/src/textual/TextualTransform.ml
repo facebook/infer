@@ -289,19 +289,11 @@ module State = struct
 end
 
 module TransformClosures = struct
-  let typename ~(closure : ProcDesc.t) ~(enclosing : ProcDesc.t) fresh_index loc : TypeName.t =
+  let typename sourcefile fresh_index loc : TypeName.t =
     (* we create a new type for this closure *)
-    let pp fmt ({enclosing_class; name} : QualifiedProcName.t) =
-      match enclosing_class with
-      | TopLevel ->
-          ProcName.pp fmt name
-      | Enclosing tname ->
-          F.fprintf fmt "%a_%a" TypeName.pp tname ProcName.pp name
-    in
-    let value =
-      F.asprintf "__Closure_%a_in_%a_%d" pp closure.procdecl.qualified_name pp
-        enclosing.procdecl.qualified_name fresh_index
-    in
+    let filename = F.asprintf "%a" SourceFile.pp sourcefile in
+    let name, _ = Filename.split_extension filename in
+    let value = F.asprintf "closure:%s:%d" name fresh_index in
     {value; loc}
 
 
@@ -409,6 +401,12 @@ module TransformClosures = struct
 end
 
 let remove_effects_in_subexprs lang decls_env _module =
+  let fresh_closure_counter =
+    let counter = ref (-1) in
+    fun () ->
+      incr counter ;
+      !counter
+  in
   let rec flatten_exp loc (exp : Exp.t) state : Exp.t * State.t =
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
@@ -434,8 +432,6 @@ let remove_effects_in_subexprs lang decls_env _module =
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Closure {proc; captured; params} ->
         let captured, state = flatten_exp_list loc captured state in
-        let id_object = state.State.fresh_ident in
-        let state = State.incr_fresh state in
         let signature = TransformClosures.signature_body lang proc captured params in
         let closure =
           match TextualDecls.get_procdesc decls_env signature with
@@ -444,10 +440,10 @@ let remove_effects_in_subexprs lang decls_env _module =
           | None ->
               L.die InternalError "TextualBasicVerication should make this situation impossible"
         in
-        let typename =
-          TransformClosures.typename ~closure ~enclosing:state.State.pdesc (Ident.to_int id_object)
-            loc
-        in
+        let id_closure = fresh_closure_counter () in
+        let typename = TransformClosures.typename _module.Module.sourcefile id_closure loc in
+        let id_object = state.State.fresh_ident in
+        let state = State.incr_fresh state in
         let instrs, fields =
           TransformClosures.closure_building_instrs id_object loc typename closure captured
         in

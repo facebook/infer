@@ -753,13 +753,13 @@ let%expect_test "closures" =
     {|
       .source_language = "hack"
 
-      type __Closure_C_add_in_D_foo_4 = {x: int; y: int}
+      type closure:dummy:0 = {x: int; y: int}
 
-      define __Closure_C_add_in_D_foo_4.call(__this: *__Closure_C_add_in_D_foo_4, p1: int, p2: float, p3: string) : int {
+      define closure:dummy:0.call(__this: *closure:dummy:0, p1: int, p2: float, p3: string) : int {
         #entry:
-            n6:*__Closure_C_add_in_D_foo_4 = load &__this
+            n6:*closure:dummy:0 = load &__this
             n7:int = load n6.?.x
-            n8:*__Closure_C_add_in_D_foo_4 = load &__this
+            n8:*closure:dummy:0 = load &__this
             n9:int = load n8.?.y
             n10:int = load &p1
             n11:float = load &p2
@@ -782,7 +782,7 @@ let%expect_test "closures" =
         local y: *HackMixed
         #entry:
             n3:int = load &x
-            n4 = __sil_allocate(<__Closure_C_add_in_D_foo_4>)
+            n4 = __sil_allocate(<closure:dummy:0>)
             store n4.?.x <- n3:int
             store n4.?.y <- 1:int
             n0 = n4

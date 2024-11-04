@@ -181,11 +181,11 @@ def g():
     FINAL TRANSFORMATIONS
     .source_language = "python"
 
-    type __Closure_dummy::g_in_dummy::__module_body___23 = {globals: *PyGlobals}
+    type closure:dummy:1 = {globals: *PyGlobals}
 
-    define __Closure_dummy::g_in_dummy::__module_body___23.call(__this: *__Closure_dummy::g_in_dummy::__module_body___23, locals: *PyLocals) : *PyObject {
+    define closure:dummy:1.call(__this: *closure:dummy:1, locals: *PyLocals) : *PyObject {
       #entry:
-          n25:*__Closure_dummy::g_in_dummy::__module_body___23 = load &__this
+          n25:*closure:dummy:1 = load &__this
           n26:*PyGlobals = load n25.?.globals
           n27:*PyLocals = load &locals
           n28 = dummy::g(n26, n27)
@@ -193,11 +193,11 @@ def g():
 
     }
 
-    type __Closure_dummy::f_in_dummy::__module_body___9 = {globals: *PyGlobals}
+    type closure:dummy:0 = {globals: *PyGlobals}
 
-    define __Closure_dummy::f_in_dummy::__module_body___9.call(__this: *__Closure_dummy::f_in_dummy::__module_body___9, locals: *PyLocals) : *PyObject {
+    define closure:dummy:0.call(__this: *closure:dummy:0, locals: *PyLocals) : *PyObject {
       #entry:
-          n11:*__Closure_dummy::f_in_dummy::__module_body___9 = load &__this
+          n11:*closure:dummy:0 = load &__this
           n12:*PyGlobals = load n11.?.globals
           n13:*PyLocals = load &locals
           n14 = dummy::f(n12, n13)
@@ -217,7 +217,7 @@ def g():
           n6 = $builtins.py_make_int(0)
           n7 = $builtins.py_store_name("x", n4, n5, n6)
           n8:*PyGlobals = load &globals
-          n9 = __sil_allocate(<__Closure_dummy::f_in_dummy::__module_body___9>)
+          n9 = __sil_allocate(<closure:dummy:0>)
           store n9.?.globals <- n8:*PyGlobals
           n15 = $builtins.py_make_none()
           n16 = $builtins.py_make_none()
@@ -228,7 +228,7 @@ def g():
           n20:*PyGlobals = load &globals
           n21 = $builtins.py_store_name("f", n19, n20, n0)
           n22:*PyGlobals = load &globals
-          n23 = __sil_allocate(<__Closure_dummy::g_in_dummy::__module_body___23>)
+          n23 = __sil_allocate(<closure:dummy:1>)
           store n23.?.globals <- n22:*PyGlobals
           n29 = $builtins.py_make_none()
           n30 = $builtins.py_make_none()
