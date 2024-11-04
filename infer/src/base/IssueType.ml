@@ -879,7 +879,8 @@ let pulse_unawaited_awaitable =
 
 let pulse_unfinished_builder =
   register ~enabled:false ~category:ResourceLeak ~id:"PULSE_UNFINISHED_BUILDER" Error Pulse
-    ~hum:"Unfinished Builder" ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
+    ~hum:"Unfinished Builder"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNFINISHED_BUILDER.md"]
 
 
 let pulse_uninitialized_const =
