@@ -17,6 +17,7 @@
       "sources": ["UserDefinedSource1", "UserDefinedSource2"],
       "sinks": ["UserDefinedSink1", "UserDefinedSink2"],
       "sanitizers": ["UserDefinedSanitizer"],
+      "name": "Example name",
       "description": "This is an example description"
     },
     {

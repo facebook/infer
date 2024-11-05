@@ -163,6 +163,7 @@ module AnnotationSpec = struct
     ; sanitizer_predicate: predicate  (** decide if something is a sanitizer *)
     ; sink_annotation: Annot.t  (** used as key in the domain (sink -> procedure -> callsite) *)
     ; source_annotation_list: Annot.t list  (** decide if something is a source *)
+    ; name: string  (** Short name to be added at the beginning of the report *)
     ; description: string  (** Extra description to be added to the issue report *)
     ; issue_type: IssueType.t
     ; models: Str.regexp list IStd.String.Map.t  (** model functions as if they were annotated *)
@@ -171,6 +172,8 @@ module AnnotationSpec = struct
 end
 
 let prepend_if_not_empty str prefix = if String.equal str "" then "" else prefix ^ str
+
+let append_if_not_empty str suffix = if String.equal str "" then "" else str ^ suffix
 
 let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} src
     (spec : AnnotationSpec.t) loc trace snk_pname =
@@ -215,16 +218,17 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
   let src_annot_str = src.Annot.class_name in
   let access_or_call = if is_dummy_field_pname snk_pname then "accesses" else "calls" in
   let spec_description = prepend_if_not_empty spec.description ". " in
+  let spec_name = append_if_not_empty spec.name ". " in
   (* A direct call has a trace of length 3: source def + callsite + sink def *)
   let transitive = if List.length trace > 3 then "transitively " else "" in
   let description =
     if is_dummy_constructor snk then
       let constr_str = str_of_pname ~withclass:true snk_pname in
-      Format.asprintf "Method %a annotated with %a allocates %a via %a%s" MF.pp_monospaced
-        (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str) MF.pp_monospaced constr_str
-        MF.pp_monospaced ("new " ^ constr_str) spec_description
+      Format.asprintf "%sMethod %a annotated with %a allocates %a via %a%s" spec_name
+        MF.pp_monospaced (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
+        MF.pp_monospaced constr_str MF.pp_monospaced ("new " ^ constr_str) spec_description
     else
-      Format.asprintf "Method %a (%s %a%s%s) %s%s %a (%s %a%s%s)%s" MF.pp_monospaced
+      Format.asprintf "%sMethod %a (%s %a%s%s) %s%s %a (%s %a%s%s)%s" spec_name MF.pp_monospaced
         (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
         (get_details src src_pname) (get_class_details src src_pname) transitive access_or_call
         MF.pp_monospaced
@@ -317,8 +321,9 @@ let report_src_and_sink {InterproceduralAnalysis.proc_desc; err_log} src (spec :
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
   let spec_description = prepend_if_not_empty spec.description ". " in
+  let spec_name = append_if_not_empty spec.name ". " in
   let description =
-    Format.asprintf "Method %a is annotated with both %a and %a%s" MF.pp_monospaced
+    Format.asprintf "%sMethod %a is annotated with both %a and %a%s" spec_name MF.pp_monospaced
       (str_of_pname proc_name) MF.pp_monospaced ("@" ^ src.Annot.class_name) MF.pp_monospaced
       ("@" ^ spec.sink_annotation.class_name)
       spec_description
@@ -346,7 +351,7 @@ let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analys
 
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots description models =
+  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots name description models =
     let src_list = List.map str_src_annots ~f:annotation_of_str in
     let sanitizer_annots = List.map str_sanitizer_annots ~f:annotation_of_str in
     let snk = annotation_of_str str_snk_annot in
@@ -358,6 +363,7 @@ module StandardAnnotationSpec = struct
           List.exists sanitizer_annots ~f:(fun s -> method_overrides_annot s models tenv pname) )
     ; sink_annotation= snk
     ; source_annotation_list= src_list
+    ; name
     ; description
     ; issue_type= IssueType.checkers_annotation_reachability_error
     ; models
@@ -375,6 +381,7 @@ module NoAllocationAnnotationSpec = struct
         (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
     ; sink_annotation= dummy_constructor_annot
     ; source_annotation_list= [no_allocation_annot]
+    ; name= ""
     ; description= ""
     ; issue_type= IssueType.checkers_allocates_memory
     ; models= String.Map.empty
@@ -415,6 +422,7 @@ module ExpensiveAnnotationSpec = struct
     ; sanitizer_predicate= (fun _ _ -> false)
     ; sink_annotation= expensive_annot
     ; source_annotation_list= [performance_critical_annot]
+    ; name= ""
     ; description= ""
     ; issue_type= IssueType.checkers_calls_expensive_method
     ; models= String.Map.empty
@@ -513,6 +521,7 @@ type custom_spec =
   { sources: string list
   ; sinks: string list
   ; sanitizers: string list [@yojson.default []]
+  ; name: string [@yojson.default ""]
   ; description: string [@yojson.default ""] }
 [@@deriving of_yojson]
 
@@ -520,10 +529,10 @@ type custom_specs = custom_spec list [@@deriving of_yojson]
 
 let parse_custom_specs () =
   let models = parse_custom_models () in
-  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers; description} =
+  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers; name; description} =
     List.map
       ~f:(fun sink ->
-        StandardAnnotationSpec.from_annotations sources sink sanitizers description models )
+        StandardAnnotationSpec.from_annotations sources sink sanitizers name description models )
       sinks
   in
   let custom_specs =
