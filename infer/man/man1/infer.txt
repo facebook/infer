@@ -1576,6 +1576,10 @@ OPTIONS
            Pulse. Accepted formats are method or namespace::method
            See also infer-analyze(1).
 
+       --pulse-model-unknown-pure +string
+           Regex of methods that should be modelled as unknown pure in Pulse
+           See also infer-analyze(1).
+
        --pulse-model-unreachable +string
            Methods to be modeled as unreachable.
            See also infer-analyze(1).

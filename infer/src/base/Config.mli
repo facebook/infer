@@ -672,6 +672,8 @@ val pulse_model_transfer_ownership : string list
 
 val pulse_model_transfer_ownership_namespace : (string * string) list
 
+val pulse_model_unknown_pure : Str.regexp option
+
 val pulse_model_unreachable : string list
 
 val pulse_models_for_erlang : string list

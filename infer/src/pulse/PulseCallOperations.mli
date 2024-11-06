@@ -35,6 +35,7 @@ val unknown_call :
   -> PathContext.t
   -> Location.t
   -> CallEvent.t
+  -> ?force_pure:bool
   -> Procname.t option
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list

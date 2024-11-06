@@ -163,3 +163,19 @@ std::string inside_try_catch_FP(const std::string& x) {
     return "";
   }
 }
+
+int unknown_pure();
+
+std::optional<std::string> get_value_pure() {
+  if (unknown_pure()) {
+    return std::optional<std::string>{"Godzilla"};
+  }
+  return std::nullopt;
+}
+
+std::string call_get_value_pure_twice_ok() {
+  if (get_value_pure().has_value()) {
+    return *get_value_pure();
+  }
+  return "";
+}

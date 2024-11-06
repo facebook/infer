@@ -825,6 +825,9 @@ PULSE CHECKER OPTIONS
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
 
+       --pulse-model-unknown-pure +string
+           Regex of methods that should be modelled as unknown pure in Pulse
+
        --pulse-models-for-erlang +path
            Provide custom models for Erlang in JSON files or SQLite3. Files
            must end with `.json` or `.db` respectively. If a path to a

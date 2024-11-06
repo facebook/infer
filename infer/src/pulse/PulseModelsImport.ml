@@ -190,7 +190,7 @@ module Basic = struct
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
-  let unknown_call skip_reason args : model_no_non_disj =
+  let unknown_call ?(force_pure = false) skip_reason args : model_no_non_disj =
    fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
@@ -199,8 +199,11 @@ module Basic = struct
     let formals_opt =
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
+    let reason =
+      if force_pure then CallEvent.SkippedKnownCall callee_procname else CallEvent.Model skip_reason
+    in
     let<++> astate =
-      PulseCallOperations.unknown_call tenv path location (Model skip_reason) (Some callee_procname)
+      PulseCallOperations.unknown_call tenv path location reason ~force_pure (Some callee_procname)
         ~ret ~actuals ~formals_opt astate
     in
     astate
@@ -454,6 +457,8 @@ module Basic = struct
                  ~desc:"modelled as returning the first argument due to configuration option"
     ; +match_regexp_opt Config.pulse_model_skip_pattern
       &::.*++> unknown_call "modelled as skip due to configuration option"
+    ; +match_regexp_opt Config.pulse_model_unknown_pure
+      &::.*++> unknown_call ~force_pure:true "modelled unknown pure due to configuration option"
     ; +match_taint_source Config.pulse_taint_skip_sources
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
     |> List.map ~f:(fun matcher ->

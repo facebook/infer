@@ -81,7 +81,7 @@ module GlobalForStats = struct
 end
 
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
-    callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
+    ?(force_pure = false) callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
     let actuals_hists = List.map actuals ~f:(fun ((_, hist), _) -> hist) in
     ValueHistory.unknown_call reason actuals_hists call_loc timestamp
@@ -91,9 +91,9 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let astate = add_returned_from_unknown callee_pname_opt ret_val actuals astate0 in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   let astate = Decompiler.add_call_source ret_val reason actuals astate in
-  (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
-     same value for the same inputs *)
-  let is_functional = ref true in
+  (* set to [false] if we think the procedure called does not behave "purely", i.e. return the same
+     value for the same inputs *)
+  let is_pure = ref true in
   let should_havoc actual_typ formal_typ_opt =
     match actual_typ.Typ.desc with
     | _ when not Config.pulse_havoc_arguments ->
@@ -122,7 +122,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     (* We should not havoc when the corresponding formal is a pointer to const *)
     match should_havoc actual_typ (Option.map ~f:snd formal_opt) with
     | `ShouldHavoc ->
-        is_functional := false ;
+        is_pure := false ;
         (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
            by [actual] *)
         let astate =
@@ -193,7 +193,15 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     in
     let++ astate =
       match f with
-      | Some f when !is_functional ->
+      | Some f when !is_pure || force_pure ->
+          let ret_val =
+            match (Option.bind formals_opt ~f:List.last, List.last actuals) with
+            | Some (pvar, _), Some ((return_param_val, _), _)
+              when Mangled.is_return_param (Pvar.get_name pvar) ->
+                return_param_val
+            | _ ->
+                ret_val
+          in
           PulseArithmetic.and_equal (AbstractValueOperand ret_val)
             (FunctionApplicationOperand
                {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals} )

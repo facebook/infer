@@ -2597,6 +2597,12 @@ and pulse_model_skip_pattern_list =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
+and pulse_model_unknown_pure =
+  CLOpt.mk_string_list ~long:"pulse-model-unknown-pure"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Regex of methods that should be modelled as unknown pure in Pulse"
+
+
 and pulse_model_unreachable =
   CLOpt.mk_string_list ~long:"pulse-model-unreachable"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4536,6 +4542,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   in
   RevList.rev_partition_map ~f:aux models
 
+
+and pulse_model_unknown_pure = join_patterns_list (RevList.to_list !pulse_model_unknown_pure)
 
 and pulse_model_unreachable = RevList.to_list !pulse_model_unreachable
 

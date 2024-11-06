@@ -177,7 +177,8 @@ module Basic : sig
     (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model_no_non_disj
 
   val unknown_call :
-       string
+       ?force_pure:bool
+    -> string
     -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
     -> model_no_non_disj
 
