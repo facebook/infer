@@ -46,11 +46,13 @@ let do_objc_preanalyses cfg tenv =
   CAddImplicitGettersSetters.process cfg tenv ;
   CReplaceDynamicDispatch.process cfg ;
   CViewControllerLifecycle.process cfg tenv ;
-  if not Config.preanalysis_html then NodePrinter.print_html := false ;
-  Timer.time Preanalysis
-    ~f:(fun () -> ComputeCapturedInfo.process cfg)
-    ~on_timeout:(fun span ->
-      L.debug Capture Quiet "TIMEOUT in ComputeCapturedInfo.process after %fs of CPU time@\n" span )
+  if Config.compute_captured_context then (
+    if not Config.preanalysis_html then NodePrinter.print_html := false ;
+    Timer.time Preanalysis
+      ~f:(fun () -> ComputeCapturedInfo.process cfg)
+      ~on_timeout:(fun span ->
+        L.debug Capture Quiet "TIMEOUT in ComputeCapturedInfo.process after %fs of CPU time@\n" span )
+    )
 
 
 let do_cpp_preanalyses cfg = CppLambdaCalls.process cfg

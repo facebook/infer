@@ -2,4 +2,3 @@ codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm
 codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:52, 1, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &y defined here,Using captured &y]
 codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:114, 1, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &y defined here,Using captured &y]
 codetoanalyze/objcpp/self-in-block/CxxRefInBlock.mm, objc_block_CxxRefInBlock.mm:114, 2, CXX_REF_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &z defined here,Using captured &z]
-codetoanalyze/objcpp/self-in-block/CxxStringInBlock.mm, objc_block_CxxStringInBlock.mm:27, 1, CXX_STRING_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &c defined here,Using captured &c]

@@ -1320,6 +1320,11 @@ and complete_capture_from =
      code will be equal to the number of rows added to the capture database."
 
 
+and compute_captured_context =
+  CLOpt.mk_bool ~long:"compute-captured-context" ~default:false
+    "Compute context information for captured variables in Objective-C blocks"
+
+
 and config_impact_config_field_patterns =
   CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
     "Register known config fields that have a config value.  The matched name contains class and \
@@ -4057,6 +4062,8 @@ and compaction_if_heap_greater_equal_to_GB = !compaction_if_heap_greater_equal_t
 and compaction_minimum_interval_s = !compaction_minimum_interval_s
 
 and complete_capture_from = !complete_capture_from
+
+and compute_captured_context = !compute_captured_context
 
 and config_impact_config_field_patterns =
   RevList.rev_map !config_impact_config_field_patterns ~f:Str.regexp

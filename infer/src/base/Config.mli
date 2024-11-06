@@ -285,6 +285,8 @@ val compaction_minimum_interval_s : int
 
 val complete_capture_from : string option
 
+val compute_captured_context : bool
+
 val config_impact_config_field_patterns : Str.regexp list
 
 val config_impact_config_function_patterns : Str.regexp list
