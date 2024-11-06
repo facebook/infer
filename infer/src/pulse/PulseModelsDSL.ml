@@ -606,8 +606,8 @@ module Syntax = struct
   let is_hack_builder_in_config tenv hacktypname =
     L.d_printfln "typname = %a" HackClassName.pp hacktypname ;
     (* TODO: deal with namespaces properly! *)
-    List.exists Config.hack_builder_patterns ~f:(fun (builder_class_name, _) ->
-        let builder_class_name = Typ.HackClass (HackClassName.make builder_class_name) in
+    List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
+        let builder_class_name = Typ.HackClass (HackClassName.make class_name) in
         PatternMatch.is_subtype tenv (HackClass hacktypname) builder_class_name )
 
 

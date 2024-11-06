@@ -62,6 +62,11 @@ type pulse_taint_config =
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
 
+type pulse_hack_builder_pattern = {class_name: string [@yojson.key "class"]; finalizers: string list}
+[@@deriving of_yojson]
+
+type pulse_hack_builder_patterns = pulse_hack_builder_pattern list [@@deriving of_yojson]
+
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
    infer is running. *)
@@ -4211,12 +4216,14 @@ and global_tenv = !global_tenv
 and hackc_binary = !hackc_binary
 
 and hack_builder_patterns =
-  let open Yojson.Safe.Util in
   let json = !hack_builder_patterns in
-  let class_of j = j |> member "class" |> to_string in
-  let finalizers j = j |> member "finalizers" |> to_list |> List.map ~f:to_string in
-  let pattern j = (class_of j, finalizers j) in
-  json |> to_list |> List.map ~f:pattern
+  match json with
+  | `List [] ->
+      []
+  | json -> (
+    try pulse_hack_builder_patterns_of_yojson json
+    with _ ->
+      L.die UserError "Failed parsing hack-builder-patterns from %a!@\n" Yojson.Safe.pp json )
 
 
 and hack_builtin_models = !hack_builtin_models

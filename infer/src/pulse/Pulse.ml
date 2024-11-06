@@ -57,7 +57,7 @@ let is_hack_builder_procname tenv pname =
   else
     match Procname.get_class_type_name pname with
     | Some (HackClass _ as tn) ->
-        List.exists Config.hack_builder_patterns ~f:(fun (class_name, _) ->
+        List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
             PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name)) )
     | _ ->
         false
@@ -67,11 +67,11 @@ let is_hack_builder_consumer tenv pname =
   match Procname.get_class_type_name pname with
   | Some (HackClass _ as tn) ->
       let res =
-        List.exists Config.hack_builder_patterns ~f:(fun (class_name, consumer_names) ->
+        List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name; finalizers} ->
             PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name))
-            && List.mem consumer_names (Procname.get_method pname) ~equal:String.equal )
+            && List.mem finalizers (Procname.get_method pname) ~equal:String.equal )
       in
-      L.d_printfln "doing builder consumer check, result is %b" res ;
+      L.d_printfln "doing builder finalizer check, result is %b" res ;
       res
   | _ ->
       false
