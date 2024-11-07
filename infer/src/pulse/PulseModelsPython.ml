@@ -62,6 +62,23 @@ let call closure _arg_names args : model =
   assign_ret value
 
 
+let load_fast name locals : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* value = Dict.get locals name in
+  assign_ret value
+
+
+let load_global name globals : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* value = Dict.get globals name in
+  (* TODO: decide what we do if the binding is missing in globals (for builtins) *)
+  assign_ret value
+
+
 let load_name name locals _globals : model =
   let open DSL.Syntax in
   start_model
@@ -86,6 +103,11 @@ let make_dictionary _args : model =
   assign_ret dict
 
 
+let store_fast name locals value : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> Dict.set locals name value
+
+
 let store_name name locals _globals value : model =
   let open DSL.Syntax in
   start_model @@ fun () -> Dict.set locals name value
@@ -105,9 +127,13 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
   ; -"$builtins" &:: "py_make_function" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $+ capt_arg_payload $--> make_function
+  ; -"$builtins" &:: "py_load_fast" <>$ capt_arg_payload $+ capt_arg_payload $--> load_fast
+  ; -"$builtins" &:: "py_load_global" <>$ capt_arg_payload $+ capt_arg_payload $--> load_global
   ; -"$builtins" &:: "py_load_name" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $--> load_name
   ; -"$builtins" &:: "py_make_none" <>--> make_none
+  ; -"$builtins" &:: "py_store_fast" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> store_fast
   ; -"$builtins" &:: "py_store_name" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> store_name ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

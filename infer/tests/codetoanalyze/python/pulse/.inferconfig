@@ -4,9 +4,11 @@
   "pulse-specialization-partial": true,
   "pulse-taint-short-traces": true,
   "pulse-taint-sources": [
-    { "procedure": "level0::taint_source" }
+    { "procedure": "level0::taint_source" },
+    { "procedure": "level1::taint_source" }
   ],
   "pulse-taint-sinks": [
-    { "procedure": "level0::taint_sink" }
+    { "procedure": "level0::taint_sink" },
+    { "procedure": "level1::taint_sink" }
   ]
 }

@@ -109,7 +109,7 @@ let rec of_exp exp : Textual.Exp.t =
   | Var {scope= Global; ident} ->
       call_builtin "py_load_global" [exp_of_ident_str ident; exp_globals]
   | Var {scope= Fast; ident} ->
-      call_builtin "py_load_local" [exp_of_ident_str ident; exp_locals]
+      call_builtin "py_load_fast" [exp_of_ident_str ident; exp_locals]
   | Var {scope= Name; ident} ->
       call_builtin "py_load_name" [exp_of_ident_str ident; exp_locals; exp_globals]
   | LoadClosure {name; slot= _} ->
@@ -424,7 +424,7 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
       let loc = label_loc in
       Textual.(
         Instr.Store
-          {exp1= Lvar Parameter.globals; exp2= call_builtin "py_make_dictionnary" []; typ= None; loc}
+          {exp1= Lvar Parameter.globals; exp2= call_builtin "py_make_dictionary" []; typ= None; loc}
         :: Instr.Store
              { exp1= Lvar Parameter.locals
              ; exp2= Load {exp= Lvar Parameter.globals; typ= None}

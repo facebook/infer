@@ -12,6 +12,8 @@ def taint_source():
 def no_taint_source():
     pass
 
+# bad
 taint_sink(taint_source())
 
+# ok
 taint_sink(no_taint_source())

@@ -62,7 +62,7 @@ def g():
     define dummy::__module_body__() : *PyObject {
       local globals: *PyGlobals, locals: *PyLocals
       #b0:
-          store &globals <- $builtins.py_make_dictionnary()
+          store &globals <- $builtins.py_make_dictionary()
           store &locals <- globals
           _ = $builtins.py_store_name("x", locals, globals, $builtins.py_make_int(0))
           n0 = $builtins.py_make_function(fun (locals) -> dummy::f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
@@ -75,17 +75,17 @@ def g():
 
     define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
-          n0 = $builtins.py_load_local("y", locals)
+          n0 = $builtins.py_load_fast("y", locals)
           if n0 then jmp b1 else jmp b2
 
       #b1:
           n10 = $builtins.py_load_global("g", globals)
-          n11 = $builtins.py_load_local("y", locals)
+          n11 = $builtins.py_load_fast("y", locals)
           n12 = $builtins.py_call(n10, $builtins.py_make_none(), $builtins.py_make_int(0), n11)
           ret $builtins.py_make_none()
 
       #b2:
-          n1 = $builtins.py_load_local("l", locals)
+          n1 = $builtins.py_load_fast("l", locals)
           n2 = $builtins.py_get_iter($builtins.py_make_none(), n1)
           jmp b3
 
@@ -97,7 +97,7 @@ def g():
       #b4:
           _ = $builtins.py_store_fast("i", locals, n3)
           n7 = $builtins.py_load_global("print", globals)
-          n8 = $builtins.py_load_local("i", locals)
+          n8 = $builtins.py_load_fast("i", locals)
           n9 = $builtins.py_call(n7, $builtins.py_make_none(), n8)
           jmp b3
 
@@ -123,7 +123,7 @@ def g():
     define dummy::__module_body__() : *PyObject {
       local globals: *PyGlobals, locals: *PyLocals
       #b0:
-          store &globals <- $builtins.py_make_dictionnary():*PyObject
+          store &globals <- $builtins.py_make_dictionary():*PyObject
           store &locals <- [&globals:*PyGlobals]:*PyGlobals
           _ = $builtins.py_store_name("x", [&locals:*PyLocals], [&globals:*PyGlobals], $builtins.py_make_int(0))
           n0 = $builtins.py_make_function(fun (locals) -> dummy::f([&globals:*PyGlobals], locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
@@ -136,17 +136,17 @@ def g():
 
     define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
-          n0 = $builtins.py_load_local("y", [&locals:*PyLocals])
+          n0 = $builtins.py_load_fast("y", [&locals:*PyLocals])
           if n0 then jmp b1 else jmp b2
 
       #b1:
           n10 = $builtins.py_load_global("g", [&globals:*PyGlobals])
-          n11 = $builtins.py_load_local("y", [&locals:*PyLocals])
+          n11 = $builtins.py_load_fast("y", [&locals:*PyLocals])
           n12 = $builtins.py_call(n10, $builtins.py_make_none(), $builtins.py_make_int(0), n11)
           ret $builtins.py_make_none()
 
       #b2:
-          n1 = $builtins.py_load_local("l", [&locals:*PyLocals])
+          n1 = $builtins.py_load_fast("l", [&locals:*PyLocals])
           n2 = $builtins.py_get_iter($builtins.py_make_none(), n1)
           jmp b3
 
@@ -158,7 +158,7 @@ def g():
       #b4:
           _ = $builtins.py_store_fast("i", [&locals:*PyLocals], n3)
           n7 = $builtins.py_load_global("print", [&globals:*PyGlobals])
-          n8 = $builtins.py_load_local("i", [&locals:*PyLocals])
+          n8 = $builtins.py_load_fast("i", [&locals:*PyLocals])
           n9 = $builtins.py_call(n7, $builtins.py_make_none(), n8)
           jmp b3
 
@@ -208,7 +208,7 @@ def g():
     define dummy::__module_body__() : *PyObject {
       local globals: *PyGlobals, locals: *PyLocals
       #b0:
-          n2 = $builtins.py_make_dictionnary()
+          n2 = $builtins.py_make_dictionary()
           store &globals <- n2:*PyObject
           n3:*PyGlobals = load &globals
           store &locals <- n3:*PyGlobals
@@ -246,7 +246,7 @@ def g():
     define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n13:*PyLocals = load &locals
-          n0 = $builtins.py_load_local("y", n13)
+          n0 = $builtins.py_load_fast("y", n13)
           jmp b1, b2
 
       #b1:
@@ -254,7 +254,7 @@ def g():
           n14:*PyGlobals = load &globals
           n10 = $builtins.py_load_global("g", n14)
           n15:*PyLocals = load &locals
-          n11 = $builtins.py_load_local("y", n15)
+          n11 = $builtins.py_load_fast("y", n15)
           n16 = $builtins.py_make_none()
           n17 = $builtins.py_make_int(0)
           n12 = $builtins.py_call(n10, n16, n17, n11)
@@ -264,7 +264,7 @@ def g():
       #b2:
           prune __sil_lnot(n0)
           n19:*PyLocals = load &locals
-          n1 = $builtins.py_load_local("l", n19)
+          n1 = $builtins.py_load_fast("l", n19)
           n20 = $builtins.py_make_none()
           n2 = $builtins.py_get_iter(n20, n1)
           jmp b3
@@ -283,7 +283,7 @@ def g():
           n25:*PyGlobals = load &globals
           n7 = $builtins.py_load_global("print", n25)
           n26:*PyLocals = load &locals
-          n8 = $builtins.py_load_local("i", n26)
+          n8 = $builtins.py_load_fast("i", n26)
           n27 = $builtins.py_make_none()
           n9 = $builtins.py_call(n7, n27, n8)
           jmp b3
