@@ -73,7 +73,7 @@ def g():
 
     }
 
-    define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_fast("y", locals)
           if n0 then jmp b1 else jmp b2
@@ -134,7 +134,7 @@ def g():
 
     }
 
-    define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_fast("y", [&locals:*PyLocals])
           if n0 then jmp b1 else jmp b2
@@ -195,7 +195,7 @@ def g():
 
     type closure:dummy:0 = {globals: *PyGlobals}
 
-    define closure:dummy:0.call(__this: *closure:dummy:0, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" closure:dummy:0.call(__this: *closure:dummy:0, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*closure:dummy:0 = load &__this
           n1:*PyGlobals = load n0.?.globals
@@ -243,7 +243,7 @@ def g():
 
     }
 
-    define dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n13:*PyLocals = load &locals
           n0 = $builtins.py_load_fast("y", n13)

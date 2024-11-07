@@ -183,7 +183,7 @@ module Vec = struct
       prune_eq_int size_val IntLit.one
       @@>
       let* fst_val = load_access arg (FieldAccess fst_field) in
-      let* mapped_fst_val = apply_closure Hack closure [fst_val] in
+      let* mapped_fst_val = apply_hack_closure closure [fst_val] in
       new_vec_dsl [mapped_fst_val]
     in
     let size_gt_1_case : DSL.aval DSL.model_monad =
@@ -191,8 +191,8 @@ module Vec = struct
       @@>
       let* fst_val = load_access arg (FieldAccess fst_field) in
       let* snd_val = load_access arg (FieldAccess snd_field) in
-      let* mapped_fst_val = apply_closure Hack closure [fst_val] in
-      let* mapped_snd_val = apply_closure Hack closure [snd_val] in
+      let* mapped_fst_val = apply_hack_closure closure [fst_val] in
+      let* mapped_snd_val = apply_hack_closure closure [snd_val] in
       new_vec_dsl ~know_size:(Some size_val) [mapped_fst_val; mapped_snd_val]
     in
     let* ret = disj [size_eq_0_case; size_eq_1_case; size_gt_1_case] in

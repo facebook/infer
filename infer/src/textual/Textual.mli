@@ -127,6 +127,10 @@ module Attr : sig
 
   val is_const : t -> bool
 
+  val mk_python_args : string list -> t
+
+  val find_python_args : t -> string list option
+
   val mk_trait : t
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

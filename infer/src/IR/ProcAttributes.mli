@@ -89,6 +89,9 @@ type t =
   ; hack_variadic_position: int option
         (** the procedure is variadic and [Some n] means the variadic vector is composed of the
             arguments n, n+1, ..., length formals -1 *)
+  ; python_args: string list
+        (** each python function has a list of parameters that we store as a special ProcAttribute
+            while list formals will only contain dict parameters like Python locals *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
         (** the procedure is a clone specialized with captured variables and paramaters sharing

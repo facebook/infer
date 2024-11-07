@@ -47,7 +47,14 @@ let mk_qualified_proc_name ?loc kind =
   ; name= Textual.ProcName.of_string ?loc qual_name_str }
 
 
-let mk_procdecl ?loc kind =
+let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames} =
+  let values =
+    List.init co_argcount ~f:(fun i -> co_varnames.(i)) |> List.map ~f:(F.asprintf "%a" Ident.pp)
+  in
+  if List.is_empty values then [] else [Textual.Attr.mk_python_args values]
+
+
+let mk_procdecl ?loc kind code_info =
   let qualified_name = mk_qualified_proc_name ?loc kind in
   let formals_types =
     if is_module_body kind then Some []
@@ -56,7 +63,7 @@ let mk_procdecl ?loc kind =
         [Textual.Typ.mk_without_attributes Typ.globals; Textual.Typ.mk_without_attributes Typ.locals]
   in
   let result_type = Textual.Typ.mk_without_attributes Typ.value in
-  let attributes = [] in
+  let attributes = mk_procdecl_attributes code_info in
   {Textual.ProcDecl.qualified_name; formals_types; result_type; attributes}
 
 
@@ -438,9 +445,9 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc proc_kind {CFG.entry; nodes; code_info= {co_firstlineno}} =
+let mk_procdesc proc_kind {CFG.entry; nodes; code_info= {co_firstlineno} as code_info} =
   let loc = Textual.Location.known ~line:co_firstlineno ~col:(-1) in
-  let procdecl = mk_procdecl ~loc proc_kind in
+  let procdecl = mk_procdecl ~loc proc_kind code_info in
   let is_module_body = is_module_body proc_kind in
   let nodes_bindings = NodeName.Map.bindings nodes in
   let nodes =

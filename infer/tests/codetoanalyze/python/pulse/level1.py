@@ -20,7 +20,7 @@ def basic_flow_ok(untainted: int) -> None:
 def fst(x: int, y: int) -> int:
     return x
 
-def FN_call_fst_bad(untainted) -> None:
+def call_fst_bad(untainted) -> None:
     arg = fst(taint_source(), untainted)
     taint_sink(arg)
 
@@ -31,16 +31,34 @@ def call_fst_ok(untainted) -> None:
 def sink_fst_arg(x, y) -> None:
     taint_sink(x)
 
-def FN_call_sink_fst_arg_bad(untainted) -> None:
+def call_sink_fst_arg_bad(untainted) -> None:
     sink_fst_arg(taint_source(), untainted)
 
 def call_sink_fst_arg_ok(untainted) -> None:
     sink_fst_arg(untainted, taint_source())
 
+def FN_call_taint_sink_on_global_bad1():
+    global g
+    taint_sink(g)
+
+def call_taint_sink_on_global_ok():
+    global g
+    taint_sink(g)
+
+def FN_call_taint_sink_on_global_bad2():
+    global g
+    g = taint_source()
+    taint_sink(g)
+
 # we need to call these functions in order to activate specialization
 basic_flow_bad()
 basic_flow_ok(0)
-FN_call_fst_bad(0)
+call_fst_bad(0)
 call_fst_ok(0)
-FN_call_sink_fst_arg_bad(0)
+call_sink_fst_arg_bad(0)
 call_sink_fst_arg_ok(0)
+g = taint_source()
+FN_call_taint_sink_on_global_bad1()
+g = 0
+call_taint_sink_on_global_ok()
+FN_call_taint_sink_on_global_bad2()

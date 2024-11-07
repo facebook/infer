@@ -268,6 +268,10 @@ module Attr = struct
 
   let is_variadic {name; values} = String.equal name "variadic" && List.is_empty values
 
+  let mk_python_args values = {name= "args"; values; loc= Location.Unknown}
+
+  let find_python_args {name; values} = if String.equal name "args" then Some values else None
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values

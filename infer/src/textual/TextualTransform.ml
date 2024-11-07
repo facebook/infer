@@ -344,6 +344,12 @@ module TransformClosures = struct
 
   let closure_call_procdecl loc typename (closure : ProcDesc.t) nb_captured : ProcDecl.t =
     let procdecl = closure.procdecl in
+    let attributes =
+      (* in Python, we transfert the 'args' attributes from the 'closure' proc to the generated 'call' proc *)
+      List.find_map procdecl.attributes ~f:Textual.Attr.find_python_args
+      |> Option.map ~f:Textual.Attr.mk_python_args
+      |> Option.to_list
+    in
     let unresolved_qualified_name = closure_call_qualified_procname loc in
     let qualified_name = {unresolved_qualified_name with enclosing_class= Enclosing typename} in
     let this_typ = Typ.mk_without_attributes (Ptr (Struct typename)) in
@@ -352,7 +358,7 @@ module TransformClosures = struct
           this_typ :: List.drop formals nb_captured )
     in
     let result_type = procdecl.result_type in
-    {qualified_name; formals_types; result_type; attributes= []}
+    {qualified_name; formals_types; result_type; attributes}
 
 
   let closure_call_procdesc loc typename state (closure : ProcDesc.t) fields params :

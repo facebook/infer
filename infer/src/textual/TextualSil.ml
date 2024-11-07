@@ -1064,6 +1064,9 @@ module ProcDescBridge = struct
     let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
     let is_abstract = List.exists procdecl.attributes ~f:Attr.is_abstract in
     let is_hack_wrapper = List.exists procdecl.attributes ~f:Attr.is_hack_wrapper in
+    let python_args =
+      List.find_map procdecl.attributes ~f:Attr.find_python_args |> Option.value ~default:[]
+    in
     let hack_variadic_position =
       Option.value_map ~default:None procdecl.formals_types ~f:(fun formals_types ->
           List.findi formals_types ~f:(fun _ typ -> Typ.is_annotated typ ~f:Attr.is_variadic)
@@ -1078,6 +1081,7 @@ module ProcDescBridge = struct
       ; is_abstract
       ; is_hack_wrapper
       ; hack_variadic_position
+      ; python_args
       ; formals
       ; locals
       ; ret_type= sil_ret_type

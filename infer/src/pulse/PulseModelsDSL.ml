@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -802,7 +803,11 @@ module Syntax = struct
     |> exec_partial_command
 
 
-  let apply_closure lang (closure : aval) closure_args : aval model_monad =
+  type closure_args =
+    | Regular of aval list
+    | FromAttributes of (ProcAttributes.t -> aval list model_monad)
+
+  let apply_closure lang (closure : aval) unresolved_pname closure_args : aval model_monad =
     let mixed_type_name =
       match (lang : Textual.Lang.t) with
       | Hack ->
@@ -813,17 +818,6 @@ module Syntax = struct
           L.die InternalError "apply_closure is not supported on Java"
     in
     let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
-    let args = closure :: closure_args in
-    let unresolved_pname =
-      match (lang : Textual.Lang.t) with
-      | Hack ->
-          Procname.make_hack ~class_name:(Some HackClassName.wildcard) ~function_name:"__invoke"
-            ~arity:(Some (List.length args))
-      | Python ->
-          Procname.make_python ~class_name:(Some PythonClassName.wildcard) ~function_name:"call"
-      | Java ->
-          L.die InternalError "apply_closure is not supported on Java"
-    in
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
@@ -837,6 +831,17 @@ module Syntax = struct
         | Some resolved_pname ->
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
             let ret_id = Ident.create_none () in
+            let* closure_args =
+              match closure_args with
+              | Regular closure_args ->
+                  ret closure_args
+              | FromAttributes gen_closure_args ->
+                  IRAttributes.load resolved_pname |> Option.map ~f:gen_closure_args
+                  |> Option.value_or_thunk ~default:(fun () ->
+                         L.d_printfln "[ocaml model] Failed to load attributes" ;
+                         ret [] )
+            in
+            let args = closure :: closure_args in
             let call_args =
               List.mapi args ~f:(fun i arg : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t ->
                   let pvar =
@@ -854,6 +859,21 @@ module Syntax = struct
         L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
         let* unknown_res = fresh () in
         ret unknown_res
+
+
+  let apply_hack_closure closure closure_args =
+    let unresolved_pname =
+      Procname.make_hack ~class_name:(Some HackClassName.wildcard) ~function_name:"__invoke"
+        ~arity:(Some (1 + List.length closure_args))
+    in
+    apply_closure Hack closure unresolved_pname (Regular closure_args)
+
+
+  let apply_python_closure closure gen_closure_args =
+    let unresolved_pname =
+      Procname.make_python ~class_name:(Some PythonClassName.wildcard) ~function_name:"call"
+    in
+    apply_closure Python closure unresolved_pname (FromAttributes gen_closure_args)
 
 
   module Basic = struct

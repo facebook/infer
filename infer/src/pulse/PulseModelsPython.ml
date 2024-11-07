@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseModelsImport
@@ -16,11 +15,12 @@ let dict_tname = TextualSil.python_dict_type_name
 
 let none_tname = TextualSil.python_none_type_name
 
-let sil_fieldname_from_string_value_exn ((address, _) : DSL.aval) : Fieldname.t DSL.model_monad =
+let sil_fieldname_from_string_value_exn type_name ((address, _) : DSL.aval) :
+    Fieldname.t DSL.model_monad =
   let f astate =
     match PulseArithmetic.as_constant_string astate address with
     | Some str ->
-        (TextualSil.wildcard_sil_fieldname Python str, astate)
+        (Fieldname.make type_name str, astate)
     | None ->
         L.die InternalError "expecting constant string value"
   in
@@ -39,26 +39,27 @@ module Dict = struct
 
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let* field = sil_fieldname_from_string_value_exn key in
+    let* field = sil_fieldname_from_string_value_exn dict_tname key in
     load_access dict (FieldAccess field)
 
 
   let set dict key value : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* field = sil_fieldname_from_string_value_exn key in
+    let* field = sil_fieldname_from_string_value_exn dict_tname key in
     let* () = store_field ~ref:dict field value in
     ret ()
 end
 
 let call closure _arg_names args : model =
-  (* TODO: take into account arg_names *)
-  (* TODO: fix the name of the positional arguments *)
+  (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let keys = List.init (List.length args) ~f:(fun i -> F.asprintf "#%d" i) in
-  let* locals = Dict.make keys args in
-  let* value = apply_closure Python closure [locals] in
+  let gen_closure_args {ProcAttributes.python_args} =
+    let* locals = Dict.make python_args args in
+    ret [locals]
+  in
+  let* value = apply_python_closure closure gen_closure_args in
   assign_ret value
 
 
