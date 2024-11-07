@@ -37,7 +37,7 @@ def call_sink_fst_arg_bad(untainted) -> None:
 def call_sink_fst_arg_ok(untainted) -> None:
     sink_fst_arg(untainted, taint_source())
 
-def FN_call_taint_sink_on_global_bad1():
+def call_taint_sink_on_global_bad1():
     global g
     taint_sink(g)
 
@@ -45,7 +45,7 @@ def call_taint_sink_on_global_ok():
     global g
     taint_sink(g)
 
-def FN_call_taint_sink_on_global_bad2():
+def call_taint_sink_on_global_bad2():
     global g
     g = taint_source()
     taint_sink(g)
@@ -58,7 +58,7 @@ call_fst_ok(0)
 call_sink_fst_arg_bad(0)
 call_sink_fst_arg_ok(0)
 g = taint_source()
-FN_call_taint_sink_on_global_bad1()
+call_taint_sink_on_global_bad1()
 g = 0
 call_taint_sink_on_global_ok()
-FN_call_taint_sink_on_global_bad2()
+call_taint_sink_on_global_bad2()

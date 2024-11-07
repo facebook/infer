@@ -109,6 +109,11 @@ let store_fast name locals value : model =
   start_model @@ fun () -> Dict.set locals name value
 
 
+let store_global name globals value : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> Dict.set globals name value
+
+
 let store_name name locals _globals value : model =
   let open DSL.Syntax in
   start_model @@ fun () -> Dict.set locals name value
@@ -135,6 +140,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_make_none" <>--> make_none
   ; -"$builtins" &:: "py_store_fast" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $--> store_fast
+  ; -"$builtins" &:: "py_store_global" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> store_global
   ; -"$builtins" &:: "py_store_name" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> store_name ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
