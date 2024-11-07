@@ -415,7 +415,8 @@ val global_tenv : bool
 
 val hackc_binary : string option
 
-type pulse_hack_builder_pattern = {class_name: string; finalizers: string list}
+type pulse_hack_builder_pattern =
+  {class_name: string; finalizers: string list; immediately_non_discardable_class: string option}
 
 type pulse_hack_builder_patterns = pulse_hack_builder_pattern list
 

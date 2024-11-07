@@ -604,13 +604,24 @@ module Syntax = struct
     |> lift_model
 
 
-  let is_hack_builder_in_config tenv hacktypname =
-    L.d_printfln "typname = %a" HackClassName.pp hacktypname ;
-    (* TODO: deal with namespaces properly! *)
-    List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
-        let builder_class_name = Typ.HackClass (HackClassName.make class_name) in
-        PatternMatch.is_subtype tenv (HackClass hacktypname) builder_class_name )
+  module HackBuilder = struct
+    let is_hack_builder tenv hacktypname builder_class_name =
+      (* TODO: deal with namespaces properly! *)
+      let builder_class_name = Typ.HackClass (HackClassName.make builder_class_name) in
+      PatternMatch.is_subtype tenv (HackClass hacktypname) builder_class_name
 
+
+    let is_hack_builder_in_config tenv hacktypname =
+      List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
+          is_hack_builder tenv hacktypname class_name )
+
+
+    let is_hack_builder_immediately_non_discardable tenv hacktypname =
+      List.exists Config.hack_builder_patterns ~f:(fun Config.{immediately_non_discardable_class} ->
+          Option.exists immediately_non_discardable_class
+            ~f:(fun immediately_non_discardable_class ->
+              is_hack_builder tenv hacktypname immediately_non_discardable_class ) )
+  end
 
   let new_ type_name_exp =
     let* {analysis_data= {tenv}} = get_data in
@@ -621,13 +632,19 @@ module Syntax = struct
         let* () = and_dynamic_type_is new_obj typ in
         let* () =
           match Typ.name typ with
-          | Some (HackClass hacktypname) when is_hack_builder_in_config tenv hacktypname ->
+          | Some (HackClass hacktypname) when HackBuilder.is_hack_builder_in_config tenv hacktypname
+            ->
               let* () = allocation (Attribute.HackBuilderResource hacktypname) new_obj in
               (* While it makes sense to set initial builder state to NonDiscardable we'd like
-                 to delay that until the first method call to avoid FPs caused by reporting
-                 on builders without any method calls *)
-              AddressAttributes.set_hack_builder (fst new_obj) Attribute.Builder.Discardable
-              |> exec_command
+                  to delay that until the first method call to avoid FPs caused by reporting
+                  on builders without any method calls unless builder is explicitly configured
+                 as non discardable *)
+              let builder_state =
+                if HackBuilder.is_hack_builder_immediately_non_discardable tenv hacktypname then
+                  Attribute.Builder.NonDiscardable
+                else Attribute.Builder.Discardable
+              in
+              AddressAttributes.set_hack_builder (fst new_obj) builder_state |> exec_command
           | _ ->
               ret ()
         in

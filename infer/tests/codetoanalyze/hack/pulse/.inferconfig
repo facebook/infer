@@ -5,8 +5,19 @@
     "models/test_models.hack"
   ],
   "hack-builder-patterns": [
-    { "class": "TestBuilderBase", "finalizers": ["doFinalize", "altFinalize"]},
-    { "class": "MyBuilder", "finalizers": ["saveX"]}
+    {
+      "class": "TestBuilderBase",
+      "finalizers": [
+        "doFinalize",
+        "altFinalize"
+        ],
+      "immediately_non_discardable_class": "MyImmediatelyDiscardableBuilder"
+      },
+    { "class": "MyBuilder",
+      "finalizers": [
+        "saveX"
+      ]
+    }
   ],
   "pulse-specialization-partial": true,
   "pulse-taint-short-traces": true,

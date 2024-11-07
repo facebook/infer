@@ -23,6 +23,18 @@ class NoBuilderSuffix implements TestBuilderBase {
   }
 }
 
+class MyImmediatelyDiscardableBuilder implements TestBuilderBase {
+  public function __construct() {}
+
+  public function setFoo(int $a): this {
+    return $this;
+  }
+
+  public function doFinalize(): void {
+    return;
+  }
+}
+
 <<__ConsistentConstruct>>
 abstract class AbstractBuilder {
   abstract public function __construct(int $foo);
@@ -101,7 +113,7 @@ class BuilderTester {
     }
   }
 
-  public static function FP_builderWithoutCallsOk(bool $flag): void {
+  public static function builderWithoutCallsOk(bool $flag): void {
     $changes_made = false;
     $b = new MyBuilder(0);
 
@@ -125,6 +137,12 @@ class BuilderTester {
     $b = new NoBuilderSuffix();
     $b->setFoo(42);
     $b->doFinalize();
+  }
+
+  // check that we can recongnise immediately discardable builders
+  // from the .inferconfig and handle them accordingly
+  public static function testImmediatelyDiscardableBuilderBad(): void {
+    $b = new MyImmediatelyDiscardableBuilder();
   }
 }
 

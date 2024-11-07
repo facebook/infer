@@ -62,7 +62,10 @@ type pulse_taint_config =
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
 
-type pulse_hack_builder_pattern = {class_name: string [@yojson.key "class"]; finalizers: string list}
+type pulse_hack_builder_pattern =
+  { class_name: string [@yojson.key "class"]
+  ; finalizers: string list
+  ; immediately_non_discardable_class: string option [@yojson.option] }
 [@@deriving of_yojson]
 
 type pulse_hack_builder_patterns = pulse_hack_builder_pattern list [@@deriving of_yojson]
