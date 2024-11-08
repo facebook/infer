@@ -15,7 +15,7 @@ async function dictForeachOK(): Awaitable<void> {
 }
 
 // short enough for unfoldings
-async function dictForeachBad_FN(): Awaitable<void> {
+async function dictForeachBad(): Awaitable<void> {
   $d = dict['a' => genInt7(), 'b' => genInt7(), 'c' => genInt7()];
   foreach ($d as $k => $elt) {
     if ($k === 'a') {

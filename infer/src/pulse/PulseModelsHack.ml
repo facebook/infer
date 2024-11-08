@@ -302,11 +302,6 @@ let aval_to_hack_bool b_val : DSL.aval DSL.model_monad =
   ret ret_val
 
 
-let int_to_hack_int n : DSL.aval DSL.model_monad =
-  let open DSL.Syntax in
-  aval_to_hack_int @= int n
-
-
 let zero_test_to_hack_bool v : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* zero = int 0 in
@@ -346,55 +341,44 @@ module VecIter = struct
 
   let mk_vec_iter_field name = Fieldname.make type_name name
 
-  let vec_field_name = "__infer_model_backing_veciterator_vec"
-
   let index_field_name = "__infer_model_backing_veciterator_index"
-
-  let vec_field = mk_vec_iter_field vec_field_name
 
   let index_field = mk_vec_iter_field index_field_name
 
-  let iter_init_vec iteraddr argv : unit DSL.model_monad =
+  let iter_init_vec iter_addr vec : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* size_val = load_access argv (FieldAccess Vec.size_field) in
+    let* size_val = load_access vec (FieldAccess Vec.size_field) in
     let emptycase = prune_eq_zero size_val @@> make_hack_bool false in
     let nonemptycase =
       prune_positive size_val
       @@>
       let* zero = int 0 in
-      let* iter = constructor type_name [(vec_field_name, argv); (index_field_name, zero)] in
-      store ~ref:iteraddr iter @@> make_hack_bool true
+      let* iter = constructor type_name [(index_field_name, zero)] in
+      store ~ref:iter_addr iter @@> make_hack_bool true
     in
     let* ret_val = disj [emptycase; nonemptycase] in
     assign_ret ret_val
 
 
-  let iter_get_key iteraddr keyaddr : unit DSL.model_monad =
+  let iter_get_key iter _vec : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* index = load_access iteraddr (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
-    let haskey = prune_positive keyaddr @@> store ~ref:keyaddr succindex @@> ret succindex in
-    let nokey = prune_eq_zero keyaddr @@> int_to_hack_int 0 in
-    let* ret_val = disj [haskey; nokey] in
-    assign_ret ret_val
-
-
-  let iter_get_value iteraddr eltaddr : unit DSL.model_monad =
-    let open DSL.Syntax in
-    let* thevec = load_access iteraddr (FieldAccess vec_field) in
-    let* index = load_access iteraddr (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
-    let* hack_succindex = aval_to_hack_int succindex in
-    let* elt = Vec.get_vec_dsl thevec hack_succindex in
-    store ~ref:eltaddr elt @@> assign_ret elt
-
-
-  let iter_next_vec iter : unit DSL.model_monad =
-    let open DSL.Syntax in
-    let* thevec = load_access iter (FieldAccess vec_field) in
-    let* size = load_access thevec (FieldAccess Vec.size_field) in
     let* index = load_access iter (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
+    assign_ret index
+
+
+  let iter_get_value iter vec : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* index = load_access iter (FieldAccess index_field) in
+    let* hack_index = aval_to_hack_int index in
+    let* value = Vec.get_vec_dsl vec hack_index in
+    assign_ret value
+
+
+  let iter_next_vec iter vec : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* size = load_access vec (FieldAccess Vec.size_field) in
+    let* index = load_access iter (FieldAccess index_field) in
+    let* succindex = binop_int (PlusA None) index IntLit.one in
     (* true loop exit condition *)
     let finished1 = prune_ge succindex size @@> make_hack_bool true in
     (* overapproximate loop exit condition *)
@@ -737,104 +721,79 @@ module DictIter = struct
 
   let mk_dict_iter_field name = Fieldname.make type_name name
 
-  let dict_field_name = "__infer_model_backing_dictiterator_dict"
-
   let index_field_name = "__infer_model_backing_dictiterator_index"
-
-  let dict_field = mk_dict_iter_field dict_field_name
 
   let index_field = mk_dict_iter_field index_field_name
 
-  let iter_init_dict iteraddr argd : unit DSL.model_monad =
+  let iter_init_dict iter_addr dict : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* fields = get_known_fields argd in
+    let* fields = get_known_fields dict in
     let* size_val = int (List.length fields) in
     let emptycase = prune_eq_zero size_val @@> make_hack_bool false in
     let nonemptycase =
       prune_positive size_val
       @@>
       let* zero = int 0 in
-      let* iter = constructor type_name [(dict_field_name, argd); (index_field_name, zero)] in
-      store ~ref:iteraddr iter @@> make_hack_bool true
+      let* iter = constructor type_name [(index_field_name, zero)] in
+      store ~ref:iter_addr iter @@> make_hack_bool true
     in
     let* ret_val = disj [emptycase; nonemptycase] in
     assign_ret ret_val
 
 
-  let get_index_acc fields q =
+  let do_on_field fields index ~f =
     let open DSL.Syntax in
-    let* index_int =
-      match QSafeCapped.to_int q with
-      | None ->
-          L.internal_error "bad index in iter_next_dict@\n" ;
-          unreachable
-      | Some i ->
-          ret i
-    in
-    match List.nth fields index_int with
+    let* index_q_opt = as_constant_q index in
+    match index_q_opt with
     | None ->
-        L.internal_error "iter next out of bounds@\n" ;
-        unreachable
-    | Some ia ->
-        ret ia
+        fresh ()
+    | Some q -> (
+        let* index_int =
+          match QSafeCapped.to_int q with
+          | None ->
+              L.internal_error "bad index in iter_next_dict@\n" ;
+              unreachable
+          | Some i ->
+              ret i
+        in
+        let* index_acc =
+          match List.nth fields index_int with
+          | None ->
+              L.internal_error "iter next out of bounds@\n" ;
+              unreachable
+          | Some ia ->
+              ret ia
+        in
+        match (index_acc : Access.t) with
+        | FieldAccess fn ->
+            f fn
+        | _ ->
+            L.internal_error "iter next dict non field access@\n" ;
+            unreachable )
 
 
-  let iter_get_key iteraddr keyaddr : unit DSL.model_monad =
+  let iter_get_key iter dict : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* thedict = load_access iteraddr (FieldAccess dict_field) in
-    let* fields = get_known_fields thedict in
-    let* index = load_access iteraddr (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
-    let* index_q_opt = as_constant_q succindex in
-    let* key_value =
-      match index_q_opt with
-      | None ->
-          fresh ()
-      | Some q -> (
-          let* index_acc = get_index_acc fields q in
-          match (index_acc : Access.t) with
-          | FieldAccess fn ->
-              make_hack_string (Fieldname.to_string fn)
-          | _ ->
-              L.internal_error "iter next dict non field access@\n" ;
-              unreachable )
-    in
-    let haskey = prune_positive keyaddr @@> store ~ref:keyaddr key_value @@> ret key_value in
-    let nokey = prune_eq_zero keyaddr @@> int_to_hack_int 0 in
-    let* ret_val = disj [haskey; nokey] in
-    assign_ret ret_val
+    let* fields = get_known_fields dict in
+    let* index = load_access iter (FieldAccess index_field) in
+    let* key = do_on_field fields index ~f:(fun fn -> make_hack_string (Fieldname.to_string fn)) in
+    assign_ret key
 
 
-  let iter_get_value iteraddr eltaddr : unit DSL.model_monad =
+  let iter_get_value iter dict : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* thedict = load_access iteraddr (FieldAccess dict_field) in
-    let* fields = get_known_fields thedict in
-    let* index = load_access iteraddr (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
-    let* index_q_opt = as_constant_q succindex in
-    let* elt_value =
-      match index_q_opt with
-      | None ->
-          fresh ()
-      | Some q -> (
-          let* index_acc = get_index_acc fields q in
-          match (index_acc : Access.t) with
-          | FieldAccess _ ->
-              load_access thedict index_acc
-          | _ ->
-              L.internal_error "iter next dict non field access@\n" ;
-              unreachable )
-    in
-    store ~ref:eltaddr elt_value @@> assign_ret elt_value
+    let* fields = get_known_fields dict in
+    let* index = load_access iter (FieldAccess index_field) in
+    let* value = do_on_field fields index ~f:(fun fn -> load_access dict (FieldAccess fn)) in
+    assign_ret value
 
 
-  let iter_next_dict iter : unit DSL.model_monad =
+  let iter_next_dict iter dict : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* thedict = load_access iter (FieldAccess dict_field) in
-    let* fields = get_known_fields thedict in
+    let* fields = get_known_fields dict in
     let* size_val = int (List.length fields) in
     let* index = load_access iter (FieldAccess index_field) in
-    let* succindex = binop_int (Binop.PlusA None) index IntLit.one in
+    let* succindex = binop_int (PlusA None) index IntLit.one in
     (* In contrast to vecs, we don't have an overapproximate exit condition here *)
     let finished = prune_ge succindex size_val @@> make_hack_bool true in
     let not_finished =
@@ -1320,52 +1279,52 @@ let hhbc_iter_base arg : model =
   start_model @@ fun () -> assign_ret arg
 
 
-let hhbc_iter_init iteraddr arg : model =
+let hhbc_iter_init iter obj : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  dynamic_dispatch arg
+  dynamic_dispatch obj
     ~cases:
-      [ (Dict.type_name, fun () -> DictIter.iter_init_dict iteraddr arg)
-      ; (Vec.type_name, fun () -> VecIter.iter_init_vec iteraddr arg) ]
+      [ (Dict.type_name, fun () -> DictIter.iter_init_dict iter obj)
+      ; (Vec.type_name, fun () -> VecIter.iter_init_vec iter obj) ]
       (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-    ~default:(fun () -> VecIter.iter_init_vec iteraddr arg)
+    ~default:(fun () -> VecIter.iter_init_vec iter obj)
 
 
-let hhbc_iter_get_key iteraddr keyaddr : model =
+let hhbc_iter_get_key iter obj : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  dynamic_dispatch iteraddr
+  dynamic_dispatch obj
     ~cases:
-      [ (Dict.type_name, fun () -> DictIter.iter_get_key iteraddr keyaddr)
-      ; (Vec.type_name, fun () -> VecIter.iter_get_key iteraddr keyaddr) ]
+      [ (Dict.type_name, fun () -> DictIter.iter_get_key iter obj)
+      ; (Vec.type_name, fun () -> VecIter.iter_get_key iter obj) ]
       (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-    ~default:(fun () -> VecIter.iter_get_key iteraddr keyaddr)
+    ~default:(fun () -> VecIter.iter_get_key iter obj)
 
 
-let hhbc_iter_get_value iteraddr eltaddr : model =
+let hhbc_iter_get_value iter obj : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  dynamic_dispatch iteraddr
+  dynamic_dispatch obj
     ~cases:
-      [ (Dict.type_name, fun () -> DictIter.iter_get_value iteraddr eltaddr)
-      ; (Vec.type_name, fun () -> VecIter.iter_get_value iteraddr eltaddr) ]
+      [ (Dict.type_name, fun () -> DictIter.iter_get_value iter obj)
+      ; (Vec.type_name, fun () -> VecIter.iter_get_value iter obj) ]
       (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-    ~default:(fun () -> VecIter.iter_get_value iteraddr eltaddr)
+    ~default:(fun () -> VecIter.iter_get_value iter obj)
 
 
-let hhbc_iter_next iteraddr _base : model =
+let hhbc_iter_next iter obj : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  dynamic_dispatch iteraddr
+  dynamic_dispatch obj
     ~cases:
-      [ (DictIter.type_name, fun () -> DictIter.iter_next_dict iteraddr)
-      ; (VecIter.type_name, fun () -> VecIter.iter_next_vec iteraddr) ]
+      [ (Dict.type_name, fun () -> DictIter.iter_next_dict iter obj)
+      ; (Vec.type_name, fun () -> VecIter.iter_next_vec iter obj) ]
       (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-    ~default:(fun () -> VecIter.iter_next_vec iteraddr)
+    ~default:(fun () -> VecIter.iter_next_vec iter obj)
 
 
 let hack_throw : model =
