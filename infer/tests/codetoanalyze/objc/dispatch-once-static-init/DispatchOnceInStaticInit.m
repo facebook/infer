@@ -28,8 +28,7 @@ __attribute__((constructor)) static void initializer_test_interproc_bad_FN(
   [Manager getInstance];
 }
 
-__attribute__((constructor)) static void initializer_test_intraproc_bad_FN(
-    void) {
+__attribute__((constructor)) static void initializer_test_intraproc_bad(void) {
   static Manager* manager;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{

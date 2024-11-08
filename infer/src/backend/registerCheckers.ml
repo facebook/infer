@@ -91,6 +91,8 @@ let all_checkers =
   [ {checker= SelfInBlock; callbacks= [(intraprocedural SelfInBlock.checker, Clang)]}
   ; { checker= ParameterNotNullChecked
     ; callbacks= [(intraprocedural ParameterNotNullChecked.checker, Clang)] }
+  ; { checker= DispatchOnceStaticInit
+    ; callbacks= [(intraprocedural DispatchOnceStaticInit.checker, Clang)] }
   ; { checker= BufferOverrunAnalysis
     ; callbacks=
         (let bo_analysis =

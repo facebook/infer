@@ -114,10 +114,11 @@ OPTIONS
            and/or reporting. (Conversely: --deduplicate)
 
        --no-default-checkers
-           Deactivates: Default checkers: --fragment-retains-view,
-           --inefficient-keyset-iterator, --liveness,
-           --parameter-not-null-checked, --pulse, --racerd, --siof,
-           --self-in-block, --starvation (Conversely: --default-checkers)
+           Deactivates: Default checkers: --dispatch-once-static-init,
+           --fragment-retains-view, --inefficient-keyset-iterator,
+           --liveness, --parameter-not-null-checked, --pulse, --racerd,
+           --siof, --self-in-block, --starvation (Conversely:
+           --default-checkers)
 
        --detach-analysis-dependency
            Activates: Detach analysis dependencies of checkers during the
@@ -129,6 +130,15 @@ OPTIONS
 
        --dict-missing-key-var-block-list +string
            Skip analyzing the variables in the dict-missing-key checker.
+
+       --no-dispatch-once-static-init
+           Deactivates: dispatch-once-static-init checker: Detect if
+           dispatch_once is called from a static constructor. (Conversely:
+           --dispatch-once-static-init)
+
+       --dispatch-once-static-init-only
+           Activates: Enable dispatch-once-static-init and disable all other
+           checkers (Conversely: --no-dispatch-once-static-init-only)
 
        --files-to-analyze-index file
            File containing a list of source files where analysis should start

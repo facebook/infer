@@ -140,6 +140,7 @@ DIRECT_TESTS += \
   objc_pulse \
   objc_pulse-data-lineage \
   objc_self-in-block \
+  objc_dispatch-once-static-init \
   objcpp_biabduction \
   objcpp_frontend \
   objcpp_liveness \

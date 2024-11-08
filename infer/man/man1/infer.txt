@@ -539,10 +539,11 @@ OPTIONS
            infer-reportdiff(1).
 
        --no-default-checkers
-           Deactivates: Default checkers: --fragment-retains-view,
-           --inefficient-keyset-iterator, --liveness,
-           --parameter-not-null-checked, --pulse, --racerd, --siof,
-           --self-in-block, --starvation (Conversely: --default-checkers)
+           Deactivates: Default checkers: --dispatch-once-static-init,
+           --fragment-retains-view, --inefficient-keyset-iterator,
+           --liveness, --parameter-not-null-checked, --pulse, --racerd,
+           --siof, --self-in-block, --starvation (Conversely:
+           --default-checkers)
            See also infer-analyze(1).
 
        --dependencies
@@ -633,6 +634,7 @@ OPTIONS
              DATA_FLOW_TO_SINK (disabled by default),
              DEADLOCK (enabled by default),
              DEAD_STORE (enabled by default),
+             DISPATCH_ONCE_IN_STATIC_INIT (disabled by default),
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
@@ -766,6 +768,17 @@ OPTIONS
              Wrong_argument_number (enabled by default).
            
            See also infer-report(1).
+
+       --no-dispatch-once-static-init
+           Deactivates: dispatch-once-static-init checker: Detect if
+           dispatch_once is called from a static constructor. (Conversely:
+           --dispatch-once-static-init)
+           See also infer-analyze(1).
+
+       --dispatch-once-static-init-only
+           Activates: Enable dispatch-once-static-init and disable all other
+           checkers (Conversely: --no-dispatch-once-static-init-only)
+           See also infer-analyze(1).
 
        --dump-duplicate-symbols
            Activates: Dump all symbols with the same name that are defined in

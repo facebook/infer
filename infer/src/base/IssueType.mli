@@ -183,6 +183,8 @@ val dead_store : t
 
 val deadlock : t
 
+val dispatch_once_in_static_init : t
+
 val divide_by_zero : t
 
 val do_not_report : t
