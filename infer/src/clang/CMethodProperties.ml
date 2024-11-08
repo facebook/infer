@@ -174,6 +174,17 @@ let is_cpp_move_ctor method_decl =
       false
 
 
+let is_static_ctor method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | FunctionDecl (decl_info, _, _, _) ->
+      let attributes = decl_info.Clang_ast_t.di_attributes in
+      List.exists attributes ~f:(fun attr ->
+          match attr with `ConstructorAttr _ -> true | _ -> false )
+  | _ ->
+      false
+
+
 let is_cpp_deleted method_decl =
   let open Clang_ast_t in
   match method_decl with
