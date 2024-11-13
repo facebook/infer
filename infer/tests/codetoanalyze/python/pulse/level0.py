@@ -17,3 +17,11 @@ taint_sink(taint_source())
 
 # ok
 taint_sink(no_taint_source())
+
+tuple = (taint_source(), 0)
+
+# bad
+taint_sink(tuple[0])
+
+# ok
+taint_sink(tuple[1])

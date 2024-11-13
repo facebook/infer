@@ -152,6 +152,8 @@ module Syntax : sig
   val load : aval -> aval model_monad
   (** read the Dereference access from the value *)
 
+  val and_dynamic_type_is : aval -> Typ.t -> unit model_monad
+
   val get_dynamic_type :
     ask_specialization:bool -> aval -> Formula.dynamic_type_data option model_monad
 

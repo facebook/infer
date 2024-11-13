@@ -139,7 +139,11 @@ let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject"
 
 let python_dict_type_name = SilTyp.PythonClass (PythonClassName.make "PyDict")
 
+let python_int_type_name = SilTyp.PythonClass (PythonClassName.make "PyInt")
+
 let python_none_type_name = SilTyp.PythonClass (PythonClassName.make "PyNone")
+
+let python_tuple_type_name = SilTyp.PythonClass (PythonClassName.make "PyTuple")
 
 let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
 
