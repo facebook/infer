@@ -3,52 +3,59 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import random
+import taint
 
-def taint_source() ->int:
-    return 42
-
-def taint_sink(args) -> None:
-    pass
 
 def basic_flow_bad() -> None:
-    tainted = taint_source()
-    taint_sink(tainted)
+    tainted = taint.source()
+    taint.sink(tainted)
+
 
 def basic_flow_ok(untainted: int) -> None:
-    taint_sink(untainted)
+    taint.sink(untainted)
+
 
 def fst(x: int, y: int) -> int:
     return x
 
+
 def call_fst_bad(untainted) -> None:
-    arg = fst(taint_source(), untainted)
-    taint_sink(arg)
+    arg = fst(taint.source(), untainted)
+    taint.sink(arg)
+
 
 def call_fst_ok(untainted) -> None:
-    arg = fst(untainted, taint_source())
-    taint_sink(arg)
+    arg = fst(untainted, taint.source())
+    taint.sink(arg)
+
 
 def sink_fst_arg(x, y) -> None:
-    taint_sink(x)
+    taint.sink(x)
+
 
 def call_sink_fst_arg_bad(untainted) -> None:
-    sink_fst_arg(taint_source(), untainted)
+    sink_fst_arg(taint.source(), untainted)
+
 
 def call_sink_fst_arg_ok(untainted) -> None:
-    sink_fst_arg(untainted, taint_source())
+    sink_fst_arg(untainted, taint.source())
+
 
 def call_taint_sink_on_global_bad1():
     global g
-    taint_sink(g)
+    taint.sink(g)
+
 
 def call_taint_sink_on_global_ok():
     global g
-    taint_sink(g)
+    taint.sink(g)
+
 
 def call_taint_sink_on_global_bad2():
     global g
-    g = taint_source()
-    taint_sink(g)
+    g = taint.source()
+    taint.sink(g)
 
 # we need to call these functions in order to activate specialization
 basic_flow_bad()
@@ -57,7 +64,7 @@ call_fst_bad(0)
 call_fst_ok(0)
 call_sink_fst_arg_bad(0)
 call_sink_fst_arg_ok(0)
-g = taint_source()
+g = taint.source()
 call_taint_sink_on_global_bad1()
 g = 0
 call_taint_sink_on_global_ok()

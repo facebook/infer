@@ -3,25 +3,21 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-def taint_sink(x):
-    pass
+import random
+import taint
 
-def taint_source():
-    pass
-
-def no_taint_source():
-    pass
+untained = random.random()
 
 # bad
-taint_sink(taint_source())
+taint.sink(taint.source())
 
 # ok
-taint_sink(no_taint_source())
+taint.sink(random.random())
 
-tuple = (taint_source(), 0)
+tuple = (taint.source(), random())
 
 # bad
-taint_sink(tuple[0])
+taint.sink(tuple[0])
 
 # ok
-taint_sink(tuple[1])
+taint.sink(tuple[1])
