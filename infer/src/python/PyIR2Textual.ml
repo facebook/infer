@@ -31,6 +31,8 @@ module Typ = struct
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
+let str_module_body name = F.asprintf "%a.__module_body__" Ident.pp name
+
 type proc_kind = ModuleBody of Ident.t | RegularFunction of QualName.t
 
 let is_module_body = function ModuleBody _ -> true | _ -> false
@@ -39,7 +41,7 @@ let mk_qualified_proc_name ?loc kind =
   let qual_name_str =
     match kind with
     | ModuleBody name ->
-        F.asprintf "%a.__module_body__" Ident.pp name
+        str_module_body name
     | RegularFunction qual_name ->
         F.asprintf "%a" QualName.pp qual_name
   in
@@ -57,7 +59,7 @@ let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames} =
 let mk_procdecl ?loc kind code_info =
   let qualified_name = mk_qualified_proc_name ?loc kind in
   let formals_types =
-    if is_module_body kind then Some []
+    if is_module_body kind then Some [Textual.Typ.mk_without_attributes Typ.globals]
     else
       Some
         [Textual.Typ.mk_without_attributes Typ.globals; Textual.Typ.mk_without_attributes Typ.locals]
@@ -126,7 +128,10 @@ let rec of_exp exp : Textual.Exp.t =
   | LoadClassDeref {name; slot= _} ->
       call_builtin "py_load_class_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
   | ImportName {name; fromlist; level} ->
-      call_builtin "py_import_name" [exp_of_ident_str name; of_exp fromlist; of_exp level]
+      let str =
+        str_module_body name |> Textual.ProcName.of_string |> F.asprintf "%a" Textual.ProcName.pp
+      in
+      call_builtin "py_import_name" [Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
   | ImportFrom {name; exp} ->
       call_builtin "py_import_from" [exp_of_ident_str name; of_exp exp]
   | Temp ssa ->
@@ -431,12 +436,10 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
       let loc = label_loc in
       Textual.(
         Instr.Store
-          {exp1= Lvar Parameter.globals; exp2= call_builtin "py_make_dictionary" []; typ= None; loc}
-        :: Instr.Store
-             { exp1= Lvar Parameter.locals
-             ; exp2= Load {exp= Lvar Parameter.globals; typ= None}
-             ; typ= None
-             ; loc }
+          { exp1= Lvar Parameter.locals
+          ; exp2= Load {exp= Lvar Parameter.globals; typ= None}
+          ; typ= None
+          ; loc }
         :: instrs )
     else instrs
   in
@@ -454,11 +457,11 @@ let mk_procdesc proc_kind {CFG.entry; nodes; code_info= {co_firstlineno} as code
     List.map nodes_bindings ~f:(fun (_node_name, node) -> of_node is_module_body entry node)
   in
   let start = mk_node_name entry in
-  let params = if is_module_body then [] else [Parameter.globals; Parameter.locals] in
+  let params =
+    if is_module_body then [Parameter.globals] else [Parameter.globals; Parameter.locals]
+  in
   let locals =
-    if is_module_body then
-      [ (Parameter.globals, Textual.Typ.mk_without_attributes Typ.globals)
-      ; (Parameter.locals, Textual.Typ.mk_without_attributes Typ.locals) ]
+    if is_module_body then [(Parameter.locals, Textual.Typ.mk_without_attributes Typ.locals)]
     else []
   in
   let exit_loc =

@@ -80,6 +80,8 @@ module Syntax : sig
     -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
     -> unit model_monad
 
+  val python_call : Procname.t -> (string * aval) list -> aval model_monad
+
   val apply_hack_closure : aval -> aval list -> aval model_monad
 
   val apply_python_closure : aval -> (ProcAttributes.t -> aval list model_monad) -> aval model_monad

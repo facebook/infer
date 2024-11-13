@@ -4,11 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import level1
-from level1 import taintSink
+from level1 import taint_sink
 
-def basicFlowBad() -> None:
-    tainted = level1.taintSource()
-    taintSink(tainted)
+def basic_flow_bad() -> None:
+    tainted = level1.taint_source()
+    taint_sink(tainted)
 
-def basicFlowOk(untainted: int) -> None:
-    level1.taintSink(untainted)
+def basic_flow_ok(untainted: int) -> None:
+    level1.taint_sink(untainted)
+
+basic_flow_bad()
+basic_flow_ok(0)

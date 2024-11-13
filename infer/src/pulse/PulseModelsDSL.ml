@@ -824,7 +824,7 @@ module Syntax = struct
     | Regular of aval list
     | FromAttributes of (ProcAttributes.t -> aval list model_monad)
 
-  let apply_closure lang (closure : aval) unresolved_pname closure_args : aval model_monad =
+  let call lang proc_name named_args =
     let mixed_type_name =
       match (lang : Textual.Lang.t) with
       | Hack ->
@@ -832,9 +832,24 @@ module Syntax = struct
       | Python ->
           TextualSil.python_mixed_type_name
       | Java ->
-          L.die InternalError "apply_closure is not supported on Java"
+          L.die InternalError "DSL.call not supported on Java"
     in
     let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
+    let ret_id = Ident.create_none () in
+    let call_args =
+      List.map named_args ~f:(fun (str, arg) : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t ->
+          let pvar = Pvar.mk (Mangled.from_string str) proc_name in
+          let exp = Exp.Lvar pvar in
+          let arg_payload = ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= arg} in
+          {exp; typ; arg_payload} )
+    in
+    let* () = dispatch_call (ret_id, typ) proc_name call_args in
+    read (Exp.Var ret_id)
+
+
+  let python_call = call Python
+
+  let apply_closure lang (closure : aval) unresolved_pname closure_args : aval model_monad =
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
@@ -847,7 +862,6 @@ module Syntax = struct
             ret unknown_res
         | Some resolved_pname ->
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
-            let ret_id = Ident.create_none () in
             let* closure_args =
               match closure_args with
               | Regular closure_args ->
@@ -859,17 +873,10 @@ module Syntax = struct
                          ret [] )
             in
             let args = closure :: closure_args in
-            let call_args =
-              List.mapi args ~f:(fun i arg : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t ->
-                  let pvar =
-                    Pvar.mk (Mangled.from_string (Printf.sprintf "CLOSURE_ARG%d" i)) resolved_pname
-                  in
-                  let exp = Exp.Lvar pvar in
-                  let arg_payload = ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= arg} in
-                  {exp; typ; arg_payload} )
+            let named_args =
+              List.mapi args ~f:(fun i arg -> (Printf.sprintf "CLOSURE_ARG%d" i, arg))
             in
-            let* () = dispatch_call (ret_id, typ) resolved_pname call_args in
-            let* res = read (Exp.Var ret_id) in
+            let* res = call lang resolved_pname named_args in
             L.d_printfln "[ocaml model] Closure return value is %a." AbstractValue.pp (fst res) ;
             ret res )
     | _ ->

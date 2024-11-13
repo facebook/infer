@@ -59,10 +59,9 @@ def g():
     TRANSFORMATION PyIR -> Textual
     .source_language = "python"
 
-    define dummy::__module_body__() : *PyObject {
-      local globals: *PyGlobals, locals: *PyLocals
+    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+      local locals: *PyLocals
       #b0:
-          store &globals <- $builtins.py_make_dictionary()
           store &locals <- globals
           _ = $builtins.py_store_name("x", locals, globals, $builtins.py_make_int(0))
           n0 = $builtins.py_make_function(fun (locals) -> dummy::f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
@@ -120,10 +119,9 @@ def g():
     TYPE INFERENCE
     .source_language = "python"
 
-    define dummy::__module_body__() : *PyObject {
-      local globals: *PyGlobals, locals: *PyLocals
+    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+      local locals: *PyLocals
       #b0:
-          store &globals <- $builtins.py_make_dictionary():*PyObject
           store &locals <- [&globals:*PyGlobals]:*PyGlobals
           _ = $builtins.py_store_name("x", [&locals:*PyLocals], [&globals:*PyGlobals], $builtins.py_make_int(0))
           n0 = $builtins.py_make_function(fun (locals) -> dummy::f([&globals:*PyGlobals], locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
@@ -205,41 +203,39 @@ def g():
 
     }
 
-    define dummy::__module_body__() : *PyObject {
-      local globals: *PyGlobals, locals: *PyLocals
+    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+      local locals: *PyLocals
       #b0:
-          n2 = $builtins.py_make_dictionary()
-          store &globals <- n2:*PyObject
-          n3:*PyGlobals = load &globals
-          store &locals <- n3:*PyGlobals
-          n4:*PyLocals = load &locals
-          n5:*PyGlobals = load &globals
-          n6 = $builtins.py_make_int(0)
-          n7 = $builtins.py_store_name("x", n4, n5, n6)
-          n8:*PyGlobals = load &globals
-          n9 = __sil_allocate(<closure:dummy:0>)
-          store n9.?.globals <- n8:*PyGlobals
+          n2:*PyGlobals = load &globals
+          store &locals <- n2:*PyGlobals
+          n3:*PyLocals = load &locals
+          n4:*PyGlobals = load &globals
+          n5 = $builtins.py_make_int(0)
+          n6 = $builtins.py_store_name("x", n3, n4, n5)
+          n7:*PyGlobals = load &globals
+          n8 = __sil_allocate(<closure:dummy:0>)
+          store n8.?.globals <- n7:*PyGlobals
+          n10 = $builtins.py_make_none()
           n11 = $builtins.py_make_none()
           n12 = $builtins.py_make_none()
           n13 = $builtins.py_make_none()
-          n14 = $builtins.py_make_none()
-          n0 = $builtins.py_make_function(n9, n11, n12, n13, n14)
-          n15:*PyLocals = load &locals
-          n16:*PyGlobals = load &globals
-          n17 = $builtins.py_store_name("f", n15, n16, n0)
-          n18:*PyGlobals = load &globals
-          n19 = __sil_allocate(<closure:dummy:1>)
-          store n19.?.globals <- n18:*PyGlobals
+          n0 = $builtins.py_make_function(n8, n10, n11, n12, n13)
+          n14:*PyLocals = load &locals
+          n15:*PyGlobals = load &globals
+          n16 = $builtins.py_store_name("f", n14, n15, n0)
+          n17:*PyGlobals = load &globals
+          n18 = __sil_allocate(<closure:dummy:1>)
+          store n18.?.globals <- n17:*PyGlobals
+          n20 = $builtins.py_make_none()
           n21 = $builtins.py_make_none()
           n22 = $builtins.py_make_none()
           n23 = $builtins.py_make_none()
-          n24 = $builtins.py_make_none()
-          n1 = $builtins.py_make_function(n19, n21, n22, n23, n24)
-          n25:*PyLocals = load &locals
-          n26:*PyGlobals = load &globals
-          n27 = $builtins.py_store_name("g", n25, n26, n1)
-          n28 = $builtins.py_make_none()
-          ret n28
+          n1 = $builtins.py_make_function(n18, n20, n21, n22, n23)
+          n24:*PyLocals = load &locals
+          n25:*PyGlobals = load &globals
+          n26 = $builtins.py_store_name("g", n24, n25, n1)
+          n27 = $builtins.py_make_none()
+          ret n27
 
     }
 

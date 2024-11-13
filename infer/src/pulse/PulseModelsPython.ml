@@ -88,17 +88,58 @@ let build_tuple args : model =
   assign_ret tuple
 
 
-let call closure _arg_names args : model =
+let call_dsl closure _arg_names args : DSL.aval DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let gen_closure_args {ProcAttributes.python_args} =
     let* locals = Dict.make python_args args in
     ret [locals]
   in
-  let* value = apply_python_closure closure gen_closure_args in
+  apply_python_closure closure gen_closure_args
+
+
+let call closure arg_names args : model =
+  (* TODO: take into account named args *)
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* value = call_dsl closure arg_names args in
   assign_ret value
+
+
+let call_method name obj arg_names args : model =
+  (* TODO: take into account named args *)
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* closure = Dict.get obj name in
+  (* TODO: for OO method, gives self argument *)
+  let* value = call_dsl closure arg_names args in
+  assign_ret value
+
+
+let import_from name module_ : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res = Dict.get module_ name in
+  assign_ret res
+
+
+let import_name name _fromlist _level : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* opt_str = as_constant_string name in
+  let function_name =
+    Option.value_or_thunk opt_str ~default:(fun () ->
+        L.die InternalError "frontend should always give a string here" )
+  in
+  let proc_name = Procname.make_python ~class_name:None ~function_name in
+  let* globals = Dict.make [] [] in
+  (* TODO: call it only once! *)
+  let* _ = python_call proc_name [("globals", globals)] in
+  assign_ret globals
 
 
 let load_fast name locals : model =
@@ -198,7 +239,10 @@ let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
   [ -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
+  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
+  ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
+  ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $--> import_name
   ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
   ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
   ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
