@@ -1279,27 +1279,6 @@ def f(l):
           return $BuildList()
 
 
-      function dummy.f._$listcomp(.0):
-        b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[x] <- n1
-          n3 <- LOCAL[x]
-          n4 <- $Binary.Add(n3, 2, None)
-          n5 <- $ListAppend($BuildList(), n4, None)
-          jmp b1
-
-        b3:
-          return $BuildList()
-
-
       function dummy.f(l):
         b0:
           n0 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", None, None, None, None]
@@ -1318,7 +1297,28 @@ def f(l):
           n11 <- GLOBAL[print]
           n12 <- LOCAL[r0]
           n13 <- $Call(n11, n12, None)
-          return None |}]
+          return None
+
+
+      function dummy.f._$listcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n1
+          n3 <- LOCAL[x]
+          n4 <- $Binary.Add(n3, 2, None)
+          n5 <- $ListAppend($BuildList(), n4, None)
+          jmp b1
+
+        b3:
+          return $BuildList() |}]
 
 
 let%expect_test _ =
@@ -1348,26 +1348,15 @@ def g(l):
           return None
 
 
-      function dummy.g._$dictcomp(.0):
+      function dummy.f(l):
         b0:
-          n0 <- LOCAL[.0]
-          jmp b1
-
-        b1:
-          n1 <- $NextIter(n0, None)
-          n2 <- $HasNextIter(n0, None)
-          if n2 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[num] <- n1
-          n3 <- LOCAL[num]
-          n4 <- LOCAL[num]
-          n5 <- $Binary.Power(n4, 2, None)
-          n6 <- $DictSetItem($BuildMap(), n3, n5, None)
-          jmp b1
-
-        b3:
-          return $BuildMap()
+          n0 <- $MakeFunction["_$setcomp", "dummy.f._$setcomp", None, None, None, None]
+          n1 <- LOCAL[l]
+          n2 <- $GetIter(n1, None)
+          n3 <- $Call(n0, n2, None)
+          LOCAL[r] <- n3
+          n4 <- LOCAL[r]
+          return n4
 
 
       function dummy.f._$setcomp(.0):
@@ -1391,17 +1380,6 @@ def g(l):
           return $BuildSet()
 
 
-      function dummy.f(l):
-        b0:
-          n0 <- $MakeFunction["_$setcomp", "dummy.f._$setcomp", None, None, None, None]
-          n1 <- LOCAL[l]
-          n2 <- $GetIter(n1, None)
-          n3 <- $Call(n0, n2, None)
-          LOCAL[r] <- n3
-          n4 <- LOCAL[r]
-          return n4
-
-
       function dummy.g(l):
         b0:
           n0 <- $MakeFunction["_$dictcomp", "dummy.g._$dictcomp", None, None, None, None]
@@ -1410,7 +1388,29 @@ def g(l):
           n3 <- $Call(n0, n2, None)
           LOCAL[squared_dict] <- n3
           n4 <- GLOBAL[r]
-          return n4 |xxx}]
+          return n4
+
+
+      function dummy.g._$dictcomp(.0):
+        b0:
+          n0 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n1 <- $NextIter(n0, None)
+          n2 <- $HasNextIter(n0, None)
+          if n2 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[num] <- n1
+          n3 <- LOCAL[num]
+          n4 <- LOCAL[num]
+          n5 <- $Binary.Power(n4, 2, None)
+          n6 <- $DictSetItem($BuildMap(), n3, n5, None)
+          jmp b1
+
+        b3:
+          return $BuildMap() |xxx}]
 
 
 let%expect_test _ =
@@ -1616,18 +1616,18 @@ o.foo()
           return None
 
 
-      function dummy._$lambda():
-        b0:
-          n0 <- GLOBAL[print]
-          n1 <- $Call(n0, "I am not foo", None)
-          return n1
-
-
       function dummy.C.foo(self):
         b0:
           n0 <- GLOBAL[print]
           n1 <- $Call(n0, "I am foo", None)
-          return None |}]
+          return None
+
+
+      function dummy._$lambda():
+        b0:
+          n0 <- GLOBAL[print]
+          n1 <- $Call(n0, "I am not foo", None)
+          return n1 |}]
 
 
 let%expect_test _ =

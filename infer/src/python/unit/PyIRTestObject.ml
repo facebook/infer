@@ -209,13 +209,6 @@ print(c.z)
           return n1
 
 
-      function dummy.getX(box):
-        b0:
-          n0 <- LOCAL[box]
-          n1 <- $CallMethod[get](n0, None)
-          return n1
-
-
       function dummy.IntBox.id(x):
         b0:
           n0 <- LOCAL[x]
@@ -232,7 +225,14 @@ print(c.z)
           n0 <- LOCAL[x]
           n1 <- LOCAL[self]
           n1.x <- n0
-          return None |}]
+          return None
+
+
+      function dummy.getX(box):
+        b0:
+          n0 <- LOCAL[box]
+          n1 <- $CallMethod[get](n0, None)
+          return n1 |}]
 
 
 let%expect_test _ =
@@ -286,14 +286,6 @@ class D(C):
           return None
 
 
-      function dummy.D():
-        b0:
-          n0 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n0
-          TOPLEVEL[__qualname__] <- "D"
-          return None
-
-
       function dummy.C.f():
         b0:
           return None
@@ -302,7 +294,15 @@ class D(C):
       function dummy.C.typed_f(x):
         b0:
           n0 <- LOCAL[x]
-          return n0 |}]
+          return n0
+
+
+      function dummy.D():
+        b0:
+          n0 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n0
+          TOPLEVEL[__qualname__] <- "D"
+          return None |}]
 
 
 let%expect_test _ =
@@ -390,6 +390,11 @@ def g(c: C) -> None:
           return None
 
 
+      function dummy.A.f(self):
+        b0:
+          return None
+
+
       function dummy.C():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -399,11 +404,6 @@ def g(c: C) -> None:
           n1 <- TOPLEVEL[A]
           n2 <- TOPLEVEL[__annotations__]
           n2["a"] <- n1
-          return None
-
-
-      function dummy.A.f(self):
-        b0:
           return None
 
 
@@ -565,6 +565,19 @@ f()
           return None
 
 
+      function dummy.f(A, a):
+        b0:
+          n0 <- $MakeFunction["A", "dummy.f.A", None, None, None, None]
+          n1 <- $BuildClass(n0, "A", None)
+          LOCAL[A] <- n1
+          n2 <- LOCAL[A]
+          n3 <- $Call(n2, None)
+          LOCAL[a] <- n3
+          n4 <- LOCAL[a]
+          n5 <- $CallMethod[get](n4, None)
+          return n5
+
+
       function dummy.f.A():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -582,19 +595,6 @@ f()
           n0 <- LOCAL[self]
           n0.x <- 0
           return None
-
-
-      function dummy.f(A, a):
-        b0:
-          n0 <- $MakeFunction["A", "dummy.f.A", None, None, None, None]
-          n1 <- $BuildClass(n0, "A", None)
-          LOCAL[A] <- n1
-          n2 <- LOCAL[A]
-          n3 <- $Call(n2, None)
-          LOCAL[a] <- n3
-          n4 <- LOCAL[a]
-          n5 <- $CallMethod[get](n4, None)
-          return n5
 
 
       function dummy.f.A.get(self):
@@ -706,6 +706,14 @@ class D0(C0):
           return None
 
 
+      function dummy.C0.__init__(foo, x):
+        b0:
+          n0 <- LOCAL[x]
+          n1 <- LOCAL[foo]
+          n1.x <- n0
+          return None
+
+
       function dummy.D():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -719,6 +727,14 @@ class D0(C0):
           return n3
 
 
+      function dummy.D.__init__(self):
+        b0:
+          n0 <- GLOBAL[super]
+          n1 <- $Call(n0, None)
+          n2 <- $CallMethod[__init__](n1, None)
+          return None
+
+
       function dummy.D0():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -730,22 +746,6 @@ class D0(C0):
           n3 <- $LoadClosure(0,"__class__")
           TOPLEVEL[__classcell__] <- n3
           return n3
-
-
-      function dummy.C0.__init__(foo, x):
-        b0:
-          n0 <- LOCAL[x]
-          n1 <- LOCAL[foo]
-          n1.x <- n0
-          return None
-
-
-      function dummy.D.__init__(self):
-        b0:
-          n0 <- GLOBAL[super]
-          n1 <- $Call(n0, None)
-          n2 <- $CallMethod[__init__](n1, None)
-          return None
 
 
       function dummy.D0.__init__(bar):
@@ -1250,11 +1250,6 @@ class defaultdict:
           return None
 
 
-      function dummy.defaultdict.__getitem__(self, key):
-        b0:
-          return 42
-
-
       function dummy.defaultdict():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -1262,7 +1257,12 @@ class defaultdict:
           TOPLEVEL[__qualname__] <- "defaultdict"
           n1 <- $MakeFunction["__getitem__", "dummy.defaultdict.__getitem__", None, None, None, None]
           TOPLEVEL[__getitem__] <- n1
-          return None |}]
+          return None
+
+
+      function dummy.defaultdict.__getitem__(self, key):
+        b0:
+          return 42 |}]
 
 
 let%expect_test _ =
@@ -1436,20 +1436,20 @@ def g(a, b):
           return None
 
 
-      function dummy.g(a, b):
-        b0:
-          n0 <- LOCAL[a]
-          n1 <- LOCAL[b]
-          n2 <- $DeleteSubscr(n0, n1, None)
-          return None
-
-
       function dummy.f.inner():
         b0:
           n0 <- GLOBAL[print]
           n1 <- $LoadDeref(0,"z")
           n2 <- $Call(n0, n1, None)
           $DeleteDeref[0,"z")
+          return None
+
+
+      function dummy.g(a, b):
+        b0:
+          n0 <- LOCAL[a]
+          n1 <- LOCAL[b]
+          n2 <- $DeleteSubscr(n0, n1, None)
           return None |}]
 
 
@@ -1488,6 +1488,17 @@ class C:
           return None
 
 
+      function dummy.C.f(self):
+        b0:
+          n0 <- $ImportName(binascii, None, 0)
+          $StoreDeref(0,"binascii", n0)
+          n1 <- $LoadClosure(0,"binascii")
+          n2 <- $MakeFunction["D", "dummy.C.f.D", None, None, None, $BuildTuple(n1)]
+          n3 <- $BuildClass(n2, "D", None)
+          LOCAL[D] <- n3
+          return None
+
+
       function dummy.C.f.D():
         b0:
           n0 <- TOPLEVEL[__name__]
@@ -1497,17 +1508,6 @@ class C:
           n2 <- n1.unhexlify
           n3 <- $MakeFunction["g", "dummy.C.f.D.g", $BuildTuple(n2), None, None, None]
           TOPLEVEL[g] <- n3
-          return None
-
-
-      function dummy.C.f(self):
-        b0:
-          n0 <- $ImportName(binascii, None, 0)
-          $StoreDeref(0,"binascii", n0)
-          n1 <- $LoadClosure(0,"binascii")
-          n2 <- $MakeFunction["D", "dummy.C.f.D", None, None, None, $BuildTuple(n1)]
-          n3 <- $BuildClass(n2, "D", None)
-          LOCAL[D] <- n3
           return None
 
 

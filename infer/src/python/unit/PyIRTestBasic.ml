@@ -549,12 +549,6 @@ def main(arg):
           return None
 
 
-      function dummy.main.f(x, y, z):
-        b0:
-          n0 <- $LoadDeref(0,"arg")
-          return n0
-
-
       function dummy.main(arg):
         b0:
           n0 <- $BuildConstKeyMap($BuildTuple("key"), None, None)
@@ -564,7 +558,13 @@ def main(arg):
           n4 <- $LoadClosure(0,"arg")
           n5 <- $MakeFunction["f", "dummy.main.f", $BuildTuple("ok", 0.), n0, $BuildTuple("x", n1, "y", n2, "z", n3), $BuildTuple(n4)]
           LOCAL[f] <- n5
-          return None |}]
+          return None
+
+
+      function dummy.main.f(x, y, z):
+        b0:
+          n0 <- $LoadDeref(0,"arg")
+          return n0 |}]
 
 
 let%expect_test _ =

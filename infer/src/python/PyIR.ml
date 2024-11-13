@@ -16,7 +16,7 @@ let remove_angles str =
   else str
 
 
-module Ident : sig
+module rec Ident : sig
   type t [@@deriving equal, compare]
 
   val mk : string -> t
@@ -72,6 +72,42 @@ end = struct
   end)
 end
 
+and QualName : sig
+  type t = {module_name: Ident.t; function_name: Ident.t} [@@deriving equal]
+
+  val init : module_name:string -> t
+
+  val extend : t -> string -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Map : Caml.Map.S with type key = t
+end = struct
+  type t = {module_name: string; function_name: string} [@@deriving compare, equal]
+
+  let pp fmt {module_name; function_name} =
+    if String.is_empty module_name then F.pp_print_string fmt function_name
+    else if String.is_empty function_name then F.pp_print_string fmt module_name
+    else F.fprintf fmt "%s.%s" module_name function_name
+
+
+  let init ~module_name = {function_name= ""; module_name}
+
+  let extend {module_name; function_name} attr =
+    let attr = remove_angles attr in
+    let function_name =
+      if String.is_empty function_name then attr else F.asprintf "%s.%s" function_name attr
+    in
+    {function_name; module_name}
+
+
+  module Map = Caml.Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
+end
+
 module ScopedIdent = struct
   type scope = Global | Fast | Name [@@deriving equal]
 
@@ -85,45 +121,6 @@ module ScopedIdent = struct
         F.fprintf fmt "LOCAL[%a]" Ident.pp ident
     | Name ->
         F.fprintf fmt "TOPLEVEL[%a]" Ident.pp ident
-end
-
-module QualName : sig
-  type t [@@deriving equal]
-
-  val from_qualified_string : sep:char -> string -> t
-
-  val extend : t -> string -> t
-
-  val pp : F.formatter -> t -> unit
-
-  module Map : Caml.Map.S with type key = t
-end = struct
-  type t = {root: string; path: string list} [@@deriving compare, equal]
-
-  let pp fmt {root; path} =
-    if List.is_empty path then F.pp_print_string fmt root
-    else F.fprintf fmt "%s.%a" root (Pp.seq ~sep:"." F.pp_print_string) (List.rev path)
-
-
-  let from_qualified_string ~sep s =
-    let l = String.split ~on:sep s in
-    match l with
-    | [] ->
-        L.die ExternalError "QualName.from_qualified_string with an empty string"
-    | hd :: tl ->
-        {root= hd; path= List.rev_map ~f:remove_angles tl}
-
-
-  let extend {root; path} attr =
-    let attr = remove_angles attr in
-    {root; path= attr :: path}
-
-
-  module Map = Caml.Map.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-  end)
 end
 
 module NodeName : sig
@@ -2640,7 +2637,7 @@ end
 
 module CodeMap : Caml.Map.S with type key = FFI.Code.t = Caml.Map.Make (FFI.Code)
 
-let build_code_object_unique_name file_path code =
+let build_code_object_unique_name module_name code =
   let rec visit map outer_name ({FFI.Code.co_consts} as code) =
     if CodeMap.mem code map then map
     else
@@ -2653,7 +2650,7 @@ let build_code_object_unique_name file_path code =
           | _ ->
               map )
   in
-  let map = visit CodeMap.empty (QualName.from_qualified_string ~sep:'/' file_path) code in
+  let map = visit CodeMap.empty (QualName.init ~module_name) code in
   fun code -> CodeMap.find_opt code map
 
 
@@ -2712,7 +2709,7 @@ let test_cfg_skeleton ~code_qual_name code =
       F.printf "topological order: %a@\n@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 
-let file_path {FFI.Code.co_filename} =
+let module_name {FFI.Code.co_filename} =
   let sz = String.length co_filename in
   let file_path =
     if sz >= 2 && String.equal "./" (String.sub co_filename ~pos:0 ~len:2) then
@@ -2724,9 +2721,9 @@ let file_path {FFI.Code.co_filename} =
 
 let mk ~debug code =
   let open IResult.Let_syntax in
-  let file_path = file_path code in
-  let code_qual_name = build_code_object_unique_name file_path code in
-  let name = Ident.mk file_path in
+  let module_name = module_name code in
+  let code_qual_name = build_code_object_unique_name module_name code in
+  let name = Ident.mk module_name in
   let f = build_cfg ~debug ~code_qual_name in
   let* toplevel = f code in
   let* functions = fold_all_inner_codes_and_build_map code ~code_qual_name ~f in
@@ -2783,7 +2780,7 @@ let test_files ?(debug = false) ?run list =
 let test_cfg_skeleton ?(filename = "dummy.py") source =
   let open IResult.Let_syntax in
   let f code =
-    let file_path = file_path code in
+    let file_path = module_name code in
     let code_qual_name = build_code_object_unique_name file_path code in
     test_cfg_skeleton ~code_qual_name code ;
     let f code = Ok (test_cfg_skeleton ~code_qual_name code) in

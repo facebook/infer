@@ -268,6 +268,19 @@ async def async_loop2():
           return None
 
 
+      function dummy.async_loop2():
+        b0:
+          $GenStartCoroutine()
+          n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
+          n1 <- GLOBAL[read]
+          n2 <- $Call(n1, None)
+          n3 <- $CallMethod[__aiter__](n2, None)
+          n4 <- $Call(n0, n3, None)
+          n5 <- $GetAwaitable(n4, None)
+          n6 <- $YieldFrom(n5, None, None)
+          return None
+
+
       function dummy.async_loop2._$listcomp(.0):
         b0:
           $GenStartCoroutine()
@@ -281,20 +294,7 @@ async def async_loop2():
           LOCAL[x] <- n2
           n4 <- LOCAL[x]
           n5 <- $ListAppend($BuildList(), n4, None)
-          jmp b1
-
-
-      function dummy.async_loop2():
-        b0:
-          $GenStartCoroutine()
-          n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
-          n1 <- GLOBAL[read]
-          n2 <- $Call(n1, None)
-          n3 <- $CallMethod[__aiter__](n2, None)
-          n4 <- $Call(n0, n3, None)
-          n5 <- $GetAwaitable(n4, None)
-          n6 <- $YieldFrom(n5, None, None)
-          return None |}]
+          jmp b1 |}]
 
 
 let%expect_test _ =
