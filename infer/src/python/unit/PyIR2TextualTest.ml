@@ -59,20 +59,20 @@ def g():
     TRANSFORMATION PyIR -> Textual
     .source_language = "python"
 
-    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals) : *PyObject {
       local locals: *PyLocals
       #b0:
           store &locals <- globals
           _ = $builtins.py_store_name("x", locals, globals, $builtins.py_make_int(0))
-          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy::f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
           _ = $builtins.py_store_name("f", locals, globals, n0)
-          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy::g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
           _ = $builtins.py_store_name("g", locals, globals, n1)
           ret $builtins.py_make_none()
 
     }
 
-    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_fast("y", locals)
           if n0 then jmp b1 else jmp b2
@@ -107,7 +107,7 @@ def g():
 
     }
 
-    define dummy::g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_global("print", globals)
           n1 = $builtins.py_load_global("x", globals)
@@ -119,20 +119,20 @@ def g():
     TYPE INFERENCE
     .source_language = "python"
 
-    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals) : *PyObject {
       local locals: *PyLocals
       #b0:
           store &locals <- [&globals:*PyGlobals]:*PyGlobals
           _ = $builtins.py_store_name("x", [&locals:*PyLocals], [&globals:*PyGlobals], $builtins.py_make_int(0))
-          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy::f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
           _ = $builtins.py_store_name("f", [&locals:*PyLocals], [&globals:*PyGlobals], n0)
-          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy::g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
           _ = $builtins.py_store_name("g", [&locals:*PyLocals], [&globals:*PyGlobals], n1)
           ret $builtins.py_make_none()
 
     }
 
-    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_fast("y", [&locals:*PyLocals])
           if n0 then jmp b1 else jmp b2
@@ -167,7 +167,7 @@ def g():
 
     }
 
-    define dummy::g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n0 = $builtins.py_load_global("print", [&globals:*PyGlobals])
           n1 = $builtins.py_load_global("x", [&globals:*PyGlobals])
@@ -185,7 +185,7 @@ def g():
       #entry:
           n0:*PyGlobals = load &globals
           n1:*PyLocals = load &locals
-          n2 = dummy::g(n0, n1)
+          n2 = dummy.g(n0, n1)
           ret n2
 
     }
@@ -196,12 +196,12 @@ def g():
       #entry:
           n0:*PyGlobals = load &globals
           n1:*PyLocals = load &locals
-          n2 = dummy::f(n0, n1)
+          n2 = dummy.f(n0, n1)
           ret n2
 
     }
 
-    define dummy::__module_body__(globals: *PyGlobals) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals) : *PyObject {
       local locals: *PyLocals
       #b0:
           n2:*PyGlobals = load &globals
@@ -233,7 +233,7 @@ def g():
 
     }
 
-    define .args = "y,l" dummy::f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n13:*PyLocals = load &locals
           n0 = $builtins.py_load_fast("y", n13)
@@ -292,7 +292,7 @@ def g():
 
     }
 
-    define dummy::g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
           n3:*PyGlobals = load &globals
           n0 = $builtins.py_load_global("print", n3)

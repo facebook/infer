@@ -63,7 +63,7 @@ module ScopedIdent : sig
 end
 
 module QualName : sig
-  type t
+  type t = {module_name: Ident.t; function_name: Ident.t}
 
   val pp : Format.formatter -> t -> unit
 

@@ -31,22 +31,23 @@ module Typ = struct
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
-let str_module_body name = F.asprintf "%a.__module_body__" Ident.pp name
+let str_module_body = "__module_body__"
 
 type proc_kind = ModuleBody of Ident.t | RegularFunction of QualName.t
 
 let is_module_body = function ModuleBody _ -> true | _ -> false
 
-let mk_qualified_proc_name ?loc kind =
-  let qual_name_str =
-    match kind with
-    | ModuleBody name ->
-        str_module_body name
-    | RegularFunction qual_name ->
-        F.asprintf "%a" QualName.pp qual_name
-  in
-  { Textual.QualifiedProcName.enclosing_class= TopLevel
-  ; name= Textual.ProcName.of_string ?loc qual_name_str }
+let typename_of_ident ?loc ident = Textual.TypeName.of_string ?loc (F.asprintf "%a" Ident.pp ident)
+
+let mk_qualified_proc_name ?loc kind : Textual.QualifiedProcName.t =
+  let procname_of_ident ident = Textual.ProcName.of_string ?loc (F.asprintf "%a" Ident.pp ident) in
+  match kind with
+  | ModuleBody name ->
+      { enclosing_class= Enclosing (typename_of_ident name)
+      ; name= Textual.ProcName.of_string ?loc str_module_body }
+  | RegularFunction {module_name; function_name} ->
+      { enclosing_class= Enclosing (typename_of_ident ?loc module_name)
+      ; name= procname_of_ident function_name }
 
 
 let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames} =
@@ -128,9 +129,7 @@ let rec of_exp exp : Textual.Exp.t =
   | LoadClassDeref {name; slot= _} ->
       call_builtin "py_load_class_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
   | ImportName {name; fromlist; level} ->
-      let str =
-        str_module_body name |> Textual.ProcName.of_string |> F.asprintf "%a" Textual.ProcName.pp
-      in
+      let str = typename_of_ident name |> F.asprintf "%a" Textual.TypeName.pp in
       call_builtin "py_import_name" [Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
   | ImportFrom {name; exp} ->
       call_builtin "py_import_from" [exp_of_ident_str name; of_exp exp]

@@ -135,11 +135,13 @@ let import_name name _fromlist _level : model =
   start_model
   @@ fun () ->
   let* opt_str = as_constant_string name in
-  let function_name =
+  let module_name =
     Option.value_or_thunk opt_str ~default:(fun () ->
         L.die InternalError "frontend should always give a string here" )
   in
-  let proc_name = Procname.make_python ~class_name:None ~function_name in
+  let class_name = PythonClassName.make module_name in
+  let function_name = "__module_body__" in
+  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
   let* globals = Dict.make [] [] in
   (* TODO: call it only once! *)
   let* _ = python_call proc_name [("globals", globals)] in

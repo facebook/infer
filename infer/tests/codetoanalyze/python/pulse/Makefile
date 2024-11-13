@@ -9,7 +9,7 @@ INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/infer.make
 
-SOURCES = $(sort $(wildcard *.py))
+SOURCES = $(sort $(wildcard *.py) $(wildcard */*.py) $(wildcard */*/*.py))
 
 default: test
 
