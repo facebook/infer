@@ -170,7 +170,11 @@ let rec of_exp exp : Textual.Exp.t =
     ->
       let proc = mk_qualified_proc_name (RegularFunction qual_name) in
       let closure =
-        Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
+        match Config.python_globals with
+        | OwnByClosures ->
+            Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
+        | OwnByModule ->
+            Textual.Exp.Closure {proc; captured= []; params= [Parameter.globals; Parameter.locals]}
       in
       call_builtin "py_make_function"
         ( closure
@@ -371,10 +375,8 @@ let of_stmt loc stmt : Textual.Instr.t =
         ; exp= call_builtin "py_store_subscript" [of_exp lhs; of_exp index; of_exp rhs]
         ; loc }
   | Call {lhs; exp; args; arg_names} ->
-      Let
-        { id= Some (mk_ident lhs)
-        ; exp= call_builtin "py_call" (of_exp exp :: of_exp arg_names :: List.map ~f:of_exp args)
-        ; loc }
+      let args = of_exp exp :: exp_globals :: of_exp arg_names :: List.map ~f:of_exp args in
+      Let {id= Some (mk_ident lhs); exp= call_builtin "py_call" args; loc}
   | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
       Let
         { id= Some (mk_ident lhs)

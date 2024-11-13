@@ -1881,6 +1881,15 @@ OPTIONS
            file2.py but not with --pyc-file.
            See also infer-capture(1).
 
+       --python-globals { own-by-closures | own-by-module }
+           Specify the strategy to wire globals dictionnaire into each
+           function
+                - own-by-closures: each closure captured the global
+           dictionary
+           - own-by-module: each function is given the global dictionary as
+           argument (not referenced in the heap to avoid aliases)
+           See also infer-analyze(1).
+
        --qualified-cpp-name-block-list +string
            Skip analyzing the procedures under the qualified cpp type name.
            See also infer-analyze(1).

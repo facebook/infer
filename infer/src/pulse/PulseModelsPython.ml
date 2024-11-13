@@ -88,22 +88,26 @@ let build_tuple args : model =
   assign_ret tuple
 
 
-let call_dsl closure _arg_names args : DSL.aval DSL.model_monad =
+let call_dsl ~closure ~globals ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   let gen_closure_args {ProcAttributes.python_args} =
     let* locals = Dict.make python_args args in
-    ret [locals]
+    match Config.python_globals with
+    | OwnByClosures ->
+        ret [locals]
+    | OwnByModule ->
+        ret [globals; locals]
   in
   apply_python_closure closure gen_closure_args
 
 
-let call closure arg_names args : model =
+let call closure globals arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* value = call_dsl closure arg_names args in
+  let* value = call_dsl ~closure ~globals ~arg_names ~args in
   assign_ret value
 
 
@@ -114,7 +118,7 @@ let call_method name obj arg_names args : model =
   @@ fun () ->
   let* closure = Dict.get obj name in
   (* TODO: for OO method, gives self argument *)
-  let* value = call_dsl closure arg_names args in
+  let* value = call_dsl ~closure ~globals:obj ~arg_names ~args in
   assign_ret value
 
 
@@ -238,7 +242,7 @@ let subscript seq idx : model =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
-  [ -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
+  [ -"$builtins" &:: "py_call" <>$ arg $+ arg $+ arg $+++$--> call
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
