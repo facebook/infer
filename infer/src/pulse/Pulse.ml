@@ -32,7 +32,7 @@ let report_topl_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
 let is_hack_async tenv pname =
   match IRAttributes.load pname with
   | None ->
-      L.d_printfln "no attributes found for %a" Procname.pp pname ;
+      L.d_printfln "no attributes found for %a" Procname.pp_verbose pname ;
       Procname.is_hack_async_name pname
   | Some attrs ->
       L.d_printfln "attributes are %a" ProcAttributes.pp attrs ;
@@ -369,7 +369,7 @@ module PulseTransferFunctions = struct
       | Some (class_name, function_name) ->
           let arity = Procname.get_hack_arity proc_name in
           let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
-          L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
+          L.d_printfln "function pointer on %a detected" Procname.pp_verbose proc_name ;
           (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
           Result.Ok (Tenv.MethodInfo.mk_class proc_name, HackFunctionReference) )
     | Some (dynamic_type_name, source_file_opt) ->
@@ -442,7 +442,7 @@ module PulseTransferFunctions = struct
       in
       let method_exists proc_name methods = List.mem ~equal methods proc_name in
       if is_already_resolved proc_name then (
-        L.d_printfln "always_implemented %a" Procname.pp proc_name ;
+        L.d_printfln "always_implemented %a" Procname.pp_verbose proc_name ;
         (None, Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
       else
         match Tenv.resolve_method ~method_exists tenv type_name proc_name with
@@ -500,8 +500,8 @@ module PulseTransferFunctions = struct
         (None, Some (Tenv.MethodInfo.mk_class callee_pname), astate)
     | Some static_class_name ->
         let* static_class_name, astate = trait_resolution astate static_class_name in
-        L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
-          Typ.Name.pp static_class_name ;
+        L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp_verbose
+          callee_pname Typ.Name.pp static_class_name ;
         let unresolved_reason, opt_callee, missed_captures =
           resolve_method tenv static_class_name callee_pname
         in
@@ -524,7 +524,7 @@ module PulseTransferFunctions = struct
       | Some typ_name ->
           let improved_proc_name = Procname.replace_class proc_name typ_name in
           L.d_printfln "Propagating declared type to improve callee name: %a replaced by %a"
-            Procname.pp proc_name Procname.pp improved_proc_name ;
+            Procname.pp_verbose proc_name Procname.pp_verbose improved_proc_name ;
           Some improved_proc_name
       | _ ->
           proc_name_opt
@@ -663,7 +663,7 @@ module PulseTransferFunctions = struct
     | None ->
         let* arity = Procname.get_hack_arity callee_procname in
         if arity <= 0 then (
-          L.d_printfln "no attribute found for %a" Procname.pp callee_procname ;
+          L.d_printfln "no attribute found for %a" Procname.pp_verbose callee_procname ;
           None )
         else
           let* callee_procname = Procname.decr_hack_arity callee_procname in
@@ -748,7 +748,7 @@ module PulseTransferFunctions = struct
       | Some proc_name
         when Language.curr_language_is Hack && is_hack_async tenv proc_name
              && not caller_is_hack_wrapper ->
-          L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp proc_name
+          L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp_verbose proc_name
             Ident.pp (fst ret) ;
           ((Ident.create_fresh Ident.kprimed, snd ret), Some (ret, proc_name))
       | _ ->
@@ -774,7 +774,7 @@ module PulseTransferFunctions = struct
             astate
       | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
         when is_hack_builder_procname tenv callee_pname ->
-          L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp
+          L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
             callee_pname ;
           AddressAttributes.set_hack_builder (ValueOrigin.value arg)
             Attribute.Builder.NonDiscardable astate
@@ -843,7 +843,7 @@ module PulseTransferFunctions = struct
           in
           if Config.log_pulse_disjunct_increase_after_model_call && List.length astates > 1 then
             L.debug Analysis Quiet "[disjunct-increase] from %a, model %a has added %d disjuncts\n"
-              Location.pp_file_pos call_loc Procname.pp callee_procname
+              Location.pp_file_pos call_loc Procname.pp_verbose callee_procname
               (List.length astates - 1) ;
           if has_continue_program astates then CallGlobalForStats.node_is_not_stuck () ;
           (List.take astates disjunct_limit, non_disj, `KnownCall)
@@ -1270,7 +1270,7 @@ module PulseTransferFunctions = struct
   let add_verbose_never_return_info proc_desc instr loc =
     let caller_name = Procdesc.get_proc_name proc_desc in
     L.debug Analysis Quiet "[pulse-info]At %a, function %a, the call %a never returns@\n"
-      Location.pp_file_pos loc Procname.pp caller_name
+      Location.pp_file_pos loc Procname.pp_verbose caller_name
       (Sil.pp_instr ~print_types:false Pp.text)
       instr
 
@@ -1502,7 +1502,7 @@ module PulseTransferFunctions = struct
         L.internal_error
           "OOM danger: heap size is %d words, more than the specified threshold of %d words. \
            Aborting the analysis of the procedure %a to avoid running out of memory.@\n"
-          heap_size max_heap_size Procname.pp pname ;
+          heap_size max_heap_size Procname.pp_verbose pname ;
         (* If we'd not compact, then heap remains big, and we'll keep skipping procedures until
            the runtime decides to compact. *)
         Gc.compact () ;
@@ -1708,7 +1708,7 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
           let node_is_a_return = node_is_a_return node in
           if Config.log_pulse_coverage then (
             L.debug Analysis Quiet "[pulse-info]At %a, function %a, the %snode %a is unreachable@\n"
-              Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp proc_name
+              Location.pp_file_pos (Procdesc.Node.get_loc node) Procname.pp_verbose proc_name
               (if node_is_a_return then "exit " else "")
               Procdesc.Node.pp node ;
             Continue (node_is_a_return || fst acc, true) )
