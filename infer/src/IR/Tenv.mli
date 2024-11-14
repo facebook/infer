@@ -136,7 +136,8 @@ val mk_unresolved_data :
 type resolution_result = (MethodInfo.t, unresolved_data) Result.t
 
 val resolve_method :
-     method_exists:(Procname.t -> Procname.t list -> bool)
+     ?is_virtual:bool
+  -> method_exists:(Procname.t -> Procname.t list -> bool)
   -> t
   -> Typ.Name.t
   -> Procname.t

@@ -441,7 +441,7 @@ let is_hack_model source_file =
          String.equal source_file hack_model )
 
 
-let resolve_method ~method_exists tenv class_name proc_name =
+let resolve_method ?(is_virtual = false) ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
   (* For Hack, we need to remember the last class we visited. Once we visit a trait, we are sure
      we will only visit traits from now on *)
@@ -479,11 +479,22 @@ let resolve_method ~method_exists tenv class_name proc_name =
                 last_class_visited := Some class_name ;
                 0
             | IsTrait {is_direct= false} ->
+                L.d_printfln
+                  "method belongs to a Trait and is not called directly, adjusting arity +1" ;
                 1
             | IsTrait {is_direct= true} ->
-                (* We do not need to increase the arity when the trait method is called directly, i.e.
-                   [T::foo], since the [proc_name] has the increased arity already. *)
-                0
+                if is_virtual then (
+                  (* This happens, eg, in the wrapper methods we generate to deal with optional
+                     arguments; in these cases the call to the "base" method with no optional
+                     arguments is emitted by hackc as a virtual call *)
+                  L.d_printfln
+                    "method belongs to a Trait, is called directly but virtually, adjusting arity \
+                     +1" ;
+                  1 )
+                else
+                  (* We do not need to increase the arity when the trait method is called directly, i.e.
+                     [T::foo], since the [proc_name] has the increased arity already. *)
+                  0
           in
           let right_proc_name = Procname.replace_class ~arity_incr proc_name class_name in
           if method_exists right_proc_name methods then

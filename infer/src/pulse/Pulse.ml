@@ -355,10 +355,10 @@ module PulseTransferFunctions = struct
     | ExactDevirtualization
     | HackFunctionReference
 
-  let find_override exe_env tenv astate receiver proc_name =
+  let find_override_for_virtual exe_env tenv astate receiver proc_name =
     let tenv_resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
-      Tenv.resolve_method ~method_exists tenv type_name proc_name
+      Tenv.resolve_method ~is_virtual:true ~method_exists tenv type_name proc_name
     in
     match get_dynamic_type_name astate receiver with
     | Some (dynamic_type_name, _) when Typ.Name.Hack.is_generated_curry dynamic_type_name -> (
@@ -409,7 +409,7 @@ module PulseTransferFunctions = struct
 
   let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override exe_env tenv astate receiver proc_name with
+        match find_override_for_virtual exe_env tenv astate receiver proc_name with
         | Ok (info, devirtualization_status) ->
             let proc_name' = Tenv.MethodInfo.get_proc_name info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
@@ -625,6 +625,7 @@ module PulseTransferFunctions = struct
       with
       | Some (info, HackFunctionReference, {missed_captures; unresolved_reason= unresolved_reason1})
         ->
+          L.d_printfln "virtual call is a HackFunctionReference" ;
           let callee = Tenv.MethodInfo.get_proc_name info in
           let unresolved_reason2, info_opt, astate =
             resolve_hack_static_method path call_loc astate tenv caller (Some callee)
@@ -636,12 +637,14 @@ module PulseTransferFunctions = struct
           in
           (Option.first_some unresolved_reason1 unresolved_reason2, Some info, astate)
       | Some (info, ExactDevirtualization, {missed_captures; unresolved_reason}) ->
+          L.d_printfln "virtual call is fully resolved" ;
           let astate =
             record_call_resolution_if_closure ResolvedUsingDynamicType astate
             |> AbductiveDomain.add_missed_captures missed_captures
           in
           (unresolved_reason, Some info, astate)
       | Some (info, ApproxDevirtualization, {missed_captures; unresolved_reason}) ->
+          L.d_printfln "virtual call is approximately resolved" ;
           let astate =
             record_call_resolution_if_closure Unresolved astate
             |> AbductiveDomain.add_missed_captures missed_captures
@@ -650,6 +653,7 @@ module PulseTransferFunctions = struct
           , Some info
           , need_dynamic_type_specialization astate (ValueOrigin.value receiver) )
       | None ->
+          L.d_printfln "virtual call is unresolved" ;
           let astate = record_call_resolution_if_closure Unresolved astate in
           (None, None, astate) )
 
