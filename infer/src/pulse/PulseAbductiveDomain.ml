@@ -1372,6 +1372,18 @@ let get_pointer_target timestamp src location astate =
       (astate, addr_hist)
 
 
+let empty =
+  { pre= PreDomain.empty
+  ; post= PostDomain.empty
+  ; path_condition= Formula.ttrue
+  ; decompiler= Decompiler.empty
+  ; need_dynamic_type_specialization= AbstractValue.Set.empty
+  ; topl= PulseTopl.start ()
+  ; transitive_info= TransitiveInfo.bottom
+  ; recursive_calls= PulseMutualRecursion.Set.empty
+  ; skipped_calls= SkippedCalls.empty }
+
+
 let canon_pointer_source' astate = function
   | `Malloc addr_hist ->
       `Malloc (CanonValue.canon_fst' astate addr_hist)
@@ -1539,17 +1551,8 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   let post =
     PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty
   in
-  let astate =
-    { pre
-    ; post
-    ; path_condition= Formula.ttrue
-    ; decompiler= Decompiler.empty
-    ; need_dynamic_type_specialization= AbstractValue.Set.empty
-    ; topl= PulseTopl.start ()
-    ; transitive_info= TransitiveInfo.bottom
-    ; recursive_calls= PulseMutualRecursion.Set.empty
-    ; skipped_calls= SkippedCalls.empty }
-  in
+  let topl = PulseTopl.start () in
+  let astate = {empty with pre; post; topl} in
   let astate =
     List.fold proc_attrs.locals ~init:astate
       ~f:(fun astate {ProcAttributes.name; typ; modify_in_block; is_constexpr; tmp_id} ->

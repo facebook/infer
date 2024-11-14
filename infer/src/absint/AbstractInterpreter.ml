@@ -387,7 +387,13 @@ struct
 
   let filter_disjuncts ~f ((l, nd) : Domain.t) =
     let filtered = List.filter l ~f in
-    if List.is_empty filtered && not (List.is_empty l) then ([], T.NonDisjDomain.bottom)
+    if
+      List.is_empty filtered
+      && (* TODO(non-disj): once [nd] detects unreachability accurately we can replace the last
+            condition with something like [not (T.NonDisjDomain.is_executable nd)] that tests if we
+            can carry on executing using the non-disjunctive state *)
+      not (List.is_empty l)
+    then ([], T.NonDisjDomain.bottom)
     else (filtered, nd)
 
 

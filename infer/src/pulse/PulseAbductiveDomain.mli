@@ -79,6 +79,8 @@ val pp : Format.formatter -> t -> unit
 
 val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
+val empty : t
+
 (** Safe version of {!PulseBaseStack} *)
 module Stack : sig
   val add : Var.t -> PulseBaseStack.value -> t -> t

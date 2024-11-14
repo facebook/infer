@@ -669,25 +669,69 @@ module InterDom = struct
         NonTop non_disj
 end
 
-type t = {intra: IntraDom.t; inter: InterDom.t; has_dropped_disjuncts: AbstractDomain.BooleanOr.t}
+module OverApproxDomain = struct
+  include AbstractDomain.BottomLifted (struct
+    type t = AbductiveDomain.t * PathContext.t
+
+    let pp fmt pair = Pp.pair ~fst:AbductiveDomain.pp ~snd:PathContext.pp fmt pair
+
+    let leq ~lhs:(astate_lhs, _) ~rhs:(astate_rhs, _) =
+      AbductiveDomain.leq ~lhs:astate_lhs ~rhs:astate_rhs
+
+
+    let join = PulseJoin.join
+
+    let widen ~prev ~next ~num_iters:_ = join prev next
+  end)
+
+  (* this is dodgy but we won't need this for long (famous last words...)  and it behaves the way we
+     want for now: when we reach top and start joining with a non-top, non-bottom abstract state,
+     then the result is that abstract state again and not top, which means we start "remembering"
+     (and joining) abstract states even after reaching top. We never really reach top anyway, top is
+     used by {!AbstractInterpreter} as a hack for when there are no executable disjuncts
+     (so... bottom!) *)
+  let top = bottom
+
+  (* *cough*... see [top] above *)
+  let is_top = is_bottom
+end
+
+type t =
+  { intra: IntraDom.t
+  ; inter: InterDom.t
+  ; has_dropped_disjuncts: AbstractDomain.BooleanOr.t
+  ; astate: OverApproxDomain.t }
 [@@deriving abstract_domain]
 
-let pp fmt ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
-  F.fprintf fmt "@[%a,@ %a%s@]" IntraDom.pp intra InterDom.pp inter
+let pp fmt ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"])
+    =
+  F.fprintf fmt "@[%a,@ %a%s@\n  @[%a@]@]" IntraDom.pp intra InterDom.pp inter
     (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
+    OverApproxDomain.pp astate
 
 
-let bottom = {intra= IntraDom.bottom; inter= InterDom.bottom; has_dropped_disjuncts= false}
+let bottom =
+  {intra= IntraDom.bottom; inter= InterDom.bottom; has_dropped_disjuncts= false; astate= Bottom}
 
-let is_bottom ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
+
+let is_bottom
+    ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"]) =
   IntraDom.is_bottom intra && InterDom.is_bottom inter
   && AbstractDomain.BooleanOr.is_bottom has_dropped_disjuncts
+  && OverApproxDomain.is_bottom astate
 
 
-let top = {intra= IntraDom.top; inter= InterDom.top; has_dropped_disjuncts= true}
+let top =
+  { intra= IntraDom.top
+  ; inter= InterDom.top
+  ; has_dropped_disjuncts= true
+  ; astate= OverApproxDomain.top }
 
-let is_top ({intra; inter; has_dropped_disjuncts} [@warning "missing-record-field-pattern"]) =
+
+let is_top ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"])
+    =
   IntraDom.is_top intra && InterDom.is_top inter && has_dropped_disjuncts
+  && OverApproxDomain.is_top astate
 
 
 (* faster? *)
@@ -752,12 +796,14 @@ let remember_dropped_disjuncts disjuncts non_disj =
   let non_disj =
     if List.is_empty disjuncts then non_disj else {non_disj with has_dropped_disjuncts= true}
   in
-  List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, _) ->
+  List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, path) ->
       match exec with
       | ExecutionDomain.ContinueProgram astate ->
-          map_inter
-            (InterDom.remember_dropped_elements astate.AbductiveDomain.transitive_info)
-            non_disj
+          let inter =
+            InterDom.remember_dropped_elements astate.AbductiveDomain.transitive_info non_disj.inter
+          in
+          let astate = OverApproxDomain.join (NonBottom (astate, path)) non_disj.astate in
+          {non_disj with inter; astate}
       | _ ->
           non_disj )
 
