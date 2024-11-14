@@ -695,6 +695,8 @@ val pulse_nullsafe_report_npe : bool
 
 val pulse_nullsafe_report_npe_as_separate_issue_type : bool
 
+val pulse_over_approximate_reasoning : bool
+
 val pulse_prevent_non_disj_top : bool
 
 val pulse_recency_limit : int

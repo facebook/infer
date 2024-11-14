@@ -2715,6 +2715,13 @@ and pulse_nullsafe_report_npe_as_separate_issue_type =
      NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS issue type."
 
 
+and pulse_over_approximate_reasoning =
+  CLOpt.mk_bool ~long:"pulse-over-approximate-reasoning"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "[EXPERIMENTAL] add over-approximate reasoning on top of the under-approximate, disjunctive \
+     reasoning of Pulse."
+
+
 and pulse_prevent_non_disj_top =
   CLOpt.mk_bool ~long:"pulse-prevent-non-disj-top" ~default:false
     "Forcibly prevent non-disjunctive domain value from becoming top. Without this option, \
@@ -4589,6 +4596,8 @@ and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 and pulse_nullsafe_report_npe_as_separate_issue_type =
   !pulse_nullsafe_report_npe_as_separate_issue_type
 
+
+and pulse_over_approximate_reasoning = !pulse_over_approximate_reasoning
 
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 

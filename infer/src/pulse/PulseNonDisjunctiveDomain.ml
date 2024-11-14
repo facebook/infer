@@ -694,6 +694,11 @@ module OverApproxDomain = struct
 
   (* *cough*... see [top] above *)
   let is_top = is_bottom
+
+  let join lhs rhs = if Config.pulse_over_approximate_reasoning then join lhs rhs else bottom
+
+  let widen ~prev ~next ~num_iters =
+    if Config.pulse_over_approximate_reasoning then widen ~prev ~next ~num_iters else bottom
 end
 
 type t =

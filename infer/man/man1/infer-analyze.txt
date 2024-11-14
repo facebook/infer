@@ -890,6 +890,11 @@ PULSE CHECKER OPTIONS
            issue type. (Conversely:
            --no-pulse-nullsafe-report-npe-as-separate-issue)
 
+       --pulse-over-approximate-reasoning
+           Activates: [EXPERIMENTAL] add over-approximate reasoning on top of
+           the under-approximate, disjunctive reasoning of Pulse.
+           (Conversely: --no-pulse-over-approximate-reasoning)
+
        --pulse-recency-limit int
            Maximum number of array elements and structure fields to keep
            track of for a given address.
