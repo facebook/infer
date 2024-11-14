@@ -80,6 +80,28 @@ module GlobalForStats = struct
   let one_call_is_stuck () = global := {!global with one_call_is_stuck= true}
 end
 
+let print_arity_mismatch_message ?(extra_call_prefix = "") callee_pname_opt ~formals ~actuals =
+  let formals_n = List.length formals in
+  let actuals_n = List.length actuals in
+  let pp_args pp_val fmt args =
+    Pp.seq ~sep:"," (Pp.pair ~fst:pp_val ~snd:(Typ.pp_full Pp.text)) fmt args
+  in
+  let message =
+    F.asprintf
+      "Arities mismatch in%s call to %a, something bogus is going on.@\n\
+      \  %d formals: %a@\n\
+      \  %d actuals: %a@\n"
+      extra_call_prefix (Pp.option Procname.pp_verbose) callee_pname_opt formals_n
+      (pp_args (Pvar.pp Pp.text))
+      formals actuals_n
+      (pp_args (fun fmt (v, _hist) -> AbstractValue.pp fmt v))
+      actuals
+  in
+  L.debug Analysis Medium "%s" message ;
+  L.d_printfln "%s" message ;
+  ()
+
+
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
     ?(force_pure = false) callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
@@ -238,8 +260,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
             havoc_actual_if_ptr actual_typ (Some formal) astate )
       with
       | Unequal_lengths ->
-          L.d_printfln "ERROR: formals have length %d but actuals have length %d"
-            (List.length formals) (List.length actuals) ;
+          print_arity_mismatch_message callee_pname_opt ~formals ~actuals ;
           havoc_actuals_without_typ_info astate
       | Ok result ->
           result ) )
@@ -640,11 +661,16 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
 
 
 let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc callee_pname
-    astate =
+    ~actuals ~formals_opt astate =
   if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then (
-    PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-      (MutualRecursionCycle
-         {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ;
+    ( match formals_opt with
+    | Some formals when List.length formals <> List.length actuals ->
+        print_arity_mismatch_message ~extra_call_prefix:" recursive" (Some callee_pname) ~formals
+          ~actuals
+    | _ ->
+        PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+          (MutualRecursionCycle
+             {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ) ;
     astate )
   else AbductiveDomain.add_recursive_call call_loc callee_pname astate
 
@@ -841,7 +867,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
                        match exec_state with
                        | ContinueProgram astate ->
                            ContinueProgram
-                             (on_recursive_call analysis_data call_loc callee_pname astate)
+                             (on_recursive_call analysis_data call_loc callee_pname ~actuals
+                                ~formals_opt astate )
                        | exec_state ->
                            exec_state ) )
                 in
@@ -894,7 +921,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
       let astate =
         match no_summary with
         | MutualRecursionCycle ->
-            on_recursive_call analysis_data call_loc callee_pname astate
+            on_recursive_call analysis_data call_loc callee_pname ~actuals ~formals_opt astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in
