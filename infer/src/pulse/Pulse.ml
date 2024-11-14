@@ -1526,6 +1526,9 @@ module PulseTransferFunctions = struct
 
   let pp_disjunct kind fmt (exec_astate, path) =
     ExecutionDomain.pp_with_kind kind (Some path) fmt exec_astate
+
+
+  let pp_non_disj kind fmt non_disj = NonDisjDomain.pp_with_kind kind fmt non_disj
 end
 
 let summary_count_channel =

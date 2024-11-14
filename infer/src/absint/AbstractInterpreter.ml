@@ -335,7 +335,7 @@ struct
             F.fprintf f "#%d: @[%a@]@;" i (T.pp_disjunct pp_kind) disjunct )
       in
       F.fprintf f "@[<v>%d disjuncts:@;%a%a@]" (List.length disjuncts) pp_disjuncts disjuncts
-        (Pp.html_collapsible_block ~name:"Non-disjunctive state" pp_kind T.NonDisjDomain.pp)
+        (Pp.html_collapsible_block ~name:"Non-disjunctive state" pp_kind (T.pp_non_disj pp_kind))
         non_disj
 
 

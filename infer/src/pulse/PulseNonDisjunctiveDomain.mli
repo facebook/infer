@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
 module DecompilerExpr = PulseDecompilerExpr
@@ -38,6 +39,8 @@ type parameter_spec_t =
   | Modified
 
 include AbstractDomain.WithBottomTop
+
+val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
 
 type summary
 

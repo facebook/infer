@@ -699,6 +699,11 @@ module OverApproxDomain = struct
 
   let widen ~prev ~next ~num_iters =
     if Config.pulse_over_approximate_reasoning then widen ~prev ~next ~num_iters else bottom
+
+
+  let pp_with_kind pp_kind fmt astate_path =
+    let pp fmt (astate, path) = PulsePp.pp pp_kind (Some path) fmt astate in
+    AbstractDomain.BottomLiftedUtils.pp pp fmt astate_path
 end
 
 type t =
@@ -708,12 +713,15 @@ type t =
   ; astate: OverApproxDomain.t }
 [@@deriving abstract_domain]
 
-let pp fmt ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"])
-    =
+let pp_with_kind pp_kind fmt
+    ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"]) =
   F.fprintf fmt "@[%a,@ %a%s@\n  @[%a@]@]" IntraDom.pp intra InterDom.pp inter
     (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
-    OverApproxDomain.pp astate
+    (OverApproxDomain.pp_with_kind pp_kind)
+    astate
 
+
+let pp fmt non_disj = pp_with_kind TEXT fmt non_disj
 
 let bottom =
   {intra= IntraDom.bottom; inter= InterDom.bottom; has_dropped_disjuncts= false; astate= Bottom}

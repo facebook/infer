@@ -126,7 +126,7 @@ module BottomLiftedUtils = struct
 
   let pp_bottom f = F.pp_print_string f SpecialChars.up_tack
 
-  let pp ~pp f = function Bottom -> pp_bottom f | NonBottom astate -> pp f astate
+  let pp pp f = function Bottom -> pp_bottom f | NonBottom astate -> pp f astate
 end
 
 module BottomLifted (Domain : S) = struct
@@ -164,7 +164,7 @@ module BottomLifted (Domain : S) = struct
 
   let map = BottomLiftedUtils.map
 
-  let pp = BottomLiftedUtils.pp ~pp:Domain.pp
+  let pp = BottomLiftedUtils.pp Domain.pp
 end
 
 module TopLiftedUtils = struct
