@@ -522,7 +522,7 @@ module Syntax = struct
     let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
     let opt_info = Tenv.resolve_method ~method_exists tenv typ_name proc_name |> Result.ok in
     (* warning: we skipped missed capture informations here *)
-    let opt_resolved_proc_name = Option.map opt_info ~f:Tenv.MethodInfo.get_procname in
+    let opt_resolved_proc_name = Option.map opt_info ~f:Tenv.MethodInfo.get_proc_name in
     ret opt_resolved_proc_name data astate
 
 

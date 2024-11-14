@@ -560,7 +560,11 @@ module Hack = struct
     let pp_arity verbosity fmt =
       match verbosity with
       | Verbose -> (
-        match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
+        match t.arity with
+        | Some arity ->
+            F.fprintf fmt "#%d" arity
+        | None ->
+            F.pp_print_string fmt "#?" )
       | Non_verbose | Simple | FullNameOnly | NameOnly ->
           ()
     in

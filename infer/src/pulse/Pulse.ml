@@ -376,7 +376,7 @@ module PulseTransferFunctions = struct
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
         L.d_printfln "finding override for dynamic type %a, proc_name %a with sourcefile %a"
-          Typ.Name.pp dynamic_type_name Procname.pp proc_name (Pp.option SourceFile.pp)
+          Typ.Name.pp dynamic_type_name Procname.pp_verbose proc_name (Pp.option SourceFile.pp)
           source_file_opt ;
         let tenv =
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
@@ -411,7 +411,7 @@ module PulseTransferFunctions = struct
     Option.map proc_name_opt ~f:(fun proc_name ->
         match find_override exe_env tenv astate receiver proc_name with
         | Ok (info, devirtualization_status) ->
-            let proc_name' = Tenv.MethodInfo.get_procname info in
+            let proc_name' = Tenv.MethodInfo.get_proc_name info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
               (string_of_devirtualization_status devirtualization_status)
               Procname.pp_verbose proc_name' ;
@@ -543,17 +543,17 @@ module PulseTransferFunctions = struct
   let add_self_for_hack_traits path location astate method_info func_args =
     let hack_kind = Option.bind method_info ~f:Tenv.MethodInfo.get_hack_kind in
     match hack_kind with
-    | Some (IsTrait {used}) ->
+    | Some (IsTrait {in_class}) ->
         let exp, arg_payload, astate =
           let arg_payload, astate =
             PulseModelsHack.get_static_companion ~model_desc:"add_self_for_hack_traits" path
-              location used astate
+              location in_class astate
           in
           let self_id = Ident.create_fresh Ident.kprimed in
           let astate = PulseOperations.write_id self_id arg_payload astate in
           (Exp.Var self_id, arg_payload, astate)
         in
-        let static_used = Typ.Name.Hack.static_companion used in
+        let static_used = Typ.Name.Hack.static_companion in_class in
         let typ = Typ.mk_struct static_used |> Typ.mk_ptr in
         let self =
           {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ValueOrigin.unknown arg_payload}
@@ -625,7 +625,7 @@ module PulseTransferFunctions = struct
       with
       | Some (info, HackFunctionReference, {missed_captures; unresolved_reason= unresolved_reason1})
         ->
-          let callee = Tenv.MethodInfo.get_procname info in
+          let callee = Tenv.MethodInfo.get_proc_name info in
           let unresolved_reason2, info_opt, astate =
             resolve_hack_static_method path call_loc astate tenv caller (Some callee)
           in
@@ -734,13 +734,15 @@ module PulseTransferFunctions = struct
         (unresolved_reason, Option.first_some info default_info, ret, actuals, func_args, astate)
       else (None, default_info, ret, actuals, func_args, astate)
     in
-    let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
+    let callee_pname = Option.map ~f:Tenv.MethodInfo.get_proc_name method_info in
     let astate =
       if Config.pulse_transitive_access_enabled then
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
     let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
+    (* if it's an async call, we're going to wrap the result in an [Awaitable], so we need to create
+       a fresh [Ident.t] for the call to return to *)
     let ret, ret_and_name_saved_for_hack_async =
       match callee_pname with
       | Some proc_name
@@ -752,8 +754,6 @@ module PulseTransferFunctions = struct
       | _ ->
           (ret, None)
     in
-    (* if it's an async call, we're going to wrap the result in an Awaitable, so we need to create a fresh Ident.t
-       for the call to return to *)
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate, callee_pname, func_args =
       if Language.curr_language_is Hack then

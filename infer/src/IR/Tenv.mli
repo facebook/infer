@@ -107,16 +107,16 @@ module MethodInfo : sig
   module Hack : sig
     type kind = private
       | IsClass  (** Normal method call *)
-      | IsTrait of {used: Typ.Name.t; is_direct: bool}
-          (** Trait method call: [used] is the name of the class uses the trait. If it is a direct
-              trait method call, e.g. [Trait::foo], [used] is the name of the trait. *)
+      | IsTrait of {in_class: Typ.Name.t; is_direct: bool}
+          (** Trait method call: [in_class] is the name of the class uses the trait. If it is a
+              direct trait method call, e.g. [Trait::foo], [used] is the name of the trait. *)
   end
 
   type t [@@deriving show]
 
   val mk_class : Procname.t -> t
 
-  val get_procname : t -> Procname.t
+  val get_proc_name : t -> Procname.t
 
   val get_hack_kind : t -> Hack.kind option
 end

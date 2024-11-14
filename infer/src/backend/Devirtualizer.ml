@@ -138,7 +138,7 @@ let process pdesc tenv =
                   instr
               | Ok method_info ->
                   (* note: missed captures are only tracked for Hack while this preanalysis is only performed on Java *)
-                  let resolved_callee_pname = Tenv.MethodInfo.get_procname method_info in
+                  let resolved_callee_pname = Tenv.MethodInfo.get_proc_name method_info in
                   let resolved_call_flags =
                     {call_flags with cf_virtual= false; cf_interface= false}
                   in

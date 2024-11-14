@@ -438,7 +438,7 @@ let resolve_method tenv class_name proc_name =
         (Typ.Name.name class_name) ;
       proc_name
   | Ok method_info ->
-      Tenv.MethodInfo.get_procname method_info
+      Tenv.MethodInfo.get_proc_name method_info
 
 
 let resolve_typename prop receiver_exp =
