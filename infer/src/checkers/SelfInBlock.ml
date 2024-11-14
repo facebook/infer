@@ -387,7 +387,14 @@ module TransferFunctions = struct
     | Prune (UnOp (LNot, BinOp (Binop.Ne, Var id, e), _), _, _, _)
       when Exp.is_null_literal e (* if !(strongSef != nil) *) ->
         Domain.clear_unchecked_use id astate
-    | Call (_, Exp.Const (Const.Cfun _callee_pn), args, _, _) ->
+    | Call (_, Exp.Const (Const.Cfun _callee_pn), args, _, cf) ->
+        let fst = if cf.CallFlags.cf_virtual then List.hd args else None in
+        let astate =
+          Option.value_map
+            ~f:(fun (arg, _) ->
+              match arg with Exp.Var id -> Domain.clear_unchecked_use id astate | _ -> astate )
+            ~default:astate fst
+        in
         List.fold ~init:astate ~f:(fun astate (exp, _) -> Domain.process_exp exp astate) args
     | _ ->
         astate
