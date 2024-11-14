@@ -50,9 +50,11 @@ let leq ~lhs ~rhs =
   | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
     , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
       LatentIssue.equal issue1 issue2 && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
-  | ( LatentInvalidAccess {astate= astate1; address= v1; must_be_valid= _}
-    , LatentInvalidAccess {astate= astate2; address= v2; must_be_valid= _} ) ->
-      DecompilerExpr.equal v1 v2 && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
+  | ( LatentInvalidAccess {astate= astate1; address= v1; must_be_valid= _, reason_opt1}
+    , LatentInvalidAccess {astate= astate2; address= v2; must_be_valid= _, reason_opt2} ) ->
+      DecompilerExpr.equal v1 v2
+      && Option.equal Invalidation.equal_must_be_valid_reason reason_opt1 reason_opt2
+      && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | _ ->
       false
 
