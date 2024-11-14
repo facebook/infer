@@ -892,6 +892,12 @@ module Pair = struct
       astate
 end
 
+module Thrift = struct
+  let field_ref ~name tgt src : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model ("apache::thrift::" ^ name) @@ fun () -> store ~ref:tgt src
+end
+
 let folly_co_yield_co_error : model =
   let open PulseModelsDSL.Syntax in
   start_named_model "folly::coro::detail::*::yield_value(folly::coro::co_error)" @@ fun () -> throw
@@ -1093,9 +1099,16 @@ let map_matchers =
   @ folly_concurrent_hash_map_matchers @ folly_coro
 
 
+let thrift_matchers =
+  let open ProcnameDispatcher.Call in
+  List.map Typ.thrift_field_refs ~f:(fun field_ref ->
+      -"apache" &:: "thrift" &:: field_ref &:: field_ref $ capt_arg_payload $+ capt_arg_payload
+      $+...$--> Thrift.field_ref ~name:field_ref )
+
+
 let simple_matchers =
   let open ProcnameDispatcher.Call in
-  map_matchers
+  map_matchers @ thrift_matchers
   @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
       |> with_non_disj
