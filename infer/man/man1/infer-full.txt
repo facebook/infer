@@ -2664,9 +2664,9 @@ INTERNAL OPTIONS
        --complete-capture-from-reset
            Cancel the effect of --complete-capture-from.
 
-       --compute-captured-context
-           Activates: Compute context information for captured variables in
-           Objective-C blocks (Conversely: --no-compute-captured-context)
+       --no-compute-captured-context
+           Deactivates: Compute context information for captured variables in
+           Objective-C blocks (Conversely: --compute-captured-context)
 
        --config-impact-config-field-patterns +regex
            Register known config fields that have a config value. The matched

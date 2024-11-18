@@ -1333,7 +1333,7 @@ and complete_capture_from =
 
 
 and compute_captured_context =
-  CLOpt.mk_bool ~long:"compute-captured-context" ~default:false
+  CLOpt.mk_bool ~long:"compute-captured-context" ~default:true
     "Compute context information for captured variables in Objective-C blocks"
 
 

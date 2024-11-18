@@ -1,3 +1,5 @@
+codetoanalyze/objc/self-in-block/CStringUsingEncodingTest.m, objc_block_CStringUsingEncodingTest.m:18, 1, NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &encoding defined here,Using captured &encoding]
+codetoanalyze/objc/self-in-block/CStringUsingEncodingTest.m, objc_block_CStringUsingEncodingTest.m:34, 1, NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK, no_bucket, ERROR, [Captured variable &utf8string defined here,Using captured &utf8string]
 codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_block_NoescapeBlock.m:35, 1, MULTIPLE_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
 codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_block_NoescapeBlock.m:35, 1, WEAK_SELF_IN_NO_ESCAPE_BLOCK, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
 codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_block_NoescapeBlock.m:35, 2, WEAK_SELF_IN_NO_ESCAPE_BLOCK, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]

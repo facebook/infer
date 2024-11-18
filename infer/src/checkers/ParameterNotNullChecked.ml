@@ -241,12 +241,19 @@ let is_block_param formals name =
 let get_captured_formals attributes =
   let captured = attributes.ProcAttributes.captured in
   let formal_of_captured (captured : CapturedVar.t) =
-    match (captured.captured_from, captured.context_info) with
-    | Some {is_formal= Some proc}, Some {CapturedVar.is_checked_for_null} -> (
+    match captured.captured_from with
+    | Some {is_formal= Some proc} -> (
       match IRAttributes.load proc with
       | Some proc_attributes ->
           let formals =
             find_block_param proc_attributes.ProcAttributes.formals (Pvar.get_name captured.pvar)
+          in
+          let is_checked_for_null =
+            match captured.CapturedVar.context_info with
+            | Some {CapturedVar.is_checked_for_null} ->
+                is_checked_for_null
+            | None ->
+                false
           in
           Option.map formals ~f:(fun formals -> (formals, proc_attributes, is_checked_for_null))
       | None ->
