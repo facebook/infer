@@ -360,6 +360,18 @@ module TransferFunctions = struct
 
   let pp_session_name _node fmt = F.pp_print_string fmt "SelfCapturedInBlock"
 
+  let is_objc_instance attributes_opt =
+    match attributes_opt with
+    | Some proc_attrs -> (
+      match proc_attrs.ProcAttributes.clang_method_kind with
+      | ClangMethodKind.OBJC_INSTANCE ->
+          true
+      | _ ->
+          false )
+    | None ->
+        false
+
+
   let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc} _cfg_node _
       (instr : Sil.instr) =
     let attributes = Procdesc.get_attributes proc_desc in
@@ -387,8 +399,13 @@ module TransferFunctions = struct
     | Prune (UnOp (LNot, BinOp (Binop.Ne, Var id, e), _), _, _, _)
       when Exp.is_null_literal e (* if !(strongSef != nil) *) ->
         Domain.clear_unchecked_use id astate
-    | Call (_, Exp.Const (Const.Cfun _callee_pn), args, _, cf) ->
-        let fst = if cf.CallFlags.cf_virtual then List.hd args else None in
+    | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, cf) ->
+        let fst =
+          if cf.CallFlags.cf_virtual then List.hd args
+          else
+            let attributes_opt = Attributes.load callee_pn in
+            if is_objc_instance attributes_opt then List.hd args else None
+        in
         let astate =
           Option.value_map
             ~f:(fun (arg, _) ->

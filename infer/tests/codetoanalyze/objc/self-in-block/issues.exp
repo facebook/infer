@@ -15,7 +15,7 @@ codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:121, 6, S
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:136, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [Using &strongSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:158, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [Using &strongSelf,Using &strongSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:170, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [Using &strongSelf,Using &strongSelf]
-codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:179, 2, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [Using &strongSelf,Using &strongSelf]
+codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:179, 3, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [Using &strongSelf,Using &strongSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:208, 1, MULTIPLE_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:229, 2, MULTIPLE_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_block_StrongSelf.m:243, 1, CAPTURED_STRONG_SELF, no_bucket, ERROR, [Using captured &strongSelf,Using captured &strongSelf]

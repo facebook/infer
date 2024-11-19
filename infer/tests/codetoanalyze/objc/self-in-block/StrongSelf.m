@@ -434,4 +434,13 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
+- (void)strongSelfCheckCallingPropertyGetter_good {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    SelfInBlockTestUser* user = strongSelf.user; // no bug here
+    return 0;
+  };
+}
+
 @end
