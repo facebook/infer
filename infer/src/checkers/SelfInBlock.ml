@@ -372,6 +372,26 @@ module TransferFunctions = struct
         false
 
 
+  let clear_unchecked_use_args attributes args (astate : Domain.t) =
+    let clear_unchecked_use_non_nullable_arg astate (arg, _) annotation =
+      match arg with
+      | Exp.Var id when Annotations.ia_is_nullable annotation ->
+          Domain.clear_unchecked_use id astate
+      | _ ->
+          astate
+    in
+    let args =
+      if is_objc_instance (Some attributes) then match args with _ :: rest -> rest | [] -> []
+      else args
+    in
+    let annotations = List.map attributes.ProcAttributes.formals ~f:trd3 in
+    match List.fold2 ~f:clear_unchecked_use_non_nullable_arg ~init:astate args annotations with
+    | List.Or_unequal_lengths.Ok astate ->
+        astate
+    | List.Or_unequal_lengths.Unequal_lengths ->
+        astate
+
+
   let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc} _cfg_node _
       (instr : Sil.instr) =
     let attributes = Procdesc.get_attributes proc_desc in
@@ -400,17 +420,22 @@ module TransferFunctions = struct
       when Exp.is_null_literal e (* if !(strongSef != nil) *) ->
         Domain.clear_unchecked_use id astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, cf) ->
+        let attributes_opt = Attributes.load callee_pn in
         let fst =
           if cf.CallFlags.cf_virtual then List.hd args
-          else
-            let attributes_opt = Attributes.load callee_pn in
-            if is_objc_instance attributes_opt then List.hd args else None
+          else if is_objc_instance attributes_opt then List.hd args
+          else None
         in
         let astate =
           Option.value_map
             ~f:(fun (arg, _) ->
               match arg with Exp.Var id -> Domain.clear_unchecked_use id astate | _ -> astate )
             ~default:astate fst
+        in
+        let astate =
+          Option.value_map
+            ~f:(fun attributes -> clear_unchecked_use_args attributes args astate)
+            attributes_opt ~default:astate
         in
         List.fold ~init:astate ~f:(fun astate (exp, _) -> Domain.process_exp exp astate) args
     | _ ->

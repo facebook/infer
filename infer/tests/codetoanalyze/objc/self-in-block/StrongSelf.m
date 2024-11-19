@@ -131,7 +131,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck6_bad {
+- (void)strongSelfCheck6_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
