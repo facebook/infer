@@ -575,8 +575,7 @@ let report_self_in_block_passed_to_init_issue proc_desc err_log domain (captured
       ()
 
 
-let report_unchecked_strongself_issues proc_desc err_log domain strongVars
-    (strongSelf : DomainData.t) =
+let report_unchecked_strongself_issues proc_desc err_log domain (strongSelf : DomainData.t) =
   if contains_self strongSelf.pvar then
     let message =
       F.asprintf
@@ -588,20 +587,16 @@ let report_unchecked_strongself_issues proc_desc err_log domain strongVars
     let attributes = Procdesc.get_attributes proc_desc in
     let return_typ = attributes.ProcAttributes.ret_type in
     let autofix =
-      match StrongEqualToWeakCapturedVars.find_opt strongSelf.pvar strongVars with
-      | Some {loc} when Typ.is_void return_typ ->
-          let strong_self_line = loc.line in
-          let replacement =
-            F.asprintf "\n if (!%s) { return; }" (Mangled.to_string (Pvar.get_name strongSelf.pvar))
-          in
-          Some
-            { Jsonbug_t.original= None
-            ; replacement= None
-            ; additional=
-                Some [{Jsonbug_t.line= strong_self_line + 1; column= 1; original= ""; replacement}]
-            }
-      | _ ->
-          None
+      if Typ.is_void return_typ then
+        let replacement =
+          F.asprintf "\n if (!%s) { return; }" (Mangled.to_string (Pvar.get_name strongSelf.pvar))
+        in
+        Some
+          { Jsonbug_t.original= None
+          ; replacement= None
+          ; additional=
+              Some [{Jsonbug_t.line= strongSelf.loc.line; column= 1; original= ""; replacement}] }
+      else None
     in
     Reporting.log_issue proc_desc err_log ~ltr ~loc:strongSelf.loc SelfInBlock ?autofix
       IssueType.strong_self_not_checked message
@@ -692,7 +687,7 @@ let report_internal_pointer_captured_in_block proc_desc err_log domain (string :
 
 type var_lists = {selfList: DomainData.t list; weakSelfList: DomainData.t list}
 
-let report_issues proc_desc err_log domain strongVars reported_strongSelfNotChecked =
+let report_issues proc_desc err_log domain reported_strongSelfNotChecked =
   let process_domain_item (var_lists, reported_strongSelfNotChecked)
       (_, (domain_data : DomainData.t)) =
     match domain_data.kind with
@@ -730,7 +725,7 @@ let report_issues proc_desc err_log domain strongVars reported_strongSelfNotChec
         if Pvar.Set.mem domain_data.pvar reported_strongSelfNotChecked then
           (var_lists, reported_strongSelfNotChecked)
         else (
-          report_unchecked_strongself_issues proc_desc err_log domain strongVars domain_data ;
+          report_unchecked_strongself_issues proc_desc err_log domain domain_data ;
           (var_lists, Pvar.Set.add domain_data.pvar reported_strongSelfNotChecked) )
     | CHECKED_STRONG_SELF ->
         (var_lists, reported_strongSelfNotChecked)
@@ -781,8 +776,8 @@ let checker ({IntraproceduralAnalysis.proc_desc; err_log} as analysis_data) =
         let reported_strongSelfNotChecked_empty = Pvar.Set.empty in
         ignore
           (Domain.fold
-             (fun {vars; strongVars} reported_strongSelfNotChecked ->
-               report_issues proc_desc err_log vars strongVars reported_strongSelfNotChecked )
+             (fun {vars} reported_strongSelfNotChecked ->
+               report_issues proc_desc err_log vars reported_strongSelfNotChecked )
              domain reported_strongSelfNotChecked_empty )
     | None ->
         ()
