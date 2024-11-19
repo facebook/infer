@@ -1,0 +1,79 @@
+include Digest
+
+@BEGIN_BEFORE_5_2_0@
+
+module type S  =
+  sig
+    type t = string
+    val hash_length : int
+    val compare : t -> t -> int
+    val equal : t -> t -> bool
+    val string : string -> t
+    val bytes : bytes -> t
+    val substring : string -> int -> int -> t
+    val subbytes : bytes -> int -> int -> t
+    val channel : in_channel -> int -> t
+    val file : string -> t
+    val output : out_channel -> t -> unit
+    val input : in_channel -> t
+    val to_hex : t -> string
+    val of_hex : string -> t
+  end
+
+module MD5 : S = struct
+  let hash_length = 16
+
+  include Digest
+
+  @BEGIN_BEFORE_4_03_0@
+  let equal : t -> t -> bool = ( = )
+  @END_BEFORE_4_03_0@
+
+  @BEGIN_BEFORE_4_02_0@
+  let bytes = string
+
+  let subbytes = substring
+
+  let compare = compare
+  @END_BEFORE_4_02_0@
+
+  @BEGIN_FROM_4_00_0@
+  let of_hex = from_hex
+  @END_FROM_4_00_0@
+  @BEGIN_BEFORE_4_00_0@
+  let of_hex s =
+    if String.length s <> 32 then invalid_arg "Digest.from_hex";
+    let digit c =
+      match c with
+      | '0'..'9' -> Char.code c - Char.code '0'
+      | 'A'..'F' -> Char.code c - Char.code 'A' + 10
+      | 'a'..'f' -> Char.code c - Char.code 'a' + 10
+      | _ -> raise (Invalid_argument "Digest.from_hex")
+    in
+    let byte i = digit s.[i] lsl 4 + digit s.[i+1] in
+    let result = String.create 16 in
+    for i = 0 to 15 do
+      String.set result i (Char.chr (byte (2 * i)));
+    done;
+    result
+  @END_BEFORE_4_00_0@
+end
+
+include MD5
+
+external channel : in_channel -> int -> t = "caml_md5_chan"
+
+@BEGIN_BEFORE_4_00_0@
+let from_hex = of_hex
+@END_BEFORE_4_00_0@
+
+module BLAKE2 (X : sig val hash_length : int end) : S = struct
+  include MD5
+
+  let hash_length = X.hash_length
+end
+
+module BLAKE128 = BLAKE2 (struct let hash_length = 16 end)
+module BLAKE256 = BLAKE2 (struct let hash_length = 32 end)
+module BLAKE512 = BLAKE2 (struct let hash_length = 64 end)
+@END_BEFORE_5_2_0@

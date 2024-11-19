@@ -1,0 +1,23 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type t = unit =
+  | () 
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type t = unit =
+  | () 
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type t = unit =
+                     | () 
+ *)
+
+val equal : t -> t -> bool
+(** @since 4.08.0: val equal : t -> t -> bool *)
+
+val compare : t -> t -> int
+(** @since 4.08.0: val compare : t -> t -> int *)
+
+val to_string : t -> string
+(** @since 4.08.0: val to_string : t -> string *)
+
+end

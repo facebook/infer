@@ -1,0 +1,21 @@
+opam-version: "2.0"
+synopsis: "Compatibility module for OCaml standard library"
+description:
+  "Compatibility module for OCaml standard library allowing programs to use some recent additions to the OCaml standard library while preserving the ability to be compiled on former versions of OCaml."
+maintainer: "Thierry Martinez <martinez@nsup.org>"
+authors: "Thierry Martinez <martinez@nsup.org>"
+license: "BSD-2-Clause"
+homepage: "https://github.com/thierry-martinez/stdcompat"
+bug-reports: "https://github.com/thierry-martinez/stdcompat/issues"
+depends: [
+  "ocaml" {>= "3.07"}
+  "dune" {>= "2.0"}
+]
+depopts: [ "result" "seq" "uchar" "ocamlfind" ]
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+dev-repo: "git+https://github.com/thierry-martinez/stdcompat.git"
+version: "19"

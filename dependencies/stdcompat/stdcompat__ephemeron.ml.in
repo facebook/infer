@@ -1,0 +1,177 @@
+@BEGIN_FROM_5_0_0@
+include Ephemeron
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+module type S  =
+  sig
+    type key
+    @BEGIN_FROM_4_12_0@
+    type !'a t
+    @END_FROM_4_12_0@
+    @BEGIN_BEFORE_4_12_0@
+    type 'a t
+    @END_BEFORE_4_12_0@
+    val create : int -> 'a t
+    val clear : 'a t -> unit
+    val reset : 'a t -> unit
+    val copy : 'a t -> 'a t
+    val add : 'a t -> key -> 'a -> unit
+    val remove : 'a t -> key -> unit
+    val find : 'a t -> key -> 'a
+    val find_opt : 'a t -> key -> 'a option
+    val find_all : 'a t -> key -> 'a list
+    val replace : 'a t -> key -> 'a -> unit
+    val mem : 'a t -> key -> bool
+    val length : 'a t -> int
+    val stats : 'a t -> Stdcompat__hashtbl.statistics
+    val add_seq : 'a t -> (key * 'a) Stdcompat__seq.t -> unit
+    val replace_seq : 'a t -> (key * 'a) Stdcompat__seq.t -> unit
+    val of_seq : (key * 'a) Stdcompat__seq.t -> 'a t
+    val clean : 'a t -> unit
+    val stats_alive : 'a t -> Stdcompat__hashtbl.statistics
+  end
+
+module type SeededS  =
+  sig
+    type key
+    @BEGIN_FROM_4_12_0@
+    type !'a t
+    @END_FROM_4_12_0@
+    @BEGIN_BEFORE_4_12_0@
+    type 'a t
+    @END_BEFORE_4_12_0@
+    val create : ?random:bool -> int -> 'a t
+    val clear : 'a t -> unit
+    val reset : 'a t -> unit
+    val copy : 'a t -> 'a t
+    val add : 'a t -> key -> 'a -> unit
+    val remove : 'a t -> key -> unit
+    val find : 'a t -> key -> 'a
+    val find_opt : 'a t -> key -> 'a option
+    val find_all : 'a t -> key -> 'a list
+    val replace : 'a t -> key -> 'a -> unit
+    val mem : 'a t -> key -> bool
+    val length : 'a t -> int
+    val stats : 'a t -> Stdcompat__hashtbl.statistics
+    val add_seq : 'a t -> (key * 'a) Stdcompat__seq.t -> unit
+    val replace_seq : 'a t -> (key * 'a) Stdcompat__seq.t -> unit
+    val of_seq : (key * 'a) Stdcompat__seq.t -> 'a t
+    val clean : 'a t -> unit
+    val stats_alive : 'a t -> Stdcompat__hashtbl.statistics
+  end
+
+let not_implemented () =
+  failwith "Stdcompat.Ephemeron is not implemented yet. Please fill an issue: https://github.com/thierry-martinez/stdcompat/issues ."
+
+module K1 = struct
+  type ('k, 'd) t
+  let make _ = not_implemented ()
+  let query _ = not_implemented ()
+  module Make (H : Hashtbl.HashedType) = struct
+    include Stdcompat__hashtbl.Make (H)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module MakeSeeded (H : Stdcompat__hashtbl.SeededHashedType) = struct
+    include Stdcompat__hashtbl.MakeSeeded (H)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module Bucket = struct
+    type ('k, 'd) t
+
+    let make _ = not_implemented ()
+    let add _ = not_implemented ()
+    let remove _ = not_implemented ()
+    let find _ = not_implemented ()
+    let length _ = not_implemented ()
+    let clear _ = not_implemented ()
+  end
+end
+
+module K2 = struct
+  type ('k1, 'k2, 'd) t
+  let make _ = not_implemented ()
+  let query _ = not_implemented ()
+  module Make (H1 : Hashtbl.HashedType) (H2 : Hashtbl.HashedType) = struct
+    include Stdcompat__hashtbl.Make (struct
+      type t = H1.t * H2.t
+
+      let equal (x1, x2) (y1, y2) = H1.equal x1 y1 && H2.equal x2 y2
+
+      let hash (x, y) = Hashtbl.hash (H1.hash x, H2.hash y)
+    end)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module MakeSeeded (H1 : Stdcompat__hashtbl.SeededHashedType)
+       (H2 : Stdcompat__hashtbl.SeededHashedType) = struct
+    include Stdcompat__hashtbl.MakeSeeded (struct
+      type t = H1.t * H2.t
+
+      let equal (x1, x2) (y1, y2) = H1.equal x1 y1 && H2.equal x2 y2
+
+      let seeded_hash seed (x, y) = Stdcompat__hashtbl.seeded_hash seed (H1.seeded_hash seed x, H2.seeded_hash seed y)
+    end)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module Bucket = struct
+    type ('k1, 'k2, 'd) t
+
+    let make _ = not_implemented ()
+    let add _ = not_implemented ()
+    let remove _ = not_implemented ()
+    let find _ = not_implemented ()
+    let length _ = not_implemented ()
+    let clear _ = not_implemented ()
+  end
+end
+
+module Kn = struct
+  type ('k, 'd) t
+  let make _ = not_implemented ()
+  let query _ = not_implemented ()
+  module Make (H : Hashtbl.HashedType) = struct
+    include Stdcompat__hashtbl.Make (struct
+      type t = H.t array
+
+      let equal x y =
+        let rec check i =
+          i >= Array.length x ||
+            H.equal x.(i) y.(i) && check (succ i) in
+        Array.length x = Array.length y && check 0
+
+      let hash x = Hashtbl.hash (Array.map H.hash x)
+    end)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module MakeSeeded (H : Stdcompat__hashtbl.SeededHashedType) = struct
+    include Stdcompat__hashtbl.MakeSeeded (struct
+      type t = H.t array
+
+      let equal x y =
+        let rec check i =
+          i >= Array.length x ||
+            H.equal x.(i) y.(i) && check (succ i) in
+        Array.length x = Array.length y && check 0
+
+      let seeded_hash seed x =
+        Stdcompat__hashtbl.seeded_hash seed (Array.map (H.seeded_hash seed) x)
+    end)
+    let clean _ = not_implemented ()
+    let stats_alive _ = not_implemented ()
+  end
+  module Bucket = struct
+    type ('k, 'd) t
+
+    let make _ = not_implemented ()
+    let add _ = not_implemented ()
+    let remove _ = not_implemented ()
+    let find _ = not_implemented ()
+    let length _ = not_implemented ()
+    let clear _ = not_implemented ()
+  end
+end
+@END_BEFORE_5_0_0@

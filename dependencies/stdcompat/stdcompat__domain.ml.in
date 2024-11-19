@@ -1,0 +1,71 @@
+@BEGIN_FROM_5_0_0@
+include Domain
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a
+@END_BEFORE_4_12_0@
+type id = int
+
+module DLS = struct
+  type 'a key = {
+    split_from_parent: ('a -> 'a) option;
+    f: unit -> 'a;
+    mutable value: 'a option;
+  }
+
+  let new_key ?split_from_parent f =
+    { split_from_parent; f; value = None }
+
+  let get key =
+    match key.value with
+    | Some value -> value
+    | None ->
+      let value = key.f () in
+      key.value <- Some value;
+      value
+
+  let set key value =
+    key.value <- Some value
+end
+
+let before_first_spawn_list = ref (Some [])
+
+let spawn f =
+  begin match !before_first_spawn_list with
+    | None -> ()
+    | Some list ->
+      List.iter (fun f -> f ()) (List.rev list);
+      before_first_spawn_list := None
+  end;
+  f ()
+
+let join v =
+  v
+
+let get_id _v =
+  0
+
+let self () =
+  0
+
+let before_first_spawn f =
+  match !before_first_spawn_list with
+  | None -> invalid_arg "Already spawned"
+  | Some list -> before_first_spawn_list := Some (f :: list)
+
+let at_exit f =
+  at_exit f
+
+let cpu_relax () =
+  ()
+
+let is_main_domain () =
+  true
+
+let recommended_domain_count () =
+  1
+@END_BEFORE_5_0_0@

@@ -1,0 +1,315 @@
+@BEGIN_FROM_4_06_0@
+include Format
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_5_2_0@
+let pp_print_nothing _fmt () = ()
+
+let pp_infinity = 1000000010
+@END_BEFORE_5_2_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_01_0@
+include (Format : module type of struct include Format end
+  with type formatter_out_functions := Format.formatter_out_functions)
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+include Format
+@END_BEFORE_4_01_0@
+
+type formatter_out_functions =
+  {
+  out_string: string -> int -> int -> unit ;
+  out_flush: unit -> unit ;
+  out_newline: unit -> unit ;
+  out_spaces: int -> unit ;
+  out_indent: int -> unit }
+
+@BEGIN_FROM_4_01_0@
+let downgrade_formatter_out_functions functions =
+  let { out_string; out_flush; out_newline; out_spaces; out_indent = _ } =
+    functions in
+  { Format.out_string; out_flush; out_newline; out_spaces }
+
+let upgrade_formatter_out_functions functions =
+  let { Format.out_string; out_flush; out_newline; out_spaces } =
+    functions in
+  let out_indent _ =
+    failwith "Not implemented." in
+  { out_string; out_flush; out_newline; out_spaces; out_indent }
+
+let pp_set_formatter_out_functions fmt functions =
+  Format.pp_set_formatter_out_functions fmt
+    (downgrade_formatter_out_functions functions)
+
+let set_formatter_out_functions functions =
+  Format.set_formatter_out_functions
+    (downgrade_formatter_out_functions functions)
+
+let pp_get_formatter_out_functions fmt () =
+  upgrade_formatter_out_functions (Format.pp_get_formatter_out_functions fmt ())
+
+let get_formatter_out_functions () =
+  upgrade_formatter_out_functions (Format.get_formatter_out_functions ())
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+let pp_set_formatter_out_functions _ =
+  failwith "Not implemented."
+
+let set_formatter_out_functions _ =
+  failwith "Not implemented."
+
+let pp_get_formatter_out_functions _ =
+  failwith "Not implemented."
+
+let get_formatter_out_functions _ =
+  failwith "Not implemented."
+@END_BEFORE_4_01_0@
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_01_0@
+let asprintf _ =
+  failwith "Not implemented."
+@END_BEFORE_4_01_0@
+
+@BEGIN_BEFORE_4_06_0@
+type symbolic_output_item =
+  | Output_flush 
+  | Output_newline 
+  | Output_string of string 
+  | Output_spaces of int 
+  | Output_indent of int 
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_06_0@
+type symbolic_output_buffer
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_08_0@
+let pp_print_option ?none some formatter value =
+  match value with
+  | None ->
+      begin
+        match none with
+        | None -> ()
+        | Some none -> none formatter ()
+      end
+  | Some value -> some formatter value
+
+let pp_print_result ~ok ~error formatter value =
+  match value with
+  | Stdcompat__result.Ok v -> ok formatter v
+  | Stdcompat__result.Error e -> error formatter e
+
+let dprintf _ =
+  failwith "Not implemented."
+
+let kdprintf _ =
+  failwith "Not implemented."
+
+let get_formatter_stag_functions _ =
+  failwith "Not implemented."
+
+let pp_get_formatter_stag_functions _ =
+  failwith "Not implemented."
+
+let set_formatter_stag_functions _ =
+  failwith "Not implemented."
+
+let pp_set_formatter_stag_functions _ =
+  failwith "Not implemented."
+
+let close_stag _ =
+  failwith "Not implemented."
+
+let pp_close_stag _ =
+  failwith "Not implemented."
+
+let open_stag _ =
+  failwith "Not implemented."
+
+let pp_open_stag _ =
+  failwith "Not implemented."
+
+let get_geometry _ =
+  failwith "Not implemented."
+
+let pp_get_geometry _ =
+  failwith "Not implemented."
+
+let set_geometry ~max_indent:_ ~margin:_ =
+  failwith "Not implemented."
+
+let pp_set_geometry _ ~max_indent:_ ~margin:_ =
+  failwith "Not implemented."
+
+let safe_set_geometry ~max_indent:_ ~margin:_ =
+  failwith "Not implemented."
+
+let pp_safe_set_geometry _ ~max_indent:_ ~margin:_ =
+  failwith "Not implemented."
+
+let check_geometry _ =
+  failwith "Not implemented."
+
+let pp_print_custom_break _ =
+  failwith "Not implemented."
+
+@BEGIN_FROM_4_02_0@
+type stag = ..
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type stag
+@END_BEFORE_4_02_0@
+
+type geometry = {
+  max_indent: int ;
+  margin: int }
+
+type formatter_stag_functions =
+  {
+  mark_open_stag: stag -> string ;
+  mark_close_stag: stag -> string ;
+  print_open_stag: stag -> unit ;
+  print_close_stag: stag -> unit }
+
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_06_0@
+let formatter_of_out_functions _ =
+  failwith "Not implemented."
+
+let make_symbolic_output_buffer _ =
+  failwith "Not implemented."
+
+let clear_symbolic_output_buffer _ =
+  failwith "Not implemented."
+
+let get_symbolic_output_buffer _ =
+  failwith "Not implemented."
+
+let flush_symbolic_output_buffer _ =
+  failwith "Not implemented."
+
+let add_symbolic_output_item _ =
+  failwith "Not implemented."
+
+let formatter_of_symbolic_output_buffer _ =
+  failwith "Not implemented."
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_03_0@
+let kasprintf _ =
+  failwith "Not implemented."
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_02_0@
+let pp_print_list ?pp_sep pp_item formatter list =
+  match list with
+  | [] -> ()
+  | hd :: tl ->
+      pp_item formatter hd;
+      match tl with
+      | [] -> ()
+      | _ ->
+          List.iter (fun item ->
+            begin
+              match pp_sep with
+              | None -> ()
+              | Some pp_sep -> pp_sep formatter ()
+            end;
+            pp_item formatter item) tl
+
+let pp_print_text formatter s =
+  Stdcompat__string.iter (fun c ->
+    match c with
+    | ' ' -> pp_print_space formatter ()
+    | '\n' -> pp_force_newline formatter ()
+    | _ -> pp_print_char formatter c) s
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_12_0@
+let rec pp_print_seq_cont pp_sep pp_item formatter (seq : _ Stdcompat__seq.t) =
+  match seq () with
+  | Stdcompat__seq.Nil -> ()
+  | Stdcompat__seq.Cons (hd, tl) ->
+      begin match pp_sep with
+      | None -> ()
+      | Some pp_sep -> pp_sep formatter ()
+      end;
+      pp_item formatter hd;
+      pp_print_seq_cont pp_sep pp_item formatter tl
+
+let pp_print_seq ?pp_sep pp_item formatter (seq : _ Stdcompat__seq.t) =
+  match seq () with
+  | Stdcompat__seq.Nil -> ()
+  | Stdcompat__seq.Cons (hd, tl) ->
+      pp_item formatter hd;
+      pp_print_seq_cont pp_sep pp_item formatter tl
+@END_BEFORE_4_12_0@
+
+@BEGIN_BEFORE_3_12_0@
+let ikfprintf _ =
+  failwith "Not implemented."
+@END_BEFORE_3_12_0@
+
+@BEGIN_BEFORE_3_10_0@
+let ifprintf _ =
+  failwith "Not implemented."
+@END_BEFORE_3_10_0@
+
+@BEGIN_BEFORE_3_08_0@
+let kfprintf _ =
+  failwith "Not implemented."
+
+let ksprintf _ =
+  failwith "Not implemented."
+@END_BEFORE_3_08_0@
+
+@BEGIN_BEFORE_4_11_0@
+let update_geometry _ =
+  failwith "Not implemented."
+
+let pp_update_geometry _ =
+  failwith "Not implemented."
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_4_13_0@
+let pp_print_either ~left ~right fmt e =
+  match e with
+  | Stdcompat__either.Left l -> left fmt l
+  | Stdcompat__either.Right r -> right fmt r
+
+let pp_print_bytes fmt bytes =
+  pp_print_string fmt (Stdcompat__bytes.unsafe_to_string bytes)
+
+let print_bytes bytes =
+  pp_print_bytes std_formatter bytes
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_5_1_0@
+let pp_print_iter ?pp_sep iter pp_item fmt arg =
+  let first = ref true in
+  iter (fun v -> if !first then first := false else begin match pp_sep with Some pp_sep -> pp_sep fmt () | None -> () end; pp_item fmt v) arg
+
+let pp_print_array ?pp_sep pp_item fmt array =
+  pp_print_iter ?pp_sep Array.iter pp_item fmt array
+@END_BEFORE_5_1_0@
+
+@BEGIN_BEFORE_5_0_0@
+let synchronized_formatter_of_out_channel _ =
+  failwith "not implemented"
+
+let get_std_formatter () =
+  std_formatter
+
+let get_err_formatter () =
+  err_formatter
+
+let get_stdbuf () =
+  stdbuf
+
+let get_str_formatter () =
+  str_formatter
+
+let make_synchronized_formatter _ _ =
+  failwith "not implemented"
+@END_BEFORE_5_0_0@

@@ -1,0 +1,147 @@
+module type S = sig
+type t = string
+(** Alias for {!Digest.t} *)
+
+@BEGIN_FROM_5_2_0@
+module type S =
+sig type t = string val hash_length : int val compare : t -> t -> int
+val equal : t -> t -> bool val string : string -> t val bytes : bytes -> t
+val substring : string -> int -> int -> t
+val subbytes : bytes -> int -> int -> t val channel : in_channel -> int -> t
+val file : string -> t val output : out_channel -> t -> unit
+val input : in_channel -> t val to_hex : t -> string val of_hex : string -> t
+end
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module type S =
+sig type t = string val hash_length : int val compare : t -> t -> int
+val equal : t -> t -> bool val string : string -> t
+val bytes : Stdcompat__init.bytes -> t
+val substring : string -> int -> int -> t
+val subbytes : Stdcompat__init.bytes -> int -> int -> t
+val channel : in_channel -> int -> t val file : string -> t
+val output : out_channel -> t -> unit val input : in_channel -> t
+val to_hex : t -> string val of_hex : string -> t end
+@END_BEFORE_5_2_0@
+(** @since 5.2.0:
+    module type S  =
+      sig
+        type t = string
+        val hash_length : int
+        val compare : t -> t -> int
+        val equal : t -> t -> bool
+        val string : string -> t
+        val bytes : bytes -> t
+        val substring : string -> int -> int -> t
+        val subbytes : bytes -> int -> int -> t
+        val channel : in_channel -> int -> t
+        val file : string -> t
+        val output : out_channel -> t -> unit
+        val input : in_channel -> t
+        val to_hex : t -> string
+        val of_hex : string -> t
+      end
+ *)
+
+@BEGIN_FROM_5_2_0@
+module BLAKE128 = Digest.BLAKE128
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module BLAKE128 : S
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: module BLAKE128 = Digest.BLAKE128
+ *)
+
+@BEGIN_FROM_5_2_0@
+module BLAKE256 = Digest.BLAKE256
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module BLAKE256 : S
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: module BLAKE256 = Digest.BLAKE256
+ *)
+
+@BEGIN_FROM_5_2_0@
+module BLAKE512 = Digest.BLAKE512
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module BLAKE512 : S
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: module BLAKE512 = Digest.BLAKE512
+ *)
+
+@BEGIN_FROM_5_2_0@
+module MD5 = Digest.MD5
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module MD5 : S
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: module MD5 = Digest.MD5
+ *)
+
+val of_hex : string -> t
+(** @since 5.2.0: val of_hex : string -> t *)
+
+val equal : t -> t -> bool
+(** @since 4.03.0: val equal : t -> t -> bool *)
+
+@BEGIN_FROM_4_02_0@
+val bytes : bytes -> t
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val bytes : Stdcompat__init.bytes -> t
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val bytes : bytes -> t
+ *)
+
+@BEGIN_FROM_4_02_0@
+val subbytes : bytes -> int -> int -> t
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val subbytes : Stdcompat__init.bytes -> int -> int -> t
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val subbytes : bytes -> int -> int -> t
+ *)
+
+val compare : t -> t -> int
+(** @since 4.00.0: val compare : t -> t -> int *)
+
+val from_hex : string -> t
+(** @since 4.00.0: val from_hex : string -> t *)
+
+val string : string -> t
+(** Alias for {!Digest.string} *)
+
+val substring : string -> int -> int -> t
+(** Alias for {!Digest.substring} *)
+
+@BEGIN_FROM_5_2_0@
+val channel : in_channel -> int -> t
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+@BEGIN_FROM_3_08_0@
+external channel : in_channel -> int -> t = "caml_md5_chan"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external channel : in_channel -> int -> t = "md5_chan"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: val channel : in_channel -> int -> t
+@since 3.08.0: external channel : in_channel -> int -> t = "caml_md5_chan"
+@since 3.07.0: external channel : in_channel -> int -> t = "md5_chan"
+ *)
+
+val file : string -> t
+(** Alias for {!Digest.file} *)
+
+val output : out_channel -> t -> unit
+(** Alias for {!Digest.output} *)
+
+val input : in_channel -> t
+(** Alias for {!Digest.input} *)
+
+val to_hex : t -> string
+(** Alias for {!Digest.to_hex} *)
+
+end

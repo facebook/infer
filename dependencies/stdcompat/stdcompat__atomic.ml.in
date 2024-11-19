@@ -1,0 +1,38 @@
+@BEGIN_FROM_4_12_0@
+include Atomic
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a ref
+
+let make = ref
+
+let get = (!)
+
+let set = (:=)
+
+let exchange r new_value =
+  let old_value = !r in
+  r := new_value;
+  old_value
+
+let compare_and_set r seen v =
+  if !r = seen then
+    begin
+      r := v;
+      true
+    end
+  else
+    false
+
+let fetch_and_add r n =
+  let old_value = !r in
+  r := old_value + n;
+  old_value
+
+let incr = incr
+
+let decr = decr
+@END_BEFORE_4_12_0@
+@BEGIN_BEFORE_5_2_0@
+let make_contended = make
+@END_BEFORE_5_2_0@

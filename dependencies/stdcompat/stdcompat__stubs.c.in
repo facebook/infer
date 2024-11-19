@@ -1,0 +1,112 @@
+#include <string.h>
+#include "stdcompat.h"
+
+@C_BEGIN_FROM_5_0_0@
+void stdcompat_dummy_symbol()
+{
+  /* If the library is empty, then the following error message appears on macOS:
+     ld: archive has no table of contents file './libtest_prog_stubs.a' for
+     architecture arm64
+
+     One solution is to execute `ranlib libtest_prog_stubs.a` after `ocamlmklib`
+     and before `ocamlopt` use the library, but I don't know how to make dune
+     execute the command.
+
+     Another solution is to export a dummy symbol!
+  */
+}
+@C_END_FROM_5_0_0@
+
+@C_BEGIN_BEFORE_4_12_0@
+@C_BEGIN_FROM_4_04_0@
+#include <caml/major_gc.h>
+@C_END_FROM_4_04_0@
+#define CAML_INTERNALS
+#include <caml/memory.h>
+@C_BEGIN_FROM_4_04_0@
+#include <caml/sys.h>
+#include <caml/osdeps.h>
+@C_END_FROM_4_04_0@
+@C_BEGIN_BEFORE_4_04_0@
+@C_BEGIN_BEFORE_3_08_0@
+CAMLextern void sys_error (value);
+#define caml_sys_error sys_error
+@C_END_BEFORE_3_08_0@
+@C_BEGIN_FROM_3_08_0@
+CAMLextern void caml_sys_error (value);
+@C_END_FROM_3_08_0@
+@C_END_BEFORE_4_04_0@
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+
+@C_BEGIN_BEFORE_3_08_0@
+#define caml_alloc_string alloc_string
+@C_END_BEFORE_3_08_0@
+
+CAMLprim value caml_sys_mkdir(value path, value perm)
+{
+  CAMLparam2(path, perm);
+  int ret;
+@C_BEGIN_FROM_4_06_0@
+  char_os * p = caml_stat_strdup_to_os(String_val(path));
+  #ifdef _WIN32
+    ret = _wmkdir(p);
+  #else
+    ret = mkdir(p, Int_val(perm));
+  #endif
+  caml_stat_free(p);
+@C_END_FROM_4_06_0@
+@C_BEGIN_BEFORE_4_06_0@
+  char * p;
+  p = String_val(path);
+  #ifdef _WIN32
+    ret = _mkdir(p);
+  #else
+    ret = mkdir(p, Int_val(perm));
+  #endif
+@C_END_BEFORE_4_06_0@
+  if (ret == -1) caml_sys_error(path);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_sys_rmdir(value path)
+{
+  CAMLparam1(path);
+  int ret;
+@C_BEGIN_FROM_4_06_0@
+  char_os * p = caml_stat_strdup_to_os(String_val(path));
+  #ifdef _WIN32
+    ret = _wrmdir(p);
+  #else
+    ret = rmdir(p);
+  #endif
+  caml_stat_free(p);
+@C_END_FROM_4_06_0@
+@C_BEGIN_BEFORE_4_06_0@
+  char * p;
+  p = String_val(path);
+  #ifdef _WIN32
+    ret = _rmdir(p);
+  #else
+    ret = rmdir(p);
+  #endif
+@C_END_BEFORE_4_06_0@
+  if (ret == -1) caml_sys_error(path);
+  CAMLreturn(Val_unit);
+}
+@C_END_BEFORE_4_12_0@
+
+@C_BEGIN_BEFORE_4_06_0@
+value
+caml_alloc_initialized_string(mlsize_t len, const char *p)
+{
+  value result = caml_alloc_string(len);
+  memcpy((char *)String_val(result), p, len);
+  return result;
+}
+@C_END_BEFORE_4_06_0@

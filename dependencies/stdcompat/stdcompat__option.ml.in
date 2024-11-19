@@ -1,0 +1,79 @@
+@BEGIN_FROM_4_08_0@
+include Option
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a option =
+  | None
+  | Some of 'a
+
+let none = None
+
+let some x = Some x
+
+let value o ~default =
+  match o with
+  | None -> default
+  | Some v -> v
+
+let get o =
+  match o with
+  | None -> invalid_arg "option is None"
+  | Some v -> v
+
+let bind o f =
+  match o with
+  | None -> None
+  | Some v -> f v
+
+let join o =
+  match o with
+  | None -> None
+  | Some v -> v
+
+let map f o =
+  match o with
+  | None -> None
+  | Some v -> Some (f v)
+
+let fold ~none ~some o =
+  match o with
+  | None -> none
+  | Some v -> some v
+
+let iter f o =
+  match o with
+  | None -> ()
+  | Some v -> f v
+
+let is_none o = o = None
+
+let is_some o = o <> None
+
+let equal eq o o' =
+  match o, o' with
+  | None, None -> true
+  | Some v, Some v' -> eq v v'
+  | None, Some _ | Some _, None -> false
+
+let compare cmp o o' =
+  match o, o' with
+  | None, None -> 0
+  | None, Some _ -> -1
+  | Some _, None -> 1
+  | Some v, Some v' -> cmp v v'
+
+let to_result ~none o =
+  match o with
+  | None -> Stdcompat__pervasives.Error none
+  | Some v -> Stdcompat__pervasives.Ok v
+
+let to_list o =
+  match o with
+  | None -> []
+  | Some v -> [v]
+
+let to_seq o =
+  match o with
+  | Some v -> fun () -> Stdcompat__seq.Cons (v, Stdcompat__seq.empty)
+  | None -> Stdcompat__seq.empty
+@END_BEFORE_4_08_0@

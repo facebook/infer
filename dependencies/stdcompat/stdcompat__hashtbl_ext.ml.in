@@ -1,0 +1,200 @@
+module type SeededHashedType  =
+  sig type t val equal : t -> t -> bool val seeded_hash : int -> t -> int end
+
+@BEGIN_FROM_4_00_0@
+@BEGIN_FROM_5_0_0@
+  module ToOCamlSeededHashedType (M : SeededHashedType) = M
+
+  module MakeSeeded = Hashtbl.MakeSeeded
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+  module ToOCamlSeededHashedType (M : SeededHashedType) = struct
+    type t = M.t
+
+    let equal = M.equal
+
+    let hash = M.seeded_hash
+  end
+
+  module MakeSeeded (M : SeededHashedType) =
+    Hashtbl.MakeSeeded (ToOCamlSeededHashedType (M))
+@END_BEFORE_5_0_0@
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+  module ToOCamlSeededHashedType (M : SeededHashedType) = struct
+    type t = M.t
+
+    let equal = M.equal
+
+    let hash x = M.seeded_hash 0 x
+  end
+
+  module MakeSeeded (M : SeededHashedType) =
+    Hashtbl.Make (ToOCamlSeededHashedType (M))
+@END_BEFORE_4_00_0@
+
+type statistics
+@BEGIN_FROM_4_00_0@
+  = Hashtbl.statistics
+@END_FROM_4_00_0@
+  = {
+    num_bindings : int;
+    num_buckets : int;
+    max_bucket_length : int;
+    bucket_histogram : int array;
+  }
+
+@BEGIN_WITH_MAGIC@
+type ('a, 'b) bucketlist =
+  | Empty
+  | Cons of 'a * 'b * ('a, 'b) bucketlist
+
+@BEGIN_FROM_4_04_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+      mutable seed: int;
+      mutable initial_size: int;
+    }
+@END_FROM_4_04_0@
+@BEGIN_BEFORE_4_04_0@
+@BEGIN_FROM_4_00_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+      mutable seed: int;
+      initial_size: int;
+    }
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+    }
+@END_BEFORE_4_00_0@
+@END_BEFORE_4_04_0@
+
+let filter_map_inplace f h =
+  let h : ('a, 'b) internal = Obj.magic h in
+  let rec do_bucket = function
+    | Empty ->
+        Empty
+    | Cons (k, d, rest) ->
+        match f k d with
+        | None -> h.size <- h.size - 1; do_bucket rest
+        | Some new_d -> Cons (k, new_d, do_bucket rest)
+  in
+  let d = h.data in
+  for i = 0 to Array.length d - 1 do
+    d.(i) <- do_bucket d.(i)
+  done
+
+let to_seq h =
+  let h : ('a, 'b) internal = Obj.magic h in
+  let h_data = h.data in
+  let rec aux i buck () = match buck with
+    | Empty ->
+        if i = Array.length h_data
+        then Stdcompat__seq.Nil
+        else aux (i+1) h_data.(i) ()
+    | Cons (key, data, next) ->
+        Stdcompat__seq.Cons ((key, data), aux i next) in
+  aux 0 Empty
+
+let to_seq_keys h =
+  Stdcompat__seq.map fst (to_seq h)
+
+let to_seq_values h =
+  Stdcompat__seq.map snd (to_seq h)
+
+let rec bucket_length accu = function
+  | Empty -> accu
+  | Cons (_, _, rest) -> bucket_length (accu + 1) rest
+
+let stats_internal h =
+  let mbl =
+    Array.fold_left (fun m b -> max m (bucket_length 0 b)) 0 h.data in
+  let histo = Array.make (mbl + 1) 0 in
+  Array.iter
+    (fun b ->
+      let l = bucket_length 0 b in
+      histo.(l) <- histo.(l) + 1)
+    h.data;
+  { num_bindings = h.size;
+    num_buckets = Array.length h.data;
+    max_bucket_length = mbl;
+    bucket_histogram = histo }
+
+let stats h =
+  let h : ('a, 'b) internal = Obj.magic h in
+  stats_internal h
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+type ('table, 'key, 'value) dict = {
+    clear : 'table -> unit;
+    fold : 'a . ('key -> 'value -> 'a -> 'a) -> 'table -> 'a -> 'a;
+    add : 'table -> 'key -> 'value -> unit;
+    remove : 'table -> 'key -> unit;
+    replace : 'table -> 'key -> 'value -> unit;
+  }
+
+let filter_map_inplace dict filter hashtbl =
+  let f key value
+      (last_key, to_replace, to_add, to_remove, rebuild, changed) =
+    match filter key value with
+    | None ->
+        if rebuild || last_key = Some key then
+          (Some key, to_replace, to_add, to_remove, true, true)
+        else
+          (None, to_replace, to_add, key :: to_remove, false, true)
+    | Some value0 ->
+        if value == value0 then
+          (Some key, to_replace, (key, value0) :: to_add, to_remove, rebuild,
+           changed)
+        else if rebuild || last_key = Some key then
+          (Some key, to_replace, (key, value0) :: to_add, to_remove, true,
+           true)
+        else
+          (Some key, (key, value0) :: to_replace, to_add, to_remove, false,
+           true) in
+  let _last_key, to_replace, to_add, to_remove, rebuild, changed =
+    dict.fold f hashtbl (None, [], [], [], false, false) in
+  if rebuild then
+    begin
+      dict.clear hashtbl;
+      List.iter (fun (key, value) -> dict.add hashtbl key value) to_add;
+      List.iter (fun (key, value) -> dict.add hashtbl key value) to_replace
+    end
+  else if changed then
+    begin
+      List.iter (fun key -> dict.remove hashtbl key) to_remove;
+      List.iter (fun (key, value) -> dict.replace hashtbl key value) to_replace
+    end
+
+let to_list fold tbl =
+  fold (fun key value accu -> (key, value) :: accu) tbl []
+
+let to_seq fold tbl =
+  Stdcompat__list.to_seq (to_list fold tbl)
+
+let to_seq_keys fold h =
+  Stdcompat__seq.map fst (to_seq fold h)
+
+let to_seq_values fold h =
+  Stdcompat__seq.map snd (to_seq fold h)
+
+let stats ~length tbl = {
+    num_bindings = length tbl;
+    num_buckets = 0;
+    max_bucket_length = 0;
+    bucket_histogram = [| |];
+  }
+@END_WITHOUT_MAGIC@
+
+let add_seq add tbl g =
+  Stdcompat__seq.iter (fun (k, v) -> add tbl k v) g
+
+let of_seq ~create ~replace g =
+  let tbl = create 17 in
+  add_seq replace tbl g;
+  tbl

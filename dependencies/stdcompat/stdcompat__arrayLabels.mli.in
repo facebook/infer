@@ -1,0 +1,1 @@
+include Stdcompat__arrayLabels_s.S

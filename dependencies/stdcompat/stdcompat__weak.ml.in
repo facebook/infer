@@ -1,0 +1,50 @@
+type 'a t = 'a Weak.t
+
+let create = Weak.create
+
+let length = Weak.length
+
+let set = Weak.set
+
+let get = Weak.get
+
+let get_copy = Weak.get_copy
+
+let check = Weak.check
+
+let fill = Weak.fill
+
+let blit = Weak.blit
+
+@BEGIN_FROM_4_05_0@
+module type S = Weak.S
+
+module Make = Weak.Make
+@END_FROM_4_05_0@
+
+@BEGIN_BEFORE_4_05_0@
+module type S = sig
+  type data
+  type t
+  val create : int -> t
+  val clear : t -> unit
+  val merge : t -> data -> data
+  val add : t -> data -> unit
+  val remove : t -> data -> unit
+  val find : t -> data -> data
+  val find_opt : t -> data -> data option
+  val find_all : t -> data -> data list
+  val mem : t -> data -> bool
+  val iter : (data -> unit) -> t -> unit
+  val fold : (data -> 'a -> 'a) -> t -> 'a -> 'a
+  val count : t -> int
+  val stats : t -> int * int * int * int * int * int
+end
+
+module Make (H : Hashtbl.HashedType) = struct
+  include Weak.Make (H)
+
+  let find_opt t d =
+    Stdcompat__tools.option_find (find t) d
+end
+@END_BEFORE_4_05_0@

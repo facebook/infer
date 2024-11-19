@@ -1,0 +1,181 @@
+@BEGIN_FROM_4_14_0@
+include In_channel
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_5_2_0@
+(*
+let max_buffer_size = 0x1000000
+
+let input_and_copy_to_bigarray channel buffer tgt pos len =
+  let read = input channel buffer 0 len in
+  for i = 0 to read - 1 do
+    Bigarray.Array1.unsafe_set tgt (pos + i) (int_of_char (Bytes.unsafe_get buffer i))
+  done;
+  read
+
+let rec input_and_copy_to_bigarray_loop channel buffer tgt pos len already_read =
+  let buffer_length = Bytes.length buffer in
+  if buffer_length < len then
+    begin
+      let read =
+        input_and_copy_to_bigarray channel buffer tgt pos buffer_length in
+      let already_read = already_read + read in
+      if read = buffer_length then
+        input_and_copy_to_bigarray_loop channel buffer tgt (pos + read)
+          (len - read) already_read
+      else
+        already_read
+    end
+  else
+    begin
+      let read = input_and_copy_to_bigarray channel buffer tgt pos len in
+      already_read + read
+    end
+
+let input_bigarray channel tgt pos len =
+  if len < 0 || pos + len >= Bigarray.Array1.dim tgt then
+    invalid_arg "input_bigarray";
+  let buffer_size = min max_buffer_size len in
+  let buffer = Bytes.create buffer_size in
+  input_and_copy_to_bigarray_loop channel buffer tgt pos len 0
+
+
+let really_input_bigarray channel tgt pos len =
+  if len < 0 || pos + len >= Bigarray.Array1.dim tgt then
+    invalid_arg "input_bigarray";
+  let buffer_size = min max_buffer_size len in
+  let buffer = Bytes.create buffer_size in
+  let rec loop len =
+    let read = input_and_copy_to_bigarray_loop channel buffer tgt pos len 0 in
+    if read = 0 then
+      None
+    else if read < len then
+      Some ()
+    else
+      loop (len - read) in
+  loop len
+*)
+let input_bigarray _channel _tgt _pos _len =
+  failwith "input_bigarray"
+
+let really_input_bigarray _channel _tgt _pos _len =
+  failwith "really_input_bigarray"
+
+let is_binary_mode _channel =
+  failwith "is_binary_mode"
+@END_BEFORE_5_2_0@
+@BEGIN_BEFORE_4_14_0@
+type t = in_channel
+
+type open_flag = Pervasives.open_flag =
+    Open_rdonly
+  | Open_wronly
+  | Open_append
+  | Open_creat
+  | Open_trunc
+  | Open_excl
+  | Open_binary
+  | Open_text
+  | Open_nonblock
+
+let stdin = stdin
+
+let open_bin = open_in_bin
+
+let open_text = open_in
+
+let open_gen = open_in_gen
+
+let read_and_close channel f =
+  Stdcompat__fun.protect
+    ~finally:(fun () -> close_in_noerr channel)
+    (fun () -> f channel)
+
+let with_open_bin filename f =
+  read_and_close (open_bin filename) f
+
+let with_open_text filename f =
+  read_and_close (open_text filename) f
+
+let with_open_gen flags perm filename f =
+  read_and_close (open_gen flags perm filename) f
+
+let seek = LargeFile.seek_in
+
+let pos = LargeFile.pos_in
+
+let length = LargeFile.in_channel_length
+
+let close = close_in
+
+let close_noerr = close_in_noerr
+
+let input_char ic =
+  try
+    Some (input_char ic)
+  with End_of_file ->
+    None
+
+let input_byte ic =
+  try
+    Some (input_byte ic)
+  with End_of_file ->
+    None
+
+let input_line ic =
+  try
+    Some (input_line ic)
+  with End_of_file ->
+    None
+
+let input = input
+
+let really_input ic buf pos len =
+  try
+    really_input ic buf pos len;
+    Some ()
+  with End_of_file ->
+    None
+
+let really_input_string ic len =
+  try
+    Some (Stdcompat__pervasives.really_input_string ic len)
+  with End_of_file ->
+    None
+
+let set_binary_mode = set_binary_mode_in
+
+let rec add_channel_to_the_end ~chunk_size buffer channel =
+  if
+    try
+      Stdcompat__buffer.add_channel buffer channel chunk_size;
+      true
+    with End_of_file ->
+      false
+  then
+    add_channel_to_the_end ~chunk_size buffer channel
+
+let input_all channel =
+  let chunk_size = 65536 in
+  let buffer_size =
+    try
+      in_channel_length channel - pos_in channel
+    with Sys_error _ ->
+      -1 in
+  let buffer = Buffer.create buffer_size in
+  add_channel_to_the_end ~chunk_size buffer channel;
+  Buffer.contents buffer
+
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_1_0@
+let rec fold_lines f acc ic =
+  match input_line ic with
+  | None -> acc
+  | Some line -> fold_lines f (f acc line) ic
+
+let input_lines ic =
+  List.rev (fold_lines (fun acc line -> line :: acc) [] ic)
+
+let isatty _ic =
+  failwith "not implemented"
+@END_BEFORE_5_1_0@

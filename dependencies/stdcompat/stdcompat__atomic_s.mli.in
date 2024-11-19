@@ -1,0 +1,44 @@
+module type S = sig
+@BEGIN_FROM_4_12_0@
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a Atomic.t
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a Atomic.t
+@END_BEFORE_4_12_0@
+
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t
+@END_BEFORE_4_12_0@
+(** @since 4.12.0: type !'a t
+ *)
+
+val make_contended : 'a -> 'a t
+(** @since 5.2.0: val make_contended : 'a -> 'a t *)
+
+val make : 'a -> 'a t
+(** @since 4.12.0: val make : 'a -> 'a t *)
+
+val get : 'a t -> 'a
+(** @since 4.12.0: val get : 'a t -> 'a *)
+
+val set : 'a t -> 'a -> unit
+(** @since 4.12.0: val set : 'a t -> 'a -> unit *)
+
+val exchange : 'a t -> 'a -> 'a
+(** @since 4.12.0: val exchange : 'a t -> 'a -> 'a *)
+
+val compare_and_set : 'a t -> 'a -> 'a -> bool
+(** @since 4.12.0: val compare_and_set : 'a t -> 'a -> 'a -> bool *)
+
+val fetch_and_add : int t -> int -> int
+(** @since 4.12.0: val fetch_and_add : int t -> int -> int *)
+
+val incr : int t -> unit
+(** @since 4.12.0: val incr : int t -> unit *)
+
+val decr : int t -> unit
+(** @since 4.12.0: val decr : int t -> unit *)
+
+end

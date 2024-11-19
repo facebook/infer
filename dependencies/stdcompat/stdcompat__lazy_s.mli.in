@@ -1,0 +1,42 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type 'a t = 'a CamlinternalLazy.t
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a Stdcompat__init.lazy_t
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type 'a t = 'a CamlinternalLazy.t
+ *)
+
+exception Undefined 
+(** Alias for {!Lazy.Undefined} *)
+
+val map : ('a -> 'b) -> 'a t -> 'b t
+(** @since 4.13.0: val map : ('a -> 'b) -> 'a t -> 'b t *)
+
+val map_val : ('a -> 'b) -> 'a t -> 'b t
+(** @since 4.13.0: val map_val : ('a -> 'b) -> 'a t -> 'b t *)
+
+val is_val : 'a t -> bool
+(** @since 4.00.0: val is_val : 'a t -> bool *)
+
+val from_val : 'a -> 'a t
+(** @since 4.00.0: val from_val : 'a -> 'a t *)
+
+val from_fun : (unit -> 'a) -> 'a t
+(** @since 4.00.0: val from_fun : (unit -> 'a) -> 'a t *)
+
+@BEGIN_FROM_3_11_0@
+external force : 'a t -> 'a = "%lazy_force"
+@END_FROM_3_11_0@
+@BEGIN_BEFORE_3_11_0@
+val force : 'a t -> 'a
+@END_BEFORE_3_11_0@
+(** @since 3.11.0: external force : 'a t -> 'a = "%lazy_force"
+@since 3.07.0: val force : 'a t -> 'a
+ *)
+
+val force_val : 'a t -> 'a
+(** Alias for {!Lazy.force_val} *)
+
+end

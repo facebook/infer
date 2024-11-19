@@ -1,0 +1,1 @@
+include Stdcompat__random_s.S

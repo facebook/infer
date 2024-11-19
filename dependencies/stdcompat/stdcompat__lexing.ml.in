@@ -1,0 +1,34 @@
+include Lexing
+
+@BEGIN_BEFORE_4_11_0@
+let set_position lexbuf position =
+  lexbuf.lex_curr_p <-
+    { position with pos_fname = lexbuf.lex_curr_p.pos_fname };
+  lexbuf.lex_abs_pos <- position.pos_cnum
+
+let set_filename lexbuf filename =
+  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename }
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_4_08_0@
+let from_channel ?with_positions:_pos chan =
+  from_channel chan
+
+let from_string ?with_positions:_pos s =
+  from_string s
+
+let from_function ?with_positions:_pos f =
+  from_function f
+
+let with_positions _lexbuf =
+  true
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_3_11_0@
+let new_line lexbuf =
+  let lex_curr_p = lexbuf.Lexing.lex_curr_p in
+  if lex_curr_p != Lexing.dummy_pos then
+    lexbuf.Lexing.lex_curr_p <- { lex_curr_p with
+      Lexing.pos_lnum = succ lex_curr_p.Lexing.pos_lnum;
+      Lexing.pos_bol = lex_curr_p.Lexing.pos_cnum; }
+@END_BEFORE_3_11_0@

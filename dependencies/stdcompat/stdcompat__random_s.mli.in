@@ -1,0 +1,89 @@
+module type S = sig
+@BEGIN_FROM_5_2_0@
+module State = Random.State
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+module State :
+sig type t val make : int array -> t val make_self_init : unit -> t
+val copy : t -> t val bits : t -> int val int : t -> int -> int
+val full_int : t -> int -> int
+val int_in_range : t -> min:int -> max:int -> int
+val int32 : t -> Int32.t -> Int32.t
+val int32_in_range : t -> min:int32 -> max:int32 -> int32
+val nativeint : t -> Nativeint.t -> Nativeint.t
+val nativeint_in_range : t -> min:nativeint -> max:nativeint -> nativeint
+val int64 : t -> Int64.t -> Int64.t
+val int64_in_range : t -> min:int64 -> max:int64 -> int64
+val float : t -> float -> float val bool : t -> bool
+val bits32 : t -> Int32.t val bits64 : t -> Int64.t
+val nativebits : t -> Nativeint.t val split : t -> t
+val to_binary_string : t -> string val of_binary_string : string -> t end
+@END_BEFORE_5_2_0@
+(** @since 5.2.0: module State = Random.State
+ *)
+
+val int_in_range : min:int -> max:int -> int
+(** @since 5.2.0: val int_in_range : min:int -> max:int -> int *)
+
+val int32_in_range : min:int32 -> max:int32 -> int32
+(** @since 5.2.0: val int32_in_range : min:int32 -> max:int32 -> int32 *)
+
+val nativeint_in_range : min:nativeint -> max:nativeint -> nativeint
+(** @since 5.2.0:
+    val nativeint_in_range : min:nativeint -> max:nativeint -> nativeint *)
+
+val int64_in_range : min:int64 -> max:int64 -> int64
+(** @since 5.2.0: val int64_in_range : min:int64 -> max:int64 -> int64 *)
+
+val split : unit -> State.t
+(** @since 5.0.0: val split : unit -> State.t *)
+
+val bits32 : unit -> Int32.t
+(** @since 4.14.0: val bits32 : unit -> Int32.t *)
+
+val bits64 : unit -> Int64.t
+(** @since 4.14.0: val bits64 : unit -> Int64.t *)
+
+val nativebits : unit -> Nativeint.t
+(** @since 4.14.0: val nativebits : unit -> Nativeint.t *)
+
+val full_int : int -> int
+(** @since 4.13.0: val full_int : int -> int *)
+
+val init : int -> unit
+(** Alias for {!Random.init} *)
+
+val full_init : int array -> unit
+(** Alias for {!Random.full_init} *)
+
+val self_init : unit -> unit
+(** Alias for {!Random.self_init} *)
+
+val bits : unit -> int
+(** Alias for {!Random.bits} *)
+
+val int : int -> int
+(** Alias for {!Random.int} *)
+
+val int32 : Int32.t -> Int32.t
+(** Alias for {!Random.int32} *)
+
+val nativeint : Nativeint.t -> Nativeint.t
+(** Alias for {!Random.nativeint} *)
+
+val int64 : Int64.t -> Int64.t
+(** Alias for {!Random.int64} *)
+
+val float : float -> float
+(** Alias for {!Random.float} *)
+
+val bool : unit -> bool
+(** Alias for {!Random.bool} *)
+
+val get_state : unit -> State.t
+(** Alias for {!Random.get_state} *)
+
+val set_state : State.t -> unit
+(** Alias for {!Random.set_state} *)
+
+end

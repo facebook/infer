@@ -1,0 +1,85 @@
+@BEGIN_FROM_4_08_0@
+type 'a lazy_t = 'a CamlinternalLazy.t
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type 'a lazy_t_ = 'a lazy_t
+type 'a lazy_t = 'a lazy_t_
+@END_BEFORE_4_08_0@
+
+type in_channel_ = in_channel
+type in_channel = in_channel_
+
+type out_channel_ = out_channel
+type out_channel = out_channel_
+
+@BEGIN_FROM_4_06_0@
+type nonrec floatarray = floatarray
+
+type ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+    ('a, 'b, 'c, 'd, 'e, 'f) CamlinternalFormatBasics.format6
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+type floatarray = float array
+
+@BEGIN_FROM_3_10_0@
+type ('a, 'b, 'c, 'd, 'e, 'f) format6_ =
+    ('a, 'b, 'c, 'd, 'e, 'f) format6
+type ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+    ('a, 'b, 'c, 'd, 'e, 'f) format6_
+@END_FROM_3_10_0@
+@BEGIN_BEFORE_3_10_0@
+type ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+    ('a, 'b, 'c, 'f) format4
+@END_BEFORE_3_10_0@
+@END_BEFORE_4_06_0@
+
+@BEGIN_FROM_4_02_0@
+type nonrec bytes = bytes
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type bytes = string
+@END_BEFORE_4_02_0@
+
+type ('a, 'b) result =
+@BEGIN_FROM_4_07_0@
+('a, 'b) Stdlib.result =
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+@BEGIN_FROM_4_03_0@
+('a, 'b) Pervasives.result =
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_WITH_RESULT_PKG@
+('a, 'b) Result.result =
+@END_WITH_RESULT_PKG@
+@END_BEFORE_4_03_0@
+@END_BEFORE_4_07_0@
+  | Ok of 'a 
+  | Error of 'b
+
+@BEGIN_FROM_4_07_0@
+type 'a seq = unit -> 'a seq_node
+and 'a seq_node = 'a Seq.node =
+  | Nil 
+  | Cons of 'a * 'a seq
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+type 'a seq = unit -> 'a seq_node
+and 'a seq_node =
+@BEGIN_WITH_SEQ_PKG@
+  'a Seq.node =
+@END_WITH_SEQ_PKG@
+  | Nil
+  | Cons of 'a * 'a seq
+@END_BEFORE_4_07_0@
+
+@BEGIN_FROM_4_12_0@
+type ('a, 'b) either = ('a, 'b) Either.t =
+  | Left of 'a
+  | Right of 'b
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type ('a, 'b) either =
+  | Left of 'a
+  | Right of 'b
+@END_BEFORE_4_12_0@

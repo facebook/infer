@@ -1,0 +1,154 @@
+module type S = sig
+@BEGIN_FROM_4_14_0@
+type t = in_channel
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+type t = in_channel
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: type t = in_channel
+ *)
+
+@BEGIN_FROM_4_14_0@
+type open_flag = In_channel.open_flag =
+  | Open_rdonly 
+  | Open_wronly 
+  | Open_append 
+  | Open_creat 
+  | Open_trunc 
+  | Open_excl 
+  | Open_binary 
+  | Open_text 
+  | Open_nonblock 
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+type open_flag =
+  | Open_rdonly 
+  | Open_wronly 
+  | Open_append 
+  | Open_creat 
+  | Open_trunc 
+  | Open_excl 
+  | Open_binary 
+  | Open_text 
+  | Open_nonblock 
+@END_BEFORE_4_14_0@
+(** @since 4.14.0:
+    type open_flag = In_channel.open_flag =
+      | Open_rdonly 
+      | Open_wronly 
+      | Open_append 
+      | Open_creat 
+      | Open_trunc 
+      | Open_excl 
+      | Open_binary 
+      | Open_text 
+      | Open_nonblock 
+ *)
+
+val input_bigarray :
+  t ->
+    ('a, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t ->
+      int -> int -> int
+(** @since 5.2.0:
+    val input_bigarray :
+      t ->
+        ('a, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+          -> int -> int -> int *)
+
+val really_input_bigarray :
+  t ->
+    ('a, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t ->
+      int -> int -> unit option
+(** @since 5.2.0:
+    val really_input_bigarray :
+      t ->
+        ('a, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+          -> int -> int -> unit option *)
+
+val is_binary_mode : t -> bool
+(** @since 5.2.0: val is_binary_mode : t -> bool *)
+
+val input_lines : t -> string list
+(** @since 5.1.0: val input_lines : t -> string list *)
+
+val fold_lines : ('acc -> string -> 'acc) -> 'acc -> t -> 'acc
+(** @since 5.1.0:
+    val fold_lines : ('acc -> string -> 'acc) -> 'acc -> t -> 'acc *)
+
+val isatty : t -> bool
+(** @since 5.1.0: val isatty : t -> bool *)
+
+val stdin : t
+(** @since 4.14.0: val stdin : t *)
+
+val open_bin : string -> t
+(** @since 4.14.0: val open_bin : string -> t *)
+
+val open_text : string -> t
+(** @since 4.14.0: val open_text : string -> t *)
+
+val open_gen : open_flag list -> int -> string -> t
+(** @since 4.14.0: val open_gen : open_flag list -> int -> string -> t *)
+
+val with_open_bin : string -> (t -> 'a) -> 'a
+(** @since 4.14.0: val with_open_bin : string -> (t -> 'a) -> 'a *)
+
+val with_open_text : string -> (t -> 'a) -> 'a
+(** @since 4.14.0: val with_open_text : string -> (t -> 'a) -> 'a *)
+
+val with_open_gen : open_flag list -> int -> string -> (t -> 'a) -> 'a
+(** @since 4.14.0:
+    val with_open_gen : open_flag list -> int -> string -> (t -> 'a) -> 'a *)
+
+val close : t -> unit
+(** @since 4.14.0: val close : t -> unit *)
+
+val close_noerr : t -> unit
+(** @since 4.14.0: val close_noerr : t -> unit *)
+
+val input_char : t -> char option
+(** @since 4.14.0: val input_char : t -> char option *)
+
+val input_byte : t -> int option
+(** @since 4.14.0: val input_byte : t -> int option *)
+
+val input_line : t -> string option
+(** @since 4.14.0: val input_line : t -> string option *)
+
+val really_input_string : t -> int -> string option
+(** @since 4.14.0: val really_input_string : t -> int -> string option *)
+
+val input_all : t -> string
+(** @since 4.14.0: val input_all : t -> string *)
+
+@BEGIN_FROM_4_14_0@
+val input : t -> bytes -> int -> int -> int
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+val input : t -> Stdcompat__init.bytes -> int -> int -> int
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: val input : t -> bytes -> int -> int -> int
+ *)
+
+@BEGIN_FROM_4_14_0@
+val really_input : t -> bytes -> int -> int -> unit option
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+val really_input : t -> Stdcompat__init.bytes -> int -> int -> unit option
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: val really_input : t -> bytes -> int -> int -> unit option
+ *)
+
+val seek : t -> int64 -> unit
+(** @since 4.14.0: val seek : t -> int64 -> unit *)
+
+val pos : t -> int64
+(** @since 4.14.0: val pos : t -> int64 *)
+
+val length : t -> int64
+(** @since 4.14.0: val length : t -> int64 *)
+
+val set_binary_mode : t -> bool -> unit
+(** @since 4.14.0: val set_binary_mode : t -> bool -> unit *)
+
+end

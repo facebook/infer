@@ -1,0 +1,225 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type ('a, 'e) t = ('a, 'e) result =
+  | Ok of 'a 
+  | Error of 'e 
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type ('a, 'e) t = ('a, 'e) Stdcompat__pervasives.result =
+  | Ok of 'a 
+  | Error of 'e 
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    type ('a, 'e) t = ('a, 'e) result =
+      | Ok of 'a 
+      | Error of 'e 
+ *)
+
+@BEGIN_FROM_4_08_0@
+val ok : 'a -> ('a, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val ok : 'a -> ('a, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val ok : 'a -> ('a, 'e) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val error : 'e -> ('a, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val error : 'e -> ('a, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val error : 'e -> ('a, 'e) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val value : ('a, 'e) result -> default:'a -> 'a
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val value : ('a, 'e) Stdcompat__pervasives.result -> default:'a -> 'a
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val value : ('a, 'e) result -> default:'a -> 'a
+ *)
+
+@BEGIN_FROM_4_08_0@
+val get_ok : ('a, 'e) result -> 'a
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val get_ok : ('a, 'e) Stdcompat__pervasives.result -> 'a
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val get_ok : ('a, 'e) result -> 'a
+ *)
+
+@BEGIN_FROM_4_08_0@
+val get_error : ('a, 'e) result -> 'e
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val get_error : ('a, 'e) Stdcompat__pervasives.result -> 'e
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val get_error : ('a, 'e) result -> 'e
+ *)
+
+@BEGIN_FROM_4_08_0@
+val bind : ('a, 'e) result -> ('a -> ('b, 'e) result) -> ('b, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val bind :
+  ('a, 'e) Stdcompat__pervasives.result ->
+    ('a -> ('b, 'e) Stdcompat__pervasives.result) ->
+      ('b, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val bind : ('a, 'e) result -> ('a -> ('b, 'e) result) -> ('b, 'e) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val join : (('a, 'e) result, 'e) result -> ('a, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val join :
+  (('a, 'e) Stdcompat__pervasives.result, 'e) Stdcompat__pervasives.result ->
+    ('a, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val join : (('a, 'e) result, 'e) result -> ('a, 'e) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val map : ('a -> 'b) -> ('a, 'e) result -> ('b, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val map :
+  ('a -> 'b) ->
+    ('a, 'e) Stdcompat__pervasives.result ->
+      ('b, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val map : ('a -> 'b) -> ('a, 'e) result -> ('b, 'e) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val map_error : ('e -> 'f) -> ('a, 'e) result -> ('a, 'f) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val map_error :
+  ('e -> 'f) ->
+    ('a, 'e) Stdcompat__pervasives.result ->
+      ('a, 'f) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val map_error : ('e -> 'f) -> ('a, 'e) result -> ('a, 'f) result
+ *)
+
+@BEGIN_FROM_4_08_0@
+val fold : ok:('a -> 'c) -> error:('e -> 'c) -> ('a, 'e) result -> 'c
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val fold :
+  ok:('a -> 'c) ->
+    error:('e -> 'c) -> ('a, 'e) Stdcompat__pervasives.result -> 'c
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val fold : ok:('a -> 'c) -> error:('e -> 'c) -> ('a, 'e) result -> 'c
+ *)
+
+@BEGIN_FROM_4_08_0@
+val iter : ('a -> unit) -> ('a, 'e) result -> unit
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val iter : ('a -> unit) -> ('a, 'e) Stdcompat__pervasives.result -> unit
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val iter : ('a -> unit) -> ('a, 'e) result -> unit
+ *)
+
+@BEGIN_FROM_4_08_0@
+val iter_error : ('e -> unit) -> ('a, 'e) result -> unit
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val iter_error :
+  ('e -> unit) -> ('a, 'e) Stdcompat__pervasives.result -> unit
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val iter_error : ('e -> unit) -> ('a, 'e) result -> unit
+ *)
+
+@BEGIN_FROM_4_08_0@
+val is_ok : ('a, 'e) result -> bool
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val is_ok : ('a, 'e) Stdcompat__pervasives.result -> bool
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val is_ok : ('a, 'e) result -> bool
+ *)
+
+@BEGIN_FROM_4_08_0@
+val is_error : ('a, 'e) result -> bool
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val is_error : ('a, 'e) Stdcompat__pervasives.result -> bool
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val is_error : ('a, 'e) result -> bool
+ *)
+
+@BEGIN_FROM_4_08_0@
+val equal :
+  ok:('a -> 'a -> bool) ->
+    error:('e -> 'e -> bool) -> ('a, 'e) result -> ('a, 'e) result -> bool
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val equal :
+  ok:('a -> 'a -> bool) ->
+    error:('e -> 'e -> bool) ->
+      ('a, 'e) Stdcompat__pervasives.result ->
+        ('a, 'e) Stdcompat__pervasives.result -> bool
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val equal :
+      ok:('a -> 'a -> bool) ->
+        error:('e -> 'e -> bool) ->
+          ('a, 'e) result -> ('a, 'e) result -> bool
+ *)
+
+@BEGIN_FROM_4_08_0@
+val compare :
+  ok:('a -> 'a -> int) ->
+    error:('e -> 'e -> int) -> ('a, 'e) result -> ('a, 'e) result -> int
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val compare :
+  ok:('a -> 'a -> int) ->
+    error:('e -> 'e -> int) ->
+      ('a, 'e) Stdcompat__pervasives.result ->
+        ('a, 'e) Stdcompat__pervasives.result -> int
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val compare :
+      ok:('a -> 'a -> int) ->
+        error:('e -> 'e -> int) -> ('a, 'e) result -> ('a, 'e) result -> int
+ *)
+
+@BEGIN_FROM_4_08_0@
+val to_option : ('a, 'e) result -> 'a option
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val to_option : ('a, 'e) Stdcompat__pervasives.result -> 'a option
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val to_option : ('a, 'e) result -> 'a option
+ *)
+
+@BEGIN_FROM_4_08_0@
+val to_list : ('a, 'e) result -> 'a list
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val to_list : ('a, 'e) Stdcompat__pervasives.result -> 'a list
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val to_list : ('a, 'e) result -> 'a list
+ *)
+
+@BEGIN_FROM_4_08_0@
+val to_seq : ('a, 'e) result -> 'a Seq.t
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val to_seq : ('a, 'e) Stdcompat__pervasives.result -> 'a Stdcompat__seq.t
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val to_seq : ('a, 'e) result -> 'a Seq.t
+ *)
+
+end

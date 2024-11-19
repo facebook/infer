@@ -1,0 +1,98 @@
+include Int32
+
+@BEGIN_BEFORE_4_13_0@
+let min i j =
+  if compare i j >= 0 then j
+  else i
+
+let max i j =
+  if compare i j >= 0 then i
+  else j
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_4_08_0@
+let unsigned_compare i j =
+  compare (sub i min_int) (sub j min_int)
+
+let unsigned_to_int =
+  let max_int = of_int Stdcompat__pervasives.max_int in
+  fun i ->
+    if compare zero i <= 0 && compare i max_int <= 0 then
+      Some (to_int i)
+    else
+      None
+
+(* Unsigned division from signed division of the same
+   bitness. See Warren Jr., Henry S. (2013). Hacker's Delight (2 ed.), Sec 9-3.
+*)
+let unsigned_div n d =
+  if d < zero then
+    if unsigned_compare n d < 0 then zero else one
+  else
+    let q = shift_left (div (shift_right_logical n 1) d) 1 in
+    let r = sub n (mul q d) in
+    if unsigned_compare r d >= 0 then succ q else q
+
+let unsigned_rem n d =
+  sub n (mul (unsigned_div n d) d)
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_03_0@
+let equal : t -> t -> bool = ( = )
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_05_0@
+let of_string_opt s =
+  Stdcompat__tools.option_fail of_string s
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_3_08_0@
+let float_of_bits bits =
+  let sign = not (equal (shift_right_logical bits 31) zero) in
+  let exponent32 =
+    to_int (shift_right_logical bits 23) land (1 lsl 8 - 1) in
+  let int32_2power23minus1 = sub (shift_left one 23) one in
+  let mantissa32 = logand bits int32_2power23minus1 in
+  let mantissa64 = Int64.shift_left (Int64.of_int32 mantissa32) 29 in
+  let exponent64 = exponent32 + 1023 - 127 in
+  let unsigned =
+    Int64.logor (Int64.shift_left (Int64.of_int exponent64) 52) mantissa64 in
+  let signed =
+    if sign then
+      Int64.logor (Int64.shift_left Int64.one 63) unsigned
+    else
+      unsigned in
+  Int64.float_of_bits signed
+
+let bits_of_float f =
+  let bits = Int64.bits_of_float f in
+  let sign =
+    not
+      (Stdcompat__int64.equal (Int64.shift_right_logical bits 63) Int64.zero) in
+  let exponent64 =
+    Int64.to_int (Int64.shift_right_logical bits 52) land (1 lsl 10 - 1) in
+  let int64_2power52minus1 =
+    Int64.sub (Int64.shift_left Int64.one 52) Int64.one in
+  let mantissa64 = Int64.logand bits int64_2power52minus1 in
+  let mantissa32_truncated =
+    Int64.to_int32 (Int64.shift_right_logical mantissa64 29) in
+  let mantissa32 =
+    if Stdcompat__int64.equal
+        (Int64.logand (Int64.shift_right_logical bits 28) Int64.one)
+        Int64.zero then
+      mantissa32_truncated
+    else
+      add mantissa32_truncated one in
+  let exponent32 = exponent64 + 127 - 1023 in
+  let unsigned = logor (shift_left (of_int exponent32) 23) mantissa32 in
+  if sign then
+    logor (shift_left one 31) unsigned
+  else
+    unsigned
+@END_BEFORE_3_08_0@
+
+@BEGIN_BEFORE_5_1_0@
+let hash = Hashtbl.hash
+
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+@END_BEFORE_5_1_0@

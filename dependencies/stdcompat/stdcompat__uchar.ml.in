@@ -1,0 +1,106 @@
+@BEGIN_FROM_4_03_0@
+include Uchar
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_WITH_UCHAR_PKG@
+include Uchar
+@END_WITH_UCHAR_PKG@
+@BEGIN_WITHOUT_UCHAR_PKG@
+type t = int
+
+let min = 0
+
+let max = 0x10FFFF
+
+let lo_bound = 0xD7FF
+
+let hi_bound = 0xE000
+
+let succ u =
+  if u = lo_bound then
+    hi_bound
+  else if u = max then
+    invalid_arg "Uchar.succ"
+  else
+    succ u
+
+let pred u =
+  if u = hi_bound then
+    lo_bound
+  else if u = min then
+    invalid_arg "Uchar.pred"
+  else
+  pred u
+
+let is_valid i =
+  min <= i && i <= lo_bound || hi_bound <= i && i <= max
+
+let of_int i =
+  if is_valid i then
+    i
+  else
+    invalid_arg "Uchar.of_int"
+
+let unsafe_of_int i =
+  i
+
+let to_int i =
+  i
+
+let is_char u =
+  u < 0x100
+
+let of_char c =
+  Char.code c
+
+let to_char u =
+  if is_char u then
+    Char.unsafe_chr u
+  else
+    invalid_arg "Uchar.to_char"
+
+let unsafe_to_char u =
+  Char.unsafe_chr u
+
+let equal : t -> t -> bool = ( = )
+
+let compare : t -> t -> int = compare
+
+let hash = to_int
+@END_WITHOUT_UCHAR_PKG@
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_14_0@
+let rep' = 0xFFFD
+
+type utf_decode = int
+
+let valid_bit = 27
+let decode_bits = 24
+
+let utf_decode_is_valid d = (d lsr valid_bit) = 1
+let utf_decode_length d = (d lsr decode_bits) land 0b111
+let utf_decode_uchar d = unsafe_of_int (d land 0xFFFFFF)
+let utf_decode n u = ((8 lor n) lsl decode_bits) lor (to_int u)
+let utf_decode_invalid n = (n lsl decode_bits) lor rep'
+
+let utf_8_byte_length u = match to_int u with
+| u when u < 0 -> assert false
+| u when u <= 0x007F -> 1
+| u when u <= 0x07FF -> 2
+| u when u <= 0xFFFF -> 3
+| u when u <= 0x10FFFF -> 4
+| _ -> assert false
+
+let utf_16_byte_length u = match to_int u with
+| u when u < 0 -> assert false
+| u when u <= 0xFFFF -> 2
+| u when u <= 0x10FFFF -> 4
+| _ -> assert false
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_4_06_0@
+let bom = unsafe_of_int 0xFEFF
+
+let rep = unsafe_of_int rep'
+@END_BEFORE_4_06_0@

@@ -1,0 +1,24 @@
+@BEGIN_BEFORE_4_11_0@
+let not_implemented _ =
+  failwith "Stdcompat.Printf is not implemented yet. Please fill an issue: https://github.com/thierry-martinez/stdcompat/issues ."
+
+let ikbprintf = not_implemented
+
+let ibprintf = not_implemented
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_4_02_0@
+let ifprintf = not_implemented
+
+let kbprintf = not_implemented
+
+let kfprintf = not_implemented
+
+let ksprintf = not_implemented
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_01_0@
+let ikfprintf = not_implemented
+@END_BEFORE_4_01_0@
+
+include Printf

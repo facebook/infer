@@ -1,0 +1,557 @@
+module type OrderedType = Set.OrderedType
+
+module type S  = sig type elt type t val empty : t val add : elt -> t -> t
+val singleton : elt -> t val remove : elt -> t -> t val union : t -> t -> t
+val inter : t -> t -> t val disjoint : t -> t -> bool val diff : t -> t -> t
+val cardinal : t -> int val elements : t -> elt list val min_elt : t -> elt
+val min_elt_opt : t -> elt option val max_elt : t -> elt
+val max_elt_opt : t -> elt option val choose : t -> elt
+val choose_opt : t -> elt option val find : elt -> t -> elt
+val find_opt : elt -> t -> elt option
+val find_first : (elt -> bool) -> t -> elt
+val find_first_opt : (elt -> bool) -> t -> elt option
+val find_last : (elt -> bool) -> t -> elt
+val find_last_opt : (elt -> bool) -> t -> elt option
+val iter : (elt -> unit) -> t -> unit
+val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+val map : (elt -> elt) -> t -> t val filter : (elt -> bool) -> t -> t
+val filter_map : (elt -> elt option) -> t -> t
+val partition : (elt -> bool) -> t -> (t * t)
+val split : elt -> t -> (t * bool * t) val is_empty : t -> bool
+val mem : elt -> t -> bool val equal : t -> t -> bool
+val compare : t -> t -> int val subset : t -> t -> bool
+val for_all : (elt -> bool) -> t -> bool
+val exists : (elt -> bool) -> t -> bool val to_list : t -> elt list
+val of_list : elt list -> t val to_seq_from : elt -> t -> elt Seq.t
+val to_seq : t -> elt Seq.t val to_rev_seq : t -> elt Seq.t
+val add_seq : elt Seq.t -> t -> t val of_seq : elt Seq.t -> t end
+
+@BEGIN_FROM_5_1_0@
+module Make = Set.Make
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+module Make (Ord : OrderedType) = struct
+  include Set.Make (Ord)
+
+  @BEGIN_WITH_MAGIC@
+    @BEGIN_BEFORE_4_12_0@
+    type internal = Empty | Node of internal * elt * internal * int
+      @BEGIN_FROM_4_02_0@
+      [@@ocaml.warning "-37"]
+      @END_FROM_4_02_0@
+    @END_BEFORE_4_12_0@
+
+    @BEGIN_BEFORE_4_11_0@
+    external t_of_internal : internal -> t = "%identity"
+    @END_BEFORE_4_11_0@
+
+    @BEGIN_BEFORE_4_12_0@
+    external internal_of_t : t -> internal = "%identity"
+    @END_BEFORE_4_12_0@
+  @END_WITH_MAGIC@
+
+  @BEGIN_BEFORE_4_12_0@
+    @BEGIN_WITH_MAGIC@
+      type enumeration = End | More of elt * internal * enumeration
+
+      let rec snoc_enum s e =
+        match s with
+          Empty -> e
+        | Node (l, v, r, _h) -> snoc_enum r (More(v, l, e))
+
+      let rec rev_seq_of_enum_ c () = match c with
+        | End -> Stdcompat__seq.Nil
+        | More (x, t, rest) ->
+            Stdcompat__seq.Cons (x, rev_seq_of_enum_ (snoc_enum t rest))
+
+      let to_rev_seq (s : t) =
+        let s = internal_of_t s in
+        rev_seq_of_enum_ (snoc_enum s End)
+    @END_WITH_MAGIC@
+    @BEGIN_WITHOUT_MAGIC@
+      let to_rev_seq s =
+        Stdcompat__list.to_seq (List.rev (elements s))
+    @END_WITHOUT_MAGIC@
+  @END_BEFORE_4_12_0@
+
+  @BEGIN_BEFORE_4_02_0@
+    let of_list l = List.fold_left (fun s item -> add item s) empty l
+  @END_BEFORE_4_02_0@
+
+  @BEGIN_BEFORE_3_08_0@
+    @BEGIN_WITH_MAGIC@
+      let rec iter f = function
+        | Empty -> ()
+        | Node (l, v, r, _) as t ->
+            iter f l;
+            f v;
+            iter f r
+
+      let iter (f : elt -> unit) (s : t) : unit =
+        iter f (internal_of_t s)
+
+      let rec fold f s a =
+        match s with
+        | Empty -> a
+        | Node (l, v, r, _) as t ->
+            let a = fold f l a in
+            let a = f v a in
+            fold f r a
+
+      let fold (f : elt -> 'a -> 'a) (s : t) (a : 'a) : 'a =
+        fold f (internal_of_t s) a
+    @END_WITH_MAGIC@
+    @BEGIN_WITHOUT_MAGIC@
+      let iter f s =
+        List.iter f (elements s)
+
+      let fold f s a =
+        List.fold_left (fun a item -> f item a) a (elements s)
+    @END_WITHOUT_MAGIC@
+  @END_BEFORE_3_08_0@
+
+  @BEGIN_BEFORE_4_11_0@
+    @BEGIN_WITH_MAGIC@
+    let height = function
+      | Empty -> 0
+      | Node (_, _, _, h) -> h
+
+    let create l v r =
+      let hl = height l in
+      let hr = height r in
+      Node (l, v, r, (if hl >= hr then hl + 1 else hr + 1))
+
+    let bal l v r =
+      let hl = match l with Empty -> 0 | Node (_, _, _, h) -> h in
+      let hr = match r with Empty -> 0 | Node (_, _, _, h) -> h in
+      if hl > hr + 2 then begin
+        match l with
+          Empty -> invalid_arg "Set.bal"
+        | Node (ll, lv, lr, _) ->
+            if height ll >= height lr then
+              create ll lv (create lr v r)
+            else begin
+              match lr with
+                Empty -> invalid_arg "Set.bal"
+              | Node (lrl, lrv, lrr, _) ->
+                  create (create ll lv lrl) lrv (create lrr v r)
+            end
+      end else if hr > hl + 2 then begin
+        match r with
+          Empty -> invalid_arg "Set.bal"
+        | Node (rl, rv, rr, _) ->
+            if height rr >= height rl then
+              create (create l v rl) rv rr
+            else begin
+              match rl with
+                Empty -> invalid_arg "Set.bal"
+              | Node (rll, rlv, rlr, _) ->
+                  create (create l v rll) rlv (create rlr rv rr)
+            end
+      end else
+        Node (l, v, r, (if hl >= hr then hl + 1 else hr + 1))
+
+    let rec add_min_element x = function
+      | Empty -> internal_of_t (singleton x)
+      | Node (l, v, r, _) ->
+        bal (add_min_element x l) v r
+
+    let rec add_max_element x = function
+      | Empty -> internal_of_t (singleton x)
+      | Node (l, v, r, _) ->
+        bal l v (add_max_element x r)
+
+    let rec join l v r =
+      match (l, r) with
+        (Empty, _) -> add_min_element v r
+      | (_, Empty) -> add_max_element v l
+      | (Node (ll, lv, lr, lh), Node (rl, rv, rr, rh)) ->
+          if lh > rh + 2 then bal ll lv (join lr v r) else
+          if rh > lh + 2 then bal (join l v rl) rv rr else
+          create l v r
+
+      let try_join l v r =
+        if (l = Empty || Ord.compare (max_elt (t_of_internal l)) v < 0)
+            && (r = Empty || Ord.compare v (min_elt (t_of_internal r)) < 0)
+        then join l v r
+        else internal_of_t (union (t_of_internal l) (add v (t_of_internal r)))
+
+      let rec remove_min_elt = function
+        | Empty -> invalid_arg "Set.remove_min_elt"
+        | Node (Empty, _, r, _) -> r
+        | Node (l, v, r, _) -> bal (remove_min_elt l) v r
+
+      let try_concat t1 t2 =
+        match (t1, t2) with
+        | (Empty, t) -> t
+        | (t, Empty) -> t
+        | (_, _) ->
+            try_join t1 (min_elt (t_of_internal t2))
+              (remove_min_elt t2)
+
+      let rec filter_map f = function
+        | Empty -> Empty
+        | Node (l, v, r, _) as t ->
+           (* enforce left-to-right evaluation order *)
+           let l' = filter_map f l in
+           let v' = f v in
+           let r' = filter_map f r in
+           begin match v' with
+             | Some v' ->
+                if l == l' && v == v' && r == r' then t
+                else try_join l' v' r'
+             | None ->
+                try_concat l' r'
+           end
+
+      let filter_map (f : elt -> elt option) (s : t) : t =
+        t_of_internal (filter_map f (internal_of_t s))
+    @END_WITH_MAGIC@
+    @BEGIN_WITHOUT_MAGIC@
+      type map_changed =
+        | Changed of t
+        | Unchanged of elt list
+
+      let filter_map f s =
+        match
+          fold (fun item accu ->
+            match accu, f item with
+            | Changed set, None -> Changed set
+            | Changed set, Some item' -> Changed (add item' set)
+            | Unchanged list, None -> Changed (of_list list)
+            | Unchanged list, Some item' ->
+               if item == item' then Unchanged (item :: list)
+               else Changed (add item' (of_list list)))
+          s (Unchanged [])
+        with
+        | Changed s -> s
+        | Unchanged _ -> s
+    @END_WITHOUT_MAGIC@
+  @END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_WITH_MAGIC@
+    type split_bis =
+      | Found
+      | NotFound of internal * (unit -> internal)
+
+    let rec split_bis x = function
+      | Empty ->
+          NotFound (Empty, (fun () -> Empty))
+      | Node (l, v, r, _) ->
+          let c = Ord.compare x v in
+          if c = 0 then Found
+          else if c < 0 then
+            match split_bis x l with
+            | Found -> Found
+            | NotFound (ll, rl) -> NotFound (ll, (fun () -> join (rl ()) v r))
+          else
+            match split_bis x r with
+            | Found -> Found
+            | NotFound (lr, rr) -> NotFound (join l v lr, rr)
+
+    let rec disjoint s1 s2 =
+      match (s1, s2) with
+        (Empty, _) | (_, Empty) -> true
+      | (Node (l1, v1, r1, _), t2) ->
+          if s1 == s2 then false
+          else match split_bis v1 t2 with
+              NotFound(l2, r2) -> disjoint l1 l2 && disjoint r1 (r2 ())
+            | Found -> false
+
+    let disjoint (s1 : t) (s2 : t) : bool =
+      disjoint (internal_of_t s1) (internal_of_t s2)
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+  let disjoint s s' =
+    is_empty (inter s s')
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_07_0@
+  let add_seq i m =
+    Stdcompat__seq.fold_left (fun s x -> add x s) m i
+
+  let of_seq i = add_seq i empty
+
+@BEGIN_WITH_MAGIC@
+  let rec cons_enum s e =
+    match s with
+      Empty -> e
+    | Node (l, v, r, _h) -> cons_enum l (More(v, r, e))
+
+  let rec seq_of_enum_ c () = match c with
+    | End -> Stdcompat__seq.Nil
+    | More (x, t, rest) ->
+        Stdcompat__seq.Cons (x, seq_of_enum_ (cons_enum t rest))
+
+  let to_seq (s : t) =
+    let s : internal = internal_of_t s in
+    seq_of_enum_ (cons_enum s End)
+
+  let to_seq_from low s =
+    let s : internal = internal_of_t s in
+    let rec aux low s c = match s with
+      | Empty -> c
+      | Node (l, v, r, _h) ->
+          begin match Ord.compare v low with
+            | 0 -> More (v, r, c)
+            | n when n<0 -> aux low r c
+            | _ -> aux low l (More (v, r, c))
+          end
+    in
+    seq_of_enum_ (aux low s End)
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+  let to_seq s =
+    Stdcompat__list.to_seq (elements s)
+
+  let elements_from low s =
+    let rec cut l =
+      match l with
+      | [] -> []
+      | hd :: tl ->
+        if Ord.compare low hd < 0 then
+          cut tl
+        else
+          l in
+     cut (elements s)
+
+  let to_seq_from low s =
+    Stdcompat__list.to_seq (elements_from low s)
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_01_0@
+  exception Find of elt
+
+@BEGIN_WITH_MAGIC@
+  let rec find_internal x = function
+      Empty -> raise Not_found
+    | Node (l, v, r, _h) ->
+        let c = Ord.compare x v in
+        if c = 0 then v
+        else find_internal x (if c < 0 then l else r)
+
+  let find x (s : t) =
+    let s : internal = internal_of_t s in
+    find_internal x s
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+  let find x s =
+    try
+      iter (fun y ->
+        if Ord.compare x y = 0 then
+          raise (Find y)) s;
+      raise Not_found
+    with Find y -> y
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_01_0@
+
+@BEGIN_BEFORE_4_05_0@
+  let min_elt_opt s =
+    Stdcompat__tools.option_find min_elt s
+
+  let max_elt_opt s =
+    Stdcompat__tools.option_find max_elt s
+
+  let choose_opt s =
+    Stdcompat__tools.option_find choose s
+
+@BEGIN_WITH_MAGIC@
+  let rec find_first_aux v0 f = function
+      Empty ->
+        v0
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_first_aux v f l
+        else
+          find_first_aux v0 f r
+
+  let rec find_first_internal f = function
+      Empty ->
+        raise Not_found
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_first_aux v f l
+        else
+          find_first_internal f r
+
+  let find_first f (s : t) =
+    let s : internal = internal_of_t s in
+    find_first_internal f s
+
+  let rec find_first_opt_aux v0 f = function
+      Empty ->
+        Some v0
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_first_opt_aux v f l
+        else
+          find_first_opt_aux v0 f r
+
+  let rec find_first_opt_internal f = function
+      Empty ->
+        None
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_first_opt_aux v f l
+        else
+          find_first_opt_internal f r
+
+  let find_first_opt f (s : t) =
+    let s : internal = internal_of_t s in
+    find_first_opt_internal f s
+
+  let rec find_last_aux v0 f = function
+      Empty ->
+        v0
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_last_aux v f r
+        else
+          find_last_aux v0 f l
+
+  let rec find_last_internal f = function
+      Empty ->
+        raise Not_found
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_last_aux v f r
+        else
+          find_last_internal f l
+
+  let find_last f (s : t) =
+    let s : internal = internal_of_t s in
+    find_last_internal f s
+
+  let rec find_last_opt_aux v0 f = function
+      Empty ->
+        Some v0
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_last_opt_aux v f r
+        else
+          find_last_opt_aux v0 f l
+
+  let rec find_last_opt_internal f = function
+      Empty ->
+        None
+    | Node (l, v, r, _h) ->
+        if f v then
+          find_last_opt_aux v f r
+        else
+          find_last_opt_internal f l
+
+  let find_last_opt f (s : t) =
+    let s : internal = internal_of_t s in
+    find_last_opt_internal f s
+
+  let rec find_opt_internal x = function
+      Empty -> None
+    | Node (l, v, r, _h) ->
+        let c = Ord.compare x v in
+        if c = 0 then Some v
+        else find_opt_internal x (if c < 0 then l else r)
+
+  let find_opt f (s : t) =
+    let s : internal = internal_of_t s in
+    find_opt_internal f s
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+  let find_opt x s =
+    Stdcompat__tools.option_find (find x) s
+
+  exception Find of elt
+
+  let find_first_opt p s =
+    try
+      iter (fun x ->
+        if p x then
+          raise (Find x)) s;
+      None
+    with Find x -> Some x
+
+  let find_first p s =
+    try
+      iter (fun x ->
+        if p x then
+          raise (Find x)) s;
+      raise Not_found
+    with Find x -> x
+
+  exception Local_not_found
+
+  let find_last_opt p s =
+    let last = ref None in
+    try
+      iter (fun x ->
+        if p x then
+          last := Some x
+        else
+          match !last with
+          | None -> raise Local_not_found
+          | Some x -> raise (Find x)) s;
+      !last
+    with
+    | Local_not_found -> None
+    | Find x -> !last
+
+  let find_last p s =
+    match find_last_opt p s with
+    | None -> raise Not_found
+    | Some x -> x
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_04_0@
+@BEGIN_WITH_MAGIC@
+  let rec map f = function
+    | Empty -> Empty
+    | Node (l, v, r, _) as t ->
+       (* enforce left-to-right evaluation order *)
+       let l' = map f l in
+       let v' = f v in
+       let r' = map f r in
+       if l == l' && v == v' && r == r' then t
+       else try_join l' v' r'
+
+  let map f s =
+    (t_of_internal (map f (internal_of_t s : internal)) : t)
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+  let map f s =
+    match
+      fold (fun item accu ->
+        let item' = f item in
+        match accu with
+        | Changed set -> Changed (add item' set)
+        | Unchanged list ->
+           if item == item' then Unchanged (item :: list)
+           else Changed (add item' (of_list list)))
+      s (Unchanged [])
+    with
+    | Changed s -> s
+    | Unchanged _ -> s
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_04_0@
+
+@BEGIN_BEFORE_3_08_0@
+   let split x s =
+     let add item (passed, (l, present, r)) =
+       if passed then
+         (passed, (l, present, add item r))
+       else
+         let o = Ord.compare item x in
+         if o < 0 then (passed, (add item l, present, add item r))
+         else if o > 0 then (true, (l, false, add item r))
+         else (true, (l, true, r)) in
+     snd (fold add s (false, (empty, false, empty)))
+@END_BEFORE_3_08_0@
+
+@BEGIN_BEFORE_5_1_0@
+  let to_list s =
+    elements s
+@END_BEFORE_5_1_0@
+end
+@END_BEFORE_5_1_0@

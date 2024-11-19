@@ -1,0 +1,73 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type t = bool =
+  | false 
+  | true 
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type t = bool =
+  | false 
+  | true 
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type t = bool =
+                     | false 
+                     | true 
+ *)
+
+val seeded_hash : int -> bool -> int
+(** @since 5.1.0: val seeded_hash : int -> bool -> int *)
+
+val hash : bool -> int
+(** @since 5.1.0: val hash : bool -> int *)
+
+val not : bool -> bool
+(** @since 4.08.0: val not : bool -> bool *)
+
+@BEGIN_FROM_4_08_0@
+external (&&) : bool -> bool -> bool = "%sequand"
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_FROM_4_02_0@
+external (&&) : bool -> bool -> bool = "%sequand"[@@ocaml.deprecated
+                                                   "Use (&&) instead."]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+external (&&) : bool -> bool -> bool = "%sequand"
+@END_BEFORE_4_02_0@
+
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: external (&&) : bool -> bool -> bool = "%sequand"
+ *)
+
+@BEGIN_FROM_4_08_0@
+external (||) : bool -> bool -> bool = "%sequor"
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_FROM_4_02_0@
+external (||) : bool -> bool -> bool = "%sequor"[@@ocaml.deprecated
+                                                  "Use (||) instead."]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+external (||) : bool -> bool -> bool = "%sequor"
+@END_BEFORE_4_02_0@
+
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: external (||) : bool -> bool -> bool = "%sequor"
+ *)
+
+val equal : bool -> bool -> bool
+(** @since 4.08.0: val equal : bool -> bool -> bool *)
+
+val compare : bool -> bool -> int
+(** @since 4.08.0: val compare : bool -> bool -> int *)
+
+val to_int : bool -> int
+(** @since 4.08.0: val to_int : bool -> int *)
+
+val to_float : bool -> float
+(** @since 4.08.0: val to_float : bool -> float *)
+
+val to_string : bool -> string
+(** @since 4.08.0: val to_string : bool -> string *)
+
+end

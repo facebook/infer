@@ -1,0 +1,758 @@
+@BEGIN_BEFORE_4_02_0@
+include String
+
+let empty = ""
+
+let of_string = copy
+
+let to_string = copy
+
+let sub_string = sub
+
+let extend s left right =
+  let len = left + length s + right in
+  let result = create len in
+  let trim_left = max (- left) 0 in
+  unsafe_blit s trim_left result (max left 0)
+    (length s - trim_left - max (- right) 0);
+  result
+
+let blit_string = blit
+
+let cat = ( ^ )
+
+let unsafe_of_string s = s
+
+let unsafe_to_string s = s
+let init n f =
+  let s = create n in
+  for i = 0 to n - 1 do
+    s.[i] <- f i
+  done;
+  s
+
+let mapi f s =
+  init (length s) (fun i -> f i (unsafe_get s i))
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_00_0@
+let iteri f s =
+  for i = 0 to length s - 1 do
+    f i (unsafe_get s i)
+  done
+
+let map f s =
+  init (length s) (fun i -> f (unsafe_get s i))
+
+let is_space = function
+  | ' ' | '\012' | '\n' | '\r' | '\t' -> true
+  | _ -> false
+
+let rec rindex_no_space_from i s =
+  if i >= 0 && is_space (unsafe_get s i) then
+    rindex_no_space_from (pred i) s
+  else
+    i
+
+let rec index_no_space_between i j s =
+  if i <= j && is_space (unsafe_get s i) then
+    index_no_space_between (succ i) j s
+  else
+    i
+
+let trim s =
+  let off_end = rindex_no_space_from (length s - 1) s in
+  let off_start = index_no_space_between 0 off_end s in
+  if off_start > off_end then
+    ""
+  else if off_start = 0 && off_end = length s - 1 then
+    s
+  else
+    sub s off_start (off_end - off_start + 1)
+@END_BEFORE_4_00_0@
+
+@BEGIN_FROM_4_02_0@
+include Bytes
+@END_FROM_4_02_0@
+
+@BEGIN_BEFORE_4_05_0@
+let index_opt s c =
+  Stdcompat__tools.option_find (index s) c
+
+let rindex_opt s c =
+  Stdcompat__tools.option_find (rindex s) c
+
+let index_from_opt s i c =
+  Stdcompat__tools.option_find (index_from s i) c
+
+let rindex_from_opt s i c =
+  Stdcompat__tools.option_find (rindex_from s i) c
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_03_0@
+let uppercase_ascii = uppercase
+
+let lowercase_ascii = lowercase
+
+let capitalize_ascii = capitalize
+
+let uncapitalize_ascii = uncapitalize
+
+let equal : t -> t -> bool = ( = )
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_07_0@
+let of_seq g =
+  Stdcompat__buffer.to_bytes (Stdcompat__buffer.of_seq g)
+
+let to_seq s = Stdcompat__tools.vec_to_seq length unsafe_get s
+
+let to_seqi s = Stdcompat__tools.vec_to_seqi length unsafe_get s
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_08_0@
+let pad_sign i w =
+  let pad_width = Stdcompat__sys.int_size - w in
+  (i lsl pad_width) asr pad_width
+
+let index_out_of_bounds () =
+  invalid_arg "index out of bounds"
+
+let unsafe_get_uint8 b i =
+  int_of_char (get b i)
+
+let get_uint8 b i =
+  if i < 0 || i >= length b then
+    index_out_of_bounds ();
+  unsafe_get_uint8 b i
+
+let get_int8 b i =
+  pad_sign (get_uint8 b i) 8
+
+let unsafe_get_uint16_le b i =
+  let l = unsafe_get_uint8 b i in
+  let u = unsafe_get_uint8 b (succ i) in
+  l lor u lsl 8
+
+let get_uint16_le b i =
+  if i < 0 || succ i >= length b then
+    index_out_of_bounds ();
+  unsafe_get_uint16_le b i
+
+let unsafe_get_uint16_be b i =
+  let u = unsafe_get_uint8 b i in
+  let l = unsafe_get_uint8 b (succ i) in
+  l lor u lsl 8
+
+let get_uint16_be b i =
+  if i < 0 || succ i >= length b then
+    index_out_of_bounds ();
+  unsafe_get_uint16_be b i
+
+let get_uint16_ne b i =
+  if Stdcompat__sys.big_endian then get_uint16_be b i
+  else get_uint16_le b i
+
+let get_int16_le b i =
+  pad_sign (get_uint16_le b i) 16
+
+let get_int16_be b i =
+  pad_sign (get_uint16_be b i) 16
+
+let get_int16_ne b i =
+  pad_sign (get_uint16_ne b i) 16
+
+let get_int32_le b i =
+  if i < 0 || i + 3 >= length b then
+    index_out_of_bounds ();
+  let i0 = unsafe_get_uint8 b i in
+  let i1 = unsafe_get_uint8 b (i + 1) in
+  let i2 = unsafe_get_uint8 b (i + 2) in
+  let i3 = unsafe_get_uint8 b (i + 3) in
+  Int32.logor (Int32.of_int i0)
+    (Int32.logor (Int32.shift_left (Int32.of_int i1) 8)
+      (Int32.logor (Int32.shift_left (Int32.of_int i2) 16)
+        (Int32.shift_left (Int32.of_int i3) 24)))
+
+let get_int32_be b i =
+  if i < 0 || i + 3 >= length b then
+    index_out_of_bounds ();
+  let i3 = unsafe_get_uint8 b i in
+  let i2 = unsafe_get_uint8 b (i + 1) in
+  let i1 = unsafe_get_uint8 b (i + 2) in
+  let i0 = unsafe_get_uint8 b (i + 3) in
+  Int32.logor (Int32.of_int i0)
+    (Int32.logor (Int32.shift_left (Int32.of_int i1) 8)
+      (Int32.logor (Int32.shift_left (Int32.of_int i2) 16)
+        (Int32.shift_left (Int32.of_int i3) 24)))
+
+let get_int32_ne b i =
+  if Stdcompat__sys.big_endian then get_int32_be b i
+  else get_int32_le b i
+
+let get_int64_le b i =
+  if i < 0 || i + 7 >= length b then
+    index_out_of_bounds ();
+  let i0 = unsafe_get_uint8 b i in
+  let i1 = unsafe_get_uint8 b (i + 1) in
+  let i2 = unsafe_get_uint8 b (i + 2) in
+  let i3 = unsafe_get_uint8 b (i + 3) in
+  let i4 = unsafe_get_uint8 b (i + 4) in
+  let i5 = unsafe_get_uint8 b (i + 5) in
+  let i6 = unsafe_get_uint8 b (i + 6) in
+  let i7 = unsafe_get_uint8 b (i + 7) in
+  Int64.logor (Int64.of_int i0)
+    (Int64.logor (Int64.shift_left (Int64.of_int i1) 8)
+      (Int64.logor (Int64.shift_left (Int64.of_int i2) 16)
+        (Int64.logor (Int64.shift_left (Int64.of_int i3) 24)
+          (Int64.logor (Int64.shift_left (Int64.of_int i4) 32)
+            (Int64.logor (Int64.shift_left (Int64.of_int i5) 40)
+              (Int64.logor (Int64.shift_left (Int64.of_int i6) 48)
+                (Int64.shift_left (Int64.of_int i7) 56)))))))
+
+let get_int64_be b i =
+  if i < 0 || i + 7 >= length b then
+    index_out_of_bounds ();
+  let i7 = unsafe_get_uint8 b i in
+  let i6 = unsafe_get_uint8 b (i + 1) in
+  let i5 = unsafe_get_uint8 b (i + 2) in
+  let i4 = unsafe_get_uint8 b (i + 3) in
+  let i3 = unsafe_get_uint8 b (i + 4) in
+  let i2 = unsafe_get_uint8 b (i + 5) in
+  let i1 = unsafe_get_uint8 b (i + 6) in
+  let i0 = unsafe_get_uint8 b (i + 7) in
+  Int64.logor (Int64.of_int i0)
+    (Int64.logor (Int64.shift_left (Int64.of_int i1) 8)
+      (Int64.logor (Int64.shift_left (Int64.of_int i2) 16)
+        (Int64.logor (Int64.shift_left (Int64.of_int i3) 24)
+          (Int64.logor (Int64.shift_left (Int64.of_int i4) 32)
+            (Int64.logor (Int64.shift_left (Int64.of_int i5) 40)
+              (Int64.logor (Int64.shift_left (Int64.of_int i6) 48)
+                (Int64.shift_left (Int64.of_int i7) 56)))))))
+
+let get_int64_ne b i =
+  if Stdcompat__sys.big_endian then get_int64_be b i
+  else get_int64_le b i
+
+let unsafe_set_uint8 b i v =
+  unsafe_set b i (char_of_int (v land 0xFF))
+
+let set_uint8 b i v =
+  if i < 0 || i >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint8 b i v
+
+let set_int8 = set_uint8
+
+let unsafe_set_uint16_le b i v =
+  unsafe_set_uint8 b i v;
+  unsafe_set_uint8 b (succ i) (v lsr 8)
+
+let set_uint16_le b i v =
+  if i < 0 || succ i >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint16_le b i v
+
+let unsafe_set_uint16_be b i v =
+  unsafe_set_uint8 b i (v lsr 8);
+  unsafe_set_uint8 b (succ i) v
+
+let set_uint16_be b i v =
+  if i < 0 || succ i >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint16_be b i v
+
+let set_uint16_ne b i v =
+  if Stdcompat__sys.big_endian then set_uint16_be b i v
+  else set_uint16_le b i v
+
+let set_int16_le = set_uint16_le
+
+let set_int16_be = set_uint16_be
+
+let set_int16_ne = set_uint16_ne
+
+let set_int32_le b i v =
+  if i < 0 || i + 3 >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint8 b i (Int32.to_int v);
+  unsafe_set_uint8 b (i + 1) (Int32.to_int (Int32.shift_right v 8));
+  unsafe_set_uint8 b (i + 2) (Int32.to_int (Int32.shift_right v 16));
+  unsafe_set_uint8 b (i + 3) (Int32.to_int (Int32.shift_right v 24))
+
+let set_int32_be b i v =
+  if i < 0 || i + 3 >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint8 b i (Int32.to_int (Int32.shift_right v 24));
+  unsafe_set_uint8 b (i + 1) (Int32.to_int (Int32.shift_right v 16));
+  unsafe_set_uint8 b (i + 2) (Int32.to_int (Int32.shift_right v 8));
+  unsafe_set_uint8 b (i + 3) (Int32.to_int v)
+
+let set_int32_ne b i v =
+  if Stdcompat__sys.big_endian then set_int32_be b i v
+  else set_int32_le b i v
+
+let set_int64_le b i v =
+  if i < 0 || i + 7 >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint8 b i (Int64.to_int v);
+  unsafe_set_uint8 b (i + 1) (Int64.to_int (Int64.shift_right v 8));
+  unsafe_set_uint8 b (i + 2) (Int64.to_int (Int64.shift_right v 16));
+  unsafe_set_uint8 b (i + 3) (Int64.to_int (Int64.shift_right v 24));
+  unsafe_set_uint8 b (i + 4) (Int64.to_int (Int64.shift_right v 32));
+  unsafe_set_uint8 b (i + 5) (Int64.to_int (Int64.shift_right v 40));
+  unsafe_set_uint8 b (i + 6) (Int64.to_int (Int64.shift_right v 48));
+  unsafe_set_uint8 b (i + 7) (Int64.to_int (Int64.shift_right v 56))
+
+let set_int64_be b i v =
+  if i < 0 || i + 7 >= length b then
+    index_out_of_bounds ();
+  unsafe_set_uint8 b i (Int64.to_int (Int64.shift_right v 56));
+  unsafe_set_uint8 b (i + 1) (Int64.to_int (Int64.shift_right v 48));
+  unsafe_set_uint8 b (i + 2) (Int64.to_int (Int64.shift_right v 40));
+  unsafe_set_uint8 b (i + 3) (Int64.to_int (Int64.shift_right v 32));
+  unsafe_set_uint8 b (i + 4) (Int64.to_int (Int64.shift_right v 24));
+  unsafe_set_uint8 b (i + 5) (Int64.to_int (Int64.shift_right v 16));
+  unsafe_set_uint8 b (i + 6) (Int64.to_int (Int64.shift_right v 8));
+  unsafe_set_uint8 b (i + 7) (Int64.to_int v)
+
+let set_int64_ne b i v =
+  if Stdcompat__sys.big_endian then set_int64_be b i v
+  else set_int64_le b i v
+@END_BEFORE_4_08_0@
+
+@BEGIN_FROM_4_08_0@
+@BEGIN_BEFORE_4_14_0@
+external unsafe_get_uint8 : bytes -> int -> int = "%bytes_unsafe_get"
+external unsafe_get_uint16_ne : bytes -> int -> int = "%caml_bytes_get16u"
+external get_uint8 : bytes -> int -> int = "%bytes_safe_get"
+external get_uint16_ne : bytes -> int -> int = "%caml_bytes_get16"
+external get_int32_ne : bytes -> int -> int32 = "%caml_bytes_get32"
+external get_int64_ne : bytes -> int -> int64 = "%caml_bytes_get64"
+
+external unsafe_set_uint8 : bytes -> int -> int -> unit = "%bytes_unsafe_set"
+external unsafe_set_uint16_ne : bytes -> int -> int -> unit
+                              = "%caml_bytes_set16u"
+external set_int8 : bytes -> int -> int -> unit = "%bytes_safe_set"
+external set_int16_ne : bytes -> int -> int -> unit = "%caml_bytes_set16"
+external set_int32_ne : bytes -> int -> int32 -> unit = "%caml_bytes_set32"
+external set_int64_ne : bytes -> int -> int64 -> unit = "%caml_bytes_set64"
+
+external swap16 : int -> int = "%bswap16"
+
+let unsafe_get_uint16_le b i =
+  if Sys.big_endian then
+    swap16 (unsafe_get_uint16_ne b i)
+  else
+    unsafe_get_uint16_ne b i
+
+let unsafe_get_uint16_be b i =
+  if Sys.big_endian then
+    unsafe_get_uint16_ne b i
+  else
+    swap16 (unsafe_get_uint16_ne b i)
+
+let unsafe_set_uint16_le b i x =
+  if Sys.big_endian then
+    unsafe_set_uint16_ne b i (swap16 x)
+  else
+    unsafe_set_uint16_ne b i x
+
+let unsafe_set_uint16_be b i x =
+  if Sys.big_endian then
+    unsafe_set_uint16_ne b i x
+  else
+    unsafe_set_uint16_ne b i (swap16 x)
+@END_BEFORE_4_14_0@
+@END_FROM_4_08_0@
+
+@BEGIN_BEFORE_4_09_0@
+@BEGIN_FROM_4_03_0@
+external unsafe_blit_string :
+  string -> int -> bytes -> int -> int -> unit = "caml_blit_string"[@@noalloc]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external unsafe_blit_string :
+  string -> int -> Stdcompat__init.bytes -> int -> int -> unit =
+    "caml_blit_string" "noalloc"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external unsafe_blit_string :
+  string -> int -> Stdcompat__init.bytes -> int -> int -> unit =
+    "blit_string" "noalloc"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+@END_BEFORE_4_09_0@
+
+@BEGIN_BEFORE_4_13_0@
+let rec fold_left_rec f init bytes i =
+  if i >= length bytes then
+    init
+  else
+    fold_left_rec f (f init (unsafe_get bytes i)) bytes (succ i)
+
+let fold_left f init bytes =
+  fold_left_rec f init bytes 0
+
+let rec fold_right_rec f bytes init i =
+  if i = 0 then
+    init
+  else
+    let j = pred i in
+    fold_right_rec f bytes (f (unsafe_get bytes j) init) j
+
+let fold_right f bytes init =
+  fold_right_rec f bytes init (length bytes)
+
+let rec for_all_rec f bytes i =
+  if i >= length bytes then
+    true
+  else if f (unsafe_get bytes i) then
+    for_all_rec f bytes (succ i)
+  else
+    false
+
+let for_all f bytes =
+  for_all_rec f bytes 0
+
+let rec exists_rec f bytes i =
+  if i >= length bytes then
+    false
+  else if f (unsafe_get bytes i) then
+    true
+  else
+    exists_rec f bytes (succ i)
+
+let exists f bytes =
+  exists_rec f bytes 0
+
+let rec unsafe_sub_equal bytes0 off0 bytes1 off1 length =
+  if length = 0 then
+    true
+  else if unsafe_get bytes0 off0 = unsafe_get bytes1 off1 then
+    unsafe_sub_equal bytes0 (succ off0) bytes1 (succ off1) (pred length)
+  else
+    false
+
+let starts_with ~prefix bytes =
+  length prefix <= length bytes &&
+  unsafe_sub_equal bytes 0 prefix 0 (length prefix)
+
+let ends_with ~suffix bytes =
+  length suffix <= length bytes &&
+  unsafe_sub_equal bytes (length bytes - length suffix) suffix 0 (length suffix)
+
+let split_on_char c s =
+  let previous_index = ref (length s) in
+  let accu = ref [] in
+  for i = length s - 1 downto 0 do
+    if unsafe_get s i = c then
+      begin
+        accu := sub s (i + 1) (!previous_index - i - 1) :: !accu;
+        previous_index := i
+      end
+  done;
+  sub s 0 !previous_index :: !accu
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_4_14_0@
+let dec_invalid = Stdcompat__uchar.utf_decode_invalid
+let dec_ret n u = Stdcompat__uchar.utf_decode n (Stdcompat__uchar.unsafe_of_int u)
+
+(* In case of decoding error, if we error on the first byte, we
+   consume the byte, otherwise we consume the [n] bytes preceeding
+   the erroring byte.
+
+   This means that if a client uses decodes without caring about
+   validity it naturally replace bogus data with Stdcompat__uchar.rep according
+   to the WHATWG Encoding standard. Other schemes are possible by
+   consulting the number of used bytes on invalid decodes. For more
+   details see https://hsivonen.fi/broken-utf-8/
+
+   For this reason in [get_utf_8_uchar] we gradually check the next
+   byte is available rather than doing it immediately after the
+   first byte. Contrast with [is_valid_utf_8]. *)
+
+(* UTF-8 *)
+
+let not_in_x80_to_xBF b = b lsr 6 <> 0b10
+let not_in_xA0_to_xBF b = b lsr 5 <> 0b101
+let not_in_x80_to_x9F b = b lsr 5 <> 0b100
+let not_in_x90_to_xBF b = b < 0x90 || 0xBF < b
+let not_in_x80_to_x8F b = b lsr 4 <> 0x8
+
+let utf_8_uchar_2 b0 b1 =
+  ((b0 land 0x1F) lsl 6) lor
+  ((b1 land 0x3F))
+
+let utf_8_uchar_3 b0 b1 b2 =
+  ((b0 land 0x0F) lsl 12) lor
+  ((b1 land 0x3F) lsl 6) lor
+  ((b2 land 0x3F))
+
+let utf_8_uchar_4 b0 b1 b2 b3 =
+  ((b0 land 0x07) lsl 18) lor
+  ((b1 land 0x3F) lsl 12) lor
+  ((b2 land 0x3F) lsl 6) lor
+  ((b3 land 0x3F))
+
+let get_utf_8_uchar b i =
+  let b0 = get_uint8 b i in (* raises if [i] is not a valid index. *)
+  let get = unsafe_get_uint8 in
+  let max = length b - 1 in
+  match Char.unsafe_chr b0 with (* See The Unicode Standard, Table 3.7 *)
+  | '\x00' .. '\x7F' -> dec_ret 1 b0
+  | '\xC2' .. '\xDF' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x80_to_xBF b1 then dec_invalid 1 else
+      dec_ret 2 (utf_8_uchar_2 b0 b1)
+  | '\xE0' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_xA0_to_xBF b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      dec_ret 3 (utf_8_uchar_3 b0 b1 b2)
+  | '\xE1' .. '\xEC' | '\xEE' .. '\xEF' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x80_to_xBF b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      dec_ret 3 (utf_8_uchar_3 b0 b1 b2)
+  | '\xED' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x80_to_x9F b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      dec_ret 3 (utf_8_uchar_3 b0 b1 b2)
+  | '\xF0' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x90_to_xBF b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      let i = i + 1 in if i > max then dec_invalid 3 else
+      let b3 = get b i in if not_in_x80_to_xBF b3 then dec_invalid 3 else
+      dec_ret 4 (utf_8_uchar_4 b0 b1 b2 b3)
+  | '\xF1' .. '\xF3' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x80_to_xBF b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      let i = i + 1 in if i > max then dec_invalid 3 else
+      let b3 = get b i in if not_in_x80_to_xBF b3 then dec_invalid 3 else
+      dec_ret 4 (utf_8_uchar_4 b0 b1 b2 b3)
+  | '\xF4' ->
+      let i = i + 1 in if i > max then dec_invalid 1 else
+      let b1 = get b i in if not_in_x80_to_x8F b1 then dec_invalid 1 else
+      let i = i + 1 in if i > max then dec_invalid 2 else
+      let b2 = get b i in if not_in_x80_to_xBF b2 then dec_invalid 2 else
+      let i = i + 1 in if i > max then dec_invalid 3 else
+      let b3 = get b i in if not_in_x80_to_xBF b3 then dec_invalid 3 else
+      dec_ret 4 (utf_8_uchar_4 b0 b1 b2 b3)
+  | _ -> dec_invalid 1
+
+let set_utf_8_uchar b i u =
+  let set = unsafe_set_uint8 in
+  let max = length b - 1 in
+  match Stdcompat__uchar.to_int u with
+  | u when u < 0 -> assert false
+  | u when u <= 0x007F ->
+      set_uint8 b i u;
+      1
+  | u when u <= 0x07FF ->
+      let last = i + 1 in
+      if last > max then 0 else
+      (set_uint8 b i (0xC0 lor (u lsr 6));
+       set b last (0x80 lor (u land 0x3F));
+       2)
+  | u when u <= 0xFFFF ->
+      let last = i + 2 in
+      if last > max then 0 else
+      (set_uint8 b i (0xE0 lor (u lsr 12));
+       set b (i + 1) (0x80 lor ((u lsr 6) land 0x3F));
+       set b last (0x80 lor (u land 0x3F));
+       3)
+  | u when u <= 0x10FFFF ->
+      let last = i + 3 in
+      if last > max then 0 else
+      (set_uint8 b i (0xF0 lor (u lsr 18));
+       set b (i + 1) (0x80 lor ((u lsr 12) land 0x3F));
+       set b (i + 2) (0x80 lor ((u lsr 6) land 0x3F));
+       set b last (0x80 lor (u land 0x3F));
+       4)
+  | _ -> assert false
+
+let is_valid_utf_8 b =
+  let rec loop max b i =
+    if i > max then true else
+    let get = unsafe_get_uint8 in
+    match Char.unsafe_chr (get b i) with
+    | '\x00' .. '\x7F' -> loop max b (i + 1)
+    | '\xC2' .. '\xDF' ->
+        let last = i + 1 in
+        if last > max
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xE0' ->
+        let last = i + 2 in
+        if last > max
+        || not_in_xA0_to_xBF (get b (i + 1))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xE1' .. '\xEC' | '\xEE' .. '\xEF' ->
+        let last = i + 2 in
+        if last > max
+        || not_in_x80_to_xBF (get b (i + 1))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xED' ->
+        let last = i + 2 in
+        if last > max
+        || not_in_x80_to_x9F (get b (i + 1))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xF0' ->
+        let last = i + 3 in
+        if last > max
+        || not_in_x90_to_xBF (get b (i + 1))
+        || not_in_x80_to_xBF (get b (i + 2))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xF1' .. '\xF3' ->
+        let last = i + 3 in
+        if last > max
+        || not_in_x80_to_xBF (get b (i + 1))
+        || not_in_x80_to_xBF (get b (i + 2))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | '\xF4' ->
+        let last = i + 3 in
+        if last > max
+        || not_in_x80_to_x8F (get b (i + 1))
+        || not_in_x80_to_xBF (get b (i + 2))
+        || not_in_x80_to_xBF (get b last)
+        then false
+        else loop max b (last + 1)
+    | _ -> false
+  in
+  loop (length b - 1) b 0
+
+(* UTF-16BE *)
+
+let get_utf_16be_uchar b i =
+  let get = unsafe_get_uint16_be in
+  let max = length b - 1 in
+  if i < 0 || i > max then invalid_arg "index out of bounds" else
+  if i = max then dec_invalid 1 else
+  match get b i with
+  | u when u < 0xD800 || u > 0xDFFF -> dec_ret 2 u
+  | u when u > 0xDBFF -> dec_invalid 2
+  | hi -> (* combine [hi] with a low surrogate *)
+      let last = i + 3 in
+      if last > max then dec_invalid (max - i + 1) else
+      match get b (i + 2) with
+      | u when u < 0xDC00 || u > 0xDFFF -> dec_invalid 2 (* retry here *)
+      | lo ->
+          let u = (((hi land 0x3FF) lsl 10) lor (lo land 0x3FF)) + 0x10000 in
+          dec_ret 4 u
+
+let set_utf_16be_uchar b i u =
+  let set = unsafe_set_uint16_be in
+  let max = length b - 1 in
+  if i < 0 || i > max then invalid_arg "index out of bounds" else
+  match Stdcompat__uchar.to_int u with
+  | u when u < 0 -> assert false
+  | u when u <= 0xFFFF ->
+      let last = i + 1 in
+      if last > max then 0 else (set b i u; 2)
+  | u when u <= 0x10FFFF ->
+      let last = i + 3 in
+      if last > max then 0 else
+      let u' = u - 0x10000 in
+      let hi = (0xD800 lor (u' lsr 10)) in
+      let lo = (0xDC00 lor (u' land 0x3FF)) in
+      set b i hi; set b (i + 2) lo; 4
+  | _ -> assert false
+
+let is_valid_utf_16be b =
+  let rec loop max b i =
+    let get = unsafe_get_uint16_be in
+    if i > max then true else
+    if i = max then false else
+    match get b i with
+    | u when u < 0xD800 || u > 0xDFFF -> loop max b (i + 2)
+    | u when u > 0xDBFF -> false
+    | _hi ->
+        let last = i + 3 in
+        if last > max then false else
+        match get b (i + 2) with
+        | u when u < 0xDC00 || u > 0xDFFF -> false
+        | _lo -> loop max b (i + 4)
+  in
+  loop (length b - 1) b 0
+
+(* UTF-16LE *)
+
+let get_utf_16le_uchar b i =
+  let get = unsafe_get_uint16_le in
+  let max = length b - 1 in
+  if i < 0 || i > max then invalid_arg "index out of bounds" else
+  if i = max then dec_invalid 1 else
+  match get b i with
+  | u when u < 0xD800 || u > 0xDFFF -> dec_ret 2 u
+  | u when u > 0xDBFF -> dec_invalid 2
+  | hi -> (* combine [hi] with a low surrogate *)
+      let last = i + 3 in
+      if last > max then dec_invalid (max - i + 1) else
+      match get b (i + 2) with
+      | u when u < 0xDC00 || u > 0xDFFF -> dec_invalid 2 (* retry here *)
+      | lo ->
+          let u = (((hi land 0x3FF) lsl 10) lor (lo land 0x3FF)) + 0x10000 in
+          dec_ret 4 u
+
+let set_utf_16le_uchar b i u =
+  let set = unsafe_set_uint16_le in
+  let max = length b - 1 in
+  if i < 0 || i > max then invalid_arg "index out of bounds" else
+  match Stdcompat__uchar.to_int u with
+  | u when u < 0 -> assert false
+  | u when u <= 0xFFFF ->
+      let last = i + 1 in
+      if last > max then 0 else (set b i u; 2)
+  | u when u <= 0x10FFFF ->
+      let last = i + 3 in
+      if last > max then 0 else
+      let u' = u - 0x10000 in
+      let hi = (0xD800 lor (u' lsr 10)) in
+      let lo = (0xDC00 lor (u' land 0x3FF)) in
+      set b i hi; set b (i + 2) lo; 4
+  | _ -> assert false
+
+let is_valid_utf_16le b =
+  let rec loop max b i =
+    let get = unsafe_get_uint16_le in
+    if i > max then true else
+    if i = max then false else
+    match get b i with
+    | u when u < 0xD800 || u > 0xDFFF -> loop max b (i + 2)
+    | u when u > 0xDBFF -> false
+    | _hi ->
+        let last = i + 3 in
+        if last > max then false else
+        match get b (i + 2) with
+        | u when u < 0xDC00 || u > 0xDFFF -> false
+        | _lo -> loop max b (i + 4)
+  in
+  loop (length b - 1) b 0
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_0_0@
+let unsafe_escape b =
+  escaped b
+@END_BEFORE_5_0_0@

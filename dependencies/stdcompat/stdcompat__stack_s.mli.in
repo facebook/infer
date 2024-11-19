@@ -1,0 +1,151 @@
+module type S = sig
+@BEGIN_FROM_5_1_0@
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a Stack.t
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a Stack.t
+@END_BEFORE_4_12_0@
+
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_5_0_0@
+type 'a t
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a Stack.t
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a Stack.t
+@END_BEFORE_4_12_0@
+
+@END_BEFORE_5_0_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0: type !'a t
+@since 3.07.0: type !'a t
+ *)
+
+exception Empty 
+(** Alias for {!Stack.Empty} *)
+
+val drop : 'a t -> unit
+(** @since 5.1.0: val drop : 'a t -> unit *)
+
+@BEGIN_FROM_5_1_0@
+val to_seq : 'a t -> 'a Seq.t
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_5_0_0@
+val to_seq : 'a t -> 'a Stdcompat__seq.t
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_07_0@
+val to_seq : 'a t -> 'a Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : 'a t -> 'a Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+
+@END_BEFORE_5_0_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0: val to_seq : 'a t -> 'a Seq.t
+@since 4.07.0: val to_seq : 'a t -> 'a Seq.t
+ *)
+
+@BEGIN_FROM_5_1_0@
+val add_seq : 'a t -> 'a Seq.t -> unit
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_5_0_0@
+val add_seq : 'a t -> 'a Stdcompat__seq.t -> unit
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_07_0@
+val add_seq : 'a t -> 'a Seq.t -> unit
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val add_seq : 'a t -> 'a Stdcompat__seq.t -> unit
+@END_BEFORE_4_07_0@
+
+@END_BEFORE_5_0_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0: val add_seq : 'a t -> 'a Seq.t -> unit
+@since 4.07.0: val add_seq : 'a t -> 'a Seq.t -> unit
+ *)
+
+@BEGIN_FROM_5_1_0@
+val of_seq : 'a Seq.t -> 'a t
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_5_0_0@
+val of_seq : 'a Stdcompat__seq.t -> 'a t
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_07_0@
+val of_seq : 'a Seq.t -> 'a t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : 'a Stdcompat__seq.t -> 'a t
+@END_BEFORE_4_07_0@
+
+@END_BEFORE_5_0_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0: val of_seq : 'a Seq.t -> 'a t
+@since 4.07.0: val of_seq : 'a Seq.t -> 'a t
+ *)
+
+val pop_opt : 'a t -> 'a option
+(** @since 4.08.0: val pop_opt : 'a t -> 'a option *)
+
+val top_opt : 'a t -> 'a option
+(** @since 4.08.0: val top_opt : 'a t -> 'a option *)
+
+@BEGIN_FROM_5_0_0@
+val fold : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_4_03_0@
+val fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val fold : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_5_0_0@
+(** @since 5.1.0: val fold : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
+@since 4.03.0: val fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b
+ *)
+
+val create : unit -> 'a t
+(** Alias for {!Stack.create} *)
+
+val push : 'a -> 'a t -> unit
+(** Alias for {!Stack.push} *)
+
+val pop : 'a t -> 'a
+(** Alias for {!Stack.pop} *)
+
+val top : 'a t -> 'a
+(** Alias for {!Stack.top} *)
+
+val clear : 'a t -> unit
+(** Alias for {!Stack.clear} *)
+
+val copy : 'a t -> 'a t
+(** Alias for {!Stack.copy} *)
+
+val is_empty : 'a t -> bool
+(** Alias for {!Stack.is_empty} *)
+
+val length : 'a t -> int
+(** Alias for {!Stack.length} *)
+
+val iter : ('a -> unit) -> 'a t -> unit
+(** Alias for {!Stack.iter} *)
+
+end

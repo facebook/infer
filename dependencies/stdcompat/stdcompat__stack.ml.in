@@ -1,0 +1,72 @@
+include Stack
+
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_WITH_MAGIC@
+type 'a internal = { mutable c : 'a list; mutable len : int; }
+
+let pop_opt (s : 'a t) =
+  let s : 'a internal = Obj.magic s in
+  match s.c with
+  | [] -> None
+  | hd :: tl ->
+      s.c <- tl;
+      s.len <- pred s.len;
+      Some hd
+
+let top_opt (s : 'a t) =
+  let s : 'a internal = Obj.magic s in
+  match s.c with
+  | [] -> None
+  | hd :: _tl -> Some hd
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+let pop_opt s =
+  try Some (pop s)
+  with Empty -> None
+
+let top_opt s =
+  try Some (top s)
+  with Empty -> None
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_WITH_MAGIC@
+let fold f acc (s : 'a t) =
+  let s : 'a internal = Obj.magic s in
+  List.fold_left f acc s.c
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+let fold f acc s =
+  let r = ref acc in
+  iter (fun item -> r := f !r item) s;
+  !r
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_07_0@
+let add_seq s i = Stdcompat__seq.iter (fun x -> push x s) i
+
+let of_seq g =
+  let s = create() in
+  add_seq s g;
+  s
+
+@BEGIN_WITH_MAGIC@
+let to_seq (s : 'a t) =
+  let s : 'a internal = Obj.magic s in
+  Stdcompat__list.to_seq s.c
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+let to_list s =
+  fold (fun accu content -> content :: accu) [] s
+
+let to_seq s =
+  Stdcompat__list.to_seq (List.rev (to_list s))
+@END_WITHOUT_MAGIC@
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_5_1_0@
+let drop s =
+  ignore (pop s)
+@END_BEFORE_5_1_0@

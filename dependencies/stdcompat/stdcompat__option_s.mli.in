@@ -1,0 +1,79 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type 'a t = 'a option =
+  | None 
+  | Some of 'a 
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a option =
+  | None 
+  | Some of 'a 
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type 'a t = 'a option =
+                     | None 
+                     | Some of 'a 
+ *)
+
+val none : 'a option
+(** @since 4.08.0: val none : 'a option *)
+
+val some : 'a -> 'a option
+(** @since 4.08.0: val some : 'a -> 'a option *)
+
+val value : 'a option -> default:'a -> 'a
+(** @since 4.08.0: val value : 'a option -> default:'a -> 'a *)
+
+val get : 'a option -> 'a
+(** @since 4.08.0: val get : 'a option -> 'a *)
+
+val bind : 'a option -> ('a -> 'b option) -> 'b option
+(** @since 4.08.0: val bind : 'a option -> ('a -> 'b option) -> 'b option *)
+
+val join : 'a option option -> 'a option
+(** @since 4.08.0: val join : 'a option option -> 'a option *)
+
+val map : ('a -> 'b) -> 'a option -> 'b option
+(** @since 4.08.0: val map : ('a -> 'b) -> 'a option -> 'b option *)
+
+val fold : none:'a -> some:('b -> 'a) -> 'b option -> 'a
+(** @since 4.08.0: val fold : none:'a -> some:('b -> 'a) -> 'b option -> 'a *)
+
+val iter : ('a -> unit) -> 'a option -> unit
+(** @since 4.08.0: val iter : ('a -> unit) -> 'a option -> unit *)
+
+val is_none : 'a option -> bool
+(** @since 4.08.0: val is_none : 'a option -> bool *)
+
+val is_some : 'a option -> bool
+(** @since 4.08.0: val is_some : 'a option -> bool *)
+
+val equal : ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
+(** @since 4.08.0:
+    val equal : ('a -> 'a -> bool) -> 'a option -> 'a option -> bool *)
+
+val compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int
+(** @since 4.08.0:
+    val compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int *)
+
+@BEGIN_FROM_4_08_0@
+val to_result : none:'e -> 'a option -> ('a, 'e) result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val to_result : none:'e -> 'a option -> ('a, 'e) Stdcompat__pervasives.result
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val to_result : none:'e -> 'a option -> ('a, 'e) result
+ *)
+
+val to_list : 'a option -> 'a list
+(** @since 4.08.0: val to_list : 'a option -> 'a list *)
+
+@BEGIN_FROM_4_08_0@
+val to_seq : 'a option -> 'a Seq.t
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val to_seq : 'a option -> 'a Stdcompat__seq.t
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: val to_seq : 'a option -> 'a Seq.t
+ *)
+
+end

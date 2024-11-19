@@ -1,0 +1,20 @@
+include Lazy
+
+@BEGIN_BEFORE_4_00_0@
+let from_fun = lazy_from_fun
+
+let from_val = lazy_from_val
+
+let is_val = lazy_is_val
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_4_13_0@
+let map f v =
+  lazy (f (force v))
+
+let map_val f v =
+  if is_val v then
+    from_val (f (force v))
+  else
+    map f v
+@END_BEFORE_4_13_0@

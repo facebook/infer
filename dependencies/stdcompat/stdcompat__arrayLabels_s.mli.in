@@ -1,0 +1,260 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+type 'a t = 'a array
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a array
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type 'a t = 'a array
+ *)
+
+@BEGIN_FROM_4_06_0@
+module Floatarray = ArrayLabels.Floatarray
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+module Floatarray :
+sig val create : int -> Stdcompat__init.floatarray
+val length : Stdcompat__init.floatarray -> int
+val get : Stdcompat__init.floatarray -> int -> float
+val set : Stdcompat__init.floatarray -> int -> float -> unit
+val unsafe_get : Stdcompat__init.floatarray -> int -> float
+val unsafe_set : Stdcompat__init.floatarray -> int -> float -> unit end
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: module Floatarray = ArrayLabels.Floatarray
+ *)
+
+val init_matrix :
+  dimx:int -> dimy:int -> f:(int -> int -> 'a) -> 'a array array
+(** @since 5.2.0:
+    val init_matrix :
+      dimx:int -> dimy:int -> f:(int -> int -> 'a) -> 'a array array *)
+
+val shuffle : rand:(int -> int) -> 'a array -> unit
+(** @since 5.2.0: val shuffle : rand:(int -> int) -> 'a array -> unit *)
+
+val map_inplace : f:('a -> 'a) -> 'a array -> unit
+(** @since 5.1.0: val map_inplace : f:('a -> 'a) -> 'a array -> unit *)
+
+val mapi_inplace : f:(int -> 'a -> 'a) -> 'a array -> unit
+(** @since 5.1.0: val mapi_inplace : f:(int -> 'a -> 'a) -> 'a array -> unit *)
+
+val find_index : f:('a -> bool) -> 'a array -> int option
+(** @since 5.1.0: val find_index : f:('a -> bool) -> 'a array -> int option *)
+
+val find_mapi : f:(int -> 'a -> 'b option) -> 'a array -> 'b option
+(** @since 5.1.0:
+    val find_mapi : f:(int -> 'a -> 'b option) -> 'a array -> 'b option *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left_map :
+  f:('acc -> 'a -> ('acc * 'b)) -> init:'acc -> 'a array -> ('acc * 'b array)
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_13_0@
+val fold_left_map :
+  f:('a -> 'b -> ('a * 'c)) -> init:'a -> 'b array -> ('a * 'c array)
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val fold_left_map :
+  f:('acc -> 'a -> ('acc * 'b)) -> init:'acc -> 'a array -> ('acc * 'b array)
+@END_BEFORE_4_13_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left_map :
+      f:('acc -> 'a -> ('acc * 'b)) ->
+        init:'acc -> 'a array -> ('acc * 'b array)
+@since 4.13.0:
+val fold_left_map :
+  f:('a -> 'b -> ('a * 'c)) -> init:'a -> 'b array -> ('a * 'c array)
+ *)
+
+val find_opt : f:('a -> bool) -> 'a array -> 'a option
+(** @since 4.13.0: val find_opt : f:('a -> bool) -> 'a array -> 'a option *)
+
+val find_map : f:('a -> 'b option) -> 'a array -> 'b option
+(** @since 4.13.0:
+    val find_map : f:('a -> 'b option) -> 'a array -> 'b option *)
+
+val split : ('a * 'b) array -> ('a array * 'b array)
+(** @since 4.13.0: val split : ('a * 'b) array -> ('a array * 'b array) *)
+
+val combine : 'a array -> 'b array -> ('a * 'b) array
+(** @since 4.13.0: val combine : 'a array -> 'b array -> ('a * 'b) array *)
+
+val for_all2 : f:('a -> 'b -> bool) -> 'a array -> 'b array -> bool
+(** @since 4.11.0:
+    val for_all2 : f:('a -> 'b -> bool) -> 'a array -> 'b array -> bool *)
+
+val exists2 : f:('a -> 'b -> bool) -> 'a array -> 'b array -> bool
+(** @since 4.11.0:
+    val exists2 : f:('a -> 'b -> bool) -> 'a array -> 'b array -> bool *)
+
+@BEGIN_FROM_4_07_0@
+val to_seq : 'a array -> 'a Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : 'a array -> 'a Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seq : 'a array -> 'a Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val to_seqi : 'a array -> (int * 'a) Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seqi : 'a array -> (int * 'a) Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seqi : 'a array -> (int * 'a) Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val of_seq : 'a Seq.t -> 'a array
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : 'a Stdcompat__seq.t -> 'a array
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val of_seq : 'a Seq.t -> 'a array
+ *)
+
+val iter2 : f:('a -> 'b -> unit) -> 'a array -> 'b array -> unit
+(** @since 4.05.0:
+    val iter2 : f:('a -> 'b -> unit) -> 'a array -> 'b array -> unit *)
+
+val map2 : f:('a -> 'b -> 'c) -> 'a array -> 'b array -> 'c array
+(** @since 4.05.0:
+    val map2 : f:('a -> 'b -> 'c) -> 'a array -> 'b array -> 'c array *)
+
+@BEGIN_FROM_4_03_0@
+external create_float : int -> float array = "caml_make_float_vect"
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val create_float : int -> float array
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external create_float : int -> float array = "caml_make_float_vect"
+ *)
+
+val for_all : f:('a -> bool) -> 'a array -> bool
+(** @since 4.03.0: val for_all : f:('a -> bool) -> 'a array -> bool *)
+
+val exists : f:('a -> bool) -> 'a array -> bool
+(** @since 4.03.0: val exists : f:('a -> bool) -> 'a array -> bool *)
+
+val mem : 'a -> set:'a array -> bool
+(** @since 4.03.0: val mem : 'a -> set:'a array -> bool *)
+
+val memq : 'a -> set:'a array -> bool
+(** @since 4.03.0: val memq : 'a -> set:'a array -> bool *)
+
+external length : 'a array -> int = "%array_length"
+(** Alias for {!ArrayLabels.length} *)
+
+external get : 'a array -> int -> 'a = "%array_safe_get"
+(** Alias for {!ArrayLabels.get} *)
+
+external set : 'a array -> int -> 'a -> unit = "%array_safe_set"
+(** Alias for {!ArrayLabels.set} *)
+
+@BEGIN_FROM_3_08_0@
+external make : int -> 'a -> 'a array = "caml_make_vect"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external make : int -> 'a -> 'a array = "make_vect"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: external make : int -> 'a -> 'a array = "caml_make_vect"
+@since 3.07.0: external make : int -> 'a -> 'a array = "make_vect"
+ *)
+
+val init : int -> f:(int -> 'a) -> 'a array
+(** Alias for {!ArrayLabels.init} *)
+
+val make_matrix : dimx:int -> dimy:int -> 'a -> 'a array array
+(** Alias for {!ArrayLabels.make_matrix} *)
+
+val append : 'a array -> 'a array -> 'a array
+(** Alias for {!ArrayLabels.append} *)
+
+val concat : 'a array list -> 'a array
+(** Alias for {!ArrayLabels.concat} *)
+
+val sub : 'a array -> pos:int -> len:int -> 'a array
+(** Alias for {!ArrayLabels.sub} *)
+
+val copy : 'a array -> 'a array
+(** Alias for {!ArrayLabels.copy} *)
+
+val fill : 'a array -> pos:int -> len:int -> 'a -> unit
+(** Alias for {!ArrayLabels.fill} *)
+
+val blit :
+  src:'a array ->
+    src_pos:int -> dst:'a array -> dst_pos:int -> len:int -> unit
+(** Alias for {!ArrayLabels.blit} *)
+
+val to_list : 'a array -> 'a list
+(** Alias for {!ArrayLabels.to_list} *)
+
+val of_list : 'a list -> 'a array
+(** Alias for {!ArrayLabels.of_list} *)
+
+val iter : f:('a -> unit) -> 'a array -> unit
+(** Alias for {!ArrayLabels.iter} *)
+
+val iteri : f:(int -> 'a -> unit) -> 'a array -> unit
+(** Alias for {!ArrayLabels.iteri} *)
+
+val map : f:('a -> 'b) -> 'a array -> 'b array
+(** Alias for {!ArrayLabels.map} *)
+
+val mapi : f:(int -> 'a -> 'b) -> 'a array -> 'b array
+(** Alias for {!ArrayLabels.mapi} *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left : f:('acc -> 'a -> 'acc) -> init:'acc -> 'a array -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val fold_left : f:('a -> 'b -> 'a) -> init:'a -> 'b array -> 'a
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left : f:('acc -> 'a -> 'acc) -> init:'acc -> 'a array -> 'acc
+@since 3.07.0:
+val fold_left : f:('a -> 'b -> 'a) -> init:'a -> 'b array -> 'a
+ *)
+
+@BEGIN_FROM_5_1_0@
+val fold_right : f:('a -> 'acc -> 'acc) -> 'a array -> init:'acc -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_00_0@
+val fold_right : f:('b -> 'a -> 'a) -> 'b array -> init:'a -> 'a
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+val fold_right : f:('a -> 'b -> 'b) -> 'a array -> init:'b -> 'b
+@END_BEFORE_4_00_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_right : f:('a -> 'acc -> 'acc) -> 'a array -> init:'acc -> 'acc
+@since 4.00.0:
+val fold_right : f:('b -> 'a -> 'a) -> 'b array -> init:'a -> 'a
+@since 3.07.0:
+val fold_right : f:('a -> 'b -> 'b) -> 'a array -> init:'b -> 'b
+ *)
+
+val sort : cmp:('a -> 'a -> int) -> 'a array -> unit
+(** Alias for {!ArrayLabels.sort} *)
+
+val stable_sort : cmp:('a -> 'a -> int) -> 'a array -> unit
+(** Alias for {!ArrayLabels.stable_sort} *)
+
+val fast_sort : cmp:('a -> 'a -> int) -> 'a array -> unit
+(** Alias for {!ArrayLabels.fast_sort} *)
+
+external unsafe_get : 'a array -> int -> 'a = "%array_unsafe_get"
+(** Alias for {!ArrayLabels.unsafe_get} *)
+
+external unsafe_set : 'a array -> int -> 'a -> unit = "%array_unsafe_set"
+(** Alias for {!ArrayLabels.unsafe_set} *)
+
+end

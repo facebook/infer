@@ -1,0 +1,464 @@
+module type S = sig
+@BEGIN_FROM_4_04_0@
+type backend_type = Sys.backend_type =
+  | Native 
+  | Bytecode 
+  | Other of string 
+@END_FROM_4_04_0@
+@BEGIN_BEFORE_4_04_0@
+type backend_type =
+  | Native 
+  | Bytecode 
+  | Other of string 
+@END_BEFORE_4_04_0@
+(** @since 4.04.0: type backend_type =
+                     | Native 
+                     | Bytecode 
+                     | Other of string 
+ *)
+
+type signal_behavior = Sys.signal_behavior =
+  | Signal_default 
+  | Signal_ignore 
+  | Signal_handle of (int -> unit) 
+(** Alias for {!Sys.signal_behavior} *)
+
+exception Break 
+(** Alias for {!Sys.Break} *)
+
+@BEGIN_FROM_4_14_0@
+type extra_prefix = Sys.extra_prefix =
+  | Plus 
+  | Tilde 
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+type extra_prefix =
+  | Plus 
+  | Tilde 
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: type extra_prefix =
+                     | Plus 
+                     | Tilde 
+ *)
+
+@BEGIN_FROM_4_14_0@
+type extra_info = (extra_prefix * string)
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+type extra_info = (extra_prefix * string)
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: type extra_info = (extra_prefix * string)
+ *)
+
+@BEGIN_FROM_4_14_0@
+type ocaml_release_info = Sys.ocaml_release_info =
+  {
+  major: int ;
+  minor: int ;
+  patchlevel: int ;
+  extra: extra_info option }
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+type ocaml_release_info =
+  {
+  major: int ;
+  minor: int ;
+  patchlevel: int ;
+  extra: extra_info option }
+@END_BEFORE_4_14_0@
+(** @since 4.14.0:
+    type ocaml_release_info =
+      {
+      major: int ;
+      minor: int ;
+      patchlevel: int ;
+      extra: extra_info option }
+ *)
+
+@BEGIN_FROM_4_10_0@
+module Immediate64 = Sys.Immediate64
+@END_FROM_4_10_0@
+@BEGIN_BEFORE_4_10_0@
+module Immediate64 :
+sig module type Non_immediate = sig type t end
+module type Immediate = sig @BEGIN_FROM_4_02_0@
+type t[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t
+@END_BEFORE_4_02_0@
+ end
+module Make :
+functor (Immediate : Immediate) ->
+functor (Non_immediate : Non_immediate) -> sig @BEGIN_FROM_4_02_0@
+type t[@@immediate64 ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t
+@END_BEFORE_4_02_0@
+
+@BEGIN_FROM_4_00_0@
+type 'a repr =
+  | Immediate: Immediate.t repr 
+  | Non_immediate: Non_immediate.t repr 
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+type 'a repr =
+  | Immediate 
+  | Non_immediate 
+@END_BEFORE_4_00_0@
+ val repr : t repr end
+end
+@END_BEFORE_4_10_0@
+(** @since 4.10.0: module Immediate64 = Sys.Immediate64
+ *)
+
+@BEGIN_FROM_5_1_0@
+external is_regular_file : string -> bool = "caml_sys_is_regular_file"
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val is_regular_file : string -> bool
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    external is_regular_file : string -> bool = "caml_sys_is_regular_file"
+ *)
+
+val development_version : bool
+(** @since 4.14.0: val development_version : bool *)
+
+val ocaml_release : ocaml_release_info
+(** @since 4.14.0: val ocaml_release : ocaml_release_info *)
+
+@BEGIN_FROM_4_12_0@
+external mkdir : string -> int -> unit = "caml_sys_mkdir"
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+val mkdir : string -> int -> unit
+@END_BEFORE_4_12_0@
+(** @since 4.12.0: external mkdir : string -> int -> unit = "caml_sys_mkdir"
+ *)
+
+@BEGIN_FROM_4_12_0@
+external rmdir : string -> unit = "caml_sys_rmdir"
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+val rmdir : string -> unit
+@END_BEFORE_4_12_0@
+(** @since 4.12.0: external rmdir : string -> unit = "caml_sys_rmdir"
+ *)
+
+val max_floatarray_length : int
+(** @since 4.08.0: val max_floatarray_length : int *)
+
+val getenv_opt : string -> string option
+(** @since 4.05.0: val getenv_opt : string -> string option *)
+
+val backend_type : backend_type
+(** @since 4.04.0: val backend_type : backend_type *)
+
+val int_size : int
+(** @since 4.03.0: val int_size : int *)
+
+@BEGIN_FROM_4_03_0@
+external runtime_variant : unit -> string = "caml_runtime_variant"
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val runtime_variant : unit -> string
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external runtime_variant : unit -> string = "caml_runtime_variant"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external runtime_parameters : unit -> string = "caml_runtime_parameters"
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val runtime_parameters : unit -> string
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external runtime_parameters : unit -> string = "caml_runtime_parameters"
+ *)
+
+val sigbus : int
+(** @since 4.03.0: val sigbus : int *)
+
+val sigpoll : int
+(** @since 4.03.0: val sigpoll : int *)
+
+val sigsys : int
+(** @since 4.03.0: val sigsys : int *)
+
+val sigtrap : int
+(** @since 4.03.0: val sigtrap : int *)
+
+val sigurg : int
+(** @since 4.03.0: val sigurg : int *)
+
+val sigxcpu : int
+(** @since 4.03.0: val sigxcpu : int *)
+
+val sigxfsz : int
+(** @since 4.03.0: val sigxfsz : int *)
+
+val enable_runtime_warnings : bool -> unit
+(** @since 4.03.0: val enable_runtime_warnings : bool -> unit *)
+
+val runtime_warnings_enabled : unit -> bool
+(** @since 4.03.0: val runtime_warnings_enabled : unit -> bool *)
+
+@BEGIN_FROM_4_03_0@
+external opaque_identity : 'a -> 'a = "%opaque"
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val opaque_identity : 'a -> 'a
+@END_BEFORE_4_03_0@
+(** @since 4.03.0: external opaque_identity : 'a -> 'a = "%opaque"
+ *)
+
+val unix : bool
+(** @since 4.01.0: val unix : bool *)
+
+val win32 : bool
+(** @since 4.01.0: val win32 : bool *)
+
+val cygwin : bool
+(** @since 4.01.0: val cygwin : bool *)
+
+val big_endian : bool
+(** @since 4.00.0: val big_endian : bool *)
+
+@BEGIN_FROM_3_10_0@
+external is_directory : string -> bool = "caml_sys_is_directory"
+@END_FROM_3_10_0@
+@BEGIN_BEFORE_3_10_0@
+val is_directory : string -> bool
+@END_BEFORE_3_10_0@
+(** @since 3.10.0:
+    external is_directory : string -> bool = "caml_sys_is_directory"
+ *)
+
+@BEGIN_FROM_4_09_0@
+external argv : string array = "%sys_argv"
+@END_FROM_4_09_0@
+@BEGIN_BEFORE_4_09_0@
+val argv : string array
+@END_BEFORE_4_09_0@
+(** @since 4.09.0: external argv : string array = "%sys_argv"
+@since 3.07.0: val argv : string array
+ *)
+
+val executable_name : string
+(** Alias for {!Sys.executable_name} *)
+
+@BEGIN_FROM_3_08_0@
+external file_exists : string -> bool = "caml_sys_file_exists"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external file_exists : string -> bool = "sys_file_exists"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external file_exists : string -> bool = "caml_sys_file_exists"
+@since 3.07.0: external file_exists : string -> bool = "sys_file_exists"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external remove : string -> unit = "caml_sys_remove"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external remove : string -> unit = "sys_remove"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: external remove : string -> unit = "caml_sys_remove"
+@since 3.07.0: external remove : string -> unit = "sys_remove"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external rename : string -> string -> unit = "caml_sys_rename"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external rename : string -> string -> unit = "sys_rename"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external rename : string -> string -> unit = "caml_sys_rename"
+@since 3.07.0: external rename : string -> string -> unit = "sys_rename"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external getenv : string -> string = "caml_sys_getenv"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external getenv : string -> string = "sys_getenv"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: external getenv : string -> string = "caml_sys_getenv"
+@since 3.07.0: external getenv : string -> string = "sys_getenv"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external command : string -> int = "caml_sys_system_command"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external command : string -> int = "sys_system_command"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external command : string -> int = "caml_sys_system_command"
+@since 3.07.0: external command : string -> int = "sys_system_command"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external time :
+  unit -> ((float)[@unboxed ]) = "caml_sys_time" "caml_sys_time_unboxed"
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external time : unit -> float = "caml_sys_time"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external time : unit -> float = "sys_time"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external time :
+      unit -> ((float)[@unboxed ]) = "caml_sys_time" "caml_sys_time_unboxed"
+    [@@noalloc ]
+@since 3.08.0: external time : unit -> float = "caml_sys_time"
+@since 3.07.0: external time : unit -> float = "sys_time"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external chdir : string -> unit = "caml_sys_chdir"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external chdir : string -> unit = "sys_chdir"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: external chdir : string -> unit = "caml_sys_chdir"
+@since 3.07.0: external chdir : string -> unit = "sys_chdir"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external getcwd : unit -> string = "caml_sys_getcwd"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external getcwd : unit -> string = "sys_getcwd"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: external getcwd : unit -> string = "caml_sys_getcwd"
+@since 3.07.0: external getcwd : unit -> string = "sys_getcwd"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external readdir : string -> string array = "caml_sys_read_directory"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external readdir : string -> string array = "sys_read_directory"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external readdir : string -> string array = "caml_sys_read_directory"
+@since 3.07.0:
+external readdir : string -> string array = "sys_read_directory"
+ *)
+
+val interactive : bool ref
+(** Alias for {!Sys.interactive} *)
+
+val os_type : string
+(** Alias for {!Sys.os_type} *)
+
+val word_size : int
+(** Alias for {!Sys.word_size} *)
+
+val max_string_length : int
+(** Alias for {!Sys.max_string_length} *)
+
+val max_array_length : int
+(** Alias for {!Sys.max_array_length} *)
+
+@BEGIN_FROM_3_08_0@
+external signal :
+  int -> signal_behavior -> signal_behavior = "caml_install_signal_handler"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external signal :
+  int -> signal_behavior -> signal_behavior = "install_signal_handler"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external signal :
+      int -> signal_behavior -> signal_behavior =
+        "caml_install_signal_handler"
+@since 3.07.0:
+external signal :
+  int -> signal_behavior -> signal_behavior = "install_signal_handler"
+ *)
+
+val set_signal : int -> signal_behavior -> unit
+(** Alias for {!Sys.set_signal} *)
+
+val sigabrt : int
+(** Alias for {!Sys.sigabrt} *)
+
+val sigalrm : int
+(** Alias for {!Sys.sigalrm} *)
+
+val sigfpe : int
+(** Alias for {!Sys.sigfpe} *)
+
+val sighup : int
+(** Alias for {!Sys.sighup} *)
+
+val sigill : int
+(** Alias for {!Sys.sigill} *)
+
+val sigint : int
+(** Alias for {!Sys.sigint} *)
+
+val sigkill : int
+(** Alias for {!Sys.sigkill} *)
+
+val sigpipe : int
+(** Alias for {!Sys.sigpipe} *)
+
+val sigquit : int
+(** Alias for {!Sys.sigquit} *)
+
+val sigsegv : int
+(** Alias for {!Sys.sigsegv} *)
+
+val sigterm : int
+(** Alias for {!Sys.sigterm} *)
+
+val sigusr1 : int
+(** Alias for {!Sys.sigusr1} *)
+
+val sigusr2 : int
+(** Alias for {!Sys.sigusr2} *)
+
+val sigchld : int
+(** Alias for {!Sys.sigchld} *)
+
+val sigcont : int
+(** Alias for {!Sys.sigcont} *)
+
+val sigstop : int
+(** Alias for {!Sys.sigstop} *)
+
+val sigtstp : int
+(** Alias for {!Sys.sigtstp} *)
+
+val sigttin : int
+(** Alias for {!Sys.sigttin} *)
+
+val sigttou : int
+(** Alias for {!Sys.sigttou} *)
+
+val sigvtalrm : int
+(** Alias for {!Sys.sigvtalrm} *)
+
+val sigprof : int
+(** Alias for {!Sys.sigprof} *)
+
+val catch_break : bool -> unit
+(** Alias for {!Sys.catch_break} *)
+
+val ocaml_version : string
+(** Alias for {!Sys.ocaml_version} *)
+
+end

@@ -1,0 +1,6 @@
+@C_BEGIN_BEFORE_4_06_0@
+#include <caml/alloc.h>
+
+value
+caml_alloc_initialized_string(mlsize_t len, const char *p);
+@C_END_BEFORE_4_06_0@

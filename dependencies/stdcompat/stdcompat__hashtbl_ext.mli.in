@@ -1,0 +1,111 @@
+module type SeededHashedType  =
+  sig type t val equal : t -> t -> bool val seeded_hash : int -> t -> int end
+
+@BEGIN_FROM_4_00_0@
+  module ToOCamlSeededHashedType (M : SeededHashedType) :
+    Hashtbl.SeededHashedType with type t = M.t
+  @BEGIN_FROM_5_0_0@
+    module MakeSeeded = Hashtbl.MakeSeeded
+  @END_FROM_5_0_0@
+  @BEGIN_BEFORE_5_0_0@
+    module MakeSeeded (M : SeededHashedType) : Hashtbl.SeededS
+      with type 'a t = 'a Hashtbl.MakeSeeded (ToOCamlSeededHashedType (M)).t
+      and type key = M.t
+  @END_BEFORE_5_0_0@
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+  module ToOCamlSeededHashedType (M : SeededHashedType) :
+    Hashtbl.HashedType with type t = M.t
+
+  module MakeSeeded (M : SeededHashedType) : Hashtbl.S
+    with type 'a t = 'a Hashtbl.Make (ToOCamlSeededHashedType (M)).t
+    and type key = M.t
+@END_BEFORE_4_00_0@
+
+type statistics
+@BEGIN_FROM_4_00_0@
+  = Hashtbl.statistics
+@END_FROM_4_00_0@
+  = {
+    num_bindings : int;
+    num_buckets : int;
+    max_bucket_length : int;
+    bucket_histogram : int array;
+  }
+
+@BEGIN_WITH_MAGIC@
+type ('a, 'b) bucketlist =
+  | Empty
+  | Cons of 'a * 'b * ('a, 'b) bucketlist
+
+@BEGIN_FROM_4_04_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+      mutable seed: int;
+      mutable initial_size: int;
+    }
+@END_FROM_4_04_0@
+@BEGIN_BEFORE_4_04_0@
+@BEGIN_FROM_4_00_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+      mutable seed: int;
+      initial_size: int;
+    }
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+type ('a, 'b) internal =
+    { mutable size: int;
+      mutable data: ('a, 'b) bucketlist array;
+    }
+@END_BEFORE_4_00_0@
+@END_BEFORE_4_04_0@
+
+val filter_map_inplace : ('a -> 'b -> 'b option) -> 'c -> unit
+
+val to_seq : 'a -> ('b * 'c) Stdcompat__seq.t
+
+val to_seq_keys : 'a -> 'b Stdcompat__seq.t
+
+val to_seq_values : 'a -> 'b Stdcompat__seq.t
+
+val stats : 'a -> statistics
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+type ('table, 'key, 'value) dict = {
+    clear : 'table -> unit;
+    fold : 'a . ('key -> 'value -> 'a -> 'a) -> 'table -> 'a -> 'a;
+    add : 'table -> 'key -> 'value -> unit;
+    remove : 'table -> 'key -> unit;
+    replace : 'table -> 'key -> 'value -> unit;
+  }
+
+val filter_map_inplace : ('table, 'key, 'value) dict ->
+    ('key -> 'value -> 'value option) -> 'table -> unit
+
+val to_seq :
+    (('key -> 'value -> ('key * 'value) list -> ('key * 'value) list) ->
+      'table -> ('key * 'value) list -> ('key * 'value) list)
+      -> 'table -> ('key * 'value) Stdcompat__seq.t
+
+val to_seq_keys :
+    (('key -> 'value -> ('key * 'value) list -> ('key * 'value) list) ->
+      'table -> ('key * 'value) list -> ('key * 'value) list)
+      -> 'table -> 'key Stdcompat__seq.t
+
+val to_seq_values :
+    (('key -> 'value -> ('key * 'value) list -> ('key * 'value) list) ->
+      'table -> ('key * 'value) list -> ('key * 'value) list)
+      -> 'table -> 'value Stdcompat__seq.t
+
+val stats : length:('table -> int) -> 'table -> statistics
+@END_WITHOUT_MAGIC@
+
+val add_seq : ('table -> 'key -> 'value -> unit) -> 'table ->
+     ('key * 'value) Stdcompat__seq.t -> unit
+
+val of_seq : create:(int -> 'table) ->
+  replace:('table -> 'key -> 'value -> unit) ->
+    ('key * 'value) Stdcompat__seq.t -> 'table

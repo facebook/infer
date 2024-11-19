@@ -1,0 +1,51 @@
+@BEGIN_BEFORE_4_07_0@
+let vec_to_seq length get v =
+  let length = length v in
+  let rec aux i () =
+    if i = length then Stdcompat__seq.Nil
+    else
+      let x = get v i in
+      Stdcompat__seq.Cons (x, aux (i + 1)) in
+  aux 0
+
+let vec_to_seqi length get v =
+  let length = length v in
+  let rec aux i () =
+    if i = length then Stdcompat__seq.Nil
+    else
+      let x = get v i in
+      Stdcompat__seq.Cons ((i, x), aux (i + 1)) in
+  aux 0
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_05_0@
+let option_find f x =
+  try Some (f x)
+  with Not_found -> None
+
+let option_fail f x =
+  try Some (f x)
+  with Failure _ -> None
+
+let option_invalid f x =
+  try Some (f x)
+  with Invalid_argument _ -> None
+
+exception Predicate_not_found
+
+let pickle_predicate_not_found p x =
+  try
+    p x
+  with Not_found ->
+    raise Predicate_not_found
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_03_0@
+let rec uniq_rev_append cmp l accu =
+  match l with
+  | [] -> accu
+  | [item] -> item :: accu
+  | hd :: (hd' :: _ as tl) ->
+      if cmp hd hd' = 0 then uniq_rev_append cmp tl accu
+      else uniq_rev_append cmp tl (hd :: accu)
+@END_BEFORE_4_03_0@

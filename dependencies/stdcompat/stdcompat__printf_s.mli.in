@@ -1,0 +1,139 @@
+module type S = sig
+val ibprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
+(** @since 4.11.0:
+    val ibprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a *)
+
+val ikbprintf :
+  (Buffer.t -> 'd) -> Buffer.t -> ('a, Buffer.t, unit, 'd) format4 -> 'a
+(** @since 4.11.0:
+    val ikbprintf :
+      (Buffer.t -> 'd) -> Buffer.t -> ('a, Buffer.t, unit, 'd) format4 -> 'a *)
+
+@BEGIN_FROM_4_03_0@
+val ifprintf : 'b -> ('a, 'b, 'c, unit) format4 -> 'a
+(** @since 4.03.0: val ifprintf : 'b -> ('a, 'b, 'c, unit) format4 -> 'a *)
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_10_0@
+val ifprintf : 'b -> ('a, 'b, unit) format -> 'a
+@END_FROM_3_10_0@
+@BEGIN_BEFORE_3_10_0@
+val ifprintf : 'b -> ('a, 'b, 'c, unit) format4 -> 'a
+@END_BEFORE_3_10_0@
+@END_BEFORE_4_03_0@
+(** @since 4.03.0: val ifprintf : 'b -> ('a, 'b, 'c, unit) format4 -> 'a *)
+
+@BEGIN_FROM_4_03_0@
+val ikfprintf : ('b -> 'd) -> 'b -> ('a, 'b, 'c, 'd) format4 -> 'a
+(** @since 4.03.0: val ikfprintf : ('b -> 'd) -> 'b -> ('a, 'b, 'c, 'd) format4 -> 'a *)
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_4_01_0@
+val ikfprintf :
+    (out_channel -> 'a) ->
+      out_channel -> ('b, out_channel, unit, 'a) format4 -> 'b
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+val ikfprintf : ('b -> 'd) -> 'b -> ('a, 'b, 'c, 'd) format4 -> 'a
+@END_BEFORE_4_01_0@
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    val ikfprintf : ('b -> 'd) -> 'b -> ('a, 'b, 'c, 'd) format4 -> 'a *)
+
+@BEGIN_FROM_4_03_0@
+val kbprintf :
+  (Buffer.t -> 'd) -> Buffer.t -> ('a, Buffer.t, unit, 'd) format4 -> 'a
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_10_0@
+val kbprintf :
+  (Buffer.t -> 'a) -> Buffer.t -> ('b, Buffer.t, unit, 'a) format4 -> 'b
+@END_FROM_3_10_0@
+@BEGIN_BEFORE_3_10_0@
+val kbprintf :
+  (Buffer.t -> 'd) -> Buffer.t -> ('a, Buffer.t, unit, 'd) format4 -> 'a
+@END_BEFORE_3_10_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    val kbprintf :
+      (Buffer.t -> 'd) -> Buffer.t -> ('a, Buffer.t, unit, 'd) format4 -> 'a
+@since 3.10.0:
+val kbprintf :
+  (Buffer.t -> 'a) -> Buffer.t -> ('b, Buffer.t, unit, 'a) format4 -> 'b
+ *)
+
+@BEGIN_FROM_4_03_0@
+val kfprintf :
+  (out_channel -> 'd) ->
+    out_channel -> ('a, out_channel, unit, 'd) format4 -> 'a
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_09_0@
+val kfprintf :
+  (out_channel -> 'a) ->
+    out_channel -> ('b, out_channel, unit, 'a) format4 -> 'b
+@END_FROM_3_09_0@
+@BEGIN_BEFORE_3_09_0@
+val kfprintf :
+  (out_channel -> 'd) ->
+    out_channel -> ('a, out_channel, unit, 'd) format4 -> 'a
+@END_BEFORE_3_09_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    val kfprintf :
+      (out_channel -> 'd) ->
+        out_channel -> ('a, out_channel, unit, 'd) format4 -> 'a
+@since 3.09.0:
+val kfprintf :
+  (out_channel -> 'a) ->
+    out_channel -> ('b, out_channel, unit, 'a) format4 -> 'b
+ *)
+
+@BEGIN_FROM_4_03_0@
+val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_09_0@
+val ksprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+@END_FROM_3_09_0@
+@BEGIN_BEFORE_3_09_0@
+val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a
+@END_BEFORE_3_09_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a
+@since 3.09.0:
+val ksprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+ *)
+
+val fprintf : out_channel -> ('a, out_channel, unit) format -> 'a
+(** Alias for {!Printf.fprintf} *)
+
+val printf : ('a, out_channel, unit) format -> 'a
+(** Alias for {!Printf.printf} *)
+
+val eprintf : ('a, out_channel, unit) format -> 'a
+(** Alias for {!Printf.eprintf} *)
+
+val sprintf : ('a, unit, string) format -> 'a
+(** Alias for {!Printf.sprintf} *)
+
+val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
+(** Alias for {!Printf.bprintf} *)
+
+@BEGIN_FROM_4_03_0@
+val kprintf : (string -> 'b) -> ('a, unit, string, 'b) format4 -> 'a
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val kprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    val kprintf : (string -> 'b) -> ('a, unit, string, 'b) format4 -> 'a
+@since 3.07.0:
+val kprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+ *)
+
+end

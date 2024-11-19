@@ -1,0 +1,34 @@
+@BEGIN_FROM_4_08_0@
+include Bool
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type t = bool =
+  | false 
+  | true
+
+let not = not
+
+external (&&) : bool -> bool -> bool = "%sequand"
+
+external (||) : bool -> bool -> bool = "%sequor"
+
+let equal = ( = )
+
+let compare = compare
+
+let to_int b =
+  if b then 1
+  else 0
+
+let to_float b =
+  if b then 1.
+  else 0.
+
+let to_string = string_of_bool
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_5_1_0@
+let hash = Hashtbl.hash
+
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+@END_BEFORE_5_1_0@

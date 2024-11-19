@@ -1,0 +1,154 @@
+include String
+
+@BEGIN_BEFORE_4_07_0@
+let of_seq g = Buffer.contents (Stdcompat__buffer.of_seq g)
+
+let to_seq s = Stdcompat__tools.vec_to_seq length unsafe_get s
+
+let to_seqi s = Stdcompat__tools.vec_to_seqi length unsafe_get s
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_05_0@
+let index_opt s c =
+  Stdcompat__tools.option_find (index s) c
+
+let rindex_opt s c =
+  Stdcompat__tools.option_find (rindex s) c
+
+let index_from_opt s i c =
+  Stdcompat__tools.option_find (index_from s i) c
+
+let rindex_from_opt s i c =
+  Stdcompat__tools.option_find (rindex_from s i) c
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_04_0@
+let split_on_char c s =
+  List.map Stdcompat__bytes.unsafe_to_string
+    (Stdcompat__bytes.split_on_char c (Stdcompat__bytes.unsafe_of_string s))
+@END_BEFORE_4_04_0@
+
+@BEGIN_BEFORE_4_03_0@
+let lowercase_ascii = lowercase
+
+let uppercase_ascii = uppercase
+
+let capitalize_ascii = capitalize
+
+let uncapitalize_ascii = uncapitalize
+
+let equal : t -> t -> bool = ( = )
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_02_0@
+let init = Stdcompat__bytes.init
+
+let mapi = Stdcompat__bytes.mapi
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_00_0@
+let iteri = Stdcompat__bytes.iteri
+
+let map = Stdcompat__bytes.map
+
+let trim = Stdcompat__bytes.trim
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_4_13_0@
+let empty = ""
+
+let of_bytes = Stdcompat__bytes.to_string
+
+let to_bytes = Stdcompat__bytes.of_string
+
+let cat = ( ^ )
+
+let starts_with ~prefix s =
+  Stdcompat__bytes.starts_with
+    ~prefix:(Stdcompat__bytes.unsafe_of_string prefix)
+    (Stdcompat__bytes.unsafe_of_string s)
+
+let ends_with ~suffix s =
+  Stdcompat__bytes.ends_with ~suffix:(Stdcompat__bytes.unsafe_of_string suffix)
+    (Stdcompat__bytes.unsafe_of_string s)
+
+let fold_left f init s =
+  Stdcompat__bytes.fold_left f init (Stdcompat__bytes.unsafe_of_string s)
+
+let fold_right f s init =
+  Stdcompat__bytes.fold_right f (Stdcompat__bytes.unsafe_of_string s) init
+
+let for_all f s =
+  Stdcompat__bytes.for_all f (Stdcompat__bytes.unsafe_of_string s)
+
+let exists f s =
+  Stdcompat__bytes.exists f (Stdcompat__bytes.unsafe_of_string s)
+
+let get_uint8 s i =
+  Stdcompat__bytes.get_uint8 (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int8 s i =
+  Stdcompat__bytes.get_int8 (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_uint16_ne s i =
+  Stdcompat__bytes.get_uint16_ne (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_uint16_be s i =
+  Stdcompat__bytes.get_uint16_be (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_uint16_le s i =
+  Stdcompat__bytes.get_uint16_le (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int16_ne s i =
+  Stdcompat__bytes.get_int16_ne (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int16_be s i =
+  Stdcompat__bytes.get_int16_be (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int16_le s i =
+  Stdcompat__bytes.get_int16_le (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int32_ne s i =
+  Stdcompat__bytes.get_int32_ne (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int32_be s i =
+  Stdcompat__bytes.get_int32_be (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int32_le s i =
+  Stdcompat__bytes.get_int32_le (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int64_ne s i =
+  Stdcompat__bytes.get_int64_ne (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int64_be s i =
+  Stdcompat__bytes.get_int64_be (Stdcompat__bytes.unsafe_of_string s) i
+
+let get_int64_le s i =
+  Stdcompat__bytes.get_int64_le (Stdcompat__bytes.unsafe_of_string s) i
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_4_14_0@
+let get_utf_8_uchar s i =
+  Stdcompat__bytes.get_utf_8_uchar (Stdcompat__bytes.unsafe_of_string s) i
+
+let is_valid_utf_8 s =
+  Stdcompat__bytes.is_valid_utf_8 (Stdcompat__bytes.unsafe_of_string s)
+
+let get_utf_16be_uchar s i =
+  Stdcompat__bytes.get_utf_16be_uchar (Stdcompat__bytes.unsafe_of_string s) i
+
+let is_valid_utf_16be s =
+  Stdcompat__bytes.is_valid_utf_16be (Stdcompat__bytes.unsafe_of_string s)
+
+let get_utf_16le_uchar s i =
+  Stdcompat__bytes.get_utf_16le_uchar (Stdcompat__bytes.unsafe_of_string s) i
+
+let is_valid_utf_16le s =
+  Stdcompat__bytes.is_valid_utf_16le (Stdcompat__bytes.unsafe_of_string s)
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_0_0@
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+
+let hash = Hashtbl.hash
+@END_BEFORE_5_0_0@

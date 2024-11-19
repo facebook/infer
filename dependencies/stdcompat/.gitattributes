@@ -1,0 +1,5 @@
+ci/*.sh -text
+.github/scripts/*.sh text eol=lf
+/configure text eol=lf
+/Makefile.in text eol=lf
+/install-sh text eol=lf

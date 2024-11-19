@@ -1,0 +1,344 @@
+module type S = sig
+@BEGIN_FROM_3_08_0@
+type t = string
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+type t = string
+@END_BEFORE_3_08_0@
+(** @since 3.08.0: type t = string
+ *)
+
+val hash : t -> int
+(** @since 5.0.0: val hash : t -> int *)
+
+val seeded_hash : int -> t -> int
+(** @since 5.0.0: val seeded_hash : int -> t -> int *)
+
+@BEGIN_FROM_4_14_0@
+val get_utf_8_uchar : t -> int -> Uchar.utf_decode
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+val get_utf_8_uchar : t -> int -> Stdcompat__uchar.utf_decode
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: val get_utf_8_uchar : t -> int -> Uchar.utf_decode
+ *)
+
+val is_valid_utf_8 : t -> bool
+(** @since 4.14.0: val is_valid_utf_8 : t -> bool *)
+
+@BEGIN_FROM_4_14_0@
+val get_utf_16be_uchar : t -> int -> Uchar.utf_decode
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+val get_utf_16be_uchar : t -> int -> Stdcompat__uchar.utf_decode
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: val get_utf_16be_uchar : t -> int -> Uchar.utf_decode
+ *)
+
+val is_valid_utf_16be : t -> bool
+(** @since 4.14.0: val is_valid_utf_16be : t -> bool *)
+
+@BEGIN_FROM_4_14_0@
+val get_utf_16le_uchar : t -> int -> Uchar.utf_decode
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+val get_utf_16le_uchar : t -> int -> Stdcompat__uchar.utf_decode
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: val get_utf_16le_uchar : t -> int -> Uchar.utf_decode
+ *)
+
+val is_valid_utf_16le : t -> bool
+(** @since 4.14.0: val is_valid_utf_16le : t -> bool *)
+
+val empty : string
+(** @since 4.13.0: val empty : string *)
+
+@BEGIN_FROM_4_13_0@
+val of_bytes : bytes -> string
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val of_bytes : Stdcompat__init.bytes -> string
+@END_BEFORE_4_13_0@
+(** @since 4.13.0: val of_bytes : bytes -> string
+ *)
+
+@BEGIN_FROM_4_13_0@
+val to_bytes : string -> bytes
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val to_bytes : string -> Stdcompat__init.bytes
+@END_BEFORE_4_13_0@
+(** @since 4.13.0: val to_bytes : string -> bytes
+ *)
+
+val cat : string -> string -> string
+(** @since 4.13.0: val cat : string -> string -> string *)
+
+val starts_with : prefix:string -> string -> bool
+(** @since 4.13.0: val starts_with : prefix:string -> string -> bool *)
+
+val ends_with : suffix:string -> string -> bool
+(** @since 4.13.0: val ends_with : suffix:string -> string -> bool *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left : f:('acc -> char -> 'acc) -> init:'acc -> string -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_13_0@
+val fold_left : f:('a -> char -> 'a) -> init:'a -> string -> 'a
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val fold_left : f:('acc -> char -> 'acc) -> init:'acc -> string -> 'acc
+@END_BEFORE_4_13_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left : f:('acc -> char -> 'acc) -> init:'acc -> string -> 'acc
+@since 4.13.0:
+val fold_left : f:('a -> char -> 'a) -> init:'a -> string -> 'a
+ *)
+
+@BEGIN_FROM_5_1_0@
+val fold_right : f:(char -> 'acc -> 'acc) -> string -> init:'acc -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_13_0@
+val fold_right : f:(char -> 'a -> 'a) -> string -> init:'a -> 'a
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val fold_right : f:(char -> 'acc -> 'acc) -> string -> init:'acc -> 'acc
+@END_BEFORE_4_13_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_right : f:(char -> 'acc -> 'acc) -> string -> init:'acc -> 'acc
+@since 4.13.0:
+val fold_right : f:(char -> 'a -> 'a) -> string -> init:'a -> 'a
+ *)
+
+val for_all : f:(char -> bool) -> string -> bool
+(** @since 4.13.0: val for_all : f:(char -> bool) -> string -> bool *)
+
+val exists : f:(char -> bool) -> string -> bool
+(** @since 4.13.0: val exists : f:(char -> bool) -> string -> bool *)
+
+val get_uint8 : string -> int -> int
+(** @since 4.13.0: val get_uint8 : string -> int -> int *)
+
+val get_int8 : string -> int -> int
+(** @since 4.13.0: val get_int8 : string -> int -> int *)
+
+val get_uint16_ne : string -> int -> int
+(** @since 4.13.0: val get_uint16_ne : string -> int -> int *)
+
+val get_uint16_be : string -> int -> int
+(** @since 4.13.0: val get_uint16_be : string -> int -> int *)
+
+val get_uint16_le : string -> int -> int
+(** @since 4.13.0: val get_uint16_le : string -> int -> int *)
+
+val get_int16_ne : string -> int -> int
+(** @since 4.13.0: val get_int16_ne : string -> int -> int *)
+
+val get_int16_be : string -> int -> int
+(** @since 4.13.0: val get_int16_be : string -> int -> int *)
+
+val get_int16_le : string -> int -> int
+(** @since 4.13.0: val get_int16_le : string -> int -> int *)
+
+val get_int32_ne : string -> int -> int32
+(** @since 4.13.0: val get_int32_ne : string -> int -> int32 *)
+
+val get_int32_be : string -> int -> int32
+(** @since 4.13.0: val get_int32_be : string -> int -> int32 *)
+
+val get_int32_le : string -> int -> int32
+(** @since 4.13.0: val get_int32_le : string -> int -> int32 *)
+
+val get_int64_ne : string -> int -> int64
+(** @since 4.13.0: val get_int64_ne : string -> int -> int64 *)
+
+val get_int64_be : string -> int -> int64
+(** @since 4.13.0: val get_int64_be : string -> int -> int64 *)
+
+val get_int64_le : string -> int -> int64
+(** @since 4.13.0: val get_int64_le : string -> int -> int64 *)
+
+@BEGIN_FROM_4_07_0@
+val to_seq : t -> char Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : t -> char Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seq : t -> char Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val to_seqi : t -> (int * char) Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seqi : t -> (int * char) Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seqi : t -> (int * char) Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val of_seq : char Seq.t -> t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : char Stdcompat__seq.t -> t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val of_seq : char Seq.t -> t
+ *)
+
+val equal : t -> t -> bool
+(** @since 4.05.0: val equal : t -> t -> bool *)
+
+val split_on_char : sep:char -> string -> string list
+(** @since 4.05.0: val split_on_char : sep:char -> string -> string list *)
+
+val uppercase_ascii : string -> string
+(** @since 4.05.0: val uppercase_ascii : string -> string *)
+
+val lowercase_ascii : string -> string
+(** @since 4.05.0: val lowercase_ascii : string -> string *)
+
+val capitalize_ascii : string -> string
+(** @since 4.05.0: val capitalize_ascii : string -> string *)
+
+val uncapitalize_ascii : string -> string
+(** @since 4.05.0: val uncapitalize_ascii : string -> string *)
+
+val index_from_opt : string -> int -> char -> int option
+(** @since 4.05.0: val index_from_opt : string -> int -> char -> int option *)
+
+val rindex_from_opt : string -> int -> char -> int option
+(** @since 4.05.0: val rindex_from_opt : string -> int -> char -> int option *)
+
+val index_opt : string -> char -> int option
+(** @since 4.05.0: val index_opt : string -> char -> int option *)
+
+val rindex_opt : string -> char -> int option
+(** @since 4.05.0: val rindex_opt : string -> char -> int option *)
+
+val init : int -> f:(int -> char) -> string
+(** @since 4.02.0: val init : int -> f:(int -> char) -> string *)
+
+@BEGIN_FROM_4_02_0@
+val blit :
+  src:string -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val blit :
+  src:string ->
+    src_pos:int ->
+      dst:Stdcompat__init.bytes -> dst_pos:int -> len:int -> unit
+@END_BEFORE_4_02_0@
+(** @since 4.02.0:
+    val blit :
+      src:string ->
+        src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit
+ *)
+
+val mapi : f:(int -> char -> char) -> string -> string
+(** @since 4.02.0: val mapi : f:(int -> char -> char) -> string -> string *)
+
+@BEGIN_FROM_4_03_0@
+external unsafe_blit :
+  src:string -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit =
+    "caml_blit_string"[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_4_02_0@
+external unsafe_blit :
+  src:string -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit =
+    "caml_blit_string" "noalloc"
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+@BEGIN_FROM_3_08_0@
+external unsafe_blit :
+  src:string ->
+    src_pos:int ->
+      dst:Stdcompat__init.bytes -> dst_pos:int -> len:int -> unit =
+    "caml_blit_string" "noalloc"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external unsafe_blit :
+  src:string ->
+    src_pos:int ->
+      dst:Stdcompat__init.bytes -> dst_pos:int -> len:int -> unit =
+    "blit_string" "noalloc"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_02_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external unsafe_blit :
+      src:string ->
+        src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit =
+        "caml_blit_string"[@@noalloc ]
+@since 4.02.0:
+external unsafe_blit :
+  src:string -> src_pos:int -> dst:bytes -> dst_pos:int -> len:int -> unit =
+    "caml_blit_string" "noalloc"
+ *)
+
+val map : f:(char -> char) -> string -> string
+(** @since 4.00.0: val map : f:(char -> char) -> string -> string *)
+
+val trim : string -> string
+(** @since 4.00.0: val trim : string -> string *)
+
+val iteri : f:(int -> char -> unit) -> string -> unit
+(** @since 4.00.0: val iteri : f:(int -> char -> unit) -> string -> unit *)
+
+val compare : t -> t -> int
+(** @since 3.08.0: val compare : t -> t -> int *)
+
+val make : int -> char -> string
+(** Alias for {!StringLabels.make} *)
+
+external length : string -> int = "%string_length"
+(** Alias for {!StringLabels.length} *)
+
+external get : string -> int -> char = "%string_safe_get"
+(** Alias for {!StringLabels.get} *)
+
+val concat : sep:string -> string list -> string
+(** Alias for {!StringLabels.concat} *)
+
+val contains_from : string -> int -> char -> bool
+(** Alias for {!StringLabels.contains_from} *)
+
+val rcontains_from : string -> int -> char -> bool
+(** Alias for {!StringLabels.rcontains_from} *)
+
+val contains : string -> char -> bool
+(** Alias for {!StringLabels.contains} *)
+
+val sub : string -> pos:int -> len:int -> string
+(** Alias for {!StringLabels.sub} *)
+
+val escaped : string -> string
+(** Alias for {!StringLabels.escaped} *)
+
+val iter : f:(char -> unit) -> string -> unit
+(** Alias for {!StringLabels.iter} *)
+
+val index_from : string -> int -> char -> int
+(** Alias for {!StringLabels.index_from} *)
+
+val rindex_from : string -> int -> char -> int
+(** Alias for {!StringLabels.rindex_from} *)
+
+val index : string -> char -> int
+(** Alias for {!StringLabels.index} *)
+
+val rindex : string -> char -> int
+(** Alias for {!StringLabels.rindex} *)
+
+external unsafe_get : string -> int -> char = "%string_unsafe_get"
+(** Alias for {!StringLabels.unsafe_get} *)
+
+end

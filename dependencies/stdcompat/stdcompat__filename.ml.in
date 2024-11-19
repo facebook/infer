@@ -1,0 +1,261 @@
+include Filename
+
+@BEGIN_BEFORE_4_08_0@
+let chop_suffix_opt ~suffix filename =
+  let len_suffix = String.length suffix in
+  let len_filename = String.length filename in
+  if len_suffix <= len_filename then
+    let len_base = len_filename - len_suffix in
+    let filename_suffix = String.sub filename len_base len_suffix in
+@BEGIN_WITH_WIN32@
+    let filename_suffix, suffix =
+        Stdcompat__string.lowercase_ascii filename_suffix,
+        Stdcompat__string.lowercase_ascii suffix in
+@END_WITH_WIN32@
+    if filename_suffix = suffix then
+      Some (String.sub filename 0 len_base)
+    else
+      None
+  else
+    None
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_14_0@
+let chop_suffix filename suffix =
+  match chop_suffix_opt ~suffix filename with
+  | Some base -> base
+  | None -> invalid_arg "Filename.chop_suffix"
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_3_09_0@
+let temp_dir_name =
+@BEGIN_WITH_WIN32@
+  try Sys.getenv "TEMP"
+  with Not_found -> "."
+@END_WITH_WIN32@
+@BEGIN_WITHOUT_WIN32@
+  try Sys.getenv "TMPDIR"
+  with Not_found -> "/tmp"
+@END_WITHOUT_WIN32@
+@END_BEFORE_3_09_0@
+
+@BEGIN_BEFORE_4_00_0@
+let current_temp_dir_name = ref temp_dir_name
+
+let get_temp_dir_name () =
+  !current_temp_dir_name
+
+let set_temp_dir_name dir =
+  current_temp_dir_name := dir
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_5_1_0@
+let prng = lazy (Random.State.make_self_init ())
+
+let temp_file_name temp_dir prefix suffix =
+  let rnd = Random.State.bits (Lazy.force prng) land 0xFFFFFF in
+  concat temp_dir (Printf.sprintf "%s%06x%s" prefix rnd suffix)
+
+let rec try_name temp_dir prefix suffix counter f =
+  let name = temp_file_name temp_dir prefix suffix in
+  try
+    name, f name
+  with Sys_error _ as e ->
+    if counter >= 1000 then
+      raise e
+    else
+      try_name temp_dir prefix suffix (succ counter) f
+@END_BEFORE_5_1_0@
+
+@BEGIN_BEFORE_4_03_0@
+let open_temp_file ?(mode = [Open_text]) ?(perms = 0o600)
+    ?(temp_dir = get_temp_dir_name ()) prefix suffix =
+  try_name temp_dir prefix suffix 0 (fun name -> 
+    open_out_gen (Open_wronly :: Open_creat :: Open_excl :: mode) perms name)
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_00_0@
+let temp_file ?(temp_dir = !current_temp_dir_name) prefix suffix =
+@BEGIN_FROM_3_11_0@
+  temp_file ~temp_dir prefix suffix
+@END_FROM_3_11_0@
+@BEGIN_BEFORE_3_11_0@
+  let name, out_channel = open_temp_file ~mode:[] ~temp_dir prefix suffix in
+  close_out out_channel;
+  name
+@END_BEFORE_3_11_0@
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_5_1_0@
+let temp_dir
+    ?(temp_dir = get_temp_dir_name ()) ?(perms = 0o600) prefix suffix =
+  let name, () =
+    try_name temp_dir prefix suffix 0 (fun name -> Stdcompat__sys.mkdir name perms) in
+  name
+@END_BEFORE_5_1_0@
+
+@BEGIN_BEFORE_3_11_0@
+let dir_sep =
+@BEGIN_WITH_WIN32@
+  "\\"
+@END_WITH_WIN32@
+@BEGIN_WITHOUT_WIN32@
+  "/"
+@END_WITHOUT_WIN32@
+@END_BEFORE_3_11_0@
+
+@BEGIN_BEFORE_4_04_0@
+@BEGIN_WITH_UNIX@
+let is_dir_sep c =
+  c = '/'
+@END_WITH_UNIX@
+@BEGIN_WITHOUT_UNIX@
+let is_dir_sep c =
+  match c with
+  | '/' | '\\' | ':' -> true
+  | _ -> false
+@END_WITHOUT_UNIX@
+
+let rec extension_start_from i s =
+  if i < 0 then
+    String.length s
+  else
+    let c = String.unsafe_get s i in
+    if c = '.' then
+      i
+    else if is_dir_sep c then
+      String.length s
+    else
+      extension_start_from (pred i) s
+
+let extension_start s =
+  extension_start_from (String.length s - 1) s
+
+let extension s =
+  let i = extension_start s in
+  String.sub s i (String.length s - i)
+
+let remove_extension s =
+  let i = extension_start s in
+  String.sub s 0 i
+@END_BEFORE_4_04_0@
+
+@BEGIN_BEFORE_4_10_0@
+let null =
+@BEGIN_WITH_WIN32@
+  "NUL"
+@END_WITH_WIN32@
+@BEGIN_WITHOUT_WIN32@
+   "/dev/null"
+@END_WITHOUT_WIN32@
+
+open Stdcompat__pervasives
+
+let quote_redirections buffer quote_string stdin stdout stderr =
+  stdin |> Stdcompat__option.iter (fun f ->
+    Buffer.add_string buffer " <";
+    quote_string buffer f);
+  stdout |> Stdcompat__option.iter (fun f ->
+    Buffer.add_string buffer " >";
+    quote_string buffer f);
+  stderr |> Stdcompat__option.iter (fun f ->
+    if stderr = stdout then
+      Buffer.add_string buffer " 2>&1"
+    else (
+        Buffer.add_string buffer " 2>";
+        quote_string buffer f
+     ))
+
+@BEGIN_WITH_WIN32@
+let quote_cmd buffer (s : string) =
+  s |> String.iter (fun c ->
+    (match c with
+    | '(' | ')' | '!' | '^' | '%' | '\"' | '<' | '>' | '&' | '|' ->
+        Buffer.add_char buffer '^'
+    | _ ->
+        ());
+    Buffer.add_char buffer c)
+
+let check_filename (filename : string) =
+  let contains_space = ref false in
+  filename |> String.iter (fun c ->
+    match c with
+    | '\"' | '%' ->
+        failwith ("Filename.quote_command: bad file name " ^ filename)
+    | ' ' ->
+        contains_space := true
+    | _ ->
+        ());
+  !contains_space
+
+let quote s =
+  let buffer = Buffer.create (String.length s + 20) in
+  Buffer.add_char buffer '\"';
+  let bs_count = ref 0 in
+  let add_bs count =
+    for _ = 1 to count do
+      Buffer.add_char buffer '\\'
+    done in
+  s |> String.iter (fun c ->
+    match c with
+    | '\\' ->
+        incr bs_count
+    | '\"' ->
+        add_bs (2 * !bs_count + 1);
+        bs_count := 0;
+        Buffer.add_char buffer '\"'
+    | _ ->
+        add_bs !bs_count;
+        bs_count := 0;
+        Buffer.add_char buffer c);
+  Buffer.add_char buffer '\"';
+  add_bs !bs_count;
+  Buffer.contents buffer
+
+let quote_cmd_filename buffer (filename : string) =
+  if check_filename filename then (
+    Buffer.add_char buffer '"';
+    quote_cmd buffer filename;
+    Buffer.add_char buffer '"')
+  else
+    Buffer.add_string buffer filename
+
+let quote_command (command : string) ?(stdin : string option)
+    ?(stdout : string option) ?(stderr : string option)
+    (args : string list) : string =
+  let buffer = Buffer.create 128 in
+  Buffer.add_char buffer '\"';
+  quote_cmd_filename buffer command;
+  args |> List.iter (fun arg ->
+    Buffer.add_char buffer ' ';
+    quote_cmd buffer (quote arg));
+  quote_redirections buffer quote_cmd_filename stdin stdout stderr;
+  Buffer.add_char buffer '\"';
+  Buffer.contents buffer
+@END_WITH_WIN32@
+@BEGIN_WITHOUT_WIN32@
+let quote_string buffer (s : string) =
+  Buffer.add_char buffer '\'';
+  s |> String.iter (fun c ->
+    match c with
+    | '\'' ->
+        Buffer.add_string buffer "'\\''"
+    | _ ->
+        Buffer.add_char buffer c);
+  Buffer.add_char buffer '\''
+
+let quote_command (command : string) ?(stdin : string option)
+    ?(stdout : string option) ?(stderr : string option)
+    (args : string list) : string =
+  let buffer = Buffer.create 128 in
+  quote_string buffer command;
+  args |> List.iter (fun arg ->
+    Buffer.add_char buffer ' ';
+    quote_string buffer arg);
+  quote_redirections buffer quote_string stdin stdout stderr;
+  Buffer.contents buffer
+@END_WITHOUT_WIN32@
+@END_BEFORE_4_10_0@
+
+@BEGIN_BEFORE_5_1_0@
+@END_BEFORE_5_1_0@

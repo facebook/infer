@@ -1,0 +1,196 @@
+include Buffer
+
+@BEGIN_BEFORE_4_08_0@
+let add_uint8 b v =
+  add_char b (char_of_int (v land 0xFF))
+
+let add_int8 b v =
+  add_uint8 b v
+
+let add_uint16_le b v =
+  add_uint8 b v;
+  add_uint8 b (v lsr 8)
+
+let add_uint16_be b v =
+  add_uint8 b (v lsr 8);
+  add_uint8 b v
+
+let add_uint16_ne b v =
+  if @BIG_ENDIAN@ then add_uint16_be b v
+  else add_uint16_le b v
+
+let add_int16_le = add_uint16_le
+
+let add_int16_be = add_uint16_be
+
+let add_int16_ne = add_uint16_ne
+
+let add_int32_le b v =
+  add_uint8 b (Int32.to_int v);
+  add_uint8 b (Int32.to_int (Int32.shift_right v 8));
+  add_uint8 b (Int32.to_int (Int32.shift_right v 16));
+  add_uint8 b (Int32.to_int (Int32.shift_right v 24))
+
+let add_int32_be b v =
+  add_uint8 b (Int32.to_int (Int32.shift_right v 24));
+  add_uint8 b (Int32.to_int (Int32.shift_right v 16));
+  add_uint8 b (Int32.to_int (Int32.shift_right v 8));
+  add_uint8 b (Int32.to_int v)
+
+let add_int32_ne b v =
+  if @BIG_ENDIAN@ then add_int32_be b v
+  else add_int32_le b v
+
+let add_int64_le b v =
+  add_uint8 b (Int64.to_int v);
+  add_uint8 b (Int64.to_int (Int64.shift_right v 8));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 16));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 24));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 32));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 40));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 48));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 56))
+
+let add_int64_be b v =
+  add_uint8 b (Int64.to_int (Int64.shift_right v 56));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 48));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 40));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 32));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 24));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 16));
+  add_uint8 b (Int64.to_int (Int64.shift_right v 8));
+  add_uint8 b (Int64.to_int v)
+
+let add_int64_ne b v =
+  if @BIG_ENDIAN@ then add_int64_be b v
+  else add_int64_le b v
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_WITH_MAGIC@
+  type internal = {
+      mutable buffer : string;
+      mutable position : int;
+      mutable length : int;
+      initial_buffer : string
+    }
+@END_WITH_MAGIC@
+let add_channel b ic size =
+  @BEGIN_WITH_MAGIC@
+    let original_offset = pos_in ic in
+    try
+      add_channel b ic size
+    with End_of_file as exc ->
+      let read = pos_in ic - original_offset in
+      let b' = (Obj.magic b : internal) in
+      b'.position <- b'.position + read;
+      raise exc
+  @END_WITH_MAGIC@
+  @BEGIN_WITHOUT_MAGIC@
+    let max_size = in_channel_length ic - pos_in ic in
+    add_channel b ic (min size max_size);
+    if max_size < size then
+      raise End_of_file
+  @END_WITHOUT_MAGIC@
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_02_0@
+let to_bytes = contents
+
+let add_bytes = add_string
+
+let add_subbytes = add_substring
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_3_08_0@
+let sub buffer offset length =
+  String.sub (contents buffer) offset length
+
+let nth buffer offset =
+  (contents buffer).[offset]
+@END_BEFORE_3_08_0@
+
+@BEGIN_BEFORE_4_05_0@
+let truncate b len =
+  let s = sub b 0 len in
+  clear b;
+  add_string b s
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_06_0@
+let add_utf_8_uchar b u =
+  if Stdcompat__uchar.is_char u then
+    add_char b (Stdcompat__uchar.unsafe_to_char u)
+  else
+    let i = Stdcompat__uchar.to_int u in
+    if i <= 0x07FF then
+      begin
+        add_char b (Char.unsafe_chr (0xC0 lor (i lsr 6)));
+        add_char b (Char.unsafe_chr (0x80 lor i land 0x3F));
+      end
+    else if i <= 0xFFFF then
+      begin
+        add_char b (Char.unsafe_chr (0xE0 lor (i lsr 12)));
+        add_char b (Char.unsafe_chr (0x80 lor (i lsr 6) land 0x3F));
+        add_char b (Char.unsafe_chr (0x80 lor i land 0x3F));
+      end
+    else
+      begin
+        add_char b (Char.unsafe_chr (0xF0 lor (i lsr 18)));
+        add_char b (Char.unsafe_chr (0x80 lor (i lsr 12) land 0x3F));
+        add_char b (Char.unsafe_chr (0x80 lor (i lsr 6) land 0x3F));
+        add_char b (Char.unsafe_chr (0x80 lor i land 0x3F));
+      end
+
+let add_utf_16be_uchar b u =
+  let i = Stdcompat__uchar.to_int u in
+  if i <= 0xFFFF then
+    begin
+      add_char b (Char.unsafe_chr (i lsr 8));
+      add_char b (Char.unsafe_chr (i land 0xFF));
+    end
+  else
+    let i = i - 0x10000 in
+    let hi = 0xD800 lor i lsr 10 in
+    let lo = 0xDC00 lor i land 0x3FF in
+    add_char b (Char.unsafe_chr (hi lsr 8));
+    add_char b (Char.unsafe_chr (hi land 0xFF));
+    add_char b (Char.unsafe_chr (lo lsr 8));
+    add_char b (Char.unsafe_chr (lo land 0xFF))
+
+let add_utf_16le_uchar b u =
+  let i = Stdcompat__uchar.to_int u in
+  if i <= 0xFFFF then
+    begin
+      add_char b (Char.unsafe_chr (i land 0xFF));
+      add_char b (Char.unsafe_chr (i lsr 8));
+    end
+  else
+    let i = i - 0x10000 in
+    let hi = 0xD800 lor i lsr 10 in
+    let lo = 0xDC00 lor i land 0x3FF in
+    add_char b (Char.unsafe_chr (hi land 0xFF));
+    add_char b (Char.unsafe_chr (hi lsr 8));
+    add_char b (Char.unsafe_chr (lo land 0xFF));
+    add_char b (Char.unsafe_chr (lo lsr 8))
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_07_0@
+let add_seq b seq =
+  Stdcompat__seq.iter (add_char b) seq
+
+let of_seq g =
+  let b = create 32 in
+  add_seq b g;
+  b
+
+let to_seq b = Stdcompat__tools.vec_to_seq length nth b
+
+let to_seqi b = Stdcompat__tools.vec_to_seqi length nth b
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_3_11_0@
+let blit src srcoff dst dstoff len =
+  String.blit (contents src) srcoff dst dstoff len
+@END_BEFORE_3_11_0@
+

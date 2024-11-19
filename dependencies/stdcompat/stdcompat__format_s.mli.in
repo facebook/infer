@@ -1,0 +1,893 @@
+module type S = sig
+type formatter = Format.formatter
+(** Alias for {!Format.formatter} *)
+
+@BEGIN_FROM_4_08_0@
+type geometry = Format.geometry = {
+  max_indent: int ;
+  margin: int }
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type geometry = {
+  max_indent: int ;
+  margin: int }
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type geometry = {
+                     max_indent: int ;
+                     margin: int }
+ *)
+
+@BEGIN_FROM_4_08_0@
+@BEGIN_FROM_4_02_0@
+type stag = Format.stag = ..
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type stag = 
+Format.stag
+@END_BEFORE_4_02_0@
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_FROM_4_02_0@
+type stag = ..
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type stag
+@END_BEFORE_4_02_0@
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type stag = ..
+ *)
+
+type tag = string
+(** Alias for {!Format.tag} *)
+
+@BEGIN_FROM_4_06_0@
+type formatter_out_functions = Format.formatter_out_functions =
+  {
+  out_string: string -> int -> int -> unit ;
+  out_flush: unit -> unit ;
+  out_newline: unit -> unit ;
+  out_spaces: int -> unit ;
+  out_indent: int -> unit }
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+type formatter_out_functions =
+  {
+  out_string: string -> int -> int -> unit ;
+  out_flush: unit -> unit ;
+  out_newline: unit -> unit ;
+  out_spaces: int -> unit ;
+  out_indent: int -> unit }
+@END_BEFORE_4_06_0@
+(** @since 4.06.0:
+    type formatter_out_functions =
+      {
+      out_string: string -> int -> int -> unit ;
+      out_flush: unit -> unit ;
+      out_newline: unit -> unit ;
+      out_spaces: int -> unit ;
+      out_indent: int -> unit }
+ *)
+
+@BEGIN_FROM_4_08_0@
+type formatter_stag_functions = Format.formatter_stag_functions =
+  {
+  mark_open_stag: stag -> string ;
+  mark_close_stag: stag -> string ;
+  print_open_stag: stag -> unit ;
+  print_close_stag: stag -> unit }
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type formatter_stag_functions =
+  {
+  mark_open_stag: stag -> string ;
+  mark_close_stag: stag -> string ;
+  print_open_stag: stag -> unit ;
+  print_close_stag: stag -> unit }
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    type formatter_stag_functions =
+      {
+      mark_open_stag: stag -> string ;
+      mark_close_stag: stag -> string ;
+      print_open_stag: stag -> unit ;
+      print_close_stag: stag -> unit }
+ *)
+
+@BEGIN_FROM_4_06_0@
+type symbolic_output_item = Format.symbolic_output_item =
+  | Output_flush 
+  | Output_newline 
+  | Output_string of string 
+  | Output_spaces of int 
+  | Output_indent of int 
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+type symbolic_output_item =
+  | Output_flush 
+  | Output_newline 
+  | Output_string of string 
+  | Output_spaces of int 
+  | Output_indent of int 
+@END_BEFORE_4_06_0@
+(** @since 4.06.0:
+    type symbolic_output_item =
+      | Output_flush 
+      | Output_newline 
+      | Output_string of string 
+      | Output_spaces of int 
+      | Output_indent of int 
+ *)
+
+@BEGIN_FROM_4_06_0@
+type symbolic_output_buffer = Format.symbolic_output_buffer
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+type symbolic_output_buffer
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: type symbolic_output_buffer
+ *)
+
+val pp_print_nothing : formatter -> unit -> unit
+(** @since 5.2.0: val pp_print_nothing : formatter -> unit -> unit *)
+
+val pp_infinity : int
+(** @since 5.2.0: val pp_infinity : int *)
+
+val pp_print_iter :
+  ?pp_sep:(formatter -> unit -> unit) ->
+    (('a -> unit) -> 'b -> unit) ->
+      (formatter -> 'a -> unit) -> formatter -> 'b -> unit
+(** @since 5.1.0:
+    val pp_print_iter :
+      ?pp_sep:(formatter -> unit -> unit) ->
+        (('a -> unit) -> 'b -> unit) ->
+          (formatter -> 'a -> unit) -> formatter -> 'b -> unit *)
+
+val pp_print_array :
+  ?pp_sep:(formatter -> unit -> unit) ->
+    (formatter -> 'a -> unit) -> formatter -> 'a array -> unit
+(** @since 5.1.0:
+    val pp_print_array :
+      ?pp_sep:(formatter -> unit -> unit) ->
+        (formatter -> 'a -> unit) -> formatter -> 'a array -> unit *)
+
+val synchronized_formatter_of_out_channel :
+  out_channel -> formatter Stdcompat__domain.DLS.key
+(** @since 5.0.0:
+    val synchronized_formatter_of_out_channel :
+      out_channel -> formatter Stdcompat__domain.DLS.key *)
+
+val get_std_formatter : unit -> formatter
+(** @since 5.0.0: val get_std_formatter : unit -> formatter *)
+
+val get_err_formatter : unit -> formatter
+(** @since 5.0.0: val get_err_formatter : unit -> formatter *)
+
+val get_stdbuf : unit -> Buffer.t
+(** @since 5.0.0: val get_stdbuf : unit -> Buffer.t *)
+
+val get_str_formatter : unit -> formatter
+(** @since 5.0.0: val get_str_formatter : unit -> formatter *)
+
+val make_synchronized_formatter :
+  (string -> int -> int -> unit) ->
+    (unit -> unit) -> formatter Stdcompat__domain.DLS.key
+(** @since 5.0.0:
+    val make_synchronized_formatter :
+      (string -> int -> int -> unit) ->
+        (unit -> unit) -> formatter Stdcompat__domain.DLS.key *)
+
+@BEGIN_FROM_4_13_0@
+val pp_print_bytes : formatter -> bytes -> unit
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val pp_print_bytes : formatter -> Stdcompat__init.bytes -> unit
+@END_BEFORE_4_13_0@
+(** @since 4.13.0: val pp_print_bytes : formatter -> bytes -> unit
+ *)
+
+@BEGIN_FROM_4_13_0@
+val print_bytes : bytes -> unit
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val print_bytes : Stdcompat__init.bytes -> unit
+@END_BEFORE_4_13_0@
+(** @since 4.13.0: val print_bytes : bytes -> unit
+ *)
+
+@BEGIN_FROM_4_13_0@
+val pp_print_either :
+  left:(formatter -> 'a -> unit) ->
+    right:(formatter -> 'b -> unit) -> formatter -> ('a, 'b) Either.t -> unit
+@END_FROM_4_13_0@
+@BEGIN_BEFORE_4_13_0@
+val pp_print_either :
+  left:(formatter -> 'a -> unit) ->
+    right:(formatter -> 'b -> unit) ->
+      formatter -> ('a, 'b) Stdcompat__either.t -> unit
+@END_BEFORE_4_13_0@
+(** @since 4.13.0:
+    val pp_print_either :
+      left:(formatter -> 'a -> unit) ->
+        right:(formatter -> 'b -> unit) ->
+          formatter -> ('a, 'b) Either.t -> unit
+ *)
+
+@BEGIN_FROM_4_12_0@
+val pp_print_seq :
+  ?pp_sep:(formatter -> unit -> unit) ->
+    (formatter -> 'a -> unit) -> formatter -> 'a Seq.t -> unit
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+val pp_print_seq :
+  ?pp_sep:(formatter -> unit -> unit) ->
+    (formatter -> 'a -> unit) -> formatter -> 'a Stdcompat__seq.t -> unit
+@END_BEFORE_4_12_0@
+(** @since 4.12.0:
+    val pp_print_seq :
+      ?pp_sep:(formatter -> unit -> unit) ->
+        (formatter -> 'a -> unit) -> formatter -> 'a Seq.t -> unit
+ *)
+
+val pp_update_geometry : formatter -> (geometry -> geometry) -> unit
+(** @since 4.11.0:
+    val pp_update_geometry : formatter -> (geometry -> geometry) -> unit *)
+
+val update_geometry : (geometry -> geometry) -> unit
+(** @since 4.11.0: val update_geometry : (geometry -> geometry) -> unit *)
+
+val pp_print_custom_break :
+  formatter ->
+    fits:(string * int * string) -> breaks:(string * int * string) -> unit
+(** @since 4.08.0:
+    val pp_print_custom_break :
+      formatter ->
+        fits:(string * int * string) ->
+          breaks:(string * int * string) -> unit *)
+
+val check_geometry : geometry -> bool
+(** @since 4.08.0: val check_geometry : geometry -> bool *)
+
+val pp_set_geometry : formatter -> max_indent:int -> margin:int -> unit
+(** @since 4.08.0:
+    val pp_set_geometry : formatter -> max_indent:int -> margin:int -> unit *)
+
+val set_geometry : max_indent:int -> margin:int -> unit
+(** @since 4.08.0: val set_geometry : max_indent:int -> margin:int -> unit *)
+
+val pp_safe_set_geometry : formatter -> max_indent:int -> margin:int -> unit
+(** @since 4.08.0:
+    val pp_safe_set_geometry :
+      formatter -> max_indent:int -> margin:int -> unit *)
+
+val safe_set_geometry : max_indent:int -> margin:int -> unit
+(** @since 4.08.0:
+    val safe_set_geometry : max_indent:int -> margin:int -> unit *)
+
+val pp_get_geometry : formatter -> unit -> geometry
+(** @since 4.08.0: val pp_get_geometry : formatter -> unit -> geometry *)
+
+val get_geometry : unit -> geometry
+(** @since 4.08.0: val get_geometry : unit -> geometry *)
+
+val pp_open_stag : formatter -> stag -> unit
+(** @since 4.08.0: val pp_open_stag : formatter -> stag -> unit *)
+
+val open_stag : stag -> unit
+(** @since 4.08.0: val open_stag : stag -> unit *)
+
+val pp_close_stag : formatter -> unit -> unit
+(** @since 4.08.0: val pp_close_stag : formatter -> unit -> unit *)
+
+val close_stag : unit -> unit
+(** @since 4.08.0: val close_stag : unit -> unit *)
+
+val pp_set_formatter_stag_functions :
+  formatter -> formatter_stag_functions -> unit
+(** @since 4.08.0:
+    val pp_set_formatter_stag_functions :
+      formatter -> formatter_stag_functions -> unit *)
+
+val set_formatter_stag_functions : formatter_stag_functions -> unit
+(** @since 4.08.0:
+    val set_formatter_stag_functions : formatter_stag_functions -> unit *)
+
+val pp_get_formatter_stag_functions :
+  formatter -> unit -> formatter_stag_functions
+(** @since 4.08.0:
+    val pp_get_formatter_stag_functions :
+      formatter -> unit -> formatter_stag_functions *)
+
+val get_formatter_stag_functions : unit -> formatter_stag_functions
+(** @since 4.08.0:
+    val get_formatter_stag_functions : unit -> formatter_stag_functions *)
+
+val pp_print_option :
+  ?none:(formatter -> unit -> unit) ->
+    (formatter -> 'a -> unit) -> formatter -> 'a option -> unit
+(** @since 4.08.0:
+    val pp_print_option :
+      ?none:(formatter -> unit -> unit) ->
+        (formatter -> 'a -> unit) -> formatter -> 'a option -> unit *)
+
+@BEGIN_FROM_4_08_0@
+val pp_print_result :
+  ok:(formatter -> 'a -> unit) ->
+    error:(formatter -> 'e -> unit) -> formatter -> ('a, 'e) result -> unit
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+val pp_print_result :
+  ok:(formatter -> 'a -> unit) ->
+    error:(formatter -> 'e -> unit) ->
+      formatter -> ('a, 'e) Stdcompat__pervasives.result -> unit
+@END_BEFORE_4_08_0@
+(** @since 4.08.0:
+    val pp_print_result :
+      ok:(formatter -> 'a -> unit) ->
+        error:(formatter -> 'e -> unit) ->
+          formatter -> ('a, 'e) result -> unit
+ *)
+
+val dprintf : ('a, formatter, unit, formatter -> unit) format4 -> 'a
+(** @since 4.08.0:
+    val dprintf : ('a, formatter, unit, formatter -> unit) format4 -> 'a *)
+
+val kdprintf :
+  ((formatter -> unit) -> 'a) -> ('b, formatter, unit, 'a) format4 -> 'b
+(** @since 4.08.0:
+    val kdprintf :
+      ((formatter -> unit) -> 'a) -> ('b, formatter, unit, 'a) format4 -> 'b *)
+
+val formatter_of_out_functions : formatter_out_functions -> formatter
+(** @since 4.06.0:
+    val formatter_of_out_functions : formatter_out_functions -> formatter *)
+
+val make_symbolic_output_buffer : unit -> symbolic_output_buffer
+(** @since 4.06.0:
+    val make_symbolic_output_buffer : unit -> symbolic_output_buffer *)
+
+val clear_symbolic_output_buffer : symbolic_output_buffer -> unit
+(** @since 4.06.0:
+    val clear_symbolic_output_buffer : symbolic_output_buffer -> unit *)
+
+val get_symbolic_output_buffer :
+  symbolic_output_buffer -> symbolic_output_item list
+(** @since 4.06.0:
+    val get_symbolic_output_buffer :
+      symbolic_output_buffer -> symbolic_output_item list *)
+
+val flush_symbolic_output_buffer :
+  symbolic_output_buffer -> symbolic_output_item list
+(** @since 4.06.0:
+    val flush_symbolic_output_buffer :
+      symbolic_output_buffer -> symbolic_output_item list *)
+
+val add_symbolic_output_item :
+  symbolic_output_buffer -> symbolic_output_item -> unit
+(** @since 4.06.0:
+    val add_symbolic_output_item :
+      symbolic_output_buffer -> symbolic_output_item -> unit *)
+
+val formatter_of_symbolic_output_buffer : symbolic_output_buffer -> formatter
+(** @since 4.06.0:
+    val formatter_of_symbolic_output_buffer :
+      symbolic_output_buffer -> formatter *)
+
+val kasprintf : (string -> 'a) -> ('b, formatter, unit, 'a) format4 -> 'b
+(** @since 4.03.0:
+    val kasprintf : (string -> 'a) -> ('b, formatter, unit, 'a) format4 -> 'b *)
+
+val pp_print_list :
+  ?pp_sep:(formatter -> unit -> unit) ->
+    (formatter -> 'a -> unit) -> formatter -> 'a list -> unit
+(** @since 4.02.0:
+    val pp_print_list :
+      ?pp_sep:(formatter -> unit -> unit) ->
+        (formatter -> 'a -> unit) -> formatter -> 'a list -> unit *)
+
+val pp_print_text : formatter -> string -> unit
+(** @since 4.02.0: val pp_print_text : formatter -> string -> unit *)
+
+val pp_set_formatter_out_functions :
+  formatter -> formatter_out_functions -> unit
+(** @since 4.01.0:
+    val pp_set_formatter_out_functions :
+      formatter -> formatter_out_functions -> unit *)
+
+val set_formatter_out_functions : formatter_out_functions -> unit
+(** @since 4.01.0:
+    val set_formatter_out_functions : formatter_out_functions -> unit *)
+
+val pp_get_formatter_out_functions :
+  formatter -> unit -> formatter_out_functions
+(** @since 4.01.0:
+    val pp_get_formatter_out_functions :
+      formatter -> unit -> formatter_out_functions *)
+
+val get_formatter_out_functions : unit -> formatter_out_functions
+(** @since 4.01.0:
+    val get_formatter_out_functions : unit -> formatter_out_functions *)
+
+val asprintf : ('a, formatter, unit, string) format4 -> 'a
+(** @since 4.01.0: val asprintf : ('a, formatter, unit, string) format4 -> 'a *)
+
+val ikfprintf :
+  (formatter -> 'a) -> formatter -> ('b, formatter, unit, 'a) format4 -> 'b
+(** @since 3.12.0:
+    val ikfprintf :
+      (formatter -> 'a) ->
+        formatter -> ('b, formatter, unit, 'a) format4 -> 'b *)
+
+val ifprintf : formatter -> ('a, formatter, unit) format -> 'a
+(** @since 3.10.0:
+    val ifprintf : formatter -> ('a, formatter, unit) format -> 'a *)
+
+val kfprintf :
+  (formatter -> 'a) -> formatter -> ('b, formatter, unit, 'a) format4 -> 'b
+(** @since 3.08.0:
+    val kfprintf :
+      (formatter -> 'a) ->
+        formatter -> ('b, formatter, unit, 'a) format4 -> 'b *)
+
+val ksprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+(** @since 3.08.0:
+    val ksprintf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b *)
+
+val pp_open_box : formatter -> int -> unit
+(** Alias for {!Format.pp_open_box} *)
+
+val open_box : int -> unit
+(** Alias for {!Format.open_box} *)
+
+val pp_close_box : formatter -> unit -> unit
+(** Alias for {!Format.pp_close_box} *)
+
+val close_box : unit -> unit
+(** Alias for {!Format.close_box} *)
+
+val pp_open_hbox : formatter -> unit -> unit
+(** Alias for {!Format.pp_open_hbox} *)
+
+val open_hbox : unit -> unit
+(** Alias for {!Format.open_hbox} *)
+
+val pp_open_vbox : formatter -> int -> unit
+(** Alias for {!Format.pp_open_vbox} *)
+
+val open_vbox : int -> unit
+(** Alias for {!Format.open_vbox} *)
+
+val pp_open_hvbox : formatter -> int -> unit
+(** Alias for {!Format.pp_open_hvbox} *)
+
+val open_hvbox : int -> unit
+(** Alias for {!Format.open_hvbox} *)
+
+val pp_open_hovbox : formatter -> int -> unit
+(** Alias for {!Format.pp_open_hovbox} *)
+
+val open_hovbox : int -> unit
+(** Alias for {!Format.open_hovbox} *)
+
+val pp_print_string : formatter -> string -> unit
+(** Alias for {!Format.pp_print_string} *)
+
+val print_string : string -> unit
+(** Alias for {!Format.print_string} *)
+
+val pp_print_as : formatter -> int -> string -> unit
+(** Alias for {!Format.pp_print_as} *)
+
+val print_as : int -> string -> unit
+(** Alias for {!Format.print_as} *)
+
+val pp_print_int : formatter -> int -> unit
+(** Alias for {!Format.pp_print_int} *)
+
+val print_int : int -> unit
+(** Alias for {!Format.print_int} *)
+
+val pp_print_float : formatter -> float -> unit
+(** Alias for {!Format.pp_print_float} *)
+
+val print_float : float -> unit
+(** Alias for {!Format.print_float} *)
+
+val pp_print_char : formatter -> char -> unit
+(** Alias for {!Format.pp_print_char} *)
+
+val print_char : char -> unit
+(** Alias for {!Format.print_char} *)
+
+val pp_print_bool : formatter -> bool -> unit
+(** Alias for {!Format.pp_print_bool} *)
+
+val print_bool : bool -> unit
+(** Alias for {!Format.print_bool} *)
+
+val pp_print_space : formatter -> unit -> unit
+(** Alias for {!Format.pp_print_space} *)
+
+val print_space : unit -> unit
+(** Alias for {!Format.print_space} *)
+
+val pp_print_cut : formatter -> unit -> unit
+(** Alias for {!Format.pp_print_cut} *)
+
+val print_cut : unit -> unit
+(** Alias for {!Format.print_cut} *)
+
+val pp_print_break : formatter -> int -> int -> unit
+(** Alias for {!Format.pp_print_break} *)
+
+val print_break : int -> int -> unit
+(** Alias for {!Format.print_break} *)
+
+val pp_force_newline : formatter -> unit -> unit
+(** Alias for {!Format.pp_force_newline} *)
+
+val force_newline : unit -> unit
+(** Alias for {!Format.force_newline} *)
+
+val pp_print_if_newline : formatter -> unit -> unit
+(** Alias for {!Format.pp_print_if_newline} *)
+
+val print_if_newline : unit -> unit
+(** Alias for {!Format.print_if_newline} *)
+
+val pp_print_flush : formatter -> unit -> unit
+(** Alias for {!Format.pp_print_flush} *)
+
+val print_flush : unit -> unit
+(** Alias for {!Format.print_flush} *)
+
+val pp_print_newline : formatter -> unit -> unit
+(** Alias for {!Format.pp_print_newline} *)
+
+val print_newline : unit -> unit
+(** Alias for {!Format.print_newline} *)
+
+val pp_set_margin : formatter -> int -> unit
+(** Alias for {!Format.pp_set_margin} *)
+
+val set_margin : int -> unit
+(** Alias for {!Format.set_margin} *)
+
+val pp_get_margin : formatter -> unit -> int
+(** Alias for {!Format.pp_get_margin} *)
+
+val get_margin : unit -> int
+(** Alias for {!Format.get_margin} *)
+
+val pp_set_max_indent : formatter -> int -> unit
+(** Alias for {!Format.pp_set_max_indent} *)
+
+val set_max_indent : int -> unit
+(** Alias for {!Format.set_max_indent} *)
+
+val pp_get_max_indent : formatter -> unit -> int
+(** Alias for {!Format.pp_get_max_indent} *)
+
+val get_max_indent : unit -> int
+(** Alias for {!Format.get_max_indent} *)
+
+val pp_set_max_boxes : formatter -> int -> unit
+(** Alias for {!Format.pp_set_max_boxes} *)
+
+val set_max_boxes : int -> unit
+(** Alias for {!Format.set_max_boxes} *)
+
+val pp_get_max_boxes : formatter -> unit -> int
+(** Alias for {!Format.pp_get_max_boxes} *)
+
+val get_max_boxes : unit -> int
+(** Alias for {!Format.get_max_boxes} *)
+
+val pp_over_max_boxes : formatter -> unit -> bool
+(** Alias for {!Format.pp_over_max_boxes} *)
+
+val over_max_boxes : unit -> bool
+(** Alias for {!Format.over_max_boxes} *)
+
+@BEGIN_FROM_4_06_0@
+val pp_open_tbox : formatter -> unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val pp_open_tbox : formatter -> unit -> unit[@@ocaml.deprecated
+                                              "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val pp_open_tbox : formatter -> unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val pp_open_tbox : formatter -> unit -> unit
+@since 4.03.0:
+val pp_open_tbox : formatter -> unit -> unit[@@ocaml.deprecated
+                                              "Tabulation boxes are not supported any more."]
+@since 3.07.0: val pp_open_tbox : formatter -> unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val open_tbox : unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val open_tbox : unit -> unit[@@ocaml.deprecated
+                              "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val open_tbox : unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val open_tbox : unit -> unit
+@since 4.03.0:
+val open_tbox : unit -> unit[@@ocaml.deprecated
+                              "Tabulation boxes are not supported any more."]
+@since 3.07.0: val open_tbox : unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val pp_close_tbox : formatter -> unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val pp_close_tbox : formatter -> unit -> unit[@@ocaml.deprecated
+                                               "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val pp_close_tbox : formatter -> unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val pp_close_tbox : formatter -> unit -> unit
+@since 4.03.0:
+val pp_close_tbox : formatter -> unit -> unit[@@ocaml.deprecated
+                                               "Tabulation boxes are not supported any more."]
+@since 3.07.0: val pp_close_tbox : formatter -> unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val close_tbox : unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val close_tbox : unit -> unit[@@ocaml.deprecated
+                               "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val close_tbox : unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val close_tbox : unit -> unit
+@since 4.03.0:
+val close_tbox : unit -> unit[@@ocaml.deprecated
+                               "Tabulation boxes are not supported any more."]
+@since 3.07.0: val close_tbox : unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val pp_set_tab : formatter -> unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val pp_set_tab : formatter -> unit -> unit[@@ocaml.deprecated
+                                            "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val pp_set_tab : formatter -> unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val pp_set_tab : formatter -> unit -> unit
+@since 4.03.0:
+val pp_set_tab : formatter -> unit -> unit[@@ocaml.deprecated
+                                            "Tabulation boxes are not supported any more."]
+@since 3.07.0: val pp_set_tab : formatter -> unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val set_tab : unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val set_tab : unit -> unit[@@ocaml.deprecated
+                            "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val set_tab : unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val set_tab : unit -> unit
+@since 4.03.0:
+val set_tab : unit -> unit[@@ocaml.deprecated
+                            "Tabulation boxes are not supported any more."]
+@since 3.07.0: val set_tab : unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val pp_print_tab : formatter -> unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val pp_print_tab : formatter -> unit -> unit[@@ocaml.deprecated
+                                              "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val pp_print_tab : formatter -> unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val pp_print_tab : formatter -> unit -> unit
+@since 4.03.0:
+val pp_print_tab : formatter -> unit -> unit[@@ocaml.deprecated
+                                              "Tabulation boxes are not supported any more."]
+@since 3.07.0: val pp_print_tab : formatter -> unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val print_tab : unit -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val print_tab : unit -> unit[@@ocaml.deprecated
+                              "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val print_tab : unit -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val print_tab : unit -> unit
+@since 4.03.0:
+val print_tab : unit -> unit[@@ocaml.deprecated
+                              "Tabulation boxes are not supported any more."]
+@since 3.07.0: val print_tab : unit -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val pp_print_tbreak : formatter -> int -> int -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val pp_print_tbreak : formatter -> int -> int -> unit[@@ocaml.deprecated
+                                                       "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val pp_print_tbreak : formatter -> int -> int -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val pp_print_tbreak : formatter -> int -> int -> unit
+@since 4.03.0:
+val pp_print_tbreak : formatter -> int -> int -> unit[@@ocaml.deprecated
+                                                       "Tabulation boxes are not supported any more."]
+@since 3.07.0: val pp_print_tbreak : formatter -> int -> int -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val print_tbreak : int -> int -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+@BEGIN_FROM_4_03_0@
+val print_tbreak : int -> int -> unit[@@ocaml.deprecated
+                                       "Tabulation boxes are not supported any more."]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+val print_tbreak : int -> int -> unit
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val print_tbreak : int -> int -> unit
+@since 4.03.0:
+val print_tbreak : int -> int -> unit[@@ocaml.deprecated
+                                       "Tabulation boxes are not supported any more."]
+@since 3.07.0: val print_tbreak : int -> int -> unit
+ *)
+
+val pp_set_ellipsis_text : formatter -> string -> unit
+(** Alias for {!Format.pp_set_ellipsis_text} *)
+
+val set_ellipsis_text : string -> unit
+(** Alias for {!Format.set_ellipsis_text} *)
+
+val pp_get_ellipsis_text : formatter -> unit -> string
+(** Alias for {!Format.pp_get_ellipsis_text} *)
+
+val get_ellipsis_text : unit -> string
+(** Alias for {!Format.get_ellipsis_text} *)
+
+val pp_set_tags : formatter -> bool -> unit
+(** Alias for {!Format.pp_set_tags} *)
+
+val set_tags : bool -> unit
+(** Alias for {!Format.set_tags} *)
+
+val pp_set_print_tags : formatter -> bool -> unit
+(** Alias for {!Format.pp_set_print_tags} *)
+
+val set_print_tags : bool -> unit
+(** Alias for {!Format.set_print_tags} *)
+
+val pp_set_mark_tags : formatter -> bool -> unit
+(** Alias for {!Format.pp_set_mark_tags} *)
+
+val set_mark_tags : bool -> unit
+(** Alias for {!Format.set_mark_tags} *)
+
+val pp_get_print_tags : formatter -> unit -> bool
+(** Alias for {!Format.pp_get_print_tags} *)
+
+val get_print_tags : unit -> bool
+(** Alias for {!Format.get_print_tags} *)
+
+val pp_get_mark_tags : formatter -> unit -> bool
+(** Alias for {!Format.pp_get_mark_tags} *)
+
+val get_mark_tags : unit -> bool
+(** Alias for {!Format.get_mark_tags} *)
+
+val pp_set_formatter_out_channel : formatter -> out_channel -> unit
+(** Alias for {!Format.pp_set_formatter_out_channel} *)
+
+val set_formatter_out_channel : out_channel -> unit
+(** Alias for {!Format.set_formatter_out_channel} *)
+
+val pp_set_formatter_output_functions :
+  formatter -> (string -> int -> int -> unit) -> (unit -> unit) -> unit
+(** Alias for {!Format.pp_set_formatter_output_functions} *)
+
+val set_formatter_output_functions :
+  (string -> int -> int -> unit) -> (unit -> unit) -> unit
+(** Alias for {!Format.set_formatter_output_functions} *)
+
+val pp_get_formatter_output_functions :
+  formatter -> unit -> ((string -> int -> int -> unit) * (unit -> unit))
+(** Alias for {!Format.pp_get_formatter_output_functions} *)
+
+val get_formatter_output_functions :
+  unit -> ((string -> int -> int -> unit) * (unit -> unit))
+(** Alias for {!Format.get_formatter_output_functions} *)
+
+val formatter_of_out_channel : out_channel -> formatter
+(** Alias for {!Format.formatter_of_out_channel} *)
+
+val std_formatter : formatter
+(** Alias for {!Format.std_formatter} *)
+
+val err_formatter : formatter
+(** Alias for {!Format.err_formatter} *)
+
+val formatter_of_buffer : Buffer.t -> formatter
+(** Alias for {!Format.formatter_of_buffer} *)
+
+val stdbuf : Buffer.t
+(** Alias for {!Format.stdbuf} *)
+
+val str_formatter : formatter
+(** Alias for {!Format.str_formatter} *)
+
+val flush_str_formatter : unit -> string
+(** Alias for {!Format.flush_str_formatter} *)
+
+val make_formatter :
+  (string -> int -> int -> unit) -> (unit -> unit) -> formatter
+(** Alias for {!Format.make_formatter} *)
+
+val fprintf : formatter -> ('a, formatter, unit) format -> 'a
+(** Alias for {!Format.fprintf} *)
+
+val printf : ('a, formatter, unit) format -> 'a
+(** Alias for {!Format.printf} *)
+
+val eprintf : ('a, formatter, unit) format -> 'a
+(** Alias for {!Format.eprintf} *)
+
+val sprintf : ('a, unit, string) format -> 'a
+(** Alias for {!Format.sprintf} *)
+
+end

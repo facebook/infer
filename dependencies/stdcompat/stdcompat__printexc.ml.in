@@ -1,0 +1,236 @@
+@BEGIN_FROM_4_08_0@
+include Printexc
+@END_FROM_4_08_0@
+
+
+@BEGIN_BEFORE_4_12_0@
+@BEGIN_FROM_3_11_0@
+type raw_backtrace_entry = private int
+@END_FROM_3_11_0@
+@BEGIN_BEFORE_3_11_0@
+type raw_backtrace_entry = int
+@END_BEFORE_3_11_0@
+
+let not_implemented () =
+  failwith "Stdcompat: not implemented."
+
+let backtrace_slots_of_raw_entry _ =
+  not_implemented ()
+
+let raw_backtrace_entries _ =
+  not_implemented ()
+@END_BEFORE_4_12_0@
+
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_FROM_4_02_0@
+type t = exn = ..
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t = exn
+@END_BEFORE_4_02_0@
+@END_BEFORE_4_08_0@
+
+@BEGIN_FROM_4_01_0@
+type raw_backtrace = Printexc.raw_backtrace
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+type raw_backtrace = unit
+@END_BEFORE_4_01_0@
+
+@BEGIN_FROM_4_02_0@
+type backtrace_slot = Printexc.backtrace_slot
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type backtrace_slot
+@END_BEFORE_4_02_0@
+
+type location =
+@BEGIN_FROM_5_2_0@
+Printexc.location =
+@END_FROM_5_2_0@
+  {
+  filename: string ;
+  line_number: int ;
+  start_char: int ;
+  end_char: int ;
+  end_line: int ;
+  end_col: int }
+
+let to_string = Printexc.to_string
+
+@BEGIN_BEFORE_4_09_0@
+let use_printers e =
+  Some (to_string e)
+
+let to_string_default e =
+  to_string e
+@END_BEFORE_4_09_0@
+
+@BEGIN_FROM_4_11_0@
+module Slot = Printexc.Slot
+@END_FROM_4_11_0@
+@BEGIN_BEFORE_4_11_0@
+module Slot = struct
+@BEGIN_FROM_4_04_0@
+  include Printexc.Slot
+@END_FROM_4_04_0@
+@BEGIN_BEFORE_4_04_0@
+  type t = backtrace_slot
+@BEGIN_FROM_4_02_0@
+  let is_raise = Printexc.Slot.is_raise
+  let location = Printexc.Slot.location
+  let format = Printexc.Slot.format
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+  let is_raise _ =
+    false
+
+  let location _ =
+    None
+
+  let format _ _ =
+    None
+@END_BEFORE_4_02_0@
+
+  let is_inline _ =
+    false
+@END_BEFORE_4_04_0@
+  let name _ =
+    None
+end
+@END_BEFORE_4_11_0@
+
+@BEGIN_FROM_4_02_0@
+type raw_backtrace_slot = Printexc.raw_backtrace_slot
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type raw_backtrace_slot
+@END_BEFORE_4_02_0@
+
+@BEGIN_FROM_4_05_0@
+external raise_with_backtrace :
+  exn -> raw_backtrace -> 'a = "%raise_with_backtrace"
+@END_FROM_4_05_0@
+@BEGIN_BEFORE_4_05_0@
+let raise_with_backtrace exn _ =
+  raise exn
+@END_BEFORE_4_05_0@
+
+@BEGIN_FROM_4_04_0@
+let get_raw_backtrace_next_slot = Printexc.get_raw_backtrace_next_slot
+@END_FROM_4_04_0@
+@BEGIN_BEFORE_4_04_0@
+let get_raw_backtrace_next_slot _ =
+  not_implemented ()
+@END_BEFORE_4_04_0@
+
+@BEGIN_FROM_4_02_0@
+let set_uncaught_exception_handler = Printexc.set_uncaught_exception_handler
+
+let backtrace_slots = Printexc.backtrace_slots
+
+let raw_backtrace_length = Printexc.raw_backtrace_length
+
+let get_raw_backtrace_slot = Printexc.get_raw_backtrace_slot
+
+let convert_raw_backtrace_slot = Printexc.convert_raw_backtrace_slot
+
+let exn_slot_id = Printexc.exn_slot_id
+
+let exn_slot_name = Printexc.exn_slot_name
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+let set_uncaught_exception_handler _ =
+  not_implemented ()
+
+let backtrace_slots _ =
+  not_implemented ()
+
+let raw_backtrace_length _ =
+  not_implemented ()
+
+let get_raw_backtrace_slot _ =
+  not_implemented ()
+
+let convert_raw_backtrace_slot _ =
+  not_implemented ()
+
+let exn_slot_id _ =
+  not_implemented ()
+
+let exn_slot_name _ =
+  not_implemented ()
+@END_BEFORE_4_02_0@
+
+@BEGIN_FROM_4_10_0@
+external get_callstack : int -> raw_backtrace = "caml_get_current_callstack"
+@END_FROM_4_10_0@
+@BEGIN_BEFORE_4_10_0@
+@BEGIN_FROM_4_01_0@
+let get_callstack = Printexc.get_callstack
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+let get_callstack _ =
+  not_implemented ()
+@END_BEFORE_4_01_0@
+@END_BEFORE_4_10_0@
+
+@BEGIN_FROM_4_01_0@
+let get_raw_backtrace = Printexc.get_raw_backtrace
+
+let print_raw_backtrace = Printexc.print_raw_backtrace
+
+let raw_backtrace_to_string = Printexc.raw_backtrace_to_string
+@END_FROM_4_01_0@
+@BEGIN_BEFORE_4_01_0@
+let get_raw_backtrace _ = ()
+
+let print_raw_backtrace _stderr _raw_backtrace =
+  ()
+
+let raw_backtrace_to_string _ =
+  not_implemented ()
+@END_BEFORE_4_01_0@
+
+@BEGIN_FROM_3_11_0@
+let print_backtrace = Printexc.print_backtrace
+
+let get_backtrace = Printexc.get_backtrace
+
+let record_backtrace = Printexc.record_backtrace
+
+let backtrace_status = Printexc.backtrace_status
+
+let register_printer = Printexc.register_printer
+@END_FROM_3_11_0@
+@BEGIN_BEFORE_3_11_0@
+let print_backtrace _ =
+  not_implemented ()
+
+let get_backtrace _ =
+  not_implemented ()
+
+let record_backtrace _ =
+  not_implemented ()
+
+let backtrace_status _ =
+  not_implemented ()
+
+let register_printer _ =
+  not_implemented ()
+@END_BEFORE_3_11_0@
+
+let print = Printexc.print
+let catch = Printexc.catch
+
+@BEGIN_BEFORE_4_11_0@
+let default_uncaught_exception_handler exn raw_backtrace =
+  Printf.eprintf "Fatal error: exception %s\n" (to_string exn);
+  print_raw_backtrace stderr raw_backtrace;
+  flush stderr
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_5_0_0@
+let string_of_extension_constructor _ =
+  failwith "not implemented"
+@END_BEFORE_5_0_0@

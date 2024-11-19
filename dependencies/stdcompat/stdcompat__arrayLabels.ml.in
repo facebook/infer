@@ -1,0 +1,11 @@
+@BEGIN_FROM_4_06_0@
+include (Stdcompat__array : module type of struct
+  include Stdcompat__array
+end with module Floatarray := Array.Floatarray)
+
+module Floatarray = ArrayLabels.Floatarray
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+include Stdcompat__array
+@END_BEFORE_4_06_0@
+

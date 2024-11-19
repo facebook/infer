@@ -1,0 +1,166 @@
+module type S = sig
+@BEGIN_FROM_5_0_0@
+  include module type of struct
+    include Stdlib
+  end
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+  module Pervasives : Stdcompat__pervasives_s.S
+
+  include Stdcompat__pervasives_s.S
+
+  val acosh : float -> float
+
+  val asinh : float -> float
+
+  val atanh : float -> float
+
+  module Arg : Stdcompat__arg_s.S
+
+  module Array : Stdcompat__array_s.S
+
+  module ArrayLabels : Stdcompat__arrayLabels_s.S
+
+  module Atomic : Stdcompat__atomic_s.S
+
+(* Bigarray is not exported before 4.02.0 to allow programs not
+   to be compiled with this module, this may change in the future.
+   From 4.02.0 and before 4.07.0, Bigarray is effectively
+   available only if the library is linked, but --no-alias-deps
+   allows the alias to be defined here without requiring such
+   a link. *)
+  @BEGIN_FROM_4_02_0@
+  module Bigarray = Bigarray
+  @END_FROM_4_02_0@
+
+  module Bool : Stdcompat__bool_s.S
+
+  module Buffer : Stdcompat__buffer_s.S
+
+  module Bytes : Stdcompat__bytes_s.S
+
+  module BytesLabels : Stdcompat__bytesLabels_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Callback : module type of (struct
+    include Callback
+  end)
+  @END_FROM_3_12_0@
+
+  module Char : Stdcompat__char_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Complex : module type of (struct
+    include Complex
+  end)
+  @END_FROM_3_12_0@
+
+  module Digest : Stdcompat__digest_s.S
+
+  module Either : Stdcompat__either_s.S
+
+  module Ephemeron : Stdcompat__ephemeron_s.S
+
+  module Filename : Stdcompat__filename_s.S
+
+  module Float : Stdcompat__float_s.S
+
+  module Format : Stdcompat__format_s.S
+
+  module Fun : Stdcompat__fun_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Gc : module type of (struct
+    include Gc
+  end)
+  @END_FROM_3_12_0@
+
+  module Hashtbl : Stdcompat__hashtbl_s.S
+
+  module In_channel : Stdcompat__in_channel_s.S
+
+  module Out_channel : Stdcompat__out_channel_s.S
+
+  module Int : Stdcompat__int_s.S
+
+  module Int32 : Stdcompat__int32_s.S
+
+  module Int64 : Stdcompat__int64_s.S
+
+  module Lazy : Stdcompat__lazy_s.S
+
+  module Lexing : Stdcompat__lexing_s.S
+
+  module List : Stdcompat__list_s.S
+
+  module ListLabels : Stdcompat__listLabels_s.S
+
+  module Map : Stdcompat__map_s.S
+
+  module Nativeint : Stdcompat__nativeint_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Obj : module type of (struct
+    include Obj
+  end)
+  @END_FROM_3_12_0@
+
+  @BEGIN_FROM_3_12_0@
+  module Oo : module type of (struct
+    include Oo
+  end)
+  @END_FROM_3_12_0@
+
+  module Option : Stdcompat__option_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Parsing : module type of (struct
+    include Parsing
+  end)
+  @END_FROM_3_12_0@
+
+  module Printexc : Stdcompat__printexc_s.S
+
+  module Printf : Stdcompat__printf_s.S
+
+  module Queue : Stdcompat__queue_s.S
+
+  module Random : Stdcompat__random_s.S
+
+  module Result : Stdcompat__result_s.S
+
+  @BEGIN_FROM_3_12_0@
+  module Scanf : module type of (struct
+    include Scanf
+  end)
+  @END_FROM_3_12_0@
+
+  module Seq : Stdcompat__seq_s.S
+
+  module Set : Stdcompat__set_s.S
+
+  module Stack : Stdcompat__stack_s.S
+
+  module StdLabels : sig
+    module Array : Stdcompat__arrayLabels_s.S
+
+    module Bytes : Stdcompat__bytesLabels_s.S
+
+    module List : Stdcompat__listLabels_s.S
+
+    module String : Stdcompat__stringLabels_s.S
+  end
+
+  module String : Stdcompat__string_s.S
+
+  module StringLabels : Stdcompat__stringLabels_s.S
+
+  module Sys : Stdcompat__sys_s.S
+
+  module Uchar : Stdcompat__uchar_s.S
+
+  module Unit : Stdcompat__unit_s.S
+
+  module Weak : Stdcompat__weak_s.S
+@END_BEFORE_5_0_0@
+end

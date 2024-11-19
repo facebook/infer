@@ -1,0 +1,128 @@
+name: ci
+on: [push]
+jobs:
+  build-ubuntu:
+    strategy:
+      fail-fast: false
+      matrix:
+        builder:
+          - dune
+          - make
+          - make-no-magic
+        ocaml-compiler:
+          - 4.02.x
+          - 4.03.x
+          - 4.04.x
+          - 4.05.x
+          - 4.06.x
+          - 4.07.x
+          - 4.08.x
+          - 4.09.x
+          - 4.10.x
+          - 4.11.x
+          - 4.12.x
+          - 4.13.x
+          - 4.14.x
+          - 5.0.0
+          - 5.1.1
+          - 5.2.0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Make stdcompat
+        run: |
+          opam exec -- sh -xc ".github/scripts/build-${{ matrix.builder }}.sh"
+
+  build-macos-and-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+        builder:
+          - dune
+          - make
+          - make-no-magic
+        ocaml-compiler:
+          - 4.02.x
+          - 4.14.x
+          - 5.0.0
+          - 5.1.1
+          - 5.2.0
+          - ocaml-variants.4.14.0+mingw64c
+        exclude:
+          - os: macos-latest
+            ocaml-compiler: ocaml-variants.4.14.0+mingw64c
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Make stdcompat
+        run: |
+          opam exec -- sh -xc ".github/scripts/build-${{ matrix.builder }}.sh"
+
+  build-ubuntu-old-ocamls:
+    strategy:
+      fail-fast: false
+      matrix:
+        builder:
+          - make
+          - make-no-magic
+        ocaml-compiler:
+          - 3.07
+          - 3.08.4
+          - 3.09.3
+          - 3.10.2
+          - 3.11.2
+          - 3.12.1
+          - 4.00.1
+          - 4.01.0
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/thierry-martinez/stdcompat-old-ocamls
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.packages_actions_read }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Make stdcompat
+        run: |
+          chown -R ci $PWD && \
+          su ci -c "sh -xc \".github/scripts/build-in-docker.sh \
+            \\\"${{ matrix.ocaml-compiler }}\\\" \
+            \\\"${{ matrix.builder }}\\\"\""
+
+#  build-ubuntu-ocaml-5-beta:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        builder:
+#          - dune
+#          - make
+#          - make-no-magic
+#    runs-on: ubuntu-latest
+#    container:
+#      image: ghcr.io/thierry-martinez/stdcompat-ocaml-5-beta
+#      credentials:
+#        username: ${{ github.actor }}
+#        password: ${{ secrets.packages_actions_read }}
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#      - name: Make stdcompat
+#        run: |
+#          chown -R ci $PWD && \
+#          su ci -c "sh -xc \".github/scripts/build-in-docker.sh \
+#            5.0.0~alpha1 \
+#            \\\"${{ matrix.builder }}\\\"\""

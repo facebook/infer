@@ -1,0 +1,36 @@
+@BEGIN_FROM_4_08_0@
+include Fun
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_5_2_0@
+let compose f g x = f (g x)
+@END_BEFORE_5_2_0@
+@BEGIN_BEFORE_4_08_0@
+external id : 'a -> 'a = "%identity"
+(** @since 4.08.0: external id : 'a -> 'a = "%identity" *)
+
+let const c _ = c
+
+let flip f x y = f y x
+
+let negate f x = not (f x)
+
+exception Finally_raised of exn
+
+let protect ~finally f =
+  let value =
+    try
+      Stdcompat__pervasives.Ok (f ())
+    with exn ->
+      let bt = Stdcompat__printexc.get_raw_backtrace () in
+      Stdcompat__pervasives.Error (exn, bt) in
+  begin
+    try
+      finally ()
+    with exn ->
+      let bt = Stdcompat__printexc.get_raw_backtrace () in
+      Stdcompat__printexc.raise_with_backtrace (Finally_raised exn) bt
+  end;
+  match value with
+  | Stdcompat__pervasives.Ok result -> result
+  | Stdcompat__pervasives.Error (exn, bt) -> Stdcompat__printexc.raise_with_backtrace exn bt
+@END_BEFORE_4_08_0@

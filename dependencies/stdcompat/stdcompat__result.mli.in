@@ -1,0 +1,1 @@
+include Stdcompat__result_s.S

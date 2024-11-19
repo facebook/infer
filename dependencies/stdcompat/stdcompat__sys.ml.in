@@ -1,0 +1,139 @@
+include Sys
+
+@BEGIN_BEFORE_4_12_0@
+external mkdir : string -> int -> unit = "caml_sys_mkdir"
+
+external rmdir : string -> unit = "caml_sys_rmdir"
+@END_BEFORE_4_12_0@
+
+@BEGIN_BEFORE_4_10_0@
+module Immediate64 = struct
+  module type Non_immediate = sig
+    type t
+  end
+  module type Immediate = sig
+    type t
+@BEGIN_FROM_4_02_0@
+[@@immediate]
+@END_FROM_4_02_0@
+  end
+
+  module Make (Immediate : Immediate) (Non_immediate : Non_immediate) = struct
+    type t = Non_immediate.t
+
+    type 'a repr =
+@BEGIN_FROM_4_00_0@
+          | Immediate: Immediate.t repr
+          | Non_immediate: Non_immediate.t repr
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+          | Immediate
+          | Non_immediate
+@END_BEFORE_4_00_0@
+
+    let repr = Non_immediate
+  end
+end
+@END_BEFORE_4_10_0@
+
+@BEGIN_BEFORE_4_08_0@
+let max_floatarray_length = max_array_length / (64 / word_size)
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_05_0@
+let getenv_opt var =
+  Stdcompat__tools.option_find getenv var
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_04_0@
+type backend_type =
+  | Native
+  | Bytecode
+  | Other of string
+
+let backend_type =
+  if Stdcompat__native.native then
+    Native
+  else
+    Bytecode
+@END_BEFORE_4_04_0@
+
+@BEGIN_BEFORE_4_03_0@
+let sigbus = -22
+
+let sigpoll = -23
+
+let sigsys = -24
+
+let sigtrap = -25
+
+let sigurg = -26
+
+let sigxcpu = -27
+
+let sigxfsz = -28
+
+let int_size =
+   if 1 lsl word_size = 0 then
+     word_size
+   else if 1 lsl (word_size - 1) = 0 then
+     word_size - 1
+   else
+     assert false
+
+let big_endian = @BIG_ENDIAN@
+
+let runtime_variant () = ""
+
+let runtime_parameters () = ""
+
+let enable_runtime_warnings _ = ()
+
+let runtime_warnings_enabled () = false
+
+let opaque_identity x = x
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_01_0@
+let unix = os_type = "Unix"
+
+let win32 = os_type = "Win32"
+
+let cygwin = os_type = "Cygwin"
+@END_BEFORE_4_01_0@
+
+@BEGIN_BEFORE_3_10_0@
+let is_directory path =
+  try
+    ignore (readdir path);
+    true
+  with Sys_error _ when file_exists path ->
+    false
+@END_BEFORE_3_10_0@
+
+@BEGIN_BEFORE_4_14_0@
+let development_version = @OCAML_DEVELOPMENT_VERSION@
+
+type extra_prefix = Plus | Tilde
+
+type extra_info = extra_prefix * string
+
+type ocaml_release_info = {
+  major : int;
+  minor : int;
+  patchlevel : int;
+  extra : extra_info option
+}
+
+let ocaml_release = {
+  major = @OCAML_VERSION_MAJOR@;
+  minor = @OCAML_VERSION_MINOR@;
+  patchlevel = @OCAML_VERSION_PATCHLEVEL@;
+  extra = @OCAML_RELEASE_EXTRA@
+}
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_1_0@
+let is_regular_file _path =
+  failwith "not implemented"
+@END_BEFORE_5_1_0@

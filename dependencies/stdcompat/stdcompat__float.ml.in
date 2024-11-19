@@ -1,0 +1,971 @@
+@BEGIN_FROM_5_2_0@
+ include Float
+@END_FROM_5_2_0@
+@BEGIN_BEFORE_5_2_0@
+
+module Array = struct
+  @BEGIN_FROM_4_08_0@
+  include Float.Array
+  @END_FROM_4_08_0@
+
+  @BEGIN_BEFORE_4_08_0@
+
+  type t = Stdcompat__init.floatarray
+
+  include Stdcompat__array.Floatarray
+
+  let unsafe_fill array offset len v =
+    for i = offset to offset + len - 1 do
+      unsafe_set array i v
+    done
+
+  let unsafe_blit src src_offset dst dst_offset len =
+    for i = 0 to len - 1 do
+      unsafe_set dst (dst_offset + i) (unsafe_get src (src_offset + i))
+    done
+
+  let make len v =
+    let result = create len in
+    unsafe_fill result 0 len v;
+    result
+
+  let init len f =
+    let result = create len in
+    for i = 0 to len - 1 do
+      unsafe_set result i (f i)
+    done;
+    result
+
+  let append a1 a2 =
+    let l1 = length a1 in
+    let l2 = length a2 in
+    let result = create (l1 + l2) in
+    unsafe_blit a1 0 result 0 l1;
+    unsafe_blit a2 0 result l1 l2;
+    result
+
+  let concat l =
+    let len = List.fold_left (fun acc a -> acc + length a) 0 l in
+    let result = create len in
+    let rec loop l i =
+      match l with
+      | [] -> ()
+      | hd :: tl ->
+          let len = length hd in
+          unsafe_blit hd 0 result i len;
+          loop tl (i + len) in
+    loop l 0;
+    result
+
+  let check a offset len msg =
+    if offset < 0 || len < 0 || offset + len < 0 || offset + len > length a then
+      failwith msg
+
+  let sub a offset len =
+    check a offset len "Float.Array.sub";
+    let result = create len in
+    unsafe_blit a offset result 0 len;
+    result
+
+  let copy a =
+    let len = length a in
+    let result = create len in
+    unsafe_blit a 0 result 0 len;
+    result
+
+  let fill a offset len v =
+    check a offset len "Float.Array.fill";
+    unsafe_fill a offset len v
+
+  let blit src src_offset dst dst_offset len =
+    check src src_offset len "Float.Array.blit";
+    check dst dst_offset len "Float.Array.blit";
+    unsafe_blit dst src_offset dst dst_offset len
+
+  let to_list a =
+    Stdcompat__list.init (length a) (unsafe_get a)
+
+  let of_list l =
+    let result = create (List.length l) in
+    let rec fill i l =
+      match l with
+      | [] -> result
+      | hd :: tl ->
+          unsafe_set result i hd;
+          fill (succ i) tl in
+    fill 0 l
+
+  let iter f a =
+    for i = 0 to length a - 1 do
+      f (unsafe_get a i)
+    done
+
+  let iteri f a =
+    for i = 0 to length a - 1 do
+      f i (unsafe_get a i)
+    done
+
+  let map f a =
+    let len = length a in
+    let result = create len in
+    for i = 0 to len - 1 do
+      unsafe_set result i (f (unsafe_get a i))
+    done;
+    result
+
+  let mapi f a =
+    let len = length a in
+    let result = create len in
+    for i = 0 to len - 1 do
+      unsafe_set result i (f i (unsafe_get a i))
+    done;
+    result
+
+  let fold_left f acc a =
+    let len = length a in
+    let rec aux i acc =
+      if i < len then
+        aux (succ i) (f acc (unsafe_get a i))
+      else
+        acc in
+    aux 0 acc
+
+  let fold_right f a acc =
+    let len = length a in
+    let rec aux i acc =
+      if i > 0 then
+        let j = pred i in
+        aux j (f (unsafe_get a j) acc)
+      else
+        acc in
+    aux len acc
+
+  let iter2 f a b =
+    let len = length a in
+    if len <> length b then
+      failwith "Float.Array.iter2";
+    for i = 0 to len - 1 do
+      f (unsafe_get a i) (unsafe_get b i)
+    done
+
+  let map2 f a b =
+    let len = length a in
+    if len <> length b then
+      failwith "Float.Array.iter2";
+    let result = create len in
+    for i = 0 to len - 1 do
+      unsafe_set result i (f (unsafe_get a i) (unsafe_get b i))
+    done;
+    result
+
+  let for_all f a =
+    let len = length a in
+    let rec aux i =
+      i >= len || f (unsafe_get a i) && aux (succ i) in
+    aux 0
+
+  let exists f a =
+    let len = length a in
+    let rec aux i =
+      i < len && (f (unsafe_get a i) || aux (succ i)) in
+    aux 0
+
+  let mem x a =
+    exists (fun y -> compare x y = 0) a
+
+  let mem_ieee x a =
+    exists (( = ) x) a
+
+  let sort _p _a =
+    failwith "unimplemented"
+
+  let stable_sort = sort
+
+  let fast_sort = sort
+
+  let to_seq a =
+    let rec aux i () =
+      if i < length a then
+        let x = unsafe_get a i in
+        Stdcompat__seq.Cons (x, aux (i + 1))
+      else
+        Stdcompat__seq.Nil in
+    aux 0
+
+  let to_seqi a =
+    let rec aux i () =
+      if i < length a then
+        let x = unsafe_get a i in
+        Stdcompat__seq.Cons ((i, x), aux (i + 1))
+      else
+        Stdcompat__seq.Nil in
+    aux 0
+
+  let of_rev_list l =
+    let len = List.length l in
+    let result = create len in
+    let rec fill i l =
+      match l with
+      | [] -> result
+      | hd :: tl ->
+          unsafe_set result i hd;
+          fill (pred i) tl in
+    fill (len - 1) l
+
+  let of_seq i =
+    let l = Stdcompat__seq.fold_left (fun acc x -> x :: acc) [] i in
+    of_rev_list l
+
+  let map_to_array f a =
+    Array.init (length a) (fun i -> f (unsafe_get a i))
+
+  let map_from_array f a =
+    init (Array.length a) (fun i -> f (Array.unsafe_get a i))
+
+@END_BEFORE_4_08_0@
+
+  @BEGIN_BEFORE_5_1_0@
+  let map_inplace f array =
+    for i = 0 to length array - 1 do
+      unsafe_set array i (f (unsafe_get array i))
+    done
+
+  let mapi_inplace f array =
+    for i = 0 to length array - 1 do
+      unsafe_set array i (f i (unsafe_get array i))
+    done
+
+  let rec find_opt_from index f array =
+    if index < length array then
+      let v = unsafe_get array index in
+      if f v then
+        Some v
+      else
+        find_opt_from (succ index) f array
+    else
+      None
+
+  let find_opt f array =
+    find_opt_from 0 f array
+
+  let rec find_index_from index p array =
+    if index < length array then
+      if p (unsafe_get array index) then
+        Some index
+      else
+        find_index_from (succ index) p array
+    else
+      None
+
+  let find_index p array =
+    find_index_from 0 p array
+
+  let rec find_map_from index f array =
+    if index < length array then
+      match f (unsafe_get array index) with
+      | None -> find_map_from (succ index) f array
+      | some -> some
+    else
+      None
+
+  let find_map f array =
+    find_map_from 0 f array
+
+  let rec find_mapi_from index f array =
+    if index < length array then
+      match f index (unsafe_get array index) with
+      | None -> find_mapi_from (succ index) f array
+      | some -> some
+    else
+      None
+
+  let find_mapi f array =
+    find_mapi_from 0 f array
+  @END_BEFORE_5_1_0@
+
+  let make_matrix m n x =
+    Array.init m (fun _ -> make n x)
+
+  let init_matrix m n f =
+    Array.init m (fun i -> init n (fun j -> f i j))
+  
+  let shuffle ~rand array =
+    for i = length array - 1 downto 0 do
+      let j = rand (i + 1) in
+      let tmp = unsafe_get array i in
+      unsafe_set array i (get array j);
+      unsafe_set array j tmp
+    done
+end
+
+module ArrayLabels = struct
+  @BEGIN_FROM_4_08_0@
+  include Float.ArrayLabels
+  @END_FROM_4_08_0@
+  @BEGIN_BEFORE_4_08_0@
+  include Float.Array
+
+  let init i ~f = init i f
+
+  let sub a ~pos ~len = sub a pos len
+
+  let fill a ~pos ~len v = fill a pos len v
+
+  let blit ~src ~src_pos ~dst ~dst_pos ~len = blit src src_pos dst dst_pos len
+
+  let iter ~f a = iter f a
+
+  let iteri ~f a = iteri f a
+
+  let map ~f a = map f a
+
+  let mapi ~f a = mapi f a
+
+  let fold_left ~f ~init a = fold_left f init a
+
+  let fold_right ~f a ~init = fold_right f a init
+
+  let iter2 ~f a = iter2 f a
+
+  let map2 ~f a = map2 f a
+
+  let for_all ~f a = for_all f a
+
+  let exists ~f a = exists f a
+
+  let mem v ~set = mem v set
+
+  let mem_ieee v ~set = mem_ieee v set
+
+  let sort ~cmp a = sort cmp a
+
+  let stable_sort ~cmp a = stable_sort cmp a
+
+  let fast_sort ~cmp a = fast_sort cmp a
+
+  let map_to_array ~f a = map_to_array f a
+
+  let map_from_array ~f a = map_from_array f a
+  @END_BEFORE_4_08_0@
+
+  @BEGIN_BEFORE_5_1_0@
+  let map_inplace ~f a = Array.map_inplace f a
+
+  let mapi_inplace ~f a = Array.mapi_inplace f a
+
+  let find_opt ~f a = Array.find_opt f a
+
+  let find_index ~f a = Array.find_index f a
+
+  let find_map ~f a = Array.find_map f a
+
+  let find_mapi ~f a = Array.find_mapi f a
+  @END_BEFORE_5_1_0@
+
+  let make_matrix ~dimx ~dimy v = Array.make_matrix dimx dimy v
+
+  let init_matrix ~dimx ~dimy ~f = Array.init_matrix dimx dimy f
+
+  let shuffle ~rand a = Array.shuffle rand a
+end
+
+@BEGIN_FROM_4_07_0@
+ include (Float : module type of Float with module Array := Array and module ArrayLabels := ArrayLabels)
+@END_FROM_4_07_0@
+@END_BEFORE_5_2_0@
+@BEGIN_BEFORE_4_07_0@
+type fpclass = Pervasives.fpclass =
+  | FP_normal 
+  | FP_subnormal 
+  | FP_zero 
+  | FP_infinite 
+  | FP_nan 
+(** @since 4.07.0:
+    type fpclass = Pervasives.fpclass =
+      | FP_normal 
+      | FP_subnormal 
+      | FP_zero 
+      | FP_infinite 
+      | FP_nan 
+ *)
+type t = float
+
+let infinity = Pervasives.infinity
+
+let neg_infinity = Pervasives.neg_infinity
+
+let nan = Pervasives.nan
+
+@BEGIN_FROM_4_03_0@
+let pi = 0x1.921fb54442d18p+1
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+let pi = 4. *. atan 1.
+@END_BEFORE_4_03_0@
+
+let max_float = Pervasives.max_float
+
+let min_float = Pervasives.min_float
+
+let epsilon = Pervasives.epsilon_float
+
+let of_string_opt = Stdcompat__pervasives.float_of_string_opt
+
+let to_string = Pervasives.string_of_float
+
+external compare : float -> float -> int = "%compare"
+
+let equal x y = compare x y = 0
+
+let hash = Hashtbl.hash
+
+@BEGIN_FROM_4_03_0@
+external hypot : float -> float -> float = "caml_hypot_float" "caml_hypot"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_4_00_0@
+external hypot :
+  float -> float -> float = "caml_hypot_float" "caml_hypot" "float"
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+let hypot = Stdcompat__pervasives.hypot
+@END_BEFORE_4_00_0@
+
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external expm1 : float -> float = "caml_expm1_float" "caml_expm1"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_12_0@
+external expm1 : float -> float = "caml_expm1_float" "caml_expm1" "float"
+@END_FROM_3_12_0@
+@BEGIN_BEFORE_3_12_0@
+let expm1 = Stdcompat__pervasives.expm1
+@END_BEFORE_3_12_0@
+
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external log1p : float -> float = "caml_log1p_float" "caml_log1p"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_12_0@
+external log1p : float -> float = "caml_log1p_float" "caml_log1p" "float"
+@END_FROM_3_12_0@
+@BEGIN_BEFORE_3_12_0@
+let log1p = Stdcompat__pervasives.log1p
+@END_BEFORE_3_12_0@
+
+@END_BEFORE_4_03_0@
+
+external neg : float -> float = "%negfloat"
+
+external add : float -> float -> float = "%addfloat"
+
+external sub : float -> float -> float = "%subfloat"
+
+external mul : float -> float -> float = "%mulfloat"
+
+external div : float -> float -> float = "%divfloat"
+
+@BEGIN_FROM_4_03_0@
+external rem : float -> float -> float = "caml_fmod_float" "fmod"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external rem : float -> float -> float = "caml_fmod_float" "fmod" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external rem : float -> float -> float = "fmod_float" "fmod" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+external abs : float -> float = "%absfloat"
+
+external of_int : int -> float = "%floatofint"
+
+external to_int : float -> int = "%intoffloat"
+
+@BEGIN_FROM_3_08_0@
+external of_string : string -> float = "caml_float_of_string"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_string : string -> float = "float_of_string"
+@END_BEFORE_3_08_0@
+
+@BEGIN_FROM_4_03_0@
+external classify_float :
+  ((float)[@unboxed ]) -> fpclass = "caml_classify_float"
+    "caml_classify_float_unboxed"[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external classify_float : float -> fpclass = "caml_classify_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external classify_float : float -> fpclass = "classify_float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external pow : float -> float -> float = "caml_power_float" "pow"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external pow : float -> float -> float = "caml_power_float" "pow" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external pow : float -> float -> float = "power_float" "pow" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external sqrt : float -> float = "caml_sqrt_float" "sqrt"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external sqrt : float -> float = "caml_sqrt_float" "sqrt" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external sqrt : float -> float = "sqrt_float" "sqrt" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external exp : float -> float = "caml_exp_float" "exp"[@@unboxed ][@@noalloc
+                                                                    ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external exp : float -> float = "caml_exp_float" "exp" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external exp : float -> float = "exp_float" "exp" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external log : float -> float = "caml_log_float" "log"[@@unboxed ][@@noalloc
+                                                                    ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external log : float -> float = "caml_log_float" "log" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external log : float -> float = "log_float" "log" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external log10 : float -> float = "caml_log10_float" "log10"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external log10 : float -> float = "caml_log10_float" "log10" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external log10 : float -> float = "log10_float" "log10" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external cos : float -> float = "caml_cos_float" "cos"[@@unboxed ][@@noalloc
+                                                                    ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external cos : float -> float = "caml_cos_float" "cos" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external cos : float -> float = "cos_float" "cos" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external sin : float -> float = "caml_sin_float" "sin"[@@unboxed ][@@noalloc
+                                                                    ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external sin : float -> float = "caml_sin_float" "sin" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external sin : float -> float = "sin_float" "sin" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external tan : float -> float = "caml_tan_float" "tan"[@@unboxed ][@@noalloc
+                                                                    ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external tan : float -> float = "caml_tan_float" "tan" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external tan : float -> float = "tan_float" "tan" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external acos : float -> float = "caml_acos_float" "acos"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external acos : float -> float = "caml_acos_float" "acos" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external acos : float -> float = "acos_float" "acos" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external asin : float -> float = "caml_asin_float" "asin"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external asin : float -> float = "caml_asin_float" "asin" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external asin : float -> float = "asin_float" "asin" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external atan : float -> float = "caml_atan_float" "atan"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external atan : float -> float = "caml_atan_float" "atan" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external atan : float -> float = "atan_float" "atan" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external atan2 : float -> float -> float = "caml_atan2_float" "atan2"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external atan2 : float -> float -> float = "caml_atan2_float" "atan2" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external atan2 : float -> float -> float = "atan2_float" "atan2" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external cosh : float -> float = "caml_cosh_float" "cosh"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external cosh : float -> float = "caml_cosh_float" "cosh" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external cosh : float -> float = "cosh_float" "cosh" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external sinh : float -> float = "caml_sinh_float" "sinh"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external sinh : float -> float = "caml_sinh_float" "sinh" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external sinh : float -> float = "sinh_float" "sinh" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external tanh : float -> float = "caml_tanh_float" "tanh"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external tanh : float -> float = "caml_tanh_float" "tanh" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external tanh : float -> float = "tanh_float" "tanh" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external ceil : float -> float = "caml_ceil_float" "ceil"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external ceil : float -> float = "caml_ceil_float" "ceil" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external ceil : float -> float = "ceil_float" "ceil" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_4_03_0@
+external floor : float -> float = "caml_floor_float" "floor"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external floor : float -> float = "caml_floor_float" "floor" "float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external floor : float -> float = "floor_float" "floor" "float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_3_08_0@
+external frexp : float -> (float * int) = "caml_frexp_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external frexp : float -> (float * int) = "frexp_float"
+@END_BEFORE_3_08_0@
+
+@BEGIN_FROM_4_03_0@
+external ldexp :
+  ((float)[@unboxed ]) -> ((int)[@untagged ]) -> ((float)[@unboxed ]) =
+    "caml_ldexp_float" "caml_ldexp_float_unboxed"[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external ldexp : float -> int -> float = "caml_ldexp_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external ldexp : float -> int -> float = "ldexp_float"
+@END_BEFORE_3_08_0@
+@END_BEFORE_4_03_0@
+
+@BEGIN_FROM_3_08_0@
+external modf : float -> (float * float) = "caml_modf_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external modf : float -> (float * float) = "modf_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_08_0@
+let sign_of_bits bits =
+  not (Stdcompat__int64.equal (Int64.shift_right_logical bits 63) Int64.zero)
+
+let sign_bit x = 
+  sign_of_bits (Int64.bits_of_float x)
+
+let is_nan (x : float) =
+  x <> x
+
+let is_infinite x =
+  1. /. x = 0.
+
+let is_finite x =
+  x -. x = 0.
+
+let trunc x =
+  if sign_bit x then
+    ceil x
+  else
+    floor x
+
+let is_integer x =
+  x = trunc x && is_finite x
+
+let round x =
+  if is_finite x then
+    let ceil = ceil x in
+    let floor = floor x in
+    let o = compare (x -. floor) (ceil -. x) in
+    if o < 0 then
+      floor
+    else if o > 0 then
+      ceil
+    else
+      if sign_bit x then
+        floor
+      else
+        ceil
+  else
+    x
+
+let min_max_num x y =
+  if is_nan x then (y, y)
+  else if is_nan y then (x, x)
+  else if x <= y && (sign_bit x || not (sign_bit y)) then (x, y)
+  else (y, x)
+
+let max_num x y =
+  if is_nan x then y
+  else if is_nan y then x
+  else if x <= y && (sign_bit x || not (sign_bit y)) then y
+  else x
+
+let min_num x y =
+  if is_nan x then y
+  else if is_nan y then x
+  else if x <= y && (sign_bit x || not (sign_bit y)) then x
+  else y
+
+let min_max x y =
+  if is_nan x then (x, x)
+  else if is_nan y then (y, y)
+  else if x <= y && (sign_bit x || not (sign_bit y)) then (x, y)
+  else (y, x)
+
+let max x y =
+  if is_nan x then x
+  else if is_nan y then y
+  else if x <= y && (sign_bit x || not (sign_bit y)) then y
+  else x
+
+let min x y =
+  if is_nan x then x
+  else if is_nan y then y
+  else if x <= y && (sign_bit x || not (sign_bit y)) then x
+  else y
+
+@BEGIN_FROM_4_03_0@
+external copy_sign :
+  float -> float -> float = "caml_copysign_float" "caml_copysign"[@@unboxed ]
+[@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_4_00_0@
+external copy_sign :
+  float -> float -> float = "caml_copysign_float" "caml_copysign" "float"
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+let copy_sign = Stdcompat__pervasives.copysign
+@END_BEFORE_4_00_0@
+@END_BEFORE_4_03_0@
+
+let pred_ x =
+  let bits = Int64.bits_of_float x in
+  if is_finite x then
+    let bits' =
+      if sign_of_bits bits then
+        Int64.succ bits
+      else
+        Int64.pred bits in
+    Int64.float_of_bits bits'
+  else
+    if sign_of_bits bits then
+      x
+    else
+      Int64.float_of_bits (Int64.pred bits)
+
+let succ_ x =
+  let bits = Int64.bits_of_float x in
+  if is_finite x then
+    let bits' =
+      if sign_of_bits bits then
+        Int64.pred bits
+      else
+        Int64.succ bits in
+    Int64.float_of_bits bits'
+  else
+    if sign_of_bits bits then
+      Int64.float_of_bits (Int64.pred bits)
+    else
+      x
+
+let next_after x y =
+  if is_nan x || is_nan y then nan
+  else
+    let o = compare x y in
+    if o < 0 then
+      succ_ x
+    else if o > 0 then
+      pred_ x
+    else
+      y
+
+let pred x =
+  if is_nan x then
+    x
+  else
+    pred_ x
+
+let succ x =
+  if is_nan x then
+    x
+  else
+    succ_ x
+
+let fma x y z =
+  x *. y +. z
+
+let minus_one = -1.
+
+let one = 1.
+
+let zero = 0.
+
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_13_0@
+let cbrt x =
+  let res = exp ((1. /. 3.) *. log (abs x)) in
+  if x >= 0. then
+    res
+  else
+    -. res
+
+let log2e = log 2.
+
+let log2 x =
+  log x /. log2e
+
+let exp2 x =
+  pow 2. x
+
+let acosh x =
+  log (x +. sqrt (x *. x -. 1.))
+
+let asinh x =
+  log (x +. sqrt (x *. x +. 1.))
+
+let atanh x =
+  0.5 *. log ((1. +. x) /. (1. -. x))
+
+let erf x =
+  (* from ocaml source floats.c, based on formula 7.1.26
+     from the "Handbook of Mathematical Functions" by Abramowitz and Stegun. *)
+  let a1 =  0.254829592 and a2 = -0.284496736 and a3 = 1.421413741
+  and a4 = -1.453152027 and a5 = 1.061405429 and p = 0.3275911 in
+  let x' = abs x in
+  let t = 1. /. (1. +. p *. x') in
+  let y =
+    1. -. ((((a5 *. t +. a4) *. t +. a3) *. t +. a2) *. t +. a1) *.
+      t *. exp (-. x' *. x') in
+  if x >= 0. then y
+  else -. y
+
+let erfc x =
+  1. -. erf x
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_5_1_0@
+let signaling_nan = nan
+
+let quiet_nan = nan
+
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+@END_BEFORE_5_1_0@

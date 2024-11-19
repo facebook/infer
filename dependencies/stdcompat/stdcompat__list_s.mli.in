@@ -1,0 +1,305 @@
+module type S = sig
+@BEGIN_FROM_4_08_0@
+@BEGIN_FROM_4_03_0@
+type 'a t = 'a list =
+  | []
+  | (::) of 'a * 'a list
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+type 'a t = 'a list
+@END_BEFORE_4_03_0@
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+@BEGIN_FROM_4_03_0@
+type 'a t = 'a list =
+  | []
+  | (::) of 'a * 'a list
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+type 'a t = 'a list
+@END_BEFORE_4_03_0@
+@END_BEFORE_4_08_0@
+(** @since 4.08.0: type 'a t = 'a list =
+                     | [] 
+                     | (::) of 'a * 'a list 
+ *)
+
+val is_empty : 'a list -> bool
+(** @since 5.1.0: val is_empty : 'a list -> bool *)
+
+val find_index : ('a -> bool) -> 'a list -> int option
+(** @since 5.1.0: val find_index : ('a -> bool) -> 'a list -> int option *)
+
+val find_mapi : (int -> 'a -> 'b option) -> 'a list -> 'b option
+(** @since 5.1.0:
+    val find_mapi : (int -> 'a -> 'b option) -> 'a list -> 'b option *)
+
+val equal : ('a -> 'a -> bool) -> 'a list -> 'a list -> bool
+(** @since 4.12.0:
+    val equal : ('a -> 'a -> bool) -> 'a list -> 'a list -> bool *)
+
+val compare : ('a -> 'a -> int) -> 'a list -> 'a list -> int
+(** @since 4.12.0:
+    val compare : ('a -> 'a -> int) -> 'a list -> 'a list -> int *)
+
+@BEGIN_FROM_4_12_0@
+val partition_map :
+  ('a -> ('b, 'c) Either.t) -> 'a list -> ('b list * 'c list)
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+val partition_map :
+  ('a -> ('b, 'c) Stdcompat__either.t) -> 'a list -> ('b list * 'c list)
+@END_BEFORE_4_12_0@
+(** @since 4.12.0:
+    val partition_map :
+      ('a -> ('b, 'c) Either.t) -> 'a list -> ('b list * 'c list)
+ *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left_map :
+  ('acc -> 'a -> ('acc * 'b)) -> 'acc -> 'a list -> ('acc * 'b list)
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_11_0@
+val fold_left_map :
+  ('a -> 'b -> ('a * 'c)) -> 'a -> 'b list -> ('a * 'c list)
+@END_FROM_4_11_0@
+@BEGIN_BEFORE_4_11_0@
+val fold_left_map :
+  ('acc -> 'a -> ('acc * 'b)) -> 'acc -> 'a list -> ('acc * 'b list)
+@END_BEFORE_4_11_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left_map :
+      ('acc -> 'a -> ('acc * 'b)) -> 'acc -> 'a list -> ('acc * 'b list)
+@since 4.11.0:
+val fold_left_map :
+  ('a -> 'b -> ('a * 'c)) -> 'a -> 'b list -> ('a * 'c list)
+ *)
+
+val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
+(** @since 4.11.0: val filteri : (int -> 'a -> bool) -> 'a list -> 'a list *)
+
+val concat_map : ('a -> 'b list) -> 'a list -> 'b list
+(** @since 4.10.0: val concat_map : ('a -> 'b list) -> 'a list -> 'b list *)
+
+val find_map : ('a -> 'b option) -> 'a list -> 'b option
+(** @since 4.10.0: val find_map : ('a -> 'b option) -> 'a list -> 'b option *)
+
+val filter_map : ('a -> 'b option) -> 'a list -> 'b list
+(** @since 4.08.0: val filter_map : ('a -> 'b option) -> 'a list -> 'b list *)
+
+@BEGIN_FROM_4_07_0@
+val to_seq : 'a list -> 'a Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : 'a list -> 'a Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seq : 'a list -> 'a Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val of_seq : 'a Seq.t -> 'a list
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : 'a Stdcompat__seq.t -> 'a list
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val of_seq : 'a Seq.t -> 'a list
+ *)
+
+val init : int -> (int -> 'a) -> 'a list
+(** @since 4.06.0: val init : int -> (int -> 'a) -> 'a list *)
+
+val compare_lengths : 'a list -> 'b list -> int
+(** @since 4.05.0: val compare_lengths : 'a list -> 'b list -> int *)
+
+val compare_length_with : 'a list -> int -> int
+(** @since 4.05.0: val compare_length_with : 'a list -> int -> int *)
+
+val nth_opt : 'a list -> int -> 'a option
+(** @since 4.05.0: val nth_opt : 'a list -> int -> 'a option *)
+
+val find_opt : ('a -> bool) -> 'a list -> 'a option
+(** @since 4.05.0: val find_opt : ('a -> bool) -> 'a list -> 'a option *)
+
+val assoc_opt : 'a -> ('a * 'b) list -> 'b option
+(** @since 4.05.0: val assoc_opt : 'a -> ('a * 'b) list -> 'b option *)
+
+val assq_opt : 'a -> ('a * 'b) list -> 'b option
+(** @since 4.05.0: val assq_opt : 'a -> ('a * 'b) list -> 'b option *)
+
+val cons : 'a -> 'a list -> 'a list
+(** @since 4.03.0: val cons : 'a -> 'a list -> 'a list *)
+
+val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list
+(** @since 4.02.0: val sort_uniq : ('a -> 'a -> int) -> 'a list -> 'a list *)
+
+val iteri : (int -> 'a -> unit) -> 'a list -> unit
+(** @since 4.00.0: val iteri : (int -> 'a -> unit) -> 'a list -> unit *)
+
+val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
+(** @since 4.00.0: val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list *)
+
+val length : 'a list -> int
+(** Alias for {!List.length} *)
+
+val hd : 'a list -> 'a
+(** Alias for {!List.hd} *)
+
+val tl : 'a list -> 'a list
+(** Alias for {!List.tl} *)
+
+val nth : 'a list -> int -> 'a
+(** Alias for {!List.nth} *)
+
+val rev : 'a list -> 'a list
+(** Alias for {!List.rev} *)
+
+val append : 'a list -> 'a list -> 'a list
+(** Alias for {!List.append} *)
+
+val rev_append : 'a list -> 'a list -> 'a list
+(** Alias for {!List.rev_append} *)
+
+val concat : 'a list list -> 'a list
+(** Alias for {!List.concat} *)
+
+val flatten : 'a list list -> 'a list
+(** Alias for {!List.flatten} *)
+
+val iter : ('a -> unit) -> 'a list -> unit
+(** Alias for {!List.iter} *)
+
+val map : ('a -> 'b) -> 'a list -> 'b list
+(** Alias for {!List.map} *)
+
+val rev_map : ('a -> 'b) -> 'a list -> 'b list
+(** Alias for {!List.rev_map} *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left : ('acc -> 'a -> 'acc) -> 'acc -> 'a list -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left : ('acc -> 'a -> 'acc) -> 'acc -> 'a list -> 'acc
+@since 3.07.0: val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
+ *)
+
+@BEGIN_FROM_5_1_0@
+val fold_right : ('a -> 'acc -> 'acc) -> 'a list -> 'acc -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_right : ('a -> 'acc -> 'acc) -> 'a list -> 'acc -> 'acc
+@since 3.07.0: val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+ *)
+
+val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
+(** Alias for {!List.iter2} *)
+
+val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
+(** Alias for {!List.map2} *)
+
+val rev_map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
+(** Alias for {!List.rev_map2} *)
+
+@BEGIN_FROM_5_1_0@
+val fold_left2 :
+  ('acc -> 'a -> 'b -> 'acc) -> 'acc -> 'a list -> 'b list -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_left2 :
+      ('acc -> 'a -> 'b -> 'acc) -> 'acc -> 'a list -> 'b list -> 'acc
+@since 3.07.0:
+val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
+ *)
+
+@BEGIN_FROM_5_1_0@
+val fold_right2 :
+  ('a -> 'b -> 'acc -> 'acc) -> 'a list -> 'b list -> 'acc -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
+@END_BEFORE_5_1_0@
+(** @since 5.1.0:
+    val fold_right2 :
+      ('a -> 'b -> 'acc -> 'acc) -> 'a list -> 'b list -> 'acc -> 'acc
+@since 3.07.0:
+val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'a list -> 'b list -> 'c -> 'c
+ *)
+
+val for_all : ('a -> bool) -> 'a list -> bool
+(** Alias for {!List.for_all} *)
+
+val exists : ('a -> bool) -> 'a list -> bool
+(** Alias for {!List.exists} *)
+
+val for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
+(** Alias for {!List.for_all2} *)
+
+val exists2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
+(** Alias for {!List.exists2} *)
+
+val mem : 'a -> 'a list -> bool
+(** Alias for {!List.mem} *)
+
+val memq : 'a -> 'a list -> bool
+(** Alias for {!List.memq} *)
+
+val find : ('a -> bool) -> 'a list -> 'a
+(** Alias for {!List.find} *)
+
+val filter : ('a -> bool) -> 'a list -> 'a list
+(** Alias for {!List.filter} *)
+
+val find_all : ('a -> bool) -> 'a list -> 'a list
+(** Alias for {!List.find_all} *)
+
+val partition : ('a -> bool) -> 'a list -> ('a list * 'a list)
+(** Alias for {!List.partition} *)
+
+val assoc : 'a -> ('a * 'b) list -> 'b
+(** Alias for {!List.assoc} *)
+
+val assq : 'a -> ('a * 'b) list -> 'b
+(** Alias for {!List.assq} *)
+
+val mem_assoc : 'a -> ('a * 'b) list -> bool
+(** Alias for {!List.mem_assoc} *)
+
+val mem_assq : 'a -> ('a * 'b) list -> bool
+(** Alias for {!List.mem_assq} *)
+
+val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
+(** Alias for {!List.remove_assoc} *)
+
+val remove_assq : 'a -> ('a * 'b) list -> ('a * 'b) list
+(** Alias for {!List.remove_assq} *)
+
+val split : ('a * 'b) list -> ('a list * 'b list)
+(** Alias for {!List.split} *)
+
+val combine : 'a list -> 'b list -> ('a * 'b) list
+(** Alias for {!List.combine} *)
+
+val sort : ('a -> 'a -> int) -> 'a list -> 'a list
+(** Alias for {!List.sort} *)
+
+val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
+(** Alias for {!List.stable_sort} *)
+
+val fast_sort : ('a -> 'a -> int) -> 'a list -> 'a list
+(** Alias for {!List.fast_sort} *)
+
+val merge : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
+(** Alias for {!List.merge} *)
+
+end

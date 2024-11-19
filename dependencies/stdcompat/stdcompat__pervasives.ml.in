@@ -1,0 +1,113 @@
+@BEGIN_FROM_4_07_0@
+include Stdlib
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+include Pervasives
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_03_0@
+type ('a, 'b) result
+  = ('a, 'b) Stdcompat__init.result
+  = Ok of 'a | Error of 'b
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_02_0@
+external raise_notrace : exn -> 'a = "%raise"
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_05_0@
+let bool_of_string_opt s =
+  Stdcompat__tools.option_invalid bool_of_string s
+
+let int_of_string_opt s =
+  Stdcompat__tools.option_fail int_of_string s
+
+let float_of_string_opt s =
+  Stdcompat__tools.option_fail float_of_string s
+
+let read_int_opt () =
+  Stdcompat__tools.option_fail read_int ()
+
+let read_float_opt () =
+  Stdcompat__tools.option_fail read_float ()
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_02_0@
+let print_bytes = print_string
+
+let prerr_bytes = prerr_string
+
+let output_bytes = output_string
+
+let output_substring = output
+
+let really_input_string channel len =
+  let s = String.create len in
+  really_input channel s 0 len;
+  s
+
+type ('a, 'b, 'c, 'd, 'e, 'f) format6 =
+  ('a, 'b, 'c, 'd, 'e, 'f) Stdcompat__init.format6
+
+@BEGIN_BEFORE_3_10_0@
+type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'c, 'c, 'd) format6
+@END_BEFORE_3_10_0@
+
+let __LOC__ = ""
+
+let __MODULE__ = ""
+
+let __POS__ = ("", 0, 0, 0)
+
+let __LOC_OF__ x = (__LOC__, x)
+
+let __LINE__ = 0
+
+let __FILE__ = ""
+
+let __LINE_OF__ x = (0, x)
+
+let __POS_OF__ x = (__POS__, x)
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_01_0@
+let ( |> ) x f = f x
+
+let ( @@ ) f x = f x
+@END_BEFORE_4_01_0@
+
+@BEGIN_BEFORE_4_00_0@
+let hypot x y =
+  sqrt (x *. x +. y *. y)
+
+let copysign x y =
+  if (x >= 0.) = (y >= 0.) then
+    x
+  else
+    -. x
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_3_12_0@
+external (~+) : int -> int = "%identity"
+
+external (~+.) : float -> float = "%identity"
+
+(* These emulations of expm1() and log1p() are due to William Kahan.
+   See http://www.plunk.org/~hatch/rightway.php *)
+
+let expm1 x =
+  let u = exp x in
+  if u = 1. then
+    x
+  else if u -. 1. = -1. then
+    -1.
+  else
+    (u -. 1.) *. x /. log u
+
+let log1p x =
+  let u = 1. +. x in
+  if u = 1. then
+    x
+  else
+    log u *. x /. (u -. 1.)
+@END_BEFORE_3_12_0@

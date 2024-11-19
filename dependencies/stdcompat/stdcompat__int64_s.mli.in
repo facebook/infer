@@ -1,0 +1,225 @@
+module type S = sig
+type t = int64
+(** Alias for {!Int64.t} *)
+
+val seeded_hash : int -> t -> int
+(** @since 5.1.0: val seeded_hash : int -> t -> int *)
+
+val hash : t -> int
+(** @since 5.1.0: val hash : t -> int *)
+
+val min : t -> t -> t
+(** @since 4.13.0: val min : t -> t -> t *)
+
+val max : t -> t -> t
+(** @since 4.13.0: val max : t -> t -> t *)
+
+val unsigned_div : int64 -> int64 -> int64
+(** @since 4.08.0: val unsigned_div : int64 -> int64 -> int64 *)
+
+val unsigned_rem : int64 -> int64 -> int64
+(** @since 4.08.0: val unsigned_rem : int64 -> int64 -> int64 *)
+
+val unsigned_to_int : int64 -> int option
+(** @since 4.08.0: val unsigned_to_int : int64 -> int option *)
+
+val unsigned_compare : t -> t -> int
+(** @since 4.08.0: val unsigned_compare : t -> t -> int *)
+
+val of_string_opt : string -> int64 option
+(** @since 4.05.0: val of_string_opt : string -> int64 option *)
+
+val equal : t -> t -> bool
+(** @since 4.03.0: val equal : t -> t -> bool *)
+
+val zero : int64
+(** Alias for {!Int64.zero} *)
+
+val one : int64
+(** Alias for {!Int64.one} *)
+
+val minus_one : int64
+(** Alias for {!Int64.minus_one} *)
+
+external neg : int64 -> int64 = "%int64_neg"
+(** Alias for {!Int64.neg} *)
+
+external add : int64 -> int64 -> int64 = "%int64_add"
+(** Alias for {!Int64.add} *)
+
+external sub : int64 -> int64 -> int64 = "%int64_sub"
+(** Alias for {!Int64.sub} *)
+
+external mul : int64 -> int64 -> int64 = "%int64_mul"
+(** Alias for {!Int64.mul} *)
+
+external div : int64 -> int64 -> int64 = "%int64_div"
+(** Alias for {!Int64.div} *)
+
+external rem : int64 -> int64 -> int64 = "%int64_mod"
+(** Alias for {!Int64.rem} *)
+
+val succ : int64 -> int64
+(** Alias for {!Int64.succ} *)
+
+val pred : int64 -> int64
+(** Alias for {!Int64.pred} *)
+
+val abs : int64 -> int64
+(** Alias for {!Int64.abs} *)
+
+val max_int : int64
+(** Alias for {!Int64.max_int} *)
+
+val min_int : int64
+(** Alias for {!Int64.min_int} *)
+
+external logand : int64 -> int64 -> int64 = "%int64_and"
+(** Alias for {!Int64.logand} *)
+
+external logor : int64 -> int64 -> int64 = "%int64_or"
+(** Alias for {!Int64.logor} *)
+
+external logxor : int64 -> int64 -> int64 = "%int64_xor"
+(** Alias for {!Int64.logxor} *)
+
+val lognot : int64 -> int64
+(** Alias for {!Int64.lognot} *)
+
+external shift_left : int64 -> int -> int64 = "%int64_lsl"
+(** Alias for {!Int64.shift_left} *)
+
+external shift_right : int64 -> int -> int64 = "%int64_asr"
+(** Alias for {!Int64.shift_right} *)
+
+external shift_right_logical : int64 -> int -> int64 = "%int64_lsr"
+(** Alias for {!Int64.shift_right_logical} *)
+
+external of_int : int -> int64 = "%int64_of_int"
+(** Alias for {!Int64.of_int} *)
+
+external to_int : int64 -> int = "%int64_to_int"
+(** Alias for {!Int64.to_int} *)
+
+@BEGIN_FROM_4_03_0@
+external of_float :
+  float -> int64 = "caml_int64_of_float" "caml_int64_of_float_unboxed"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external of_float : float -> int64 = "caml_int64_of_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_float : float -> int64 = "int64_of_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external of_float :
+      float -> int64 = "caml_int64_of_float" "caml_int64_of_float_unboxed"
+    [@@unboxed ][@@noalloc ]
+@since 3.08.0: external of_float : float -> int64 = "caml_int64_of_float"
+@since 3.07.0: external of_float : float -> int64 = "int64_of_float"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external to_float :
+  int64 -> float = "caml_int64_to_float" "caml_int64_to_float_unboxed"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external to_float : int64 -> float = "caml_int64_to_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external to_float : int64 -> float = "int64_to_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external to_float :
+      int64 -> float = "caml_int64_to_float" "caml_int64_to_float_unboxed"
+    [@@unboxed ][@@noalloc ]
+@since 3.08.0: external to_float : int64 -> float = "caml_int64_to_float"
+@since 3.07.0: external to_float : int64 -> float = "int64_to_float"
+ *)
+
+external of_int32 : int32 -> int64 = "%int64_of_int32"
+(** Alias for {!Int64.of_int32} *)
+
+external to_int32 : int64 -> int32 = "%int64_to_int32"
+(** Alias for {!Int64.to_int32} *)
+
+external of_nativeint : nativeint -> int64 = "%int64_of_nativeint"
+(** Alias for {!Int64.of_nativeint} *)
+
+external to_nativeint : int64 -> nativeint = "%int64_to_nativeint"
+(** Alias for {!Int64.to_nativeint} *)
+
+@BEGIN_FROM_3_08_0@
+external of_string : string -> int64 = "caml_int64_of_string"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_string : string -> int64 = "int64_of_string"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external of_string : string -> int64 = "caml_int64_of_string"
+@since 3.07.0: external of_string : string -> int64 = "int64_of_string"
+ *)
+
+val to_string : int64 -> string
+(** Alias for {!Int64.to_string} *)
+
+@BEGIN_FROM_4_03_0@
+external bits_of_float :
+  float -> int64 = "caml_int64_bits_of_float"
+    "caml_int64_bits_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external bits_of_float : float -> int64 = "caml_int64_bits_of_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external bits_of_float : float -> int64 = "int64_bits_of_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external bits_of_float :
+      float -> int64 = "caml_int64_bits_of_float"
+        "caml_int64_bits_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external bits_of_float : float -> int64 = "caml_int64_bits_of_float"
+@since 3.07.0:
+external bits_of_float : float -> int64 = "int64_bits_of_float"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external float_of_bits :
+  int64 -> float = "caml_int64_float_of_bits"
+    "caml_int64_float_of_bits_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external float_of_bits : int64 -> float = "caml_int64_float_of_bits"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external float_of_bits : int64 -> float = "int64_float_of_bits"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external float_of_bits :
+      int64 -> float = "caml_int64_float_of_bits"
+        "caml_int64_float_of_bits_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external float_of_bits : int64 -> float = "caml_int64_float_of_bits"
+@since 3.07.0:
+external float_of_bits : int64 -> float = "int64_float_of_bits"
+ *)
+
+val compare : t -> t -> int
+(** Alias for {!Int64.compare} *)
+
+end

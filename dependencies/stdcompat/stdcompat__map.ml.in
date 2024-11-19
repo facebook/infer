@@ -1,0 +1,882 @@
+module type OrderedType = Map.OrderedType
+
+module type S = sig
+  type key
+  @BEGIN_FROM_4_12_0@
+    type +!'a t
+  @END_FROM_4_12_0@
+  @BEGIN_BEFORE_4_12_0@
+    type +'a t
+  @END_BEFORE_4_12_0@
+ val empty : 'a t val add : key -> 'a -> 'a t -> 'a t
+val add_to_list : key -> 'a -> 'a list t -> 'a list t
+val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
+val singleton : key -> 'a -> 'a t val remove : key -> 'a t -> 'a t
+val merge :
+  (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
+val union : (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
+val cardinal : 'a t -> int val bindings : 'a t -> (key * 'a) list
+val min_binding : 'a t -> (key * 'a)
+val min_binding_opt : 'a t -> (key * 'a) option
+val max_binding : 'a t -> (key * 'a)
+val max_binding_opt : 'a t -> (key * 'a) option
+val choose : 'a t -> (key * 'a) val choose_opt : 'a t -> (key * 'a) option
+val find : key -> 'a t -> 'a val find_opt : key -> 'a t -> 'a option
+val find_first : (key -> bool) -> 'a t -> (key * 'a)
+val find_first_opt : (key -> bool) -> 'a t -> (key * 'a) option
+val find_last : (key -> bool) -> 'a t -> (key * 'a)
+val find_last_opt : (key -> bool) -> 'a t -> (key * 'a) option
+val iter : (key -> 'a -> unit) -> 'a t -> unit
+val fold : (key -> 'a -> 'acc -> 'acc) -> 'a t -> 'acc -> 'acc
+val map : ('a -> 'b) -> 'a t -> 'b t
+val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+val filter : (key -> 'a -> bool) -> 'a t -> 'a t
+val filter_map : (key -> 'a -> 'b option) -> 'a t -> 'b t
+val partition : (key -> 'a -> bool) -> 'a t -> ('a t * 'a t)
+val split : key -> 'a t -> ('a t * 'a option * 'a t)
+val is_empty : 'a t -> bool val mem : key -> 'a t -> bool
+val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+val for_all : (key -> 'a -> bool) -> 'a t -> bool
+val exists : (key -> 'a -> bool) -> 'a t -> bool
+val to_list : 'a t -> (key * 'a) list val of_list : (key * 'a) list -> 'a t
+val to_seq : 'a t -> (key * 'a) Seq.t
+val to_rev_seq : 'a t -> (key * 'a) Seq.t
+val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
+val add_seq : (key * 'a) Seq.t -> 'a t -> 'a t
+val of_seq : (key * 'a) Seq.t -> 'a t
+end
+
+@BEGIN_FROM_5_1_0@
+module Make = Map.Make
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+module Make (Ord : OrderedType) = struct
+  include Map.Make (Ord)
+
+  @BEGIN_BEFORE_4_07_0@
+    let add_seq g m =
+      Stdcompat__seq.fold_left (fun m (k, v) -> add k v m) m g
+
+    let of_seq g = add_seq g empty
+  @END_BEFORE_4_07_0@
+
+  @BEGIN_WITH_MAGIC@
+    @BEGIN_BEFORE_4_12_0@
+    type 'a internal =
+      | Empty
+      | Node of 'a internal * key * 'a * 'a internal * int
+      @BEGIN_FROM_4_02_0@
+      [@@ocaml.warning "-37"]
+      @END_FROM_4_02_0@
+    @END_BEFORE_4_12_0@
+
+    @BEGIN_BEFORE_4_11_0@
+    external t_of_internal : 'a internal -> 'a t = "%identity"
+    @END_BEFORE_4_11_0@
+
+    @BEGIN_BEFORE_4_12_0@
+    external internal_of_t : 'a t -> 'a internal = "%identity"
+    @END_BEFORE_4_12_0@
+
+    @BEGIN_BEFORE_4_05_0@
+      let rec min_binding_aux l v d =
+        match l with
+        | Empty -> v, d
+        | Node (l', v', d', _r, _h) -> min_binding_aux l' v' d'
+
+      let min_binding_opt (map : 'a t) =
+        match internal_of_t map with
+        | Empty -> None
+        | Node (l, v, d, _r, _h) -> Some (min_binding_aux l v d)
+
+      let rec max_binding_aux v d r =
+        match r with
+        | Empty -> v, d
+        | Node (_, v', d', r', _h) -> max_binding_aux v' d' r'
+
+      let max_binding_opt (map : 'a t) =
+        match internal_of_t map with
+        | Empty -> None
+        | Node (_l, v, d, r, _h) -> Some (max_binding_aux v d r)
+    @END_BEFORE_4_05_0@
+
+    @BEGIN_BEFORE_3_12_0@
+      let singleton key value =
+        t_of_internal (Node (Empty, key, value, Empty, 1))
+      let min_binding map =
+        match map with
+        | Empty -> raise Not_found
+        | Node (l, v, d, _r, _h) -> min_binding_aux l v d
+
+      let min_binding (map : 'a t) =
+        min_binding (internal_of_t map)
+
+      let max_binding map =
+        match map with
+        | Empty -> raise Not_found
+        | Node (_l, v, d, r, _h) -> max_binding_aux v d r
+
+      let max_binding (map : 'a t) =
+        max_binding (internal_of_t map)
+    @END_BEFORE_3_12_0@
+
+    @BEGIN_BEFORE_3_08_0@
+      let rec iter f = function
+        | Empty -> ()
+        | Node (l, v, d, r, _) as t ->
+            iter f l;
+            f v d;
+            iter f r
+
+      let iter (f : key -> 'a -> unit) (s : 'a t) : unit =
+        iter f (internal_of_t s)
+
+      let rec fold f s a =
+        match s with
+        | Empty -> a
+        | Node (l, v, d, r, _) as t ->
+            let a = fold f l a in
+            let a = f v d a in
+            fold f r a
+
+      let fold (f : key -> 'a -> 'b -> 'b) (s : 'a t) (a : 'b) : 'b =
+        fold f (internal_of_t s) a
+    @END_BEFORE_3_08_0@
+
+    @BEGIN_BEFORE_4_11_0@
+    let height map =
+      match map with
+      | Empty -> 0
+      | Node (_l, _v, _d, _r, h) -> h
+
+    let create l x d r =
+      Node (l, x, d, r, (max (height l) (height r)) + 1)
+
+    let destruct map =
+      match map with
+      | Empty -> assert false
+      | Node (l, v, d, r, h) -> l, v, d, r, h
+
+    let bal l x d r =
+      let hl = height l and hr = height r in
+      if hl > hr + 2 then
+        begin
+          let ll, lv, ld, lr, _h = destruct l in
+          if height ll >= height lr then
+            create ll lv ld (create lr x d r)
+          else
+            let lrl, lrv, lrd, lrr, _ = destruct lr in
+            create (create ll lv ld lrl) lrv lrd (create lrr x d r)
+        end
+      else if hr > hl + 2 then
+        begin
+          let rl, rv, rd, rr, _h = destruct r in
+          if height rr >= height rl then
+            create (create l x d rl) rv rd rr
+          else
+            let rll, rlv, rld, rlr, _h = destruct rl in
+            create (create l x d rll) rlv rld (create rlr rv rd rr)
+        end
+      else
+        Node (l, x, d, r, (max hl hr) + 1)
+
+    let rec remove_min_binding map =
+      match map with
+      | Empty -> assert false
+      | Node (Empty, _v, _d, r, _h) -> r
+      | Node (l, v, d, r, _h) ->
+          bal (remove_min_binding l) v d r
+
+    let rec add_min_binding k x map =
+      match map with
+      | Empty -> internal_of_t (singleton k x)
+      | Node (l, v, d, r, _h) ->
+          bal (add_min_binding k x l) v d r
+
+    let rec add_max_binding k x = function
+      | Empty -> internal_of_t (singleton k x)
+      | Node (l, v, d, r, _h) ->
+          bal l v d (add_max_binding k x r)
+
+    let rec join l v d r =
+      match l, r with
+      | Empty, _ -> add_min_binding v d r
+      | _, Empty -> add_max_binding v d l
+      | Node (ll, lv, ld, lr, lh), Node (rl, rv, rd, rr, rh) ->
+          if lh > rh + 2 then
+            bal ll lv ld (join lr v d r)
+          else if rh > lh + 2 then
+            bal (join l v d rl) rv rd rr
+          else
+            create l v d r
+
+    let concat t1 t2 =
+      match t1, t2 with
+      | Empty, t
+      | t, Empty -> t
+      | _ ->
+          let x, d = min_binding (t_of_internal t2) in
+          join t1 x d (remove_min_binding t2)
+
+    let rec filter_map f = function
+      | Empty -> Empty
+      | Node (l, v, d, r, _) ->
+          let l' = filter_map f l in
+          let fvd = f v d in
+          let r' = filter_map f r in
+          begin match fvd with
+            | Some d' -> join l' v d' r'
+            | None -> concat l' r'
+          end
+
+    let filter_map (f : key -> 'a -> 'b option) (m : 'a t) : 'b t =
+      t_of_internal (filter_map f (internal_of_t m))
+    @END_BEFORE_4_11_0@
+
+    @BEGIN_BEFORE_4_12_0@
+      type 'a enumeration =
+        | End | More of key * 'a * 'a internal * 'a enumeration
+
+      let rec snoc_enum m e =
+        match m with
+        | Empty -> e
+        | Node (l, v, d, r, _h) -> snoc_enum r (More (v, d, l, e))
+
+      let rec rev_seq_of_enum_ c () = match c with
+        | End -> Stdcompat__seq.Nil
+        | More (k,v,t,rest) ->
+            Stdcompat__seq.Cons ((k,v), rev_seq_of_enum_ (snoc_enum t rest))
+
+      let to_rev_seq (m : 'a t) =
+        rev_seq_of_enum_ (snoc_enum (internal_of_t m) End)
+    @END_BEFORE_4_12_0@
+
+    @BEGIN_BEFORE_4_07_0@
+    let rec cons_enum m e =
+      match m with
+        Empty -> e
+      | Node (l, v, d, r, _h) -> cons_enum l (More (v, d, r, e))
+
+    let rec seq_of_enum_ c () = match c with
+      | End -> Stdcompat__seq.Nil
+      | More (k,v,t,rest) ->
+          Stdcompat__seq.Cons ((k,v), seq_of_enum_ (cons_enum t rest))
+
+    let to_seq (m : 'a t) =
+      seq_of_enum_ (cons_enum (internal_of_t m) End)
+
+    let to_seq_from low (m : 'a t) =
+      let rec aux low m c = match m with
+        | Empty -> c
+        | Node (l, v, d, r, _h) ->
+            begin match Ord.compare v low with
+              | 0 -> More (v, d, r, c)
+              | n when n<0 -> aux low r c
+              | _ -> aux low l (More (v, d, r, c))
+            end
+      in
+      seq_of_enum_ (aux low (internal_of_t m) End)
+  @END_BEFORE_4_07_0@
+  @END_WITH_MAGIC@
+
+  @BEGIN_WITHOUT_MAGIC@
+    @BEGIN_BEFORE_3_12_0@
+      let singleton key value =
+        add key value empty
+
+      let bindings map =
+        fold (fun v d accu -> (v, d) :: accu) map []
+
+      @BEGIN_FROM_3_08_0@
+        let bindings map =
+          List.rev (bindings map)
+      @END_FROM_3_08_0@
+      @BEGIN_BEFORE_3_08_0@
+        let iter f s =
+          List.iter (fun (k, d) -> f k d) (bindings s)
+
+        let fold f s a =
+          List.fold_left (fun a (k, d) -> f k d a) a (bindings s)
+      @END_BEFORE_3_08_0@
+    @END_BEFORE_3_12_0@
+
+    @BEGIN_BEFORE_4_11_0@
+    let filter_map f map =
+      fold (fun x d map' ->
+        match f x d with
+        | Some d' -> add x d' map'
+        | None -> map') map empty
+    @END_BEFORE_4_11_0@
+
+    @BEGIN_BEFORE_4_12_0@
+      let to_rev_seq m =
+        Stdcompat__list.to_seq (List.rev (bindings m))
+    @END_BEFORE_4_12_0@
+  @END_WITHOUT_MAGIC@
+
+@BEGIN_WITH_MAGIC@
+@BEGIN_BEFORE_4_06_0@
+  let simple_merge t1 t2 =
+    match t1, t2 with
+    | Empty, t -> t
+    | t, Empty -> t
+    | _ ->
+        let x, d = min_binding (t_of_internal t2) in
+        bal t1 x d (remove_min_binding t2)
+
+  let rec update x f map =
+    match map with
+    | Empty ->
+        begin
+          match f None with
+          | None -> Empty
+          | Some data -> Node (Empty, x, data, Empty, 1)
+        end
+    | Node (l, v, d, r, h) as m ->
+        let c = Ord.compare x v in
+        if c = 0 then
+          begin
+            match f (Some d) with
+            | None -> simple_merge l r
+            | Some data ->
+                if d == data then
+                  m
+                else
+                  Node (l, x, data, r, h)
+          end
+        else if c < 0 then
+          let ll = update x f l in
+          if l == ll then
+            m
+          else
+            bal ll v d r
+        else
+          let rr = update x f r in
+          if r == rr then
+            m
+          else
+            bal l v d rr
+
+  let update x f (map : 'a t) =
+    t_of_internal (update x f (internal_of_t map))
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_05_0@
+  let rec find_opt key (map : 'a internal) =
+    match map with
+    | Empty -> None
+    | Node (l, v, d, r, _h) ->
+        let c = Ord.compare key v in
+        if c = 0 then
+          Some d
+        else
+          find_opt key  (if c < 0 then l else r)
+
+  let find_opt key (map : 'a t) =
+    find_opt key (internal_of_t map)
+
+  let rec find_first_aux v d p m =
+    match m with
+    | Empty -> (v, d)
+    | Node (l, v', d', r, _h) ->
+        if p v' then
+          find_first_aux v' d' p l
+        else
+          find_first_aux v d p r
+
+  let rec find_first_opt p m =
+    match m with
+    | Empty -> None
+    | Node (l, v, d, r, _h) ->
+        if p v then
+          Some (find_first_aux v d p l)
+        else
+          find_first_opt p r
+
+  let find_first_opt p (m : 'a t) =
+    find_first_opt p (internal_of_t m)
+
+  let rec find_first p m =
+    match m with
+    | Empty -> raise Not_found
+    | Node (l, v, d, r, _h) ->
+        if p v then
+          find_first_aux v d p l
+        else
+          find_first p r
+
+  let find_first p (m : 'a t) =
+    find_first p (internal_of_t m)
+
+  let rec find_last_aux v d p m =
+    match m with
+    | Empty -> (v, d)
+    | Node (l, v', d', r, _h) ->
+        if p v' then
+          find_last_aux v' d' p r
+        else
+          find_last_aux v d p l
+
+  let rec find_last_opt p m =
+    match m with
+    | Empty -> None
+    | Node (l, v, d, r, _h) ->
+        if p v then
+          Some (find_last_aux v d p r)
+        else
+          find_last_opt p l
+
+  let find_last_opt p (m : 'a t) =
+    find_last_opt p (internal_of_t m)
+
+  let rec find_last p m =
+    match m with
+    | Empty -> raise Not_found
+    | Node (l, v, d, r, _h) ->
+        if p v then
+          find_last_aux v d p r
+        else
+          find_last p l
+
+  let find_last p (m : 'a t) =
+    find_last p (internal_of_t m)
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_3_12_0@
+  let rec split x map =
+    match map with
+    | Empty ->
+        Empty, None, Empty
+    | Node (l, v, d, r, _h) ->
+        let c = Ord.compare x v in
+        if c = 0 then
+          l, Some d, r
+        else if c < 0 then
+          let ll, pres, rl = split x l in
+          ll, pres, join rl v d r
+        else
+          let lr, pres, rr = split x r in
+          join l v d lr, pres, rr
+
+  let split x (map : 'a t) : ('a t * 'a option * 'a t) =
+    let (l : 'a internal), item, (r : 'a internal) =
+      split x (internal_of_t map) in
+    (t_of_internal l, item, t_of_internal r)
+@END_BEFORE_3_12_0@
+
+@BEGIN_BEFORE_4_03_0@
+  let concat_or_join t1 v d t2 =
+    match d with
+    | Some d -> join t1 v d t2
+    | None -> concat t1 t2
+
+  let rec union f s1 s2 =
+    match s1, s2 with
+    | Empty, s | s, Empty -> s
+    | Node (l1, v1, d1, r1, h1), Node (l2, v2, d2, r2, h2) ->
+        if h1 >= h2 then
+          let (l2, d2, r2) = split v1 (t_of_internal s2) in
+          let l = union f l1 (internal_of_t l2)
+          and r = union f r1 (internal_of_t r2) in
+          match d2 with
+          | None -> join l v1 d1 r
+          | Some d2 -> concat_or_join l v1 (f v1 d1 d2) r
+        else
+          let (l1, d1, r1) = split v2 (t_of_internal s1) in
+          let l = union f (internal_of_t l1) l2
+          and r = union f (internal_of_t r1) r2 in
+          match d1 with
+          | None -> join l v2 d2 r
+          | Some d1 -> concat_or_join l v2 (f v2 d1 d2) r
+
+  let union f (s1 : 'a t) (s2 : 'a t) : 'a t =
+    t_of_internal (union f (internal_of_t s1) (internal_of_t s2))
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_3_12_0@
+  let rec bindings_aux accu map =
+    match map with
+    | Empty -> accu
+    | Node (l, v, d, r, _h) -> bindings_aux ((v, d) :: bindings_aux accu r) l
+
+  let bindings (map : 'a t) =
+    bindings_aux [] (internal_of_t map)
+
+  let rec merge f s1 s2 =
+    match s1, s2 with
+    | Empty, Empty -> Empty
+    | Node (l1, v1, d1, r1, h1), _ when h1 >= height s2 ->
+        let l2, d2, r2 = split v1 (t_of_internal s2) in
+        concat_or_join (merge f l1 (internal_of_t l2)) v1 (f v1 (Some d1) d2)
+          (merge f r1 (internal_of_t r2))
+    | _, Node (l2, v2, d2, r2, _h2) ->
+        let (l1, d1, r1) = split v2 (t_of_internal s1) in
+        concat_or_join (merge f (internal_of_t l1) l2) v2 (f v2 d1 (Some d2))
+          (merge f (internal_of_t r1) r2)
+    | _ -> assert false
+
+  let merge (f : key -> 'a option -> 'b option -> 'c option)
+      (map : 'a t) (map' : 'b t) : 'c t =
+    let result : 'c internal =
+      merge f (internal_of_t map) (internal_of_t map') in
+    t_of_internal result
+
+  let rec partition p map =
+    match map with
+    | Empty -> Empty, Empty
+    | Node (l, v, d, r, _h) ->
+        let (lt, lf) = partition p l in
+        let pvd = p v d in
+        let (rt, rf) = partition p r in
+        if pvd then
+          join lt v d rt, concat lf rf
+        else
+          concat lt rt, join lf v d rf
+
+  let partition p (map : 'a t) : 'a t * 'a t =
+    let (true_map : 'a internal), (false_map : 'a internal) =
+      partition p (internal_of_t map) in
+    t_of_internal true_map, t_of_internal false_map
+
+  let rec filter p map =
+    match map with
+    | Empty -> Empty
+    | Node (l, v, d, r, _h) as m ->
+        let l' = filter p l in
+        let pvd = p v d in
+        let r' = filter p r in
+        if pvd then
+          if l==l' && r==r' then
+            m
+          else
+            join l' v d r'
+        else
+          concat l' r'
+
+  let filter p (map : 'a t) : 'a t =
+    let map : 'a internal = internal_of_t map in
+    let result : 'a internal = filter p map in
+    t_of_internal result
+
+  let rec for_all p = function
+    | Empty -> true
+    | Node (l, v, d, r, _h) -> p v d && for_all p l && for_all p r
+
+  let for_all p (map : 'a t) =
+    let map : 'a internal = internal_of_t map in
+    for_all p map
+
+  let rec exists p = function
+    | Empty -> false
+    | Node (l, v, d, r, _h) -> p v d || exists p l || exists p r
+
+  let exists p (map : 'a t) =
+    let map : 'a internal = internal_of_t map in
+    exists p map
+
+  let compare cmp m1 m2 =
+    let rec compare_aux e1 e2 =
+      match e1, e2 with
+        End, End -> 0
+      | End, _  -> -1
+      | _, End -> 1
+      | More(v1, d1, r1, e1), More(v2, d2, r2, e2) ->
+          let c = Ord.compare v1 v2 in
+          if c <> 0 then
+            c
+          else
+            let c = cmp d1 d2 in
+            if c <> 0 then
+              c
+            else
+              compare_aux (cons_enum r1 e1) (cons_enum r2 e2) in
+    compare_aux (cons_enum m1 End) (cons_enum m2 End)
+
+  let compare cmp (map : 'a t) (map' : 'a t) =
+    let map : 'a internal = internal_of_t map in
+    let map' : 'a internal = internal_of_t map' in
+    compare cmp map map'
+
+  let equal cmp m1 m2 =
+    let rec equal_aux e1 e2 =
+      match e1, e2 with
+      | End, End -> true
+      | End, _  -> false
+      | _, End -> false
+      | More(v1, d1, r1, e1), More(v2, d2, r2, e2) ->
+          Ord.compare v1 v2 = 0 && cmp d1 d2 &&
+          equal_aux (cons_enum r1 e1) (cons_enum r2 e2) in
+    equal_aux (cons_enum m1 End) (cons_enum m2 End)
+
+
+  let equal eq (map : 'a t) (map' : 'a t) =
+    let map : 'a internal = internal_of_t map in
+    let map' : 'a internal = internal_of_t map' in
+    equal eq map map'
+@END_BEFORE_3_12_0@
+
+@BEGIN_BEFORE_3_08_0@
+   let is_empty (map : 'a t) =
+     match (internal_of_t map : 'a internal) with
+     | Empty -> true
+     | Node _ -> false
+@END_BEFORE_3_08_0@
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+@BEGIN_BEFORE_4_07_0@
+  let to_seq m =
+    Stdcompat__list.to_seq (bindings m)
+
+  let bindings_from low s =
+    let rec cut l =
+      match l with
+      | [] -> []
+      | (key, _) :: tl ->
+        if Ord.compare low key < 0 then
+          cut tl
+        else
+          l in
+     cut (bindings s)
+
+  let to_seq_from low s =
+    Stdcompat__list.to_seq (bindings_from low s)
+@END_BEFORE_4_07_0@
+@BEGIN_BEFORE_4_05_0@
+  exception Local_exit
+
+  let find_opt key m =
+    Stdcompat__tools.option_find (find key) m
+
+  let find_first_opt p m =
+    let result = ref None in
+    iter (fun v d ->
+      if p v then
+        begin
+          result := Some (v, d);
+          raise Local_exit
+        end) m;
+    !result
+
+  let find_first p m =
+    match find_first_opt p m with
+    | None -> raise Not_found
+    | Some (v, d) -> v, d
+
+  let find_last_opt p m =
+    let result = ref None in
+    iter (fun v d ->
+      if p v then
+        result := Some (v, d)) m;
+    !result
+
+  let find_last p m =
+    match find_last_opt p m with
+    | None -> raise Not_found
+    | Some (v, d) -> v, d
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_06_0@
+  let update x f map =
+    let d = find_opt x map in
+    let d' = f d in
+    match d, d' with
+    | None, None -> map
+    | Some _, None -> remove x map
+    | Some d, Some d' when d == d' -> map
+    | _, Some d' -> add x d' map
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_3_12_0@
+  let accu_binding v d accu =
+    match d with
+    | None -> accu
+    | Some d -> add v d accu
+
+  let rec add_left_bindings f b accu =
+    List.fold_left (fun accu (v, d) -> accu_binding v (f v (Some d) None) accu)
+      accu b
+
+  let rec add_right_bindings f b accu =
+    List.fold_left (fun accu (v, d) -> accu_binding v (f v None (Some d)) accu)
+      accu b
+
+  let merge f map map' =
+    let b = bindings map and b' = bindings map' in
+    let rec merge_bindings b b' accu =
+      match b, b' with
+      | [], _ -> add_right_bindings f b' accu
+      | _, [] -> add_left_bindings f b accu
+      | (v, d) :: tl, (v', d') :: tl' ->
+          let c = Ord.compare v v' in
+          if c < 0 then
+            merge_bindings tl b' (accu_binding v (f v (Some d) None) accu)
+          else if c > 0 then
+            merge_bindings b tl' (accu_binding v' (f v' None (Some d')) accu)
+          else
+            merge_bindings tl tl'
+              (accu_binding v (f v (Some d) (Some d')) accu) in
+    merge_bindings b b' empty
+@END_BEFORE_3_12_0@
+
+@BEGIN_BEFORE_4_03_0@
+  let union f map map' =
+    let f' key v v' =
+      match v, v' with
+      | None, None ->
+          None
+      | Some v, None | None, Some v ->
+          Some v
+      | Some v, Some v' ->
+          f key v v' in
+    merge f' map map'
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_05_0@
+@BEGIN_FROM_3_12_0@
+  let min_binding_opt m =
+    Stdcompat__tools.option_find min_binding m
+
+  let max_binding_opt m =
+    Stdcompat__tools.option_find max_binding m
+@END_FROM_3_12_0@
+@BEGIN_BEFORE_3_12_0@
+  let min_binding_opt m =
+    let binding = ref None in
+    try
+      iter (fun  v d ->
+        binding := Some ((v, d));
+        raise Local_exit) m;
+      None
+    with Local_exit ->
+      !binding
+
+  let min_binding m =
+    match min_binding_opt m with
+    | None -> raise Not_found
+    | Some result -> result
+
+  let max_binding_opt m =
+    let binding = ref None in
+    iter (fun v d ->
+      binding := Some (v, d)) m;
+    !binding
+
+  let max_binding m =
+    match max_binding_opt m with
+    | None -> raise Not_found
+    | Some result -> result
+
+  let partition p map =
+    fold (fun x d (true_map, false_map) ->
+      if p x d then
+        add x d true_map, false_map
+      else
+        true_map, add x d false_map) map (empty, empty)
+
+  let split x t =
+    fold (fun key value (ll, pres, rl) ->
+      let c = Ord.compare key x in
+      if c < 0 then (add key value ll, pres, rl)
+      else if c > 0 then (ll, pres, add key value rl)
+      else (ll, Some value, rl)) t (empty, None, empty)
+
+  let filter p map =
+    fold (fun x d map' ->
+      if p x d then
+        add x d map'
+      else
+        map') map empty
+
+  let exists p map =
+    try
+      iter (fun key value ->
+        if p key value then
+          raise Local_exit) map;
+      false
+    with Local_exit ->
+      true
+
+  let for_all p map =
+    try
+      iter (fun key value ->
+        if not (p key value) then
+          raise Local_exit) map;
+      true
+    with Local_exit ->
+      false
+@END_BEFORE_3_12_0@
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_3_08_0@
+   let is_empty map =
+     for_all (fun _ _ -> false) map
+
+   exception Compare_return of int
+
+   let compare cmp map map' =
+     try
+       let seq' =
+         fold (fun key value seq' ->
+           match seq' () with
+           | Stdcompat__seq.Nil -> raise (Compare_return 1)
+           | Stdcompat__seq.Cons ((key', value'), tail) ->
+               match Ord.compare key key' with
+               | 0 ->
+                   begin
+                     match cmp value value' with
+                     | 0 -> tail
+                     | diff -> raise (Compare_return diff)
+                   end
+               | diff -> raise (Compare_return diff)) map (to_seq map') in
+       match seq' () with
+       | Stdcompat__seq.Nil -> 0
+       | Stdcompat__seq.Cons _ -> -1
+     with Compare_return result -> result
+
+   let equal eq map map' =
+     try
+       let seq' =
+         fold (fun key value seq' ->
+           match seq' () with
+           | Stdcompat__seq.Nil -> raise Local_exit
+           | Stdcompat__seq.Cons ((key', value'), tail) ->
+               match Ord.compare key key' with
+               | 0 ->
+                   begin
+                     if eq value value' then
+                       tail
+                     else
+                       raise Local_exit
+                   end
+               | diff -> raise Local_exit) map (to_seq map') in
+       match seq' () with
+       | Stdcompat__seq.Nil -> true
+       | Stdcompat__seq.Cons _ -> false
+     with Local_exit -> false
+@END_BEFORE_3_08_0@
+@END_WITHOUT_MAGIC@
+
+@BEGIN_BEFORE_4_05_0@
+  let choose_opt = min_binding_opt
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_3_12_0@
+  let choose = min_binding
+
+  let cardinal map =
+    fold (fun _ _ counter -> succ counter) map 0
+@END_BEFORE_3_12_0@
+
+@BEGIN_BEFORE_5_1_0@
+  let add_to_list key data m =
+    update key (fun opt -> match opt with None -> Some [data] | Some list -> Some (data :: list)) m
+
+  let to_list m =
+    bindings m
+
+  let of_list l =
+    List.fold_left (fun acc (key, value) -> add key value acc) empty l
+@END_BEFORE_5_1_0@
+end
+@END_BEFORE_5_1_0@

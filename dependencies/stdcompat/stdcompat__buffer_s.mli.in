@@ -1,0 +1,191 @@
+module type S = sig
+type t = Buffer.t
+(** Alias for {!Buffer.t} *)
+
+val add_uint8 : t -> int -> unit
+(** @since 4.08.0: val add_uint8 : t -> int -> unit *)
+
+val add_int8 : t -> int -> unit
+(** @since 4.08.0: val add_int8 : t -> int -> unit *)
+
+val add_uint16_ne : t -> int -> unit
+(** @since 4.08.0: val add_uint16_ne : t -> int -> unit *)
+
+val add_uint16_be : t -> int -> unit
+(** @since 4.08.0: val add_uint16_be : t -> int -> unit *)
+
+val add_uint16_le : t -> int -> unit
+(** @since 4.08.0: val add_uint16_le : t -> int -> unit *)
+
+val add_int16_ne : t -> int -> unit
+(** @since 4.08.0: val add_int16_ne : t -> int -> unit *)
+
+val add_int16_be : t -> int -> unit
+(** @since 4.08.0: val add_int16_be : t -> int -> unit *)
+
+val add_int16_le : t -> int -> unit
+(** @since 4.08.0: val add_int16_le : t -> int -> unit *)
+
+val add_int32_ne : t -> int32 -> unit
+(** @since 4.08.0: val add_int32_ne : t -> int32 -> unit *)
+
+val add_int32_be : t -> int32 -> unit
+(** @since 4.08.0: val add_int32_be : t -> int32 -> unit *)
+
+val add_int32_le : t -> int32 -> unit
+(** @since 4.08.0: val add_int32_le : t -> int32 -> unit *)
+
+val add_int64_ne : t -> int64 -> unit
+(** @since 4.08.0: val add_int64_ne : t -> int64 -> unit *)
+
+val add_int64_be : t -> int64 -> unit
+(** @since 4.08.0: val add_int64_be : t -> int64 -> unit *)
+
+val add_int64_le : t -> int64 -> unit
+(** @since 4.08.0: val add_int64_le : t -> int64 -> unit *)
+
+@BEGIN_FROM_4_07_0@
+val to_seq : t -> char Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : t -> char Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seq : t -> char Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val to_seqi : t -> (int * char) Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seqi : t -> (int * char) Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seqi : t -> (int * char) Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val add_seq : t -> char Seq.t -> unit
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val add_seq : t -> char Stdcompat__seq.t -> unit
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val add_seq : t -> char Seq.t -> unit
+ *)
+
+@BEGIN_FROM_4_07_0@
+val of_seq : char Seq.t -> t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : char Stdcompat__seq.t -> t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val of_seq : char Seq.t -> t
+ *)
+
+@BEGIN_FROM_4_06_0@
+val add_utf_8_uchar : t -> Uchar.t -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+val add_utf_8_uchar : t -> Stdcompat__uchar.t -> unit
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val add_utf_8_uchar : t -> Uchar.t -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val add_utf_16le_uchar : t -> Uchar.t -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+val add_utf_16le_uchar : t -> Stdcompat__uchar.t -> unit
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val add_utf_16le_uchar : t -> Uchar.t -> unit
+ *)
+
+@BEGIN_FROM_4_06_0@
+val add_utf_16be_uchar : t -> Uchar.t -> unit
+@END_FROM_4_06_0@
+@BEGIN_BEFORE_4_06_0@
+val add_utf_16be_uchar : t -> Stdcompat__uchar.t -> unit
+@END_BEFORE_4_06_0@
+(** @since 4.06.0: val add_utf_16be_uchar : t -> Uchar.t -> unit
+ *)
+
+val truncate : t -> int -> unit
+(** @since 4.05.0: val truncate : t -> int -> unit *)
+
+@BEGIN_FROM_4_02_0@
+val to_bytes : t -> bytes
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val to_bytes : t -> Stdcompat__init.bytes
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val to_bytes : t -> bytes
+ *)
+
+@BEGIN_FROM_4_02_0@
+val blit : t -> int -> bytes -> int -> int -> unit
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val blit : t -> int -> Stdcompat__init.bytes -> int -> int -> unit
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val blit : t -> int -> bytes -> int -> int -> unit
+ *)
+
+@BEGIN_FROM_4_02_0@
+val add_bytes : t -> bytes -> unit
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val add_bytes : t -> Stdcompat__init.bytes -> unit
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val add_bytes : t -> bytes -> unit
+ *)
+
+@BEGIN_FROM_4_02_0@
+val add_subbytes : t -> bytes -> int -> int -> unit
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+val add_subbytes : t -> Stdcompat__init.bytes -> int -> int -> unit
+@END_BEFORE_4_02_0@
+(** @since 4.02.0: val add_subbytes : t -> bytes -> int -> int -> unit
+ *)
+
+val sub : t -> int -> int -> string
+(** @since 3.08.0: val sub : t -> int -> int -> string *)
+
+val nth : t -> int -> char
+(** @since 3.08.0: val nth : t -> int -> char *)
+
+val create : int -> t
+(** Alias for {!Buffer.create} *)
+
+val contents : t -> string
+(** Alias for {!Buffer.contents} *)
+
+val length : t -> int
+(** Alias for {!Buffer.length} *)
+
+val clear : t -> unit
+(** Alias for {!Buffer.clear} *)
+
+val reset : t -> unit
+(** Alias for {!Buffer.reset} *)
+
+val output_buffer : out_channel -> t -> unit
+(** Alias for {!Buffer.output_buffer} *)
+
+val add_char : t -> char -> unit
+(** Alias for {!Buffer.add_char} *)
+
+val add_string : t -> string -> unit
+(** Alias for {!Buffer.add_string} *)
+
+val add_substring : t -> string -> int -> int -> unit
+(** Alias for {!Buffer.add_substring} *)
+
+val add_substitute : t -> (string -> string) -> string -> unit
+(** Alias for {!Buffer.add_substitute} *)
+
+val add_buffer : t -> t -> unit
+(** Alias for {!Buffer.add_buffer} *)
+
+val add_channel : t -> in_channel -> int -> unit
+(** Alias for {!Buffer.add_channel} *)
+
+end

@@ -1,0 +1,209 @@
+module type S = sig
+type t = int32
+(** Alias for {!Int32.t} *)
+
+val seeded_hash : int -> t -> int
+(** @since 5.1.0: val seeded_hash : int -> t -> int *)
+
+val hash : t -> int
+(** @since 5.1.0: val hash : t -> int *)
+
+val min : t -> t -> t
+(** @since 4.13.0: val min : t -> t -> t *)
+
+val max : t -> t -> t
+(** @since 4.13.0: val max : t -> t -> t *)
+
+val unsigned_div : int32 -> int32 -> int32
+(** @since 4.08.0: val unsigned_div : int32 -> int32 -> int32 *)
+
+val unsigned_rem : int32 -> int32 -> int32
+(** @since 4.08.0: val unsigned_rem : int32 -> int32 -> int32 *)
+
+val unsigned_to_int : int32 -> int option
+(** @since 4.08.0: val unsigned_to_int : int32 -> int option *)
+
+val unsigned_compare : t -> t -> int
+(** @since 4.08.0: val unsigned_compare : t -> t -> int *)
+
+val of_string_opt : string -> int32 option
+(** @since 4.05.0: val of_string_opt : string -> int32 option *)
+
+val equal : t -> t -> bool
+(** @since 4.03.0: val equal : t -> t -> bool *)
+
+@BEGIN_FROM_4_03_0@
+external bits_of_float :
+  float -> int32 = "caml_int32_bits_of_float"
+    "caml_int32_bits_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external bits_of_float : float -> int32 = "caml_int32_bits_of_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+val bits_of_float : float -> int32
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external bits_of_float :
+      float -> int32 = "caml_int32_bits_of_float"
+        "caml_int32_bits_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external bits_of_float : float -> int32 = "caml_int32_bits_of_float"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external float_of_bits :
+  int32 -> float = "caml_int32_float_of_bits"
+    "caml_int32_float_of_bits_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external float_of_bits : int32 -> float = "caml_int32_float_of_bits"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+val float_of_bits : int32 -> float
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external float_of_bits :
+      int32 -> float = "caml_int32_float_of_bits"
+        "caml_int32_float_of_bits_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external float_of_bits : int32 -> float = "caml_int32_float_of_bits"
+ *)
+
+val zero : int32
+(** Alias for {!Int32.zero} *)
+
+val one : int32
+(** Alias for {!Int32.one} *)
+
+val minus_one : int32
+(** Alias for {!Int32.minus_one} *)
+
+external neg : int32 -> int32 = "%int32_neg"
+(** Alias for {!Int32.neg} *)
+
+external add : int32 -> int32 -> int32 = "%int32_add"
+(** Alias for {!Int32.add} *)
+
+external sub : int32 -> int32 -> int32 = "%int32_sub"
+(** Alias for {!Int32.sub} *)
+
+external mul : int32 -> int32 -> int32 = "%int32_mul"
+(** Alias for {!Int32.mul} *)
+
+external div : int32 -> int32 -> int32 = "%int32_div"
+(** Alias for {!Int32.div} *)
+
+external rem : int32 -> int32 -> int32 = "%int32_mod"
+(** Alias for {!Int32.rem} *)
+
+val succ : int32 -> int32
+(** Alias for {!Int32.succ} *)
+
+val pred : int32 -> int32
+(** Alias for {!Int32.pred} *)
+
+val abs : int32 -> int32
+(** Alias for {!Int32.abs} *)
+
+val max_int : int32
+(** Alias for {!Int32.max_int} *)
+
+val min_int : int32
+(** Alias for {!Int32.min_int} *)
+
+external logand : int32 -> int32 -> int32 = "%int32_and"
+(** Alias for {!Int32.logand} *)
+
+external logor : int32 -> int32 -> int32 = "%int32_or"
+(** Alias for {!Int32.logor} *)
+
+external logxor : int32 -> int32 -> int32 = "%int32_xor"
+(** Alias for {!Int32.logxor} *)
+
+val lognot : int32 -> int32
+(** Alias for {!Int32.lognot} *)
+
+external shift_left : int32 -> int -> int32 = "%int32_lsl"
+(** Alias for {!Int32.shift_left} *)
+
+external shift_right : int32 -> int -> int32 = "%int32_asr"
+(** Alias for {!Int32.shift_right} *)
+
+external shift_right_logical : int32 -> int -> int32 = "%int32_lsr"
+(** Alias for {!Int32.shift_right_logical} *)
+
+external of_int : int -> int32 = "%int32_of_int"
+(** Alias for {!Int32.of_int} *)
+
+external to_int : int32 -> int = "%int32_to_int"
+(** Alias for {!Int32.to_int} *)
+
+@BEGIN_FROM_4_03_0@
+external of_float :
+  float -> int32 = "caml_int32_of_float" "caml_int32_of_float_unboxed"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external of_float : float -> int32 = "caml_int32_of_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_float : float -> int32 = "int32_of_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external of_float :
+      float -> int32 = "caml_int32_of_float" "caml_int32_of_float_unboxed"
+    [@@unboxed ][@@noalloc ]
+@since 3.08.0: external of_float : float -> int32 = "caml_int32_of_float"
+@since 3.07.0: external of_float : float -> int32 = "int32_of_float"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external to_float :
+  int32 -> float = "caml_int32_to_float" "caml_int32_to_float_unboxed"
+[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external to_float : int32 -> float = "caml_int32_to_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external to_float : int32 -> float = "int32_to_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external to_float :
+      int32 -> float = "caml_int32_to_float" "caml_int32_to_float_unboxed"
+    [@@unboxed ][@@noalloc ]
+@since 3.08.0: external to_float : int32 -> float = "caml_int32_to_float"
+@since 3.07.0: external to_float : int32 -> float = "int32_to_float"
+ *)
+
+@BEGIN_FROM_3_08_0@
+external of_string : string -> int32 = "caml_int32_of_string"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_string : string -> int32 = "int32_of_string"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external of_string : string -> int32 = "caml_int32_of_string"
+@since 3.07.0: external of_string : string -> int32 = "int32_of_string"
+ *)
+
+val to_string : int32 -> string
+(** Alias for {!Int32.to_string} *)
+
+val compare : t -> t -> int
+(** Alias for {!Int32.compare} *)
+
+end

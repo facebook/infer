@@ -1,0 +1,15 @@
+include Char
+
+@BEGIN_BEFORE_4_03_0@
+let lowercase_ascii = Char.lowercase
+
+let uppercase_ascii = Char.uppercase
+
+let equal : t -> t -> bool = ( = )
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_5_1_0@
+let hash = Hashtbl.hash
+
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+@END_BEFORE_5_1_0@

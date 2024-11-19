@@ -1,0 +1,178 @@
+module type S = sig
+type t = nativeint
+(** Alias for {!Nativeint.t} *)
+
+val seeded_hash : int -> t -> int
+(** @since 5.1.0: val seeded_hash : int -> t -> int *)
+
+val hash : t -> int
+(** @since 5.1.0: val hash : t -> int *)
+
+val min : t -> t -> t
+(** @since 4.13.0: val min : t -> t -> t *)
+
+val max : t -> t -> t
+(** @since 4.13.0: val max : t -> t -> t *)
+
+val unsigned_div : nativeint -> nativeint -> nativeint
+(** @since 4.08.0: val unsigned_div : nativeint -> nativeint -> nativeint *)
+
+val unsigned_rem : nativeint -> nativeint -> nativeint
+(** @since 4.08.0: val unsigned_rem : nativeint -> nativeint -> nativeint *)
+
+val unsigned_to_int : nativeint -> int option
+(** @since 4.08.0: val unsigned_to_int : nativeint -> int option *)
+
+val unsigned_compare : t -> t -> int
+(** @since 4.08.0: val unsigned_compare : t -> t -> int *)
+
+val of_string_opt : string -> nativeint option
+(** @since 4.05.0: val of_string_opt : string -> nativeint option *)
+
+val equal : t -> t -> bool
+(** @since 4.03.0: val equal : t -> t -> bool *)
+
+val zero : nativeint
+(** Alias for {!Nativeint.zero} *)
+
+val one : nativeint
+(** Alias for {!Nativeint.one} *)
+
+val minus_one : nativeint
+(** Alias for {!Nativeint.minus_one} *)
+
+external neg : nativeint -> nativeint = "%nativeint_neg"
+(** Alias for {!Nativeint.neg} *)
+
+external add : nativeint -> nativeint -> nativeint = "%nativeint_add"
+(** Alias for {!Nativeint.add} *)
+
+external sub : nativeint -> nativeint -> nativeint = "%nativeint_sub"
+(** Alias for {!Nativeint.sub} *)
+
+external mul : nativeint -> nativeint -> nativeint = "%nativeint_mul"
+(** Alias for {!Nativeint.mul} *)
+
+external div : nativeint -> nativeint -> nativeint = "%nativeint_div"
+(** Alias for {!Nativeint.div} *)
+
+external rem : nativeint -> nativeint -> nativeint = "%nativeint_mod"
+(** Alias for {!Nativeint.rem} *)
+
+val succ : nativeint -> nativeint
+(** Alias for {!Nativeint.succ} *)
+
+val pred : nativeint -> nativeint
+(** Alias for {!Nativeint.pred} *)
+
+val abs : nativeint -> nativeint
+(** Alias for {!Nativeint.abs} *)
+
+val size : int
+(** Alias for {!Nativeint.size} *)
+
+val max_int : nativeint
+(** Alias for {!Nativeint.max_int} *)
+
+val min_int : nativeint
+(** Alias for {!Nativeint.min_int} *)
+
+external logand : nativeint -> nativeint -> nativeint = "%nativeint_and"
+(** Alias for {!Nativeint.logand} *)
+
+external logor : nativeint -> nativeint -> nativeint = "%nativeint_or"
+(** Alias for {!Nativeint.logor} *)
+
+external logxor : nativeint -> nativeint -> nativeint = "%nativeint_xor"
+(** Alias for {!Nativeint.logxor} *)
+
+val lognot : nativeint -> nativeint
+(** Alias for {!Nativeint.lognot} *)
+
+external shift_left : nativeint -> int -> nativeint = "%nativeint_lsl"
+(** Alias for {!Nativeint.shift_left} *)
+
+external shift_right : nativeint -> int -> nativeint = "%nativeint_asr"
+(** Alias for {!Nativeint.shift_right} *)
+
+external shift_right_logical :
+  nativeint -> int -> nativeint = "%nativeint_lsr"
+(** Alias for {!Nativeint.shift_right_logical} *)
+
+external of_int : int -> nativeint = "%nativeint_of_int"
+(** Alias for {!Nativeint.of_int} *)
+
+external to_int : nativeint -> int = "%nativeint_to_int"
+(** Alias for {!Nativeint.to_int} *)
+
+@BEGIN_FROM_4_03_0@
+external of_float :
+  float -> nativeint = "caml_nativeint_of_float"
+    "caml_nativeint_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external of_float : float -> nativeint = "caml_nativeint_of_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_float : float -> nativeint = "nativeint_of_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external of_float :
+      float -> nativeint = "caml_nativeint_of_float"
+        "caml_nativeint_of_float_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external of_float : float -> nativeint = "caml_nativeint_of_float"
+@since 3.07.0: external of_float : float -> nativeint = "nativeint_of_float"
+ *)
+
+@BEGIN_FROM_4_03_0@
+external to_float :
+  nativeint -> float = "caml_nativeint_to_float"
+    "caml_nativeint_to_float_unboxed"[@@unboxed ][@@noalloc ]
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_FROM_3_08_0@
+external to_float : nativeint -> float = "caml_nativeint_to_float"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external to_float : nativeint -> float = "nativeint_to_float"
+@END_BEFORE_3_08_0@
+
+@END_BEFORE_4_03_0@
+(** @since 4.03.0:
+    external to_float :
+      nativeint -> float = "caml_nativeint_to_float"
+        "caml_nativeint_to_float_unboxed"[@@unboxed ][@@noalloc ]
+@since 3.08.0:
+external to_float : nativeint -> float = "caml_nativeint_to_float"
+@since 3.07.0: external to_float : nativeint -> float = "nativeint_to_float"
+ *)
+
+external of_int32 : int32 -> nativeint = "%nativeint_of_int32"
+(** Alias for {!Nativeint.of_int32} *)
+
+external to_int32 : nativeint -> int32 = "%nativeint_to_int32"
+(** Alias for {!Nativeint.to_int32} *)
+
+@BEGIN_FROM_3_08_0@
+external of_string : string -> nativeint = "caml_nativeint_of_string"
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+external of_string : string -> nativeint = "nativeint_of_string"
+@END_BEFORE_3_08_0@
+(** @since 3.08.0:
+    external of_string : string -> nativeint = "caml_nativeint_of_string"
+@since 3.07.0:
+external of_string : string -> nativeint = "nativeint_of_string"
+ *)
+
+val to_string : nativeint -> string
+(** Alias for {!Nativeint.to_string} *)
+
+val compare : t -> t -> int
+(** Alias for {!Nativeint.compare} *)
+
+end

@@ -1,0 +1,53 @@
+include Int64
+
+@BEGIN_BEFORE_4_13_0@
+let min i j =
+  if compare i j >= 0 then j
+  else i
+
+let max i j =
+  if compare i j >= 0 then i
+  else j
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_4_08_0@
+let unsigned_compare i j =
+  compare (sub i min_int) (sub j min_int)
+
+let unsigned_to_int =
+  let max_int = of_int Stdcompat__pervasives.max_int in
+  fun i ->
+    if compare zero i <= 0 && compare i max_int <= 0 then
+      Some (to_int i)
+    else
+      None
+
+(* Unsigned division from signed division of the same
+   bitness. See Warren Jr., Henry S. (2013). Hacker's Delight (2 ed.), Sec 9-3.
+*)
+let unsigned_div n d =
+  if d < zero then
+    if unsigned_compare n d < 0 then zero else one
+  else
+    let q = shift_left (div (shift_right_logical n 1) d) 1 in
+    let r = sub n (mul q d) in
+    if unsigned_compare r d >= 0 then succ q else q
+
+let unsigned_rem n d =
+  sub n (mul (unsigned_div n d) d)
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_03_0@
+let equal : t -> t -> bool = ( = )
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_05_0@
+let of_string_opt s =
+  Stdcompat__tools.option_fail of_string s
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_5_1_0@
+let hash = Hashtbl.hash
+
+let seeded_hash = Stdcompat__hashtbl.seeded_hash
+@END_BEFORE_5_1_0@

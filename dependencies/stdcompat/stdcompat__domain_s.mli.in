@@ -1,0 +1,71 @@
+module type S = sig
+@BEGIN_FROM_5_0_0@
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a Domain.t
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a Domain.t
+@END_BEFORE_4_12_0@
+
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+type 'a t
+@END_BEFORE_5_0_0@
+(** @since 5.0.0: type !'a t
+ *)
+
+@BEGIN_FROM_5_0_0@
+type id = Domain.id
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+@BEGIN_FROM_3_11_0@
+type id = private int
+@END_FROM_3_11_0@
+@BEGIN_BEFORE_3_11_0@
+type id = int
+@END_BEFORE_3_11_0@
+
+@END_BEFORE_5_0_0@
+(** @since 5.0.0: type id = Domain.id
+ *)
+
+@BEGIN_FROM_5_0_0@
+module DLS = Domain.DLS
+@END_FROM_5_0_0@
+@BEGIN_BEFORE_5_0_0@
+module DLS :
+sig type 'a key
+val new_key : ?split_from_parent:('a -> 'a) -> (unit -> 'a) -> 'a key
+val get : 'a key -> 'a val set : 'a key -> 'a -> unit end
+@END_BEFORE_5_0_0@
+(** @since 5.0.0: module DLS = Domain.DLS
+ *)
+
+val spawn : (unit -> 'a) -> 'a t
+(** @since 5.0.0: val spawn : (unit -> 'a) -> 'a t *)
+
+val join : 'a t -> 'a
+(** @since 5.0.0: val join : 'a t -> 'a *)
+
+val get_id : 'a t -> id
+(** @since 5.0.0: val get_id : 'a t -> id *)
+
+val self : unit -> id
+(** @since 5.0.0: val self : unit -> id *)
+
+val before_first_spawn : (unit -> unit) -> unit
+(** @since 5.0.0: val before_first_spawn : (unit -> unit) -> unit *)
+
+val at_exit : (unit -> unit) -> unit
+(** @since 5.0.0: val at_exit : (unit -> unit) -> unit *)
+
+val cpu_relax : unit -> unit
+(** @since 5.0.0: val cpu_relax : unit -> unit *)
+
+val is_main_domain : unit -> bool
+(** @since 5.0.0: val is_main_domain : unit -> bool *)
+
+val recommended_domain_count : unit -> int
+(** @since 5.0.0: val recommended_domain_count : unit -> int *)
+
+end

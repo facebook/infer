@@ -1,0 +1,103 @@
+module type S = sig
+@BEGIN_FROM_4_12_0@
+type !'a t = 'a Queue.t
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+type 'a t = 'a Queue.t
+@END_BEFORE_4_12_0@
+
+(** Alias for {!Queue.t} *)
+
+exception Empty 
+(** Alias for {!Queue.Empty} *)
+
+val take_opt : 'a t -> 'a option
+(** @since 4.08.0: val take_opt : 'a t -> 'a option *)
+
+val peek_opt : 'a t -> 'a option
+(** @since 4.08.0: val peek_opt : 'a t -> 'a option *)
+
+@BEGIN_FROM_4_07_0@
+val to_seq : 'a t -> 'a Seq.t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val to_seq : 'a t -> 'a Stdcompat__seq.t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val to_seq : 'a t -> 'a Seq.t
+ *)
+
+@BEGIN_FROM_4_07_0@
+val add_seq : 'a t -> 'a Seq.t -> unit
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val add_seq : 'a t -> 'a Stdcompat__seq.t -> unit
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val add_seq : 'a t -> 'a Seq.t -> unit
+ *)
+
+@BEGIN_FROM_4_07_0@
+val of_seq : 'a Seq.t -> 'a t
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+val of_seq : 'a Stdcompat__seq.t -> 'a t
+@END_BEFORE_4_07_0@
+(** @since 4.07.0: val of_seq : 'a Seq.t -> 'a t
+ *)
+
+val create : unit -> 'a t
+(** Alias for {!Queue.create} *)
+
+val add : 'a -> 'a t -> unit
+(** Alias for {!Queue.add} *)
+
+val push : 'a -> 'a t -> unit
+(** Alias for {!Queue.push} *)
+
+val take : 'a t -> 'a
+(** Alias for {!Queue.take} *)
+
+val pop : 'a t -> 'a
+(** Alias for {!Queue.pop} *)
+
+val peek : 'a t -> 'a
+(** Alias for {!Queue.peek} *)
+
+val top : 'a t -> 'a
+(** Alias for {!Queue.top} *)
+
+val clear : 'a t -> unit
+(** Alias for {!Queue.clear} *)
+
+val copy : 'a t -> 'a t
+(** Alias for {!Queue.copy} *)
+
+val is_empty : 'a t -> bool
+(** Alias for {!Queue.is_empty} *)
+
+val length : 'a t -> int
+(** Alias for {!Queue.length} *)
+
+val iter : ('a -> unit) -> 'a t -> unit
+(** Alias for {!Queue.iter} *)
+
+@BEGIN_FROM_5_1_0@
+val fold : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+@BEGIN_FROM_4_00_0@
+val fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b
+@END_FROM_4_00_0@
+@BEGIN_BEFORE_4_00_0@
+val fold : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+@END_BEFORE_4_00_0@
+
+@END_BEFORE_5_1_0@
+(** @since 5.1.0: val fold : ('acc -> 'a -> 'acc) -> 'acc -> 'a t -> 'acc
+@since 4.00.0: val fold : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b
+@since 3.07.0: val fold : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+ *)
+
+val transfer : 'a t -> 'a t -> unit
+(** Alias for {!Queue.transfer} *)
+
+end

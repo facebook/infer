@@ -1,0 +1,216 @@
+include List
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a list
+@BEGIN_FROM_4_03_0@
+  = [] | (::) of 'a * 'a list
+@END_FROM_4_03_0@
+
+let filter_map f list =
+  let rec aux accu list =
+    match list with
+    | [] -> rev accu
+    | head :: tail ->
+        let accu' =
+          match f head with
+          | None -> accu
+          | Some head' -> head' :: accu in
+        aux accu' tail in
+  aux [] list
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_12_0@
+let rec partition_map_aux left right f list =
+  match list with
+  | [] -> rev left, rev right
+  | hd :: tl ->
+      match f hd with
+      | Stdcompat__either.Left v -> partition_map_aux (v :: left) right f tl
+      | Stdcompat__either.Right v -> partition_map_aux left (v :: right) f tl
+
+let partition_map f list =
+  partition_map_aux [] [] f list
+
+let rec compare cmp l0 l1 =
+  match l0, l1 with
+  | [], [] -> 0
+  | [], _ :: _ -> -1
+  | _ :: _, [] -> 1
+  | hd0 :: tl0, hd1 :: tl1 ->
+      match cmp hd0 hd1 with
+      | 0 -> compare cmp tl0 tl1
+      | c -> c
+
+let rec equal eq l0 l1 =
+  match l0, l1 with
+  | [], [] -> true
+  | [], _ :: _
+  | _ :: _, [] -> false
+  | hd0 :: tl0, hd1 :: tl1 ->
+      eq hd0 hd1 && equal eq tl0 tl1
+@END_BEFORE_4_12_0@
+
+@BEGIN_BEFORE_4_00_0@
+let rec iteri_aux i f l =
+  match l with
+  | [] -> ()
+  | hd :: tl ->
+      f i hd;
+      iteri_aux (succ i) f tl
+
+let iteri f l =
+  iteri_aux 0 f l
+
+let rec mapi_aux i f l =
+  match l with
+  | [] -> []
+  | hd :: tl ->
+      let hd = f i hd in
+      hd :: mapi_aux (succ i) f tl
+
+let mapi f l =
+  mapi_aux 0 f l
+@END_BEFORE_4_00_0@
+
+@BEGIN_BEFORE_4_02_0@
+let sort_uniq cmp l =
+  let cmp' a b = - (cmp a b) in
+  let rev_l = sort cmp' l in
+  Stdcompat__tools.uniq_rev_append cmp rev_l []
+@END_BEFORE_4_02_0@
+
+@BEGIN_BEFORE_4_03_0@
+let cons x xs =
+  x :: xs
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_05_0@
+let rec compare_lengths l l' =
+  match l, l' with
+  | [], [] -> 0
+  | [], _ -> -1
+  | _, [] -> 1
+  | _ :: tl, _ :: tl' ->
+      compare_lengths tl tl'
+
+let rec compare_length_with l n =
+  if n < 0 then 1
+  else if n = 0 then
+    if l = [] then 0
+    else 1
+  else
+    match l with
+    | [] -> -1
+    | _ :: tl -> compare_length_with tl (pred n)
+
+let nth_opt l n =
+  Stdcompat__tools.option_fail (nth l) n
+
+let find_opt p l =
+  try
+    Stdcompat__tools.option_find
+      (find (Stdcompat__tools.pickle_predicate_not_found p)) l
+  with Stdcompat__tools.Predicate_not_found ->
+    raise Not_found
+
+let assoc_opt key l =
+  Stdcompat__tools.option_find (assoc key) l
+
+let assq_opt key l=
+  Stdcompat__tools.option_find (assq key) l
+@END_BEFORE_4_05_0@
+
+@BEGIN_BEFORE_4_06_0@
+let rec init_aux i len f accu =
+  if i >= len then
+    accu
+  else
+    init_aux (succ i) len f (f i :: accu)
+
+let init len f =
+  if len < 0 then
+    invalid_arg "List.init"
+  else if len = 0 then
+    []
+  else
+    rev (init_aux 0 len f [])
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_07_0@
+let of_seq seq =
+  rev (Stdcompat__seq.fold_left (fun accu x -> x :: accu) [] seq)
+
+let rec to_seq l () =
+  match l with
+  | [] -> Stdcompat__seq.Nil
+  | hd :: tl -> Stdcompat__seq.Cons (hd, to_seq tl)
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_10_0@
+let rec find_map f l =
+  match l with
+  | [] -> None
+  | hd :: tl ->
+      match f hd with
+      | None -> find_map f tl
+      | some -> some
+
+let rec concat_rev_map_aux f l accu =
+  match l with
+  | [] -> accu
+  | hd :: tl ->
+      concat_rev_map_aux f tl (rev_append (f hd) accu)
+
+let concat_map f l =
+  rev (concat_rev_map_aux f l [])
+@END_BEFORE_4_10_0@
+
+@BEGIN_BEFORE_4_11_0@
+let rec filteri_rev_aux f l i accu =
+  match l with
+  | [] -> accu
+  | hd :: tl ->
+      let accu =
+        if f i hd then
+          hd :: accu
+        else
+          accu in
+      filteri_rev_aux f tl (succ i) accu
+
+let filteri f l =
+  rev (filteri_rev_aux f l 0 [])
+
+let fold_left_map f accu l =
+  let accu, rev =
+    fold_left (fun (accu, rev) item ->
+      let accu, x = f accu item in
+      (accu, x :: rev)) (accu, []) l in
+  accu, List.rev rev
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_5_1_0@
+let is_empty l =
+  l = []
+
+let rec find_index_from index p l =
+  match l with
+  | [] -> None
+  | hd :: tl ->
+    if p hd then
+      Some index
+    else
+      find_index_from (succ index) p tl
+
+let find_index p l =
+  find_index_from 0 p l
+
+let rec find_mapi_from index f l =
+  match l with
+  | [] -> None
+  | hd :: tl ->
+    match f index hd with
+    | None -> find_mapi_from (succ index) f tl
+    | some -> some
+
+let find_mapi f l =
+  find_mapi_from 0 f l
+@END_BEFORE_5_1_0@

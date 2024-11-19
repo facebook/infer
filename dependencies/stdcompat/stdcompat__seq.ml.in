@@ -1,0 +1,494 @@
+@BEGIN_FROM_4_07_0@
+include Seq
+@END_FROM_4_07_0@
+@BEGIN_BEFORE_4_07_0@
+@BEGIN_WITH_SEQ_PKG@
+include Seq
+@END_WITH_SEQ_PKG@
+@BEGIN_WITHOUT_SEQ_PKG@
+type 'a t = unit -> 'a node
+and 'a node =
+  'a Stdcompat__init.seq_node =
+  | Nil
+  | Cons of 'a * 'a t
+
+let empty () = Nil
+
+let return x () = Cons (x, empty)
+
+let rec map f seq () = match seq () with
+  | Nil -> Nil
+  | Cons (x, next) -> Cons (f x, map f next)
+
+let rec filter_map f seq () = match seq () with
+  | Nil -> Nil
+  | Cons (x, next) ->
+      match f x with
+        | None -> filter_map f next ()
+        | Some y -> Cons (y, filter_map f next)
+
+let rec filter f seq () = match seq () with
+  | Nil -> Nil
+  | Cons (x, next) ->
+      if f x
+      then Cons (x, filter f next)
+      else filter f next ()
+
+let rec flat_map f seq () = match seq () with
+  | Nil -> Nil
+  | Cons (x, next) ->
+    flat_map_app f (f x) next ()
+and flat_map_app f seq tail () = match seq () with
+  | Nil -> flat_map f tail ()
+  | Cons (x, next) ->
+    Cons (x, flat_map_app f next tail)
+
+let fold_left f acc seq =
+  let rec aux f acc seq = match seq () with
+    | Nil -> acc
+    | Cons (x, next) ->
+        let acc = f acc x in
+        aux f acc next
+  in
+  aux f acc seq
+
+let iter f seq =
+  let rec aux seq = match seq () with
+    | Nil -> ()
+    | Cons (x, next) ->
+        f x;
+        aux next
+  in
+  aux seq
+@END_WITHOUT_SEQ_PKG@
+@END_BEFORE_4_07_0@
+@BEGIN_BEFORE_4_11_0@
+let cons x seq () =
+  Cons (x, seq)
+
+let rec append a b () =
+  match a () with
+  | Nil -> b ()
+  | Cons (hd, tl) ->
+      Cons (hd, append tl b)
+
+let rec unfold f state () =
+  match f state with
+  | None -> Nil
+  | Some (value, state) ->
+      Cons (value, unfold f state)
+@END_BEFORE_4_11_0@
+@BEGIN_BEFORE_4_13_0@
+let concat_map = flat_map
+
+let rec concat seq () =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) ->
+      append hd (concat tl) ()
+@END_BEFORE_4_13_0@
+@BEGIN_FROM_4_14_0@
+(* Temporary reimplemented here for compatibility with alpha releases. *)
+let fold_lefti f acc seq =
+  let rec aux f acc i seq = match seq () with
+    | Nil -> acc
+    | Cons (x, next) ->
+        let acc = f acc i x in
+        aux f acc (succ i) next
+  in
+  aux f acc 0 seq
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+let is_empty seq =
+  match seq () with
+  | Nil -> true
+  | Cons _ -> false
+
+let uncons seq =
+  match seq () with
+  | Nil -> None
+  | Cons (hd, tl) -> Some (hd, tl)
+
+let rec length_rec accu seq =
+  match seq () with
+  | Nil -> accu
+  | Cons (_hd, tl) -> length_rec (succ accu) tl
+
+let length seq =
+  length_rec 0 seq
+
+let iteri f seq =
+  let rec aux i seq = match seq () with
+    | Nil -> ()
+    | Cons (x, next) ->
+        f i x;
+        aux (succ i) next
+  in
+  aux 0 seq
+
+let fold_lefti f acc seq =
+  let rec aux f acc i seq = match seq () with
+    | Nil -> acc
+    | Cons (x, next) ->
+        let acc = f acc i x in
+        aux f acc (succ i) next
+  in
+  aux f acc 0 seq
+
+let rec for_all p seq =
+  match seq () with
+  | Nil -> true
+  | Cons (hd, tl) -> p hd && for_all p tl
+
+let rec exists p seq =
+  match seq () with
+  | Nil -> false
+  | Cons (hd, tl) -> p hd || exists p tl
+
+let rec find p seq =
+  match seq () with
+  | Nil -> None
+  | Cons (hd, tl) ->
+      if p hd then
+        Some hd
+      else
+        find p tl
+
+let rec find_map f seq =
+  match seq () with
+  | Nil -> None
+  | Cons (hd, tl) ->
+      match f hd with
+      | None -> find_map f tl
+      | Some _ as result -> result
+
+let iter2 f a b =
+  let rec aux a b =
+    match a () with
+    | Nil -> ()
+    | Cons (a_hd, a_tl) ->
+        match b () with
+        | Nil -> ()
+        | Cons (b_hd, b_tl) ->
+            f a_hd b_hd;
+            aux a_tl b_tl
+  in
+  aux a b
+
+let fold_left2 f acc a b =
+  let rec aux acc a b =
+    match a () with
+    | Nil -> acc
+    | Cons (a_hd, a_tl) ->
+      match b () with
+      | Nil  -> acc
+      | Cons (b_hd, b_tl) ->
+          aux (f acc a_hd b_hd) a_tl b_tl
+  in
+  aux acc a b
+
+let rec for_all2 p a b =
+  match a () with
+  | Nil -> true
+  | Cons (a_hd, a_tl) ->
+    match b () with
+    | Nil -> true
+    | Cons (b_hd, b_tl) -> p a_hd b_hd && for_all2 p a_tl b_tl
+
+let rec exists2 p a b =
+  match a () with
+  | Nil -> false
+  | Cons (a_hd, a_tl) ->
+      match b () with
+      | Nil -> false
+      | Cons (b_hd, b_tl) -> p a_hd b_hd || exists2 p a_tl b_tl
+
+let rec equal p a b =
+  match a (), b () with
+  | Nil, Nil -> true
+  | Nil, Cons _ | Cons _, Nil -> false
+  | Cons (a_hd, a_tl), Cons (b_hd, b_tl) -> p a_hd b_hd && equal p a_tl b_tl
+
+let rec compare o a b =
+  match a (), b () with
+  | Nil, Nil -> 0
+  | Nil, Cons _ -> -1
+  | Cons _, Nil -> 1
+  | Cons (a_hd, a_tl), Cons (b_hd, b_tl) ->
+      match o a_hd b_hd with
+      | 0 -> compare o a_tl b_tl
+      | result -> result
+
+let init n f =
+  let rec aux i () =
+    if i < n then
+      Cons (f i, aux (succ i))
+    else
+      Nil in
+  if n < 0 then
+    invalid_arg "Seq.init: length should be non-negative";
+  aux 0
+
+let rec repeat x () =
+  Cons (x, repeat x)
+
+let rec forever gen () =
+  Cons (gen (), forever gen)
+
+let cycle seq () =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) ->
+      let rec aux tl' () =
+        match tl' () with
+        | Nil -> Cons (hd, aux tl)
+        | Cons (hd', tl') -> Cons (hd', aux tl') in
+      Cons (hd, aux tl)
+
+let rec iterate1 f x () =
+  let fx = f x in
+  Cons (fx, iterate1 f fx)
+
+let iterate f x () =
+  Cons (x, iterate1 f x)
+
+let mapi f seq =
+  let rec aux i seq () = match seq () with
+    | Nil -> Nil
+    | Cons (x, next) ->
+        Cons (f i x, aux (succ i) next)
+  in
+  aux 0 seq
+
+let scan f acc seq =
+  let rec aux f acc seq () = match seq () with
+    | Nil -> Nil
+    | Cons (x, next) ->
+        let acc = f acc x in
+        Cons (acc, aux f acc next)
+  in
+  cons acc (aux f acc seq)
+
+let rec take_rec n seq =
+  if n > 0 then fun () ->
+    match seq () with
+    | Nil -> Nil
+    | Cons (hd, tl) ->
+        Cons (hd, take_rec (pred n) tl)
+  else
+    empty
+
+let take n seq =
+  if n < 0 then
+    invalid_arg "Seq.take: length should be non-negative";
+  take_rec n seq
+
+let rec drop_rec n seq =
+  match seq () with
+  | Nil -> empty
+  | Cons (_hd, tl) ->
+      let n' = pred n in
+      if n' > 0 then
+        drop_rec n' tl
+      else
+        tl
+
+let drop n seq =
+  if n < 0 then
+    invalid_arg "Seq.drop: length should be non-negative";
+  if n = 0 then
+    seq
+  else
+    drop_rec n seq
+
+let rec take_while p seq () =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) ->
+      if p hd then
+        Cons (hd, take_while p tl)
+      else
+        Nil
+
+let rec drop_while_rec p seq =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) as result ->
+      if p hd then
+        drop_while_rec p tl
+      else
+        result
+
+let drop_while p seq () =
+  drop_while_rec p seq
+
+let rec group eq seq () =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) ->
+      Cons (cons hd (take_while (eq hd) tl), group eq (drop_while (eq hd) tl))
+
+let rec memoize seq =
+  let next =
+    lazy (match seq () with
+    | Nil -> Nil
+    | Cons (hd, tl) -> Cons (hd, memoize tl)) in
+  fun () -> Lazy.force next
+
+exception Forced_twice
+
+let rec once seq =
+  let consumed = ref false in
+  fun () ->
+    if !consumed then
+      raise Forced_twice;
+    consumed := true;
+    match seq () with
+    | Nil -> Nil
+    | Cons (hd, tl) -> Cons (hd, once tl)
+
+let rec transpose seq () =
+  match seq () with
+  | Nil -> Nil
+  | Cons (hd, tl) ->
+      let first () =
+        let hd_opt seq =
+          match seq () with
+          | Nil -> None
+          | Cons (hd, _tl) -> Some hd in
+        let tl' = filter_map hd_opt tl in
+        match hd () with
+        | Nil -> tl' ()
+        | Cons (hd, _tl) -> Cons (hd, tl') in
+      let others () =
+        let tl_opt seq =
+          match seq () with
+          | Nil -> None
+          | Cons (_hd, tl) -> Some tl in
+        let tl' = filter_map tl_opt tl in
+        match hd () with
+        | Nil -> tl' ()
+        | Cons (_hd, tl) -> Cons (tl, tl') in
+      if is_empty first then
+        Nil
+      else
+        Cons (first, transpose others)
+
+let rec zip a b () =
+  match a () with
+  | Nil -> Nil
+  | Cons (a_hd, a_tl) ->
+      match b () with
+      | Nil -> Nil
+      | Cons (b_hd, b_tl) ->
+          Cons ((a_hd, b_hd), zip a_tl b_tl)
+
+let rec map2 f a b () =
+  match a () with
+  | Nil -> Nil
+  | Cons (a_hd, a_tl) ->
+      match b () with
+      | Nil -> Nil
+      | Cons (b_hd, b_tl) ->
+          Cons (f a_hd b_hd, map2 f a_tl b_tl)
+
+let rec interleave a b () =
+  match a () with
+  | Nil -> b ()
+  | Cons (hd, tl) ->
+      Cons (hd, interleave b tl)
+
+let rec sorted_merge1l o a_cell a_hd a_tl b () =
+  match b () with
+  | Nil -> a_cell
+  | Cons (b_hd, b_tl) as b_cell ->
+      sorted_merge1 o a_cell a_hd a_tl b_cell b_hd b_tl
+and sorted_merge1r o a b_cell b_hd b_tl () =
+  match a () with
+  | Nil -> b_cell
+  | Cons (a_hd, a_tl) as a_cell ->
+      sorted_merge1 o a_cell a_hd a_tl b_cell b_hd b_tl
+and sorted_merge1 o a_cell a_hd a_tl b_cell b_hd b_tl =
+  if o a_hd b_hd <= 0 then
+    Cons (a_hd, sorted_merge1r o a_tl b_cell b_hd b_tl)
+  else
+    Cons (b_hd, sorted_merge1l o a_cell a_hd a_tl b_tl)
+
+let sorted_merge o a b () =
+  match a (), b () with
+  | Nil, Nil -> Nil
+  | Nil, c | c, Nil -> c
+  | Cons (a_hd, a_tl) as a_cell, (Cons (b_hd, b_tl) as b_cell) ->
+      sorted_merge1 o a_cell a_hd a_tl b_cell b_hd b_tl
+
+let rec map_product1 f a_hd a_tl b =
+  match b () with
+  | Nil -> Nil
+  | Cons (b_hd, b_tl) ->
+      Cons (f a_hd b_hd,
+        append (map (fun ai -> f ai b_hd) a_tl)
+          (fun () -> map_product1 f a_hd a_tl b_tl))
+
+let map_product f a b () =
+  match a () with
+  | Nil -> Nil
+  | Cons (a_hd, a_tl) ->
+      map_product1 f a_hd a_tl b
+
+let product a b =
+  map_product (fun a b -> (a, b)) a b
+
+let unzip seq =
+  (map fst seq, map snd seq)
+
+let split = unzip
+
+let partition_map f seq =
+  filter_map (fun x -> Stdcompat__either.find_left (f x)) seq,
+  filter_map (fun x -> Stdcompat__either.find_right (f x)) seq
+
+let partition p seq =
+  filter p seq, filter (fun x -> not (p x)) seq
+
+let rec of_dispenser f () =
+  match f () with
+  | None -> Nil
+  | Some item -> Cons (item, of_dispenser f)
+
+let to_dispenser seq =
+  let seq_ref = ref seq in
+  fun () ->
+    match !seq_ref () with
+    | Nil -> None
+    | Cons (hd, tl) ->
+        seq_ref := tl;
+        Some hd
+
+let rec ints i () =
+  Cons (i, ints (succ i))
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_1_0@
+let rec find_index_from index p seq =
+  match seq () with
+  | Nil -> None
+  | Cons (hd, tl) ->
+    if p hd then
+      Some index
+    else
+      find_index_from (succ index) p tl
+
+let find_index p seq =
+  find_index_from 0 p seq
+
+let rec find_mapi_from index f seq =
+  match seq () with
+  | Nil -> None
+  | Cons (hd, tl) ->
+    match f index hd with
+    | None -> find_mapi_from (succ index) f tl
+    | some -> some
+
+let find_mapi f seq =
+  find_mapi_from 0 f seq
+@END_BEFORE_5_1_0@

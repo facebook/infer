@@ -1,0 +1,182 @@
+@BEGIN_FROM_4_12_0@
+include Arg
+@END_FROM_4_12_0@
+@BEGIN_BEFORE_4_12_0@
+exception Help of string
+
+exception Bad of string
+
+let not_implemented () =
+  failwith "Stdcompat.Arg is not fully implemented yet. Please fill an issue: https://github.com/thierry-martinez/stdcompat/issues ."
+
+type spec =
+  | Unit of (unit -> unit)
+  | Bool of (bool -> unit)
+  | Set of bool ref
+  | Clear of bool ref
+  | String of (string -> unit)
+  | Set_string of string ref
+  | Int of (int -> unit)
+  | Set_int of int ref
+  | Float of (float -> unit)
+  | Set_float of float ref
+  | Tuple of spec list
+  | Symbol of string list * (string -> unit)
+  | Rest of (string -> unit)
+  | Rest_all of (string list -> unit)
+  | Expand of (string -> string array)
+
+type key = string
+
+type doc = string
+
+type usage_msg = string
+
+type anon_fun = string -> unit
+
+let rec no_expand spec =
+  match spec with
+  | Unit f -> Arg.Unit f
+  | Bool f -> Arg.Bool f
+  | Set r -> Arg.Set r
+  | Clear c -> Arg.Clear c
+  | String f -> Arg.String f
+  | Set_string r -> Arg.Set_string r
+  | Int f -> Arg.Int f
+  | Set_int r -> Arg.Set_int r
+  | Float f -> Arg.Float f
+  | Set_float r -> Arg.Set_float r
+  | Tuple l -> Arg.Tuple (List.map no_expand l)
+  | Symbol (l, f) -> Arg.Symbol (l, f)
+  | Rest f -> Arg.Rest f
+  | Rest_all _ -> not_implemented ()
+  @BEGIN_FROM_4_05_0@
+  | Expand f -> Expand f
+  @END_FROM_4_05_0@
+  @BEGIN_BEFORE_4_05_0@
+  | Expand _ -> not_implemented ()
+  @END_BEFORE_4_05_0@
+
+let rec expand spec =
+  match spec with
+  | Arg.Unit f -> Unit f
+  | Arg.Bool f -> Bool f
+  | Arg.Set r -> Set r
+  | Arg.Clear c -> Clear c
+  | Arg.String f -> String f
+  | Arg.Set_string r -> Set_string r
+  | Arg.Int f -> Int f
+  | Arg.Set_int r -> Set_int r
+  | Arg.Float f -> Float f
+  | Arg.Set_float r -> Set_float r
+  | Arg.Tuple l -> Tuple (List.map expand l)
+  | Arg.Symbol (l, f) -> Symbol (l, f)
+  | Arg.Rest f -> Rest f
+  @BEGIN_FROM_4_05_0@
+  | Arg.Expand f -> Expand f
+  @END_FROM_4_05_0@
+  @BEGIN_FROM_4_12_0@
+  | Arg.Rest_all f -> Rest_all f
+  @END_FROM_4_12_0@
+
+let no_expand_list l =
+  List.map (fun (k, s, d) -> k, no_expand s, d) l
+
+let expand_list l =
+  List.map (fun (k, s, d) -> k, expand s, d) l
+
+@BEGIN_FROM_3_12_0@
+let usage_string l msg =
+  Arg.usage_string (no_expand_list l) msg
+@END_FROM_3_12_0@
+@BEGIN_BEFORE_3_12_0@
+let usage_string l msg =
+  not_implemented ()
+@END_BEFORE_3_12_0@
+
+@BEGIN_FROM_3_08_0@
+let align ?limit:_limit l =
+  expand_list (Arg.align (no_expand_list l))
+@END_FROM_3_08_0@
+@BEGIN_BEFORE_3_08_0@
+let align ?limit:_limit _l =
+  not_implemented ()
+@END_BEFORE_3_08_0@
+
+let parse l anon msg =
+  Arg.parse (no_expand_list l) anon msg
+
+let parse_argv ?current argv l anon msg =
+  Arg.parse_argv ?current argv (no_expand_list l) anon msg
+
+let usage l msg =
+  Arg.usage (no_expand_list l) msg
+
+let current = Arg.current
+
+let read_aux trim sep file =
+  let channel = open_in_bin file in
+  try
+    let buffer = Buffer.create 20 in
+    let accu = ref [] in
+    let push () =
+      let s = Buffer.contents buffer in
+      let s =
+        if trim && s <> "" && s.[String.length s - 1] = '\r' then
+          String.sub s 0 (String.length s - 1)
+        else
+          s in
+      accu := s :: !accu in
+    try
+      while true do
+        let c = input_char channel in
+        if c = sep then
+          begin
+            push ();
+            Buffer.clear buffer
+          end
+        else
+          Buffer.add_char buffer c
+      done;
+      assert false
+    with End_of_file ->
+      if Buffer.length buffer > 0 then
+        push ();
+      close_in channel;
+      Array.of_list (List.rev !accu)
+  with e ->
+    close_in_noerr channel;
+    raise e
+
+let read_arg =
+  read_aux true '\n'
+
+let read_arg0 =
+  read_aux false '\x00'
+
+let write_aux sep file args =
+  let channel = open_out_bin file in
+  try
+    Array.iter (fun s -> Printf.fprintf channel "%s%c" s sep) args
+  with e ->
+    close_out_noerr channel;
+    raise e
+
+let write_arg =
+  write_aux '\n'
+
+let write_arg0 =
+  write_aux '\x00'
+
+let parse_argv_dynamic ?current:_current _ =
+  not_implemented ()
+
+let parse_dynamic _ =
+  not_implemented ()
+
+let parse_expand _ =
+  not_implemented ()
+
+let parse_and_expand_argv_dynamic _ =
+  not_implemented ()
+@END_BEFORE_4_12_0@

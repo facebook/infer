@@ -1,0 +1,101 @@
+@BEGIN_FROM_4_08_0@
+include Stdlib.Result
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type ('a, 'e) t = ('a, 'e) Stdcompat__pervasives.result =
+  | Ok of 'a
+  | Error of 'e
+
+let ok v = Ok v
+
+let error e = Error e
+
+let value r ~default =
+  match r with
+  | Ok v -> v
+  | Error _ -> default
+
+let get_ok r =
+  match r with
+  | Ok v -> v
+  | Error _ -> invalid_arg "result is Error _"
+
+let get_error r =
+  match r with
+  | Ok _ -> invalid_arg "result is Ok _"
+  | Error e -> e
+
+let bind r f =
+  match r with
+  | Ok v -> f v
+  | Error e -> Error e
+
+let join r =
+  match r with
+  | Ok v -> v
+  | Error e -> Error e
+
+let map f r =
+  match r with
+  | Ok v -> Ok (f v)
+  | Error e -> Error e
+
+let map_error f r =
+  match r with
+  | Ok v -> Ok v
+  | Error e -> Error (f e)
+
+let fold ~ok ~error r =
+  match r with
+  | Ok v -> ok v
+  | Error e -> error e
+
+let iter f r =
+  match r with
+  | Ok v -> f v
+  | Error _ -> ()
+
+let iter_error f r =
+  match r with
+  | Ok _ -> ()
+  | Error e -> f e
+
+let is_ok e =
+  match e with
+  | Ok _ -> true
+  | Error _ -> false
+
+let is_error e =
+  match e with
+  | Ok _ -> false
+  | Error _ -> true
+
+let equal ~ok ~error r r' =
+  match r, r' with
+  | Ok v, Ok v' -> ok v v'
+  | Error e, Error e' -> error e e'
+  | Ok _, Error _
+  | Error _, Ok _ -> false
+
+let compare ~ok ~error r r' =
+  match r, r' with
+  | Ok v, Ok v' -> ok v v'
+  | Ok _, Error _ -> -1
+  | Error _, Ok _ -> 1
+  | Error e, Error e' -> error e e'
+
+let to_option r =
+  match r with
+  | Ok v -> Some v
+  | Error _ -> None
+
+let to_list r =
+  match r with
+  | Ok v -> [v]
+  | Error _ -> []
+
+let to_seq r =
+  match r with
+  | Ok v -> fun () -> Stdcompat__seq.Cons (v, Stdcompat__seq.empty)
+  | Error _ -> Stdcompat__seq.empty
+@END_BEFORE_4_08_0@

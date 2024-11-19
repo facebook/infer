@@ -1,0 +1,86 @@
+@BEGIN_FROM_4_14_0@
+include Out_channel
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_5_2_0@
+let output_bigarray _channel _src _pos _len =
+  failwith "output_bigarray"
+
+let is_binary_mode _channel =
+  failwith "is_binary_mode"
+@END_BEFORE_5_2_0@
+@BEGIN_BEFORE_4_14_0@
+type t = out_channel
+
+type open_flag = Pervasives.open_flag =
+    Open_rdonly
+  | Open_wronly
+  | Open_append
+  | Open_creat
+  | Open_trunc
+  | Open_excl
+  | Open_binary
+  | Open_text
+  | Open_nonblock
+
+let stdout = stdout
+
+let stderr = stderr
+
+let open_bin = open_out_bin
+
+let open_text = open_out
+
+let open_gen = open_out_gen
+
+let read_and_close channel f =
+  Stdcompat__fun.protect
+    ~finally:(fun () -> close_out_noerr channel)
+    (fun () -> f channel)
+
+let with_open_bin filename f =
+  read_and_close (open_bin filename) f
+
+let with_open_text filename f =
+  read_and_close (open_text filename) f
+
+let with_open_gen flags perm filename f =
+  read_and_close (open_gen flags perm filename) f
+
+let seek = LargeFile.seek_out
+
+let pos = LargeFile.pos_out
+
+let length = LargeFile.out_channel_length
+
+let close = close_out
+
+let close_noerr = close_out_noerr
+
+let flush = flush
+
+let flush_all = flush_all
+
+let output_char = output_char
+
+let output_byte = output_byte
+
+let output_string = output_string
+
+let output_bytes = Stdcompat__pervasives.output_bytes
+
+let output = output
+
+let output_substring = Stdcompat__pervasives.output_substring
+
+let set_binary_mode = set_binary_mode_out
+
+let set_buffered _ _ =
+  failwith "Stdcompat.Out_channel.set_buffered is not implemented yet. Please fill an issue: https://github.com/thierry-martinez/stdcompat/issues ."
+
+let is_buffered _ = true
+@END_BEFORE_4_14_0@
+
+@BEGIN_BEFORE_5_1_0@
+let isatty _ic =
+  failwith "not implemented"
+@END_BEFORE_5_1_0@

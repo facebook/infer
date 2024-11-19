@@ -1,0 +1,7 @@
+description = "Stdcompat: compatibility module for OCaml standard library"
+requires = "@SEQ_PKG@ @RESULT_PKG@ @UCHAR_PKG@"
+version = "@VERSION@"
+archive(byte) = "stdcompat.cma"
+archive(native) = "stdcompat.cmxa"
+plugin(byte) = "stdcompat.cma"
+plugin(native) = "@SHARED_LIBS@"

@@ -1,0 +1,20 @@
+@BEGIN_FROM_5_1_0@
+module Hashtbl = MoreLabels.Hashtbl
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+module Hashtbl = Stdcompat__hashtbl
+@END_BEFORE_5_1_0@
+
+@BEGIN_FROM_5_1_0@
+module Map = MoreLabels.Map
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+module Map = Stdcompat__map
+@END_BEFORE_5_1_0@
+
+@BEGIN_FROM_5_1_0@
+module Set = MoreLabels.Set
+@END_FROM_5_1_0@
+@BEGIN_BEFORE_5_1_0@
+module Set = Stdcompat__set
+@END_BEFORE_5_1_0@

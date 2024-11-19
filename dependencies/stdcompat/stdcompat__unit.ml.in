@@ -1,0 +1,12 @@
+@BEGIN_FROM_4_08_0@
+include Unit
+@END_FROM_4_08_0@
+@BEGIN_BEFORE_4_08_0@
+type t = unit = ()
+
+let equal () () = true
+
+let compare () () = 0
+
+let to_string () = "()"
+@END_BEFORE_4_08_0@

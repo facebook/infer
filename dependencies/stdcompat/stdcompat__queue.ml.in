@@ -1,0 +1,81 @@
+include Queue
+
+@BEGIN_BEFORE_4_08_0@
+let take_opt q =
+  try Some (take q)
+  with Empty -> raise Empty
+
+let peek_opt q =
+  try Some (peek q)
+  with Empty -> raise Empty
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_07_0@
+@BEGIN_WITH_MAGIC@
+@BEGIN_FROM_4_03_0@
+@BEGIN_FROM_4_00_0@
+[@@@ocaml.warning "-37"]
+@END_FROM_4_00_0@
+
+type 'a cell =
+  | Nil
+  | Cons of { content: 'a; mutable next: 'a cell }
+
+type 'a internal = {
+  mutable length: int;
+  mutable first: 'a cell;
+  mutable last: 'a cell
+}
+
+let to_seq (q : 'a t) =
+  let q : 'a internal = Obj.magic q in
+  let rec aux c () = match c with
+    | Nil -> Stdcompat__seq.Nil
+    | Cons { content=x; next; } -> Stdcompat__seq.Cons (x, aux next)
+  in
+  aux q.first
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+type 'a cell = {
+    content: 'a;
+    mutable next: 'a cell
+  }
+
+type 'a internal = {
+    mutable length: int;
+    mutable tail: 'a cell
+  }
+
+let to_seq (q : 'a t) =
+  let q : 'a internal = Obj.magic q in
+  if q.length = 0 then
+    Stdcompat__seq.empty
+  else
+    begin
+      let tail = q.tail in
+      let rec aux cell () =
+        let tail' =
+          if cell == tail then
+            Stdcompat__seq.empty
+          else
+            aux cell.next in
+        Stdcompat__seq.Cons (cell.content, tail') in
+      aux tail.next
+    end
+@END_BEFORE_4_03_0@
+@END_WITH_MAGIC@
+@BEGIN_WITHOUT_MAGIC@
+let to_list q =
+  fold (fun accu content -> content :: accu) [] q
+
+let to_seq q =
+  Stdcompat__list.to_seq (List.rev (to_list q))
+@END_WITHOUT_MAGIC@
+
+let add_seq q i = Stdcompat__seq.iter (fun x -> push x q) i
+
+let of_seq g =
+  let q = create() in
+  add_seq q g;
+  q
+@END_BEFORE_4_07_0@

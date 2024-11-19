@@ -1,0 +1,153 @@
+module type S = sig
+@BEGIN_FROM_4_14_0@
+@BEGIN_WITH_UCHAR_PKG@
+@BEGIN_FROM_4_02_0@
+type t = Uchar.t[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t = Uchar.t
+@END_BEFORE_4_02_0@
+
+@END_WITH_UCHAR_PKG@
+@BEGIN_WITHOUT_UCHAR_PKG@
+@BEGIN_FROM_4_02_0@
+type t = Uchar.t[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t = Uchar.t
+@END_BEFORE_4_02_0@
+
+@END_WITHOUT_UCHAR_PKG@
+
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+@BEGIN_FROM_4_03_0@
+@BEGIN_WITH_UCHAR_PKG@
+type t = Uchar.t
+@END_WITH_UCHAR_PKG@
+@BEGIN_WITHOUT_UCHAR_PKG@
+type t = Uchar.t
+@END_WITHOUT_UCHAR_PKG@
+
+@END_FROM_4_03_0@
+@BEGIN_BEFORE_4_03_0@
+@BEGIN_WITH_UCHAR_PKG@
+@BEGIN_FROM_4_02_0@
+type t = Uchar.t[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t = Uchar.t
+@END_BEFORE_4_02_0@
+
+@END_WITH_UCHAR_PKG@
+@BEGIN_WITHOUT_UCHAR_PKG@
+@BEGIN_FROM_4_02_0@
+type t[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type t
+@END_BEFORE_4_02_0@
+
+@END_WITHOUT_UCHAR_PKG@
+
+@END_BEFORE_4_03_0@
+
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: type t[@@immediate ]
+@since 4.03.0: type t
+ *)
+
+@BEGIN_FROM_4_14_0@
+@BEGIN_FROM_4_02_0@
+type utf_decode = Uchar.utf_decode[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type utf_decode = Uchar.utf_decode
+@END_BEFORE_4_02_0@
+
+@END_FROM_4_14_0@
+@BEGIN_BEFORE_4_14_0@
+@BEGIN_FROM_4_02_0@
+type utf_decode[@@immediate ]
+@END_FROM_4_02_0@
+@BEGIN_BEFORE_4_02_0@
+type utf_decode
+@END_BEFORE_4_02_0@
+
+@END_BEFORE_4_14_0@
+(** @since 4.14.0: type utf_decode[@@immediate ]
+ *)
+
+val utf_decode_is_valid : utf_decode -> bool
+(** @since 4.14.0: val utf_decode_is_valid : utf_decode -> bool *)
+
+val utf_decode_uchar : utf_decode -> t
+(** @since 4.14.0: val utf_decode_uchar : utf_decode -> t *)
+
+val utf_decode_length : utf_decode -> int
+(** @since 4.14.0: val utf_decode_length : utf_decode -> int *)
+
+val utf_decode : int -> t -> utf_decode
+(** @since 4.14.0: val utf_decode : int -> t -> utf_decode *)
+
+val utf_decode_invalid : int -> utf_decode
+(** @since 4.14.0: val utf_decode_invalid : int -> utf_decode *)
+
+val utf_8_byte_length : t -> int
+(** @since 4.14.0: val utf_8_byte_length : t -> int *)
+
+val utf_16_byte_length : t -> int
+(** @since 4.14.0: val utf_16_byte_length : t -> int *)
+
+val bom : t
+(** @since 4.06.0: val bom : t *)
+
+val rep : t
+(** @since 4.06.0: val rep : t *)
+
+val min : t
+(** @since 4.03.0: val min : t *)
+
+val max : t
+(** @since 4.03.0: val max : t *)
+
+val succ : t -> t
+(** @since 4.03.0: val succ : t -> t *)
+
+val pred : t -> t
+(** @since 4.03.0: val pred : t -> t *)
+
+val is_valid : int -> bool
+(** @since 4.03.0: val is_valid : int -> bool *)
+
+val of_int : int -> t
+(** @since 4.03.0: val of_int : int -> t *)
+
+val unsafe_of_int : int -> t
+(** @since 4.03.0: val unsafe_of_int : int -> t *)
+
+val to_int : t -> int
+(** @since 4.03.0: val to_int : t -> int *)
+
+val is_char : t -> bool
+(** @since 4.03.0: val is_char : t -> bool *)
+
+val of_char : char -> t
+(** @since 4.03.0: val of_char : char -> t *)
+
+val to_char : t -> char
+(** @since 4.03.0: val to_char : t -> char *)
+
+val unsafe_to_char : t -> char
+(** @since 4.03.0: val unsafe_to_char : t -> char *)
+
+val equal : t -> t -> bool
+(** @since 4.03.0: val equal : t -> t -> bool *)
+
+val compare : t -> t -> int
+(** @since 4.03.0: val compare : t -> t -> int *)
+
+val hash : t -> int
+(** @since 4.03.0: val hash : t -> int *)
+
+end

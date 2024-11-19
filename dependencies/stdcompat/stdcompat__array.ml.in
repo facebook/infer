@@ -1,0 +1,231 @@
+include Array
+
+@BEGIN_BEFORE_5_2_0@
+let init_matrix m n f =
+  init m (fun i -> init n (fun j -> f i j))
+
+let shuffle ~rand array =
+  for i = length array - 1 downto 0 do
+    let j = rand (i + 1) in
+    let tmp = unsafe_get array i in
+    unsafe_set array i array.(j);
+    unsafe_set array j tmp
+  done
+@END_BEFORE_5_2_0@
+
+@BEGIN_BEFORE_4_08_0@
+type 'a t = 'a array
+@END_BEFORE_4_08_0@
+
+@BEGIN_BEFORE_4_02_0@
+let create_float l = Array.make l 0.
+
+let make_float = create_float
+@END_BEFORE_4_02_0@
+@BEGIN_FROM_4_02_0@
+@BEGIN_BEFORE_4_03_0@
+let create_float = Array.make_float
+@END_BEFORE_4_03_0@
+@END_FROM_4_02_0@
+
+@BEGIN_BEFORE_4_13_0@
+let fold_left_map f init array =
+  let r = ref init in
+  let array' = Array.map (fun item ->
+    let (accu, item') = f !r item in
+    r := accu;
+    item') array in
+  !r, array'
+
+let rec find_opt_rec f array i =
+  if i >= length array then
+    None
+  else
+    let item = unsafe_get array i in
+    if f item then
+      Some item
+    else
+      find_opt_rec f array (succ i)
+
+let find_opt f array =
+  find_opt_rec f array 0
+
+let rec find_map_rec f array i =
+  if i >= length array then
+    None
+  else
+    match f (unsafe_get array i) with
+    | None -> find_map_rec f array (succ i)
+    | Some _ as result -> result
+
+let find_map f array =
+  find_map_rec f array 0
+
+let split array =
+  let l = length array in
+  if l = 0 then
+    ([| |], [| |])
+  else
+    let (fst0, snd0) = unsafe_get array 0 in
+    let array_fst = Array.make l fst0 in
+    let array_snd = Array.make l snd0 in
+    for i = 1 to l - 1 do
+      let (fsti, sndi) = unsafe_get array i in
+      Array.unsafe_set array_fst i fsti;
+      Array.unsafe_set array_snd i sndi;
+    done;
+    (array_fst, array_snd)
+
+let combine array_fst array_snd =
+  if length array_fst <> length array_snd then
+    invalid_arg "Array.combine";
+  Array.init (length array_fst) (fun i ->
+    (unsafe_get array_fst i, unsafe_get array_snd i))
+@END_BEFORE_4_13_0@
+
+@BEGIN_BEFORE_4_11_0@
+exception Iter
+
+let for_all2 f array1 array2 =
+  if length array1 <> length array2 then
+    invalid_arg "Array.for_all2";
+  try
+    for i = 0 to length array1 - 1 do
+      if not (f (unsafe_get array1 i) (unsafe_get array2 i)) then
+        raise Iter
+    done;
+    true
+  with Iter -> false
+
+let exists2 f array1 array2 =
+  if length array1 <> length array2 then
+    invalid_arg "Array.exists2";
+  try
+    for i = 0 to length array1 - 1 do
+      if f (unsafe_get array1 i) (unsafe_get array2 i) then
+        raise Iter
+    done;
+    false
+  with Iter -> true
+@END_BEFORE_4_11_0@
+
+@BEGIN_BEFORE_4_03_0@
+let iter2 f array1 array2 =
+  if length array1 <> length array2 then
+    invalid_arg "Array.iter2";
+  for i = 0 to length array1 - 1 do
+    f (unsafe_get array1 i) (unsafe_get array2 i)
+  done
+
+let map2 f array1 array2 =
+  if length array1 <> length array2 then
+    invalid_arg "Array.map2";
+  init (length array1)
+    (fun i -> f (unsafe_get array1 i) (unsafe_get array2 i))
+
+let for_all f array =
+  try
+    for i = 0 to length array - 1 do
+      if not (f (unsafe_get array i)) then
+        raise Iter
+    done;
+    true
+  with Iter -> false
+
+let exists f array =
+  try
+    for i = 0 to length array - 1 do
+      if f (unsafe_get array i) then
+        raise Iter
+    done;
+    false
+  with Iter -> true
+
+let mem item =
+  exists (( = ) item)
+
+let memq item =
+  exists (( == ) item)
+@END_BEFORE_4_03_0@
+
+@BEGIN_BEFORE_4_06_0@
+module Floatarray = struct
+  let create = create_float
+
+  let length : Stdcompat__root.floatarray -> int = length
+
+  let get : Stdcompat__root.floatarray -> int -> float = get
+
+  let set : Stdcompat__root.floatarray -> int -> float -> unit = set
+
+  let unsafe_get : Stdcompat__root.floatarray -> int -> float = unsafe_get
+
+  let unsafe_set : Stdcompat__root.floatarray -> int -> float -> unit
+    = unsafe_set
+end
+@END_BEFORE_4_06_0@
+
+@BEGIN_BEFORE_4_07_0@
+let to_seq s = Stdcompat__tools.vec_to_seq length unsafe_get s
+
+let to_seqi s = Stdcompat__tools.vec_to_seqi length unsafe_get s
+@END_BEFORE_4_07_0@
+
+@BEGIN_BEFORE_4_07_1@
+(* Array.of_seq is redefined in OCaml 4.07.0 to circumvent a bug in the
+   implementation of the standard library. See:
+   - https://caml.inria.fr/mantis/view.php?id=7820
+   - https://github.com/ocaml/ocaml/pull/1897 *)
+
+let of_rev_list l =
+  match l with
+  | [] -> [||]
+  | hd :: tl ->
+      let len = List.length l in
+      let result = make len hd in
+      let rec fill i l =
+        match l with
+        | [] -> result
+        | hd :: tl ->
+            unsafe_set result i hd;
+            fill (pred i) tl in
+      fill (len - 2) tl
+
+let of_seq g =
+  of_rev_list (Stdcompat__seq.fold_left (fun accu x -> x :: accu) [] g)
+@END_BEFORE_4_07_1@
+
+@BEGIN_BEFORE_5_1_0@
+let map_inplace f array =
+  for i = 0 to length array - 1 do
+    unsafe_set array i (f (unsafe_get array i))
+  done
+
+let mapi_inplace f array =
+  for i = 0 to length array - 1 do
+    unsafe_set array i (f i (unsafe_get array i))
+  done
+
+let rec find_index_from index p array =
+  if index < length array then
+    if p (unsafe_get array index) then
+      Some index
+    else
+      find_index_from (succ index) p array
+  else
+    None
+
+let find_index p array =
+  find_index_from 0 p array
+
+let rec find_mapi_from index f array =
+  if index < length array then
+    match f index (unsafe_get array index) with
+    | None -> find_mapi_from (succ index) f array
+    | some -> some
+  else
+    None
+
+let find_mapi f array =
+  find_mapi_from 0 f array
+@END_BEFORE_5_1_0@

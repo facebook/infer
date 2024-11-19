@@ -1,0 +1,1 @@
+include Stdcompat__nativeint_s.S
