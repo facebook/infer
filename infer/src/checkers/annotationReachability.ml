@@ -337,6 +337,8 @@ let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analys
   let proc_name = Procdesc.get_proc_name proc_desc in
   let check_one_src_and_find_snk src =
     if method_overrides_annot src spec.models tenv proc_name then (
+      L.d_printfln "%s: Finding paths from source (`@%s`) `%a`" spec.kind src.Annot.class_name
+        Procname.pp proc_name ;
       (* If there are callsites to sinks, find/report such paths. *)
       Option.iter (Domain.find_opt spec.sink_annotation annot_map) ~f:(fun sink_map ->
           find_paths_to_snk analysis_data src spec sink_map ) ;
@@ -564,8 +566,11 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t op
   let specs = expensive_specs @ no_alloc_specs @ custom_specs in
   let proc_data = {TransferFunctions.analysis_data; loop_nodes; specs} in
   let post = Analyzer.compute_post proc_data ~initial proc_desc in
-  Option.iter post ~f:(fun annot_map ->
-      List.iter specs ~f:(fun spec ->
-          spec.AnnotationSpec.pre_check analysis_data ;
-          check_srcs_and_find_snk analysis_data spec annot_map ) ) ;
+  let pp_name f = F.pp_print_string f "annotation reachability reporting" in
+  AnalysisCallbacks.html_debug_new_node_session (Procdesc.get_exit_node proc_desc)
+    ~pp_name ~kind:`ExecNode ~f:(fun () ->
+      Option.iter post ~f:(fun annot_map ->
+          List.iter specs ~f:(fun spec ->
+              spec.AnnotationSpec.pre_check analysis_data ;
+              check_srcs_and_find_snk analysis_data spec annot_map ) ) ) ;
   post
