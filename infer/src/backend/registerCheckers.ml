@@ -261,7 +261,7 @@ let register checkers =
   List.iter ~f:register_one checkers
 
 
-module LanguageSet = Caml.Set.Make (Language)
+module LanguageSet = Stdlib.Set.Make (Language)
 
 let pp_checker fmt {checker; callbacks} =
   let langs_of_callbacks =

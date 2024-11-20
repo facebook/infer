@@ -394,7 +394,7 @@ let rec eval_sympath_partial ~mode params p mem =
   match p with
   | BoField.Prim (Symb.SymbolPath.Pvar x) -> (
     try ParamBindings.find (Pvar.get_name x) params
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
   | BoField.Prim (Symb.SymbolPath.Callsite {ret_typ; cs; obj_path}) -> (

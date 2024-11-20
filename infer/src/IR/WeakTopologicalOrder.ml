@@ -177,7 +177,7 @@ module Bourdoncle_SCC (CFG : PreProcCfg) = struct
             current strictly connected component.
           *)
           record_head node_dfn
-      | exception (Not_found_s _ | Caml.Not_found) ->
+      | exception (Not_found_s _ | Stdlib.Not_found) ->
           push_on_stack node
     in
     let rec process_stack partition =

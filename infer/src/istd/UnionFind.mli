@@ -19,8 +19,8 @@ end
 
 module Make
     (X : Element)
-    (XSet : Caml.Set.S with type elt = X.t)
-    (XMap : Caml.Map.S with type key = X.t) : sig
+    (XSet : Stdlib.Set.S with type elt = X.t)
+    (XMap : Stdlib.Map.S with type key = X.t) : sig
   type t [@@deriving compare, equal]
 
   val pp : (F.formatter -> X.t -> unit) -> F.formatter -> t -> unit

@@ -603,7 +603,7 @@ module MapOfPPMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
     else
       M.for_all
         (fun k lhs_v ->
-          try ValueDomain.leq ~lhs:lhs_v ~rhs:(M.find k rhs) with Caml.Not_found -> false )
+          try ValueDomain.leq ~lhs:lhs_v ~rhs:(M.find k rhs) with Stdlib.Not_found -> false )
         lhs
 
 
@@ -665,7 +665,7 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
     if phys_equal lhs rhs then true
     else
       try for_all (fun k rhs_v -> ValueDomain.leq ~lhs:(find k lhs) ~rhs:rhs_v) rhs
-      with Caml.Not_found -> false
+      with Stdlib.Not_found -> false
 
 
   let inter ~f astate1 astate2 =

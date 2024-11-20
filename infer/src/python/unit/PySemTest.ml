@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module StringHashtble = Caml.Hashtbl.Make (String)
+module StringHashtble = Stdlib.Hashtbl.Make (String)
 
 let newbindings () = StringHashtble.create 17
 

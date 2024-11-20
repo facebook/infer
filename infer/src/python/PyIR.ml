@@ -39,7 +39,7 @@ module rec Ident : sig
     val print : t
   end
 
-  module Hashtbl : Caml.Hashtbl.S with type key = t
+  module Hashtbl : Stdlib.Hashtbl.S with type key = t
 end = struct
   type t = string [@@deriving equal, compare, hash]
 
@@ -63,7 +63,7 @@ end = struct
     let print = "print"
   end
 
-  module Hashtbl = Caml.Hashtbl.Make (struct
+  module Hashtbl = Stdlib.Hashtbl.Make (struct
     type nonrec t = t
 
     let equal = equal
@@ -81,7 +81,7 @@ and QualName : sig
 
   val pp : F.formatter -> t -> unit
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 end = struct
   type t = {module_name: string; function_name: string} [@@deriving compare, equal]
 
@@ -101,7 +101,7 @@ end = struct
     {function_name; module_name}
 
 
-  module Map = Caml.Map.Make (struct
+  module Map = Stdlib.Map.Make (struct
     type nonrec t = t
 
     let compare = compare
@@ -133,7 +133,7 @@ module NodeName : sig
   val pp : F.formatter -> t -> unit
 
   module Map : sig
-    include Caml.Map.S with type key = t
+    include Stdlib.Map.S with type key = t
 
     val map_result : f:(key -> 'a -> ('b, 'c) result) -> 'a t -> ('b t, 'c) result
   end
@@ -151,7 +151,7 @@ end = struct
   let get_offset {offset} = offset
 
   module Map = struct
-    include Caml.Map.Make (struct
+    include Stdlib.Map.Make (struct
       type nonrec t = t
 
       let compare = compare
@@ -177,7 +177,7 @@ module SSA = struct
 
   let next n = 1 + n
 
-  module Hashtbl = Caml.Hashtbl.Make (struct
+  module Hashtbl = Stdlib.Hashtbl.Make (struct
     type nonrec t = t
 
     let equal = equal
@@ -2635,7 +2635,7 @@ module Module = struct
     F.fprintf fmt "@]@\n"
 end
 
-module CodeMap : Caml.Map.S with type key = FFI.Code.t = Caml.Map.Make (FFI.Code)
+module CodeMap : Stdlib.Map.S with type key = FFI.Code.t = Stdlib.Map.Make (FFI.Code)
 
 let build_code_object_unique_name module_name code =
   let rec visit map outer_name ({FFI.Code.co_consts} as code) =

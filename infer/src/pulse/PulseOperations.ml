@@ -118,7 +118,7 @@ end
 
 let conservatively_initialize_args arg_values astate =
   let reachable_values =
-    AbductiveDomain.reachable_addresses_from (Caml.List.to_seq arg_values) astate `Post
+    AbductiveDomain.reachable_addresses_from (Stdlib.List.to_seq arg_values) astate `Post
   in
   AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
 

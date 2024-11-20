@@ -366,7 +366,7 @@ end = struct
         try
           let n = Procdesc.NodeMap.find node !map in
           map := Procdesc.NodeMap.add node (n + 1) !map
-        with Caml.Not_found -> map := Procdesc.NodeMap.add node 1 !map )
+        with Stdlib.Not_found -> map := Procdesc.NodeMap.add node 1 !map )
       | None ->
           ()
     in
@@ -390,7 +390,7 @@ end = struct
     Invariant.reset_stats path
 
 
-  module PathMap = Caml.Map.Make (struct
+  module PathMap = Stdlib.Map.Make (struct
     type nonrec t = t [@@deriving compare]
   end)
 
@@ -399,7 +399,7 @@ end = struct
     let delayed = ref PathMap.empty in
     let add_path p =
       try ignore (PathMap.find p !delayed)
-      with Caml.Not_found ->
+      with Stdlib.Not_found ->
         incr delayed_num ;
         delayed := PathMap.add p !delayed_num !delayed
     in
@@ -424,10 +424,10 @@ end = struct
     in
     let rec doit n fmt path =
       try
-        if n > 0 then raise Caml.Not_found ;
+        if n > 0 then raise Stdlib.Not_found ;
         let num = PathMap.find path !delayed in
         F.fprintf fmt "P%d" num
-      with Caml.Not_found -> (
+      with Stdlib.Not_found -> (
         match path with
         | Pstart (node, _) ->
             F.fprintf fmt "n%a" Procdesc.Node.pp node
@@ -560,7 +560,7 @@ end
 
 (* =============== END of the Path module ===============*)
 
-module PropMap = Caml.Map.Make (struct
+module PropMap = Stdlib.Map.Make (struct
   type t = Prop.normal Prop.t
 
   let compare = Prop.compare_prop
@@ -657,7 +657,7 @@ end = struct
       try
         let path_old = PropMap.find p ps in
         Path.join path_old path
-      with Caml.Not_found -> path
+      with Stdlib.Not_found -> path
     in
     PropMap.add p path_new ps
 
@@ -681,7 +681,7 @@ end = struct
         let path_old = PropMap.find p !res in
         if path_nodes_subset path path_old (* do not propagate new path if it has no new nodes *)
         then res := PropMap.remove p !res
-      with Caml.Not_found -> res := PropMap.remove p !res
+      with Stdlib.Not_found -> res := PropMap.remove p !res
     in
     PropMap.iter rem ps2 ;
     !res

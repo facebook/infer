@@ -12,7 +12,7 @@ open! IStd
 
 (** {2 Sets of Propositions} *)
 
-module PropSet = Caml.Set.Make (struct
+module PropSet = Stdlib.Set.Make (struct
   type t = Prop.normal Prop.t
 
   let compare = Prop.compare_prop

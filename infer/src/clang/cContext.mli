@@ -32,7 +32,7 @@ val pp_var_to_destroy : Format.formatter -> var_to_destroy -> unit
 
 type curr_class = ContextClsDeclPtr of int | ContextNoCls [@@deriving compare]
 
-type str_node_map = (string, Procdesc.Node.t) Caml.Hashtbl.t
+type str_node_map = (string, Procdesc.Node.t) Stdlib.Hashtbl.t
 
 type t =
   { translation_unit_context: CFrontend_config.translation_unit_context
@@ -48,7 +48,7 @@ type t =
   ; vars_to_destroy: var_to_destroy list StmtMap.t
         (** mapping from a statement to a list of variables, that go out of scope after the end of
             the statement *)
-  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Caml.Hashtbl.t
+  ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Stdlib.Hashtbl.t
   ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t
         (** In order to know when to destruct C++ temporaries created in expressions containing
             conditionals (e.g. to hold the object created by [X()] in [b?foo(X()):goo()]), we

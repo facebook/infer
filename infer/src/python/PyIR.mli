@@ -25,7 +25,7 @@ end
 module NodeName : sig
   type t [@@deriving equal]
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
   val pp : Format.formatter -> t -> unit
 end
@@ -37,7 +37,7 @@ module SSA : sig
 
   val pp : Format.formatter -> t -> unit
 
-  module Hashtbl : Caml.Hashtbl.S with type key = t
+  module Hashtbl : Stdlib.Hashtbl.S with type key = t
 end
 
 module Ident : sig
@@ -47,7 +47,7 @@ module Ident : sig
 
   val pp : Format.formatter -> t -> unit
 
-  module Hashtbl : Caml.Hashtbl.S with type key = t
+  module Hashtbl : Stdlib.Hashtbl.S with type key = t
 
   module Special : sig
     val name : t
@@ -67,7 +67,7 @@ module QualName : sig
 
   val pp : Format.formatter -> t -> unit
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 end
 
 module UnaryOp : sig

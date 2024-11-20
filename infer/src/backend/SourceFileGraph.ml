@@ -102,7 +102,7 @@ module G = struct
     g
 
 
-  module Cache = Caml.Hashtbl.Make (Vertex)
+  module Cache = Stdlib.Hashtbl.Make (Vertex)
 
   let vertex_name =
     (* hashtable from source files to strings of the form "N%d". Used for dot conversion only. *)

@@ -181,7 +181,7 @@ let check_no_duplicates desc_list =
 
 let parse_mode_desc_lists = List.map ~f:(fun parse_mode -> (parse_mode, ref [])) all_of_parse_mode
 
-module SectionMap = Caml.Map.Make (struct
+module SectionMap = Stdlib.Map.Make (struct
   type t = String.t
 
   (* this must be the reverse of the order in which we want the sections to appear in the
@@ -213,7 +213,7 @@ let add parse_mode sections desc =
   desc_list := desc :: !desc_list ;
   let add_to_section (command, section) =
     let sections = List.Assoc.find_exn ~equal:InferCommand.equal help_sections_desc_lists command in
-    let prev_contents = try SectionMap.find section !sections with Caml.Not_found -> [] in
+    let prev_contents = try SectionMap.find section !sections with Stdlib.Not_found -> [] in
     sections := SectionMap.add section (desc :: prev_contents) !sections
   in
   List.iter sections ~f:add_to_section ;
@@ -980,7 +980,7 @@ let decode_inferconfig_to_argv path =
       in
       decode_json ~inferconfig_dir json_val @ result
     with
-    | Not_found_s _ | Caml.Not_found ->
+    | Not_found_s _ | Stdlib.Not_found ->
         warnf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
         result
     | YSU.Type_error (msg, json) ->

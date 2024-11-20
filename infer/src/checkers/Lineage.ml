@@ -1010,7 +1010,7 @@ module Out = struct
       of_sequence
         (Sequence.map
            ~f:(fun c -> Z.of_int (int_of_char c))
-           (Sequence.of_seq (Caml.String.to_seq s)) )
+           (Sequence.of_seq (Stdlib.String.to_seq s)) )
 
 
     let of_procname procname : t = of_string (Procname.hashable_name procname)

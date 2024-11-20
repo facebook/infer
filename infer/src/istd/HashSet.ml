@@ -6,8 +6,8 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
-module Seq = Caml.Seq
+module Hashtbl = Stdlib.Hashtbl
+module Seq = Stdlib.Seq
 
 module type S = sig
   type elt

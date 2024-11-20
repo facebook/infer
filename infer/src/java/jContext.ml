@@ -7,7 +7,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 open Javalib_pack
 open Sawja_pack
 module NodeTbl = Procdesc.NodeHash
@@ -53,7 +53,7 @@ let get_or_set_pvar_type context var typ =
       set_var_map context (JBir.VarMap.add var (pvar, otyp, typ) var_map)
     else set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map) ;
     (pvar, typ)
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     let procname = Procdesc.get_proc_name context.procdesc in
     let varname = Mangled.from_string (JBir.var_name_g var) in
     let pvar = Pvar.mk varname procname in
@@ -77,7 +77,7 @@ let get_var_type context var =
   try
     let _, _, otyp = JBir.VarMap.find var context.var_map in
     Some otyp
-  with Caml.Not_found -> None
+  with Stdlib.Not_found -> None
 
 
 let get_if_jumps context = context.if_jumps
@@ -91,12 +91,12 @@ let get_if_jump context node = NodeTbl.find_opt (get_if_jumps context) node
 let add_goto_jump context pc jump = Hashtbl.add (get_goto_jumps context) pc jump
 
 let get_goto_jump context pc =
-  try Hashtbl.find (get_goto_jumps context) pc with Caml.Not_found -> Next
+  try Hashtbl.find (get_goto_jumps context) pc with Stdlib.Not_found -> Next
 
 
 let is_goto_jump context pc =
   try match Hashtbl.find (get_goto_jumps context) pc with Jump _ -> true | _ -> false
-  with Caml.Not_found -> false
+  with Stdlib.Not_found -> false
 
 
 let exn_node_table = Procname.Hash.create 100

@@ -179,7 +179,7 @@ let exclude_in_loc source_file exclude_in exclude_matching =
             match Str.search_forward exclude_matching source_file 0 with
             | _ ->
                 true
-            | exception Caml.Not_found ->
+            | exception Stdlib.Not_found ->
                 false )
     | _ ->
         false

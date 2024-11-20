@@ -250,7 +250,7 @@ let maybe_make_hashtable_api ~loc td =
     let ct = Ast_helper.Typ.constr ~loc (Common.make_longident ~loc td.ptype_name.txt) [] in
     let body =
       [%expr
-        let module H = Caml.Hashtbl.Make (struct
+        let module H = Stdlib.Hashtbl.Make (struct
           type nonrec t = [%t ct]
 
           let equal = [%e equal_name_expr]

@@ -23,7 +23,7 @@ let raise_error ?backtrace error ~msg =
     | None ->
         raise exn
     | Some backtrace ->
-        Caml.Printexc.raise_with_backtrace exn backtrace
+        Stdlib.Printexc.raise_with_backtrace exn backtrace
   in
   match error with
   | ExternalError ->

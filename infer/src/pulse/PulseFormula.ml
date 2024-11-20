@@ -1433,7 +1433,7 @@ module Term = struct
 
 
   module VarMap = struct
-    include Caml.Map.Make (struct
+    include Stdlib.Map.Make (struct
       type nonrec t = t [@@deriving compare]
     end)
 
@@ -1852,7 +1852,7 @@ module Atom = struct
   let simplify_linear atom = map_terms atom ~f:Term.simplify_linear
 
   module Set = struct
-    include Caml.Set.Make (struct
+    include Stdlib.Set.Make (struct
       type nonrec t = t [@@deriving compare]
     end)
 
@@ -1868,7 +1868,7 @@ module Atom = struct
   end
 
   module Map = struct
-    include Caml.Map.Make (struct
+    include Stdlib.Map.Make (struct
       type nonrec t = t [@@deriving compare]
     end)
 
@@ -1905,7 +1905,7 @@ let pp_new_eqs fmt new_eqs =
 module MakeOccurrences (In : sig
   type t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 
   val pp_set : (F.formatter -> Var.t -> unit) -> F.formatter -> Set.t -> unit
 end) =
@@ -1952,7 +1952,7 @@ module TermDomainOrRange = struct
 
   type t = Term.t * domain_or_range [@@deriving compare]
 
-  module Set = Caml.Set.Make (struct
+  module Set = Stdlib.Set.Make (struct
     type nonrec t = t [@@deriving compare]
   end)
 
@@ -4394,20 +4394,20 @@ module DeadVariables = struct
     (* a map where a vertex maps to the set of destination vertices *)
     (* unused but can be useful for debugging *)
     let _pp_graph fmt graph =
-      Caml.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
+      Stdlib.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
     in
     (* 16 because why not *)
-    let graph = Caml.Hashtbl.create 16 in
+    let graph = Stdlib.Hashtbl.create 16 in
     (* add [src->vs] to [graph] (but not the symmetric edges) *)
     let add_set src vs =
       let dest =
-        match Caml.Hashtbl.find_opt graph src with
+        match Stdlib.Hashtbl.find_opt graph src with
         | None ->
             vs
         | Some dest0 ->
             Var.Set.union vs dest0
       in
-      Caml.Hashtbl.replace graph src dest
+      Stdlib.Hashtbl.replace graph src dest
     in
     (* add edges between all pairs of [vs] *)
     let add_all vs = Var.Set.iter (fun v -> add_set v vs) vs in
@@ -4451,8 +4451,8 @@ module DeadVariables = struct
       in [graph]. *)
   let get_reachable_from graph vs =
     (* HashSet represented as a [Hashtbl.t] mapping items to [()], start with the variables in [vs] *)
-    let reachable = Caml.Hashtbl.create (Var.Set.cardinal vs) in
-    Var.Set.iter (fun v -> Caml.Hashtbl.add reachable v ()) vs ;
+    let reachable = Stdlib.Hashtbl.create (Var.Set.cardinal vs) in
+    Var.Set.iter (fun v -> Stdlib.Hashtbl.add reachable v ()) vs ;
     (* Do a Dijkstra-style graph transitive closure in [graph] starting from [vs]. At each step,
        [new_vs] contains the variables to explore next. Iterative to avoid blowing the stack. *)
     let new_vs = ref (Var.Set.elements vs) in
@@ -4460,17 +4460,17 @@ module DeadVariables = struct
       (* pop [new_vs] *)
       let[@warning "-partial-match"] (v :: rest) = !new_vs in
       new_vs := rest ;
-      Caml.Hashtbl.find_opt graph v
+      Stdlib.Hashtbl.find_opt graph v
       |> Option.iter ~f:(fun vs' ->
              Var.Set.iter
                (fun v' ->
-                 if not (Caml.Hashtbl.mem reachable v') then (
+                 if not (Stdlib.Hashtbl.mem reachable v') then (
                    (* [v'] seen for the first time: we need to explore it *)
-                   Caml.Hashtbl.replace reachable v' () ;
+                   Stdlib.Hashtbl.replace reachable v' () ;
                    new_vs := v' :: !new_vs ) )
                vs' )
     done ;
-    Caml.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
+    Stdlib.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
 
 
   (** Get rid of atoms when they contain only variables that do not appear in atoms mentioning

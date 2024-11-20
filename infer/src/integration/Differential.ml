@@ -11,7 +11,7 @@ module L = Logging
 
 (** set of lists of locations for remembering what trace ends have been reported *)
 module LocListSet = struct
-  include Caml.Set.Make (struct
+  include Stdlib.Set.Make (struct
     type t = Location.t list [@@deriving compare]
   end)
 

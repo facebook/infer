@@ -24,7 +24,7 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc ~f_instr_list =
     | node :: other_node ->
         let converted_node =
           try Procdesc.NodeMap.find node !node_map
-          with Caml.Not_found ->
+          with Stdlib.Not_found ->
             let new_node = convert_node node
             and successors = Procdesc.Node.get_succs node
             and exn_nodes = Procdesc.Node.get_exn node in
@@ -59,7 +59,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
   in
   let subst_map = ref Ident.Map.empty in
   let redirect_typename origin_id =
-    try Some (Ident.Map.find origin_id !subst_map) with Caml.Not_found -> None
+    try Some (Ident.Map.find origin_id !subst_map) with Stdlib.Not_found -> None
   in
   let convert_instr = function
     | Sil.Load
@@ -69,7 +69,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         ; loc } ->
         let specialized_typname =
           try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions
-          with Caml.Not_found -> origin_typename
+          with Stdlib.Not_found -> origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
         let typ = mk_ptr_typ specialized_typname in
@@ -78,7 +78,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         {id; e= Exp.Var origin_id as origin_exp; typ= {Typ.desc= Tstruct _} as origin_typ; loc} ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
-          with Caml.Not_found -> origin_typ
+          with Stdlib.Not_found -> origin_typ
         in
         Some (Sil.Load {id; e= convert_exp origin_exp; typ= updated_typ; loc})
     | Sil.Load {id; e= origin_exp; typ; loc} ->

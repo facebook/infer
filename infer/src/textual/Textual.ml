@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 module L = Logging
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 module Lang = struct
   type t = Java | Hack | Python [@@deriving equal]
@@ -53,7 +53,7 @@ module Location = struct
         F.fprintf fmt "<unknown line>"
 
 
-  module Set = Caml.Set.Make (T)
+  module Set = Stdlib.Set.Make (T)
 end
 
 module SourceFile = struct
@@ -90,9 +90,9 @@ module type NAME = sig
 
   module HashSet : HashSet.S with type elt = t
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module Name : NAME = struct
@@ -116,8 +116,8 @@ module Name : NAME = struct
 
   module Hashtbl = Hashtbl.Make (T)
   module HashSet = HashSet.Make (T)
-  module Map = Caml.Map.Make (T)
-  module Set = Caml.Set.Make (T)
+  module Map = Stdlib.Map.Make (T)
+  module Set = Stdlib.Set.Make (T)
 end
 
 module ProcName : NAME = Name
@@ -327,9 +327,9 @@ module Ident : sig
 
   val pp : F.formatter -> t -> unit
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 
   (* We assume idents are totally ordered.
      [next id] returns an ident that is strictly greater than [id] wrt this order. *)

@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-module ConfigProcnameSet = Caml.Set.Make (struct
+module ConfigProcnameSet = Stdlib.Set.Make (struct
   (* workaround: since there is no way to have @@deriving directive
      in atd declaration, we redefine the type *)
   type t = Config_impact_data_t.config_item = {method_name: string; class_name: string}

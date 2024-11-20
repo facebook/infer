@@ -266,7 +266,7 @@ include module type of struct
 end
 
 (** Hash tables with proc names as keys. *)
-module Hash : Caml.Hashtbl.S with type key = t
+module Hash : Stdlib.Hashtbl.S with type key = t
 
 module LRUHash : LRUHashtbl.S with type key = t
 

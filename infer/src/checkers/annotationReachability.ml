@@ -309,7 +309,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       let fst_call_site =
         (* Just pick one path forward (per sink procedure) to avoid path explosion *)
         try Domain.CallSites.min_elt call_sites
-        with Caml.Not_found -> L.die InternalError "Callsite map should not be empty"
+        with Stdlib.Not_found -> L.die InternalError "Callsite map should not be empty"
       in
       (* Report the issue where the source makes the first call *)
       let report_loc = CallSite.loc fst_call_site.call_site in

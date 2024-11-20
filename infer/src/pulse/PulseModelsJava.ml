@@ -13,7 +13,7 @@ open PulseModelsImport
 module DSL = PulseModelsDSL
 module Cplusplus = PulseModelsCpp
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
-module StringSet = Caml.Set.Make (String)
+module StringSet = Stdlib.Set.Make (String)
 
 let mk_java_field pkg clazz field =
   Fieldname.make (Typ.JavaClass (JavaClassName.make ~package:(Some pkg) ~classname:clazz)) field

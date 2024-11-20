@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions. *)
 
@@ -88,7 +88,7 @@ end
 module GotoLabel = struct
   let find_goto_label context label sil_loc =
     try Hashtbl.find context.CContext.label_map label
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
       let new_node =
         Procdesc.create_node context.CContext.procdesc sil_loc (Procdesc.Node.Skip_node node_name)

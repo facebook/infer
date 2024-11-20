@@ -349,7 +349,7 @@ let get_passed_by_ref_invariant_map proc_desc =
   PassedByRefAnalyzer.exec_cfg cfg () ~initial:VarSet.empty
 
 
-module IntLitSet = Caml.Set.Make (IntLit)
+module IntLitSet = Stdlib.Set.Make (IntLit)
 
 let ignored_constants =
   let int_lit_constants =

@@ -10,13 +10,13 @@ open! IStd
 type t [@@deriving compare, sexp, hash, normalize]
 
 (** Maps from source_file *)
-module Map : Caml.Map.S with type key = t
+module Map : Stdlib.Map.S with type key = t
 
 (** Set of source files *)
-module Set : Caml.Set.S with type elt = t
+module Set : Stdlib.Set.S with type elt = t
 
 (** Mutable hash tables and sets keyed on source files *)
-module Hash : Caml.Hashtbl.S with type key = t
+module Hash : Stdlib.Hashtbl.S with type key = t
 
 module HashSet : HashSet.S with type elt = t
 

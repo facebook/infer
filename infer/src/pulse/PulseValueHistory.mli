@@ -19,9 +19,9 @@ module CellId : sig
 
   val next : unit -> t
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 type event =

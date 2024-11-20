@@ -36,7 +36,7 @@ module type S = sig
 
   val yojson_of_t : t -> Yojson.Safe.t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 include S with type key := AbstractValue.t

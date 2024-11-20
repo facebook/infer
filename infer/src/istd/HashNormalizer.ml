@@ -7,7 +7,7 @@
 open! Core
 
 module type NormalizedT = sig
-  include Caml.Hashtbl.HashedType
+  include Stdlib.Hashtbl.HashedType
 
   val normalize : t -> t
 end
@@ -30,7 +30,7 @@ module Make (T : NormalizedT) = struct
   type t = T.t
 
   let hash_normalize =
-    let module H = Caml.Hashtbl.Make (T) in
+    let module H = Stdlib.Hashtbl.Make (T) in
     let table : t H.t = H.create 11 in
     let () = register_reset (fun () -> H.reset table) in
     fun t ->

@@ -81,9 +81,9 @@ let pp_custom_of_report fmt report fields =
       | BugTrace ->
           pp_trace fmt issue.bug_trace (comma_separator index)
       | Key ->
-          F.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.key)
+          F.fprintf fmt "%s%s" (comma_separator index) (Stdlib.Digest.to_hex issue.key)
       | Hash ->
-          F.fprintf fmt "%s%s" (comma_separator index) (Caml.Digest.to_hex issue.hash)
+          F.fprintf fmt "%s%s" (comma_separator index) (Stdlib.Digest.to_hex issue.hash)
       | LineOffset ->
           F.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
       | QualifierContainsPotentialExceptionNote ->

@@ -54,7 +54,7 @@ let reset () = gs := initial ()
 
 let get_failure_stats node =
   try NodeHash.find !gs.failure_map node
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     let fs = {instr_fail= 0; instr_ok= 0; node_fail= 0; node_ok= 0; first_failure= None} in
     NodeHash.add !gs.failure_map node fs ;
     fs

@@ -7,7 +7,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 (** Printers for the analysis results *)
 
@@ -185,7 +185,7 @@ end = struct
       try
         let set = Hashtbl.find err_per_line err_data.loc.Location.line in
         Hashtbl.replace err_per_line err_data.loc.Location.line (String.Set.add set err_str)
-      with Caml.Not_found ->
+      with Stdlib.Not_found ->
         Hashtbl.add err_per_line err_data.loc.Location.line (String.Set.singleton err_str)
     in
     Errlog.iter add_err err_log ;
@@ -202,7 +202,7 @@ end = struct
     Procdesc.init_wto proc_desc ;
     let process_node n =
       let lnum = (Procdesc.Node.get_loc n).Location.line in
-      let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Caml.Not_found -> [] in
+      let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Stdlib.Not_found -> [] in
       Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
     in
     List.iter ~f:process_node (Procdesc.get_nodes proc_desc) ;
@@ -246,12 +246,12 @@ end = struct
                   else F.fprintf fmt "no summary for %s" proc_name_escaped
               | _ ->
                   () )
-      | exception Caml.Not_found ->
+      | exception Stdlib.Not_found ->
           () ) ;
       ( match Hashtbl.find table_err_per_line line_number with
       | errset ->
           String.Set.iter errset ~f:(pp_err_message fmt)
-      | exception Caml.Not_found ->
+      | exception Stdlib.Not_found ->
           () ) ;
       F.fprintf fmt "</td></tr>@\n"
     in
@@ -290,7 +290,7 @@ end = struct
                 if is_allow_listed file then (
                   let pdescs_in_file =
                     try Hashtbl.find pdescs_in_source file
-                    with Caml.Not_found -> Procname.Map.empty
+                    with Stdlib.Not_found -> Procname.Map.empty
                   in
                   let pdescs_in_file = Procname.Map.add proc_name proc_desc pdescs_in_file in
                   Hashtbl.replace pdescs_in_source file pdescs_in_file ;
@@ -306,7 +306,7 @@ end = struct
           match Hashtbl.find pdescs_in_source file with
           | pdescs_map ->
               Procname.Map.bindings pdescs_map |> List.map ~f:snd
-          | exception Caml.Not_found ->
+          | exception Stdlib.Not_found ->
               []
         in
         DB.Results_dir.init file ;

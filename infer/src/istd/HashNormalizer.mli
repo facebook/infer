@@ -9,7 +9,7 @@ open! Core
 
 (** a hashed type with a normalization function which respects equality *)
 module type NormalizedT = sig
-  include Caml.Hashtbl.HashedType
+  include Stdlib.Hashtbl.HashedType
 
   val normalize : t -> t
 end

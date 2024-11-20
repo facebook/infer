@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module L = Logging
 module F = Format
 
@@ -91,7 +91,7 @@ type err_data =
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
 module ErrDataSet = (* set err_data with no repeated loc *)
-Caml.Set.Make (struct
+Stdlib.Set.Make (struct
   type t = err_data [@@deriving compare]
 end)
 
@@ -184,7 +184,7 @@ let add_issue tbl err_key (err_datas : ErrDataSet.t) : bool =
     else (
       ErrLogHash.replace tbl err_key (ErrDataSet.union err_datas current_eds) ;
       true )
-  with Caml.Not_found | Not_found_s _ ->
+  with Stdlib.Not_found | Not_found_s _ ->
     ErrLogHash.add tbl err_key err_datas ;
     true
 

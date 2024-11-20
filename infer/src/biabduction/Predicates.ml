@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module F = Format
 module L = Logging
 
@@ -137,7 +137,7 @@ let equal_hpara_dll = [%compare.equal: hpara_dll]
 let is_objc_object = function Hpointsto (_, _, Sizeof {typ}) -> Typ.is_objc_class typ | _ -> false
 
 (** Sets of heap predicates *)
-module HpredSet = Caml.Set.Make (struct
+module HpredSet = Stdlib.Set.Make (struct
   type t = hpred
 
   let compare = compare_hpred ~inst:false
@@ -858,7 +858,7 @@ let sub_symmetric_difference sub1_in sub2_in =
 
 
 (** [sub_find filter sub] returns the expression associated to the first identifier that satisfies
-    [filter]. Raise [Not_found_s/Caml.Not_found] if there isn't one. *)
+    [filter]. Raise [Not_found_s/Stdlib.Not_found] if there isn't one. *)
 let sub_find filter (sub : subst) = snd (List.find_exn ~f:(fun (i, _) -> filter i) sub)
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the identifiers satisfying [filter]. *)
@@ -1053,7 +1053,7 @@ let create_sharing_env () = {exph= Exp.Hash.create 3; hpredh= HpredInstHash.crea
 (** Return a canonical representation of the exp *)
 let exp_compact sh e =
   try Exp.Hash.find sh.exph e
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     Exp.Hash.add sh.exph e e ;
     e
 
@@ -1084,7 +1084,7 @@ let hpred_compact_ sh hpred =
 
 let hpred_compact sh hpred =
   try HpredInstHash.find sh.hpredh hpred
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     let hpred' = hpred_compact_ sh hpred in
     HpredInstHash.add sh.hpredh hpred' hpred' ;
     hpred'

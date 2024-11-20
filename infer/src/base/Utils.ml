@@ -8,7 +8,7 @@
 open! IStd
 open PolyVariantEqual
 module F = Format
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module L = Die
 
 let fold_file_tree ~init ~f_dir ~f_reg ~path =
@@ -208,7 +208,7 @@ let directory_iter f path =
   if Sys.is_directory path = `Yes then loop [path] else f path
 
 
-let string_crc_hex32 s = Caml.Digest.to_hex (Caml.Digest.string s)
+let string_crc_hex32 s = Stdlib.Digest.to_hex (Stdlib.Digest.string s)
 
 let read_json_file path =
   try Ok (Yojson.Safe.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
@@ -320,7 +320,7 @@ let realpath_cache = Hashtbl.create 1023
 
 let realpath ?(warn_on_error = true) path =
   match Hashtbl.find realpath_cache path with
-  | exception Caml.Not_found -> (
+  | exception Stdlib.Not_found -> (
     match Filename.realpath path with
     | realpath ->
         Hashtbl.add realpath_cache path (Ok realpath) ;
@@ -409,7 +409,7 @@ let rm_all_in_dir ?except name = rm_all_in_dir_ ?except name |> ignore
 
 let rmtree ?except name = rmtree_ ?except name |> ignore
 
-let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.string
+let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Stdlib.Digest.string
 
 let unlink_file_on_exit temp_file =
   let description = "Cleaning temporary file " ^ temp_file in

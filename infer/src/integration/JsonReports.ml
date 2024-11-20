@@ -70,7 +70,7 @@ let compute_hash =
       , location_independent_proc_name
       , base_filename
       , location_independent_qualifier )
-    |> Caml.Digest.to_hex
+    |> Stdlib.Digest.to_hex
 
 
 let loc_trace_to_jsonbug_record trace_list =

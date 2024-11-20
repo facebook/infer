@@ -20,9 +20,9 @@ let to_string = function Checker checker -> Checker.get_id checker | Preanalysis
 
 let pp fmt timeable = F.pp_print_string fmt @@ to_string timeable
 
-module Map = Caml.Map.Make (struct
+module Map = Stdlib.Map.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 
 let mk_map_of_all ~init =
-  all |> Caml.List.to_seq |> Seq.map (fun timeable -> (timeable, init)) |> Map.of_seq
+  all |> Stdlib.List.to_seq |> Seq.map (fun timeable -> (timeable, init)) |> Map.of_seq

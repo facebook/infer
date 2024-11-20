@@ -13,7 +13,7 @@ module L = Logging
 (* how many lines of context around each report *)
 let source_context = 2
 
-module IssueHash = Caml.Hashtbl.Make (String)
+module IssueHash = Stdlib.Hashtbl.Make (String)
 
 let pp_n_spaces n fmt =
   for _ = 1 to n do

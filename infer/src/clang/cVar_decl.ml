@@ -62,13 +62,13 @@ let mk_temp_sil_var procdesc ~name =
 
 
 let mk_temp_sil_var_for_qual_type context ~name ~clang_pointer qual_type =
-  match Caml.Hashtbl.find_opt context.CContext.temporary_names clang_pointer with
+  match Stdlib.Hashtbl.find_opt context.CContext.temporary_names clang_pointer with
   | Some pvar_typ ->
       pvar_typ
   | None ->
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       let pvar_typ = (mk_temp_sil_var context.CContext.procdesc ~name, typ) in
-      Caml.Hashtbl.add context.CContext.temporary_names clang_pointer pvar_typ ;
+      Stdlib.Hashtbl.add context.CContext.temporary_names clang_pointer pvar_typ ;
       pvar_typ
 
 
@@ -302,14 +302,14 @@ let captured_vars_from_block_info context source_range captured_vars =
 
 
 let mk_temp_sil_var_for_expr context ~name ~clang_pointer expr_info =
-  match Caml.Hashtbl.find_opt context.CContext.temporary_names clang_pointer with
+  match Stdlib.Hashtbl.find_opt context.CContext.temporary_names clang_pointer with
   | Some pvar_typ ->
       pvar_typ
   | None ->
       let qual_type = expr_info.Clang_ast_t.ei_qual_type in
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       let pvar_typ = (mk_temp_sil_var context.CContext.procdesc ~name, typ) in
-      Caml.Hashtbl.add context.CContext.temporary_names clang_pointer pvar_typ ;
+      Stdlib.Hashtbl.add context.CContext.temporary_names clang_pointer pvar_typ ;
       pvar_typ
 
 

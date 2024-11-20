@@ -97,7 +97,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let node = WorkUnit.node max_priority_work in
       let t' = {t with worklist= M.remove (CFG.Node.id node) t.worklist} in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
-    with Caml.Not_found -> None
+    with Stdlib.Not_found -> None
 
 
   let empty cfg = {worklist= M.empty; cfg}

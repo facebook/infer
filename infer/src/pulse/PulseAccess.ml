@@ -49,7 +49,7 @@ module type S = sig
 
   val yojson_of_t : t -> Yojson.Safe.t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module T = struct
@@ -71,4 +71,4 @@ module T = struct
 end
 
 include T
-module Set = Caml.Set.Make (T)
+module Set = Stdlib.Set.Make (T)

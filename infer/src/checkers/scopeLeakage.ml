@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 module F = Format
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module VarMap = Hashtbl.Make (Var)
 
 let pp_loc_opt fmt loc_opt =

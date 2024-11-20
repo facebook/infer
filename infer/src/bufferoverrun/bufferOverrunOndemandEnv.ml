@@ -9,7 +9,7 @@ open! IStd
 module L = Logging
 module BoField = BufferOverrunField
 module SPath = Symb.SymbolPath
-module FormalTyps = Caml.Map.Make (Pvar)
+module FormalTyps = Stdlib.Map.Make (Pvar)
 
 type t =
   { tenv: Tenv.t

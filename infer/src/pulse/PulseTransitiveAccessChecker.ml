@@ -89,7 +89,7 @@ end = struct
             class_name )
     in
     let regexp_match regexp name =
-      match Str.search_forward regexp name 0 with _ -> true | exception Caml.Not_found -> false
+      match Str.search_forward regexp name 0 with _ -> true | exception Stdlib.Not_found -> false
     in
     let match_class_name_regex regexp =
       Option.exists class_name ~f:(fun class_name ->

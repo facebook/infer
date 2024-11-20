@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module IssueHash = Caml.Hashtbl.Make (String)
+module IssueHash = Stdlib.Hashtbl.Make (String)
 
 module ReportSummary = struct
   type t = {mutable n_issues: int; issue_type_counts: (int * string) IssueHash.t}

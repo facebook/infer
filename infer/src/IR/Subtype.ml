@@ -74,7 +74,7 @@ let check_subclass_tenv tenv c1 c2 : result =
   if is_root_class c2 then Yes else check c1
 
 
-module SubtypesMap = Caml.Map.Make (struct
+module SubtypesMap = Stdlib.Map.Make (struct
   (* pair of subtypes *)
   type t = Typ.Name.t * Typ.Name.t [@@deriving compare]
 end)
@@ -83,7 +83,7 @@ let check_subtype =
   let subtMap = ref SubtypesMap.empty in
   fun tenv c1 c2 : result ->
     try SubtypesMap.find (c1, c2) !subtMap
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       let is_subt = check_subclass_tenv tenv c1 c2 in
       subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
       is_subt

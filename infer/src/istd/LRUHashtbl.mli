@@ -35,4 +35,4 @@ module type S = sig
   (** visible for testing mainly; makes linear number of hashtable lookups *)
 end
 
-module Make (Key : Caml.Hashtbl.HashedType) : S with type key = Key.t
+module Make (Key : Stdlib.Hashtbl.HashedType) : S with type key = Key.t

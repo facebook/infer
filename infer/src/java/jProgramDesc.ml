@@ -23,7 +23,7 @@ let javalib_get_class classpath cn =
 
 type callee_status = Translated | Missing of JBasics.class_name * JBasics.method_signature
 
-module Classmap = Caml.Hashtbl.Make (struct
+module Classmap = Stdlib.Hashtbl.Make (struct
   type t = JBasics.class_name
 
   let equal = JBasics.cn_equal
@@ -33,7 +33,7 @@ end)
 
 type classmap = JCode.jcode Javalib.interface_or_class Classmap.t
 
-module Sourcemap = Caml.Hashtbl.Make (String)
+module Sourcemap = Stdlib.Hashtbl.Make (String)
 
 type sourcemap = JBasics.class_name list Sourcemap.t
 
@@ -52,7 +52,7 @@ type t =
 let get_classmap program = program.classmap
 
 let get_matching_class_names program source_file =
-  try Sourcemap.find program.sourcemap source_file with Caml.Not_found -> []
+  try Sourcemap.find program.sourcemap source_file with Stdlib.Not_found -> []
 
 
 let set_java_location program cn loc =
@@ -60,7 +60,7 @@ let set_java_location program cn loc =
 
 
 let get_java_location program cn =
-  try Some (JBasics.ClassMap.find cn program.java_location_map) with Caml.Not_found -> None
+  try Some (JBasics.ClassMap.find cn program.java_location_map) with Stdlib.Not_found -> None
 
 
 let set_callee_translated program pname = Procname.Hash.replace program.callees pname Translated
@@ -77,7 +77,7 @@ let iter_missing_callees program ~f =
 
 let lookup_node cn program =
   try Some (Classmap.find program.classmap cn)
-  with Caml.Not_found -> (
+  with Stdlib.Not_found -> (
     match javalib_get_class program.classpath_channel cn with
     | Some jclass ->
         Classmap.add program.classmap cn jclass ;
@@ -94,7 +94,7 @@ let create_sourcemap classes program =
         ()
     | Some source_file ->
         let class_names =
-          try Sourcemap.find program.sourcemap source_file with Caml.Not_found -> []
+          try Sourcemap.find program.sourcemap source_file with Stdlib.Not_found -> []
         in
         Sourcemap.replace program.sourcemap source_file (cn :: class_names)
   in

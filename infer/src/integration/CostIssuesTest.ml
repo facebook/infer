@@ -34,7 +34,7 @@ let pp_custom_of_cost_report fmt report cost_fields =
 
 let cost_tests_jsonbug_compare (cost1 : Jsoncost_t.item) (cost2 : Jsoncost_t.item) =
   let open Jsonbug_t in
-  [%compare: string * string * string * Caml.Digest.t * bool]
+  [%compare: string * string * string * Stdlib.Digest.t * bool]
     ( cost1.loc.file
     , cost1.procedure_id
     , cost1.exec_cost.hum.hum_polynomial

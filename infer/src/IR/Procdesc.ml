@@ -7,14 +7,14 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module L = Logging
 module F = Format
 
 module NodeKey = struct
-  type t = Caml.Digest.t
+  type t = Stdlib.Digest.t
 
-  let to_string = Caml.Digest.to_hex
+  let to_string = Stdlib.Digest.to_hex
 
   let compute node ~simple_key ~succs ~preds =
     let v = (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds) in
@@ -483,7 +483,7 @@ end
 (* =============== END of module Node =============== *)
 
 (** Map over nodes *)
-module NodeMap = Caml.Map.Make (Node)
+module NodeMap = Stdlib.Map.Make (Node)
 
 (** Hash table with nodes as keys. *)
 module NodeHash = Hashtbl.Make (Node)

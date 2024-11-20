@@ -227,7 +227,7 @@ module Exceptional = struct
       let add_exn_pred exn_preds_acc exn_succ_node =
         let exn_succ_node_id = Procdesc.Node.get_id exn_succ_node in
         let existing_exn_preds =
-          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc with Caml.Not_found -> []
+          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc with Stdlib.Not_found -> []
         in
         if not (List.mem ~equal:Procdesc.Node.equal existing_exn_preds n) then
           (* don't add duplicates *)
@@ -252,7 +252,7 @@ module Exceptional = struct
     match Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map with
     | exn_preds ->
         List.fold exn_preds ~init ~f
-    | exception Caml.Not_found ->
+    | exception Stdlib.Not_found ->
         init
 
 

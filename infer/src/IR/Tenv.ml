@@ -12,7 +12,7 @@ open Option.Monad_infix
 (** Module for Type Environments. *)
 
 (** Hash tables on type names. *)
-module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
+module TypenameHash = Stdlib.Hashtbl.Make (Typ.Name)
 
 (** Type for type environment. *)
 type t = Struct.t TypenameHash.t
@@ -47,7 +47,7 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
 let lookup tenv name : Struct.t option =
   let result =
     try Some (TypenameHash.find tenv name)
-    with Caml.Not_found -> (
+    with Stdlib.Not_found -> (
       (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
       match (name : Typ.Name.t) with
       | CStruct m ->
@@ -175,7 +175,7 @@ let get_parent tenv name =
 
 
 let get_fields_trans =
-  let module Fields = Caml.Set.Make (struct
+  let module Fields = Stdlib.Set.Make (struct
     type t = Struct.field
 
     let compare {Struct.name= x} {Struct.name= y} =

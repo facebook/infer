@@ -11,7 +11,7 @@ open PyIR
 
 let todo msg = L.die InternalError "TODO: %s" msg
 
-module GenericUnsafeHashtbl (H : Caml.Hashtbl.S) = struct
+module GenericUnsafeHashtbl (H : Stdlib.Hashtbl.S) = struct
   let get hashtbl mk_error_msg key =
     match H.find_opt hashtbl key with
     | Some v ->

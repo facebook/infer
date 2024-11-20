@@ -285,7 +285,7 @@ struct
         try
           let {AbstractInterpreter.State.post} = M.find node_id inv_map in
           F.asprintf "%a" pp_state post
-        with Caml.Not_found -> "_|_"
+        with Stdlib.Not_found -> "_|_"
       in
       if not (String.equal inv_str post_str) then
         let error_msg =

@@ -226,7 +226,7 @@ let get_pure_extended p =
             let old_id = Ident.Map.find pid primed_map in
             let new_atom = Predicates.Aeq (Var id, Var old_id) in
             (new_atom :: atoms, primed_map)
-          with Caml.Not_found -> (atoms, Ident.Map.add pid id primed_map)
+          with Stdlib.Not_found -> (atoms, Ident.Map.add pid id primed_map)
         in
         match base_atom with
         | Predicates.Aeq (Exp.Var id0, Exp.Var id1)
@@ -2105,14 +2105,14 @@ let compute_renaming free_vars =
 
 let rec idlist_assoc id = function
   | [] ->
-      raise Caml.Not_found
+      raise Stdlib.Not_found
   | (i, x) :: l ->
       if Ident.equal i id then x else idlist_assoc id l
 
 
 let ident_captured_ren ren id =
   (* If not defined in ren, id should be mapped to itself *)
-  try idlist_assoc id ren with Caml.Not_found -> id
+  try idlist_assoc id ren with Stdlib.Not_found -> id
 
 
 let rec exp_captured_ren ren (e : Exp.t) : Exp.t =

@@ -81,8 +81,8 @@ let register_timeout_handlers =
       already_registered := true ;
       (* Can't use Core since it wraps signal handlers and alarms with catch-all exception handlers
          that exit, while we need to propagate the timeout exceptions. *)
-      let module Gc = Caml.Gc in
-      let module Sys = Caml.Sys in
+      let module Gc = Stdlib.Gc in
+      let module Sys = Stdlib.Sys in
       match Config.os_type with
       | Config.Unix | Config.Cygwin ->
           Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action) ;

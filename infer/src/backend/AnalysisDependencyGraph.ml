@@ -224,7 +224,7 @@ module Serialized = struct
           is_first := false )
         coll
     in
-    let pp_proc_id_list fmt list = pp_proc_id_iter Caml.List.iter fmt list in
+    let pp_proc_id_list fmt list = pp_proc_id_iter Stdlib.List.iter fmt list in
     let pp_proc_id_set fmt set = pp_proc_id_iter Procname.Set.iter fmt set in
     Utils.with_file_out file ~f:(fun outf ->
         Printf.fprintf outf "schema_version=%d\n" schema_version ;

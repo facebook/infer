@@ -63,7 +63,7 @@ let create_condition_ls ids_private id_base p_leftover (inst : Predicates.subst)
     let insts_of_public_ids = Predicates.sub_range inst_public in
     let inst_of_base =
       try Predicates.sub_find (Ident.equal id_base) inst_public
-      with Not_found_s _ | Caml.Not_found -> assert false
+      with Not_found_s _ | Stdlib.Not_found -> assert false
     in
     let insts_of_private_ids = Predicates.sub_range inst_private in
     (insts_of_private_ids, insts_of_public_ids, inst_of_base)
@@ -216,7 +216,7 @@ let mk_rule_lsls_ls tenv k1 k2 impl_ok1 impl_ok2 para =
   let find x = sub_find (equal x) inst in
   try
   (find id_base, find id_next, find id_end)
-  with Not_found_s _ | Caml.Not_found -> assert false in
+  with Not_found_s _ | Stdlib.Not_found -> assert false in
   let spooky_case _ =
   (equal_lseg_kind Lseg_PE k_res)
   && (check_allocatedness p_leftover inst_end)
@@ -1225,7 +1225,7 @@ let abstract_spec ({InterproceduralAnalysis.tenv; _} as analysis_data) spec =
       (* TODO(rgrigore): [Prover.check_implication] gives up immediately if the consequence contains
          a disequality. As a workaround, here we drop pure facts from the consequent that are known to
          be true. *)
-      let module AtomSet = Caml.Set.Make (struct
+      let module AtomSet = Stdlib.Set.Make (struct
         type t = Predicates.atom
 
         let compare = Predicates.compare_atom

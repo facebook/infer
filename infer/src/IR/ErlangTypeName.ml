@@ -144,7 +144,7 @@ let calculate_hash atom =
   *)
   Md5.digest_string atom (* Compute md5 *)
   |> Md5.to_binary |> Bytes.of_string (* Get the hash as bytes *)
-  |> Fn.flip Caml.Bytes.get_int64_be 0 (* Get the first 8 bytes as a big-endian int64 *)
+  |> Fn.flip Stdlib.Bytes.get_int64_be 0 (* Get the first 8 bytes as a big-endian int64 *)
   |> Fn.flip Int64.shift_right_logical 8 (* Drop the last byte / keep the first 7 bytes only *)
   |> Int64.to_int_exn (* Put in an integer, raising if it unexpectedly does not fit *)
 

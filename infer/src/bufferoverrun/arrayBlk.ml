@@ -336,7 +336,7 @@ let diff : t -> t -> Itv.t =
     match find k arr1 with
     | a1 ->
         Itv.join acc (ArrInfo.diff a1 a2)
-    | exception Caml.Not_found ->
+    | exception Stdlib.Not_found ->
         Itv.top
   in
   fold diff_join arr2 Itv.bot

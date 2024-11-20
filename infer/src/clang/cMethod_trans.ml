@@ -126,7 +126,7 @@ let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
         Procname.Hash.remove cfg procname ;
         true )
       else false
-  | exception Caml.Not_found ->
+  | exception Stdlib.Not_found ->
       true
 
 
@@ -292,7 +292,7 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
       match Procname.Hash.find cfg proc_name with
       | procdesc_prev ->
           Procdesc.get_captured procdesc_prev
-      | exception Caml.Not_found ->
+      | exception Stdlib.Not_found ->
           captured_mangled
     else captured_mangled
   in
@@ -333,7 +333,7 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
                 {(Procdesc.get_attributes procdesc_prev) with captured= captured_mangled}
               in
               Procdesc.set_attributes procdesc_prev new_attributes
-          | exception Caml.Not_found ->
+          | exception Stdlib.Not_found ->
               () ) ;
     false )
 

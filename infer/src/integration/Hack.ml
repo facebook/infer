@@ -388,7 +388,7 @@ let process_output_in_parallel ic =
 
 let process_output_sequentially hackc_stdout =
   let _, units = Unit.extract_units hackc_stdout in
-  let units = Caml.List.of_seq units in
+  let units = Stdlib.List.of_seq units in
   let acc_tenv = Tenv.create () in
   let n_captured, n_error =
     List.fold units ~init:(0, 0) ~f:(fun (n_captured, n_error) unit ->

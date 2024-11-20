@@ -34,7 +34,7 @@ val to_list : 'a t -> 'a list
 val filter : 'a t list -> 'a list
 (** keep only [Sat _] elements *)
 
-val seq_fold : 'a Caml.Seq.t -> init:'accum -> f:('accum -> 'a -> 'accum t) -> 'accum t
+val seq_fold : 'a Stdlib.Seq.t -> init:'accum -> f:('accum -> 'a -> 'accum t) -> 'accum t
 
 module Import : sig
   include module type of Types

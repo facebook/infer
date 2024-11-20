@@ -50,7 +50,7 @@ let filter l = List.filter_map l ~f:sat
 
 let seq_fold seq ~init ~f =
   let open Import in
-  Caml.Seq.fold_left
+  Stdlib.Seq.fold_left
     (fun accum x ->
       let* accum in
       f accum x )

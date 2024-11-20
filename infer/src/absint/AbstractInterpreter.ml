@@ -619,7 +619,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
               Ok post
             with exn ->
               (* delay reraising to get a chance to write the debug HTML *)
-              let backtrace = Caml.Printexc.get_raw_backtrace () in
+              let backtrace = Stdlib.Printexc.get_raw_backtrace () in
               Error (exn, backtrace, instr) )
       in
       match result with
@@ -639,7 +639,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
                   (Sil.pp_instr ~print_types:true Pp.text)
                   instr ;
                 logged_error := true ) ) ;
-          Caml.Printexc.raise_with_backtrace exn backtrace
+          Stdlib.Printexc.raise_with_backtrace exn backtrace
     in
     (* hack to ensure that we call [exec_instr] on a node even if it has no instructions *)
     let instrs = if Instrs.is_empty instrs then Instrs.singleton Sil.skip_instr else instrs in

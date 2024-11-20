@@ -7,7 +7,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 (** Interprocedural Analysis *)
 
@@ -18,7 +18,7 @@ module F = Format
 type visitednode = {node: Procdesc.Node.t; visits: int}
 
 (** Set of nodes with number of visits *)
-module NodeVisitSet = Caml.Set.Make (struct
+module NodeVisitSet = Stdlib.Set.Make (struct
   type t = visitednode
 
   let compare_ids n1 n2 =
@@ -75,7 +75,7 @@ end = struct
 
   let create () : t = Hashtbl.create 11
 
-  let find table i = try Hashtbl.find table i with Caml.Not_found -> Paths.PathSet.empty
+  let find table i = try Hashtbl.find table i with Stdlib.Not_found -> Paths.PathSet.empty
 
   let add table i dset = Hashtbl.replace table i dset
 end
@@ -102,7 +102,7 @@ module Worklist = struct
   let add (wl : t) (node : Procdesc.Node.t) : unit =
     let visits =
       (* recover visit count if it was visited before *)
-      try Procdesc.NodeMap.find node wl.visit_map with Caml.Not_found -> 0
+      try Procdesc.NodeMap.find node wl.visit_map with Stdlib.Not_found -> 0
     in
     wl.todo_set <- NodeVisitSet.add {node; visits} wl.todo_set
 
@@ -115,7 +115,7 @@ module Worklist = struct
       wl.visit_map <- Procdesc.NodeMap.add min.node (min.visits + 1) wl.visit_map ;
       (* increase the visits *)
       min.node
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       L.internal_error "@\n...Work list is empty! Impossible to remove edge...@\n" ;
       assert false
 end
@@ -132,7 +132,7 @@ let path_set_create_worklist proc_cfg =
 let htable_retrieve (htable : (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key : Procdesc.Node.id)
     : Paths.PathSet.t =
   try Hashtbl.find htable key
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
     Paths.PathSet.empty
 
@@ -160,7 +160,7 @@ let path_set_checkout_todo (wl : Worklist.t) (node : Procdesc.Node.t) : Paths.Pa
     let new_visited = Paths.PathSet.union visited todo in
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited ;
     todo
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     L.die InternalError "could not find todo for node %a" Procdesc.Node.pp node
 
 
@@ -917,7 +917,7 @@ let report_custom_errors {InterproceduralAnalysis.proc_desc; err_log; tenv} summ
   List.iter ~f:report error_preconditions
 
 
-module SpecMap = Caml.Map.Make (struct
+module SpecMap = Stdlib.Map.Make (struct
   type t = Prop.normal BiabductionSummary.Jprop.t
 
   let compare = BiabductionSummary.Jprop.compare
@@ -967,7 +967,7 @@ let update_specs analysis_data prev_summary_opt phase
         current_specs :=
           SpecMap.add spec.BiabductionSummary.pre (new_post, new_visited)
             (SpecMap.remove spec.BiabductionSummary.pre !current_specs) )
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       changed := true ;
       current_specs :=
         SpecMap.add spec.BiabductionSummary.pre

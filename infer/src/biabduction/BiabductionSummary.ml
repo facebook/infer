@@ -150,7 +150,7 @@ end
 (***** End of module Jprop *****)
 
 module Visitedset = struct
-  include Caml.Set.Make (struct
+  include Stdlib.Set.Make (struct
     type t = Procdesc.Node.id * int list
 
     let compare (node_id1, _) (node_id2, _) = Procdesc.Node.compare_id node_id1 node_id2

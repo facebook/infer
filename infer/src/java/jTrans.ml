@@ -412,7 +412,7 @@ let create_callee_attributes tenv program cn ms procname =
         ; ret_type
         ; ret_annots
         ; is_abstract }
-    with Caml.Not_found -> None
+    with Stdlib.Not_found -> None
   in
   Option.bind ~f (JProgramDesc.lookup_node cn program)
 

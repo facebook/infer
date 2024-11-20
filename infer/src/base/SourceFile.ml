@@ -30,9 +30,9 @@ module T = struct
   type nonrec t = t [@@deriving compare, equal, hash, sexp]
 end
 
-module Map = Caml.Map.Make (T)
-module Set = Caml.Set.Make (T)
-module Hash = Caml.Hashtbl.Make (T)
+module Map = Stdlib.Map.Make (T)
+module Set = Stdlib.Set.Make (T)
+module Hash = Stdlib.Hashtbl.Make (T)
 module HashSet = HashSet.Make (T)
 
 let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
@@ -239,7 +239,7 @@ let exists_cache = String.Table.create ~size:256 ()
 
 let path_exists abs_path =
   try String.Table.find_exn exists_cache abs_path
-  with Not_found_s _ | Caml.Not_found ->
+  with Not_found_s _ | Stdlib.Not_found ->
     let result = ISys.file_exists abs_path in
     String.Table.set exists_cache ~key:abs_path ~data:result ;
     result
@@ -338,7 +338,7 @@ let is_matching patterns source_file =
   let path = to_rel_path source_file in
   List.exists
     ~f:(fun pattern ->
-      try Int.equal (Str.search_forward pattern path 0) 0 with Caml.Not_found -> false )
+      try Int.equal (Str.search_forward pattern path 0) 0 with Stdlib.Not_found -> false )
     patterns
 
 

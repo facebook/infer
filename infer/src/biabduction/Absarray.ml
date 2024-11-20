@@ -49,7 +49,7 @@ module StrexpMatch : sig
   type t
 
   val find_path : sigma -> path -> t
-  (** Find a strexp at the given path. Can raise [Not_found_s/Caml.Not_found] *)
+  (** Find a strexp at the given path. Can raise [Not_found_s/Stdlib.Not_found] *)
 
   val find : Tenv.t -> sigma -> (strexp_data -> bool) -> t list
   (** Find a strexp with the given property. *)
@@ -166,14 +166,14 @@ end = struct
   (** Store hpred using physical equality, and offset list for an array *)
   type t = sigma * Predicates.hpred * syn_offset list
 
-  (** Find an array at the given path. Can raise [Not_found_s/Caml.Not_found] *)
+  (** Find an array at the given path. Can raise [Not_found_s/Stdlib.Not_found] *)
   let find_path sigma (root, syn_offs) : t =
     let filter = function Predicates.Hpointsto (e, _, _) -> Exp.equal root e | _ -> false in
     let hpred = List.find_exn ~f:filter sigma in
     (sigma, hpred, syn_offs)
 
 
-  (** Find a sub strexp with the given property. Can raise [Not_found_s/Caml.Not_found] *)
+  (** Find a sub strexp with the given property. Can raise [Not_found_s/Stdlib.Not_found] *)
   let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
     let rec find_offset_sexp sigma_other hpred root offs se (typ : Typ.t) =
@@ -361,7 +361,7 @@ let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal
   let match_select_next (matchings_cur, matchings_fp) =
     match (matchings_cur, matchings_fp) with
     | [], [] ->
-        raise Caml.Not_found
+        raise Stdlib.Not_found
     | matched :: cur', fp' ->
         (matched, false, (cur', fp'))
     | [], matched :: fp' ->
@@ -375,7 +375,7 @@ let generic_strexp_abstract tenv (abstraction_name : string) (p_in : Prop.normal
       let strexp_data = StrexpMatch.get_data tenv matched in
       let p1, changed = do_abstract footprint_part p0 strexp_data in
       if changed then (p1, true) else match_abstract p0 matchings_cur_fp'
-    with Caml.Not_found -> (p0, false)
+    with Stdlib.Not_found -> (p0, false)
   in
   let rec find_then_abstract bound p0 =
     if Int.equal bound 0 then p0
@@ -433,7 +433,7 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
           let sigma_fp' = StrexpMatch.replace_index tenv true matched_fp index fresh_index in
           Prop.set p ~sigma_fp:sigma_fp'
         else Prop.expose p
-      with Not_found_s _ | Caml.Not_found -> Prop.expose p
+      with Not_found_s _ | Stdlib.Not_found -> Prop.expose p
     in
     let p3 =
       let matched = StrexpMatch.find_path p.Prop.sigma path in
@@ -447,7 +447,7 @@ let blur_array_index tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (in
       prop_replace_path_index tenv p3 path map
     in
     Prop.normalize tenv p4
-  with Not_found_s _ | Caml.Not_found -> p
+  with Not_found_s _ | Stdlib.Not_found -> p
 
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
@@ -476,7 +476,7 @@ let keep_only_indices tenv (p : Prop.normal Prop.t) (path : StrexpMatch.path) (i
             (sigma', true)
       | _ ->
           (sigma, false)
-    with Not_found_s _ | Caml.Not_found -> (sigma, false)
+    with Not_found_s _ | Stdlib.Not_found -> (sigma, false)
   in
   prop_update_sigma_and_fp_sigma tenv p prune_sigma
 

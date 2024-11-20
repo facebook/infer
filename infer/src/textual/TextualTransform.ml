@@ -724,7 +724,7 @@ let remove_if_terminator module_ =
 let let_propagation module_ =
   let get id ident_map =
     try Ident.Map.find id ident_map
-    with Caml.Not_found ->
+    with Stdlib.Not_found ->
       L.die InternalError "Textual.let_propagation.get failed: unknown identifier %a" Ident.pp id
   in
   let build_equations pdesc : Exp.t Ident.Map.t =
@@ -809,7 +809,7 @@ let out_of_ssa module_ =
       in
       fun node ->
         try NodeName.Map.find node map
-        with Caml.Not_found -> L.die InternalError "Textual.remove_ssa_params internal error"
+        with Stdlib.Not_found -> L.die InternalError "Textual.remove_ssa_params internal error"
     in
     (* Compute which nodes are handlers. This should *really* be done upfront in hackc but for now just see
        which ones are listed as handlers for some other other node. We'll assume that handlers are disjoint from

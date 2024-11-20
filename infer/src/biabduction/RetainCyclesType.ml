@@ -49,7 +49,7 @@ let compare (rc1 : t) (rc2 : t) =
   List.compare compare_retain_cycle_edge rc1.rc_elements rc2.rc_elements
 
 
-module Set = Caml.Set.Make (struct
+module Set = Stdlib.Set.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 

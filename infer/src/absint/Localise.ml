@@ -104,7 +104,7 @@ let get_value_line_tag tags =
     let value = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.value) tags) in
     let line = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.line) tags) in
     Some [value; line]
-  with Not_found_s _ | Caml.Not_found -> None
+  with Not_found_s _ | Stdlib.Not_found -> None
 
 
 (** extract from desc a value on which to apply polymorphic hash and equality *)

@@ -146,9 +146,9 @@ module Make
 
 
   let to_seq map =
-    Seq.append (Caml.List.to_seq map.new_)
+    Seq.append (Stdlib.List.to_seq map.new_)
       ( (* this is quadratic time but the lists are at most [Config.limit] long, assumed small *)
-        Caml.List.to_seq map.old
+        Stdlib.List.to_seq map.old
       |> Seq.filter (fun binding -> not (List.Assoc.mem ~equal:Key.equal map.new_ (fst binding))) )
 
 
@@ -156,7 +156,7 @@ module Make
 
   let iter map ~f = fold map ~init:() ~f:(fun () x -> f x)
 
-  let bindings map = to_seq map |> Caml.List.of_seq
+  let bindings map = to_seq map |> Stdlib.List.of_seq
 
   let exists map ~f =
     List.exists map.new_ ~f

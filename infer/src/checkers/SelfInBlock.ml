@@ -298,7 +298,7 @@ module Mem = struct
                   {pvar; typ; loc; kind= UNCHECKED_STRONG_SELF; is_implicit= false}
                   astate.vars
               else astate.vars
-            with Caml.Not_found -> astate.vars ) )
+            with Stdlib.Not_found -> astate.vars ) )
     in
     {astate with vars}
 
@@ -328,7 +328,7 @@ module Mem = struct
           || Option.is_some strong_pvar_opt
         then StrongEqualToWeakCapturedVars.add pvar {checked= false; loc} astate.strongVars
         else astate.strongVars
-      with Caml.Not_found -> astate.strongVars
+      with Stdlib.Not_found -> astate.strongVars
     in
     {astate with strongVars}
 end

@@ -16,8 +16,8 @@ end
 
 module Make
     (X : Element)
-    (XSet : Caml.Set.S with type elt = X.t)
-    (XMap : Caml.Map.S with type key = X.t) =
+    (XSet : Stdlib.Set.S with type elt = X.t)
+    (XMap : Stdlib.Map.S with type key = X.t) =
 struct
   module XSet = Iter.Set.Adapt (XSet)
 
@@ -41,7 +41,7 @@ struct
         [uf], assuming the [repr] is correct and the class does not intersect with any existing
         elements of [uf] *)
 
-    module Map : Caml.Map.S with type key = repr
+    module Map : Stdlib.Map.S with type key = repr
   end = struct
     type repr = X.t
 

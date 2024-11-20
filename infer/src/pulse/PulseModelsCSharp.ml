@@ -10,7 +10,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
-module StringSet = Caml.Set.Make (String)
+module StringSet = Stdlib.Set.Make (String)
 
 let mk_csharp_field namespace clazz field =
   Fieldname.make

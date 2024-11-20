@@ -16,7 +16,7 @@ type jump_kind = Next | Jump of int | Exit
 
 (** Hastable for storing nodes that correspond to if-instructions. These are used when adding the
     edges in the contrl flow graph. *)
-module NodeTbl : Caml.Hashtbl.S with type key = Procdesc.Node.t
+module NodeTbl : Stdlib.Hashtbl.S with type key = Procdesc.Node.t
 
 (** data structure for saving the three structures tht contain the intermediate representation of a
     file: the type environment, the control graph and the control flow graph *)
@@ -29,7 +29,7 @@ type t = private
   ; impl: JBir.t
   ; mutable var_map: (Pvar.t * Typ.t * Typ.t) JBir.VarMap.t
   ; if_jumps: int NodeTbl.t
-  ; goto_jumps: (int, jump_kind) Caml.Hashtbl.t
+  ; goto_jumps: (int, jump_kind) Stdlib.Hashtbl.t
   ; cn: JBasics.class_name
   ; source_file: SourceFile.t
   ; program: JProgramDesc.t }

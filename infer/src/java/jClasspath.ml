@@ -135,9 +135,9 @@ let load_from_verbose_output =
     | Some line when Str.string_match class_filename_re line 0 -> (
         let path =
           try Str.matched_group 5 line
-          with Caml.Not_found -> (
+          with Stdlib.Not_found -> (
             try Config.javac_classes_out ^/ Str.matched_group 2 line
-            with Caml.Not_found ->
+            with Stdlib.Not_found ->
               (* either matched group 5, 6, or 2 is found, see doc for [class_filename_re] above *)
               Str.matched_group 6 line )
         in

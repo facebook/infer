@@ -135,11 +135,11 @@ let ( && ) f1 f2 phi = f1 phi >>= f2
 
 (* we remember a mapping [Var.t -> string] to print more readable results that mention the
    user-defined variables by their readable names instead of [v123] *)
-let var_names = Caml.Hashtbl.create 4
+let var_names = Stdlib.Hashtbl.create 4
 
 let mk_var name =
   let v = AbstractValue.mk_fresh () in
-  Caml.Hashtbl.add var_names v name ;
+  Stdlib.Hashtbl.add var_names v name ;
   v
 
 
@@ -169,7 +169,7 @@ let () = PulseContext.set_tenv_global_for_testing dummy_tenv
 let global_state = AnalysisGlobalState.save ()
 
 let pp_var fmt v =
-  match Caml.Hashtbl.find_opt var_names v with
+  match Stdlib.Hashtbl.find_opt var_names v with
   | Some name ->
       F.pp_print_string fmt name
   | None ->

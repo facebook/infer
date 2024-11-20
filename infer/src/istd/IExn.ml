@@ -8,11 +8,11 @@
 open! Core
 
 let reraise_after ~f exn =
-  let backtrace = Caml.Printexc.get_raw_backtrace () in
+  let backtrace = Stdlib.Printexc.get_raw_backtrace () in
   let () = f () in
-  Caml.Printexc.raise_with_backtrace exn backtrace
+  Stdlib.Printexc.raise_with_backtrace exn backtrace
 
 
 let reraise_if ~f exn =
-  let backtrace = Caml.Printexc.get_raw_backtrace () in
-  if f () then Caml.Printexc.raise_with_backtrace exn backtrace
+  let backtrace = Stdlib.Printexc.get_raw_backtrace () in
+  if f () then Stdlib.Printexc.raise_with_backtrace exn backtrace

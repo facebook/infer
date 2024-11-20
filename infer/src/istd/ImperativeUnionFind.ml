@@ -21,7 +21,7 @@ end
 
 module Make (Set : Set) = struct
   module H = struct
-    include Caml.Hashtbl
+    include Stdlib.Hashtbl
 
     let fold : (('a, 'b) t, 'a * 'b, 'accum) Container.fold =
      fun h ~init ~f ->

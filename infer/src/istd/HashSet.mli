@@ -43,4 +43,4 @@ module type S = sig
   val is_empty : t -> bool
 end
 
-module Make (Key : Caml.Hashtbl.HashedType) : S with type elt = Key.t
+module Make (Key : Stdlib.Hashtbl.HashedType) : S with type elt = Key.t

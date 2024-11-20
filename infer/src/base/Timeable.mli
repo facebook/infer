@@ -17,7 +17,7 @@ val to_string : t -> string
 
 val pp : F.formatter -> t -> unit
 
-module Map : Caml.Map.S with type key = t
+module Map : Stdlib.Map.S with type key = t
 
 val mk_map_of_all : init:'a -> 'a Map.t
 (** [mk_map_of_all ~init] is a map [timeable -> init] for all [timeable] keys *)

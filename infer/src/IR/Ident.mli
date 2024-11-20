@@ -29,10 +29,10 @@ val equal_kind : kind -> kind -> bool
 (** Equality for kind. *)
 
 (** Set for identifiers. *)
-module Set : Caml.Set.S with type elt = t
+module Set : Stdlib.Set.S with type elt = t
 
 (** Map with ident as key. *)
-module Map : Caml.Map.S with type key = t
+module Map : Stdlib.Map.S with type key = t
 
 module HashQueue : Hash_queue.S with type key = t
 

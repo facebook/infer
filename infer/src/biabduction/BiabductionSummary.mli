@@ -45,7 +45,7 @@ module Jprop : sig
 end
 
 (** set of visited nodes: node id and list of lines of all the instructions *)
-module Visitedset : Caml.Set.S with type elt = Procdesc.Node.id * int list
+module Visitedset : Stdlib.Set.S with type elt = Procdesc.Node.id * int list
 
 (** A spec consists of:
 

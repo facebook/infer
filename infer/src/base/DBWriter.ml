@@ -628,7 +628,7 @@ module Command = struct
         Implementation.update_report_summary ~proc_uid ~merge_report_summary
 end
 
-type response = Ack | Error of (exn * Caml.Printexc.raw_backtrace)
+type response = Ack | Error of (exn * Stdlib.Printexc.raw_backtrace)
 
 let server_pid : Pid.t option ref = ref None
 
@@ -656,7 +656,7 @@ module Server = struct
         Command.execute command ;
         Marshal.to_channel out_channel Ack []
       with exn ->
-        Marshal.to_channel out_channel (Error (exn, Caml.Printexc.get_raw_backtrace ())) [] ) ;
+        Marshal.to_channel out_channel (Error (exn, Stdlib.Printexc.get_raw_backtrace ())) [] ) ;
     Out_channel.flush out_channel ;
     In_channel.close in_channel ;
     let useful_time = ExecutionDuration.add_duration_since useful_time now in
@@ -693,7 +693,7 @@ module Server = struct
     | Ack ->
         ()
     | Error (exn, exn_backtrace) ->
-        Caml.Printexc.raise_with_backtrace exn exn_backtrace ) ;
+        Stdlib.Printexc.raise_with_backtrace exn exn_backtrace ) ;
     In_channel.close in_channel
 
 

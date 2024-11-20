@@ -1134,7 +1134,7 @@ let attr_has_annot is_annotation tenv prop exp =
         None
   in
   try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp)
-  with Not_found_s _ | Caml.Not_found -> None
+  with Not_found_s _ | Stdlib.Not_found -> None
 
 
 let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp (fld, strexp) =

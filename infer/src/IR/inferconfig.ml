@@ -53,7 +53,7 @@ module FileContainsStringMatcher = struct
   let file_contains regexp regexp_not_opt source_file =
     let rec loop regexp file_in =
       try Str.search_forward regexp (In_channel.input_line_exn file_in) 0 >= 0 with
-      | Caml.Not_found ->
+      | Stdlib.Not_found ->
           loop regexp file_in
       | End_of_file ->
           false
@@ -120,7 +120,7 @@ module FileOrProcMatcher = struct
           ~f:(fun map pattern ->
             let previous =
               try String.Map.find_exn map pattern.class_name
-              with Not_found_s _ | Caml.Not_found -> []
+              with Not_found_s _ | Stdlib.Not_found -> []
             in
             String.Map.set ~key:pattern.class_name ~data:(pattern :: previous) map )
           ~init:String.Map.empty m_patterns
@@ -134,7 +134,7 @@ module FileOrProcMatcher = struct
             ~f:(fun p ->
               match p.method_name with None -> true | Some m -> String.equal m method_name )
             class_patterns
-        with Not_found_s _ | Caml.Not_found -> false
+        with Not_found_s _ | Stdlib.Not_found -> false
       in
       fun _ proc_name ->
         match proc_name with Procname.Java pname_java -> do_java pname_java | _ -> false

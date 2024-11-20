@@ -112,7 +112,7 @@ module ProcessedPair = struct
   type t = Var.t * Procdesc.Node.t [@@deriving compare]
 end
 
-module ProcessedPairSet = Caml.Set.Make (ProcessedPair)
+module ProcessedPairSet = Stdlib.Set.Make (ProcessedPair)
 
 (* get all the ptr variables (and their dependencies) occurring on the
    RHS of the definition of a given variable. *)

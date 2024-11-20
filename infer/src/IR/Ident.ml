@@ -9,7 +9,7 @@
 (** Module for Names and Identifiers *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module F = Format
 
 module Name = struct
@@ -73,11 +73,11 @@ let equal i1 i2 =
 
 
 (** {2 Set for identifiers} *)
-module Set = Caml.Set.Make (struct
+module Set = Stdlib.Set.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 
-module Map = Caml.Map.Make (struct
+module Map = Stdlib.Map.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 
@@ -128,7 +128,7 @@ module NameGenerator = struct
         let stamp = NameHash.find !name_map name in
         NameHash.replace !name_map name (stamp + 1) ;
         stamp + 1
-      with Caml.Not_found ->
+      with Stdlib.Not_found ->
         NameHash.add !name_map name 0 ;
         0
     in
@@ -141,7 +141,7 @@ module NameGenerator = struct
       let curr_stamp = NameHash.find !name_map name in
       let new_stamp = max curr_stamp stamp in
       NameHash.replace !name_map name new_stamp
-    with Caml.Not_found -> NameHash.add !name_map name stamp
+    with Stdlib.Not_found -> NameHash.add !name_map name stamp
 end
 
 (** Name used for the return variable *)

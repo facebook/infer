@@ -163,7 +163,7 @@ let recognize_exception exn : IssueToReport.t =
   | exn ->
       { issue_type= IssueType.failure_exe
       ; description=
-          Localise.verbatim_desc (F.asprintf "%a: %s" Exn.pp exn (Caml.Printexc.get_backtrace ()))
+          Localise.verbatim_desc (F.asprintf "%a: %s" Exn.pp exn (Stdlib.Printexc.get_backtrace ()))
       ; ocaml_pos= None }
 
 

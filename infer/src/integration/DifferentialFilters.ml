@@ -11,7 +11,7 @@ module L = Logging
 module FileRenamings = struct
   type renaming = {current: string; previous: string}
 
-  module CurrentToPreviousMap = Caml.Map.Make (String)
+  module CurrentToPreviousMap = Stdlib.Map.Make (String)
 
   type t = string CurrentToPreviousMap.t [@@deriving compare, equal]
 
@@ -61,7 +61,7 @@ module FileRenamings = struct
   let from_json_file file : t = from_json (In_channel.read_all file)
 
   let find_previous (t : t) current =
-    try CurrentToPreviousMap.find current t with Caml.Not_found -> current
+    try CurrentToPreviousMap.find current t with Stdlib.Not_found -> current
 
 
   module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
@@ -117,7 +117,7 @@ let relative_complements ~compare ~pred l1 l2 =
 
 let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Differential.t =
   let compare (issue1, previous_file1) (issue2, previous_file2) =
-    [%compare: Caml.Digest.t option * string * string]
+    [%compare: Stdlib.Digest.t option * string * string]
       (issue1.Jsonbug_t.node_key, issue1.Jsonbug_t.bug_type, previous_file1)
       (issue2.Jsonbug_t.node_key, issue2.Jsonbug_t.bug_type, previous_file2)
   in

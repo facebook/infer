@@ -105,7 +105,7 @@ end = struct
     else update reported_access (reported_set, f reported_access issue_log)
 end
 
-module PathModuloThis : Caml.Map.OrderedType with type t = AccessPath.t = struct
+module PathModuloThis : Stdlib.Map.OrderedType with type t = AccessPath.t = struct
   type t = AccessPath.t
 
   type var_ = Var.t
@@ -145,7 +145,7 @@ end = struct
           Call pname
   end
 
-  module M = Caml.Map.Make (Key)
+  module M = Stdlib.Map.Make (Key)
 
   type t = reported_access list M.t
 

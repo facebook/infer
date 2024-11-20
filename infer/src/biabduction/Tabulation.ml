@@ -107,7 +107,7 @@ let spec_find_rename proc_attrs specs :
       List.map ~f:(fun (x, _, _) -> Pvar.mk_callee x proc_name) proc_attrs.ProcAttributes.formals
     in
     (List.map ~f:rename_vars specs, formal_parameters)
-  with Caml.Not_found ->
+  with Stdlib.Not_found ->
     L.d_printfln "ERROR: found no entry for procedure %a. Give up..." Procname.pp proc_name ;
     raise
       (Exceptions.Precondition_not_found

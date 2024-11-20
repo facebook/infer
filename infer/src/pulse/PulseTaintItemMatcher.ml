@@ -84,7 +84,7 @@ let check_regex name_regex elem ?source_file exclude_in exclude_names =
     | _ ->
         L.d_printfln " Matching regex wrt %s, found match!" elem ;
         true
-    | exception Caml.Not_found ->
+    | exception Stdlib.Not_found ->
         false
 
 

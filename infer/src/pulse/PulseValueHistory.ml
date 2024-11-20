@@ -64,7 +64,7 @@ and t =
   | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
 [@@deriving compare, equal]
 
-module EventSet = Caml.Set.Make (struct
+module EventSet = Stdlib.Set.Make (struct
   type t = event [@@deriving compare]
 end)
 

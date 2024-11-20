@@ -7,7 +7,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 (** Operators for the abstract domain. In particular, join and meet. *)
 
@@ -95,7 +95,7 @@ end = struct
     match e with
     | Exp.Var _ -> (
       try Hashtbl.find tbl e
-      with Caml.Not_found ->
+      with Stdlib.Not_found ->
         Hashtbl.replace tbl e default ;
         default )
     | _ ->
@@ -716,7 +716,7 @@ end = struct
       List.iter ~f:handle_triple !tbl ;
       let rep x =
         try H.find rep_cache (get x)
-        with Caml.Not_found -> L.die L.InternalError "Dom.Rename.get_unify_eqs broken"
+        with Stdlib.Not_found -> L.die L.InternalError "Dom.Rename.get_unify_eqs broken"
       in
       rep
     in

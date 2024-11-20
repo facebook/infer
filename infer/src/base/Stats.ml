@@ -99,7 +99,7 @@ module PulseSummaryCountMap = struct
 
   let pp fmt map =
     let bindings = bindings map in
-    (* already sorted because we use Caml.Map *)
+    (* already sorted because we use Stdlib.Map *)
     let pp_binding fmt (key, value) = F.fprintf fmt "%d: %d" key value in
     let pp_sep fmt () = F.pp_print_string fmt ", " in
     F.fprintf fmt "{ %a }" (F.pp_print_list ~pp_sep pp_binding) bindings

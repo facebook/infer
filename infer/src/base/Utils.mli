@@ -112,7 +112,7 @@ val rm_all_in_dir : ?except:string list -> string -> unit
 val iter_dir : string -> f:(string -> unit) -> unit
 (** iterate on each entry in the directory except for "." and ".." *)
 
-val better_hash : 'a -> Caml.Digest.t
+val better_hash : 'a -> Stdlib.Digest.t
 (** Hashtbl.hash only hashes the first 10 meaningful values, [better_hash] uses everything. *)
 
 val unlink_file_on_exit : string -> unit

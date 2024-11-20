@@ -205,7 +205,7 @@ module Pp = struct
     let pp_binding = binding ~bind pp_key pp_value in
     Format.fprintf fmt "@[(%a)@]"
       (IFmt.Labelled.iter ~sep List.iter pp_binding)
-      ( Caml.Hashtbl.to_seq hashtbl |> Caml.List.of_seq
+      ( Stdlib.Hashtbl.to_seq hashtbl |> Stdlib.List.of_seq
       |> List.sort ~compare:(fun (k, _) (k', _) -> compare k k') )
 
 
@@ -549,8 +549,8 @@ end = struct
   let iter_hashtbl htbl f = Hashtbl.iteri ~f:(fun ~key ~data -> f (key, data)) htbl
 
   let caml_hashtbl_of_iter_exn iter =
-    let r = Caml.Hashtbl.create 42 in
-    iter (fun (key, data) -> Caml.Hashtbl.add r key data) ;
+    let r = Stdlib.Hashtbl.create 42 in
+    iter (fun (key, data) -> Stdlib.Hashtbl.add r key data) ;
     r
 
 
@@ -951,7 +951,7 @@ end = struct
       module HashSet = struct
         include HashSet.Make (Shape_id)
 
-        let of_list li = of_seq (Caml.List.to_seq li)
+        let of_list li = of_seq (Stdlib.List.to_seq li)
 
         let pp = Fmt.iter ~sep:Fmt.comma (Fn.flip iter) pp
       end
@@ -971,12 +971,12 @@ end = struct
         It also registers the formal and returned variables, to allow querying for their shapes
         using only the environment. *)
     type t =
-      { var_shapes: (Var.t, shape) Caml.Hashtbl.t
-      ; shape_structures: (Shape_id.t, structure) Caml.Hashtbl.t
+      { var_shapes: (Var.t, shape) Stdlib.Hashtbl.t
+      ; shape_structures: (Shape_id.t, structure) Stdlib.Hashtbl.t
       ; formals: shape array
       ; return: shape
-      ; argument_of: (Procname.t, Shape.HashSet.t array) Caml.Hashtbl.t
-      ; return_of: (Procname.t, Shape.HashSet.t) Caml.Hashtbl.t }
+      ; argument_of: (Procname.t, Shape.HashSet.t array) Stdlib.Hashtbl.t
+      ; return_of: (Procname.t, Shape.HashSet.t) Stdlib.Hashtbl.t }
 
     let pp fmt {var_shapes; shape_structures; formals; return; return_of} =
       (* TODO argument_of *)
@@ -995,7 +995,7 @@ end = struct
 
 
     let find_var_shape {var_shapes; _} var =
-      match Caml.Hashtbl.find_opt var_shapes var with
+      match Stdlib.Hashtbl.find_opt var_shapes var with
       | Some shape ->
           shape
       | None ->
@@ -1005,7 +1005,7 @@ end = struct
     (** Returns true iff the corresponding shape would be represented by several cells in a fully
         precise abstraction, ie. has known sub-fields. *)
     let has_sub_cells {shape_structures; _} shape =
-      match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
+      match (Stdlib.Hashtbl.find_opt shape_structures shape : structure option) with
       | None | Some Bottom | Some (Variant _) | Some LocalAbstract ->
           false
       | Some (Vector {all_map_value= Some _; _}) ->
@@ -1018,7 +1018,7 @@ end = struct
 
 
     let find_field_table {shape_structures; _} shape =
-      match (Caml.Hashtbl.find_opt shape_structures shape : structure option) with
+      match (Stdlib.Hashtbl.find_opt shape_structures shape : structure option) with
       | Some (Vector {fields; _}) ->
           Some fields
       | Some LocalAbstract ->
@@ -1111,7 +1111,7 @@ end = struct
 
 
     let find_shape_structure {shape_structures; _} shape =
-      Caml.Hashtbl.find_opt shape_structures shape
+      Stdlib.Hashtbl.find_opt shape_structures shape
 
 
     let find_var_path_structure summary var_path =
@@ -1162,10 +1162,12 @@ end = struct
       let formals =
         Procdesc.get_pvar_formals proc_desc
         |> List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar)
-        |> List.map ~f:(fun var -> Caml.Hashtbl.find var_shapes var)
+        |> List.map ~f:(fun var -> Stdlib.Hashtbl.find var_shapes var)
         |> List.to_array
       in
-      let return = Caml.Hashtbl.find var_shapes @@ Var.of_pvar @@ Procdesc.get_ret_var proc_desc in
+      let return =
+        Stdlib.Hashtbl.find var_shapes @@ Var.of_pvar @@ Procdesc.get_ret_var proc_desc
+      in
       let translate_shape_list shapes =
         List.map ~f:translate_shape shapes |> Shape.HashSet.of_list
       in
@@ -1199,7 +1201,7 @@ end = struct
              recursively introducing its fields. *)
           let state_shape = State.Shape.Private.create () in
           Hashtbl.set id_translation_tbl ~key:shape_id ~data:state_shape ;
-          ( match (Caml.Hashtbl.find_opt shape_structures shape_id : structure option) with
+          ( match (Stdlib.Hashtbl.find_opt shape_structures shape_id : structure option) with
           | None
           | Some Bottom
           | Some LocalAbstract
@@ -1238,7 +1240,7 @@ end = struct
     let introduce_var ~var id_translation_tbl {var_shapes; shape_structures; _}
         {State.shape_structures= state_shape_structures; _} =
       introduce_shape id_translation_tbl
-        (Caml.Hashtbl.find var_shapes var)
+        (Stdlib.Hashtbl.find var_shapes var)
         shape_structures state_shape_structures
 
 
@@ -1269,9 +1271,9 @@ end = struct
               "@[Assertion fails: incompatible shapes.@ @[`%a`: %a={%a}@]@ vs@ @[`%a`: %a={%a}@]@]"
               VarPath.pp var_path_1 Shape_id.pp var_path_shape_1
               (Fmt.option @@ Structure.pp pp_shape)
-              (Caml.Hashtbl.find_opt shape_structures var_path_shape_1)
+              (Stdlib.Hashtbl.find_opt shape_structures var_path_shape_1)
               VarPath.pp var_path_2 Shape_id.pp var_path_shape_2 (Fmt.option pp_structure)
-              (Caml.Hashtbl.find_opt shape_structures var_path_shape_2)
+              (Stdlib.Hashtbl.find_opt shape_structures var_path_shape_2)
 
 
     let finalise summary var_shape field_path =
@@ -1446,7 +1448,7 @@ end = struct
     let fold_return_of summary_option procname field_path ~init ~f =
       match summary_option with
       | Some ({return_of; _} as summary) ->
-          let shape_hset = Caml.Hashtbl.find return_of procname in
+          let shape_hset = Stdlib.Hashtbl.find return_of procname in
           fold_shape_hset summary shape_hset field_path ~init ~f
       | None ->
           f init []

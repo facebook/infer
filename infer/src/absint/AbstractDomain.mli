@@ -210,7 +210,7 @@ end
 module MinReprSet (Element : PrettyPrintable.PrintableOrderedType) : sig
   type elt = Element.t
 
-  include Caml.Set.OrderedType
+  include Stdlib.Set.OrderedType
 
   include WithBottom with type t := t
 

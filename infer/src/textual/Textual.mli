@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 
 module Lang : sig
   type t = Java | Hack | Python [@@deriving equal]
@@ -43,9 +43,9 @@ module type NAME = sig
 
   module HashSet : HashSet.S with type elt = t
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module ProcName : NAME (* procedure names, without their attachement type *)
@@ -161,9 +161,9 @@ end
 module Ident : sig
   type t [@@deriving equal]
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 
-  module Map : Caml.Map.S with type key = t
+  module Map : Stdlib.Map.S with type key = t
 
   val of_int : int -> t
 

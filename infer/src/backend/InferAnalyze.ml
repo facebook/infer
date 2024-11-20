@@ -34,8 +34,8 @@ let do_compaction_if_needed =
     Int64.(ns_since_last_compaction >= compaction_minimum_interval_ns)
   in
   fun () ->
-    let stat = Caml.Gc.quick_stat () in
-    let heap_words = stat.Caml.Gc.heap_words in
+    let stat = Stdlib.Gc.quick_stat () in
+    let heap_words = stat.Stdlib.Gc.heap_words in
     if
       heap_words >= compaction_if_heap_greater_equal_to_words
       && time_since_last_compaction_is_over_threshold ()

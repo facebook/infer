@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module F = Format
 module L = Logging
 
@@ -1177,7 +1177,7 @@ let replace_regex regex tgt name =
   match Str.search_forward regex name 0 with
   | _ ->
       Str.global_replace regex tgt name
-  | exception Caml.Not_found ->
+  | exception Stdlib.Not_found ->
       name
 
 

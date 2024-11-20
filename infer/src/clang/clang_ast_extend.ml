@@ -116,4 +116,4 @@ module TypePointerOrd = struct
           if restrict_cmp <> 0 then restrict_cmp else Bool.compare v1 v2
 end
 
-module TypePointerMap = Caml.Map.Make (TypePointerOrd)
+module TypePointerMap = Stdlib.Map.Make (TypePointerOrd)

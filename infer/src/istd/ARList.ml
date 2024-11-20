@@ -26,12 +26,12 @@ type +'a t = Empty | Cons of 'a * 'a t | Snoc of 'a t * 'a | Concat of 'a t * 'a
 let () =
   (* This is a pretty simple test to check that the runtime representation of OCaml lists is compatible with our lists and hence using [Obj.magic] for [of_list] is legit *)
   let exception RuntimeValue in
-  assert (Poly.(Caml.Obj.repr [RuntimeValue] = Caml.Obj.repr (Cons (RuntimeValue, Empty))))
+  assert (Poly.(Stdlib.Obj.repr [RuntimeValue] = Stdlib.Obj.repr (Cons (RuntimeValue, Empty))))
 
 
 (* Constructors *)
 
-let of_list = Caml.Obj.magic
+let of_list = Stdlib.Obj.magic
 
 let empty = Empty
 
@@ -72,7 +72,7 @@ let is_singleton_or_more = function
 
 let rec hd_tl_exn : 'a t -> 'a * 'a t = function
   | Empty ->
-      raise Caml.Not_found
+      raise Stdlib.Not_found
   | Cons (hd, tl) ->
       (hd, tl)
   | Snoc (front, last) ->
@@ -88,7 +88,7 @@ let rec hd_tl_exn : 'a t -> 'a * 'a t = function
 
 and front_last_exn : 'a t -> 'a t * 'a = function
   | Empty ->
-      raise Caml.Not_found
+      raise Stdlib.Not_found
   | Cons (hd, tl) ->
       let front, last = front_last_exn tl in
       (cons hd front, last)
@@ -104,7 +104,7 @@ and front_last_exn : 'a t -> 'a t * 'a = function
 
 let rec hd_exn : 'a t -> 'a = function
   | Empty ->
-      raise Caml.Not_found
+      raise Stdlib.Not_found
   | Cons (hd, _) ->
       hd
   | Snoc (front, _) | Concat (front, _) ->
@@ -115,7 +115,7 @@ let rec hd_exn : 'a t -> 'a = function
 
 and last_exn : 'a t -> 'a = function
   | Empty ->
-      raise Caml.Not_found
+      raise Stdlib.Not_found
   | Snoc (_, last) ->
       last
   | Cons (_, tl) | Concat (_, tl) ->

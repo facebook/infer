@@ -1003,7 +1003,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let exp = enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero in
           CAst_utils.update_enum_map_exn enum_constant_pointer exp ;
           exp
-    with Not_found_s _ | Caml.Not_found -> zero
+    with Not_found_s _ | Stdlib.Not_found -> zero
 
 
   and enum_constant_trans trans_state decl_ref =

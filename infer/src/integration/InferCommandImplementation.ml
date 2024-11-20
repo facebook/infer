@@ -146,7 +146,7 @@ let help () =
 
 module ReportSet = struct
   module type JsonReport = sig
-    include Caml.Hashtbl.HashedType
+    include Stdlib.Hashtbl.HashedType
 
     val json_loader : Yojson.lexer_state -> Lexing.lexbuf -> t list
 
@@ -157,7 +157,7 @@ module ReportSet = struct
 
   (** functor producing a json report set module (using the provided equality relation) *)
   module MakeSet (R : JsonReport) = struct
-    module HT = Caml.Hashtbl.Make (R)
+    module HT = Stdlib.Hashtbl.Make (R)
 
     type t = unit HT.t
 

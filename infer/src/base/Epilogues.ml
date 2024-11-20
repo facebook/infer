@@ -43,7 +43,7 @@ let run () =
 exception Sigint
 
 (* Raise a specific exception when we get SIGINT (Control-C). *)
-let () = Caml.Sys.(set_signal sigint (Signal_handle (fun _ -> raise Sigint)))
+let () = Stdlib.Sys.(set_signal sigint (Signal_handle (fun _ -> raise Sigint)))
 
 let reset () =
   (early_callback := fun () -> ()) ;

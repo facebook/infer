@@ -201,7 +201,7 @@ let add_model_fields classpath_fields cn =
         Javalib.cf_fold (collect_models_class_fields classpath_field_map cn) jclass classpath_fields
     | _ ->
         classpath_fields
-  with Caml.Not_found -> classpath_fields
+  with Stdlib.Not_found -> classpath_fields
 
 
 let get_method_kind m =

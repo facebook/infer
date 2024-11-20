@@ -113,7 +113,7 @@ let string_of_build_system build_system =
 
 let build_system_of_exe_name name =
   try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
-  with Not_found_s _ | Caml.Not_found ->
+  with Not_found_s _ | Stdlib.Not_found ->
     L.(die UserError)
       "Unsupported build command '%s'.@\n\
        If this is an alias for another build system that infer supports, you can use@\n\
@@ -3762,7 +3762,7 @@ let post_parsing_initialization command_opt =
         match inferconfig_file with
         | Some inferconfig ->
             Printf.sprintf "version %s/inferconfig %s" Version.commit
-              (Caml.Digest.to_hex (Caml.Digest.file inferconfig))
+              (Stdlib.Digest.to_hex (Stdlib.Digest.file inferconfig))
         | None ->
             Version.commit
       in
@@ -3798,7 +3798,7 @@ let post_parsing_initialization command_opt =
     in
     let suggest_keep_going = should_print_backtrace_default && not !keep_going in
     let backtrace =
-      if is_infer_exit_zero then "" else Caml.Printexc.raw_backtrace_to_string raw_backtrace
+      if is_infer_exit_zero then "" else Stdlib.Printexc.raw_backtrace_to_string raw_backtrace
     in
     let print_exception () =
       let error prefix msg =
@@ -3834,7 +3834,7 @@ let post_parsing_initialization command_opt =
     Epilogues.run () ;
     Stdlib.exit exitcode
   in
-  Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
+  Stdlib.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
   let set_gc_params () =
     let ctrl = Gc.get () in

@@ -63,12 +63,12 @@ let add source_file cfg tenv integer_type_widths =
           source_file ;
         (* merge the proc names defined in the source file using a hashtbl so that order is
            preserved but merging is still linear time *)
-        let existing_proc_names = Caml.Hashtbl.create (List.length old_proc_names) in
+        let existing_proc_names = Stdlib.Hashtbl.create (List.length old_proc_names) in
         List.iter old_proc_names ~f:(fun proc_name ->
-            Caml.Hashtbl.add existing_proc_names proc_name () ) ;
+            Stdlib.Hashtbl.add existing_proc_names proc_name () ) ;
         let proc_names =
           List.fold new_proc_names ~init:old_proc_names ~f:(fun proc_names proc_name ->
-              if not (Caml.Hashtbl.mem existing_proc_names proc_name) then proc_name :: proc_names
+              if not (Stdlib.Hashtbl.mem existing_proc_names proc_name) then proc_name :: proc_names
               else proc_names )
         in
         (Tenv.merge_per_file ~dst:old_tenv ~src:tenv, proc_names)

@@ -18,7 +18,7 @@ include struct
   let _ = fun (_ : record) -> ()
 
   let hash_normalize_find_opt_record, hash_normalize_add_record =
-    let module H = Caml.Hashtbl.Make (struct
+    let module H = Stdlib.Hashtbl.Make (struct
       type nonrec t = record
 
       let equal = equal_record
@@ -82,7 +82,7 @@ include struct
   let _ = fun (_ : tuple) -> ()
 
   let hash_normalize_find_opt_tuple, hash_normalize_add_tuple =
-    let module H = Caml.Hashtbl.Make (struct
+    let module H = Stdlib.Hashtbl.Make (struct
       type nonrec t = tuple
 
       let equal = equal_tuple
@@ -152,7 +152,7 @@ include struct
   let _ = fun (_ : variant) -> ()
 
   let hash_normalize_find_opt_variant, hash_normalize_add_variant =
-    let module H = Caml.Hashtbl.Make (struct
+    let module H = Stdlib.Hashtbl.Make (struct
       type nonrec t = variant
 
       let equal = equal_variant
@@ -243,7 +243,7 @@ module SourceFile = struct
     let _ = fun (_ : t) -> ()
 
     let hash_normalize_find_opt, hash_normalize_add =
-      let module H = Caml.Hashtbl.Make (struct
+      let module H = Stdlib.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -334,7 +334,7 @@ module Location = struct
     let _ = fun (_ : t) -> ()
 
     let hash_normalize_find_opt, hash_normalize_add =
-      let module H = Caml.Hashtbl.Make (struct
+      let module H = Stdlib.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -401,7 +401,7 @@ module CSharpClassName = struct
     let _ = fun (_ : t) -> ()
 
     let hash_normalize_find_opt, hash_normalize_add =
-      let module H = Caml.Hashtbl.Make (struct
+      let module H = Stdlib.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -468,7 +468,7 @@ module JavaClassName = struct
     let _ = fun (_ : t) -> ()
 
     let hash_normalize_find_opt, hash_normalize_add =
-      let module H = Caml.Hashtbl.Make (struct
+      let module H = Stdlib.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -537,7 +537,7 @@ include struct
   let _ = fun (_ : recursive2) -> ()
 
   let hash_normalize_find_opt_recursive1, hash_normalize_add_recursive1 =
-    let module H = Caml.Hashtbl.Make (struct
+    let module H = Stdlib.Hashtbl.Make (struct
       type nonrec t = recursive1
 
       let equal = equal_recursive1
@@ -558,7 +558,7 @@ include struct
   and _ = hash_normalize_add_recursive1
 
   let hash_normalize_find_opt_recursive2, hash_normalize_add_recursive2 =
-    let module H = Caml.Hashtbl.Make (struct
+    let module H = Stdlib.Hashtbl.Make (struct
       type nonrec t = recursive2
 
       let equal = equal_recursive2

@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module BuiltinPureMethods = Caml.Set.Make (String)
+module BuiltinPureMethods = Stdlib.Set.Make (String)
 
 let pure_builtins =
   List.map ~f:Procname.get_method

@@ -50,13 +50,13 @@ val equal : t -> t -> bool
 (** Equality for expressions. *)
 
 (** Set of expressions. *)
-module Set : Caml.Set.S with type elt = t
+module Set : Stdlib.Set.S with type elt = t
 
 (** Map with expression keys. *)
-module Map : Caml.Map.S with type key = t
+module Map : Stdlib.Map.S with type key = t
 
 (** Hashtable with expression keys. *)
-module Hash : Caml.Hashtbl.S with type key = t
+module Hash : Stdlib.Hashtbl.S with type key = t
 
 val is_null_literal : t -> bool
 

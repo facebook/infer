@@ -13,7 +13,7 @@ open Yojson.Safe.Util
    OCaml's basic integers *)
 
 module L = Logging
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module Safe = Yojson.Safe
 
 module IntHash = struct

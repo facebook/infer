@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module Hashtbl = Caml.Hashtbl
+module Hashtbl = Stdlib.Hashtbl
 module StmtMap = ClangPointers.Map
 
 type cxx_temporary =
@@ -138,7 +138,7 @@ let add_block_static_var context block_name static_var_typ =
               static_vars static_var_typ
           then (static_vars, true)
           else (static_var_typ :: static_vars, false)
-        with Caml.Not_found -> ([static_var_typ], false)
+        with Stdlib.Not_found -> ([static_var_typ], false)
       in
       if not duplicate then
         let blocks_static_vars =
