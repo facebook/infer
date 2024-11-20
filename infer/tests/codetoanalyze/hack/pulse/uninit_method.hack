@@ -28,6 +28,11 @@ class MyClass implements MyInterface {
 }
 
 final class MyFinalClass extends MyClass {
+  public function closure_in_vector_ok(): void {
+    foreach (vec[self::foo<>] as $f) {
+      $_ = $f();
+    }
+  }
 }
 
 final class MyFinalUnknownClass extends UnknownClass {

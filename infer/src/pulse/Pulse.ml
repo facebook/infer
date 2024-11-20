@@ -563,10 +563,11 @@ module PulseTransferFunctions = struct
         (astate, func_args)
 
 
-  let modify_receiver_if_hack_function_reference path location astate func_args =
+  let modify_receiver_if_hack_function_reference path location astate callee_pname func_args =
     let open IOption.Let_syntax in
     ( match func_args with
-    | ({ProcnameDispatcher.Call.FuncArg.arg_payload= value} as arg) :: args ->
+    | ({ProcnameDispatcher.Call.FuncArg.arg_payload= value} as arg) :: args
+      when Option.exists callee_pname ~f:Procname.is_hack_late_binding ->
         let function_addr_hist = ValueOrigin.addr_hist value in
         let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
         if Typ.Name.Hack.is_generated_curry dynamic_type_name then
@@ -578,7 +579,7 @@ module PulseTransferFunctions = struct
           in
           (astate, {arg with arg_payload= ValueOrigin.unknown class_object} :: args)
         else None
-    | [] ->
+    | _ ->
         None )
     |> Option.value ~default:(astate, func_args)
 
@@ -601,16 +602,14 @@ module PulseTransferFunctions = struct
     else None
 
 
-  let is_closure_call opt_procname =
-    Option.exists opt_procname ~f:(fun procname ->
-        Language.curr_language_is Hack && String.equal (Procname.get_method procname) "__invoke" )
-
-
   let lookup_virtual_method_info {InterproceduralAnalysis.tenv; proc_desc; exe_env} path func_args
       call_loc astate callee_pname default_info =
     let caller = Procdesc.get_proc_name proc_desc in
     let record_call_resolution_if_closure resolution astate =
-      if Config.pulse_monitor_transitive_callees && is_closure_call callee_pname then
+      if
+        Config.pulse_monitor_transitive_callees
+        && Option.exists callee_pname ~f:Procname.is_hack_invoke
+      then
         AbductiveDomain.record_call_resolution ~caller:proc_desc call_loc Closure resolution astate
       else astate
     in
@@ -767,7 +766,7 @@ module PulseTransferFunctions = struct
       else (astate, callee_pname, func_args)
     in
     let astate, func_args =
-      modify_receiver_if_hack_function_reference path call_loc astate func_args
+      modify_receiver_if_hack_function_reference path call_loc astate callee_pname func_args
     in
     let astate =
       match (callee_pname, func_args) with

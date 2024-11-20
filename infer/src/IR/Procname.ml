@@ -587,6 +587,10 @@ module Hack = struct
     {class_name= Some static_class_name; function_name= "_86constinit"; arity= Some arity}
 
 
+  let is_invoke {function_name= name} = String.equal name "__invoke"
+
+  let is_late_binding {function_name= name} = String.equal name "lateBinding"
+
   let is_xinit {function_name= name} =
     String.equal name "_86pinit" || String.equal name "_86cinit" || String.equal name "_86constinit"
 
@@ -996,6 +1000,10 @@ let is_hack_construct = function
   | _ ->
       false
 
+
+let is_hack_invoke = function Hack classname -> Hack.is_invoke classname | _ -> false
+
+let is_hack_late_binding = function Hack classname -> Hack.is_late_binding classname | _ -> false
 
 let is_hack_xinit = function Hack classname -> Hack.is_xinit classname | _ -> false
 
