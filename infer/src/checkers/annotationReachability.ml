@@ -506,7 +506,6 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
           ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
         in
         check_call tenv ~callee_pname ~caller_pname call_site_info astate specs
-        |> merge_callee_map analysis_data call_site_info ~callee_pname
     | _ ->
         astate
 
