@@ -450,22 +450,22 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     && not (spec.sanitizer_predicate tenv caller_pname)
 
 
-  let check_call tenv ~caller_pname ~callee_pname call_site_info astate specs =
+  let check_direct_call tenv ~caller_pname ~callee_pname call_site_info astate specs =
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
         if is_sink tenv spec ~caller_pname ~callee_pname then (
-          L.d_printfln "%s: Adding sink call `%a -> %a`" spec.kind Procname.pp caller_pname
-            Procname.pp callee_pname ;
+          L.d_printfln "%s: Adding direct call `%a -> %a` to sink `@%s`" spec.kind Procname.pp
+            caller_pname Procname.pp callee_pname spec.sink_annotation.Annot.class_name ;
           Domain.add_call_site spec.sink_annotation callee_pname call_site_info astate )
         else astate )
 
 
-  let merge_callee_map {analysis_data= {proc_desc; tenv; analyze_dependency}; specs} call_site_info
-      ~callee_pname astate =
+  let add_transitive_calls {analysis_data= {proc_desc; tenv; analyze_dependency}; specs}
+      call_site_info ~callee_pname astate =
     match analyze_dependency callee_pname with
     | Error _ ->
         astate
     | Ok callee_call_map ->
-        L.d_printf "Applying summary for `%a`@\n" Procname.pp callee_pname ;
+        L.d_printf "Applying summary of callee `%a`@\n" Procname.pp callee_pname ;
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate
           else
@@ -476,8 +476,8 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
             let caller_pname = Procdesc.get_proc_name proc_desc in
             List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
                 if is_sink tenv spec ~caller_pname ~callee_pname:sink then (
-                  L.d_printf "%s: Adding sink call from `%a`'s summary `%a -> %a`@\n" spec.kind
-                    Procname.pp callee_pname Procname.pp caller_pname Procname.pp sink ;
+                  L.d_printf "%s: Adding transitive call `%a -> %a` to sink `@%s`@\n" spec.kind
+                    Procname.pp caller_pname Procname.pp sink spec.sink_annotation.Annot.class_name ;
                   Domain.add_call_site annot sink call_site_info astate )
                 else astate )
         in
@@ -495,8 +495,8 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
           { call_site= CallSite.make callee_pname call_loc
           ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
         in
-        check_call tenv ~callee_pname ~caller_pname call_site_info astate specs
-        |> merge_callee_map analysis_data call_site_info ~callee_pname
+        check_direct_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        |> add_transitive_calls analysis_data call_site_info ~callee_pname
     | Sil.Load {e= Exp.Lfield (_, fieldname, typ); loc} ->
         (* Pretend that field access is a call to a fake method (containing the name of the field) *)
         let caller_pname = Procdesc.get_proc_name proc_desc in
@@ -505,7 +505,7 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
           { call_site= CallSite.make callee_pname loc
           ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
         in
-        check_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        check_direct_call tenv ~callee_pname ~caller_pname call_site_info astate specs
     | _ ->
         astate
 
