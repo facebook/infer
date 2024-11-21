@@ -10,6 +10,7 @@ Concurrent accesses to the same resource conflict in a way that can give incorre
 
 Issue types in this category:
 - [DEADLOCK](/docs/next/all-issue-types#deadlock)
+- [DISPATCH_ONCE_IN_STATIC_INIT](/docs/next/all-issue-types#dispatch_once_in_static_init)
 - [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
 - [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
 - [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)
@@ -32,6 +33,7 @@ Issue types in this category:
 - [CXX_STRING_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#cxx_string_captured_in_block)
 - [NIL_MESSAGING_TO_NON_POD](/docs/next/all-issue-types#nil_messaging_to_non_pod)
 - [NIL_MESSAGING_TO_NON_POD_LATENT](/docs/next/all-issue-types#nil_messaging_to_non_pod_latent)
+- [NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#nsstring_internal_ptr_captured_in_block)
 - [PULSE_REFERENCE_STABILITY](/docs/next/all-issue-types#pulse_reference_stability)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [STACK_VARIABLE_ADDRESS_ESCAPE](/docs/next/all-issue-types#stack_variable_address_escape)

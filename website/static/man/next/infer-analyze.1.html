@@ -82,9 +82,12 @@ indirectly, another method annotated with &lsquo;@B&lsquo;.
 Besides the custom pairs, it is also possible to enable some
 built-in checks, such as &lsquo;@PerformanceCritical&lsquo;
 reaching &lsquo;@Expensive&lsquo; or
-&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. See
-flags starting with &lsquo;--annotation-reachability&lsquo;.
-(Conversely: <b>--no-annotation-reachability</b>)</p>
+&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. It
+is also possible to model methods as if they were annotated,
+using regular expressions. This should also work in
+languages where there are no annotations. See flags starting
+with &lsquo;--annotation-reachability&lsquo;. (Conversely:
+<b>--no-annotation-reachability</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--annotation-reachability-only</b></p>
@@ -232,6 +235,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--no-default-checkers</b></p>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
+<b>--dispatch-once-static-init</b>,
 <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
 <b>--parameter-not-null-checked</b>, <b>--pulse</b>,
@@ -256,6 +260,22 @@ all of the captured data should be analyzed, e.g.
 
 <p style="margin-left:17%;">Skip analyzing the variables in
 the dict-missing-key checker.</p>
+
+
+<p style="margin-left:11%;"><b>--no-dispatch-once-static-init</b></p>
+
+<p style="margin-left:17%;">Deactivates:
+<i>dispatch-once-static-init</i> checker: Detect if
+dispatch_once is called from a static constructor.
+(Conversely: <b>--dispatch-once-static-init</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--dispatch-once-static-init-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>dispatch-once-static-init</i> and disable all other
+checkers (Conversely:
+<b>--no-dispatch-once-static-init-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--files-to-analyze-index</b>
@@ -486,6 +506,21 @@ cannot annotate them accordingly.</p>
 
 <p style="margin-left:17%;">Macro for executing Objective-C
 blocks safely.</p>
+
+
+<p style="margin-left:11%;"><b>--ondemand-recursion-restart-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">In order to make the analysis
+of mutual recursion cycles deterministic in their output,
+the analysis of a cycle of mutually recursive functions may
+restart the analysis of the entire cycle from a
+deterministic place. If the graph of mutual recursion is
+more complex than a simple cycle this could potentially
+result in many restarts before finding the &quot;right&quot;
+procedure from which to start. This limits the number of
+restarts before we give up and analyze the cycle as-is
+instead.</p>
 
 
 <p style="margin-left:11%;"><b>--no-parameter-not-null-checked</b></p>
@@ -1417,6 +1452,13 @@ as transfering memory ownership in Pulse. Accepted formats
 are method or namespace::method</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-model-unknown-pure</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as unknown pure in Pulse</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-models-for-erlang</b>
 <i>+path</i></p>
 
@@ -1481,6 +1523,14 @@ dereference issues on files marked @Nullsafe as a separate
 NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS issue type.
 (Conversely:
 <b>--no-pulse-nullsafe-report-npe-as-separate-issue</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-over-approximate-reasoning</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] add
+over-approximate reasoning on top of the under-approximate,
+disjunctive reasoning of Pulse. (Conversely:
+<b>--no-pulse-over-approximate-reasoning</b>)</p>
 
 <p style="margin-left:11%;"><b>--pulse-recency-limit</b>
 <i>int</i></p>
@@ -1746,6 +1796,19 @@ source shouldn't be flagged. <b><br>
 
 <p style="margin-left:17%;">Stop exploring new paths after
 <i>int</i> loop iterations</p>
+
+<p style="margin-left:11%;"><b>--python-globals</b> <i>{
+own-by-closures | own-by-module }</i></p>
+
+<p style="margin-left:17%;">Specify the strategy to wire
+globals dictionnaire into each function</p>
+
+<p style="margin-left:11%;">- own-by-closures: each closure
+captured the global <br>
+dictionary <br>
+- own-by-module: each function is given the global
+dictionary as <br>
+argument (not referenced in the heap to avoid aliases)</p>
 
 <h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>

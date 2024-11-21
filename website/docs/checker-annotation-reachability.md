@@ -1,16 +1,16 @@
 ---
 title: "Annotation Reachability"
-description: "Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`."
+description: "Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. It is also possible to model methods as if they were annotated, using regular expressions. This should also work in languages where there are no annotations. See flags starting with `--annotation-reachability`."
 ---
 
-Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`.
+Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. It is also possible to model methods as if they were annotated, using regular expressions. This should also work in languages where there are no annotations. See flags starting with `--annotation-reachability`.
 
 Activate with `--annotation-reachability`.
 
 Supported languages:
-- C/C++/ObjC: No
+- C/C++/ObjC: Yes
 - C#/.Net: No
-- Erlang: No
+- Erlang: Yes
 - Hack: No
 - Java: Yes
 - Python: No

@@ -25,6 +25,7 @@ The following issue types are reported by this checker:
 - [CXX_STRING_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#cxx_string_captured_in_block)
 - [MIXED_SELF_WEAKSELF](/docs/next/all-issue-types#mixed_self_weakself)
 - [MULTIPLE_WEAKSELF](/docs/next/all-issue-types#multiple_weakself)
+- [NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#nsstring_internal_ptr_captured_in_block)
 - [SELF_IN_BLOCK_PASSED_TO_INIT](/docs/next/all-issue-types#self_in_block_passed_to_init)
 - [STRONG_SELF_NOT_CHECKED](/docs/next/all-issue-types#strong_self_not_checked)
 - [WEAK_SELF_IN_NO_ESCAPE_BLOCK](/docs/next/all-issue-types#weak_self_in_no_escape_block)

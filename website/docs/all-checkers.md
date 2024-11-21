@@ -7,7 +7,7 @@ Here is an overview of the checkers currently available in Infer.
 
 ## Annotation Reachability
 
-Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. See flags starting with `--annotation-reachability`.
+Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn whenever some method annotated with `@A` calls, directly or indirectly, another method annotated with `@B`. Besides the custom pairs, it is also possible to enable some built-in checks, such as `@PerformanceCritical` reaching `@Expensive` or `@NoAllocation` reaching `new`. It is also possible to model methods as if they were annotated, using regular expressions. This should also work in languages where there are no annotations. See flags starting with `--annotation-reachability`.
 
 [Visit here for more information.](/docs/next/checker-annotation-reachability)
 
@@ -36,6 +36,12 @@ InferBO is a detector for out-of-bounds array accesses.
 Computes the asymptotic complexity of functions with respect to execution cost or other user defined resources. Can be used to detect changes in the complexity with `infer reportdiff`.
 
 [Visit here for more information.](/docs/next/checker-cost)
+
+## dispatch-once in static init
+
+Detect if dispatch_once is called from a static constructor.
+
+[Visit here for more information.](/docs/next/checker-dispatch-once-static-init)
 
 ## Fragment Retains View
 

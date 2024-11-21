@@ -554,25 +554,21 @@ dereferences it later.
 
 *Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "C++ String Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).*
 
-This check flags when a local variable of type `std::string` is captured in an escaping block.
+This check flags when an internal pointer of a local variable of type `std::string` is captured in an escaping block.
 This means that the block will be leaving the current scope, i.e. it is
 not annotated with `__attribute__((noescape))`.
 
 Example:
 
 ```
-- (void)string_captured_in_escaping_block_bad {
   std::string fullName;
+  const char* c = fullName.c_str();
   dispatch_async(dispatch_get_main_queue(), ^{
-    const char* c = fullName.c_str();
-    ...
+    const char* c1 = c;
   });
-  ...;
-}
 ```
 
-This could cause crashes because the variable is likely to be freed if the block
-uses it later.
+This could cause crashes because the variable is likely to be freed when the code is executed, leaving the pointer dangling.
 
 ## DANGLING_POINTER_DEREFERENCE
 
@@ -656,6 +652,11 @@ To suppress reports of deadlocks in a method `m()` use the
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
 
+## DISPATCH_ONCE_IN_STATIC_INIT
+
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "dispatch_once in static init" by [dispatch-once-static-init](/docs/next/checker-dispatch-once-static-init).*
+
+Calling dispatch_once during the static initialization of objects is risky, for example it could cause deadlocks, because other objects might not have been initialized yet.
 ## DIVIDE_BY_ZERO
 
 *Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).*
@@ -1494,6 +1495,26 @@ sign(X) ->
 *Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).*
 
 A latent [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK
+
+*Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "NSString Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).*
+
+This check flags when an internal pointer of a local variable of type `std::string` is captured in an escaping block.
+This means that the block will be leaving the current scope, i.e. it is
+not annotated with `__attribute__((noescape))`.
+
+Example:
+
+```
+  std::string fullName;
+  const char* c = fullName.c_str();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    const char* c1 = c;
+  });
+```
+
+This could cause crashes because the variable is likely to be freed when the code is executed, leaving the pointer dangling.
+
 ## NULLPTR_DEREFERENCE
 
 *Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).*
@@ -2013,7 +2034,41 @@ Failure to `await` an `Awaitable` can lead to non-deterministic amount of the as
 
 *Category: [Resource leak](/docs/next/all-categories#resource-leak). Reported as "Unfinished Builder" by [pulse](/docs/next/checker-pulse).*
 
-See [RESOURCE_LEAK](#resource_leak)
+Classes adhering to builder pattern are usually expected to call a finalizer function at some point to produce final result based on values that were passed to a builder itself. If finalizer function hasn't been called then builder's data won't be consumed in any meaningful way and will just be discarded.
+
+```hack
+class MyBuilder {
+  private int $a = 0;
+  private int $b = 0;
+
+  public function setA(int $a): MyBuilder {
+    $this->a = $a;
+    return $this;
+  }
+
+  public function setB(int $b): MyBuilder {
+    $this->b = $b;
+    return $this;
+  }
+
+  public function saveX(): Awaitable<void> {
+    // typically do something involving IO
+  }
+}
+
+class BuilderTester {
+  public static function builderUserOK(): void {
+    $b = new MyBuilder(0);
+    $b->setA(42)->setB(97)->saveX();
+  }
+
+  public static function builderUserBad(): void {
+    $b = new MyBuilder(0);
+    $b->setA(42)->setB(97); // ERROR: saveX hasn't been called so the builder's data is discarded
+  }
+}
+```
+
 ## PULSE_UNINITIALIZED_CONST
 
 *Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).*
