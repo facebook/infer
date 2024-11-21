@@ -423,7 +423,8 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let {id= None; exp= call_builtin ("py_gen_start_" ^ kind) []; loc}
 
 
-let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
+let of_node is_module_body nullify_locals entry
+    {Node.name; first_loc; last_loc; ssa_parameters; stmts; last} =
   let label = mk_node_name name in
   let label_loc = of_location first_loc in
   let last_loc = of_location last_loc in
@@ -432,6 +433,7 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
     List.map stmts ~f:(fun (loc, stmt) ->
         let loc = of_location loc in
         of_stmt loc stmt )
+    |> nullify_locals last_loc last
   in
   let instrs =
     if is_module_body && NodeName.equal name entry then
@@ -450,13 +452,31 @@ let of_node is_module_body entry {Node.name; first_loc; last_loc; ssa_parameters
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc proc_kind {CFG.entry; nodes; code_info= {co_firstlineno} as code_info} =
+let mk_procdesc proc_kind
+    {CFG.entry; nodes; code_info= {co_firstlineno; co_argcount; co_varnames} as code_info} =
   let loc = Textual.Location.known ~line:co_firstlineno ~col:(-1) in
   let procdecl = mk_procdecl ~loc proc_kind code_info in
   let is_module_body = is_module_body proc_kind in
   let nodes_bindings = NodeName.Map.bindings nodes in
+  let nullify_locals loc last instrs =
+    let nb_vars = Array.length co_varnames in
+    if co_argcount >= nb_vars then instrs
+    else
+      match (last : Textual.Terminator.t) with
+      | Ret _ ->
+          let args =
+            exp_locals
+            :: List.init (nb_vars - co_argcount) ~f:(fun i ->
+                   let name = co_varnames.(i + co_argcount) in
+                   exp_of_ident_str name )
+          in
+          instrs @ [Textual.Instr.Let {id= None; exp= call_builtin "py_nullify_locals" args; loc}]
+      | _ ->
+          instrs
+  in
   let nodes =
-    List.map nodes_bindings ~f:(fun (_node_name, node) -> of_node is_module_body entry node)
+    List.map nodes_bindings ~f:(fun (_node_name, node) ->
+        of_node is_module_body nullify_locals entry node )
   in
   let start = mk_node_name entry in
   let params =

@@ -224,6 +224,14 @@ let make_none : model =
   assign_ret none
 
 
+let nullify_locals locals names : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* zero = null in
+  list_iter names ~f:(fun name -> Dict.set locals name zero)
+
+
 let store_fast name locals value : model =
   let open DSL.Syntax in
   start_model @@ fun () -> Dict.set locals name value
@@ -266,13 +274,14 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $+ arg $--> get_awaitable
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
   ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $--> import_name
-  ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
-  ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
-  ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
   ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
   ; -"$builtins" &:: "py_load_global" <>$ arg $+ arg $--> load_global
   ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
+  ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
+  ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
+  ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
   ; -"$builtins" &:: "py_make_none" <>--> make_none
+  ; -"$builtins" &:: "py_nullify_locals" <>$ arg $+++$--> nullify_locals
   ; -"$builtins" &:: "py_subscript" <>$ arg $+ arg $--> subscript
   ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
   ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global

@@ -81,6 +81,7 @@ async def g():
           n10 = $builtins.py_load_global("g", globals)
           n11 = $builtins.py_load_fast("y", locals)
           n12 = $builtins.py_call(n10, globals, $builtins.py_make_none(), $builtins.py_make_int(0), n11)
+          _ = $builtins.py_nullify_locals(locals, "i")
           ret $builtins.py_make_none()
 
       #b2:
@@ -103,6 +104,7 @@ async def g():
       #b5:
           n5 = $builtins.py_load_global("done", globals)
           n6 = $builtins.py_call(n5, globals, $builtins.py_make_none())
+          _ = $builtins.py_nullify_locals(locals, "i")
           ret $builtins.py_make_none()
 
     }
@@ -143,6 +145,7 @@ async def g():
           n10 = $builtins.py_load_global("g", [&globals:*PyGlobals])
           n11 = $builtins.py_load_fast("y", [&locals:*PyLocals])
           n12 = $builtins.py_call(n10, [&globals:*PyGlobals], $builtins.py_make_none(), $builtins.py_make_int(0), n11)
+          _ = $builtins.py_nullify_locals([&locals:*PyLocals], "i")
           ret $builtins.py_make_none()
 
       #b2:
@@ -165,6 +168,7 @@ async def g():
       #b5:
           n5 = $builtins.py_load_global("done", [&globals:*PyGlobals])
           n6 = $builtins.py_call(n5, [&globals:*PyGlobals], $builtins.py_make_none())
+          _ = $builtins.py_nullify_locals([&locals:*PyLocals], "i")
           ret $builtins.py_make_none()
 
     }
@@ -253,46 +257,50 @@ async def g():
           n17 = $builtins.py_make_none()
           n18 = $builtins.py_make_int(0)
           n12 = $builtins.py_call(n10, n16, n17, n18, n11)
-          n19 = $builtins.py_make_none()
-          ret n19
+          n19:*PyLocals = load &locals
+          n20 = $builtins.py_nullify_locals(n19, "i")
+          n21 = $builtins.py_make_none()
+          ret n21
 
       #b2:
           prune __sil_lnot(n0)
-          n20:*PyLocals = load &locals
-          n1 = $builtins.py_load_fast("l", n20)
-          n21 = $builtins.py_make_none()
-          n2 = $builtins.py_get_iter(n21, n1)
+          n22:*PyLocals = load &locals
+          n1 = $builtins.py_load_fast("l", n22)
+          n23 = $builtins.py_make_none()
+          n2 = $builtins.py_get_iter(n23, n1)
           jmp b3
 
       #b3:
-          n22 = $builtins.py_make_none()
-          n3 = $builtins.py_next_iter(n22, n2)
-          n23 = $builtins.py_make_none()
-          n4 = $builtins.py_has_next_iter(n23, n2)
+          n24 = $builtins.py_make_none()
+          n3 = $builtins.py_next_iter(n24, n2)
+          n25 = $builtins.py_make_none()
+          n4 = $builtins.py_has_next_iter(n25, n2)
           jmp b4, b5
 
       #b4:
           prune n4
-          n24:*PyLocals = load &locals
-          n25 = $builtins.py_store_fast("i", n24, n3)
-          n26:*PyGlobals = load &globals
-          n7 = $builtins.py_load_global("print", n26)
-          n27:*PyLocals = load &locals
-          n8 = $builtins.py_load_fast("i", n27)
+          n26:*PyLocals = load &locals
+          n27 = $builtins.py_store_fast("i", n26, n3)
           n28:*PyGlobals = load &globals
-          n29 = $builtins.py_make_none()
-          n9 = $builtins.py_call(n7, n28, n29, n8)
+          n7 = $builtins.py_load_global("print", n28)
+          n29:*PyLocals = load &locals
+          n8 = $builtins.py_load_fast("i", n29)
+          n30:*PyGlobals = load &globals
+          n31 = $builtins.py_make_none()
+          n9 = $builtins.py_call(n7, n30, n31, n8)
           jmp b3
 
       #b5:
           prune __sil_lnot(n4)
-          n30:*PyGlobals = load &globals
-          n5 = $builtins.py_load_global("done", n30)
-          n31:*PyGlobals = load &globals
-          n32 = $builtins.py_make_none()
-          n6 = $builtins.py_call(n5, n31, n32)
-          n33 = $builtins.py_make_none()
-          ret n33
+          n32:*PyGlobals = load &globals
+          n5 = $builtins.py_load_global("done", n32)
+          n33:*PyGlobals = load &globals
+          n34 = $builtins.py_make_none()
+          n6 = $builtins.py_call(n5, n33, n34)
+          n35:*PyLocals = load &locals
+          n36 = $builtins.py_nullify_locals(n35, "i")
+          n37 = $builtins.py_make_none()
+          ret n37
 
     }
 
