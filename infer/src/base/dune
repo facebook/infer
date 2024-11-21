@@ -23,7 +23,9 @@
    -open
    ATDGenerated
    -open
-   OpenSource))
+   OpenSource
+   -open
+   Ppx_yojson_conv_lib.Yojson_conv.Primitives))
  (libraries
   cmdliner
   core

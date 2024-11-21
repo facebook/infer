@@ -29,7 +29,9 @@
    -open
    BO
    -open
-   Pulselib))
+   Pulselib
+   -open
+   Ppx_yojson_conv_lib.Yojson_conv.Primitives))
  (libraries
   base64
   core
