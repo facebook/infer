@@ -501,7 +501,9 @@ let mk_procdesc proc_kind
 
 
 let mk_module {Module.name; toplevel; functions} =
-  let filename = F.asprintf "%a.py" Ident.pp name (* TODO: may not work with nested paths *) in
+  let filename =
+    F.asprintf "%a.py" Ident.pp name |> String.substr_replace_all ~pattern:"::" ~with_:"/"
+  in
   let sourcefile = Textual.SourceFile.create filename in
   let decls =
     List.map (QualName.Map.bindings functions) ~f:(fun (qual_name, cfg) ->
