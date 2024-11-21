@@ -747,8 +747,11 @@ module PulseTransferFunctions = struct
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
+    let caller_is_closure_wrapper = (Procdesc.get_attributes proc_desc).is_closure_wrapper in
     let is_python_async =
-      Language.curr_language_is Python && Option.exists ~f:is_python_async callee_pname
+      Language.curr_language_is Python
+      && Option.exists ~f:is_python_async callee_pname
+      && not caller_is_closure_wrapper
     in
     let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
     (* if it's an async call, we're going to wrap the result in an [Awaitable], so we need to create

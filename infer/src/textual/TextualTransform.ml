@@ -345,10 +345,10 @@ module TransformClosures = struct
   let closure_call_procdecl loc typename (closure : ProcDesc.t) nb_captured : ProcDecl.t =
     let procdecl = closure.procdecl in
     let attributes =
-      (* in Python, we transfert the 'args' attributes from the 'closure' proc to the generated 'call' proc *)
-      List.find_map procdecl.attributes ~f:Textual.Attr.find_python_args
-      |> Option.map ~f:Textual.Attr.mk_python_args
-      |> Option.to_list
+      Textual.Attr.mk_closure_wrapper
+      :: (* in Python, we transfert the 'args' and 'async' attributes from the 'closure' proc to the generated 'call' proc *)
+         List.filter procdecl.attributes ~f:(fun attr ->
+             Option.is_some (Textual.Attr.find_python_args attr) || Textual.Attr.is_async attr )
     in
     let unresolved_qualified_name = closure_call_qualified_procname loc in
     let qualified_name = {unresolved_qualified_name with enclosing_class= Enclosing typename} in

@@ -1067,6 +1067,7 @@ module ProcDescBridge = struct
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
     let is_async = List.exists procdecl.attributes ~f:Attr.is_async in
     let is_abstract = List.exists procdecl.attributes ~f:Attr.is_abstract in
+    let is_closure_wrapper = List.exists procdecl.attributes ~f:Attr.is_closure_wrapper in
     let is_hack_wrapper = List.exists procdecl.attributes ~f:Attr.is_hack_wrapper in
     let python_args =
       List.find_map procdecl.attributes ~f:Attr.find_python_args |> Option.value ~default:[]
@@ -1083,6 +1084,7 @@ module ProcDescBridge = struct
         is_defined= true
       ; is_async
       ; is_abstract
+      ; is_closure_wrapper
       ; is_hack_wrapper
       ; hack_variadic_position
       ; python_args

@@ -755,7 +755,7 @@ let%expect_test "closures" =
 
       type closure:dummy:0 = {x: int; y: int}
 
-      define closure:dummy:0.call(__this: *closure:dummy:0, p1: int, p2: float, p3: string) : int {
+      define .closure_wrapper closure:dummy:0.call(__this: *closure:dummy:0, p1: int, p2: float, p3: string) : int {
         #entry:
             n0:*closure:dummy:0 = load &__this
             n1:int = load n0.?.x

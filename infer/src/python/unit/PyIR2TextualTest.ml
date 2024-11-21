@@ -189,7 +189,7 @@ async def g():
 
     type closure:dummy:1 = {}
 
-    define closure:dummy:1.call(__this: *closure:dummy:1, globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper .async closure:dummy:1.call(__this: *closure:dummy:1, globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyGlobals = load &globals
           n1:*PyLocals = load &locals
@@ -200,7 +200,7 @@ async def g():
 
     type closure:dummy:0 = {}
 
-    define .args = "y,l" closure:dummy:0.call(__this: *closure:dummy:0, globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper .args = "y,l" closure:dummy:0.call(__this: *closure:dummy:0, globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyGlobals = load &globals
           n1:*PyLocals = load &locals

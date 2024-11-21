@@ -111,6 +111,8 @@ module Attr : sig
 
   val is_alias : t -> bool
 
+  val is_closure_wrapper : t -> bool
+
   val is_hack_wrapper : t -> bool
 
   val is_final : t -> bool
@@ -132,6 +134,8 @@ module Attr : sig
   val find_python_args : t -> string list option
 
   val mk_async : t
+
+  val mk_closure_wrapper : t
 
   val mk_trait : t
 

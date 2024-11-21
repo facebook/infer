@@ -250,6 +250,10 @@ module Attr = struct
     String.equal name "kind" && List.equal String.equal values ["typedef"]
 
 
+  let is_closure_wrapper {name; values} =
+    String.equal name "closure_wrapper" && List.is_empty values
+
+
   let is_const {name; values} = String.equal name "constant" && List.is_empty values
 
   let is_curry {name; values} = String.equal name "curry" && List.is_empty values
@@ -273,6 +277,8 @@ module Attr = struct
   let find_python_args {name; values} = if String.equal name "args" then Some values else None
 
   let mk_async = {name= "async"; values= []; loc= Location.Unknown}
+
+  let mk_closure_wrapper = {name= "closure_wrapper"; values= []; loc= Location.Unknown}
 
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name

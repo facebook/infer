@@ -78,6 +78,7 @@ type t =
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
   ; is_async: bool
+  ; is_closure_wrapper: bool  (** the wrapper we insert for each closure *)
   ; is_hack_wrapper: bool  (** a generated wrapper for LSB or default parameters *)
   ; block_as_arg_attributes: block_as_arg_attributes option
         (** Present if the procedure is an Objective-C block that has been passed to the given
