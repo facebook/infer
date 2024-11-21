@@ -119,22 +119,20 @@ module FileOrProcMatcher = struct
         List.fold
           ~f:(fun map pattern ->
             let previous =
-              try String.Map.find_exn map pattern.class_name
-              with Not_found_s _ | Stdlib.Not_found -> []
+              IString.Map.find_opt pattern.class_name map |> Option.value ~default:[]
             in
-            String.Map.set ~key:pattern.class_name ~data:(pattern :: previous) map )
-          ~init:String.Map.empty m_patterns
+            IString.Map.add pattern.class_name (pattern :: previous) map )
+          ~init:IString.Map.empty m_patterns
       in
       let do_java pname_java =
         let class_name = Procname.Java.get_class_name pname_java
         and method_name = Procname.Java.get_method pname_java in
-        try
-          let class_patterns = String.Map.find_exn pattern_map class_name in
-          List.exists
-            ~f:(fun p ->
-              match p.method_name with None -> true | Some m -> String.equal m method_name )
-            class_patterns
-        with Not_found_s _ | Stdlib.Not_found -> false
+        IString.Map.find_opt class_name pattern_map
+        |> Option.exists ~f:(fun class_patterns ->
+               List.exists
+                 ~f:(fun p ->
+                   match p.method_name with None -> true | Some m -> String.equal m method_name )
+                 class_patterns )
       in
       fun _ proc_name ->
         match proc_name with Procname.Java pname_java -> do_java pname_java | _ -> false

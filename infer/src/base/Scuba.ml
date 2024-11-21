@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module SMap = Map.Make (String)
+module SMap = IString.Map
 
 type table = InferEvents
 
@@ -27,23 +27,23 @@ let new_sample ~time =
 
 
 let add_int ~name ~value sample =
-  let int_section = SMap.set sample.int_section ~key:name ~data:value in
+  let int_section = SMap.add name value sample.int_section in
   {sample with int_section}
 
 
 let add_normal ~name ~value sample =
-  let normal_section = SMap.set sample.normal_section ~key:name ~data:value in
+  let normal_section = SMap.add name value sample.normal_section in
   {sample with normal_section}
 
 
 let add_tagset ~name ~value sample =
-  let tagset_section = SMap.set sample.tagset_section ~key:name ~data:value in
+  let tagset_section = SMap.add name value sample.tagset_section in
   {sample with tagset_section}
 
 
 let sample_to_json sample =
   let map_to_assoc value_to_json key_value_map =
-    let pairs = SMap.to_alist key_value_map in
+    let pairs = SMap.bindings key_value_map in
     let assocs = List.map pairs ~f:(fun (name, data) -> (name, value_to_json data)) in
     `Assoc assocs
   in

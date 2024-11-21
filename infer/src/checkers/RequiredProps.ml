@@ -90,13 +90,15 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
 
 let has_prop prop_set prop =
   let check prop =
-    String.Set.mem prop_set prop
+    IString.Set.mem prop prop_set
     || (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
           Our annotation parameter parsing is too primitive to identify resType, so just assume
           that all @Prop's can be set any of these 6 ways. *)
-    String.Set.exists prop_set ~f:(fun el ->
+    IString.Set.exists
+      (fun el ->
         String.chop_prefix el ~prefix:prop
-        |> Option.exists ~f:(fun suffix -> String.Set.mem LithoDomain.suffixes suffix) )
+        |> Option.exists ~f:(fun suffix -> IString.Set.mem suffix LithoDomain.suffixes) )
+      prop_set
   in
   match prop with
   | Prop prop ->

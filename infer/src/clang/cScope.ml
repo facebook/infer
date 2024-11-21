@@ -269,9 +269,7 @@ module Variables = struct
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
           vars_to_destroy ;
-        let map =
-          ClangPointers.Map.set map ~key:stmt_info.Clang_ast_t.si_pointer ~data:vars_to_destroy
-        in
+        let map = ClangPointers.Map.add stmt_info.Clang_ast_t.si_pointer vars_to_destroy map in
         (scope, map)
     | DeclStmt (_, stmts, decl_list) ->
         let to_destroy =
@@ -323,7 +321,7 @@ module Variables = struct
         L.debug Capture Verbose "~[%d:%a]" pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
           vars_to_destroy ;
-        ClangPointers.Map.set map ~key:pointer ~data:vars_to_destroy )
+        ClangPointers.Map.add pointer vars_to_destroy map )
       else (
         L.debug Capture Verbose "~[%d:skip]" pointer ;
         map )

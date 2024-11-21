@@ -912,11 +912,11 @@ let get_array_length context pc expr_list content_type =
 let detect_loop entry_pc impl =
   let code = JBir.code impl in
   let pc_bound = Array.length code in
-  let empty = Int.Set.empty in
+  let empty = IInt.Set.empty in
   let rec loop visited pc =
-    if Int.Set.mem visited pc || pc >= pc_bound then (false, visited)
+    if IInt.Set.mem pc visited || pc >= pc_bound then (false, visited)
     else
-      let visited_updated = Int.Set.add visited pc in
+      let visited_updated = IInt.Set.add pc visited in
       match code.(pc) with
       | JBir.Goto goto_pc when Int.equal goto_pc entry_pc ->
           (true, empty)

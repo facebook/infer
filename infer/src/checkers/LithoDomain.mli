@@ -20,7 +20,7 @@ module LocalAccessPath : sig
   val make_from_access_expression : HilExp.AccessExpression.t -> Procname.t -> t
 end
 
-val suffixes : String.Set.t
+val suffixes : IString.Set.t
 
 (** Called procedure & location *)
 module MethodCallPrefix : sig
@@ -76,6 +76,6 @@ val pp_summary : Format.formatter -> summary -> unit
 val get_summary : is_void_func:bool -> t -> summary
 
 val check_required_props :
-     check_on_string_set:(Typ.name -> Location.t -> MethodCallPrefix.t list -> String.Set.t -> unit)
+     check_on_string_set:(Typ.name -> Location.t -> MethodCallPrefix.t list -> IString.Set.t -> unit)
   -> summary
   -> summary

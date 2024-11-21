@@ -657,7 +657,7 @@ let get_litho_explanation tenv pname =
 
 
 let class_is_ignored_by_racerd class_name =
-  Typ.Name.name class_name |> String.Set.mem Config.racerd_ignore_classes
+  IString.Set.mem (Typ.Name.name class_name) Config.racerd_ignore_classes
 
 
 let proc_is_ignored_by_racerd callee =

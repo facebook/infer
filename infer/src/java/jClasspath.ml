@@ -29,7 +29,7 @@ type file_entry = Singleton of SourceFile.t | Duplicate of (string list * Source
 
 type t =
   { classpath_channel: Javalib.class_path
-  ; sources: file_entry String.Map.t
+  ; sources: file_entry IString.Map.t
   ; classes: JBasics.ClassSet.t }
 
 (* Open the source file and search for the package declaration.
@@ -61,7 +61,7 @@ let add_source_file =
     let basename = Filename.basename path in
     let entry =
       let current_source_file = SourceFile.from_abs_path (convert_to_absolute path) in
-      match String.Map.find map basename with
+      match IString.Map.find_opt basename map with
       | None ->
           (* Most common case: there is no conflict with the base name of the source file *)
           Singleton current_source_file
@@ -80,10 +80,10 @@ let add_source_file =
           let current_package = read_package_declaration current_source_file in
           Duplicate ((current_package, current_source_file) :: previous_source_files)
     in
-    String.Map.set ~key:basename ~data:entry map
+    IString.Map.add basename entry map
 
 
-let add_root_path path roots = String.Set.add roots path
+let add_root_path path roots = IString.Set.add path roots
 
 let read_modules_1 path =
   let temp_dir = Filename.temp_dir "java_modules_lib" "" in
@@ -130,7 +130,7 @@ let load_from_verbose_output =
     match In_channel.input_line file_in with
     | None ->
         let paths = if Config.java_read_modules then read_modules paths else paths in
-        let classpath = classpath_of_paths (String.Set.elements roots @ paths) in
+        let classpath = classpath_of_paths (IString.Set.elements roots @ paths) in
         {classpath_channel= Javalib.class_path classpath; sources; classes}
     | Some line when Str.string_match class_filename_re line 0 -> (
         let path =
@@ -163,7 +163,7 @@ let load_from_verbose_output =
   in
   fun javac_verbose_out ->
     Utils.with_file_in javac_verbose_out
-      ~f:(loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty)
+      ~f:(loop [] IString.Set.empty IString.Map.empty JBasics.ClassSet.empty)
 
 
 let collect_classnames init jar_filename =
@@ -195,7 +195,7 @@ let search_classes path =
           (add_root_path p paths, collect_classnames classes p)
       | _ ->
           accu )
-    (String.Set.empty, JBasics.ClassSet.empty)
+    (IString.Set.empty, JBasics.ClassSet.empty)
     path
 
 
@@ -207,7 +207,7 @@ let is_valid_source_file path =
 
 let search_sources sources =
   let initial_map =
-    List.fold sources ~init:String.Map.empty ~f:(fun map path ->
+    List.fold sources ~init:IString.Map.empty ~f:(fun map path ->
         if is_valid_source_file path then add_source_file path map
         else (
           L.external_warning "'%s' does not appear to be a valid source file, skipping@\n" path ;
@@ -227,7 +227,7 @@ let load_from_arguments classes_out_path sources =
   let split cp_option = Option.value_map ~f:split_classpath ~default:[] cp_option in
   let classpath =
     (* order follows https://docs.oracle.com/javase/7/docs/technotes/tools/windows/classpath.html *)
-    split Config.bootclasspath @ split Config.classpath @ String.Set.elements roots
+    split Config.bootclasspath @ split Config.classpath @ IString.Set.elements roots
     |> classpath_of_paths
   in
   {classpath_channel= Javalib.class_path classpath; sources= search_sources sources; classes}
@@ -245,13 +245,13 @@ let with_classpath ~f source =
     | FromArguments {path; sources} ->
         load_from_arguments path sources
   in
-  if String.Map.is_empty classpath.sources then
+  if IString.Map.is_empty classpath.sources then
     L.user_warning "No Java source code loaded. Analyzing JAR/WAR files directly" ;
-  if String.Map.is_empty classpath.sources && JBasics.ClassSet.is_empty classpath.classes then
+  if IString.Map.is_empty classpath.sources && JBasics.ClassSet.is_empty classpath.classes then
     L.(die InternalError) "Failed to load any Java source or class files" ;
   L.(debug Capture Quiet)
     "Translating %d source files (%d classes)@."
-    (String.Map.length classpath.sources)
+    (IString.Map.cardinal classpath.sources)
     (JBasics.ClassSet.cardinal classpath.classes) ;
   f classpath ;
   Javalib.close_class_path classpath.classpath_channel

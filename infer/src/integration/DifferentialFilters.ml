@@ -178,14 +178,16 @@ let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
                if (not (SourceFile.is_invalid p)) && SourceFile.is_under_project_root p then
                  Some (SourceFile.to_string p)
                else None )
-        |> String.Set.of_list
+        |> IString.Set.of_list
       in
       fun ~do_log report ->
         let stat = {all= List.length report; filtered_out= 0; filtered_out_header= 0} in
         let filtered_report =
           List.filter
             ~f:(fun issue ->
-              let is_interesting_path = String.Set.mem interesting_paths_set issue.Jsonbug_t.file in
+              let is_interesting_path =
+                IString.Set.mem issue.Jsonbug_t.file interesting_paths_set
+              in
               if do_log then incr_stat is_interesting_path issue.Jsonbug_t.file stat ;
               is_interesting_path )
             report

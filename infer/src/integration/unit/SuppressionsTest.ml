@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module Map = String.Map
+module Map = IString.Map
 
 (** {2 parsing} *)
 
@@ -41,8 +41,8 @@ let%test "parsing matching line multiple issue types" =
     (Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY"])
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}]) )
+      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 2}])
+      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 2}]) )
 
 
 let%test "parsing matching line multiple noise" =
@@ -51,8 +51,8 @@ let%test "parsing matching line multiple noise" =
        ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,,,, PULSE_UNNECESSARY_COPY,,,,,,,"] )
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}]) )
+      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 2}])
+      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 2}]) )
 
 
 let%test "multi line block" =
@@ -61,8 +61,8 @@ let%test "multi line block" =
        ["// @infer-ignore BUFFER_OVERRUN_L1"; "1+1 // @infer-ignore ,PULSE_UNNECESSARY_COPY"] )
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1" ~data:(Suppressions.Span.Blocks [{first= 1; last= 3}])
-      |> add_exn ~key:"PULSE_UNNECESSARY_COPY" ~data:(Suppressions.Span.Blocks [{first= 1; last= 3}]) )
+      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 3}])
+      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 3}]) )
 
 
 let%test "multiple blocks" =
@@ -71,8 +71,8 @@ let%test "multiple blocks" =
        ["// @infer-ignore BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"] )
     Map.(
       empty
-      |> add_exn ~key:"BUFFER_OVERRUN_L1"
-           ~data:(Suppressions.Span.Blocks [{first= 1; last= 2}; {first= 3; last= 4}]) )
+      |> add "BUFFER_OVERRUN_L1"
+           (Suppressions.Span.Blocks [{first= 1; last= 2}; {first= 3; last= 4}]) )
 
 
 let%test "parsing matching line every" =

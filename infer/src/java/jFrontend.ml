@@ -27,7 +27,7 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
     | JTrans.Skip when is_last pc && not (JContext.is_goto_jump context pc) ->
         exit_nodes
     | JTrans.Skip ->
-        direct_successors pc (Int.Set.add visited pc)
+        direct_successors pc (IInt.Set.add pc visited)
     | JTrans.Instr node ->
         [node]
     | JTrans.Prune (node_true, node_false) ->
@@ -40,20 +40,20 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
       match JContext.get_goto_jump context pc with
       | JContext.Next ->
           let next_pc = pc + 1 in
-          if Int.Set.mem visited next_pc || is_a_throw pc then []
+          if IInt.Set.mem next_pc visited || is_a_throw pc then []
           else get_body_nodes_ next_pc visited
-      | JContext.Jump goto_pc when Int.Set.mem visited goto_pc ->
+      | JContext.Jump goto_pc when IInt.Set.mem goto_pc visited ->
           [] (* loop in goto *)
       | JContext.Jump goto_pc ->
           get_body_nodes_ goto_pc visited
       | JContext.Exit ->
           exit_nodes
   in
-  let get_body_nodes pc = get_body_nodes_ pc Int.Set.empty in
+  let get_body_nodes pc = get_body_nodes_ pc IInt.Set.empty in
   let get_succ_nodes node pc =
     match JContext.get_if_jump context node with
     | None ->
-        direct_successors pc Int.Set.empty
+        direct_successors pc IInt.Set.empty
     | Some jump_pc ->
         get_body_nodes jump_pc
   in
@@ -81,7 +81,7 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
   in
   let first_nodes =
     (* deals with the case of an empty array *)
-    direct_successors (-1) Int.Set.empty
+    direct_successors (-1) IInt.Set.empty
   in
   (* the exceptions edges here are going directly to the exit node *)
   Procdesc.node_set_succs context.procdesc start_node ~normal:first_nodes ~exn:exit_nodes ;

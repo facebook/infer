@@ -56,11 +56,11 @@ module FixClosureAppExpr = struct
     let open ProcDesc in
     let globals_and_locals =
       List.fold pdesc.locals ~init:globals ~f:(fun set (varname, _) ->
-          String.Set.add set varname.VarName.value )
+          IString.Set.add varname.VarName.value set )
     in
     let is_varname ({enclosing_class; name} : QualifiedProcName.t) =
       match enclosing_class with
-      | TopLevel when String.Set.mem globals_and_locals name.value ->
+      | TopLevel when IString.Set.mem name.value globals_and_locals ->
           let varname : VarName.t = {value= name.value; loc= name.loc} in
           Some (Exp.Load {exp= Lvar varname; typ= None})
       | TopLevel when is_ident name.value ->
@@ -142,10 +142,10 @@ module FixClosureAppExpr = struct
   let transform (module_ : Module.t) =
     let open Module in
     let globals =
-      List.fold module_.decls ~init:String.Set.empty ~f:(fun set decl ->
+      List.fold module_.decls ~init:IString.Set.empty ~f:(fun set decl ->
           match decl with
           | Global {name} ->
-              String.Set.add set name.VarName.value
+              IString.Set.add name.VarName.value set
           | Proc _ | Struct _ | Procdecl _ ->
               set )
     in

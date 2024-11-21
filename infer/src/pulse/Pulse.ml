@@ -1646,11 +1646,11 @@ let log_summary_count proc_name summary =
   let counts =
     let summary_kinds = List.map ~f:ExecutionDomain.to_name summary in
     let map =
-      let incr_or_one val_opt = match val_opt with Some v -> v + 1 | None -> 1 in
-      let update acc s = String.Map.update acc s ~f:incr_or_one in
-      List.fold summary_kinds ~init:String.Map.empty ~f:update
+      let incr_or_one val_opt = Some (match val_opt with Some v -> v + 1 | None -> 1) in
+      let update acc s = IString.Map.update s incr_or_one acc in
+      List.fold summary_kinds ~init:IString.Map.empty ~f:update
     in
-    let alist = List.map ~f:(fun (s, i) -> (s, `Int i)) (String.Map.to_alist map) in
+    let alist = List.map ~f:(fun (s, i) -> (s, `Int i)) (IString.Map.bindings map) in
     let alist =
       match PulseModelsErlang.Custom.exists_db_model proc_name with
       | true ->

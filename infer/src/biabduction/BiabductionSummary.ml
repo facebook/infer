@@ -157,9 +157,9 @@ module Visitedset = struct
   end)
 
   let pp fmt visitedset =
-    let collect_lines (_, ns) acc = List.fold ns ~f:Int.Set.add ~init:acc in
-    let lines = fold collect_lines visitedset Int.Set.empty in
-    Pp.seq F.pp_print_int fmt (Int.Set.elements lines)
+    let collect_lines (_, ns) acc = List.fold ns ~f:(fun acc i -> IInt.Set.add i acc) ~init:acc in
+    let lines = fold collect_lines visitedset IInt.Set.empty in
+    Pp.seq F.pp_print_int fmt (IInt.Set.elements lines)
 end
 
 (** A spec consists of:

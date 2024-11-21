@@ -765,7 +765,7 @@ val racerd_always_report_java : bool
 
 val racerd_guardedby : bool
 
-val racerd_ignore_classes : String.Set.t
+val racerd_ignore_classes : IString.Set.t
 
 val reactive_mode : bool
 

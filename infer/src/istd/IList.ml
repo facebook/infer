@@ -122,21 +122,16 @@ let split_last_rev l = match List.rev l with x :: xs -> Some (x, xs) | [] -> Non
 let append_no_duplicates (type a) ~(cmp : a -> a -> int) =
   (* roughly based on [Core.List.stable_dedup_staged] but also takes care of the append and takes
      into account the invariant that [list1] and [list2] do not contain duplicates individually *)
-  let module Set = Set.Make (struct
+  let module Set = Stdlib.Set.Make (struct
     type t = a
 
     let compare = cmp
-
-    (* we never calls these *)
-    let t_of_sexp _ = assert false
-
-    let sexp_of_t _ = assert false
   end) in
   Staged.stage (fun (list1 : a list) (list2 : a list) ->
       let set1 = Set.of_list list1 in
       let res_rev =
         List.fold_left list2 ~init:(List.rev list1) ~f:(fun res_rev x ->
-            if Set.mem set1 x then res_rev else x :: res_rev )
+            if Set.mem x set1 then res_rev else x :: res_rev )
       in
       List.rev res_rev )
 

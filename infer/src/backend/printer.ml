@@ -184,9 +184,9 @@ end = struct
       in
       try
         let set = Hashtbl.find err_per_line err_data.loc.Location.line in
-        Hashtbl.replace err_per_line err_data.loc.Location.line (String.Set.add set err_str)
+        Hashtbl.replace err_per_line err_data.loc.Location.line (IString.Set.add err_str set)
       with Stdlib.Not_found ->
-        Hashtbl.add err_per_line err_data.loc.Location.line (String.Set.singleton err_str)
+        Hashtbl.add err_per_line err_data.loc.Location.line (IString.Set.singleton err_str)
     in
     Errlog.iter add_err err_log ;
     err_per_line
@@ -250,7 +250,7 @@ end = struct
           () ) ;
       ( match Hashtbl.find table_err_per_line line_number with
       | errset ->
-          String.Set.iter errset ~f:(pp_err_message fmt)
+          IString.Set.iter (pp_err_message fmt) errset
       | exception Stdlib.Not_found ->
           () ) ;
       F.fprintf fmt "</td></tr>@\n"

@@ -2100,7 +2100,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then None
     else
       match
-        CContext.StmtMap.find context.CContext.vars_to_destroy stmt_info.Clang_ast_t.si_pointer
+        CContext.StmtMap.find_opt stmt_info.Clang_ast_t.si_pointer context.CContext.vars_to_destroy
       with
       | None ->
           L.(debug Capture Verbose) "@\nNo variables going out of scope here.@\n" ;
@@ -3084,9 +3084,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and init_dynamic_array trans_state array_exp_typ array_stmt_info dynlength_stmt_pointer =
-    let dynlength_stmt =
-      Int.Table.find_exn ClangPointers.pointer_stmt_table dynlength_stmt_pointer
-    in
+    let dynlength_stmt = IInt.Hash.find ClangPointers.pointer_stmt_table dynlength_stmt_pointer in
     let dynlength_stmt_info, _ = Clang_ast_proj.get_stmt_tuple dynlength_stmt in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state array_stmt_info in
     let dynlength_trans_result = instruction trans_state_pri dynlength_stmt in

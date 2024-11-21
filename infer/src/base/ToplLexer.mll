@@ -22,9 +22,9 @@
   let quoted = Str.regexp "\\\\\\(.\\)"
   let unquote x = Str.global_replace quoted "\\1" x
 
-  (* We open Caml, because ocamllex generates code that uses Array.make,
+  (* We open Stdlib, because ocamllex generates code that uses Array.make,
   which is not available in Core. Ideally, this should go away. *)
-  open! Caml
+  open! Stdlib
 }
 
 let id_tail = ['a'-'z' 'A'-'Z' '0'-'9']*

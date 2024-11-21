@@ -429,21 +429,20 @@ module Implementation = struct
     in
     let update_statement =
       let stmts =
-        List.fold PayloadId.database_fields ~init:String.Map.empty ~f:(fun acc payload_id ->
-            String.Map.add_exn ~key:payload_id
-              ~data:
-                (Database.register_statement AnalysisDatabase
-                   {|
+        List.fold PayloadId.database_fields ~init:IString.Map.empty ~f:(fun acc payload_id ->
+            IString.Map.add payload_id
+              (Database.register_statement AnalysisDatabase
+                 {|
                      UPDATE specs SET
                        report_summary = :report_summary,
                        summary_metadata = :summary_metadata,
                        %s = :value
                      WHERE proc_uid = :proc_uid
                    |}
-                   payload_id )
+                 payload_id )
               acc )
       in
-      fun payload_id -> String.Map.find_exn stmts (PayloadId.Variants.to_name payload_id)
+      fun payload_id -> IString.Map.find (PayloadId.Variants.to_name payload_id) stmts
     in
     fun analysis_req ~proc_uid ~proc_name ~merge_pulse_payload ~merge_report_summary
         ~merge_summary_metadata ->

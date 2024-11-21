@@ -146,10 +146,10 @@ let named_decl_info_equal ndi1 ndi2 =
 
 
 let get_decl decl_ptr =
-  let decl = Int.Table.find ClangPointers.pointer_decl_table decl_ptr in
+  let decl = IInt.Hash.find_opt ClangPointers.pointer_decl_table decl_ptr in
   match decl with
   | Some (VarDecl ({di_parent_pointer= Some parent_pointer}, ndi, _, _)) -> (
-    match Int.Table.find ClangPointers.pointer_decl_table parent_pointer with
+    match IInt.Hash.find_opt ClangPointers.pointer_decl_table parent_pointer with
     | Some (CXXRecordDecl (_, _, _, decls, _, _, _, _)) -> (
         let has_same_ndi = function
           | Clang_ast_t.VarDecl (_, ndi', _, _) ->
@@ -169,7 +169,7 @@ let get_decl_opt decl_ptr_opt =
 
 
 let get_stmt stmt_ptr source_range =
-  let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
+  let stmt = IInt.Hash.find_opt ClangPointers.pointer_stmt_table stmt_ptr in
   if Option.is_none stmt then
     CFrontend_errors.incorrect_assumption __POS__ source_range "stmt with pointer %d not found@\n"
       stmt_ptr ;
@@ -204,28 +204,28 @@ let update_sil_types_map type_ptr sil_type =
 
 let update_enum_map_exn enum_constant_pointer sil_exp =
   let predecessor_pointer_opt, _ =
-    ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
+    ClangPointers.Map.find enum_constant_pointer !CFrontend_config.enum_map
   in
   let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
   CFrontend_config.enum_map :=
-    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
+    ClangPointers.Map.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
 
 
 let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
   let enum_map_value = (predecessor_pointer_opt, None) in
   CFrontend_config.enum_map :=
-    ClangPointers.Map.set !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
+    ClangPointers.Map.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
 
 
 let get_enum_constant_exp_exn enum_constant_pointer =
-  ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
+  ClangPointers.Map.find enum_constant_pointer !CFrontend_config.enum_map
 
 
 let get_type type_ptr =
   match type_ptr with
   (* There is chance for success only if type_ptr is in fact clang pointer *)
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
-      Int.Table.find ClangPointers.pointer_type_table raw_ptr
+      IInt.Hash.find_opt ClangPointers.pointer_type_table raw_ptr
   | _ ->
       (* TODO(T30739447): investigate why this happens *)
       (* otherwise, function fails *)

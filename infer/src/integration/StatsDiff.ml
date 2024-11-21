@@ -29,24 +29,24 @@ module F = Format
   }
     v} *)
 
-(* keep this sorted or else... (the [ok_exn] below will fail) *)
+(* keep this sorted or else... *)
 let stable_stat_events =
-  [| "count.analysis_scheduler_gc_stats.compactions"
-   ; "count.backend_stats.pulse_aliasing_contradictions"
-   ; "count.backend_stats.pulse_captured_vars_length_contradictions"
-   ; "count.backend_stats.pulse_summaries_count_0_percent"
-   ; "count.backend_stats.pulse_summaries_count_1"
-   ; "count.backend_stats.pulse_summaries_unsat_for_caller"
-   ; "count.backend_stats.pulse_summaries_unsat_for_caller_percent"
-   ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes"
-   ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes_percent"
-   ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns"
-   ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns_percent"
-   ; "count.backend_stats.timeouts"
-   ; "count.num_analysis_workers"
-   ; "count.source_files_to_analyze"
-   ; "msg.analyzed_file" |]
-  |> String.Set.of_sorted_array |> Or_error.ok_exn
+  IString.Set.of_list
+    [ "count.analysis_scheduler_gc_stats.compactions"
+    ; "count.backend_stats.pulse_aliasing_contradictions"
+    ; "count.backend_stats.pulse_captured_vars_length_contradictions"
+    ; "count.backend_stats.pulse_summaries_count_0_percent"
+    ; "count.backend_stats.pulse_summaries_count_1"
+    ; "count.backend_stats.pulse_summaries_unsat_for_caller"
+    ; "count.backend_stats.pulse_summaries_unsat_for_caller_percent"
+    ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes"
+    ; "count.backend_stats.pulse_summaries_with_some_unreachable_nodes_percent"
+    ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns"
+    ; "count.backend_stats.pulse_summaries_with_some_unreachable_returns_percent"
+    ; "count.backend_stats.timeouts"
+    ; "count.num_analysis_workers"
+    ; "count.source_files_to_analyze"
+    ; "msg.analyzed_file" ]
 
 
 let error ~expected json =
@@ -269,7 +269,7 @@ let pp_diff fmt diff =
 
 
 let is_changed_entry_significant entry =
-  String.Set.mem stable_stat_events entry.event
+  IString.Set.mem entry.event stable_stat_events
   && Option.exists (delta_of_changed_entry entry) ~f:(fun (_, _, delta) -> Float.(abs delta > 0.5))
 
 

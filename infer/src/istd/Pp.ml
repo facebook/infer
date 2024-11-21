@@ -205,8 +205,8 @@ let cli_args_with_verbosity ~verbose fmt args =
                pp_argfile in_argfiles fmt argfile ) ) ;
     if !at_least_one then F.fprintf fmt "@]@\n"
   and pp_argfile in_argfiles fmt fname =
-    if not (String.Set.mem in_argfiles fname) then
-      let in_argfiles' = String.Set.add in_argfiles fname in
+    if not (IString.Set.mem fname in_argfiles) then
+      let in_argfiles' = IString.Set.add fname in_argfiles in
       match In_channel.read_lines fname with
       | args ->
           F.fprintf fmt "++Contents of %s:@\n%a@\n"
@@ -220,7 +220,7 @@ let cli_args_with_verbosity ~verbose fmt args =
             Exn.pp exn
   in
   pp_args fmt args ;
-  if verbose then pp_argfile_args String.Set.empty fmt args
+  if verbose then pp_argfile_args IString.Set.empty fmt args
 
 
 let cli_args fmt args = cli_args_with_verbosity ~verbose:true fmt args

@@ -88,9 +88,9 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
            arg file, we need to remove its argument now *)
         aux in_argfiles (false, res_rev, true) tl
     | at_argfile :: tl
-      when String.is_prefix at_argfile ~prefix:"@" && not (String.Set.mem in_argfiles at_argfile)
+      when String.is_prefix at_argfile ~prefix:"@" && not (IString.Set.mem at_argfile in_argfiles)
       -> (
-        let in_argfiles' = String.Set.add in_argfiles at_argfile in
+        let in_argfiles' = IString.Set.add at_argfile in_argfiles in
         let argfile = String.slice at_argfile 1 (String.length at_argfile) in
         match In_channel.read_lines argfile with
         | lines ->
@@ -129,7 +129,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
         let arg' = replace_options_arg res_rev arg in
         aux in_argfiles (false, arg' :: res_rev, changed || not (phys_equal arg arg')) tl
   in
-  match aux String.Set.empty (false, [], false) args with
+  match aux IString.Set.empty (false, [], false) args with
   | _, res_rev, _ ->
       (* return non-reversed list *)
       List.append pre_args (List.rev_append res_rev post_args)

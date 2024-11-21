@@ -45,11 +45,11 @@ let process_gradle_output_line =
     |> Option.value_map ~default:acc ~f:(fun pos ->
            let content = String.drop_prefix line (pos + String.length arg_start_pattern) in
            L.debug Capture Verbose "Processing: %s@." content ;
-           if String.Set.mem seen content then acc
+           if IString.Set.mem content seen then acc
            else
              let javac_data = parse_gradle_line ~kotlin:Config.kotlin_capture ~line:content in
              let out_dir = Unix.mkdtemp capture_output_template in
-             (String.Set.add seen content, (out_dir, javac_data) :: target_dirs) )
+             (IString.Set.add content seen, (out_dir, javac_data) :: target_dirs) )
 
 
 let run_gradle ~prog ~args =
@@ -67,7 +67,7 @@ let run_gradle ~prog ~args =
   L.progress "[GRADLE] running gradle took %a@\n" Mtime.Span.pp (Mtime_clock.count time) ;
   match Utils.read_file gradle_output_file with
   | Ok lines ->
-      List.fold lines ~init:(String.Set.empty, []) ~f:process_gradle_output_line
+      List.fold lines ~init:(IString.Set.empty, []) ~f:process_gradle_output_line
   | Error _ ->
       L.die ExternalError "*** failed to read gradle output: %s@\n" gradle_output_file
 
@@ -133,5 +133,5 @@ let capture ~prog ~args =
   let time = Mtime_clock.counter () in
   run_infer_capture rev_target_data ;
   write_rev_infer_deps rev_target_data ;
-  L.debug Capture Quiet "[GRADLE] infer processed %d lines in %a@\n" (String.Set.length processed)
-    Mtime.Span.pp (Mtime_clock.count time)
+  L.debug Capture Quiet "[GRADLE] infer processed %d lines in %a@\n"
+    (IString.Set.cardinal processed) Mtime.Span.pp (Mtime_clock.count time)

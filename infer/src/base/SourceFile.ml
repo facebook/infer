@@ -235,14 +235,14 @@ let is_under_project_root = function
       false
 
 
-let exists_cache = String.Table.create ~size:256 ()
+let exists_cache = IString.Hash.create 256
 
 let path_exists abs_path =
-  try String.Table.find_exn exists_cache abs_path
-  with Not_found_s _ | Stdlib.Not_found ->
-    let result = ISys.file_exists abs_path in
-    String.Table.set exists_cache ~key:abs_path ~data:result ;
-    result
+  IString.Hash.find_opt exists_cache abs_path
+  |> Option.value_or_thunk ~default:(fun () ->
+         let result = ISys.file_exists abs_path in
+         IString.Hash.replace exists_cache abs_path result ;
+         result )
 
 
 let of_header ?(warn_on_error = true) header_file =

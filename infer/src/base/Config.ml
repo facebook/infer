@@ -4720,7 +4720,7 @@ and racerd_always_report_java = !racerd_always_report_java
 
 and racerd_guardedby = !racerd_guardedby
 
-and racerd_ignore_classes = RevList.to_list !racerd_ignore_classes |> String.Set.of_list
+and racerd_ignore_classes = RevList.to_list !racerd_ignore_classes |> IString.Set.of_list
 
 and reactive_mode = !reactive
 

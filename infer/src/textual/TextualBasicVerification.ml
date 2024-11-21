@@ -81,7 +81,7 @@ let count_generics_args args generics =
 
 let verify_decl ~env errors (decl : Module.decl) =
   let verify_label errors declared_labels pname label =
-    if String.Set.mem declared_labels label.NodeName.value then errors
+    if IString.Set.mem label.NodeName.value declared_labels then errors
     else UnknownLabel {label; pname} :: errors
   in
   let verify_field errors field =
@@ -221,8 +221,8 @@ let verify_decl ~env errors (decl : Module.decl) =
                   idents ) )
     in
     let declared_labels =
-      List.fold procdesc.nodes ~init:String.Set.empty ~f:(fun set node ->
-          String.Set.add set node.Node.label.value )
+      List.fold procdesc.nodes ~init:IString.Set.empty ~f:(fun set node ->
+          IString.Set.add node.Node.label.value set )
     in
     let verify_label errors =
       verify_label errors declared_labels procdesc.procdecl.qualified_name

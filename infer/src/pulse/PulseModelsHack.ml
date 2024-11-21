@@ -1465,7 +1465,7 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
                   let rootname = replace_backslash_with_colon rootname in
                   L.d_printfln "got root_name = %s, type_prop_name = %s" rootname type_prop_name ;
                   let concatenated_name = Printf.sprintf "%s$$%s" rootname type_prop_name in
-                  if String.Set.mem visited_set concatenated_name then (
+                  if IString.Set.mem concatenated_name visited_set then (
                     L.d_printfln "Cyclic type constant detected!" ;
                     ret None )
                   else
@@ -1479,12 +1479,12 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
                     L.d_printfln "type structure for projection=%a" AbstractValue.pp
                       (fst type_constant_ts) ;
                     find_name type_constant_ts nullable
-                      (String.Set.add visited_set concatenated_name)
+                      (IString.Set.add concatenated_name visited_set)
               | _, _ ->
                   ret None )
             else ret None )
   in
-  let* name_opt = find_name tdict false String.Set.empty in
+  let* name_opt = find_name tdict false IString.Set.empty in
   match name_opt with
   | Some (name, nullable) ->
       L.d_printfln "type structure test against type name %a" Typ.Name.pp name ;

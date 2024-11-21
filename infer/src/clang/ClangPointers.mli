@@ -7,15 +7,15 @@
 
 open! IStd
 
-module Map : module type of Map.Make (Int)
+module Map : Stdlib.Map.S with type key = int
 
-val pointer_decl_table : Clang_ast_t.decl Int.Table.t
+val pointer_decl_table : Clang_ast_t.decl IInt.Hash.t
 (** maps decl pointer to its decl record *)
 
-val pointer_stmt_table : Clang_ast_t.stmt Int.Table.t
+val pointer_stmt_table : Clang_ast_t.stmt IInt.Hash.t
 (** maps stmt pointer to its stmt record *)
 
-val pointer_type_table : Clang_ast_t.c_type Int.Table.t
+val pointer_type_table : Clang_ast_t.c_type IInt.Hash.t
 (** map pointer to its type *)
 
 val populate_all_tables : Clang_ast_t.decl -> unit

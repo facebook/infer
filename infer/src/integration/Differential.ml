@@ -476,7 +476,7 @@ module ConfigImpactItem = struct
           in
           {config_impact_item; unchecked_callees}
     in
-    let fold_aux ~key:_ ~data ((acc_introduced, acc_fixed) as acc) =
+    let fold_aux _key data ((acc_introduced, acc_fixed) as acc) =
       match data with
       | `Both (current_reports, previous_reports) ->
           (* current/previous reports cannot be empty. *)
@@ -507,14 +507,31 @@ module ConfigImpactItem = struct
           acc
     in
     let map_of_config_impact config_impact =
-      List.fold ~init:String.Map.empty config_impact
+      List.fold ~init:IString.Map.empty config_impact
         ~f:(fun acc ({Jsonconfigimpact_t.hash= key; unchecked_callees} as config_impact_item) ->
           let unchecked_callees = UncheckedCallees.decode unchecked_callees in
-          String.Map.add_multi acc ~key ~data:{config_impact_item; unchecked_callees} )
+          IString.Map.update key
+            (fun v_opt ->
+              Some ({config_impact_item; unchecked_callees} :: Option.value v_opt ~default:[]) )
+            acc )
     in
     let current_map = map_of_config_impact current_config_impact in
     let previous_map = map_of_config_impact previous_config_impact in
-    Map.fold2 ~init:([], []) current_map previous_map ~f:fold_aux
+    let combined_map =
+      IString.Map.merge
+        (fun _key curr_opt prev_opt ->
+          match (curr_opt, prev_opt) with
+          | Some curr, None ->
+              Some (`Left curr)
+          | None, Some prev ->
+              Some (`Right prev)
+          | Some curr, Some prev ->
+              Some (`Both (curr, prev))
+          | None, None ->
+              assert false )
+        current_map previous_map
+    in
+    IString.Map.fold fold_aux combined_map ([], [])
 end
 
 module Report = struct

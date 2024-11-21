@@ -239,7 +239,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
           match Utils.read_file filename with
           | Error _ ->
               L.user_error "Could not read file %s@\n" filename ;
-              String.Map.empty
+              IString.Map.empty
           | Ok lines ->
               Suppressions.parse_lines ~file:filename lines )
     in

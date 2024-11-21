@@ -38,7 +38,7 @@ let android_anr_time_limit = 5.0
 (* get time unit in seconds *)
 let secs_of_timeunit =
   let time_units =
-    String.Map.of_alist_exn
+    Stdlib.List.to_seq
       [ ("NANOSECONDS", 0.000_000_001)
       ; ("MICROSECONDS", 0.000_001)
       ; ("MILLISECONDS", 0.001)
@@ -46,6 +46,7 @@ let secs_of_timeunit =
       ; ("MINUTES", 60.0)
       ; ("HOURS", 3_600.0)
       ; ("DAYS", 86_400.0) ]
+    |> IString.Map.of_seq
   in
   let str_of_access_path = function
     | _, [AccessPath.FieldAccess field]
@@ -61,7 +62,8 @@ let secs_of_timeunit =
     | _ ->
         None
   in
-  fun timeunit_exp -> str_of_exp timeunit_exp |> Option.bind ~f:(String.Map.find time_units)
+  fun timeunit_exp ->
+    str_of_exp timeunit_exp |> Option.bind ~f:(fun t -> IString.Map.find_opt t time_units)
 
 
 let float_of_const_int = function

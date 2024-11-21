@@ -14,7 +14,7 @@ type file_entry = Singleton of SourceFile.t | Duplicate of (string list * Source
 
 type t =
   { classpath_channel: Javalib.class_path
-  ; sources: file_entry String.Map.t
+  ; sources: file_entry IString.Map.t
   ; classes: JBasics.ClassSet.t }
 
 type source =

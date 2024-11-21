@@ -13,7 +13,7 @@ module Span : sig
   type t = Every | Blocks of block list [@@deriving compare, equal]
 end
 
-type t = Span.t String.Map.t
+type t = Span.t IString.Map.t
 
 val parse_lines : ?file:string -> string list -> t
 
