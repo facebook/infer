@@ -50,11 +50,12 @@ let mk_qualified_proc_name ?loc kind : Textual.QualifiedProcName.t =
       ; name= procname_of_ident function_name }
 
 
-let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames} =
+let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames; is_async} =
+  let attrs = if is_async then [Textual.Attr.mk_async] else [] in
   let values =
     List.init co_argcount ~f:(fun i -> co_varnames.(i)) |> List.map ~f:(F.asprintf "%a" Ident.pp)
   in
-  if List.is_empty values then [] else [Textual.Attr.mk_python_args values]
+  if List.is_empty values then attrs else Textual.Attr.mk_python_args values :: attrs
 
 
 let mk_procdecl ?loc kind code_info =

@@ -131,6 +131,8 @@ module Attr : sig
 
   val find_python_args : t -> string list option
 
+  val mk_async : t
+
   val mk_trait : t
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

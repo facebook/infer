@@ -49,8 +49,8 @@ def f(y, l):
             print(i)
         done()
 
-def g():
-    print(x)
+async def g():
+    await sleep(1)
 |}
   in
   PyIR.test ~run source ;
@@ -107,11 +107,13 @@ def g():
 
     }
 
-    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
-          n0 = $builtins.py_load_global("print", globals)
-          n1 = $builtins.py_load_global("x", globals)
-          n2 = $builtins.py_call(n0, globals, $builtins.py_make_none(), n1)
+          _ = $builtins.py_gen_start_coroutine()
+          n0 = $builtins.py_load_global("sleep", globals)
+          n1 = $builtins.py_call(n0, globals, $builtins.py_make_none(), $builtins.py_make_int(1))
+          n2 = $builtins.py_get_awaitable($builtins.py_make_none(), n1)
+          n3 = $builtins.py_yield_from($builtins.py_make_none(), n2, $builtins.py_make_none())
           ret $builtins.py_make_none()
 
     }
@@ -167,11 +169,13 @@ def g():
 
     }
 
-    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
-          n0 = $builtins.py_load_global("print", [&globals:*PyGlobals])
-          n1 = $builtins.py_load_global("x", [&globals:*PyGlobals])
-          n2 = $builtins.py_call(n0, [&globals:*PyGlobals], $builtins.py_make_none(), n1)
+          _ = $builtins.py_gen_start_coroutine()
+          n0 = $builtins.py_load_global("sleep", [&globals:*PyGlobals])
+          n1 = $builtins.py_call(n0, [&globals:*PyGlobals], $builtins.py_make_none(), $builtins.py_make_int(1))
+          n2 = $builtins.py_get_awaitable($builtins.py_make_none(), n1)
+          n3 = $builtins.py_yield_from($builtins.py_make_none(), n2, $builtins.py_make_none())
           ret $builtins.py_make_none()
 
     }
@@ -292,16 +296,21 @@ def g():
 
     }
 
-    define dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
       #b0:
-          n3:*PyGlobals = load &globals
-          n0 = $builtins.py_load_global("print", n3)
-          n4:*PyGlobals = load &globals
-          n1 = $builtins.py_load_global("x", n4)
+          n4 = $builtins.py_gen_start_coroutine()
           n5:*PyGlobals = load &globals
-          n6 = $builtins.py_make_none()
-          n2 = $builtins.py_call(n0, n5, n6, n1)
+          n0 = $builtins.py_load_global("sleep", n5)
+          n6:*PyGlobals = load &globals
           n7 = $builtins.py_make_none()
-          ret n7
+          n8 = $builtins.py_make_int(1)
+          n1 = $builtins.py_call(n0, n6, n7, n8)
+          n9 = $builtins.py_make_none()
+          n2 = $builtins.py_get_awaitable(n9, n1)
+          n10 = $builtins.py_make_none()
+          n11 = $builtins.py_make_none()
+          n3 = $builtins.py_yield_from(n10, n2, n11)
+          n12 = $builtins.py_make_none()
+          ret n12
 
     } |}]

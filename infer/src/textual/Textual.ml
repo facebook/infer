@@ -272,6 +272,8 @@ module Attr = struct
 
   let find_python_args {name; values} = if String.equal name "args" then Some values else None
 
+  let mk_async = {name= "async"; values= []; loc= Location.Unknown}
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
