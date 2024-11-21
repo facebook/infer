@@ -136,9 +136,12 @@ indirectly, another method annotated with &lsquo;@B&lsquo;.
 Besides the custom pairs, it is also possible to enable some
 built-in checks, such as &lsquo;@PerformanceCritical&lsquo;
 reaching &lsquo;@Expensive&lsquo; or
-&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. See
-flags starting with &lsquo;--annotation-reachability&lsquo;.
-(Conversely: <b>--no-annotation-reachability</b>)</p>
+&lsquo;@NoAllocation&lsquo; reaching &lsquo;new&lsquo;. It
+is also possible to model methods as if they were annotated,
+using regular expressions. This should also work in
+languages where there are no annotations. See flags starting
+with &lsquo;--annotation-reachability&lsquo;. (Conversely:
+<b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -861,6 +864,7 @@ infer-reportdiff</b>(1). <b><br>
 --no-default-checkers</b></p>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
+<b>--dispatch-once-static-init</b>,
 <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
 <b>--parameter-not-null-checked</b>, <b>--pulse</b>,
@@ -978,6 +982,7 @@ DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
+DISPATCH_ONCE_IN_STATIC_INIT (disabled by default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
@@ -1045,6 +1050,8 @@ NO_MATCH_OF_RHS (enabled by default), <br>
 NO_MATCH_OF_RHS_LATENT (disabled by default), <br>
 NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default), <br>
+NSSTRING_INTERNAL_PTR_CAPTURED_IN_BLOCK (disabled by
+default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS (enabled by default),
 <br>
@@ -1124,6 +1131,24 @@ VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
 Wrong_argument_number (enabled by default). <br>
 See also <b>infer-report</b>(1). <b><br>
+--no-dispatch-once-static-init</b></p>
+
+<p style="margin-left:17%;">Deactivates:
+<i>dispatch-once-static-init</i> checker: Detect if
+dispatch_once is called from a static constructor.
+(Conversely: <b>--dispatch-once-static-init</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--dispatch-once-static-init-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>dispatch-once-static-init</i> and disable all other
+checkers (Conversely:
+<b>--no-dispatch-once-static-init-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -1970,6 +1995,21 @@ Objective-C classes corresponding to what the compiler does.
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--ondemand-recursion-restart-limit</b> <i>int</i></p>
+
+<p style="margin-left:17%;">In order to make the analysis
+of mutual recursion cycles deterministic in their output,
+the analysis of a cycle of mutually recursive functions may
+restart the analysis of the entire cycle from a
+deterministic place. If the graph of mutual recursion is
+more complex than a simple cycle this could potentially
+result in many restarts before finding the &quot;right&quot;
+procedure from which to start. This limits the number of
+restarts before we give up and analyze the cycle as-is
+instead.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --no-parameter-not-null-checked</b></p>
 
 <p style="margin-left:17%;">Deactivates:
@@ -2362,6 +2402,13 @@ are method or namespace::method</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-model-unknown-pure</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as unknown pure in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-model-unreachable</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Methods to be modeled as
@@ -2442,6 +2489,15 @@ NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS issue type.
 <p style="margin-left:17%;">Activates: Enable <i>pulse</i>
 and disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-over-approximate-reasoning</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] add
+over-approximate reasoning on top of the under-approximate,
+disjunctive reasoning of Pulse. (Conversely:
+<b>--no-pulse-over-approximate-reasoning</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2771,6 +2827,19 @@ with <b>--pyc-file</b>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--python-globals</b> <i>{ own-by-closures | own-by-module
+}</i></p>
+
+<p style="margin-left:17%;">Specify the strategy to wire
+globals dictionnaire into each function</p>
+
+<p style="margin-left:11%;">- own-by-closures: each closure
+captured the global <br>
+dictionary <br>
+- own-by-module: each function is given the global
+dictionary as <br>
+argument (not referenced in the heap to avoid aliases) <br>
+See also <b>infer-analyze</b>(1). <b><br>
 --qualified-cpp-name-block-list</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Skip analyzing the procedures
