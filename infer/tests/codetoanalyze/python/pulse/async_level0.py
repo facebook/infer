@@ -10,6 +10,8 @@ import random
 async def sleep(i):
     await asyncio.sleep(i)
 
+async def FN_sleep_bad(i):
+    asyncio.sleep(i)
 
 async def call_sleep_ok():
     await sleep(1)
@@ -51,6 +53,9 @@ async def call_sleep_with_branchs_bad2(b):
 b = random.choice([True, False])
 
 
+asyncio.run(FN_sleep_bad(random.random()))
+
+
 asyncio.run(call_sleep_ok())
 
 
@@ -65,5 +70,5 @@ asyncio.run(call_sleep_with_branchs_ok(b))
 
 asyncio.run(call_sleep_with_branchs_bad1(b))
 
-#FP
+
 asyncio.run(call_sleep_with_branchs_bad2(b))
