@@ -71,7 +71,7 @@ let hack_await_static _ arg : model =
 let make_new_awaitable av =
   let open DSL.Syntax in
   let* av = constructor awaitable_type_name [("val", av)] in
-  allocation Attribute.HackAsync av @@> ret av
+  allocation Attribute.Awaitable av @@> ret av
 
 
 let deep_clean_hack_value aval : unit DSL.model_monad =

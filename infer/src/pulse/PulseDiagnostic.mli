@@ -72,7 +72,7 @@ type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; t
 type resource =
   | CSharpClass of CSharpClassName.t
   | JavaClass of JavaClassName.t
-  | HackAsync
+  | Awaitable
   | HackBuilderResource of HackClassName.t
   | Memory of Attribute.allocator
 

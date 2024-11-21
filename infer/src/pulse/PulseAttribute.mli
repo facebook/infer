@@ -27,14 +27,16 @@ type allocator =
   | JavaResource of JavaClassName.t
   | CSharpResource of CSharpClassName.t
   | ObjCAlloc
-  | HackAsync
   | HackBuilderResource of HackClassName.t
+  | Awaitable (* used for Hack and Python *)
   | FileDescriptor
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
 
 val is_hack_resource : allocator -> bool
+
+val is_python_resource : allocator -> bool
 
 (** Describes the source of taint in taint propagation.
 

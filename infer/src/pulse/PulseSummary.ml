@@ -107,7 +107,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
               }
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
-    | Error (`HackUnawaitedAwaitable (summary, astate, allocation_trace, location)) ->
+    | Error (`UnawaitedAwaitable (summary, astate, allocation_trace, location)) ->
         (* suppress unawaited awaitable reporting in the case that we're throwing an exception because it leads to
            too many true-but-unhelpful positives. TODO: reinstate reporting in the case that the exception is caught *)
         if is_exceptional_state then (
@@ -116,7 +116,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
         else
           PulseReport.report_summary_error analysis_data
             ( ReportableError
-                {astate; diagnostic= ResourceLeak {resource= HackAsync; allocation_trace; location}}
+                {astate; diagnostic= ResourceLeak {resource= Awaitable; allocation_trace; location}}
             , summary )
           |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`HackUnfinishedBuilder (summary, astate, allocation_trace, location, builder_type)) ->

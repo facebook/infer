@@ -195,7 +195,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
               let some_resource_found =
                 some_resource_found
                 || AddressAttributes.get_allocation_attr reachable_actual astate
-                   |> Option.exists ~f:(fun (attr, _) -> Attribute.is_hack_resource attr)
+                   |> Option.exists ~f:(fun (attr, _) ->
+                          Attribute.is_hack_resource attr || Attribute.is_python_resource attr )
               in
               (some_resource_found, AddressAttributes.remove_allocation_attr reachable_actual astate) )
         in

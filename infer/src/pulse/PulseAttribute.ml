@@ -29,8 +29,8 @@ module Attribute = struct
     | JavaResource of JavaClassName.t
     | CSharpResource of CSharpClassName.t
     | ObjCAlloc
-    | HackAsync
     | HackBuilderResource of HackClassName.t
+    | Awaitable (* used for Hack and Python *)
     | FileDescriptor
   [@@deriving compare, equal]
 
@@ -53,10 +53,10 @@ module Attribute = struct
         F.fprintf fmt "csharp resource %a" CSharpClassName.pp class_name
     | ObjCAlloc ->
         F.fprintf fmt "alloc"
-    | HackAsync ->
-        F.fprintf fmt "hack async"
     | HackBuilderResource class_name ->
         F.fprintf fmt "hack builder %a" HackClassName.pp class_name
+    | Awaitable ->
+        F.fprintf fmt "awaitable"
     | FileDescriptor ->
         F.pp_print_string fmt "file descriptor"
 
@@ -664,7 +664,7 @@ module Attribute = struct
     | ObjCAlloc, _
     | FileDescriptor, Some (FClose, _) ->
         true
-    | JavaResource _, _ | CSharpResource _, _ | HackAsync, _ | HackBuilderResource _, _ ->
+    | JavaResource _, _ | CSharpResource _, _ | HackBuilderResource _, _ | Awaitable, _ ->
         is_released
     | _ ->
         false
@@ -672,8 +672,26 @@ module Attribute = struct
 
   let is_hack_resource allocator =
     match allocator with
-    | HackAsync | HackBuilderResource _ ->
+    | Awaitable | HackBuilderResource _ ->
         true
+    | CMalloc
+    | CustomMalloc _
+    | CRealloc
+    | CustomRealloc _
+    | CppNew
+    | CppNewArray
+    | ObjCAlloc
+    | JavaResource _
+    | CSharpResource _
+    | FileDescriptor ->
+        false
+
+
+  let is_python_resource allocator =
+    match allocator with
+    | Awaitable ->
+        true
+    | HackBuilderResource _
     | CMalloc
     | CustomMalloc _
     | CRealloc

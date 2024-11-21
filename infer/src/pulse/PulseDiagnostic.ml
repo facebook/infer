@@ -129,7 +129,7 @@ type resource =
   | CSharpClass of CSharpClassName.t
   | JavaClass of JavaClassName.t
   (* TODO: add more data to HackAsync tracking the parameter type *)
-  | HackAsync
+  | Awaitable
   | HackBuilderResource of HackClassName.t
   | Memory of Attribute.allocator
 [@@deriving equal]
@@ -139,7 +139,7 @@ let pp_resource fmt = function
       CSharpClassName.pp fmt class_name
   | JavaClass class_name ->
       JavaClassName.pp fmt class_name
-  | HackAsync ->
+  | Awaitable ->
       F.pp_print_string fmt "async call"
   | HackBuilderResource class_name ->
       F.fprintf fmt "builder %a" HackClassName.pp class_name
@@ -152,7 +152,7 @@ let describe_allocation fmt = function
       F.fprintf fmt "constructor `%a()`" CSharpClassName.pp class_name
   | JavaClass class_name ->
       F.fprintf fmt "constructor `%a()`" JavaClassName.pp class_name
-  | HackAsync ->
+  | Awaitable ->
       F.pp_print_string fmt "async call"
   | HackBuilderResource class_name ->
       F.fprintf fmt "constructor `%a()`" HackClassName.pp class_name
@@ -165,7 +165,7 @@ let describe_allocation fmt = function
 let resource_type_s = function
   | CSharpClass _ | JavaClass _ ->
       "resource"
-  | HackAsync ->
+  | Awaitable ->
       "awaitable"
   | HackBuilderResource _ ->
       "builder object"
@@ -178,7 +178,7 @@ let resource_type_s = function
 let resource_closed_s = function
   | CSharpClass _ | JavaClass _ | Memory FileDescriptor ->
       "closed"
-  | HackAsync ->
+  | Awaitable ->
       "awaited"
   | HackBuilderResource _ ->
       "built/saved/finalised"
@@ -793,7 +793,7 @@ let get_message_and_suggestion diagnostic =
           (resource_type_s resource |> String.capitalize)
           pp_allocation_trace allocation_trace (resource_closed_s resource) Location.pp location
       , match resource with
-        | HackAsync ->
+        | Awaitable ->
             Some
               "Unawaited asynchronous computations can lead to SEVs. Please ensure there is an \
                await on all code paths, even if the result value is not needed."
@@ -1287,13 +1287,13 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_cpp
     | FileDescriptor ->
         IssueType.pulse_resource_leak
-    | JavaResource _ | CSharpResource _ | HackAsync | HackBuilderResource _ | ObjCAlloc ->
+    | JavaResource _ | CSharpResource _ | HackBuilderResource _ | Awaitable | ObjCAlloc ->
         L.die InternalError
           "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
            as allocator" )
   | ResourceLeak {resource= CSharpClass _ | JavaClass _}, false ->
       IssueType.pulse_resource_leak
-  | ResourceLeak {resource= HackAsync}, false ->
+  | ResourceLeak {resource= Awaitable}, false ->
       IssueType.pulse_unawaited_awaitable
   | ResourceLeak {resource= HackBuilderResource _}, false ->
       IssueType.pulse_unfinished_builder

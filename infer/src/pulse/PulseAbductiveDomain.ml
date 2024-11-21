@@ -2007,9 +2007,9 @@ module Summary = struct
               , class_name
               , trace
               , Option.value unreachable_location ~default:location ) )
-      | Error (unreachable_location, HackAsync, trace) ->
+      | Error (unreachable_location, Awaitable, trace) ->
           Error
-            (`HackUnawaitedAwaitable
+            (`UnawaitedAwaitable
               ( astate
               , astate_before_filter
               , trace

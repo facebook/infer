@@ -1065,7 +1065,7 @@ module ProcDescBridge = struct
       TypBridge.to_sil lang ~attrs:procdecl.result_type.attributes procdecl.result_type.typ
     in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
-    let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
+    let is_async = List.exists procdecl.attributes ~f:Attr.is_async in
     let is_abstract = List.exists procdecl.attributes ~f:Attr.is_abstract in
     let is_hack_wrapper = List.exists procdecl.attributes ~f:Attr.is_hack_wrapper in
     let python_args =
@@ -1081,7 +1081,7 @@ module ProcDescBridge = struct
     let pattributes =
       { (ProcAttributes.default (SourceFile.file sourcefile) sil_procname) with
         is_defined= true
-      ; is_hack_async
+      ; is_async
       ; is_abstract
       ; is_hack_wrapper
       ; hack_variadic_position

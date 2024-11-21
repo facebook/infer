@@ -36,7 +36,7 @@ let is_hack_async tenv pname =
       Procname.is_hack_async_name pname
   | Some attrs ->
       L.d_printfln "attributes are %a" ProcAttributes.pp attrs ;
-      attrs.ProcAttributes.is_hack_async
+      attrs.ProcAttributes.is_async
       || Procname.is_hack_async_name pname
          && ( attrs.ProcAttributes.is_abstract
             || (not attrs.ProcAttributes.is_defined)
@@ -50,6 +50,10 @@ let is_hack_async tenv pname =
                   false
               | Some str ->
                   Struct.is_hack_interface str ) )
+
+
+let is_python_async pname =
+  match IRAttributes.load pname with None -> false | Some attrs -> attrs.ProcAttributes.is_async
 
 
 let is_hack_builder_procname tenv pname =
@@ -743,6 +747,9 @@ module PulseTransferFunctions = struct
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
+    let is_python_async =
+      Language.curr_language_is Python && Option.exists ~f:is_python_async callee_pname
+    in
     let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
     (* if it's an async call, we're going to wrap the result in an [Awaitable], so we need to create
        a fresh [Ident.t] for the call to return to *)
@@ -923,6 +930,12 @@ module PulseTransferFunctions = struct
               in
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate
+              |> PulseResult.map ~f:(fun astate ->
+                     match PulseOperations.read_id (fst ret) astate with
+                     | Some (rv, _) when is_python_async ->
+                         PulseOperations.allocate Attribute.Awaitable call_loc rv astate
+                     | _ ->
+                         astate )
             in
             ContinueProgram astate
         | ExceptionRaised astate ->

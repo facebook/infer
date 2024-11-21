@@ -122,6 +122,16 @@ let call_method name obj arg_names args : model =
   assign_ret value
 
 
+let gen_start_coroutine : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> ret ()
+
+
+let get_awaitable _ arg : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> assign_ret arg
+
+
 let import_from name module_ : model =
   let open DSL.Syntax in
   start_model
@@ -241,12 +251,19 @@ let subscript seq idx : model =
   assign_ret res
 
 
+let yield_from _ _ _ : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> ret ()
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
   [ -"$builtins" &:: "py_call" <>$ arg $+ arg $+ arg $+++$--> call
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
+  ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
+  ; -"$builtins" &:: "py_get_awaitable" <>$ arg $+ arg $--> get_awaitable
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
   ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $--> import_name
   ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
@@ -259,5 +276,6 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_subscript" <>$ arg $+ arg $--> subscript
   ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
   ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global
-  ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name ]
+  ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name
+  ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $+ arg $--> yield_from ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

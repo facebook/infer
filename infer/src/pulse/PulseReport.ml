@@ -243,7 +243,7 @@ let summary_of_error_post proc_desc location mk_error astate =
   | Sat
       ( Error (`MemoryLeak (summary, _, _, _, _))
       | Error (`JavaResourceLeak (summary, _, _, _, _))
-      | Error (`HackUnawaitedAwaitable (summary, _, _, _))
+      | Error (`UnawaitedAwaitable (summary, _, _, _))
       | Error (`HackUnfinishedBuilder (summary, _, _, _, _))
       | Error (`CSharpResourceLeak (summary, _, _, _, _)) ) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
