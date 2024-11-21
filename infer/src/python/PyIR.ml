@@ -867,7 +867,10 @@ module CodeInfo = struct
     ; co_varnames: Ident.t array
     ; has_star_arguments: bool
     ; has_star_keywords: bool
+    ; is_async: bool
     ; is_generator: bool }
+
+  let is_async = function {FFI.Instruction.opname= "GEN_START"; arg= 1} :: _ -> true | _ -> false
 
   let of_code
       { FFI.Code.co_name
@@ -880,12 +883,14 @@ module CodeInfo = struct
       ; co_cellvars
       ; co_freevars
       ; co_names
-      ; co_varnames } =
+      ; co_varnames
+      ; instructions } =
     { co_name= Ident.mk co_name
     ; co_firstlineno
     ; has_star_arguments= co_flags land 0x04 <> 0
     ; has_star_keywords= co_flags land 0x08 <> 0
     ; is_generator= co_flags land 0x20 <> 0
+    ; is_async= is_async instructions
     ; co_nlocals
     ; co_argcount
     ; co_posonlyargcount
@@ -899,8 +904,10 @@ end
 module CFG = struct
   type t = {entry: NodeName.t; nodes: Node.t NodeName.Map.t; code_info: CodeInfo.t}
 
-  let pp ~name fmt {nodes; code_info= {co_varnames; co_argcount}} =
-    F.fprintf fmt "function %s(%a):@\n" name (Pp.seq ~sep:", " Ident.pp)
+  let pp ~name fmt {nodes; code_info= {co_varnames; co_argcount; is_async}} =
+    F.fprintf fmt "%sfunction %s(%a):@\n"
+      (if is_async then "async " else "")
+      name (Pp.seq ~sep:", " Ident.pp)
       (Array.slice co_varnames 0 co_argcount |> Array.to_list) ;
     NodeName.Map.iter (fun _ node -> Node.pp fmt node) nodes
 

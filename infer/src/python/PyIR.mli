@@ -234,6 +234,7 @@ module CodeInfo : sig
     ; co_varnames: Ident.t array
     ; has_star_arguments: bool
     ; has_star_keywords: bool
+    ; is_async: bool
     ; is_generator: bool }
 end
 

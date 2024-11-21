@@ -1440,13 +1440,13 @@ async def g():
           return None
 
 
-      function dummy.f():
+      async function dummy.f():
         b0:
           $GenStartCoroutine()
           return true
 
 
-      function dummy.g():
+      async function dummy.g():
         b0:
           $GenStartCoroutine()
           n0 <- GLOBAL[f]
@@ -1769,7 +1769,7 @@ async def foo():
           return None
 
 
-      function dummy.foo(i, f):
+      async function dummy.foo(i, f):
         b0:
           $GenStartCoroutine()
           n0 <- GLOBAL[range]

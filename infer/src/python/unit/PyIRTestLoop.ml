@@ -232,7 +232,7 @@ async def async_loop1():
           return None
 
 
-      function dummy.async_loop1(doc):
+      async function dummy.async_loop1(doc):
         b0:
           $GenStartCoroutine()
           n0 <- GLOBAL[get_docs]
@@ -268,7 +268,7 @@ async def async_loop2():
           return None
 
 
-      function dummy.async_loop2():
+      async function dummy.async_loop2():
         b0:
           $GenStartCoroutine()
           n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
@@ -281,7 +281,7 @@ async def async_loop2():
           return None
 
 
-      function dummy.async_loop2._$listcomp(.0):
+      async function dummy.async_loop2._$listcomp(.0):
         b0:
           $GenStartCoroutine()
           n0 <- LOCAL[.0]
