@@ -400,8 +400,8 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release address)
 
 
-    let hack_async_await address astate =
-      map_post_attrs astate ~f:(BaseAddressAttributes.hack_async_await address)
+    let await_awaitable address astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.await_awaitable address)
 
 
     let remove_hack_builder address astate =
@@ -1716,6 +1716,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
        |> snd
   in
   let check_memory_leak addr attributes =
+    L.d_printfln ~color:Orange "check_memory_leak on %a" CanonValue.pp addr ;
     let allocated_not_freed_opt = Attributes.get_allocated_not_freed attributes in
     match allocated_not_freed_opt with
     | None ->
@@ -2355,9 +2356,7 @@ module AddressAttributes = struct
     SafeAttributes.java_resource_release (CanonValue.canon' astate v) astate
 
 
-  let hack_async_await v astate =
-    SafeAttributes.hack_async_await (CanonValue.canon' astate v) astate
-
+  let await_awaitable v astate = SafeAttributes.await_awaitable (CanonValue.canon' astate v) astate
 
   let remove_hack_builder v astate =
     SafeAttributes.remove_hack_builder (CanonValue.canon' astate v) astate

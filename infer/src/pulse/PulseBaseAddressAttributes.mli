@@ -33,7 +33,7 @@ module type S = sig
 
   val java_resource_release : key -> t -> t
 
-  val hack_async_await : key -> t -> t
+  val await_awaitable : key -> t -> t
 
   val remove_hack_builder : key -> t -> t
 

@@ -385,10 +385,10 @@ let of_stmt loc stmt : Textual.Instr.t =
               ( exp_of_ident_str name :: of_exp self_if_needed :: of_exp arg_names
               :: List.map ~f:of_exp args )
         ; loc }
-  | BuiltinCall {lhs; call; args; arg_names} ->
+  | BuiltinCall {lhs; call; args; arg_names= _} ->
       Let
         { id= Some (mk_ident lhs)
-        ; exp= call_builtin (builtin_name call) (of_exp arg_names :: List.map ~f:of_exp args)
+        ; exp= call_builtin (builtin_name call) (List.map ~f:of_exp args)
         ; loc }
   | Delete {scope= Global; ident} ->
       Let {id= None; exp= call_builtin "py_delete_global" [exp_of_ident_str ident; exp_globals]; loc}

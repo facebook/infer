@@ -1,7 +1,4 @@
-async_level0.py, async_level0.FP_call_sleep_ok, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.call_sleep_bad, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
-async_level0.py, async_level0.FP_call_sleep_with_temp_ok, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
-async_level0.py, async_level0.FP_call_sleep_with_branchs_ok, 5, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.call_sleep_with_branchs_bad1, 3, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.call_sleep_with_branchs_bad2, 4, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.__module_body__, 68, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]

@@ -147,7 +147,7 @@ let allocate allocator address location memory =
 
 let java_resource_release address memory = add_one address Attribute.JavaResourceReleased memory
 
-let hack_async_await address memory = add_one address Attribute.HackAsyncAwaited memory
+let await_awaitable address memory = add_one address Attribute.AwaitedAwaitable memory
 
 let csharp_resource_release address memory = add_one address Attribute.CSharpResourceReleased memory
 
@@ -396,7 +396,7 @@ module type S = sig
 
   val java_resource_release : key -> t -> t
 
-  val hack_async_await : key -> t -> t
+  val await_awaitable : key -> t -> t
 
   val remove_hack_builder : key -> t -> t
 

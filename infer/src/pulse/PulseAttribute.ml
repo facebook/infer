@@ -235,7 +235,7 @@ module Attribute = struct
     | MustNotBeTainted of TaintSink.t TaintSinkMap.t
     | JavaResourceReleased
     | CSharpResourceReleased
-    | HackAsyncAwaited
+    | AwaitedAwaitable
     | PropagateTaintFrom of taint_propagation_reason * taint_in list
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
          retain [v1] to [vn], in fact they should be collected
@@ -296,7 +296,7 @@ module Attribute = struct
 
   let last_lookup_rank = Variants.lastlookup.rank
 
-  let hack_async_awaited_rank = Variants.hackasyncawaited.rank
+  let awaited_awaitable_rank = Variants.awaitedawaitable.rank
 
   let csharp_resource_released_rank = Variants.csharpresourcereleased.rank
 
@@ -391,7 +391,7 @@ module Attribute = struct
         F.pp_print_string f "Released"
     | CSharpResourceReleased ->
         F.pp_print_string f "Released"
-    | HackAsyncAwaited ->
+    | AwaitedAwaitable ->
         F.pp_print_string f "Awaited"
     | PropagateTaintFrom (reason, taints_in) ->
         F.fprintf f "PropagateTaintFrom(%a, [%a])" pp_taint_propagation_reason reason
@@ -452,7 +452,7 @@ module Attribute = struct
     | JavaResourceReleased
     | LastLookup _
     | CSharpResourceReleased
-    | HackAsyncAwaited
+    | AwaitedAwaitable
     | HackBuilder _ (* TODO: right choice? Planning on doing on the outside in pulse call/return *)
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
@@ -497,7 +497,7 @@ module Attribute = struct
     | JavaResourceReleased
     | LastLookup _
     | CSharpResourceReleased
-    | HackAsyncAwaited
+    | AwaitedAwaitable
     | HackBuilder _ (* TODO: right choice again? *)
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
@@ -540,7 +540,7 @@ module Attribute = struct
     | JavaResourceReleased
     | LastLookup _
     | CSharpResourceReleased
-    | HackAsyncAwaited
+    | AwaitedAwaitable
     | HackBuilder _
     | HackConstinitCalled
     | MustBeInitialized _
@@ -642,7 +642,7 @@ module Attribute = struct
       | CSharpResourceReleased
       | DictContainConstKeys
       | EndOfCollection
-      | HackAsyncAwaited
+      | AwaitedAwaitable
       | HackBuilder _
       | HackConstinitCalled
       | Initialized
@@ -753,7 +753,7 @@ module Attribute = struct
       | DictContainConstKeys
       | DictReadConstKeys _
       | EndOfCollection
-      | HackAsyncAwaited
+      | AwaitedAwaitable
       | HackBuilder _
       | HackConstinitCalled
       | InReportedRetainCycle
@@ -909,7 +909,7 @@ module Attributes = struct
 
   let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank
 
-  let is_hack_async_awaited = mem_by_rank Attribute.hack_async_awaited_rank
+  let is_awaited_awaitable = mem_by_rank Attribute.awaited_awaitable_rank
 
   let get_hack_builder =
     get_by_rank Attribute.hack_builder_rank ~dest:(function [@warning "-partial-match"]
@@ -1007,7 +1007,7 @@ module Attributes = struct
     || mem_by_rank Attribute.invalid_rank attrs
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
-    || mem_by_rank Attribute.hack_async_awaited_rank attrs
+    || mem_by_rank Attribute.awaited_awaitable_rank attrs
     || mem_by_rank Attribute.hack_builder_rank attrs
     || mem_by_rank Attribute.csharp_resource_released_rank attrs
     || mem_by_rank Attribute.propagate_taint_from_rank attrs
@@ -1068,10 +1068,11 @@ module Attributes = struct
         let is_released =
           is_java_resource_released attributes
           || is_csharp_resource_released attributes
-          || is_hack_async_awaited attributes
+          || is_awaited_awaitable attributes
           || is_hack_builder_discardable
                attributes (* Not entirely sure about the definition of this *)
         in
+        L.d_printfln ~color:Orange "address is allocated: is_released=%b" is_released ;
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )
 

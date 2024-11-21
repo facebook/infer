@@ -148,7 +148,7 @@ type t =
   | MustNotBeTainted of TaintSink.t TaintSinkMap.t
   | JavaResourceReleased
   | CSharpResourceReleased
-  | HackAsyncAwaited
+  | AwaitedAwaitable
   | PropagateTaintFrom of taint_propagation_reason * taint_in list
   | ReturnedFromUnknown of AbstractValue.t list
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}

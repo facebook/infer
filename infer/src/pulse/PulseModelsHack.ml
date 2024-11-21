@@ -47,7 +47,7 @@ let await_hack_value aval : DSL.aval DSL.model_monad =
     ~cases:
       [ ( awaitable_type_name
         , fun () ->
-            let* () = fst aval |> AddressAttributes.hack_async_await |> DSL.Syntax.exec_command in
+            let* () = fst aval |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command in
             load_access aval (FieldAccess val_field) ) ]
     ~default:(fun () -> ret aval)
 

@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 open PulseBasicInterface
+open PulseDomainInterface
 open PulseModelsImport
 module DSL = PulseModelsDSL
 
@@ -127,9 +128,12 @@ let gen_start_coroutine : model =
   start_model @@ fun () -> ret ()
 
 
-let get_awaitable _ arg : model =
+let get_awaitable arg : model =
   let open DSL.Syntax in
-  start_model @@ fun () -> assign_ret arg
+  start_model
+  @@ fun () ->
+  let* () = fst arg |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command in
+  assign_ret arg
 
 
 let import_from name module_ : model =
@@ -259,7 +263,7 @@ let subscript seq idx : model =
   assign_ret res
 
 
-let yield_from _ _ _ : model =
+let yield_from _ _ : model =
   let open DSL.Syntax in
   start_model @@ fun () -> ret ()
 
@@ -271,7 +275,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
-  ; -"$builtins" &:: "py_get_awaitable" <>$ arg $+ arg $--> get_awaitable
+  ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
   ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $--> import_name
   ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
@@ -286,5 +290,5 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
   ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global
   ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name
-  ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $+ arg $--> yield_from ]
+  ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $--> yield_from ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

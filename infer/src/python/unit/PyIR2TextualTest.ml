@@ -86,12 +86,12 @@ async def g():
 
       #b2:
           n1 = $builtins.py_load_fast("l", locals)
-          n2 = $builtins.py_get_iter($builtins.py_make_none(), n1)
+          n2 = $builtins.py_get_iter(n1)
           jmp b3
 
       #b3:
-          n3 = $builtins.py_next_iter($builtins.py_make_none(), n2)
-          n4 = $builtins.py_has_next_iter($builtins.py_make_none(), n2)
+          n3 = $builtins.py_next_iter(n2)
+          n4 = $builtins.py_has_next_iter(n2)
           if n4 then jmp b4 else jmp b5
 
       #b4:
@@ -114,8 +114,8 @@ async def g():
           _ = $builtins.py_gen_start_coroutine()
           n0 = $builtins.py_load_global("sleep", globals)
           n1 = $builtins.py_call(n0, globals, $builtins.py_make_none(), $builtins.py_make_int(1))
-          n2 = $builtins.py_get_awaitable($builtins.py_make_none(), n1)
-          n3 = $builtins.py_yield_from($builtins.py_make_none(), n2, $builtins.py_make_none())
+          n2 = $builtins.py_get_awaitable(n1)
+          n3 = $builtins.py_yield_from(n2, $builtins.py_make_none())
           ret $builtins.py_make_none()
 
     }
@@ -150,12 +150,12 @@ async def g():
 
       #b2:
           n1 = $builtins.py_load_fast("l", [&locals:*PyLocals])
-          n2 = $builtins.py_get_iter($builtins.py_make_none(), n1)
+          n2 = $builtins.py_get_iter(n1)
           jmp b3
 
       #b3:
-          n3 = $builtins.py_next_iter($builtins.py_make_none(), n2)
-          n4 = $builtins.py_has_next_iter($builtins.py_make_none(), n2)
+          n3 = $builtins.py_next_iter(n2)
+          n4 = $builtins.py_has_next_iter(n2)
           if n4 then jmp b4 else jmp b5
 
       #b4:
@@ -178,8 +178,8 @@ async def g():
           _ = $builtins.py_gen_start_coroutine()
           n0 = $builtins.py_load_global("sleep", [&globals:*PyGlobals])
           n1 = $builtins.py_call(n0, [&globals:*PyGlobals], $builtins.py_make_none(), $builtins.py_make_int(1))
-          n2 = $builtins.py_get_awaitable($builtins.py_make_none(), n1)
-          n3 = $builtins.py_yield_from($builtins.py_make_none(), n2, $builtins.py_make_none())
+          n2 = $builtins.py_get_awaitable(n1)
+          n3 = $builtins.py_yield_from(n2, $builtins.py_make_none())
           ret $builtins.py_make_none()
 
     }
@@ -266,41 +266,38 @@ async def g():
           prune __sil_lnot(n0)
           n22:*PyLocals = load &locals
           n1 = $builtins.py_load_fast("l", n22)
-          n23 = $builtins.py_make_none()
-          n2 = $builtins.py_get_iter(n23, n1)
+          n2 = $builtins.py_get_iter(n1)
           jmp b3
 
       #b3:
-          n24 = $builtins.py_make_none()
-          n3 = $builtins.py_next_iter(n24, n2)
-          n25 = $builtins.py_make_none()
-          n4 = $builtins.py_has_next_iter(n25, n2)
+          n3 = $builtins.py_next_iter(n2)
+          n4 = $builtins.py_has_next_iter(n2)
           jmp b4, b5
 
       #b4:
           prune n4
+          n23:*PyLocals = load &locals
+          n24 = $builtins.py_store_fast("i", n23, n3)
+          n25:*PyGlobals = load &globals
+          n7 = $builtins.py_load_global("print", n25)
           n26:*PyLocals = load &locals
-          n27 = $builtins.py_store_fast("i", n26, n3)
-          n28:*PyGlobals = load &globals
-          n7 = $builtins.py_load_global("print", n28)
-          n29:*PyLocals = load &locals
-          n8 = $builtins.py_load_fast("i", n29)
-          n30:*PyGlobals = load &globals
-          n31 = $builtins.py_make_none()
-          n9 = $builtins.py_call(n7, n30, n31, n8)
+          n8 = $builtins.py_load_fast("i", n26)
+          n27:*PyGlobals = load &globals
+          n28 = $builtins.py_make_none()
+          n9 = $builtins.py_call(n7, n27, n28, n8)
           jmp b3
 
       #b5:
           prune __sil_lnot(n4)
-          n32:*PyGlobals = load &globals
-          n5 = $builtins.py_load_global("done", n32)
-          n33:*PyGlobals = load &globals
+          n29:*PyGlobals = load &globals
+          n5 = $builtins.py_load_global("done", n29)
+          n30:*PyGlobals = load &globals
+          n31 = $builtins.py_make_none()
+          n6 = $builtins.py_call(n5, n30, n31)
+          n32:*PyLocals = load &locals
+          n33 = $builtins.py_nullify_locals(n32, "i")
           n34 = $builtins.py_make_none()
-          n6 = $builtins.py_call(n5, n33, n34)
-          n35:*PyLocals = load &locals
-          n36 = $builtins.py_nullify_locals(n35, "i")
-          n37 = $builtins.py_make_none()
-          ret n37
+          ret n34
 
     }
 
@@ -313,12 +310,10 @@ async def g():
           n7 = $builtins.py_make_none()
           n8 = $builtins.py_make_int(1)
           n1 = $builtins.py_call(n0, n6, n7, n8)
+          n2 = $builtins.py_get_awaitable(n1)
           n9 = $builtins.py_make_none()
-          n2 = $builtins.py_get_awaitable(n9, n1)
+          n3 = $builtins.py_yield_from(n2, n9)
           n10 = $builtins.py_make_none()
-          n11 = $builtins.py_make_none()
-          n3 = $builtins.py_yield_from(n10, n2, n11)
-          n12 = $builtins.py_make_none()
-          ret n12
+          ret n10
 
     } |}]

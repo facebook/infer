@@ -190,7 +190,7 @@ module AddressAttributes : sig
 
   val java_resource_release : AbstractValue.t -> t -> t
 
-  val hack_async_await : AbstractValue.t -> t -> t
+  val await_awaitable : AbstractValue.t -> t -> t
 
   val remove_hack_builder : AbstractValue.t -> t -> t [@@warning "-unused-value-declaration"]
 
