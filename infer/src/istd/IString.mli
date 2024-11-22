@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Map : Stdlib.Map.S with type key = string
+module Map : PrettyPrintable.HashSexpPPMap with type key = string
 
-module Set : Stdlib.Set.S with type elt = string
+module Set : PrettyPrintable.HashSexpPPSet with type elt = string
 
 module Hash : Stdlib.Hashtbl.S with type key = string

@@ -14,17 +14,17 @@ let tt fmt =
   Logging.debug Analysis mode fmt
 
 
-type pindex = int [@@deriving compare, hash, sexp]
+type pindex = int [@@deriving compare, hash, sexp, equal]
 
 type pname = ToplAst.property_name
 
 module Vname = struct
   module T = struct
-    type t = pindex * ToplAst.vertex [@@deriving compare, hash, sexp]
+    type t = pindex * ToplAst.vertex [@@deriving compare, hash, sexp, equal]
   end
 
   include T
-  include Hashable.Make (T)
+  module Hash = Stdlib.Hashtbl.Make (T)
 end
 
 type vname = Vname.t
@@ -53,12 +53,12 @@ type t =
 (** [index_in H a] returns a pair of functions [(opt, err)] that lookup the (last) index of an
     element in [a]. The difference is that [opt x] returns an option, while [err msg x] makes Infer
     die, mentioning [msg].*)
-let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array) :
+let index_in (type k) (module H : Stdlib.Hashtbl.S with type key = k) (a : k array) :
     (k -> int option) * (string -> k -> int) =
-  let h = H.create ~size:(2 * Array.length a) () in
-  let f i x = H.set h ~key:x ~data:i in
+  let h = H.create (2 * Array.length a) in
+  let f i x = H.add h x i in
   Array.iteri ~f a ;
-  let opt = H.find h in
+  let opt = H.find_opt h in
   let err msg x =
     match opt x with
     | Some x ->
@@ -74,7 +74,7 @@ let make properties =
     let f {ToplAst.name} = name in
     Array.of_list (List.map ~f properties)
   in
-  let _pindex_opt, pindex = index_in (module String.Table) names in
+  let _pindex_opt, pindex = index_in (module IString.Hash) names in
   let pindex = pindex "property name" in
   let messages : string array =
     let f {ToplAst.name; message} =
@@ -90,7 +90,7 @@ let make properties =
     Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_mapi ~f properties))
   in
   Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%d,%s)@\n" i p v) states ;
-  let _vindex_opt, vindex = index_in (module Vname.Table) states in
+  let _vindex_opt, vindex = index_in (module Vname.Hash) states in
   let vindex = vindex "vertex" in
   let transitions : transition array =
     let f pindex p =
@@ -145,9 +145,9 @@ let tcount a = Array.length a.transitions
 
 let registers a =
   (* TODO(rgrigore): cache *)
-  let do_assignment acc (r, _v) = String.Set.add acc r in
+  let do_assignment acc (r, _v) = IString.Set.add r acc in
   let do_action acc = List.fold ~init:acc ~f:do_assignment in
-  let do_value acc = ToplAst.(function Register r -> String.Set.add acc r | _ -> acc) in
+  let do_value acc = ToplAst.(function Register r -> IString.Set.add r acc | _ -> acc) in
   let do_predicate acc =
     ToplAst.(function Binop (_op, l, r) -> do_value (do_value acc l) r | _ -> acc)
   in
@@ -155,7 +155,7 @@ let registers a =
   let do_label acc {ToplAst.action; condition} = do_action (do_condition acc condition) action in
   let do_label_opt acc = Option.fold ~init:acc ~f:do_label in
   let do_transition acc {label} = do_label_opt acc label in
-  String.Set.to_list (Array.fold ~init:String.Set.empty ~f:do_transition a.transitions)
+  IString.Set.elements (Array.fold ~init:IString.Set.empty ~f:do_transition a.transitions)
 
 
 let tfilter_mapi a ~f = Array.to_list (Array.filter_mapi ~f a.transitions)

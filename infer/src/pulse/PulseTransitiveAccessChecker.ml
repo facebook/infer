@@ -145,10 +145,10 @@ end = struct
     in
     let has_parents tenv type_name =
       let parents =
-        Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
-            String.Set.add acc (Typ.Name.name parent) )
+        Tenv.fold_supers tenv type_name ~init:IString.Set.empty ~f:(fun parent _ acc ->
+            IString.Set.add (Typ.Name.name parent) acc )
       in
-      fun classes -> List.exists classes ~f:(String.Set.mem parents)
+      fun classes -> List.exists classes ~f:(fun c -> IString.Set.mem c parents)
     in
     let check_extends tenv procname final_class_only initial_caller_class_extends =
       match Procname.get_class_type_name procname with

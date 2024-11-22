@@ -173,7 +173,7 @@ and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
 
 (* Function specs can be overloaded, forming disjunctions.
    Currently the only kind of constraints are "subtype of" which we track in a map. *)
-type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_ String.Map.t}
+type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_ IString.Map.t}
 [@@deriving sexp_of]
 
 type spec = spec_disjunct list [@@deriving sexp_of]

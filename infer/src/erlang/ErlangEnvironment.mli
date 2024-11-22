@@ -23,34 +23,36 @@ module UnqualifiedFunction : sig
     include T
   end
 
-  include module type of Comparable.Make (T)
+  module Set : PrettyPrintable.HashSexpPPSet with type elt = t
+
+  module Map : PrettyPrintable.HashSexpPPMap with type key = t
 end
 
 type record_field_info = {index: int; initializer_: Ast.expression option} [@@deriving sexp_of]
 
-type record_info = {field_names: string list; field_info: record_field_info String.Map.t}
+type record_info = {field_names: string list; field_info: record_field_info IString.Map.t}
 [@@deriving sexp_of]
 
 (** This data structure holds module-level information and other global data that we pass around
     when translating individual functions of the module. *)
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
-  ; module_info: (Annot.t String.Map.t[@sexp.opaque])
+  ; module_info: (Annot.t IString.Map.t[@sexp.opaque])
         (** used to store data for Module:module_info *)
   ; current_module: module_name  (** used to qualify function names *)
   ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
-  ; types: Ast.type_ String.Map.t  (** user defined types *)
+  ; types: Ast.type_ IString.Map.t  (** user defined types *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
-  ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
+  ; records: record_info IString.Map.t  (** used to get fields, indexes and initializers *)
   ; location: Location.t  (** used to tag nodes and instructions being created *)
   ; procdesc: ('procdesc[@sexp.opaque])
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-val initialize_environment : Ast.form list -> String.Set.t -> (absent, absent) t
+val initialize_environment : Ast.form list -> IString.Set.t -> (absent, absent) t
 (** Entry point: go through the top-level forms in the module and initialize the environment. *)
 
 val typ_of_name : ErlangTypeName.t -> Typ.t

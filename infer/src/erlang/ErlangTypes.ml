@@ -77,7 +77,7 @@ let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : I
       simple_condition Nil ident
   | Record name -> (
     (* We can replace this check with [find_exn] once we have AST validation for specs (T115271156). *)
-    match String.Map.find env.records name with
+    match IString.Map.find_opt name env.records with
     | Some record_info ->
         let tuple_size = 1 + List.length record_info.field_names in
         let tuple_typ = ErlangTypeName.Tuple tuple_size in
@@ -123,7 +123,7 @@ let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : I
   | Var v -> (
     (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
-    match Map.find constraints v with
+    match IString.Map.find_opt v constraints with
     | Some subtyp ->
         type_condition_real env constraints (ident, subtyp)
     | None ->

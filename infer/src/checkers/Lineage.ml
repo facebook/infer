@@ -70,10 +70,11 @@ module Local = struct
       | ConstantString of string
       | Cell of (Cell.t[@sexp.opaque])
     [@@deriving compare, equal, sexp, hash]
+
+    let pp _ _ = assert false
   end
 
   include T
-  include Comparable.Make (T)
 
   let pp fmt local =
     match local with
@@ -88,10 +89,10 @@ module Local = struct
 
 
   module Set = struct
-    include Set
+    include PrettyPrintable.MakeHashSexpPPSet (T)
 
     (** Shortcut for adding a Cell-variant local *)
-    let add_cell set cell = add set (Cell cell)
+    let add_cell set cell = add (Cell cell) set
   end
 end
 
@@ -433,13 +434,13 @@ end = struct
     module FieldPathSet = struct
       (* Sets of field paths, that shall be associated to an argument index *)
 
-      module M = Set.Make_tree (FieldPath)
+      module M = PrettyPrintable.MakeHashSexpPPSet (FieldPath)
       include M
 
       let pp ~arg_index =
         (* Prints: $argN#foo#bar $argN#other#field *)
         let pp_field_path = Fmt.using (fun path -> arg_index & path) F.arg_path in
-        IFmt.Labelled.iter ~sep:Fmt.sp M.iter pp_field_path
+        IFmt.Labelled.iter ~sep:Fmt.sp (fun a ~f -> M.iter f a) pp_field_path
     end
 
     (* Marshallable maps from integer indices. Note: using an array instead of Map could improve the
@@ -469,15 +470,15 @@ end = struct
         | None ->
             FieldPathSet.singleton arg_field_path
         | Some field_path_set ->
-            FieldPathSet.add field_path_set arg_field_path )
+            FieldPathSet.add arg_field_path field_path_set )
 
 
     let fold t ~f ~init =
       IntMap.fold
         ~f:(fun ~key:arg_index ~data:field_path_set acc ->
           FieldPathSet.fold
-            ~f:(fun acc arg_field_path -> f ~arg_index ~arg_field_path acc)
-            ~init:acc field_path_set )
+            (fun arg_field_path acc -> f ~arg_index ~arg_field_path acc)
+            field_path_set acc )
         ~init t
   end
 
@@ -1514,7 +1515,7 @@ end = struct
 
     let local_set local_set : unit t =
      fun shapes node f astate ->
-      Set.fold ~f:(fun acc one_local -> local one_local shapes node f acc) ~init:astate local_set
+      Local.Set.fold (fun one_local acc -> local one_local shapes node f acc) local_set astate
 
 
     let atom atom_name : unit t = local (ConstantAtom atom_name)

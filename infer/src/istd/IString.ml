@@ -6,11 +6,7 @@
  *)
 
 open! IStd
-
-module T = struct
-  type t = string [@@deriving compare, hash, equal]
-end
-
-module Map = Stdlib.Map.Make (T)
-module Set = Stdlib.Set.Make (T)
+module T = String
+module Map = PrettyPrintable.MakeHashSexpPPMap (T)
+module Set = PrettyPrintable.MakeHashSexpPPSet (T)
 module Hash = Stdlib.Hashtbl.Make (T)

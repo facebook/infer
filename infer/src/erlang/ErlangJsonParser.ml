@@ -710,7 +710,7 @@ let to_spec_disjunct json : Ast.spec_disjunct option =
   | `List [`String "type"; _anno; `String "fun"; `List [args_json; ret_json]] ->
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
-      Some {Ast.arguments; return; constraints= String.Map.empty}
+      Some {Ast.arguments; return; constraints= IString.Map.empty}
   | `List
       [ `String "type"
       ; _anno
@@ -722,15 +722,17 @@ let to_spec_disjunct json : Ast.spec_disjunct option =
       let* arguments = to_spec_args args_json in
       let* constr_list = to_list ~f:to_constraint constraints_json in
       let f map (key, data) =
-        match Map.add ~key ~data map with
-        | `Ok map ->
-            map
-        | `Duplicate ->
-            L.debug Capture Verbose "Ignoring duplicate constraint for type variable %s in %s@." key
-              (Yojson.Safe.show json) ;
-            map
+        IString.Map.update key
+          (function
+            | None ->
+                Some data
+            | some_d ->
+                L.debug Capture Verbose "Ignoring duplicate constraint for type variable %s in %s@."
+                  key (Yojson.Safe.show json) ;
+                some_d )
+          map
       in
-      let constraints = List.fold ~f ~init:String.Map.empty constr_list in
+      let constraints = List.fold ~f ~init:IString.Map.empty constr_list in
       Some {Ast.arguments; return; constraints}
   | _ ->
       unknown "spec" json

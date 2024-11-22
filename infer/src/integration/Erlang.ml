@@ -34,7 +34,7 @@ let parse_translate_store ?(base_dir = None) result_dir =
   let otp_modules =
     match Utils.read_file otp_modules_file with
     | Ok modules ->
-        String.Set.of_list modules
+        IString.Set.of_list modules
     | Error err ->
         L.die InternalError "Error while loading list of OTP modules from file %s: %s@."
           otp_modules_file err

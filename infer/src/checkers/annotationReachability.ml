@@ -81,7 +81,7 @@ let parse_custom_models () =
   match Config.annotation_reachability_custom_models with
   (* The default value for JSON options is an empty list and not an empty object *)
   | `List [] ->
-      String.Map.empty
+      IString.Map.empty
   | json ->
       json |> Yojson.Safe.Util.to_assoc
       |> List.map ~f:(fun (key, val_arr) ->
@@ -89,7 +89,7 @@ let parse_custom_models () =
              , val_arr |> Yojson.Safe.Util.to_list
                |> List.map ~f:Yojson.Safe.Util.to_string
                |> List.map ~f:Str.regexp ) )
-      |> String.Map.of_alist_exn
+      |> Stdlib.List.to_seq |> IString.Map.of_seq
 
 
 let check_attributes check tenv pname =
@@ -111,7 +111,7 @@ let check_modeled_annotation models annot pname =
   let method_name =
     Procname.to_string ~verbosity:(if Procname.is_erlang pname then Verbose else FullNameOnly) pname
   in
-  Option.exists (String.Map.find models annot.Annot.class_name) ~f:(fun methods ->
+  Option.exists (IString.Map.find_opt annot.Annot.class_name models) ~f:(fun methods ->
       List.exists methods ~f:(fun r -> Str.string_match r method_name 0) )
 
 
@@ -166,7 +166,7 @@ module AnnotationSpec = struct
     ; name: string  (** Short name to be added at the beginning of the report *)
     ; description: string  (** Extra description to be added to the issue report *)
     ; issue_type: IssueType.t
-    ; models: Str.regexp list IStd.String.Map.t  (** model functions as if they were annotated *)
+    ; models: Str.regexp list IString.Map.t  (** model functions as if they were annotated *)
     ; pre_check: Domain.t InterproceduralAnalysis.t -> unit
           (** additional check before reporting *) }
 end
@@ -386,7 +386,7 @@ module NoAllocationAnnotationSpec = struct
     ; name= ""
     ; description= ""
     ; issue_type= IssueType.checkers_allocates_memory
-    ; models= String.Map.empty
+    ; models= IString.Map.empty
     ; pre_check= (fun _ -> ()) }
 end
 
@@ -427,7 +427,7 @@ module ExpensiveAnnotationSpec = struct
     ; name= ""
     ; description= ""
     ; issue_type= IssueType.checkers_calls_expensive_method
-    ; models= String.Map.empty
+    ; models= IString.Map.empty
     ; pre_check=
         (fun ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) ->
           let proc_name = Procdesc.get_proc_name proc_desc in

@@ -235,7 +235,7 @@ end
     returns some field [foo] of [X]: we want to know that we should create the Lineage node
     [$argN#foo] at the same time as the node [$argN]. *)
 
-module StringSet = Set.Make_tree (String)
+module StringSet = IString.Set
 module FieldLabelMap = Map.Make_tree (FieldLabel)
 
 module Structure : sig
@@ -352,7 +352,7 @@ end = struct
         Fmt.pf fmt "?"
     | Variant constructors ->
         Fmt.pf fmt "[@[%a@]]"
-          (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") StringSet.iter Fmt.string)
+          (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") (fun a ~f -> StringSet.iter f a) Fmt.string)
           constructors
     | Vector {is_fully_abstract; fields; all_map_value} ->
         (* Example: ('foo' : <1>, 'bar' : <1>, baz : <2>) {* : <1>} *)
@@ -389,7 +389,7 @@ end = struct
   let local_abstract = LocalAbstract
 
   let variant constructors =
-    if StringSet.length constructors <= ShapeConfig.variant_width then Variant constructors
+    if StringSet.cardinal constructors <= ShapeConfig.variant_width then Variant constructors
     else scalar
 
 
@@ -653,7 +653,7 @@ end = struct
         let id = Union_find.get shape in
         match Hashtbl.find shape_structures id with
         | Some (Variant constructors) ->
-            Some (StringSet.to_list constructors)
+            Some (StringSet.elements constructors)
         | _ ->
             None
 
@@ -1457,9 +1457,7 @@ end = struct
     let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =
       match find_var_path_structure summary (var, field_path) with
       | Variant set ->
-          StringSet.fold ~init
-            ~f:(fun acc constructor -> f acc (FieldLabel.map_key constructor))
-            set
+          StringSet.fold (fun constructor acc -> f acc (FieldLabel.map_key constructor)) set init
       | _ ->
           fallback init
 
@@ -1477,8 +1475,8 @@ end = struct
       let* summary = summary_option in
       match find_var_path_structure summary var_path with
       | Variant set ->
-          if Int.O.(StringSet.length set = 1) then
-            let+ constructor = StringSet.choose set in
+          if Int.O.(StringSet.cardinal set = 1) then
+            let+ constructor = StringSet.choose_opt set in
             FieldLabel.map_key constructor
           else None
       | _ ->

@@ -57,7 +57,7 @@ type label =
   ; pattern: label_pattern }
 [@@deriving show]
 
-type vertex = string [@@deriving compare, hash, sexp, show]
+type vertex = string [@@deriving compare, hash, sexp, show, equal]
 
 type transition = {source: vertex; target: vertex; label: label option} [@@deriving show]
 

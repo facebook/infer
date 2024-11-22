@@ -9,7 +9,7 @@ open! IStd
 
 val type_condition :
      (Procdesc.t ErlangEnvironment.present, 'a) ErlangEnvironment.t
-  -> (string, ErlangAst.type_, 'b) Map_intf.Map.t
+  -> ErlangAst.type_ IString.Map.t
   -> Ident.t * ErlangAst.type_
   -> ErlangBlock.t * Exp.t
 (** Given an argument, its type (and a list of constraints), returns a condition that is true if the

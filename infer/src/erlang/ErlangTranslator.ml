@@ -434,8 +434,8 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
 
 
 and translate_pattern_record_index (env : (_, _) Env.t) value name field : Block.t =
-  let record_info = String.Map.find_exn env.records name in
-  let field_info = String.Map.find_exn record_info.field_info field in
+  let record_info = IString.Map.find name env.records in
+  let field_info = IString.Map.find field record_info.field_info in
   let index_expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
   translate_pattern_integer env value index_expr
 
@@ -455,7 +455,7 @@ and match_record_name env value name (record_info : Env.record_info) : Block.t =
 
 
 and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Block.t =
-  let record_info = String.Map.find_exn env.records name in
+  let record_info = IString.Map.find name env.records in
   (* Match the type and the record name *)
   let record_name_matcher = match_record_name env value name record_info in
   (* Match each specified field *)
@@ -464,7 +464,7 @@ and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Bl
   let make_one_field_matcher (one_update : Ast.record_update) =
     match one_update.field with
     | Some name ->
-        let field_info = String.Map.find_exn record_info.field_info name in
+        let field_info = IString.Map.find name record_info.field_info in
         let value_id = mk_fresh_id () in
         let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
         let load_instr = load_field_from_id env value_id value tuple_elem tuple_typ in
@@ -808,11 +808,11 @@ and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
      as compiler should enforce that both cannot hold at the same time).
      Then assume it's built-in. *)
   let uf_name = {Env.UnqualifiedFunction.name= function_name; arity} in
-  match Env.UnqualifiedFunction.Map.find env.imports uf_name with
+  match Env.UnqualifiedFunction.Map.find_opt uf_name env.imports with
   | Some name ->
       name
   | None ->
-      if Env.UnqualifiedFunction.Set.mem env.functions uf_name then env.current_module
+      if Env.UnqualifiedFunction.Set.mem uf_name env.functions then env.current_module
       else ErlangTypeName.erlang_namespace
 
 
@@ -1310,7 +1310,7 @@ and translate_expression_receive (env : (_, _) Env.t) cases timeout : Block.t =
 and translate_expression_record_access (env : (_, _) Env.t) ret_var record name field : Block.t =
   (* Under the hood, a record is a tagged tuple, the first element is the name,
      and then the fields follow in the order as in the record definition. *)
-  let record_info = String.Map.find_exn env.records name in
+  let record_info = IString.Map.find name env.records in
   let record_id = mk_fresh_id () in
   let record_block =
     let value_block = translate_expression_to_id env record_id record in
@@ -1320,7 +1320,7 @@ and translate_expression_record_access (env : (_, _) Env.t) ret_var record name 
     let matcher_block = {matcher_block with exit_failure= Some crash_node} in
     Block.all env [value_block; matcher_block]
   in
-  let field_info = String.Map.find_exn record_info.field_info field in
+  let field_info = IString.Map.find field record_info.field_info in
   let field_no = field_info.index in
   let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
   let field_load =
@@ -1331,8 +1331,8 @@ and translate_expression_record_access (env : (_, _) Env.t) ret_var record name 
 
 
 and translate_expression_record_index (env : (_, _) Env.t) ret_var name field : Block.t =
-  let record_info = String.Map.find_exn env.records name in
-  let field_info = String.Map.find_exn record_info.field_info field in
+  let record_info = IString.Map.find name env.records in
+  let field_info = IString.Map.find field record_info.field_info in
   let expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
   box_integer env ret_var expr
 
@@ -1340,18 +1340,22 @@ and translate_expression_record_index (env : (_, _) Env.t) ret_var name field : 
 and translate_expression_record_update (env : (_, _) Env.t) ret_var record name updates : Block.t =
   (* Under the hood, a record is a tagged tuple, the first element is the name,
      and then the fields follow in the order as in the record definition. *)
-  let record_info = String.Map.find_exn env.records name in
+  let record_info = IString.Map.find name env.records in
   let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
   (* First collect all the fields that are updated *)
   let collect_updates map (one_update : Ast.record_update) =
     match one_update.field with
     | Some name ->
-        Map.add_exn ~key:name ~data:one_update.expression map
+        IString.Map.update name
+          (function None -> Some one_update.expression | Some _ -> assert false)
+          map
     | None ->
         (* '_' stands for 'everything else' *)
-        Map.add_exn ~key:"_" ~data:one_update.expression map
+        IString.Map.update "_"
+          (function None -> Some one_update.expression | Some _ -> assert false)
+          map
   in
-  let updates_map = List.fold ~init:String.Map.empty ~f:collect_updates updates in
+  let updates_map = List.fold ~init:IString.Map.empty ~f:collect_updates updates in
   (* Translate record expression if it is an update *)
   let record_id = mk_fresh_id () in
   let record_block =
@@ -1369,16 +1373,16 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
   (* Translate each field: the value can come from 5 different sources *)
   let translate_one_field ((one_field_name, one_id) : string * Ident.t) =
     (* (1) Check if field is explicitly set *)
-    match String.Map.find updates_map one_field_name with
+    match IString.Map.find_opt one_field_name updates_map with
     | Some expr ->
         translate_expression_to_id env one_id expr
     | None -> (
       (* (2) Check if field is set using 'everything else' *)
-      match String.Map.find updates_map "_" with
+      match IString.Map.find_opt "_" updates_map with
       | Some expr ->
           translate_expression_to_id env one_id expr
       | None -> (
-          let field_info = String.Map.find_exn record_info.field_info one_field_name in
+          let field_info = IString.Map.find one_field_name record_info.field_info in
           (* (3) Check if we have to copy over from record that is being updated *)
           match record with
           | Some _ ->
@@ -1588,7 +1592,9 @@ let mk_procdesc (env : (_, _) Env.t) attributes =
 
 let mk_attributes (env : (_, _) Env.t) (uf_name : Env.UnqualifiedFunction.t) procname =
   let default = ProcAttributes.default env.location.file procname in
-  let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
+  let access : ProcAttributes.access =
+    if Env.UnqualifiedFunction.Set.mem uf_name env.exports then Public else Private
+  in
   let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) uf_name.arity in
   {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
 
@@ -1600,7 +1606,7 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let procdesc = mk_procdesc env attributes in
   let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
   let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
-  let spec = Env.UnqualifiedFunction.Map.find env.specs uf_name in
+  let spec = Env.UnqualifiedFunction.Map.find_opt uf_name env.specs in
   translate_function_clauses env procdesc attributes procname clauses spec
 
 
@@ -1631,7 +1637,7 @@ let translate_one_type (env : (_, _) Env.t) name type_ =
     let load_instr = Sil.Load {id= arg_id; e= Exp.Lvar pvar; typ= any_typ; loc= attributes.loc} in
     let load_block = Block.make_instruction env [load_instr] in
     let type_check_block, condition =
-      ErlangTypes.type_condition env String.Map.empty (arg_id, type_)
+      ErlangTypes.type_condition env IString.Map.empty (arg_id, type_)
     in
     let store_instr = Sil.Store {e1= ret_var; typ= any_typ; e2= condition; loc= env.location} in
     let store_block = Block.make_instruction env [store_instr] in
@@ -1649,7 +1655,7 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
   let uf_name, procname = Env.func_procname env function_ in
   (* Skip specs where we have a function, because those are translated
      by [translate_one_function] and the spec is used there. *)
-  if Env.UnqualifiedFunction.Set.mem env.functions uf_name then ()
+  if Env.UnqualifiedFunction.Set.mem uf_name env.functions then ()
   else
     let attributes = mk_attributes env uf_name procname in
     let attributes = {attributes with is_synthetic_method= true} in
@@ -1675,7 +1681,7 @@ let add_module_info_field (env : (_, _) Env.t) tenv =
   Tenv.mk_struct tenv typ |> ignore ;
   let name = Fieldname.make typ ErlangTypeName.module_info_field_name in
   let field_typ = Typ.mk_struct typ in
-  let annot = Map.data env.module_info in
+  let annot = IString.Map.bindings env.module_info |> List.map ~f:snd in
   let field = Struct.mk_field name field_typ ~annot in
   Tenv.add_field tenv typ field
 

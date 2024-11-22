@@ -11,7 +11,7 @@ module Env = ErlangEnvironment
 module L = Logging
 
 (* One frame in the stack of scopes *)
-type scope = {procname: Procname.t; locals: String.Set.t; captured: Pvar.Set.t}
+type scope = {procname: Procname.t; locals: IString.Set.t; captured: Pvar.Set.t}
 
 (* Data structure we pass around for giving unique names to lambdas (per function).
    Initial plan was to use line+column, but if a macro expands to multiple lambdas,
@@ -20,7 +20,7 @@ type lambda_name_counter = {funcname: string; mutable counter: int}
 
 let lookup_var (scopes : scope list) (vname : string) : Procname.t option =
   List.find_map scopes ~f:(fun {procname; locals} ->
-      if String.Set.mem locals vname then Some procname else None )
+      if IString.Set.mem vname locals then Some procname else None )
 
 
 let push_scope =
@@ -29,7 +29,7 @@ let push_scope =
     if (not !warned) && List.length scopes > 100 then (
       L.debug Capture Verbose "@[Many nested scopes: translation might be slow@." ;
       warned := true ) ;
-    {procname; locals= String.Set.empty; captured= Pvar.Set.empty} :: scopes
+    {procname; locals= IString.Set.empty; captured= Pvar.Set.empty} :: scopes
 
 
 let pop_scope scopes =
@@ -176,7 +176,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
           (* The anonymus variable is always fresh in the local scope *)
           v.scope <- Some {procname= hd.procname; is_first_use= true} ;
           scopes )
-        else if String.Set.mem hd.locals v.vname then (
+        else if IString.Set.mem v.vname hd.locals then (
           (* Known local var *)
           v.scope <- Some {procname= hd.procname; is_first_use= false} ;
           scopes )
@@ -190,7 +190,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
           | None ->
               (* It's a local we see here first *)
               v.scope <- Some {procname= hd.procname; is_first_use= true} ;
-              {hd with locals= String.Set.add hd.locals v.vname} :: tl )
+              {hd with locals= IString.Set.add v.vname hd.locals} :: tl )
     | [] ->
         L.die InternalError "No scope found during variable annotation." )
 
@@ -253,14 +253,14 @@ and merge_scopes ~into (scopes : scope list list) =
     (* Merge results: intersect locals, union captured  *)
     let merge (acc : scope) (s : scope) =
       { acc with
-        locals= String.Set.inter acc.locals s.locals
+        locals= IString.Set.inter acc.locals s.locals
       ; captured= Pvar.Set.union acc.captured s.captured }
     in
     let merged = List.reduce_exn ~f:merge top_scopes in
     (* Add to top scope *)
     let top_scope, tl_scopes = pop_scope into in
     { top_scope with
-      locals= String.Set.union top_scope.locals merged.locals
+      locals= IString.Set.union top_scope.locals merged.locals
     ; captured= Pvar.Set.union top_scope.captured merged.captured }
     :: tl_scopes
 
