@@ -52,16 +52,16 @@ let update_suppressions block_start current_line issue_types suppressions =
   | Some start ->
       IString.Set.fold
         (fun issue_type m ->
-          match IString.Map.find_opt issue_type suppressions with
-          | None ->
-              IString.Map.add issue_type (Span.Blocks [{first= start; last= current_line}]) m
-          | Some (Span.Blocks b) ->
-              IString.Map.add issue_type
-                (Span.Blocks (b @ [{Span.first= start; last= current_line}]))
-                m
-          | Some Span.Every ->
-              (* don't override Every with Blocks *)
-              m )
+          IString.Map.update issue_type
+            (function
+              | None ->
+                  Some (Span.Blocks [{first= start; last= current_line}])
+              | Some (Span.Blocks b) ->
+                  Some (Span.Blocks (b @ [{Span.first= start; last= current_line}]))
+              | Some Span.Every as some_every ->
+                  (* don't override Every with Blocks *)
+                  some_every )
+            m )
         issue_types suppressions
 
 
