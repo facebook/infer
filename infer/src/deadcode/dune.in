@@ -7,7 +7,9 @@
  (name all_infer_in_one_file)
  (modes byte)
  (flags
-  (:standard -w +60))
+  (:standard -w +60
+   -open
+   Ppx_yojson_conv_lib.Yojson_conv.Primitives))
  (libraries javalib ANSITerminal async atdgen base base64 bheap cmdliner core fmt iter memtrace
    menhirLib mtime.clock.os ocamlgraph oUnit parmap ppx_show.runtime pyml re sawja sedlex sqlite3
    tdigest unix xmlm yojson zarith zip)

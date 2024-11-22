@@ -9,7 +9,7 @@
 ; 2. Check the dune logs in infer/_build/log. At the very end is the linking command, which
 ;    contains linking directives starting with `-l`, e.g.
 ;
-;  '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lpthread' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lcamlstr' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lpthread' '-lANSITerminal_stubs' '-lcore_stubs' '-lbase_bigstring_stubs' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lunix' '-lbase_stubs' '-lbase_internalhash_types_stubs' '/data/users/jul/opam/4.14.0+flambda/lib/ocaml/libasmrun.a' -lm -ldl
+;  '-lcamlstr' '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lpthread' '-lANSITerminal_stubs' '-lpyml_stubs' '-lstdcompat_stubs' '-lcore_stubs' '-lheap_block_stubs' '-lbase_bigstring_stubs' '-lunix' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lbase_stubs' '-lbase_internalhash_types_stubs' '/home/nikosg/.opam/4.14.0+flambda/lib/ocaml/libasmrun.a' -lm
 ;
 ;  3. Copy those below as follows: Keep the flags the same until the dynamic section after
 ;     `-cclib -Wl,-Bdynamic`. The flags already included are for static libraries; we want to keep
@@ -33,7 +33,7 @@
  -cclib -lmtime_clock_stubs -cclib -lrt -cclib -lcamlstr -cclib -lfilename_unix_stubs
  -cclib -lsys_unix_stubs -cclib -lcore_unix_stubs -cclib -lspawn_stubs -cclib -lsignal_unix_stubs
  -cclib -lerror_checking_mutex_stubs -cclib -lthreadsnat -cclib -lpthread
- -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lstdcompat_stubs -cclib -lcore_stubs
+ -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lstdcompat_stubs -cclib -lcore_stubs -cclib -lheap_block_stubs
  -cclib -lbase_bigstring_stubs -cclib -lexpect_test_collector_stubs -cclib -ltime_now_stubs
  -cclib -lbin_prot_stubs -cclib -lunix -cclib -lbase_stubs -cclib -lbase_internalhash_types_stubs
  -cclib -lasmrun -cclib -lm -cclib -ldl

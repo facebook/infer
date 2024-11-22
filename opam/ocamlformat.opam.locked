@@ -14,22 +14,20 @@ homepage: "https://github.com/ocaml-ppx/ocamlformat"
 bug-reports: "https://github.com/ocaml-ppx/ocamlformat/issues"
 depends: [
   "astring" {= "0.8.5"}
-  "base" {= "v0.15.1"}
+  "base" {= "v0.16.3"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
   "camlp-streams" {= "5.0.1"}
   "cmdliner" {= "1.3.0"}
-  "cppo" {= "1.6.9" & with-doc}
-  "crunch" {= "3.3.1" & with-doc}
+  "conf-bash" {= "1"}
   "csexp" {= "1.5.2"}
   "dune" {= "3.16.0"}
   "dune-build-info" {= "3.14.2"}
   "dune-configurator" {= "3.16.0"}
   "either" {= "1.0.0"}
   "fix" {= "20230505"}
-  "fmt" {= "0.9.0" & with-doc}
   "fpath" {= "0.7.3"}
   "menhir" {= "20240715"}
   "menhirCST" {= "20240715"}
@@ -44,16 +42,12 @@ depends: [
   "ocamlfind" {= "1.9.6"}
   "ocamlformat-lib" {= "0.26.2"}
   "ocp-indent" {= "1.8.1"}
-  "odoc" {= "2.4.2" & with-doc}
-  "odoc-parser" {= "2.4.2" & with-doc}
-  "ptime" {= "1.1.0" & with-doc}
   "re" {= "1.11.0"}
   "result" {= "1.5"}
   "seq" {= "base"}
-  "sexplib0" {= "v0.15.1"}
-  "stdio" {= "v0.15.0"}
+  "sexplib0" {= "v0.16.0"}
+  "stdio" {= "v0.16.0"}
   "topkg" {= "1.0.7"}
-  "tyxml" {= "4.6.0" & with-doc}
   "uucp" {= "15.1.0"}
   "uuseg" {= "15.1.0"}
   "uutf" {= "1.0.3"}
