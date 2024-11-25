@@ -91,7 +91,21 @@ let db_close db =
             (Sqlite3.errmsg db) ) )
 
 
+(* an underapproximation of the maximum path length allowed in sqlite *)
+let sqlite_max_path_length = 500
+
 let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
+  let db_file =
+    if
+      (* If [db_file]'s length exceeds Sqlite's limit then use a symlink trampoline.
+         Do not bother if [db_file] is a special Sqlite path like [:memory:] *)
+      String.length db_file < sqlite_max_path_length || String.is_prefix db_file ~prefix:":"
+    then db_file
+    else
+      let link_name = Filename.temp_file "infer-merge-sqlite-trampoline" "db" in
+      Unix.symlink ~target:db_file ~link_name ;
+      link_name
+  in
   let attach_stmt =
     Printf.sprintf "ATTACH '%s%s%s' AS %s"
       (if immutable then "file:" else "")
