@@ -45,6 +45,8 @@ void m(SelfInBlockTest* obj) {}
 
 void m2(_Nullable SelfInBlockTest* obj) {}
 
+void m3(_Nonnull SelfInBlockTest* obj) {}
+
 @implementation SelfInBlockTest {
   int x;
   NSString* _name;
@@ -116,7 +118,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   };
 }
 
-- (void)strongSelfCheck2_bad {
+- (void)strongSelfCheckNoAnnot_good {
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
@@ -124,8 +126,7 @@ void m2(_Nullable SelfInBlockTest* obj) {}
       [strongSelf foo];
       int x = strongSelf->x;
     } else {
-      m(strongSelf); // bug here
-      int x = strongSelf->x;
+      m(strongSelf); // no bug here
     }
     return 0;
   };
@@ -135,7 +136,16 @@ void m2(_Nullable SelfInBlockTest* obj) {}
   __weak __typeof(self) weakSelf = self;
   int (^my_block)(BOOL) = ^(BOOL isTapped) {
     __strong __typeof(weakSelf) strongSelf = weakSelf;
-    m2(strongSelf); // bug here
+    m2(strongSelf); // no bug here
+    return 0;
+  };
+}
+
+- (void)strongSelfCheckNonnullArg_bad {
+  __weak __typeof(self) weakSelf = self;
+  int (^my_block)(BOOL) = ^(BOOL isTapped) {
+    __strong __typeof(weakSelf) strongSelf = weakSelf;
+    m3(strongSelf); // bug here
     return 0;
   };
 }

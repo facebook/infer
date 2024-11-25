@@ -375,7 +375,7 @@ module TransferFunctions = struct
   let clear_unchecked_use_args attributes args (astate : Domain.t) =
     let clear_unchecked_use_non_nullable_arg astate (arg, _) annotation =
       match arg with
-      | Exp.Var id when Annotations.ia_is_nullable annotation ->
+      | Exp.Var id when not (Annotations.ia_is_nonnull annotation) ->
           Domain.clear_unchecked_use id astate
       | _ ->
           astate
