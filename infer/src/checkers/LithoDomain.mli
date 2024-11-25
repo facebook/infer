@@ -20,7 +20,7 @@ module LocalAccessPath : sig
   val make_from_access_expression : HilExp.AccessExpression.t -> Procname.t -> t
 end
 
-val suffixes : IString.Set.t
+val suffixes : string list
 
 (** Called procedure & location *)
 module MethodCallPrefix : sig

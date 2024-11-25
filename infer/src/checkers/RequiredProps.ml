@@ -97,7 +97,8 @@ let has_prop prop_set prop =
     IString.Set.exists
       (fun el ->
         String.chop_prefix el ~prefix:prop
-        |> Option.exists ~f:(fun suffix -> IString.Set.mem suffix LithoDomain.suffixes) )
+        |> Option.exists ~f:(fun suffix -> List.mem LithoDomain.suffixes suffix ~equal:String.equal)
+        )
       prop_set
   in
   match prop with

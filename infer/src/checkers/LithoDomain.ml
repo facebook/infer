@@ -30,29 +30,17 @@ end
 
 module LocalAccessPathSet = PrettyPrintable.MakePPSet (LocalAccessPath)
 
-let suffixes = IString.Set.of_list ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
+let suffixes = ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
 
 module MethodCallPrefix = struct
   type t =
     {prefix: string; procname: Procname.t [@compare.ignore]; location: Location.t [@compare.ignore]}
   [@@deriving compare]
 
-  exception Found of string
-
   let make_with_prefixes procname location =
     let method_name = Procname.get_method procname in
     let prefix_opt =
-      try
-        IString.Set.iter
-          (fun suffix ->
-            match String.chop_suffix method_name ~suffix with
-            | Some res ->
-                raise (Found res)
-            | None ->
-                () )
-          suffixes ;
-        None
-      with Found res -> Some res
+      List.find_map suffixes ~f:(fun suffix -> String.chop_suffix method_name ~suffix)
     in
     let default = [{prefix= method_name; procname; location}] in
     Option.value_map prefix_opt ~default ~f:(fun prefix ->
