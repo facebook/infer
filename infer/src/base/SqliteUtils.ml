@@ -95,16 +95,16 @@ let db_close db =
 let sqlite_max_path_length = 500
 
 let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
-  let db_file =
+  let db_file, remove_after_use =
     if
       (* If [db_file]'s length exceeds Sqlite's limit then use a symlink trampoline.
          Do not bother if [db_file] is a special Sqlite path like [:memory:] *)
       String.length db_file < sqlite_max_path_length || String.is_prefix db_file ~prefix:":"
-    then db_file
+    then (db_file, false)
     else
       let link_name = Filename.temp_file "infer-merge-sqlite-trampoline" "db" in
       Unix.symlink ~target:db_file ~link_name ;
-      link_name
+      (link_name, true)
   in
   let attach_stmt =
     Printf.sprintf "ATTACH '%s%s%s' AS %s"
@@ -117,6 +117,7 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
   exec db ~stmt:attach_stmt ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   let result = f () in
   exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
+  if remove_after_use then Unix.unlink db_file ;
   result
 
 
