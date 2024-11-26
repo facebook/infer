@@ -102,7 +102,8 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
       String.length db_file < sqlite_max_path_length || String.is_prefix db_file ~prefix:":"
     then (db_file, false)
     else
-      let link_name = Filename.temp_file "infer-merge-sqlite-trampoline" "db" in
+      let in_dir = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Temporary in
+      let link_name = Filename.temp_file ~in_dir "infer-merge-sqlite-trampoline" "db" in
       Unix.symlink ~target:db_file ~link_name ;
       (link_name, true)
   in
