@@ -92,7 +92,9 @@ let all_checkers =
   ; { checker= ParameterNotNullChecked
     ; callbacks= [(intraprocedural ParameterNotNullChecked.checker, Clang)] }
   ; { checker= DispatchOnceStaticInit
-    ; callbacks= [(intraprocedural DispatchOnceStaticInit.checker, Clang)] }
+    ; callbacks=
+        [ ( interprocedural Payloads.Fields.dispatch_once_static_init DispatchOnceStaticInit.checker
+          , Clang ) ] }
   ; { checker= BufferOverrunAnalysis
     ; callbacks=
         (let bo_analysis =

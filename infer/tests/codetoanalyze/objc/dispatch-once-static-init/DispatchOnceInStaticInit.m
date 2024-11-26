@@ -23,8 +23,7 @@
 
 @end
 
-__attribute__((constructor)) static void initializer_test_interproc_bad_FN(
-    void) {
+__attribute__((constructor)) static void initializer_test_interproc_bad(void) {
   [Manager getInstance];
 }
 
