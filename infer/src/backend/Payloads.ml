@@ -65,7 +65,8 @@ let all_fields =
     ~config_impact_analysis:(fun f -> mk f ConfigImpactAnalysis ConfigImpactAnalysis.Summary.pp)
     ~cost:(fun f -> mk f Cost CostDomain.pp_summary)
     ~disjunctive_demo:(fun f -> mk f DisjunctiveDemo DisjunctiveDemo.pp_domain)
-    ~dispatch_once_static_init:(fun f -> mk f DisjunctiveDemo DispatchOnceStaticInit.Summary.pp)
+    ~dispatch_once_static_init:(fun f ->
+      mk f DispatchOnceStaticInit DispatchOnceStaticInit.Summary.pp )
     ~litho_required_props:(fun f -> mk f LithoRequiredProps LithoDomain.pp_summary)
     ~pulse:(fun f -> mk_full f Pulse PulseSummary.pp)
     ~purity:(fun f -> mk f Purity PurityDomain.pp_summary)

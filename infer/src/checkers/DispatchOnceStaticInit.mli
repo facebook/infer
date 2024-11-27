@@ -8,7 +8,11 @@ open! IStd
 module F = Format
 
 module Mem : sig
-  type t = {loc: Location.t}
+  type kind = [`Call | `Dispatch_once] [@@deriving compare, equal]
+
+  type trace_elem = {call_site: CallSite.t; kind: kind} [@@deriving compare, equal]
+
+  type t = trace_elem list [@@deriving compare, equal]
 
   val compare : t -> t -> int
 
