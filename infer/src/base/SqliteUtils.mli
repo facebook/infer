@@ -14,6 +14,9 @@ exception Error of string
 (** Raised from serializers when final size exceeds Sqlite3 limits (normally 1000_000_000 bytes). *)
 exception DataTooBig
 
+val sqlite_max_path_length : int
+(** an underapproximation of the maximum path length allowed in sqlite *)
+
 val check_result_code : Sqlite3.db -> log:string -> Sqlite3.Rc.t -> unit
 (** Assert that the result is either [Sqlite3.Rc.OK] or [Sqlite3.Rc.ROW]. If the result is not
     valid, raise {!Error}. *)

@@ -138,14 +138,31 @@ type location = Primary | Secondary of string [@@deriving show {with_path= false
 let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
 
 let get_db_path location id =
-  match location with Primary -> results_dir_get_path (get_db_entry id) | Secondary file -> file
+  match location with
+  | Secondary file ->
+      file
+  | Primary ->
+      let path_to_db = results_dir_get_path (get_db_entry id) in
+      if String.length path_to_db > SqliteUtils.sqlite_max_path_length then (
+        let link_name = Filename.temp_file "infer-merge-sqlite-trampoline" ".db" in
+        Unix.unlink link_name ;
+        Unix.symlink ~target:(Filename.dirname path_to_db) ~link_name ;
+        Filename.concat link_name (Filename.basename path_to_db) )
+      else path_to_db
 
 
 let create_db location id =
   let final_db_path = get_db_path location id in
   let pid = Unix.getpid () in
+  let in_dir =
+    (* if the length of the path to the results directory is greater than Sqlite's limit
+       then create the DB in [$TMPDIR] otherwise in [results_dir/tmp] *)
+    let results_temp_dir = results_dir_get_path Temporary in
+    if String.length results_temp_dir > SqliteUtils.sqlite_max_path_length - 50 then None
+    else Some results_temp_dir
+  in
   let temp_db_path =
-    Filename.temp_file ~in_dir:(results_dir_get_path Temporary)
+    Filename.temp_file ?in_dir
       ( match id with
       | CaptureDatabase ->
           "capture." ^ Pid.to_string pid ^ ".db"

@@ -103,9 +103,10 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
     then (db_file, false)
     else
       let in_dir = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Temporary in
-      let link_name = Filename.temp_file ~in_dir "infer-merge-sqlite-trampoline" "db" in
-      Unix.symlink ~target:db_file ~link_name ;
-      (link_name, true)
+      let link_name = Filename.temp_file ~in_dir "infer-merge-sqlite-trampoline-out" "" in
+      Unix.unlink link_name ;
+      Unix.symlink ~target:(Filename.dirname db_file) ~link_name ;
+      (Filename.concat link_name (Filename.basename db_file), true)
   in
   let attach_stmt =
     Printf.sprintf "ATTACH '%s%s%s' AS %s"
