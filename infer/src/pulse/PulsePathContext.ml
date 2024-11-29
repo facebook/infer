@@ -17,6 +17,8 @@ let leq ~lhs:_ ~rhs:_ = true
 (** see [leq] *)
 let equal_fast _ _ = true
 
+let join {timestamp= ts1} {timestamp= ts2} = {timestamp= Timestamp.max ts1 ts2}
+
 let is_normal _ = true
 
 let is_exceptional _ = true

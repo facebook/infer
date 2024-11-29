@@ -16,6 +16,8 @@ let pp = F.pp_print_int
 
 let incr t = t + 1
 
+let max = Int.max
+
 (** A trace of timestamps: a way of recording evolution of a timestamp over the course of analysis.
     In particular, this can permit lightweight comparison of histories across interprocedural calls. *)
 type trace = t list [@@deriving compare, equal]

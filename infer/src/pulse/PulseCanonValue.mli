@@ -91,6 +91,9 @@ module type S = sig
     val add : Var.t -> ValueOrigin.t -> t -> t
     (* we don't care about the normalization status of the value we put in the map since the idea is
        to always normalize upon reading *)
+
+    val merge : (Var.t -> value option -> value option -> ValueOrigin.t option) -> t -> t -> t
+    (* like {!add}, needed to strengthen the requirements on the return value of the callback *)
   end
 
   module Memory :

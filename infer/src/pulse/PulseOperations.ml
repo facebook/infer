@@ -472,7 +472,7 @@ let add_static_type_objc_class tenv typ address location astate =
 
 let havoc_id id hist astate =
   (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
-  if Topl.is_active () || Stack.mem (Var.of_id id) astate then
+  if Topl.is_active () || Stack.mem `Post (Var.of_id id) astate then
     write_id id (AbstractValue.mk_fresh (), hist) astate
   else astate
 

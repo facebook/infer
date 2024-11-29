@@ -174,6 +174,11 @@ module Internal = struct
   [@@inline always]
 
 
+  let downcast_opt_value_origin vo_opt =
+    (vo_opt : CanonValue.t ValueOrigin.t_ option :> ValueOrigin.t option)
+  [@@inline always]
+
+
   module SafeBaseMemory = struct
     module Edges = struct
       let fold astate edges ~init ~f =
@@ -264,26 +269,27 @@ module Internal = struct
       BaseStack.fold (fun v _ acc -> f v acc) (astate.post :> base_domain).stack accum
 
 
+    let select pre_or_post astate =
+      ( match pre_or_post with
+      | `Pre ->
+          (astate.pre :> base_domain)
+      | `Post ->
+          (astate.post :> base_domain) )
+        .stack
+
+
     let fold pre_or_post f astate accum =
-      let stack =
-        ( match pre_or_post with
-        | `Pre ->
-            (astate.pre :> base_domain)
-        | `Post ->
-            (astate.post :> base_domain) )
-          .stack
-      in
+      let stack = select pre_or_post astate in
       BaseStack.fold
         (fun var vo acc -> f var (CanonValue.canon_value_origin astate vo) acc)
         stack accum
 
 
-    let find_opt var astate =
-      BaseStack.find_opt var (astate.post :> base_domain).stack
-      |> CanonValue.canon_opt_value_origin astate
+    let find_opt pre_or_post var astate =
+      BaseStack.find_opt var (select pre_or_post astate) |> CanonValue.canon_opt_value_origin astate
 
 
-    let mem var astate = BaseStack.mem var (astate.post :> base_domain).stack
+    let mem pre_or_post var astate = BaseStack.mem var (select pre_or_post astate)
 
     let exists f astate =
       BaseStack.exists
@@ -292,6 +298,29 @@ module Internal = struct
 
 
     let keys astate = fold_keys List.cons astate []
+
+    let fold_merge pre_or_post astate1 astate2 ~init ~f =
+      let stack1, stack2 =
+        match pre_or_post with
+        | `Pre ->
+            ((astate1.pre :> base_domain).stack, (astate2.pre :> base_domain).stack)
+        | `Post ->
+            ((astate1.post :> base_domain).stack, (astate2.post :> base_domain).stack)
+      in
+      let acc_ref = ref init in
+      let stack =
+        BaseStack.merge
+          (fun var vo1_opt vo2_opt ->
+            let acc, vo_opt =
+              f !acc_ref var
+                (CanonValue.canon_opt_value_origin astate1 vo1_opt)
+                (CanonValue.canon_opt_value_origin astate2 vo2_opt)
+            in
+            acc_ref := acc ;
+            vo_opt )
+          stack1 stack2
+      in
+      (!acc_ref, stack)
   end
 
   module SafeAttributes = struct
@@ -1384,6 +1413,13 @@ let empty =
   ; skipped_calls= SkippedCalls.empty }
 
 
+let mk_join_state ~pre:(stack_pre, heap_pre) ~post:(stack_post, heap_post) path_condition =
+  { empty with
+    pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre
+  ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post
+  ; path_condition }
+
+
 let canon_pointer_source' astate = function
   | `Malloc addr_hist ->
       `Malloc (CanonValue.canon_fst' astate addr_hist)
@@ -2188,7 +2224,7 @@ let is_allocated_this_pointer proc_attrs astate address =
   Option.exists ~f:Fn.id
     (let* this = ProcAttributes.get_this proc_attrs in
      let* this_pointer_address =
-       SafeStack.find_opt (Var.of_pvar this) astate >>| ValueOrigin.value
+       SafeStack.find_opt `Post (Var.of_pvar this) astate >>| ValueOrigin.value
      in
      let+ this_pointer, _ = SafeMemory.find_edge_opt this_pointer_address Dereference astate in
      CanonValue.equal this_pointer address )
@@ -2249,7 +2285,9 @@ module Stack = struct
     SafeStack.fold pre_or_post (fun var vo acc -> f var (downcast_value_origin vo) acc) astate init
 
 
-  let find_opt var astate = SafeStack.find_opt var astate |> Option.map ~f:downcast_value_origin
+  let find_opt ?(pre_or_post = `Post) var astate =
+    SafeStack.find_opt pre_or_post var astate |> Option.map ~f:downcast_value_origin
+
 
   let eval origin var astate =
     let astate, vo = SafeStack.eval origin var astate in
@@ -2257,6 +2295,10 @@ module Stack = struct
 
 
   let exists f astate = SafeStack.exists (fun var vo -> f var (downcast_value_origin vo)) astate
+
+  let fold_merge pre_or_post astate1 astate2 ~init ~f =
+    SafeStack.fold_merge pre_or_post astate1 astate2 ~init ~f:(fun acc var vo1_opt vo2_opt ->
+        f acc var (downcast_opt_value_origin vo1_opt) (downcast_opt_value_origin vo2_opt) )
 end
 
 module Memory = struct

@@ -407,7 +407,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             | None ->
                 let return = Var.of_id return in
                 let astate =
-                  if Stack.mem return astate then astate
+                  if Stack.mem `Post return astate then astate
                   else
                     let ret_val = AbstractValue.mk_fresh () in
                     Stack.add return (ValueOrigin.unknown (ret_val, ValueHistory.epoch)) astate

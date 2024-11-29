@@ -79,7 +79,11 @@ val pp : Format.formatter -> t -> unit
 
 val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
-val empty : t
+val mk_join_state :
+     pre:PulseBaseStack.t * PulseBaseMemory.t
+  -> post:PulseBaseStack.t * PulseBaseMemory.t
+  -> PulseFormula.t
+  -> t
 
 (** Safe version of {!PulseBaseStack} *)
 module Stack : sig
@@ -91,16 +95,29 @@ module Stack : sig
     ?pre_or_post:[`Pre | `Post] -> (Var.t -> PulseBaseStack.value -> 'a -> 'a) -> t -> 'a -> 'a
   (** [pre_or_post] defaults to [`Post] *)
 
-  val find_opt : Var.t -> t -> PulseBaseStack.value option
+  val find_opt : ?pre_or_post:[`Pre | `Post] -> Var.t -> t -> PulseBaseStack.value option
 
   val eval : ValueHistory.t -> Var.t -> t -> t * ValueOrigin.t
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
-  val mem : Var.t -> t -> bool
+  val mem : [`Pre | `Post] -> Var.t -> t -> bool
 
   val exists : (Var.t -> PulseBaseStack.value -> bool) -> t -> bool
 
   val keys : t -> Var.t list
+
+  val fold_merge :
+       [`Pre | `Post]
+    -> t
+    -> t
+    -> init:'acc
+    -> f:
+         (   'acc
+          -> Var.t
+          -> PulseBaseStack.value option
+          -> PulseBaseStack.value option
+          -> 'acc * PulseBaseStack.value option )
+    -> 'acc * PulseBaseStack.t
 end
 
 (** Safe version of {!PulseBaseMemory} *)

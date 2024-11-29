@@ -13,6 +13,8 @@ type t = {timestamp: Timestamp.t  (** step number in an intra-procedural analysi
 
 include AbstractDomain.Disjunct with type t := t
 
+val join : t -> t -> t
+
 val initial : t
 
 val post_exec_instr : t -> t

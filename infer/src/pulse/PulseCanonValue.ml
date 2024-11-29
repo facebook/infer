@@ -57,6 +57,8 @@ module type S = sig
       PulseBaseStack.S with type value = needs_canon ValueOrigin.t_ and type t = PulseBaseStack.t
 
     val add : Var.t -> ValueOrigin.t -> t -> t
+
+    val merge : (Var.t -> value option -> value option -> ValueOrigin.t option) -> t -> t -> t
   end
 
   module Memory :
