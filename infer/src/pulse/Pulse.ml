@@ -1484,7 +1484,7 @@ module PulseTransferFunctions = struct
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           let prune_result =
             let=* astate = check_config_usage analysis_data loc condition astate in
-            PulseOperations.prune path loc ~condition astate
+            PulseOperations.prune proc_desc path loc ~condition astate
           in
           let results =
             let<++> astate, _ = prune_result in

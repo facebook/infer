@@ -75,7 +75,8 @@ val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.
 val eval_ident : Ident.t -> t -> t * (AbstractValue.t * ValueHistory.t)
 
 val prune :
-     PathContext.t
+     Procdesc.t
+  -> PathContext.t
   -> Location.t
   -> condition:Exp.t
   -> t

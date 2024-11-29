@@ -415,8 +415,8 @@ module Basic = struct
       discarding some abstract values that were potentially created to evaluate [exp] when the model
       was called. *)
   let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model_no_non_disj =
-   fun {path; location} astate ->
-    let<++> astate, _ = PulseOperations.prune path location ~condition astate in
+   fun {analysis_data= {proc_desc}; path; location} astate ->
+    let<++> astate, _ = PulseOperations.prune proc_desc path location ~condition astate in
     astate
 
 

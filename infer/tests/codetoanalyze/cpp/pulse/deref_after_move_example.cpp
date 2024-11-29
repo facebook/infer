@@ -50,4 +50,32 @@ void deref_after_register_ok(std::unique_ptr<SimpleStruct> x) {
   int n = p->field;
 }
 
+struct S {
+ public:
+  S();
+  S(const S& s);
+  S(S&& s) {
+    if (this == &s) {
+      return;
+    }
+  }
+  ~S();
+};
+
+class T {
+ public:
+  S s;
+  T(S&& s) : s(std::move(s)) {}
+};
+
+T move_local_variable() {
+  S x{};
+  return T(std::move(x));
+}
+
+S call_move_local_variable_ok() {
+  T t = move_local_variable();
+  return t.s;
+}
+
 } // namespace deref_after_move_example

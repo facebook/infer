@@ -340,58 +340,92 @@ let eval_to_operand path location exp astate =
       (astate, `ValueOrigin value_origin)
 
 
-let prune path location ~condition astate =
+let is_pvar vo astate ~f =
+  match Decompiler.find (ValueOrigin.value vo) astate with
+  | SourceExpr ((PVar pvar, [Dereference]), _) ->
+      f pvar
+  | _ ->
+      false
+
+
+let is_this vo astate = is_pvar vo astate ~f:Pvar.is_this
+
+let is_non_this_param pdesc vo astate =
+  is_pvar vo astate ~f:(fun pvar ->
+      (not (Pvar.is_this pvar))
+      && List.exists (Procdesc.get_pvar_formals pdesc) ~f:(fun (formal, _) ->
+             Pvar.equal formal pvar ) )
+
+
+let is_constructor pdesc = Procname.is_constructor (Procdesc.get_proc_name pdesc)
+
+let is_infeasible pdesc ~negated bop lhs_op rhs_op astate =
+  match ((negated, (bop : Binop.t)), lhs_op, rhs_op) with
+  | (false, Eq | true, Ne), `ValueOrigin lhs, `ValueOrigin rhs ->
+      (* [this == param] is alwasy false inside a constructor. *)
+      ( (is_this lhs astate && is_non_this_param pdesc rhs astate)
+      || (is_non_this_param pdesc lhs astate && is_this rhs astate) )
+      && is_constructor pdesc
+  | _, _, _ ->
+      false
+
+
+let prune pdesc path location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
         (* TODO: eval to value origin and place an Invalidation event in the corresponding value history *)
         let** astate, lhs_op = eval_to_operand path location exp_lhs astate in
         let** astate, rhs_op = eval_to_operand path location exp_rhs astate in
-        let is_bop_equal = match (bop, negated) with Eq, false | Ne, true -> true | _ -> false in
-        L.d_printfln "is_bop_equal: %b" is_bop_equal ;
-        let astate =
-          match (lhs_op, rhs_op) with
-          | `ValueOrigin p, `Constant (Const.Cint null)
-          | `Constant (Const.Cint null), `ValueOrigin p
-            when is_bop_equal && IntLit.isnull null ->
-              L.d_printfln "comparison to null detected, recording attribute on %a" AbstractValue.pp
-                (ValueOrigin.value p) ;
-              let compared_to_null = Invalidation.ComparedToNullInThisProcedure location in
-              AbductiveDomain.add_event_to_value_origin path location
-                (Invalidated (compared_to_null, location, path.PathContext.timestamp))
-                p astate
-              |> AbductiveDomain.AddressAttributes.invalidate (ValueOrigin.addr_hist p)
-                   compared_to_null location
-          | _ ->
-              L.d_printfln "not a comparison to null: %a %a %a (negated: %b, is_bop_equal: %b)"
-                Exp.pp exp_lhs Binop.pp bop Exp.pp exp_rhs negated is_bop_equal ;
-              astate
-        in
-        let to_op : _ -> PulseArithmetic.operand = function
-          | `Constant c ->
-              ConstOperand c
-          | `ValueOrigin vo ->
-              AbstractValueOperand (ValueOrigin.value vo)
-        in
-        let to_hist = function
-          | `Constant _ ->
-              ValueHistory.epoch
-          | `ValueOrigin vo ->
-              ValueOrigin.hist vo
-        in
-        let++ astate =
-          PulseArithmetic.prune_binop ~negated bop (to_op lhs_op) (to_op rhs_op) astate
-        in
-        let hist =
-          match (to_hist lhs_op, to_hist rhs_op) with
-          | ValueHistory.Epoch, hist | hist, ValueHistory.Epoch ->
-              (* if one history is empty then just propagate the other one (which could also be
-                 empty) *)
-              hist
-          | lhs_hist, rhs_hist ->
-              ValueHistory.binary_op bop lhs_hist rhs_hist
-        in
-        (astate, hist)
+        if is_infeasible pdesc ~negated bop lhs_op rhs_op astate then Unsat
+        else
+          let is_bop_equal =
+            match (bop, negated) with Eq, false | Ne, true -> true | _ -> false
+          in
+          L.d_printfln "is_bop_equal: %b" is_bop_equal ;
+          let astate =
+            match (lhs_op, rhs_op) with
+            | `ValueOrigin p, `Constant (Const.Cint null)
+            | `Constant (Const.Cint null), `ValueOrigin p
+              when is_bop_equal && IntLit.isnull null ->
+                L.d_printfln "comparison to null detected, recording attribute on %a"
+                  AbstractValue.pp (ValueOrigin.value p) ;
+                let compared_to_null = Invalidation.ComparedToNullInThisProcedure location in
+                AbductiveDomain.add_event_to_value_origin path location
+                  (Invalidated (compared_to_null, location, path.PathContext.timestamp))
+                  p astate
+                |> AbductiveDomain.AddressAttributes.invalidate (ValueOrigin.addr_hist p)
+                     compared_to_null location
+            | _ ->
+                L.d_printfln "not a comparison to null: %a %a %a (negated: %b, is_bop_equal: %b)"
+                  Exp.pp exp_lhs Binop.pp bop Exp.pp exp_rhs negated is_bop_equal ;
+                astate
+          in
+          let to_op : _ -> PulseArithmetic.operand = function
+            | `Constant c ->
+                ConstOperand c
+            | `ValueOrigin vo ->
+                AbstractValueOperand (ValueOrigin.value vo)
+          in
+          let to_hist = function
+            | `Constant _ ->
+                ValueHistory.epoch
+            | `ValueOrigin vo ->
+                ValueOrigin.hist vo
+          in
+          let++ astate =
+            PulseArithmetic.prune_binop ~negated bop (to_op lhs_op) (to_op rhs_op) astate
+          in
+          let hist =
+            match (to_hist lhs_op, to_hist rhs_op) with
+            | ValueHistory.Epoch, hist | hist, ValueHistory.Epoch ->
+                (* if one history is empty then just propagate the other one (which could also be
+                   empty) *)
+                hist
+            | lhs_hist, rhs_hist ->
+                ValueHistory.binary_op bop lhs_hist rhs_hist
+          in
+          (astate, hist)
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->
