@@ -145,10 +145,7 @@ module Basic = struct
    fun {analysis_data= {proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      AbductiveDomain.Summary.of_post
-        (Procdesc.get_proc_name proc_desc)
-        (Procdesc.get_attributes proc_desc)
-        location astate
+      AbductiveDomain.Summary.of_post (Procdesc.get_attributes proc_desc) location astate
       >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
       >>| AccessResult.with_summary
     with

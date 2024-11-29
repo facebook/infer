@@ -233,12 +233,7 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
 
 
 let summary_of_error_post proc_desc location mk_error astate =
-  match
-    AbductiveDomain.Summary.of_post
-      (Procdesc.get_proc_name proc_desc)
-      (Procdesc.get_attributes proc_desc)
-      location astate
-  with
+  match AbductiveDomain.Summary.of_post (Procdesc.get_attributes proc_desc) location astate with
   | Sat (Ok summary)
   | Sat
       ( Error (`MemoryLeak (summary, _, _, _, _))

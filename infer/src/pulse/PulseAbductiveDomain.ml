@@ -2053,7 +2053,7 @@ module Summary = struct
 
   let remove_all_must_not_be_tainted = SafeAttributes.remove_all_must_not_be_tainted
 
-  let of_post_ proc_name (proc_attrs : ProcAttributes.t) location astate0 =
+  let of_post_ (proc_attrs : ProcAttributes.t) location astate0 =
     let open SatUnsat.Import in
     let astate = astate0 in
     let astate_before_filter = astate in
@@ -2061,7 +2061,7 @@ module Summary = struct
        marking it invalid *)
     let astate = {astate with decompiler= Decompiler.invalid} in
     let* astate, live_addresses, dead_addresses, new_eqs =
-      filter_for_summary proc_name location astate
+      filter_for_summary (ProcAttributes.get_proc_name proc_attrs) location astate
     in
     let+ astate, error = incorporate_new_eqs astate new_eqs in
     match error with
@@ -2121,8 +2121,8 @@ module Summary = struct
             )
 
 
-  let of_post proc_name proc_attrs location astate0 =
-    let summary_sat = of_post_ proc_name proc_attrs location astate0 in
+  let of_post proc_attrs location astate0 =
+    let summary_sat = of_post_ proc_attrs location astate0 in
     match summary_sat with
     | Sat _ ->
         summary_sat

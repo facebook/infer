@@ -367,7 +367,6 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post
-              (Procdesc.get_proc_name proc_desc)
               (Procdesc.get_attributes proc_desc)
               call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
