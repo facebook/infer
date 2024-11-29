@@ -189,7 +189,7 @@ module AddressAttributes : sig
   val add_all : AbstractValue.t -> Attributes.t -> t -> t
   (** [add_one] on each attribute in the set *)
 
-  val find_opt : AbstractValue.t -> t -> Attributes.t option
+  val find_opt : [`Pre | `Post] -> AbstractValue.t -> t -> Attributes.t option
 
   val check_valid :
        PathContext.t

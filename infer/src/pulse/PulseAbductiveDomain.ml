@@ -411,8 +411,14 @@ module Internal = struct
       map_post_attrs astate ~f:(fun attrs -> BaseAddressAttributes.initialize address attrs)
 
 
-    let find_opt address astate =
-      BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
+    let find_opt pre_or_post address astate =
+      BaseAddressAttributes.find_opt address
+        ( match pre_or_post with
+        | `Pre ->
+            (astate.pre :> base_domain)
+        | `Post ->
+            (astate.post :> base_domain) )
+          .attrs
 
 
     let check_initialized path access_trace addr astate =
@@ -1830,7 +1836,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
   in
   List.fold_result unreachable_addresses ~init:() ~f:(fun () addr ->
       let addr = CanonValue.canon' astate addr in
-      match SafeAttributes.find_opt addr astate with
+      match SafeAttributes.find_opt `Post addr astate with
       | Some unreachable_attrs ->
           check_memory_leak addr unreachable_attrs
       | None ->
@@ -2417,7 +2423,9 @@ module AddressAttributes = struct
 
   let add_all v attrs astate = SafeAttributes.add_all (CanonValue.canon' astate v) attrs astate
 
-  let find_opt v astate = SafeAttributes.find_opt (CanonValue.canon' astate v) astate
+  let find_opt pre_or_post v astate =
+    SafeAttributes.find_opt pre_or_post (CanonValue.canon' astate v) astate
+
 
   let check_valid path ?must_be_valid_reason trace v astate =
     SafeAttributes.check_valid path ?must_be_valid_reason trace (CanonValue.canon' astate v) astate

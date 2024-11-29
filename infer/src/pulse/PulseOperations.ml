@@ -707,7 +707,7 @@ let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_his
       in
       let astate = PulseArithmetic.copy_type_constraints (fst addr_hist_src) (fst copy) astate in
       let astate =
-        AddressAttributes.find_opt (fst addr_hist_src) astate
+        AddressAttributes.find_opt `Post (fst addr_hist_src) astate
         |> Option.value_map ~default:astate ~f:(fun src_attrs ->
                AddressAttributes.add_all (fst copy) src_attrs astate )
       in
@@ -725,7 +725,7 @@ let check_address_escape escape_location proc_desc address history astate =
       astate
   in
   let check_address_of_cpp_temporary () =
-    AddressAttributes.find_opt address astate
+    AddressAttributes.find_opt `Post address astate
     |> Option.value_map ~default:(Result.Ok ()) ~f:(fun attrs ->
            IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
                match attr with
