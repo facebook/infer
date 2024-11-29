@@ -17,11 +17,12 @@ let join_histories (_hist : ValueHistory.t option) (_hist' : ValueHistory.t opti
   (* TODO: something *) ValueHistory.epoch
 
 
-let record_join_value _v_join _v1 _v2 formula =
+let record_join_value _v_join _v1 _v2 (formula : PulseFormula.t) =
   (* TODO: record equality [v_join \in {v1, v2}] *) formula
 
 
-let join_values_hists (v_lhs, hist_lhs) (v_rhs, hist_rhs) formula_join =
+(** case where both sides have a value available at the same memory location *)
+let join_values_hists formula_join (v_lhs, hist_lhs) (v_rhs, hist_rhs) =
   let formula_join, v_join =
     if AbstractValue.equal v_lhs v_rhs then
       (* [x↦v ⊔ x↦v = x↦v], use the fact that abstract values are unique even across disjuncts
@@ -38,7 +39,9 @@ let join_values_hists (v_lhs, hist_lhs) (v_rhs, hist_rhs) formula_join =
   (formula_join, (v_join, hist_join))
 
 
-let join_values_hists_opts (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_opt) formula_join =
+(** uncached version *)
+let join_values_hists_opts_aux formula_join (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_opt)
+    =
   match (astate_lhs, v_hist_lhs_opt, astate_rhs, v_hist_rhs_opt) with
   | _, None, _, None ->
       (* we assume at least one side has a value otherwise what are we even joining? *)
@@ -64,77 +67,100 @@ let join_values_hists_opts (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_
       (formula_join, v_hist_lhs)
   | _, Some v_hist_lhs, _, Some v_hist_rhs (* [v(v_hist_lhs) ≠ v(v_hist_rhs)] *) ->
       (* [x↦v ⊔ x↦v' = x↦v''], [v''] fresh *)
-      join_values_hists v_hist_lhs v_hist_rhs formula_join
+      join_values_hists formula_join v_hist_lhs v_hist_rhs
 
 
-let join_value_origins (astate_lhs, vo_lhs_opt) (astate_rhs, vo_rhs_opt) formula_join =
+(* keep track of previous [(v_lhs_opt, v_rhs_opt) -> v_join] mappings so we can reuse the same
+   [v_join] for the same pair every time *)
+module Subst = Stdlib.Map.Make (struct
+  type t = AbstractValue.t option * AbstractValue.t option [@@deriving compare]
+end)
+
+(** like [join_values_hists_opts_aux] but uses the [Subst.t] cache provided *)
+let join_values_hists_opts subst formula_join (astate_lhs, v_hist_lhs_opt)
+    (astate_rhs, v_hist_rhs_opt) =
+  let subst_key = (Option.map ~f:fst v_hist_lhs_opt, Option.map ~f:fst v_hist_rhs_opt) in
+  match Subst.find_opt subst_key subst with
+  | Some v_join ->
+      let hist_join =
+        join_histories (Option.map ~f:snd v_hist_lhs_opt) (Option.map ~f:snd v_hist_rhs_opt)
+      in
+      (formula_join, subst, (v_join, hist_join))
+  | None ->
+      let formula_join, v_hist_join =
+        join_values_hists_opts_aux formula_join (astate_lhs, v_hist_lhs_opt)
+          (astate_rhs, v_hist_rhs_opt)
+      in
+      let subst = Subst.add subst_key (fst v_hist_join) subst in
+      (formula_join, subst, v_hist_join)
+
+
+let join_value_origins subst formula_join (astate_lhs, vo_lhs_opt) (astate_rhs, vo_rhs_opt) =
   (* TODO: actually join value origins, not just the underlying values and histories, i.e. do better
        than [Unknown] here *)
-  let formula_join, v_hist_join =
-    join_values_hists_opts
+  let formula_join, subst, v_hist_join =
+    join_values_hists_opts subst formula_join
       (astate_lhs, Option.map ~f:ValueOrigin.addr_hist vo_lhs_opt)
       (astate_rhs, Option.map ~f:ValueOrigin.addr_hist vo_rhs_opt)
-      formula_join
   in
-  (formula_join, ValueOrigin.unknown v_hist_join)
+  (formula_join, subst, ValueOrigin.unknown v_hist_join)
 
 
-(* TODO: keep track of previous [(v_lhs_opt, v_rhs_opt) -> v_join] mappings so we can reuse the same
-   [v_join] for the same pair every time; need to keep track of mapping and visited set separately
-   as [visited] is reset between pre and post but the mapping is constant across both *)
 module Visited = Stdlib.Set.Make (struct
   type t = AbstractValue.t option * AbstractValue.t option [@@deriving compare]
 end)
 
-let rec join_heaps_from pre_or_post (formula_join, heap_join, visited, v_hist_join)
+let rec join_heaps_from pre_or_post (formula_join, heap_join, visited, subst, v_hist_join)
     (astate_lhs, vh_lhs_opt) (astate_rhs, vh_rhs_opt) =
   let visited_key = (Option.map ~f:fst vh_lhs_opt, Option.map ~f:fst vh_rhs_opt) in
-  if Visited.mem visited_key visited then (formula_join, heap_join, visited)
+  if Visited.mem visited_key visited then (formula_join, heap_join, visited, subst)
   else
     let visited = Visited.add visited_key visited in
-    let join_heap_values (formula_join, heap_join, visited) _access v_hist_lhs_opt v_hist_rhs_opt =
-      let formula_join, v_hist_join =
-        join_values_hists_opts (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_opt)
-          formula_join
+    let join_heap_values (formula_join, heap_join, visited, subst) _access v_hist_lhs_opt
+        v_hist_rhs_opt =
+      let formula_join, subst, v_hist_join =
+        join_values_hists_opts subst formula_join (astate_lhs, v_hist_lhs_opt)
+          (astate_rhs, v_hist_rhs_opt)
       in
       let join_state =
         join_heaps_from pre_or_post
-          (formula_join, heap_join, visited, v_hist_join)
+          (formula_join, heap_join, visited, subst, v_hist_join)
           (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_opt)
       in
       (join_state, Some v_hist_join)
     in
-    let (formula_join, heap_join, visited), edges_join =
+    let (formula_join, heap_join, visited, subst), edges_join =
       Memory.fold_merge_edges pre_or_post (astate_lhs, vh_lhs_opt) (astate_rhs, vh_rhs_opt)
-        ~init:(formula_join, heap_join, visited)
+        ~init:(formula_join, heap_join, visited, subst)
         ~f:join_heap_values
     in
     let heap_join = PulseBaseMemory.add (fst v_hist_join) edges_join heap_join in
-    (formula_join, heap_join, visited)
+    (formula_join, heap_join, visited, subst)
 
 
 let join_stacks astate_lhs astate_rhs =
-  let join_stack_values pre_or_post (formula_join, heap_join, visited) _var vo_lhs_opt vo_rhs_opt =
-    let formula_join, vo_join =
-      join_value_origins (astate_lhs, vo_lhs_opt) (astate_rhs, vo_rhs_opt) formula_join
+  let join_stack_values pre_or_post (formula_join, heap_join, visited, subst) _var vo_lhs_opt
+      vo_rhs_opt =
+    let formula_join, subst, vo_join =
+      join_value_origins subst formula_join (astate_lhs, vo_lhs_opt) (astate_rhs, vo_rhs_opt)
     in
     let v_hist_lhs_opt = Option.map ~f:ValueOrigin.addr_hist vo_lhs_opt in
     let v_hist_rhs_opt = Option.map ~f:ValueOrigin.addr_hist vo_rhs_opt in
     let join_state =
       join_heaps_from pre_or_post
-        (formula_join, heap_join, visited, ValueOrigin.addr_hist vo_join)
+        (formula_join, heap_join, visited, subst, ValueOrigin.addr_hist vo_join)
         (astate_lhs, v_hist_lhs_opt) (astate_rhs, v_hist_rhs_opt)
     in
     (join_state, Some vo_join)
   in
-  let (formula_join, heap_pre_join, _visited), stack_pre_join =
+  let (formula_join, heap_pre_join, _visited, subst), stack_pre_join =
     Stack.fold_merge `Pre astate_lhs astate_rhs
-      ~init:(astate_lhs.AbductiveDomain.path_condition, BaseMemory.empty, Visited.empty)
+      ~init:(astate_lhs.AbductiveDomain.path_condition, BaseMemory.empty, Visited.empty, Subst.empty)
       ~f:(join_stack_values `Pre)
   in
-  let (formula_join, heap_post_join, _visited), stack_post_join =
+  let (formula_join, heap_post_join, _visited, _subst), stack_post_join =
     Stack.fold_merge `Post astate_lhs astate_rhs
-      ~init:(formula_join, BaseMemory.empty, Visited.empty)
+      ~init:(formula_join, BaseMemory.empty, Visited.empty, subst)
       ~f:(join_stack_values `Post)
   in
   AbductiveDomain.mk_join_state ~pre:(stack_pre_join, heap_pre_join)
