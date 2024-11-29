@@ -40,6 +40,12 @@ type parameter_spec_t =
 
 include AbstractDomain.WithBottomTop
 
+val exec :
+     t
+  -> exec_instr:
+       ((ExecutionDomain.t * PathContext.t) * t -> (ExecutionDomain.t * PathContext.t) list * t)
+  -> t
+
 val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
 
 type summary

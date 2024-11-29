@@ -408,7 +408,7 @@ struct
 
   let use_balanced_disjunct_strategy () = Config.pulse_balanced_disjuncts_strategy
 
-  let exec_instr (pre_disjuncts, non_disj) analysis_data node _ instr =
+  let exec_instr (pre_disjuncts, pre_non_disj) analysis_data node _ instr =
     (* [remaining_disjuncts] is the number of remaining disjuncts taking into account disjuncts
        already recorded in the post of a node (and therefore that will stay there).  It is always
        set from [exec_node_instrs], so [remaining_disjuncts] should always be [Some _]. *)
@@ -436,7 +436,7 @@ struct
                 (* check timeout once per disjunct to execute instead of once for all disjuncts *)
                 Timer.check_timeout () ;
                 let disjuncts', non_disj' =
-                  T.exec_instr ~limit (pre_disjunct, non_disj) analysis_data node instr
+                  T.exec_instr ~limit (pre_disjunct, pre_non_disj) analysis_data node instr
                 in
                 ( if Config.write_html then
                     let n = List.length disjuncts' in
@@ -448,9 +448,10 @@ struct
                 let post_disj', n, new_dropped = Domain.join_up_to ~limit ~into:post disjuncts' in
                 ((post_disj', non_disj' :: non_disj_astates), new_dropped @ dropped, n, limit - n) ) )
     in
+    let post_non_disj = T.exec_instr_non_disj pre_non_disj analysis_data node instr in
     let non_disj =
-      if List.is_empty disjuncts then non_disj
-      else List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates
+      if List.is_empty disjuncts then post_non_disj
+      else List.fold ~init:post_non_disj ~f:T.NonDisjDomain.join non_disj_astates
     in
     let non_disj = add_dropped_disjuncts dropped non_disj in
     (disjuncts, non_disj)

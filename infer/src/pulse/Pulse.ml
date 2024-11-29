@@ -1535,6 +1535,11 @@ module PulseTransferFunctions = struct
     , astate_n )
 
 
+  let exec_instr_non_disj non_disj analysis_data cfg_node instr =
+    NonDisjDomain.exec non_disj ~exec_instr:(fun exec_state_path_non_disj ->
+        exec_instr ~limit:1 exec_state_path_non_disj analysis_data cfg_node instr )
+
+
   let remember_dropped_disjuncts = NonDisjDomain.remember_dropped_disjuncts
 
   let pp_session_name _node fmt = F.fprintf fmt "Pulse%t" pp_space_specialization

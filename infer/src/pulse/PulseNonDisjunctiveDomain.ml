@@ -832,6 +832,31 @@ let bind (execs, non_disj) ~f =
          (l @ acc, join joined_non_disj new_non_disj) )
 
 
+let exec non_disj ~exec_instr =
+  if Config.pulse_over_approximate_reasoning then
+    match non_disj.astate with
+    | Bottom ->
+        bottom
+    | NonBottom (astate, path) ->
+        (* move the abstract state from the non-disjunctive part into a single disjunct *)
+        let non_disj = {non_disj with astate= Bottom} in
+        let exec_states_paths, non_disj =
+          exec_instr ((ExecutionDomain.ContinueProgram astate, path), non_disj)
+        in
+        let astate =
+          List.fold exec_states_paths ~init:Bottom ~f:(fun astate_join (exec_state, path) ->
+              match (exec_state : ExecutionDomain.t) with
+              | ContinueProgram astate ->
+                  OverApproxDomain.join astate_join (NonBottom (astate, path))
+              | _ ->
+                  (* TODO: we may want separate over-approximate states for other kinds of
+                     disjuncts, especially for exceptional disjuncts *)
+                  astate_join )
+        in
+        if OverApproxDomain.is_bottom astate then bottom else {non_disj with astate}
+  else non_disj
+
+
 type summary = {transitive_info: InterDom.t; has_dropped_disjuncts: AbstractDomain.BooleanOr.t}
 [@@deriving abstract_domain]
 
