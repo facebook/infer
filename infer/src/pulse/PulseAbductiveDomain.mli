@@ -80,9 +80,15 @@ val pp : Format.formatter -> t -> unit
 val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
 val mk_join_state :
-     pre:PulseBaseStack.t * PulseBaseMemory.t
-  -> post:PulseBaseStack.t * PulseBaseMemory.t
-  -> PulseFormula.t
+     pre:PulseBaseStack.t * PulseBaseMemory.t * PulseBaseAddressAttributes.t
+  -> post:PulseBaseStack.t * PulseBaseMemory.t * PulseBaseAddressAttributes.t
+  -> Formula.t
+  -> Decompiler.t
+  -> need_dynamic_type_specialization:AbstractValue.Set.t
+  -> PulseTopl.state
+  -> TransitiveInfo.t
+  -> PulseMutualRecursion.Set.t
+  -> SkippedCalls.t
   -> t
 
 (** Safe version of {!PulseBaseStack} *)

@@ -1452,11 +1452,18 @@ let empty =
   ; skipped_calls= SkippedCalls.empty }
 
 
-let mk_join_state ~pre:(stack_pre, heap_pre) ~post:(stack_post, heap_post) path_condition =
-  { empty with
-    pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre
-  ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post
-  ; path_condition }
+let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_post, attrs_post)
+    path_condition decompiler ~need_dynamic_type_specialization topl transitive_info recursive_calls
+    skipped_calls =
+  { pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre ~attrs:attrs_pre
+  ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post ~attrs:attrs_post
+  ; path_condition
+  ; decompiler
+  ; need_dynamic_type_specialization
+  ; topl
+  ; transitive_info
+  ; recursive_calls
+  ; skipped_calls }
 
 
 let canon_pointer_source' astate = function
