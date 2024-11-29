@@ -478,6 +478,8 @@ module Summary : sig
       0) or there is sharing in the heap. Both represent implicit assumptions that the program must
       have made. *)
 
+  val unsafe_from_join : t -> summary
+
   type t = summary [@@deriving compare, equal, yojson_of]
 
   val get_transitive_info : t -> TransitiveInfo.t

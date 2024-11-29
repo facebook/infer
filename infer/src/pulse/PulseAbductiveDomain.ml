@@ -2029,6 +2029,8 @@ module Summary = struct
 
   type t = summary [@@deriving compare, equal, yojson_of]
 
+  let unsafe_from_join = Fn.id
+
   let pp = pp_ ~is_summary:true
 
   let leq = leq

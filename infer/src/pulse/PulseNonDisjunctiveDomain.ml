@@ -857,11 +857,25 @@ let exec non_disj ~exec_instr =
   else non_disj
 
 
-type summary = {transitive_info: InterDom.t; has_dropped_disjuncts: AbstractDomain.BooleanOr.t}
-[@@deriving abstract_domain]
+type summary =
+  { transitive_info: InterDom.t
+  ; has_dropped_disjuncts: AbstractDomain.BooleanOr.t
+  ; astate: AbductiveDomain.Summary.t AbstractDomain.Types.bottom_lifted }
 
-let make_summary ({inter= transitive_info; has_dropped_disjuncts} : t) =
-  {transitive_info; has_dropped_disjuncts}
+let make_summary proc_attributes location
+    ({inter= transitive_info; has_dropped_disjuncts; astate} : t) =
+  let astate =
+    match astate with
+    | Bottom ->
+        Bottom
+    | NonBottom (astate, _path) -> (
+      match AbductiveDomain.Summary.of_post proc_attributes location astate with
+      | Sat (Ok summary) ->
+          NonBottom summary
+      | _ ->
+          (* TODO(join): we should be more lenient here *) Bottom )
+  in
+  {transitive_info; has_dropped_disjuncts; astate}
 
 
 let apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses (non_disj : t) summary =
@@ -878,20 +892,32 @@ let apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses (non_disj : 
 
 
 module Summary = struct
-  type t = summary [@@deriving abstract_domain]
+  type t = summary
 
-  let pp fmt {transitive_info; has_dropped_disjuncts} =
-    F.fprintf fmt "%a%s" InterDom.pp transitive_info
+  let pp fmt {transitive_info; has_dropped_disjuncts; astate} =
+    F.fprintf fmt "over-approx:@[%a@]@\n%a%s"
+      (AbstractDomain.BottomLiftedUtils.pp AbductiveDomain.Summary.pp)
+      astate InterDom.pp transitive_info
       (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
 
 
   let bottom =
-    {transitive_info= InterDom.bottom; has_dropped_disjuncts= AbstractDomain.BooleanOr.bottom}
+    { transitive_info= InterDom.bottom
+    ; has_dropped_disjuncts= AbstractDomain.BooleanOr.bottom
+    ; astate= Bottom }
 
 
-  let is_bottom summary =
-    InterDom.is_bottom summary.transitive_info
-    && AbstractDomain.BooleanOr.is_bottom summary.has_dropped_disjuncts
+  let join
+      { transitive_info= transitive_info1
+      ; has_dropped_disjuncts= has_dropped_disjuncts1
+      ; astate= astate1 }
+      { transitive_info= transitive_info2
+      ; has_dropped_disjuncts= has_dropped_disjuncts2
+      ; astate= astate2 } =
+    { transitive_info= InterDom.join transitive_info1 transitive_info2
+    ; has_dropped_disjuncts=
+        AbstractDomain.BooleanOr.join has_dropped_disjuncts1 has_dropped_disjuncts2
+    ; astate= AbstractDomain.BottomLiftedUtils.join PulseJoin.join_summaries astate1 astate2 }
 
 
   let get_transitive_info_if_not_top {transitive_info} =

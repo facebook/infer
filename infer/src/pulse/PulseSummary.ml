@@ -198,7 +198,8 @@ let force_exit_program analysis_data post =
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts analysis_data specialization location posts non_disj =
+let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specialization location posts
+    non_disj =
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i exec_state ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i
@@ -209,7 +210,8 @@ let of_posts analysis_data specialization location posts non_disj =
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )
   in
-  {pre_post_list; non_disj= NonDisjDomain.make_summary non_disj}
+  { pre_post_list
+  ; non_disj= NonDisjDomain.make_summary (Procdesc.get_attributes proc_desc) location non_disj }
 
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name

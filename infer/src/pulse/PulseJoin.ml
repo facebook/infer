@@ -160,3 +160,9 @@ let join_abductive astate_lhs astate_rhs =
 
 let join (astate_lhs, path_lhs) (astate_rhs, path_rhs) =
   (join_abductive astate_lhs astate_rhs, PathContext.join path_lhs path_rhs)
+
+
+let join_summaries (summary_lhs : AbductiveDomain.Summary.t)
+    (summary_rhs : AbductiveDomain.Summary.t) =
+  join_abductive (summary_lhs :> AbductiveDomain.t) (summary_rhs :> AbductiveDomain.t)
+  |> AbductiveDomain.Summary.unsafe_from_join

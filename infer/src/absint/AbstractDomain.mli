@@ -109,6 +109,8 @@ module BottomLifted (Domain : S) : sig
 end
 
 module BottomLiftedUtils : sig
+  val join : ('t -> 't -> 't) -> 't bottom_lifted -> 't bottom_lifted -> 't bottom_lifted
+
   val pp_bottom : F.formatter -> unit
 
   val pp : (F.formatter -> 't -> unit) -> F.formatter -> 't bottom_lifted -> unit

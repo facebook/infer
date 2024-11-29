@@ -50,10 +50,16 @@ val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
 
 type summary
 
-val make_summary : t -> summary
+val make_summary : ProcAttributes.t -> Location.t -> t -> summary
 
 module Summary : sig
-  include AbstractDomain.WithBottom with type t = summary
+  type t = summary
+
+  val bottom : t
+
+  val pp : F.formatter -> t -> unit
+
+  val join : t -> t -> t
 
   val get_transitive_info_if_not_top : t -> TransitiveInfo.t option
 

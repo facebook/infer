@@ -13,3 +13,6 @@ val join :
      AbductiveDomain.t * PathContext.t
   -> AbductiveDomain.t * PathContext.t
   -> AbductiveDomain.t * PathContext.t
+
+val join_summaries :
+  AbductiveDomain.Summary.t -> AbductiveDomain.Summary.t -> AbductiveDomain.Summary.t
