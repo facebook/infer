@@ -715,10 +715,10 @@ type t =
 
 let pp_with_kind pp_kind fmt
     ({intra; inter; has_dropped_disjuncts; astate} [@warning "missing-record-field-pattern"]) =
-  F.fprintf fmt "@[%a,@ %a%s@\n  @[%a@]@]" IntraDom.pp intra InterDom.pp inter
-    (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
+  F.fprintf fmt "@[over-approx: %a@\n%a,@ %a%s@]"
     (OverApproxDomain.pp_with_kind pp_kind)
-    astate
+    astate IntraDom.pp intra InterDom.pp inter
+    (if has_dropped_disjuncts then " (some disjuncts dropped)" else "")
 
 
 let pp fmt non_disj = pp_with_kind TEXT fmt non_disj
