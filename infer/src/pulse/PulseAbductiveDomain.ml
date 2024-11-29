@@ -162,6 +162,11 @@ module Internal = struct
 
   let downcast_fst pair = (pair : CanonValue.t * _ :> AbstractValue.t * _) [@@inline always]
 
+  let downcast_opt_fst pair_opt =
+    (pair_opt : (CanonValue.t * _) option :> (AbstractValue.t * _) option)
+  [@@inline always]
+
+
   let downcast_snd_fst pair_pair = (pair_pair : _ * (CanonValue.t * _) :> _ * (AbstractValue.t * _))
   [@@inline always]
 
@@ -189,6 +194,24 @@ module Internal = struct
       let mapi astate edges ~f =
         BaseMemory.Edges.mapi edges ~f:(fun access addr_hist ->
             f access (CanonValue.canon_fst astate addr_hist) )
+
+
+      let fold_merge astate1 astate2 edges1_opt edges2_opt ~init ~f =
+        let edges1 = Option.value edges1_opt ~default:BaseMemory.Edges.empty in
+        let edges2 = Option.value edges2_opt ~default:BaseMemory.Edges.empty in
+        let acc_ref = ref init in
+        let edges =
+          BaseMemory.Edges.merge edges1 edges2 ~f:(fun access v_hist1_opt v_hist2_opt ->
+              let acc = !acc_ref in
+              let acc, vh =
+                f acc access
+                  (CanonValue.canon_opt_fst astate1 v_hist1_opt)
+                  (CanonValue.canon_opt_fst astate2 v_hist2_opt)
+              in
+              acc_ref := acc ;
+              vh )
+        in
+        (!acc_ref, edges)
     end
 
     let fold_edges astate v heap ~init ~f =
@@ -197,6 +220,22 @@ module Internal = struct
           init
       | Some edges ->
           Edges.fold astate edges ~init ~f
+
+
+    let fold_merge_edges pre_or_post (astate1, vh1_opt) (astate2, vh2_opt) ~init ~f =
+      let heap1, heap2 =
+        match pre_or_post with
+        | `Pre ->
+            ((astate1.pre :> base_domain).heap, (astate2.pre :> base_domain).heap)
+        | `Post ->
+            ((astate1.post :> base_domain).heap, (astate2.post :> base_domain).heap)
+      in
+      let get_edges heap vh_opt =
+        Option.bind vh_opt ~f:(fun (addr, _) -> BaseMemory.find_opt addr heap)
+      in
+      let edges1_opt = get_edges heap1 vh1_opt in
+      let edges2_opt = get_edges heap2 vh2_opt in
+      Edges.fold_merge astate1 astate2 edges1_opt edges2_opt ~init ~f
   end
 
   module SafeStack = struct
@@ -2343,6 +2382,15 @@ module Memory = struct
           ( access_addr_hist
             : Access.t * (CanonValue.t * ValueHistory.t)
             :> PulseAccess.t * (AbstractValue.t * ValueHistory.t) ) )
+
+
+  let fold_merge_edges pre_or_post (astate1, vh1_opt) (astate2, vh2_opt) ~init ~f =
+    SafeBaseMemory.fold_merge_edges pre_or_post
+      (astate1, CanonValue.canon_opt_fst' astate1 vh1_opt)
+      (astate2, CanonValue.canon_opt_fst' astate2 vh2_opt)
+      ~init
+      ~f:(fun acc access v_hist1_opt v_hist2_opt ->
+        f acc (downcast_access access) (downcast_opt_fst v_hist1_opt) (downcast_opt_fst v_hist2_opt) )
 end
 
 let add_block_source v block astate =

@@ -64,6 +64,8 @@ module type S = sig
 
   val canon_opt_fst : astate -> (needs_canon * 'a) option -> (t * 'a) option
 
+  val canon_opt_fst' : astate -> (AbstractValue.t * 'a) option -> (t * 'a) option
+
   val canon_opt_fst4' :
     astate -> (AbstractValue.t * 'a * 'b * 'c) option -> (t * 'a * 'b * 'c) option
 

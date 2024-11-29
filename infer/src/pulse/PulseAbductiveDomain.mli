@@ -152,6 +152,21 @@ module Memory : sig
     -> f:(PulseAccess.t * (AbstractValue.t * ValueHistory.t) -> bool)
     -> bool
   (** [pre_or_post] defaults to [`Post] *)
+
+  val fold_merge_edges :
+       [`Pre | `Post]
+    -> t * (AbstractValue.t * ValueHistory.t) option
+    -> t * (AbstractValue.t * ValueHistory.t) option
+    -> init:'acc
+    -> f:
+         (   'acc
+          -> Access.t
+          -> PulseBaseMemory.Edges.value option
+          -> PulseBaseMemory.Edges.value option
+          -> 'acc * PulseBaseMemory.Edges.value option )
+    -> 'acc * PulseBaseMemory.value
+  (** merge the stacks of the given astates into one and set the stack of the first abstract state
+      to be the merged stack*)
 end
 
 (** Safe version of {!PulseBaseAddressAttributes} *)

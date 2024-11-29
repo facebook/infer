@@ -57,6 +57,8 @@ module type S = sig
   val union_left_biased : t -> t -> t
 
   val to_seq : t -> (key * value) Seq.t
+
+  val merge : f:(key -> value option -> value option -> value option) -> t -> t -> t
 end
 
 module Make

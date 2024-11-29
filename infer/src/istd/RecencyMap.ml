@@ -54,6 +54,8 @@ module type S = sig
   val union_left_biased : t -> t -> t
 
   val to_seq : t -> (key * value) Seq.t
+
+  val merge : f:(key -> value option -> value option -> value option) -> t -> t -> t
 end
 
 module Make
@@ -157,6 +159,27 @@ module Make
   let iter map ~f = fold map ~init:() ~f:(fun () x -> f x)
 
   let bindings map = to_seq map |> Stdlib.List.of_seq
+
+  let merge ~f map1 map2 =
+    let add_to_acc k v_opt acc = match v_opt with None -> acc | Some v -> (k, v) :: acc in
+    let rec aux l l1 l2 =
+      match (l1, l2) with
+      | [], [] ->
+          l
+      | [], (k, v) :: l2' ->
+          aux (add_to_acc k (f k None (Some v)) l) l1 l2'
+      | (k, v) :: l1', [] ->
+          aux (add_to_acc k (f k (Some v) None) l) l1' l2
+      | (k1, v1) :: l1', (k2, v2) :: l2' ->
+          if Key.compare k1 k2 < 0 then aux (add_to_acc k1 (f k1 (Some v1) None) l) l1' l2
+          else if Key.equal k1 k2 then aux (add_to_acc k1 (f k1 (Some v1) (Some v2)) l) l1' l2'
+          else (* [k1 > k2] *) aux (add_to_acc k2 (f k2 None (Some v2)) l) l1 l2'
+    in
+    let compare (k1, _) (k2, _) = Key.compare k1 k2 in
+    let new_ = aux [] (bindings map1 |> List.sort ~compare) (bindings map2 |> List.sort ~compare) in
+    let count_new = List.length new_ in
+    {old= []; new_; count_new}
+
 
   let exists map ~f =
     List.exists map.new_ ~f

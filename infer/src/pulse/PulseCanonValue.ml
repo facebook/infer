@@ -40,6 +40,8 @@ module type S = sig
 
   val canon_opt_fst : astate -> (needs_canon * 'a) option -> (t * 'a) option
 
+  val canon_opt_fst' : astate -> (AbstractValue.t * 'a) option -> (t * 'a) option
+
   val canon_opt_fst4' :
     astate -> (AbstractValue.t * 'a * 'b * 'c) option -> (t * 'a * 'b * 'c) option
 
@@ -137,6 +139,15 @@ end) : S with type astate = AbductiveDomain.astate = struct
         pair_opt
     | Some (v, snd) ->
         let v' = canon astate v in
+        if AbstractValue.equal v v' then pair_opt else Some (v', snd)
+
+
+  let canon_opt_fst' astate pair_opt =
+    match pair_opt with
+    | None ->
+        pair_opt
+    | Some (v, snd) ->
+        let v' = canon' astate v in
         if AbstractValue.equal v v' then pair_opt else Some (v', snd)
 
 

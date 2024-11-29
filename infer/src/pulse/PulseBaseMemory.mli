@@ -23,6 +23,9 @@ module type S = sig
     val mapi : t -> f:(key -> out_of_map_t -> in_map_t) -> t
 
     val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+
+    val merge :
+      f:(key -> out_of_map_t option -> out_of_map_t option -> in_map_t option) -> t -> t -> t
   end
 
   include PrettyPrintable.PPMonoMap with type key := key and type value = Edges.t
