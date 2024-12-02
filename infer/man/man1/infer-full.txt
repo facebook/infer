@@ -2652,8 +2652,7 @@ INTERNAL OPTIONS
 
        --compaction-minimum-interval-s int
            An analysis worker will only trigger compaction if this amount of
-           time (in seconds) has elapsed since last compaction. Defaults to
-           15
+           time (in seconds) has elapsed since last compaction. Defaults to 0
 
        --compilation-database-escaped-reset
            Set --compilation-database-escaped to the empty list.

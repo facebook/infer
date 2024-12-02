@@ -1305,9 +1305,9 @@ and compaction_if_heap_greater_equal_to_GB =
 
 
 and compaction_minimum_interval_s =
-  CLOpt.mk_int ~long:"compaction-minimum-interval-s" ~default:15 ~meta:"int"
+  CLOpt.mk_int ~long:"compaction-minimum-interval-s" ~default:0 ~meta:"int"
     "An analysis worker will only trigger compaction if this amount of time (in seconds) has \
-     elapsed since last compaction. Defaults to 15"
+     elapsed since last compaction. Defaults to 0"
 
 
 and compilation_database =
