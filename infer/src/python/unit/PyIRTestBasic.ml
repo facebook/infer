@@ -279,7 +279,7 @@ d = { 0x78: "abc", # 1-n decoding mapping
   in
   PyIR.test source ;
   [%expect
-    {xxx|
+    {|
     module dummy:
 
       function toplevel():
@@ -298,7 +298,7 @@ d = { 0x78: "abc", # 1-n decoding mapping
           n8 <- $Call(n5, n7, None)
           n9 <- $BuildConstKeyMap($BuildTuple(120, "abc", 1, 121), "abc", 120, None, "", None)
           TOPLEVEL[d] <- n9
-          return None |xxx}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -433,7 +433,7 @@ x = o.f(0, *args1, *args2, **d1, **d2)
   in
   PyIR.test source ;
   [%expect
-    {xxx|
+    {|
     module dummy:
 
       function toplevel():
@@ -524,8 +524,7 @@ x = o.f(0, *args1, *args2, **d1, **d2)
           n70 <- $DictMerge($BuildMap(), n69, None)
           n71 <- $CallFunctionEx(n61, n66, $BuildMap(), None)
           TOPLEVEL[x] <- n71
-          return None
-|xxx}]
+          return None |}]
 
 
 let%expect_test _ =

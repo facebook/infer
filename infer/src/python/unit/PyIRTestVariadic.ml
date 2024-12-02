@@ -84,7 +84,7 @@ start()
   in
   PyIR.test source ;
   [%expect
-    {xxx|
+    {|
     module dummy:
 
       function toplevel():
@@ -178,7 +178,7 @@ start()
           n17 <- $ListExtend($BuildList(), n16, None)
           n18 <- $ListToTuple($BuildList(), None)
           n19 <- $CallFunctionEx(n14, n18, None, None)
-          return None |xxx}]
+          return None |}]
 
 
 let%expect_test _ =
@@ -272,7 +272,7 @@ f(**d1, x=42)
   in
   PyIR.test source ;
   [%expect
-    {xxx|
+    {|
     module dummy:
 
       function toplevel():
@@ -326,7 +326,7 @@ f(**d1, x=42)
           jmp b1
 
         b3:
-          return None |xxx}]
+          return None |}]
 
 
 let%expect_test _ =

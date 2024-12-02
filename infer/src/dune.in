@@ -38,6 +38,10 @@ let strict_flags =
   ocamlc_flags @ ["-w"; warnings; "-warn-error"; fatal_warnings] |> String.concat " "
 
 
+(* OCaml 5.2 on macos with -O3 can lead to compilation failing
+   https://github.com/ocaml/ocaml/issues/13596 *)
+let ocamlopt_flags_val = if darwin then "(:standard -O2)" else "(:standard -O3)"
+
 let env_stanza =
   Format.sprintf
     {|
@@ -47,13 +51,13 @@ let env_stanza =
     (inline_tests enabled))
   (opt
     (flags %s)
-    (ocamlopt_flags (:standard -O3)))
+    (ocamlopt_flags %s))
   (dev-noerror
     (flags %s)
     (inline_tests enabled))
   )
 |}
-    strict_flags lenient_flags lenient_flags
+    strict_flags lenient_flags ocamlopt_flags_val lenient_flags
 
 
 (** Put this *first* in (libraries) specifications to prevent a clash between extlib's and base64's

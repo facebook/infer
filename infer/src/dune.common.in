@@ -26,3 +26,5 @@ let facebook = is_yes "@IS_FACEBOOK_TREE@"
 let extra_cflags = if is_empty "@EXTRA_CFLAGS@" then [] else ["@EXTRA_CFLAGS@"]
 
 let windows = is_yes "@WINDOWS_BUILD@"
+
+let darwin = String.equal "@BUILD_PLATFORM@" "Darwin"

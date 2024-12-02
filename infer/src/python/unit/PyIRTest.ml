@@ -1336,7 +1336,7 @@ def g(l):
   in
   PyIR.test source ;
   [%expect
-    {xxx|
+    {|
     module dummy:
 
       function toplevel():
@@ -1410,7 +1410,7 @@ def g(l):
           jmp b1
 
         b3:
-          return $BuildMap() |xxx}]
+          return $BuildMap() |}]
 
 
 let%expect_test _ =

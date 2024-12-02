@@ -17,8 +17,8 @@ DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
 SANDCASTLE=${SANDCASTLE:-}
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-INFER_OPAM_DEFAULT_SWITCH="4.14.0+flambda"
-INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.4.14.0+options,ocaml-option-flambda"
+INFER_OPAM_DEFAULT_SWITCH="5.2.1+flambda"
+INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.5.2.1+options,ocaml-option-flambda"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
 INFER_OPAM_SWITCH_OPTIONS=${INFER_OPAM_SWITCH_OPTIONS:-$INFER_OPAM_DEFAULT_SWITCH_OPTIONS}
 PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
@@ -171,9 +171,7 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=.locked
     fi
-    if [ -z "$SANDCASTLE" ] ; then
-      opam pin add --no-action stdcompat "$INFER_ROOT"/dependencies/stdcompat
-    fi
+    opam pin add --no-action stdcompat "$INFER_ROOT"/dependencies/stdcompat
     opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
 }
 

@@ -24,7 +24,7 @@ rule processSource = parse
         let i = String.rindex s '.' in
         let s = String.sub s 0 i in
         let s = Filename.basename s in
-        let s = String.capitalize s in
+        let s = String.capitalize_ascii s in
         currentSource := s;
         processTargets lexbuf }
   | eof
@@ -43,7 +43,7 @@ and processTargets = parse
         let i = String.rindex t '.' in
         let t = String.sub t 0 i in
         let t = Filename.basename t in
-        let t = String.capitalize t in
+        let t = String.capitalize_ascii t in
         addDepend t;
         processTargets lexbuf }
   | eof
@@ -319,7 +319,7 @@ let dir_to_mod_names graph dir =
     ) StringSet.empty graph in
   fold_dir (fun dir_to_mod_names path ->
     let file = Filename.basename path in
-    let mod_name = String.capitalize (try Filename.chop_extension file with _ -> file) in
+    let mod_name = String.capitalize_ascii (try Filename.chop_extension file with _ -> file) in
     if ((Filename.check_suffix file ".ml")
         && StringSet.mem mod_name nodes)
     then

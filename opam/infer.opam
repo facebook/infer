@@ -28,7 +28,7 @@ depends: [
   "memtrace" {>="0.1.2"}
   "menhir" {>= "20220210"}
   "mtime" {>="2"}
-  "ocaml" {>="4.12.0"}
+  "ocaml" {>="5.2.1"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {>="2.0.5"}
