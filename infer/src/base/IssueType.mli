@@ -30,6 +30,7 @@ type category =
   | RuntimeException
   | SensitiveDataFlow
   | UngatedCode
+  | UserDefinedProperty
 [@@deriving compare, equal, enumerate]
 
 val string_of_severity : severity -> string

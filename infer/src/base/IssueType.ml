@@ -26,6 +26,7 @@ type category =
   | RuntimeException
   | SensitiveDataFlow
   | UngatedCode
+  | UserDefinedProperty
 [@@deriving compare, equal, enumerate]
 
 let string_of_severity = function
@@ -60,6 +61,8 @@ let string_of_category = function
       "Runtime exception"
   | UngatedCode ->
       "Ungated code"
+  | UserDefinedProperty ->
+      "User defined property"
 
 
 let category_documentation = function
@@ -88,6 +91,8 @@ let category_documentation = function
       "Sensitive data is flowing where it shouldn't."
   | UngatedCode ->
       "Code must be under a gating mechanism but isn't."
+  | UserDefinedProperty ->
+      "A user defined (custom) property is violated."
 
 
 (* Make sure we cannot create new issue types other than by calling [register_from_string]. This is because
@@ -459,14 +464,14 @@ let checkers_allocates_memory =
 
 
 let checkers_annotation_reachability_error =
-  register ~category:PerfRegression ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+  register ~category:UserDefinedProperty ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR"
     ~hum:"Annotation Reachability Error" Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
 
 
 let checkers_calls_expensive_method =
-  register ~category:NoCategory ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called"
-    Error AnnotationReachability
+  register ~category:PerfRegression ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD"
+    ~hum:"Expensive Method Called" Error AnnotationReachability
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_CALLS_EXPENSIVE_METHOD.md"]
 
 
@@ -1000,7 +1005,7 @@ let thread_safety_violation =
 
 
 let topl_error =
-  register_with_latent ~category:SensitiveDataFlow ~id:"TOPL_ERROR" Error Topl
+  register_with_latent ~category:UserDefinedProperty ~id:"TOPL_ERROR" Error Topl
     ~user_documentation:[%blob "./documentation/issues/TOPL_ERROR.md"]
 
 
