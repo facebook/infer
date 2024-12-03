@@ -883,3 +883,20 @@ let out_of_ssa module_ =
     {pdesc with nodes}
   in
   module_map_procs ~f:transform module_
+
+
+let run lang module_ =
+  let errors, decls_env = TextualDecls.make_decls module_ in
+  if not (List.is_empty errors) then
+    L.die InternalError
+      "to_sil conversion should not be performed if TextualDecls verification has raised any \
+       errors before." ;
+  let module_, new_decls_were_added =
+    (* note: because && and || operators are lazy we must remove them before moving calls *)
+    module_ |> remove_if_terminator |> remove_effects_in_subexprs lang decls_env
+  in
+  let decls_env =
+    if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env
+  in
+  let module_ = module_ |> let_propagation |> out_of_ssa in
+  (module_, decls_env)

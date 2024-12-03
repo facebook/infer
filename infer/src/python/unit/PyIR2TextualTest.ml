@@ -14,15 +14,12 @@ let run module_ =
     let textual = PyIR2Textual.mk_module module_ in
     F.printf "TRANSFORMATION PyIR -> Textual@\n" ;
     F.printf "%a" Textual.Module.pp textual ;
-    let* verified_textual =
+    let+ verified_textual =
       TextualVerification.verify textual |> Result.map_error ~f:(fun err -> `VerificationError err)
     in
     F.printf "TYPE INFERENCE@\n" ;
     F.printf "%a" Textual.Module.pp verified_textual ;
-    let+ _, _, transformed_textual =
-      TextualSil.module_to_sil verified_textual
-      |> Result.map_error ~f:(fun err -> `TransformationError err)
-    in
+    let transformed_textual, _ = TextualTransform.run Python verified_textual in
     F.printf "FINAL TRANSFORMATIONS@\n" ;
     F.printf "%a" Textual.Module.pp transformed_textual
   in

@@ -11,7 +11,10 @@ val proc_decl_to_sil : Textual.Lang.t -> Textual.ProcDecl.t -> Procname.t
 [@@warning "-unused-value-declaration"]
 
 val module_to_sil :
-  Textual.Module.t -> (Cfg.t * Tenv.t * Textual.Module.t, Textual.transform_error list) result
+     Textual.Lang.t
+  -> Textual.Module.t
+  -> TextualDecls.t
+  -> (Cfg.t * Tenv.t, Textual.transform_error list) result
 (** convert a Textual unit into Infer internal representation (cfg + tenv). During the process the
     textual representation undergoes several transformations. The result is passed as the third
     element of the returned tuple *)

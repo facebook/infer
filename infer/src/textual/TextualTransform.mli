@@ -14,6 +14,7 @@ val fix_closure_app : Textual.Module.t -> Textual.Module.t
 
 val remove_effects_in_subexprs :
   Textual.Lang.t -> TextualDecls.t -> Textual.Module.t -> Textual.Module.t * bool
+[@@warning "-unused-value-declaration"]
 (* generates enough intermediate Let and Load instructions to make the procdesc free
    of side-effect sub-expressions.
    Example:
@@ -27,7 +28,16 @@ val remove_effects_in_subexprs :
 *)
 
 val remove_if_terminator : Textual.Module.t -> Textual.Module.t
+[@@warning "-unused-value-declaration"]
 
-val let_propagation : Textual.Module.t -> Textual.Module.t
+val let_propagation : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
 
-val out_of_ssa : Textual.Module.t -> Textual.Module.t
+val out_of_ssa : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
+
+val run : Textual.Lang.t -> Textual.Module.t -> Textual.Module.t * TextualDecls.t
+(* run the following transformations in the given order:
+   1) remove_if_terminator
+   2) remove_effects_in_subexprs (also removes closures expressions)
+   3) let_propagation
+   4) out_of_ssa in
+*)

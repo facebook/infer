@@ -100,10 +100,24 @@ module TextualFile = struct
     |> Result.map_error ~f:(fun err -> (sourcefile, [VerificationError err]))
 
 
+  let lang sourcefile module_ =
+    match Textual.Module.lang module_ with
+    | None ->
+        Error
+          ( sourcefile
+          , [ TransformError
+                [ { loc= Textual.Location.Unknown
+                  ; msg= lazy "Missing or unsupported source_language attribute" } ] ] )
+    | Some lang ->
+        Ok lang
+
+
   let textual_to_sil sourcefile module_ =
     let open IResult.Let_syntax in
-    let* cfg, tenv, _ =
-      TextualSil.module_to_sil module_
+    let* lang = lang sourcefile module_ in
+    let module_, decls_env = TextualTransform.run lang module_ in
+    let* cfg, tenv =
+      TextualSil.module_to_sil lang module_ decls_env
       |> Result.map_error ~f:(fun errors -> (sourcefile, [TransformError errors]))
     in
     Ok {sourcefile; cfg; tenv}

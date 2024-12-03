@@ -96,11 +96,12 @@ let process_file ~is_binary file =
     TextualVerification.verify textual |> Result.map_error ~f
   in
   if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
-  let* cfg, tenv, transformed_textual =
-    let f = Error.textual_transformation sourcefile in
-    TextualSil.module_to_sil verified_textual |> Result.map_error ~f
-  in
+  let transformed_textual, decls = TextualTransform.run Python verified_textual in
   if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
+  let* cfg, tenv =
+    let f = Error.textual_transformation sourcefile in
+    TextualSil.module_to_sil Python transformed_textual decls |> Result.map_error ~f
+  in
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
   if Config.python_skip_db then Ok None
   else (

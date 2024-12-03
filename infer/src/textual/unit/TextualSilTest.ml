@@ -11,21 +11,12 @@ module T = Textual
 open TextualTestHelpers
 
 let module_to_sil_exn module_ =
-  match TextualSil.module_to_sil module_ with
-  | Ok (cfg, tenv, _) ->
+  let module_, decls = TextualTransform.run Hack module_ in
+  match TextualSil.module_to_sil Hack module_ decls with
+  | Ok (cfg, tenv) ->
       (cfg, tenv)
   | Error err ->
       raise (Textual.TextualTransformError err)
-
-
-let%expect_test _ =
-  let no_lang = {|define nothing() : void { #node: ret null }|} in
-  let m = parse_module no_lang in
-  try module_to_sil_exn m |> ignore
-  with T.TextualTransformError errs ->
-    List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
-    [%expect
-      {| dummy.sil, <unknown location>: transformation error: Missing or unsupported source_language attribute |}]
 
 
 let%expect_test "undefined types are included in tenv" =
