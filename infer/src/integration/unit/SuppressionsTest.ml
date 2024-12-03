@@ -6,136 +6,164 @@
  *)
 
 open! IStd
-module Map = IString.Map
 
 (** {2 parsing} *)
 
-let%test "parsing empty file" = Map.is_empty @@ Suppressions.parse_lines []
+let t parse_result = Format.printf "%a" Suppressions.pp_parse_result parse_result
 
-let%test "parsing empty string" = Map.is_empty @@ Suppressions.parse_lines [""]
-
-let%test "parsing non-matching line" = Map.is_empty @@ Suppressions.parse_lines ["1+1 #hello"]
-
-let%test "parsing matching line" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1"])
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 1; last= 2}])
+let%expect_test "parsing empty file" =
+  t @@ Suppressions.parse_lines [] ;
+  [%expect {| Empty |}]
 
 
-let%test "parsing matching line inside string gotcha" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines ["const char* s = \"@infer-ignore BUFFER_OVERRUN_L1,\";"])
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Blocks [{first= 1; last= 2}])
+let%expect_test "parsing empty string" =
+  t @@ Suppressions.parse_lines [""] ;
+  [%expect {| Empty |}]
 
 
-let%test "parsing matching line no issue type" =
-  Map.is_empty @@ Suppressions.parse_lines ["1+1 // @infer-ignore  "]
+let%expect_test "parsing non-matching line" =
+  t @@ Suppressions.parse_lines ["1+1 #hello"] ;
+  [%expect {| Empty |}]
 
 
-let%test "parsing half-matching line no issue type" =
-  Map.is_empty @@ Suppressions.parse_lines ["1+1 // @infer-ignore-all"]
+let%expect_test "parsing matching line" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1"] ;
+  [%expect {| BUFFER_OVERRUN_L1: Blocks 1-2 |}]
 
 
-let%test "parsing matching line multiple issue types" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY"])
-    Map.(
-      empty
-      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 2}])
-      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 2}]) )
+let%expect_test "parsing matching line inside string gotcha" =
+  t @@ Suppressions.parse_lines ["const char* s = \"@infer-ignore BUFFER_OVERRUN_L1,\";"] ;
+  [%expect
+    {|
+    RESULT: BUFFER_OVERRUN_L1: Blocks 1-2
+
+    ERRORS: "; not a valid issue_type / wildcard |}]
 
 
-let%test "parsing matching line multiple noise" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
-       ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,,,, PULSE_UNNECESSARY_COPY,,,,,,,"] )
-    Map.(
-      empty
-      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 2}])
-      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 2}]) )
+let%expect_test "parsing matching line no issue type" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore  "] ;
+  [%expect {| Empty |}]
 
 
-let%test "multi line block" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
-       ["// @infer-ignore BUFFER_OVERRUN_L1"; "1+1 // @infer-ignore ,PULSE_UNNECESSARY_COPY"] )
-    Map.(
-      empty
-      |> add "BUFFER_OVERRUN_L1" (Suppressions.Span.Blocks [{first= 1; last= 3}])
-      |> add "PULSE_UNNECESSARY_COPY" (Suppressions.Span.Blocks [{first= 1; last= 3}]) )
+let%expect_test "parsing half-matching line no issue type" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-all"] ;
+  [%expect {| Empty |}]
 
 
-let%test "multiple blocks" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
-       ["// @infer-ignore BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"] )
-    Map.(
-      empty
-      |> add "BUFFER_OVERRUN_L1"
-           (Suppressions.Span.Blocks [{first= 1; last= 2}; {first= 3; last= 4}]) )
+let%expect_test "parsing matching line multiple issue types" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY"] ;
+  [%expect {|
+    BUFFER_OVERRUN_L1: Blocks 1-2
+    PULSE_UNNECESSARY_COPY: Blocks 1-2 |}]
 
 
-let%test "parsing matching line every" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines ["1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"])
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Every)
+let%expect_test "parsing matching line multiple noise" =
+  t
+  @@ Suppressions.parse_lines
+       ["1+1 // @infer-ignore BUFFER_OVERRUN_L1,,,, PULSE_UNNECESSARY_COPY,,,,,,,"] ;
+  [%expect {|
+    BUFFER_OVERRUN_L1: Blocks 1-2
+    PULSE_UNNECESSARY_COPY: Blocks 1-2 |}]
 
 
-let%test "every overrides block" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
-       ["//@infer-ignore BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"] )
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Every)
+let%expect_test "multi line block" =
+  t
+  @@ Suppressions.parse_lines
+       ["// @infer-ignore BUFFER_OVERRUN_L1"; "1+1 // @infer-ignore ,PULSE_UNNECESSARY_COPY"] ;
+  [%expect {|
+    BUFFER_OVERRUN_L1: Blocks 1-3
+    PULSE_UNNECESSARY_COPY: Blocks 1-3 |}]
 
 
-let%test "block doesn't override every" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
-       ["//@infer-ignore-every BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"] )
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Every)
+let%expect_test "multiple blocks" =
+  t
+  @@ Suppressions.parse_lines
+       ["// @infer-ignore BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"] ;
+  [%expect {| BUFFER_OVERRUN_L1: Blocks 1-2, 3-4 |}]
 
 
-let%test "both ignore and ignore-every on single line" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
+let%expect_test "parsing matching line every" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"] ;
+  [%expect {| BUFFER_OVERRUN_L1: Every |}]
+
+
+let%expect_test "every overrides block" =
+  t
+  @@ Suppressions.parse_lines
+       ["//@infer-ignore BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"] ;
+  [%expect {| BUFFER_OVERRUN_L1: Every |}]
+
+
+let%expect_test "block doesn't override every" =
+  t
+  @@ Suppressions.parse_lines
+       ["//@infer-ignore-every BUFFER_OVERRUN_L1"; ""; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"] ;
+  [%expect {| BUFFER_OVERRUN_L1: Every |}]
+
+
+let%expect_test "both ignore and ignore-every on single line" =
+  t
+  @@ Suppressions.parse_lines
        [ "1+1 // @infer-ignore-every BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY @infer-ignore \
-          DEAD_STORE" ] )
-    (* PULSE_UNNECESSARY_COPY @infer-ignore DEAD_STORE not a valid issue_type / wildcard *)
-    (Map.singleton "BUFFER_OVERRUN_L1" @@ Suppressions.Span.Every)
+          DEAD_STORE" ] ;
+  [%expect
+    {|
+    RESULT: BUFFER_OVERRUN_L1: Every
+
+    ERRORS: PULSE_UNNECESSARY_COPY @infer-ignore DEAD_STORE not a valid issue_type / wildcard
+    ;
+            Both @infer-ignore-every and @infer-ignore found in  line 2 |}]
 
 
-let%test "both ignore and ignore-every on single line every wins" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines
+let%expect_test "both ignore and ignore-every on single line every wins" =
+  t
+  @@ Suppressions.parse_lines
        [ "1+1 // @infer-ignore BUFFER_OVERRUN_L1,PULSE_UNNECESSARY_COPY @infer-ignore-every \
-          DEAD_STORE" ] )
-    (Map.singleton "DEAD_STORE" @@ Suppressions.Span.Every)
+          DEAD_STORE" ] ;
+  [%expect
+    {|
+    RESULT: DEAD_STORE: Every
+
+    ERRORS: Both @infer-ignore-every and @infer-ignore found in  line 2 |}]
 
 
-let%test "simple wildcard" =
-  Map.equal Suppressions.Span.equal
-    (Suppressions.parse_lines ["1+1 // @infer-ignore-every PULSE_UNNECESSARY_.*"])
-    (Map.singleton "PULSE_UNNECESSARY_.*" @@ Suppressions.Span.Every)
+let%expect_test "simple wildcard" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every PULSE_UNNECESSARY_.*"] ;
+  [%expect {| PULSE_UNNECESSARY_.*: Every |}]
 
 
-let%test "match everything wildcard is invalid" =
-  Map.is_empty @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every .*"]
+let%expect_test "match everything wildcard is invalid" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every .*"] ;
+  [%expect {|
+    RESULT: Empty
+    ERRORS: .* not a valid issue_type / wildcard |}]
 
 
-let%test "syntax error wildcard" =
-  Map.is_empty @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every *"]
+let%expect_test "syntax error wildcard" =
+  t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every *"] ;
+  [%expect
+    {|
+    RESULT: Empty
+    ERRORS: * not a valid issue_type / wildcard
+    ;  Invalid regex: * |}]
 
 
 (** {2 matching} *)
 
-let s1 = Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1"]
+let no_error (x, errors) =
+  assert (List.is_empty errors) ;
+  x
+
+
+let s1 = Suppressions.parse_lines ["1+1 // @infer-ignore BUFFER_OVERRUN_L1"] |> no_error
 
 let s2 =
   Suppressions.parse_lines
     ["//@infer-ignore ,PULSE_UNNECESSARY_COPY"; "1+1 // @infer-ignore BUFFER_OVERRUN_L1"]
+  |> no_error
 
 
-let s_every = Suppressions.parse_lines ["1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"]
+let s_every = Suppressions.parse_lines ["1+1 // @infer-ignore-every BUFFER_OVERRUN_L1"] |> no_error
 
 let%test "matching suppression" =
   Suppressions.is_suppressed ~suppressions:s1 ~issue_type:"BUFFER_OVERRUN_L1" ~line:1
@@ -166,7 +194,9 @@ let%test "matching suppression every large line" =
   Suppressions.is_suppressed ~suppressions:s_every ~issue_type:"BUFFER_OVERRUN_L1" ~line:1000
 
 
-let s_wild = Suppressions.parse_lines ["1+1 // @infer-ignore-every PULSE_UNNECESSARY_.*"]
+let s_wild =
+  Suppressions.parse_lines ["1+1 // @infer-ignore-every PULSE_UNNECESSARY_.*"] |> no_error
+
 
 let%test "matching suppression wildcard" =
   Suppressions.is_suppressed ~suppressions:s_wild ~issue_type:"PULSE_UNNECESSARY_COPY_ASSIGNMENT"

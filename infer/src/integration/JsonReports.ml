@@ -241,7 +241,10 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
               L.user_error "Could not read file %s@\n" filename ;
               IString.Map.empty
           | Ok lines ->
-              Suppressions.parse_lines ~file:filename lines )
+              let suppressions, errors = Suppressions.parse_lines ~file:filename lines in
+              List.iter errors ~f:(fun (Suppressions.UserError error) ->
+                  L.user_error "%s" (error ()) ) ;
+              suppressions )
     in
     suppressions_cache := SourceFile.Map.add source_file suppressions !suppressions_cache ;
     Suppressions.is_suppressed ~suppressions ~issue_type ~line

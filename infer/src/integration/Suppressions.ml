@@ -82,7 +82,7 @@ module ParseResult = struct
 
   type 'a parse_result = 'a * error list
 
-  let _pp_parse_result pp fmt ((x, errors) : _ parse_result) =
+  let pp_parse_result pp fmt ((x, errors) : _ parse_result) =
     if List.is_empty errors then pp fmt x
     else
       F.fprintf fmt "@[RESULT: @[%a@]@\nERRORS: @[%a@]@]" pp x
@@ -224,11 +224,7 @@ let parse_lines ?file lines =
   res
 
 
-let parse_lines ?file lines =
-  let suppressions, errors = parse_lines ?file lines in
-  List.iter errors ~f:(fun (UserError error) -> L.user_error "%s" (error ())) ;
-  suppressions
-
+let pp_parse_result fmt parse_result = pp_parse_result pp fmt parse_result
 
 let first_key_match ~suppressions s =
   IString.Map.to_seq suppressions
