@@ -149,6 +149,8 @@ let python_unresolved_module_type_name =
   SilTyp.PythonClass (PythonClassName.make "PyUnresolvedModule")
 
 
+let python_resolved_module_type_name = SilTyp.PythonClass (PythonClassName.make "PyResolvedModule")
+
 let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
 
 let default_return_type (lang : Lang.t option) loc =

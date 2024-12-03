@@ -338,6 +338,10 @@ let builtin_name builtin =
       "py_get_previous_exception"
 
 
+let builtin_needs_globals_as_argument builtin =
+  match (builtin : BuiltinCaller.t) with BuildClass -> true | _ -> false
+
+
 let of_stmt loc stmt : Textual.Instr.t =
   match (stmt : Stmt.t) with
   | Let {lhs; rhs} ->
@@ -382,14 +386,15 @@ let of_stmt loc stmt : Textual.Instr.t =
         { id= Some (mk_ident lhs)
         ; exp=
             call_builtin "py_call_method"
-              ( exp_of_ident_str name :: of_exp self_if_needed :: of_exp arg_names
+              ( exp_globals :: exp_of_ident_str name :: of_exp self_if_needed :: of_exp arg_names
               :: List.map ~f:of_exp args )
         ; loc }
   | BuiltinCall {lhs; call; args; arg_names= _} ->
-      Let
-        { id= Some (mk_ident lhs)
-        ; exp= call_builtin (builtin_name call) (List.map ~f:of_exp args)
-        ; loc }
+      let args =
+        if builtin_needs_globals_as_argument call then exp_globals :: List.map ~f:of_exp args
+        else List.map ~f:of_exp args
+      in
+      Let {id= Some (mk_ident lhs); exp= call_builtin (builtin_name call) args; loc}
   | Delete {scope= Global; ident} ->
       Let {id= None; exp= call_builtin "py_delete_global" [exp_of_ident_str ident; exp_globals]; loc}
   | Delete {scope= Fast; ident} ->

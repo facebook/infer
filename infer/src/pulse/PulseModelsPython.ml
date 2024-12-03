@@ -24,6 +24,8 @@ let tuple_tname = TextualSil.python_tuple_type_name
 
 let unresolved_module_tname = TextualSil.python_unresolved_module_type_name
 
+let resolved_module_tname = TextualSil.python_resolved_module_type_name
+
 let sil_fieldname_from_string_value_exn type_name ((address, _) : DSL.aval) :
     Fieldname.t DSL.model_monad =
   let f astate =
@@ -97,12 +99,35 @@ module UnresolvedModule = struct
     as_constant_string aval
 end
 
+module ResolvedModule = struct
+  let make : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    constructor resolved_module_tname []
+end
+
 let build_tuple args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* tuple = Tuple.make args in
   assign_ret tuple
+
+
+let build_class globals closure _name _args : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* class_ = Dict.make [] [] in
+  let gen_closure_args {ProcAttributes.python_args= _} =
+    let locals = class_ in
+    match Config.python_globals with
+    | OwnByClosures ->
+        ret [locals]
+    | OwnByModule ->
+        ret [globals; locals]
+  in
+  let* _ = apply_python_closure closure gen_closure_args in
+  assign_ret class_
 
 
 let call_dsl ~closure ~globals ~arg_names:_ ~args : DSL.aval DSL.model_monad =
@@ -132,7 +157,7 @@ let await_awaitable arg : unit DSL.model_monad =
   fst arg |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command
 
 
-let call_method name obj arg_names args : model =
+let call_method globals name obj arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
@@ -164,11 +189,15 @@ let call_method name obj arg_names args : model =
               else
                 L.d_printfln "unknown special method call (%a, %a)" (Pp.option F.pp_print_string)
                   opt_module_name (Pp.option F.pp_print_string) opt_method_name ;
-              ret res ) ]
+              ret res )
+        ; ( resolved_module_tname
+          , fun () ->
+              let* closure = Dict.get obj name in
+              call_dsl ~closure ~globals:obj ~arg_names ~args ) ]
       ~default:(fun () ->
         let* closure = Dict.get obj name in
         (* TODO: for OO method, gives self argument *)
-        call_dsl ~closure ~globals:obj ~arg_names ~args )
+        call_dsl ~closure ~globals ~arg_names ~args )
   in
   assign_ret res
 
@@ -211,10 +240,10 @@ let import_name name _fromlist _level : model =
     let* module_ = UnresolvedModule.make name in
     assign_ret module_ )
   else
-    let* globals = Dict.make [] [] in
+    let* module_ = ResolvedModule.make in
     (* TODO: call it only once! *)
-    let* _ = python_call proc_name [("globals", globals)] in
-    assign_ret globals
+    let* _ = python_call proc_name [("globals", module_)] in
+    assign_ret module_
 
 
 let load_fast name locals : model =
@@ -326,8 +355,9 @@ let yield_from _ _ : model =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
-  [ -"$builtins" &:: "py_call" <>$ arg $+ arg $+ arg $+++$--> call
-  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
+  [ -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+ arg $+++$--> build_class
+  ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+ arg $+++$--> call
+  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable

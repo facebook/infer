@@ -64,6 +64,8 @@ val python_tuple_type_name : Typ.name
 
 val python_unresolved_module_type_name : Typ.name
 
+val python_resolved_module_type_name : Typ.name
+
 val wildcard_sil_fieldname : Textual.Lang.t -> string -> Fieldname.t
 
 val textual_ext : string
