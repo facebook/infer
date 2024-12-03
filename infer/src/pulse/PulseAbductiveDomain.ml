@@ -2332,6 +2332,34 @@ let reachable_addresses_from ?edge_filter addresses astate pre_or_post =
   |> CanonValue.downcast_set
 
 
+let has_reachable_in_inner_pre_heap addresses astate =
+  (* We are looking for one "real" (i.e. in the program text somewhere) dereference from the stack
+     variables in the pre-condition. Since the first dereference is always to access the value of
+     the formal, it is enough to look for access paths with at least two dereferences. *)
+  let has_two_dereferences accesses =
+    let rec has_two_dereferences_aux has_deref (accesses : Access.t list) =
+      match accesses with
+      | [] ->
+          false
+      | Dereference :: accesses' ->
+          has_deref || has_two_dereferences_aux true accesses'
+      | _ :: accesses' ->
+          has_two_dereferences_aux has_deref accesses'
+    in
+    has_two_dereferences_aux false accesses
+  in
+  let addresses =
+    ListLabels.to_seq addresses |> Seq.map (CanonValue.canon' astate) |> CanonValue.Set.of_seq
+  in
+  GraphVisit.fold astate
+    ~var_filter:(fun _ -> true)
+    `Pre ~init:false ~finish:Fn.id
+    ~f:(fun _ found v accesses ->
+      if CanonValue.Set.mem v addresses && has_two_dereferences accesses then Stop true
+      else Continue found )
+  |> snd
+
+
 module Stack = struct
   include SafeStack
 

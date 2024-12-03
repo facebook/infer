@@ -671,9 +671,29 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
         L.d_printfln "Suppressing recursive call report for non-user-visible function %a"
           Procname.pp callee_pname
     | _ ->
-        PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-          (MutualRecursionCycle
-             {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ) ;
+        if
+          AbductiveDomain.has_reachable_in_inner_pre_heap
+            (List.map actuals ~f:(fun ((actual, _), _) -> actual))
+            astate
+        then
+          L.d_printfln
+            "heap progress made before recursive call to %a; unlikely to be an infinite recursion, \
+             suppressing report"
+            Procname.pp callee_pname
+        else
+          PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+            (MutualRecursionCycle
+               {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ) ;
+    astate )
+  else if
+    AbductiveDomain.has_reachable_in_inner_pre_heap
+      (List.map actuals ~f:(fun ((actual, _), _) -> actual))
+      astate
+  then (
+    L.d_printfln
+      "heap progress made before recursive call to %a; unlikely to be an infinite recursion, not \
+       recording the cycle"
+      Procname.pp callee_pname ;
     astate )
   else AbductiveDomain.add_recursive_call call_loc callee_pname astate
 

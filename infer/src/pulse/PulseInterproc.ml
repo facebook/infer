@@ -964,7 +964,7 @@ let report_mutual_recursion_cycle
 
 
 let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) callee_proc_name
-    call_loc callee_summary call_state =
+    call_loc actuals callee_summary call_state =
   if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
     L.d_printfln "Not recording recursive calls for Hack xinit caller function %a" Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
@@ -974,6 +974,16 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
        functions in the first place *)
     L.d_printfln "Not recording recursive calls for Hack xinit callee function %a" Procname.pp
       callee_proc_name ;
+    call_state )
+  else if
+    AbductiveDomain.has_reachable_in_inner_pre_heap
+      (List.map actuals ~f:(fun ((actual, _), _) -> actual))
+      call_state.astate
+  then (
+    L.d_printfln
+      "Not recording recursive calls for function %a since heap progress has been made to compute \
+       actuals"
+      Procname.pp callee_proc_name ;
     call_state )
   else
     let callee_recursive_calls =
@@ -1101,7 +1111,7 @@ let read_return_value {PathContext.timestamp} callee_proc_name call_loc
         ) )
 
 
-let apply_post analysis_data path callee_proc_name call_location callee_summary call_state =
+let apply_post analysis_data path callee_proc_name call_location actuals callee_summary call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     call_state
@@ -1110,7 +1120,7 @@ let apply_post analysis_data path callee_proc_name call_location callee_summary 
     >>= apply_post_from_callee_post path callee_proc_name call_location callee_summary
     >>| add_attributes `Post path callee_proc_name call_location
           (AbductiveDomain.Summary.get_post callee_summary).attrs
-    >>| record_recursive_calls analysis_data callee_proc_name call_location callee_summary
+    >>| record_recursive_calls analysis_data callee_proc_name call_location actuals callee_summary
     >>| record_skipped_calls callee_proc_name call_location callee_summary
     >>| record_transitive_info analysis_data callee_proc_name call_location callee_summary
     >>| read_return_value path callee_proc_name call_location callee_summary
@@ -1295,7 +1305,8 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
           let call_state = {call_state with astate; visited= AddressSet.empty} in
           (* apply the postcondition *)
           let* call_state, return_caller =
-            apply_post analysis_data path callee_proc_name call_location callee_summary call_state
+            apply_post analysis_data path callee_proc_name call_location actuals callee_summary
+              call_state
           in
           let astate =
             if Topl.is_active () then

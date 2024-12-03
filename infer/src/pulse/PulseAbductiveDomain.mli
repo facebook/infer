@@ -353,6 +353,12 @@ val reachable_addresses_from :
   -> AbstractValue.Set.t
 (** Compute the set of abstract addresses that are reachable from given abstract addresses. *)
 
+val has_reachable_in_inner_pre_heap : AbstractValue.t list -> t -> bool
+(** [true] if there is a value in the provided list that is reachable from the pre-condition after
+    some non-trivial steps in the pre heap, i.e. the value is gotten from at least one dereference
+    from the parameters of the current procedure. Used to detect likely-harmless recursive calls
+    since heap progress has been made. *)
+
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
