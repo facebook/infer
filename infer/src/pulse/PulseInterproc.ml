@@ -965,22 +965,33 @@ let report_mutual_recursion_cycle
 
 let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) callee_proc_name
     call_loc callee_summary call_state =
-  let callee_recursive_calls =
-    PulseMutualRecursion.Set.filter_map
-      (fun cycle ->
-        let cycle = PulseMutualRecursion.add_call callee_proc_name call_loc cycle in
-        if
-          Procname.equal
-            (PulseMutualRecursion.get_inner_call cycle)
-            (Procdesc.get_proc_name proc_desc)
-        then (
-          report_mutual_recursion_cycle analysis_data cycle ;
-          None )
-        else Some cycle )
-      (AbductiveDomain.Summary.get_recursive_calls callee_summary)
-  in
-  let astate = AbductiveDomain.add_recursive_calls callee_recursive_calls call_state.astate in
-  {call_state with astate}
+  if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
+    L.d_printfln "Not recording recursive calls for Hack xinit caller function %a" Procname.pp
+      (Procdesc.get_proc_name proc_desc) ;
+    call_state )
+  else if Procname.is_hack_xinit callee_proc_name then (
+    (* shouldn't get there normally since we are careful never to record a recursive cycle for xinit
+       functions in the first place *)
+    L.d_printfln "Not recording recursive calls for Hack xinit callee function %a" Procname.pp
+      callee_proc_name ;
+    call_state )
+  else
+    let callee_recursive_calls =
+      PulseMutualRecursion.Set.filter_map
+        (fun cycle ->
+          let cycle = PulseMutualRecursion.add_call callee_proc_name call_loc cycle in
+          if
+            Procname.equal
+              (PulseMutualRecursion.get_inner_call cycle)
+              (Procdesc.get_proc_name proc_desc)
+          then (
+            report_mutual_recursion_cycle analysis_data cycle ;
+            None )
+          else Some cycle )
+        (AbductiveDomain.Summary.get_recursive_calls callee_summary)
+    in
+    let astate = AbductiveDomain.add_recursive_calls callee_recursive_calls call_state.astate in
+    {call_state with astate}
 
 
 let record_skipped_calls callee_proc_name call_loc callee_summary call_state =

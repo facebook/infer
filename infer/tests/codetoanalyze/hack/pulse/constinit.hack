@@ -69,3 +69,8 @@ class Tester {
     };
   }
 }
+
+class SeveralConsts {
+  const int X = 42;
+  const int Y = SeveralConsts::X + 1; // FP reported here
+}

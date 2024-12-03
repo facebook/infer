@@ -667,6 +667,9 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
     | Some formals when List.length formals <> List.length actuals ->
         print_arity_mismatch_message ~extra_call_prefix:" recursive" (Some callee_pname) ~formals
           ~actuals
+    | _ when Procname.is_hack_xinit callee_pname ->
+        L.d_printfln "Suppressing recursive call report for non-user-visible function %a"
+          Procname.pp callee_pname
     | _ ->
         PulseReport.report analysis_data ~is_suppressed:false ~latent:false
           (MutualRecursionCycle
