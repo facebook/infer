@@ -2685,5 +2685,5 @@ let add_event_to_value_origin path location event value_origin astate =
 module CanonValue = struct
   include CanonValue
 
-  let downcast = downcast
+  let downcast x = downcast x [@@inline always]
 end

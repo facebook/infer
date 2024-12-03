@@ -21,13 +21,12 @@ module type S = sig
 
   module Set : PrettyPrintable.PPSet with type elt = t
 
-  val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
+  val downcast_set : Set.t -> AbstractValue.Set.t
 
   val unsafe_cast_set : AbstractValue.Set.t -> Set.t
   [@@deprecated
     "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
      locally with [@alert \"-deprecated\"]"]
-  [@@inline always]
 
   (** an abstract value that needs to be normalized; just [AbstractValue.t] under the hood too *)
   type needs_canon
@@ -82,7 +81,6 @@ module type S = sig
   [@@deprecated
     "unsafe, obviously; please add a comment why you need to use this and suppress this warning \
      locally with [@alert \"-deprecated\"]"]
-  [@@inline always]
 
   (** {2 Domain elements, revisited to be safe wrt value normalization} *)
 

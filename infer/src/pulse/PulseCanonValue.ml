@@ -18,9 +18,9 @@ module type S = sig
 
   module Set : PrettyPrintable.PPSet with type elt = t
 
-  val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
+  val downcast_set : Set.t -> AbstractValue.Set.t
 
-  val unsafe_cast_set : AbstractValue.Set.t -> Set.t [@@deprecated ""] [@@inline always]
+  val unsafe_cast_set : AbstractValue.Set.t -> Set.t [@@deprecated ""]
 
   type needs_canon
 
@@ -52,7 +52,7 @@ module type S = sig
 
   val mk_fresh : unit -> t
 
-  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""] [@@inline always]
+  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""]
 
   module Stack : sig
     include
@@ -90,9 +90,9 @@ end) : S with type astate = AbductiveDomain.astate = struct
 
   module Set = AbstractValue.Set
 
-  let downcast_set = Fn.id
+  let downcast_set xs = xs [@@inline always]
 
-  let unsafe_cast_set = Fn.id
+  let unsafe_cast_set x = x [@@inline always]
 
   type needs_canon = AbstractValue.t
 
@@ -106,7 +106,7 @@ end) : S with type astate = AbductiveDomain.astate = struct
 
   let canon' = canon
 
-  let unsafe_cast = Fn.id
+  let unsafe_cast x = x [@@inline always]
 
   let canon_fst astate pair =
     let v, snd = pair in

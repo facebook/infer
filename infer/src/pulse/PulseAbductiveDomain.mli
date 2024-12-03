@@ -521,5 +521,5 @@ end
 module CanonValue : sig
   include PulseCanonValue.S with type astate = t
 
-  val downcast : t -> AbstractValue.t [@@inline always]
+  val downcast : t -> AbstractValue.t
 end
