@@ -26,7 +26,10 @@ let of_location loc = Location.line loc |> location_from_opt_line
 module Typ = struct
   let locals = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyLocals")))
 
-  let globals = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyGlobals")))
+  let globals module_name =
+    let str = F.asprintf "PyGlobals::%a" Ident.pp module_name in
+    Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string str)))
+
 
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
@@ -61,10 +64,13 @@ let mk_procdecl_attributes {CodeInfo.co_argcount; co_varnames; is_async} =
 let mk_procdecl ?loc kind code_info =
   let qualified_name = mk_qualified_proc_name ?loc kind in
   let formals_types =
-    if is_module_body kind then Some [Textual.Typ.mk_without_attributes Typ.globals]
-    else
-      Some
-        [Textual.Typ.mk_without_attributes Typ.globals; Textual.Typ.mk_without_attributes Typ.locals]
+    match kind with
+    | ModuleBody name ->
+        Some [Textual.Typ.mk_without_attributes (Typ.globals name)]
+    | RegularFunction {module_name} ->
+        Some
+          [ Textual.Typ.mk_without_attributes (Typ.globals module_name)
+          ; Textual.Typ.mk_without_attributes Typ.locals ]
   in
   let result_type = Textual.Typ.mk_without_attributes Typ.value in
   let attributes = mk_procdecl_attributes code_info in
