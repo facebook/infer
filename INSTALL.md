@@ -44,6 +44,7 @@ is required to compile everything from source.
 - opam >= 2.0.0
 - pkg-config
 - Java (only needed for the Java analysis)
+- sqlite3 installation
 - gcc >= 5.X or clang >= 3.4 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
 - CMake (only needed for the C/Objective-C analysis)
