@@ -25,8 +25,8 @@ let print_error_and_exit ?(exit_code = 1) fmt =
     terminate. The standard out and error are not redirected. If the command fails to execute, print
     an error message and exit. *)
 let create_process_and_wait ~prog ~args =
-  Unix.fork_exec ~prog ~argv:(prog :: args) ()
-  |> Unix.waitpid
+  let {pid; _} : Core_unix.Process_info.t = Unix.create_process ~prog ~args in
+  Unix.waitpid pid
   |> function
   | Ok () ->
       ()

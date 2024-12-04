@@ -20,8 +20,10 @@ let capture compiler ~prog ~args =
       let extended_env = `Extend [(path_var, new_path); ("INFER_OLD_PATH", old_path)] in
       L.environment_info "Running command %s with env:@\n%s@\n@." prog
         (Unix.sexp_of_env extended_env |> Sexp.to_string) ;
-      Unix.fork_exec ~prog ~argv:(prog :: args) ~env:extended_env ()
-      |> Unix.waitpid
+      let {pid; _} : Core_unix.Process_info.t =
+        Unix.create_process_env ~prog ~args ~env:extended_env ()
+      in
+      Unix.waitpid pid
       |> function
       | Ok () ->
           ()
