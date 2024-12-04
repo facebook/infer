@@ -57,13 +57,6 @@ def call_taint_sink_on_global_bad2():
     g = taint.source()
     taint.sink(g)
 
-# we need to call these functions in order to activate specialization
-basic_flow_bad()
-basic_flow_ok(0)
-call_fst_bad(0)
-call_fst_ok(0)
-call_sink_fst_arg_bad(0)
-call_sink_fst_arg_ok(0)
 g = taint.source()
 call_taint_sink_on_global_bad1()
 g = 0

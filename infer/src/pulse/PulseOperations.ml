@@ -533,8 +533,8 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
 
 
 let hack_python_propagates_type_on_load tenv path loc rhs_exp addr astate =
-  ( if Language.curr_language_is Hack || Language.curr_language_is Python then
-      (* The Hack and Python frontends do not propagate types from declarations to usage,
+  ( if Language.curr_language_is Hack then
+      (* The Hack frontend do not propagate types from declarations to usage,
          so we redo part of the work ourself *)
       let open IOption.Let_syntax in
       match rhs_exp with

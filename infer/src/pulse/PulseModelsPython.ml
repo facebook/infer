@@ -48,10 +48,24 @@ module Dict = struct
     ret dict
 
 
+  let propagate_static_type_on_load dict key load_res : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* opt_static_type = get_static_type dict in
+    option_iter opt_static_type ~f:(fun tname ->
+        let* field = sil_fieldname_from_string_value_exn tname key in
+        let* opt_info = tenv_resolve_field_info tname field in
+        option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
+            let opt_static_tname = Typ.name (Typ.strip_ptr field_typ) in
+            option_iter opt_static_tname ~f:(fun static_tname ->
+                add_static_type static_tname load_res ) ) )
+
+
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* field = sil_fieldname_from_string_value_exn dict_tname key in
-    load_access dict (FieldAccess field)
+    let* load_res = load_access dict (FieldAccess field) in
+    let* () = propagate_static_type_on_load dict key load_res in
+    ret load_res
 
 
   let set dict key value : unit DSL.model_monad =

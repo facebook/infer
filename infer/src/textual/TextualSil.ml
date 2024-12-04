@@ -1247,11 +1247,12 @@ module ModuleBridge = struct
       (not (TypeName.Set.mem tname types_used_as_enclosing_but_not_defined))
       && TextualDecls.get_struct decls_env tname |> Option.is_none
     in
-    TextualDecls.get_undefined_types decls_env
-    |> Seq.iter (fun tname ->
-           if is_undefined_type tname then
-             let sil_tname = TypeNameBridge.to_sil lang tname in
-             Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
+    if not (Lang.equal lang Python) then
+      TextualDecls.get_undefined_types decls_env
+      |> Seq.iter (fun tname ->
+             if is_undefined_type tname then
+               let sil_tname = TypeNameBridge.to_sil lang tname in
+               Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
     (cfgs, tenv)
 
 

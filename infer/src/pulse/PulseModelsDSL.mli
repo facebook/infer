@@ -128,6 +128,8 @@ module Syntax : sig
 
   val add_static_type : Typ.name -> aval -> unit model_monad
 
+  val get_static_type : aval -> Typ.name option model_monad
+
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
 
   val check_valid :

@@ -199,7 +199,7 @@ async def g():
     type PyGlobals::dummy = {random: *PyGlobals::random; a: *PyGlobals::asyncio; f: *closure:dummy:0;
                              g: *closure:dummy:1}
 
-    type closure:dummy:1 = {}
+    type .final closure:dummy:1 = {}
 
     define .closure_wrapper .async closure:dummy:1.call(__this: *closure:dummy:1, globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
       #entry:
@@ -210,7 +210,7 @@ async def g():
 
     }
 
-    type closure:dummy:0 = {}
+    type .final closure:dummy:0 = {}
 
     define .closure_wrapper .args = "y,l" closure:dummy:0.call(__this: *closure:dummy:0, globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
       #entry:

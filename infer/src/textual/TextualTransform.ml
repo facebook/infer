@@ -332,7 +332,9 @@ module TransformClosures = struct
     (alloc :: List.rev instrs, List.rev fields)
 
 
-  let type_declaration name fields : Struct.t = {name; supers= []; fields; attributes= []}
+  let type_declaration name fields : Struct.t =
+    {name; supers= []; fields; attributes= [Attr.mk_final]}
+
 
   let closure_call_qualified_procname loc : QualifiedProcName.t =
     {enclosing_class= Enclosing TypeName.wildcard; name= {value= "call"; loc}}

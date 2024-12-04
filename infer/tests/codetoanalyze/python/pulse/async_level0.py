@@ -20,7 +20,7 @@ async def call_sleep_ok():
 async def call_sleep_bad():
     sleep(1)
 
-async def call_sleep_unknown_call_ok():
+async def FP_call_sleep_unknown_call_ok():
     unknown(sleep(1))
 
 
@@ -48,27 +48,3 @@ async def call_sleep_with_branchs_bad2(b):
     if b:
         return
     await temp
-
-
-b = random.choice([True, False])
-
-
-asyncio.run(FN_sleep_bad(random.random()))
-
-
-asyncio.run(call_sleep_ok())
-
-
-asyncio.run(call_sleep_bad())
-
-
-asyncio.run(call_sleep_with_temp_ok())
-
-
-asyncio.run(call_sleep_with_branchs_ok(b))
-
-
-asyncio.run(call_sleep_with_branchs_bad1(b))
-
-
-asyncio.run(call_sleep_with_branchs_bad2(b))

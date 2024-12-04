@@ -497,6 +497,8 @@ module Syntax = struct
     ret () data astate
 
 
+  let get_static_type (addr, _) = AddressAttributes.get_static_type addr |> exec_pure_operation
+
   let tenv_resolve_field_info typ_name field_name : Struct.field_info option model_monad =
    fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     let info = Tenv.resolve_field_info tenv typ_name field_name in

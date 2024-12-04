@@ -753,7 +753,7 @@ let%expect_test "closures" =
     {|
       .source_language = "hack"
 
-      type closure:dummy:0 = {x: int; y: int}
+      type .final closure:dummy:0 = {x: int; y: int}
 
       define .closure_wrapper closure:dummy:0.call(__this: *closure:dummy:0, p1: int, p2: float, p3: string) : int {
         #entry:
