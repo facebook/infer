@@ -184,7 +184,7 @@ val dead_store : t
 
 val deadlock : t
 
-val dispatch_once_in_static_init : t
+val static_constructor_stall : t
 
 val divide_by_zero : t
 

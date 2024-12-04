@@ -571,12 +571,13 @@ let deadlock =
     ~user_documentation:[%blob "./documentation/issues/DEADLOCK.md"]
 
 
-let dispatch_once_in_static_init =
-  register ~category:Concurrency ~enabled:false ~id:"DISPATCH_ONCE_IN_STATIC_INIT"
-    ~hum:"dispatch_once in static init" Error StaticConstructorStallChecker
+let static_constructor_stall =
+  register ~category:Concurrency ~enabled:false ~id:"STATIC_CONSTRUCTOR_STALL" Error
+    StaticConstructorStallChecker
     ~user_documentation:
-      "Calling dispatch_once during the static initialization of objects is risky, for example it \
-       could cause deadlocks, because other objects might not have been initialized yet."
+      "Calling certain methods, for instance dispatch_once, during the static initialization of \
+       objects is risky. It could cause deadlocks, because other objects might not have been \
+       initialized yet."
 
 
 let divide_by_zero =

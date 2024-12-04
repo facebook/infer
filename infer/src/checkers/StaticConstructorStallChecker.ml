@@ -35,7 +35,7 @@ module TransferFunctions = struct
 
   type analysis_data = Summary.t InterproceduralAnalysis.t
 
-  let pp_session_name _node fmt = F.pp_print_string fmt "DispatchOnceStaticInit"
+  let pp_session_name _node fmt = F.pp_print_string fmt "StaticConstructorStallChecker"
 
   let exec_instr (astate : Summary.t) {InterproceduralAnalysis.analyze_dependency} _cfg_node _
       (instr : Sil.instr) =
@@ -88,7 +88,7 @@ let report_issue proc_desc err_log trace_elems =
       (kind_to_string kind) Location.pp loc
   in
   Reporting.log_issue proc_desc err_log ~ltr ~loc StaticConstructorStallChecker
-    IssueType.dispatch_once_in_static_init message
+    IssueType.static_constructor_stall message
 
 
 let checker ({InterproceduralAnalysis.proc_desc; err_log} as analysis_data) =
