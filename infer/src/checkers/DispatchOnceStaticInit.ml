@@ -41,22 +41,25 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     match instr with
     | Call (_, Exp.Const (Const.Cfun procname), _, loc, _) ->
-        let call_site = CallSite.make procname loc in
-        let astate =
-          match analyze_dependency procname with
-          | Ok summary ->
-              L.d_printf "Applying summary of callee `%a`@\n" Procname.pp procname ;
-              L.d_printf "Summary: %a @\n" Summary.pp summary ;
-              if not (Summary.is_empty summary) then
-                let astate' = Summary.add_call {call_site; kind= `Call} summary in
-                Summary.join astate astate'
-              else astate
-          | Error _ ->
-              astate
-        in
-        let calls_dispatch_once = String.equal "_dispatch_once" (Procname.get_method procname) in
-        if calls_dispatch_once then Summary.add_call {call_site; kind= `Dispatch_once} astate
-        else astate
+        (* Any time static constructor calls dispatch_async then thread execution changes and calling dispatch_once is not an issue. *)
+        if String.equal "dispatch_async" (Procname.get_method procname) then astate
+        else
+          let call_site = CallSite.make procname loc in
+          let astate =
+            match analyze_dependency procname with
+            | Ok summary ->
+                L.d_printf "Applying summary of callee `%a`@\n" Procname.pp procname ;
+                L.d_printf "Summary: %a @\n" Summary.pp summary ;
+                if not (Summary.is_empty summary) then
+                  let astate' = Summary.add_call {call_site; kind= `Call} summary in
+                  Summary.join astate astate'
+                else astate
+            | Error _ ->
+                astate
+          in
+          let calls_dispatch_once = String.equal "_dispatch_once" (Procname.get_method procname) in
+          if calls_dispatch_once then Summary.add_call {call_site; kind= `Dispatch_once} astate
+          else astate
     | _ ->
         astate
 end

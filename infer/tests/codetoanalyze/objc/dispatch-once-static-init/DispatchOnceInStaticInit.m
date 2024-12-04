@@ -43,3 +43,17 @@ initializer_test_interproc_condition_bad(BOOL flag) {
     [Manager getInstance];
   }
 }
+
+void dispatch_async(dispatch_queue_t _Nonnull queue,
+                    dispatch_block_t _Nonnull block) {
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    block();
+  });
+}
+
+__attribute__((constructor)) static void initializer_test_interproc_good() {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    int x = 0;
+  });
+}
