@@ -31,6 +31,15 @@ module Typ = struct
     Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string str)))
 
 
+  let class_companion_name module_name name =
+    let str = F.asprintf "PyClassCompanion::%a::%s" Textual.TypeName.pp module_name name in
+    Textual.(TypeName.of_string str)
+
+
+  let class_companion module_name name =
+    Textual.(Typ.Ptr (Typ.Struct (class_companion_name module_name name)))
+
+
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
@@ -91,6 +100,8 @@ let call_builtin name args =
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
+let str_py_make_string = "py_make_string"
+
 let of_const cst =
   let open Textual in
   let mk_const c = Exp.Const c in
@@ -106,7 +117,7 @@ let of_const cst =
   | Complex {real; imag} ->
       call_builtin "py_make_complex" [mk_const (Const.Float real); mk_const (Const.Float imag)]
   | String s ->
-      call_builtin "py_make_string" [mk_const (Const.Str s)]
+      call_builtin str_py_make_string [mk_const (Const.Str s)]
   | InvalidUnicode _ ->
       call_builtin "py_invalid_unicode" []
   | Bytes bytes ->
@@ -290,10 +301,12 @@ let compare_op_name op =
       "bad"
 
 
+let str_py_build_class = "py_build_class"
+
 let builtin_name builtin =
   match (builtin : BuiltinCaller.t) with
   | BuildClass ->
-      "py_build_class"
+      str_py_build_class
   | BuildConstKeyMap ->
       "py_build_const_key_map"
   | Format ->
@@ -539,6 +552,7 @@ let mk_module {Module.name; toplevel; functions} =
 
 module DefaultType : sig
   type decl =
+    | Class of {name: string; target: string}
     | Import of {name: string; target: string}
     | Fundef of {typ: Textual.Typ.t; target: string}
 
@@ -550,29 +564,47 @@ module DefaultType : sig
 
   val add_allocate : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
 
+  val add_class_body : Textual.Ident.t -> string -> acc -> acc
+
   val add_fun_ptr : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
 
   val add_import : Textual.Ident.t -> string -> acc -> acc
 
+  val add_string_constant : Textual.Ident.t -> string -> acc -> acc
+
   val get_allocate : Textual.Ident.t -> acc -> Textual.Typ.t option
+
+  val get_class_body : Textual.Ident.t -> acc -> string option
 
   val get_fun_ptr : Textual.Ident.t -> acc -> Textual.Typ.t option
 
   val get_import : Textual.Ident.t -> acc -> string option
 
+  val get_string_constant : Textual.Ident.t -> acc -> string option
+
   val is_allocate : Textual.Ident.t -> acc -> bool
+
+  val is_class_body : Textual.Ident.t -> acc -> bool
 
   val is_fun_ptr : Textual.Ident.t -> acc -> bool
 
   val is_import : Textual.Ident.t -> acc -> bool
 
+  val is_string_constant : Textual.Ident.t -> acc -> bool
+
   val export : acc -> decl list
 end = struct
   type decl =
+    | Class of {name: string; target: string}
     | Import of {name: string; target: string}
     | Fundef of {typ: Textual.Typ.t; target: string}
 
-  type exp = Allocate of Textual.Typ.t | FuncPtr of Textual.Typ.t | Import of string
+  type exp =
+    | Allocate of Textual.Typ.t
+    | ClassBody of string
+    | FuncPtr of Textual.Typ.t
+    | Import of string
+    | StringConstant of string
 
   type acc = {default_type: decl list; exps: exp Textual.Ident.Map.t}
 
@@ -592,8 +624,20 @@ end = struct
     {acc with exps= Textual.Ident.Map.add ident (Import str) exps}
 
 
+  let add_class_body ident str ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (ClassBody str) exps}
+
+
+  let add_string_constant ident str ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (StringConstant str) exps}
+
+
   let is_allocate ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with Some (Allocate _) -> true | _ -> false
+
+
+  let is_class_body ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (ClassBody _) -> true | _ -> false
 
 
   let is_fun_ptr ident {exps} =
@@ -604,8 +648,16 @@ end = struct
     match Textual.Ident.Map.find_opt ident exps with Some (Import _) -> true | _ -> false
 
 
+  let is_string_constant ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (StringConstant _) -> true | _ -> false
+
+
   let get_allocate ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with Some (Allocate typ) -> Some typ | _ -> None
+
+
+  let get_class_body ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (ClassBody str) -> Some str | _ -> None
 
 
   let get_fun_ptr ident {exps} =
@@ -616,28 +668,35 @@ end = struct
     match Textual.Ident.Map.find_opt ident exps with Some (Import str) -> Some str | _ -> None
 
 
+  let get_string_constant ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with
+    | Some (StringConstant str) ->
+        Some str
+    | _ ->
+        None
+
+
   let export {default_type} = List.rev default_type
 end
 
-let gen_module_default_type {Textual.Module.decls} =
-  let open Textual in
+let py_import_name = builtin_qual_proc_name str_py_import_name
+
+let py_build_class = builtin_qual_proc_name str_py_build_class
+
+let py_store_name = builtin_qual_proc_name str_py_store_name
+
+let py_make_function = builtin_qual_proc_name str_py_make_function
+
+let py_make_string = builtin_qual_proc_name str_py_make_string
+
+let sil_allocate : Textual.QualifiedProcName.t =
+  {enclosing_class= TopLevel; name= Textual.ProcName.of_string "__sil_allocate"}
+
+
+let gen_type module_name ~allow_classes name node =
   let open IOption.Let_syntax in
-  let module_body_name = ProcName.of_string str_module_body in
-  let* module_name, module_body =
-    List.find_map decls ~f:(function
-      | Module.Proc
-          {procdecl= {qualified_name= {enclosing_class= Enclosing module_name; name}}; nodes= [node]}
-        when ProcName.equal name module_body_name ->
-          Some (module_name, node.instrs)
-      | _ ->
-          None )
-  in
-  let py_import_name = builtin_qual_proc_name str_py_import_name in
-  let py_store_name = builtin_qual_proc_name str_py_store_name in
-  let py_make_function = builtin_qual_proc_name str_py_make_function in
-  let sil_allocate : QualifiedProcName.t =
-    {enclosing_class= TopLevel; name= Textual.ProcName.of_string "__sil_allocate"}
-  in
+  let mk_class_companion str = Typ.class_companion module_name str in
+  let open Textual in
   let rec find_next_declaration acc = function
     | Instr.Let {id= Some ident; exp= Call {proc; args= Const (Str name) :: _}} :: instrs
       when QualifiedProcName.equal py_import_name proc ->
@@ -653,6 +712,16 @@ let gen_module_default_type {Textual.Module.decls} =
         let typ = DefaultType.get_allocate ident_allocate acc |> Option.value_exn in
         let acc = DefaultType.add_fun_ptr ident typ acc in
         find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str str)]}} :: instrs
+      when QualifiedProcName.equal py_make_string proc ->
+        let acc = DefaultType.add_string_constant ident str acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [_; _; Var ident_str_const]}} :: instrs
+      when QualifiedProcName.equal py_build_class proc
+           && DefaultType.is_string_constant ident_str_const acc ->
+        let name = DefaultType.get_string_constant ident_str_const acc |> Option.value_exn in
+        let acc = DefaultType.add_class_body ident name acc in
+        find_next_declaration acc instrs
     | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
       when QualifiedProcName.equal py_store_name proc && DefaultType.is_fun_ptr ident acc ->
         let typ = DefaultType.get_fun_ptr ident acc |> Option.value_exn in
@@ -663,21 +732,30 @@ let gen_module_default_type {Textual.Module.decls} =
         let name = DefaultType.get_import ident acc |> Option.value_exn in
         let acc = DefaultType.add_decl (Import {name; target}) acc in
         find_next_declaration acc instrs
+    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
+      when QualifiedProcName.equal py_store_name proc && DefaultType.is_class_body ident acc ->
+        let name = DefaultType.get_class_body ident acc |> Option.value_exn in
+        let acc = DefaultType.add_decl (Class {name; target}) acc in
+        find_next_declaration acc instrs
     | _ :: instrs ->
         find_next_declaration acc instrs
     | [] ->
         Some (DefaultType.export acc)
   in
-  let* decls = find_next_declaration DefaultType.empty module_body in
-  let name =
-    F.asprintf "PyGlobals::%a" Textual.TypeName.pp module_name |> Textual.TypeName.of_string
-  in
+  let* decls = find_next_declaration DefaultType.empty node in
   let mk_fieldname str : qualified_fieldname =
     {enclosing_class= name; name= FieldName.of_string str}
   in
   let fields =
     List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
         match decl with
+        | Class {name; target} when allow_classes ->
+            Some
+              { FieldDecl.qualified_name= mk_fieldname target
+              ; typ= mk_class_companion name
+              ; attributes= [] }
+        | Class _ ->
+            None
         | Import {name; target} ->
             Some
               { FieldDecl.qualified_name= mk_fieldname target
@@ -686,11 +764,48 @@ let gen_module_default_type {Textual.Module.decls} =
         | Fundef {typ; target} ->
             Some {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
   in
-  Some {Struct.name; supers= []; fields; attributes= []}
+  let classes =
+    List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
+        match decl with Class {name} -> Some name | _ -> None )
+  in
+  Some ({Struct.name; supers= []; fields; attributes= []}, classes)
+
+
+let gen_module_default_type {Textual.Module.decls} =
+  let open IOption.Let_syntax in
+  let module_body_name = Textual.ProcName.of_string str_module_body in
+  let opt, classes_map =
+    List.fold decls ~init:(None, Textual.ProcName.Map.empty) ~f:(fun (opt, map) decl ->
+        match decl with
+        | Textual.Module.Proc
+            { procdecl= {qualified_name= {enclosing_class= Enclosing module_name; name}}
+            ; nodes= [node] }
+          when Textual.ProcName.equal name module_body_name ->
+            (Some (module_name, node.instrs), map)
+        | Textual.Module.Proc {procdecl= {qualified_name= {name}}; nodes= [node]} ->
+            (opt, Textual.ProcName.Map.add name node.instrs map)
+        | _ ->
+            (opt, map) )
+  in
+  let* module_name, module_body = opt in
+  let name =
+    F.asprintf "PyGlobals::%a" Textual.TypeName.pp module_name |> Textual.TypeName.of_string
+  in
+  let* default_type, classes = gen_type module_name ~allow_classes:true name module_body in
+  let* other_type_decls =
+    List.fold classes ~init:(Some []) ~f:(fun decls name ->
+        let* decls in
+        let proc_name = Textual.ProcName.of_string name in
+        let* body = Textual.ProcName.Map.find_opt proc_name classes_map in
+        let type_name = Typ.class_companion_name module_name name in
+        let+ type_decl, _ = gen_type module_name ~allow_classes:false type_name body in
+        Textual.Module.Struct type_decl :: decls )
+  in
+  Some (Textual.Module.Struct default_type :: other_type_decls)
 
 
 let add_module_default_type textual =
   let open Textual.Module in
   gen_module_default_type textual
-  |> Option.value_map ~default:textual ~f:(fun struct_ ->
-         {textual with decls= Struct struct_ :: textual.decls} )
+  |> Option.value_map ~default:textual ~f:(fun extra_type_decls ->
+         {textual with decls= extra_type_decls @ textual.decls} )

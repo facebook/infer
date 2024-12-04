@@ -10,5 +10,3 @@ class C:
 class D:
     def main():
         x = C.gen()
-
-D.main()
