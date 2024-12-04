@@ -10,3 +10,7 @@ class C:
 class D:
     def main():
         x = C.gen()
+
+if __name__ == '__main__':
+    # common pattern
+    pass

@@ -694,7 +694,6 @@ let sil_allocate : Textual.QualifiedProcName.t =
 
 
 let gen_type module_name ~allow_classes name node =
-  let open IOption.Let_syntax in
   let mk_class_companion str = Typ.class_companion module_name str in
   let open Textual in
   let rec find_next_declaration acc = function
@@ -740,9 +739,9 @@ let gen_type module_name ~allow_classes name node =
     | _ :: instrs ->
         find_next_declaration acc instrs
     | [] ->
-        Some (DefaultType.export acc)
+        DefaultType.export acc
   in
-  let* decls = find_next_declaration DefaultType.empty node in
+  let decls = find_next_declaration DefaultType.empty node in
   let mk_fieldname str : qualified_fieldname =
     {enclosing_class= name; name= FieldName.of_string str}
   in
@@ -768,7 +767,7 @@ let gen_type module_name ~allow_classes name node =
     List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
         match decl with Class {name} -> Some name | _ -> None )
   in
-  Some ({Struct.name; supers= []; fields; attributes= []}, classes)
+  ({Struct.name; supers= []; fields; attributes= []}, classes)
 
 
 let gen_module_default_type {Textual.Module.decls} =
@@ -779,11 +778,21 @@ let gen_module_default_type {Textual.Module.decls} =
         match decl with
         | Textual.Module.Proc
             { procdecl= {qualified_name= {enclosing_class= Enclosing module_name; name}}
-            ; nodes= [node] }
+            ; start
+            ; nodes }
           when Textual.ProcName.equal name module_body_name ->
-            (Some (module_name, node.instrs), map)
-        | Textual.Module.Proc {procdecl= {qualified_name= {name}}; nodes= [node]} ->
-            (opt, Textual.ProcName.Map.add name node.instrs map)
+            let opt =
+              List.find nodes ~f:(fun node -> Textual.NodeName.equal start node.Textual.Node.label)
+              |> Option.map ~f:(fun node -> (module_name, node.Textual.Node.instrs))
+            in
+            (opt, map)
+        | Textual.Module.Proc {procdecl= {qualified_name= {name}}; start; nodes} ->
+            let map =
+              List.find nodes ~f:(fun node -> Textual.NodeName.equal start node.Textual.Node.label)
+              |> Option.value_map ~default:map ~f:(fun node ->
+                     Textual.ProcName.Map.add name node.Textual.Node.instrs map )
+            in
+            (opt, map)
         | _ ->
             (opt, map) )
   in
@@ -791,14 +800,14 @@ let gen_module_default_type {Textual.Module.decls} =
   let name =
     F.asprintf "PyGlobals::%a" Textual.TypeName.pp module_name |> Textual.TypeName.of_string
   in
-  let* default_type, classes = gen_type module_name ~allow_classes:true name module_body in
+  let default_type, classes = gen_type module_name ~allow_classes:true name module_body in
   let* other_type_decls =
     List.fold classes ~init:(Some []) ~f:(fun decls name ->
         let* decls in
         let proc_name = Textual.ProcName.of_string name in
-        let* body = Textual.ProcName.Map.find_opt proc_name classes_map in
+        let+ body = Textual.ProcName.Map.find_opt proc_name classes_map in
         let type_name = Typ.class_companion_name module_name name in
-        let+ type_decl, _ = gen_type module_name ~allow_classes:false type_name body in
+        let type_decl, _ = gen_type module_name ~allow_classes:false type_name body in
         Textual.Module.Struct type_decl :: decls )
   in
   Some (Textual.Module.Struct default_type :: other_type_decls)
