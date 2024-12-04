@@ -17,7 +17,7 @@ type t =
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
-  | DispatchOnceStaticInit
+  | StaticConstructorStallChecker
   | FragmentRetainsView
   | Impurity
   | InefficientKeysetIterator
@@ -175,9 +175,9 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }
-  | DispatchOnceStaticInit ->
-      { id= "dispatch-once-static-init"
-      ; kind= UserFacing {title= "dispatch-once in static init"; markdown_body= ""}
+  | StaticConstructorStallChecker ->
+      { id= "static-constructor-stall-checker"
+      ; kind= UserFacing {title= "Static Constructor Stall Checker"; markdown_body= ""}
       ; support= mk_support_func ~clang:Support ()
       ; short_documentation= "Detect if dispatch_once is called from a static constructor."
       ; cli_flags= Some {deprecated= []; show_in_help= true}

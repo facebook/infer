@@ -26,7 +26,7 @@ include sig
     ; config_impact_analysis: ConfigImpactAnalysis.Summary.t Lazy.t option
     ; cost: CostDomain.summary Lazy.t option
     ; disjunctive_demo: DisjunctiveDemo.domain Lazy.t option
-    ; dispatch_once_static_init: DispatchOnceStaticInit.Summary.t Lazy.t option
+    ; static_constructor_stall_checker: StaticConstructorStallChecker.Summary.t Lazy.t option
     ; lab_resource_leaks: ResourceLeakDomain.summary Lazy.t option
     ; litho_required_props: LithoDomain.summary Lazy.t option
     ; pulse: PulseSummary.t Lazy.t option

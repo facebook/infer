@@ -87,7 +87,7 @@ let report_issue proc_desc err_log trace_elems =
        a deadlock."
       (kind_to_string kind) Location.pp loc
   in
-  Reporting.log_issue proc_desc err_log ~ltr ~loc DispatchOnceStaticInit
+  Reporting.log_issue proc_desc err_log ~ltr ~loc StaticConstructorStallChecker
     IssueType.dispatch_once_in_static_init message
 
 

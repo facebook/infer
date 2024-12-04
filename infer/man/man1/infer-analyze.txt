@@ -114,7 +114,7 @@ OPTIONS
            and/or reporting. (Conversely: --deduplicate)
 
        --no-default-checkers
-           Deactivates: Default checkers: --dispatch-once-static-init,
+           Deactivates: Default checkers: --static-constructor-stall-checker,
            --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --pulse, --racerd,
            --siof, --self-in-block, --starvation (Conversely:
@@ -130,15 +130,6 @@ OPTIONS
 
        --dict-missing-key-var-block-list +string
            Skip analyzing the variables in the dict-missing-key checker.
-
-       --no-dispatch-once-static-init
-           Deactivates: dispatch-once-static-init checker: Detect if
-           dispatch_once is called from a static constructor. (Conversely:
-           --dispatch-once-static-init)
-
-       --dispatch-once-static-init-only
-           Activates: Enable dispatch-once-static-init and disable all other
-           checkers (Conversely: --no-dispatch-once-static-init-only)
 
        --files-to-analyze-index file
            File containing a list of source files where analysis should start
@@ -444,6 +435,16 @@ OPTIONS
        --starvation-only
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
+
+       --no-static-constructor-stall-checker
+           Deactivates: static-constructor-stall-checker checker: Detect if
+           dispatch_once is called from a static constructor. (Conversely:
+           --static-constructor-stall-checker)
+
+       --static-constructor-stall-checker-only
+           Activates: Enable static-constructor-stall-checker and disable all
+           other checkers (Conversely:
+           --no-static-constructor-stall-checker-only)
 
        --timeout float
            Time after which any checker (except biabduction) should give up

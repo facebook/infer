@@ -1,3 +1,0 @@
-codetoanalyze/objc/dispatch-once-static-init/DispatchOnceInStaticInit.m, initializer_test_interproc_bad, 1, DISPATCH_ONCE_IN_STATIC_INIT, no_bucket, ERROR, [Call to Manager.getInstance,macro expanded here,Call to _dispatch_once]
-codetoanalyze/objc/dispatch-once-static-init/DispatchOnceInStaticInit.m, initializer_test_intraproc_bad, 3, DISPATCH_ONCE_IN_STATIC_INIT, no_bucket, ERROR, [macro expanded here,Call to _dispatch_once]
-codetoanalyze/objc/dispatch-once-static-init/DispatchOnceInStaticInit.m, initializer_test_interproc_condition_bad, 3, DISPATCH_ONCE_IN_STATIC_INIT, no_bucket, ERROR, [Call to Manager.getInstance,macro expanded here,Call to _dispatch_once]

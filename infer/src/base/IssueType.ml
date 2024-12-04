@@ -573,7 +573,7 @@ let deadlock =
 
 let dispatch_once_in_static_init =
   register ~category:Concurrency ~enabled:false ~id:"DISPATCH_ONCE_IN_STATIC_INIT"
-    ~hum:"dispatch_once in static init" Error DispatchOnceStaticInit
+    ~hum:"dispatch_once in static init" Error StaticConstructorStallChecker
     ~user_documentation:
       "Calling dispatch_once during the static initialization of objects is risky, for example it \
        could cause deadlocks, because other objects might not have been initialized yet."

@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --dispatch-once-static-init-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --static-constructor-stall-checker-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = \
   --issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
   --issues-tests

@@ -539,7 +539,7 @@ OPTIONS
            infer-reportdiff(1).
 
        --no-default-checkers
-           Deactivates: Default checkers: --dispatch-once-static-init,
+           Deactivates: Default checkers: --static-constructor-stall-checker,
            --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --pulse, --racerd,
            --siof, --self-in-block, --starvation (Conversely:
@@ -768,17 +768,6 @@ OPTIONS
              Wrong_argument_number (enabled by default).
            
            See also infer-report(1).
-
-       --no-dispatch-once-static-init
-           Deactivates: dispatch-once-static-init checker: Detect if
-           dispatch_once is called from a static constructor. (Conversely:
-           --dispatch-once-static-init)
-           See also infer-analyze(1).
-
-       --dispatch-once-static-init-only
-           Activates: Enable dispatch-once-static-init and disable all other
-           checkers (Conversely: --no-dispatch-once-static-init-only)
-           See also infer-analyze(1).
 
        --dump-duplicate-symbols
            Activates: Dump all symbols with the same name that are defined in
@@ -2248,6 +2237,18 @@ OPTIONS
        --starvation-only
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
+           See also infer-analyze(1).
+
+       --no-static-constructor-stall-checker
+           Deactivates: static-constructor-stall-checker checker: Detect if
+           dispatch_once is called from a static constructor. (Conversely:
+           --static-constructor-stall-checker)
+           See also infer-analyze(1).
+
+       --static-constructor-stall-checker-only
+           Activates: Enable static-constructor-stall-checker and disable all
+           other checkers (Conversely:
+           --no-static-constructor-stall-checker-only)
            See also infer-analyze(1).
 
        --stats-dir-current path
