@@ -48,3 +48,11 @@ async def call_sleep_with_branchs_bad2(b):
     if b:
         return
     await temp
+
+def FP_main_ok():
+    asyncio.run(sleep(10))
+
+FP_main_ok()
+
+# no FP here
+asyncio.run(sleep(10))
