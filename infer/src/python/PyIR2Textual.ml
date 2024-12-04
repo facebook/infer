@@ -34,6 +34,8 @@ module Typ = struct
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
+let global_type_of_str str = Typ.globals (Ident.mk str)
+
 let str_module_body = "__module_body__"
 
 type proc_kind = ModuleBody of Ident.t | RegularFunction of QualName.t
@@ -79,11 +81,13 @@ let mk_procdecl ?loc kind code_info =
 
 let mk_ident ssa = Textual.Ident.of_int (SSA.id ssa)
 
+let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
+  { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
+  ; name= Textual.ProcName.of_string name }
+
+
 let call_builtin name args =
-  let proc : Textual.QualifiedProcName.t =
-    { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
-    ; name= Textual.ProcName.of_string name }
-  in
+  let proc = builtin_qual_proc_name name in
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
@@ -117,6 +121,12 @@ let exp_locals = Textual.Exp.(Load {exp= Lvar Parameter.locals; typ= None})
 
 let exp_globals = Textual.Exp.(Load {exp= Lvar Parameter.globals; typ= None})
 
+let str_py_import_name = "py_import_name"
+
+let str_py_import_from = "py_import_from"
+
+let str_py_make_function = "py_make_function"
+
 let rec of_exp exp : Textual.Exp.t =
   match (exp : Exp.t) with
   | AssertionError ->
@@ -137,9 +147,9 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_load_class_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
   | ImportName {name; fromlist; level} ->
       let str = typename_of_ident name |> F.asprintf "%a" Textual.TypeName.pp in
-      call_builtin "py_import_name" [Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
+      call_builtin str_py_import_name [Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
   | ImportFrom {name; exp} ->
-      call_builtin "py_import_from" [exp_of_ident_str name; of_exp exp]
+      call_builtin str_py_import_from [exp_of_ident_str name; of_exp exp]
   | Temp ssa ->
       Var (mk_ident ssa)
   | MatchClass {subject; type_; count; names} ->
@@ -182,7 +192,7 @@ let rec of_exp exp : Textual.Exp.t =
         | OwnByModule ->
             Textual.Exp.Closure {proc; captured= []; params= [Parameter.globals; Parameter.locals]}
       in
-      call_builtin "py_make_function"
+      call_builtin str_py_make_function
         ( closure
         :: List.map ~f:of_exp [default_values; default_values_kw; annotations; cells_for_closure] )
   | Yield exp ->
@@ -348,6 +358,8 @@ let builtin_needs_globals_as_argument builtin =
   match (builtin : BuiltinCaller.t) with BuildClass -> true | _ -> false
 
 
+let str_py_store_name = "py_store_name"
+
 let of_stmt loc stmt : Textual.Instr.t =
   match (stmt : Stmt.t) with
   | Let {lhs; rhs} ->
@@ -371,7 +383,7 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let
         { id= None
         ; exp=
-            call_builtin "py_store_name"
+            call_builtin str_py_store_name
               [exp_of_ident_str ident; exp_locals; exp_globals; of_exp rhs]
         ; loc }
   | StoreDeref {name; rhs} ->
@@ -523,3 +535,162 @@ let mk_module {Module.name; toplevel; functions} =
   let decls = Textual.Module.Proc (mk_procdesc (ModuleBody name) toplevel) :: decls in
   let attrs = [Textual.Attr.mk_source_language Python] in
   {Textual.Module.attrs; decls; sourcefile}
+
+
+module DefaultType : sig
+  type decl =
+    | Import of {name: string; target: string}
+    | Fundef of {typ: Textual.Typ.t; target: string}
+
+  type acc
+
+  val empty : acc
+
+  val add_decl : decl -> acc -> acc
+
+  val add_allocate : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
+
+  val add_fun_ptr : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
+
+  val add_import : Textual.Ident.t -> string -> acc -> acc
+
+  val get_allocate : Textual.Ident.t -> acc -> Textual.Typ.t option
+
+  val get_fun_ptr : Textual.Ident.t -> acc -> Textual.Typ.t option
+
+  val get_import : Textual.Ident.t -> acc -> string option
+
+  val is_allocate : Textual.Ident.t -> acc -> bool
+
+  val is_fun_ptr : Textual.Ident.t -> acc -> bool
+
+  val is_import : Textual.Ident.t -> acc -> bool
+
+  val export : acc -> decl list
+end = struct
+  type decl =
+    | Import of {name: string; target: string}
+    | Fundef of {typ: Textual.Typ.t; target: string}
+
+  type exp = Allocate of Textual.Typ.t | FuncPtr of Textual.Typ.t | Import of string
+
+  type acc = {default_type: decl list; exps: exp Textual.Ident.Map.t}
+
+  let empty = {default_type= []; exps= Textual.Ident.Map.empty}
+
+  let add_decl decl ({default_type} as acc) = {acc with default_type= decl :: default_type}
+
+  let add_allocate ident typ ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (Allocate typ) exps}
+
+
+  let add_fun_ptr ident typ ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (FuncPtr typ) exps}
+
+
+  let add_import ident str ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (Import str) exps}
+
+
+  let is_allocate ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (Allocate _) -> true | _ -> false
+
+
+  let is_fun_ptr ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (FuncPtr _) -> true | _ -> false
+
+
+  let is_import ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (Import _) -> true | _ -> false
+
+
+  let get_allocate ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (Allocate typ) -> Some typ | _ -> None
+
+
+  let get_fun_ptr ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (FuncPtr typ) -> Some typ | _ -> None
+
+
+  let get_import ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (Import str) -> Some str | _ -> None
+
+
+  let export {default_type} = List.rev default_type
+end
+
+let gen_module_default_type {Textual.Module.decls} =
+  let open Textual in
+  let open IOption.Let_syntax in
+  let module_body_name = ProcName.of_string str_module_body in
+  let* module_name, module_body =
+    List.find_map decls ~f:(function
+      | Module.Proc
+          {procdecl= {qualified_name= {enclosing_class= Enclosing module_name; name}}; nodes= [node]}
+        when ProcName.equal name module_body_name ->
+          Some (module_name, node.instrs)
+      | _ ->
+          None )
+  in
+  let py_import_name = builtin_qual_proc_name str_py_import_name in
+  let py_store_name = builtin_qual_proc_name str_py_store_name in
+  let py_make_function = builtin_qual_proc_name str_py_make_function in
+  let sil_allocate : QualifiedProcName.t =
+    {enclosing_class= TopLevel; name= Textual.ProcName.of_string "__sil_allocate"}
+  in
+  let rec find_next_declaration acc = function
+    | Instr.Let {id= Some ident; exp= Call {proc; args= Const (Str name) :: _}} :: instrs
+      when QualifiedProcName.equal py_import_name proc ->
+        let acc = DefaultType.add_import ident name acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Typ typ]}} :: instrs
+      when QualifiedProcName.equal sil_allocate proc ->
+        let acc = DefaultType.add_allocate ident typ acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= Var ident_allocate :: _}} :: instrs
+      when QualifiedProcName.equal py_make_function proc
+           && DefaultType.is_allocate ident_allocate acc ->
+        let typ = DefaultType.get_allocate ident_allocate acc |> Option.value_exn in
+        let acc = DefaultType.add_fun_ptr ident typ acc in
+        find_next_declaration acc instrs
+    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
+      when QualifiedProcName.equal py_store_name proc && DefaultType.is_fun_ptr ident acc ->
+        let typ = DefaultType.get_fun_ptr ident acc |> Option.value_exn in
+        let acc = DefaultType.add_decl (Fundef {typ; target}) acc in
+        find_next_declaration acc instrs
+    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
+      when QualifiedProcName.equal py_store_name proc && DefaultType.is_import ident acc ->
+        let name = DefaultType.get_import ident acc |> Option.value_exn in
+        let acc = DefaultType.add_decl (Import {name; target}) acc in
+        find_next_declaration acc instrs
+    | _ :: instrs ->
+        find_next_declaration acc instrs
+    | [] ->
+        Some (DefaultType.export acc)
+  in
+  let* decls = find_next_declaration DefaultType.empty module_body in
+  let name =
+    F.asprintf "PyGlobals::%a" Textual.TypeName.pp module_name |> Textual.TypeName.of_string
+  in
+  let mk_fieldname str : qualified_fieldname =
+    {enclosing_class= name; name= FieldName.of_string str}
+  in
+  let fields =
+    List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
+        match decl with
+        | Import {name; target} ->
+            Some
+              { FieldDecl.qualified_name= mk_fieldname target
+              ; typ= global_type_of_str name
+              ; attributes= [] }
+        | Fundef {typ; target} ->
+            Some {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
+  in
+  Some {Struct.name; supers= []; fields; attributes= []}
+
+
+let add_module_default_type textual =
+  let open Textual.Module in
+  gen_module_default_type textual
+  |> Option.value_map ~default:textual ~f:(fun struct_ ->
+         {textual with decls= Struct struct_ :: textual.decls} )

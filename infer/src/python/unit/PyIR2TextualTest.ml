@@ -20,6 +20,7 @@ let run module_ =
     F.printf "TYPE INFERENCE@\n" ;
     F.printf "%a" Textual.Module.pp verified_textual ;
     let transformed_textual, _ = TextualTransform.run Python verified_textual in
+    let transformed_textual = PyIR2Textual.add_module_default_type transformed_textual in
     F.printf "FINAL TRANSFORMATIONS@\n" ;
     F.printf "%a" Textual.Module.pp transformed_textual
   in
@@ -36,6 +37,9 @@ let run module_ =
 let%expect_test _ =
   let source =
     {|
+import random
+import asyncio as a
+
 x = 0
 
 def f(y, l):
@@ -60,11 +64,15 @@ async def g():
       local locals: *PyLocals
       #b0:
           store &locals <- globals
+          n0 = $builtins.py_import_name("random", $builtins.py_make_none(), $builtins.py_make_int(0))
+          _ = $builtins.py_store_name("random", locals, globals, n0)
+          n1 = $builtins.py_import_name("asyncio", $builtins.py_make_none(), $builtins.py_make_int(0))
+          _ = $builtins.py_store_name("a", locals, globals, n1)
           _ = $builtins.py_store_name("x", locals, globals, $builtins.py_make_int(0))
-          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
-          _ = $builtins.py_store_name("f", locals, globals, n0)
-          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
-          _ = $builtins.py_store_name("g", locals, globals, n1)
+          n2 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          _ = $builtins.py_store_name("f", locals, globals, n2)
+          n3 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          _ = $builtins.py_store_name("g", locals, globals, n3)
           ret $builtins.py_make_none()
 
     }
@@ -124,11 +132,15 @@ async def g():
       local locals: *PyLocals
       #b0:
           store &locals <- [&globals:*PyGlobals::dummy]:*PyGlobals::dummy
+          n0 = $builtins.py_import_name("random", $builtins.py_make_none(), $builtins.py_make_int(0))
+          _ = $builtins.py_store_name("random", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n0)
+          n1 = $builtins.py_import_name("asyncio", $builtins.py_make_none(), $builtins.py_make_int(0))
+          _ = $builtins.py_store_name("a", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n1)
           _ = $builtins.py_store_name("x", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], $builtins.py_make_int(0))
-          n0 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
-          _ = $builtins.py_store_name("f", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n0)
-          n1 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
-          _ = $builtins.py_store_name("g", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n1)
+          n2 = $builtins.py_make_function(fun (globals, locals) -> dummy.f(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          _ = $builtins.py_store_name("f", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n2)
+          n3 = $builtins.py_make_function(fun (globals, locals) -> dummy.g(globals, locals), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none(), $builtins.py_make_none())
+          _ = $builtins.py_store_name("g", [&locals:*PyLocals], [&globals:*PyGlobals::dummy], n3)
           ret $builtins.py_make_none()
 
     }
@@ -184,6 +196,9 @@ async def g():
     FINAL TRANSFORMATIONS
     .source_language = "python"
 
+    type PyGlobals::dummy = {random: *PyGlobals::random; a: *PyGlobals::asyncio; f: *closure:dummy:0;
+                             g: *closure:dummy:1}
+
     type closure:dummy:1 = {}
 
     define .closure_wrapper .async closure:dummy:1.call(__this: *closure:dummy:1, globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
@@ -209,32 +224,44 @@ async def g():
     define dummy.__module_body__(globals: *PyGlobals::dummy) : *PyObject {
       local locals: *PyLocals
       #b0:
-          n2:*PyGlobals::dummy = load &globals
-          store &locals <- n2:*PyGlobals::dummy
-          n3:*PyLocals = load &locals
           n4:*PyGlobals::dummy = load &globals
-          n5 = $builtins.py_make_int(0)
-          n6 = $builtins.py_store_name("x", n3, n4, n5)
-          n7 = __sil_allocate(<closure:dummy:0>)
-          n9 = $builtins.py_make_none()
+          store &locals <- n4:*PyGlobals::dummy
+          n5 = $builtins.py_make_none()
+          n6 = $builtins.py_make_int(0)
+          n0 = $builtins.py_import_name("random", n5, n6)
+          n7:*PyLocals = load &locals
+          n8:*PyGlobals::dummy = load &globals
+          n9 = $builtins.py_store_name("random", n7, n8, n0)
           n10 = $builtins.py_make_none()
-          n11 = $builtins.py_make_none()
-          n12 = $builtins.py_make_none()
-          n0 = $builtins.py_make_function(n7, n9, n10, n11, n12)
-          n13:*PyLocals = load &locals
-          n14:*PyGlobals::dummy = load &globals
-          n15 = $builtins.py_store_name("f", n13, n14, n0)
-          n16 = __sil_allocate(<closure:dummy:1>)
-          n18 = $builtins.py_make_none()
-          n19 = $builtins.py_make_none()
-          n20 = $builtins.py_make_none()
+          n11 = $builtins.py_make_int(0)
+          n1 = $builtins.py_import_name("asyncio", n10, n11)
+          n12:*PyLocals = load &locals
+          n13:*PyGlobals::dummy = load &globals
+          n14 = $builtins.py_store_name("a", n12, n13, n1)
+          n15:*PyLocals = load &locals
+          n16:*PyGlobals::dummy = load &globals
+          n17 = $builtins.py_make_int(0)
+          n18 = $builtins.py_store_name("x", n15, n16, n17)
+          n19 = __sil_allocate(<closure:dummy:0>)
           n21 = $builtins.py_make_none()
-          n1 = $builtins.py_make_function(n16, n18, n19, n20, n21)
-          n22:*PyLocals = load &locals
-          n23:*PyGlobals::dummy = load &globals
-          n24 = $builtins.py_store_name("g", n22, n23, n1)
-          n25 = $builtins.py_make_none()
-          ret n25
+          n22 = $builtins.py_make_none()
+          n23 = $builtins.py_make_none()
+          n24 = $builtins.py_make_none()
+          n2 = $builtins.py_make_function(n19, n21, n22, n23, n24)
+          n25:*PyLocals = load &locals
+          n26:*PyGlobals::dummy = load &globals
+          n27 = $builtins.py_store_name("f", n25, n26, n2)
+          n28 = __sil_allocate(<closure:dummy:1>)
+          n30 = $builtins.py_make_none()
+          n31 = $builtins.py_make_none()
+          n32 = $builtins.py_make_none()
+          n33 = $builtins.py_make_none()
+          n3 = $builtins.py_make_function(n28, n30, n31, n32, n33)
+          n34:*PyLocals = load &locals
+          n35:*PyGlobals::dummy = load &globals
+          n36 = $builtins.py_store_name("g", n34, n35, n3)
+          n37 = $builtins.py_make_none()
+          ret n37
 
     }
 

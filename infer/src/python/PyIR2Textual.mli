@@ -7,3 +7,5 @@
 open! IStd
 
 val mk_module : PyIR.Module.t -> Textual.Module.t
+
+val add_module_default_type : Textual.Module.t -> Textual.Module.t
