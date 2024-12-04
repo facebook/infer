@@ -182,5 +182,11 @@ module Basic : sig
     -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
     -> model_no_non_disj
 
+  val unknown_call_without_formals :
+       ?force_pure:bool
+    -> string
+    -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list
+    -> model_no_non_disj
+
   val matchers : matcher list
 end

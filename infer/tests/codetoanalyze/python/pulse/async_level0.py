@@ -20,7 +20,7 @@ async def call_sleep_ok():
 async def call_sleep_bad():
     sleep(1)
 
-async def FP_call_sleep_unknown_call_ok():
+async def call_sleep_unknown_call_ok():
     unknown(sleep(1))
 
 

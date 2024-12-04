@@ -824,18 +824,20 @@ module Syntax = struct
 
   type closure_args =
     | Regular of aval list
-    | FromAttributes of (ProcAttributes.t -> aval list model_monad)
+    | FromAttributes of (ProcAttributes.t option -> aval list model_monad)
+
+  let mixed_type_name lang =
+    match (lang : Textual.Lang.t) with
+    | Hack ->
+        TextualSil.hack_mixed_type_name
+    | Python ->
+        TextualSil.python_mixed_type_name
+    | Java ->
+        L.die InternalError "DSL.call not supported on Java"
+
 
   let call lang proc_name named_args =
-    let mixed_type_name =
-      match (lang : Textual.Lang.t) with
-      | Hack ->
-          TextualSil.hack_mixed_type_name
-      | Python ->
-          TextualSil.python_mixed_type_name
-      | Java ->
-          L.die InternalError "DSL.call not supported on Java"
-    in
+    let mixed_type_name = mixed_type_name lang in
     let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
     let ret_id = Ident.create_none () in
     let call_args =
@@ -850,6 +852,14 @@ module Syntax = struct
 
 
   let python_call = call Python
+
+  let unknown_call ?(force_pure = false) lang skip_reason args : aval model_monad =
+    let mixed_type_name = mixed_type_name lang in
+    let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
+    let actuals = List.map args ~f:(fun arg -> (arg, typ)) in
+    lift_model (Basic.unknown_call_without_formals ~force_pure skip_reason actuals)
+    |> lift_to_monad_and_get_result
+
 
   let apply_closure lang (closure : aval) unresolved_pname closure_args : aval model_monad =
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
@@ -869,10 +879,7 @@ module Syntax = struct
               | Regular closure_args ->
                   ret closure_args
               | FromAttributes gen_closure_args ->
-                  IRAttributes.load resolved_pname |> Option.map ~f:gen_closure_args
-                  |> Option.value_or_thunk ~default:(fun () ->
-                         L.d_printfln "[ocaml model] Failed to load attributes" ;
-                         ret [] )
+                  gen_closure_args (IRAttributes.load resolved_pname)
             in
             let args = closure :: closure_args in
             let named_args =
@@ -883,8 +890,15 @@ module Syntax = struct
             ret res )
     | _ ->
         L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
-        let* unknown_res = fresh () in
-        ret unknown_res
+        let unresolved_str = Format.asprintf "%a" Procname.pp unresolved_pname in
+        let* args =
+          match closure_args with
+          | Regular closure_args ->
+              ret closure_args
+          | FromAttributes gen_closure_args ->
+              gen_closure_args None
+        in
+        unknown_call lang unresolved_str args
 
 
   let apply_hack_closure closure closure_args =

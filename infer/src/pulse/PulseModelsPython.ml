@@ -132,7 +132,7 @@ let build_class globals closure _name _args : model =
   start_model
   @@ fun () ->
   let* class_ = Dict.make [] [] in
-  let gen_closure_args {ProcAttributes.python_args= _} =
+  let gen_closure_args _ =
     let locals = class_ in
     match Config.python_globals with
     | OwnByClosures ->
@@ -147,7 +147,20 @@ let build_class globals closure _name _args : model =
 let call_dsl ~closure ~globals ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
-  let gen_closure_args {ProcAttributes.python_args} =
+  let gen_closure_args opt_proc_attrs =
+    let python_args =
+      match opt_proc_attrs with
+      | Some {ProcAttributes.python_args}
+        when Int.equal (List.length python_args) (List.length args) ->
+          python_args
+      | Some {ProcAttributes.python_args} ->
+          L.d_printfln "[ocaml model] %d argument required but %d were given"
+            (List.length python_args) (List.length args) ;
+          List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
+      | None ->
+          L.d_printfln "[ocaml model] Failed to load attributes" ;
+          List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
+    in
     let* locals = Dict.make python_args args in
     match Config.python_globals with
     | OwnByClosures ->

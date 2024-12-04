@@ -187,12 +187,8 @@ module Basic = struct
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
-  let unknown_call ?(force_pure = false) skip_reason args : model_no_non_disj =
+  let unknown_call_without_formals ?(force_pure = false) skip_reason actuals : model_no_non_disj =
    fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
-    let actuals =
-      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
-          (actual, typ) )
-    in
     let formals_opt =
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
@@ -204,6 +200,14 @@ module Basic = struct
         ~ret ~actuals ~formals_opt astate
     in
     astate
+
+
+  let unknown_call ?(force_pure = false) skip_reason args : model_no_non_disj =
+    let actuals =
+      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
+          (actual, typ) )
+    in
+    unknown_call_without_formals ~force_pure skip_reason actuals
 
 
   let id_first_arg_from_list ~desc args : model_no_non_disj =

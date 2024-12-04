@@ -84,7 +84,8 @@ module Syntax : sig
 
   val apply_hack_closure : aval -> aval list -> aval model_monad
 
-  val apply_python_closure : aval -> (ProcAttributes.t -> aval list model_monad) -> aval model_monad
+  val apply_python_closure :
+    aval -> (ProcAttributes.t option -> aval list model_monad) -> aval model_monad
 
   val get_data : model_data model_monad
 
