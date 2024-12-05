@@ -2578,20 +2578,28 @@ module Formula = struct
             L.die InternalError "Failed attempt to copy type constraints" )
 
 
-    let remove_term_eq t v phi =
-      Debug.p "remove_term_eq %a->%a in %a@\n" (Term.pp Var.pp) t Var.pp v (pp_with_pp_var Var.pp)
-        phi ;
+    let remove_term_eq_ t v term_eqs term_eqs_occurrences =
       let term_eqs_occurrences =
         match Term.get_as_linear t with
         | Some _ ->
-            phi.term_eqs_occurrences
+            term_eqs_occurrences
         | None ->
-            Term.fold_variables t ~init:phi.term_eqs_occurrences ~f:(fun occurrences v' ->
+            Term.fold_variables t ~init:term_eqs_occurrences ~f:(fun occurrences v' ->
                 TermMapOccurrences.remove v' ~occurred_in:(t, Domain) occurrences )
             |> TermMapOccurrences.remove v ~occurred_in:(t, Range)
             |> TermMapOccurrences.remove v ~occurred_in:(t, DomainAndRange)
       in
-      {phi with term_eqs= Term.VarMap.remove t phi.term_eqs; term_eqs_occurrences}
+      let term_eqs = Term.VarMap.remove t term_eqs in
+      (term_eqs, term_eqs_occurrences)
+
+
+    let remove_term_eq t v phi =
+      Debug.p "remove_term_eq %a->%a in %a@\n" (Term.pp Var.pp) t Var.pp v (pp_with_pp_var Var.pp)
+        phi ;
+      let term_eqs, term_eqs_occurrences =
+        remove_term_eq_ t v phi.term_eqs phi.term_eqs_occurrences
+      in
+      {phi with term_eqs; term_eqs_occurrences}
 
 
     let add_term_eq t v phi =
@@ -2603,7 +2611,7 @@ module Formula = struct
           let term_eqs_occurrences =
             match Term.get_as_linear t with
             | Some _ ->
-                phi.term_eqs_occurrences
+                TermMapOccurrences.add v ~occurs_in:(t, Range) phi.term_eqs_occurrences
             | None ->
                 let term_eqs_occurrences, added_to_range =
                   Term.fold_variables t ~init:(phi.term_eqs_occurrences, false)
@@ -2716,12 +2724,18 @@ module Formula = struct
       {phi with atoms= Atom.Set.add atom phi.atoms; atoms_occurrences}
 
 
-    let remove_atom atom phi =
+    let remove_atom_ atom atoms atoms_occurrences =
       let atoms_occurrences =
-        Atom.fold_variables atom ~init:phi.atoms_occurrences ~f:(fun occurrences v' ->
+        Atom.fold_variables atom ~init:atoms_occurrences ~f:(fun occurrences v' ->
             AtomMapOccurrences.remove v' ~occurred_in:atom occurrences )
       in
-      {phi with atoms= Atom.Set.remove atom phi.atoms; atoms_occurrences}
+      let atoms = Atom.Set.remove atom atoms in
+      (atoms, atoms_occurrences)
+
+
+    let remove_atom atom phi =
+      let atoms, atoms_occurrences = remove_atom_ atom phi.atoms phi.atoms_occurrences in
+      {phi with atoms; atoms_occurrences}
 
 
     let remove_from_linear_eqs_occurrences v phi =
