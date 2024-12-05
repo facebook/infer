@@ -195,16 +195,39 @@ struct
 
 
   let filter ~f uf =
+    let is_singleton clazz =
+      match XSet.min_elt_opt clazz with
+      | None ->
+          false
+      | Some min ->
+          X.equal (XSet.max_elt clazz) min
+    in
     let classes =
-      UF.Map.filter_map
-        (fun repr clazz ->
+      UF.Map.fold
+        (fun repr clazz classes ->
           let clazz = XSet.filter f clazz in
-          if XSet.is_empty clazz && not (f (repr :> X.t)) then None else Some clazz )
-        uf.classes
+          if XSet.is_empty clazz then
+            (* empty or singleton equivalence class, no need to keep it *)
+            classes
+          else if f (repr :> X.t) then
+            (* keep the old representative *)
+            UF.Map.add repr clazz classes
+          else if is_singleton clazz then
+            (* singleton equivalence class, no need to keep it *)
+            classes
+          else
+            (* the class is not empty so it has a min element that can serve as the new
+               representative *)
+            let new_repr = XSet.min_elt clazz in
+            let clazz = XSet.remove new_repr clazz in
+            UF.Map.add ((* HACK: unsafe cast to [repr] *) UF.find UF.empty new_repr) clazz classes
+          )
+        uf.classes UF.Map.empty
     in
     (* rebuild [reprs] directly from [classes]: does path compression and garbage collection on the
        old [reprs] *)
-    of_classes classes
+    let reprs = UF.Map.fold UF.add_disjoint_class classes UF.empty in
+    {reprs; classes}
 
 
   let fold_elements uf ~init ~f =
