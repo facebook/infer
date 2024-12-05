@@ -279,7 +279,7 @@ module OnDisk = struct
           not_found_from_cache ()
       | One _ | CheckerWithoutPayload _ -> (
         (* If there is a cache for [All], we use it. *)
-        match Hash.find cache (proc_name, analysis_req) with
+        match Hash.find cache (proc_name, AnalysisRequest.all) with
         | summary ->
             found_from_cache summary
         | exception Stdlib.Not_found ->
