@@ -345,9 +345,12 @@ let join_attributes join_state astate_lhs astate_rhs =
   (pre, post)
 
 
-let join_formulas _join_state _astate_lhs _astate_rhs =
-  (* TODO *)
-  Formula.ttrue
+let join_formulas _join_state astate_lhs astate_rhs =
+  let formula =
+    Formula.join astate_lhs.AbductiveDomain.path_condition astate_rhs.AbductiveDomain.path_condition
+  in
+  (* TODO: add info from [join_state.rev_subst] *)
+  formula
 
 
 let join_abductive astate_lhs astate_rhs =

@@ -103,13 +103,19 @@ let ( = ) f1 f2 phi =
 let ( =. ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
-  prune_binop ~negated:false Binop.Eq op1 op2 phi >>| fst
+  prune_binop ~negated:false Eq op1 op2 phi >>| fst
 
 
 let ( <> ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
   and_not_equal op1 op2 phi >>| fst
+
+
+let ( <>. ) f1 f2 phi =
+  let* phi, op1 = f1 phi in
+  let* phi, op2 = f2 phi in
+  prune_binop ~negated:false Ne op1 op2 phi >>| fst
 
 
 let ( < ) f1 f2 phi =
@@ -120,6 +126,12 @@ let ( < ) f1 f2 phi =
 
 let ( > ) f1 f2 phi = ( < ) f2 f1 phi
 
+let ( >. ) f1 f2 phi =
+  let* phi, op1 = f1 phi in
+  let* phi, op2 = f2 phi in
+  prune_binop ~negated:false Gt op1 op2 phi >>| fst
+
+
 let ( <= ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
@@ -129,6 +141,12 @@ let ( <= ) f1 f2 phi =
 let ( >= ) f1 f2 phi = ( <= ) f2 f1 phi
 
 let ( && ) f1 f2 phi = f1 phi >>= f2
+
+let ( || ) f1 f2 phi =
+  let* phi1 = f1 phi in
+  let+ phi2 = f2 phi in
+  join phi1 phi2
+
 
 [@@@warning "+unused-value-declaration"]
 (* end of shorthand notations *)
@@ -707,4 +725,103 @@ let%test_module "non-numerical constants" =
         phi: var_eqs: x=v6
              && const_eqs: x="prefix cannot match" ∧ y="hello"
              && term_eqs: "hello"=y∧"prefix cannot match"=x∧("hello"^z)=x |}]
+  end )
+
+
+let%test_module "join" =
+  ( module struct
+    let%expect_test _ =
+      test (x =. i 42 || x =. i 42) ;
+      [%expect
+        {|
+        conditions: {x = 42} phi: linear_eqs: x = 42 && term_eqs: 42=x && intervals: x=42 |}]
+
+
+    let%expect_test _ =
+      test (x =. i 42 || x <>. i 42) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test (x =. y + i 1 || x =. y + i 1) ;
+      [%expect {|
+        conditions: (empty) phi: linear_eqs: x = y +1 && term_eqs: [y +1]=x |}]
+
+
+    let%expect_test _ =
+      test (z = y + i 1 && (x =. z || x <>. z)) ;
+      [%expect {|
+        conditions: (empty) phi: var_eqs: x=v6 |}]
+
+
+    let%expect_test _ =
+      test (x =. i 42 || x =. y) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test (x =. i 42 || (x <>. i 42 && x =. y)) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test ((x =. i 42 && y =. w) || (x =. z && y =. i 42)) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test (x =. y * z || i 0 = i 0) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test (w = y * z && (x =. w || x =. w)) ;
+      [%expect {|
+        conditions: {[x -w] = 0} phi: var_eqs: x=w=v6 && term_eqs: (y×z)=x |}]
+
+
+    (* doesn't work as well as the previous test when the non-linear term is evaluated (twice)
+       inside the conditionals *)
+    let%expect_test _ =
+      test (x =. y * z || x =. y * z) ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
+
+
+    let%expect_test _ =
+      test (w = y + z - i 4 && (x >. w || x >. w)) ;
+      [%expect
+        {|
+        conditions: {[-x +w] < 0}
+        phi: var_eqs: w=v7
+             && linear_eqs: x = v6 +a1 -3 ∧ y = -z +v6 ∧ w = v6 -4
+             && term_eqs: [v6 -4]=w∧[v6 +a1 -3]=x∧[-z +v6]=y |}]
+
+
+    (* doesn't work as well as the previous test when the term is evaluated (twice) inside the
+       conditionals *)
+    let%expect_test _ =
+      test (x >. y + z - i 4 || x >. y + z - i 4) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: linear_eqs: y = -z +v7 +4 ∧ v6 = v7 +4 && term_eqs: [-z +v7 +4]=y∧[v7 +4]=v6 |}]
+
+
+    let%expect_test _ =
+      test (x =. s "toto" || x =. s "toto") ;
+      [%expect
+        {|
+        conditions: {x = "toto"} phi: const_eqs: x="toto" && term_eqs: "toto"=x |}]
+
+
+    let%expect_test _ =
+      test (x =. s "toto" || x =. s "titi") ;
+      [%expect {|
+        conditions: (empty) phi: (empty) |}]
   end )

@@ -2259,6 +2259,10 @@ module Formula = struct
 
     val set_intervals : intervals -> t -> t
 
+    val join : t -> t -> t
+
+    val remove_conditions_for_join : Atom.t list -> t -> t -> t
+
     val unsafe_mk :
          var_eqs:var_eqs
       -> const_eqs:Term.t Var.Map.t
@@ -2781,6 +2785,98 @@ module Formula = struct
       ; tableau_occurrences
       ; term_eqs_occurrences
       ; atoms_occurrences }
+
+
+    let join phi1 _phi2 =
+      (* TODO: do phi1 /\ phi2 *)
+      phi1
+
+
+    let scramble_var phi_rhs phi v =
+      let remove_if_different mem_lhs test_equal find remove lhs rhs =
+        if (not mem_lhs) || test_equal (find v lhs) (find v rhs) then (lhs, false)
+        else (remove v lhs, true)
+      in
+      let var_eqs, _removed =
+        remove_if_different true VarUF.equal_repr
+          (fun v var_eqs -> VarUF.find var_eqs v)
+          VarUF.remove phi.var_eqs phi_rhs.var_eqs
+      in
+      let const_eqs, _removed =
+        remove_if_different (Var.Map.mem v phi.const_eqs) (Option.equal Term.equal) Var.Map.find_opt
+          Var.Map.remove phi.const_eqs phi_rhs.const_eqs
+      in
+      let type_constraints, _removed =
+        remove_if_different
+          (Var.Map.mem v phi.type_constraints)
+          (Option.equal InstanceOf.equal_instance_fact)
+          Var.Map.find_opt Var.Map.remove phi.type_constraints phi_rhs.type_constraints
+      in
+      let linear_eqs, removed_linear_eqs =
+        remove_if_different (Var.Map.mem v phi.linear_eqs) (Option.equal LinArith.equal)
+          Var.Map.find_opt Var.Map.remove phi.linear_eqs phi_rhs.linear_eqs
+      in
+      let linear_eqs_occurrences =
+        if removed_linear_eqs then Var.Map.remove v phi.linear_eqs_occurrences
+        else phi.linear_eqs_occurrences
+      in
+      let tableau, removed_tableau =
+        remove_if_different (Var.Map.mem v phi.tableau) (Option.equal LinArith.equal)
+          Var.Map.find_opt Var.Map.remove phi.tableau phi_rhs.tableau
+      in
+      let tableau_occurrences =
+        if removed_tableau then Var.Map.remove v phi.tableau_occurrences
+        else phi.tableau_occurrences
+      in
+      let intervals, _removed =
+        remove_if_different (Var.Map.mem v phi.intervals) (Option.equal CItv.equal) Var.Map.find_opt
+          Var.Map.remove phi.intervals phi_rhs.intervals
+      in
+      let atoms, atoms_occurrences =
+        match Var.Map.find_opt v phi.atoms_occurrences with
+        | None ->
+            (phi.atoms, phi.atoms_occurrences)
+        | Some atoms_v ->
+            Atom.Set.fold
+              (fun atom_v (atoms, atoms_occurrences) ->
+                if Atom.Set.mem atom_v phi_rhs.atoms then (atoms, atoms_occurrences)
+                else remove_atom_ atom_v atoms atoms_occurrences )
+              atoms_v
+              (phi.atoms, phi.atoms_occurrences)
+      in
+      let term_eqs, term_eqs_occurrences =
+        match Var.Map.find_opt v phi.term_eqs_occurrences with
+        | None ->
+            (phi.term_eqs, phi.term_eqs_occurrences)
+        | Some term_eqs_v ->
+            TermDomainOrRange.Set.fold
+              (fun (term_v, _) (term_eqs, term_eqs_occurrences) ->
+                if Term.VarMap.find_opt term_v phi_rhs.term_eqs |> Option.exists ~f:(Var.equal v)
+                then (term_eqs, term_eqs_occurrences)
+                else remove_term_eq_ term_v v term_eqs term_eqs_occurrences )
+              term_eqs_v
+              (phi.term_eqs, phi.term_eqs_occurrences)
+      in
+      { var_eqs
+      ; const_eqs
+      ; type_constraints
+      ; linear_eqs
+      ; term_eqs
+      ; tableau
+      ; intervals
+      ; atoms
+      ; linear_eqs_occurrences
+      ; tableau_occurrences
+      ; term_eqs_occurrences
+      ; atoms_occurrences }
+
+
+    let remove_condition_for_join atom phi_lhs phi_rhs =
+      Atom.fold_variables atom ~init:phi_lhs ~f:(scramble_var phi_rhs)
+
+
+    let remove_conditions_for_join atoms phi_lhs phi_rhs =
+      List.fold atoms ~init:phi_lhs ~f:(fun phi atom -> remove_condition_for_join atom phi phi_rhs)
   end
 
   include Unsafe
@@ -4735,3 +4831,53 @@ let pp_formula_explained pp_var fmt {phi} =
 let pp_conditions_explained pp_var fmt {conditions} =
   if not (Atom.Map.is_empty conditions) then
     F.fprintf fmt "@;∧ %a" (pp_conditions pp_var) conditions
+
+
+let join_conditions conditions_lhs conditions_rhs =
+  let conditions_join =
+    Atom.Map.merge
+      (fun _atom depth1 depth2 ->
+        (* keep only atoms present on both sides, with the min of their call depths *)
+        Option.both depth1 depth2 |> Option.map ~f:(fun (depth1, depth2) -> Int.min depth1 depth2)
+        )
+      conditions_lhs conditions_rhs
+  in
+  let atoms_not_in ~not_in:atoms_not_in atoms =
+    Atom.Map.merge
+      (fun _atom atom_depth not_in ->
+        match (atom_depth, not_in) with
+        | Some _, None ->
+            atom_depth
+        | None, _ | Some _, Some _ ->
+            None )
+      atoms atoms_not_in
+    |> Atom.Map.bindings |> List.map ~f:fst
+  in
+  let kill_conditions_lhs = atoms_not_in ~not_in:conditions_join conditions_lhs in
+  let kill_conditions_rhs = atoms_not_in ~not_in:conditions_join conditions_rhs in
+  (conditions_join, kill_conditions_lhs, kill_conditions_rhs)
+
+
+(* This relies on the idea that two formulas for the same procedure must be different only because
+   the path conditions are different. All other variables not involved in the path conditions are
+   the results of being created fresh to hold some intermediate values created by the program and so
+   can be handled with a conjunction (since they will appear only on one side).
+
+   Given that, the strategy is to compute the conditions that are common to both sides, and those
+   that are present only on one side need to be removed from the formulas. The removal of facts is
+   done brutally by forgetting all facts involving any variable present in these conditions. This
+   should be a valid over-approximation.
+
+   NOTE: It would be good to know which variables were created fresh in [phi1] and in [phi2] and
+   automatically keep information about these, since they cannot appear in the other formula and
+   their valuation doesn't matter for the formula where they don't belong. Instead, we rely on
+   conditions to tell which variables need to be forgotten about but that is over-approximate (and
+   fragile: it could be that some consequences are not completely cleaned up this way). *)
+let join {conditions= conditions_lhs; phi= phi_lhs} {conditions= conditions_rhs; phi= phi_rhs} =
+  let conditions_join, killed_conditions_lhs, killed_conditions_rhs =
+    join_conditions conditions_lhs conditions_rhs
+  in
+  let phi_lhs = Formula.remove_conditions_for_join killed_conditions_lhs phi_lhs phi_rhs in
+  let phi_rhs = Formula.remove_conditions_for_join killed_conditions_rhs phi_rhs phi_lhs in
+  let phi_join = Formula.join phi_lhs phi_rhs in
+  {conditions= conditions_join; phi= phi_join}

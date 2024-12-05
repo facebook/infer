@@ -1,1 +1,3 @@
+codetoanalyze/c/pulse-join/formula.c, FP_same_facts_different_branches_ok, 19, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/pulse-join/formula.c, FP_same_facts_different_branches_ok, 23, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse-join/join.c, join_valid_invalid_pointers, 1, NULLPTR_DEREFERENCE_LATENT, no_bucket, ERROR, [*** SUPPRESSED ***,source of the null value part of the trace starts here,is assigned to the null pointer,null pointer dereference part of the trace starts here,parameter `p` of join_valid_invalid_pointers,invalid access occurs here]

@@ -24,7 +24,7 @@ struct
   (** the union-find backing data structure: maps elements to their representatives *)
   module UF : sig
     (** to get a little bit of type safety *)
-    type repr = private X.t
+    type repr = private X.t [@@deriving compare, equal]
 
     type t [@@deriving compare, equal]
 
@@ -43,7 +43,7 @@ struct
 
     module Map : Stdlib.Map.S with type key = repr
   end = struct
-    type repr = X.t
+    type repr = X.t [@@deriving compare, equal]
 
     type t = X.t XMap.t [@@deriving compare, equal]
 
@@ -74,7 +74,7 @@ struct
     module Map = XMap
   end
 
-  type repr = UF.repr
+  type repr = UF.repr [@@deriving compare, equal]
 
   module Classes = struct
     let find classes (x : UF.repr) = UF.Map.find_opt x classes |> Option.value ~default:XSet.empty
@@ -229,6 +229,8 @@ struct
     let reprs = UF.Map.fold UF.add_disjoint_class classes UF.empty in
     {reprs; classes}
 
+
+  let remove x uf = filter uf ~f:(fun y -> not (X.equal x y))
 
   let fold_elements uf ~init ~f =
     fold_congruences uf ~init ~f:(fun acc (repr, xs) ->

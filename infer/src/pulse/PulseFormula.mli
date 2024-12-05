@@ -160,3 +160,5 @@ val pp_term : (F.formatter -> Var.t -> unit) -> F.formatter -> term -> unit
 val pp_conditions_explained : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
 
 val pp_formula_explained : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
+
+val join : t -> t -> t
