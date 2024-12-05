@@ -377,6 +377,8 @@ module type PPUniqRankSet = sig
 
   val union_prefer_left : t -> t -> t
 
+  val merge : t -> t -> f:(elt option -> elt option -> elt option) -> t
+
   val filter : t -> f:(elt -> bool) -> t
 
   val filter_map : t -> f:(elt -> elt option) -> t
@@ -463,6 +465,8 @@ module MakePPUniqRankSet
   let update value map = Map.update (Val.to_rank value) (fun _ -> Some value) map
 
   let union_prefer_left m1 m2 = Map.union (fun _rank value1 _value2 -> Some value1) m1 m2
+
+  let merge m1 m2 ~f = Map.merge (fun _rank value1 value2 -> f value1 value2) m1 m2
 
   let filter map ~f = Map.filter (fun _ v -> f v) map
 

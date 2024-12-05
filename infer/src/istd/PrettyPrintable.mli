@@ -264,6 +264,8 @@ module type PPUniqRankSet = sig
   (** in case an element with the same rank is present both in [lhs] and [rhs], keep the one from
       [lhs] in [union_prefer_left lhs rhs] *)
 
+  val merge : t -> t -> f:(elt option -> elt option -> elt option) -> t
+
   val filter : t -> f:(elt -> bool) -> t
 
   val filter_map : t -> f:(elt -> elt option) -> t

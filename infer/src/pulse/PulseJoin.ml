@@ -7,8 +7,10 @@
 
 open! IStd
 open PulseBasicInterface
+module L = Logging
 module AbductiveDomain = PulseAbductiveDomain
 module AddressAttributes = PulseBaseAddressAttributes
+module Attributes = Attribute.Attributes
 module BaseMemory = PulseBaseMemory
 module Decompiler = PulseDecompiler
 module Formula = PulseFormula
@@ -35,8 +37,20 @@ type join_state =
 
 let empty_join_state = {subst= Subst.empty; rev_subst= RevSubst.empty; visited= Visited.empty}
 
-let join_histories (_hist : ValueHistory.t option) (_hist' : ValueHistory.t option) =
-  (* TODO: something *) ValueHistory.epoch
+let join_histories hist1 hist2 =
+  if ValueHistory.equal hist1 hist2 then hist1 else (* TODO: something *) ValueHistory.epoch
+
+
+let join_histories_opts hist1_opt hist2_opt =
+  match (hist1_opt, hist2_opt) with
+  | Some hist1, Some hist2 ->
+      join_histories hist1 hist2
+  | Some _, None | None, Some _ | None, None ->
+      (* TODO: something *) ValueHistory.epoch
+
+
+let join_traces trace1 trace2 =
+  if Trace.equal trace1 trace2 then trace1 else (* TODO: something *) trace1
 
 
 let record_join_value v_join v1 v2 join_state =
@@ -61,7 +75,7 @@ let join_values_hists join_state (v_lhs, hist_lhs) (v_rhs, hist_rhs) =
       let join_state = record_join_value v_join v_lhs v_rhs join_state in
       (join_state, v_join)
   in
-  let hist_join = join_histories (Some hist_lhs) (Some hist_rhs) in
+  let hist_join = join_histories_opts (Some hist_lhs) (Some hist_rhs) in
   (join_state, (v_join, hist_join))
 
 
@@ -83,7 +97,7 @@ let join_values_hists_opts_aux formula_join (astate_lhs, v_hist_lhs_opt) (astate
          pointers that the joined values originated from is invalid: [x↦v ⊔ Invalid(x) = x↦v *
          WeakInvalid(x)]. *)
       let v_join = AbstractValue.mk_fresh () in
-      let hist_join = join_histories (Some hist_one_sided) None in
+      let hist_join = join_histories_opts (Some hist_one_sided) None in
       (formula_join, (v_join, hist_join))
   | _, Some v_hist_lhs, _, Some v_hist_rhs
     when AbstractValue.equal (fst v_hist_lhs) (fst v_hist_rhs) ->
@@ -102,7 +116,7 @@ let join_values_hists_opts join_state (astate_lhs, v_hist_lhs_opt) (astate_rhs, 
   match Subst.find_opt subst_key join_state.subst with
   | Some v_join ->
       let hist_join =
-        join_histories (Option.map ~f:snd v_hist_lhs_opt) (Option.map ~f:snd v_hist_rhs_opt)
+        join_histories_opts (Option.map ~f:snd v_hist_lhs_opt) (Option.map ~f:snd v_hist_rhs_opt)
       in
       (join_state, (v_join, hist_join))
   | None ->
@@ -179,9 +193,156 @@ let join_stacks astate_lhs astate_rhs =
   (join_state, (stack_pre_join, heap_pre_join), (stack_post_join, heap_post_join))
 
 
-let join_attributes _join_state _astate_lhs _astate_rhs =
-  (* TODO *)
-  (AddressAttributes.empty, AddressAttributes.empty)
+let join_one_sided_attribute _attr = (* TODO: weaken the given attribute in most cases *) None
+
+let join_two_sided_attribute join_state (attr1 : Attribute.t) (attr2 : Attribute.t) :
+    Attribute.t option =
+  let mk_from_joined_values v1 v2 ~f =
+    if AbstractValue.equal v1 v2 then Some attr1
+    else
+      match Subst.find_opt (Some v1, Some v2) join_state.subst with
+      | Some v_join ->
+          Some (f v_join)
+      | None ->
+          None
+  in
+  match (attr1, attr2) with
+  | AlwaysReachable, AlwaysReachable
+  | CSharpResourceReleased, CSharpResourceReleased
+  | DictContainConstKeys, DictContainConstKeys
+  | EndOfCollection, EndOfCollection
+  | HackConstinitCalled, HackConstinitCalled
+  | InReportedRetainCycle, InReportedRetainCycle
+  | Initialized, Initialized
+  | JavaResourceReleased, JavaResourceReleased
+  | StdMoved, StdMoved
+  | StdVectorReserve, StdVectorReserve ->
+      Some attr1
+  | AddressOfCppTemporary (var1, hist1), AddressOfCppTemporary (var2, hist2) ->
+      if Var.equal var1 var2 then
+        let hist = join_histories hist1 hist2 in
+        Some (AddressOfCppTemporary (var1, hist))
+      else None
+  | AddressOfStackVariable (var1, _, _), AddressOfStackVariable (var2, _, _) ->
+      (* TODO: join histories, etc. *)
+      if Var.equal var1 var2 then Some attr1 else None
+  | Allocated (allocator1, _), Allocated (allocator2, _) ->
+      (* TODO: join traces *)
+      if Attribute.equal_allocator allocator1 allocator2 then Some attr1 else None
+  | Closure proc_name1, Closure proc_name2 ->
+      if Procname.equal proc_name1 proc_name2 then Some attr1 else None
+  | ConfigUsage cu1, ConfigUsage cu2 ->
+      if Attribute.ConfigUsage.equal cu1 cu2 then Some attr1 else None
+  | CopiedInto ci1, CopiedInto ci2 ->
+      if Attribute.CopiedInto.equal ci1 ci2 then Some attr1 else None
+  | ( CopiedReturn {source= source1; is_const_ref= is_const_ref1; from= from1; copied_location}
+    , CopiedReturn {source= source2; is_const_ref= is_const_ref2; from= from2} ) ->
+      if Bool.equal is_const_ref1 is_const_ref2 && Attribute.CopyOrigin.equal from1 from2 then
+        mk_from_joined_values source1 source2 ~f:(fun source ->
+            CopiedReturn {source; is_const_ref= is_const_ref1; from= from1; copied_location} )
+      else None
+  | DictReadConstKeys keys1, DictReadConstKeys keys2 ->
+      (* TODO: chose [inter] here but to be more over-approx we should do the union! can't help
+         shooting for under-approximation... *)
+      let keys = Attribute.ConstKeys.inter keys1 keys2 in
+      if Attribute.ConstKeys.is_empty keys then None else Some (DictReadConstKeys keys)
+  | HackBuilder builder1, HackBuilder builder2 ->
+      if Attribute.Builder.equal builder1 builder2 then Some attr1 else None
+  | Invalid (invalidation1, trace1), Invalid (invalidation2, trace2) ->
+      if Invalidation.equal invalidation1 invalidation2 then
+        Some (Invalid (invalidation1, join_traces trace1 trace2))
+      else None
+  | LastLookup v1, LastLookup v2 ->
+      mk_from_joined_values v1 v2 ~f:(fun v -> LastLookup v)
+  | MustBeInitialized _, MustBeInitialized _ ->
+      (* doesn't really matter which branch is doing the reading for now *) Some attr1
+  | MustBeValid _, MustBeValid _ ->
+      (* TODO: join must_be_valid_reason *) Some attr1
+  | MustNotBeTainted sinks1, MustNotBeTainted sinks2 ->
+      let sinks = Attribute.TaintSinkMap.union (fun _ sink1 _sink2 -> Some sink1) sinks1 sinks2 in
+      Some (MustNotBeTainted sinks)
+  | PropagateTaintFrom (reason1, taint_in1), PropagateTaintFrom (_reason2, taint_in2) ->
+      (* TODO: merge reasons? or allow the attribute to have several reasons and their associated
+         [taint_in]s *)
+      let taint_in1 = List.sort ~compare:Attribute.compare_taint_in taint_in1 in
+      let taint_in2 = List.sort ~compare:Attribute.compare_taint_in taint_in2 in
+      let taint_in = List.merge ~compare:Attribute.compare_taint_in taint_in1 taint_in2 in
+      Some (PropagateTaintFrom (reason1, taint_in))
+  | ReturnedFromUnknown vs1, ReturnedFromUnknown vs2 ->
+      let vs1 = List.sort ~compare:AbstractValue.compare vs1 in
+      let vs2 = List.sort ~compare:AbstractValue.compare vs2 in
+      let vs = List.merge ~compare:AbstractValue.compare vs1 vs2 in
+      Some (ReturnedFromUnknown vs)
+  | ( SourceOriginOfCopy {source= source1; is_const_ref= is_const_ref1}
+    , SourceOriginOfCopy {source= source2; is_const_ref= is_const_ref2} ) ->
+      if Bool.equal is_const_ref1 is_const_ref2 then
+        mk_from_joined_values source1 source2 ~f:(fun source ->
+            SourceOriginOfCopy {source; is_const_ref= is_const_ref1} )
+      else None
+  | StaticType t1, StaticType t2 ->
+      if Typ.Name.equal t1 t2 then Some attr1 else None
+  | Tainted sources1, Tainted sources2 ->
+      let sources = Attribute.TaintedSet.union sources1 sources2 in
+      Some (Tainted sources)
+  | TaintSanitized sanitizers1, TaintSanitized sanitizers2 ->
+      let sanitizers = Attribute.TaintSanitizedSet.union sanitizers1 sanitizers2 in
+      Some (TaintSanitized sanitizers)
+  | Uninitialized t1, Uninitialized t2 ->
+      if Attribute.UninitializedTyp.equal t1 t2 then Some attr1 else None
+  | UnknownEffect _, UnknownEffect _ ->
+      (* arbitrary, doesn't matter much which side *) Some attr1
+  | UnreachableAt loc1, UnreachableAt loc2 ->
+      let loc = if Location.compare loc1 loc2 > 0 then loc1 else loc2 in
+      Some (UnreachableAt loc)
+  | UsedAsBranchCond _, UsedAsBranchCond _ ->
+      (* arbitrary, doesn't matter much which side *) Some attr1
+  | WrittenTo (ts1, _), WrittenTo (ts2, _) ->
+      (* pick the most recent event *)
+      if Timestamp.compare ts1 ts2 >= 0 then Some attr1 else Some attr2
+  | _, _ ->
+      (* impossible unless this is called with attributes of different ranks *)
+      L.die InternalError "joining attributes with different kinds"
+
+
+let join_attribute join_state (attr1_opt : Attribute.t option) (attr2_opt : Attribute.t option) :
+    Attribute.t option =
+  match (attr1_opt, attr2_opt) with
+  | None, None ->
+      assert false
+  | Some attr, None | None, Some attr ->
+      join_one_sided_attribute attr
+  | Some attr1, Some attr2 ->
+      if Attribute.equal attr1 attr2 then attr1_opt
+      else join_two_sided_attribute join_state attr1 attr2
+
+
+let join_address_attributes join_state attrs_lhs attrs_rhs =
+  Attributes.merge attrs_lhs attrs_rhs ~f:(join_attribute join_state)
+
+
+let join_base_attributes pre_or_post join_state astate_lhs astate_rhs =
+  RevSubst.fold
+    (fun v_join (v_lhs_opt, v_rhs_opt) attrs_join ->
+      let open IOption.Let_syntax in
+      let attrs_lhs =
+        (let* v_lhs = v_lhs_opt in
+         AbductiveDomain.AddressAttributes.find_opt pre_or_post v_lhs astate_lhs )
+        |> Option.value ~default:Attributes.empty
+      in
+      let attrs_rhs =
+        (let* v_rhs = v_rhs_opt in
+         AbductiveDomain.AddressAttributes.find_opt pre_or_post v_rhs astate_rhs )
+        |> Option.value ~default:Attributes.empty
+      in
+      let attrs = join_address_attributes join_state attrs_lhs attrs_rhs in
+      AddressAttributes.add v_join attrs attrs_join )
+    join_state.rev_subst AddressAttributes.empty
+
+
+let join_attributes join_state astate_lhs astate_rhs =
+  let pre = join_base_attributes `Pre join_state astate_lhs astate_rhs in
+  let post = join_base_attributes `Post join_state astate_lhs astate_rhs in
+  (pre, post)
 
 
 let join_formulas _join_state _astate_lhs _astate_rhs =

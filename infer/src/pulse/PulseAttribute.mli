@@ -95,6 +95,7 @@ end
 
 module ConfigUsage : sig
   type t = ConfigName of ConfigName.t | StringParam of {v: AbstractValue.t; config_type: string}
+  [@@deriving equal]
 end
 
 module Builder : sig
@@ -116,9 +117,13 @@ end
 module ConstKeys : sig
   type t
 
+  val is_empty : t -> bool
+
   val singleton : Fieldname.t -> Timestamp.t * Trace.t -> t
 
   val fold : (Fieldname.t -> Timestamp.t * Trace.t -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val inter : t -> t -> t
 end
 
 type t =
@@ -170,7 +175,7 @@ type t =
           reporting leaks *)
   | UsedAsBranchCond of Procname.t * Location.t * Trace.t
   | WrittenTo of Timestamp.t * Trace.t
-[@@deriving compare]
+[@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit
 

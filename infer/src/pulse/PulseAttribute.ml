@@ -206,6 +206,12 @@ module Attribute = struct
     let union =
       union (fun _ left right ->
           (if Timestamp.compare (fst left) (fst right) <= 0 then left else right) |> Option.some )
+
+
+    let inter =
+      merge (fun _ left right ->
+          Option.both left right
+          |> Option.bind ~f:(fun (md1, md2) -> Option.some_if (Metadata.equal md1 md2) md1) )
   end
 
   type t =
