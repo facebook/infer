@@ -72,18 +72,6 @@ let pp_var_data fmt
     is_structured_binding has_cleanup_attribute
 
 
-type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t list list}
-[@@deriving compare, equal]
-
-type 'captured_var passed_closure =
-  | Closure of (Procname.t * 'captured_var list)
-  | Fields of (Fieldname.t * 'captured_var passed_closure) list
-[@@deriving compare, equal]
-
-type specialized_with_closures_info =
-  {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
-[@@deriving compare, equal]
-
 type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
 [@@deriving compare, equal]
 
@@ -134,11 +122,6 @@ type t =
         (** each python function has a list of parameters that we store as a special ProcAttribute
             while list formals will only contain dict parameters like Python locals *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
-  ; specialized_with_aliasing_info: specialized_with_aliasing_info option
-  ; specialized_with_closures_info: specialized_with_closures_info option
-        (** the procedure is a clone specialized with calls to concrete closures, with link to the
-            original procedure, and a map that links the original formals to the elements of the
-            closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
@@ -218,8 +201,6 @@ let default translation_unit proc_name =
   ; is_no_return= false
   ; is_objc_arc_on= false
   ; is_specialized= false
-  ; specialized_with_aliasing_info= None
-  ; specialized_with_closures_info= None
   ; is_synthetic_method= false
   ; is_clang_variadic= false
   ; hack_variadic_position= None
@@ -242,31 +223,6 @@ let default translation_unit proc_name =
 let pp_parameters =
   Pp.semicolon_seq ~print_env:Pp.text_break (fun f (mangled, typ, _) ->
       Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text) f (mangled, typ) )
-
-
-let pp_specialized_with_aliasing_info fmt (info : specialized_with_aliasing_info) =
-  let pp_aliases fmt aliases =
-    let pp_alias fmt alias = Pp.seq ~sep:"=" Pvar.pp_value fmt alias in
-    PrettyPrintable.pp_collection ~pp_item:pp_alias fmt aliases
-  in
-  F.fprintf fmt "orig_procname=%a, aliases=%a" Procname.pp info.orig_proc pp_aliases info.aliases
-
-
-let pp_specialized_with_closures_info fmt info =
-  let rec pp_passed_closure fmt passed_closure =
-    match passed_closure with
-    | Closure closure ->
-        let pp_captured_vars = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
-        Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt closure
-    | Fields field_to_function_map ->
-        PrettyPrintable.pp_collection
-          ~pp_item:(fun fmt (fld, func) ->
-            F.fprintf fmt "%a->%a" Fieldname.pp fld pp_passed_closure func )
-          fmt field_to_function_map
-  in
-  F.fprintf fmt "orig_procname=%a, formals_to_closures=%a" Procname.pp info.orig_proc
-    (Pvar.Map.pp ~pp_value:pp_passed_closure)
-    info.formals_to_closures
 
 
 let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp
@@ -299,8 +255,6 @@ let pp f
      ; is_no_return
      ; is_objc_arc_on
      ; is_specialized
-     ; specialized_with_aliasing_info
-     ; specialized_with_closures_info
      ; is_synthetic_method
      ; is_clang_variadic
      ; hack_variadic_position
@@ -375,22 +329,6 @@ let pp f
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_objc_arc_on "is_objc_arc_on" is_objc_arc_on f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
-  if
-    not
-      ([%equal: specialized_with_aliasing_info option] default.specialized_with_aliasing_info
-         specialized_with_aliasing_info )
-  then
-    F.fprintf f "; specialized_with_aliasing_info %a@,"
-      (Pp.option pp_specialized_with_aliasing_info)
-      specialized_with_aliasing_info ;
-  if
-    not
-      ([%equal: specialized_with_closures_info option] default.specialized_with_closures_info
-         specialized_with_closures_info )
-  then
-    F.fprintf f "; specialized_with_closures_info %a@,"
-      (Pp.option pp_specialized_with_closures_info)
-      specialized_with_closures_info ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_clang_variadic "is_clang_variadic" is_clang_variadic f () ;
