@@ -200,7 +200,59 @@ let join_stacks astate_lhs astate_rhs =
   (join_state, (stack_pre_join, heap_pre_join), (stack_post_join, heap_post_join))
 
 
-let join_one_sided_attribute _attr = (* TODO: weaken the given attribute in most cases *) None
+let join_one_sided_attribute (attr : Attribute.t) =
+  let weaken attr =
+    (* TODO: add weaker versions of some of the attributes so that we can distinguish when we have
+       lost precision on attributes or not (eg the pointer is null in all branches vs null in some
+       branches only. For now let's just pretend we always have the strong version. *)
+    attr
+  in
+  match attr with
+  | AlwaysReachable
+  (* maybe we want to be more forgiving, at least we get a closure to call even if it comes from
+     just one branch? *)
+  | Closure _
+  | CSharpResourceReleased
+  | DictContainConstKeys
+  | HackConstinitCalled
+  | Initialized
+  | JavaResourceReleased
+  (* could move these two to the "keep if one sided" case if this creates too many FPs *)
+  | ReturnedFromUnknown _
+  | UnknownEffect _
+  (* could be more forgiving about one-sided [StaticType] too *)
+  | StaticType _
+  | StdVectorReserve
+  (* harsh, but biased towards reporting more taint errors *)
+  | TaintSanitized _
+  | UnreachableAt _ ->
+      None
+  | Allocated _
+  | AwaitedAwaitable
+  | CopiedInto _
+  | CopiedReturn _
+  | InReportedRetainCycle
+  | LastLookup _
+  | SourceOriginOfCopy _
+  | StdMoved
+  | UsedAsBranchCond _
+  | WrittenTo _ ->
+      Some attr
+  | AddressOfCppTemporary _
+  | AddressOfStackVariable _
+  | ConfigUsage _
+  | DictReadConstKeys _
+  | EndOfCollection
+  | HackBuilder _
+  | Invalid _
+  | MustBeInitialized _
+  | MustBeValid _
+  | MustNotBeTainted _
+  | PropagateTaintFrom _
+  | Tainted _
+  | Uninitialized _ ->
+      Some (weaken attr)
+
 
 let join_two_sided_attribute join_state (attr1 : Attribute.t) (attr2 : Attribute.t) :
     Attribute.t option =
