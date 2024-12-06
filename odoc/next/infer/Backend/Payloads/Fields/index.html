@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Fields (infer.Backend.Payloads.Fields)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.2"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">infer</a> &#x00BB; <a href="../../index.html">Backend</a> &#x00BB; <a href="../index.html">Payloads</a> &#x00BB; Fields</nav><header class="odoc-preamble"><h1>Module <code><span>Payloads.Fields</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-names"><a href="#val-names" class="anchor"></a><code><span><span class="keyword">val</span> names : <span>string list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-starvation"><a href="#val-starvation" class="anchor"></a><code><span><span class="keyword">val</span> starvation : 
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Fields (infer.Backend.Payloads.Fields)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../odoc.support/odoc.css"/><meta name="generator" content="odoc 2.4.3"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">infer</a> &#x00BB; <a href="../../index.html">Backend</a> &#x00BB; <a href="../index.html">Payloads</a> &#x00BB; Fields</nav><header class="odoc-preamble"><h1>Module <code><span>Payloads.Fields</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-names"><a href="#val-names" class="anchor"></a><code><span><span class="keyword">val</span> names : <span>string list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-starvation"><a href="#val-starvation" class="anchor"></a><code><span><span class="keyword">val</span> starvation : 
   <span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Concurrency/StarvationDomain/index.html#type-summary">Concurrency.StarvationDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
     <span class="xref-unresolved">Fieldslib</span>.Field.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lineage_shape"><a href="#val-lineage_shape" class="anchor"></a><code><span><span class="keyword">val</span> lineage_shape : 
   <span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LineageShape/Summary/index.html#type-t">Checkers.LineageShape.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
@@ -17,6 +17,9 @@
   <span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
     <span class="xref-unresolved">Fieldslib</span>.Field.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-lab_resource_leaks"><a href="#val-lab_resource_leaks" class="anchor"></a><code><span><span class="keyword">val</span> lab_resource_leaks : 
   <span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+    <span class="xref-unresolved">Fieldslib</span>.Field.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-static_constructor_stall_checker"><a href="#val-static_constructor_stall_checker" class="anchor"></a><code><span><span class="keyword">val</span> static_constructor_stall_checker : 
+  <span><span>(<a href="../index.html#type-t">t</a>,
+    <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
     <span class="xref-unresolved">Fieldslib</span>.Field.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-disjunctive_demo"><a href="#val-disjunctive_demo" class="anchor"></a><code><span><span class="keyword">val</span> disjunctive_demo : 
   <span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
     <span class="xref-unresolved">Fieldslib</span>.Field.t</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-cost"><a href="#val-cost" class="anchor"></a><code><span><span class="keyword">val</span> cost : 
@@ -67,56 +70,63 @@
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span class="type-var">'acc__7</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">lab_resource_leaks</span>:
+  <span><span class="label">static_constructor_stall_checker</span>:
     <span>(<span><span class="type-var">'acc__7</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      <span><span><span>(<a href="../index.html#type-t">t</a>,
+        <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+          option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span class="type-var">'acc__8</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">litho_required_props</span>:
+  <span><span class="label">lab_resource_leaks</span>:
     <span>(<span><span class="type-var">'acc__8</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span class="type-var">'acc__9</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">pulse</span>:
+  <span><span class="label">litho_required_props</span>:
     <span>(<span><span class="type-var">'acc__9</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span> <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span class="type-var">'acc__10</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">purity</span>:
+  <span><span class="label">pulse</span>:
     <span>(<span><span class="type-var">'acc__10</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span> <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__11</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">purity</span>:
+    <span>(<span><span class="type-var">'acc__11</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/PurityDomain/index.html#type-summary">Checkers.PurityDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__11</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__12</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">racerd</span>:
-    <span>(<span><span class="type-var">'acc__11</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__12</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Concurrency/RacerDDomain/index.html#type-summary">Concurrency.RacerDDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__12</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__13</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">scope_leakage</span>:
-    <span>(<span><span class="type-var">'acc__12</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__13</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/ScopeLeakage/Summary/index.html#type-t">Checkers.ScopeLeakage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__13</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__14</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">siof</span>:
-    <span>(<span><span class="type-var">'acc__13</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__14</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/SiofDomain/Summary/index.html#type-t">Checkers.SiofDomain.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__14</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__15</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lineage</span>:
-    <span>(<span><span class="type-var">'acc__14</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__15</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/Lineage/Summary/index.html#type-t">Checkers.Lineage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__15</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__16</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lineage_shape</span>:
-    <span>(<span><span class="type-var">'acc__15</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__16</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LineageShape/Summary/index.html#type-t">Checkers.LineageShape.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__16</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'acc__17</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">starvation</span>:
-    <span>(<span><span class="type-var">'acc__16</span> <span class="arrow">&#45;&gt;</span></span>
+    <span>(<span><span class="type-var">'acc__17</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Concurrency/StarvationDomain/index.html#type-summary">Concurrency.StarvationDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
         <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span class="type-var">'acc__17</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span class="type-var">'acc__17</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_creator"><a href="#val-make_creator" class="anchor"></a><code><span><span class="keyword">val</span> make_creator : 
+      <span class="type-var">'acc__18</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'acc__18</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_creator"><a href="#val-make_creator" class="anchor"></a><code><span><span class="keyword">val</span> make_creator : 
   <span><span class="label">annot_map</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/AnnotationReachabilityDomain/index.html#type-t">Checkers.AnnotationReachabilityDomain.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
@@ -166,77 +176,87 @@
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
       * <span class="type-var">'acc__7</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">lab_resource_leaks</span>:
-    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span class="type-var">'acc__7</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+        option</span>)</span>
       * <span class="type-var">'acc__8</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">litho_required_props</span>:
-    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+  <span><span class="label">lab_resource_leaks</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span class="type-var">'acc__8</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
       * <span class="type-var">'acc__9</span>)</span> <span class="arrow">&#45;&gt;</span></span>
-  <span><span class="label">pulse</span>:
-    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span> <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">litho_required_props</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span class="type-var">'acc__9</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      <span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
       * <span class="type-var">'acc__10</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">pulse</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span> <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__10</span> <span class="arrow">&#45;&gt;</span></span>
+      <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+      * <span class="type-var">'acc__11</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">purity</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/PurityDomain/index.html#type-summary">Checkers.PurityDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__10</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__11</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/PurityDomain/index.html#type-summary">Checkers.PurityDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__11</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__12</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">racerd</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Concurrency/RacerDDomain/index.html#type-summary">Concurrency.RacerDDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__11</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__12</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Concurrency/RacerDDomain/index.html#type-summary">Concurrency.RacerDDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__12</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__13</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">scope_leakage</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/ScopeLeakage/Summary/index.html#type-t">Checkers.ScopeLeakage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__12</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__13</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/ScopeLeakage/Summary/index.html#type-t">Checkers.ScopeLeakage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__13</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__14</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">siof</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/SiofDomain/Summary/index.html#type-t">Checkers.SiofDomain.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__13</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__14</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/SiofDomain/Summary/index.html#type-t">Checkers.SiofDomain.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__14</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__15</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lineage</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/Lineage/Summary/index.html#type-t">Checkers.Lineage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__14</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__15</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/Lineage/Summary/index.html#type-t">Checkers.Lineage.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__15</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__16</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lineage_shape</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/LineageShape/Summary/index.html#type-t">Checkers.LineageShape.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__15</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__16</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/LineageShape/Summary/index.html#type-t">Checkers.LineageShape.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__16</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__17</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">starvation</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Concurrency/StarvationDomain/index.html#type-summary">Concurrency.StarvationDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
-      <span><span class="type-var">'acc__16</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span class="type-var">'acc__17</span> <span class="arrow">&#45;&gt;</span></span>
       <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Concurrency/StarvationDomain/index.html#type-summary">Concurrency.StarvationDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
-      * <span class="type-var">'acc__17</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+      * <span class="type-var">'acc__18</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="type-var">'acc__0</span> <span class="arrow">&#45;&gt;</span></span>
-  <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span> <a href="../index.html#type-t">t</a>)</span> * <span class="type-var">'acc__17</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span>(<span><span class="type-var">'input__</span> <span class="arrow">&#45;&gt;</span></span> <a href="../index.html#type-t">t</a>)</span> * <span class="type-var">'acc__18</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
   <span><span class="label">annot_map</span>:<span><span><a href="../../../Checkers/AnnotationReachabilityDomain/index.html#type-t">Checkers.AnnotationReachabilityDomain.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">biabduction</span>:<span><span><a href="../../../Biabduction/BiabductionSummary/index.html#type-t">Biabduction.BiabductionSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">buffer_overrun_analysis</span>:
@@ -247,6 +267,8 @@
     <span><span><a href="../../../Costlib/ConfigImpactAnalysis/Summary/index.html#type-t">Costlib.ConfigImpactAnalysis.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">cost</span>:<span><span><a href="../../../Costlib/CostDomain/index.html#type-summary">Costlib.CostDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">disjunctive_demo</span>:<span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:<span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">litho_required_props</span>:<span><span><a href="../../../Checkers/LithoDomain/index.html#type-summary">Checkers.LithoDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">pulse</span>:<span><span><a href="../../../Pulselib/PulseSummary/index.html#type-t">Pulselib.PulseSummary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span> <span class="arrow">&#45;&gt;</span></span>
@@ -286,6 +308,13 @@
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+        option</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
@@ -352,6 +381,12 @@
       unit)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">disjunctive_demo</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      unit)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       unit)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:
@@ -422,6 +457,12 @@
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       bool)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      bool)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
@@ -490,6 +531,12 @@
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       bool)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      bool)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Labs/ResourceLeakDomain/index.html#type-summary">Labs.ResourceLeakDomain.summary</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
@@ -556,6 +603,12 @@
       <span class="type-var">'elem__</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">disjunctive_demo</span>:
     <span>(<span><span><span>(<a href="../index.html#type-t">t</a>, <span><span><a href="../../../Checkers/DisjunctiveDemo/index.html#type-domain">Checkers.DisjunctiveDemo.domain</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span> option</span>)</span>
+       <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'elem__</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">static_constructor_stall_checker</span>:
+    <span>(<span><span><span>(<a href="../index.html#type-t">t</a>,
+       <span><span><a href="../../../Checkers/StaticConstructorStallChecker/Summary/index.html#type-t">Checkers.StaticConstructorStallChecker.Summary.t</a> <span class="xref-unresolved">IStdlib</span>.IStd.Lazy.t</span>
+         option</span>)</span>
        <span class="xref-unresolved">Fieldslib</span>.Field.t</span> <span class="arrow">&#45;&gt;</span></span>
       <span class="type-var">'elem__</span>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span class="label">lab_resource_leaks</span>:

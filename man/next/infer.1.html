@@ -864,7 +864,7 @@ infer-reportdiff</b>(1). <b><br>
 --no-default-checkers</b></p>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
-<b>--dispatch-once-static-init</b>,
+<b>--static-constructor-stall-checker</b>,
 <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
 <b>--parameter-not-null-checked</b>, <b>--pulse</b>,
@@ -982,7 +982,6 @@ DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
-DISPATCH_ONCE_IN_STATIC_INIT (disabled by default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
@@ -1110,6 +1109,7 @@ SENSITIVE_DATA_FLOW (disabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
 STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
 STARVATION (enabled by default), <br>
+STATIC_CONSTRUCTOR_STALL (disabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
 STRICT_MODE_VIOLATION (enabled by default), <br>
@@ -1131,24 +1131,6 @@ VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
 Wrong_argument_number (enabled by default). <br>
 See also <b>infer-report</b>(1). <b><br>
---no-dispatch-once-static-init</b></p>
-
-<p style="margin-left:17%;">Deactivates:
-<i>dispatch-once-static-init</i> checker: Detect if
-dispatch_once is called from a static constructor.
-(Conversely: <b>--dispatch-once-static-init</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---dispatch-once-static-init-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable
-<i>dispatch-once-static-init</i> and disable all other
-checkers (Conversely:
-<b>--no-dispatch-once-static-init-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -3377,6 +3359,24 @@ is being made because of concurrency errors. (Conversely:
 <p style="margin-left:17%;">Activates: Enable
 <i>starvation</i> and disable all other checkers
 (Conversely: <b>--no-starvation-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-static-constructor-stall-checker</b></p>
+
+<p style="margin-left:17%;">Deactivates:
+<i>static-constructor-stall-checker</i> checker: Detect if
+dispatch_once is called from a static constructor.
+(Conversely: <b>--static-constructor-stall-checker</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--static-constructor-stall-checker-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>static-constructor-stall-checker</i> and disable all
+other checkers (Conversely:
+<b>--no-static-constructor-stall-checker-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
