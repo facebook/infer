@@ -33,7 +33,13 @@ module Visited = Stdlib.Set.Make (struct
 end)
 
 type join_state =
-  {subst: AbstractValue.t Subst.t; rev_subst: join_key RevSubst.t; visited: Visited.t}
+  { subst: AbstractValue.t Subst.t
+  ; rev_subst: join_key RevSubst.t
+        (** Record the provenance of each abstract value in the join state in terms of the two
+            joined states. This is used, e.g., when joining attributes. Other, more efficient
+            possibilities (that don't need to record this intermediate data) include handling
+            attributes as we go. *)
+  ; visited: Visited.t }
 
 let empty_join_state = {subst= Subst.empty; rev_subst= RevSubst.empty; visited= Visited.empty}
 
@@ -68,7 +74,8 @@ let join_values_hists join_state (v_lhs, hist_lhs) (v_rhs, hist_rhs) =
       (* [x↦v ⊔ x↦v = x↦v], use the fact that abstract values are unique even across disjuncts
          so their valuations can be shared, i.e. we can keep [v] as the representative in the
          joined state. *)
-      (join_state, v_lhs)
+      let rev_subst = RevSubst.add v_lhs (Some v_lhs, Some v_rhs) join_state.rev_subst in
+      ({join_state with rev_subst}, v_lhs)
     else
       (* [x↦v ⊔ x↦v' = x↦v''], [v''] fresh *)
       let v_join = AbstractValue.mk_fresh () in
@@ -124,9 +131,9 @@ let join_values_hists_opts join_state (astate_lhs, v_hist_lhs_opt) (astate_rhs, 
         join_values_hists_opts_aux join_state (astate_lhs, v_hist_lhs_opt)
           (astate_rhs, v_hist_rhs_opt)
       in
-      let join_state =
-        {join_state with subst= Subst.add subst_key (fst v_hist_join) join_state.subst}
-      in
+      let subst = Subst.add subst_key (fst v_hist_join) join_state.subst in
+      let rev_subst = RevSubst.add (fst v_hist_join) subst_key join_state.rev_subst in
+      let join_state = {join_state with subst; rev_subst} in
       (join_state, v_hist_join)
 
 
