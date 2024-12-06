@@ -10,10 +10,10 @@ Concurrent accesses to the same resource conflict in a way that can give incorre
 
 Issue types in this category:
 - [DEADLOCK](/docs/next/all-issue-types#deadlock)
-- [DISPATCH_ONCE_IN_STATIC_INIT](/docs/next/all-issue-types#dispatch_once_in_static_init)
 - [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
 - [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
 - [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)
+- [STATIC_CONSTRUCTOR_STALL](/docs/next/all-issue-types#static_constructor_stall)
 - [THREAD_SAFETY_VIOLATION](/docs/next/all-issue-types#thread_safety_violation)
 
 ## Logic error
@@ -69,7 +69,7 @@ Unnecessary (or blocking) computation is performed, potentially causing a perfor
 
 Issue types in this category:
 - [CHECKERS_ALLOCATES_MEMORY](/docs/next/all-issue-types#checkers_allocates_memory)
-- [CHECKERS_ANNOTATION_REACHABILITY_ERROR](/docs/next/all-issue-types#checkers_annotation_reachability_error)
+- [CHECKERS_CALLS_EXPENSIVE_METHOD](/docs/next/all-issue-types#checkers_calls_expensive_method)
 - [CONFIG_IMPACT](/docs/next/all-issue-types#config_impact)
 - [INEFFICIENT_KEYSET_ITERATOR](/docs/next/all-issue-types#inefficient_keyset_iterator)
 - [IPC_ON_UI_THREAD](/docs/next/all-issue-types#ipc_on_ui_thread)
@@ -160,8 +160,6 @@ Issue types in this category:
 - [SCOPE_LEAKAGE](/docs/next/all-issue-types#scope_leakage)
 - [SENSITIVE_DATA_FLOW](/docs/next/all-issue-types#sensitive_data_flow)
 - [TAINT_ERROR](/docs/next/all-issue-types#taint_error)
-- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
-- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)
 
 ## Ungated code
 
@@ -169,4 +167,13 @@ Code must be under a gating mechanism but isn't.
 
 Issue types in this category:
 - [CONFIG_IMPACT_STRICT](/docs/next/all-issue-types#config_impact_strict)
+
+## User defined property
+
+A user defined (custom) property is violated.
+
+Issue types in this category:
+- [CHECKERS_ANNOTATION_REACHABILITY_ERROR](/docs/next/all-issue-types#checkers_annotation_reachability_error)
+- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
+- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)
 

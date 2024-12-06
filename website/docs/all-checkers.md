@@ -37,11 +37,11 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 [Visit here for more information.](/docs/next/checker-cost)
 
-## dispatch-once in static init
+## Static Constructor Stall Checker
 
 Detect if dispatch_once is called from a static constructor.
 
-[Visit here for more information.](/docs/next/checker-dispatch-once-static-init)
+[Visit here for more information.](/docs/next/checker-static-constructor-stall-checker)
 
 ## Fragment Retains View
 

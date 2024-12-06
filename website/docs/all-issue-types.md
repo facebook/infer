@@ -359,13 +359,13 @@ class C implements I {
 
 ## CHECKERS_ANNOTATION_REACHABILITY_ERROR
 
-*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
+*Category: [User defined property](/docs/next/all-categories#user-defined-property). Reported as "Annotation Reachability Error" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with an annotation `@A` transitively calls a method annotated `@B` where the combination of annotations is forbidden (for example, `@UiThread` calling `@WorkerThread`).
 
 ## CHECKERS_CALLS_EXPENSIVE_METHOD
 
-*Reported as "Expensive Method Called" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Expensive Method Called" by [annotation-reachability](/docs/next/checker-annotation-reachability).*
 
 A method annotated with `@PerformanceCritical` transitively calls a method annotated `@Expensive`.
 
@@ -652,11 +652,6 @@ To suppress reports of deadlocks in a method `m()` use the
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
 
-## DISPATCH_ONCE_IN_STATIC_INIT
-
-*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "dispatch_once in static init" by [dispatch-once-static-init](/docs/next/checker-dispatch-once-static-init).*
-
-Calling dispatch_once during the static initialization of objects is risky, for example it could cause deadlocks, because other objects might not have been initialized yet.
 ## DIVIDE_BY_ZERO
 
 *Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).*
@@ -2867,6 +2862,11 @@ This instructs Infer to filter out any potentially blocking calls in `m()`
 due to a call to `m()`. You will need to set up your class path appropriately to
 include the JAR files in `infer/annotations` for this annotation to work.
 
+## STATIC_CONSTRUCTOR_STALL
+
+*Category: [Concurrency](/docs/next/all-categories#concurrency). Reported as "Static Constructor Stall" by [static-constructor-stall-checker](/docs/next/checker-static-constructor-stall-checker).*
+
+Calling certain methods, for instance dispatch_once, during the static initialization of objects is risky. It could cause deadlocks, because other objects might not have been initialized yet.
 ## STATIC_INITIALIZATION_ORDER_FIASCO
 
 *Category: [Memory error](/docs/next/all-categories#memory-error). Reported as "Static Initialization Order Fiasco" by [siof](/docs/next/checker-siof).*
@@ -3034,7 +3034,7 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 
 ## TOPL_ERROR
 
-*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error" by [topl](/docs/next/checker-topl).*
+*Category: [User defined property](/docs/next/all-categories#user-defined-property). Reported as "Topl Error" by [topl](/docs/next/checker-topl).*
 
 A violation of a Topl property (user-specified).
 There is an execution path in the code that drives a Topl property from a start state to an error state.
@@ -3045,7 +3045,7 @@ See [Topl](/docs/next/checker-topl#what-is-it) for an example
 
 ## TOPL_ERROR_LATENT
 
-*Category: [Sensitive data flow](/docs/next/all-categories#sensitive-data-flow). Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).*
+*Category: [User defined property](/docs/next/all-categories#user-defined-property). Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).*
 
 A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## USE_AFTER_DELETE

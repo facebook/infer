@@ -235,7 +235,7 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:11%;"><b>--no-default-checkers</b></p>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
-<b>--dispatch-once-static-init</b>,
+<b>--static-constructor-stall-checker</b>,
 <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
 <b>--parameter-not-null-checked</b>, <b>--pulse</b>,
@@ -260,22 +260,6 @@ all of the captured data should be analyzed, e.g.
 
 <p style="margin-left:17%;">Skip analyzing the variables in
 the dict-missing-key checker.</p>
-
-
-<p style="margin-left:11%;"><b>--no-dispatch-once-static-init</b></p>
-
-<p style="margin-left:17%;">Deactivates:
-<i>dispatch-once-static-init</i> checker: Detect if
-dispatch_once is called from a static constructor.
-(Conversely: <b>--dispatch-once-static-init</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--dispatch-once-static-init-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable
-<i>dispatch-once-static-init</i> and disable all other
-checkers (Conversely:
-<b>--no-dispatch-once-static-init-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--files-to-analyze-index</b>
@@ -770,6 +754,22 @@ is being made because of concurrency errors. (Conversely:
 <p style="margin-left:17%;">Activates: Enable
 <i>starvation</i> and disable all other checkers
 (Conversely: <b>--no-starvation-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-static-constructor-stall-checker</b></p>
+
+<p style="margin-left:17%;">Deactivates:
+<i>static-constructor-stall-checker</i> checker: Detect if
+dispatch_once is called from a static constructor.
+(Conversely: <b>--static-constructor-stall-checker</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--static-constructor-stall-checker-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>static-constructor-stall-checker</i> and disable all
+other checkers (Conversely:
+<b>--no-static-constructor-stall-checker-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--timeout</b>
 <i>float</i></p>
