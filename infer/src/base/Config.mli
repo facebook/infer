@@ -283,8 +283,6 @@ val command : InferCommand.t
 
 val compaction_if_heap_greater_equal_to_GB : int
 
-val compaction_minimum_interval_s : int
-
 val complete_capture_from : string option
 
 val compute_captured_context : bool

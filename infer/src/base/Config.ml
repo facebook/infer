@@ -1304,12 +1304,6 @@ and compaction_if_heap_greater_equal_to_GB =
      in Gigabytes. Defaults to 8"
 
 
-and compaction_minimum_interval_s =
-  CLOpt.mk_int ~long:"compaction-minimum-interval-s" ~default:0 ~meta:"int"
-    "An analysis worker will only trigger compaction if this amount of time (in seconds) has \
-     elapsed since last compaction. Defaults to 0"
-
-
 and compilation_database =
   CLOpt.mk_path_list ~long:"compilation-database"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -4093,8 +4087,6 @@ and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_r
 and classpath = !classpath
 
 and compaction_if_heap_greater_equal_to_GB = !compaction_if_heap_greater_equal_to_GB
-
-and compaction_minimum_interval_s = !compaction_minimum_interval_s
 
 and complete_capture_from = !complete_capture_from
 

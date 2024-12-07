@@ -13,11 +13,6 @@ module F = Format
 module L = Logging
 open TaskSchedulerTypes
 
-(** do a compaction only if a sufficient amount of time has passed since last compaction *)
-let compaction_minimum_interval_ns =
-  Int64.(of_int Config.compaction_minimum_interval_s * of_int 1000_000_000)
-
-
 (** do a compaction if heap size over this value *)
 let compaction_if_heap_greater_equal_to_words =
   (* we don't try hard to avoid overflow, apart from assuming that word size
@@ -25,26 +20,14 @@ let compaction_if_heap_greater_equal_to_words =
   Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * (1024 / Sys.word_size_in_bits)
 
 
-let do_compaction_if_needed =
-  let last_compaction_time = ref (Mtime_clock.counter ()) in
-  let time_since_last_compaction_is_over_threshold () =
-    let ns_since_last_compaction =
-      Mtime_clock.count !last_compaction_time |> Mtime.Span.to_uint64_ns
-    in
-    Int64.(ns_since_last_compaction >= compaction_minimum_interval_ns)
-  in
-  fun () ->
-    let stat = Stdlib.Gc.quick_stat () in
-    let heap_words = stat.Stdlib.Gc.heap_words in
-    if
-      heap_words >= compaction_if_heap_greater_equal_to_words
-      && time_since_last_compaction_is_over_threshold ()
-    then (
-      L.log_task "Triggering compaction, heap size= %d GB@\n"
-        (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
-      Gc.compact () ;
-      last_compaction_time := Mtime_clock.counter () )
-    else ()
+let do_compaction_if_needed () =
+  let stat = Stdlib.Gc.quick_stat () in
+  let heap_words = stat.Stdlib.Gc.heap_words in
+  if heap_words >= compaction_if_heap_greater_equal_to_words then (
+    L.log_task "Triggering compaction, heap size= %d GB@\n"
+      (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
+    Gc.compact () )
+  else ()
 
 
 let clear_caches () =

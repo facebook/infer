@@ -2657,10 +2657,6 @@ INTERNAL OPTIONS
            An analysis worker will trigger compaction if its heap size is
            equal or great to this value in Gigabytes. Defaults to 8
 
-       --compaction-minimum-interval-s int
-           An analysis worker will only trigger compaction if this amount of
-           time (in seconds) has elapsed since last compaction. Defaults to 0
-
        --compilation-database-escaped-reset
            Set --compilation-database-escaped to the empty list.
 
