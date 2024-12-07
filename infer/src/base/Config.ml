@@ -2226,6 +2226,12 @@ and modeled_expensive =
        performance critical checker." )
 
 
+and multicore =
+  CLOpt.mk_bool ~long:"multicore" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "[EXPERIMENTAL] uses multi-threading for analysis, currently partially or not implemented."
+
+
 and never_returning_null =
   let long = "never-returning-null" in
   ( long
@@ -4407,6 +4413,8 @@ and merge_report = RevList.to_list !merge_report
 and merge_summaries = RevList.to_list !merge_summaries
 
 and modeled_expensive = match modeled_expensive with k, r -> (k, !r)
+
+and multicore = !multicore
 
 and never_returning_null = match never_returning_null with k, r -> (k, !r)
 

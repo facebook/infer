@@ -561,6 +561,8 @@ val merge_summaries : string list
 
 val modeled_expensive : string * Yojson.Safe.t
 
+val multicore : bool [@@warning "-unused-value-declaration"]
+
 val never_returning_null : string * Yojson.Safe.t
 
 val noescaping_function_list : string list
