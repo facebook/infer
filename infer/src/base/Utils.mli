@@ -152,3 +152,7 @@ val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filena
 val is_term_dumb : unit -> bool
 (** Check if the terminal is "dumb" or otherwise has very limited functionality. For example, Emacs'
     eshell reports itself as a dumb terminal. *)
+
+val with_dls : 'a Domain.DLS.key -> f:('a -> 'a) -> unit
+[@@warning "-unused-value-declaration"]
+(** get value in domain local storage, pass to [f] and set to result *)

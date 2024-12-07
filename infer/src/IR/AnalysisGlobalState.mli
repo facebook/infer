@@ -10,10 +10,10 @@ open! IStd
 (** {2 Global state for the backend analyses}
 
     While global state should be kept under control at possible (so try to introduce as little of it
-    as possible!), it is sometimes too convenient to ignore. This module lets us do it safely, at
-    least until infer becomes multicore. In particular, global state is appropriately and safely
-    stashed away and restored when the analysis of a procedure is suspended to go analyze another
-    procedure with ondemand (see the {!Backend.Ondemand} module). *)
+    as possible!), it is sometimes too convenient to ignore. This module lets us do it safely. In
+    particular, global state (really, domain-local state) is appropriately and safely stashed away
+    and restored when the analysis of a procedure is suspended to go analyze another procedure with
+    ondemand (see the {!Backend.Ondemand} module). *)
 
 type t
 
