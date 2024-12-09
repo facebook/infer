@@ -1670,15 +1670,18 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
 
 let are_same_values_as_pre_formals proc_desc values astate =
   List.for_all2 (Procdesc.get_formals proc_desc) values ~f:(fun (mangled_name, _, _) v ->
-      let formal = Pvar.mk mangled_name (Procdesc.get_proc_name proc_desc) in
-      let formal_addr =
-        SafeStack.find_opt `Pre (Var.of_pvar formal) astate |> Option.value_exn |> ValueOrigin.value
-      in
-      let formal_v =
-        SafeMemory.find_edge_opt `Pre formal_addr Dereference astate
-        |> Option.value_exn |> fst |> downcast
-      in
-      AbstractValue.equal formal_v v )
+      if Language.curr_language_is Hack && Mangled.is_self mangled_name then true
+      else
+        let formal = Pvar.mk mangled_name (Procdesc.get_proc_name proc_desc) in
+        let formal_addr =
+          SafeStack.find_opt `Pre (Var.of_pvar formal) astate
+          |> Option.value_exn |> ValueOrigin.value
+        in
+        let formal_v =
+          SafeMemory.find_edge_opt `Pre formal_addr Dereference astate
+          |> Option.value_exn |> fst |> downcast
+        in
+        AbstractValue.equal formal_v v )
   |> function List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
 
 
