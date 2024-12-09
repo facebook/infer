@@ -7,7 +7,7 @@ digraph cfg {
 "getMyStructField:my_struct:#A(cla.268793c3bccfa457_2" [label="2: Exit A.getMyStructField:my_struct: \n  " color=yellow style=filled]
 	
 
-"getMyStructField:my_struct:#A(cla.268793c3bccfa457_3" [label="3:  Return Stmt \n   n$2=*&target:A* [line 28, column 10]\n  n$5=_fun_A.s(n$2:A*,&0$?%__sil_tmp__temp_return_n$4:my_struct*) assign_last [line 28, column 17]\n  n$6=*&0$?%__sil_tmp__temp_return_n$4.x:int [line 28, column 10]\n " shape="box"]
+"getMyStructField:my_struct:#A(cla.268793c3bccfa457_3" [label="3:  Return Stmt \n   n$2=*&target:A* [line 28, column 10]\n  n$5=_fun_A.s(n$2:A*,&0$?%__sil_tmp__temp_return_n$4:my_struct*) assign_last objc_getter_setter [line 28, column 17]\n  n$6=*&0$?%__sil_tmp__temp_return_n$4.x:int [line 28, column 10]\n " shape="box"]
 	
 
 	 "getMyStructField:my_struct:#A(cla.268793c3bccfa457_3" -> "getMyStructField:my_struct:#A(cla.268793c3bccfa457_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "getMyStructField:my_struct:#A(cla.268793c3bccfa457_4" -> "getMyStructField:my_struct:#A(cla.268793c3bccfa457_2" ;
-"getMyStructField:my_struct:#A(cla.268793c3bccfa457_5" [label="5:  Message Call: setS: \n   n$7=*&target:A* [line 27, column 3]\n  n$8=_fun_A.setS:(n$7:A*,&my_struct:my_struct) [line 27, column 10]\n " shape="box"]
+"getMyStructField:my_struct:#A(cla.268793c3bccfa457_5" [label="5:  Message Call: setS: \n   n$7=*&target:A* [line 27, column 3]\n  n$8=_fun_A.setS:(n$7:A*,&my_struct:my_struct) objc_getter_setter [line 27, column 10]\n " shape="box"]
 	
 
 	 "getMyStructField:my_struct:#A(cla.268793c3bccfa457_5" -> "getMyStructField:my_struct:#A(cla.268793c3bccfa457_3" ;
@@ -26,7 +26,7 @@ digraph cfg {
 "addTarget:#A(class A)#[instance].769d110b6edf5ce8_2" [label="2: Exit A.addTarget: \n  " color=yellow style=filled]
 	
 
-"addTarget:#A(class A)#[instance].769d110b6edf5ce8_3" [label="3:  Return Stmt \n   n$0=*&target:A* [line 23, column 10]\n  n$1=_fun_A.x(n$0:A*) [line 23, column 17]\n " shape="box"]
+"addTarget:#A(class A)#[instance].769d110b6edf5ce8_3" [label="3:  Return Stmt \n   n$0=*&target:A* [line 23, column 10]\n  n$1=_fun_A.x(n$0:A*) objc_getter_setter [line 23, column 17]\n " shape="box"]
 	
 
 	 "addTarget:#A(class A)#[instance].769d110b6edf5ce8_3" -> "addTarget:#A(class A)#[instance].769d110b6edf5ce8_4" ;

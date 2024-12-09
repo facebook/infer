@@ -38,6 +38,7 @@ type trans_state =
         (** the expression (usually of the form [Exp.Lvar pvar]) that the enclosing expression or
             statement is trying to initialize, if any *)
   ; opaque_exp: (Exp.t * Typ.t) option  (** needed for translating [OpaqueValueExpr] nodes *)
+  ; is_objc_getter_setter_call: bool
   ; is_fst_arg_objc_instance_method_call: bool
   ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option }
 

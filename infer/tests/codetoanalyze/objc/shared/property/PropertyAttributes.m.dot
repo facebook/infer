@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "test.098f6bcd4621d373_4" -> "test.098f6bcd4621d373_3" ;
-"test.098f6bcd4621d373_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA.setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
+"test.098f6bcd4621d373_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA.setLast_name:(n$3:PropertyA*,n$2:PropertyA*) objc_getter_setter [line 42, column 5]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373_5" -> "test.098f6bcd4621d373_4" ;

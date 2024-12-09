@@ -7,7 +7,7 @@ digraph cfg {
 "should_have_div0.f0a0c4e0ab301ca0_2" [label="2: Exit should_have_div0 \n  " color=yellow style=filled]
 	
 
-"should_have_div0.f0a0c4e0ab301ca0_3" [label="3:  Return Stmt \n   n$0=*&a:GetterExample* [line 15, column 15]\n  n$1=_fun_GetterExample.name(n$0:GetterExample*) [line 15, column 17]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0_3" [label="3:  Return Stmt \n   n$0=*&a:GetterExample* [line 15, column 15]\n  n$1=_fun_GetterExample.name(n$0:GetterExample*) objc_getter_setter [line 15, column 17]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0_3" -> "should_have_div0.f0a0c4e0ab301ca0_4" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0_4" -> "should_have_div0.f0a0c4e0ab301ca0_2" ;
-"should_have_div0.f0a0c4e0ab301ca0_5" [label="5:  Message Call: setName: \n   n$2=*&a:GetterExample* [line 14, column 3]\n  n$3=_fun_GetterExample.setName:(n$2:GetterExample*,5:int) [line 14, column 5]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0_5" [label="5:  Message Call: setName: \n   n$2=*&a:GetterExample* [line 14, column 3]\n  n$3=_fun_GetterExample.setName:(n$2:GetterExample*,5:int) objc_getter_setter [line 14, column 5]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0_5" -> "should_have_div0.f0a0c4e0ab301ca0_3" ;

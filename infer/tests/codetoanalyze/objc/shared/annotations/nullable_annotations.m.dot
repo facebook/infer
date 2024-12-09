@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "npe_property_nullable.ba4461b16b55481a_4" -> "npe_property_nullable.ba4461b16b55481a_2" ;
-"npe_property_nullable.ba4461b16b55481a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(child:Person*); [line 55, column 3]\n  n$7=*&person:Person* [line 55, column 19]\n  n$8=_fun_Person.child(n$7:Person*) [line 55, column 26]\n  *&child:Person*=n$8 [line 55, column 3]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(child:Person*); [line 55, column 3]\n  n$7=*&person:Person* [line 55, column 19]\n  n$8=_fun_Person.child(n$7:Person*) objc_getter_setter [line 55, column 26]\n  *&child:Person*=n$8 [line 55, column 3]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481a_5" -> "npe_property_nullable.ba4461b16b55481a_3" ;

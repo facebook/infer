@@ -94,7 +94,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_6" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_4" ;
-"array_trans#MyBlock#[instance].92a91a5a6c07d842_7" [label="7:  BinaryOperatorStmt: LT \n   n$12=*&idx:unsigned long [line 48, column 28]\n  n$13=*&objects:NSArray* [line 48, column 34]\n  n$14=_fun_NSArray.count(n$13:NSArray*) [line 48, column 42]\n " shape="box"]
+"array_trans#MyBlock#[instance].92a91a5a6c07d842_7" [label="7:  BinaryOperatorStmt: LT \n   n$12=*&idx:unsigned long [line 48, column 28]\n  n$13=*&objects:NSArray* [line 48, column 34]\n  n$14=_fun_NSArray.count(n$13:NSArray*) objc_getter_setter [line 48, column 42]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_7" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_8" ;
