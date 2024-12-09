@@ -10,7 +10,6 @@ INFER_OPTIONS = \
   --pulse-only --debug-exceptions --no-pulse-force-continue --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --inline-func-pointer-for-testing "mockptr_" \
   --report-suppress-errors DATA_FLOW_TO_SINK \
-  --report-suppress-errors MUTUAL_RECURSION_CYCLE \
   --report-suppress-errors SENSITIVE_DATA_FLOW \
   --pulse-taint-config ../.infertaintconfig \
   --pulse-taint-config taint/.infertaintconfig \

@@ -663,8 +663,8 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
       `UseCurrentSummary
 
 
-let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc callee_pname
-    ~actuals ~formals_opt astate =
+let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc
+    (call_flags : CallFlags.t) callee_pname ~actuals ~formals_opt astate =
   if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then (
     ( match formals_opt with
     | Some formals when List.length formals <> List.length actuals ->
@@ -673,6 +673,10 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
     | _ when Procname.is_hack_xinit callee_pname ->
         L.d_printfln "Suppressing recursive call report for non-user-visible function %a"
           Procname.pp callee_pname
+    | _ when call_flags.cf_is_objc_getter_setter ->
+        (* objc custom getters and setters generate recursive calls to themselves in the clang AST
+           that end up here too; discard any possible cycle coming from them *)
+        L.d_printfln "Suppressing recursive call to ObjC getter/setter %a" Procname.pp callee_pname
     | _ ->
         if
           AbductiveDomain.has_reachable_in_inner_pre_heap
@@ -894,8 +898,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
                        match exec_state with
                        | ContinueProgram astate ->
                            ContinueProgram
-                             (on_recursive_call analysis_data call_loc callee_pname ~actuals
-                                ~formals_opt astate )
+                             (on_recursive_call analysis_data call_loc call_flags callee_pname
+                                ~actuals ~formals_opt astate )
                        | exec_state ->
                            exec_state ) )
                 in
@@ -948,7 +952,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
       let astate =
         match no_summary with
         | MutualRecursionCycle ->
-            on_recursive_call analysis_data call_loc callee_pname ~actuals ~formals_opt astate
+            on_recursive_call analysis_data call_loc call_flags callee_pname ~actuals ~formals_opt
+              astate
         | AnalysisFailed | InBlockList | UnknownProcedure ->
             astate
       in

@@ -10,7 +10,6 @@ INFER_OPTIONS = \
   --pulse-only --debug-exceptions --no-pulse-force-continue \
   --pulse-taint-config .infertaintconfig --pulse-taint-skip-sources \
   --project-root $(TESTS_DIR) \
-  --report-suppress-errors MUTUAL_RECURSION_CYCLE \
 
 # test that the error messages are good; sort of mimicks what gets displayed on the console
 INFERPRINT_OPTIONS = --issues-tests-fields file,procedure,line,column,severity,bug_type,qualifier,suggestion --issues-tests
