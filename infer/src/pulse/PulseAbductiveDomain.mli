@@ -366,7 +366,7 @@ val finalize_all_hack_builders : t -> t
 
 val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
-val add_recursive_call : Location.t -> Procname.t -> t -> t
+val add_recursive_call : Location.t -> Procname.t -> AbstractValue.t list -> t -> t
 
 val add_recursive_calls : PulseMutualRecursion.Set.t -> t -> t
 

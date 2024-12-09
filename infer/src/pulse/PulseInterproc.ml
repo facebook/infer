@@ -965,6 +965,7 @@ let report_mutual_recursion_cycle
 
 let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) callee_proc_name
     call_loc actuals callee_summary call_state =
+  let actuals_values = List.map actuals ~f:(fun ((actual, _), _) -> actual) in
   if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
     L.d_printfln "Not recording recursive calls for Hack xinit caller function %a" Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
@@ -975,11 +976,7 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
     L.d_printfln "Not recording recursive calls for Hack xinit callee function %a" Procname.pp
       callee_proc_name ;
     call_state )
-  else if
-    AbductiveDomain.has_reachable_in_inner_pre_heap
-      (List.map actuals ~f:(fun ((actual, _), _) -> actual))
-      call_state.astate
-  then (
+  else if AbductiveDomain.has_reachable_in_inner_pre_heap actuals_values call_state.astate then (
     L.d_printfln
       "Not recording recursive calls for function %a since heap progress has been made to compute \
        actuals"
@@ -989,15 +986,22 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
     let callee_recursive_calls =
       PulseMutualRecursion.Set.filter_map
         (fun cycle ->
-          let cycle = PulseMutualRecursion.add_call callee_proc_name call_loc cycle in
-          if
-            Procname.equal
-              (PulseMutualRecursion.get_inner_call cycle)
-              (Procdesc.get_proc_name proc_desc)
-          then (
-            report_mutual_recursion_cycle analysis_data cycle ;
-            None )
-          else Some cycle )
+          match
+            PulseMutualRecursion.add_call
+              (raw_map_of_to_caller_subst call_state.subst)
+              callee_proc_name call_loc cycle
+          with
+          | None ->
+              None
+          | Some cycle ->
+              if
+                Procname.equal
+                  (PulseMutualRecursion.get_inner_call cycle)
+                  (Procdesc.get_proc_name proc_desc)
+              then (
+                report_mutual_recursion_cycle analysis_data cycle ;
+                None )
+              else Some cycle )
         (AbductiveDomain.Summary.get_recursive_calls callee_summary)
     in
     let astate = AbductiveDomain.add_recursive_calls callee_recursive_calls call_state.astate in

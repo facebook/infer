@@ -2237,8 +2237,8 @@ let add_missed_captures missed_captures ({transitive_info} as astate) =
   else astate
 
 
-let add_recursive_call location callee astate =
-  let trace = PulseMutualRecursion.mk location callee in
+let add_recursive_call location callee actuals astate =
+  let trace = PulseMutualRecursion.mk location callee actuals in
   let recursive_calls = PulseMutualRecursion.Set.add trace astate.recursive_calls in
   {astate with recursive_calls}
 

@@ -665,6 +665,7 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
 
 let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc
     (call_flags : CallFlags.t) callee_pname ~actuals ~formals_opt astate =
+  let actuals_values = List.map actuals ~f:(fun ((actual, _), _) -> actual) in
   if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then (
     ( match formals_opt with
     | Some formals when List.length formals <> List.length actuals ->
@@ -678,11 +679,7 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
            that end up here too; discard any possible cycle coming from them *)
         L.d_printfln "Suppressing recursive call to ObjC getter/setter %a" Procname.pp callee_pname
     | _ ->
-        if
-          AbductiveDomain.has_reachable_in_inner_pre_heap
-            (List.map actuals ~f:(fun ((actual, _), _) -> actual))
-            astate
-        then
+        if AbductiveDomain.has_reachable_in_inner_pre_heap actuals_values astate then
           L.d_printfln
             "heap progress made before recursive call to %a; unlikely to be an infinite recursion, \
              suppressing report"
@@ -690,7 +687,8 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
         else
           PulseReport.report analysis_data ~is_suppressed:false ~latent:false
             (MutualRecursionCycle
-               {cycle= PulseMutualRecursion.mk call_loc callee_pname; location= call_loc} ) ) ;
+               { cycle= PulseMutualRecursion.mk call_loc callee_pname actuals_values
+               ; location= call_loc } ) ) ;
     astate )
   else if
     AbductiveDomain.has_reachable_in_inner_pre_heap
@@ -702,7 +700,7 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
        recording the cycle"
       Procname.pp callee_pname ;
     astate )
-  else AbductiveDomain.add_recursive_call call_loc callee_pname astate
+  else AbductiveDomain.add_recursive_call call_loc callee_pname actuals_values astate
 
 
 let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_loc callee_pname
