@@ -198,7 +198,8 @@ type t =
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
-  | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
+  | MutualRecursionCycle of
+      {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t
@@ -254,9 +255,10 @@ let pp fmt diagnostic =
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
         type_name (Trace.pp ~pp_immediate) trace
-  | MutualRecursionCycle {cycle; location} ->
-      F.fprintf fmt "MutualRecursionCycle {@[cycle=%a;@;location=%a@]}" PulseMutualRecursion.pp
-        cycle Location.pp location
+  | MutualRecursionCycle {cycle; location; is_call_with_same_values} ->
+      F.fprintf fmt
+        "MutualRecursionCycle {@[cycle=%a;@;location=%a;@;is_call_with_same_values=%b@]}"
+        PulseMutualRecursion.pp cycle Location.pp location is_call_with_same_values
   | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
       F.fprintf fmt
         "ReadonlySharedPtrParameter {@[param=%a;@;typ=%a;@;location=%a;@;used_locations=%a@]}"
@@ -688,8 +690,8 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "Abstract class `%s` is being instantiated %a" (Typ.Name.name type_name) pp_trace
         trace
       |> no_suggestion
-  | MutualRecursionCycle {cycle} ->
-      PulseMutualRecursion.get_error_message cycle |> no_suggestion
+  | MutualRecursionCycle {cycle; is_call_with_same_values} ->
+      PulseMutualRecursion.get_error_message cycle ~is_call_with_same_values |> no_suggestion
   | ReadonlySharedPtrParameter {param; location; used_locations} ->
       let pp_used_locations f =
         match used_locations with
@@ -1147,8 +1149,8 @@ let get_trace = function
         ~pp_immediate:(fun fmt ->
           F.fprintf fmt "abstract class %s is instantiated here" (Typ.Name.name type_name) )
         trace []
-  | MutualRecursionCycle {cycle} ->
-      PulseMutualRecursion.to_errlog cycle
+  | MutualRecursionCycle {cycle; is_call_with_same_values} ->
+      PulseMutualRecursion.to_errlog cycle ~is_call_with_same_values
   | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
       let nesting = 0 in
       Errlog.make_trace_element nesting location (get_param_typ param typ) []
@@ -1269,8 +1271,9 @@ let get_issue_type ~latent issue_type =
       IssueType.no_true_branch_in_if ~latent
   | ErlangError (Try_clause _), _ ->
       IssueType.no_matching_branch_in_try ~latent
-  | MutualRecursionCycle _, _ ->
-      IssueType.mutual_recursion_cycle
+  | MutualRecursionCycle {is_call_with_same_values}, _ ->
+      if is_call_with_same_values then IssueType.infinite_recursion
+      else IssueType.mutual_recursion_cycle
   | ReadonlySharedPtrParameter _, false ->
       IssueType.readonly_shared_ptr_param
   | ReadUninitialized {typ= Value}, _ ->

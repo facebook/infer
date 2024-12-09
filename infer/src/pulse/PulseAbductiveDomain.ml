@@ -672,6 +672,14 @@ module Internal = struct
   module SafeMemory = struct
     module Access = BaseMemory.Access
 
+    let select pre_or_post astate =
+      match pre_or_post with
+      | `Pre ->
+          (astate.pre :> base_domain).heap
+      | `Post ->
+          (astate.post :> base_domain).heap
+
+
     (** [astate] with [astate.post.heap = f astate.post.heap] *)
     let map_post_heap ~f astate =
       let new_post = PostDomain.update astate.post ~heap:(f (astate.post :> base_domain).heap) in
@@ -686,15 +694,15 @@ module Internal = struct
                 (WrittenTo (timestamp, Trace.Immediate {location; history})) )
 
 
-    let find_edge_opt address access astate =
+    let find_edge_opt pre_or_post address access astate =
       let get_var_repr v = Formula.get_var_repr astate.path_condition v in
-      BaseMemory.find_edge_opt ~get_var_repr address access (astate.post :> base_domain).heap
+      BaseMemory.find_edge_opt ~get_var_repr address access (select pre_or_post astate)
       |> CanonValue.canon_opt_fst astate
 
 
     let eval_edge (addr_src, hist_src) access astate =
       let astate, addr_hist_dst =
-        match find_edge_opt addr_src access astate with
+        match find_edge_opt `Post addr_src access astate with
         | Some addr_hist_dst ->
             (astate, addr_hist_dst)
         | None ->
@@ -751,13 +759,7 @@ module Internal = struct
 
 
     let fold_edges pre_or_post address astate ~init ~f =
-      let heap =
-        match pre_or_post with
-        | `Pre ->
-            (astate.pre :> base_domain).heap
-        | `Post ->
-            (astate.post :> base_domain).heap
-      in
+      let heap = select pre_or_post astate in
       SafeBaseMemory.fold_edges astate address heap ~init ~f
 
 
@@ -1666,6 +1668,20 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   update_pre_for_kotlin_proc astate proc_attrs formals
 
 
+let are_same_values_as_pre_formals proc_desc values astate =
+  List.for_all2 (Procdesc.get_formals proc_desc) values ~f:(fun (mangled_name, _, _) v ->
+      let formal = Pvar.mk mangled_name (Procdesc.get_proc_name proc_desc) in
+      let formal_addr =
+        SafeStack.find_opt `Pre (Var.of_pvar formal) astate |> Option.value_exn |> ValueOrigin.value
+      in
+      let formal_v =
+        SafeMemory.find_edge_opt `Pre formal_addr Dereference astate
+        |> Option.value_exn |> fst |> downcast
+      in
+      AbstractValue.equal formal_v v )
+  |> function List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
+
+
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
   || SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
@@ -2280,7 +2296,9 @@ let is_allocated_this_pointer proc_attrs astate address =
      let* this_pointer_address =
        SafeStack.find_opt `Post (Var.of_pvar this) astate >>| ValueOrigin.value
      in
-     let+ this_pointer, _ = SafeMemory.find_edge_opt this_pointer_address Dereference astate in
+     let+ this_pointer, _ =
+       SafeMemory.find_edge_opt `Post this_pointer_address Dereference astate
+     in
      CanonValue.equal this_pointer address )
 
 
@@ -2411,7 +2429,7 @@ module Memory = struct
 
 
   let find_edge_opt address access astate =
-    SafeMemory.find_edge_opt
+    SafeMemory.find_edge_opt `Post
       (CanonValue.canon' astate address)
       (CanonValue.canon_access astate access)
       astate

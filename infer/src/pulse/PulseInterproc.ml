@@ -938,7 +938,8 @@ let apply_post_from_callee_post path callee_proc_name call_location callee_summa
 
 
 let report_mutual_recursion_cycle
-    ({InterproceduralAnalysis.add_errlog; proc_desc; err_log} as analysis_data) cycle =
+    ({InterproceduralAnalysis.add_errlog; proc_desc; err_log} as analysis_data) cycle
+    ~is_call_with_same_values =
   let proc_name = Procdesc.get_proc_name proc_desc in
   PulseMutualRecursion.iter_rotations cycle ~f:(fun cycle ->
       let inner_call = PulseMutualRecursion.get_inner_call cycle in
@@ -959,7 +960,7 @@ let report_mutual_recursion_cycle
           L.d_printfln "reporting on procedure %a (foreign=%b) at %a" Procname.pp inner_call
             is_foreign_procedure Location.pp_file_pos location ;
           PulseReport.report report_analysis_data ~is_suppressed:false ~latent:false
-            (MutualRecursionCycle {cycle; location}) ;
+            (MutualRecursionCycle {cycle; location; is_call_with_same_values}) ;
           if is_foreign_procedure then add_errlog inner_call err_log )
 
 
@@ -999,7 +1000,11 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
                   (PulseMutualRecursion.get_inner_call cycle)
                   (Procdesc.get_proc_name proc_desc)
               then (
-                report_mutual_recursion_cycle analysis_data cycle ;
+                let is_call_with_same_values =
+                  AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_values
+                    call_state.astate
+                in
+                report_mutual_recursion_cycle ~is_call_with_same_values analysis_data cycle ;
                 None )
               else Some cycle )
         (AbductiveDomain.Summary.get_recursive_calls callee_summary)

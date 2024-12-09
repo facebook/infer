@@ -36,8 +36,8 @@ val iter_rotations : t -> f:(t -> unit) -> unit
 
 val pp : F.formatter -> t -> unit
 
-val get_error_message : t -> string
+val get_error_message : t -> is_call_with_same_values:bool -> string
 
-val to_errlog : t -> Errlog.loc_trace
+val to_errlog : t -> is_call_with_same_values:bool -> Errlog.loc_trace
 
 module Set : PrettyPrintable.PPSet with type elt = t

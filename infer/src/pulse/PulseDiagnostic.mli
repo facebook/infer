@@ -89,7 +89,8 @@ type t =
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
-  | MutualRecursionCycle of {cycle: PulseMutualRecursion.t; location: Location.t}
+  | MutualRecursionCycle of
+      {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitialized of ReadUninitialized.t

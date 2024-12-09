@@ -168,6 +168,7 @@ OPTIONS
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
+             INFINITE_RECURSION (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INTEGER_OVERFLOW_L1 (enabled by default),
              INTEGER_OVERFLOW_L2 (enabled by default),

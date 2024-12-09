@@ -685,10 +685,14 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
              suppressing report"
             Procname.pp callee_pname
         else
+          let is_call_with_same_values =
+            AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_values astate
+          in
           PulseReport.report analysis_data ~is_suppressed:false ~latent:false
             (MutualRecursionCycle
                { cycle= PulseMutualRecursion.mk call_loc callee_pname actuals_values
-               ; location= call_loc } ) ) ;
+               ; location= call_loc
+               ; is_call_with_same_values } ) ) ;
     astate )
   else if
     AbductiveDomain.has_reachable_in_inner_pre_heap

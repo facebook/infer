@@ -79,6 +79,8 @@ val pp : Format.formatter -> t -> unit
 
 val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
+val are_same_values_as_pre_formals : Procdesc.t -> AbstractValue.t list -> t -> bool
+
 val mk_join_state :
      pre:PulseBaseStack.t * PulseBaseMemory.t * PulseBaseAddressAttributes.t
   -> post:PulseBaseStack.t * PulseBaseMemory.t * PulseBaseAddressAttributes.t

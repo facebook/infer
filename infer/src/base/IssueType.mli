@@ -215,6 +215,8 @@ val inferbo_alloc_may_be_negative : t
 
 val infinite_cost_call : kind:CostKind.t -> t
 
+val infinite_recursion : t
+
 val inherently_dangerous_function : t
 
 val integer_overflow_l1 : t

@@ -52,7 +52,7 @@ let pp fmt cycle =
   pp_chain fmt cycle.chain
 
 
-let get_error_message cycle =
+let get_error_message cycle ~is_call_with_same_values =
   let pp_cycle fmt cycle =
     match cycle.chain with
     | [] ->
@@ -61,9 +61,11 @@ let get_error_message cycle =
         F.fprintf fmt "mutual recursion cycle: %a -> %a" CallEvent.pp
           (CallEvent.Call cycle.innermost.call.proc_name) pp cycle
   in
-  F.asprintf
-    "%a; make sure this is intentional and cannot lead to non-termination or stack overflow"
-    pp_cycle cycle
+  F.asprintf "%a; %s" pp_cycle cycle
+    ( if is_call_with_same_values then
+        "moreover, the same values are passed along the cycle so there is a high chance of an \
+         infinite recursion"
+      else "make sure this is intentional and cannot lead to non-termination or stack overflow" )
 
 
 let iter_rotations cycle ~f =
@@ -86,12 +88,13 @@ let iter_rotations cycle ~f =
   done
 
 
-let to_errlog cycle =
+let to_errlog cycle ~is_call_with_same_values =
   let rec chain_to_errlog prev_call = function
     | [] ->
         Errlog.make_trace_element 0 cycle.innermost.call.location
-          (F.asprintf "%a makes a recursive call to %a" CallEvent.pp (CallEvent.Call prev_call)
-             CallEvent.pp (CallEvent.Call cycle.innermost.call.proc_name) )
+          (F.asprintf "%a makes a recursive call to %a%s" CallEvent.pp (CallEvent.Call prev_call)
+             CallEvent.pp (CallEvent.Call cycle.innermost.call.proc_name)
+             (if is_call_with_same_values then " with the same argument values" else "") )
           []
         :: []
     | call :: chain ->

@@ -42,6 +42,10 @@ class Node {
   public function infinite_bad(Node $something, Node $other): int {
     return $this->infinite_bad($other, $something);
   }
+
+  public function infinite_same_args_bad(Node $something, Node $other): int {
+    return $this->infinite_same_args_bad($something, $other);
+  }
 }
 
 class A {
