@@ -231,7 +231,7 @@ let test_with_all_types_Nil phi =
       test_with_initial phi init_phi
 
 
-let () = Language.curr_language := Language.Erlang
+let () = Language.set_language Language.Erlang
 
 let simplify ~keep phi =
   let keep = AbstractValue.Set.of_list keep in

@@ -623,7 +623,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp =
-        match !Language.curr_language with
+        match Language.get_language () with
         | Clang ->
             Exp.Sizeof
               {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= true}
@@ -841,7 +841,7 @@ let perform_analysis_phase ({InterproceduralAnalysis.proc_desc; err_log; tenv} a
 
 let set_current_language proc_desc =
   let language = Procname.get_language (Procdesc.get_proc_name proc_desc) in
-  Language.curr_language := language
+  Language.set_language language
 
 
 (** reset global values before analysing a procedure *)

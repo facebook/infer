@@ -13,6 +13,8 @@ val equal : t -> t -> bool
 
 val to_string : t -> string
 
-val curr_language : t ref
-
 val curr_language_is : t -> bool
+
+val get_language : unit -> t
+
+val set_language : t -> unit

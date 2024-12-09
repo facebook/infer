@@ -1628,7 +1628,7 @@ and proc_call callee_pname callee_summary
   let actuals = comb actual_pars formal_types in
   (* In case we call an objc instance method we add an extra spec
      where the receiver is null and the semantics of the call is nop *)
-  match (!Language.curr_language, callee_attributes.ProcAttributes.clang_method_kind) with
+  match (Language.get_language (), callee_attributes.ProcAttributes.clang_method_kind) with
   | Language.Clang, ClangMethodKind.OBJC_INSTANCE ->
       handle_objc_instance_method_call actual_pars pre tenv (fst ret_id_typ) caller_pdesc
         callee_pname path (fun () ->

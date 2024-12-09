@@ -318,20 +318,21 @@ module Liveness = struct
           astate
 
 
-    let cache_node = ref (Procdesc.Node.dummy (Procname.from_string_c_fun ""))
-
-    let cache_instr = ref Sil.skip_instr
-
-    let last_instr_in_node node =
-      let get_last_instr () =
-        CFG.instrs node |> Instrs.last |> Option.value ~default:Sil.skip_instr
+    let last_instr_in_node =
+      let cache_node =
+        Stdlib.Domain.DLS.new_key (fun () -> Procdesc.Node.dummy (Procname.from_string_c_fun ""))
       in
-      if phys_equal node !cache_node then !cache_instr
-      else
-        let last_instr = get_last_instr () in
-        cache_node := node ;
-        cache_instr := last_instr ;
-        last_instr
+      let cache_instr = Stdlib.Domain.DLS.new_key (fun () -> Sil.skip_instr) in
+      fun node ->
+        let get_last_instr () =
+          CFG.instrs node |> Instrs.last |> Option.value ~default:Sil.skip_instr
+        in
+        if phys_equal node (Stdlib.Domain.DLS.get cache_node) then Stdlib.Domain.DLS.get cache_instr
+        else
+          let last_instr = get_last_instr () in
+          Stdlib.Domain.DLS.set cache_node node ;
+          Stdlib.Domain.DLS.set cache_instr last_instr ;
+          last_instr
 
 
     let is_last_instr_in_node instr node = phys_equal (last_instr_in_node node) instr

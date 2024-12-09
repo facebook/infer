@@ -1963,7 +1963,7 @@ let filter_for_summary proc_name location astate0 =
 
 
 let should_havoc_if_unknown () =
-  match !Language.curr_language with
+  match Language.get_language () with
   | Java
     (* TODO(T138610370): temporary until we improve the way taint propagates for unknown calls *)
   | Hack

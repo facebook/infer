@@ -52,7 +52,7 @@ let normalise_access_list (accesses : access_list) =
 
 let pp_with_base pp_base fmt (base, accesses) =
   let rec pp_rev_accesses fmt (accesses : access_list) =
-    match (accesses, !Language.curr_language) with
+    match (accesses, Language.get_language ()) with
     | _, Erlang ->
         L.internal_error "Erlang not supported@\n"
     | _, Hack ->
@@ -65,7 +65,7 @@ let pp_with_base pp_base fmt (base, accesses) =
         F.fprintf fmt "%a[]" pp_rev_accesses rest
     | FieldAccess field_name :: Dereference :: rest, _ ->
         let op =
-          match !Language.curr_language with
+          match Language.get_language () with
           | Clang ->
               "->"
           | Java ->

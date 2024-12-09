@@ -28,7 +28,7 @@ let apply_to_first_actual actuals astate ~f =
 
 
 let pp_exp fmt exp =
-  match !Language.curr_language with
+  match Language.get_language () with
   | Clang ->
       AccessExpression.pp fmt exp
   | Java ->

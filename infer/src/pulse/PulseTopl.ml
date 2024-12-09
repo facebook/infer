@@ -536,16 +536,16 @@ let get env x =
 let set = List.Assoc.add ~equal:String.equal
 
 let make_field class_name field_name : Fieldname.t =
-  match !Language.curr_language with
+  match Language.get_language () with
   | Erlang -> (
     match ErlangTypeName.from_string class_name with
     | None ->
         L.die UserError "Unknown/unsupported Erlang type %s" class_name
     | Some typ ->
         Fieldname.make (ErlangType typ) field_name )
-  | _ ->
+  | lang ->
       L.die InternalError "Field access is not supported for current language (%s)"
-        (Language.to_string !Language.curr_language)
+        (Language.to_string lang)
 
 
 let deref_field_access pulse_state value class_name field_name : Formula.operand option =

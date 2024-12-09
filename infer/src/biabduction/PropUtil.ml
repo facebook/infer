@@ -140,7 +140,7 @@ let remove_abduced_retvars tenv p =
 let remove_locals tenv (curr_f : Procdesc.t) p =
   let names_of_locals = List.map ~f:(get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
   let names_of_locals' =
-    match !Language.curr_language with
+    match Language.get_language () with
     | Language.Clang ->
         (* in ObjC to deal with block we need to remove static locals *)
         let names_of_static_locals = get_name_of_objc_static_locals curr_f p in

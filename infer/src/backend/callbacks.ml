@@ -57,7 +57,7 @@ let register_file_callback checker language (callback : file_callback_t) =
 let iterate_procedure_callbacks exe_env analysis_req ?specialization
     ({Summary.proc_name} as summary) proc_desc =
   let procedure_language = Procname.get_language proc_name in
-  Language.curr_language := procedure_language ;
+  Language.set_language procedure_language ;
   let is_specialized = Procdesc.is_specialized proc_desc in
   let is_requested =
     let is_dependency_of checker =
@@ -115,7 +115,7 @@ let iterate_file_callbacks_and_store_issues procedures exe_env source_file =
     in
     List.iter (List.rev !file_callbacks_rev) ~f:(fun {checker; language; callback} ->
         if language_matches language then (
-          Language.curr_language := language ;
+          Language.set_language language ;
           if not (IssueLog.is_stored ~checker ~file:source_file) then
             let issue_log = callback environment in
             IssueLog.store ~checker ~file:source_file issue_log ) )

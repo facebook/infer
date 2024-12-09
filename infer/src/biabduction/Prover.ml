@@ -2234,7 +2234,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     let root = Exp.Const (Const.Cstr s) in
     let sexp =
       let index = Exp.int (IntLit.of_int (String.length s)) in
-      match !Language.curr_language with
+      match Language.get_language () with
       | Clang ->
           Predicates.Earray
             ( Exp.int len
@@ -2270,7 +2270,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
           L.die InternalError "Python not supported"
     in
     let const_string_texp =
-      match !Language.curr_language with
+      match Language.get_language () with
       | Clang ->
           Exp.Sizeof
             { typ= Typ.mk_array (Typ.mk (Tint Typ.IChar)) ~length:len ~stride:(IntLit.of_int 1)

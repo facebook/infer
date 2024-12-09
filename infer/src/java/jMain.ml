@@ -11,7 +11,7 @@ open Javalib_pack
 module L = Logging
 
 let init_global_state source_file =
-  Language.curr_language := Language.Java ;
+  Language.set_language Java ;
   DB.Results_dir.init source_file ;
   Ident.NameGenerator.reset () ;
   JContext.reset_exn_node_table ()
