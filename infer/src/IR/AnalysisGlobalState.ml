@@ -38,6 +38,19 @@ let register_ref ~init ref_ =
   register_ref_with_proc_desc_and_tenv ref_ ~init:(fun _proc_desc _tenv -> init ())
 
 
+let register_dls_with_proc_desc_and_tenv ~init key =
+  stores :=
+    StateManager
+      { save= (fun () -> Domain.DLS.get key)
+      ; restore= (fun x -> Domain.DLS.set key x)
+      ; init= (fun proc_desc tenv -> Domain.DLS.set key (init proc_desc tenv)) }
+    :: !stores
+
+
+let register_dls ~init key =
+  register_dls_with_proc_desc_and_tenv key ~init:(fun _proc_desc _tenv -> init ())
+
+
 (** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save] *)
 type saved_state = Saved : 'a * ('a -> unit) -> saved_state
 

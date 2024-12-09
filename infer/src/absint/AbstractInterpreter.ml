@@ -187,17 +187,18 @@ module DisjunctiveMetadata = struct
      of metadata since otherwise we would need to carry the metadata around the analysis while being
      careful to avoid double-counting. With a reference this is simpler to achieve as we can simply
      update it whenever a relevant action is taken (eg dropping a disjunct). *)
-  let proc_metadata = ref empty
+  let proc_metadata = Domain.DLS.new_key (fun () -> empty)
 
-  let () = AnalysisGlobalState.register_ref ~init:(fun () -> empty) proc_metadata
+  let () = AnalysisGlobalState.register_dls ~init:(fun () -> empty) proc_metadata
 
   let add_dropped_disjuncts dropped_disjuncts =
-    proc_metadata :=
-      {!proc_metadata with dropped_disjuncts= !proc_metadata.dropped_disjuncts + dropped_disjuncts}
+    Utils.with_dls proc_metadata ~f:(fun proc_metadata ->
+        {proc_metadata with dropped_disjuncts= proc_metadata.dropped_disjuncts + dropped_disjuncts} )
 
 
   let incr_interrupted_loops () =
-    proc_metadata := {!proc_metadata with interrupted_loops= !proc_metadata.interrupted_loops + 1}
+    Utils.with_dls proc_metadata ~f:(fun proc_metadata ->
+        {proc_metadata with interrupted_loops= proc_metadata.interrupted_loops + 1} )
 
 
   let record_cfg_stats {dropped_disjuncts; interrupted_loops} =
@@ -567,7 +568,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
 
   (** reference to log errors only at the innermost recursive call *)
-  let logged_error = ref false
+  let logged_error = Stdlib.Domain.DLS.new_key (fun () -> false)
 
   let dump_html f pre post_result =
     let pp_post_error f (exn, _, instr) =
@@ -616,7 +617,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
               let post = TransferFunctions.exec_instr pre proc_data node idx instr in
               Timer.check_timeout () ;
               (* don't forget to reset this so we output messages for future errors too *)
-              logged_error := false ;
+              Stdlib.Domain.DLS.set logged_error false ;
               Ok post
             with exn ->
               (* delay reraising to get a chance to write the debug HTML *)
@@ -635,11 +636,11 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
               (* this isn't an error; don't log it *)
               ()
           | _ ->
-              if not !logged_error then (
+              if not (Stdlib.Domain.DLS.get logged_error) then (
                 L.internal_error "In instruction %a@\n"
                   (Sil.pp_instr ~print_types:true Pp.text)
                   instr ;
-                logged_error := true ) ) ;
+                Stdlib.Domain.DLS.set logged_error true ) ) ;
           Stdlib.Printexc.raise_with_backtrace exn backtrace
     in
     (* hack to ensure that we call [exec_instr] on a node even if it has no instructions *)
@@ -936,7 +937,7 @@ struct
   include MakeWTONode (DisjunctiveTransferFunctions)
 
   let get_cfg_metadata () =
-    let metadata = !DisjunctiveMetadata.proc_metadata in
+    let metadata = Stdlib.Domain.DLS.get DisjunctiveMetadata.proc_metadata in
     DisjunctiveMetadata.record_cfg_stats metadata ;
     metadata
 end

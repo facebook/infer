@@ -156,7 +156,7 @@ let from_summaries () =
       edges_to_ignore := Procname.Map.add proc_name recursion_edges !edges_to_ignore ;
       CallGraph.create_node graph proc_name summary_loads ) ;
   if Config.debug_level_analysis > 0 then CallGraph.to_dotty graph AnalysisDependencyGraphDot ;
-  Ondemand.edges_to_ignore := Some !edges_to_ignore ;
+  Domain.DLS.set Ondemand.edges_to_ignore (Some !edges_to_ignore) ;
   graph
 
 
@@ -276,7 +276,7 @@ module Serialized = struct
         in
         edges_to_ignore := Procname.Map.add proc_name recursion_edges !edges_to_ignore )
       pre_call_graph ;
-    Ondemand.edges_to_ignore := Some !edges_to_ignore ;
+    Domain.DLS.set Ondemand.edges_to_ignore (Some !edges_to_ignore) ;
     call_graph
 
 

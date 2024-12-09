@@ -89,12 +89,12 @@ end
     the previous analysis scheduling are recorded in this variable
 
     TODO: [edges_to_ignore] should take specialization into account, like [is_active] *)
-let edges_to_ignore = ref None
+let edges_to_ignore = Domain.DLS.new_key (fun () -> None)
 
 (** use either [is_active] or [edges_to_ignore] to determine if we should return an empty summary to
     avoid mutual recursion cycles *)
 let detect_mutual_recursion_cycle ~caller_summary ~callee specialization =
-  match (!edges_to_ignore, caller_summary) with
+  match (Domain.DLS.get edges_to_ignore, caller_summary) with
   | Some edges_to_ignore, Some {Summary.proc_name} ->
       let is_replay_recursive_callee =
         Procname.Map.find_opt proc_name edges_to_ignore
@@ -227,13 +227,14 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     decr nesting ;
     (* copy the previous recursion edges over to the new summary if doing a replay analysis so that
        subsequent replay analyses can pick them up too *)
-    Option.iter !edges_to_ignore ~f:(fun edges_to_ignore ->
-        Procname.Map.find_opt callee_pname edges_to_ignore
-        |> Option.iter ~f:(fun recursive_callees ->
-               Procname.Set.iter
-                 (fun callee ->
-                   Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
-                 recursive_callees ) ) ;
+    Domain.DLS.get edges_to_ignore
+    |> Option.iter ~f:(fun edges_to_ignore ->
+           Procname.Map.find_opt callee_pname edges_to_ignore
+           |> Option.iter ~f:(fun recursive_callees ->
+                  Procname.Set.iter
+                    (fun callee ->
+                      Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
+                    recursive_callees ) ) ;
     let summary = Summary.OnDisk.store analysis_req summary in
     ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     if Option.is_some specialization then Stats.incr_summary_specializations () ;

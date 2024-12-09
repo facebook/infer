@@ -37,7 +37,7 @@ let clear_caches () =
   Dependencies.clear ()
 
 
-let useful_time = ref ExecutionDuration.zero
+let useful_time = Domain.DLS.new_key (fun () -> ExecutionDuration.zero)
 
 let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) Tasks.doer =
   let run_and_interpret_result ~f =
@@ -78,7 +78,8 @@ let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_res
        release memory before potentially going idle *)
     clear_caches () ;
     do_compaction_if_needed () ;
-    useful_time := ExecutionDuration.add_duration_since !useful_time start ;
+    Utils.with_dls useful_time ~f:(fun useful_time ->
+        ExecutionDuration.add_duration_since useful_time start ) ;
     result
 
 
@@ -184,7 +185,7 @@ let analyze replay_call_graph source_files_to_analyze =
     let build_tasks_generator () =
       (* USELESS HACK: this is called only in the orchestrator, which doesn't need to do any
          analysis itself so we can unset this ref to save minute amount of memory *)
-      Ondemand.edges_to_ignore := None ;
+      Domain.DLS.set Ondemand.edges_to_ignore None ;
       tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze)
     in
     (* Prepare tasks one file at a time while executing in parallel *)
@@ -228,7 +229,7 @@ let analyze replay_call_graph source_files_to_analyze =
               L.internal_error
                 "Child did not start the process times counter in its prologue, what happened?"
         in
-        Stats.set_useful_times !useful_time ;
+        Stats.set_useful_times (Domain.DLS.get useful_time) ;
         (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
       ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
