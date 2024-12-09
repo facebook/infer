@@ -35,8 +35,6 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
 val string_of_scheduler : scheduler -> string
 
-type python_globals = OwnByClosures | OwnByModule [@@deriving equal]
-
 val build_system_of_exe_name : string -> build_system
 
 val string_of_build_system : build_system -> string
@@ -754,8 +752,6 @@ val pyc_file : string list
 val python_files_index : string option
 
 val python_skip_db : bool
-
-val python_globals : python_globals
 
 val qualified_cpp_name_block_list : string list
 

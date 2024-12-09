@@ -197,11 +197,7 @@ let rec of_exp exp : Textual.Exp.t =
     ->
       let proc = mk_qualified_proc_name (RegularFunction qual_name) in
       let closure =
-        match Config.python_globals with
-        | OwnByClosures ->
-            Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
-        | OwnByModule ->
-            Textual.Exp.Closure {proc; captured= []; params= [Parameter.globals; Parameter.locals]}
+        Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
       in
       call_builtin str_py_make_function
         ( closure
@@ -367,10 +363,6 @@ let builtin_name builtin =
       "py_get_previous_exception"
 
 
-let builtin_needs_globals_as_argument builtin =
-  match (builtin : BuiltinCaller.t) with BuildClass -> true | _ -> false
-
-
 let str_py_store_name = "py_store_name"
 
 let of_stmt loc stmt : Textual.Instr.t =
@@ -410,21 +402,18 @@ let of_stmt loc stmt : Textual.Instr.t =
         ; exp= call_builtin "py_store_subscript" [of_exp lhs; of_exp index; of_exp rhs]
         ; loc }
   | Call {lhs; exp; args; arg_names} ->
-      let args = of_exp exp :: exp_globals :: of_exp arg_names :: List.map ~f:of_exp args in
+      let args = of_exp exp :: of_exp arg_names :: List.map ~f:of_exp args in
       Let {id= Some (mk_ident lhs); exp= call_builtin "py_call" args; loc}
   | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
       Let
         { id= Some (mk_ident lhs)
         ; exp=
             call_builtin "py_call_method"
-              ( exp_globals :: exp_of_ident_str name :: of_exp self_if_needed :: of_exp arg_names
+              ( exp_of_ident_str name :: of_exp self_if_needed :: of_exp arg_names
               :: List.map ~f:of_exp args )
         ; loc }
   | BuiltinCall {lhs; call; args; arg_names= _} ->
-      let args =
-        if builtin_needs_globals_as_argument call then exp_globals :: List.map ~f:of_exp args
-        else List.map ~f:of_exp args
-      in
+      let args = List.map ~f:of_exp args in
       Let {id= Some (mk_ident lhs); exp= call_builtin (builtin_name call) args; loc}
   | Delete {scope= Global; ident} ->
       Let {id= None; exp= call_builtin "py_delete_global" [exp_of_ident_str ident; exp_globals]; loc}
@@ -715,7 +704,7 @@ let gen_type module_name ~allow_classes name node =
       when QualifiedProcName.equal py_make_string proc ->
         let acc = DefaultType.add_string_constant ident str acc in
         find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [_; _; Var ident_str_const]}} :: instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [_; Var ident_str_const]}} :: instrs
       when QualifiedProcName.equal py_build_class proc
            && DefaultType.is_string_constant ident_str_const acc ->
         let name = DefaultType.get_string_constant ident_str_const acc |> Option.value_exn in

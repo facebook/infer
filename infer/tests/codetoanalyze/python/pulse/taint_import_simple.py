@@ -6,12 +6,12 @@
 import taint
 from taint import sink
 
-def FN_basic_flow_bad() -> None:
+def basic_flow_bad() -> None:
     tainted = taint.source()
     sink(tainted)
 
 def basic_flow_ok(untainted: int) -> None:
     sink(untainted)
 
-FN_basic_flow_bad()
+basic_flow_bad()
 basic_flow_ok(0)

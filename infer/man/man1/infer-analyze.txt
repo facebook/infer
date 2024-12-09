@@ -1079,14 +1079,6 @@ PULSE CHECKER OPTIONS
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations
 
-       --python-globals { own-by-closures | own-by-module }
-           Specify the strategy to wire globals dictionnaire into each
-           function
-                - own-by-closures: each closure captured the global
-           dictionary
-           - own-by-module: each function is given the global dictionary as
-           argument (not referenced in the heap to avoid aliases)
-
 RACERD CHECKER OPTIONS
        --racerd-always-report-java
            Activates: Every Java class analysed is treated as if it were

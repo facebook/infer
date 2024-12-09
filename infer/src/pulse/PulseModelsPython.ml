@@ -115,24 +115,17 @@ let build_tuple args : model =
   assign_ret tuple
 
 
-let build_class globals closure _name _args : model =
+let build_class closure _name _args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* class_ = Dict.make [] [] in
-  let gen_closure_args _ =
-    let locals = class_ in
-    match Config.python_globals with
-    | OwnByClosures ->
-        ret [locals]
-    | OwnByModule ->
-        ret [globals; locals]
-  in
+  let gen_closure_args _ = ret [class_] in
   let* _ = apply_python_closure closure gen_closure_args in
   assign_ret class_
 
 
-let call_dsl ~closure ~globals ~arg_names:_ ~args : DSL.aval DSL.model_monad =
+let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   let gen_closure_args opt_proc_attrs =
@@ -150,21 +143,17 @@ let call_dsl ~closure ~globals ~arg_names:_ ~args : DSL.aval DSL.model_monad =
           List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
     in
     let* locals = Dict.make python_args args in
-    match Config.python_globals with
-    | OwnByClosures ->
-        ret [locals]
-    | OwnByModule ->
-        ret [globals; locals]
+    ret [locals]
   in
   apply_python_closure closure gen_closure_args
 
 
-let call closure globals arg_names args : model =
+let call closure arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* value = call_dsl ~closure ~globals ~arg_names ~args in
+  let* value = call_dsl ~closure ~arg_names ~args in
   assign_ret value
 
 
@@ -189,7 +178,7 @@ let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_m
       ret None
 
 
-let call_method globals name obj arg_names args : model =
+let call_method name obj arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
@@ -208,7 +197,7 @@ let call_method globals name obj arg_names args : model =
             L.d_printfln "calling method %a on module object %s" (Pp.option F.pp_print_string)
               opt_str_name module_name ;
             let* closure = Dict.get obj name in
-            call_dsl ~closure ~globals:obj ~arg_names ~args
+            call_dsl ~closure ~arg_names ~args
         | Some res ->
             L.d_printfln "catching special call %a on module object %s"
               (Pp.option F.pp_print_string) opt_str_name module_name ;
@@ -216,8 +205,7 @@ let call_method globals name obj arg_names args : model =
     | _ ->
         let* closure = Dict.get obj name in
         (* TODO: for OO method, gives self argument *)
-        (* this is incorrect for a module *)
-        call_dsl ~closure ~globals ~arg_names ~args
+        call_dsl ~closure ~arg_names ~args
   in
   assign_ret res
 
@@ -371,9 +359,9 @@ let yield_from _ _ : model =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
-  [ -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+ arg $+++$--> build_class
-  ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+ arg $+++$--> call
-  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+ arg $+++$--> call_method
+  [ -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
+  ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
+  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable

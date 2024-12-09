@@ -54,10 +54,6 @@ let string_of_scheduler scheduler =
   List.Assoc.find_exn (List.Assoc.inverse scheduler_symbols) ~equal:equal_scheduler scheduler
 
 
-type python_globals = OwnByClosures | OwnByModule [@@deriving equal]
-
-let python_globals_symbols = [("own-by-closures", OwnByClosures); ("own-by-module", OwnByModule)]
-
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
@@ -2997,16 +2993,6 @@ and python_skip_db =
   CLOpt.mk_bool ~long:"python-skip-db" ~default:false "Skip the DB writing during Python capture"
 
 
-and python_globals =
-  CLOpt.mk_symbol ~long:"python-globals" ~default:OwnByModule ~eq:equal_python_globals
-    ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    ~symbols:python_globals_symbols
-    "Specify the strategy to wire globals dictionnaire into each function\n\
-    \     - own-by-closures: each closure captured the global dictionary\n\
-     - own-by-module: each function is given the global dictionary as argument (not referenced in \
-     the heap to avoid aliases)"
-
-
 and qualified_cpp_name_block_list =
   CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4709,8 +4695,6 @@ and pyc_file = RevList.to_list !pyc_file
 and python_files_index = !python_files_index
 
 and python_skip_db = !python_skip_db
-
-and python_globals = !python_globals
 
 and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 
