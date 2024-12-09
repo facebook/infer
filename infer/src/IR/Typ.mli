@@ -204,6 +204,12 @@ module Name : sig
 
   val is_python_class : t -> bool
 
+  val is_python_final : t -> bool
+
+  val is_python_module : t -> bool
+
+  val get_python_module_name : t -> string option
+
   module C : sig
     val from_string : string -> t
 

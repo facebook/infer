@@ -775,13 +775,14 @@ module Internal = struct
     let is_final =
       Tenv.lookup tenv typ_name
       |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+      || Typ.Name.is_python_final typ_name
     in
     if is_final then
       let phi' =
         PulseFormula.add_dynamic_type_unsafe (downcast addr) (Typ.mk_struct typ_name) location
           astate.path_condition
       in
-      set_path_condition phi' astate
+      set_path_condition phi' astate |> SafeAttributes.add_static_type typ_name addr
     else SafeAttributes.add_static_type typ_name addr astate
 
 

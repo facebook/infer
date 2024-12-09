@@ -595,6 +595,18 @@ module Name = struct
 
   let is_python_class name = match name with PythonClass _ -> true | _ -> false
 
+  let is_python_final name =
+    match name with PythonClass py -> PythonClassName.is_final py | _ -> false
+
+
+  let is_python_module name =
+    match name with PythonClass py -> PythonClassName.is_module py | _ -> false
+
+
+  let get_python_module_name name =
+    match name with PythonClass py -> PythonClassName.get_module_name py | _ -> None
+
+
   let is_same_type t1 t2 =
     match (t1, t2) with
     | CStruct _, CStruct _

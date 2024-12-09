@@ -26,17 +26,10 @@ let pp fmt {classname} = F.fprintf fmt "%s" classname
 
 let to_string = Pp.string_of_pp pp
 
-let static_suffix = "$static"
+let globals_prefix = "PyGlobals::"
 
-let len_static_suffix = String.length static_suffix
+let is_module {classname} = String.is_prefix classname ~prefix:globals_prefix
 
-let static_companion {classname} = {classname= classname ^ static_suffix}
+let get_module_name {classname} = String.chop_prefix classname ~prefix:globals_prefix
 
-let is_static {classname} = StringLabels.ends_with ~suffix:static_suffix classname
-
-let static_companion_origin ({classname} as name) =
-  let len_classname = String.length classname in
-  if len_classname > len_static_suffix then
-    let len = len_classname - len_static_suffix in
-    {classname= StringLabels.sub ~pos:0 ~len classname}
-  else name
+let is_final name = is_module name
