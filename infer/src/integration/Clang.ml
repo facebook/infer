@@ -13,22 +13,11 @@ let capture compiler ~prog ~args =
   match compiler with
   | Clang ->
       ClangWrapper.exe ~prog ~args
-  | Make -> (
+  | Make ->
       let path_var = "PATH" in
       let old_path = Option.value ~default:"" (Sys.getenv path_var) in
       let new_path = Config.wrappers_dir ^ ":" ^ old_path in
       let extended_env = `Extend [(path_var, new_path); ("INFER_OLD_PATH", old_path)] in
       L.environment_info "Running command %s with env:@\n%s@\n@." prog
         (Unix.sexp_of_env extended_env |> Sexp.to_string) ;
-      let {pid; _} : Core_unix.Process_info.t =
-        Unix.create_process_env ~prog ~args ~env:extended_env ()
-      in
-      Unix.waitpid pid
-      |> function
-      | Ok () ->
-          ()
-      | Error _ as status ->
-          L.(die ExternalError)
-            "*** capture command failed:@\n*** %s@\n*** %s@."
-            (String.concat ~sep:" " (prog :: args))
-            (Unix.Exit_or_signal.to_string_hum status) )
+      Process.create_process_and_wait ~prog ~args ~env:extended_env ()

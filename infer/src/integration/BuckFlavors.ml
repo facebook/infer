@@ -75,7 +75,7 @@ let capture build_cmd =
         updated_buck_cmd ;
       let prog, buck_build_cmd = (prog, updated_buck_cmd) in
       if Config.keep_going && not Config.continue_capture then
-        Process.create_process_and_wait ~prog ~args:["clean"] ;
+        Process.create_process_and_wait ~prog ~args:["clean"] () ;
       let build_report_file =
         Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
       in

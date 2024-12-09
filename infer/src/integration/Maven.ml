@@ -174,15 +174,4 @@ let capture ~prog ~args =
     "Running maven capture:@\n%s %s@." prog
     (String.concat ~sep:" " (List.map ~f:(Printf.sprintf "'%s'") capture_args)) ;
   (* let children infer processes know that they are spawned by Maven *)
-  let {pid; _} : Core_unix.Process_info.t =
-    Unix.create_process_env ~prog ~args:capture_args ~env:Config.env_inside_maven ()
-  in
-  Unix.waitpid pid
-  |> function
-  | Ok () ->
-      ()
-  | Error _ as status ->
-      L.(die UserError)
-        "*** Maven command failed:@\n*** %s@\n*** %s@\n"
-        (String.concat ~sep:" " (prog :: capture_args))
-        (Unix.Exit_or_signal.to_string_hum status)
+  Process.create_process_and_wait ~prog ~args:capture_args ~env:Config.env_inside_maven ()

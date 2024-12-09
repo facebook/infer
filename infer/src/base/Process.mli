@@ -7,14 +7,14 @@
 
 open! IStd
 
-val create_process_and_wait : prog:string -> args:string list -> unit
+val create_process_and_wait : prog:string -> args:string list -> ?env:Core_unix.env -> unit -> unit
 (** Given an command to be executed, creates a process to execute this command, and waits for its
-    execution. The standard out and error are not redirected. If the commands fails to execute,
-    prints an error message and exits. *)
+    execution. If the commands fails to execute, prints an error message and exits. *)
 
 type action = ReadStdout | ReadStderr
 
-val create_process_and_wait_with_output : prog:string -> args:string list -> action -> string
+val create_process_and_wait_with_output :
+  prog:string -> args:string list -> ?env:Core_unix.env -> action -> string
 (** Given an command to be executed, creates a process to execute this command, and waits for its
     execution. Depending on the action passed, either stdout or stderr is returned, with the other
     being streamed to the console. If the commands fails to execute, prints an error message and

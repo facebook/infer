@@ -21,23 +21,9 @@ let print_error_and_exit ?(exit_code = 1) fmt =
     F.str_formatter fmt
 
 
-(** Given a command to be executed, create a process to execute this command, and wait for it to
-    terminate. The standard out and error are not redirected. If the command fails to execute, print
-    an error message and exit. *)
-let create_process_and_wait ~prog ~args =
-  let {pid; _} : Core_unix.Process_info.t = Unix.create_process ~prog ~args in
-  Unix.waitpid pid
-  |> function
-  | Ok () ->
-      ()
-  | Error _ as status ->
-      L.die ExternalError "Error executing: %a@\n%s@\n" Pp.cli_args (prog :: args)
-        (Unix.Exit_or_signal.to_string_hum status)
-
-
 type action = ReadStdout | ReadStderr
 
-let create_process_and_wait_with_output ~prog ~args action =
+let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
   let redirected_fd_name, redirect_spec =
     match action with ReadStderr -> ("stderr", "2>") | ReadStdout -> ("stdout", ">")
   in
@@ -47,7 +33,7 @@ let create_process_and_wait_with_output ~prog ~args action =
   let escaped_cmd = List.map ~f:Escape.escape_shell (prog :: args) |> String.concat ~sep:" " in
   let redirected_cmd = Printf.sprintf "exec %s %s'%s'" escaped_cmd redirect_spec output_file in
   let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
+    Unix.create_process_env ~prog:"sh" ~args:["-c"; redirected_cmd] ~env ()
   in
   let fd_to_log, redirected_fd =
     match action with ReadStderr -> (stdout, stderr) | ReadStdout -> (stderr, stdout)
@@ -63,6 +49,12 @@ let create_process_and_wait_with_output ~prog ~args action =
   | Error _ as status ->
       L.die ExternalError "Error executing: %a@\n%s@\n" Pp.cli_args (prog :: args)
         (Unix.Exit_or_signal.to_string_hum status)
+
+
+(** Given a command to be executed, create a process to execute this command, and wait for it to
+    terminate. If the command fails to execute, print an error message and exit. *)
+let create_process_and_wait ~prog ~args ?env () =
+  create_process_and_wait_with_output ~prog ~args ?env ReadStdout |> ignore
 
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =

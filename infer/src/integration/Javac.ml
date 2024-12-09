@@ -109,7 +109,7 @@ let call_infer_javac_capture ~javac_args =
            else Some arg )
   in
   L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
-  Process.create_process_and_wait ~prog ~args
+  Process.create_process_and_wait ~prog ~args ()
 
 
 let capture compiler ~prog ~args =

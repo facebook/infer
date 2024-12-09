@@ -63,7 +63,7 @@ let run_gradle ~prog ~args =
   in
   L.progress "[GRADLE] %s@\n" shell_cmd ;
   let time = Mtime_clock.counter () in
-  Process.create_process_and_wait ~prog:"sh" ~args:["-c"; shell_cmd] ;
+  Process.create_process_and_wait ~prog:"sh" ~args:["-c"; shell_cmd] () ;
   L.progress "[GRADLE] running gradle took %a@\n" Mtime.Span.pp (Mtime_clock.count time) ;
   match Utils.read_file gradle_output_file with
   | Ok lines ->
@@ -95,7 +95,7 @@ let capture_gradle_target (out_dir, (javac_data : javac_data)) =
     ["capture"; "-j"; "1"; "-o"; out_dir; "--"; "javac"; "@" ^ gradle_files; "@" ^ java_opts]
   in
   L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
-  Process.create_process_and_wait ~prog ~args ;
+  Process.create_process_and_wait ~prog ~args () ;
   None
 
 
