@@ -247,6 +247,8 @@ val lockless_violation : t
 
 val lock_consistency_violation : t
 
+val lock_on_ui_thread : t
+
 val expensive_loop_invariant_call : t
 
 val memory_leak : t

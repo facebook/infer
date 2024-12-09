@@ -719,6 +719,11 @@ let lock_consistency_violation =
     ~user_documentation:[%blob "./documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
+let lock_on_ui_thread =
+  register ~hum:"Lock on UI Thread" ~id:"LOCK_ON_UI_THREAD" ~category:PerfRegression ~enabled:false
+    Warning Starvation ~user_documentation:[%blob "./documentation/issues/LOCK_ON_UI_THREAD.md"]
+
+
 let lockless_violation =
   register ~category:NoCategory ~id:"LOCKLESS_VIOLATION" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/LOCKLESS_VIOLATION.md"]

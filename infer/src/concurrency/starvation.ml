@@ -564,6 +564,8 @@ module ReportMap : sig
 
   val add_starvation : report_add_t
 
+  val add_lock_on_ui_thread : report_add_t
+
   val add_strict_mode_violation : report_add_t
 
   val issue_log_of : t -> IssueLog.t
@@ -623,6 +625,10 @@ end = struct
     add tenv pattrs loc ltr message IssueType.lockless_violation map
 
 
+  let add_lock_on_ui_thread tenv pattrs loc ltr message map =
+    add tenv pattrs loc ltr message IssueType.lock_on_ui_thread map
+
+
   let add_arbitrary_code_execution_under_lock tenv pattrs loc ltr message map =
     add tenv pattrs loc ltr message IssueType.arbitrary_code_execution_under_lock map
 
@@ -632,6 +638,7 @@ end = struct
       [ deadlock
       ; lockless_violation
       ; ipc_on_ui_thread
+      ; lock_on_ui_thread
       ; regex_op_on_ui_thread
       ; starvation
       ; strict_mode_violation
@@ -908,33 +915,42 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
       let ltr = CriticalPair.make_trace pname pair in
       ReportMap.add_lockless_violation tenv pattrs loc ltr error_message report_map
-  | LockAcquire {locks} when is_not_private -> (
-    match
-      List.find locks ~f:(fun lock -> Acquisitions.lock_is_held lock pair.elem.acquisitions)
-    with
-    | Some lock ->
-        let error_message =
-          Format.asprintf "Potential self deadlock. %a%a twice." pname_pp pname Lock.pp_locks lock
-        in
-        let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
-        let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
-        ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
-    | None when Config.starvation_whole_program ->
-        report_map
-    | None ->
-        List.fold locks ~init:report_map ~f:(fun acc lock ->
-            Lock.root_class lock
-            |> Option.value_map ~default:acc ~f:(fun other_class ->
-                   (* get the class of the root variable of the lock in the lock acquisition
-                      and retrieve all the summaries of the methods of that class;
-                      then, report on the parallel composition of the current pair and any pair in these
-                      summaries that can indeed run in parallel *)
-                   fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
-                     ~f:(fun acc (other_pname, summary) ->
-                       Domain.fold_critical_pairs_of_summary
-                         (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
-                            lock other_pname )
-                         summary acc ) ) ) )
+  | LockAcquire {locks; thread} when is_not_private -> (
+      let report_map =
+        if ThreadDomain.is_uithread thread && should_report_starvation then
+          let error_message =
+            Format.asprintf "%a acquired in UI Thread!" (Format.pp_print_list Lock.pp_locks) locks
+          in
+          let ltr, loc = make_trace_and_loc () in
+          ReportMap.add_lock_on_ui_thread tenv pattrs loc ltr error_message report_map
+        else report_map
+      in
+      match
+        List.find locks ~f:(fun lock -> Acquisitions.lock_is_held lock pair.elem.acquisitions)
+      with
+      | Some lock ->
+          let error_message =
+            Format.asprintf "Potential self deadlock. %a%a twice." pname_pp pname Lock.pp_locks lock
+          in
+          let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+          let ltr = CriticalPair.make_trace ~header:"In method " pname pair in
+          ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
+      | None when Config.starvation_whole_program ->
+          report_map
+      | None ->
+          List.fold locks ~init:report_map ~f:(fun acc lock ->
+              Lock.root_class lock
+              |> Option.value_map ~default:acc ~f:(fun other_class ->
+                     (* get the class of the root variable of the lock in the lock acquisition
+                        and retrieve all the summaries of the methods of that class;
+                        then, report on the parallel composition of the current pair and any pair in these
+                        summaries that can indeed run in parallel *)
+                     fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
+                       ~f:(fun acc (other_pname, summary) ->
+                         Domain.fold_critical_pairs_of_summary
+                           (report_on_parallel_composition ~should_report_starvation tenv pattrs
+                              pair lock other_pname )
+                           summary acc ) ) ) )
   | _ ->
       report_map
 

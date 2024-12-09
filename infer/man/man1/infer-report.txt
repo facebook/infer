@@ -182,6 +182,7 @@ OPTIONS
              LINEAGE_FLOW (enabled by default),
              LOCKLESS_VIOLATION (enabled by default),
              LOCK_CONSISTENCY_VIOLATION (enabled by default),
+             LOCK_ON_UI_THREAD (disabled by default),
              Leak_after_array_abstraction (enabled by default),
              Leak_in_footprint (enabled by default),
              Leak_unknown_origin (disabled by default),

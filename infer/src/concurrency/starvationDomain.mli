@@ -20,6 +20,8 @@ module F = Format
 module ThreadDomain : sig
   type t = UnknownThread | UIThread | BGThread | AnyThread | NamedThread of string
 
+  val is_uithread : t -> bool
+
   include AbstractDomain.WithBottom with type t := t
 end
 
