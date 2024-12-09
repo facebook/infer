@@ -66,36 +66,40 @@ module JsonFragment = struct
 
   (** for some limited (not thread-safe) form of safety, and to know when we need to print
       separators *)
-  let pp_state = ref [Outside]
+  let pp_state = Domain.DLS.new_key (fun () -> [Outside])
+
+  let get_state () = Domain.DLS.get pp_state
+
+  let set_state state = Domain.DLS.set pp_state state
 
   let pp f json_fragment =
-    match (json_fragment, !pp_state) with
+    match (json_fragment, get_state ()) with
     | AssocBegin, ((Outside | InList) :: _ as state) ->
-        pp_state := InAssocFirst :: state
+        set_state (InAssocFirst :: state)
     | AssocEnd, (InAssocFirst | InAssocMiddle) :: state' ->
         F.pp_print_string f "}" ;
-        pp_state := state'
+        set_state state'
     | ListBegin, ((Outside | InList) :: _ as state) ->
         F.pp_print_string f "[" ;
-        pp_state := InList :: state
+        set_state (InList :: state)
     | ListItemSeparator, InList :: _ ->
         F.pp_print_string f ","
     | ListEnd, InList :: state0 ->
         F.pp_print_string f "]" ;
-        pp_state := state0
+        set_state state0
     | _ ->
         L.die InternalError "Unexpected json fragment \"%s\" in state [%a]"
           (to_string json_fragment)
           (Pp.seq (Pp.of_string ~f:string_of_state))
-          !pp_state
+          (get_state ())
 
 
   let pp_assoc_field pp_value f key value =
-    match !pp_state with
+    match get_state () with
     | InAssocFirst :: state0 ->
         F.pp_print_string f "{" ;
         Json.pp_field pp_value f key value ;
-        pp_state := InAssocMiddle :: state0
+        set_state (InAssocMiddle :: state0)
     | InAssocMiddle :: _ ->
         F.pp_print_string f "," ;
         Json.pp_field pp_value f key value
@@ -103,7 +107,7 @@ module JsonFragment = struct
         L.die InternalError "Unexpected assoc field \"%t\" in state [%a]"
           (fun f -> Json.pp_field pp_value f key value)
           (Pp.seq (Pp.of_string ~f:string_of_state))
-          !pp_state
+          (get_state ())
 end
 
 type event_type = Begin | Complete | End | Instant
@@ -246,7 +250,7 @@ let logger =
              Out_channel.close out_channel ) )
        else
          (* assume the trace file is here and is ready to accept list elements *)
-         JsonFragment.(pp_state := InList :: !pp_state) ) ;
+         JsonFragment.(set_state (InList :: get_state ())) ) ;
      logger )
 
 

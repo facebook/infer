@@ -12,14 +12,14 @@ exception Timeout of float
 
 let now () = (Unix.times ()).tms_utime
 
-let timer = ref None
+let timer = Domain.DLS.new_key (fun () -> None)
 
-let start () = timer := Some (now ())
+let start () = Domain.DLS.set timer (Some (now ()))
 
 let time_since start_time = now () -. start_time
 
 let get () =
-  match !timer with
+  match Domain.DLS.get timer with
   | None ->
       L.die InternalError "trying to get the value of the timer but no timer is active"
   | Some start_time ->
@@ -29,15 +29,15 @@ let get () =
 type state = float option
 
 let suspend () : state =
-  let current_timer = !timer in
-  timer := None ;
+  let current_timer = Domain.DLS.get timer in
+  Domain.DLS.set timer None ;
   Option.map current_timer ~f:time_since
 
 
 let resume (t : state) =
   (* forget about the time spent between [suspend ()] and [resume _] by pretending the timer started
      at [now - previous_time_spent] *)
-  timer := Option.map t ~f:(fun previous_time_spent -> now () -. previous_time_spent)
+  Option.map t ~f:(fun previous_time_spent -> now () -. previous_time_spent) |> Domain.DLS.set timer
 
 
 let check_timeout timeout =

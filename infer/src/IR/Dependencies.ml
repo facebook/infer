@@ -9,7 +9,9 @@ open! IStd
 module F = Format
 module L = Logging
 
-let currently_under_analysis : Procname.t option ref = ref None
+let currently_under_analysis : Procname.t option Domain.DLS.key =
+  Domain.DLS.new_key (fun () -> None)
+
 
 type complete =
   { summary_loads: Procname.t list
@@ -25,7 +27,9 @@ type partial =
   ; partial_other_proc_names: Procname.HashSet.t
   ; partial_used_tenv_sources: SourceFile.HashSet.t }
 
-let deps_in_progress : partial Procname.Hash.t = Procname.Hash.create 0
+let deps_in_progress : partial Procname.Hash.t Domain.DLS.key =
+  Domain.DLS.new_key (fun () -> Procname.Hash.create 0)
+
 
 let reset pname =
   let partial =
@@ -34,7 +38,7 @@ let reset pname =
     ; partial_other_proc_names= Procname.HashSet.create 0
     ; partial_used_tenv_sources= SourceFile.HashSet.create 0 }
   in
-  Procname.Hash.replace deps_in_progress pname partial ;
+  Procname.Hash.replace (Domain.DLS.get deps_in_progress) pname partial ;
   Partial
 
 
@@ -45,7 +49,7 @@ let freeze pname deps =
           ; partial_recursion_edges
           ; partial_other_proc_names
           ; partial_used_tenv_sources } =
-        Procname.Hash.find deps_in_progress pname
+        Procname.Hash.find (Domain.DLS.get deps_in_progress) pname
       in
       (* make sets pairwise disjoint to save space in summaries, in case we first added a procedure
          to "other" and *then* to "summary loads", for example *)
@@ -77,39 +81,43 @@ let complete_exn = function
 type kind = SummaryLoad | RecursionEdge | Other
 
 let record_pname_dep ?caller kind callee =
-  let caller = match caller with Some _ -> caller | None -> !currently_under_analysis in
+  let caller =
+    match caller with Some _ -> caller | None -> Domain.DLS.get currently_under_analysis
+  in
   match caller with
   | Some caller when not (Procname.equal caller callee) ->
-      Option.iter (Procname.Hash.find_opt deps_in_progress caller)
-        ~f:(fun {partial_summary_loads; partial_recursion_edges; partial_other_proc_names} ->
-          match kind with
-          | SummaryLoad ->
-              Procname.HashSet.add callee partial_summary_loads
-          (* HACK: only add to the other (than "summary loads") buckets if the proc name is not
-             already accounted for in summary loads as we don't need to precisely account for
-             holding another kind of dependency as long as we know it's a dependency already. This
-             avoids double counting elsewhere and saves some space. *)
-          | RecursionEdge ->
-              if not @@ Procname.HashSet.mem partial_summary_loads callee then
-                Procname.HashSet.add callee partial_recursion_edges
-          | Other ->
-              if
-                (not @@ Procname.HashSet.mem partial_summary_loads callee)
-                && (not @@ Procname.HashSet.mem partial_recursion_edges callee)
-              then Procname.HashSet.add callee partial_other_proc_names )
+      Procname.Hash.find_opt (Domain.DLS.get deps_in_progress) caller
+      |> Option.iter
+           ~f:(fun {partial_summary_loads; partial_recursion_edges; partial_other_proc_names} ->
+             match kind with
+             | SummaryLoad ->
+                 Procname.HashSet.add callee partial_summary_loads
+             (* HACK: only add to the other (than "summary loads") buckets if the proc name is not
+                already accounted for in summary loads as we don't need to precisely account for
+                holding another kind of dependency as long as we know it's a dependency already. This
+                avoids double counting elsewhere and saves some space. *)
+             | RecursionEdge ->
+                 if not @@ Procname.HashSet.mem partial_summary_loads callee then
+                   Procname.HashSet.add callee partial_recursion_edges
+             | Other ->
+                 if
+                   (not @@ Procname.HashSet.mem partial_summary_loads callee)
+                   && (not @@ Procname.HashSet.mem partial_recursion_edges callee)
+                 then Procname.HashSet.add callee partial_other_proc_names )
   | _ ->
       ()
 
 
 let record_srcfile_dep src_file =
-  Option.bind !currently_under_analysis ~f:(Procname.Hash.find_opt deps_in_progress)
+  Domain.DLS.get currently_under_analysis
+  |> Option.bind ~f:(Procname.Hash.find_opt (Domain.DLS.get deps_in_progress))
   |> Option.iter ~f:(fun {partial_used_tenv_sources} ->
          SourceFile.HashSet.add src_file partial_used_tenv_sources )
 
 
 let clear () =
-  Procname.Hash.clear deps_in_progress ;
-  currently_under_analysis := None
+  Procname.Hash.clear (Domain.DLS.get deps_in_progress) ;
+  Domain.DLS.set currently_under_analysis None
 
 
 let pp fmt = function

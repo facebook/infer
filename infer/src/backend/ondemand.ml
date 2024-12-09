@@ -143,7 +143,7 @@ let () =
   AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ()) ;
   AnalysisGlobalState.register ~save:Ident.NameGenerator.get_current
     ~restore:Ident.NameGenerator.set_current ~init:Ident.NameGenerator.reset ;
-  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv Dependencies.currently_under_analysis
+  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv Dependencies.currently_under_analysis
     ~init:(fun proc_desc _tenv -> Option.some (Procdesc.get_proc_name proc_desc) ) ;
   ()
 
