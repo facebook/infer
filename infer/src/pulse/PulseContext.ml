@@ -7,23 +7,23 @@
 
 open! IStd
 
-let proc_desc_ref = ref None
+let proc_desc_key = Domain.DLS.new_key (fun () -> None)
 
-let tenv_ref = ref (None : Tenv.t Option.t)
+let tenv_key = Domain.DLS.new_key (fun () : Tenv.t Option.t -> None)
 
 let () =
-  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv proc_desc_ref
+  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv proc_desc_key
     ~init:(fun proc_desc _tenv -> Some proc_desc )
 
 
 let () =
-  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv tenv_ref ~init:(fun _proc_desc tenv ->
+  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv tenv_key ~init:(fun _proc_desc tenv ->
       Some tenv )
 
 
-let proc_desc () = !proc_desc_ref
+let proc_desc () = Domain.DLS.get proc_desc_key
 
-let tenv () = !tenv_ref
+let tenv () = Domain.DLS.get tenv_key
 
 let tenv_exn () =
   match tenv () with
@@ -33,4 +33,4 @@ let tenv_exn () =
       tenv
 
 
-let set_tenv_global_for_testing tenv = tenv_ref := Some tenv
+let set_tenv_global_for_testing tenv = Domain.DLS.set tenv_key (Some tenv)

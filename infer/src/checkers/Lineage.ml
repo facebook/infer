@@ -939,23 +939,23 @@ module Out = struct
     [@@deriving compare, equal, hash, sexp]
   end
 
-  let channel_ref = ref None
+  let channel_key = Domain.DLS.new_key (fun () -> None)
 
   let get_pid_channel () =
     (* We keep the old simple-lineage output dir for historical reasons and should change it to
        lineage once no external infra code depends on it anymore *)
     let output_dir = Filename.concat Config.results_dir "simple-lineage" in
     Unix.mkdir_p output_dir ;
-    match !channel_ref with
+    match Domain.DLS.get channel_key with
     | None ->
         let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
         let channel = Filename.concat output_dir filename |> Out_channel.create in
         let close_channel () =
-          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
-          channel_ref := None
+          Domain.DLS.get channel_key |> Option.iter ~f:Out_channel.close_no_err ;
+          Domain.DLS.set channel_key None
         in
         Epilogues.register ~f:close_channel ~description:"close output channel for lineage" ;
-        channel_ref := Some channel ;
+        Domain.DLS.set channel_key (Some channel) ;
         channel
     | Some channel ->
         channel

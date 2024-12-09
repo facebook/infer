@@ -65,19 +65,24 @@ module GlobalForStats = struct
 
   let empty = {node_is_not_stuck= false; one_call_is_stuck= false}
 
-  let global = ref empty
+  let global = Domain.DLS.new_key (fun () -> empty)
 
-  let () = AnalysisGlobalState.register_ref ~init:(fun () -> empty) global
+  let () = AnalysisGlobalState.register_dls ~init:(fun () -> empty) global
 
-  let init_before_call () = global := {!global with node_is_not_stuck= false}
+  let init_before_call () =
+    Utils.with_dls global ~f:(fun global -> {global with node_is_not_stuck= false})
 
-  let is_node_not_stuck () = !global.node_is_not_stuck
 
-  let node_is_not_stuck () = global := {!global with node_is_not_stuck= true}
+  let is_node_not_stuck () = (Domain.DLS.get global).node_is_not_stuck
 
-  let is_one_call_stuck () = !global.one_call_is_stuck
+  let node_is_not_stuck () =
+    Utils.with_dls global ~f:(fun global -> {global with node_is_not_stuck= true})
 
-  let one_call_is_stuck () = global := {!global with one_call_is_stuck= true}
+
+  let is_one_call_stuck () = (Domain.DLS.get global).one_call_is_stuck
+
+  let one_call_is_stuck () =
+    Utils.with_dls global ~f:(fun global -> {global with one_call_is_stuck= true})
 end
 
 let print_arity_mismatch_message ?(extra_call_prefix = "") callee_pname_opt ~formals ~actuals =

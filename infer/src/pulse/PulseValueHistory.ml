@@ -17,13 +17,13 @@ module CellId = struct
 
   let pp = Int.pp
 
-  let next_id = ref 0
+  let next_id = Domain.DLS.new_key (fun () -> 0)
 
-  let () = AnalysisGlobalState.register_ref ~init:(fun () -> 0) next_id
+  let () = AnalysisGlobalState.register_dls ~init:(fun () -> 0) next_id
 
   let next () =
-    let id = !next_id in
-    incr next_id ;
+    let id = Domain.DLS.get next_id in
+    Domain.DLS.set next_id (id + 1) ;
     id
 
 
