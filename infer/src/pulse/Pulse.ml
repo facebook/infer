@@ -214,25 +214,25 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path ret
-      ~unresolved_reason callee_pname call_exp func_args call_loc astate non_disj =
+      ~unresolved_reason callee_pname call_exp func_args call_loc call_flags astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
     in
-    let call_kind_of call_exp =
+    let call_kind_of call_exp : PulseOperations.call_kind =
       match call_exp with
       | Exp.Closure {captured_vars} ->
-          `Closure captured_vars
+          ClosureCall captured_vars
       | Exp.Var id ->
-          `Var id
+          VarCall id
       | _ ->
-          `ResolvedProcname
+          ResolvedCall
     in
     let eval_args_and_call callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
       PulseCallOperations.call ~disjunct_limit analysis_data path call_loc ?unresolved_reason
-        callee_pname ~ret ~actuals ~formals_opt ~call_kind astate non_disj
+        callee_pname ~ret ~actuals ~formals_opt call_kind call_flags astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
@@ -719,13 +719,13 @@ module PulseTransferFunctions = struct
 
   let rec dispatch_call_eval_args disjunct_limit
       ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path ret call_exp func_args
-      call_loc flags astate non_disj callee_pname =
+      call_loc call_flags astate non_disj callee_pname =
     let actuals =
       List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
     in
     let unresolved_reason, method_info, ret, actuals, func_args, astate =
       let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
-      if flags.CallFlags.cf_virtual then
+      if call_flags.CallFlags.cf_virtual then
         let unresolved_reason, method_info, astate =
           lookup_virtual_method_info analysis_data path func_args call_loc astate callee_pname
             default_info
@@ -871,7 +871,7 @@ module PulseTransferFunctions = struct
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
             interprocedural_call disjunct_limit analysis_data path ret ~unresolved_reason
-              callee_pname call_exp func_args call_loc astate non_disj
+              callee_pname call_exp func_args call_loc call_flags astate non_disj
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
@@ -966,7 +966,7 @@ module PulseTransferFunctions = struct
       else exec_states_res
     in
     let exec_states_res =
-      match get_out_of_scope_object callee_pname actuals flags with
+      match get_out_of_scope_object callee_pname actuals call_flags with
       | Some pvar_typ ->
           L.d_printfln "%a is going out of scope" Pvar.pp_value (fst pvar_typ) ;
           List.filter_map exec_states_res ~f:(fun exec_state ->

@@ -909,19 +909,19 @@ let get_closure_captured_actuals path location ~captured_actuals astate =
   (astate, List.rev captured_actuals)
 
 
-type call_kind = [`Closure of (Exp.t * CapturedVar.t) list | `Var of Ident.t | `ResolvedProcname]
+type call_kind = ClosureCall of (Exp.t * CapturedVar.t) list | VarCall of Ident.t | ResolvedCall
 
-let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
+let get_captured_actuals procname path location call_kind ~captured_formals ~actuals astate =
   let is_lambda_or_block = Procname.is_cpp_lambda procname || Procname.is_objc_block procname in
   if Procname.is_objc_block procname || Procname.is_erlang procname then
     match call_kind with
-    | `Closure captured_actuals ->
+    | ClosureCall captured_actuals ->
         get_closure_captured_actuals path location ~captured_actuals astate
-    | `Var id ->
+    | VarCall id ->
         let+* astate, actual_closure = eval path Read location (Exp.Var id) astate in
         get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals ~actual_closure
           astate
-    | `ResolvedProcname -> (
+    | ResolvedCall -> (
       match actuals with
       | (actual_closure, _) :: _ ->
           Sat

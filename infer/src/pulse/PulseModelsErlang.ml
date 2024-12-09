@@ -1675,7 +1675,7 @@ module GenServer = struct
           let actuals = [(args, erlang_typ (get_erlang_type_or_any (fst args) astate))] in
           let res_list, non_disj, _, _ =
             PulseCallOperations.call analysis_data path location procname ~ret ~actuals
-              ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
+              ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
           in
           (res_list, non_disj)
     in
@@ -1816,7 +1816,7 @@ module GenServer = struct
         in
         let execs, non_disj, _, _ =
           PulseCallOperations.call analysis_data path location procname ~ret ~actuals
-            ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
+            ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
         in
         (execs, non_disj)
     | None ->

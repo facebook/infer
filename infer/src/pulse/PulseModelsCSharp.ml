@@ -418,7 +418,7 @@ module Resource = struct
     in
     let res, non_disj, _, is_known_call =
       PulseCallOperations.call analysis_data path location callee_procname ~ret ~actuals
-        ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
+        ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
     in
     match is_known_call with
     | `KnownCall ->

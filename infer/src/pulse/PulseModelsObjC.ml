@@ -242,9 +242,9 @@ let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
       in
       let astate, non_disj, _, _ =
         PulseCallOperations.call analysis_data path location callee_proc_name ~ret ~actuals
-          ~formals_opt:None ~call_kind:`ResolvedProcname astate
-          ~call_flags:{CallFlags.default with cf_is_objc_block= true}
-          non_disj
+          ~formals_opt:None ResolvedCall
+          {CallFlags.default with cf_is_objc_block= true}
+          astate non_disj
       in
       (astate, non_disj)
   | _ ->

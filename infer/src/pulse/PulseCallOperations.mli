@@ -19,9 +19,9 @@ val call :
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option
-  -> call_kind:PulseOperations.call_kind
+  -> PulseOperations.call_kind
+  -> CallFlags.t
   -> AbductiveDomain.t
-  -> ?call_flags:CallFlags.t
   -> NonDisjDomain.t
   -> ExecutionDomain.t AccessResult.t list
      * NonDisjDomain.t

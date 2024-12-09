@@ -424,7 +424,7 @@ module Function = struct
         in
         let astate, non_disj, _, _ =
           PulseCallOperations.call analysis_data path location callee_proc_name ~ret ~actuals
-            ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
+            ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
         in
         (astate, non_disj)
     | _ ->
