@@ -5,11 +5,13 @@
 
 TESTS_DIR = ../../..
 
+# Tests for the over-approximating pulse domain mixed with the disjunctive domain
+
 CLANG_OPTIONS = -c
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
-  --pulse-max-disjuncts 0 --pulse-over-approximate-reasoning \
+  --pulse-max-disjuncts 1 --pulse-over-approximate-reasoning \
 
 INFERPRINT_OPTIONS = --issues-tests
 

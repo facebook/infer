@@ -56,7 +56,8 @@ DIRECT_TESTS += \
   c_bufferoverrun \
   c_performance \
   c_pulse \
-  c_pulse-join \
+  c_pulse-over-only \
+  c_pulse-over-under \
   c_purity \
   c_starvation \
   c_topl \
