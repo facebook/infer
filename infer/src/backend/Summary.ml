@@ -179,27 +179,26 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
 
 
 module OnDisk = struct
-  module Hash = Stdlib.Hashtbl.Make (struct
-    type t = Procname.t * AnalysisRequest.t [@@deriving equal, hash]
+  module M = Stdlib.Map.Make (struct
+    type t = Procname.t * AnalysisRequest.t [@@deriving compare]
   end)
 
-  type cache = t Hash.t
+  module Cache = PrettyPrintable.MakeConcurrentMap (M)
 
-  let cache : cache = Hash.create 128
-
-  let clear_cache () = Hash.clear cache
-
-  (** Remove an element from the cache of summaries. Contrast to reset which re-initializes a
-      summary keeping the same Procdesc and updates the cache accordingly. *)
-  let remove_from_cache pname =
-    Hash.filter_map_inplace
-      (fun (pname', _) v -> if Procname.equal pname pname' then None else Some v)
-      cache
-
-
-  (** Add the summary to the table for the given function *)
-  let add proc_name analysis_req summary : unit =
-    Hash.replace cache (proc_name, analysis_req) summary
+  let clear_cache, remove_from_cache, add_to_cache, find_in_cache =
+    let cache = Cache.empty () in
+    let clear_cache () = Cache.clear cache in
+    (* Remove an element from the cache of summaries. Contrast to reset which re-initializes a
+        summary keeping the same Procdesc and updates the cache accordingly. *)
+    let remove_from_cache pname =
+      Cache.filter cache (fun (pname', _) _ -> not (Procname.equal pname pname'))
+    in
+    (* Add the summary to the table for the given function *)
+    let add proc_name analysis_req summary : unit =
+      Cache.add cache (proc_name, analysis_req) summary
+    in
+    let find_opt key = Cache.find_opt cache key in
+    (clear_cache, remove_from_cache, add, find_opt)
 
 
   let spec_of_procname, spec_of_model =
@@ -256,7 +255,7 @@ module OnDisk = struct
       | summ_opt ->
           summ_opt
     in
-    Option.iter ~f:(add proc_name analysis_req) summ_opt ;
+    Option.iter ~f:(add_to_cache proc_name analysis_req) summ_opt ;
     summ_opt
 
 
@@ -269,20 +268,20 @@ module OnDisk = struct
       BStats.incr_summary_cache_misses () ;
       load_summary_to_spec_table ~lazy_payloads analysis_req proc_name
     in
-    match Hash.find cache (proc_name, analysis_req) with
-    | summary ->
+    match find_in_cache (proc_name, analysis_req) with
+    | Some summary ->
         found_from_cache summary
-    | exception Stdlib.Not_found -> (
+    | None -> (
       match (analysis_req : AnalysisRequest.t) with
       | All ->
           (* We already tried to find the cache for [All]. *)
           not_found_from_cache ()
       | One _ | CheckerWithoutPayload _ -> (
         (* If there is a cache for [All], we use it. *)
-        match Hash.find cache (proc_name, AnalysisRequest.all) with
-        | summary ->
+        match find_in_cache (proc_name, AnalysisRequest.all) with
+        | Some summary ->
             found_from_cache summary
-        | exception Stdlib.Not_found ->
+        | None ->
             not_found_from_cache () ) )
 
 
@@ -290,7 +289,7 @@ module OnDisk = struct
   let rec store (analysis_req : AnalysisRequest.t)
       ({proc_name; dependencies; payloads} as summary : t) =
     (* Make sure the summary in memory is identical to the saved one *)
-    add proc_name analysis_req summary ;
+    add_to_cache proc_name analysis_req summary ;
     summary.dependencies <- Dependencies.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
     let summary_metadata =
@@ -328,7 +327,7 @@ module OnDisk = struct
       ; dependencies= Dependencies.reset proc_name
       ; is_complete_result= false }
     in
-    Hash.replace cache (proc_name, analysis_req) summary ;
+    add_to_cache proc_name analysis_req summary ;
     summary
 
 
@@ -407,7 +406,7 @@ module OnDisk = struct
 
   let add_errlog proc_name err_log =
     (* Make sure the summary in memory gets the updated err_log *)
-    Hash.find_opt cache (proc_name, AnalysisRequest.all)
+    find_in_cache (proc_name, AnalysisRequest.all)
     |> Option.iter ~f:(fun summary ->
            (* side-effects galore! no need to do anything except run [Errlog.merge] to update all
               existing copies of this summary's error log *)

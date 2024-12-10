@@ -376,15 +376,15 @@ module ReplaceCallee = struct
 
 
   module CacheForMakeShared = struct
-    let results : Procname.t option Procname.LRUHash.t lazy_t =
-      lazy (Procname.LRUHash.create ~initial_size:128 ~max_size:200)
+    module Cache = PrettyPrintable.MakeConcurrentMap (Procname.Map)
 
+    let results : Procname.t option Cache.t = Cache.empty ()
 
-    let add pname value = Procname.LRUHash.replace (Lazy.force results) pname value
+    let add pname value = Cache.add results pname value
 
-    let find_opt pname = Procname.LRUHash.find_opt (Lazy.force results) pname
+    let find_opt pname = Cache.find_opt results pname
 
-    let clear () = if Lazy.is_val results then Procname.LRUHash.clear (Lazy.force results)
+    let clear () = Cache.clear results
   end
 
   let get_cpp_constructor_of_make_shared =

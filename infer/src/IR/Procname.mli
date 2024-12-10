@@ -268,7 +268,12 @@ end
 (** Hash tables with proc names as keys. *)
 module Hash : Stdlib.Hashtbl.S with type key = t
 
-module LRUHash : LRUHashtbl.S with type key = t
+include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
+  sig
+  [@@@warning "-unused-module"]
+
+  module LRUHash : LRUHashtbl.S with type key = t
+end
 
 module HashQueue : Hash_queue.S with type key = t
 

@@ -154,5 +154,4 @@ val is_term_dumb : unit -> bool
     eshell reports itself as a dumb terminal. *)
 
 val with_dls : 'a Domain.DLS.key -> f:('a -> 'a) -> unit
-[@@warning "-unused-value-declaration"]
 (** get value in domain local storage, pass to [f] and set to result *)

@@ -16,7 +16,7 @@ type t = private
   | One of PayloadId.t  (** Request an analysis for one payload *)
   | CheckerWithoutPayload of checker_without_payload
       (** Request an analysis of a checker that has no payload in DB *)
-[@@deriving equal, hash, show]
+[@@deriving compare, equal, hash, show]
 
 val all : t
 

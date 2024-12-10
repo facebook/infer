@@ -29,18 +29,19 @@ let find =
       (run_query select_statement_adb)
 
 
+module Cache = PrettyPrintable.MakeConcurrentMap (Procname.Map)
+
 let load, clear_cache, store =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)
-  let cache : ProcAttributes.t Procname.Hash.t = Procname.Hash.create 1 in
+  let cache : ProcAttributes.t Cache.t = Cache.empty () in
   let load_from_uid uid =
     let result = find uid in
-    Option.iter result ~f:(fun attrs ->
-        Procname.Hash.add cache (ProcAttributes.get_proc_name attrs) attrs ) ;
+    Option.iter result ~f:(fun attrs -> Cache.add cache (ProcAttributes.get_proc_name attrs) attrs) ;
     result
   in
   let load pname =
     Dependencies.record_pname_dep Other pname ;
-    match Procname.Hash.find_opt cache pname with
+    match Cache.find_opt cache pname with
     | Some _ as result ->
         result
     | None -> (
@@ -51,7 +52,7 @@ let load, clear_cache, store =
       | some ->
           some )
   in
-  let clear_cache () = Procname.Hash.clear cache in
+  let clear_cache () = Cache.clear cache in
   let store ~proc_desc (attr : ProcAttributes.t) ~analysis =
     if attr.is_defined && Option.is_none proc_desc then
       Logging.die InternalError "Was given DEFINED procedure without procdesc: %a@."
@@ -69,7 +70,7 @@ let load, clear_cache, store =
       |> Procname.SQLiteList.serialize
     in
     DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis ;
-    Procname.Hash.remove cache pname
+    Cache.remove cache pname
   in
   (load, clear_cache, store)
 

@@ -7,10 +7,10 @@
 
 open! IStd
 
-type checker_without_payload = LoopHoisting [@@deriving equal, hash, show]
+type checker_without_payload = LoopHoisting [@@deriving compare, equal, hash, show]
 
 type t = All | One of PayloadId.t | CheckerWithoutPayload of checker_without_payload
-[@@deriving equal, hash, show]
+[@@deriving compare, equal, hash, show]
 
 let all = All
 
