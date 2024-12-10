@@ -18,6 +18,7 @@
   iter
   mtime
   re
+  str
   yojson)
  (preprocess
   (pps ppx_compare ppx_hash ppx_sexp_conv)))

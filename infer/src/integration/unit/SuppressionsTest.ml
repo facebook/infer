@@ -141,11 +141,9 @@ let%expect_test "match everything wildcard is invalid" =
 
 let%expect_test "syntax error wildcard" =
   t @@ Suppressions.parse_lines ["1+1 // @infer-ignore-every *"] ;
-  [%expect
-    {|
+  [%expect {|
     RESULT: Empty
-    ERRORS: * not a valid issue_type / wildcard
-    ;  Invalid regex: * |}]
+    ERRORS: * not a valid issue_type / wildcard |}]
 
 
 (** {2 matching} *)
