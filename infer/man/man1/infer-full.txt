@@ -2758,6 +2758,10 @@ INTERNAL OPTIONS
        --debug-level-reset
            Cancel the effect of --debug-level.
 
+       --[DEPRECATED] scuba-logging
+           Activates: (direct) logging to scuba (Conversely:
+           --no-[DEPRECATED] scuba-logging)
+
        --developer-mode
            Activates: Show internal exceptions (Conversely:
            --no-developer-mode)
@@ -3349,22 +3353,19 @@ INTERNAL OPTIONS
                
 
        --scuba-execution-id int64
-           Execution ID attached to all samples logged to scuba
+           [DEPRECATED] Execution ID attached to all samples logged to scuba
 
        --scuba-execution-id-reset
            Cancel the effect of --scuba-execution-id.
 
-       --scuba-logging
-           Activates: (direct) logging to scuba (Conversely:
-           --no-scuba-logging)
-
        --scuba-normal +key=value
-           add an extra string (normal) field to be set for each sample of
-           scuba, format <name>=<value>
+           [DEPRECATED] add an extra string (normal) field to be set for each
+           sample of scuba, format <name>=<value>
 
        --scuba-tags +key=value
-           add an extra set of strings (tagset) field to be set for each
-           sample of scuba, format <name>=(<value>,<value>,<value>|NONE)
+           [DEPRECATED] add an extra set of strings (tagset) field to be set
+           for each sample of scuba, format
+           <name>=(<value>,<value>,<value>|NONE)
 
        --select-reset
            Cancel the effect of --select.
