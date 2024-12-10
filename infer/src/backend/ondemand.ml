@@ -45,23 +45,26 @@ end = struct
 
   module AnalysisTargets = Hash_queue.Make (SpecializedProcname)
 
-  let currently_analyzed = AnalysisTargets.create ()
+  let currently_analyzed = Domain.DLS.new_key (fun () -> AnalysisTargets.create ())
 
   let pp_actives fmt =
-    AnalysisTargets.iteri currently_analyzed ~f:(fun ~key:target ~data:_ ->
-        F.fprintf fmt "%a,@," SpecializedProcname.pp target )
+    Domain.DLS.get currently_analyzed
+    |> AnalysisTargets.iteri ~f:(fun ~key:target ~data:_ ->
+           F.fprintf fmt "%a,@," SpecializedProcname.pp target )
 
 
-  let mem analysis_target = AnalysisTargets.mem currently_analyzed analysis_target
+  let mem analysis_target = AnalysisTargets.mem (Domain.DLS.get currently_analyzed) analysis_target
 
   let add analysis_target =
     if Config.trace_ondemand then L.progress "add %a@." SpecializedProcname.pp analysis_target ;
-    AnalysisTargets.enqueue_back_exn currently_analyzed analysis_target ()
+    AnalysisTargets.enqueue_back_exn (Domain.DLS.get currently_analyzed) analysis_target ()
 
 
   let remove analysis_target =
     if Config.trace_ondemand then L.progress "remove %a@." SpecializedProcname.pp analysis_target ;
-    let popped_target, () = AnalysisTargets.dequeue_back_with_key_exn currently_analyzed in
+    let popped_target, () =
+      AnalysisTargets.dequeue_back_with_key_exn (Domain.DLS.get currently_analyzed)
+    in
     if not (SpecializedProcname.equal popped_target analysis_target) then
       L.die InternalError
         "Queue structure for ondemand violated: expected to pop %a but got %a instead@\n\
@@ -69,7 +72,7 @@ end = struct
         SpecializedProcname.pp analysis_target SpecializedProcname.pp popped_target pp_actives
 
 
-  let get_all () = AnalysisTargets.keys currently_analyzed
+  let get_all () = AnalysisTargets.keys @@ Domain.DLS.get currently_analyzed
 
   let get_cycle_start recursive =
     let all = get_all () in
