@@ -9,8 +9,6 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type call = {proc_name: Procname.t; location: Location.t}
-
 (** the trace represents the start of a cycle but isn't a cycle yet, it's a sequence of calls that
     end where ondemand returned no summary due to mutual recursion; these proto-cycles get bubbled
     the cyclic call stack until the cycle is closed again *)
