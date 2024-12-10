@@ -122,15 +122,15 @@ let invalidate ~changed_files =
       invalidated_nodes_count total_nodes invalidated_files
       (if Int.equal invalidated_files 1 then "" else "s")
       Mtime.Span.pp traverse_time Mtime.Span.pp db_time ;
-    ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
-    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes"
+    StatsLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
+    StatsLogging.log_count ~label:"incremental_analysis.invalidated_nodes"
       ~value:invalidated_nodes_count ;
-    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files ;
-    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_time"
+    StatsLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files ;
+    StatsLogging.log_duration ~label:"incremental_analysis.invalidation_time"
       ~duration_us:(span_to_us @@ Mtime.Span.add traverse_time db_time) ;
-    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_traverse_time"
+    StatsLogging.log_duration ~label:"incremental_analysis.invalidation_traverse_time"
       ~duration_us:(span_to_us traverse_time) ;
-    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_db_time"
+    StatsLogging.log_duration ~label:"incremental_analysis.invalidation_db_time"
       ~duration_us:(span_to_us db_time) ) ;
   (* save some memory *)
   ResultsDir.scrub_for_incremental ()

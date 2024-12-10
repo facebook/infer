@@ -33,6 +33,6 @@ val total_useful_s : t -> float
 val timed_evaluate : f:(unit -> 'a) -> 'a evaluation_result
 
 val log : prefix:string -> Logging.debug_kind -> t -> unit
-(** log to debug logs and to Scuba *)
+(** log to debug logs and to stats *)
 
-val to_scuba_entries : prefix:string -> t -> LogEntry.t list
+val to_stats_entries : prefix:string -> t -> LogEntry.t list

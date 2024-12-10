@@ -7,9 +7,8 @@
 
 open! IStd
 
-(** Functionality for logging into "infer_events" Scuba table. The table is organized in form of
-    key-value pairs. Two most important fields are "event" and "value". Other fields in the table
-    correspond to things common for this particular run of Infer. *)
+(** The two most important fields are "event" and "value". Other fields in the table correspond to
+    things common for this particular run of Infer. *)
 
 val log_many : LogEntry.t list -> unit
 (** Log several events in one go. Useful when you do custom aggregations and have a place to log all
@@ -38,7 +37,7 @@ val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 
     {[
       let f a b = <some code>
-      let f a b = ScubaLogging.execute_with_time_logging "f" (fun () -> f a b)
+      let f a b = StatsLogging.execute_with_time_logging "f" (fun () -> f a b)
     ]} *)
 
 val register_global_log_flushing_at_exit : unit -> unit

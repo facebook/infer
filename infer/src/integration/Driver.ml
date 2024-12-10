@@ -250,14 +250,14 @@ let log_db_size_mb db db_entry debug_mode label =
     let size = Int64.to_int lstat.st_size |> Option.value_exn in
     let value = size / 1024 / 1024 in
     L.debug debug_mode Quiet "Database size %s: %d@\n" label value ;
-    ScubaLogging.log_count ~label ~value )
+    StatsLogging.log_count ~label ~value )
 
 
 (* shadowed for tracing *)
 let capture ~changed_files mode =
   GCStats.log_f ~name:"capture" Capture
   @@ fun () ->
-  ScubaLogging.execute_with_time_logging "capture"
+  StatsLogging.execute_with_time_logging "capture"
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"capture" ())) ;
   capture ~changed_files mode ;
@@ -341,7 +341,7 @@ let analyze_and_report ~changed_files mode =
 
 
 let analyze_and_report ~changed_files mode =
-  ScubaLogging.execute_with_time_logging "analyze_and_report" (fun () ->
+  StatsLogging.execute_with_time_logging "analyze_and_report" (fun () ->
       analyze_and_report ~changed_files mode )
 
 
@@ -578,7 +578,7 @@ let run_prologue mode =
 
 
 let run_prologue mode =
-  ScubaLogging.execute_with_time_logging "run_prologue" (fun () -> run_prologue mode)
+  StatsLogging.execute_with_time_logging "run_prologue" (fun () -> run_prologue mode)
 
 
 let run_epilogue () =
@@ -602,6 +602,6 @@ let run driver_mode =
 
 
 let run driver_mode =
-  ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode) ;
+  StatsLogging.execute_with_time_logging "run" (fun () -> run driver_mode) ;
   (* logging should finish before we run the epilogue *)
   run_epilogue ()

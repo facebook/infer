@@ -316,7 +316,7 @@ let write tenv tenv_filename =
   let value = size / 1024 / 1024 in
   let label = "global_tenv_size_mb" in
   L.debug Capture Quiet "Global tenv size %s: %d@\n" label value ;
-  ScubaLogging.log_count ~label:"global_tenv_size_mb" ~value
+  StatsLogging.log_count ~label:"global_tenv_size_mb" ~value
 
 
 module Normalizer = struct

@@ -83,4 +83,4 @@ val get : unit -> t
 (** get the stats so far *)
 
 val log_aggregate : t list -> unit
-(** log aggregated stats to infer's log file and to Scuba *)
+(** log aggregated stats to infer's log file and to stats *)

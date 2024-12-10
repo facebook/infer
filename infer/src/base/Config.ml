@@ -3243,20 +3243,21 @@ and scope_leakage_config =
 
 and scuba_execution_id =
   CLOpt.mk_int64_opt ~long:"scuba-execution-id"
-    "Execution ID attached to all samples logged to scuba"
+    "[DEPRECATED] Execution ID attached to all samples logged to scuba"
 
 
-and scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba"
+and scuba_logging = CLOpt.mk_bool ~long:"[DEPRECATED] scuba-logging" "(direct) logging to scuba"
 
 and scuba_normals =
   CLOpt.mk_string_map ~long:"scuba-normal"
-    "add an extra string (normal) field to be set for each sample of scuba, format <name>=<value>"
+    "[DEPRECATED] add an extra string (normal) field to be set for each sample of scuba, format \
+     <name>=<value>"
 
 
 and scuba_tags =
   CLOpt.mk_string_map ~long:"scuba-tags"
-    "add an extra set of strings (tagset) field to be set for each sample of scuba, format \
-     <name>=(<value>,<value>,<value>|NONE)"
+    "[DEPRECATED] add an extra set of strings (tagset) field to be set for each sample of scuba, \
+     format <name>=(<value>,<value>,<value>|NONE)"
 
 
 and select =
@@ -4759,6 +4760,8 @@ and scheduler = !scheduler
 
 and scope_leakage_config = !scope_leakage_config
 
+and scuba_execution_id = !scuba_execution_id
+
 and scuba_logging = !scuba_logging
 
 and scuba_normals = !scuba_normals
@@ -4966,17 +4969,6 @@ let clang_frontend_action_string =
 let java_package_is_external package =
   RevList.exists external_java_packages ~f:(fun (prefix : string) ->
       String.is_prefix package ~prefix )
-
-
-let scuba_execution_id =
-  if scuba_logging then
-    match !scuba_execution_id with
-    | None ->
-        Random.self_init () ;
-        Some (Random.int64 Int64.max_value)
-    | Some _ as some_value ->
-        some_value
-  else None
 
 
 let is_originator =

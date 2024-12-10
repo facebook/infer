@@ -33,7 +33,7 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
     | None | Some Ok ->
         decr remaining ;
         if is_empty () then (
-          ScubaLogging.log_count ~label:"analysis_restarts" ~value:!restart_count ;
+          StatsLogging.log_count ~label:"analysis_restarts" ~value:!restart_count ;
           L.debug Analysis Quiet "restart count: %d@\n" !restart_count )
     | Some (RaceOn {dependency_filenames}) ->
         incr restart_count ;

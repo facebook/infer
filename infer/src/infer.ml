@@ -103,7 +103,7 @@ let log_environment_info () =
       L.environment_info "Could not retrieve available memory (possibly not on Linux)@\n"
   | Some available_memory ->
       L.environment_info "Available memory at startup: %d MB@\n" available_memory ;
-      ScubaLogging.log_count ~label:"startup_mem_avail_MB" ~value:available_memory ) ;
+      StatsLogging.log_count ~label:"startup_mem_avail_MB" ~value:available_memory ) ;
   print_active_checkers () ;
   print_scheduler () ;
   print_cores_used ()
@@ -112,7 +112,7 @@ let log_environment_info () =
 let () =
   (* We specifically want to collect samples only from the main process until
      we figure out what other entries and how we want to collect *)
-  if Config.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
+  if Config.is_originator then StatsLogging.register_global_log_flushing_at_exit () ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then
@@ -124,9 +124,8 @@ let () =
   if Config.print_builtins then Builtin.print_and_exit () ;
   let has_results_dir = setup () in
   if has_results_dir && Config.is_originator then log_environment_info () ;
-  if has_results_dir && Config.debug_mode && Config.is_originator then (
+  if has_results_dir && Config.debug_mode && Config.is_originator then
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
-    Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
   ( match Config.command with
   | _ when Option.is_some Config.run_as_child ->
       InferAnalyze.register_active_checkers () ;

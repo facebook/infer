@@ -544,12 +544,12 @@ let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) pat
          ~actuals ~formals_opt
   in
   if Config.pulse_log_unknown_calls then
-    ScubaLogging.log_message_with_location ~label:"unmodeled_function_operation_pulse"
+    StatsLogging.log_message_with_location ~label:"unmodeled_function_operation_pulse"
       ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
       ~message:
         (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
   Option.iter Config.pulse_log_unknown_calls_sampled ~f:(fun sample_rate ->
-      ScubaLogging.log_message_with_location_sampled
+      StatsLogging.log_message_with_location_sampled
         ~label:(lazy "unmodeled_function_operation_pulse")
         ~loc:(lazy (F.asprintf "%a" Location.pp_file_pos call_loc))
         ~message:

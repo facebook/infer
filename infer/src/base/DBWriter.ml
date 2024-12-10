@@ -488,7 +488,7 @@ module Implementation = struct
 
   let terminate () =
     let overwrites = IInt.Hash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
-    ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
+    StatsLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
     L.debug Analysis Quiet "Detected %d spec overwrites.@\n" overwrites
 
 
@@ -642,7 +642,7 @@ module Server = struct
     let total_store = ExecutionDuration.total_useful_s !Implementation.store_sql_time in
     let store_pct = 100.0 *. total_store /. total_useful |> Float.round |> int_of_float in
     L.debug Analysis Quiet "%s= %d%%@\n" label store_pct ;
-    ScubaLogging.log_count ~label ~value:store_pct
+    StatsLogging.log_count ~label ~value:store_pct
 
 
   let rec server_loop ?(useful_time = ExecutionDuration.zero) socket =

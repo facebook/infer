@@ -44,15 +44,6 @@ let warnf =
 
 
 let log_deprecated_option source ~deprecated ~instead ~short_instead ~doc =
-  ( if is_originator then
-      let label =
-        match source with
-        | `CLI ->
-            "deprecated_option"
-        | `Inferconfig _ ->
-            "deprecated_option_inferconfig"
-      in
-      EarlyScubaLogging.log_message ~label ~message:deprecated ) ;
   let pp_source fmt = function
     | `CLI ->
         ()

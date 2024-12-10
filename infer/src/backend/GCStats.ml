@@ -68,7 +68,7 @@ let pp f
     top_heap_words
 
 
-let to_scuba_entries ~prefix (stats : t) =
+let to_stats_entries ~prefix (stats : t) =
   let create_counter field value =
     LogEntry.mk_count ~label:(Printf.sprintf "%s_gc_stats.%s" prefix field) ~value
   in
@@ -81,11 +81,11 @@ let to_scuba_entries ~prefix (stats : t) =
   ; create_counter "top_heap_words" stats.top_heap_words ]
 
 
-let log_to_scuba ~prefix stats = ScubaLogging.log_many (to_scuba_entries ~prefix stats)
+let log_to_stats ~prefix stats = StatsLogging.log_many (to_stats_entries ~prefix stats)
 
 let log ~name debug_kind stats =
   L.debug debug_kind Quiet "@[GC stats for %s:@\n%a@]@." name pp stats ;
-  log_to_scuba ~prefix:name stats
+  log_to_stats ~prefix:name stats
 
 
 let log_f ~name debug_kind f =

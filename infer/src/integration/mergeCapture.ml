@@ -53,7 +53,7 @@ module TenvMerger = struct
 
 
   let merge_global_tenvs ~normalize infer_deps_file =
-    ScubaLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
+    StatsLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
         GCStats.log_f ~name:"tenv_merge" MergeCapture (fun () ->
             merge_global_tenvs ~normalize infer_deps_file ) )
 
@@ -92,7 +92,7 @@ let merge_captured_targets ~root =
     Utils.with_file_in infer_deps_file ~f:(In_channel.iter_lines ~f:incr_counter) ;
     !counter
   in
-  ScubaLogging.log_count ~label:"merged_captured_targets" ~value:targets_num ;
+  StatsLogging.log_count ~label:"merged_captured_targets" ~value:targets_num ;
   L.progress "Merging %d captured targets took %a@\n%!" targets_num Mtime.Span.pp
     (Mtime_clock.count time0)
 
@@ -105,5 +105,5 @@ let merge_captured_targets ~root =
 
 
 let merge_captured_targets ~root =
-  ScubaLogging.execute_with_time_logging "merge_captured_targets" (fun () ->
+  StatsLogging.execute_with_time_logging "merge_captured_targets" (fun () ->
       merge_captured_targets ~root )

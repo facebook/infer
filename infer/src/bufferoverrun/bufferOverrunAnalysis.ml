@@ -347,7 +347,7 @@ module TransferFunctions = struct
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
               callee_pname ;
             if Config.cost_log_unknown_calls then
-              ScubaLogging.log_message ~label:"unmodeled_function_inferbo"
+              StatsLogging.log_message ~label:"unmodeled_function_inferbo"
                 ~message:
                   (F.asprintf "[Inferbo] Unmodeled Function: %a" Procname.pp_without_templates
                      callee_pname ) ;

@@ -19,11 +19,11 @@ type since =
 val get : since:since -> t
 
 val log : name:string -> L.debug_kind -> t -> unit
-(** log to infer's log file and to Scuba *)
+(** log to infer's log file and to stats *)
 
 val log_aggregate : prefix:string -> L.debug_kind -> t list -> unit
-(** log aggregate to infer's log file and to Scuba *)
+(** log aggregate to infer's log file and to stats *)
 
 val log_f : name:string -> L.debug_kind -> (unit -> 'a) -> 'a
 (** log GC stats for the duration of the function passed as argument to infer's log file and to
-    Scuba *)
+    stats *)

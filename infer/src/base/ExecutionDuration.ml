@@ -82,7 +82,7 @@ let timed_evaluate ~f =
   {result; execution_duration= since start}
 
 
-let to_scuba_entries ~prefix exe_duration =
+let to_stats_entries ~prefix exe_duration =
   let secs_to_us s = s *. 1000_000. |> Float.to_int in
   [ LogEntry.mk_time ~label:(prefix ^ "_sys") ~duration_us:(sys_time exe_duration |> secs_to_us)
   ; LogEntry.mk_time ~label:(prefix ^ "_user") ~duration_us:(user_time exe_duration |> secs_to_us)
@@ -92,4 +92,4 @@ let to_scuba_entries ~prefix exe_duration =
 
 let log ~prefix debug_kind exe_duration =
   L.debug debug_kind Quiet "%a@\n" (pp ~prefix) exe_duration ;
-  ScubaLogging.log_many (to_scuba_entries ~prefix exe_duration)
+  StatsLogging.log_many (to_stats_entries ~prefix exe_duration)

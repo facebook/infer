@@ -27,4 +27,4 @@ val serialize : t -> serialized
 
 val deserialize : serialized -> t
 
-val to_scuba : t -> LogEntry.t list
+val to_stats : t -> LogEntry.t list

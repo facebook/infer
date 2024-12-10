@@ -158,11 +158,11 @@ let incr_stat is_interesting_path file stat =
       stat.filtered_out_header <- stat.filtered_out_header + 1 )
 
 
-let log_to_scuba {all; filtered_out; filtered_out_header} =
+let log_stats {all; filtered_out; filtered_out_header} =
   let mk_entry ~label ~value =
     LogEntry.mk_count ~label:(Printf.sprintf "differential_filters.%s" label) ~value
   in
-  ScubaLogging.log_many
+  StatsLogging.log_many
     [ mk_entry ~label:"all" ~value:all
     ; mk_entry ~label:"filtered_out" ~value:filtered_out
     ; mk_entry ~label:"filtered_out_header" ~value:filtered_out_header ]
@@ -192,7 +192,7 @@ let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
               is_interesting_path )
             report
         in
-        if do_log then log_to_scuba stat ;
+        if do_log then log_stats stat ;
         filtered_report
   | None ->
       fun ~do_log:_ -> Fn.id

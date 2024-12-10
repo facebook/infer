@@ -8,19 +8,14 @@
 open! IStd
 module SMap = IString.Map
 
-type table = InferEvents
-
 type sample =
   { int_section: int SMap.t  (** All integer type fields and their values *)
-  ; normal_section: string SMap.t
-        (** All string (normal in Scuba terminology) type fields and their values *)
-  ; tagset_section: string list SMap.t
-        (** All sets of strings (tagsets in Scuba terminology) type fields and their values *) }
+  ; normal_section: string SMap.t  (** All string type fields and their values *)
+  ; tagset_section: string list SMap.t  (** All sets of strings type fields and their values *) }
 
 let new_sample ~time =
   let time = match time with Some time -> time | None -> int_of_float (Unix.time ()) in
-  { (* time is a single mandatory field in scuba. without it,
-       scuba disregards all samples *)
+  { (* time is a single mandatory field. *)
     int_section= SMap.singleton "time" time
   ; normal_section= SMap.empty
   ; tagset_section= SMap.empty }
@@ -54,15 +49,3 @@ let sample_to_json sample =
     [ ("int", ints_to_assoc sample.int_section)
     ; ("normal", normals_to_assoc sample.normal_section)
     ; ("tags", tags_to_assoc sample.tagset_section) ]
-
-
-let sample_to_json_string sample = sample |> sample_to_json |> Yojson.Basic.to_string
-
-let table_to_scribe_category = function InferEvents -> Scribe.InferEvents
-
-let log table samples =
-  let category = table_to_scribe_category table in
-  Scribe.log category (List.map samples ~f:sample_to_json_string)
-
-
-let log = if Config.scuba_logging then log else fun _ _ -> ()

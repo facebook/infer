@@ -815,6 +815,8 @@ val scheduler : scheduler
 
 val scope_leakage_config : Yojson.Safe.t
 
+val scuba_execution_id : Int64.t option
+
 val scuba_logging : bool
 
 val scuba_normals : string String.Map.t
@@ -957,9 +959,6 @@ val toplevel_results_dir : string
 
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)
-
-val scuba_execution_id : Int64.t option
-(** a random number to (hopefully) uniquely identify this run *)
 
 val is_originator : bool
 (** is the current process (forked from) the root of the Infer process tree *)

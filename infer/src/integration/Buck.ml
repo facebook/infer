@@ -485,7 +485,7 @@ let parse_command_and_targets =
         ~f:(fun re -> List.filter ~f:(fun tgt -> not (Str.string_match re tgt 0)) targets)
         buck_targets_block_list_regexp
     in
-    ScubaLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
+    StatsLogging.log_count ~label:"buck_targets" ~value:(List.length targets) ;
     (command, parsed_args.rev_not_targets', targets)
 
 

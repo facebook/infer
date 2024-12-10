@@ -65,7 +65,7 @@ let serialize timings = Timeable.Map.map (fun t -> Tdigest.to_string t |> snd) t
 
 let deserialize timings = Timeable.Map.map Tdigest.of_string timings
 
-let to_scuba timings =
+let to_stats timings =
   Timeable.Map.bindings timings
   |> List.concat_map ~f:(fun (timeable, digest) ->
          let _updated_digest, percentile_values = Tdigest.percentiles digest percentiles in

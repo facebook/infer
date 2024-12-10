@@ -70,13 +70,13 @@ module TimeCounter = struct
   let merge = add
 
   let to_log_entries ~field_name duration =
-    ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ field_name) duration
+    ExecutionDuration.to_stats_entries ~prefix:("backend_stats." ^ field_name) duration
 end
 
 module TimingsStat = OfUnmarshallable (struct
   include Timings
 
-  let to_log_entries ~field_name:_ ts = Timings.to_scuba ts
+  let to_log_entries ~field_name:_ ts = Timings.to_stats ts
 end)
 
 module PulseSummaryCountMap = struct
@@ -198,7 +198,7 @@ type t =
 
 let reset () = copy initial ~into:global_stats
 
-let log_to_scuba stats =
+let log_to_jsonl stats =
   let hit_percent hit miss =
     let total = hit + miss in
     if Int.equal total 0 then None else Some (hit * 100 / total)
@@ -208,7 +208,7 @@ let log_to_scuba stats =
     |> Option.map ~f:(fun hit_percent ->
            LogEntry.mk_count ~label:"backend_stats.summary_cache_hit_rate" ~value:hit_percent )
   in
-  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> ScubaLogging.log_many
+  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> StatsLogging.log_many
 
 
 (** human-readable pretty-printing of all fields *)
@@ -371,7 +371,7 @@ let log_aggregate stats_list =
         else stats
       in
       L.debug Analysis Quiet "@[Backend stats:@\n@[<v2>  %a@]@]@\n" pp stats ;
-      log_to_scuba stats ;
+      log_to_jsonl stats ;
       log_to_file stats
 
 
