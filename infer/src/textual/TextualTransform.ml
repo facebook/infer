@@ -162,6 +162,51 @@ end
 
 let fix_closure_app = FixClosureAppExpr.transform
 
+module FixHackWrapper = struct
+  let is_forward_to_static_method_wrapper (pdesc : ProcDesc.t) =
+    (* hackc generates two kinds of wrapper but we are not interested in the
+       forward-to-static-method case *)
+    Int.equal (List.length pdesc.nodes) 1
+
+
+  let replace_forward_call ({procdecl; nodes} as pdesc : ProcDesc.t) =
+    (* we expect the last node to be of the form:
+       n0: *HackMixed = load &$param1
+       n1: *HackMixed = load &$param2
+       ...
+       n_{k+1} = n_k.?.name(n0, n1, ...)
+       ret n_{k+1}
+    *)
+    let nodes =
+      match List.rev nodes with
+      | [] ->
+          []
+      | last_node :: others ->
+          let instrs =
+            List.map last_node.Node.instrs ~f:(function
+              | Instr.Let {id; exp= Exp.Call {proc; args; kind= Virtual}; loc} ->
+                  let enclosing_class = procdecl.qualified_name.enclosing_class in
+                  let proc : QualifiedProcName.t = {proc with enclosing_class} in
+                  let instr = Instr.Let {id; exp= Exp.Call {proc; args; kind= NonVirtual}; loc} in
+                  instr
+              | instr ->
+                  instr )
+          in
+          {last_node with Node.instrs} :: others |> List.rev
+    in
+    {pdesc with nodes}
+
+
+  let transform module_ =
+    module_map_procs module_ ~f:(fun pdesc : ProcDesc.t ->
+        let has_wrapper_attr =
+          List.exists pdesc.procdecl.attributes ~f:Textual.Attr.is_hack_wrapper
+        in
+        if has_wrapper_attr && not (is_forward_to_static_method_wrapper pdesc) then
+          replace_forward_call pdesc
+        else pdesc )
+end
+
 module Subst = struct
   let rec of_exp_one exp ~id ~by =
     let open Exp in
@@ -900,5 +945,5 @@ let run lang module_ =
   let decls_env =
     if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env
   in
-  let module_ = module_ |> let_propagation |> out_of_ssa in
+  let module_ = module_ |> let_propagation |> FixHackWrapper.transform |> out_of_ssa in
   (module_, decls_env)
