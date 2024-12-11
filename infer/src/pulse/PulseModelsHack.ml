@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -532,13 +531,7 @@ let hhbc_class_get_c value : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let default () =
-    let* {location} = DSL.Syntax.get_data in
-    StatsLogging.log_message_with_location ~label:"hhbc_class_get_c argument"
-      ~loc:(F.asprintf "%a" Location.pp_file_pos location)
-      ~message:"hhbc_class_get_c received a non-constant-string argument." ;
-    get_static_class value |> lift_to_monad
-  in
+  let default () = get_static_class value |> lift_to_monad in
   dynamic_dispatch value
     ~cases:
       [ ( hack_string_type_name
