@@ -22,8 +22,4 @@ val add_normal : name:string -> value:string -> sample -> sample
 (** Set a new string field and its value to the sample. Overwrites if a field with this name was
     already set. *)
 
-val add_tagset : name:string -> value:string list -> sample -> sample
-(** Set a new set of strings field and its value to the sample. Overwrites if a field with this name
-    was already set. *)
-
 val sample_to_json : sample -> Yojson.t

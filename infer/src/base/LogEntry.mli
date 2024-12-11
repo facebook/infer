@@ -30,5 +30,3 @@ val mk_string : label:string -> message:string -> t
 val global_log_get : unit -> t list
 
 val global_log_erase : unit -> unit
-
-val global_log_add : t -> unit

@@ -31,11 +31,6 @@ let add_normal ~name ~value sample =
   {sample with normal_section}
 
 
-let add_tagset ~name ~value sample =
-  let tagset_section = SMap.add name value sample.tagset_section in
-  {sample with tagset_section}
-
-
 let sample_to_json sample =
   let map_to_assoc value_to_json key_value_map =
     let pairs = SMap.bindings key_value_map in

@@ -815,14 +815,6 @@ val scheduler : scheduler
 
 val scope_leakage_config : Yojson.Safe.t
 
-val scuba_execution_id : Int64.t option
-
-val scuba_logging : bool
-
-val scuba_normals : string String.Map.t
-
-val scuba_tags : string list String.Map.t
-
 val select : [`All | `Select of int] option
 
 val show_buckets : bool

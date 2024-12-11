@@ -40,5 +40,3 @@ let global_entry_log : t list ref = ref []
 let global_log_get () = List.rev !global_entry_log
 
 let global_log_erase () = global_entry_log := []
-
-let global_log_add entry = global_entry_log := entry :: !global_entry_log

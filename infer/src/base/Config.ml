@@ -3241,22 +3241,22 @@ and scope_leakage_config =
     |}
 
 
-and scuba_execution_id =
+and _scuba_execution_id =
   CLOpt.mk_int64_opt ~long:"scuba-execution-id"
-    "[DEPRECATED] Execution ID attached to all samples logged to scuba"
+    "[DOES NOTHING] Execution ID attached to all samples logged to scuba"
 
 
-and scuba_logging = CLOpt.mk_bool ~long:"[DEPRECATED] scuba-logging" "(direct) logging to scuba"
+and _scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "[DOES NOTHING] (direct) logging to scuba"
 
-and scuba_normals =
+and _scuba_normals =
   CLOpt.mk_string_map ~long:"scuba-normal"
-    "[DEPRECATED] add an extra string (normal) field to be set for each sample of scuba, format \
+    "[DOES NOTHING] add an extra string (normal) field to be set for each sample of scuba, format \
      <name>=<value>"
 
 
-and scuba_tags =
+and _scuba_tags =
   CLOpt.mk_string_map ~long:"scuba-tags"
-    "[DEPRECATED] add an extra set of strings (tagset) field to be set for each sample of scuba, \
+    "[DOES NOTHING] add an extra set of strings (tagset) field to be set for each sample of scuba, \
      format <name>=(<value>,<value>,<value>|NONE)"
 
 
@@ -4759,14 +4759,6 @@ and sarif = !sarif
 and scheduler = !scheduler
 
 and scope_leakage_config = !scope_leakage_config
-
-and scuba_execution_id = !scuba_execution_id
-
-and scuba_logging = !scuba_logging
-
-and scuba_normals = !scuba_normals
-
-and scuba_tags = String.Map.map !scuba_tags ~f:(fun v -> String.split v ~on:',')
 
 and select =
   match !select with
