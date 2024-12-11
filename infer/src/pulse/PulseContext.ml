@@ -7,9 +7,9 @@
 
 open! IStd
 
-let proc_desc_key = Domain.DLS.new_key (fun () -> None)
+let proc_desc_key = DLS.new_key (fun () -> None)
 
-let tenv_key = Domain.DLS.new_key (fun () : Tenv.t Option.t -> None)
+let tenv_key = DLS.new_key (fun () : Tenv.t Option.t -> None)
 
 let () =
   AnalysisGlobalState.register_dls_with_proc_desc_and_tenv proc_desc_key
@@ -21,9 +21,9 @@ let () =
       Some tenv )
 
 
-let proc_desc () = Domain.DLS.get proc_desc_key
+let proc_desc () = DLS.get proc_desc_key
 
-let tenv () = Domain.DLS.get tenv_key
+let tenv () = DLS.get tenv_key
 
 let tenv_exn () =
   match tenv () with
@@ -33,4 +33,4 @@ let tenv_exn () =
       tenv
 
 
-let set_tenv_global_for_testing tenv = Domain.DLS.set tenv_key (Some tenv)
+let set_tenv_global_for_testing tenv = DLS.set tenv_key (Some tenv)

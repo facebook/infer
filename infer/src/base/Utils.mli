@@ -153,5 +153,5 @@ val is_term_dumb : unit -> bool
 (** Check if the terminal is "dumb" or otherwise has very limited functionality. For example, Emacs'
     eshell reports itself as a dumb terminal. *)
 
-val with_dls : 'a Domain.DLS.key -> f:('a -> 'a) -> unit
+val with_dls : 'a DLS.key -> f:('a -> 'a) -> unit
 (** get value in domain local storage, pass to [f] and set to result *)

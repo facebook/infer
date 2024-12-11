@@ -31,7 +31,7 @@ val pp : F.formatter -> t -> unit
     in the Backend module to conservatively invalidate procedure summaries that were computed using
     out-of-date type environment information. *)
 
-val currently_under_analysis : Procname.t option Domain.DLS.key
+val currently_under_analysis : Procname.t option DLS.key
 
 val reset : Procname.t -> t
 

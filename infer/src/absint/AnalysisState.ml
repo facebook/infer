@@ -20,30 +20,30 @@ type t =
 let initial () = {last_instr= None; last_node= None; last_session= 0; remaining_disjuncts= None}
 
 (** Global state *)
-let gs = Domain.DLS.new_key initial
+let gs = DLS.new_key initial
 
 let () = AnalysisGlobalState.register_dls gs ~init:initial
 
-let get_instr () = (Domain.DLS.get gs).last_instr
+let get_instr () = (DLS.get gs).last_instr
 
-let set_instr instr = (Domain.DLS.get gs).last_instr <- Some instr
+let set_instr instr = (DLS.get gs).last_instr <- Some instr
 
-let get_node_exn () = Option.value_exn (Domain.DLS.get gs).last_node
+let get_node_exn () = Option.value_exn (DLS.get gs).last_node
 
-let get_node () = (Domain.DLS.get gs).last_node
+let get_node () = (DLS.get gs).last_node
 
 let set_node (node : Procdesc.Node.t) =
-  let gs = Domain.DLS.get gs in
+  let gs = DLS.get gs in
   gs.last_instr <- None ;
   gs.last_node <- Some node
 
 
-let get_session () = (Domain.DLS.get gs).last_session
+let get_session () = (DLS.get gs).last_session
 
-let set_session (session : int) = (Domain.DLS.get gs).last_session <- session
+let set_session (session : int) = (DLS.get gs).last_session <- session
 
 let get_loc_exn () =
-  match (Domain.DLS.get gs).last_instr with
+  match (DLS.get gs).last_instr with
   | Some instr ->
       Sil.location_of_instr instr
   | None ->
@@ -51,14 +51,14 @@ let get_loc_exn () =
 
 
 let get_loc () =
-  match (Domain.DLS.get gs).last_instr with
+  match (DLS.get gs).last_instr with
   | Some instr ->
       Some (Sil.location_of_instr instr)
   | None ->
       None
 
 
-let get_remaining_disjuncts () = (Domain.DLS.get gs).remaining_disjuncts
+let get_remaining_disjuncts () = (DLS.get gs).remaining_disjuncts
 
 let set_remaining_disjuncts remaining_disjuncts =
-  (Domain.DLS.get gs).remaining_disjuncts <- Some remaining_disjuncts
+  (DLS.get gs).remaining_disjuncts <- Some remaining_disjuncts

@@ -33,5 +33,5 @@ val analyze_proc_name_toplevel :
   Exe_env.t -> AnalysisRequest.t -> specialization:Specialization.t option -> Procname.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given procedure. *)
 
-val edges_to_ignore : Procname.Set.t Procname.Map.t option Domain.DLS.key
+val edges_to_ignore : Procname.Set.t Procname.Map.t option DLS.key
 (** used by the replay analysis to cut mutual recursion cycles in the same places again *)

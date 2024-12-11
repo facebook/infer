@@ -45,25 +45,25 @@ end = struct
 
   module AnalysisTargets = Hash_queue.Make (SpecializedProcname)
 
-  let currently_analyzed = Domain.DLS.new_key (fun () -> AnalysisTargets.create ())
+  let currently_analyzed = DLS.new_key (fun () -> AnalysisTargets.create ())
 
   let pp_actives fmt =
-    Domain.DLS.get currently_analyzed
+    DLS.get currently_analyzed
     |> AnalysisTargets.iteri ~f:(fun ~key:target ~data:_ ->
            F.fprintf fmt "%a,@," SpecializedProcname.pp target )
 
 
-  let mem analysis_target = AnalysisTargets.mem (Domain.DLS.get currently_analyzed) analysis_target
+  let mem analysis_target = AnalysisTargets.mem (DLS.get currently_analyzed) analysis_target
 
   let add analysis_target =
     if Config.trace_ondemand then L.progress "add %a@." SpecializedProcname.pp analysis_target ;
-    AnalysisTargets.enqueue_back_exn (Domain.DLS.get currently_analyzed) analysis_target ()
+    AnalysisTargets.enqueue_back_exn (DLS.get currently_analyzed) analysis_target ()
 
 
   let remove analysis_target =
     if Config.trace_ondemand then L.progress "remove %a@." SpecializedProcname.pp analysis_target ;
     let popped_target, () =
-      AnalysisTargets.dequeue_back_with_key_exn (Domain.DLS.get currently_analyzed)
+      AnalysisTargets.dequeue_back_with_key_exn (DLS.get currently_analyzed)
     in
     if not (SpecializedProcname.equal popped_target analysis_target) then
       L.die InternalError
@@ -72,7 +72,7 @@ end = struct
         SpecializedProcname.pp analysis_target SpecializedProcname.pp popped_target pp_actives
 
 
-  let get_all () = AnalysisTargets.keys @@ Domain.DLS.get currently_analyzed
+  let get_all () = AnalysisTargets.keys @@ DLS.get currently_analyzed
 
   let get_cycle_start recursive =
     let all = get_all () in
@@ -92,12 +92,12 @@ end
     the previous analysis scheduling are recorded in this variable
 
     TODO: [edges_to_ignore] should take specialization into account, like [is_active] *)
-let edges_to_ignore = Domain.DLS.new_key (fun () -> None)
+let edges_to_ignore = DLS.new_key (fun () -> None)
 
 (** use either [is_active] or [edges_to_ignore] to determine if we should return an empty summary to
     avoid mutual recursion cycles *)
 let detect_mutual_recursion_cycle ~caller_summary ~callee specialization =
-  match (Domain.DLS.get edges_to_ignore, caller_summary) with
+  match (DLS.get edges_to_ignore, caller_summary) with
   | Some edges_to_ignore, Some {Summary.proc_name} ->
       let is_replay_recursive_callee =
         Procname.Map.find_opt proc_name edges_to_ignore
@@ -116,26 +116,24 @@ let procedure_is_defined proc_name =
 
 (* Remember what the last status sent was so that we can update the status correctly when entering
    and exiting nested ondemand analyses. In particular we need to remember the original time.*)
-let current_taskbar_status : (Mtime.t * string) option Domain.DLS.key =
-  Domain.DLS.new_key (fun () -> None)
-
+let current_taskbar_status : (Mtime.t * string) option DLS.key = DLS.new_key (fun () -> None)
 
 let () =
   let open IOption.Let_syntax in
   AnalysisGlobalState.register
     ~save:(fun () ->
-      let+ t0, status = Domain.DLS.get current_taskbar_status in
+      let+ t0, status = DLS.get current_taskbar_status in
       (* the time elapsed doing [status] so far *)
       (Mtime.span t0 (Mtime_clock.now ()), status) )
     ~restore:(fun proc_analysis_time ->
-      Domain.DLS.set current_taskbar_status
+      DLS.set current_taskbar_status
         (let+ suspended_span, status = proc_analysis_time in
          (* forget about the time spent doing a nested analysis and resend the status of the outer
             analysis with the updated "original" start time *)
          let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span |> Option.value_exn in
          !ProcessPoolState.update_status (Some new_t0) status ;
          (new_t0, status) ) )
-    ~init:(fun _ -> Domain.DLS.set current_taskbar_status None)
+    ~init:(fun _ -> DLS.set current_taskbar_status None)
 
 
 let () =
@@ -152,7 +150,7 @@ let () =
 
 
 (** reference to log errors only at the innermost recursive call *)
-let logged_error = Domain.DLS.new_key (fun () -> false)
+let logged_error = DLS.new_key (fun () -> false)
 
 let update_taskbar proc_name_opt source_file_opt =
   let t0 = Mtime_clock.now () in
@@ -171,7 +169,7 @@ let update_taskbar proc_name_opt source_file_opt =
     | None, None ->
         "Unspecified task"
   in
-  Domain.DLS.set current_taskbar_status (Some (t0, status)) ;
+  DLS.set current_taskbar_status (Some (t0, status)) ;
   !ProcessPoolState.update_status (Some t0) status
 
 
@@ -232,7 +230,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     decr nesting ;
     (* copy the previous recursion edges over to the new summary if doing a replay analysis so that
        subsequent replay analyses can pick them up too *)
-    Domain.DLS.get edges_to_ignore
+    DLS.get edges_to_ignore
     |> Option.iter ~f:(fun edges_to_ignore ->
            Procname.Map.find_opt callee_pname edges_to_ignore
            |> Option.iter ~f:(fun recursive_callees ->
@@ -274,7 +272,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     in
     let final_callee_summary = postprocess callee_summary in
     (* don't forget to reset this so we output messages for future errors too *)
-    Domain.DLS.set logged_error false ;
+    DLS.set logged_error false ;
     final_callee_summary
   with exn -> (
     let backtrace = Printexc.get_backtrace () in
@@ -287,13 +285,13 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
             ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
             true
         | exn ->
-            if not (Domain.DLS.get logged_error) then (
+            if not (DLS.get logged_error) then (
               let source_file = callee_attributes.ProcAttributes.translation_unit in
               let location = callee_attributes.ProcAttributes.loc in
               L.internal_error "While analysing function %a:%a at %a, raised %s@\n" SourceFile.pp
                 source_file Procname.pp callee_pname Location.pp_file_pos location
                 (Exn.to_string exn) ;
-              Domain.DLS.set logged_error true ) ;
+              DLS.set logged_error true ) ;
             not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Procname.pp
       callee_pname (Exn.to_string exn) backtrace ;
@@ -433,7 +431,7 @@ let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.A
 
 (** track how many times we restarted the analysis of the current dependency chain to make the
     analysis of mutual recursion cycles deterministic *)
-let number_of_recursion_restarts = Domain.DLS.new_key (fun () -> 0)
+let number_of_recursion_restarts = DLS.new_key (fun () -> 0)
 
 let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req : AnalysisRequest.t)
     ~specialization ?caller_summary ?(from_file_analysis = false) callee_pname : _ AnalysisResult.t
@@ -443,14 +441,14 @@ let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req 
       let target = {SpecializedProcname.proc_name= callee_pname; specialization} in
       let cycle_start, cycle_length, first_active = ActiveProcedures.get_cycle_start target in
       if
-        Domain.DLS.get number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
+        DLS.get number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
         || SpecializedProcname.equal cycle_start target
       then (
         register_callee ~cycle_detected:true ?caller_summary callee_pname ;
         if Config.trace_ondemand then
           L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
         if
-          Domain.DLS.get number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
+          DLS.get number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
           && not (SpecializedProcname.equal cycle_start target)
         then Stats.incr_ondemand_recursion_cycle_restart_limit_hit () ;
         Error MutualRecursionCycle )
@@ -560,7 +558,7 @@ let analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_s
   (* If [caller_summary] is set then we are analyzing a dependency of another procedure, so we
      should keep counting restarts within that dependency chain (or cycle). If it's not set then
      this is a "toplevel" analysis of [callee_pname] so we start fresh. *)
-  if Option.is_none caller_summary then Domain.DLS.set number_of_recursion_restarts 0 ;
+  if Option.is_none caller_summary then DLS.set number_of_recursion_restarts 0 ;
   analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
     ?from_file_analysis callee_pname
 

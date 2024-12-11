@@ -41,9 +41,9 @@ let register_ref ~init ref_ =
 let register_dls_with_proc_desc_and_tenv ~init key =
   stores :=
     StateManager
-      { save= (fun () -> Domain.DLS.get key)
-      ; restore= (fun x -> Domain.DLS.set key x)
-      ; init= (fun proc_desc tenv -> Domain.DLS.set key (init proc_desc tenv)) }
+      { save= (fun () -> DLS.get key)
+      ; restore= (fun x -> DLS.set key x)
+      ; init= (fun proc_desc tenv -> DLS.set key (init proc_desc tenv)) }
     :: !stores
 
 

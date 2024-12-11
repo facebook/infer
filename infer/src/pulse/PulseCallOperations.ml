@@ -65,7 +65,7 @@ module GlobalForStats = struct
 
   let empty = {node_is_not_stuck= false; one_call_is_stuck= false}
 
-  let global = Domain.DLS.new_key (fun () -> empty)
+  let global = DLS.new_key (fun () -> empty)
 
   let () = AnalysisGlobalState.register_dls ~init:(fun () -> empty) global
 
@@ -73,13 +73,13 @@ module GlobalForStats = struct
     Utils.with_dls global ~f:(fun global -> {global with node_is_not_stuck= false})
 
 
-  let is_node_not_stuck () = (Domain.DLS.get global).node_is_not_stuck
+  let is_node_not_stuck () = (DLS.get global).node_is_not_stuck
 
   let node_is_not_stuck () =
     Utils.with_dls global ~f:(fun global -> {global with node_is_not_stuck= true})
 
 
-  let is_one_call_stuck () = (Domain.DLS.get global).one_call_is_stuck
+  let is_one_call_stuck () = (DLS.get global).one_call_is_stuck
 
   let one_call_is_stuck () =
     Utils.with_dls global ~f:(fun global -> {global with one_call_is_stuck= true})

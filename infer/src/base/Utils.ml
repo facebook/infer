@@ -515,4 +515,4 @@ let is_term_dumb () =
       false
 
 
-let with_dls key ~f = Domain.DLS.get key |> f |> Domain.DLS.set key
+let with_dls key ~f = DLS.get key |> f |> DLS.set key

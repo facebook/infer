@@ -19,10 +19,10 @@ let language_to_string =
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
 
-let curr_language = Domain.DLS.new_key (fun () -> Clang)
+let curr_language = DLS.new_key (fun () -> Clang)
 
-let get_language () = Domain.DLS.get curr_language
+let get_language () = DLS.get curr_language
 
 let curr_language_is lang = equal (get_language ()) lang
 
-let set_language lang = Domain.DLS.set curr_language lang
+let set_language lang = DLS.set curr_language lang

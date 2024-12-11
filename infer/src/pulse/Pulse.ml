@@ -192,12 +192,12 @@ let report_unnecessary_parameter_copies ({InterproceduralAnalysis.proc_desc; ten
 let heap_size () = (Gc.quick_stat ()).heap_words
 
 (* for printing the session name only, promise! *)
-let current_specialization = Domain.DLS.new_key (fun () -> None)
+let current_specialization = DLS.new_key (fun () -> None)
 
 let () = AnalysisGlobalState.register_dls ~init:(fun () -> None) current_specialization
 
 let pp_space_specialization fmt =
-  Domain.DLS.get current_specialization
+  DLS.get current_specialization
   |> Option.iter ~f:(function _, Specialization.Pulse specialization ->
          F.fprintf fmt " (specialized: %a)" Specialization.Pulse.pp specialization )
 
@@ -1857,7 +1857,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
 let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let open IOption.Let_syntax in
   if should_analyze proc_desc then (
-    Domain.DLS.set current_specialization specialization ;
+    DLS.set current_specialization specialization ;
     try
       match specialization with
       | None ->

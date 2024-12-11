@@ -11,21 +11,21 @@ type t = int [@@deriving compare, equal, hash]
 
 let initial_next_fresh = 1
 
-let next_fresh = Domain.DLS.new_key (fun () -> initial_next_fresh)
+let next_fresh = DLS.new_key (fun () -> initial_next_fresh)
 
 let mk_fresh () =
-  let l = Domain.DLS.get next_fresh in
-  Domain.DLS.set next_fresh (l + 1) ;
+  let l = DLS.get next_fresh in
+  DLS.set next_fresh (l + 1) ;
   l
 
 
 let initial_next_fresh_restricted = -1
 
-let next_fresh_restricted = Domain.DLS.new_key (fun () -> initial_next_fresh_restricted)
+let next_fresh_restricted = DLS.new_key (fun () -> initial_next_fresh_restricted)
 
 let mk_fresh_restricted () =
-  let v = Domain.DLS.get next_fresh_restricted in
-  Domain.DLS.set next_fresh_restricted (v - 1) ;
+  let v = DLS.get next_fresh_restricted in
+  DLS.set next_fresh_restricted (v - 1) ;
   v
 
 

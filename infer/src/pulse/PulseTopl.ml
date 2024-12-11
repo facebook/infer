@@ -716,7 +716,7 @@ let static_match_call tenv return arguments procname label : tcontext option =
 
 
 module Debug = struct
-  let dropped_disjuncts_count = Domain.DLS.new_key (fun () -> 0)
+  let dropped_disjuncts_count = DLS.new_key (fun () -> 0)
 
   let rec matched_transitions =
     lazy
@@ -745,9 +745,9 @@ module Debug = struct
 
   let () = AnalysisGlobalState.register_dls dropped_disjuncts_count ~init:(fun () -> 0)
 
-  let get_dropped_disjuncts_count () = Domain.DLS.get dropped_disjuncts_count
+  let get_dropped_disjuncts_count () = DLS.get dropped_disjuncts_count
 
-  let set_dropped_disjuncts_count count = Domain.DLS.set dropped_disjuncts_count count
+  let set_dropped_disjuncts_count count = DLS.set dropped_disjuncts_count count
 end
 
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match

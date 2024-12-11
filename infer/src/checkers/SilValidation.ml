@@ -300,7 +300,7 @@ end = struct
   let callbacks = {instr_conforms; call_exp_conforms; arg_exp_conforms= is_pure}
 end
 
-let error_counter = Domain.DLS.new_key (fun () -> 0)
+let error_counter = DLS.new_key (fun () -> 0)
 
 let error_limit = 10000
 
@@ -332,7 +332,7 @@ let checker (language : Language.t) ({proc_desc; err_log} : IntraproceduralAnaly
         (* Clang is the most general, i.e., least restrictive validator. *)
         Clang.callbacks
   in
-  if Domain.DLS.get error_counter < error_limit then
+  if DLS.get error_counter < error_limit then
     Procdesc.iter_instrs
       (fun _ instr ->
         if not (instr_conforms instr) then (

@@ -180,10 +180,10 @@ let create_db location id =
 
 
 let make_callback_get_and_set () =
-  let make_key () = Domain.DLS.new_key ~split_from_parent:Fn.id (fun () -> []) in
+  let make_key () = DLS.new_key ~split_from_parent:Fn.id (fun () -> []) in
   let db_keys = [(AnalysisDatabase, make_key ()); (CaptureDatabase, make_key ())] in
-  let get_db_callbacks id = Stdlib.List.assoc id db_keys |> Domain.DLS.get in
-  let set_db_callbacks id callbacks = Domain.DLS.set (Stdlib.List.assoc id db_keys) callbacks in
+  let get_db_callbacks id = Stdlib.List.assoc id db_keys |> DLS.get in
+  let set_db_callbacks id callbacks = DLS.set (Stdlib.List.assoc id db_keys) callbacks in
   (get_db_callbacks, set_db_callbacks)
 
 
@@ -205,7 +205,7 @@ type registered_stmt = unit -> Sqlite3.stmt * Sqlite3.db
 
 let register_statement id =
   let k stmt0 =
-    let stmt_key = Domain.DLS.new_key (fun () -> None) in
+    let stmt_key = DLS.new_key (fun () -> None) in
     let new_statement db =
       let stmt =
         try Sqlite3.prepare db stmt0
@@ -214,11 +214,11 @@ let register_statement id =
             error
       in
       on_close_database id ~f:(fun _ -> SqliteUtils.finalize db ~log:"db close callback" stmt) ;
-      Domain.DLS.set stmt_key (Some (stmt, db))
+      DLS.set stmt_key (Some (stmt, db))
     in
     on_new_database_connection id ~f:new_statement ;
     fun () ->
-      match Domain.DLS.get stmt_key with
+      match DLS.get stmt_key with
       | None ->
           L.(die InternalError) "database not initialized"
       | Some (stmt, db) ->
@@ -251,9 +251,9 @@ module UnsafeDatabaseRef : sig
 end = struct
   let make_db_descr () =
     (* we implicitly throw away the descr of the parent domain here to avoid conflict *)
-    let key = Domain.DLS.new_key (fun () -> None) in
-    let get () = Domain.DLS.get key in
-    let set descr = Domain.DLS.set key descr in
+    let key = DLS.new_key (fun () -> None) in
+    let get () = DLS.get key in
+    let set descr = DLS.set key descr in
     (get, set)
 
 

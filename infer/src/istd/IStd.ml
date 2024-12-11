@@ -24,6 +24,9 @@ module Sys = struct
   include Sys_unix
 end
 
+(* easy access to sub-module *)
+module DLS = Domain.DLS
+
 (* Compare police: generic compare mostly disabled. *)
 let compare = No_polymorphic_compare.compare
 

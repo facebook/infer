@@ -66,11 +66,11 @@ module JsonFragment = struct
 
   (** for some limited (not thread-safe) form of safety, and to know when we need to print
       separators *)
-  let pp_state = Domain.DLS.new_key (fun () -> [Outside])
+  let pp_state = DLS.new_key (fun () -> [Outside])
 
-  let get_state () = Domain.DLS.get pp_state
+  let get_state () = DLS.get pp_state
 
-  let set_state state = Domain.DLS.set pp_state state
+  let set_state state = DLS.set pp_state state
 
   let pp f json_fragment =
     match (json_fragment, get_state ()) with
