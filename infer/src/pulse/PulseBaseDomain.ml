@@ -28,6 +28,24 @@ let empty =
 type cell = Memory.Edges.t * Attributes.t
 
 let pp fmt {heap; stack; attrs} =
+  let attrs =
+    if Language.curr_language_is Python then
+      let filter_attribute (attr : Attribute.t) =
+        match attr with
+        | Attribute.Allocated _ | AwaitedAwaitable | MustNotBeTainted _ | StaticType _ | Tainted _
+          ->
+            true
+        | _ ->
+            false
+      in
+      let attrs = AddressAttributes.map (Attributes.filter ~f:filter_attribute) attrs in
+      AddressAttributes.filter
+        (fun _ attr ->
+          let set = Attributes.filter attr ~f:filter_attribute in
+          not (Attributes.is_empty set) )
+        attrs
+    else attrs
+  in
   F.fprintf fmt "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@];@;attrs=@[<hv>%a@];@]}" Stack.pp stack
     Memory.pp heap AddressAttributes.pp attrs
 

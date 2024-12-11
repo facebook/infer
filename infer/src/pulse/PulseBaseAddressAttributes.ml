@@ -51,6 +51,8 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
+let map = Graph.map
+
 (* for an abstract value v, where f_keep(v) == false, find an abstract value v_keep, where
    f_keep(v_keep) == true and where v_keep has taint propagated from v *)
 let mk_transitive_taint_from_subst f_keep memory =
@@ -383,6 +385,8 @@ module type S = sig
   val filter : (key -> Attributes.t -> bool) -> t -> t
 
   val filter_with_discarded_addrs : (key -> bool) -> t -> t * AbstractValue.t list
+
+  val map : (Attributes.t -> Attributes.t) -> t -> t
 
   val find_opt : key -> t -> Attributes.t option
 

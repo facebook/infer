@@ -21,6 +21,8 @@ module type S = sig
 
   val filter_with_discarded_addrs : (key -> bool) -> t -> t * AbstractValue.t list
 
+  val map : (Attributes.t -> Attributes.t) -> t -> t
+
   val find_opt : key -> t -> Attributes.t option
 
   val add_one : key -> Attribute.t -> t -> t
