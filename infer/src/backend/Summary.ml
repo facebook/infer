@@ -248,7 +248,7 @@ module OnDisk = struct
   let load_summary_to_spec_table ~lazy_payloads analysis_req proc_name =
     let summ_opt =
       match spec_of_procname ~lazy_payloads proc_name with
-      | None when BiabductionModels.mem proc_name ->
+      | None when (not Config.multicore) && BiabductionModels.mem proc_name ->
           (* most of the time we don't run biabduction and it's the only analysis with non-NULL
              specs in these models, so load lazily *)
           spec_of_model ~lazy_payloads:true proc_name
