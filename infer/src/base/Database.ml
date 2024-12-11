@@ -298,8 +298,9 @@ end = struct
     let db_path = get_db_path location id in
     let db =
       do_in_db_dir db_path ~f:(fun db_path ->
-          Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
-            ~uri:true db_path )
+          let mutex = if Config.multicore then `NO else `FULL in
+          Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex ?vfs:Config.sqlite_vfs ~uri:true
+            db_path )
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"mmap"
