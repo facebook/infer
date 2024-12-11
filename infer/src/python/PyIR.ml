@@ -467,7 +467,7 @@ module Exp = struct
     | ContextManagerExit of t
   [@@deriving equal]
 
-  let none = Const Const.None
+  let none = Temp 0
 
   let of_int i = Const (Int (Z.of_int i))
 
@@ -922,6 +922,14 @@ module CFG = struct
           let+ last = Terminator.of_builder ~loc last in
           {node with Node.last} )
     in
+    let nodes =
+      NodeName.Map.find_opt entry nodes
+      |> Option.value_map ~default:nodes ~f:(fun ({first_loc; stmts} as entry_node : Node.t) ->
+             let entry_node =
+               {entry_node with stmts= (first_loc, Let {lhs= 0; rhs= Exp.Const Const.None}) :: stmts}
+             in
+             NodeName.Map.add entry entry_node nodes )
+    in
     {nodes; entry; code_info= CodeInfo.of_code code}
 end
 
@@ -968,7 +976,7 @@ module State = struct
     ; stmts= []
     ; ssa_parameters= []
     ; stack_at_loop_headers= IMap.empty
-    ; fresh_id= 0 }
+    ; fresh_id= 3 (* we reserve 0 for Const.None, 1 for *&locals and 2 for *&globals *) }
 
 
   let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())

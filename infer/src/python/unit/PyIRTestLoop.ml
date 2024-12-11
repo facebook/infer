@@ -23,25 +23,26 @@ for x in range(10):
 
       function toplevel():
         b0:
-          n0 <- TOPLEVEL[range]
-          n1 <- $Call(n0, 10, None)
-          n2 <- $GetIter(n1, None)
+          n0 <- None
+          n3 <- TOPLEVEL[range]
+          n4 <- $Call(n3, 10, n0)
+          n5 <- $GetIter(n4, n0)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2, None)
-          n4 <- $HasNextIter(n2, None)
-          if n4 then jmp b2 else jmp b3
+          n6 <- $NextIter(n5, n0)
+          n7 <- $HasNextIter(n5, n0)
+          if n7 then jmp b2 else jmp b3
 
         b2:
-          TOPLEVEL[x] <- n3
-          n5 <- TOPLEVEL[print]
-          n6 <- TOPLEVEL[x]
-          n7 <- $Call(n5, n6, None)
+          TOPLEVEL[x] <- n6
+          n8 <- TOPLEVEL[print]
+          n9 <- TOPLEVEL[x]
+          n10 <- $Call(n8, n9, n0)
           jmp b1
 
         b3:
-          return None |}]
+          return n0 |}]
 
 
 let%expect_test _ =
@@ -62,53 +63,55 @@ def f(x, y, l, bar, toto):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          TOPLEVEL[f] <- n3
+          return n0
 
 
       function dummy.f(x, y, l, bar, toto):
         b0:
-          n0 <- LOCAL[l]
-          n1 <- $GetIter(n0, None)
+          n0 <- None
+          n3 <- LOCAL[l]
+          n4 <- $GetIter(n3, n0)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1, None)
-          n3 <- $HasNextIter(n1, None)
-          if n3 then jmp b2 else jmp b13
+          n5 <- $NextIter(n4, n0)
+          n6 <- $HasNextIter(n4, n0)
+          if n6 then jmp b2 else jmp b13
 
         b12:
           jmp b1
 
         b13:
-          return None
+          return n0
 
         b2:
-          LOCAL[x] <- n2
-          n4 <- LOCAL[bar]
-          n5 <- $Call(n4, None)
-          n6 <- $CallMethod[__enter__](n5, None)
-          n7 <- LOCAL[toto]
-          n8 <- $Call(n7, None)
-          n9 <- $CallMethod[__enter__](n8, None)
-          LOCAL[obj] <- n9
-          n10 <- LOCAL[y]
-          if n10 then jmp b3 else jmp b4
+          LOCAL[x] <- n5
+          n7 <- LOCAL[bar]
+          n8 <- $Call(n7, n0)
+          n9 <- $CallMethod[__enter__](n8, n0)
+          n10 <- LOCAL[toto]
+          n11 <- $Call(n10, n0)
+          n12 <- $CallMethod[__enter__](n11, n0)
+          LOCAL[obj] <- n12
+          n13 <- LOCAL[y]
+          if n13 then jmp b3 else jmp b4
 
         b3:
-          n15 <- $CallMethod[__exit__](n8, None)
-          n16 <- $CallMethod[__exit__](n5, None)
+          n18 <- $CallMethod[__exit__](n11, n0)
+          n19 <- $CallMethod[__exit__](n8, n0)
           jmp b1
 
         b4:
-          n11 <- GLOBAL[print]
-          n12 <- $Call(n11, "nop", None)
-          n13 <- $CallMethod[__exit__](n8, None)
+          n14 <- GLOBAL[print]
+          n15 <- $Call(n14, "nop", n0)
+          n16 <- $CallMethod[__exit__](n11, n0)
           jmp b8
 
         b8:
-          n14 <- $CallMethod[__exit__](n5, None)
+          n17 <- $CallMethod[__exit__](n8, n0)
           jmp b12 |}]
 
 
@@ -128,43 +131,45 @@ def f(match, it, n):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          TOPLEVEL[f] <- n3
+          return n0
 
 
       function dummy.f(match, it, n):
         b0:
-          n0 <- LOCAL[match]
-          n1 <- $GetIter(n0, None)
+          n0 <- None
+          n3 <- LOCAL[match]
+          n4 <- $GetIter(n3, n0)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1, None)
-          n3 <- $HasNextIter(n1, None)
-          if n3 then jmp b2 else jmp b5
+          n5 <- $NextIter(n4, n0)
+          n6 <- $HasNextIter(n4, n0)
+          if n6 then jmp b2 else jmp b5
 
         b2:
-          LOCAL[item] <- n2
-          n4 <- LOCAL[it]
-          n5 <- LOCAL[n]
-          n6 <- n4[n5]
-          n7 <- LOCAL[item]
-          n8 <- $Compare.eq(n6, n7, None)
-          if n8 then jmp b4 else jmp b3
+          LOCAL[item] <- n5
+          n7 <- LOCAL[it]
+          n8 <- LOCAL[n]
+          n9 <- n7[n8]
+          n10 <- LOCAL[item]
+          n11 <- $Compare.eq(n9, n10, n0)
+          if n11 then jmp b4 else jmp b3
 
         b3:
-          n11 <- GLOBAL[AssertionError]
-          throw n11
+          n14 <- GLOBAL[AssertionError]
+          throw n14
 
         b4:
-          n9 <- LOCAL[n]
-          n10 <- $Inplace.Add(n9, 1, None)
-          LOCAL[n] <- n10
+          n12 <- LOCAL[n]
+          n13 <- $Inplace.Add(n12, 1, n0)
+          LOCAL[n] <- n13
           jmp b1
 
         b5:
-          return None |}]
+          return n0 |}]
 
 
 let%expect_test _ =
@@ -183,35 +188,37 @@ def f(foo):
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["f", "dummy.f", None, None, None, None]
-          TOPLEVEL[f] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          TOPLEVEL[f] <- n3
+          return n0
 
 
       function dummy.f(foo):
         b0:
-          n0 <- LOCAL[foo]
-          n1 <- $GetIter(n0, None)
+          n0 <- None
+          n3 <- LOCAL[foo]
+          n4 <- $GetIter(n3, n0)
           jmp b1
 
         b1:
-          n2 <- $NextIter(n1, None)
-          n3 <- $HasNextIter(n1, None)
-          if n3 then jmp b2 else jmp b5
+          n5 <- $NextIter(n4, n0)
+          n6 <- $HasNextIter(n4, n0)
+          if n6 then jmp b2 else jmp b5
 
         b2:
-          LOCAL[path] <- n2
-          n4 <- LOCAL[path]
-          if n4 then jmp b3 else jmp b4
+          LOCAL[path] <- n5
+          n7 <- LOCAL[path]
+          if n7 then jmp b3 else jmp b4
 
         b3:
-          return None
+          return n0
 
         b4:
           jmp b1
 
         b5:
-          return None |}]
+          return n0 |}]
 
 
 let%expect_test _ =
@@ -227,27 +234,29 @@ async def async_loop1():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["async_loop1", "dummy.async_loop1", None, None, None, None]
-          TOPLEVEL[async_loop1] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["async_loop1", "dummy.async_loop1", n0, n0, n0, n0]
+          TOPLEVEL[async_loop1] <- n3
+          return n0
 
 
       async function dummy.async_loop1(doc):
         b0:
+          n0 <- None
           $GenStartCoroutine()
-          n0 <- GLOBAL[get_docs]
-          n1 <- $Call(n0, None)
-          n2 <- $CallMethod[__aiter__](n1, None)
+          n3 <- GLOBAL[get_docs]
+          n4 <- $Call(n3, n0)
+          n5 <- $CallMethod[__aiter__](n4, n0)
           jmp b1
 
         b1:
-          n3 <- $CallMethod[__anext__](n2, None)
-          n4 <- $GetAwaitable(n3, None)
-          n5 <- $YieldFrom(n4, None, None)
-          LOCAL[doc] <- n4
-          n6 <- GLOBAL[foo]
-          n7 <- LOCAL[doc]
-          n8 <- $Call(n6, n7, None)
+          n6 <- $CallMethod[__anext__](n5, n0)
+          n7 <- $GetAwaitable(n6, n0)
+          n8 <- $YieldFrom(n7, n0, n0)
+          LOCAL[doc] <- n7
+          n9 <- GLOBAL[foo]
+          n10 <- LOCAL[doc]
+          n11 <- $Call(n9, n10, n0)
           jmp b1 |}]
 
 
@@ -263,37 +272,40 @@ async def async_loop2():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["async_loop2", "dummy.async_loop2", None, None, None, None]
-          TOPLEVEL[async_loop2] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["async_loop2", "dummy.async_loop2", n0, n0, n0, n0]
+          TOPLEVEL[async_loop2] <- n3
+          return n0
 
 
       async function dummy.async_loop2():
         b0:
+          n0 <- None
           $GenStartCoroutine()
-          n0 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", None, None, None, None]
-          n1 <- GLOBAL[read]
-          n2 <- $Call(n1, None)
-          n3 <- $CallMethod[__aiter__](n2, None)
-          n4 <- $Call(n0, n3, None)
-          n5 <- $GetAwaitable(n4, None)
-          n6 <- $YieldFrom(n5, None, None)
-          return None
+          n3 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", n0, n0, n0, n0]
+          n4 <- GLOBAL[read]
+          n5 <- $Call(n4, n0)
+          n6 <- $CallMethod[__aiter__](n5, n0)
+          n7 <- $Call(n3, n6, n0)
+          n8 <- $GetAwaitable(n7, n0)
+          n9 <- $YieldFrom(n8, n0, n0)
+          return n0
 
 
       async function dummy.async_loop2._$listcomp(.0):
         b0:
+          n0 <- None
           $GenStartCoroutine()
-          n0 <- LOCAL[.0]
+          n3 <- LOCAL[.0]
           jmp b1
 
         b1:
-          n1 <- $CallMethod[__anext__](n0, None)
-          n2 <- $GetAwaitable(n1, None)
-          n3 <- $YieldFrom(n2, None, None)
-          LOCAL[x] <- n2
-          n4 <- LOCAL[x]
-          n5 <- $ListAppend($BuildList(), n4, None)
+          n4 <- $CallMethod[__anext__](n3, n0)
+          n5 <- $GetAwaitable(n4, n0)
+          n6 <- $YieldFrom(n5, n0, n0)
+          LOCAL[x] <- n5
+          n7 <- LOCAL[x]
+          n8 <- $ListAppend($BuildList(), n7, n0)
           jmp b1 |}]
 
 
@@ -315,54 +327,56 @@ def main():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
-          TOPLEVEL[main] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          TOPLEVEL[main] <- n3
+          return n0
 
 
       function dummy.main(i):
         b0:
-          n0 <- GLOBAL[test]
-          n1 <- $Call(n0, None)
-          if n1 then jmp b1 else jmp b7
+          n0 <- None
+          n3 <- GLOBAL[test]
+          n4 <- $Call(n3, n0)
+          if n4 then jmp b1 else jmp b7
 
         b1:
-          n2 <- GLOBAL[r]
-          n3 <- $Call(n2, None)
-          n4 <- $GetIter(n3, None)
+          n5 <- GLOBAL[r]
+          n6 <- $Call(n5, n0)
+          n7 <- $GetIter(n6, n0)
           jmp b2
 
         b2:
-          n5 <- $NextIter(n4, None)
-          n6 <- $HasNextIter(n4, None)
-          if n6 then jmp b3 else jmp b4
+          n8 <- $NextIter(n7, n0)
+          n9 <- $HasNextIter(n7, n0)
+          if n9 then jmp b3 else jmp b4
 
         b3:
-          LOCAL[i] <- n5
-          n13 <- GLOBAL[action]
-          n14 <- $Call(n13, None)
+          LOCAL[i] <- n8
+          n16 <- GLOBAL[action]
+          n17 <- $Call(n16, n0)
           jmp b2
 
         b4:
-          n7 <- GLOBAL[test]
-          n8 <- $Call(n7, None)
-          if n8 then jmp b5 else jmp b8
+          n10 <- GLOBAL[test]
+          n11 <- $Call(n10, n0)
+          if n11 then jmp b5 else jmp b8
 
         b5:
-          n9 <- GLOBAL[action]
-          n10 <- $Call(n9, None)
-          n11 <- GLOBAL[test]
-          n12 <- $Call(n11, None)
-          if n12 then jmp b5 else jmp b6
+          n12 <- GLOBAL[action]
+          n13 <- $Call(n12, n0)
+          n14 <- GLOBAL[test]
+          n15 <- $Call(n14, n0)
+          if n15 then jmp b5 else jmp b6
 
         b6:
-          return None
+          return n0
 
         b7:
-          return None
+          return n0
 
         b8:
-          return None |}]
+          return n0 |}]
 
 
 let%expect_test _ =
@@ -382,36 +396,38 @@ def main():
 
       function toplevel():
         b0:
-          n0 <- $MakeFunction["main", "dummy.main", None, None, None, None]
-          TOPLEVEL[main] <- n0
-          return None
+          n0 <- None
+          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          TOPLEVEL[main] <- n3
+          return n0
 
 
       function dummy.main(_):
         b0:
-          n0 <- GLOBAL[loop]
-          n1 <- $Call(n0, None)
-          n2 <- $GetIter(n1, None)
+          n0 <- None
+          n3 <- GLOBAL[loop]
+          n4 <- $Call(n3, n0)
+          n5 <- $GetIter(n4, n0)
           jmp b1
 
         b1:
-          n3 <- $NextIter(n2, None)
-          n4 <- $HasNextIter(n2, None)
-          if n4 then jmp b2 else jmp b5
+          n6 <- $NextIter(n5, n0)
+          n7 <- $HasNextIter(n5, n0)
+          if n7 then jmp b2 else jmp b5
 
         b2:
-          LOCAL[_] <- n3
-          n5 <- GLOBAL[test]
-          n6 <- $Call(n5, None)
-          if n6 then jmp b3 else jmp b4
+          LOCAL[_] <- n6
+          n8 <- GLOBAL[test]
+          n9 <- $Call(n8, n0)
+          if n9 then jmp b3 else jmp b4
 
         b3:
           jmp b4
 
         b4:
-          n7 <- GLOBAL[action]
-          n8 <- $Call(n7, None)
+          n10 <- GLOBAL[action]
+          n11 <- $Call(n10, n0)
           jmp b1
 
         b5:
-          return None |}]
+          return n0 |}]

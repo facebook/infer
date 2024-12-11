@@ -128,9 +128,9 @@ let of_const cst =
 
 let exp_of_ident_str ident = Textual.Exp.Const (Str (F.asprintf "%a" Ident.pp ident))
 
-let exp_locals = Textual.Exp.(Load {exp= Lvar Parameter.locals; typ= None})
+let exp_locals = Textual.(Exp.Var (Ident.of_int 1))
 
-let exp_globals = Textual.Exp.(Load {exp= Lvar Parameter.globals; typ= None})
+let exp_globals = Textual.(Exp.Var (Ident.of_int 2))
 
 let str_py_import_name = "py_import_name"
 
@@ -464,11 +464,19 @@ let of_node is_module_body nullify_locals entry
     if is_module_body && NodeName.equal name entry then
       let loc = label_loc in
       Textual.(
-        Instr.Store
-          { exp1= Lvar Parameter.locals
-          ; exp2= Load {exp= Lvar Parameter.globals; typ= None}
-          ; typ= None
-          ; loc }
+        Instr.Let
+          {id= Some (Ident.of_int 2); exp= Load {exp= Lvar Parameter.globals; typ= None}; loc}
+        :: Instr.Store {exp1= Lvar Parameter.locals; exp2= exp_globals; typ= None; loc}
+        :: Instr.Let
+             {id= Some (Ident.of_int 1); exp= Load {exp= Lvar Parameter.locals; typ= None}; loc}
+        :: instrs )
+    else if NodeName.equal name entry then
+      let loc = label_loc in
+      Textual.(
+        Instr.Let
+          {id= Some (Ident.of_int 2); exp= Load {exp= Lvar Parameter.globals; typ= None}; loc}
+        :: Instr.Let
+             {id= Some (Ident.of_int 1); exp= Load {exp= Lvar Parameter.locals; typ= None}; loc}
         :: instrs )
     else instrs
   in
