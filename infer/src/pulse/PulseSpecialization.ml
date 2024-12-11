@@ -45,8 +45,7 @@ let apply {Specialization.Pulse.aliases; dynamic_types} location astate =
         List.fold aliases ~init:astate ~f:(fun astate alias ->
             let astate, values =
               List.fold alias ~init:(astate, []) ~f:(fun (astate, values) heap_path ->
-                  let astate, addr = initialize_heap_path heap_path astate in
-                  let astate, (value, _) = Memory.eval_edge addr Dereference astate in
+                  let astate, (value, _) = initialize_heap_path heap_path astate in
                   (astate, value :: values) )
             in
             prune_eq_list_values astate values ) )

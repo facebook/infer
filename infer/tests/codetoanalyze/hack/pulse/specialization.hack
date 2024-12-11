@@ -166,7 +166,7 @@ class Main {
     self::conditional_with_paths_sink($tainted, $i1, $i2);
   }
 
-  public static function FN_with_heap_alias3_bad(int $i): void {
+  public static function with_heap_alias3_bad(int $i): void {
     $tainted = \Level1\taintSource();
     $i = new Box3<int>(10);
     $j1 = new Box2<Box3<int>>($i);

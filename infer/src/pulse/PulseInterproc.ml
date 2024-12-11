@@ -44,10 +44,10 @@ end = struct
         F.pp_print_string fmt "unsupported"
     | Supported {stack; pvar} ->
         Pvar.pp Pp.text fmt pvar ;
-        List.iter stack ~f:(fun access -> F.fprintf fmt " -> %a" Access.pp access)
+        List.rev stack |> List.iter ~f:(fun access -> F.fprintf fmt " -> %a" Access.pp access)
 
 
-  let from_pvar pvar = Supported {stack= []; pvar}
+  let from_pvar pvar = Supported {stack= [Access.Dereference]; pvar}
 
   let unsupported = Unsupported
 
@@ -63,15 +63,16 @@ end = struct
         None
     | Supported {stack; pvar} ->
         (* Note: Specialization.HeapPath.t are reversed *)
-        List.fold_left stack ~init:(Some (HeapPath.Pvar pvar)) ~f:(fun opt_path access ->
-            Option.bind opt_path ~f:(fun path ->
-                match access with
-                | Access.FieldAccess fieldname ->
-                    Some (HeapPath.FieldAccess (fieldname, path))
-                | Access.Dereference ->
-                    Some (HeapPath.Dereference path)
-                | _ ->
-                    None ) )
+        List.rev stack
+        |> List.fold_left ~init:(Some (HeapPath.Pvar pvar)) ~f:(fun opt_path access ->
+               Option.bind opt_path ~f:(fun path ->
+                   match access with
+                   | Access.FieldAccess fieldname ->
+                       Some (HeapPath.FieldAccess (fieldname, path))
+                   | Access.Dereference ->
+                       Some (HeapPath.Dereference path)
+                   | _ ->
+                       None ) )
 end
 
 type callee_index_to_visit =
