@@ -45,7 +45,7 @@ module Dict = struct
     if not (Int.equal (List.length args) (List.length keys)) then
       L.die InternalError "Dict.make expects two list of same length@\n" ;
     let bindings = List.zip_exn keys args in
-    let* dict = constructor dict_tname bindings in
+    let* dict = constructor ~deref:false dict_tname bindings in
     ret dict
 
 
@@ -64,7 +64,7 @@ module Dict = struct
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* field = sil_fieldname_from_string_value_exn dict_tname key in
-    let* load_res = load_access dict (FieldAccess field) in
+    let* load_res = load_access ~deref:false dict (FieldAccess field) in
     let* () = propagate_static_type_on_load dict key load_res in
     ret load_res
 
@@ -72,7 +72,7 @@ module Dict = struct
   let set dict key value : unit DSL.model_monad =
     let open DSL.Syntax in
     let* field = sil_fieldname_from_string_value_exn dict_tname key in
-    let* () = store_field ~ref:dict field value in
+    let* () = store_field ~deref:false ~ref:dict field value in
     ret ()
 end
 
@@ -86,7 +86,7 @@ module Tuple = struct
           let field = str_field_of_int i in
           (field, aval) )
     in
-    let* dict = constructor tuple_tname bindings in
+    let* dict = constructor ~deref:false tuple_tname bindings in
     ret dict
 
 
@@ -98,13 +98,13 @@ module Tuple = struct
         fresh ()
     | Some i ->
         let field = Fieldname.make tuple_tname (str_field_of_int i) in
-        load_access tuple (FieldAccess field)
+        load_access ~deref:false tuple (FieldAccess field)
 end
 
 module PyModule = struct
   let make name : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    constructor (module_tname name) []
+    constructor ~deref:false (module_tname name) []
 end
 
 let build_tuple args : model =
@@ -299,7 +299,7 @@ let make_int arg : model =
   let* res =
     match opt_int with
     | None ->
-        constructor int_tname []
+        constructor ~deref:false int_tname []
     | Some i ->
         let* res = int i in
         let* () = and_dynamic_type_is res (Typ.mk_struct int_tname) in
@@ -312,7 +312,7 @@ let make_none : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* none = constructor none_tname [] in
+  let* none = constructor ~deref:false none_tname [] in
   assign_ret none
 
 

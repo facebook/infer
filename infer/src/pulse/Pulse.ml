@@ -1311,6 +1311,15 @@ module PulseTransferFunctions = struct
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
+      | Load {id= lhs_id; e= Lfield _ as rhs_exp; loc} when Language.curr_language_is Python ->
+          (* note: Python frontend only uses load during closure calls, for captured arguments *)
+          let astates =
+            (let++ astate, rhs_addr = PulseOperations.eval path Read loc rhs_exp astate in
+             PulseOperations.write_load_id lhs_id (ValueOrigin.unknown rhs_addr) astate )
+            |> SatUnsat.to_list
+            |> PulseReport.report_results analysis_data loc
+          in
+          (astates, path, astate_n)
       | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
           (* [lhs_id := *rhs_exp] *)
           let model_opt = PulseLoadInstrModels.dispatch ~load:rhs_exp in
@@ -1327,7 +1336,7 @@ module PulseTransferFunctions = struct
              in
              let rhs_addr = ValueOrigin.value rhs_vo in
              and_is_int_if_integer_type typ rhs_addr astate
-             >>|| PulseOperations.hack_python_propagates_type_on_load tenv path loc rhs_exp rhs_addr
+             >>|| PulseOperations.hack_propagates_type_on_load tenv path loc rhs_exp rhs_addr
              >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_load_id lhs_id rhs_vo )
             |> SatUnsat.to_list
@@ -1404,8 +1413,15 @@ module PulseTransferFunctions = struct
               then AbductiveDomain.apply_unknown_effect hist lhs_addr astate
               else astate
             in
-            let=+ astate =
-              PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate
+            let+* astate =
+              match lhs_exp with
+              | Lfield ({exp}, fieldname, _) when Language.curr_language_is Python ->
+                  let+* astate, ref = PulseOperations.eval path Read loc exp astate in
+                  PulseOperations.write_field path loc ~ref fieldname ~obj:(rhs_addr, hist) astate
+              | _ ->
+                  Sat
+                    (PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
+                       astate )
             in
             let* astate =
               PulseRetainCycleChecker.check_retain_cycles_store tenv loc (rhs_addr, hist) astate

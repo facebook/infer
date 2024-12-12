@@ -532,7 +532,7 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
     astate
 
 
-let hack_python_propagates_type_on_load tenv path loc rhs_exp addr astate =
+let hack_propagates_type_on_load tenv path loc rhs_exp addr astate =
   ( if Language.curr_language_is Hack then
       (* The Hack frontend do not propagate types from declarations to usage,
          so we redo part of the work ourself *)

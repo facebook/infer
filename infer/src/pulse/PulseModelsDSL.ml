@@ -358,11 +358,13 @@ module Syntax = struct
     PulseOperations.eval_deref path location exp |> exec_partial_operation
 
 
-  let load_access ?(no_access = false) aval access : aval model_monad =
+  let load_access ?(no_access = false) ?(deref = true) aval access : aval model_monad =
     let* {path; location} = get_data in
     let mode = if no_access then NoAccess else Read in
-    PulseOperations.eval_deref_access path mode location aval access
-    >> sat |> exec_partial_operation
+    let eval_access =
+      if deref then PulseOperations.eval_deref_access else PulseOperations.eval_access
+    in
+    eval_access path mode location aval access >> sat |> exec_partial_operation
 
 
   let load x = access Read x Dereference
@@ -573,9 +575,10 @@ module Syntax = struct
     PulseOperations.write_field path location ~ref ~obj field >> sat |> exec_partial_command
 
 
-  let store_field ~ref field obj : unit model_monad =
+  let store_field ?(deref = true) ~ref field obj : unit model_monad =
     let* {path; location} = get_data in
-    PulseOperations.write_deref_field path location ~ref ~obj field >> sat |> exec_partial_command
+    let write = if deref then PulseOperations.write_deref_field else PulseOperations.write_field in
+    write path location ~ref ~obj field >> sat |> exec_partial_command
 
 
   let store ~ref obj : unit model_monad =
@@ -655,7 +658,7 @@ module Syntax = struct
         unreachable
 
 
-  let constructor type_name fields : aval model_monad =
+  let constructor ?(deref = true) type_name fields : aval model_monad =
     let exp =
       Exp.Sizeof
         { typ= Typ.mk_struct type_name
@@ -668,7 +671,7 @@ module Syntax = struct
     let* () =
       list_iter fields ~f:(fun (fieldname, obj) ->
           let field = Fieldname.make type_name fieldname in
-          store_field ~ref:new_obj field obj )
+          store_field ~deref ~ref:new_obj field obj )
     in
     ret new_obj
 

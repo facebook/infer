@@ -152,7 +152,7 @@ module Syntax : sig
 
   val access : access_mode -> aval -> Access.t -> aval model_monad
 
-  val load_access : ?no_access:bool -> aval -> Access.t -> aval model_monad
+  val load_access : ?no_access:bool -> ?deref:bool -> aval -> Access.t -> aval model_monad
 
   val load : aval -> aval model_monad
   (** read the Dereference access from the value *)
@@ -164,7 +164,7 @@ module Syntax : sig
 
   val new_ : Exp.t -> aval model_monad
 
-  val constructor : Typ.Name.t -> (string * aval) list -> aval model_monad
+  val constructor : ?deref:bool -> Typ.Name.t -> (string * aval) list -> aval model_monad
   (** [constructor_dsl typ_name fields] builds a fresh object of type [typ_name] and initializes its
       fields using list [fields] *)
 
@@ -177,7 +177,7 @@ module Syntax : sig
 
   val write_field : ref:aval -> Fieldname.t -> aval -> unit model_monad
 
-  val store_field : ref:aval -> Fieldname.t -> aval -> unit model_monad
+  val store_field : ?deref:bool -> ref:aval -> Fieldname.t -> aval -> unit model_monad
 
   val store : ref:aval -> aval -> unit model_monad
 
