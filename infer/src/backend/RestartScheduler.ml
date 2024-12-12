@@ -106,11 +106,9 @@ let make sources =
   of_queue queue
 
 
-let if_restart_scheduler f =
-  match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
+let setup () =
+  match Config.scheduler with Restart when not Config.multicore -> ProcLocker.setup () | _ -> ()
 
-
-let setup () = if_restart_scheduler ProcLocker.setup
 
 type locked_proc = {start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
 
@@ -136,9 +134,7 @@ let unlock ~after_exn pname =
 
 let with_lock ~get_actives ~f pname =
   match Config.scheduler with
-  | File | SyntacticCallGraph ->
-      f ()
-  | Restart -> (
+  | Restart when not Config.multicore -> (
     match ProcLocker.try_lock pname with
     | `AlreadyLockedByUs ->
         f ()
@@ -158,6 +154,8 @@ let with_lock ~get_actives ~f pname =
              )
         in
         raise (RestartSchedulerException.ProcnameAlreadyLocked {dependency_filenames}) )
+  | _ ->
+      f ()
 
 
 let finish result task = match result with None | Some Ok -> None | Some (RaceOn _) -> Some task
