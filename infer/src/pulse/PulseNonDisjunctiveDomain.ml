@@ -845,6 +845,8 @@ let exec non_disj ~exec_instr =
     | NonBottom (astate, path) ->
         (* move the abstract state from the non-disjunctive part into a single disjunct *)
         let non_disj = {non_disj with astate= Bottom} in
+        (* set the context to "non-disjunctive" *)
+        let path = {path with is_non_disj= true} in
         let exec_states_paths, non_disj =
           exec_instr ((ExecutionDomain.ContinueProgram astate, path), non_disj)
         in
@@ -860,6 +862,10 @@ let exec non_disj ~exec_instr =
         in
         if OverApproxDomain.is_bottom astate then bottom else {non_disj with astate}
   else non_disj
+
+
+let join_to_astate astate non_disj =
+  {non_disj with astate= OverApproxDomain.join non_disj.astate astate}
 
 
 type summary =
@@ -930,4 +936,6 @@ module Summary = struct
 
 
   let has_dropped_disjuncts {has_dropped_disjuncts} = has_dropped_disjuncts
+
+  let get_pre_post {astate} = astate
 end

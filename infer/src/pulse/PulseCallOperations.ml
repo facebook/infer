@@ -508,13 +508,25 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
     NonDisjDomain.apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses non_disj_caller
       non_disj_callee
   in
-  (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
+  (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary, and to the
+     over-approximate pre/post if we are currently executing the over-approximate part of the
+     current state *)
+  let exec_states_callee =
+    if path.PathContext.is_non_disj then
+      match NonDisjDomain.Summary.get_pre_post non_disj_callee with
+      | Bottom ->
+          exec_states_callee
+      | NonBottom astate_over_approx ->
+          exec_states_callee @ [ContinueProgram astate_over_approx]
+    else exec_states_callee
+  in
   let posts, contradiction =
     List.fold ~init:([], None) exec_states_callee
       ~f:(fun (posts, contradiction) callee_exec_state ->
         if
-          Option.exists disjunct_limit ~f:(fun limit -> List.length posts >= limit)
-          || (should_keep_at_most_one_disjunct && not (List.is_empty posts))
+          (not path.PathContext.is_non_disj)
+          && ( Option.exists disjunct_limit ~f:(fun limit -> List.length posts >= limit)
+             || (should_keep_at_most_one_disjunct && not (List.is_empty posts)) )
         then (posts, contradiction)
         else (
           (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
@@ -529,6 +541,35 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
               (posts, PulseInterproc.merge_contradictions contradiction new_contradiction)
           | Sat post, new_contradiction ->
               (post :: posts, PulseInterproc.merge_contradictions contradiction new_contradiction) ) )
+  in
+  (* We always apply the non-disj part of the summary from the current state, even if it we are
+     inside a disjunct and not the non-disj part of the current state. We then put the result
+     directly into the non-disjunctive part of the state, which will be joined with the results from
+     other disjuncts and whatever over-approximate state was already there. *)
+  let non_disj =
+    match NonDisjDomain.Summary.get_pre_post non_disj_callee with
+    | NonBottom callee_astate_over_approx
+      when not path.PathContext.is_non_disj (* already executed above in this case *) ->
+        let (non_disj_caller : _ AbstractDomain.Types.bottom_lifted) =
+          match
+            apply_callee analysis_data path callee_pname call_loc call_flags
+              (ContinueProgram callee_astate_over_approx) ~captured_formals ~captured_actuals
+              ~formals ~actuals ~ret astate
+          with
+          | Sat (Ok (ContinueProgram post)), _new_contradiction ->
+              NonBottom (post, path)
+          | Sat (Recoverable (ContinueProgram post, _)), _new_contradiction ->
+              (* TODO: report errors *)
+              NonBottom (post, path)
+          | Sat (FatalError _), _ ->
+              (* TODO: report errors, recover after errors *)
+              Bottom
+          | _, _new_contradiction ->
+              Bottom
+        in
+        NonDisjDomain.join_to_astate non_disj_caller non_disj
+    | _ ->
+        non_disj
   in
   (posts, (non_disj, contradiction))
 

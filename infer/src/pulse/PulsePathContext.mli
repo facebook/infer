@@ -8,7 +8,11 @@
 open! IStd
 open PulseBasicInterface
 
-type t = {timestamp: Timestamp.t  (** step number in an intra-procedural analysis *)}
+type t =
+  { timestamp: Timestamp.t  (** step number in an intra-procedural analysis *)
+  ; is_non_disj: bool
+        (** whether we are currently executing the abstract state inside the non-disjunctive
+            (=over-approximate) part of the state *) }
 [@@deriving compare, equal]
 
 include AbstractDomain.Disjunct with type t := t

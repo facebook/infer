@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 open PulseBasicInterface
+module AbductiveDomain = PulseAbductiveDomain
 module BaseMemory = PulseBaseMemory
 module DecompilerExpr = PulseDecompilerExpr
 module ExecutionDomain = PulseExecutionDomain
@@ -46,6 +47,9 @@ val exec :
        ((ExecutionDomain.t * PathContext.t) * t -> (ExecutionDomain.t * PathContext.t) list * t)
   -> t
 
+val join_to_astate :
+  (AbductiveDomain.t * PathContext.t) AbstractDomain.Types.bottom_lifted -> t -> t
+
 val for_disjunct_exec_instr : t -> t
 
 val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
@@ -66,6 +70,8 @@ module Summary : sig
   val get_transitive_info_if_not_top : t -> TransitiveInfo.t option
 
   val has_dropped_disjuncts : t -> bool
+
+  val get_pre_post : t -> AbductiveDomain.Summary.t AbstractDomain.Types.bottom_lifted
 end
 
 val add_var :

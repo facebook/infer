@@ -52,13 +52,13 @@ void maybe_deref_pointer(int a, int* p) {
   }
 }
 
-// no interproc yet
-void FN_interproc_joined_invalid_deref_bad() {
+void interproc_joined_invalid_deref_bad() {
   int* p = get_maybe_invalid_pointer(random());
   maybe_deref_pointer(random(), p);
 }
 
-void interproc_path_sensitive_valid_deref_ok() {
+// the price of over-approximation!
+void FP_interproc_path_sensitive_valid_deref_ok() {
   int* p = get_maybe_invalid_pointer(10);
   maybe_deref_pointer(10, p);
 }
