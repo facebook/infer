@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-def sink(x):
-    pass
+async def await_it(arg):
+    await arg
 
-def source():
+async def dont_await_it(arg):
     pass
