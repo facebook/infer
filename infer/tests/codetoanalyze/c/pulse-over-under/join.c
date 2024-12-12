@@ -9,13 +9,12 @@
 
 #include <stdlib.h>
 
-void FP_join_strong_update_ok() {
+void join_strong_update_ok() {
   int x;
-  int z = 0;
   if (random()) {
-    x = z;
+    x = 0;
   } else {
-    x = z;
+    x = 0;
   }
   // could be an uninit FP if x's assignments disappear
   int y = x;

@@ -832,6 +832,11 @@ let bind (execs, non_disj) ~f =
          (l @ acc, join joined_non_disj new_non_disj) )
 
 
+(* start executing each disjunct with an empty non-disjunctive domain; the non-disjunctive state
+   before the instruction will be executed separately by [exec] below from [AbstractInterpreter]
+   calling Pulse.ml's [exec_instr_non_disj] *)
+let for_disjunct_exec_instr non_disj = {non_disj with astate= Bottom}
+
 let exec non_disj ~exec_instr =
   if Config.pulse_over_approximate_reasoning then
     match non_disj.astate with

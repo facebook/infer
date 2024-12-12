@@ -1,2 +1,0 @@
-codetoanalyze/c/pulse-over-under/join.c, FP_join_strong_update_ok, 10, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [read to uninitialized value occurs here]
-codetoanalyze/c/pulse-over-under/join.c, FP_join_strong_update_ok, 13, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

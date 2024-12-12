@@ -46,6 +46,8 @@ val exec :
        ((ExecutionDomain.t * PathContext.t) * t -> (ExecutionDomain.t * PathContext.t) list * t)
   -> t
 
+val for_disjunct_exec_instr : t -> t
+
 val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit
 
 type summary

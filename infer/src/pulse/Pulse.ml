@@ -1513,8 +1513,8 @@ module PulseTransferFunctions = struct
           ([ContinueProgram astate], path, astate_n) )
 
 
-  let exec_instr ~limit ((astate, path), astate_n) analysis_data cfg_node instr :
-      DisjDomain.t list * NonDisjDomain.t =
+  let exec_instr_with_oom_protection_and_path_update ~limit ((astate, path), astate_n) analysis_data
+      cfg_node instr : DisjDomain.t list * NonDisjDomain.t =
     let heap_size = heap_size () in
     ( match Config.pulse_max_heap with
     | Some max_heap_size when heap_size > max_heap_size ->
@@ -1536,9 +1536,29 @@ module PulseTransferFunctions = struct
     , astate_n )
 
 
+  let exec_instr_with_bottom_non_disj ~limit one_disj_astate analysis_data cfg_node instr =
+    exec_instr_with_oom_protection_and_path_update ~limit one_disj_astate analysis_data cfg_node
+      instr
+
+
+  (** For [AbstractInterpreter] functor only: in the disjunctive analysis, set the non-disjunctive
+      domain to bottom at the start. This allows the disjunctive analysis to proceed on a single
+      disjunct and to compute potential over-approximate states separately from other disjuncts so
+      that we can join all of them after executing one instruction.
+
+      TODO: make sure we don't forget to execute any new intermediate over-approximate states when
+      performing the inner steps of executing the instruction. As long as we only produce disjunct
+      lists from these steps things are ok but if we start spilling into the over-approximate state
+      (for instance after a summary application) then things get iffy. *)
+  let exec_instr ~limit (astate_path, astate_n) analysis_data cfg_node instr =
+    let astate_n = NonDisjDomain.for_disjunct_exec_instr astate_n in
+    exec_instr_with_bottom_non_disj ~limit (astate_path, astate_n) analysis_data cfg_node instr
+
+
   let exec_instr_non_disj non_disj analysis_data cfg_node instr =
     NonDisjDomain.exec non_disj ~exec_instr:(fun exec_state_path_non_disj ->
-        exec_instr ~limit:1 exec_state_path_non_disj analysis_data cfg_node instr )
+        exec_instr_with_oom_protection_and_path_update ~limit:1 exec_state_path_non_disj
+          analysis_data cfg_node instr )
 
 
   let remember_dropped_disjuncts = NonDisjDomain.remember_dropped_disjuncts
