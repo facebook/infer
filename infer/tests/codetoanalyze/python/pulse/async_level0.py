@@ -10,8 +10,10 @@ import random
 async def sleep(i):
     await asyncio.sleep(i)
 
+
 async def sleep_bad(i):
     asyncio.sleep(i)
+
 
 async def call_sleep_ok():
     await sleep(1)
@@ -19,6 +21,7 @@ async def call_sleep_ok():
 
 async def call_sleep_bad():
     sleep(1)
+
 
 async def call_sleep_unknown_call_ok():
     unknown(sleep(1))
@@ -49,10 +52,40 @@ async def call_sleep_with_branchs_bad2(b):
         return
     await temp
 
+
+async def tuple0_bad():
+    t = (sleep(1), sleep(2))
+    await t[0]
+
+
+async def tuple1_bad():
+    t = (sleep(1), sleep(2))
+    await t[1]
+
+
+async def tuple_ok():
+    t = (sleep(1), sleep(2))
+    await t[0]
+    await t[1]
+
+
+def fst(x: int, y: int) -> int:
+    return x
+
+
+async def call_fst_ok(i):
+    await fst(sleep(1), i)
+
+
+async def call_fst_bad(i):
+    return fst(i, sleep(1))
+
+
 def main_ok():
     asyncio.run(sleep(10))
 
 main_ok()
+
 
 # no FP here
 asyncio.run(sleep(10))
