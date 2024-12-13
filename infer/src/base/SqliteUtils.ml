@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 module L = Logging
 
 exception Error of string
@@ -13,12 +14,16 @@ exception DataTooBig
 
 let error fmt = Format.kasprintf (fun err -> raise (Error err)) fmt
 
+let pp_db_error fmt db =
+  F.fprintf fmt "(%s [%d])" (Sqlite3.errmsg db) (Sqlite3.extended_errcode_int db)
+
+
 let check_result_code db ~log rc =
   match (rc : Sqlite3.Rc.t) with
   | OK | ROW ->
       ()
   | _ as err ->
-      error "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
+      error "%s: %s %a" log (Sqlite3.Rc.to_string err) pp_db_error db
 
 
 let exec db ~log ~stmt =
@@ -27,15 +32,15 @@ let exec db ~log ~stmt =
       PerfEvent.log_begin_event logger ~name:"sql exec" ~arguments:[("stmt", `String log)] () ) ;
   let rc = Sqlite3.exec db stmt in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-  try check_result_code db ~log rc with Error err -> error "exec: %s (%s)" err (Sqlite3.errmsg db)
+  try check_result_code db ~log rc with Error err -> error "exec: %s %a" err pp_db_error db
 
 
 let finalize db ~log stmt =
   try check_result_code db ~log (Sqlite3.finalize stmt) with
   | Error err ->
-      error "finalize: %s (%s)" err (Sqlite3.errmsg db)
+      error "finalize: %s %a" err pp_db_error db
   | Sqlite3.Error err ->
-      error "finalize: %s: %s (%s)" log err (Sqlite3.errmsg db)
+      error "finalize: %s: %s %a" log err pp_db_error db
 
 
 let result_fold_rows ?finalize:(do_finalize = true) db ~log stmt ~init ~f =
@@ -47,7 +52,7 @@ let result_fold_rows ?finalize:(do_finalize = true) db ~log stmt ~init ~f =
     | DONE ->
         accum
     | err ->
-        L.die InternalError "%s: %s (%s)" log (Sqlite3.Rc.to_string err) (Sqlite3.errmsg db)
+        L.die InternalError "%s: %s %a" log (Sqlite3.Rc.to_string err) pp_db_error db
   in
   if do_finalize then protect ~finally:(fun () -> finalize db ~log stmt) ~f:(fun () -> aux init stmt)
   else aux init stmt
@@ -86,9 +91,8 @@ let db_close db =
   if not (Sqlite3.db_close db) then
     raise
       (Error
-         (Printf.sprintf "closing: %s (%s)"
-            (Sqlite3.errcode db |> Sqlite3.Rc.to_string)
-            (Sqlite3.errmsg db) ) )
+         (F.asprintf "closing: %s %a" (Sqlite3.errcode db |> Sqlite3.Rc.to_string) pp_db_error db)
+      )
 
 
 (* an underapproximation of the maximum path length allowed in sqlite *)
