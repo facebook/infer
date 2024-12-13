@@ -603,8 +603,21 @@ module Name = struct
     match name with PythonClass py -> PythonClassName.is_module py | _ -> false
 
 
+  let is_python_module_attribute name =
+    match name with PythonClass py -> PythonClassName.is_module_attribute py | _ -> false
+
+
   let get_python_module_name name =
     match name with PythonClass py -> PythonClassName.get_module_name py | _ -> None
+
+
+  let get_python_module_attribute_infos name =
+    match name with
+    | PythonClass py ->
+        PythonClassName.get_module_attribute_infos py
+        |> Option.map ~f:(fun (py_name, str) -> (PythonClass py_name, str))
+    | _ ->
+        None
 
 
   let is_same_type t1 t2 =

@@ -22,7 +22,3 @@ async def with_from_import_bad():
 
 async def with_from_import_ok():
     await async_await(asyncio.sleep(1))
-
-#TODO: remove the need for explicit call here
-asyncio.run(with_from_import_ok())
-asyncio.run(with_from_import_bad())

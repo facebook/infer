@@ -51,14 +51,26 @@ module Dict = struct
 
   let propagate_static_type_on_load dict key load_res : unit DSL.model_monad =
     let open DSL.Syntax in
+    let rec propagate_field_type tname key =
+      let field = Fieldname.make tname key in
+      let* opt_info = tenv_resolve_field_info tname field in
+      option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
+          let opt_static_tname = Typ.name (Typ.strip_ptr field_typ) in
+          option_iter opt_static_tname ~f:(fun static_tname ->
+              if Typ.Name.is_python_module_attribute static_tname then
+                let tname, attr =
+                  Typ.Name.get_python_module_attribute_infos static_tname |> Option.value_exn
+                in
+                propagate_field_type tname attr
+              else add_static_type static_tname load_res ) )
+    in
+    let* opt_key = as_constant_string key in
+    let key =
+      Option.value_or_thunk opt_key ~default:(fun () ->
+          L.die InternalError "expecting constant string value" )
+    in
     let* opt_static_type = get_static_type dict in
-    option_iter opt_static_type ~f:(fun tname ->
-        let* field = sil_fieldname_from_string_value_exn tname key in
-        let* opt_info = tenv_resolve_field_info tname field in
-        option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
-            let opt_static_tname = Typ.name (Typ.strip_ptr field_typ) in
-            option_iter opt_static_tname ~f:(fun static_tname ->
-                add_static_type static_tname load_res ) ) )
+    option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
 
 
   let get dict key : DSL.aval DSL.model_monad =

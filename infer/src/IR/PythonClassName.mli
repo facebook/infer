@@ -26,6 +26,12 @@ val is_final : t -> bool
 
 val is_module : t -> bool
 
+val is_module_attribute : t -> bool
+
+val get_module_attribute_infos : t -> (t * string) option
+(** will return the pair (module_name, attribute) params of the type iff the type name is a module
+    attribute type *)
+
 val get_module_name : t -> string option
 (** will return the string representation of the module iff type name is a module type *)
 

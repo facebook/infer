@@ -208,7 +208,11 @@ module Name : sig
 
   val is_python_module : t -> bool
 
+  val is_python_module_attribute : t -> bool
+
   val get_python_module_name : t -> string option
+
+  val get_python_module_attribute_infos : t -> (t * string) option
 
   module C : sig
     val from_string : string -> t
