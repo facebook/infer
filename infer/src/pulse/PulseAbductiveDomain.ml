@@ -1003,11 +1003,12 @@ module Internal = struct
           Union_find.same_class aa bb
         in
         if Bool.(equal_in_subst <> equal_in_uf) then (
-          F.fprintf F.str_formatter "@[<v>" ;
+          let str_formatter = F.get_str_formatter () in
+          F.fprintf str_formatter "@[<v>" ;
           List.iter eqs ~f:(function x, y ->
-              F.fprintf F.str_formatter "@[%a -> %a@]@;" V.pp x V.pp y ) ;
-          F.fprintf F.str_formatter "@[See values %a %a: equal_in_subst=%b equal_in_uf=%b@]@;@]"
-            V.pp a V.pp b equal_in_subst equal_in_uf ;
+              F.fprintf str_formatter "@[%a -> %a@]@;" V.pp x V.pp y ) ;
+          F.fprintf str_formatter "@[See values %a %a: equal_in_subst=%b equal_in_uf=%b@]@;@]" V.pp
+            a V.pp b equal_in_subst equal_in_uf ;
           L.die InternalError "%s" (F.flush_str_formatter ()) ) )
 
 

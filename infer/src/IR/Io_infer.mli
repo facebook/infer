@@ -11,10 +11,12 @@ open! IStd
 (** Module to handle IO. Includes html and xml modules. *)
 
 module Html : sig
-  val close : Unix.File_descr.t * Format.formatter -> unit
+  type t = Unix.File_descr.t * Format.formatter DLS.key
+
+  val close : t -> unit
   (** Close an Html file *)
 
-  val create : SourceFile.t -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
+  val create : SourceFile.t -> DB.Results_dir.path -> t
   (** Create a new html file *)
 
   val modified_during_analysis : SourceFile.t -> DB.Results_dir.path -> bool
@@ -23,7 +25,7 @@ module Html : sig
   val node_filename : Procname.t -> int -> string
   (** File name for the node, given the procedure name and node id *)
 
-  val open_out : SourceFile.t -> DB.Results_dir.path -> Unix.File_descr.t * Format.formatter
+  val open_out : SourceFile.t -> DB.Results_dir.path -> t
   (** Open an Html file to append data *)
 
   val pp_line_link :

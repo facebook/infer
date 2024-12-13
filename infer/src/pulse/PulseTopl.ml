@@ -1008,9 +1008,9 @@ let filter_for_summary pulse_state state = drop_infeasible pulse_state state
 let description_of_step_data step_data =
   ( match step_data with
   | SmallStep (Call {procname}) | LargeStep {procname} ->
-      F.fprintf F.str_formatter "@[call to %a@]" Procname.pp_verbose procname
+      F.fprintf (F.get_str_formatter ()) "@[call to %a@]" Procname.pp_verbose procname
   | SmallStep (ArrayWrite _) ->
-      F.fprintf F.str_formatter "@[write to array@]" ) ;
+      F.fprintf (F.get_str_formatter ()) "@[write to array@]" ) ;
   F.flush_str_formatter ()
 
 

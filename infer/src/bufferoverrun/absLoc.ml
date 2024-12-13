@@ -182,7 +182,7 @@ module Loc = struct
     let module SP = Symb.SymbolPath in
     function
     | BoField.Prim (Var v) ->
-        Var.pp F.str_formatter v ;
+        Var.pp (F.get_str_formatter ()) v ;
         let s = F.flush_str_formatter () in
         if Char.equal s.[0] '&' then
           F.pp_print_string fmt (String.sub s ~pos:1 ~len:(String.length s - 1))

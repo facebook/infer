@@ -95,7 +95,7 @@ let mk_file_formatter file_fmt category0 =
 
 let color_console ?(use_stdout = false) scheme =
   let scheme = Option.value scheme ~default:Normal in
-  let formatter = if use_stdout then F.std_formatter else F.err_formatter in
+  let formatter = if use_stdout then F.get_std_formatter () else F.get_err_formatter () in
   let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
   if can_colorize then
     let styles = term_styles_of_style scheme in
@@ -183,7 +183,7 @@ let () = register_epilogue ()
 let log ~to_console ?(to_file = true) (lazy formatters) =
   match (to_console, to_file) with
   | false, false ->
-      F.ifprintf F.std_formatter
+      F.ifprintf (F.get_std_formatter ())
   | true, _ when not Config.print_logs ->
       F.fprintf !formatters.console_file
   | _ ->
@@ -191,7 +191,7 @@ let log ~to_console ?(to_file = true) (lazy formatters) =
          stderr because it will get logs from the log file already *)
       Option.value_map !formatters.file
         ~f:(fun file_fmt -> F.fprintf file_fmt)
-        ~default:(F.fprintf F.err_formatter)
+        ~default:(F.fprintf (F.get_err_formatter ()))
 
 
 let debug_file_fmts = register_formatter "debug"
@@ -357,7 +357,7 @@ let setup_log_file () =
         let chan = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
         let file_fmt =
           let f = F.formatter_of_out_channel chan in
-          if Config.print_logs then dup_formatter f F.err_formatter else f
+          if Config.print_logs then dup_formatter f (F.get_err_formatter ()) else f
         in
         (file_fmt, chan, preexisting_logfile)
       in
@@ -426,7 +426,7 @@ let d_kfprintf ?color k f fmt =
       F.kfprintf k f fmt
 
 
-let d_iprintf fmt = Format.ikfprintf ignore Format.err_formatter fmt
+let d_iprintf fmt = Format.ikfprintf ignore (F.get_err_formatter ()) fmt
 
 let d_kprintf ?color k fmt =
   match get_f () with Some f -> d_kfprintf ?color k f fmt | None -> d_iprintf fmt
@@ -491,7 +491,7 @@ let d_increase_indent () = d_printf "  @["
 let d_decrease_indent () = d_printf "@]"
 
 let with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~f name_fmt =
-  if not Config.write_html then F.ikfprintf (fun _ -> f ()) Format.std_formatter name_fmt
+  if not Config.write_html then F.ikfprintf (fun _ -> f ()) (F.get_std_formatter ()) name_fmt
   else
     let print_block name =
       let block_tag, name_tag = if collapsible then ("details", "summary") else ("div", "div") in

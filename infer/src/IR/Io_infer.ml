@@ -15,6 +15,8 @@ module L = Logging
 
 (* =============== START of module Html =============== *)
 module Html = struct
+  type t = Unix.File_descr.t * Format.formatter DLS.key
+
   (** Create a new html file *)
   let create source path =
     if SourceFile.is_invalid source then
@@ -28,7 +30,7 @@ module Html = struct
     in
     let fd = DB.Results_dir.(create_file (Abs_source_dir source)) dir_path in
     let outc = Unix.out_channel_of_descr fd in
-    let fmt = F.formatter_of_out_channel outc in
+    let fmt = F.synchronized_formatter_of_out_channel outc in
     let script =
       {|
 <script>
@@ -51,7 +53,7 @@ function toggleListingOnTop() {
     listing.classList.add(sticky_class);
   }
 }
-       
+
 function toggleListingVisibility() {
   var listing = document.querySelector("#node_listing > code");
   if (listing.style.display == "none") {
@@ -83,7 +85,7 @@ h1 { font-size:14pt }
 .with_tooltip { position: relative; }
 .with_tooltip:hover .tooltip, .visited:hover .tooltip { display: block; }
 #node_listing { margin-top: 5pt; margin-bottom: 5pt; }
-.sticky_header { position: fixed; top: 0; width: 100%; background-color: #eeeee4; }         
+.sticky_header { position: fixed; top: 0; width: 100%; background-color: #eeeee4; }
 details { padding-left: 20pt; }
 summary { margin-left: -20pt; }
 .d_with_indent { padding-left: 20pt; }
@@ -109,7 +111,7 @@ summary { margin-left: -20pt; }
 |}
         fname script style
     in
-    F.pp_print_string fmt page ;
+    F.pp_print_string (DLS.get fmt) page ;
     (fd, fmt)
 
 
@@ -132,7 +134,7 @@ summary { margin-left: -20pt; }
       Unix.openfile (DB.filename_to_string full_fname) ~mode:[O_WRONLY; O_APPEND] ~perm:0o777
     in
     let outc = Unix.out_channel_of_descr fd in
-    let fmt = F.formatter_of_out_channel outc in
+    let fmt = F.synchronized_formatter_of_out_channel outc in
     (fd, fmt)
 
 
@@ -145,7 +147,7 @@ summary { margin-left: -20pt; }
 
   (** Close an Html file *)
   let close (fd, fmt) =
-    F.fprintf fmt "</body>@\n</html>@." ;
+    F.fprintf (DLS.get fmt) "</body>@\n</html>@." ;
     Unix.close fd
 
 
