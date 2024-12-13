@@ -370,6 +370,8 @@ let builtin_name builtin =
 
 let str_py_store_name = "py_store_name"
 
+let str_py_call = "py_call"
+
 let of_stmt loc stmt : Textual.Instr.t =
   match (stmt : Stmt.t) with
   | Let {lhs; rhs} ->
@@ -408,7 +410,7 @@ let of_stmt loc stmt : Textual.Instr.t =
         ; loc }
   | Call {lhs; exp; args; arg_names} ->
       let args = of_exp exp :: of_exp arg_names :: List.map ~f:of_exp args in
-      Let {id= Some (mk_ident lhs); exp= call_builtin "py_call" args; loc}
+      Let {id= Some (mk_ident lhs); exp= call_builtin str_py_call args; loc}
   | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
       Let
         { id= Some (mk_ident lhs)
@@ -712,6 +714,8 @@ let py_import_from = builtin_qual_proc_name str_py_import_from
 
 let py_build_class = builtin_qual_proc_name str_py_build_class
 
+let py_call = builtin_qual_proc_name str_py_call
+
 let py_store_name = builtin_qual_proc_name str_py_store_name
 
 let py_make_function = builtin_qual_proc_name str_py_make_function
@@ -755,6 +759,20 @@ let gen_type module_name ~allow_classes name node =
       when QualifiedProcName.equal py_build_class proc
            && DefaultType.is_string_constant ident_str_const acc ->
         let name = DefaultType.get_string_constant ident_str_const acc |> Option.value_exn in
+        let acc = DefaultType.add_class_body ident name acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Var _id_decorator; _; Var id_fun_ptr]}}
+      :: instrs
+      when QualifiedProcName.equal py_call proc && DefaultType.is_fun_ptr id_fun_ptr acc ->
+        (* note: we could filter the decorator in id_decorator if needed *)
+        let typ = DefaultType.get_fun_ptr id_fun_ptr acc |> Option.value_exn in
+        let acc = DefaultType.add_fun_ptr ident typ acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Var _id_decorator; _; Var id_class]}}
+      :: instrs
+      when QualifiedProcName.equal py_call proc && DefaultType.is_class_body id_class acc ->
+        (* note: we could filter the decorator in id_decorator if needed *)
+        let name = DefaultType.get_class_body id_class acc |> Option.value_exn in
         let acc = DefaultType.add_class_body ident name acc in
         find_next_declaration acc instrs
     | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
