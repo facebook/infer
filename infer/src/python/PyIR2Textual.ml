@@ -40,6 +40,11 @@ module Typ = struct
     Textual.(Typ.Ptr (Typ.Struct (class_companion_name module_name name)))
 
 
+  let module_attribute module_name attr_name =
+    let str = F.asprintf "PyModuleAttr::%s::%s" module_name attr_name in
+    Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string str)))
+
+
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
@@ -551,6 +556,7 @@ module DefaultType : sig
   type decl =
     | Class of {name: string; target: string}
     | Import of {name: string; target: string}
+    | ImportFrom of {module_name: string; attr_name: string; target: string}
     | Fundef of {typ: Textual.Typ.t; target: string}
 
   type acc
@@ -567,6 +573,8 @@ module DefaultType : sig
 
   val add_import : Textual.Ident.t -> string -> acc -> acc
 
+  val add_import_from : Textual.Ident.t -> module_name:string -> attr_name:string -> acc -> acc
+
   val add_string_constant : Textual.Ident.t -> string -> acc -> acc
 
   val get_allocate : Textual.Ident.t -> acc -> Textual.Typ.t option
@@ -576,6 +584,8 @@ module DefaultType : sig
   val get_fun_ptr : Textual.Ident.t -> acc -> Textual.Typ.t option
 
   val get_import : Textual.Ident.t -> acc -> string option
+
+  val get_import_from : Textual.Ident.t -> acc -> (string * string) option
 
   val get_string_constant : Textual.Ident.t -> acc -> string option
 
@@ -587,6 +597,8 @@ module DefaultType : sig
 
   val is_import : Textual.Ident.t -> acc -> bool
 
+  val is_import_from : Textual.Ident.t -> acc -> bool
+
   val is_string_constant : Textual.Ident.t -> acc -> bool
 
   val export : acc -> decl list
@@ -594,6 +606,7 @@ end = struct
   type decl =
     | Class of {name: string; target: string}
     | Import of {name: string; target: string}
+    | ImportFrom of {module_name: string; attr_name: string; target: string}
     | Fundef of {typ: Textual.Typ.t; target: string}
 
   type exp =
@@ -601,6 +614,7 @@ end = struct
     | ClassBody of string
     | FuncPtr of Textual.Typ.t
     | Import of string
+    | ImportFrom of {module_name: string; attr_name: string}
     | StringConstant of string
 
   type acc = {default_type: decl list; exps: exp Textual.Ident.Map.t}
@@ -619,6 +633,10 @@ end = struct
 
   let add_import ident str ({exps} as acc) =
     {acc with exps= Textual.Ident.Map.add ident (Import str) exps}
+
+
+  let add_import_from ident ~module_name ~attr_name ({exps} as acc) =
+    {acc with exps= Textual.Ident.Map.add ident (ImportFrom {module_name; attr_name}) exps}
 
 
   let add_class_body ident str ({exps} as acc) =
@@ -645,6 +663,10 @@ end = struct
     match Textual.Ident.Map.find_opt ident exps with Some (Import _) -> true | _ -> false
 
 
+  let is_import_from ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some (ImportFrom _) -> true | _ -> false
+
+
   let is_string_constant ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with Some (StringConstant _) -> true | _ -> false
 
@@ -665,6 +687,14 @@ end = struct
     match Textual.Ident.Map.find_opt ident exps with Some (Import str) -> Some str | _ -> None
 
 
+  let get_import_from ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with
+    | Some (ImportFrom {module_name; attr_name}) ->
+        Some (module_name, attr_name)
+    | _ ->
+        None
+
+
   let get_string_constant ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with
     | Some (StringConstant str) ->
@@ -677,6 +707,8 @@ end = struct
 end
 
 let py_import_name = builtin_qual_proc_name str_py_import_name
+
+let py_import_from = builtin_qual_proc_name str_py_import_from
 
 let py_build_class = builtin_qual_proc_name str_py_build_class
 
@@ -692,11 +724,18 @@ let sil_allocate : Textual.QualifiedProcName.t =
 
 let gen_type module_name ~allow_classes name node =
   let mk_class_companion str = Typ.class_companion module_name str in
+  let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
   let open Textual in
   let rec find_next_declaration acc = function
     | Instr.Let {id= Some ident; exp= Call {proc; args= Const (Str name) :: _}} :: instrs
       when QualifiedProcName.equal py_import_name proc ->
         let acc = DefaultType.add_import ident name acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_module]}}
+      :: instrs
+      when QualifiedProcName.equal py_import_from proc ->
+        let module_name = DefaultType.get_import id_module acc |> Option.value_exn in
+        let acc = DefaultType.add_import_from ident ~module_name ~attr_name acc in
         find_next_declaration acc instrs
     | Instr.Let {id= Some ident; exp= Call {proc; args= [Typ typ]}} :: instrs
       when QualifiedProcName.equal sil_allocate proc ->
@@ -729,6 +768,11 @@ let gen_type module_name ~allow_classes name node =
         let acc = DefaultType.add_decl (Import {name; target}) acc in
         find_next_declaration acc instrs
     | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
+      when QualifiedProcName.equal py_store_name proc && DefaultType.is_import_from ident acc ->
+        let module_name, attr_name = DefaultType.get_import_from ident acc |> Option.value_exn in
+        let acc = DefaultType.add_decl (ImportFrom {module_name; attr_name; target}) acc in
+        find_next_declaration acc instrs
+    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
       when QualifiedProcName.equal py_store_name proc && DefaultType.is_class_body ident acc ->
         let name = DefaultType.get_class_body ident acc |> Option.value_exn in
         let acc = DefaultType.add_decl (Class {name; target}) acc in
@@ -756,6 +800,11 @@ let gen_type module_name ~allow_classes name node =
             Some
               { FieldDecl.qualified_name= mk_fieldname target
               ; typ= global_type_of_str name
+              ; attributes= [] }
+        | ImportFrom {module_name; attr_name; target} ->
+            Some
+              { FieldDecl.qualified_name= mk_fieldname target
+              ; typ= mk_module_attribute_name module_name attr_name
               ; attributes= [] }
         | Fundef {typ; target} ->
             Some {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
