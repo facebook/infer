@@ -127,7 +127,8 @@ val timeit : f:(unit -> 'a) -> 'a * Mtime.Span.t
 (** Returns the execution time of [f] together with its result *)
 
 val do_in_dir : dir:string -> f:(unit -> 'a) -> 'a
-(** executes [f] after cding into [dir] and then restores original cwd *)
+(** executes [f] after cding into [dir] and then restores original cwd. Uses a mutex to prevent
+    races on [chdir] in multicore mode. *)
 
 val get_available_memory_MB : unit -> int option
 (** On Linux systems, return [Some x] where [MemAvailable x] is in [/proc/meminfo]. Returns [None]

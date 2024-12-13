@@ -12,6 +12,8 @@ module F = Format
 module ServerSocket = struct
   let socket_name = ResultsDirEntryName.db_writer_socket_name
 
+  let socket_path = Config.toplevel_results_dir ^/ socket_name
+
   let socket_addr = Unix.ADDR_UNIX socket_name
 
   let socket_domain = Unix.domain_of_sockaddr socket_addr
@@ -22,7 +24,7 @@ module ServerSocket = struct
       function. *)
   let in_results_dir ~f = Utils.do_in_dir ~dir:Config.toplevel_results_dir ~f
 
-  let socket_exists () = in_results_dir ~f:(fun () -> Sys.file_exists_exn socket_name)
+  let socket_exists () = Sys.file_exists_exn socket_path
 
   (* Error recuperation is done by attempting this function at module initialization time, and
      not using DbWriter at all in case it fails. See {!can_use_socket} below. *)
@@ -37,12 +39,10 @@ module ServerSocket = struct
     socket
 
 
-  let remove_socket_file () =
-    in_results_dir ~f:(fun () -> if socket_exists () then Unix.unlink socket_name)
-
+  let remove_socket_file () = if socket_exists () then Unix.unlink socket_path
 
   let remove_socket socket =
-    in_results_dir ~f:(fun () -> Unix.close socket) ;
+    Unix.close socket ;
     remove_socket_file ()
 
 

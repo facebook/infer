@@ -435,10 +435,13 @@ let timeit ~f =
   (ret_val, duration)
 
 
+let mutex = Error_checking_mutex.create ()
+
 let do_in_dir ~dir ~f =
-  let cwd = Unix.getcwd () in
-  Unix.chdir dir ;
-  Exception.try_finally ~f ~finally:(fun () -> Unix.chdir cwd)
+  Error_checking_mutex.critical_section mutex ~f:(fun () ->
+      let cwd = Unix.getcwd () in
+      Unix.chdir dir ;
+      Exception.try_finally ~f ~finally:(fun () -> Unix.chdir cwd) )
 
 
 let get_available_memory_MB () =
