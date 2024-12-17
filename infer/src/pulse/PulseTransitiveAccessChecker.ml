@@ -269,6 +269,13 @@ let report_errors ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           (TransitiveAccess
              {tag; description; call_trace; transitive_callees; transitive_missed_captures} )
       in
+      let pre_post_list =
+        match NonDisjDomain.Summary.get_pre_post non_disj with
+        | Bottom ->
+            pre_post_list
+        | NonBottom pre_post ->
+            ContinueProgram pre_post :: pre_post_list
+      in
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
             let {PulseTransitiveInfo.accesses; callees; direct_missed_captures} =

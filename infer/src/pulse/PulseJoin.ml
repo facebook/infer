@@ -418,12 +418,16 @@ let join_abductive astate_lhs astate_rhs =
   in
   let attrs_pre_join, attrs_post_join = join_attributes join_state astate_lhs astate_rhs in
   let formula = join_formulas join_state astate_lhs astate_rhs in
+  let transitive_info =
+    TransitiveInfo.join astate_lhs.AbductiveDomain.transitive_info
+      astate_rhs.AbductiveDomain.transitive_info
+  in
   AbductiveDomain.mk_join_state
     ~pre:(stack_pre_join, heap_pre_join, attrs_pre_join)
     ~post:(stack_post_join, heap_post_join, attrs_post_join)
-    formula (* TODO: everything past this *) Decompiler.empty
-    ~need_dynamic_type_specialization:AbstractValue.Set.empty (PulseTopl.start ())
-    TransitiveInfo.bottom PulseMutualRecursion.Set.empty SkippedCalls.empty
+    formula (* TODO: almost everything past this *) Decompiler.empty
+    ~need_dynamic_type_specialization:AbstractValue.Set.empty (PulseTopl.start ()) transitive_info
+    PulseMutualRecursion.Set.empty SkippedCalls.empty
 
 
 let join (astate_lhs, path_lhs) (astate_rhs, path_rhs) =

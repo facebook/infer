@@ -9,4 +9,4 @@ void sink() {}
 
 void wrapper_ok() { sink(); }
 
-void FN_source_bad() { wrapper_ok(); }
+void source_bad() { wrapper_ok(); }
