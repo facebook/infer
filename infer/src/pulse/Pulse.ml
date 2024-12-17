@@ -977,7 +977,8 @@ module PulseTransferFunctions = struct
     ( ( if Option.exists callee_pname ~f:IRAttributes.is_no_return then
           List.filter_map exec_states_res ~f:(fun exec_state_res ->
               (let+ exec_state = exec_state_res in
-               PulseSummary.force_exit_program analysis_data call_loc exec_state |> SatUnsat.sat )
+               PulseSummary.force_exit_program analysis_data path call_loc exec_state
+               |> SatUnsat.sat )
               |> PulseResult.of_some )
         else exec_states_res )
     , non_disj )
@@ -1088,7 +1089,7 @@ module PulseTransferFunctions = struct
                      dispatch_call limit analysis_data path ret call_exp actuals location call_flags
                        astate non_disj
                    in
-                   (PulseReport.report_exec_results analysis_data location execs, non_disj) )
+                   (PulseReport.report_exec_results analysis_data path location execs, non_disj) )
                   |> Option.value ~default:([default_astate], non_disj) )
         in
         (astates, non_disj, !ret_vars) )
@@ -1126,7 +1127,7 @@ module PulseTransferFunctions = struct
                 dispatch_call limit analysis_data path ret call_exp actuals location call_flags
                   astate non_disj
               in
-              (PulseReport.report_exec_results analysis_data location execs, non_disj) )
+              (PulseReport.report_exec_results analysis_data path location execs, non_disj) )
     in
     let dynamic_types_unreachable =
       PulseOperations.get_dynamic_type_unreachable_values vars astate
@@ -1168,7 +1169,7 @@ module PulseTransferFunctions = struct
   let exit_scope limit vars location path astate astate_n
       ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
     if Procname.is_java (Procdesc.get_proc_name proc_desc) then
-      (remove_vars vars location [ContinueProgram astate], path, astate_n)
+      (remove_vars vars location [ContinueProgram astate], astate_n)
     else
       (* Some RefCounted variables must not be removed at their ExitScope
          because they may still be referenced by someone and that reference may
@@ -1217,7 +1218,6 @@ module PulseTransferFunctions = struct
          append [vars] to [ret_vars]. *)
       let vars_to_remove = if List.is_empty ret_vars then vars else List.rev_append vars ret_vars in
       ( remove_vars vars_to_remove location astates
-      , path
       , PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters vars astates astate_n )
 
 
@@ -1317,7 +1317,7 @@ module PulseTransferFunctions = struct
             (let++ astate, rhs_addr = PulseOperations.eval path Read loc rhs_exp astate in
              PulseOperations.write_load_id lhs_id (ValueOrigin.unknown rhs_addr) astate )
             |> SatUnsat.to_list
-            |> PulseReport.report_results analysis_data loc
+            |> PulseReport.report_results analysis_data path loc
           in
           (astates, path, astate_n)
       | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
@@ -1340,7 +1340,7 @@ module PulseTransferFunctions = struct
              >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_load_id lhs_id rhs_vo )
             |> SatUnsat.to_list
-            |> PulseReport.report_results analysis_data loc
+            |> PulseReport.report_results analysis_data path loc
           in
           let astates, astate_n =
             (* call the initializer for certain globals to populate their values, unless we already
@@ -1365,7 +1365,7 @@ module PulseTransferFunctions = struct
                       [ PulseTaintOperations.load procname tenv path loc ~lhs:(lhs_id, typ)
                           ~rhs:rhs_exp astate ]
                     in
-                    PulseReport.report_results analysis_data loc astates
+                    PulseReport.report_results analysis_data path loc astates
                 | _ ->
                     [astate] )
           in
@@ -1433,13 +1433,13 @@ module PulseTransferFunctions = struct
             in
             match lhs_exp with
             | Lvar pvar when Pvar.is_return pvar ->
-                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
+                PulseOperations.check_address_escape loc proc_desc path rhs_addr rhs_history astate
             | _ ->
                 Ok astate
           in
           let astate_n = NonDisjDomain.set_captured_variables rhs_exp astate_n in
           let results = SatUnsat.to_list result in
-          let astates = PulseReport.report_results analysis_data loc results in
+          let astates = PulseReport.report_results analysis_data path loc results in
           (List.take astates limit, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astate_n = check_modified_before_destructor actuals call_exp astate astate_n in
@@ -1481,7 +1481,9 @@ module PulseTransferFunctions = struct
                        , List.length new_astates + n_disjuncts ) )
             in
             let astates_before = !astates_before in
-            (PulseReport.report_exec_results analysis_data loc res, post_astate_n, astates_before)
+            ( PulseReport.report_exec_results analysis_data path loc res
+            , post_astate_n
+            , astates_before )
           in
           if not (CallGlobalForStats.is_node_not_stuck ()) then (
             if Config.log_pulse_coverage then add_verbose_never_return_info proc_desc instr loc ;
@@ -1507,10 +1509,13 @@ module PulseTransferFunctions = struct
             let<++> astate, _ = prune_result in
             astate
           in
-          let astates = PulseReport.report_exec_results analysis_data loc results in
+          let astates = PulseReport.report_exec_results analysis_data path loc results in
           (List.take astates limit, path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
-          exit_scope limit vars location path astate astate_n analysis_data
+          let exec_states, non_disj =
+            exit_scope limit vars location path astate astate_n analysis_data
+          in
+          (exec_states, path, non_disj)
       | Metadata (VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding})
         when not (Pvar.is_global pvar) ->
           let set_uninitialized = (not is_cpp_structured_binding) && not (Typ.is_folly_coro typ) in
@@ -1684,18 +1689,21 @@ let exit_function limit analysis_data location posts non_disj_astate =
         | LatentAbortProgram _
         | LatentInvalidAccess _
         | LatentSpecializedTypeIssue _ ->
-            (exec_state :: acc_astates, astate_n)
+            ((exec_state, path) :: acc_astates, astate_n)
         | ContinueProgram astate ->
             let vars =
               Stack.fold
                 (fun var _ vars -> if Var.is_return var then vars else var :: vars)
                 astate []
             in
-            let astates, _, astate_n =
+            let astates, astate_n =
               PulseTransferFunctions.exit_scope limit vars location path astate astate_n
                 analysis_data
             in
-            (PulseTransferFunctions.remove_vars vars location astates @ acc_astates, astate_n) )
+            ( ( PulseTransferFunctions.remove_vars vars location astates
+              |> List.map ~f:(fun exec_state -> (exec_state, path)) )
+              @ acc_astates
+            , astate_n ) )
   in
   (List.rev astates, astate_n)
 
@@ -1824,8 +1832,8 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} a
         in
         let posts =
           if convert_normal_to_exceptional then
-            List.map posts ~f:(fun edomain ->
-                match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
+            List.map posts ~f:(fun ((exec_state, path) as post) ->
+                match exec_state with ContinueProgram x -> (ExceptionRaised x, path) | _ -> post )
           else posts
         in
         let summary =

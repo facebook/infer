@@ -11,6 +11,7 @@ module AbductiveDomain = PulseAbductiveDomain
 module DecompilerExpr = PulseDecompilerExpr
 module Decompiler = PulseAbductiveDecompiler
 module Diagnostic = PulseDiagnostic
+module PathContext = PulsePathContext
 
 type error =
   | PotentialInvalidAccess of
@@ -26,13 +27,13 @@ let with_summary result =
   PulseResult.map_error result ~f:(fun (error, summary) -> WithSummary (error, summary))
 
 
-let rec is_fatal = function
+let rec is_fatal path = function
   | PotentialInvalidAccess _ | PotentialInvalidSpecializedCall _ ->
       true
   | ReportableError {diagnostic} ->
-      Diagnostic.aborts_execution diagnostic
+      Diagnostic.aborts_execution path diagnostic
   | WithSummary (error, _) ->
-      is_fatal error
+      is_fatal path error
 
 
 let rec astate_of_error = function
@@ -90,12 +91,12 @@ let of_abductive_summary_result abductive_summary_result =
   |> PulseResult.fatal_of_result
 
 
-let of_error_f error ~f : _ t =
-  if is_fatal error then FatalError (error, []) else Recoverable (f error, [error])
+let of_error_f path error ~f : _ t =
+  if is_fatal path error then FatalError (error, []) else Recoverable (f error, [error])
 
 
-let of_result_f (result : _ result) ~f : _ t =
-  match result with Ok x -> Ok x | Error error -> of_error_f ~f error
+let of_result_f path (result : _ result) ~f : _ t =
+  match result with Ok x -> Ok x | Error error -> of_error_f path ~f error
 
 
-let of_result result = of_result_f ~f:astate_of_error result
+let of_result path result = of_result_f path ~f:astate_of_error result

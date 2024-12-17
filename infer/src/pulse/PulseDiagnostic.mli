@@ -12,6 +12,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
 module TransitiveInfo = PulseTransitiveInfo
@@ -129,7 +130,7 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
-val aborts_execution : t -> bool
+val aborts_execution : PathContext.t -> t -> bool
 (** whether the presence of an error should abort the execution *)
 
 val get_message_and_suggestion : t -> string * string option

@@ -10,6 +10,7 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
+module PathContext = PulsePathContext
 
 type error =
   | PotentialInvalidAccess of
@@ -47,11 +48,11 @@ type abductive_summary_error =
     * DecompilerExpr.t
     * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
-val of_result_f : ('a, error) result -> f:(error -> 'a) -> 'a t
+val of_result_f : PathContext.t -> ('a, error) result -> f:(error -> 'a) -> 'a t
 
-val of_result : (AbductiveDomain.t, error) result -> AbductiveDomain.t t
+val of_result : PathContext.t -> (AbductiveDomain.t, error) result -> AbductiveDomain.t t
 
-val of_error_f : error -> f:(error -> 'a) -> 'a t
+val of_error_f : PathContext.t -> error -> f:(error -> 'a) -> 'a t
 
 val of_abductive_summary_error : [< abductive_summary_error] -> error * AbductiveDomain.Summary.t
 

@@ -20,7 +20,7 @@ val of_posts :
      t InterproceduralAnalysis.t
   -> Specialization.Pulse.t option
   -> Location.t
-  -> ExecutionDomain.t list
+  -> (ExecutionDomain.t * PathContext.t) list
   -> NonDisjDomain.t
   -> summary
 
@@ -32,6 +32,7 @@ val join : summary -> summary -> summary
 
 val force_exit_program :
      t InterproceduralAnalysis.t
+  -> PathContext.t
   -> Location.t
   -> ExecutionDomain.t
   -> _ ExecutionDomain.base_t SatUnsat.t

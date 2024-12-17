@@ -13,6 +13,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
+module PathContext = PulsePathContext
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
 module TransitiveInfo = PulseTransitiveInfo
@@ -393,7 +394,7 @@ let get_copy_type = function
       None
 
 
-let aborts_execution = function
+let aborts_execution (path : PathContext.t) = function
   | AccessToInvalidAddress _
   | ErlangError
       ( Badarg _
@@ -411,7 +412,7 @@ let aborts_execution = function
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
-      true
+      not path.is_non_disj
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _

@@ -397,7 +397,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
               | `ReportNow ->
                   L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
-                    (AccessResult.of_error_f
+                    (AccessResult.of_error_f path
                        (WithSummary
                           (ReportableError {diagnostic; astate= astate_post_call}, astate_summary)
                        )

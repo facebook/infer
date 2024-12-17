@@ -265,7 +265,7 @@ let summary_error_of_error proc_desc location (error : AccessResult.error) : _ S
 
 
 (* the access error and summary must come from [summary_error_of_error] *)
-let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
+let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path
     ((access_error : AccessResult.error), summary) : _ ExecutionDomain.base_t option =
   match access_error with
   | PotentialInvalidAccess {address; must_be_valid} ->
@@ -308,7 +308,7 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
       | `ReportNow ->
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
           report analysis_data ~latent:false ~is_suppressed diagnostic ;
-          if Diagnostic.aborts_execution diagnostic then Some (AbortProgram summary) else None
+          if Diagnostic.aborts_execution path diagnostic then Some (AbortProgram summary) else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
@@ -319,12 +319,12 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
       assert false
 
 
-let report_error ({InterproceduralAnalysis.proc_desc} as analysis_data) location access_error =
+let report_error ({InterproceduralAnalysis.proc_desc} as analysis_data) path location access_error =
   let open SatUnsat.Import in
-  summary_error_of_error proc_desc location access_error >>| report_summary_error analysis_data
+  summary_error_of_error proc_desc location access_error >>| report_summary_error analysis_data path
 
 
-let report_errors analysis_data location errors =
+let report_errors analysis_data path location errors =
   let open SatUnsat.Import in
   List.rev errors
   |> List.fold ~init:(Sat None) ~f:(fun sat_result error ->
@@ -332,17 +332,17 @@ let report_errors analysis_data location errors =
          | Unsat | Sat (Some _) ->
              sat_result
          | Sat None ->
-             report_error analysis_data location error )
+             report_error analysis_data path location error )
 
 
-let report_exec_results analysis_data location results =
+let report_exec_results analysis_data path location results =
   let results = PulseTaintOperations.dedup_reports results in
   List.filter_map results ~f:(fun exec_result ->
       match PulseResult.to_result exec_result with
       | Ok post ->
           Some post
       | Error errors -> (
-        match report_errors analysis_data location errors with
+        match report_errors analysis_data path location errors with
         | Unsat ->
             L.d_printfln "UNSAT discovered during error reporting" ;
             None
@@ -357,12 +357,13 @@ let report_exec_results analysis_data location results =
             Some exec_state ) )
 
 
-let report_results analysis_data location results =
+let report_results analysis_data path location results =
   let open PulseResult.Let_syntax in
   List.map results ~f:(fun result ->
       let+ astate = result in
       ExecutionDomain.ContinueProgram astate )
-  |> report_exec_results analysis_data location
+  |> report_exec_results analysis_data path location
 
 
-let report_result analysis_data location result = report_results analysis_data location [result]
+let report_result analysis_data path location result =
+  report_results analysis_data path location [result]

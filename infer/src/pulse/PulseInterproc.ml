@@ -1296,20 +1296,21 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
           let pre = AbductiveDomain.Summary.get_pre callee_summary in
           let* astate =
             check_all_valid path callee_proc_name call_location ~pre call_state
-            |> AccessResult.of_result
+            |> AccessResult.of_result path
           in
-          (* if at that stage [call_state.first_error] is set but we haven't error'd then there is
-             a problem; give up because something is wrong *)
+          (* if at that stage [call_state.first_error] is set but we haven't error'd then there is a
+             problem; give up because something is wrong, except in over-approximation mode where we
+             don't want to lose our precious single state because of this *)
           ( match call_state.first_error with
-          | None ->
-              ()
-          | Some v ->
+          | Some v when not path.PathContext.is_non_disj ->
               L.d_printfln
                 "huho, we found an error on accessing invalid address %a when applying the \
                  precondition but did not actually report an error. Abort!"
                 AbstractValue.pp v ;
               (* HACK: abuse [PathCondition], sorry *)
-              raise (Contradiction PathCondition) ) ;
+              raise (Contradiction PathCondition)
+          | _ ->
+              () ) ;
           let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
           (* reset [visited] *)
           let call_state = {call_state with astate; visited= AddressSet.empty} in

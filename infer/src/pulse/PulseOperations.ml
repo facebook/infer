@@ -28,7 +28,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                    ; access_trace
                    ; must_be_valid_reason }
              ; astate } )
-    |> AccessResult.of_result
+    |> AccessResult.of_result path
   in
   match access_mode with
   | Read ->
@@ -38,7 +38,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                { diagnostic=
                    Diagnostic.ReadUninitialized {typ; calling_context= []; trace= access_trace}
                ; astate } )
-      |> AccessResult.of_result_f ~f:(fun _ ->
+      |> AccessResult.of_result_f path ~f:(fun _ ->
              (* do not report further uninitialized reads errors on this value *)
              AddressAttributes.initialize address astate )
   | Write ->
@@ -748,7 +748,7 @@ let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_his
       (astate, copy)
 
 
-let check_address_escape escape_location proc_desc address history astate =
+let check_address_escape escape_location proc_desc path address history astate =
   let is_assigned_to_global address astate =
     let points_to_address pointer address astate =
       Memory.find_edge_opt pointer Dereference astate
@@ -801,7 +801,7 @@ let check_address_escape escape_location proc_desc address history astate =
   let+ () =
     let open Result.Monad_infix in
     check_address_of_cpp_temporary () >>= check_address_of_stack_variable
-    |> AccessResult.of_result_f ~f:(fun _ -> ())
+    |> AccessResult.of_result_f path ~f:(fun _ -> ())
   in
   astate
 

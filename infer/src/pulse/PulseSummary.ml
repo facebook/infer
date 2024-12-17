@@ -77,8 +77,8 @@ let join summary1 summary2 =
 
 
 let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis_data)
-    ~continue_program ~exception_raised specialization location (exec_astate : ExecutionDomain.t) :
-    _ ExecutionDomain.base_t SatUnsat.t =
+    ~continue_program ~exception_raised specialization path location
+    (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
       ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
@@ -90,14 +90,14 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
     | Ok summary ->
         exec_domain_of_summary summary
     | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
-        PulseReport.report_summary_error analysis_data
+        PulseReport.report_summary_error analysis_data path
           ( ReportableError
               { astate
               ; diagnostic= ResourceLeak {resource= Memory allocator; allocation_trace; location} }
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`JavaResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-        PulseReport.report_summary_error analysis_data
+        PulseReport.report_summary_error analysis_data path
           ( ReportableError
               { astate
               ; diagnostic= ResourceLeak {resource= JavaClass class_name; allocation_trace; location}
@@ -111,7 +111,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
           L.d_printfln "Suppressing Unawaited Awaitable report because exception thown" ;
           exec_domain_of_summary summary )
         else
-          PulseReport.report_summary_error analysis_data
+          PulseReport.report_summary_error analysis_data path
             ( ReportableError
                 {astate; diagnostic= ResourceLeak {resource= Awaitable; allocation_trace; location}}
             , summary )
@@ -121,7 +121,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
           L.d_printfln "Suppressing Unfinished Builder report because exception thown" ;
           exec_domain_of_summary summary )
         else
-          PulseReport.report_summary_error analysis_data
+          PulseReport.report_summary_error analysis_data path
             ( ReportableError
                 { astate
                 ; diagnostic=
@@ -130,7 +130,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
             , summary )
           |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-        PulseReport.report_summary_error analysis_data
+        PulseReport.report_summary_error analysis_data path
           ( ReportableError
               { astate
               ; diagnostic=
@@ -151,7 +151,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
           (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
              contain the reason for invalidation and thus we will filter out the report. TODO:
              figure out if that's a problem. *)
-          PulseReport.report_summary_error analysis_data
+          PulseReport.report_summary_error analysis_data path
             ( ReportableError
                 { diagnostic=
                     AccessToInvalidAddress
@@ -192,8 +192,8 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
         Sat (AbortProgram astate) )
 
 
-let force_exit_program analysis_data post =
-  exec_summary_of_post_common analysis_data None post
+let force_exit_program analysis_data path post =
+  exec_summary_of_post_common analysis_data None path post
     ~continue_program:(fun astate -> ExitProgram astate)
     ~exception_raised:(fun astate -> ExitProgram astate)
 
@@ -201,11 +201,11 @@ let force_exit_program analysis_data post =
 let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specialization location posts
     non_disj =
   let pre_post_list =
-    List.filter_mapi posts ~f:(fun i exec_state ->
+    List.filter_mapi posts ~f:(fun i (exec_state, path) ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i
           (ExecutionDomain.pp_with_kind HTML None)
           exec_state ;
-        exec_summary_of_post_common analysis_data specialization location exec_state
+        exec_summary_of_post_common analysis_data specialization path location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )

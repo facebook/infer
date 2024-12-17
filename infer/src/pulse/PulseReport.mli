@@ -15,6 +15,7 @@ val report :
 
 val report_summary_error :
      _ InterproceduralAnalysis.t
+  -> PathContext.t
   -> AccessResult.error * AbductiveDomain.Summary.t
   -> _ ExecutionDomain.base_t option
 (** [None] means that the execution can continue but we could not compute the continuation state
@@ -22,18 +23,21 @@ val report_summary_error :
 
 val report_result :
      _ InterproceduralAnalysis.t
+  -> PathContext.t
   -> Location.t
   -> AbductiveDomain.t AccessResult.t
   -> ExecutionDomain.t list
 
 val report_results :
      _ InterproceduralAnalysis.t
+  -> PathContext.t
   -> Location.t
   -> AbductiveDomain.t AccessResult.t list
   -> ExecutionDomain.t list
 
 val report_exec_results :
      _ InterproceduralAnalysis.t
+  -> PathContext.t
   -> Location.t
   -> ExecutionDomain.t AccessResult.t list
   -> ExecutionDomain.t list

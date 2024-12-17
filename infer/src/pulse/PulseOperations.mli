@@ -312,7 +312,13 @@ val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.t) lis
 val remove_vars : Var.t list -> Location.t -> t -> t SatUnsat.t
 
 val check_address_escape :
-  Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t AccessResult.t
+     Location.t
+  -> Procdesc.t
+  -> PathContext.t
+  -> AbstractValue.t
+  -> ValueHistory.t
+  -> t
+  -> t AccessResult.t
 
 type call_kind = ClosureCall of (Exp.t * CapturedVar.t) list | VarCall of Ident.t | ResolvedCall
 

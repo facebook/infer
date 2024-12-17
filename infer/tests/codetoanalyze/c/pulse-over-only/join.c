@@ -124,3 +124,16 @@ void a_few_join_cases2(int x, int y, int* p, int* q) {
   }
   // *p \in {0, 42, y}
 }
+
+void continue_after_fatal_bad2() {
+  int x;
+  int* p;
+  if (random()) {
+    p = NULL;
+  } else {
+    p = &x;
+  }
+  *p = 42;
+  int* q = NULL;
+  *q = 52;
+}
