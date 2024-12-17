@@ -50,6 +50,8 @@ val exec :
 val join_to_astate :
   (AbductiveDomain.t * PathContext.t) AbstractDomain.Types.bottom_lifted -> t -> t
 
+val astate_is_bottom : t -> bool
+
 val for_disjunct_exec_instr : t -> t
 
 val pp_with_kind : Pp.print_kind -> F.formatter -> t -> unit

@@ -968,7 +968,9 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
           already_given summary.PulseSummary.main astate
       in
-      let has_continue_program = has_continue_program res in
+      let has_continue_program =
+        has_continue_program res || not (NonDisjDomain.astate_is_bottom non_disj)
+      in
       if has_continue_program then GlobalForStats.node_is_not_stuck () ;
       let res, non_disj =
         if

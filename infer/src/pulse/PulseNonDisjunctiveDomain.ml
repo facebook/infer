@@ -868,6 +868,8 @@ let join_to_astate astate non_disj =
   {non_disj with astate= OverApproxDomain.join non_disj.astate astate}
 
 
+let astate_is_bottom {astate} = OverApproxDomain.is_bottom astate
+
 type summary =
   { transitive_info: InterDom.t
   ; has_dropped_disjuncts: AbstractDomain.BooleanOr.t
