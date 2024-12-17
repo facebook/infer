@@ -50,6 +50,15 @@ public class TransitiveAccess {
     }
   }
 
+  abstract class BaseSinks {
+    @SinkAnno
+    public abstract void overrideAnnotated();
+  }
+
+  abstract class ChildSinks extends BaseSinks {
+    public void overrideAnnotated() {}
+  }
+
   public static class Base {}
 
   public static class Context extends Base {
@@ -97,7 +106,15 @@ public class TransitiveAccess {
       Sinks.funcWithAnno();
     }
 
-    public static void sourceCallsFuncWithAnnoOk() {
+    public void sourceCallsOverrideAnnotatedBad(ChildSinks sink) {
+      sink.overrideAnnotated();
+    }
+
+    public void sourceCallsAbstractOverrideAnnotatedBad(BaseSinks sink) {
+      sink.overrideAnnotated();
+    }
+
+    public static void sourceCallsSafeWithAnnoOk() {
       Sinks.safeWithAnno();
     }
   }

@@ -69,12 +69,15 @@ end = struct
         List.exists fieldnames_to_monitor ~f:(String.equal (Fieldname.get_field_name fieldname))
 
 
-  let procname_has_annotation procname annotations =
-    let match_one_annotation anno =
-      let has_annot ia = Annotations.ia_ends_with ia anno in
-      Annotations.pname_has_return_annot procname has_annot
+  let proc_name_has_annotation tenv proc_name annotations =
+    let match_one_annotation proc_name annotation =
+      let has_annot ia = Annotations.ia_ends_with ia annotation in
+      Annotations.pname_has_return_annot proc_name has_annot
     in
-    List.exists annotations ~f:match_one_annotation
+    PatternMatch.override_exists
+      (fun proc_name ->
+        List.exists annotations ~f:(fun annot -> match_one_annotation proc_name annot) )
+      tenv proc_name
 
 
   let procname_is_matched specs tenv procname =
@@ -114,7 +117,7 @@ end = struct
                  List.mem ~equal:String.equal mn method_name )
           && map_or_true class_name_regex ~f:match_class_name_regex
           && map_or_true method_name_regex ~f:match_method_name_regex
-          && map_or_true annotations ~f:(procname_has_annotation procname)
+          && map_or_true annotations ~f:(proc_name_has_annotation tenv procname)
     in
     List.exists specs ~f:check_one_procname_spec
 
@@ -184,7 +187,7 @@ end = struct
         && map_or_true initial_caller_class_does_not_extend
              ~f:(check_not_extends tenv procname final_class_only)
         && map_or_true procedures ~f:(fun specs -> procname_is_matched specs tenv procname)
-        && map_or_true annotations ~f:(procname_has_annotation procname)
+        && map_or_true annotations ~f:(proc_name_has_annotation tenv procname)
 
 
   type context_metadata = {description: string; tag: string}
