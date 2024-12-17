@@ -527,7 +527,9 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
           (not path.PathContext.is_non_disj)
           && ( Option.exists disjunct_limit ~f:(fun limit -> List.length posts >= limit)
              || (should_keep_at_most_one_disjunct && not (List.is_empty posts)) )
-        then (posts, contradiction)
+        then (
+          L.d_printfln "disjunct limit reached, stop applying callee pre/posts" ;
+          (posts, contradiction) )
         else (
           (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
               *)

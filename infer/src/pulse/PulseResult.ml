@@ -6,9 +6,19 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 type ('ok, 'err) t = Ok of 'ok | Recoverable of 'ok * 'err list | FatalError of 'err * 'err list
+
+let pp pp_ok pp_err fmt = function
+  | Ok ok ->
+      F.fprintf fmt "Ok (%a)" pp_ok ok
+  | Recoverable (ok, errs) ->
+      F.fprintf fmt "Recoverable (%a, [%a])" pp_ok ok (Pp.comma_seq pp_err) errs
+  | FatalError (err, errs) ->
+      F.fprintf fmt "FatalError (%a, [%a])" pp_err err (Pp.comma_seq pp_err) errs
+
 
 let append_errors errors result =
   if List.is_empty errors then result

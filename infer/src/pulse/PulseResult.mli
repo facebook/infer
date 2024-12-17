@@ -6,12 +6,20 @@
  *)
 
 open! IStd
+module F = Format
 
 [@@@warning "-unused-value-declaration"]
 
 (** Pulse's base error monad: some errors can be accumulated along paths, others are fatal and
     there's no point continuing the execution. *)
 type ('ok, 'err) t = Ok of 'ok | Recoverable of 'ok * 'err list | FatalError of 'err * 'err list
+
+val pp :
+     (F.formatter -> 'ok -> unit)
+  -> (F.formatter -> 'err -> unit)
+  -> F.formatter
+  -> ('ok, 'err) t
+  -> unit
 
 val append_errors : 'err list -> ('ok, 'err) t -> ('ok, 'err) t
 (** adds the given error list to the result, possibly changing an [Ok] result into a [Recoverable]

@@ -74,7 +74,7 @@ let pp_header kind fmt = function
   | AbortProgram _ ->
       Pp.with_color kind Red F.pp_print_string fmt "AbortProgram"
   | ContinueProgram _ ->
-      ()
+      F.pp_print_string fmt "ContinueProgram"
   | ExceptionRaised _ ->
       Pp.with_color kind Orange F.pp_print_string fmt "ExceptionRaised"
   | ExitProgram _ ->
