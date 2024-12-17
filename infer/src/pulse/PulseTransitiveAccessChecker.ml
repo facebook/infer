@@ -38,6 +38,7 @@ end = struct
   type context =
     { initial_caller_class_extends: string list option [@yojson.option]
     ; initial_caller_class_does_not_extend: string list option [@yojson.option]
+    ; procedures: procname_match_spec list option [@yojson.option]
     ; final_class_only: bool [@yojson.default false]
     ; annotations: string list option [@yojson.option]
     ; description: string
@@ -170,16 +171,19 @@ end = struct
     match context with
     | { initial_caller_class_extends= None
       ; initial_caller_class_does_not_extend= None
+      ; procedures= None
       ; annotations= None } ->
         false
     | { initial_caller_class_extends
       ; initial_caller_class_does_not_extend
       ; final_class_only
+      ; procedures
       ; annotations } ->
         let map_or_true = Option.value_map ~default:true in
         map_or_true initial_caller_class_extends ~f:(check_extends tenv procname final_class_only)
         && map_or_true initial_caller_class_does_not_extend
              ~f:(check_not_extends tenv procname final_class_only)
+        && map_or_true procedures ~f:(fun specs -> procname_is_matched specs tenv procname)
         && map_or_true annotations ~f:(procname_has_annotation procname)
 
 

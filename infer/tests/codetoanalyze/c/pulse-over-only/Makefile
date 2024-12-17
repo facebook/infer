@@ -12,6 +12,7 @@ INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
   --pulse-max-disjuncts 0 --pulse-over-approximate-reasoning \
+  --pulse-transitive-access-config transitive-access.conf \
 
 INFERPRINT_OPTIONS = --issues-tests
 

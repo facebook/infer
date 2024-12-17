@@ -10,6 +10,7 @@ INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
   --pulse-taint-config .infertaintconfig \
+  --pulse-transitive-access-config transitive-access.conf \
   --jobs 1 \
 
 INFERPRINT_OPTIONS = --issues-tests
