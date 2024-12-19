@@ -152,6 +152,7 @@ The following issue types are reported by this checker:
 - [CONSTANT_ADDRESS_DEREFERENCE](/docs/next/all-issue-types#constant_address_dereference)
 - [CONSTANT_ADDRESS_DEREFERENCE_LATENT](/docs/next/all-issue-types#constant_address_dereference_latent)
 - [DATA_FLOW_TO_SINK](/docs/next/all-issue-types#data_flow_to_sink)
+- [INFINITE_RECURSION](/docs/next/all-issue-types#infinite_recursion)
 - [MEMORY_LEAK_C](/docs/next/all-issue-types#memory_leak_c)
 - [MEMORY_LEAK_CPP](/docs/next/all-issue-types#memory_leak_cpp)
 - [MUTUAL_RECURSION_CYCLE](/docs/next/all-issue-types#mutual_recursion_cycle)

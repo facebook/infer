@@ -916,6 +916,11 @@ void call_top_cost_FP() {
 ```
 
 
+## INFINITE_RECURSION
+
+*Category: [Runtime exception](/docs/next/all-categories#runtime-exception). Reported as "Infinite Recursion" by [pulse](/docs/next/checker-pulse).*
+
+A special case of [MUTUAL_RECURSION_CYCLE](#mutual_recursion_cycle) where we detected that the recursive call is made with the exact same values, which guarantees an infinite recursion.
 ## INTEGER_OVERFLOW_L1
 
 *Reported as "Integer Overflow L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).*
@@ -1058,6 +1063,24 @@ container (an array, a vector, etc).
   warning, since Infer looks for a pair of non-private methods. Objective-C:
   Infer considers a method as private if it's not exported in the header-file
   interface.
+
+## LOCK_ON_UI_THREAD
+
+*Category: [Perf regression](/docs/next/all-categories#perf-regression). Reported as "Lock on UI Thread" by [starvation](/docs/next/checker-starvation).*
+
+A method annoted as being on UIThread acquires a lock. This could be a potential performance issue
+
+Example:
+
+```java
+class Example {
+    @UiThread
+    void foo() {
+        synchronized(this) {
+        }
+    }
+}
+```
 
 ## MEMORY_LEAK_C
 
