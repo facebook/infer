@@ -155,6 +155,8 @@ let compare = Graph.compare Edges.compare
 
 let equal = Graph.equal Edges.equal
 
+let add v edges heap = if Edges.is_empty edges then Graph.remove v heap else Graph.add v edges heap
+
 module type S = sig
   type key
 

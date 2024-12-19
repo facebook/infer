@@ -35,12 +35,14 @@ let add_one addr attribute attrs =
 
 
 let add addr attributes attrs =
-  match Graph.find_opt addr attrs with
-  | None ->
-      Graph.add addr attributes attrs
-  | Some old_attrs ->
-      let new_attrs = Attributes.union_prefer_left old_attrs attributes in
-      Graph.add addr new_attrs attrs
+  if Attributes.is_empty attributes then Graph.remove addr attrs
+  else
+    match Graph.find_opt addr attrs with
+    | None ->
+        Graph.add addr attributes attrs
+    | Some old_attrs ->
+        let new_attrs = Attributes.union_prefer_left old_attrs attributes in
+        Graph.add addr new_attrs attrs
 
 
 let fold = Graph.fold

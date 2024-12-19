@@ -1872,15 +1872,25 @@ let get_all_addrs_marked_as_always_reachable {post} =
 
 
 let filter_pre_addr ~f (foot : PreDomain.t) =
-  let heap' = BaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
+  let heap' =
+    BaseMemory.filter
+      (fun address edges -> (not (RawMemory.Edges.is_empty edges)) && f address)
+      (foot :> BaseDomain.t).heap
+  in
   let attrs' =
-    BaseAddressAttributes.filter (fun address _ -> f address) (foot :> BaseDomain.t).attrs
+    BaseAddressAttributes.filter
+      (fun address attrs -> (not (Attributes.is_empty attrs)) && f address)
+      (foot :> BaseDomain.t).attrs
   in
   PreDomain.update ~heap:heap' ~attrs:attrs' foot
 
 
 let filter_post_addr_with_discarded_addrs ~heap_only ~f (foot : PostDomain.t) =
-  let heap' = BaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
+  let heap' =
+    BaseMemory.filter
+      (fun address edges -> (not (RawMemory.Edges.is_empty edges)) && f address)
+      (foot :> BaseDomain.t).heap
+  in
   let attrs', discarded_addresses =
     if heap_only then ((foot :> BaseDomain.t).attrs, [])
     else BaseAddressAttributes.filter_with_discarded_addrs f (foot :> BaseDomain.t).attrs
