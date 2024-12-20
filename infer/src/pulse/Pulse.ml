@@ -56,31 +56,6 @@ let is_python_async pname =
   match IRAttributes.load pname with None -> false | Some attrs -> attrs.ProcAttributes.is_async
 
 
-let is_hack_builder_procname tenv pname =
-  if Procname.is_hack_internal pname then false
-  else
-    match Procname.get_class_type_name pname with
-    | Some (HackClass _ as tn) ->
-        List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
-            PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name)) )
-    | _ ->
-        false
-
-
-let is_hack_builder_consumer tenv pname =
-  match Procname.get_class_type_name pname with
-  | Some (HackClass _ as tn) ->
-      let res =
-        List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name; finalizers} ->
-            PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name))
-            && List.mem finalizers (Procname.get_method pname) ~equal:String.equal )
-      in
-      L.d_printfln "doing builder finalizer check, result is %b" res ;
-      res
-  | _ ->
-      false
-
-
 let is_not_implicit_or_copy_ctor_assignment pname =
   not
     (Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
@@ -607,6 +582,41 @@ module PulseTransferFunctions = struct
     else None
 
 
+  let is_receiver_hack_builder tenv astate pname receiver =
+    let open IOption.Let_syntax in
+    let get_receiver_type_name astate receiver =
+      let addr, _ = ValueOrigin.addr_hist receiver in
+      let* type_name, _ = get_dynamic_type_name astate addr in
+      Some type_name
+    in
+    if Procname.is_hack_internal pname then false
+    else
+      let receiver_type_name = get_receiver_type_name astate receiver in
+      Option.exists receiver_type_name ~f:(fun receiver_type_name ->
+          let res =
+            List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name} ->
+                PatternMatch.is_subtype tenv receiver_type_name
+                  (HackClass (HackClassName.make class_name)) )
+          in
+          L.d_printfln "doing builder receiver check for type %a, result is %b" Typ.Name.pp
+            receiver_type_name res ;
+          res )
+
+
+  let is_hack_builder_consumer tenv pname =
+    match Procname.get_class_type_name pname with
+    | Some (HackClass _ as tn) ->
+        let res =
+          List.exists Config.hack_builder_patterns ~f:(fun Config.{class_name; finalizers} ->
+              PatternMatch.is_subtype tenv tn (HackClass (HackClassName.make class_name))
+              && List.mem finalizers (Procname.get_method pname) ~equal:String.equal )
+        in
+        L.d_printfln "doing builder finalizer check, result is %b" res ;
+        res
+    | _ ->
+        false
+
+
   let lookup_virtual_method_info {InterproceduralAnalysis.tenv; proc_desc; exe_env} path func_args
       call_loc astate callee_pname default_info =
     let caller = Procdesc.get_proc_name proc_desc in
@@ -787,7 +797,7 @@ module PulseTransferFunctions = struct
           AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
             astate
       | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
-        when is_hack_builder_procname tenv callee_pname ->
+        when is_receiver_hack_builder tenv astate callee_pname arg ->
           L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
             callee_pname ;
           AddressAttributes.set_hack_builder (ValueOrigin.value arg)
