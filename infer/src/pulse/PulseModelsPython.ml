@@ -27,16 +27,20 @@ let module_tname module_name =
   Typ.PythonClass (PythonClassName.make str)
 
 
-let sil_fieldname_from_string_value_exn type_name ((address, _) : DSL.aval) :
-    Fieldname.t DSL.model_monad =
-  let f astate =
-    match PulseArithmetic.as_constant_string astate address with
-    | Some str ->
-        (Fieldname.make type_name str, astate)
-    | None ->
-        L.die InternalError "expecting constant string value"
+let as_constant_string_exn aval : string DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_str = as_constant_string aval in
+  let str =
+    Option.value_or_thunk opt_str ~default:(fun () ->
+        L.die InternalError "Python frontend should have put a constant string here" )
   in
-  DSL.Syntax.exec_operation f
+  ret str
+
+
+let sil_fieldname_from_string_value_exn type_name aval : Fieldname.t DSL.model_monad =
+  let open DSL.Syntax in
+  let* str = as_constant_string_exn aval in
+  ret (Fieldname.make type_name str)
 
 
 module Dict = struct
@@ -64,11 +68,7 @@ module Dict = struct
                 propagate_field_type tname attr
               else add_static_type static_tname load_res ) )
     in
-    let* opt_key = as_constant_string key in
-    let key =
-      Option.value_or_thunk opt_key ~default:(fun () ->
-          L.die InternalError "expecting constant string value" )
-    in
+    let* key = as_constant_string_exn key in
     let* opt_static_type = get_static_type dict in
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
 
@@ -178,11 +178,11 @@ let await_awaitable arg : unit DSL.model_monad =
 let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   match (module_name, fun_name, args) with
-  | "asyncio", Some "run", [arg] ->
+  | "asyncio", "run", [arg] ->
       let* () = await_awaitable arg in
       let* res = fresh () in
       ret (Some res)
-  | "asyncio", Some "sleep", _ ->
+  | "asyncio", "sleep", _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
       ret (Some res)
@@ -202,17 +202,15 @@ let call_method name obj arg_names args : model =
       -> (
         (* since module types are final, static type will save us most of the time *)
         let module_name = Typ.Name.get_python_module_name type_name |> Option.value_exn in
-        let* opt_str_name = as_constant_string name in
-        let* opt_special_call = modelled_python_call module_name opt_str_name args in
+        let* str_name = as_constant_string_exn name in
+        let* opt_special_call = modelled_python_call module_name str_name args in
         match opt_special_call with
         | None ->
-            L.d_printfln "calling method %a on module object %s" (Pp.option F.pp_print_string)
-              opt_str_name module_name ;
+            L.d_printfln "calling method %s on module object %s" str_name module_name ;
             let* closure = Dict.get obj name in
             call_dsl ~closure ~arg_names ~args
         | Some res ->
-            L.d_printfln "catching special call %a on module object %s"
-              (Pp.option F.pp_print_string) opt_str_name module_name ;
+            L.d_printfln "catching special call %s on module object %s" str_name module_name ;
             ret res )
     | _ ->
         let* closure = Dict.get obj name in
@@ -247,11 +245,7 @@ let import_name name _fromlist _level : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* opt_str = as_constant_string name in
-  let module_name =
-    Option.value_or_thunk opt_str ~default:(fun () ->
-        L.die InternalError "frontend should always give a string here" )
-  in
+  let* module_name = as_constant_string_exn name in
   let class_name = PythonClassName.make module_name in
   let function_name = "__module_body__" in
   let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
