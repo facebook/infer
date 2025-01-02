@@ -305,7 +305,20 @@ let import_from name module_ : model =
   assign_ret res
 
 
-let import_name name _fromlist _level : model =
+let is_tuple aval : bool DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
+  let res =
+    match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} ->
+        Typ.Name.equal tuple_tname type_name
+    | _ ->
+        false
+  in
+  ret res
+
+
+let import_name name fromlist _level : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
@@ -315,6 +328,10 @@ let import_name name _fromlist _level : model =
         L.die InternalError "frontend should always give a string here" )
   in
   let* module_ = import_module module_name in
+  let* fromlist_is_tuple = is_tuple fromlist in
+  if fromlist_is_tuple then
+    L.debug Analysis Quiet "[PYTHON] import_name %s with tuple@\n" module_name
+  else L.debug Analysis Quiet "[PYTHON] import_name %s without tuple@\n" module_name ;
   assign_ret module_
 
 

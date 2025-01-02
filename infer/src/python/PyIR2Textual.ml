@@ -737,7 +737,7 @@ let gen_type module_name ~allow_classes name node =
         find_next_declaration acc instrs
     | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_module]}}
       :: instrs
-      when QualifiedProcName.equal py_import_from proc ->
+      when QualifiedProcName.equal py_import_from proc && DefaultType.is_import id_module acc ->
         let module_name = DefaultType.get_import id_module acc |> Option.value_exn in
         let acc = DefaultType.add_import_from ident ~module_name ~attr_name acc in
         find_next_declaration acc instrs
