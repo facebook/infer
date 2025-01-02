@@ -210,9 +210,13 @@ module Name : sig
 
   val is_python_module_attribute : t -> bool
 
+  val is_python_reserved_builtin : t -> bool
+
   val get_python_module_name : t -> string option
 
   val get_python_module_attribute_infos : t -> (t * string) option
+
+  val get_python_reserved_builtin : t -> string option
 
   val python_concatenate_package_name_and_file_name : t -> string -> t option
 

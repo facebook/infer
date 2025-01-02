@@ -55,3 +55,15 @@ let concatenate_package_name_and_file_name typename filename =
   let+ package_name = get_module_name typename in
   let classname = Printf.sprintf "%s%s::%s" globals_prefix package_name filename in
   {classname}
+
+
+let closure_builtin_prefix = "closure:builtin:"
+
+let mk_reserved_builtin name =
+  let classname = closure_builtin_prefix ^ name in
+  {classname}
+
+
+let is_reserved_builtin {classname} = String.is_prefix classname ~prefix:closure_builtin_prefix
+
+let get_reserved_builtin {classname} = String.chop_prefix classname ~prefix:closure_builtin_prefix

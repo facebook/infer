@@ -70,10 +70,13 @@ module Dict = struct
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
 
 
-  let get_str_key dict key : DSL.aval DSL.model_monad =
+  let get_str_key ?(propagate_static_type = false) dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let field = Fieldname.make dict_tname key in
     let* load_res = load_access ~deref:false dict (FieldAccess field) in
+    let* () =
+      if propagate_static_type then propagate_static_type_on_load dict key load_res else ret ()
+    in
     (* note: we do not try static type propagation here *)
     ret load_res
 
@@ -82,8 +85,7 @@ module Dict = struct
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* key = as_constant_string_exn key in
-    let* load_res = get_str_key dict key in
-    let* () = propagate_static_type_on_load dict key load_res in
+    let* load_res = get_str_key ~propagate_static_type:true dict key in
     ret load_res
 
 
@@ -173,15 +175,6 @@ let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   apply_python_closure closure gen_closure_args
 
 
-let call closure arg_names args : model =
-  (* TODO: take into account named args *)
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
-  let* value = call_dsl ~closure ~arg_names ~args in
-  assign_ret value
-
-
 let await_awaitable arg : unit DSL.model_monad =
   fst arg |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command
 
@@ -191,16 +184,43 @@ let await_awaitable arg : unit DSL.model_monad =
 let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   match (module_name, fun_name, args) with
-  | "asyncio", "run", [arg] ->
+  | `PyLib "asyncio", "run", [arg] ->
       let* () = await_awaitable arg in
       let* res = fresh () in
       ret (Some res)
-  | "asyncio", "sleep", _ ->
+  | `PyLib "asyncio", "sleep", _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
       ret (Some res)
+  | `PyBuiltin, "str", _ ->
+      let* res = fresh () in
+      ret (Some res)
   | _, _, _ ->
       ret None
+
+
+let call closure arg_names args : model =
+  (* TODO: take into account named args *)
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+  let* res =
+    match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}}
+      when Typ.Name.is_python_reserved_builtin type_name -> (
+        let builtin_name = Typ.Name.get_python_reserved_builtin type_name |> Option.value_exn in
+        let* opt_special_call = modelled_python_call `PyBuiltin builtin_name args in
+        match opt_special_call with
+        | None ->
+            L.die InternalError "builtin %s was not successfully recognized" builtin_name
+        | Some res ->
+            L.d_printfln "catching reserved builtin call %s" builtin_name ;
+            ret res )
+    | _ ->
+        call_dsl ~closure ~arg_names ~args
+  in
+  assign_ret res
 
 
 let call_method name obj arg_names args : model =
@@ -216,7 +236,7 @@ let call_method name obj arg_names args : model =
         (* since module types are final, static type will save us most of the time *)
         let module_name = Typ.Name.get_python_module_name type_name |> Option.value_exn in
         let* str_name = as_constant_string_exn name in
-        let* opt_special_call = modelled_python_call module_name str_name args in
+        let* opt_special_call = modelled_python_call (`PyLib module_name) str_name args in
         match opt_special_call with
         | None ->
             L.d_printfln "calling method %s on module object %s" str_name module_name ;
@@ -421,12 +441,22 @@ let load_fast name locals : model =
   assign_ret value
 
 
+let tag_if_builtin name aval : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let reserved_builtins = ["str"] in
+  if List.mem ~equal:String.equal reserved_builtins name then
+    and_dynamic_type_is aval
+      (Typ.mk_struct (PythonClass (PythonClassName.mk_reserved_builtin name)))
+  else ret ()
+
+
 let load_global name globals : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* value = Dict.get globals name in
-  (* TODO: decide what we do if the binding is missing in globals (for builtins) *)
+  let* name = as_constant_string_exn name in
+  let* value = Dict.get_str_key ~propagate_static_type:true globals name in
+  let* () = tag_if_builtin name value in
   assign_ret value
 
 

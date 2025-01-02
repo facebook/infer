@@ -69,6 +69,18 @@ async def tuple_ok():
     await t[1]
 
 
+async def with_str_bad():
+    unwaited = sleep(1)
+    return str(unwaited)
+
+
+async def with_str_ok():
+    unwaited = sleep(1)
+    s = str(unwaited)
+    awaited = await unwaited
+    return (awaited, s)
+
+
 def fst(x: int, y: int) -> int:
     return x
 

@@ -607,6 +607,10 @@ module Name = struct
     match name with PythonClass py -> PythonClassName.is_module_attribute py | _ -> false
 
 
+  let is_python_reserved_builtin name =
+    match name with PythonClass py -> PythonClassName.is_reserved_builtin py | _ -> false
+
+
   let get_python_module_name name =
     match name with PythonClass py -> PythonClassName.get_module_name py | _ -> None
 
@@ -618,6 +622,10 @@ module Name = struct
         |> Option.map ~f:(fun (py_name, str) -> (PythonClass py_name, str))
     | _ ->
         None
+
+
+  let get_python_reserved_builtin name =
+    match name with PythonClass py -> PythonClassName.get_reserved_builtin py | _ -> None
 
 
   let python_concatenate_package_name_and_file_name name filename =

@@ -15,5 +15,6 @@ async_level0.py, async_level0.call_sleep_with_branchs_bad1, 3, PULSE_UNAWAITED_A
 async_level0.py, async_level0.call_sleep_with_branchs_bad2, 4, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.tuple0_bad, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.tuple1_bad, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
+async_level0.py, async_level0.with_str_bad, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level0.py, async_level0.call_fst_bad, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_level1.py, async_level1.D::main, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
