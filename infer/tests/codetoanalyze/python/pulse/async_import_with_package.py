@@ -68,13 +68,10 @@ asyncio.run(ok4())
 
 async def bad5():
     await import5.dont_await_it(asyncio.sleep(1))
-# we still need this explicit toplevel call until we adapt specialization (see next diff)
-asyncio.run(bad5())
 
 
 async def ok5():
     await import5.await_it(asyncio.sleep(1))
-asyncio.run(ok5())
 
 
 async def bad6():

@@ -769,6 +769,17 @@ let gen_type module_name ~allow_classes name node =
         let module_name = DefaultType.get_import id_module acc |> Option.value_exn in
         let acc = DefaultType.add_import_from ident ~module_name ~attr_name acc in
         find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_from]}}
+      :: instrs
+      when QualifiedProcName.equal py_import_from proc && DefaultType.is_import_from id_from acc ->
+        let module_name, attr_name0 = DefaultType.get_import_from id_from acc |> Option.value_exn in
+        let acc =
+          String.chop_suffix module_name ~suffix:"__init__"
+          |> Option.value_map ~default:acc ~f:(fun module_name ->
+                 let module_name = module_name ^ attr_name0 in
+                 DefaultType.add_import_from ident ~module_name ~attr_name acc )
+        in
+        find_next_declaration acc instrs
     | Instr.Let {id= Some ident; exp= Call {proc; args= [Typ typ]}} :: instrs
       when QualifiedProcName.equal sil_allocate proc ->
         let acc = DefaultType.add_allocate ident typ acc in
