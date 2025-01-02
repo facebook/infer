@@ -855,8 +855,8 @@ let get_class_name t =
       Block.get_class_name bsig
   | Hack hack_pname ->
       Hack.get_class_name_as_a_string hack_pname
-  | Python _ ->
-      L.die InternalError "TODO: get_class_name for Python type"
+  | Python py_pname ->
+      Python.get_class_name_as_a_string py_pname
   | C _ | Erlang _ ->
       None
 
