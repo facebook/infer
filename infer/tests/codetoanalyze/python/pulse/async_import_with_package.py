@@ -54,19 +54,23 @@ async def from_class_ok3():
     await await_it3(C.async_fun())
 
 
-async def FN_bad4():
+async def bad4():
     await dir1.dir4.testmod.dont_await_it(asyncio.sleep(1))
-asyncio.run(FN_bad4())
-
+# we still need this explicit toplevel call until we adapt specialization
+# types to import-packages without alias names but this is not a frequent
+# pattern in our experiments so far
+asyncio.run(bad4())
 
 async def ok4():
     await dir1.dir4.testmod.await_it(asyncio.sleep(1))
 asyncio.run(ok4())
 
 
-async def FN_bad5():
+async def bad5():
     await import5.dont_await_it(asyncio.sleep(1))
-asyncio.run(FN_bad5())
+# we still need this explicit toplevel call until we adapt specialization (see next diff)
+asyncio.run(bad5())
+
 
 async def ok5():
     await import5.await_it(asyncio.sleep(1))

@@ -163,7 +163,8 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_load_class_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
   | ImportName {name; fromlist; level} ->
       let str = typename_of_ident name |> F.asprintf "%a" Textual.TypeName.pp in
-      call_builtin str_py_import_name [Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
+      call_builtin str_py_import_name
+        [exp_globals; Textual.Exp.Const (Str str); of_exp fromlist; of_exp level]
   | ImportFrom {name; exp} ->
       call_builtin str_py_import_from [exp_of_ident_str name; of_exp exp]
   | Temp ssa ->
@@ -579,6 +580,8 @@ module DefaultType : sig
 
   val add_string_constant : Textual.Ident.t -> string -> acc -> acc
 
+  val add_tuple : Textual.Ident.t -> acc -> acc
+
   val get_allocate : Textual.Ident.t -> acc -> Textual.Typ.t option
 
   val get_class_body : Textual.Ident.t -> acc -> string option
@@ -603,6 +606,8 @@ module DefaultType : sig
 
   val is_string_constant : Textual.Ident.t -> acc -> bool
 
+  val is_tuple : Textual.Ident.t -> acc -> bool
+
   val export : acc -> decl list
 end = struct
   type decl =
@@ -612,6 +617,7 @@ end = struct
     | Fundef of {typ: Textual.Typ.t; target: string}
 
   type exp =
+    | Tuple (* we just need to remember if a value must-be a tuple *)
     | Allocate of Textual.Typ.t
     | ClassBody of string
     | FuncPtr of Textual.Typ.t
@@ -649,6 +655,8 @@ end = struct
     {acc with exps= Textual.Ident.Map.add ident (StringConstant str) exps}
 
 
+  let add_tuple ident ({exps} as acc) = {acc with exps= Textual.Ident.Map.add ident Tuple exps}
+
   let is_allocate ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with Some (Allocate _) -> true | _ -> false
 
@@ -671,6 +679,10 @@ end = struct
 
   let is_string_constant ident {exps} =
     match Textual.Ident.Map.find_opt ident exps with Some (StringConstant _) -> true | _ -> false
+
+
+  let is_tuple ident {exps} =
+    match Textual.Ident.Map.find_opt ident exps with Some Tuple -> true | _ -> false
 
 
   let get_allocate ident {exps} =
@@ -714,6 +726,8 @@ let py_import_from = builtin_qual_proc_name str_py_import_from
 
 let py_build_class = builtin_qual_proc_name str_py_build_class
 
+let py_build_tuple = builtin_qual_proc_name "py_build_tuple"
+
 let py_call = builtin_qual_proc_name str_py_call
 
 let py_store_name = builtin_qual_proc_name str_py_store_name
@@ -726,13 +740,27 @@ let sil_allocate : Textual.QualifiedProcName.t =
   {enclosing_class= TopLevel; name= Textual.ProcName.of_string "__sil_allocate"}
 
 
+let root_of_name str =
+  String.substr_index str ~pattern:"::"
+  |> Option.value_map ~default:str ~f:(fun pos ->
+         let package_name = String.sub ~pos:0 ~len:pos str in
+         package_name ^ "::__init__" )
+
+
 let gen_type module_name ~allow_classes name node =
   let mk_class_companion str = Typ.class_companion module_name str in
   let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
   let open Textual in
   let rec find_next_declaration acc = function
-    | Instr.Let {id= Some ident; exp= Call {proc; args= Const (Str name) :: _}} :: instrs
+    | Instr.Let {id= Some ident; exp= Call {proc}} :: instrs
+      when QualifiedProcName.equal py_build_tuple proc ->
+        let acc = DefaultType.add_tuple ident acc in
+        find_next_declaration acc instrs
+    | Instr.Let {id= Some ident; exp= Call {proc; args= _ :: Const (Str name) :: Var id_from :: _}}
+      :: instrs
       when QualifiedProcName.equal py_import_name proc ->
+        let is_from_import = DefaultType.is_tuple id_from acc in
+        let name = if is_from_import then name else root_of_name name in
         let acc = DefaultType.add_import ident name acc in
         find_next_declaration acc instrs
     | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_module]}}

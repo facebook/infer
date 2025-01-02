@@ -37,12 +37,6 @@ let as_constant_string_exn aval : string DSL.model_monad =
   ret str
 
 
-let sil_fieldname_from_string_value_exn type_name aval : Fieldname.t DSL.model_monad =
-  let open DSL.Syntax in
-  let* str = as_constant_string_exn aval in
-  ret (Fieldname.make type_name str)
-
-
 module Dict = struct
   let make keys args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
@@ -72,24 +66,39 @@ module Dict = struct
                   |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
               else add_static_type static_tname load_res ) )
     in
-    let* key = as_constant_string_exn key in
     let* opt_static_type = get_static_type dict in
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
 
 
+  let get_str_key dict key : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let field = Fieldname.make dict_tname key in
+    let* load_res = load_access ~deref:false dict (FieldAccess field) in
+    (* note: we do not try static type propagation here *)
+    ret load_res
+
+
+  (* beware: key is expected to be a constant string! *)
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let* field = sil_fieldname_from_string_value_exn dict_tname key in
-    let* load_res = load_access ~deref:false dict (FieldAccess field) in
+    let* key = as_constant_string_exn key in
+    let* load_res = get_str_key dict key in
     let* () = propagate_static_type_on_load dict key load_res in
     ret load_res
 
 
-  let set dict key value : unit DSL.model_monad =
+  let set_str_key dict key value : unit DSL.model_monad =
     let open DSL.Syntax in
-    let* field = sil_fieldname_from_string_value_exn dict_tname key in
+    let field = Fieldname.make dict_tname key in
     let* () = store_field ~deref:false ~ref:dict field value in
     ret ()
+
+
+  (* beware: key is expected to be a constant string! *)
+  let set dict key value : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* key = as_constant_string_exn key in
+    set_str_key dict key value
 end
 
 module Tuple = struct
@@ -229,6 +238,16 @@ let gen_start_coroutine : model =
   start_model @@ fun () -> ret ()
 
 
+let get_attr obj attr : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* attr = as_constant_string_exn attr in
+  (* TODO: look into companion class object if necessary *)
+  let* res = Dict.get_str_key obj attr in
+  assign_ret res
+
+
 let get_awaitable arg : model =
   let open DSL.Syntax in
   start_model
@@ -249,6 +268,20 @@ let is_package aval : string option DSL.model_monad =
         |> Option.bind ~f:(String.chop_prefix ~prefix:PythonClassName.globals_prefix)
     | _ ->
         None )
+
+
+let is_global aval : bool DSL.model_monad =
+  let tname_is_global tname =
+    Typ.Name.name tname |> String.is_prefix ~prefix:PythonClassName.globals_prefix
+  in
+  let open DSL.Syntax in
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
+  ret
+    ( match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct tname}} ->
+        tname_is_global tname
+    | _ ->
+        false )
 
 
 let is_module_captured module_name =
@@ -274,7 +307,6 @@ let lookup_module module_name =
           ret (module_, None)
       | Some proc_name ->
           (* it is a captured package name *)
-          L.debug Analysis Quiet "[PYTHON] %s is a package@\n" module_name ;
           let* module_ = PyModule.make module_name_init in
           ret (module_, Some proc_name) )
 
@@ -289,19 +321,45 @@ let import_module module_name : DSL.aval DSL.model_monad =
   ret module_
 
 
+let import_module_from_package package ~module_path ~module_name =
+  let open DSL.Syntax in
+  let* module_ = Dict.get_str_key package module_name in
+  let* already_imported = is_global module_ in
+  if already_imported then ret ()
+  else
+    let* imported = import_module module_path in
+    Dict.set_str_key package module_name imported
+
+
+let rec import_chain parents ?root_parent ?path chain : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  match (parents, chain, root_parent) with
+  | _ :: _, [], Some root_parent ->
+      ret root_parent
+  | parent :: _, name :: chain, _ ->
+      let path =
+        Option.value_map path ~default:name ~f:(fun path -> F.asprintf "%s::%s" path name)
+      in
+      let* () = import_module_from_package parent ~module_path:path ~module_name:name in
+      let* module_ = Dict.get_str_key parent name in
+      let root_parent = Option.value root_parent ~default:module_ in
+      import_chain (module_ :: parents) ~path ~root_parent chain
+  | _, _, _ ->
+      L.die InternalError "import_chain should never be called on an ampty parents list"
+
+
 let import_from name module_ : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* opt_is_package = is_package module_ in
-  let* str_name = as_constant_string_exn name in
+  let* name = as_constant_string_exn name in
   let* () =
     option_iter opt_is_package ~f:(fun package_name ->
-        let module_name = F.asprintf "%s::%s" package_name str_name in
-        let* package_module_attribute = import_module module_name in
-        Dict.set module_ name package_module_attribute )
+        let module_path = F.asprintf "%s::%s" package_name name in
+        import_module_from_package module_ ~module_path ~module_name:name )
   in
-  let* res = Dict.get module_ name in
+  let* res = Dict.get_str_key module_ name in
   assign_ret res
 
 
@@ -318,21 +376,41 @@ let is_tuple aval : bool DSL.model_monad =
   ret res
 
 
-let import_name name fromlist _level : model =
+let split_module_path path =
+  let rec loop acc = function
+    | [] ->
+        L.die InternalError "split_module_path: unexpected case"
+    | [last] ->
+        let pos = last + 2 in
+        String.sub path ~pos ~len:(String.length path - pos) :: acc |> List.rev
+    | pos :: (next_pos :: _ as rest) ->
+        let pos = pos + 2 in
+        let acc = String.sub path ~pos ~len:(next_pos - pos) :: acc in
+        loop acc rest
+  in
+  let positions = String.substr_index_all path ~may_overlap:false ~pattern:"::" in
+  loop [] (-2 :: positions)
+
+
+let import_name globals name fromlist _level : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* opt_str = as_constant_string name in
-  let module_name =
-    Option.value_or_thunk opt_str ~default:(fun () ->
-        L.die InternalError "frontend should always give a string here" )
-  in
-  let* module_ = import_module module_name in
+  let* module_name = as_constant_string_exn name in
   let* fromlist_is_tuple = is_tuple fromlist in
-  if fromlist_is_tuple then
-    L.debug Analysis Quiet "[PYTHON] import_name %s with tuple@\n" module_name
-  else L.debug Analysis Quiet "[PYTHON] import_name %s without tuple@\n" module_name ;
-  assign_ret module_
+  let names = split_module_path module_name in
+  if
+    fromlist_is_tuple
+    (* this is a from ... import ... [as ...] *)
+    || List.length names <= 1
+    (* this is a import <simple_name> [as ...] *)
+  then
+    let* module_ = import_module module_name in
+    assign_ret module_
+  else
+    (* this is a import <package> [as ...] *)
+    let* first_parent = import_chain [globals] names in
+    assign_ret first_parent
 
 
 let load_fast name locals : model =
@@ -522,7 +600,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
   ; -"$builtins" &:: "py_gen_start_generator" &::.*+++> unknown
   ; -"$builtins" &:: "py_get_aiter" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_attr" &::.*+++> unknown
+  ; -"$builtins" &:: "py_get_attr" <>$ arg $+ arg $--> get_attr
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable
   ; -"$builtins" &:: "py_get_iter" &::.*+++> unknown
   ; -"$builtins" &:: "py_get_len" <>$ arg $--> unknown
@@ -530,7 +608,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_get_yield_from_iter" &::.*+++> unknown
   ; -"$builtins" &:: "py_has_next_iter" &::.*+++> unknown
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
-  ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $--> import_name
+  ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $+ arg $--> import_name
   ; -"$builtins" &:: "py_import_star" &::.*+++> unknown
   ; -"$builtins" &:: "py_inplace_add" &::.*+++> unknown
   ; -"$builtins" &:: "py_inplace_and" &::.*+++> unknown
