@@ -25,10 +25,7 @@ from dir2.dir5.testmod import (
     await_it as await_it5,
     dont_await_it as dont_await_it5,
 )
-from dir2.dir6.testmod import (
-    await_it as await_it6,
-    dont_await_it as dont_await_it6,
-)
+from dir2.dir6 import testmod as import6
 
 
 async def bad1():
@@ -80,8 +77,10 @@ async def ok5():
 
 
 async def bad6():
-    await dont_await_it6(asyncio.sleep(1))
+    await import6.dont_await_it(asyncio.sleep(1))
+asyncio.run(bad6())
 
 
 async def ok6():
-    await await_it6(asyncio.sleep(1))
+    await import6.await_it(asyncio.sleep(1))
+asyncio.run(ok6())

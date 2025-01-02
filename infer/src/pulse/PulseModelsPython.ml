@@ -233,10 +233,70 @@ let get_awaitable arg : model =
   assign_ret arg
 
 
+let is_package aval : string option DSL.model_monad =
+  let suffix = "::__init__" in
+  let tname_is_package tname = Typ.Name.name tname |> String.is_suffix ~suffix in
+  let open DSL.Syntax in
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
+  ret
+    ( match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct tname}} when tname_is_package tname ->
+        Typ.Name.name tname |> String.chop_suffix ~suffix
+        |> Option.bind ~f:(String.chop_prefix ~prefix:PythonClassName.globals_prefix)
+    | _ ->
+        None )
+
+
+let is_module_captured module_name =
+  let function_name = "__module_body__" in
+  let class_name = PythonClassName.make module_name in
+  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
+  IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
+
+
+let lookup_module module_name =
+  let open DSL.Syntax in
+  match is_module_captured module_name with
+  | Some proc_name ->
+      let* module_ = PyModule.make module_name in
+      ret (module_, Some proc_name)
+  | None -> (
+      (* it is not a capture module name *)
+      let module_name_init = module_name ^ "::__init__" in
+      match is_module_captured module_name_init with
+      | None ->
+          (* neither it is a captured package name *)
+          let* module_ = PyModule.make module_name in
+          ret (module_, None)
+      | Some proc_name ->
+          (* it is a captured package name *)
+          L.debug Analysis Quiet "[PYTHON] %s is a package@\n" module_name ;
+          let* module_ = PyModule.make module_name_init in
+          ret (module_, Some proc_name) )
+
+
+let import_module module_name : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* module_, opt_body_procname = lookup_module module_name in
+  let* () =
+    option_iter opt_body_procname ~f:(fun proc_name ->
+        python_call proc_name [("globals", module_)] |> ignore )
+  in
+  ret module_
+
+
 let import_from name module_ : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
+  let* opt_is_package = is_package module_ in
+  let* str_name = as_constant_string_exn name in
+  let* () =
+    option_iter opt_is_package ~f:(fun package_name ->
+        let module_name = F.asprintf "%s::%s" package_name str_name in
+        let* package_module_attribute = import_module module_name in
+        Dict.set module_ name package_module_attribute )
+  in
   let* res = Dict.get module_ name in
   assign_ret res
 
@@ -245,15 +305,13 @@ let import_name name _fromlist _level : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* module_name = as_constant_string_exn name in
-  let class_name = PythonClassName.make module_name in
-  let function_name = "__module_body__" in
-  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
-  let* module_ = PyModule.make module_name in
-  if IRAttributes.load proc_name |> Option.is_none then assign_ret module_
-  else
-    let* _ = python_call proc_name [("globals", module_)] in
-    assign_ret module_
+  let* opt_str = as_constant_string name in
+  let module_name =
+    Option.value_or_thunk opt_str ~default:(fun () ->
+        L.die InternalError "frontend should always give a string here" )
+  in
+  let* module_ = import_module module_name in
+  assign_ret module_
 
 
 let load_fast name locals : model =
