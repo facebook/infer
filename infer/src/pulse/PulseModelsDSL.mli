@@ -243,6 +243,7 @@ module Syntax : sig
   val tenv_resolve_fieldname :
     Typ.name -> string -> (Fieldname.t option * Tenv.unresolved_reason option) model_monad
 
+  val tenv_type_is_defined : Typ.name -> bool model_monad
   (** {2 Invalidation operations} *)
 
   val invalidate_access : Invalidation.t -> aval -> Access.t -> unit model_monad

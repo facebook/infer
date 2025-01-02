@@ -36,3 +36,5 @@ val get_module_name : t -> string option
 (** will return the string representation of the module iff type name is a module type *)
 
 val globals_prefix : string
+
+val concatenate_package_name_and_file_name : t -> string -> t option

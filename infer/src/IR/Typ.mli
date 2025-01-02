@@ -214,6 +214,8 @@ module Name : sig
 
   val get_python_module_attribute_infos : t -> (t * string) option
 
+  val python_concatenate_package_name_and_file_name : t -> string -> t option
+
   module C : sig
     val from_string : string -> t
 

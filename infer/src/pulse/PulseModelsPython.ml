@@ -65,7 +65,11 @@ module Dict = struct
                 let tname, attr =
                   Typ.Name.get_python_module_attribute_infos static_tname |> Option.value_exn
                 in
-                propagate_field_type tname attr
+                let* tname_is_defined = tenv_type_is_defined tname in
+                if tname_is_defined then propagate_field_type tname attr
+                else
+                  Typ.Name.python_concatenate_package_name_and_file_name tname attr
+                  |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
               else add_static_type static_tname load_res ) )
     in
     let* key = as_constant_string_exn key in

@@ -48,3 +48,10 @@ let get_module_attribute_infos {classname} =
   in
   let classname = globals_prefix ^ module_name in
   ({classname}, attribute_name)
+
+
+let concatenate_package_name_and_file_name typename filename =
+  let open IOption.Let_syntax in
+  let+ package_name = get_module_name typename in
+  let classname = Printf.sprintf "%s%s::%s" globals_prefix package_name filename in
+  {classname}

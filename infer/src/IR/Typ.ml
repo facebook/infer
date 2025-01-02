@@ -620,6 +620,15 @@ module Name = struct
         None
 
 
+  let python_concatenate_package_name_and_file_name name filename =
+    match name with
+    | PythonClass py ->
+        PythonClassName.concatenate_package_name_and_file_name py filename
+        |> Option.map ~f:(fun py_name -> PythonClass py_name)
+    | _ ->
+        None
+
+
   let is_same_type t1 t2 =
     match (t1, t2) with
     | CStruct _, CStruct _

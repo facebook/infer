@@ -78,9 +78,7 @@ async def ok5():
 
 async def bad6():
     await import6.dont_await_it(asyncio.sleep(1))
-asyncio.run(bad6())
 
 
 async def ok6():
     await import6.await_it(asyncio.sleep(1))
-asyncio.run(ok6())
