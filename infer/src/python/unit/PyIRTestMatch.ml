@@ -283,63 +283,62 @@ foo(C.BAR, C.BAR)
           n0 <- None
           n3 <- LOCAL[n]
           n4 <- LOCAL[m]
-          if $MatchSequence($BuildTuple(n3, n4)) then jmp b1 else jmp b5(
-          $BuildTuple(n3, n4))
+          n5 <- $BuildTuple(n3, n4)
+          if $MatchSequence(n5) then jmp b1 else jmp b5(n5)
 
         b1:
-          n5 <- $Compare.eq($GetLen($BuildTuple(n3, n4)), 2, n0)
-          if n5 then jmp b2 else jmp b5($BuildTuple(n3, n4))
+          n6 <- $Compare.eq($GetLen(n5), 2, n0)
+          if n6 then jmp b2 else jmp b5(n5)
 
         b10:
-          n21 <- GLOBAL[print]
-          n22 <- $Call(n21, "BAR", n0)
+          n22 <- GLOBAL[print]
+          n23 <- $Call(n22, "BAR", n0)
           return n0
 
-        b11(n17):
+        b11(n18):
           return n0
 
         b12:
           return n0
 
         b2:
-          n6 <- GLOBAL[C]
-          n7 <- n6.FOO
-          n8 <- $Compare.eq($BuildTuple(n3, n4)[0], n7, n0)
-          if n8 then jmp b3 else jmp b5($BuildTuple(n3, n4)[1])
+          n7 <- GLOBAL[C]
+          n8 <- n7.FOO
+          n9 <- $Compare.eq(n5[0], n8, n0)
+          if n9 then jmp b3 else jmp b5(n5[1])
 
         b3:
-          n10 <- GLOBAL[C]
-          n11 <- n10.FOO
-          n12 <- $Compare.eq($BuildTuple(n3, n4)[1], n11, n0)
-          if n12 then jmp b4 else jmp b6
+          n11 <- GLOBAL[C]
+          n12 <- n11.FOO
+          n13 <- $Compare.eq(n5[1], n12, n0)
+          if n13 then jmp b4 else jmp b6
 
         b4:
-          n23 <- $BuildTuple(n3, n4)
           n24 <- GLOBAL[print]
           n25 <- $Call(n24, "FOO", n0)
           return n0
 
-        b5(n9):
+        b5(n10):
           jmp b6
 
         b6:
-          if $MatchSequence($BuildTuple(n3, n4)) then jmp b7 else jmp b11($BuildTuple(n3, n4))
+          if $MatchSequence(n5) then jmp b7 else jmp b11(n5)
 
         b7:
-          n13 <- $Compare.eq($GetLen($BuildTuple(n3, n4)), 2, n0)
-          if n13 then jmp b8 else jmp b11($BuildTuple(n3, n4))
+          n14 <- $Compare.eq($GetLen(n5), 2, n0)
+          if n14 then jmp b8 else jmp b11(n5)
 
         b8:
-          n14 <- GLOBAL[C]
-          n15 <- n14.BAR
-          n16 <- $Compare.eq($BuildTuple(n3, n4)[0], n15, n0)
-          if n16 then jmp b9 else jmp b11($BuildTuple(n3, n4)[1])
+          n15 <- GLOBAL[C]
+          n16 <- n15.BAR
+          n17 <- $Compare.eq(n5[0], n16, n0)
+          if n17 then jmp b9 else jmp b11(n5[1])
 
         b9:
-          n18 <- GLOBAL[C]
-          n19 <- n18.BAR
-          n20 <- $Compare.eq($BuildTuple(n3, n4)[1], n19, n0)
-          if n20 then jmp b10 else jmp b12 |}]
+          n19 <- GLOBAL[C]
+          n20 <- n19.BAR
+          n21 <- $Compare.eq(n5[1], n20, n0)
+          if n21 then jmp b10 else jmp b12 |}]
 
 
 let%expect_test _ =
@@ -435,9 +434,9 @@ def location(point):
           if n9 then jmp b3 else jmp b4
 
         b3:
-          n42 <- $AttributesOfMatchClass(n5)
-          n43 <- GLOBAL[print]
-          n44 <- $Call(n43, "Origin is the point's location.", n0)
+          n44 <- $AttributesOfMatchClass(n5)
+          n45 <- GLOBAL[print]
+          n46 <- $Call(n45, "Origin is the point's location.", n0)
           return n0
 
         b4:
@@ -452,13 +451,14 @@ def location(point):
           if n14 then jmp b6 else jmp b7
 
         b6:
-          n36 <- $AttributesOfMatchClass(n12)[1]
-          n37 <- $AttributesOfMatchClass(n12)
-          LOCAL[y] <- n36
-          n38 <- GLOBAL[print]
-          n39 <- LOCAL[y]
-          n40 <- $Format(n39, n0, n0)
-          n41 <- $Call(n38, $BuildString("Y=", n40, " and the point is on the y-axis."), n0)
+          n37 <- $AttributesOfMatchClass(n12)[1]
+          n38 <- $AttributesOfMatchClass(n12)
+          LOCAL[y] <- n37
+          n39 <- GLOBAL[print]
+          n40 <- LOCAL[y]
+          n41 <- $Format(n40, n0, n0)
+          n42 <- $BuildString("Y=", n41, " and the point is on the y-axis.")
+          n43 <- $Call(n39, n42, n0)
           return n0
 
         b7:
@@ -479,7 +479,8 @@ def location(point):
           n32 <- GLOBAL[print]
           n33 <- LOCAL[x]
           n34 <- $Format(n33, n0, n0)
-          n35 <- $Call(n32, $BuildString("X=", n34, " and the point is on the x-axis."), n0)
+          n35 <- $BuildString("X=", n34, " and the point is on the x-axis.")
+          n36 <- $Call(n32, n35, n0)
           return n0 |}]
 
 
@@ -578,9 +579,9 @@ def location(point):
           if n9 then jmp b3 else jmp b4
 
         b3:
-          n42 <- $AttributesOfMatchClass(n5)
-          n43 <- GLOBAL[print]
-          n44 <- $Call(n43, "Origin is the point's location.", n0)
+          n44 <- $AttributesOfMatchClass(n5)
+          n45 <- GLOBAL[print]
+          n46 <- $Call(n45, "Origin is the point's location.", n0)
           return n0
 
         b4:
@@ -595,13 +596,14 @@ def location(point):
           if n14 then jmp b6 else jmp b7
 
         b6:
-          n36 <- $AttributesOfMatchClass(n12)[1]
-          n37 <- $AttributesOfMatchClass(n12)
-          LOCAL[y] <- n36
-          n38 <- GLOBAL[print]
-          n39 <- LOCAL[y]
-          n40 <- $Format(n39, n0, n0)
-          n41 <- $Call(n38, $BuildString("Y=", n40, " and the point is on the y-axis."), n0)
+          n37 <- $AttributesOfMatchClass(n12)[1]
+          n38 <- $AttributesOfMatchClass(n12)
+          LOCAL[y] <- n37
+          n39 <- GLOBAL[print]
+          n40 <- LOCAL[y]
+          n41 <- $Format(n40, n0, n0)
+          n42 <- $BuildString("Y=", n41, " and the point is on the y-axis.")
+          n43 <- $Call(n39, n42, n0)
           return n0
 
         b7:
@@ -622,7 +624,8 @@ def location(point):
           n32 <- GLOBAL[print]
           n33 <- LOCAL[x]
           n34 <- $Format(n33, n0, n0)
-          n35 <- $Call(n32, $BuildString("X=", n34, " and the point is on the x-axis."), n0)
+          n35 <- $BuildString("X=", n34, " and the point is on the x-axis.")
+          n36 <- $Call(n32, n35, n0)
           return n0 |}]
 
 
@@ -717,7 +720,8 @@ def location(point):
           n24 <- $Format(n23, n0, n0)
           n25 <- LOCAL[y2]
           n26 <- $Format(n25, n0, n0)
-          n27 <- $Call(n22, $BuildString("Two points on the Y axis at ", n24, ", ", n26, " are in the list."), n0)
+          n27 <- $BuildString("Two points on the Y axis at ", n24, ", ", n26, " are in the list.")
+          n28 <- $Call(n22, n27, n0)
           return n0
 
         b7(n15, n16):

@@ -557,8 +557,10 @@ def test_format_specifier_expressions(self):
           n8 <- $Format(n7, n0, n0)
           n9 <- LOCAL[precision]
           n10 <- $Format(n9, n0, n0)
-          n11 <- $Format(n6, $BuildString(n8, ".", n10), n0)
-          n12 <- $Call(n5, $BuildString("result: ", n11), n0)
+          n11 <- $BuildString(n8, ".", n10)
+          n12 <- $Format(n6, n11, n0)
+          n13 <- $BuildString("result: ", n12)
+          n14 <- $Call(n5, n13, n0)
           return n0 |}]
 
 

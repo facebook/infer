@@ -149,25 +149,26 @@ print(c.z)
           TOPLEVEL[IntBox] <- n4
           n5 <- TOPLEVEL[IntBox]
           n6 <- TOPLEVEL[int]
-          n7 <- $MakeFunction["getX", "dummy.getX", n0, n0, $BuildTuple("box", n5, "return", n6), n0]
-          TOPLEVEL[getX] <- n7
-          n8 <- TOPLEVEL[IntBox]
-          n9 <- $Call(n8, 10, n0)
-          TOPLEVEL[c] <- n9
-          n10 <- TOPLEVEL[c]
-          n11 <- n10.x
-          n12 <- TOPLEVEL[c]
-          n12.z <- 10
+          n7 <- $BuildTuple("box", n5, "return", n6)
+          n8 <- $MakeFunction["getX", "dummy.getX", n0, n0, n7, n0]
+          TOPLEVEL[getX] <- n8
+          n9 <- TOPLEVEL[IntBox]
+          n10 <- $Call(n9, 10, n0)
+          TOPLEVEL[c] <- n10
+          n11 <- TOPLEVEL[c]
+          n12 <- n11.x
           n13 <- TOPLEVEL[c]
-          n14 <- $CallMethod[get](n13, n0)
-          n15 <- TOPLEVEL[c]
-          n16 <- $CallMethod[set](n15, 42, n0)
-          n17 <- TOPLEVEL[c]
-          n18 <- $CallMethod[run](n17, n0)
-          n19 <- TOPLEVEL[print]
-          n20 <- TOPLEVEL[c]
-          n21 <- n20.z
-          n22 <- $Call(n19, n21, n0)
+          n13.z <- 10
+          n14 <- TOPLEVEL[c]
+          n15 <- $CallMethod[get](n14, n0)
+          n16 <- TOPLEVEL[c]
+          n17 <- $CallMethod[set](n16, 42, n0)
+          n18 <- TOPLEVEL[c]
+          n19 <- $CallMethod[run](n18, n0)
+          n20 <- TOPLEVEL[print]
+          n21 <- TOPLEVEL[c]
+          n22 <- n21.z
+          n23 <- $Call(n20, n22, n0)
           return n0
 
 
@@ -182,22 +183,26 @@ print(c.z)
           n5 <- TOPLEVEL[__annotations__]
           n5["x"] <- n4
           n6 <- TOPLEVEL[int]
-          n7 <- $MakeFunction["__init__", "dummy.IntBox.__init__", n0, n0, $BuildTuple("x", n6, "return", n0), n0]
-          TOPLEVEL[__init__] <- n7
-          n8 <- TOPLEVEL[int]
-          n9 <- $MakeFunction["get", "dummy.IntBox.get", n0, n0, $BuildTuple("return", n8), n0]
-          TOPLEVEL[get] <- n9
-          n10 <- TOPLEVEL[int]
-          n11 <- $MakeFunction["set", "dummy.IntBox.set", n0, n0, $BuildTuple("x", n10, "return", n0), n0]
-          TOPLEVEL[set] <- n11
-          n12 <- $MakeFunction["run", "dummy.IntBox.run", n0, n0, $BuildTuple("return", n0), n0]
-          TOPLEVEL[run] <- n12
-          n13 <- TOPLEVEL[staticmethod]
-          n14 <- TOPLEVEL[int]
-          n15 <- TOPLEVEL[int]
-          n16 <- $MakeFunction["id", "dummy.IntBox.id", n0, n0, $BuildTuple("x", n14, "return", n15), n0]
-          n17 <- $Call(n13, n16, n0)
-          TOPLEVEL[id] <- n17
+          n7 <- $BuildTuple("x", n6, "return", n0)
+          n8 <- $MakeFunction["__init__", "dummy.IntBox.__init__", n0, n0, n7, n0]
+          TOPLEVEL[__init__] <- n8
+          n9 <- TOPLEVEL[int]
+          n10 <- $BuildTuple("return", n9)
+          n11 <- $MakeFunction["get", "dummy.IntBox.get", n0, n0, n10, n0]
+          TOPLEVEL[get] <- n11
+          n12 <- TOPLEVEL[int]
+          n13 <- $BuildTuple("x", n12, "return", n0)
+          n14 <- $MakeFunction["set", "dummy.IntBox.set", n0, n0, n13, n0]
+          TOPLEVEL[set] <- n14
+          n15 <- $MakeFunction["run", "dummy.IntBox.run", n0, n0, $BuildTuple("return", n0), n0]
+          TOPLEVEL[run] <- n15
+          n16 <- TOPLEVEL[staticmethod]
+          n17 <- TOPLEVEL[int]
+          n18 <- TOPLEVEL[int]
+          n19 <- $BuildTuple("x", n17, "return", n18)
+          n20 <- $MakeFunction["id", "dummy.IntBox.id", n0, n0, n19, n0]
+          n21 <- $Call(n16, n20, n0)
+          TOPLEVEL[id] <- n21
           return n0
 
 
@@ -295,9 +300,10 @@ class D(C):
           n7 <- TOPLEVEL[staticmethod]
           n8 <- TOPLEVEL[int]
           n9 <- TOPLEVEL[int]
-          n10 <- $MakeFunction["typed_f", "dummy.C.typed_f", n0, n0, $BuildTuple("x", n8, "return", n9), n0]
-          n11 <- $Call(n7, n10, n0)
-          TOPLEVEL[typed_f] <- n11
+          n10 <- $BuildTuple("x", n8, "return", n9)
+          n11 <- $MakeFunction["typed_f", "dummy.C.typed_f", n0, n0, n10, n0]
+          n12 <- $Call(n7, n11, n0)
+          TOPLEVEL[typed_f] <- n12
           return n0
 
 
@@ -397,8 +403,9 @@ def g(c: C) -> None:
           n6 <- $BuildClass(n5, "C", n0)
           TOPLEVEL[C] <- n6
           n7 <- TOPLEVEL[C]
-          n8 <- $MakeFunction["g", "dummy.g", n0, n0, $BuildTuple("c", n7, "return", n0), n0]
-          TOPLEVEL[g] <- n8
+          n8 <- $BuildTuple("c", n7, "return", n0)
+          n9 <- $MakeFunction["g", "dummy.g", n0, n0, n8, n0]
+          TOPLEVEL[g] <- n9
           return n0
 
 
@@ -566,7 +573,8 @@ cs[0].x
           n0 <- None
           n3 <- GLOBAL[C]
           n4 <- $Call(n3, n0)
-          return $BuildList(n4) |}]
+          n5 <- $BuildList(n4)
+          return n5 |}]
 
 
 let%expect_test _ =
@@ -767,11 +775,12 @@ class D0(C0):
           TOPLEVEL[__module__] <- n3
           TOPLEVEL[__qualname__] <- "D"
           n4 <- $LoadClosure(0,"__class__")
-          n5 <- $MakeFunction["__init__", "dummy.D.__init__", n0, n0, n0, $BuildTuple(n4)]
-          TOPLEVEL[__init__] <- n5
-          n6 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n6
-          return n6
+          n5 <- $BuildTuple(n4)
+          n6 <- $MakeFunction["__init__", "dummy.D.__init__", n0, n0, n0, n5]
+          TOPLEVEL[__init__] <- n6
+          n7 <- $LoadClosure(0,"__class__")
+          TOPLEVEL[__classcell__] <- n7
+          return n7
 
 
       function dummy.D.__init__(self):
@@ -790,11 +799,12 @@ class D0(C0):
           TOPLEVEL[__module__] <- n3
           TOPLEVEL[__qualname__] <- "D0"
           n4 <- $LoadClosure(0,"__class__")
-          n5 <- $MakeFunction["__init__", "dummy.D0.__init__", n0, n0, n0, $BuildTuple(n4)]
-          TOPLEVEL[__init__] <- n5
-          n6 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n6
-          return n6
+          n5 <- $BuildTuple(n4)
+          n6 <- $MakeFunction["__init__", "dummy.D0.__init__", n0, n0, n0, n5]
+          TOPLEVEL[__init__] <- n6
+          n7 <- $LoadClosure(0,"__class__")
+          TOPLEVEL[__classcell__] <- n7
+          return n7
 
 
       function dummy.D0.__init__(bar):
@@ -841,11 +851,12 @@ class C(foo.D):
           TOPLEVEL[__module__] <- n3
           TOPLEVEL[__qualname__] <- "C"
           n4 <- $LoadClosure(0,"__class__")
-          n5 <- $MakeFunction["__init__", "dummy.C.__init__", n0, n0, n0, $BuildTuple(n4)]
-          TOPLEVEL[__init__] <- n5
-          n6 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n6
-          return n6
+          n5 <- $BuildTuple(n4)
+          n6 <- $MakeFunction["__init__", "dummy.C.__init__", n0, n0, n0, n5]
+          TOPLEVEL[__init__] <- n6
+          n7 <- $LoadClosure(0,"__class__")
+          TOPLEVEL[__classcell__] <- n7
+          return n7
 
 
       function dummy.C.__init__(self, x):
@@ -1058,7 +1069,8 @@ class PwdTest(unittest.TestCase):
           n8 <- GLOBAL[str]
           n9 <- GLOBAL[type]
           n10 <- $Call(n9, n0, n0)
-          n11 <- $CallMethod[assertIn](n3, n7, $BuildTuple(n8, n10), n0)
+          n11 <- $BuildTuple(n8, n10)
+          n12 <- $CallMethod[assertIn](n3, n7, n11, n0)
           return n0 |}]
 
 
@@ -1204,8 +1216,9 @@ class TestHook:
           TOPLEVEL[__module__] <- n3
           TOPLEVEL[__qualname__] <- "TestHook"
           n4 <- TOPLEVEL[RuntimeError]
-          n5 <- $MakeFunction["__init__", "dummy.TestHook.__init__", $BuildTuple(n0, n4), n0, n0, n0]
-          TOPLEVEL[__init__] <- n5
+          n5 <- $BuildTuple(n0, n4)
+          n6 <- $MakeFunction["__init__", "dummy.TestHook.__init__", n5, n0, n0, n0]
+          TOPLEVEL[__init__] <- n6
           return n0
 
 
@@ -1522,8 +1535,9 @@ def g(a, b):
           $Delete(LOCAL[x])
           $StoreDeref(0,"z", 0)
           n3 <- $LoadClosure(0,"z")
-          n4 <- $MakeFunction["inner", "dummy.f.inner", n0, n0, n0, $BuildTuple(n3)]
-          LOCAL[inner] <- n4
+          n4 <- $BuildTuple(n3)
+          n5 <- $MakeFunction["inner", "dummy.f.inner", n0, n0, n0, n4]
+          LOCAL[inner] <- n5
           return n0
 
 
@@ -1589,9 +1603,10 @@ class C:
           n3 <- $ImportName(binascii, n0, 0)
           $StoreDeref(0,"binascii", n3)
           n4 <- $LoadClosure(0,"binascii")
-          n5 <- $MakeFunction["D", "dummy.C.f.D", n0, n0, n0, $BuildTuple(n4)]
-          n6 <- $BuildClass(n5, "D", n0)
-          LOCAL[D] <- n6
+          n5 <- $BuildTuple(n4)
+          n6 <- $MakeFunction["D", "dummy.C.f.D", n0, n0, n0, n5]
+          n7 <- $BuildClass(n6, "D", n0)
+          LOCAL[D] <- n7
           return n0
 
 
@@ -1603,8 +1618,9 @@ class C:
           TOPLEVEL[__qualname__] <- "C.f.<locals>.D"
           n4 <- $LoadClassDeref(0,"binascii")
           n5 <- n4.unhexlify
-          n6 <- $MakeFunction["g", "dummy.C.f.D.g", $BuildTuple(n5), n0, n0, n0]
-          TOPLEVEL[g] <- n6
+          n6 <- $BuildTuple(n5)
+          n7 <- $MakeFunction["g", "dummy.C.f.D.g", n6, n0, n0, n0]
+          TOPLEVEL[g] <- n7
           return n0
 
 

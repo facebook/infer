@@ -296,16 +296,17 @@ async def async_loop2():
         b0:
           n0 <- None
           $GenStartCoroutine()
-          n3 <- LOCAL[.0]
+          n3 <- $BuildList()
+          n4 <- LOCAL[.0]
           jmp b1
 
         b1:
-          n4 <- $CallMethod[__anext__](n3, n0)
-          n5 <- $GetAwaitable(n4, n0)
-          n6 <- $YieldFrom(n5, n0, n0)
-          LOCAL[x] <- n5
-          n7 <- LOCAL[x]
-          n8 <- $ListAppend($BuildList(), n7, n0)
+          n5 <- $CallMethod[__anext__](n4, n0)
+          n6 <- $GetAwaitable(n5, n0)
+          n7 <- $YieldFrom(n6, n0, n0)
+          LOCAL[x] <- n6
+          n8 <- LOCAL[x]
+          n9 <- $ListAppend(n3, n8, n0)
           jmp b1 |}]
 
 

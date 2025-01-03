@@ -386,34 +386,36 @@ print(d)
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[l]
           n5 <- $Call(n3, n4, n0)
-          TOPLEVEL[d] <- $BuildMap()
-          n6 <- TOPLEVEL[print]
-          n7 <- TOPLEVEL[d]
-          n8 <- $Call(n6, n7, n0)
+          n6 <- $BuildMap()
+          TOPLEVEL[d] <- n6
+          n7 <- TOPLEVEL[print]
+          n8 <- TOPLEVEL[d]
+          n9 <- $Call(n7, n8, n0)
           TOPLEVEL[key1] <- "k1"
-          n9 <- $MakeFunction["key2", "dummy.key2", n0, n0, n0, n0]
-          TOPLEVEL[key2] <- n9
-          n10 <- TOPLEVEL[key1]
-          n11 <- TOPLEVEL[key2]
-          n12 <- $Call(n11, n0)
-          TOPLEVEL[d] <- $BuildMap(n10, "val1", n12, "val2")
-          n13 <- TOPLEVEL[print]
-          n14 <- TOPLEVEL[d]
-          n15 <- $Call(n13, n14, n0)
-          n16 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", n0)
-          TOPLEVEL[d] <- n16
-          n17 <- TOPLEVEL[print]
-          n18 <- TOPLEVEL[d]
-          n19 <- $Call(n17, n18, n0)
-          n20 <- TOPLEVEL[print]
-          n21 <- TOPLEVEL[d]
-          n22 <- n21["x"]
-          n23 <- $Call(n20, n22, n0)
-          n24 <- TOPLEVEL[d]
-          n24["z"] <- true
-          n25 <- TOPLEVEL[print]
+          n10 <- $MakeFunction["key2", "dummy.key2", n0, n0, n0, n0]
+          TOPLEVEL[key2] <- n10
+          n11 <- TOPLEVEL[key1]
+          n12 <- TOPLEVEL[key2]
+          n13 <- $Call(n12, n0)
+          n14 <- $BuildMap(n11, "val1", n13, "val2")
+          TOPLEVEL[d] <- n14
+          n15 <- TOPLEVEL[print]
+          n16 <- TOPLEVEL[d]
+          n17 <- $Call(n15, n16, n0)
+          n18 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", n0)
+          TOPLEVEL[d] <- n18
+          n19 <- TOPLEVEL[print]
+          n20 <- TOPLEVEL[d]
+          n21 <- $Call(n19, n20, n0)
+          n22 <- TOPLEVEL[print]
+          n23 <- TOPLEVEL[d]
+          n24 <- n23["x"]
+          n25 <- $Call(n22, n24, n0)
           n26 <- TOPLEVEL[d]
-          n27 <- $Call(n25, n26, n0)
+          n26["z"] <- true
+          n27 <- TOPLEVEL[print]
+          n28 <- TOPLEVEL[d]
+          n29 <- $Call(n27, n28, n0)
           return n0
 
 

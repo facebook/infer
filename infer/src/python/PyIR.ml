@@ -1492,7 +1492,11 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
 let build_collection st count ~f =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n_and_cast st count in
-  let exp = f values in
+  let rhs = f values in
+  let id, st = State.fresh_id st in
+  let exp = Exp.Temp id in
+  let stmt = Stmt.Let {lhs= id; rhs} in
+  let st = State.push_stmt st stmt in
   let st = State.push st exp in
   Ok (st, None)
 
