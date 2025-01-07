@@ -198,9 +198,7 @@ let rec of_exp exp : Textual.Exp.t =
   | GetAttr {exp; attr} ->
       let attr = exp_of_ident_str attr in
       call_builtin "py_get_attr" [of_exp exp; attr]
-  | Function
-      {qual_name; short_name= _; default_values; default_values_kw; annotations; cells_for_closure}
-    ->
+  | Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure} ->
       let proc = mk_qualified_proc_name (RegularFunction qual_name) in
       let closure =
         Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}

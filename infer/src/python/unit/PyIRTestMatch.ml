@@ -99,7 +99,7 @@ foo(1.1)
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["foo", "dummy.foo", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.foo", n0, n0, n0, n0]
           TOPLEVEL[foo] <- n3
           n4 <- TOPLEVEL[foo]
           n5 <- $Call(n4, 1, n0)
@@ -165,10 +165,10 @@ foo(C.BAR)
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["C", "dummy.C", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "C", n0)
           TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["foo", "dummy.foo", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.foo", n0, n0, n0, n0]
           TOPLEVEL[foo] <- n5
           n6 <- TOPLEVEL[foo]
           n7 <- TOPLEVEL[C]
@@ -247,10 +247,10 @@ foo(C.BAR, C.BAR)
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["C", "dummy.C", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "C", n0)
           TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["foo", "dummy.foo", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.foo", n0, n0, n0, n0]
           TOPLEVEL[foo] <- n5
           n6 <- TOPLEVEL[foo]
           n7 <- TOPLEVEL[C]
@@ -370,10 +370,10 @@ def location(point):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["Point", "dummy.Point", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.Point", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "Point", n0)
           TOPLEVEL[Point] <- n4
-          n5 <- $MakeFunction["location", "dummy.location", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.location", n0, n0, n0, n0]
           TOPLEVEL[location] <- n5
           return n0
 
@@ -514,10 +514,10 @@ def location(point):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["Point", "dummy.Point", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.Point", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "Point", n0)
           TOPLEVEL[Point] <- n4
-          n5 <- $MakeFunction["location", "dummy.location", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.location", n0, n0, n0, n0]
           TOPLEVEL[location] <- n5
           return n0
 
@@ -653,10 +653,10 @@ def location(point):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["Point", "dummy.Point", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.Point", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "Point", n0)
           TOPLEVEL[Point] <- n4
-          n5 <- $MakeFunction["location", "dummy.location", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.location", n0, n0, n0, n0]
           TOPLEVEL[location] <- n5
           return n0
 
@@ -750,7 +750,7 @@ def main():
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.main", n0, n0, n0, n0]
           TOPLEVEL[main] <- n3
           return n0
 

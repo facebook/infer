@@ -438,7 +438,6 @@ module Exp = struct
     | Const of Const.t
     | Function of
         { qual_name: QualName.t
-        ; short_name: Ident.t
         ; default_values: t
         ; default_values_kw: t
         ; annotations: t
@@ -516,12 +515,9 @@ module Exp = struct
         F.fprintf fmt "$LoadDeref(%d,\"%a\")" slot Ident.pp name
     | LoadClassDeref {name; slot} ->
         F.fprintf fmt "$LoadClassDeref(%d,\"%a\")" slot Ident.pp name
-    | Function
-        {qual_name; short_name; default_values; default_values_kw; annotations; cells_for_closure}
-      ->
-        F.fprintf fmt "$MakeFunction[\"%a\", \"%a\", %a, %a, %a, %a]" Ident.pp short_name
-          QualName.pp qual_name pp default_values pp default_values_kw pp annotations pp
-          cells_for_closure
+    | Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure} ->
+        F.fprintf fmt "$MakeFunction[\"%a\", %a, %a, %a, %a]" QualName.pp qual_name pp
+          default_values pp default_values_kw pp annotations pp cells_for_closure
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
 
@@ -1267,7 +1263,6 @@ let make_function st flags =
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
   let* qual_name = read_code_qual_name st code in
-  let short_name = Ident.mk code.FFI.Code.co_name in
   let* cells_for_closure, st =
     if flags land 0x08 <> 0 then State.pop_and_cast st else Ok (Exp.none, st)
   in
@@ -1282,8 +1277,7 @@ let make_function st flags =
   in
   let lhs, st = State.fresh_id st in
   let rhs =
-    Exp.Function
-      {short_name; qual_name; default_values; default_values_kw; annotations; cells_for_closure}
+    Exp.Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure}
   in
   let stmt = Stmt.Let {lhs; rhs} in
   let st = State.push_stmt st stmt in

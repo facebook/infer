@@ -155,7 +155,6 @@ module Exp : sig
     | Const of Const.t
     | Function of
         { qual_name: QualName.t
-        ; short_name: Ident.t
         ; default_values: t
         ; default_values_kw: t
         ; annotations: t

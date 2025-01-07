@@ -587,7 +587,7 @@ def main(arg):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.main", n0, n0, n0, n0]
           TOPLEVEL[main] <- n3
           return n0
 
@@ -602,7 +602,7 @@ def main(arg):
           n7 <- $BuildTuple("x", n4, "y", n5, "z", n6)
           n8 <- $LoadClosure(0,"arg")
           n9 <- $BuildTuple(n8)
-          n10 <- $MakeFunction["f", "dummy.main.f", $BuildTuple("ok", 0.), n3, n7, n9]
+          n10 <- $MakeFunction["dummy.main.f", $BuildTuple("ok", 0.), n3, n7, n9]
           LOCAL[f] <- n10
           return n0
 
@@ -627,7 +627,7 @@ def foo(n):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["foo", "dummy.foo", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.foo", n0, n0, n0, n0]
           TOPLEVEL[foo] <- n3
           return n0
 
@@ -656,7 +656,7 @@ def foo(n):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["foo", "dummy.foo", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.foo", n0, n0, n0, n0]
           TOPLEVEL[foo] <- n3
           return n0
 

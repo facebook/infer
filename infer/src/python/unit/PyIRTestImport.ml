@@ -61,7 +61,7 @@ g()
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n3
           n4 <- TOPLEVEL[f]
           n5 <- $Call(n4, n0)
@@ -105,7 +105,7 @@ class MyTest(unittest.TestCase):
           n0 <- None
           n3 <- $ImportName(unittest, n0, 0)
           TOPLEVEL[unittest] <- n3
-          n4 <- $MakeFunction["MyTest", "dummy.MyTest", n0, n0, n0, n0]
+          n4 <- $MakeFunction["dummy.MyTest", n0, n0, n0, n0]
           n5 <- TOPLEVEL[unittest]
           n6 <- n5.TestCase
           n7 <- $BuildClass(n4, "MyTest", n6, n0)
@@ -175,7 +175,7 @@ if __name__ == '__main__':
           TOPLEVEL[main] <- n6
           n7 <- TOPLEVEL[main]
           TOPLEVEL[main_in_temp_cwd] <- n7
-          n8 <- $MakeFunction["_main", "dummy._main", n0, n0, n0, n0]
+          n8 <- $MakeFunction["dummy._main", n0, n0, n0, n0]
           TOPLEVEL[_main] <- n8
           n9 <- TOPLEVEL[__name__]
           n10 <- $Compare.eq(n9, "__main__", n0)
@@ -420,7 +420,7 @@ class Test(unittest.TestCase):
           n7 <- TOPLEVEL[signal]
           n8 <- $Call(n6, n7, "setitimer", n0)
           n9 <- $CallMethod[skipUnless](n5, n8, "requires setitimer()", n0)
-          n10 <- $MakeFunction["Test", "dummy.Test", n0, n0, n0, n0]
+          n10 <- $MakeFunction["dummy.Test", n0, n0, n0, n0]
           n11 <- TOPLEVEL[unittest]
           n12 <- n11.TestCase
           n13 <- $BuildClass(n10, "Test", n12, n0)
@@ -455,7 +455,7 @@ def f():
           n0 <- None
           n3 <- $ImportName(foo, n0, 0)
           TOPLEVEL[foo] <- n3
-          n4 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n4 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n4
           return n0
 
@@ -491,7 +491,7 @@ def f(ok):
           n0 <- None
           n3 <- $ImportName(foo, n0, 0)
           TOPLEVEL[foo] <- n3
-          n4 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n4 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n4
           return n0
 
@@ -530,9 +530,9 @@ def test_format_specifier_expressions(self):
           n0 <- None
           n3 <- $ImportName(decimal, n0, 0)
           TOPLEVEL[decimal] <- n3
-          n4 <- $MakeFunction["assertEqual", "dummy.assertEqual", n0, n0, n0, n0]
+          n4 <- $MakeFunction["dummy.assertEqual", n0, n0, n0, n0]
           TOPLEVEL[assertEqual] <- n4
-          n5 <- $MakeFunction["test_format_specifier_expressions", "dummy.test_format_specifier_expressions", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.test_format_specifier_expressions", n0, n0, n0, n0]
           TOPLEVEL[test_format_specifier_expressions] <- n5
           return n0
 
@@ -608,7 +608,7 @@ def f():
           n9 <- n8.T
           n10 <- TOPLEVEL[__annotations__]
           n10["z"] <- n9
-          n11 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n11 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n11
           return n0
 

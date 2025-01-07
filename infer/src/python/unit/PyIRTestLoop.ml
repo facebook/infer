@@ -64,7 +64,7 @@ def f(x, y, l, bar, toto):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n3
           return n0
 
@@ -132,7 +132,7 @@ def f(match, it, n):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n3
           return n0
 
@@ -189,7 +189,7 @@ def f(foo):
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["f", "dummy.f", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
           TOPLEVEL[f] <- n3
           return n0
 
@@ -235,7 +235,7 @@ async def async_loop1():
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["async_loop1", "dummy.async_loop1", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.async_loop1", n0, n0, n0, n0]
           TOPLEVEL[async_loop1] <- n3
           return n0
 
@@ -273,7 +273,7 @@ async def async_loop2():
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["async_loop2", "dummy.async_loop2", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.async_loop2", n0, n0, n0, n0]
           TOPLEVEL[async_loop2] <- n3
           return n0
 
@@ -282,7 +282,7 @@ async def async_loop2():
         b0:
           n0 <- None
           $GenStartCoroutine()
-          n3 <- $MakeFunction["_$listcomp", "dummy.async_loop2._$listcomp", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.async_loop2._$listcomp", n0, n0, n0, n0]
           n4 <- GLOBAL[read]
           n5 <- $Call(n4, n0)
           n6 <- $CallMethod[__aiter__](n5, n0)
@@ -329,7 +329,7 @@ def main():
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.main", n0, n0, n0, n0]
           TOPLEVEL[main] <- n3
           return n0
 
@@ -398,7 +398,7 @@ def main():
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["main", "dummy.main", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.main", n0, n0, n0, n0]
           TOPLEVEL[main] <- n3
           return n0
 

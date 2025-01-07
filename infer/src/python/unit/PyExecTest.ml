@@ -67,7 +67,7 @@ print("fst(x, y) =", fst(x, y))
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["fst", "dummy.fst", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.fst", n0, n0, n0, n0]
           TOPLEVEL[fst] <- n3
           TOPLEVEL[x] <- "x"
           TOPLEVEL[y] <- "y"
@@ -119,9 +119,9 @@ print('n =', n)
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["incr", "dummy.incr", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.incr", n0, n0, n0, n0]
           TOPLEVEL[incr] <- n3
-          n4 <- $MakeFunction["no_effect", "dummy.no_effect", n0, n0, n0, n0]
+          n4 <- $MakeFunction["dummy.no_effect", n0, n0, n0, n0]
           TOPLEVEL[no_effect] <- n4
           GLOBAL[n] <- 0
           n5 <- TOPLEVEL[incr]
@@ -181,7 +181,7 @@ print('fact(5) =', fact(5))
       function toplevel():
         b0:
           n0 <- None
-          n3 <- $MakeFunction["fact", "dummy.fact", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.fact", n0, n0, n0, n0]
           TOPLEVEL[fact] <- n3
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[fact]
@@ -289,7 +289,7 @@ print('saved x is', C.saved_x)
         b0:
           n0 <- None
           TOPLEVEL[x] <- "global"
-          n3 <- $MakeFunction["C", "dummy.C", n0, n0, n0, n0]
+          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "C", n0)
           TOPLEVEL[C] <- n4
           n5 <- TOPLEVEL[print]
@@ -323,9 +323,9 @@ print('saved x is', C.saved_x)
           n4 <- TOPLEVEL[x]
           TOPLEVEL[saved_x] <- n4
           TOPLEVEL[x] <- "local to class body"
-          n5 <- $MakeFunction["get_x", "dummy.C.get_x", n0, n0, n0, n0]
+          n5 <- $MakeFunction["dummy.C.get_x", n0, n0, n0, n0]
           TOPLEVEL[get_x] <- n5
-          n6 <- $MakeFunction["get_C_x", "dummy.C.get_C_x", n0, n0, n0, n0]
+          n6 <- $MakeFunction["dummy.C.get_C_x", n0, n0, n0, n0]
           TOPLEVEL[get_C_x] <- n6
           return n0
 
@@ -392,7 +392,7 @@ print(d)
           n8 <- TOPLEVEL[d]
           n9 <- $Call(n7, n8, n0)
           TOPLEVEL[key1] <- "k1"
-          n10 <- $MakeFunction["key2", "dummy.key2", n0, n0, n0, n0]
+          n10 <- $MakeFunction["dummy.key2", n0, n0, n0, n0]
           TOPLEVEL[key2] <- n10
           n11 <- TOPLEVEL[key1]
           n12 <- TOPLEVEL[key2]
