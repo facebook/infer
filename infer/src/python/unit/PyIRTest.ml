@@ -1327,7 +1327,7 @@ def f(l):
           n5 <- $GetIter(n4, n0)
           n6 <- $Call(n3, n5, n0)
           TOPLEVEL[g] <- n6
-          n7 <- $MakeFunction["_$listcomp", "dummy._$listcomp", n0, n0, n0, n0]
+          n7 <- $MakeFunction["_$listcomp", "dummy._$listcomp1", n0, n0, n0, n0]
           n8 <- TOPLEVEL[l]
           n9 <- $GetIter(n8, n0)
           n10 <- $Call(n7, n9, n0)
@@ -1358,6 +1358,29 @@ def f(l):
         b2:
           LOCAL[x] <- n5
           n7 <- LOCAL[x]
+          n8 <- $Binary.Add(n7, 1, n0)
+          n9 <- $ListAppend(n3, n8, n0)
+          jmp b1
+
+        b3:
+          return n3
+
+
+      function dummy._$listcomp1(.0):
+        b0:
+          n0 <- None
+          n3 <- $BuildList()
+          n4 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n5 <- $NextIter(n4, n0)
+          n6 <- $HasNextIter(n4, n0)
+          if n6 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n5
+          n7 <- LOCAL[x]
           n8 <- $Binary.Add(n7, 2, n0)
           n9 <- $ListAppend(n3, n8, n0)
           jmp b1
@@ -1374,7 +1397,7 @@ def f(l):
           n5 <- $GetIter(n4, n0)
           n6 <- $Call(n3, n5, n0)
           LOCAL[r] <- n6
-          n7 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp", n0, n0, n0, n0]
+          n7 <- $MakeFunction["_$listcomp", "dummy.f._$listcomp1", n0, n0, n0, n0]
           n8 <- LOCAL[l]
           n9 <- $GetIter(n8, n0)
           n10 <- $Call(n7, n9, n0)
@@ -1389,6 +1412,29 @@ def f(l):
 
 
       function dummy.f._$listcomp(.0):
+        b0:
+          n0 <- None
+          n3 <- $BuildList()
+          n4 <- LOCAL[.0]
+          jmp b1
+
+        b1:
+          n5 <- $NextIter(n4, n0)
+          n6 <- $HasNextIter(n4, n0)
+          if n6 then jmp b2 else jmp b3
+
+        b2:
+          LOCAL[x] <- n5
+          n7 <- LOCAL[x]
+          n8 <- $Binary.Add(n7, 1, n0)
+          n9 <- $ListAppend(n3, n8, n0)
+          jmp b1
+
+        b3:
+          return n3
+
+
+      function dummy.f._$listcomp1(.0):
         b0:
           n0 <- None
           n3 <- $BuildList()

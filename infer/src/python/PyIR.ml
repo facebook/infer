@@ -77,7 +77,7 @@ and QualName : sig
 
   val init : module_name:string -> t
 
-  val extend : t -> string -> t
+  val extend : t -> string -> int -> t
 
   val pp : F.formatter -> t -> unit
 
@@ -93,10 +93,12 @@ end = struct
 
   let init ~module_name = {function_name= ""; module_name}
 
-  let extend {module_name; function_name} attr =
+  let extend {module_name; function_name} attr counter =
     let attr = remove_angles attr in
+    let str_counter = match counter with 0 -> "" | _ -> string_of_int counter in
     let function_name =
-      if String.is_empty function_name then attr else F.asprintf "%s.%s" function_name attr
+      if String.is_empty function_name then F.asprintf "%s%s" attr str_counter
+      else F.asprintf "%s.%s%s" function_name attr str_counter
     in
     {function_name; module_name}
 
@@ -2661,13 +2663,16 @@ let build_code_object_unique_name module_name code =
     if CodeMap.mem code map then map
     else
       let map = CodeMap.add code outer_name map in
-      Array.fold co_consts ~init:map ~f:(fun map constant ->
+      Array.fold co_consts ~init:(map, IString.Map.empty) ~f:(fun (map, counter_map) constant ->
           match constant with
           | FFI.Constant.PYCCode code ->
-              let outer_name = QualName.extend outer_name code.FFI.Code.co_name in
-              visit map outer_name code
+              let name = code.FFI.Code.co_name in
+              let counter = IString.Map.find_opt name counter_map |> Option.value ~default:0 in
+              let outer_name = QualName.extend outer_name name counter in
+              (visit map outer_name code, IString.Map.add name (counter + 1) counter_map)
           | _ ->
-              map )
+              (map, counter_map) )
+      |> fst
   in
   let map = visit CodeMap.empty (QualName.init ~module_name) code in
   fun code -> CodeMap.find_opt code map
