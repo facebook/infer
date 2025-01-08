@@ -446,18 +446,23 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     ; loop_nodes: Control.GuardNodes.t
     ; analysis_data: Domain.t InterproceduralAnalysis.t }
 
-  let is_sink tenv (spec : AnnotationSpec.t) ~caller_pname ~callee_pname =
-    spec.sink_predicate tenv callee_pname
-    && (not (spec.sanitizer_predicate tenv callee_pname))
-    && not (spec.sanitizer_predicate tenv caller_pname)
-
-
   let check_direct_call tenv ~caller_pname ~callee_pname call_site_info astate specs =
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
-        if is_sink tenv spec ~caller_pname ~callee_pname then (
-          L.d_printfln "%s: Adding direct call `%a -> %a` to sink `@%s`" spec.kind Procname.pp
-            caller_pname Procname.pp callee_pname spec.sink_annotation.Annot.class_name ;
-          Domain.add_call_site spec.sink_annotation callee_pname call_site_info astate )
+        if spec.sink_predicate tenv callee_pname then
+          if spec.sanitizer_predicate tenv callee_pname then (
+            L.d_printf "%s: Direct call `%a -> %a` to sink `@%s` sanitized by callee `%a`\n"
+              spec.kind Procname.pp caller_pname Procname.pp callee_pname
+              spec.sink_annotation.Annot.class_name Procname.pp callee_pname ;
+            astate )
+          else if spec.sanitizer_predicate tenv caller_pname then (
+            L.d_printf "%s: Direct call `%a -> %a` to sink `@%s` sanitized by caller `%a`\n"
+              spec.kind Procname.pp caller_pname Procname.pp callee_pname
+              spec.sink_annotation.Annot.class_name Procname.pp caller_pname ;
+            astate )
+          else (
+            L.d_printfln "%s: Adding direct call `%a -> %a` to sink `@%s`" spec.kind Procname.pp
+              caller_pname Procname.pp callee_pname spec.sink_annotation.Annot.class_name ;
+            Domain.add_call_site spec.sink_annotation callee_pname call_site_info astate )
         else astate )
 
 
@@ -477,10 +482,26 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
                of the specs thinks that this sink is indeed a sink. *)
             let caller_pname = Procdesc.get_proc_name proc_desc in
             List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
-                if is_sink tenv spec ~caller_pname ~callee_pname:sink then (
-                  L.d_printf "%s: Adding transitive call `%a -> %a` to sink `@%s`@\n" spec.kind
-                    Procname.pp caller_pname Procname.pp sink spec.sink_annotation.Annot.class_name ;
-                  Domain.add_call_site annot sink call_site_info astate )
+                if spec.sink_predicate tenv sink then
+                  if spec.sanitizer_predicate tenv callee_pname then (
+                    (* I don't think this branch can happen, if callee is sanitizer then call
+                       to sink should not appear in its summary. But better be safe. *)
+                    L.d_printf
+                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by callee `%a`\n"
+                      spec.kind Procname.pp caller_pname Procname.pp sink
+                      spec.sink_annotation.Annot.class_name Procname.pp callee_pname ;
+                    astate )
+                  else if spec.sanitizer_predicate tenv caller_pname then (
+                    L.d_printf
+                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by caller `%a`\n"
+                      spec.kind Procname.pp caller_pname Procname.pp sink
+                      spec.sink_annotation.Annot.class_name Procname.pp caller_pname ;
+                    astate )
+                  else (
+                    L.d_printf "%s: Adding transitive call `%a -> %a` to sink `@%s`@\n" spec.kind
+                      Procname.pp caller_pname Procname.pp sink
+                      spec.sink_annotation.Annot.class_name ;
+                    Domain.add_call_site annot sink call_site_info astate )
                 else astate )
         in
         Domain.fold
