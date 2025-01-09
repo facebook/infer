@@ -11,9 +11,9 @@ module L = Logging
 
 (** global (per-function) state: count stores and function calls in order to identify which branch
     and which call in a branch we are analyzing *)
-let node_id = ref (-1)
+let node_id = DLS.new_key (fun () -> -1)
 
-let () = AnalysisGlobalState.register_ref ~init:(fun () -> -1) node_id
+let () = AnalysisGlobalState.register_dls ~init:(fun () -> -1) node_id
 
 module DisjDomain = struct
   (** ["4";"goo2";"1";"foo1"], printed as "foo1.1.goo2.4", means we explored the first branch of foo
@@ -50,16 +50,16 @@ module DisjunctiveAnalyzerTransferFunctions = struct
       match instr with
       | Store _ ->
           (* only store instructions (and calls) are used as markers, to avoid cluttering tests *)
-          incr node_id ;
-          [string_of_int !node_id :: astate]
+          DLS.incr node_id ;
+          [string_of_int (DLS.get node_id) :: astate]
       | Call (_, Const (Cfun proc_name), _, _, _) -> (
         match analysis_data.InterproceduralAnalysis.analyze_dependency proc_name with
         | Error _ ->
             [astate]
         | Ok (callee_summary, _) ->
-            incr node_id ;
+            DLS.incr node_id ;
             List.map callee_summary ~f:(fun xs ->
-                xs @ (F.asprintf "%a%d" Procname.pp proc_name !node_id :: astate) ) )
+                xs @ (F.asprintf "%a%d" Procname.pp proc_name (DLS.get node_id) :: astate) ) )
       | Call _ | Load _ | Prune _ | Metadata _ ->
           [astate]
     in

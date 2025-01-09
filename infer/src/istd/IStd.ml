@@ -25,7 +25,13 @@ module Sys = struct
 end
 
 (* easy access to sub-module *)
-module DLS = Domain.DLS
+module DLS = struct
+  include Domain.DLS
+
+  let incr key = get key |> (fun x -> x + 1) |> set key
+
+  let decr key = get key |> (fun x -> x - 1) |> set key
+end
 
 (* Compare police: generic compare mostly disabled. *)
 let compare = No_polymorphic_compare.compare

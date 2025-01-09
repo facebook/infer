@@ -46,7 +46,7 @@ let initial () =
 (** Global state *)
 let gs = ref (initial ())
 
-let () = AnalysisGlobalState.register_ref gs ~init:initial
+let[@alert "-deprecated"] () = AnalysisGlobalState.register_ref gs ~init:initial
 
 let reset_diverging_states_node () = !gs.diverging_states_node <- Paths.PathSet.empty
 

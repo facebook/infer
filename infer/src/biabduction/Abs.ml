@@ -682,7 +682,9 @@ module Global = struct
   let current_rules : rules ref = ref []
 end
 
-let () = AnalysisGlobalState.register_ref Global.current_rules ~init:(fun () -> [])
+let[@alert "-deprecated"] () =
+  AnalysisGlobalState.register_ref Global.current_rules ~init:(fun () -> [])
+
 
 let eqs_sub subst eqs =
   List.map ~f:(fun (e1, e2) -> (Predicates.exp_sub subst e1, Predicates.exp_sub subst e2)) eqs

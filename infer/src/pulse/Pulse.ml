@@ -95,10 +95,10 @@ let is_copy_cted_into_var from copied_into =
       false
 
 
-let is_in_loop_ref = ref (lazy (assert false))
+let is_in_loop_dls = DLS.new_key (fun () -> lazy (assert false))
 
 let () =
-  AnalysisGlobalState.register_ref_with_proc_desc_and_tenv is_in_loop_ref ~init:(fun pdesc _ ->
+  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv is_in_loop_dls ~init:(fun pdesc _ ->
       lazy
         (let nodes_in_loop = Procdesc.Loop.compute_loop_nodes pdesc in
          fun node -> Procdesc.NodeSet.mem node nodes_in_loop ) )
@@ -107,7 +107,7 @@ let () =
 let is_unnecessary_copy_intermediate_in_loop node copied_into =
   match (copied_into : Attribute.CopiedInto.t) with
   | IntoIntermediate _ ->
-      Lazy.force !is_in_loop_ref node
+      Lazy.force (DLS.get is_in_loop_dls) node
   | IntoVar _ | IntoField _ ->
       false
 

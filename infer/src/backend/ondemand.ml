@@ -14,9 +14,9 @@ module F = Format
 open Option.Monad_infix
 
 (* always incremented before use *)
-let nesting = ref (-1)
+let nesting = DLS.new_key (fun () -> -1)
 
-let () = AnalysisGlobalState.register_ref nesting ~init:(fun () -> -1)
+let () = AnalysisGlobalState.register_dls nesting ~init:(fun () -> -1)
 
 let max_nesting_to_print = 8
 
@@ -158,8 +158,8 @@ let update_taskbar proc_name_opt source_file_opt =
     match (proc_name_opt, source_file_opt) with
     | Some pname, Some src_file ->
         let nesting =
-          if !nesting <= max_nesting_to_print then String.make !nesting '>'
-          else Printf.sprintf "%d>" !nesting
+          let n = DLS.get nesting in
+          if n <= max_nesting_to_print then String.make n '>' else Printf.sprintf "%d>" n
         in
         F.asprintf "%s%a: %a" nesting SourceFile.pp src_file Procname.pp pname
     | Some pname, None ->
@@ -207,10 +207,10 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
         "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp elapsed
   in
   if Config.trace_ondemand then
-    L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Procname.pp) caller_pname
-      Procname.pp callee_pname ;
+    L.progress "[%d] run_proc_analysis %a -> %a@." (DLS.get nesting) (Pp.option Procname.pp)
+      caller_pname Procname.pp callee_pname ;
   let preprocess () =
-    incr nesting ;
+    DLS.incr nesting ;
     let source_file = callee_attributes.ProcAttributes.translation_unit in
     update_taskbar (Some callee_pname) (Some source_file) ;
     Preanal.do_preanalysis tenv callee_pdesc ;
@@ -227,7 +227,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     initial_callee_summary
   in
   let postprocess summary =
-    decr nesting ;
+    DLS.decr nesting ;
     (* copy the previous recursion edges over to the new summary if doing a replay analysis so that
        subsequent replay analyses can pick them up too *)
     DLS.get edges_to_ignore
@@ -281,7 +281,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
         | RecursiveCycleException.RecursiveCycle _
         | RestartSchedulerException.ProcnameAlreadyLocked _
         | MissingDependencyException.MissingDependencyException ->
-            decr nesting ;
+            DLS.decr nesting ;
             ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
             true
         | exn ->
