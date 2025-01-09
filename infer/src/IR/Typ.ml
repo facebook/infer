@@ -574,7 +574,7 @@ module Name = struct
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
 
-  let to_string = F.asprintf "%a" pp
+  let to_string t = F.asprintf "%a" pp t
 
   let is_class = function
     | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ | PythonClass _ ->
