@@ -17,101 +17,104 @@ include Die
 
 (* Return a formatter that multiplexes to [fmt1] and [fmt2]. *)
 let dup_formatter fmt1 fmt2 =
-  let out_funs1 = F.pp_get_formatter_out_functions fmt1 () in
-  let out_funs2 = F.pp_get_formatter_out_functions fmt2 () in
-  F.formatter_of_out_functions
-    { F.out_string=
-        (fun s p n ->
-          out_funs1.out_string s p n ;
-          out_funs2.out_string s p n )
-    ; out_indent=
-        (fun n ->
-          out_funs1.out_indent n ;
-          out_funs2.out_indent n )
-    ; out_flush=
-        (fun () ->
-          out_funs1.out_flush () ;
-          out_funs2.out_flush () )
-    ; out_newline=
-        (fun () ->
-          out_funs1.out_newline () ;
-          out_funs2.out_newline () )
-    ; out_spaces=
-        (fun n ->
-          out_funs1.out_spaces n ;
-          out_funs2.out_spaces n ) }
+  DLS.new_key (fun () ->
+      let out_funs1 = F.pp_get_formatter_out_functions (DLS.get fmt1) () in
+      let out_funs2 = F.pp_get_formatter_out_functions (DLS.get fmt2) () in
+      F.formatter_of_out_functions
+        { F.out_string=
+            (fun s p n ->
+              out_funs1.out_string s p n ;
+              out_funs2.out_string s p n )
+        ; out_indent=
+            (fun n ->
+              out_funs1.out_indent n ;
+              out_funs2.out_indent n )
+        ; out_flush=
+            (fun () ->
+              out_funs1.out_flush () ;
+              out_funs2.out_flush () )
+        ; out_newline=
+            (fun () ->
+              out_funs1.out_newline () ;
+              out_funs2.out_newline () )
+        ; out_spaces=
+            (fun n ->
+              out_funs1.out_spaces n ;
+              out_funs2.out_spaces n ) } )
 
 
 (* can be set up to emit to a file later on *)
 let log_file = ref None
 
 type formatters =
-  { file: F.formatter option  (** send to log file *)
-  ; console_file: F.formatter  (** send both to console and log file *) }
+  { file: F.formatter DLS.key option  (** send to log file *)
+  ; console_file: F.formatter DLS.key  (** send both to console and log file *) }
 
 let logging_formatters : (formatters ref * (unit -> formatters)) list ref = ref []
 
 (* shared ref is less punishing to sloppy accounting of newlines *)
-let is_newline = ref true
+let is_newline = DLS.new_key (fun () -> true)
 
-let prev_category = ref ""
+let prev_category = DLS.new_key (fun () -> "")
 
 let mk_file_formatter file_fmt category0 =
-  let out_functions_orig = F.pp_get_formatter_out_functions file_fmt () in
-  let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (Unix.getpid ())) category0 in
-  let print_prefix_if_newline () =
-    let category_has_changed =
-      (* take category + PID into account *)
-      not (phys_equal !prev_category prefix)
-    in
-    if !is_newline || category_has_changed then (
-      if (not !is_newline) && category_has_changed then
-        (* category change but previous line has not ended: print newline *)
+  DLS.new_key (fun () ->
+      let out_functions_orig = F.pp_get_formatter_out_functions (DLS.get file_fmt) () in
+      let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (Unix.getpid ())) category0 in
+      let print_prefix_if_newline () =
+        let category_has_changed =
+          (* take category + PID into account *)
+          not (phys_equal (DLS.get prev_category) prefix)
+        in
+        if DLS.get is_newline || category_has_changed then (
+          if (not (DLS.get is_newline)) && category_has_changed then
+            (* category change but previous line has not ended: print newline *)
+            out_functions_orig.out_newline () ;
+          DLS.set is_newline false ;
+          DLS.set prev_category prefix ;
+          out_functions_orig.out_string prefix 0 (String.length prefix) )
+      in
+      let out_string s p n =
+        print_prefix_if_newline () ;
+        out_functions_orig.out_string s p n
+      in
+      let out_indent n =
+        print_prefix_if_newline () ;
+        out_functions_orig.out_indent n
+      in
+      let out_newline () =
+        print_prefix_if_newline () ;
         out_functions_orig.out_newline () ;
-      is_newline := false ;
-      prev_category := prefix ;
-      out_functions_orig.out_string prefix 0 (String.length prefix) )
-  in
-  let out_string s p n =
-    print_prefix_if_newline () ;
-    out_functions_orig.out_string s p n
-  in
-  let out_indent n =
-    print_prefix_if_newline () ;
-    out_functions_orig.out_indent n
-  in
-  let out_newline () =
-    print_prefix_if_newline () ;
-    out_functions_orig.out_newline () ;
-    is_newline := true
-  in
-  let out_spaces n =
-    print_prefix_if_newline () ;
-    out_functions_orig.out_spaces n
-  in
-  F.formatter_of_out_functions
-    {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces}
+        DLS.set is_newline true
+      in
+      let out_spaces n =
+        print_prefix_if_newline () ;
+        out_functions_orig.out_spaces n
+      in
+      F.formatter_of_out_functions
+        {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces} )
 
 
 let color_console ?(use_stdout = false) scheme =
-  let scheme = Option.value scheme ~default:Normal in
-  let formatter = if use_stdout then F.get_std_formatter () else F.get_err_formatter () in
-  let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
-  if can_colorize then
-    let styles = term_styles_of_style scheme in
-    let orig_out_functions = F.pp_get_formatter_out_functions formatter () in
-    let out_string s p n =
-      let s = ANSITerminal.sprintf styles "%s" (String.slice s p n) in
-      orig_out_functions.F.out_string s 0 (String.length s)
-    in
-    let out_newline () =
-      (* erase to end-of-line to avoid garbage, in particular when writing over the taskbar *)
-      let erase_eol = "\027[0K" in
-      orig_out_functions.F.out_string erase_eol 0 (String.length erase_eol) ;
-      orig_out_functions.F.out_newline ()
-    in
-    F.formatter_of_out_functions {orig_out_functions with F.out_string; out_newline}
-  else formatter
+  DLS.new_key (fun () ->
+      let scheme = Option.value scheme ~default:Normal in
+      let formatter = if use_stdout then F.get_std_formatter () else F.get_err_formatter () in
+      let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
+      if can_colorize then
+        let styles = term_styles_of_style scheme in
+        let orig_out_functions = F.pp_get_formatter_out_functions formatter () in
+        let out_string s p n =
+          let s = ANSITerminal.sprintf styles "%s" (String.slice s p n) in
+          orig_out_functions.F.out_string s 0 (String.length s)
+        in
+        let out_newline () =
+          (* erase to end-of-line to avoid garbage, in particular when writing over the taskbar *)
+          let erase_eol = "\027[0K" in
+          orig_out_functions.F.out_string erase_eol 0 (String.length erase_eol) ;
+          orig_out_functions.F.out_newline ()
+        in
+        F.formatter_of_out_functions {orig_out_functions with F.out_string; out_newline}
+      else formatter )
 
 
 let register_formatter =
@@ -144,8 +147,8 @@ let register_formatter =
 
 
 let flush_formatter {file; console_file} =
-  Option.iter file ~f:(fun file -> F.pp_print_flush file ()) ;
-  F.pp_print_flush console_file ()
+  Option.iter file ~f:(fun file -> F.pp_print_flush (DLS.get file) ()) ;
+  F.pp_print_flush (DLS.get console_file) ()
 
 
 let flush_formatters () =
@@ -156,7 +159,7 @@ let flush_formatters () =
 let close_logs () =
   flush_formatters () ;
   Option.iter !log_file ~f:(function file_fmt, chan ->
-      F.pp_print_flush file_fmt () ;
+      F.pp_print_flush (DLS.get file_fmt) () ;
       Out_channel.close chan )
 
 
@@ -172,9 +175,9 @@ let reset_formatters () =
     formatters := mk_formatters ()
   in
   List.iter ~f:refresh_formatter !logging_formatters ;
-  if not !is_newline then
-    Option.iter !log_file ~f:(function log_file, _ -> F.pp_print_newline log_file ()) ;
-  is_newline := true ;
+  if not (DLS.get is_newline) then
+    Option.iter !log_file ~f:(function log_file, _ -> F.pp_print_newline (DLS.get log_file) ()) ;
+  DLS.set is_newline true ;
   register_epilogue ()
 
 
@@ -185,12 +188,12 @@ let log ~to_console ?(to_file = true) (lazy formatters) =
   | false, false ->
       F.ifprintf (F.get_std_formatter ())
   | true, _ when not Config.print_logs ->
-      F.fprintf !formatters.console_file
+      F.fprintf (DLS.get !formatters.console_file)
   | _ ->
       (* to_console might be true, but in that case so is Config.print_logs so do not print to
          stderr because it will get logs from the log file already *)
       Option.value_map !formatters.file
-        ~f:(fun file_fmt -> F.fprintf file_fmt)
+        ~f:(fun file_fmt -> F.fprintf (DLS.get file_fmt))
         ~default:(F.fprintf (F.get_err_formatter ()))
 
 
@@ -356,13 +359,13 @@ let setup_log_file () =
         let preexisting_logfile = ISys.file_exists logfile_path in
         let chan = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
         let file_fmt =
-          let f = F.formatter_of_out_channel chan in
-          if Config.print_logs then dup_formatter f (F.get_err_formatter ()) else f
+          let f = F.synchronized_formatter_of_out_channel chan in
+          if Config.print_logs then dup_formatter f (DLS.new_key F.get_err_formatter) else f
         in
         (file_fmt, chan, preexisting_logfile)
       in
       log_file := Some (fmt, chan) ;
-      if preexisting_logfile then is_newline := false ;
+      if preexisting_logfile then DLS.set is_newline false ;
       reset_formatters () ;
       if Config.is_originator && preexisting_logfile then
         phase
@@ -377,39 +380,42 @@ let set_geometry f =
   F.pp_set_geometry f ~max_indent:(Config.margin_html - 10) ~margin:Config.margin_html
 
 
-type delayed_prints = Buffer.t * F.formatter
+type delayed_prints = Buffer.t DLS.key * F.formatter DLS.key
 
 let new_delayed_prints () =
-  let b = Buffer.create 16 in
-  let f = F.formatter_of_buffer b in
-  set_geometry f ;
+  let b = DLS.new_key (fun () -> Buffer.create 16) in
+  let flush () = () in
+  let out_string s ofs len = Stdlib.Buffer.add_substring (DLS.get b) s ofs len in
+  let f = F.make_synchronized_formatter out_string flush in
+  set_geometry (DLS.get f) ;
   (b, f)
 
 
-let delayed_prints = ref (new_delayed_prints ())
+let delayed_prints = DLS.new_key new_delayed_prints
 
 (** reset the delayed prints *)
-let reset_delayed_prints () = delayed_prints := new_delayed_prints ()
+let reset_delayed_prints () = DLS.set delayed_prints (new_delayed_prints ())
 
 (** return the delayed prints *)
 let get_and_reset_delayed_prints () =
-  let res = !delayed_prints in
+  let res = DLS.get delayed_prints in
   reset_delayed_prints () ;
   res
 
 
 let force_and_reset_delayed_prints f =
   let delayed_prints_buffer, delayed_prints_formatter = get_and_reset_delayed_prints () in
-  F.pp_print_flush delayed_prints_formatter () ;
-  F.pp_print_string f (Buffer.contents delayed_prints_buffer)
+  F.pp_print_flush (DLS.get delayed_prints_formatter) () ;
+  F.pp_print_string f (Buffer.contents @@ DLS.get delayed_prints_buffer)
 
 
 (** set the delayed prints *)
-let set_delayed_prints new_delayed_prints = delayed_prints := new_delayed_prints
+let set_delayed_prints new_delayed_prints = DLS.set delayed_prints new_delayed_prints
 
 let get_f () =
-  if Config.write_html then Some (snd !delayed_prints)
-  else if not Config.only_cheap_debug then Option.map ~f:fst !log_file
+  if Config.write_html then Some (DLS.get @@ snd @@ DLS.get delayed_prints)
+  else if not Config.only_cheap_debug then
+    Option.map ~f:(fun (file_fmt, _) -> DLS.get file_fmt) !log_file
   else None
 
 

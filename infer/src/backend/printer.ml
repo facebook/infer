@@ -60,7 +60,7 @@ module NodesHtml : sig
 
   val finish_session : Procdesc.Node.t -> unit
 end = struct
-  let log_files = Hashtbl.create 11
+  let log_files = DLS.new_key (fun () -> Hashtbl.create 11)
 
   let pp_node_link_seq fmt node = pp_node_link_seq [".."] ~description:false fmt node
 
@@ -79,7 +79,7 @@ end = struct
     in
     let fmt = DLS.get fmt_key in
     DLS.set curr_html_formatter fmt ;
-    Hashtbl.add log_files (node_fname, source) fd ;
+    Hashtbl.add (DLS.get log_files) (node_fname, source) fd ;
     if needs_initialization then (
       F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>"
         (Io_infer.Html.pp_line_link source ~text:(Some (string_of_int nodeid)) [".."])
@@ -122,9 +122,9 @@ end = struct
       let nodeid = (Procdesc.Node.get_id node :> int) in
       Io_infer.Html.node_filename proc_name nodeid
     in
-    let fd = Hashtbl.find log_files (node_fname, source) in
+    let fd = Hashtbl.find (DLS.get log_files) (node_fname, source) in
     Unix.close fd ;
-    Hashtbl.remove log_files (node_fname, source) ;
+    Hashtbl.remove (DLS.get log_files) (node_fname, source) ;
     DLS.set curr_html_formatter (F.get_std_formatter ())
 end
 
