@@ -174,6 +174,8 @@ let analyze replay_call_graph source_files_to_analyze =
     ( [Stats.get ()]
     , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
     , [MissingDependencies.get ()] ) )
+  else if Config.multicore then
+    MulticoreAnalyze.run_analysis replay_call_graph source_files_to_analyze
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
