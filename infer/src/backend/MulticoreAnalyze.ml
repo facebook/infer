@@ -55,6 +55,7 @@ let run_analysis replay_call_graph source_files_to_analyze_lazy =
   L.debug Analysis Quiet "Multicore analysis starting...@." ;
   if Option.is_some replay_call_graph then
     L.die UserError "Multicore analysis does not support the replay scheduler.@\n" ;
+  let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
   Lazy.force source_files_to_analyze_lazy |> List.iter ~f:TargetStack.push ;
   Database.db_close () ;
   let n_workers = min (Domain.recommended_domain_count () - 1) (TargetStack.length ()) in
@@ -63,4 +64,6 @@ let run_analysis replay_call_graph source_files_to_analyze_lazy =
   L.debug Analysis Quiet "Multicore analysis spawned %d domains.@." n_workers ;
   List.iter workers ~f:Domain.join ;
   L.debug Analysis Quiet "Multicore analysis finished.@." ;
-  ([], [], [])
+  ( [Stats.get ()]
+  , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
+  , [MissingDependencies.get ()] )
