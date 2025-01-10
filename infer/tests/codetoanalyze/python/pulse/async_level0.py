@@ -4,7 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-import random
 
 
 async def sleep(i):
@@ -96,8 +95,13 @@ async def call_fst_bad(i):
 def main_ok():
     asyncio.run(sleep(10))
 
-main_ok()
 
+async def multi_tasks_ok():
+    asyncio.gather(sleep(1), sleep(2))
+
+
+main_ok()
 
 # no FP here
 asyncio.run(sleep(10))
+asyncio.run(multi_tasks_ok())
