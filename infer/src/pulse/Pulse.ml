@@ -167,9 +167,7 @@ let report_unnecessary_parameter_copies ({InterproceduralAnalysis.proc_desc; ten
 let heap_size () = (Gc.quick_stat ()).heap_words
 
 (* for printing the session name only, promise! *)
-let current_specialization = DLS.new_key (fun () -> None)
-
-let () = AnalysisGlobalState.register_dls ~init:(fun () -> None) current_specialization
+let current_specialization = AnalysisGlobalState.make_dls ~init:(fun () -> None)
 
 let pp_space_specialization fmt =
   DLS.get current_specialization

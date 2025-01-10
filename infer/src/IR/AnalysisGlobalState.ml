@@ -47,8 +47,10 @@ let register_dls_with_proc_desc_and_tenv ~init key =
     :: !stores
 
 
-let register_dls ~init key =
-  register_dls_with_proc_desc_and_tenv key ~init:(fun _proc_desc _tenv -> init ())
+let make_dls ~init =
+  let key = DLS.new_key init in
+  register_dls_with_proc_desc_and_tenv key ~init:(fun _proc_desc _tenv -> init ()) ;
+  key
 
 
 (** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save] *)

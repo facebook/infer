@@ -14,9 +14,7 @@ module F = Format
 open Option.Monad_infix
 
 (* always incremented before use *)
-let nesting = DLS.new_key (fun () -> -1)
-
-let () = AnalysisGlobalState.register_dls nesting ~init:(fun () -> -1)
+let nesting = AnalysisGlobalState.make_dls ~init:(fun () -> -1)
 
 let max_nesting_to_print = 8
 

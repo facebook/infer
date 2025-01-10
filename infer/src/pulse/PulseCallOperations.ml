@@ -65,9 +65,7 @@ module GlobalForStats = struct
 
   let empty = {node_is_not_stuck= false; one_call_is_stuck= false}
 
-  let global = DLS.new_key (fun () -> empty)
-
-  let () = AnalysisGlobalState.register_dls ~init:(fun () -> empty) global
+  let global = AnalysisGlobalState.make_dls ~init:(fun () -> empty)
 
   let init_before_call () =
     Utils.with_dls global ~f:(fun global -> {global with node_is_not_stuck= false})

@@ -11,7 +11,7 @@ type t = int [@@deriving compare, equal, hash]
 
 let initial_next_fresh = 1
 
-let next_fresh = DLS.new_key (fun () -> initial_next_fresh)
+let next_fresh = AnalysisGlobalState.make_dls ~init:(fun () -> initial_next_fresh)
 
 let mk_fresh () =
   let l = DLS.get next_fresh in
@@ -21,7 +21,9 @@ let mk_fresh () =
 
 let initial_next_fresh_restricted = -1
 
-let next_fresh_restricted = DLS.new_key (fun () -> initial_next_fresh_restricted)
+let next_fresh_restricted =
+  AnalysisGlobalState.make_dls ~init:(fun () -> initial_next_fresh_restricted)
+
 
 let mk_fresh_restricted () =
   let v = DLS.get next_fresh_restricted in
@@ -61,9 +63,3 @@ module Map = struct
   let yojson_of_t yojson_of_val m =
     `List (List.map ~f:(fun (k, v) -> `List [yojson_of_t k; yojson_of_val v]) (bindings m))
 end
-
-let () =
-  AnalysisGlobalState.register_dls next_fresh ~init:(fun () -> initial_next_fresh) ;
-  AnalysisGlobalState.register_dls next_fresh_restricted ~init:(fun () ->
-      initial_next_fresh_restricted ) ;
-  ()

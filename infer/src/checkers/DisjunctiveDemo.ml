@@ -11,9 +11,7 @@ module L = Logging
 
 (** global (per-function) state: count stores and function calls in order to identify which branch
     and which call in a branch we are analyzing *)
-let node_id = DLS.new_key (fun () -> -1)
-
-let () = AnalysisGlobalState.register_dls ~init:(fun () -> -1) node_id
+let node_id = AnalysisGlobalState.make_dls ~init:(fun () -> -1)
 
 module DisjDomain = struct
   (** ["4";"goo2";"1";"foo1"], printed as "foo1.1.goo2.4", means we explored the first branch of foo

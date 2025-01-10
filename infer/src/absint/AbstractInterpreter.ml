@@ -187,9 +187,7 @@ module DisjunctiveMetadata = struct
      of metadata since otherwise we would need to carry the metadata around the analysis while being
      careful to avoid double-counting. With a reference this is simpler to achieve as we can simply
      update it whenever a relevant action is taken (eg dropping a disjunct). *)
-  let proc_metadata = DLS.new_key (fun () -> empty)
-
-  let () = AnalysisGlobalState.register_dls ~init:(fun () -> empty) proc_metadata
+  let proc_metadata = AnalysisGlobalState.make_dls ~init:(fun () -> empty)
 
   let add_dropped_disjuncts dropped_disjuncts =
     Utils.with_dls proc_metadata ~f:(fun proc_metadata ->

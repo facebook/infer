@@ -716,7 +716,7 @@ let static_match_call tenv return arguments procname label : tcontext option =
 
 
 module Debug = struct
-  let dropped_disjuncts_count = DLS.new_key (fun () -> 0)
+  let dropped_disjuncts_count = AnalysisGlobalState.make_dls ~init:(fun () -> 0)
 
   let rec matched_transitions =
     lazy
@@ -742,8 +742,6 @@ module Debug = struct
       L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
         (F.pp_print_list pp) unseen
 
-
-  let () = AnalysisGlobalState.register_dls dropped_disjuncts_count ~init:(fun () -> 0)
 
   let get_dropped_disjuncts_count () = DLS.get dropped_disjuncts_count
 

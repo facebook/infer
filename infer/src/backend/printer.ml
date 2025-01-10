@@ -15,9 +15,7 @@ module L = Logging
 module F = Format
 
 (** Current formatter for the html output *)
-let curr_html_formatter = DLS.new_key F.get_std_formatter
-
-let () = AnalysisGlobalState.register_dls ~init:F.get_std_formatter curr_html_formatter
+let curr_html_formatter = AnalysisGlobalState.make_dls ~init:F.get_std_formatter
 
 (** Return true if the node was visited during analysis *)
 let is_visited node =

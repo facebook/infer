@@ -20,9 +20,7 @@ type t =
 let initial () = {last_instr= None; last_node= None; last_session= 0; remaining_disjuncts= None}
 
 (** Global state *)
-let gs = DLS.new_key initial
-
-let () = AnalysisGlobalState.register_dls gs ~init:initial
+let gs = AnalysisGlobalState.make_dls ~init:initial
 
 let get_instr () = (DLS.get gs).last_instr
 
