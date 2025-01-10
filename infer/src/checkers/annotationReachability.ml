@@ -279,13 +279,31 @@ let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot
 let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) src
     (spec : AnnotationSpec.t) sink_map =
   let snk_annot = spec.sink_annotation in
+  let src_pname = Procdesc.get_proc_name proc_desc in
+  let update_loc_if_nonsynth loc caller (call_site_info : Domain.call_site_info) =
+    match loc with
+    | None ->
+        let is_synth =
+          Attributes.load caller
+          |> Option.exists ~f:(fun (a : ProcAttributes.t) -> a.is_synthetic_method)
+        in
+        if is_synth then None else Some (CallSite.loc call_site_info.call_site)
+    | Some _ ->
+        loc
+  in
   let rec step_forward report_loc trace snk_pname (call_site_info : Domain.call_site_info) =
     let callee_pname = CallSite.pname call_site_info.call_site in
     let end_of_stack = Procname.equal callee_pname snk_pname in
     let new_trace = add_to_trace call_site_info end_of_stack snk_annot trace in
     if end_of_stack then
       (* Reached sink, report *)
-      report_src_to_snk_path analysis_data src spec report_loc (List.rev new_trace) callee_pname
+      match report_loc with
+      | Some report_loc ->
+          report_src_to_snk_path analysis_data src spec report_loc (List.rev new_trace) callee_pname
+      | None ->
+          L.debug Analysis Verbose
+            "Annotation reachability skipped path %s -> %s all procedures were synthetic@."
+            (str_of_pname src_pname) (str_of_pname snk_pname)
     else if
       Config.annotation_reachability_minimize_sources
       && method_overrides_annot src spec.models tenv callee_pname
@@ -301,7 +319,9 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
         |> Option.value ~default:Domain.CallSites.empty
       in
       let next_fst_call_site = Domain.CallSites.min_elt_opt next_call_sites in
-      Option.iter next_fst_call_site ~f:(step_forward report_loc new_trace snk_pname)
+      Option.iter next_fst_call_site ~f:(fun call_site ->
+          let report_loc = update_loc_if_nonsynth report_loc callee_pname call_site in
+          step_forward report_loc new_trace snk_pname call_site )
   in
   let trace = start_trace proc_desc src in
   Domain.SinkMap.iter
@@ -312,7 +332,7 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
         with Stdlib.Not_found -> L.die InternalError "Callsite map should not be empty"
       in
       (* Report the issue where the source makes the first call *)
-      let report_loc = CallSite.loc fst_call_site.call_site in
+      let report_loc = update_loc_if_nonsynth None src_pname fst_call_site in
       step_forward report_loc trace snk_pname fst_call_site )
     sink_map
 

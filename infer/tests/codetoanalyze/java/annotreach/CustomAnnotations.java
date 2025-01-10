@@ -283,4 +283,23 @@ class CustomAnnotations {
   public void callsDeprecatedMethodBad() {
     deprecatedMethod();
   }
+
+  // Testing bridge methods: there will be a synthetic version of source, that will
+  // call the original source and we want to report the issue on the original one
+  abstract class GenericBase<T> {
+    @UserDefinedSource1
+    public abstract void source(T t);
+  }
+
+  class Dummy {}
+
+  class GenericDerived extends GenericBase<Dummy> {
+    @Override
+    public void source(Dummy d) {
+      sink();
+    }
+
+    @UserDefinedSink1
+    public void sink() {}
+  }
 }
