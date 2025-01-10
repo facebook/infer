@@ -7,11 +7,18 @@
 
 open! IStd
 module L = Logging
+module Node = SpecializedProcname
+module NodeSet = SpecializedProcname.Set
+
+let read_procs_to_analyze () =
+  Option.value_map ~default:NodeSet.empty Config.procs_to_analyze_index ~f:(fun index ->
+      In_channel.read_all index |> Parsexp.Single.parse_string_exn |> NodeSet.t_of_sexp )
+
 
 module TargetStack = struct
   let mutex = Error_checking_mutex.create ()
 
-  let stack : SourceFile.t Stack.t = Stack.create ()
+  let stack : TaskSchedulerTypes.target Stack.t = Stack.create ()
 
   let push x = Error_checking_mutex.critical_section mutex ~f:(fun () -> Stack.push stack x)
 
@@ -26,15 +33,28 @@ let analyze_source_file exe_env source_file =
   if Config.write_html then Printer.write_all_html_files source_file
 
 
+let analyze_proc_name exe_env ~specialization proc_name =
+  Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all ~specialization proc_name
+
+
+let analyze_target exe_env target =
+  match (target : TaskSchedulerTypes.target) with
+  | File source_file ->
+      analyze_source_file exe_env source_file
+  | Procname {proc_name; specialization} ->
+      analyze_proc_name exe_env ~specialization proc_name
+
+
 let crash_flag = Atomic.make false
 
 let rec analysis_loop exe_env =
-  match TargetStack.pop () with
-  | Some source_file when not (Atomic.get crash_flag) ->
-      analyze_source_file exe_env source_file ;
-      analysis_loop exe_env
-  | _ ->
-      ()
+  if not @@ Atomic.get crash_flag then
+    match TargetStack.pop () with
+    | None ->
+        ()
+    | Some target ->
+        analyze_target exe_env target ;
+        analysis_loop exe_env
 
 
 let worker num =
@@ -56,7 +76,10 @@ let run_analysis replay_call_graph source_files_to_analyze_lazy =
   if Option.is_some replay_call_graph then
     L.die UserError "Multicore analysis does not support the replay scheduler.@\n" ;
   let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
-  Lazy.force source_files_to_analyze_lazy |> List.iter ~f:TargetStack.push ;
+  Lazy.force source_files_to_analyze_lazy |> List.iter ~f:(fun f -> TargetStack.push (File f)) ;
+  read_procs_to_analyze ()
+  |> NodeSet.iter (fun {Node.proc_name; specialization} ->
+         TargetStack.push (Procname {specialization; proc_name}) ) ;
   Database.db_close () ;
   let n_workers = min (Domain.recommended_domain_count () - 1) (TargetStack.length ()) in
   let workers = List.init n_workers ~f:(fun num -> Domain.spawn (fun () -> worker num)) in
