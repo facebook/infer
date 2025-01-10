@@ -221,17 +221,18 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
   let spec_name = append_if_not_empty spec.name ". " in
   (* A direct call has a trace of length 3: source def + callsite + sink def *)
   let transitive = if List.length trace > 3 then "transitively " else "" in
+  let method_or_constr = if Procname.is_constructor src_pname then "Constructor" else "Method" in
   let description =
     if is_dummy_constructor snk then
       let constr_str = str_of_pname ~withclass:true snk_pname in
-      Format.asprintf "%sMethod %a annotated with %a allocates %a via %a%s" spec_name
+      Format.asprintf "%s%s %a annotated with %a allocates %a via %a%s" spec_name method_or_constr
         MF.pp_monospaced (str_of_pname src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
         MF.pp_monospaced constr_str MF.pp_monospaced ("new " ^ constr_str) spec_description
     else
-      Format.asprintf "%sMethod %a (%s %a%s%s) %s%s %a (%s %a%s%s)%s" spec_name MF.pp_monospaced
-        (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced ("@" ^ src_annot_str)
-        (get_details src src_pname) (get_class_details src src_pname) transitive access_or_call
-        MF.pp_monospaced
+      Format.asprintf "%s%s %a (%s %a%s%s) %s%s %a (%s %a%s%s)%s" spec_name method_or_constr
+        MF.pp_monospaced (str_of_pname src_pname) (get_kind src src_pname) MF.pp_monospaced
+        ("@" ^ src_annot_str) (get_details src src_pname) (get_class_details src src_pname)
+        transitive access_or_call MF.pp_monospaced
         (str_of_pname ~withclass:true snk_pname)
         (get_kind snk snk_pname) MF.pp_monospaced ("@" ^ snk_annot_str) (get_details snk snk_pname)
         (get_class_details snk snk_pname) spec_description
@@ -242,7 +243,8 @@ let report_src_to_snk_path {InterproceduralAnalysis.proc_desc; tenv; err_log} sr
 
 let start_trace proc_desc annot =
   let description =
-    "Method "
+    ( if Procname.is_constructor (Procdesc.get_proc_name proc_desc) then "Constructor "
+      else "Method " )
     ^ str_of_pname (Procdesc.get_proc_name proc_desc)
     ^ ", marked as source @" ^ annot.Annot.class_name
   in

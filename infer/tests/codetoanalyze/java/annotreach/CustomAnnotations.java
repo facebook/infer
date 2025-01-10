@@ -302,4 +302,17 @@ class CustomAnnotations {
     @UserDefinedSink1
     public void sink() {}
   }
+
+  // Testing implicit constructors
+  class BaseConstructorCallsSink {
+    public BaseConstructorCallsSink() {
+      sink();
+    }
+
+    @UserDefinedSink1
+    public void sink() {}
+  }
+
+  @UserDefinedSource1
+  class DerivedWithSourceConstructor extends BaseConstructorCallsSink {}
 }
