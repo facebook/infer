@@ -293,6 +293,11 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
     | Some _ ->
         loc
   in
+  let first_callsite call_sites =
+    (* Just pick one path forward (per sink procedure) to avoid path explosion *)
+    try Domain.CallSites.min_elt call_sites
+    with Stdlib.Not_found -> L.die InternalError "Callsite map should not be empty"
+  in
   let rec step_forward report_loc trace snk_pname (call_site_info : Domain.call_site_info) =
     let callee_pname = CallSite.pname call_site_info.call_site in
     let end_of_stack = Procname.equal callee_pname snk_pname in
@@ -317,23 +322,21 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       (* Sink not yet reached, thus we have an intermediate step: let's get its summary and recurse *)
       let callee_sink_map = lookup_annotation_calls analysis_data snk_annot callee_pname in
       let next_call_sites =
-        Domain.SinkMap.find_opt snk_pname callee_sink_map
-        |> Option.value ~default:Domain.CallSites.empty
+        try Domain.SinkMap.find snk_pname callee_sink_map
+        with Stdlib.Not_found ->
+          (* This could happen if some function F says that it can reach H via G
+             but G doesn't have an entry for H, which is a bug somewhere else. *)
+          L.die InternalError "Sink procedure not found in summary of dependency"
       in
-      let next_fst_call_site = Domain.CallSites.min_elt_opt next_call_sites in
-      Option.iter next_fst_call_site ~f:(fun call_site ->
-          let report_loc = update_loc_if_nonsynth report_loc callee_pname call_site in
-          step_forward report_loc new_trace snk_pname call_site )
+      let next_call_site = first_callsite next_call_sites in
+      let report_loc = update_loc_if_nonsynth report_loc callee_pname next_call_site in
+      step_forward report_loc new_trace snk_pname next_call_site
   in
   let trace = start_trace proc_desc src in
   Domain.SinkMap.iter
     (fun snk_pname call_sites ->
-      let fst_call_site =
-        (* Just pick one path forward (per sink procedure) to avoid path explosion *)
-        try Domain.CallSites.min_elt call_sites
-        with Stdlib.Not_found -> L.die InternalError "Callsite map should not be empty"
-      in
-      (* Report the issue where the source makes the first call *)
+      let fst_call_site = first_callsite call_sites in
+      (* Report the issue where the source makes the first non-synthetic call *)
       let report_loc = update_loc_if_nonsynth None src_pname fst_call_site in
       step_forward report_loc trace snk_pname fst_call_site )
     sink_map
