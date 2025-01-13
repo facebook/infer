@@ -17,6 +17,4 @@ val with_session :
   -> 'a
 (** Wraps [f] in an html debug session *)
 
-val enable_html_printing : unit -> unit
-
-val disable_html_printing : unit -> unit
+val with_html_printing_disabled_if : f:(unit -> 'a) -> bool -> 'a

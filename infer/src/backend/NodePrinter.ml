@@ -54,3 +54,9 @@ let with_session ?kind ~pp_name node ~f =
 let enable_html_printing () = DLS.set print_html true
 
 let disable_html_printing () = DLS.set print_html false
+
+let with_html_printing_disabled_if ~f cond =
+  if cond then disable_html_printing () ;
+  let result = f () in
+  if cond then enable_html_printing () ;
+  result

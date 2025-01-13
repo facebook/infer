@@ -556,19 +556,17 @@ module RemoveDeadNodes = struct
 end
 
 let do_preanalysis tenv pdesc =
-  if not Config.preanalysis_html then NodePrinter.disable_html_printing () ;
-  let proc_name = Procdesc.get_proc_name pdesc in
-  if Procname.is_java proc_name || Procname.is_csharp proc_name then
-    InlineJavaSyntheticMethods.process pdesc ;
-  (* NOTE: It is important that this preanalysis stays before Liveness *)
-  if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
-    (* Apply dynamic selection of copy and overriden methods *)
-    ReplaceObjCMethodCall.process tenv pdesc proc_name ;
-  if Procname.is_hack_constinit proc_name then InjectTraitInterfaceConstinit.process tenv pdesc ;
-  Liveness.process pdesc ;
-  AddAbstractionInstructions.process pdesc ;
-  if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
-  NoReturn.process tenv pdesc ;
-  RemoveDeadNodes.process pdesc ;
-  NodePrinter.enable_html_printing () ;
-  ()
+  NodePrinter.with_html_printing_disabled_if (not Config.preanalysis_html) ~f:(fun () ->
+      let proc_name = Procdesc.get_proc_name pdesc in
+      if Procname.is_java proc_name || Procname.is_csharp proc_name then
+        InlineJavaSyntheticMethods.process pdesc ;
+      (* NOTE: It is important that this preanalysis stays before Liveness *)
+      if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
+        (* Apply dynamic selection of copy and overriden methods *)
+        ReplaceObjCMethodCall.process tenv pdesc proc_name ;
+      if Procname.is_hack_constinit proc_name then InjectTraitInterfaceConstinit.process tenv pdesc ;
+      Liveness.process pdesc ;
+      AddAbstractionInstructions.process pdesc ;
+      if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
+      NoReturn.process tenv pdesc ;
+      RemoveDeadNodes.process pdesc )
