@@ -13,3 +13,5 @@ type no_summary = AnalysisFailed | InBlockList | MutualRecursionCycle | UnknownP
 type 'a t = ('a, no_summary) result
 
 val to_option : 'a t -> 'a option
+
+val of_option : 'a option -> ('a, no_summary) result

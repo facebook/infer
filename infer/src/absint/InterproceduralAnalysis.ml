@@ -29,5 +29,4 @@ let bind_payload_opt analysis_data ~f =
     analyze_dependency=
       (fun ?specialization proc_name ->
         analysis_data.analyze_dependency ?specialization proc_name
-        |> Result.bind ~f:(fun payload ->
-               f payload |> Result.of_option ~error:AnalysisResult.AnalysisFailed ) ) }
+        |> Result.bind ~f:(fun payload -> f payload |> AnalysisResult.of_option) ) }

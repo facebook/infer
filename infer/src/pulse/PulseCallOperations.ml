@@ -947,9 +947,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
                            exec_state ) )
                 in
                 case_if_specialization_is_impossible res
-            | Error ((AnalysisFailed | InBlockList | UnknownProcedure) as no_summary) ->
-                L.die InternalError "No summary found by specialization: %a"
-                  AnalysisResult.pp_no_summary no_summary
+            | Error (AnalysisFailed | InBlockList | UnknownProcedure) ->
+                case_if_specialization_is_impossible res
             | Ok (summary, is_pulse_specialization_limit_not_reached) ->
                 let already_given = Specialization.Pulse.Set.add specialization already_given in
                 iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)

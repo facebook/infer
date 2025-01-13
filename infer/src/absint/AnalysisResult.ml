@@ -13,3 +13,5 @@ type no_summary = AnalysisFailed | InBlockList | MutualRecursionCycle | UnknownP
 type 'a t = ('a, no_summary) result
 
 let to_option = function Ok x -> Some x | Error _ -> None
+
+let of_option = function Some v -> Ok v | None -> Error AnalysisFailed

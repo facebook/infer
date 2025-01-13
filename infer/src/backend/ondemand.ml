@@ -427,8 +427,6 @@ let double_lock_for_restart ~lazy_payloads analysis_req callee_pname specializat
         `NoSummary )
 
 
-let analysis_result_of_option opt = Result.of_option opt ~error:AnalysisResult.AnalysisFailed
-
 (** track how many times we restarted the analysis of the current dependency chain to make the
     analysis of mutual recursion cycles deterministic *)
 let number_of_recursion_restarts = DLS.new_key (fun () -> 0)
@@ -520,15 +518,15 @@ let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req 
         | `SummaryReady summary ->
             Ok summary
         | `ComputeDefaultSummary ->
-            analyze_callee_aux None |> analysis_result_of_option
+            analyze_callee_aux None |> AnalysisResult.of_option
         | `ComputeDefaultSummaryThenSpecialize specialization ->
             (* recursive call so that we detect mutual recursion on the unspecialized summary *)
             analyze_callee exe_env ~lazy_payloads analysis_req ~specialization:None ?caller_summary
               ~from_file_analysis callee_pname
             |> Result.bind ~f:(fun summary ->
-                   analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option )
+                   analyze_callee_aux (Some (summary, specialization)) |> AnalysisResult.of_option )
         | `AddNewSpecialization (summary, specialization) ->
-            analyze_callee_aux (Some (summary, specialization)) |> analysis_result_of_option
+            analyze_callee_aux (Some (summary, specialization)) |> AnalysisResult.of_option
         | `UnknownProcedure ->
             Error UnknownProcedure )
 
@@ -541,7 +539,7 @@ and on_recursive_cycle exe_env ~lazy_payloads analysis_req ?caller_summary:_ ?fr
     ?from_file_analysis cycle_start.proc_name
   |> ignore ;
   (* TODO: register caller -> callee relationship, possibly *)
-  Summary.OnDisk.get ~lazy_payloads analysis_req callee_pname |> analysis_result_of_option
+  Summary.OnDisk.get ~lazy_payloads analysis_req callee_pname |> AnalysisResult.of_option
 
 
 and analyze_callee exe_env ~lazy_payloads analysis_req ~specialization ?caller_summary
