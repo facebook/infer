@@ -556,7 +556,7 @@ module RemoveDeadNodes = struct
 end
 
 let do_preanalysis tenv pdesc =
-  if not Config.preanalysis_html then NodePrinter.print_html := false ;
+  if not Config.preanalysis_html then NodePrinter.disable_html_printing () ;
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
     InlineJavaSyntheticMethods.process pdesc ;
@@ -570,5 +570,5 @@ let do_preanalysis tenv pdesc =
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
   NoReturn.process tenv pdesc ;
   RemoveDeadNodes.process pdesc ;
-  NodePrinter.print_html := true ;
+  NodePrinter.enable_html_printing () ;
   ()
