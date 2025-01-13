@@ -76,7 +76,13 @@ let run_analysis replay_call_graph source_files_to_analyze_lazy =
   if Option.is_some replay_call_graph then
     L.die UserError "Multicore analysis does not support the replay scheduler.@\n" ;
   let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
-  Lazy.force source_files_to_analyze_lazy |> List.iter ~f:(fun f -> TargetStack.push (File f)) ;
+  let source_files = Lazy.force source_files_to_analyze_lazy in
+  List.iter source_files ~f:(fun f -> TargetStack.push (File f)) ;
+  (* leave procedures on top of files to increase concurrency *)
+  List.iter source_files ~f:(fun source ->
+      SourceFiles.proc_names_of_source source
+      |> List.iter ~f:(fun proc_name ->
+             TargetStack.push (Procname {proc_name; specialization= None}) ) ) ;
   read_procs_to_analyze ()
   |> NodeSet.iter (fun {Node.proc_name; specialization} ->
          TargetStack.push (Procname {specialization; proc_name}) ) ;
