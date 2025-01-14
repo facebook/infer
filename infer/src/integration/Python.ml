@@ -91,12 +91,12 @@ module Builtins = struct
 
   let add () =
     let tenv =
-      Tenv.load_global ()
+      Tenv.Global.load ()
       |> Option.value_or_thunk ~default:(fun () ->
              L.die InternalError "Global tenv not found after capture merge" )
     in
     List.iter ~f:(declare_closure tenv) reserved_builtins ;
-    Tenv.store_global ~normalize:false tenv
+    Tenv.Global.store ~normalize:false tenv
 end
 
 let dump_textual_file ~version pyc module_ =

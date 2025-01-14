@@ -43,7 +43,7 @@ let load_java_global_tenv _exe_env =
      If somebody wants to fetch java global environment, they'd better have exe_env instance provided.
      If they don't they are probably doing something wrong.
   *)
-  match Tenv.load_global () with
+  match Tenv.Global.load () with
   | None ->
       L.die InternalError "Could not load the global tenv"
   | Some tenv ->

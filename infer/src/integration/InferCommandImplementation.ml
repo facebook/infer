@@ -14,7 +14,7 @@ let debug () =
       "Expected at least one of '--global-tenv', '--procedures' or '--source_files'.@\n"
   else (
     ( if Config.global_tenv then
-        match Tenv.load_global () with
+        match Tenv.Global.load () with
         | None ->
             L.result "No global type environment was found.@."
         | Some tenv ->

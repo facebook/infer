@@ -14,7 +14,7 @@ module TenvMerger = struct
   let merge paths =
     let output =
       if Config.(continue_capture || reactive_capture) then (
-        match Tenv.read_global () with
+        match Tenv.Global.read () with
         | None ->
             L.progress "Merge found no pre-existing global type environment@\n" ;
             Tenv.create ()
@@ -35,7 +35,7 @@ module TenvMerger = struct
     let time0 = Mtime_clock.counter () in
     let global_tenv = merge paths in
     let time1 = Mtime_clock.counter () in
-    Tenv.store_global ~normalize global_tenv ;
+    Tenv.Global.store ~normalize global_tenv ;
     L.progress "Merging type environments took %a, of which %a were spent storing the global tenv@."
       Mtime.Span.pp (Mtime_clock.count time0) Mtime.Span.pp (Mtime_clock.count time1)
 
@@ -85,7 +85,7 @@ let merge_captured_targets ~root =
   let tenv_merger_child = TenvMerger.start infer_deps_file in
   DBWriter.merge_captures ~root ~infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
-  Tenv.force_load_global () |> ignore ;
+  Tenv.Global.force_load () |> ignore ;
   let targets_num =
     let counter = ref 0 in
     let incr_counter _line = incr counter in

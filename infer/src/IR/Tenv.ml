@@ -252,55 +252,6 @@ let tenv_serializer : t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.tenv
 
 
-let global_tenv : t option Atomic.t = Atomic.make None
-
-let global_tenv_path = ResultsDir.get_path GlobalTypeEnvironment |> DB.filename_from_string
-
-let read path = Serialization.read_from_file tenv_serializer path
-
-let read_global () = read global_tenv_path
-
-let global_tenv_mutex = Error_checking_mutex.create ()
-
-let set_global tenv =
-  Error_checking_mutex.critical_section global_tenv_mutex ~f:(fun () -> Atomic.set global_tenv tenv)
-
-
-let force_load_global () =
-  let tenv = read_global () in
-  set_global tenv ;
-  tenv
-
-
-let load_global () : t option =
-  let tenv = Atomic.get global_tenv in
-  if Option.is_some tenv then tenv else force_load_global ()
-
-
-let load =
-  let load_statement =
-    Database.register_statement CaptureDatabase
-      "SELECT type_environment FROM source_files WHERE source_file = :k"
-  in
-  fun source ->
-    let res_opt =
-      Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-          SourceFile.SQLite.serialize source
-          |> Sqlite3.bind load_stmt 1
-          |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-          SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
-          >>| SQLite.deserialize )
-    in
-    match res_opt with
-    | None ->
-        MissingDependencies.record_sourcefile source ;
-        None
-    | Some Global ->
-        load_global ()
-    | Some (FileLocal tenv) ->
-        Some tenv
-
-
 let store_debug_file tenv tenv_filename =
   let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
   let out_channel = Out_channel.create debug_filename in
@@ -339,19 +290,78 @@ module Normalizer = struct
     new_tenv
 end
 
-let store_global ~normalize tenv =
-  (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
-     frontend and backend run in the same process *)
-  if Config.debug_level_capture > 0 then
-    L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
-      (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
-  let tenv = if normalize then Normalizer.normalize tenv else tenv in
-  HashNormalizer.reset_all_normalizers () ;
-  if Config.debug_level_capture > 0 then
-    L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
-      (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
-  set_global (Some tenv) ;
-  write tenv global_tenv_path
+let read path = Serialization.read_from_file tenv_serializer path
+
+module Global : sig
+  val read : unit -> t option
+
+  val load : unit -> t option
+
+  val force_load : unit -> t option
+
+  val store : normalize:bool -> t -> unit
+end = struct
+  let global_tenv : t option Atomic.t = Atomic.make None
+
+  let global_tenv_path = ResultsDir.get_path GlobalTypeEnvironment |> DB.filename_from_string
+
+  let read () = read global_tenv_path
+
+  let global_tenv_mutex = Error_checking_mutex.create ()
+
+  let set tenv =
+    Error_checking_mutex.critical_section global_tenv_mutex ~f:(fun () ->
+        Atomic.set global_tenv tenv )
+
+
+  let force_load () =
+    let tenv = read () in
+    set tenv ;
+    tenv
+
+
+  let load () : t option =
+    let tenv = Atomic.get global_tenv in
+    if Option.is_some tenv then tenv else force_load ()
+
+
+  let store ~normalize tenv =
+    (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
+       frontend and backend run in the same process *)
+    if Config.debug_level_capture > 0 then
+      L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
+        (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
+    let tenv = if normalize then Normalizer.normalize tenv else tenv in
+    HashNormalizer.reset_all_normalizers () ;
+    if Config.debug_level_capture > 0 then
+      L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
+        (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
+    set (Some tenv) ;
+    write tenv global_tenv_path
+end
+
+let load =
+  let load_statement =
+    Database.register_statement CaptureDatabase
+      "SELECT type_environment FROM source_files WHERE source_file = :k"
+  in
+  fun source ->
+    let res_opt =
+      Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
+          SourceFile.SQLite.serialize source
+          |> Sqlite3.bind load_stmt 1
+          |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+          SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
+          >>| SQLite.deserialize )
+    in
+    match res_opt with
+    | None ->
+        MissingDependencies.record_sourcefile source ;
+        None
+    | Some Global ->
+        Global.load ()
+    | Some (FileLocal tenv) ->
+        Some tenv
 
 
 let normalize = function

@@ -359,7 +359,7 @@ let process_output_in_parallel ic =
   if not Config.hack_verify_capture_only then (
     MergeCapture.merge_captured_targets ~root:Config.results_dir ;
     let tenv =
-      Tenv.load_global ()
+      Tenv.Global.load ()
       |> Option.value_or_thunk ~default:(fun () ->
              L.die InternalError "Global tenv not found after capture merge" )
     in
@@ -486,5 +486,5 @@ let capture ~prog ~args =
     Tenv.merge ~src:hack_model_tenv ~dst:captured_tenv ;
     Tenv.merge ~src:textual_model_tenv ~dst:captured_tenv ;
     (* normalization already happened in the compile call through merging, no point repeating it *)
-    Tenv.store_global ~normalize:false captured_tenv )
+    Tenv.Global.store ~normalize:false captured_tenv )
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand

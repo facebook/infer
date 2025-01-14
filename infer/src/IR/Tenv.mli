@@ -29,17 +29,19 @@ val read : DB.filename -> t option
 val write : t -> DB.filename -> unit
 (** Write the type environment into the given file *)
 
-val read_global : unit -> t option
-(** Load (without caching) the global type environment *)
+module Global : sig
+  val read : unit -> t option
+  (** Load (without caching) the global type environment *)
 
-val force_load_global : unit -> t option
-(** Load and cache the global type environment *)
+  val force_load : unit -> t option
+  (** Load and cache the global type environment *)
 
-val load_global : unit -> t option
-(** Load and cache the global type environment if not already loaded *)
+  val load : unit -> t option
+  (** Load and cache the global type environment if not already loaded *)
 
-val store_global : normalize:bool -> t -> unit
-(** Save and cache the global type environment *)
+  val store : normalize:bool -> t -> unit
+  (** Save and cache the global type environment *)
+end
 
 val lookup : t -> Typ.Name.t -> Struct.t option
 (** Look up a name in the given type environment. *)

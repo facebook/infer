@@ -156,4 +156,4 @@ let capture files =
         Tenv.merge ~src:sil.tenv ~dst:global_tenv
   in
   List.iter files ~f:capture_one ;
-  Tenv.store_global ~normalize:true global_tenv
+  Tenv.Global.store ~normalize:true global_tenv

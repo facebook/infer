@@ -665,7 +665,7 @@ let proc_is_ignored_by_racerd callee =
 
 
 let is_kotlin_coroutine_generated classname =
-  Tenv.load_global ()
+  Tenv.Global.load ()
   |> Option.bind ~f:(fun tenv -> Tenv.lookup tenv classname)
   |> Option.exists ~f:(fun (tstruct : Struct.t) ->
          List.mem tstruct.supers ~equal:Typ.Name.equal

@@ -732,6 +732,6 @@ let parse_tenv (json : Safe.t) =
 let capture ~cfg_json ~tenv_json =
   let tenv = parse_tenv (Yojson.Safe.from_file tenv_json) in
   let cfg = parse_cfg (Yojson.Safe.from_file cfg_json) in
-  Tenv.store_global ~normalize:true tenv ;
+  Tenv.Global.store ~normalize:true tenv ;
   store cfg ;
   ()
