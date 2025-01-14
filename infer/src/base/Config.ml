@@ -398,7 +398,7 @@ let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
 
 let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
 
-let env_inside_maven = `Extend [(infer_inside_maven_env_var, "1")]
+let maven_env = `Extend [(infer_inside_maven_env_var, "1"); ("JAVA_HOME", "")]
 
 let infer_is_javac = maven
 

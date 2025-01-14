@@ -174,4 +174,4 @@ let capture ~prog ~args =
     "Running maven capture:@\n%s %s@." prog
     (String.concat ~sep:" " (List.map ~f:(Printf.sprintf "'%s'") capture_args)) ;
   (* let children infer processes know that they are spawned by Maven *)
-  Process.create_process_and_wait ~prog ~args:capture_args ~env:Config.env_inside_maven ()
+  Process.create_process_and_wait ~prog ~args:capture_args ~env:Config.maven_env ()
