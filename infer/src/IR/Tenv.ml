@@ -252,7 +252,7 @@ let tenv_serializer : t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.tenv
 
 
-let global_tenv : t option ref = ref None
+let global_tenv : t option Atomic.t = Atomic.make None
 
 let global_tenv_path = ResultsDir.get_path GlobalTypeEnvironment |> DB.filename_from_string
 
@@ -260,13 +260,21 @@ let read path = Serialization.read_from_file tenv_serializer path
 
 let read_global () = read global_tenv_path
 
+let global_tenv_mutex = Error_checking_mutex.create ()
+
+let set_global tenv =
+  Error_checking_mutex.critical_section global_tenv_mutex ~f:(fun () -> Atomic.set global_tenv tenv)
+
+
 let force_load_global () =
-  global_tenv := read_global () ;
-  !global_tenv
+  let tenv = read_global () in
+  set_global tenv ;
+  tenv
 
 
 let load_global () : t option =
-  if Option.is_some !global_tenv then !global_tenv else force_load_global ()
+  let tenv = Atomic.get global_tenv in
+  if Option.is_some tenv then tenv else force_load_global ()
 
 
 let load =
@@ -342,7 +350,7 @@ let store_global ~normalize tenv =
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
-  global_tenv := Some tenv ;
+  set_global (Some tenv) ;
   write tenv global_tenv_path
 
 
