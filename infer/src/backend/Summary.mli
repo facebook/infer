@@ -51,8 +51,8 @@ module OnDisk : sig
   val get : lazy_payloads:bool -> AnalysisRequest.t -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
-  val reset : Procname.t -> AnalysisRequest.t -> t
-  (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
+  val empty : Procname.t -> t
+  (** Empty summary. *)
 
   val store : AnalysisRequest.t -> t -> t
   (** Save summary for the procedure into the spec database and return it. If the operation fails,

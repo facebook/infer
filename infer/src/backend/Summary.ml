@@ -288,8 +288,6 @@ module OnDisk = struct
   (** Save summary for the procedure into the spec database *)
   let rec store (analysis_req : AnalysisRequest.t)
       ({proc_name; dependencies; payloads} as summary : t) =
-    (* Make sure the summary in memory is identical to the saved one *)
-    add_to_cache proc_name analysis_req summary ;
     summary.dependencies <- Dependencies.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
     let summary_metadata =
@@ -304,6 +302,8 @@ module OnDisk = struct
         ~merge_pulse_payload:(Payloads.SQLite.serialize payloads)
         ~merge_report_summary:(ReportSummary.SQLite.serialize report_summary)
         ~merge_summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata) ;
+      (* Make sure the summary in memory is identical to the saved one *)
+      add_to_cache proc_name analysis_req summary ;
       summary
     with SqliteUtils.DataTooBig ->
       (* Serialization exceeded size limits, write and return an empty summary  *)
@@ -317,18 +317,14 @@ module OnDisk = struct
       store analysis_req new_summary
 
 
-  let reset proc_name analysis_req =
-    let summary =
-      { sessions= 0
-      ; payloads= Payloads.empty
-      ; stats= Stats.empty
-      ; proc_name
-      ; err_log= Errlog.empty ()
-      ; dependencies= Dependencies.reset proc_name
-      ; is_complete_result= false }
-    in
-    add_to_cache proc_name analysis_req summary ;
-    summary
+  let empty proc_name =
+    { sessions= 0
+    ; payloads= Payloads.empty
+    ; stats= Stats.empty
+    ; proc_name
+    ; err_log= Errlog.empty ()
+    ; dependencies= Dependencies.reset proc_name
+    ; is_complete_result= false }
 
 
   let delete_all ~procedures =

@@ -219,7 +219,7 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
       | None ->
           if Config.debug_mode then
             DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
-          Summary.OnDisk.reset callee_pname analysis_req
+          Summary.OnDisk.empty callee_pname
       | Some (current_summary, _) ->
           current_summary
     in
