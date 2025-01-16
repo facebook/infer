@@ -316,3 +316,44 @@ class CustomAnnotations {
   @UserDefinedSource1
   class DerivedWithSourceConstructor extends BaseConstructorCallsSink {}
 }
+
+// Testing that Infer can break a cycle
+class Recursion {
+  // Breaks it in the "wrong" way, misses trace
+  @UserDefinedSource1
+  void sourceBad_FN() {
+    g();
+  }
+
+  void g() {
+    f();
+  }
+
+  void f() {
+    g();
+    sink();
+  }
+
+  @UserDefinedSink1
+  void sink() {}
+}
+
+// Same example as above, just "f" and "g" swapped, Infer finds the trace
+class RecursionSlightlyRenamed {
+  @UserDefinedSource1
+  void sourceBad() {
+    f();
+  }
+
+  void f() {
+    g();
+  }
+
+  void g() {
+    f();
+    sink();
+  }
+
+  @UserDefinedSink1
+  void sink() {}
+}

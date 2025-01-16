@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --debug-exceptions --annotation-reachability-only
+INFER_OPTIONS = --debug-exceptions --annotation-reachability-only --scheduler restart
 
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
