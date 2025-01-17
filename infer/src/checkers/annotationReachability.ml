@@ -494,7 +494,9 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
   let add_transitive_calls {analysis_data= {proc_desc; tenv; analyze_dependency}; specs}
       call_site_info ~callee_pname astate =
     match analyze_dependency callee_pname with
-    | Error _ ->
+    | Error err ->
+        L.d_printf "No summary for callee `%a`: %a@\n" Procname.pp callee_pname
+          AnalysisResult.pp_no_summary err ;
         astate
     | Ok callee_call_map ->
         L.d_printf "Applying summary of callee `%a`@\n" Procname.pp callee_pname ;
