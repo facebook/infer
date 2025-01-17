@@ -8,4 +8,9 @@
 
 open! IStd
 
-include DBWriterS.S
+val use_daemon : unit -> bool
+
+val override_use_daemon : bool -> unit
+(** override the default of whether the process should use DB daemon [true] or not [false] *)
+
+val perform : DBWriterCommand.t -> unit

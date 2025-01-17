@@ -268,7 +268,7 @@ module CaptureWorker = struct
         ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath CaptureDB
       in
       let capture_db = Database.Secondary capture_db_abspath in
-      DBWriter.override_use_daemon false ;
+      DBWriterProcess.override_use_daemon false ;
       Database.create_db capture_db CaptureDatabase ;
       Database.new_database_connection capture_db CaptureDatabase
     in

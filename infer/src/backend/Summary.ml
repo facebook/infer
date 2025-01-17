@@ -410,4 +410,5 @@ module OnDisk = struct
     let report_summary = ReportSummary.of_err_log proc_name err_log in
     DBWriter.update_report_summary ~proc_uid:(Procname.to_unique_id proc_name)
       ~merge_report_summary:(ReportSummary.SQLite.serialize report_summary)
+      ()
 end
