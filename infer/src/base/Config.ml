@@ -1147,6 +1147,10 @@ and buck_mode =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `Java) "Buck integration for Java."
   |> ignore ;
+  CLOpt.mk_bool ~long:"buck-python"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    ~f:(set_mode `Python) "Buck integration for Python."
+  |> ignore ;
   buck_mode
 
 
@@ -4008,6 +4012,8 @@ and buck_mode : BuckMode.t option =
       Some Erlang
   | `Java, _ ->
       Some Java
+  | `Python, _ ->
+      Some Python
 
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list

@@ -275,6 +275,11 @@ OPTIONS
            --no-buck-merge-all-deps)
            See also infer-capture(1).
 
+       --buck-python
+           Activates: Buck integration for Python. (Conversely:
+           --no-buck-python)
+           See also infer-capture(1).
+
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression.

@@ -149,7 +149,7 @@ module Target = struct
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | Clang, Compile | Erlang, _ ->
+    | Clang, Compile | Erlang, _ | Python, _ ->
         target
     | Clang, _ ->
         add_flavor_internal target "infer-capture-all"
@@ -380,13 +380,15 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
       L.die InternalError "Not used"
   | Java ->
       "^(java|android)_library$"
+  | Python ->
+      "^python_(binary|library|test)$"
 
 
 let resolve_pattern_targets (buck_mode : BuckMode.t) version targets =
   let target_set = List.rev_map targets ~f:Query.target |> Query.set in
   let deps_query =
     match (buck_mode, version) with
-    | Clang, V2 ->
+    | Clang, V2 | Python, _ ->
         if Config.buck2_query_deps then Query.deps Config.buck_dependency_depth else Fn.id
     | Clang, V1 | ClangCompilationDB NoDependencies, _ | Erlang, _ ->
         Fn.id

@@ -20,7 +20,7 @@ let pp_clang_compilation_db_deps fmt = function
       F.pp_print_string fmt "DepsAllDepths"
 
 
-type t = ClangCompilationDB of clang_compilation_db_deps | Clang | Erlang | Java
+type t = ClangCompilationDB of clang_compilation_db_deps | Clang | Erlang | Java | Python
 
 let pp fmt = function
   | ClangCompilationDB clang_compilation_db_deps ->
@@ -32,13 +32,15 @@ let pp fmt = function
       F.pp_print_string fmt "Erlang/buck2"
   | Java ->
       F.pp_print_string fmt "Java"
+  | Python ->
+      F.pp_print_string fmt "Python"
 
 
 let is_clang_compilation_db = function
   | ClangCompilationDB _ ->
       true
-  | Clang | Erlang | Java ->
+  | Clang | Erlang | Java | Python ->
       false
 
 
-let is_clang = function Clang -> true | ClangCompilationDB _ | Erlang | Java -> false
+let is_clang = function Clang -> true | ClangCompilationDB _ | Erlang | Java | Python -> false

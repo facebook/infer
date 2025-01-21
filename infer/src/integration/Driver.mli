@@ -21,6 +21,7 @@ type mode =
   | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlJava of {build_cmd: string list}
+  | BxlPython of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Erlc of {args: string list}
