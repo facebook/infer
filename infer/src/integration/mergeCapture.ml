@@ -59,21 +59,30 @@ module TenvMerger = struct
 
 
   let start infer_deps_file =
-    match Unix.fork () with
-    | `In_the_child ->
-        ForkUtils.protect ~f:(merge_global_tenvs ~normalize:true) infer_deps_file ;
-        L.exit 0
-    | `In_the_parent child_pid ->
-        child_pid
+    if Config.multicore then
+      `DomainWorker
+        (Domain.spawn (fun () ->
+             Database.new_database_connections Primary ;
+             merge_global_tenvs ~normalize:true infer_deps_file ) )
+    else
+      match Unix.fork () with
+      | `In_the_child ->
+          ForkUtils.protect ~f:(merge_global_tenvs ~normalize:true) infer_deps_file ;
+          L.exit 0
+      | `In_the_parent child_pid ->
+          `ForkWorker child_pid
 
 
-  let wait child_pid =
-    match Unix.waitpid child_pid with
-    | Error _ as err ->
-        L.die InternalError "Worker terminated abnormally: %s.@\n"
-          (Unix.Exit_or_signal.to_string_hum err)
-    | Ok () ->
-        ()
+  let wait = function
+    | `DomainWorker domain ->
+        Domain.join domain
+    | `ForkWorker child_pid -> (
+      match Unix.waitpid child_pid with
+      | Error _ as err ->
+          L.die InternalError "Worker terminated abnormally: %s.@\n"
+            (Unix.Exit_or_signal.to_string_hum err)
+      | Ok () ->
+          Tenv.Global.force_load () |> ignore )
 end
 
 let merge_global_tenv = TenvMerger.merge_into_global
@@ -85,7 +94,6 @@ let merge_captured_targets ~root =
   let tenv_merger_child = TenvMerger.start infer_deps_file in
   DBWriter.merge_captures ~root ~infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
-  Tenv.Global.force_load () |> ignore ;
   let targets_num =
     let counter = ref 0 in
     let incr_counter _line = incr counter in
