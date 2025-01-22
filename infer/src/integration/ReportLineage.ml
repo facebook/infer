@@ -33,7 +33,7 @@ let worker source_file =
 
 let report_json () =
   let tasks () =
-    ProcessPool.TaskGenerator.of_list ~finish:ProcessPool.TaskGenerator.finish_always_none
+    TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none
       (SourceFiles.get_all ~filter:(fun _ -> true) ())
   in
   Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:worker ~child_epilogue:ignore

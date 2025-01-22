@@ -167,7 +167,7 @@ let capture_files ~is_binary files =
   (* TODO(vsiles) keep track of the number of success / failures like Hack *)
   let n_captured, n_error = (ref 0, ref 0) in
   let tasks () =
-    ProcessPool.TaskGenerator.of_list files ~finish:(fun result _ ->
+    TaskGenerator.of_list files ~finish:(fun result _ ->
         match result with
         | Some () ->
             incr n_error ;

@@ -44,7 +44,7 @@ module Runner = struct
 end
 
 let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
-  let task_generator = ProcessPool.TaskGenerator.of_list ~finish tasks in
+  let task_generator = TaskGenerator.of_list ~finish tasks in
   let task_bar = TaskBar.create ~jobs:1 in
   (ProcessPoolState.update_status :=
      fun t status ->
@@ -53,7 +53,7 @@ let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
   TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
   TaskBar.tasks_done_reset task_bar ;
   let for_child_info =
-    {ProcessPool.TaskGenerator.child_slot= -1; child_pid= Unix.getpid (); is_first_update= true}
+    {TaskGenerator.child_slot= -1; child_pid= Unix.getpid (); is_first_update= true}
   in
   let rec run_tasks () =
     if not (task_generator.is_empty ()) then (

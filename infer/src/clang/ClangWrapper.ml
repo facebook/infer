@@ -177,9 +177,7 @@ let s fmt l = match l with [_] -> () | [] | _ :: _ :: _ -> F.pp_print_char fmt '
 
 let exec_in_parallel ~prog ~args commands =
   L.progress "Starting parallel capture for %d command%a@\n%!" (List.length commands) s commands ;
-  let tasks () =
-    ProcessPool.TaskGenerator.of_list ~finish:ProcessPool.TaskGenerator.finish_always_none commands
-  in
+  let tasks () = TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none commands in
   Tasks.Runner.create tasks ~jobs:Config.jobs ~child_prologue:ignore ~child_epilogue:ignore
     ~f:(fun command ->
       !ProcessPoolState.update_status

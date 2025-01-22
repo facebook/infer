@@ -325,7 +325,7 @@ let process_output_in_parallel ic =
   let worker_blueprint = CaptureWorker.mk_blueprint () in
   let on_finish = function Some () -> incr n_error | None -> incr n_captured in
   let tasks () =
-    ProcessPool.TaskGenerator.
+    TaskGenerator.
       { remaining_tasks= (fun () -> IterSeq.estimated_remaining unit_iter)
       ; is_empty= (fun () -> IterSeq.is_empty unit_iter)
       ; finished= (fun ~result _ -> on_finish result)

@@ -9,4 +9,4 @@ open! IStd
 val make :
      finish:('a option -> TaskSchedulerTypes.target -> TaskSchedulerTypes.target option)
   -> SourceFile.t list
-  -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t
+  -> (TaskSchedulerTypes.target, 'a) TaskGenerator.t

@@ -12,6 +12,4 @@ let make ~finish call_graph sources =
      file-level analyses. This is done by chaining the file scheduler after
      [replay_call_graph]. This is similar to how callgraph does it but the expectation here is that
      by then all procedure-level analyses required by those have been done already. *)
-  ProcessPool.TaskGenerator.chain
-    (CallGraphScheduler.bottom_up call_graph)
-    (FileScheduler.make ~finish sources)
+  TaskGenerator.chain (CallGraphScheduler.bottom_up call_graph) (FileScheduler.make ~finish sources)

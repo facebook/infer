@@ -12,7 +12,7 @@ val iter_captured_procs_and_callees : (Procname.t -> Procname.t list -> unit) ->
 val make :
      finish:('a option -> TaskSchedulerTypes.target -> TaskSchedulerTypes.target option)
   -> SourceFile.t list
-  -> (TaskSchedulerTypes.target, 'a) ProcessPool.TaskGenerator.t
+  -> (TaskSchedulerTypes.target, 'a) TaskGenerator.t
 (** task generator that works by
 
     - loading the syntactic call graph from the capture DB

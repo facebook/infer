@@ -59,8 +59,7 @@ let run_compilation_database compilation_database should_capture_file =
   L.progress "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
   let compilation_commands = List.map ~f:create_cmd compilation_data in
   let tasks () =
-    ProcessPool.TaskGenerator.of_list ~finish:ProcessPool.TaskGenerator.finish_always_none
-      compilation_commands
+    TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none compilation_commands
   in
   (* no stats to record so [child_epilogue] does nothing and we ignore the return
      {!Tasks.Runner.run} *)

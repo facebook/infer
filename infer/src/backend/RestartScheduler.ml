@@ -19,7 +19,7 @@ type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_fil
 
 let restart_count = ref 0
 
-let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGenerator.t =
+let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) TaskGenerator.t =
   let remaining = ref (Queue.length ready) in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
@@ -60,7 +60,7 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result) ProcessPool.TaskGe
     | _ ->
         None
   in
-  let next {ProcessPool.TaskGenerator.child_pid; is_first_update} =
+  let next {TaskGenerator.child_pid; is_first_update} =
     if is_first_update then
       (* new update cycle, worth checking if the first job in the queue is still blocked again *)
       waiting_for_blocked_target := false ;

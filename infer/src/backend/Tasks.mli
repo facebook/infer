@@ -22,7 +22,7 @@ module Runner : sig
     -> child_prologue:(ProcessPool.Worker.id -> unit)
     -> f:('work, 'result) doer
     -> child_epilogue:(ProcessPool.Worker.id -> 'final)
-    -> (unit -> ('work, 'result) ProcessPool.TaskGenerator.t)
+    -> (unit -> ('work, 'result) TaskGenerator.t)
     -> ('work, 'final, 'result) t
   (** Create a runner running [jobs] jobs in parallel *)
 
