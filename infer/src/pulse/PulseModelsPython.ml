@@ -244,7 +244,7 @@ let stdlib_modules : IString.Set.t =
     ; "zoneinfo" ]
 
 
-let reserved_builtins = ["str"; "type"]
+let reserved_builtins = ["int"; "str"; "type"]
 
 let module_tname module_name =
   let str = F.asprintf "%s%s" PythonClassName.globals_prefix module_name in
@@ -422,6 +422,18 @@ let make_type arg : DSL.aval option DSL.model_monad =
       ret (Some res)
 
 
+let make_int_internal arg : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_int = as_constant_int arg in
+  match opt_int with
+  | None ->
+      constructor ~deref:false int_tname []
+  | Some i ->
+      let* res = int i in
+      let* () = and_dynamic_type_is res (Typ.mk_struct int_tname) in
+      ret res
+
+
 (* Only Python frontend builtins ($builtins.py_) have a C-style syntax, so we
    must catch other specific calls here *)
 let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_monad =
@@ -434,6 +446,9 @@ let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_m
   | `PyLib "asyncio", "sleep", _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
+      ret (Some res)
+  | `PyBuiltin, "int", [arg] ->
+      let* res = make_int_internal arg in
       ret (Some res)
   | `PyBuiltin, "str", _ ->
       let* res = fresh () in
@@ -734,16 +749,7 @@ let make_int arg : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* opt_int = as_constant_int arg in
-  let* res =
-    match opt_int with
-    | None ->
-        constructor ~deref:false int_tname []
-    | Some i ->
-        let* res = int i in
-        let* () = and_dynamic_type_is res (Typ.mk_struct int_tname) in
-        ret res
-  in
+  let* res = make_int_internal arg in
   assign_ret res
 
 

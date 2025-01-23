@@ -8,7 +8,8 @@ import types
 
 
 async def fp_await_condition_typing_ok():
-    if type(5) == int:
+    x = int(5)
+    if type(x) == int:
         await asyncio.sleep(1)
     else:
         asyncio.sleep(1)
