@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
+import types
 
 
 async def fp_await_condition_typing_ok():
@@ -22,6 +23,29 @@ async def await_condition_typing_bad():
 
 async def await_condition_typing_with_arg_bad(x):
     if type(x) == str:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+class Name:
+    def __init__(self, name):
+        self.name = name
+
+
+async def fp_await_condition_typing_user_defined_ok():
+    x = Name("foo")
+    if type(x) == Name:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def fp_await_condition_typing_fun_ok():
+    def x():
+        return -1
+
+    if type(x) == types.FunctionType:
         await asyncio.sleep(1)
     else:
         asyncio.sleep(1)

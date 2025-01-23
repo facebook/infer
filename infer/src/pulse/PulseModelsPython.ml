@@ -244,6 +244,8 @@ let stdlib_modules : IString.Set.t =
     ; "zoneinfo" ]
 
 
+let reserved_builtins = ["str"; "type"]
+
 let module_tname module_name =
   let str = F.asprintf "%s%s" PythonClassName.globals_prefix module_name in
   Typ.PythonClass (PythonClassName.make str)
@@ -401,6 +403,25 @@ let await_awaitable arg : unit DSL.model_monad =
   fst arg |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command
 
 
+let make_type arg : DSL.aval option DSL.model_monad =
+  let open DSL.Syntax in
+  let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+  let* res = fresh () in
+  match arg_dynamic_type_data with
+  | Some {Formula.typ= {desc= Tstruct (PythonClass py_class)}} -> (
+    match PythonClassName.get_reserved_builtin_from_underlying_pyclass py_class with
+    | Some builtin ->
+        let* () =
+          and_dynamic_type_is res
+            (Typ.mk_struct (PythonClass (PythonClassName.mk_reserved_builtin builtin)))
+        in
+        ret (Some res)
+    | None ->
+        ret (Some res) )
+  | _ ->
+      ret (Some res)
+
+
 (* Only Python frontend builtins ($builtins.py_) have a C-style syntax, so we
    must catch other specific calls here *)
 let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_monad =
@@ -417,6 +438,8 @@ let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_m
   | `PyBuiltin, "str", _ ->
       let* res = fresh () in
       ret (Some res)
+  | `PyBuiltin, "type", [arg] ->
+      make_type arg
   | _, _, _ ->
       ret None
 
@@ -667,7 +690,6 @@ let load_fast name locals : model =
 
 let tag_if_builtin name aval : unit DSL.model_monad =
   let open DSL.Syntax in
-  let reserved_builtins = ["str"] in
   if List.mem ~equal:String.equal reserved_builtins name then
     and_dynamic_type_is aval
       (Typ.mk_struct (PythonClass (PythonClassName.mk_reserved_builtin name)))

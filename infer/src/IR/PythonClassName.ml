@@ -67,3 +67,13 @@ let mk_reserved_builtin name =
 let is_reserved_builtin {classname} = String.is_prefix classname ~prefix:closure_builtin_prefix
 
 let get_reserved_builtin {classname} = String.chop_prefix classname ~prefix:closure_builtin_prefix
+
+let builtin_types = ["Object"; "Dict"; "Int"; "Tuple"]
+
+let get_reserved_builtin_from_underlying_pyclass {classname} =
+  let py_suffix = String.chop_prefix classname ~prefix:"Py" in
+  match py_suffix with
+  | Some s when List.mem builtin_types s ~equal:String.equal ->
+      Some (String.lowercase s)
+  | _ ->
+      None

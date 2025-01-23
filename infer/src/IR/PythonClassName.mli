@@ -41,6 +41,8 @@ val get_module_name : t -> string option
 
 val get_reserved_builtin : t -> string option
 
+val get_reserved_builtin_from_underlying_pyclass : t -> string option
+
 val globals_prefix : string
 
 val concatenate_package_name_and_file_name : t -> string -> t option
