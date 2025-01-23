@@ -175,12 +175,14 @@ let terminate () =
   Option.iter !server_pid ~f:(fun server_pid ->
       L.debug Analysis Quiet "Sqlite write daemon: waiting for process %a to finish@." Pid.pp
         server_pid ;
-      let pid, exit_or_signal = Unix.wait (`Pid server_pid) in
-      Result.iter_error exit_or_signal ~f:(function error ->
-          ( L.internal_error "ERROR: Sqlite write daemon terminated with an error: %s@\n"
-              (Core_unix.Exit_or_signal.to_string_hum (Error error)) ;
-            try ServerSocket.remove_socket_file () with Unix.Unix_error _ -> () ) ) ;
-      L.debug Analysis Quiet "Sqlite write daemon: process %a terminated@." Pid.pp pid )
+      try
+        let pid, exit_or_signal = Unix.wait (`Pid server_pid) in
+        Result.iter_error exit_or_signal ~f:(function error ->
+            ( L.internal_error "ERROR: Sqlite write daemon terminated with an error: %s@\n"
+                (Core_unix.Exit_or_signal.to_string_hum (Error error)) ;
+              try ServerSocket.remove_socket_file () with Unix.Unix_error _ -> () ) ) ;
+        L.debug Analysis Quiet "Sqlite write daemon: process %a terminated@." Pid.pp pid
+      with Unix.Unix_error _ -> () )
 
 
 let start =

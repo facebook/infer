@@ -86,10 +86,11 @@ let run_analysis replay_call_graph source_files_to_analyze_lazy =
   read_procs_to_analyze ()
   |> NodeSet.iter (fun {Node.proc_name; specialization} ->
          TargetStack.push (Procname {specialization; proc_name}) ) ;
-  Database.db_close () ;
-  let n_workers = min (Domain.recommended_domain_count () - 1) (TargetStack.length ()) in
+  DBWriter.terminate () ;
+  DBWriter.use_multicore := true ;
+  DBWriter.start () ;
+  let n_workers = min (Domain.recommended_domain_count () - 2) (TargetStack.length ()) in
   let workers = List.init n_workers ~f:(fun num -> Domain.spawn (fun () -> worker num)) in
-  Database.new_database_connections Primary ;
   L.debug Analysis Quiet "Multicore analysis spawned %d domains.@." n_workers ;
   List.iter workers ~f:Domain.join ;
   L.debug Analysis Quiet "Multicore analysis finished.@." ;

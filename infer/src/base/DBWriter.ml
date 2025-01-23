@@ -7,8 +7,12 @@
 
 open! IStd
 
+let use_multicore = ref false
+
 let perform cmd =
-  if DBWriterProcess.use_daemon () then DBWriterProcess.perform cmd else DBWriterCommand.perform cmd
+  if !use_multicore then DBWriterDomain.perform cmd
+  else if DBWriterProcess.use_daemon () then DBWriterProcess.perform cmd
+  else DBWriterCommand.perform cmd
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
