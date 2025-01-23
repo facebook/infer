@@ -110,7 +110,14 @@ let dump_textual_file ~version pyc module_ =
 
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
-  let sourcefile = Textual.SourceFile.create file in
+  let sourcefile =
+    let file' =
+      (* if we are in buck-mode, we need to use absolute paths in order for Config.project_root
+         to be properly applied in SourceFile.create *)
+      if Config.buck then Utils.filename_to_absolute ~root:Config.buck2_root file else file
+    in
+    Textual.SourceFile.create file'
+  in
   let* code = FFI.from_file ~is_binary file |> Result.map_error ~f:Error.ffi in
   let* pyir = PyIR.mk ~debug:false code |> Result.map_error ~f:Error.ir in
   let textual = PyIR2Textual.mk_module pyir in
