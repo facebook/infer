@@ -29,6 +29,7 @@ type build_system =
   | BNdk
   | BPython
   | BRebar3
+  | BSwiftc
   | BXcode
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]

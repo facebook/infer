@@ -36,6 +36,7 @@ type mode =
   | Python of {prog: string; args: string list}
   | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
+  | Swiftc of {args: string list}
   | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
@@ -93,6 +94,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Python driver mode:@\nfiles = '%a'" Pp.cli_args files
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
+  | Swiftc {args} ->
+      F.fprintf fmt "Swift driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {prog; args} ->
@@ -215,6 +218,9 @@ let capture ~changed_files mode =
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
+      | Swiftc {args} ->
+          L.progress "Capturing in swift mode...@." ;
+          Swift.capture ~command:"swiftc" ~args
       | Erlc {args} ->
           L.progress "Capturing in erlc mode...@." ;
           Erlang.capture ~command:"erlc" ~args
@@ -382,6 +388,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.hack_enabled
     | `Python ->
         Version.python_enabled
+    | `Swift ->
+        Version.swift_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -400,6 +408,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "hack"
       | `Python ->
           "python"
+      | `Swift ->
+          "swift"
       | `Xcode ->
           "clang and xcode"
     in
@@ -424,6 +434,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
   | BRebar3 ->
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
+  | BSwiftc ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Swift
   | BErlc ->
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BHackc ->
@@ -547,6 +559,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           NdkBuild {build_cmd}
       | BRebar3 ->
           Rebar3 {args}
+      | BSwiftc ->
+          Swiftc {args}
       | BErlc ->
           Erlc {args}
       | BHackc ->
