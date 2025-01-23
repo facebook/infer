@@ -1676,8 +1676,47 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   update_pre_for_kotlin_proc astate proc_attrs formals
 
 
+(* work a bit hard: we need to canonicalize abstract values taken out of edges on the fly and
+   compare the two edges maps access per access so we sort their respective accesses first to behave
+   in [n (lg n)] instead of quadratically *)
+let equal_edges astate edges_pre edges_post =
+  let to_sorted astate edges =
+    RawMemory.Edges.to_seq edges
+    |> Stdlib.Seq.map (fun (access, (v, _hist)) ->
+           ( CanonValue.canon_access astate access |> downcast_access
+           , CanonValue.canon' astate v |> downcast ) )
+    |> Stdlib.Seq.fold_left (fun l x -> x :: l) []
+    |> List.sort ~compare:(fun (access1, _) (access2, _) ->
+           RawMemory.Access.compare access1 access2 )
+  in
+  List.equal [%compare.equal: RawMemory.Access.t * AbstractValue.t] (to_sorted astate edges_pre)
+    (to_sorted astate edges_post)
+
+
+let rec equal_pre_post_heaps visited astate v =
+  if AbstractValue.Set.mem v !visited then true
+  else
+    let raw_edges_post_opt = RawMemory.find_opt v (SafeMemory.select `Post astate) in
+    let raw_edges_pre_opt = RawMemory.find_opt v (SafeMemory.select `Pre astate) in
+    (* addresses get "registered" in the pre with empty edges, which doesn't happen in the post and
+       can lead to spuriously considering that the edges are different *)
+    let raw_edges_pre_opt =
+      if Option.exists raw_edges_pre_opt ~f:RawMemory.Edges.is_empty then None
+      else raw_edges_pre_opt
+    in
+    visited := AbstractValue.Set.add v !visited ;
+    Option.equal (equal_edges astate) raw_edges_pre_opt raw_edges_post_opt
+    && Option.for_all raw_edges_pre_opt ~f:(fun raw_edges_pre ->
+           RawMemory.Edges.for_all raw_edges_pre ~f:(fun (_access, (v, _)) ->
+               equal_pre_post_heaps visited astate v ) )
+
+
 let are_same_values_as_pre_formals proc_desc values astate =
   let open IOption.Let_syntax in
+  let visited_ref = ref AbstractValue.Set.empty in
+  let compatible_sub_heaps astate v_pre v_post =
+    AbstractValue.equal v_pre v_post && equal_pre_post_heaps visited_ref astate v_pre
+  in
   let deref pre_or_post addr astate =
     SafeMemory.find_edge_opt pre_or_post addr Dereference astate >>| fst >>| downcast
   in
@@ -1694,7 +1733,7 @@ let are_same_values_as_pre_formals proc_desc values astate =
         else
           let formal = Pvar.mk mangled_name proc_name in
           let formal_v = pvar_value `Pre formal astate |> Option.value_exn in
-          AbstractValue.equal formal_v v )
+          compatible_sub_heaps astate formal_v v )
     |> function
     | List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
   in
@@ -1716,7 +1755,7 @@ let are_same_values_as_pre_formals proc_desc values astate =
             else
               let v_pre = deref `Pre (ValueOrigin.value vo) astate in
               let v_curr = pvar_value `Post pvar astate in
-              Option.equal AbstractValue.equal v_pre v_curr
+              Option.equal (compatible_sub_heaps astate) v_pre v_curr
         | LogicalVar _ ->
             (* should be impossible *)
             L.internal_error "Logical variable found in precondition" ;
