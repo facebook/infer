@@ -14,13 +14,15 @@ open PulseDomainInterface
 open PulseModelsImport
 module DSL = PulseModelsDSL
 
+let bool_tname = TextualSil.python_bool_type_name
+
 let dict_tname = TextualSil.python_dict_type_name
 
 let int_tname = TextualSil.python_int_type_name
 
-let none_tname = TextualSil.python_none_type_name
-
 let tuple_tname = TextualSil.python_tuple_type_name
+
+let none_tname = Typ.PythonClass (PythonClassName.mk_reserved_builtin "None")
 
 (* sys.stdlib_module_names *)
 let stdlib_modules : IString.Set.t =
@@ -753,6 +755,20 @@ let make_int arg : model =
   assign_ret res
 
 
+let make_bool bool : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* bool = int (if bool then 1 else 0) in
+  let* () = and_dynamic_type_is bool (Typ.mk_struct bool_tname) in
+  ret bool
+
+
+let make_random_bool () =
+  let open DSL.Syntax in
+  let* res = fresh () in
+  let* () = and_dynamic_type_is res (Typ.mk_struct bool_tname) in
+  ret res
+
+
 let make_none : model =
   let open DSL.Syntax in
   start_model
@@ -817,6 +833,33 @@ let die_if_other_builtin (_, proc_name) _ =
   false
 
 
+let is_builtin typename : bool =
+  match (typename : Typ.Name.t) with
+  | PythonClass pyclass ->
+      PythonClassName.is_reserved_builtin pyclass
+  | _ ->
+      false
+
+
+let compare_eq arg1 arg2 : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
+  let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
+  let* res =
+    match (arg1_dynamic_type_data, arg2_dynamic_type_data) with
+    | ( Some {Formula.typ= {desc= Tstruct arg1_type_name}}
+      , Some {Formula.typ= {desc= Tstruct arg2_type_name}} )
+      when is_builtin arg1_type_name || is_builtin arg2_type_name ->
+        make_bool (Typ.Name.equal arg1_type_name arg2_type_name)
+    | _ ->
+        L.d_printfln "py_compare_eq: at least one unknown dynamic type: unknown result" ;
+        make_random_bool ()
+  in
+  assign_ret res
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
@@ -854,12 +897,12 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_call_function_ex" &::.*+++> unknown
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_compare_bad" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_eq" &::.*+++> unknown
+  ; -"$builtins" &:: "py_compare_eq" <>$ arg $+ arg $--> compare_eq
   ; -"$builtins" &:: "py_compare_exception" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_ge" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_gt" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_in" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_is" &::.*+++> unknown
+  ; -"$builtins" &:: "py_compare_is" <>$ arg $+ arg $--> compare_eq
   ; -"$builtins" &:: "py_compare_is_not" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_le" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_lt" &::.*+++> unknown

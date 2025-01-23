@@ -7,7 +7,7 @@ import asyncio
 import types
 
 
-async def fp_await_condition_typing_ok():
+async def await_condition_typing_ok():
     x = int(5)
     if type(x) == int:
         await asyncio.sleep(1)
@@ -47,6 +47,32 @@ async def fp_await_condition_typing_fun_ok():
         return -1
 
     if type(x) == types.FunctionType:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def await_condition_is_none_ok():
+    x = None
+    if x is None:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def fp_await_condition_val_equal_ok():
+    x = Name("foo")
+    y = Name("foo")
+    if x == y:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def await_condition_phys_equal_bad():
+    x = Name("foo")
+    y = Name("foo")
+    if x is y:
         await asyncio.sleep(1)
     else:
         asyncio.sleep(1)

@@ -141,7 +141,7 @@ let python_dict_type_name = SilTyp.PythonClass (PythonClassName.make "PyDict")
 
 let python_int_type_name = SilTyp.PythonClass (PythonClassName.make "PyInt")
 
-let python_none_type_name = SilTyp.PythonClass (PythonClassName.make "PyNone")
+let python_bool_type_name = SilTyp.PythonClass (PythonClassName.make "PyBool")
 
 let python_tuple_type_name = SilTyp.PythonClass (PythonClassName.make "PyTuple")
 
