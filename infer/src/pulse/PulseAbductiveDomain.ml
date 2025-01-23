@@ -336,6 +336,12 @@ module Internal = struct
         (astate.post :> base_domain).stack
 
 
+    let for_all pre_or_post f astate =
+      BaseStack.for_all
+        (fun var vo -> f var (CanonValue.canon_value_origin astate vo))
+        (select pre_or_post astate)
+
+
     let keys astate = fold_keys List.cons astate []
 
     let fold_merge pre_or_post astate1 astate2 ~init ~f =
@@ -1671,20 +1677,53 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
 
 
 let are_same_values_as_pre_formals proc_desc values astate =
-  List.for_all2 (Procdesc.get_formals proc_desc) values ~f:(fun (mangled_name, _, _) v ->
-      if Language.curr_language_is Hack && Mangled.is_self mangled_name then true
-      else
-        let formal = Pvar.mk mangled_name (Procdesc.get_proc_name proc_desc) in
-        let formal_addr =
-          SafeStack.find_opt `Pre (Var.of_pvar formal) astate
-          |> Option.value_exn |> ValueOrigin.value
-        in
-        let formal_v =
-          SafeMemory.find_edge_opt `Pre formal_addr Dereference astate
-          |> Option.value_exn |> fst |> downcast
-        in
-        AbstractValue.equal formal_v v )
-  |> function List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
+  let open IOption.Let_syntax in
+  let deref pre_or_post addr astate =
+    SafeMemory.find_edge_opt pre_or_post addr Dereference astate >>| fst >>| downcast
+  in
+  let pvar_value pre_or_post pvar astate =
+    let* pvar_addr =
+      SafeStack.find_opt pre_or_post (Var.of_pvar pvar) astate >>| ValueOrigin.value
+    in
+    deref pre_or_post pvar_addr astate
+  in
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let same_input_parameters () =
+    List.for_all2 (Procdesc.get_formals proc_desc) values ~f:(fun (mangled_name, _, _) v ->
+        if Language.curr_language_is Hack && Mangled.is_self mangled_name then true
+        else
+          let formal = Pvar.mk mangled_name proc_name in
+          let formal_v = pvar_value `Pre formal astate |> Option.value_exn in
+          AbstractValue.equal formal_v v )
+    |> function
+    | List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
+  in
+  let same_globals () =
+    let formals =
+      Procdesc.get_formals proc_desc
+      |> List.map ~f:(fun (mangled_name, _, _) -> Pvar.mk mangled_name proc_name)
+      |> Pvar.Set.of_list
+    in
+    (* parameters are given in the same order as [Procdesc.get_formals proc_desc] so above we look
+       up each one in turn, but to discover other input values in the precondition (global
+       variables) we need to enumerate the bindings of the pre stack, skipping over the parameters
+       we already handled *)
+    SafeStack.for_all `Pre
+      (fun var vo ->
+        match var with
+        | ProgramVar pvar ->
+            if Pvar.Set.mem pvar formals then (* handled above *) true
+            else
+              let v_pre = deref `Pre (ValueOrigin.value vo) astate in
+              let v_curr = pvar_value `Post pvar astate in
+              Option.equal AbstractValue.equal v_pre v_curr
+        | LogicalVar _ ->
+            (* should be impossible *)
+            L.internal_error "Logical variable found in precondition" ;
+            true )
+      astate
+  in
+  same_input_parameters () && same_globals ()
 
 
 let leq ~lhs ~rhs =

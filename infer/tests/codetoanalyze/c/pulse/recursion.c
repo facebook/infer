@@ -27,6 +27,23 @@ void mutual2_bad() { mutual3_bad(); }
 
 void mutual1_bad() { mutual2_bad(); }
 
+int global;
+
+// should report MUTUAL_RECURSION not INFINITE_RECURSION
+void recursive_modify_global_ok(int x) {
+  if (global > 0) {
+    global--;
+    recursive_modify_global_ok(x);
+  }
+}
+
+void infinite_recursion_unchanged_global_bad(int x) {
+  if (global > 0) {
+    global = global;
+    infinite_recursion_unchanged_global_bad(x);
+  }
+}
+
 #include "recursion2.h"
 
 void across_file_1() { across_file_2(); }
