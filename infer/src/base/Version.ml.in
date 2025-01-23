@@ -61,4 +61,4 @@ let python_exe = "@PYTHON@"
 
 let python_enabled = is_yes "@BUILD_PYTHON_ANALYZERS@"
 
-let swift_enabled = is_yes "yes"
+let swift_enabled = is_yes "@BUILD_SWIFT_ANALYZERS@"
