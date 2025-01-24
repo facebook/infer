@@ -57,7 +57,7 @@ jobs:
           - macOS-13
           - ubuntu-latest
         ocaml-compiler:
-          - ocaml-variants.4.14.0+options,ocaml-option-flambda
+          - ocaml-variants.5.2.1+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -93,7 +93,7 @@ jobs:
         run: cp opam/infer-tests.opam.locked opam/infer.opam.locked
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
