@@ -729,7 +729,7 @@ module Stack = struct
 end
 
 module TerminatorBuilder = struct
-  (** This is a terminator in a tempory state. We will cast the [ssa_args] when finalizing the
+  (** This is a terminator in a temporary state. We will cast the [ssa_args] when finalizing the
       consrtruction *)
   type node_call = {label: NodeName.t; ssa_args: Exp.opstack_symbol list}
 
@@ -1664,7 +1664,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "POP_TOP" -> (
       (* TODO: rethink this in the future.
          Keep the popped values around in case their construction involves side effects.
-         dpichardie: I don't see any raison to keep the popped value, except special care
+         dpichardie: I don't see any reason to keep the popped value, except special care
          with the YIELD operations. *)
       let* rhs, st = State.pop st in
       match (rhs : Exp.opstack_symbol) with
@@ -1991,7 +1991,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "POP_EXCEPT" ->
       internal_error st (Error.UnsupportedOpcode opname)
   | "BUILD_TUPLE_UNPACK_WITH_CALL"
-    (* No real difference betwen the two but in case of an error, which shouldn't happen since
+    (* No real difference between the two but in case of an error, which shouldn't happen since
        the code is known to compile *)
   | "BUILD_TUPLE_UNPACK" ->
       build_collection st arg ~f:(fun values -> Exp.Collection {kind= Tuple; values; unpack= true})
@@ -2000,7 +2000,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
   | "BUILD_SET_UNPACK" ->
       build_collection st arg ~f:(fun values -> Exp.Collection {kind= Set; values; unpack= true})
   | "BUILD_MAP_UNPACK_WITH_CALL" | "BUILD_MAP_UNPACK" ->
-      (* No real difference betwen the two but in case of an error, which shouldn't happen since
+      (* No real difference between the two but in case of an error, which shouldn't happen since
          the code is known to compile *)
       build_collection st arg ~f:(fun values -> Exp.Collection {kind= Map; values; unpack= true})
   | "YIELD_VALUE" ->
@@ -2113,7 +2113,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          https://quentin.pradet.me/blog/using-asynchronous-for-loops-in-python.html
          https://superfastpython.com/asyncio-async-for/
          We model it like a throwing exception for now. This offset will not be reached
-         by our DFS anyway since we don't model exceptionnal edges yet.
+         by our DFS anyway since we don't model exceptional edges yet.
       *)
       Ok (st, Some (TerminatorBuilder.Throw Exp.none))
   | "RERAISE" | "WITH_EXCEPT_START" ->
@@ -2326,8 +2326,8 @@ module Subroutine = struct
      Then, we hit a END_FINALLY, the current frame is either [None]
      or [Some offset] and we can make a decision.
      This approach is rather fragile because a the order of return
-     adresses in the real operand stack could **in theory** be messed
-     up by some stack operaion like ROT_TWO, ROT_THREE and so one.
+     addresses in the real operand stack could **in theory** be messed
+     up by some stack operation like ROT_TWO, ROT_THREE and so one.
      We do not try to detect such a strange situation for now.
   *)
 
