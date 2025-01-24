@@ -19,7 +19,7 @@ let library =
      -open IBase -open IR -open Textuallib -open Absint -open BO -open Checkers -open Costlib -open Concurrency -open Backend
      -open ClangFrontend -open ErlangFrontend -open JavaFrontend -open PythonFrontend %s %s))
  (libraries xmlm core IStdlib ATDGenerated IBase IR Textuallib Absint BO Checkers Costlib Concurrency Backend
-     ClangFrontend ErlangFrontend JavaFrontend PythonFrontend)
+     ClangFrontend ErlangFrontend JavaFrontend PythonFrontend SwiftFrontend)
  (preprocess (pps ppx_compare))
 )
 

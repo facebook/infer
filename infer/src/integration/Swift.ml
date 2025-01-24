@@ -9,10 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-let run_swift_frontend _source_file _llvm_bitcode =
-  (* TODO: plug in frontend *)
-  ()
-
+let run_swift_frontend source_file llvm_bitcode = SwiftFrontend.capture source_file llvm_bitcode
 
 let run_swift_frontend source_file llvm_bitcode =
   PerfEvent.(
