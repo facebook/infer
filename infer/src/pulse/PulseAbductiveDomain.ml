@@ -781,7 +781,7 @@ module Internal = struct
     let is_final =
       Tenv.lookup tenv typ_name
       |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
-      || Typ.Name.is_python_final typ_name
+      || Typ.Name.Python.is_final typ_name
     in
     if is_final then
       let phi' =
@@ -815,8 +815,8 @@ module Internal = struct
     let record_static_type astate (_var, typ, _, (src_addr, src_addr_hist)) =
       match typ with
       | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)}
-        when Typ.Name.is_objc_class typ_name || Typ.Name.is_hack_class typ_name
-             || Typ.Name.is_python_class typ_name ->
+        when Typ.Name.is_objc_class typ_name || Typ.Name.Hack.is_class typ_name
+             || Typ.Name.Python.is_class typ_name ->
           let pre_heap = (astate.pre :> BaseDomain.t).heap in
           let post_heap = (astate.post :> BaseDomain.t).heap in
           let addr = CanonValue.mk_fresh () in

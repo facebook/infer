@@ -200,26 +200,6 @@ module Name : sig
 
   val is_objc_block : t -> bool
 
-  val is_hack_class : t -> bool
-
-  val is_python_class : t -> bool
-
-  val is_python_final : t -> bool
-
-  val is_python_module : t -> bool
-
-  val is_python_module_attribute : t -> bool
-
-  val is_python_reserved_builtin : t -> bool
-
-  val get_python_module_name : t -> string option
-
-  val get_python_module_attribute_infos : t -> (t * string) option
-
-  val get_python_reserved_builtin : t -> string option
-
-  val python_concatenate_package_name_and_file_name : t -> string -> t option
-
   module C : sig
     val from_string : string -> t
 
@@ -235,6 +215,8 @@ module Name : sig
   end
 
   module Hack : sig
+    val is_class : t -> bool
+
     val static_companion : t -> t
     (** See {!HackClassName.static_companion} *)
 
@@ -252,6 +234,26 @@ module Name : sig
 
     val is_HH_classname : t -> bool
     (** Check return true if the typename is [HH::classname] *)
+  end
+
+  module Python : sig
+    val is_class : t -> bool
+
+    val is_final : t -> bool
+
+    val is_module : t -> bool
+
+    val is_module_attribute : t -> bool
+
+    val is_reserved_builtin : t -> bool
+
+    val get_module_name : t -> string option
+
+    val get_module_attribute_infos : t -> (t * string) option
+
+    val get_reserved_builtin : t -> string option
+
+    val concatenate_package_name_and_file_name : t -> string -> t option
   end
 
   module Java : sig

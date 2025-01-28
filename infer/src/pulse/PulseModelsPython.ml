@@ -278,14 +278,14 @@ module Dict = struct
       option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
           let opt_static_tname = Typ.name (Typ.strip_ptr field_typ) in
           option_iter opt_static_tname ~f:(fun static_tname ->
-              if Typ.Name.is_python_module_attribute static_tname then
+              if Typ.Name.Python.is_module_attribute static_tname then
                 let tname, attr =
-                  Typ.Name.get_python_module_attribute_infos static_tname |> Option.value_exn
+                  Typ.Name.Python.get_module_attribute_infos static_tname |> Option.value_exn
                 in
                 let* tname_is_defined = tenv_type_is_defined tname in
                 if tname_is_defined then propagate_field_type tname attr
                 else
-                  Typ.Name.python_concatenate_package_name_and_file_name tname attr
+                  Typ.Name.Python.concatenate_package_name_and_file_name tname attr
                   |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
               else add_static_type static_tname load_res ) )
     in
@@ -470,8 +470,8 @@ let call closure arg_names args : model =
   let* res =
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}}
-      when Typ.Name.is_python_reserved_builtin type_name -> (
-        let builtin_name = Typ.Name.get_python_reserved_builtin type_name |> Option.value_exn in
+      when Typ.Name.Python.is_reserved_builtin type_name -> (
+        let builtin_name = Typ.Name.Python.get_reserved_builtin type_name |> Option.value_exn in
         let* opt_special_call = modelled_python_call `PyBuiltin builtin_name args in
         match opt_special_call with
         | None ->
@@ -493,10 +493,10 @@ let call_method name obj arg_names args : model =
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
   let* res =
     match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} when Typ.Name.is_python_module type_name
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} when Typ.Name.Python.is_module type_name
       -> (
         (* since module types are final, static type will save us most of the time *)
-        let module_name = Typ.Name.get_python_module_name type_name |> Option.value_exn in
+        let module_name = Typ.Name.Python.get_module_name type_name |> Option.value_exn in
         let* str_name = as_constant_string_exn name in
         let* opt_special_call = modelled_python_call (`PyLib module_name) str_name args in
         match opt_special_call with

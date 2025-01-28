@@ -95,7 +95,7 @@ let reorder_hack_supers tenv ~ignore_require_extends ({Struct.supers} as str) =
 
 
 let fold_supers ?(ignore_require_extends = false) tenv name ~init ~f =
-  let is_hack = Typ.Name.is_hack_class name in
+  let is_hack = Typ.Name.Hack.is_class name in
   let rec aux worklist visited result =
     match worklist with
     | [] ->

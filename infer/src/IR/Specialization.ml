@@ -96,7 +96,7 @@ module Pulse = struct
   let has_type_in_specialization {dynamic_types} specialized_type =
     (* for Hack we don't care if type is Foo or Foo$static *)
     let get_hack_static_companion_origin typ =
-      if Typ.Name.is_hack_class typ && Typ.Name.Hack.is_static_companion typ then
+      if Typ.Name.Hack.is_class typ && Typ.Name.Hack.is_static_companion typ then
         Typ.Name.Hack.static_companion_origin typ
       else typ
     in
