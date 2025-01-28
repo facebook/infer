@@ -13,11 +13,11 @@ module TypeNameBridge = struct
   include TypeName
 
   (** the name of the Textual string type *)
-  let sil_string = {value= "String"; loc= Unknown}
+  let sil_string = of_string "String"
 
   (** the name of the Textual type of all types (do not ask what it the type of this type itself
       please...) *)
-  let sil_type_of_types = {value= "TYPE"; loc= Unknown}
+  let sil_type_of_types = of_string "TYPE"
 end
 
 (** is it safe to assign a value of type [given] to a variable of type [assigned] *)

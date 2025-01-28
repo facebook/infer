@@ -22,7 +22,7 @@ type error =
 
 let error_loc = function
   | UnknownField {enclosing_class; _} ->
-      enclosing_class.loc
+      enclosing_class.name.loc
   | ProcNotImplementedButInClosure {proc} | UnknownProc {proc} ->
       proc.name.loc
   | UnknownLabel {label; _} ->

@@ -342,18 +342,18 @@ class C:
 
     type PyGlobals::dummy = {random: *PyGlobals::random; a: *PyGlobals::asyncio;
                              y: *PyModuleAttr::dir1::dir2::mod::x; mod: *PyModuleAttr::dir1::dir2::mod;
-                             f: *closure:dummy.f; g: *closure:dummy.g; D: *PyClassCompanion::dummy::D;
-                             C: *PyClassCompanion::dummy::C}
+                             f: *PyClosure<dummy.f>; g: *PyClosure<dummy.g>;
+                             D: *PyClassCompanion::dummy::D; C: *PyClassCompanion::dummy::C}
 
-    type PyClassCompanion::dummy::C = {foo: *closure:dummy.C.foo}
+    type PyClassCompanion::dummy::C = {foo: *PyClosure<dummy.C.foo>}
 
-    type PyClassCompanion::dummy::D = {foo: *closure:dummy.D.foo}
+    type PyClassCompanion::dummy::D = {foo: *PyClosure<dummy.D.foo>}
 
-    type .final closure:dummy.D.foo = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.D.foo> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper closure:dummy.D.foo.call(__this: *closure:dummy.D.foo, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper PyClosure<dummy.D.foo>.call(__this: *PyClosure<dummy.D.foo>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.D.foo = load &__this
+          n0:*PyClosure<dummy.D.foo> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.D::foo(n1, n2)
@@ -361,11 +361,11 @@ class C:
 
     }
 
-    type .final closure:dummy.C.foo = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.C.foo> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper closure:dummy.C.foo.call(__this: *closure:dummy.C.foo, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper PyClosure<dummy.C.foo>.call(__this: *PyClosure<dummy.C.foo>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.C.foo = load &__this
+          n0:*PyClosure<dummy.C.foo> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.C::foo(n1, n2)
@@ -373,11 +373,11 @@ class C:
 
     }
 
-    type .final closure:dummy.C = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.C> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper closure:dummy.C.call(__this: *closure:dummy.C, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper PyClosure<dummy.C>.call(__this: *PyClosure<dummy.C>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.C = load &__this
+          n0:*PyClosure<dummy.C> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.C(n1, n2)
@@ -385,11 +385,11 @@ class C:
 
     }
 
-    type .final closure:dummy.D = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.D> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper closure:dummy.D.call(__this: *closure:dummy.D, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper PyClosure<dummy.D>.call(__this: *PyClosure<dummy.D>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.D = load &__this
+          n0:*PyClosure<dummy.D> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.D(n1, n2)
@@ -397,11 +397,11 @@ class C:
 
     }
 
-    type .final closure:dummy.g = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.g> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper .async closure:dummy.g.call(__this: *closure:dummy.g, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper .async PyClosure<dummy.g>.call(__this: *PyClosure<dummy.g>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.g = load &__this
+          n0:*PyClosure<dummy.g> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.g(n1, n2)
@@ -409,11 +409,11 @@ class C:
 
     }
 
-    type .final closure:dummy.f = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.f> = {globals: *PyGlobals::dummy}
 
-    define .closure_wrapper .args = "y,l" closure:dummy.f.call(__this: *closure:dummy.f, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper .args = "y,l" PyClosure<dummy.f>.call(__this: *PyClosure<dummy.f>, locals: *PyLocals) : *PyObject {
       #entry:
-          n0:*closure:dummy.f = load &__this
+          n0:*PyClosure<dummy.f> = load &__this
           n1:*PyGlobals::dummy = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.f(n1, n2)
@@ -448,21 +448,21 @@ class C:
           n28 = $builtins.py_store_name("mod", n16, n15, n8)
           n29 = $builtins.py_make_int(0)
           n30 = $builtins.py_store_name("x", n16, n15, n29)
-          n31 = __sil_allocate(<closure:dummy.f>)
+          n31 = __sil_allocate(<PyClosure<dummy.f>>)
           store n31.?.globals <- n15:*PyGlobals::dummy
           n9 = $builtins.py_make_function(n31, n0, n0, n0, n0)
           n33 = $builtins.py_store_name("f", n16, n15, n9)
-          n34 = __sil_allocate(<closure:dummy.g>)
+          n34 = __sil_allocate(<PyClosure<dummy.g>>)
           store n34.?.globals <- n15:*PyGlobals::dummy
           n10 = $builtins.py_make_function(n34, n0, n0, n0, n0)
           n36 = $builtins.py_store_name("g", n16, n15, n10)
-          n37 = __sil_allocate(<closure:dummy.D>)
+          n37 = __sil_allocate(<PyClosure<dummy.D>>)
           store n37.?.globals <- n15:*PyGlobals::dummy
           n11 = $builtins.py_make_function(n37, n0, n0, n0, n0)
           n39 = $builtins.py_make_string("D")
           n12 = $builtins.py_build_class(n11, n39)
           n40 = $builtins.py_store_name("D", n16, n15, n12)
-          n41 = __sil_allocate(<closure:dummy.C>)
+          n41 = __sil_allocate(<PyClosure<dummy.C>>)
           store n41.?.globals <- n15:*PyGlobals::dummy
           n13 = $builtins.py_make_function(n41, n0, n0, n0, n0)
           n43 = $builtins.py_make_string("C")
@@ -481,7 +481,7 @@ class C:
           n7 = $builtins.py_store_name("__module__", n6, n5, n3)
           n8 = $builtins.py_make_string("C")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
-          n10 = __sil_allocate(<closure:dummy.C.foo>)
+          n10 = __sil_allocate(<PyClosure<dummy.C.foo>>)
           store n10.?.globals <- n5:*PyGlobals::dummy
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
           n12 = $builtins.py_store_name("foo", n6, n5, n4)
@@ -507,7 +507,7 @@ class C:
           n7 = $builtins.py_store_name("__module__", n6, n5, n3)
           n8 = $builtins.py_make_string("D")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
-          n10 = __sil_allocate(<closure:dummy.D.foo>)
+          n10 = __sil_allocate(<PyClosure<dummy.D.foo>>)
           store n10.?.globals <- n5:*PyGlobals::dummy
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
           n12 = $builtins.py_store_name("foo", n6, n5, n4)

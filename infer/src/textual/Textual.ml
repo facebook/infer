@@ -138,7 +138,7 @@ let builtin_get_lazy_class = "__sil_get_lazy_class"
 
 let builtin_instanceof = "__sil_instanceof"
 
-module TypeName : sig
+module BaseTypeName : sig
   include NAME
 
   val hack_builtin : t
@@ -158,6 +158,58 @@ end = struct
   let python_builtin = {value= "$builtins"; loc= Location.Unknown}
 
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
+end
+
+module TypeName : sig
+  type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
+
+  val of_string : ?loc:Location.t -> string -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
+
+  module HashSet : HashSet.S with type elt = t
+
+  module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
+
+  val hack_builtin : t
+
+  val python_builtin : t
+
+  val hack_generics : t
+
+  val wildcard : t
+end = struct
+  module T = struct
+    type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
+  end
+
+  include T
+
+  let from_basename name = {name; args= []}
+
+  let of_string ?loc str = BaseTypeName.of_string ?loc str |> from_basename
+
+  let rec pp fmt {name; args} =
+    if List.is_empty args then BaseTypeName.pp fmt name
+    else F.fprintf fmt "%a<%a>" BaseTypeName.pp name (Pp.comma_seq pp) args
+
+
+  module Hashtbl = Hashtbl.Make (T)
+  module HashSet = HashSet.Make (T)
+  module Map = Stdlib.Map.Make (T)
+  module Set = Stdlib.Set.Make (T)
+
+  let wildcard = from_basename BaseTypeName.wildcard
+
+  let hack_builtin = from_basename BaseTypeName.hack_builtin
+
+  let python_builtin = from_basename BaseTypeName.python_builtin
+
+  let hack_generics = from_basename BaseTypeName.hack_generics
 end
 
 module QualifiedProcName = struct

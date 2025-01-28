@@ -61,9 +61,24 @@ module FieldName : NAME (* field names, without their enclosing types *)
 
 module NodeName : NAME (* node names, also called labels *)
 
+module BaseTypeName : NAME
+
 module TypeName : sig
   (* structured value type name *)
-  include NAME
+  type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
+
+  val of_string : ?loc:Location.t -> string -> t
+  (** we replace any dot in the string by '::' because dot is a reserved separator in Textual *)
+
+  val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
+
+  module HashSet : HashSet.S with type elt = t
+
+  module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
 
   val hack_generics : t
 

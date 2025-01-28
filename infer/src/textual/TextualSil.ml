@@ -89,26 +89,31 @@ module TypeNameBridge = struct
     JavaClass (replace_2colons_with_dot string |> JavaClassName.from_string)
 
 
-  let value_to_python_class_name value : PythonClassName.t =
-    let is_closure = String.chop_prefix ~prefix:"closure:" value in
-    if Option.is_some is_closure then Option.value_exn is_closure |> PythonClassName.make_closure
-    else
-      let is_globals = String.chop_prefix ~prefix:"PyGlobals::" value in
-      if Option.is_some is_globals then Option.value_exn is_globals |> PythonClassName.make_global
-      else PythonClassName.make_filename value
+  let to_python_class_name value args : PythonClassName.t =
+    match (value, args) with
+    | "PyClosure", [{TypeName.name= {BaseTypeName.value}}] ->
+        PythonClassName.make_closure value
+    | "PyGlobals", [{TypeName.name= {BaseTypeName.value}}] ->
+        PythonClassName.make_global value
+    | value, [] ->
+        PythonClassName.make_filename value
+    | _, _ ->
+        L.die InternalError "to_python_class_name failed"
 
 
-  let value_to_sil (lang : Lang.t) value : SilTyp.Name.t =
-    match lang with
-    | Java ->
+  let to_sil (lang : Lang.t) {name= {value}; args} : SilTyp.Name.t =
+    match (lang, args) with
+    | Java, [] ->
         string_to_java_sil value
-    | Hack ->
+    | Java, _ ->
+        L.die InternalError "to_sil conversion failed on Java type name with non-empty args"
+    | Hack, [] ->
         HackClass (HackClassName.make value)
-    | Python ->
-        PythonClass (value_to_python_class_name value)
+    | Hack, _ ->
+        L.die InternalError "to_sil conversion failed on Hack type name with non-empty args"
+    | Python, _ ->
+        PythonClass (to_python_class_name value args)
 
-
-  let to_sil (lang : Lang.t) {value} = value_to_sil lang value
 
   let java_lang_object = of_string "java.lang.Object"
 end
@@ -135,7 +140,7 @@ let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
 let hack_awaitable_type_name = SilTyp.HackClass (HackClassName.make "HH::Awaitable")
 
-let mk_hack_mixed_type_textual loc = Typ.Struct TypeName.{value= "HackMixed"; loc}
+let mk_hack_mixed_type_textual loc = Typ.Struct (TypeName.of_string ~loc "HackMixed")
 
 let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name
 
@@ -157,7 +162,7 @@ let python_none_type_name = SilTyp.PythonClass PythonClassName.builtin_none
 let python_tuple_type_name = SilTyp.PythonClass PythonClassName.builtin_tuple
 
 let mk_python_mixed_type_textual loc =
-  Typ.Struct TypeName.{value= PythonClassName.(classname builtin_object); loc}
+  Typ.Struct (TypeName.of_string ~loc PythonClassName.(classname builtin_object))
 
 
 let default_return_type (lang : Lang.t option) loc =
@@ -366,15 +371,17 @@ module ProcDeclBridge = struct
   let hack_class_name_to_sil = function
     | QualifiedProcName.TopLevel ->
         None
-    | QualifiedProcName.Enclosing name ->
+    | QualifiedProcName.Enclosing {TypeName.name; args= []} ->
         Some (HackClassName.make name.value)
+    | _ ->
+        L.die InternalError "hack_class_name_to_sil failed"
 
 
   let python_class_name_to_sil = function
     | QualifiedProcName.TopLevel ->
         None
-    | QualifiedProcName.Enclosing name ->
-        Some (TypeNameBridge.value_to_python_class_name name.value)
+    | QualifiedProcName.Enclosing {name= {value}; args} ->
+        Some (TypeNameBridge.to_python_class_name value args)
 
 
   let to_sil lang t : SilProcname.t =

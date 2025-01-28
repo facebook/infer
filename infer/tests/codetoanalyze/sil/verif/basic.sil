@@ -123,3 +123,11 @@ declare A::foo() : void
 declare mixed:::bar() : void
 
 declare A::mixed:::zoo() : void
+
+type C<X,Y> = { }
+
+define A.f() : *C<A,A> {
+  #entry:
+    n0 = A.f()
+    ret null
+}

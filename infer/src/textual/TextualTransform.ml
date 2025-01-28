@@ -356,11 +356,11 @@ module TransformClosures = struct
           let filename = F.asprintf "%a" SourceFile.pp sourcefile in
           let name, _ = Filename.split_extension filename in
           let id = fresh_closure_counter () in
-          Printf.sprintf "closure:anonymous:%s:%d" name id
+          Printf.sprintf "%s:%d" name id
       | Some name ->
-          Printf.sprintf "closure:%s" name
+          name
     in
-    {value; loc}
+    {name= {value= "PyClosure"; loc}; args= [{name= {value; loc}; args= []}]}
 
 
   let mk_fielddecl (varname : VarName.t) (typ : Typ.t) : FieldDecl.t =
