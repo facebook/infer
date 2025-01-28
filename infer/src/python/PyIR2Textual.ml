@@ -26,14 +26,21 @@ let of_location loc = Location.line loc |> location_from_opt_line
 module Typ = struct
   let locals = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyLocals")))
 
+  let ident_to_typename ident =
+    let name = Ident.to_textual_base_type_name ident in
+    {Textual.TypeName.name; args= []}
+
+
   let globals module_name =
-    let str = F.asprintf "PyGlobals::%a" Ident.pp module_name in
-    Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string str)))
+    let name = Textual.BaseTypeName.of_string "PyGlobals" in
+    let args = [ident_to_typename module_name] in
+    Textual.(Typ.Ptr (Typ.Struct {TypeName.name; args}))
 
 
   let class_companion_name module_name name =
-    let str = F.asprintf "PyClassCompanion::%a::%s" Textual.TypeName.pp module_name name in
-    Textual.(TypeName.of_string str)
+    let args = [module_name; Textual.TypeName.of_string name] in
+    let name = Textual.BaseTypeName.of_string "PyClassCompanion" in
+    {Textual.TypeName.name; args}
 
 
   let class_companion module_name name =
@@ -41,8 +48,9 @@ module Typ = struct
 
 
   let module_attribute module_name attr_name =
-    let str = F.asprintf "PyModuleAttr::%s::%s" module_name attr_name in
-    Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string str)))
+    let name = Textual.BaseTypeName.of_string "PyModuleAttr" in
+    let args = Textual.TypeName.[of_string module_name; of_string attr_name] in
+    Textual.(Typ.Ptr (Typ.Struct {TypeName.name; args}))
 
 
   let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
@@ -903,9 +911,7 @@ let gen_module_default_type {Textual.Module.decls} =
             (opt, map) )
   in
   let* module_name, module_body = opt in
-  let name =
-    F.asprintf "PyGlobals::%a" Textual.TypeName.pp module_name |> Textual.TypeName.of_string
-  in
+  let name = Textual.{TypeName.name= BaseTypeName.of_string "PyGlobals"; args= [module_name]} in
   let default_type, classes = gen_type module_name ~allow_classes:true name module_body in
   let* other_type_decls =
     List.fold classes ~init:(Some []) ~f:(fun decls name ->

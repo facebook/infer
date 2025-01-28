@@ -47,6 +47,8 @@ module Ident : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val to_textual_base_type_name : t -> Textual.BaseTypeName.t
+
   module Hashtbl : Stdlib.Hashtbl.S with type key = t
 
   module Special : sig

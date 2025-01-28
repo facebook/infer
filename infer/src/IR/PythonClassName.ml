@@ -37,6 +37,14 @@ let make_closure name =
   {classname}
 
 
+let make_class_companion ~module_name ~attr_name =
+  make (Printf.sprintf "PyClassCompanion::%s::%s" module_name attr_name)
+
+
+let make_module_attribute ~module_name ~attr_name =
+  make (Printf.sprintf "PyModuleAttr::%s::%s" module_name attr_name)
+
+
 let builtin_object = make "PyObject"
 
 let builtin_dict = make "PyDict"

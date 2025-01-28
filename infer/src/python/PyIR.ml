@@ -23,6 +23,8 @@ module rec Ident : sig
 
   val pp : F.formatter -> t -> unit
 
+  val to_textual_base_type_name : t -> Textual.BaseTypeName.t
+
   module Special : sig
     val aiter : t
 
@@ -46,6 +48,8 @@ end = struct
   let pp fmt ident = F.pp_print_string fmt ident
 
   let mk ident = remove_angles ident
+
+  let to_textual_base_type_name value = Textual.{BaseTypeName.value; loc= Location.Unknown}
 
   module Special = struct
     let aiter = "__aiter__"

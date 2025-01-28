@@ -70,7 +70,7 @@ class C:
     TRANSFORMATION PyIR -> Textual
     .source_language = "python"
 
-    define dummy.__module_body__(globals: *PyGlobals::dummy) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals<dummy>) : *PyObject {
       local locals: *PyLocals
       #b0:
           n2 = globals
@@ -102,7 +102,7 @@ class C:
 
     }
 
-    define dummy.C(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -116,7 +116,7 @@ class C:
 
     }
 
-    define dummy.C::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -125,7 +125,7 @@ class C:
 
     }
 
-    define dummy.D(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -139,7 +139,7 @@ class C:
 
     }
 
-    define dummy.D::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -148,7 +148,7 @@ class C:
 
     }
 
-    define .args = "y,l" dummy.f(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -188,7 +188,7 @@ class C:
 
     }
 
-    define .async dummy.g(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -205,11 +205,11 @@ class C:
     TYPE INFERENCE
     .source_language = "python"
 
-    define dummy.__module_body__(globals: *PyGlobals::dummy) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals<dummy>) : *PyObject {
       local locals: *PyLocals
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
-          store &locals <- n2:*PyGlobals::dummy
+          n2 = [&globals:*PyGlobals<dummy>]
+          store &locals <- n2:*PyGlobals<dummy>
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_import_name(n2, "random", n0, $builtins.py_make_int(0))
@@ -237,9 +237,9 @@ class C:
 
     }
 
-    define dummy.C(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_name("__name__", n1, n2)
@@ -251,18 +251,18 @@ class C:
 
     }
 
-    define dummy.C::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           ret n0
 
     }
 
-    define dummy.D(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_name("__name__", n1, n2)
@@ -274,18 +274,18 @@ class C:
 
     }
 
-    define dummy.D::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           ret n0
 
     }
 
-    define .args = "y,l" dummy.f(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_fast("y", n1)
@@ -323,9 +323,9 @@ class C:
 
     }
 
-    define .async dummy.g(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n2 = [&globals:*PyGlobals::dummy]
+          n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           _ = $builtins.py_gen_start_coroutine()
@@ -340,92 +340,92 @@ class C:
     FINAL TRANSFORMATIONS
     .source_language = "python"
 
-    type PyGlobals::dummy = {random: *PyGlobals::random; a: *PyGlobals::asyncio;
-                             y: *PyModuleAttr::dir1::dir2::mod::x; mod: *PyModuleAttr::dir1::dir2::mod;
+    type PyGlobals<dummy> = {random: *PyGlobals<random>; a: *PyGlobals<asyncio>;
+                             y: *PyModuleAttr<dir1::dir2::mod,x>; mod: *PyModuleAttr<dir1::dir2,mod>;
                              f: *PyClosure<dummy.f>; g: *PyClosure<dummy.g>;
-                             D: *PyClassCompanion::dummy::D; C: *PyClassCompanion::dummy::C}
+                             D: *PyClassCompanion<dummy,D>; C: *PyClassCompanion<dummy,C>}
 
-    type PyClassCompanion::dummy::C = {foo: *PyClosure<dummy.C.foo>}
+    type PyClassCompanion<dummy,C> = {foo: *PyClosure<dummy.C.foo>}
 
-    type PyClassCompanion::dummy::D = {foo: *PyClosure<dummy.D.foo>}
+    type PyClassCompanion<dummy,D> = {foo: *PyClosure<dummy.D.foo>}
 
-    type .final PyClosure<dummy.D.foo> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.D.foo> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper PyClosure<dummy.D.foo>.call(__this: *PyClosure<dummy.D.foo>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.D.foo> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.D::foo(n1, n2)
           ret n3
 
     }
 
-    type .final PyClosure<dummy.C.foo> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.C.foo> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper PyClosure<dummy.C.foo>.call(__this: *PyClosure<dummy.C.foo>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.C.foo> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.C::foo(n1, n2)
           ret n3
 
     }
 
-    type .final PyClosure<dummy.C> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.C> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper PyClosure<dummy.C>.call(__this: *PyClosure<dummy.C>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.C> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.C(n1, n2)
           ret n3
 
     }
 
-    type .final PyClosure<dummy.D> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.D> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper PyClosure<dummy.D>.call(__this: *PyClosure<dummy.D>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.D> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.D(n1, n2)
           ret n3
 
     }
 
-    type .final PyClosure<dummy.g> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.g> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper .async PyClosure<dummy.g>.call(__this: *PyClosure<dummy.g>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.g> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.g(n1, n2)
           ret n3
 
     }
 
-    type .final PyClosure<dummy.f> = {globals: *PyGlobals::dummy}
+    type .final PyClosure<dummy.f> = {globals: *PyGlobals<dummy>}
 
     define .closure_wrapper .args = "y,l" PyClosure<dummy.f>.call(__this: *PyClosure<dummy.f>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.f> = load &__this
-          n1:*PyGlobals::dummy = load n0.?.globals
+          n1:*PyGlobals<dummy> = load n0.?.globals
           n2:*PyLocals = load &locals
           n3 = dummy.f(n1, n2)
           ret n3
 
     }
 
-    define dummy.__module_body__(globals: *PyGlobals::dummy) : *PyObject {
+    define dummy.__module_body__(globals: *PyGlobals<dummy>) : *PyObject {
       local locals: *PyLocals
       #b0:
-          n15:*PyGlobals::dummy = load &globals
-          store &locals <- n15:*PyGlobals::dummy
+          n15:*PyGlobals<dummy> = load &globals
+          store &locals <- n15:*PyGlobals<dummy>
           n16:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n17 = $builtins.py_make_int(0)
@@ -449,21 +449,21 @@ class C:
           n29 = $builtins.py_make_int(0)
           n30 = $builtins.py_store_name("x", n16, n15, n29)
           n31 = __sil_allocate(<PyClosure<dummy.f>>)
-          store n31.?.globals <- n15:*PyGlobals::dummy
+          store n31.?.globals <- n15:*PyGlobals<dummy>
           n9 = $builtins.py_make_function(n31, n0, n0, n0, n0)
           n33 = $builtins.py_store_name("f", n16, n15, n9)
           n34 = __sil_allocate(<PyClosure<dummy.g>>)
-          store n34.?.globals <- n15:*PyGlobals::dummy
+          store n34.?.globals <- n15:*PyGlobals<dummy>
           n10 = $builtins.py_make_function(n34, n0, n0, n0, n0)
           n36 = $builtins.py_store_name("g", n16, n15, n10)
           n37 = __sil_allocate(<PyClosure<dummy.D>>)
-          store n37.?.globals <- n15:*PyGlobals::dummy
+          store n37.?.globals <- n15:*PyGlobals<dummy>
           n11 = $builtins.py_make_function(n37, n0, n0, n0, n0)
           n39 = $builtins.py_make_string("D")
           n12 = $builtins.py_build_class(n11, n39)
           n40 = $builtins.py_store_name("D", n16, n15, n12)
           n41 = __sil_allocate(<PyClosure<dummy.C>>)
-          store n41.?.globals <- n15:*PyGlobals::dummy
+          store n41.?.globals <- n15:*PyGlobals<dummy>
           n13 = $builtins.py_make_function(n41, n0, n0, n0, n0)
           n43 = $builtins.py_make_string("C")
           n14 = $builtins.py_build_class(n13, n43)
@@ -472,9 +472,9 @@ class C:
 
     }
 
-    define dummy.C(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n5:*PyGlobals::dummy = load &globals
+          n5:*PyGlobals<dummy> = load &globals
           n6:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_name("__name__", n6, n5)
@@ -482,25 +482,25 @@ class C:
           n8 = $builtins.py_make_string("C")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
           n10 = __sil_allocate(<PyClosure<dummy.C.foo>>)
-          store n10.?.globals <- n5:*PyGlobals::dummy
+          store n10.?.globals <- n5:*PyGlobals<dummy>
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
           n12 = $builtins.py_store_name("foo", n6, n5, n4)
           ret n0
 
     }
 
-    define dummy.C::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.C::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n3:*PyGlobals::dummy = load &globals
+          n3:*PyGlobals<dummy> = load &globals
           n4:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           ret n0
 
     }
 
-    define dummy.D(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n5:*PyGlobals::dummy = load &globals
+          n5:*PyGlobals<dummy> = load &globals
           n6:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_name("__name__", n6, n5)
@@ -508,25 +508,25 @@ class C:
           n8 = $builtins.py_make_string("D")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
           n10 = __sil_allocate(<PyClosure<dummy.D.foo>>)
-          store n10.?.globals <- n5:*PyGlobals::dummy
+          store n10.?.globals <- n5:*PyGlobals<dummy>
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
           n12 = $builtins.py_store_name("foo", n6, n5, n4)
           ret n0
 
     }
 
-    define dummy.D::foo(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define dummy.D::foo(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n3:*PyGlobals::dummy = load &globals
+          n3:*PyGlobals<dummy> = load &globals
           n4:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           ret n0
 
     }
 
-    define .args = "y,l" dummy.f(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .args = "y,l" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n16:*PyGlobals::dummy = load &globals
+          n16:*PyGlobals<dummy> = load &globals
           n17:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_fast("y", n17)
@@ -569,9 +569,9 @@ class C:
 
     }
 
-    define .async dummy.g(globals: *PyGlobals::dummy, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
-          n7:*PyGlobals::dummy = load &globals
+          n7:*PyGlobals<dummy> = load &globals
           n8:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n9 = $builtins.py_gen_start_coroutine()

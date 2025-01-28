@@ -18,6 +18,10 @@ val make_global : string -> t
 
 val make_reserved_builtin : string -> t
 
+val make_class_companion : module_name:string -> attr_name:string -> t
+
+val make_module_attribute : module_name:string -> attr_name:string -> t
+
 val builtin_object : t
 
 val builtin_dict : t

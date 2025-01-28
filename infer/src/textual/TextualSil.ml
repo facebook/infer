@@ -90,11 +90,20 @@ module TypeNameBridge = struct
 
 
   let to_python_class_name value args : PythonClassName.t =
+    let to_string {TypeName.name= {BaseTypeName.value}} = value in
     match (value, args) with
-    | "PyClosure", [{TypeName.name= {BaseTypeName.value}}] ->
-        PythonClassName.make_closure value
-    | "PyGlobals", [{TypeName.name= {BaseTypeName.value}}] ->
-        PythonClassName.make_global value
+    | "PyClosure", [tname] ->
+        PythonClassName.make_closure (to_string tname)
+    | "PyGlobals", [tname] ->
+        PythonClassName.make_global (to_string tname)
+    | "PyClassCompanion", [module_tname; attr_tname] ->
+        let module_name = to_string module_tname in
+        let attr_name = to_string attr_tname in
+        PythonClassName.make_class_companion ~module_name ~attr_name
+    | "PyModuleAttr", [module_tname; attr_tname] ->
+        let module_name = to_string module_tname in
+        let attr_name = to_string attr_tname in
+        PythonClassName.make_module_attribute ~module_name ~attr_name
     | value, [] ->
         PythonClassName.make_filename value
     | _, _ ->
