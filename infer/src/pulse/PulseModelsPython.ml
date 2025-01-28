@@ -361,6 +361,11 @@ module Tuple = struct
     | Some i ->
         let field = Fieldname.make tuple_tname (str_field_of_int i) in
         load_access ~deref:false tuple (FieldAccess field)
+
+
+  let append _list value : unit DSL.model_monad =
+    let open DSL.Syntax in
+    remove_allocation_attr_transitively [value]
 end
 
 module PyModule = struct
@@ -748,6 +753,11 @@ let import_name globals name fromlist _level : model =
     assign_ret first_parent
 
 
+let list_append list arg : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> Tuple.append list arg
+
+
 let load_fast name locals : model =
   let open DSL.Syntax in
   start_model
@@ -1007,7 +1017,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_inplace_xor" &::.*+++> unknown
   ; -"$builtins" &:: "py_invalid_unicode" &::.*+++> unknown
   ; -"$builtins" &:: "py_iter_data" &::.*+++> unknown
-  ; -"$builtins" &:: "py_list_append" &::.*+++> unknown
+  ; -"$builtins" &:: "py_list_append" <>$ arg $+ arg $--> list_append
   ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown
   ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown
   ; -"$builtins" &:: "py_load_assertion_error" &::.*+++> unknown

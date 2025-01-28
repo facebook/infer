@@ -46,6 +46,6 @@ async def asyncio_gather_3_elements_ok():
     )
 
 
-async def FP_asyncio_gather_unknown_list_ok(l):
+async def asyncio_gather_unknown_list_ok(l):
     tasks = [asyncio.sleep(i) for i in l]
     await asyncio.gather(*tasks)
