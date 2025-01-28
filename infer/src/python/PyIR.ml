@@ -2727,19 +2727,26 @@ let test_cfg_skeleton ~code_qual_name code =
       F.printf "topological order: %a@\n@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
 
 
-let module_name {FFI.Code.co_filename} =
-  let sz = String.length co_filename in
+let module_name ~path_prefixes {FFI.Code.co_filename} =
+  let remove_prefix str prefix =
+    if String.is_prefix str ~prefix then
+      let prefix_len = String.length prefix in
+      String.sub str ~pos:prefix_len ~len:(String.length str - prefix_len)
+    else str
+  in
+  let file_path = List.fold path_prefixes ~init:co_filename ~f:remove_prefix in
+  (* if any prefixes have been removed, then also remove any leading / *)
   let file_path =
-    if sz >= 2 && String.equal "./" (String.sub co_filename ~pos:0 ~len:2) then
-      String.sub co_filename ~pos:2 ~len:(sz - 2)
-    else co_filename
+    if String.equal file_path co_filename then file_path else remove_prefix file_path "/"
   in
   Stdlib.Filename.remove_extension file_path |> String.substr_replace_all ~pattern:"/" ~with_:"::"
 
 
-let mk ~debug code =
+let mk ~debug ~path_prefix code =
   let open IResult.Let_syntax in
-  let module_name = module_name code in
+  let module_name =
+    module_name ~path_prefixes:(List.concat [["./"]; Option.to_list path_prefix]) code
+  in
   let code_qual_name = build_code_object_unique_name module_name code in
   let name = Ident.mk module_name in
   let f = build_cfg ~debug ~code_qual_name in
@@ -2776,7 +2783,7 @@ let test_generator ~filename ~f source =
 let test ?(filename = "dummy.py") ?(debug = false) ?run source =
   let open IResult.Let_syntax in
   let f code =
-    let+ module_ = mk ~debug code in
+    let+ module_ = mk ~debug ~path_prefix:None code in
     let run = Option.value run ~default:(F.printf "%a" Module.pp) in
     run module_
   in
@@ -2787,7 +2794,7 @@ let test_files ?(debug = false) ?run list =
   let open IResult.Let_syntax in
   let units = ref [] in
   let f code =
-    let+ module_ = mk ~debug code in
+    let+ module_ = mk ~debug ~path_prefix:None code in
     units := module_ :: !units
   in
   List.iter list ~f:(fun (filename, source) -> test_generator ~filename ~f source) ;
@@ -2798,7 +2805,7 @@ let test_files ?(debug = false) ?run list =
 let test_cfg_skeleton ?(filename = "dummy.py") source =
   let open IResult.Let_syntax in
   let f code =
-    let file_path = module_name code in
+    let file_path = module_name code ~path_prefixes:[] in
     let code_qual_name = build_code_object_unique_name file_path code in
     test_cfg_skeleton ~code_qual_name code ;
     let f code = Ok (test_cfg_skeleton ~code_qual_name code) in

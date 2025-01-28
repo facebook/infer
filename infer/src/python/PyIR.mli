@@ -245,7 +245,7 @@ module Module : sig
   type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t}
 end
 
-val mk : debug:bool -> FFI.Code.t -> (Module.t, Error.t) result
+val mk : debug:bool -> path_prefix:string option -> FFI.Code.t -> (Module.t, Error.t) result
 
 val test : ?filename:string -> ?debug:bool -> ?run:(Module.t -> unit) -> string -> unit
 [@@warning "-unused-value-declaration"]
