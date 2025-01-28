@@ -279,19 +279,27 @@ module Dict = struct
     let rec propagate_field_type tname key =
       let field = Fieldname.make tname key in
       let* opt_info = tenv_resolve_field_info tname field in
-      option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
-          match Typ.name (Typ.strip_ptr field_typ) with
-          | Some (PythonClass (ModuleAttribute {module_name; attr_name})) ->
-              let tname = Typ.PythonClass (Globals module_name) in
-              let* tname_is_defined = tenv_type_is_defined tname in
-              if tname_is_defined then propagate_field_type tname attr_name
-              else
-                Typ.Name.Python.concatenate_package_name_and_file_name tname attr_name
-                |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
-          | Some static_tname ->
-              add_static_type static_tname load_res
-          | None ->
-              ret () )
+      match opt_info with
+      | Some {Struct.typ= field_typ} -> (
+        match Typ.name (Typ.strip_ptr field_typ) with
+        | Some (PythonClass (ModuleAttribute {module_name; attr_name})) ->
+            let tname = Typ.PythonClass (Globals module_name) in
+            let* tname_is_defined = tenv_type_is_defined tname in
+            if tname_is_defined then propagate_field_type tname attr_name
+            else
+              Typ.Name.Python.concatenate_package_name_and_file_name tname attr_name
+              |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
+        | Some static_tname ->
+            add_static_type static_tname load_res
+        | None ->
+            ret () )
+      | None -> (
+        match tname with
+        | Typ.PythonClass (Globals module_name) ->
+            let static_type = Typ.PythonClass (ModuleAttribute {module_name; attr_name= key}) in
+            add_static_type static_type load_res
+        | _ ->
+            ret () )
     in
     let* opt_static_type = get_static_type dict in
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
@@ -454,6 +462,10 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       let* () = list_iter args ~f:await_awaitable in
       let* res = fresh () in
       ret (Some res)
+  | PyLib {module_name= "asyncio"; name= "gather"}, _ ->
+      let* res = fresh () in
+      L.debug Analysis Quiet "[PYTHON] call to asyncio.gather(...) detected@\n" ;
+      ret (Some res)
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
@@ -505,6 +517,32 @@ let call closure arg_names args : model =
   assign_ret res
 
 
+let call_function_ex closure tuple dict : model =
+  (* TODO: take into account named args *)
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+  let* res =
+    match opt_dynamic_type_data with
+    | None -> (
+        let* opt_static_type = get_static_type closure in
+        match opt_static_type with
+        | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name})) -> (
+            let* opt_special_call =
+              modelled_python_call (PyLib {module_name; name}) [tuple; dict]
+            in
+            match opt_special_call with None -> fresh () | Some res -> ret res )
+        | _ ->
+            (* TODO: find situations where it happens and specific models are needed *)
+            fresh () )
+    | _ ->
+        (* TODO: model regular call using tuple and dict contents as arguments *)
+        fresh ()
+  in
+  assign_ret res
+
+
 let call_method name obj arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
@@ -544,7 +582,7 @@ let get_attr obj attr : model =
   @@ fun () ->
   let* attr = as_constant_string_exn attr in
   (* TODO: look into companion class object if necessary *)
-  let* res = Dict.get_str_key obj attr in
+  let* res = Dict.get_str_key ~propagate_static_type:true obj attr in
   assign_ret res
 
 
@@ -913,7 +951,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_build_unpack_set" &::.*+++> unknown
   ; -"$builtins" &:: "py_build_unpack_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
-  ; -"$builtins" &:: "py_call_function_ex" &::.*+++> unknown
+  ; -"$builtins" &:: "py_call_function_ex" <>$ arg $+ arg $+ arg $--> call_function_ex
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
   ; -"$builtins" &:: "py_compare_bad" &::.*+++> unknown
   ; -"$builtins" &:: "py_compare_eq" <>$ arg $+ arg $--> compare_eq

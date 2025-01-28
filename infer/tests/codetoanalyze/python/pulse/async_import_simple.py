@@ -34,3 +34,18 @@ async def with_imported_class_bad():
 
 async def with_imported_class_ok():
     await async_await(C.sleep())
+
+
+async def FP_asyncio_gather_3_elements_ok():
+    await asyncio.gather(
+        *[
+            sleep(),
+            sleep(),
+            sleep(),
+        ]
+    )
+
+
+async def FP_asyncio_gather_unknown_list_ok(l):
+    tasks = [asyncio.sleep(i) for i in l]
+    await asyncio.gather(*tasks)
