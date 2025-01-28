@@ -96,9 +96,7 @@ def main_ok():
     asyncio.run(sleep(10))
 
 
-async def FP_multi_tasks_ok():
-    #it becomes an FP because we do not treat that as an unknown call anymore
-    #to be fixed in the next diff
+async def multi_tasks_ok():
     asyncio.gather(sleep(1), sleep(2))
 
 

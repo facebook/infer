@@ -116,11 +116,22 @@ module ModeledField = struct
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 end
 
-let conservatively_initialize_args arg_values astate =
+let fold_reachable_from ~f args astate =
   let reachable_values =
-    AbductiveDomain.reachable_addresses_from (Stdlib.List.to_seq arg_values) astate `Post
+    AbductiveDomain.reachable_addresses_from (Stdlib.List.to_seq args) astate `Post
   in
-  AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
+  AbstractValue.Set.fold f reachable_values astate
+
+
+let conservatively_initialize_args arg_values astate =
+  fold_reachable_from ~f:AddressAttributes.initialize arg_values astate
+
+
+let remove_allocation_attr_transitively arg_values astate =
+  L.d_printfln ~color:Orange "remove_allocation_attr_transitively from [%a]"
+    (Pp.seq ~sep:"; " AbstractValue.pp)
+    arg_values ;
+  fold_reachable_from ~f:AddressAttributes.remove_allocation_attr arg_values astate
 
 
 let eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate =

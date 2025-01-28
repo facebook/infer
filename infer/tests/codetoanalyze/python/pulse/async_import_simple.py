@@ -36,7 +36,7 @@ async def with_imported_class_ok():
     await async_await(C.sleep())
 
 
-async def FP_asyncio_gather_3_elements_ok():
+async def asyncio_gather_3_elements_ok():
     await asyncio.gather(
         *[
             sleep(),

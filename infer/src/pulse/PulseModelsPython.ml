@@ -464,7 +464,7 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       ret (Some res)
   | PyLib {module_name= "asyncio"; name= "gather"}, _ ->
       let* res = fresh () in
-      L.debug Analysis Quiet "[PYTHON] call to asyncio.gather(...) detected@\n" ;
+      let* () = remove_allocation_attr_transitively args in
       ret (Some res)
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       let* res = fresh () in
@@ -940,7 +940,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
   ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown
   ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_list" &::.*+++> unknown
+  ; -"$builtins" &:: "py_build_list" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_build_map" &::.*+++> unknown
   ; -"$builtins" &:: "py_build_set" &::.*+++> unknown
   ; -"$builtins" &:: "py_build_slice" &::.*+++> unknown

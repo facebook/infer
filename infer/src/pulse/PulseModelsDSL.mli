@@ -144,6 +144,8 @@ module Syntax : sig
 
   val read : Exp.t -> aval model_monad [@@warning "-unused-value-declaration"]
 
+  val remove_allocation_attr_transitively : aval list -> unit model_monad
+
   val int : ?hist:ValueHistory.t -> int -> aval model_monad
 
   val string : string -> aval model_monad

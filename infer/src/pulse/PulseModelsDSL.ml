@@ -541,6 +541,11 @@ module Syntax = struct
     PulseOperations.eval path Read location exp |> exec_partial_operation
 
 
+  let remove_allocation_attr_transitively (args : aval list) : unit model_monad =
+    let args = List.map ~f:fst args in
+    PulseOperations.remove_allocation_attr_transitively args |> exec_command
+
+
   let string str : aval model_monad = read (Const (Cstr str))
 
   let string_concat (v1, hist1) (v2, hist2) : aval model_monad =

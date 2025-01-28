@@ -48,6 +48,9 @@ end
 val conservatively_initialize_args : AbstractValue.t list -> t -> t
 (** Set all reachable values from the given list as initialized conservatively. *)
 
+val remove_allocation_attr_transitively : AbstractValue.t list -> t -> t
+(** Remove allocation attribute (if any) on all reachable values from the given list. *)
+
 val eval :
      PathContext.t
   -> access_mode
