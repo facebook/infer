@@ -339,11 +339,27 @@ module State = struct
 end
 
 module TransformClosures = struct
-  let typename sourcefile fresh_index loc : TypeName.t =
+  let rec name_of_attribute = function
+    | [] ->
+        None
+    | {Textual.Attr.name= "name"; values= [name]} :: _ ->
+        Some name
+    | _ :: l ->
+        name_of_attribute l
+
+
+  let typename ~fresh_closure_counter sourcefile attributes loc : TypeName.t =
     (* we create a new type for this closure *)
-    let filename = F.asprintf "%a" SourceFile.pp sourcefile in
-    let name, _ = Filename.split_extension filename in
-    let value = F.asprintf "closure:%s:%d" name fresh_index in
+    let value =
+      match name_of_attribute attributes with
+      | None ->
+          let filename = F.asprintf "%a" SourceFile.pp sourcefile in
+          let name, _ = Filename.split_extension filename in
+          let id = fresh_closure_counter () in
+          Printf.sprintf "closure:anonymous:%s:%d" name id
+      | Some name ->
+          Printf.sprintf "closure:%s" name
+    in
     {value; loc}
 
 
@@ -490,7 +506,7 @@ let remove_effects_in_subexprs lang decls_env _module =
           let fresh = state.State.fresh_ident in
           let new_instr : Instr.t = Let {id= Some fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
-    | Closure {proc; captured; params} ->
+    | Closure {proc; captured; params; attributes} ->
         let captured, state = flatten_exp_list loc captured state in
         let signature = TransformClosures.signature_body lang proc captured params in
         let closure =
@@ -500,8 +516,9 @@ let remove_effects_in_subexprs lang decls_env _module =
           | None ->
               L.die InternalError "TextualBasicVerication should make this situation impossible"
         in
-        let id_closure = fresh_closure_counter () in
-        let typename = TransformClosures.typename _module.Module.sourcefile id_closure loc in
+        let typename =
+          TransformClosures.typename ~fresh_closure_counter _module.Module.sourcefile attributes loc
+        in
         let id_object = state.State.fresh_ident in
         let state = State.incr_fresh state in
         let instrs, fields =
