@@ -8,37 +8,27 @@
 open! IStd
 module F = Format
 
-type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyTuple
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-val make_closure : string -> t
+type builtin_closure = IntFun | StrFun | TypeFun
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-val make_filename : string -> t
-
-val make_global : string -> t
-
-val make_reserved_builtin : string -> t
-
-val make_class_companion : module_name:string -> attr_name:string -> t
-
-val make_module_attribute : module_name:string -> attr_name:string -> t
-
-val builtin_object : t
-
-val builtin_dict : t
-
-val builtin_int : t
-
-val builtin_none : t
-
-val builtin_bool : t
-
-val builtin_tuple : t
+type t =
+  | Builtin of builtin_type
+  | Globals of string
+  | Closure of string
+  | BuiltinClosure of builtin_closure
+  | ClassCompanion of {module_name: string; attr_name: string}
+  | ModuleAttribute of {module_name: string; attr_name: string}
+  | Filename of string
+  | Package of string
+  | Wildcard
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val classname : t -> string
 
 val components : t -> string list
-
-val wildcard : t
 
 val pp : F.formatter -> t -> unit
 
@@ -46,23 +36,8 @@ val to_string : t -> string
 
 val is_final : t -> bool
 
-val is_module : t -> bool
-
-val is_module_attribute : t -> bool
-
-val is_reserved_builtin : t -> bool
-
-val get_module_attribute_infos : t -> (t * string) option
-(** will return the pair (module_name, attribute) params of the type iff the type name is a module
-    attribute type *)
-
-val get_module_name : t -> string option
-(** will return the string representation of the module iff type name is a module type *)
-
-val get_reserved_builtin : t -> string option
-
-val get_reserved_builtin_from_underlying_pyclass : t -> string option
-
-val globals_prefix : string
+val is_singleton : t -> bool
 
 val concatenate_package_name_and_file_name : t -> string -> t option
+
+val get_builtin_closure_from_builtin_type : builtin_type -> builtin_closure option

@@ -93,19 +93,19 @@ module TypeNameBridge = struct
     let to_string {TypeName.name= {BaseTypeName.value}} = value in
     match (value, args) with
     | "PyClosure", [tname] ->
-        PythonClassName.make_closure (to_string tname)
+        PythonClassName.Closure (to_string tname)
     | "PyGlobals", [tname] ->
-        PythonClassName.make_global (to_string tname)
+        PythonClassName.Globals (to_string tname)
     | "PyClassCompanion", [module_tname; attr_tname] ->
         let module_name = to_string module_tname in
         let attr_name = to_string attr_tname in
-        PythonClassName.make_class_companion ~module_name ~attr_name
+        PythonClassName.ClassCompanion {module_name; attr_name}
     | "PyModuleAttr", [module_tname; attr_tname] ->
         let module_name = to_string module_tname in
         let attr_name = to_string attr_tname in
-        PythonClassName.make_module_attribute ~module_name ~attr_name
+        PythonClassName.ModuleAttribute {module_name; attr_name}
     | value, [] ->
-        PythonClassName.make_filename value
+        PythonClassName.Filename value
     | _, _ ->
         L.die InternalError "to_python_class_name failed"
 
@@ -158,20 +158,20 @@ let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
 (* pseudo-class for top-level functions *)
 let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
 
-let python_mixed_type_name = SilTyp.PythonClass PythonClassName.builtin_object
+let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyObject)
 
-let python_dict_type_name = SilTyp.PythonClass PythonClassName.builtin_dict
+let python_dict_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyDict)
 
-let python_int_type_name = SilTyp.PythonClass PythonClassName.builtin_int
+let python_int_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyInt)
 
-let python_bool_type_name = SilTyp.PythonClass PythonClassName.builtin_bool
+let python_bool_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyBool)
 
-let python_none_type_name = SilTyp.PythonClass PythonClassName.builtin_none
+let python_none_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyNone)
 
-let python_tuple_type_name = SilTyp.PythonClass PythonClassName.builtin_tuple
+let python_tuple_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyTuple)
 
 let mk_python_mixed_type_textual loc =
-  Typ.Struct (TypeName.of_string ~loc PythonClassName.(classname builtin_object))
+  Typ.Struct (TypeName.of_string ~loc PythonClassName.(classname (Builtin PyObject)))
 
 
 let default_return_type (lang : Lang.t option) loc =
@@ -241,7 +241,7 @@ let wildcard_sil_fieldname lang name =
   | Hack ->
       SilFieldname.make (HackClass HackClassName.wildcard) name
   | Python ->
-      SilFieldname.make (PythonClass PythonClassName.wildcard) name
+      SilFieldname.make (PythonClass PythonClassName.Wildcard) name
 
 
 module TypBridge = struct

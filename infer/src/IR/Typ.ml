@@ -598,6 +598,7 @@ module Name = struct
     | CppClass _, CppClass _
     | JavaClass _, JavaClass _
     | HackClass _, HackClass _
+    | PythonClass _, PythonClass _
     | ObjcClass _, ObjcClass _
     | ObjcProtocol _, ObjcProtocol _
     | CSharpClass _, CSharpClass _ ->
@@ -680,33 +681,8 @@ module Name = struct
 
     let is_final name = match name with PythonClass py -> PythonClassName.is_final py | _ -> false
 
-    let is_module name =
-      match name with PythonClass py -> PythonClassName.is_module py | _ -> false
-
-
-    let is_module_attribute name =
-      match name with PythonClass py -> PythonClassName.is_module_attribute py | _ -> false
-
-
-    let is_reserved_builtin name =
-      match name with PythonClass py -> PythonClassName.is_reserved_builtin py | _ -> false
-
-
-    let get_module_name name =
-      match name with PythonClass py -> PythonClassName.get_module_name py | _ -> None
-
-
-    let get_module_attribute_infos name =
-      match name with
-      | PythonClass py ->
-          PythonClassName.get_module_attribute_infos py
-          |> Option.map ~f:(fun (py_name, str) -> (PythonClass py_name, str))
-      | _ ->
-          None
-
-
-    let get_reserved_builtin name =
-      match name with PythonClass py -> PythonClassName.get_reserved_builtin py | _ -> None
+    let is_singleton name =
+      match name with PythonClass py -> PythonClassName.is_singleton py | _ -> false
 
 
     let concatenate_package_name_and_file_name name filename =

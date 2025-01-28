@@ -241,17 +241,7 @@ module Name : sig
 
     val is_final : t -> bool
 
-    val is_module : t -> bool
-
-    val is_module_attribute : t -> bool
-
-    val is_reserved_builtin : t -> bool
-
-    val get_module_name : t -> string option
-
-    val get_module_attribute_infos : t -> (t * string) option
-
-    val get_reserved_builtin : t -> string option
+    val is_singleton : t -> bool
 
     val concatenate_package_name_and_file_name : t -> string -> t option
   end

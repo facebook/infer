@@ -12,97 +12,69 @@ module F = Format
    - module names
    - nested classes
 *)
-type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyTuple
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize, show]
 
-let make classname = {classname}
+type builtin_closure = IntFun | StrFun | TypeFun
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-let make_filename name = make name
+type t =
+  | Builtin of builtin_type
+  | Globals of string
+  | Closure of string
+  | BuiltinClosure of builtin_closure
+  | ClassCompanion of {module_name: string; attr_name: string}
+  | ModuleAttribute of {module_name: string; attr_name: string}
+  | Filename of string
+  | Package of string
+  | Wildcard
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-let classname {classname} = classname
+let builtin_type_to_string = show_builtin_type
 
-let components {classname} = [classname]
+let builtin_closure_to_string = function IntFun -> "int" | StrFun -> "str" | TypeFun -> "type"
 
-let wildcard = make "?"
+let pp fmt = function
+  | Builtin builtin ->
+      F.pp_print_string fmt (builtin_type_to_string builtin)
+  | Globals name ->
+      F.fprintf fmt "Globals[%s]" name
+  | Closure name ->
+      F.fprintf fmt "Closure[%s]" name
+  | BuiltinClosure builtin ->
+      F.fprintf fmt "ClosureBuiltin[%s]" (builtin_closure_to_string builtin)
+  | ClassCompanion {module_name; attr_name} ->
+      F.fprintf fmt "ClassCompanion[%s,%s]" module_name attr_name
+  | ModuleAttribute {module_name; attr_name} ->
+      F.fprintf fmt "ModuleAttribute[%s,%s]" module_name attr_name
+  | Filename name ->
+      F.pp_print_string fmt name
+  | Package name ->
+      F.fprintf fmt "%s.__init__" name
+  | Wildcard ->
+      F.pp_print_char fmt '?'
 
-let pp fmt {classname} = F.fprintf fmt "%s" classname
+
+let components tname = [F.asprintf "%a" pp tname]
 
 let to_string = Pp.string_of_pp pp
 
-let globals_prefix = "PyGlobals::"
+let classname = to_string
 
-let make_global name = make (globals_prefix ^ name)
+let is_final = function Globals _ -> true | _ -> false
 
-let make_closure name =
-  let classname = "closure:" ^ name in
-  {classname}
-
-
-let make_class_companion ~module_name ~attr_name =
-  make (Printf.sprintf "PyClassCompanion::%s::%s" module_name attr_name)
-
-
-let make_module_attribute ~module_name ~attr_name =
-  make (Printf.sprintf "PyModuleAttr::%s::%s" module_name attr_name)
-
-
-let builtin_object = make "PyObject"
-
-let builtin_dict = make "PyDict"
-
-let builtin_int = make "PyInt"
-
-let builtin_bool = make "PyBool"
-
-let builtin_tuple = make "PyTuple"
-
-let is_module {classname} = String.is_prefix classname ~prefix:globals_prefix
-
-let get_module_name {classname} = String.chop_prefix classname ~prefix:globals_prefix
-
-let is_final name = is_module name
-
-let module_attribute_prefix = "PyModuleAttr::"
-
-let is_module_attribute {classname} = String.is_prefix classname ~prefix:module_attribute_prefix
-
-let get_module_attribute_infos {classname} =
-  let open IOption.Let_syntax in
-  let* last_pos = String.substr_index_all classname ~may_overlap:false ~pattern:"::" |> List.last in
-  let length = String.length classname in
-  let attribute_name = String.sub classname ~pos:(last_pos + 2) ~len:(length - last_pos - 2) in
-  let+ module_name =
-    String.sub classname ~pos:0 ~len:last_pos |> String.chop_prefix ~prefix:module_attribute_prefix
-  in
-  let classname = globals_prefix ^ module_name in
-  ({classname}, attribute_name)
-
+let is_singleton = function BuiltinClosure _ | Builtin PyNone | Closure _ -> true | _ -> false
 
 let concatenate_package_name_and_file_name typename filename =
-  let open IOption.Let_syntax in
-  let+ package_name = get_module_name typename in
-  let classname = Printf.sprintf "%s%s::%s" globals_prefix package_name filename in
-  {classname}
-
-
-let closure_builtin_prefix = "closure:builtin:"
-
-let make_reserved_builtin name =
-  let classname = closure_builtin_prefix ^ name in
-  {classname}
-
-
-let builtin_none = make_reserved_builtin "None"
-
-let is_reserved_builtin {classname} = String.is_prefix classname ~prefix:closure_builtin_prefix
-
-let get_reserved_builtin {classname} = String.chop_prefix classname ~prefix:closure_builtin_prefix
-
-let builtin_types = ["Object"; "Dict"; "Int"; "Tuple"]
-
-let get_reserved_builtin_from_underlying_pyclass {classname} =
-  let py_suffix = String.chop_prefix classname ~prefix:"Py" in
-  match py_suffix with
-  | Some s when List.mem builtin_types s ~equal:String.equal ->
-      Some (String.lowercase s)
+  match typename with
+  | Globals module_name ->
+      Some (Globals (Printf.sprintf "%s::%s" module_name filename))
   | _ ->
       None
+
+
+let get_builtin_closure_from_builtin_type = function
+  | PyObject | PyDict | PyTuple | PyNone | PyBool ->
+      None
+  | PyInt ->
+      Some IntFun

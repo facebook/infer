@@ -246,9 +246,7 @@ let stdlib_modules : IString.Set.t =
     ; "zoneinfo" ]
 
 
-let reserved_builtins = ["int"; "str"; "type"]
-
-let module_tname module_name = Typ.PythonClass (PythonClassName.make_global module_name)
+let module_tname module_name = Typ.PythonClass (PythonClassName.Globals module_name)
 
 let as_constant_string_exn aval : string DSL.model_monad =
   let open DSL.Syntax in
@@ -276,18 +274,18 @@ module Dict = struct
       let field = Fieldname.make tname key in
       let* opt_info = tenv_resolve_field_info tname field in
       option_iter opt_info ~f:(fun {Struct.typ= field_typ} ->
-          let opt_static_tname = Typ.name (Typ.strip_ptr field_typ) in
-          option_iter opt_static_tname ~f:(fun static_tname ->
-              if Typ.Name.Python.is_module_attribute static_tname then
-                let tname, attr =
-                  Typ.Name.Python.get_module_attribute_infos static_tname |> Option.value_exn
-                in
-                let* tname_is_defined = tenv_type_is_defined tname in
-                if tname_is_defined then propagate_field_type tname attr
-                else
-                  Typ.Name.Python.concatenate_package_name_and_file_name tname attr
-                  |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
-              else add_static_type static_tname load_res ) )
+          match Typ.name (Typ.strip_ptr field_typ) with
+          | Some (PythonClass (ModuleAttribute {module_name; attr_name})) ->
+              let tname = Typ.PythonClass (Globals module_name) in
+              let* tname_is_defined = tenv_type_is_defined tname in
+              if tname_is_defined then propagate_field_type tname attr_name
+              else
+                Typ.Name.Python.concatenate_package_name_and_file_name tname attr_name
+                |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
+          | Some static_tname ->
+              add_static_type static_tname load_res
+          | None ->
+              ret () )
     in
     let* opt_static_type = get_static_type dict in
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
@@ -407,12 +405,12 @@ let make_type arg : DSL.aval option DSL.model_monad =
   let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
   let* res = fresh () in
   match arg_dynamic_type_data with
-  | Some {Formula.typ= {desc= Tstruct (PythonClass py_class)}} -> (
-    match PythonClassName.get_reserved_builtin_from_underlying_pyclass py_class with
-    | Some builtin ->
+  | Some {Formula.typ= {desc= Tstruct (PythonClass (Builtin builtin_type))}} -> (
+    match PythonClassName.get_builtin_closure_from_builtin_type builtin_type with
+    | Some builtin_closure ->
         let* () =
           and_dynamic_type_is res
-            (Typ.mk_struct (PythonClass (PythonClassName.make_reserved_builtin builtin)))
+            (Typ.mk_struct (PythonClass (PythonClassName.BuiltinClosure builtin_closure)))
         in
         ret (Some res)
     | None ->
@@ -433,31 +431,35 @@ let make_int_internal arg : DSL.aval DSL.model_monad =
       ret res
 
 
+type pymodel =
+  | PyLib of {module_name: string; name: string}
+  | PyBuiltin of PythonClassName.builtin_closure
+
 (* Only Python frontend builtins ($builtins.py_) have a C-style syntax, so we
    must catch other specific calls here *)
-let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_monad =
+let modelled_python_call model args : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
-  match (module_name, fun_name, args) with
-  | `PyLib "asyncio", "run", [arg] ->
+  match (model, args) with
+  | PyLib {module_name= "asyncio"; name= "run"}, [arg] ->
       let* () = await_awaitable arg in
       let* res = fresh () in
       ret (Some res)
-  | `PyLib "asyncio", "sleep", _ ->
+  | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
       ret (Some res)
-  | `PyBuiltin, "int", [arg] ->
+  | PyBuiltin IntFun, [arg] ->
       let* res = make_int_internal arg in
       ret (Some res)
-  | `PyBuiltin, "str", _ ->
+  | PyBuiltin StrFun, _ ->
       let* res = fresh () in
       ret (Some res)
-  | `PyBuiltin, "type", [arg] ->
+  | PyBuiltin TypeFun, [arg] ->
       make_type arg
-  | `PyBuiltin, "type", _ ->
+  | PyBuiltin TypeFun, _ ->
       let* res = fresh () in
       ret (Some res)
-  | _, _, _ ->
+  | _, _ ->
       ret None
 
 
@@ -469,15 +471,15 @@ let call closure arg_names args : model =
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
   let* res =
     match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct type_name}}
-      when Typ.Name.Python.is_reserved_builtin type_name -> (
-        let builtin_name = Typ.Name.Python.get_reserved_builtin type_name |> Option.value_exn in
-        let* opt_special_call = modelled_python_call `PyBuiltin builtin_name args in
+    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (BuiltinClosure builtin))}} -> (
+        let* opt_special_call = modelled_python_call (PyBuiltin builtin) args in
         match opt_special_call with
         | None ->
-            L.die InternalError "builtin %s was not successfully recognized" builtin_name
+            L.die InternalError "builtin %s was not successfully recognized"
+              (PythonClassName.to_string (BuiltinClosure builtin))
         | Some res ->
-            L.d_printfln "catching reserved builtin call %s" builtin_name ;
+            L.d_printfln "catching reserved builtin call %s"
+              (PythonClassName.to_string (BuiltinClosure builtin)) ;
             ret res )
     | _ ->
         call_dsl ~closure ~arg_names ~args
@@ -493,12 +495,10 @@ let call_method name obj arg_names args : model =
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
   let* res =
     match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} when Typ.Name.Python.is_module type_name
-      -> (
+    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals module_name))}} -> (
         (* since module types are final, static type will save us most of the time *)
-        let module_name = Typ.Name.Python.get_module_name type_name |> Option.value_exn in
         let* str_name = as_constant_string_exn name in
-        let* opt_special_call = modelled_python_call (`PyLib module_name) str_name args in
+        let* opt_special_call = modelled_python_call (PyLib {module_name; name= str_name}) args in
         match opt_special_call with
         | None ->
             L.d_printfln "calling method %s on module object %s" str_name module_name ;
@@ -539,36 +539,31 @@ let get_awaitable arg : model =
 
 
 let is_package aval : string option DSL.model_monad =
-  let suffix = "::__init__" in
-  let tname_is_package tname = Typ.Name.name tname |> String.is_suffix ~suffix in
   let open DSL.Syntax in
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
   ret
     ( match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct tname}} when tname_is_package tname ->
-        Typ.Name.name tname |> String.chop_suffix ~suffix
-        |> Option.bind ~f:(String.chop_prefix ~prefix:PythonClassName.globals_prefix)
+    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Filename name))}}
+      when String.is_suffix name ~suffix:"::__init__" ->
+        Some name
     | _ ->
         None )
 
 
 let is_global aval : bool DSL.model_monad =
-  let tname_is_global tname =
-    Typ.Name.name tname |> String.is_prefix ~prefix:PythonClassName.globals_prefix
-  in
   let open DSL.Syntax in
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
   ret
     ( match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct tname}} ->
-        tname_is_global tname
+    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals _))}} ->
+        true
     | _ ->
         false )
 
 
 let is_module_captured module_name =
   let function_name = "__module_body__" in
-  let class_name = PythonClassName.make_filename module_name in
+  let class_name = PythonClassName.Filename module_name in
   let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
   IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
 
@@ -707,10 +702,23 @@ let load_fast name locals : model =
 
 let tag_if_builtin name aval : unit DSL.model_monad =
   let open DSL.Syntax in
-  if List.mem ~equal:String.equal reserved_builtins name then
-    and_dynamic_type_is aval
-      (Typ.mk_struct (PythonClass (PythonClassName.make_reserved_builtin name)))
-  else ret ()
+  let opt_builtin : PythonClassName.builtin_closure option =
+    match name with
+    | "str" ->
+        Some StrFun
+    | "int" ->
+        Some IntFun
+    | "type" ->
+        Some TypeFun
+    | _ ->
+        None
+  in
+  match opt_builtin with
+  | Some builtin ->
+      and_dynamic_type_is aval
+        (Typ.mk_struct (PythonClass (PythonClassName.BuiltinClosure builtin)))
+  | _ ->
+      ret ()
 
 
 let load_global name globals : model =
@@ -833,14 +841,6 @@ let die_if_other_builtin (_, proc_name) _ =
   false
 
 
-let is_builtin typename : bool =
-  match (typename : Typ.Name.t) with
-  | PythonClass pyclass ->
-      PythonClassName.is_reserved_builtin pyclass
-  | _ ->
-      false
-
-
 let compare_eq arg1 arg2 : model =
   let open DSL.Syntax in
   start_model
@@ -851,7 +851,8 @@ let compare_eq arg1 arg2 : model =
     match (arg1_dynamic_type_data, arg2_dynamic_type_data) with
     | ( Some {Formula.typ= {desc= Tstruct arg1_type_name}}
       , Some {Formula.typ= {desc= Tstruct arg2_type_name}} )
-      when is_builtin arg1_type_name || is_builtin arg2_type_name ->
+      when Typ.Name.Python.is_singleton arg1_type_name
+           || Typ.Name.Python.is_singleton arg2_type_name ->
         make_bool (Typ.Name.equal arg1_type_name arg2_type_name)
     | _ ->
         L.d_printfln "py_compare_eq: at least one unknown dynamic type: unknown result" ;
