@@ -214,3 +214,35 @@ class ClosuresAndDict2_with_self {
   }
 
 }
+
+class ThenAsyncPattern {
+  public static async function gen(): Awaitable<void> {
+    return;
+  }
+
+  public static async function then_async<TOut>(
+    (function()[_]: Awaitable<TOut>) $fn,
+  )[ctx $fn]: Awaitable<TOut> {
+    return await $fn();
+  }
+
+  public static async function static_method_bad(): Awaitable<void> {
+    await self::then_async(async () ==> self::gen());
+    return;
+  }
+
+  public static async function static_method_ok(): Awaitable<void> {
+    await self::then_async(async () ==> await self::gen());
+    return;
+  }
+
+  public async function FN_method_bad(): Awaitable<void> {
+    await self::then_async(async () ==> self::gen());
+    return;
+  }
+
+  public async function method_ok(): Awaitable<void> {
+    await self::then_async(async () ==> await self::gen());
+    return;
+  }
+}
