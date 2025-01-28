@@ -718,30 +718,33 @@ let static_match_call tenv return arguments procname label : tcontext option =
 module Debug = struct
   let dropped_disjuncts_count = AnalysisGlobalState.make_dls ~init:(fun () -> 0)
 
-  let rec matched_transitions =
+  let matched_transitions =
     lazy
-      ( Epilogues.register ~f:log_unseen
-          ~description:"log which transitions never match because of their static pattern" ;
-        let automaton = Topl.automaton () in
-        let tcount = ToplAutomaton.tcount automaton in
-        Array.create ~len:tcount false )
+      (let matched_transitions =
+         let automaton = Topl.automaton () in
+         let tcount = ToplAutomaton.tcount automaton in
+         Array.create ~len:tcount false
+       in
+       let get_unseen () =
+         let f index seen = if seen then None else Some index in
+         Array.filter_mapi ~f matched_transitions
+       in
+       (* The transitions reported here *probably* have patterns that were miswrote by the user. *)
+       let log_unseen () =
+         let unseen = Array.to_list (get_unseen ()) in
+         let pp f i = ToplAutomaton.pp_tindex (Topl.automaton ()) f i in
+         if Config.trace_topl && not (List.is_empty unseen) then
+           L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
+             (F.pp_print_list pp) unseen
+       in
+       let () =
+         Epilogues.register ~f:log_unseen
+           ~description:"log which transitions never match because of their static pattern"
+       in
+       matched_transitions )
 
 
-  and set_seen tindex = (Lazy.force matched_transitions).(tindex) <- true
-
-  and get_unseen () =
-    let f index seen = if seen then None else Some index in
-    Array.filter_mapi ~f (Lazy.force matched_transitions)
-
-
-  (** The transitions reported here *probably* have patterns that were miswrote by the user. *)
-  and log_unseen () =
-    let unseen = Array.to_list (get_unseen ()) in
-    let pp f i = ToplAutomaton.pp_tindex (Topl.automaton ()) f i in
-    if Config.trace_topl && not (List.is_empty unseen) then
-      L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
-        (F.pp_print_list pp) unseen
-
+  let set_seen tindex = (Lazy.force matched_transitions).(tindex) <- true
 
   let get_dropped_disjuncts_count () = DLS.get dropped_disjuncts_count
 
