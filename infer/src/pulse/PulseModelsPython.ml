@@ -457,6 +457,9 @@ let modelled_python_call module_name fun_name args : DSL.aval option DSL.model_m
       ret (Some res)
   | `PyBuiltin, "type", [arg] ->
       make_type arg
+  | `PyBuiltin, "type", _ ->
+      let* res = fresh () in
+      ret (Some res)
   | _, _, _ ->
       ret None
 
