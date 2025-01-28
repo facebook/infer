@@ -200,8 +200,13 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_get_attr" [of_exp exp; attr]
   | Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure} ->
       let proc = mk_qualified_proc_name (RegularFunction qual_name) in
+      let str_qual_name = F.asprintf "%a" QualName.pp qual_name in
+      let attr : Textual.Attr.t =
+        {name= "name"; values= [str_qual_name]; loc= Textual.Location.Unknown}
+      in
       let closure =
-        Textual.Exp.Closure {proc; captured= [exp_globals]; params= [Parameter.locals]}
+        Textual.Exp.Closure
+          {proc; captured= [exp_globals]; params= [Parameter.locals]; attributes= [attr]}
       in
       call_builtin str_py_make_function
         ( closure

@@ -297,7 +297,11 @@ module Exp : sig
     | Index of t * t  (** an array index offset: [exp1[exp2]] *)
     | Const of Const.t
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
-    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Closure of
+        { proc: QualifiedProcName.t
+        ; captured: t list
+        ; params: VarName.t list
+        ; attributes: Attr.t list }
     | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 

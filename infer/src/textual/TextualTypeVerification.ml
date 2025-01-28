@@ -554,12 +554,12 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       let* loc = get_location in
       let+ lang = get_lang in
       (Exp.Apply {closure; args}, TextualSil.default_return_type lang loc)
-  | Closure {proc; captured; params} ->
+  | Closure {proc; captured; params; attributes} ->
       let* captured_and_types = mapM captured ~f:typeof_exp in
       let captured = List.map ~f:fst captured_and_types in
       let* loc = get_location in
       let+ lang = get_lang in
-      (Exp.Closure {proc; captured; params}, TextualSil.default_return_type lang loc)
+      (Exp.Closure {proc; captured; params; attributes}, TextualSil.default_return_type lang loc)
   | Typ _ ->
       ret (exp, Typ.Struct TypeNameBridge.sil_type_of_types)
 

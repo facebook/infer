@@ -88,8 +88,8 @@ module FixClosureAppExpr = struct
           Option.value_map (is_varname proc)
             ~f:(fun closure -> Apply {closure; args})
             ~default:(Call {proc; args; kind})
-      | Closure {proc; captured; params} ->
-          Closure {proc; captured= List.map captured ~f:of_exp; params}
+      | Closure {proc; captured; params; attributes} ->
+          Closure {proc; captured= List.map captured ~f:of_exp; params; attributes}
       | Apply {closure; args} ->
           Apply {closure= of_exp closure; args= List.map args ~f:of_exp}
     in
@@ -223,8 +223,12 @@ module Subst = struct
         Index (of_exp_one exp1 ~id ~by, of_exp_one exp2 ~id ~by)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp_one exp ~id ~by)}
-    | Closure {proc; captured; params} ->
-        Closure {proc; captured= List.map captured ~f:(fun exp -> of_exp_one exp ~id ~by); params}
+    | Closure {proc; captured; params; attributes} ->
+        Closure
+          { proc
+          ; captured= List.map captured ~f:(fun exp -> of_exp_one exp ~id ~by)
+          ; params
+          ; attributes }
     | Apply {closure; args} ->
         Apply
           { closure= of_exp_one closure ~id ~by
@@ -246,8 +250,9 @@ module Subst = struct
         Index (of_exp exp1 eqs, of_exp exp2 eqs)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp exp eqs)}
-    | Closure {proc; captured; params} ->
-        Closure {proc; captured= List.map captured ~f:(fun exp -> of_exp exp eqs); params}
+    | Closure {proc; captured; params; attributes} ->
+        Closure
+          {proc; captured= List.map captured ~f:(fun exp -> of_exp exp eqs); params; attributes}
     | Apply {closure; args} ->
         Apply {closure= of_exp closure eqs; args= List.map args ~f:(fun exp -> of_exp exp eqs)}
 

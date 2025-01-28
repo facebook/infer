@@ -689,7 +689,11 @@ module Exp = struct
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
-    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Closure of
+        { proc: QualifiedProcName.t
+        ; captured: t list
+        ; params: VarName.t list
+        ; attributes: Attr.t list }
     | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 
@@ -713,6 +717,8 @@ module Exp = struct
   let allocate_object typename =
     Call {proc= ProcDecl.allocate_object_name; args= [Typ (Typ.Struct typename)]; kind= NonVirtual}
 
+
+  let pp_fun_attributes fmt = function [] -> () | l -> List.iter l ~f:(Attr.pp fmt)
 
   let rec pp fmt = function
     | Apply {closure; args} ->
@@ -743,12 +749,13 @@ module Exp = struct
             L.die InternalError "virtual call with 0 args: %a" QualifiedProcName.pp proc )
       | NonVirtual ->
           F.fprintf fmt "%a%a" QualifiedProcName.pp proc pp_list args )
-    | Closure {proc; captured; params} ->
+    | Closure {proc; captured; params; attributes} ->
         let captured_and_params =
           captured @ List.map params ~f:(fun varname -> Load {exp= Lvar varname; typ= None})
         in
-        F.fprintf fmt "fun (%a) -> %a(%a)" (pp_list_with_comma VarName.pp) params
-          QualifiedProcName.pp proc (pp_list_with_comma pp) captured_and_params
+        F.fprintf fmt "@[<hov>%afun (%a) -> %a(%a)@]" pp_fun_attributes attributes
+          (pp_list_with_comma VarName.pp) params QualifiedProcName.pp proc (pp_list_with_comma pp)
+          captured_and_params
     | Typ typ ->
         F.fprintf fmt "<%a>" Typ.pp typ
 

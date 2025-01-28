@@ -446,7 +446,7 @@ expression:
     { Exp.Apply {closure; args} }
   | recv=expression DOT proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
-  | FUN params=separated_list(COMMA, vname) RPAREN ARROW
+  | attributes=annots FUN params=separated_list(COMMA, vname) RPAREN ARROW
      proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     {
       let syntax_error () =
@@ -466,7 +466,7 @@ expression:
             | _ -> false
         in
         if List.for_all2_exn ~f:match_param params2 params then
-          Exp.Closure {proc; captured; params}
+          Exp.Closure {proc; captured; params; attributes}
         else syntax_error ()
      }
   | LABRACKET typ=typ RABRACKET

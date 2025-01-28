@@ -88,14 +88,14 @@ class C:
           n8 = $builtins.py_import_from("mod", n7)
           _ = $builtins.py_store_name("mod", n1, n2, n8)
           _ = $builtins.py_store_name("x", n1, n2, $builtins.py_make_int(0))
-          n9 = $builtins.py_make_function(fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
+          n9 = $builtins.py_make_function(.name = "dummy.f"fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("f", n1, n2, n9)
-          n10 = $builtins.py_make_function(fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
+          n10 = $builtins.py_make_function(.name = "dummy.g"fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("g", n1, n2, n10)
-          n11 = $builtins.py_make_function(fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
+          n11 = $builtins.py_make_function(.name = "dummy.D"fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
           n12 = $builtins.py_build_class(n11, $builtins.py_make_string("D"))
           _ = $builtins.py_store_name("D", n1, n2, n12)
-          n13 = $builtins.py_make_function(fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
+          n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C"))
           _ = $builtins.py_store_name("C", n1, n2, n14)
           ret n0
@@ -110,7 +110,7 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("C"))
-          n4 = $builtins.py_make_function(fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
+          n4 = $builtins.py_make_function(.name = "dummy.C.foo"fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
 
@@ -133,7 +133,7 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("D"))
-          n4 = $builtins.py_make_function(fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
+          n4 = $builtins.py_make_function(.name = "dummy.D.foo"fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
 
@@ -223,14 +223,14 @@ class C:
           n8 = $builtins.py_import_from("mod", n7)
           _ = $builtins.py_store_name("mod", n1, n2, n8)
           _ = $builtins.py_store_name("x", n1, n2, $builtins.py_make_int(0))
-          n9 = $builtins.py_make_function(fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
+          n9 = $builtins.py_make_function(.name = "dummy.f"fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("f", n1, n2, n9)
-          n10 = $builtins.py_make_function(fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
+          n10 = $builtins.py_make_function(.name = "dummy.g"fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("g", n1, n2, n10)
-          n11 = $builtins.py_make_function(fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
+          n11 = $builtins.py_make_function(.name = "dummy.D"fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
           n12 = $builtins.py_build_class(n11, $builtins.py_make_string("D"))
           _ = $builtins.py_store_name("D", n1, n2, n12)
-          n13 = $builtins.py_make_function(fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
+          n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C"))
           _ = $builtins.py_store_name("C", n1, n2, n14)
           ret n0
@@ -245,7 +245,7 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("C"))
-          n4 = $builtins.py_make_function(fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
+          n4 = $builtins.py_make_function(.name = "dummy.C.foo"fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
 
@@ -268,7 +268,7 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("D"))
-          n4 = $builtins.py_make_function(fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
+          n4 = $builtins.py_make_function(.name = "dummy.D.foo"fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
 
