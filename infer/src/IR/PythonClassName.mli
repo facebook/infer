@@ -38,6 +38,10 @@ val is_final : t -> bool
 
 val is_singleton : t -> bool
 
+val split_module_attr : t -> (string * string) option
+(** if the argument is a closure type or a module type, split the corresponding name into a pair
+    (module_name, function_name) *)
+
 val concatenate_package_name_and_file_name : t -> string -> t option
 
 val get_builtin_closure_from_builtin_type : builtin_type -> builtin_closure option

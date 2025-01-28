@@ -15,3 +15,10 @@ class C:
     @staticmethod
     async def async_fun():
         pass
+
+
+def wait(arg):
+    """
+    This function is expected to be modeled as unknown by the analysis because of .inferconfig
+    """
+    pass

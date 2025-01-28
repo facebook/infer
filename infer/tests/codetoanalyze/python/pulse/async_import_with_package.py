@@ -11,8 +11,10 @@ from dir1.testmod import (
 from dir1.dir3.testmod import (
     await_it as await_it3,
     dont_await_it as dont_await_it3,
-    C
+    C,
+    wait
 )
+from not_captured.helper import not_captured_wait
 import dir1.dir4.testmod
 from dir2.testmod import (
     await_it as await_it2,
@@ -80,3 +82,11 @@ async def bad6():
 
 async def ok6():
     await import6.await_it(asyncio.sleep(1))
+
+
+def use_pulse_model_release_option_ok():
+    wait(asyncio.sleep())
+
+
+def use_pulse_model_release_option_not_captured_ok():
+    not_captured_wait(asyncio.sleep())

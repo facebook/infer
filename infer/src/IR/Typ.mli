@@ -243,6 +243,8 @@ module Name : sig
 
     val is_singleton : t -> bool
 
+    val split_module_attr : t -> (string * string) option
+
     val concatenate_package_name_and_file_name : t -> string -> t option
   end
 

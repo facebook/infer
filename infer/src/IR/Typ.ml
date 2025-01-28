@@ -685,6 +685,10 @@ module Name = struct
       match name with PythonClass py -> PythonClassName.is_singleton py | _ -> false
 
 
+    let split_module_attr name =
+      match name with PythonClass py -> PythonClassName.split_module_attr py | _ -> None
+
+
     let concatenate_package_name_and_file_name name filename =
       match name with
       | PythonClass py ->

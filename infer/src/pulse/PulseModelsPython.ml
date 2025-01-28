@@ -258,6 +258,12 @@ let as_constant_string_exn aval : string DSL.model_monad =
   ret str
 
 
+let is_release_model tname attr =
+  Option.exists Config.pulse_model_release_pattern ~f:(fun regexp ->
+      let str = Printf.sprintf "%s::%s" tname attr in
+      Str.string_match regexp str 0 )
+
+
 module Dict = struct
   let make keys args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
@@ -444,6 +450,10 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       let* () = await_awaitable arg in
       let* res = fresh () in
       ret (Some res)
+  | PyLib {module_name; name}, _ when is_release_model module_name name ->
+      let* () = list_iter args ~f:await_awaitable in
+      let* res = fresh () in
+      ret (Some res)
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       let* res = fresh () in
       let* () = allocation Attribute.Awaitable res in
@@ -481,6 +491,14 @@ let call closure arg_names args : model =
             L.d_printfln "catching reserved builtin call %s"
               (PythonClassName.to_string (BuiltinClosure builtin)) ;
             ret res )
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
+      (* we introspect the dyntype of the callee tyring to recognize a Pyton library model *)
+      match Typ.Name.Python.split_module_attr type_name with
+      | Some (module_name, name) -> (
+          let* opt_res = modelled_python_call (PyLib {module_name; name}) args in
+          match opt_res with Some res -> ret res | None -> call_dsl ~closure ~arg_names ~args )
+      | _ ->
+          call_dsl ~closure ~arg_names ~args )
     | _ ->
         call_dsl ~closure ~arg_names ~args
   in

@@ -10,5 +10,6 @@
     { "procedure": "taint.sink",
       "taint_target": ["ArgumentPositions", [1]]
     }
-  ]
+  ],
+  "pulse-model-release-pattern": "dir1::dir3::testmod::wait\\|not_captured::helper::not_captured_wait"
 }

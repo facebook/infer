@@ -65,6 +65,26 @@ let is_final = function Globals _ -> true | _ -> false
 
 let is_singleton = function BuiltinClosure _ | Builtin PyNone | Closure _ -> true | _ -> false
 
+let split_module_attr = function
+  (* TODO: we could simplify this function if we use [string list] instead of [string] in [t] *)
+  | Closure name ->
+      let open IOption.Let_syntax in
+      let+ pos = String.index name '.' in
+      let length = String.length name in
+      let attribute_name = String.sub name ~pos:(pos + 1) ~len:(length - pos - 1) in
+      let module_name = String.sub name ~pos:0 ~len:pos in
+      (module_name, attribute_name)
+  | Globals name ->
+      let open IOption.Let_syntax in
+      let+ last_pos = String.substr_index_all name ~may_overlap:false ~pattern:"::" |> List.last in
+      let length = String.length name in
+      let attribute_name = String.sub name ~pos:(last_pos + 2) ~len:(length - last_pos - 2) in
+      let module_name = String.sub name ~pos:0 ~len:last_pos in
+      (module_name, attribute_name)
+  | _ ->
+      None
+
+
 let concatenate_package_name_and_file_name typename filename =
   match typename with
   | Globals module_name ->

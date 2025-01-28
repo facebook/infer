@@ -17,4 +17,4 @@ $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
 	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions \
 		--dump-duplicate-symbols \
 		-o $(INFER_OUT) \
-                -- python3 $(SOURCES)
+		-- python3 $(SOURCES)
