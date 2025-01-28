@@ -22,7 +22,7 @@ let int_tname = TextualSil.python_int_type_name
 
 let tuple_tname = TextualSil.python_tuple_type_name
 
-let none_tname = Typ.PythonClass (PythonClassName.mk_reserved_builtin "None")
+let none_tname = TextualSil.python_none_type_name
 
 (* sys.stdlib_module_names *)
 let stdlib_modules : IString.Set.t =
@@ -248,10 +248,7 @@ let stdlib_modules : IString.Set.t =
 
 let reserved_builtins = ["int"; "str"; "type"]
 
-let module_tname module_name =
-  let str = F.asprintf "%s%s" PythonClassName.globals_prefix module_name in
-  Typ.PythonClass (PythonClassName.make str)
-
+let module_tname module_name = Typ.PythonClass (PythonClassName.make_global module_name)
 
 let as_constant_string_exn aval : string DSL.model_monad =
   let open DSL.Syntax in
@@ -415,7 +412,7 @@ let make_type arg : DSL.aval option DSL.model_monad =
     | Some builtin ->
         let* () =
           and_dynamic_type_is res
-            (Typ.mk_struct (PythonClass (PythonClassName.mk_reserved_builtin builtin)))
+            (Typ.mk_struct (PythonClass (PythonClassName.make_reserved_builtin builtin)))
         in
         ret (Some res)
     | None ->
@@ -571,7 +568,7 @@ let is_global aval : bool DSL.model_monad =
 
 let is_module_captured module_name =
   let function_name = "__module_body__" in
-  let class_name = PythonClassName.make module_name in
+  let class_name = PythonClassName.make_filename module_name in
   let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
   IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
 
@@ -712,7 +709,7 @@ let tag_if_builtin name aval : unit DSL.model_monad =
   let open DSL.Syntax in
   if List.mem ~equal:String.equal reserved_builtins name then
     and_dynamic_type_is aval
-      (Typ.mk_struct (PythonClass (PythonClassName.mk_reserved_builtin name)))
+      (Typ.mk_struct (PythonClass (PythonClassName.make_reserved_builtin name)))
   else ret ()
 
 

@@ -10,9 +10,25 @@ module F = Format
 
 type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-val make : string -> t
+val make_closure : string -> t
 
-val mk_reserved_builtin : string -> t
+val make_filename : string -> t
+
+val make_global : string -> t
+
+val make_reserved_builtin : string -> t
+
+val builtin_object : t
+
+val builtin_dict : t
+
+val builtin_int : t
+
+val builtin_none : t
+
+val builtin_bool : t
+
+val builtin_tuple : t
 
 val classname : t -> string
 

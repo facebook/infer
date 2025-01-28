@@ -16,6 +16,8 @@ type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash, 
 
 let make classname = {classname}
 
+let make_filename name = make name
+
 let classname {classname} = classname
 
 let components {classname} = [classname]
@@ -27,6 +29,23 @@ let pp fmt {classname} = F.fprintf fmt "%s" classname
 let to_string = Pp.string_of_pp pp
 
 let globals_prefix = "PyGlobals::"
+
+let make_global name = make (globals_prefix ^ name)
+
+let make_closure name =
+  let classname = "closure:" ^ name in
+  {classname}
+
+
+let builtin_object = make "PyObject"
+
+let builtin_dict = make "PyDict"
+
+let builtin_int = make "PyInt"
+
+let builtin_bool = make "PyBool"
+
+let builtin_tuple = make "PyTuple"
 
 let is_module {classname} = String.is_prefix classname ~prefix:globals_prefix
 
@@ -59,10 +78,12 @@ let concatenate_package_name_and_file_name typename filename =
 
 let closure_builtin_prefix = "closure:builtin:"
 
-let mk_reserved_builtin name =
+let make_reserved_builtin name =
   let classname = closure_builtin_prefix ^ name in
   {classname}
 
+
+let builtin_none = make_reserved_builtin "None"
 
 let is_reserved_builtin {classname} = String.is_prefix classname ~prefix:closure_builtin_prefix
 

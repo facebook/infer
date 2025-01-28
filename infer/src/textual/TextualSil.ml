@@ -89,6 +89,15 @@ module TypeNameBridge = struct
     JavaClass (replace_2colons_with_dot string |> JavaClassName.from_string)
 
 
+  let value_to_python_class_name value : PythonClassName.t =
+    let is_closure = String.chop_prefix ~prefix:"closure:" value in
+    if Option.is_some is_closure then Option.value_exn is_closure |> PythonClassName.make_closure
+    else
+      let is_globals = String.chop_prefix ~prefix:"PyGlobals::" value in
+      if Option.is_some is_globals then Option.value_exn is_globals |> PythonClassName.make_global
+      else PythonClassName.make_filename value
+
+
   let value_to_sil (lang : Lang.t) value : SilTyp.Name.t =
     match lang with
     | Java ->
@@ -96,7 +105,7 @@ module TypeNameBridge = struct
     | Hack ->
         HackClass (HackClassName.make value)
     | Python ->
-        PythonClass (PythonClassName.make value)
+        PythonClass (value_to_python_class_name value)
 
 
   let to_sil (lang : Lang.t) {value} = value_to_sil lang value
@@ -135,17 +144,21 @@ let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
 (* pseudo-class for top-level functions *)
 let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
 
-let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject")
+let python_mixed_type_name = SilTyp.PythonClass PythonClassName.builtin_object
 
-let python_dict_type_name = SilTyp.PythonClass (PythonClassName.make "PyDict")
+let python_dict_type_name = SilTyp.PythonClass PythonClassName.builtin_dict
 
-let python_int_type_name = SilTyp.PythonClass (PythonClassName.make "PyInt")
+let python_int_type_name = SilTyp.PythonClass PythonClassName.builtin_int
 
-let python_bool_type_name = SilTyp.PythonClass (PythonClassName.make "PyBool")
+let python_bool_type_name = SilTyp.PythonClass PythonClassName.builtin_bool
 
-let python_tuple_type_name = SilTyp.PythonClass (PythonClassName.make "PyTuple")
+let python_none_type_name = SilTyp.PythonClass PythonClassName.builtin_none
 
-let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
+let python_tuple_type_name = SilTyp.PythonClass PythonClassName.builtin_tuple
+
+let mk_python_mixed_type_textual loc =
+  Typ.Struct TypeName.{value= PythonClassName.(classname builtin_object); loc}
+
 
 let default_return_type (lang : Lang.t option) loc =
   match lang with
@@ -361,7 +374,7 @@ module ProcDeclBridge = struct
     | QualifiedProcName.TopLevel ->
         None
     | QualifiedProcName.Enclosing name ->
-        Some (PythonClassName.make name.value)
+        Some (TypeNameBridge.value_to_python_class_name name.value)
 
 
   let to_sil lang t : SilProcname.t =
