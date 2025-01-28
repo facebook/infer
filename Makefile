@@ -174,6 +174,12 @@ endif
 endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
+ifneq ($(BUILD_SWIFT_ANALYZERS),no)
+DIRECT_TESTS += \
+  swift_frontend \
+
+endif
+
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(ERLC),no)
 ifneq ($(ESCRIPT),no)

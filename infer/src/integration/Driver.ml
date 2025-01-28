@@ -36,7 +36,7 @@ type mode =
   | Python of {prog: string; args: string list}
   | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
-  | Swiftc of {args: string list}
+  | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
@@ -94,8 +94,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Python driver mode:@\nfiles = '%a'" Pp.cli_args files
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
-  | Swiftc {args} ->
-      F.fprintf fmt "Swift driver mode:@\nargs = %a" Pp.cli_args args
+  | Swiftc {prog; args} ->
+      F.fprintf fmt "Swift driver mode:@\nprog = '%s' args = %a" prog Pp.cli_args args
   | Erlc {args} ->
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {prog; args} ->
@@ -218,9 +218,9 @@ let capture ~changed_files mode =
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
-      | Swiftc {args} ->
+      | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
-          Swift.capture ~command:"swiftc" ~args
+          Swift.capture ~command:prog ~args
       | Erlc {args} ->
           L.progress "Capturing in erlc mode...@." ;
           Erlang.capture ~command:"erlc" ~args
@@ -560,7 +560,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       | BRebar3 ->
           Rebar3 {args}
       | BSwiftc ->
-          Swiftc {args}
+          Swiftc {prog; args}
       | BErlc ->
           Erlc {args}
       | BHackc ->

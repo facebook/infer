@@ -1310,10 +1310,10 @@ let module_to_sil lang module_ decls_env =
 let pp_copyright fmt =
   F.fprintf fmt "// \n" ;
   F.fprintf fmt "// Copyright (c) Facebook, Inc. and its affiliates.\n" ;
-  F.fprintf fmt "// \n" ;
+  F.fprintf fmt "//\n" ;
   F.fprintf fmt "// This source code is licensed under the MIT license found in the\n" ;
   F.fprintf fmt "// LICENSE file in the root directory of this source tree.\n" ;
-  F.fprintf fmt "//\n\n"
+  F.fprintf fmt "\n"
 
 
 let from_java ~filename tenv cfg =
