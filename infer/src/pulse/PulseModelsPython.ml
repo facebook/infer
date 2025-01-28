@@ -874,6 +874,11 @@ let store_name name locals _globals value : model =
   start_model @@ fun () -> Dict.set locals name value
 
 
+let store_subscript _dict _key value =
+  let open DSL.Syntax in
+  start_model @@ fun () -> remove_allocation_attr_transitively [value]
+
+
 let subscript seq idx : model =
   let open DSL.Syntax in
   start_model
@@ -1047,7 +1052,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
   ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global
   ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name
-  ; -"$builtins" &:: "py_store_subscript" &::.*+++> unknown
+  ; -"$builtins" &:: "py_store_subscript" <>$ arg $+ arg $+ arg $--> store_subscript
   ; -"$builtins" &:: "py_subscript" <>$ arg $+ arg $--> subscript
   ; -"$builtins" &:: "py_unary_invert" &::.*+++> unknown
   ; -"$builtins" &:: "py_unary_negative" &::.*+++> unknown

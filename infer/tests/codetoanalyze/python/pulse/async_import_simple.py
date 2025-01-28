@@ -49,3 +49,10 @@ async def asyncio_gather_3_elements_ok():
 async def asyncio_gather_unknown_list_ok(l):
     tasks = [asyncio.sleep(i) for i in l]
     await asyncio.gather(*tasks)
+
+
+async def make_awaitables_dict(cond):
+    awaitables_dict = {}
+    if cond:
+        awaitables_dict["a key"] = sleep()
+    return awaitables_dict
