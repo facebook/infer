@@ -483,10 +483,10 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       ret (Some res)
   | PyBuiltin TypeFun, [arg] ->
       make_type arg
-  | PyBuiltin TypeFun, _ ->
+  | PyBuiltin TypeFun, _ | PyBuiltin IntFun, _ ->
       let* res = fresh () in
       ret (Some res)
-  | _, _ ->
+  | PyLib _, _ ->
       ret None
 
 
