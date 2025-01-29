@@ -475,12 +475,12 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     List.fold ~init:astate specs ~f:(fun astate (spec : AnnotationSpec.t) ->
         if spec.sink_predicate tenv callee_pname then
           if spec.sanitizer_predicate tenv callee_pname then (
-            L.d_printf "%s: Direct call `%a -> %a` to sink `@%s` sanitized by callee `%a`\n"
+            L.d_printfln "%s: Direct call `%a -> %a` to sink `@%s` sanitized by callee `%a`"
               spec.kind Procname.pp caller_pname Procname.pp callee_pname
               spec.sink_annotation.Annot.class_name Procname.pp callee_pname ;
             astate )
           else if spec.sanitizer_predicate tenv caller_pname then (
-            L.d_printf "%s: Direct call `%a -> %a` to sink `@%s` sanitized by caller `%a`\n"
+            L.d_printfln "%s: Direct call `%a -> %a` to sink `@%s` sanitized by caller `%a`"
               spec.kind Procname.pp caller_pname Procname.pp callee_pname
               spec.sink_annotation.Annot.class_name Procname.pp caller_pname ;
             astate )
@@ -495,11 +495,11 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
       call_site_info ~callee_pname astate =
     match analyze_dependency callee_pname with
     | Error err ->
-        L.d_printf "No summary for callee `%a`: %a@\n" Procname.pp callee_pname
+        L.d_printfln "No summary for callee `%a`: %a" Procname.pp callee_pname
           AnalysisResult.pp_no_summary err ;
         astate
     | Ok callee_call_map ->
-        L.d_printf "Applying summary of callee `%a`@\n" Procname.pp callee_pname ;
+        L.d_printfln "Applying summary of callee `%a`" Procname.pp callee_pname ;
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate
           else
@@ -513,19 +513,19 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
                   if spec.sanitizer_predicate tenv callee_pname then (
                     (* I don't think this branch can happen, if callee is sanitizer then call
                        to sink should not appear in its summary. But better be safe. *)
-                    L.d_printf
-                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by callee `%a`\n"
+                    L.d_printfln
+                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by callee `%a`"
                       spec.kind Procname.pp caller_pname Procname.pp sink
                       spec.sink_annotation.Annot.class_name Procname.pp callee_pname ;
                     astate )
                   else if spec.sanitizer_predicate tenv caller_pname then (
-                    L.d_printf
-                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by caller `%a`\n"
+                    L.d_printfln
+                      "%s: Indirect call `%a -> %a` to sink `@%s` sanitized by caller `%a`"
                       spec.kind Procname.pp caller_pname Procname.pp sink
                       spec.sink_annotation.Annot.class_name Procname.pp caller_pname ;
                     astate )
                   else (
-                    L.d_printf "%s: Adding transitive call `%a -> %a` to sink `@%s`@\n" spec.kind
+                    L.d_printfln "%s: Adding transitive call `%a -> %a` to sink `@%s`" spec.kind
                       Procname.pp caller_pname Procname.pp sink
                       spec.sink_annotation.Annot.class_name ;
                     Domain.add_call_site annot sink call_site_info astate )
