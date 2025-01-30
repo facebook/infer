@@ -521,6 +521,28 @@ let create :
   {slots; children_updates; jobs; task_bar; tasks= tasks (); children_states}
 
 
+let with_primary_db_connection ~f () =
+  Database.new_database_connections Primary ;
+  f ()
+
+
+let create ?(with_primary_db = true) ~jobs ~child_prologue ~f ~child_epilogue ~tasks () =
+  PerfEvent.(log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
+  (* Close database connections before forking *)
+  Database.db_close () ;
+  let tasks = if with_primary_db then with_primary_db_connection ~f:tasks else tasks in
+  let pool =
+    create ~jobs ~f ~child_epilogue ~tasks
+      ~child_prologue:
+        ((* hack: we'll continue executing after the function passed to [protect], despite what he name might suggest *)
+         ForkUtils.protect ~f:child_prologue )
+  in
+  PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+  (* Re-open database connections after forking *)
+  Database.new_database_connections Primary ;
+  pool
+
+
 let run pool =
   let total_tasks = pool.tasks.remaining_tasks () in
   TaskBar.set_tasks_total pool.task_bar total_tasks ;
@@ -542,3 +564,39 @@ let run pool =
   let results = run pool in
   PerfEvent.(log (fun logger -> log_instant_event logger ~name:"end process pool" Global)) ;
   results
+
+
+let run runner =
+  (* Flush here all buffers to avoid passing unflushed data to forked processes, leading to duplication *)
+  Stdlib.flush_all () ;
+  (* Compact heap before forking *)
+  Gc.compact () ;
+  run runner
+
+
+type ('a, 'b) doer = 'a -> 'b option
+
+let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
+  let task_generator = TaskGenerator.of_list ~finish tasks in
+  let task_bar = TaskBar.create ~jobs:1 in
+  (ProcessPoolState.update_status :=
+     fun t status ->
+       TaskBar.update_status task_bar ~slot:0 t status ;
+       TaskBar.refresh task_bar ) ;
+  TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
+  TaskBar.tasks_done_reset task_bar ;
+  let for_child_info =
+    {TaskGenerator.child_slot= -1; child_id= Unix.getpid (); is_first_update= true}
+  in
+  let rec run_tasks () =
+    if not (task_generator.is_empty ()) then (
+      Option.iter (task_generator.next for_child_info) ~f:(fun (t, finish) ->
+          let result = f t in
+          finish () ;
+          task_generator.finished ~result t ) ;
+      TaskBar.set_remaining_tasks task_bar (task_generator.remaining_tasks ()) ;
+      TaskBar.refresh task_bar ;
+      run_tasks () )
+  in
+  run_tasks () ;
+  TaskBar.finish task_bar

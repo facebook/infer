@@ -343,11 +343,11 @@ let process_output_in_parallel ic =
   in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner =
-    Tasks.Runner.create ~with_primary_db:false ~jobs ~child_prologue:worker_blueprint.prologue
-      ~f:worker_blueprint.action ~child_epilogue:worker_blueprint.epilogue tasks
+    ProcessPool.create ~with_primary_db:false ~jobs ~child_prologue:worker_blueprint.prologue
+      ~f:worker_blueprint.action ~child_epilogue:worker_blueprint.epilogue ~tasks ()
   in
   let worker_outs =
-    Tasks.Runner.run runner
+    ProcessPool.run runner
     |> Array.mapi ~f:(fun worker_num out_path ->
            match out_path with
            | Some out_path ->

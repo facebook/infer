@@ -62,12 +62,12 @@ let run_compilation_database compilation_database should_capture_file =
     TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none compilation_commands
   in
   (* no stats to record so [child_epilogue] does nothing and we ignore the return
-     {!Tasks.Runner.run} *)
+     {!ProcessPool.run} *)
   let runner =
-    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:invoke_cmd
-      ~child_epilogue:ignore tasks
+    ProcessPool.create ~jobs:Config.jobs ~child_prologue:ignore ~f:invoke_cmd ~child_epilogue:ignore
+      ~tasks ()
   in
-  Tasks.Runner.run runner |> ignore ;
+  ProcessPool.run runner |> ignore ;
   L.progress "@." ;
   L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs
 

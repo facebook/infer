@@ -39,7 +39,8 @@ let clear_caches () =
 
 let useful_time = DLS.new_key (fun () -> ExecutionDuration.zero)
 
-let analyze_target : (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) Tasks.doer =
+let analyze_target :
+    (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result) ProcessPool.doer =
   let run_and_interpret_result ~f =
     try
       f () ;
@@ -170,7 +171,7 @@ let analyze replay_call_graph source_files_to_analyze =
       | Some (RaceOn _) ->
           L.die InternalError "Race detected in -j 1"
     in
-    Tasks.run_sequentially ~finish:fail_on_race ~f:analyze_target target_files ;
+    ProcessPool.run_sequentially ~finish:fail_on_race ~f:analyze_target target_files ;
     ( [Stats.get ()]
     , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
     , [MissingDependencies.get ()] ) )
@@ -229,10 +230,10 @@ let analyze replay_call_graph source_files_to_analyze =
         (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
       StatsLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
-      Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
-        build_tasks_generator
+      ProcessPool.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
+        ~tasks:build_tasks_generator ()
     in
-    let workers_stats = Tasks.Runner.run runner in
+    let workers_stats = ProcessPool.run runner in
     let collected_backend_stats, collected_gc_stats, collected_missing_deps =
       Array.fold workers_stats ~init:([], [], [])
         ~f:(fun ((backend_stats_list, gc_stats_list, missing_deps_list) as stats_list) stats_opt ->

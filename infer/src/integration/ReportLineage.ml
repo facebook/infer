@@ -36,9 +36,9 @@ let report_json () =
     TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none
       (SourceFiles.get_all ~filter:(fun _ -> true) ())
   in
-  Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:worker ~child_epilogue:ignore
-    tasks
-  |> Tasks.Runner.run |> ignore
+  ProcessPool.create ~jobs:Config.jobs ~child_prologue:ignore ~f:worker ~child_epilogue:ignore
+    ~tasks ()
+  |> ProcessPool.run |> ignore
 
 
 let pp_issue_log fmt issue_log =

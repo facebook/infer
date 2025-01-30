@@ -172,8 +172,8 @@ let capture_files ~is_binary files =
     min ((per_worker + n_files) / per_worker) Config.jobs
   in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
-  let runner = Tasks.Runner.create ~jobs ~child_prologue ~f:child_action ~child_epilogue tasks in
-  let child_tenv_paths = Tasks.Runner.run runner in
+  let runner = ProcessPool.create ~jobs ~child_prologue ~f:child_action ~child_epilogue ~tasks () in
+  let child_tenv_paths = ProcessPool.run runner in
   (* Merge worker tenvs into a global tenv *)
   let child_tenv_paths =
     Array.mapi child_tenv_paths ~f:(fun child_num tenv_path ->

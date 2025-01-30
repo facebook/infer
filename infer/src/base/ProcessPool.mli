@@ -33,15 +33,17 @@ module Worker : sig
 end
 
 val create :
-     jobs:int
+     ?with_primary_db:bool
+  -> jobs:int
   -> child_prologue:(Worker.id -> unit)
   -> f:('work -> 'result option)
   -> child_epilogue:(Worker.id -> 'final)
   -> tasks:(unit -> ('work, 'result, Pid.t) TaskGenerator.t)
+  -> unit
   -> ('work, 'final, 'result) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)
 
-val run : (_, 'final, 'result) t -> 'final option Array.t
+val run : (_, 'final, _) t -> 'final option Array.t
 (** use the processes in the given process pool to run all the given tasks in parallel and return
     the results of the epilogues *)
 
@@ -49,3 +51,8 @@ val run_as_child : unit -> never_returns
 (** run a child that has been started by [create_process], on platforms where [fork] is not
     available. The child will take care of executing the proper code. Once it has started, it
     receives order from the parent through [stdin], and send status updates through [stdout]. *)
+
+type ('a, 'b) doer = 'a -> 'b option
+
+val run_sequentially : finish:('b option -> 'a -> 'a option) -> f:('a, 'b) doer -> 'a list -> unit
+(** Run the tasks sequentially *)
