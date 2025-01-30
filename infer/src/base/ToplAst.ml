@@ -36,9 +36,9 @@ type condition = predicate list (* conjunction *) [@@deriving show]
 
 type assignment = register_name * variable_name [@@deriving show]
 
-type regex = {re_text: string; re: (Str.regexp[@show.opaque])} [@@deriving show]
+type regex = {re: (Str.regexp[@show.opaque]); re_negated: bool; re_text: string} [@@deriving show]
 
-let mk_regex re_text = {re_text; re= Str.regexp re_text}
+let mk_regex re_negated re_text = {re= Str.regexp re_text; re_negated; re_text}
 
 type call_pattern =
   {procedure_name_regex: regex; type_regexes: regex option list option (* [None] means anything *)}

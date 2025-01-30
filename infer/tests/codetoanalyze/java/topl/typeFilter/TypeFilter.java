@@ -47,4 +47,25 @@ public class TypeFilter {
   static void longLocalBad() {
     f(new B());
   }
+
+  // Should fail ReturnB and ReturnNotC
+  // TODO: Tests do not record which TOPL property fails.
+  static void fBad() {
+    mk_b();
+  }
+
+  // Should fail ReturnB and ReturnC
+  static void gBad() {
+    mk_c();
+  }
+
+  // helper
+  static B mk_b() {
+    return new B();
+  }
+
+  // helper
+  static C mk_c() {
+    return new C();
+  }
 }

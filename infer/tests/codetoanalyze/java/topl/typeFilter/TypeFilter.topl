@@ -5,3 +5,19 @@ property CallWithB
   start -> error: f(Arg: ".*Bad.*", Ret: void) // should match the return type
   start -> error: f(Arg: "A$", Ret) // should not match because types will actually be A* (because it's Java)
   start -> error: f(Arg, Ret: NonVoid) // should not match the return type
+
+property ReturnB
+  start -> start: *
+  start -> error: ".*mk_.*"(Ret: ".*B")
+
+property ReturnNotB
+  start -> start: *
+  start -> error: ".*mk_.*"(Ret: !".*B")
+
+property ReturnC
+  start -> start: *
+  start -> error: ".*mk_.*"(Ret: ".*C")
+
+property ReturnNotC
+  start -> start: *
+  start -> error: ".*mk_.*"(Ret: !".*C")

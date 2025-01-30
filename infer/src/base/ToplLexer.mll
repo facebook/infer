@@ -54,6 +54,7 @@ rule raw_token = parse
   | "==" { EQ }
   | "!=" { NE }
   | "&&" { AND }
+  | "!"  { BANG }
   | "#ArrayWrite" { ARRAYWRITE }
   | "prefix" { PREFIX }
   | "property" { PROPERTY }

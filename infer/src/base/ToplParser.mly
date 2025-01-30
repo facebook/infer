@@ -17,6 +17,7 @@
 %token ARRAYWRITE
 %token ARROW
 %token ARROWARROW
+%token BANG
 %token COLON
 %token COLONEQ
 %token COMMA
@@ -119,8 +120,8 @@ colon_regex:
     COLON r=regex { r }
 
 regex:
-    i=identifier { ToplAst.mk_regex i }
-  | s=STRING { ToplAst.mk_regex s }
+    i=identifier { ToplAst.mk_regex false i }
+  | n=BANG? s=STRING { ToplAst.mk_regex (Option.is_some n) s }
 
 action:
     ARROWARROW a=separated_nonempty_list(SEMI, assignment) { a }

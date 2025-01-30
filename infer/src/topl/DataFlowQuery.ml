@@ -303,7 +303,8 @@ module Topl = struct
     match language with
     | Erlang ->
         (* for erlang, we assume [pattern] looks like "module:function" *)
-        ToplAst.CallPattern {procedure_name_regex= ToplAst.mk_regex pattern; type_regexes= None}
+        ToplAst.CallPattern
+          {procedure_name_regex= ToplAst.mk_regex false pattern; type_regexes= None}
     | Clang | CIL | Hack | Python | Java ->
         L.die InternalError "Unsupported language for data flow queries"
 

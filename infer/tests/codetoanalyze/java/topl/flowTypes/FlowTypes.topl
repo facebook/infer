@@ -1,0 +1,12 @@
+property FlowTypes
+  prefix "FlowTypes"
+  start -> start: *
+  start -> track: source(This, Ret) => dirty := Ret
+  track -> track: *
+  track -> track: ".*"(This, Arg, Ret: !"\\(java.lang.\\(Enum\\|Boolean\\)\\|_Bool\\)") when Arg ~~> dirty => dirty := Ret
+  track -> sawString: !"sanitizer"(This, Arg, Ret: "java.lang.String") when Arg ~~> dirty => dirty := Ret
+  sawString -> sawString: *
+  sawString -> sawString: ".*"(This, Arg, Ret: !"\\(java.lang.\\(Enum\\|Boolean\\)\\|_Bool\\)") when Arg ~~> dirty => dirty := Ret
+  sawString -> error: sink(This, Arg, Void) when Arg == dirty
+
+// NOTE: "_Bool" is the name of the type to which primitive booleans are compiled in Sil. See Typ.ml.

@@ -3,3 +3,7 @@ codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.cBad(C):void, 0, 
 codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.dBad(D):void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.f(java.lang.Object):void]
 codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.longArgBad(LongBadName):void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.f(java.lang.Object):void]
 codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.longLocalBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.f(java.lang.Object):void]
+codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.fBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.mk_b():B]
+codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.fBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.mk_b():B]
+codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.gBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.mk_c():C]
+codetoanalyze/java/topl/typeFilter/TypeFilter.java, TypeFilter.gBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to TypeFilter.mk_c():C]
