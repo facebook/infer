@@ -40,6 +40,8 @@ depends: [
   "conf-sqlite3" {= "1"}
   "conf-which" {= "1"}
   "conf-zlib" {= "1"}
+  "containers" {= "3.15"}
+  "containers-data" {= "3.15"}
   "core" {= "v0.16.2"}
   "core_kernel" {= "v0.16.0"}
   "core_unix" {= "v0.16.0"}
@@ -49,6 +51,7 @@ depends: [
   "dune" {= "3.16.1"}
   "dune-configurator" {= "3.16.1"}
   "easy-format" {= "1.3.4"}
+  "either" {= "1.0.0"}
   "expect_test_helpers_core" {= "v0.16.0"}
   "extlib" {= "1.8.0"}
   "fieldslib" {= "v0.16.0"}
@@ -155,7 +158,7 @@ depends: [
   "trie" {= "1.0.0"}
   "typerep" {= "v0.16.0"}
   "uchar" {= "0.0.2"}
-  "utop" {= "2.14.0" & with-test}
+  "utop" {= "2.15.0" & with-test}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}
   "uutf" {= "1.0.3"}
