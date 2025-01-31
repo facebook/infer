@@ -26,6 +26,9 @@ let is_dummy_field_pname pname =
 
 
 let dummy_pname_for_field fieldname typ =
+  (* This assumes Java and can result in errors for other languages, e.g.
+     typ can be a pointer. Plus putting a non-Java type in Procname.make_java
+     can cause problems later. *)
   let class_name = Option.value_exn (Typ.name typ) in
   Procname.make_java ~class_name ~return_type:None
     ~method_name:(dummy_field_method_prefix ^ Fieldname.get_field_name fieldname)
@@ -548,14 +551,17 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
         check_direct_call tenv ~callee_pname ~caller_pname call_site_info astate specs
         |> add_transitive_calls analysis_data call_site_info ~callee_pname
     | Sil.Load {e= Exp.Lfield (_, fieldname, typ); loc} ->
-        (* Pretend that field access is a call to a fake method (containing the name of the field) *)
-        let caller_pname = Procdesc.get_proc_name proc_desc in
-        let callee_pname = dummy_pname_for_field fieldname typ in
-        let call_site_info : Domain.call_site_info =
-          { call_site= CallSite.make callee_pname loc
-          ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
-        in
-        check_direct_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        (* Pretend that field access is a call to a fake method (containing the name of the field).
+           Currently only supported for Java. *)
+        if Language.curr_language_is Java then
+          let caller_pname = Procdesc.get_proc_name proc_desc in
+          let callee_pname = dummy_pname_for_field fieldname typ in
+          let call_site_info : Domain.call_site_info =
+            { call_site= CallSite.make callee_pname loc
+            ; is_in_loop= Control.GuardNodes.mem node loop_nodes }
+          in
+          check_direct_call tenv ~callee_pname ~caller_pname call_site_info astate specs
+        else astate
     | _ ->
         astate
 
