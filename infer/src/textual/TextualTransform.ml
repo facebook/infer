@@ -308,14 +308,31 @@ module Subst = struct
 end
 
 module State = struct
+  module ClosureDeclarations = struct
+    type t = {typenames: TypeName.Set.t; decls: Module.decl list}
+
+    let empty = {typenames= TypeName.Set.empty; decls= []}
+
+    let is_empty {typenames} = TypeName.Set.is_empty typenames
+
+    let add struct_ procdecl {typenames; decls} =
+      let name = struct_.Struct.name in
+      (* we assume [name] is not already in set [typnames] *)
+      {typenames= TypeName.Set.add name typenames; decls= Struct struct_ :: Proc procdecl :: decls}
+
+
+    let mem name {typenames} = TypeName.Set.mem name typenames
+  end
+
   type t =
     { instrs_rev: Instr.t list
     ; fresh_ident: Ident.t
     ; pdesc: ProcDesc.t
-    ; closure_declarations: Module.decl list }
+    ; closure_declarations: ClosureDeclarations.t }
 
   let add_closure_declaration struct_ procdecl state =
-    {state with closure_declarations= Struct struct_ :: Proc procdecl :: state.closure_declarations}
+    { state with
+      closure_declarations= ClosureDeclarations.add struct_ procdecl state.closure_declarations }
 
 
   let incr_fresh state = {state with fresh_ident= Ident.next state.fresh_ident}
@@ -530,10 +547,14 @@ let remove_effects_in_subexprs lang decls_env _module =
         let struct_ = TransformClosures.type_declaration typename fields in
         let state = State.incr_fresh state in
         let loc = if Lang.equal lang Python then Location.decr_line loc else loc in
-        let state, call_procdecl =
-          TransformClosures.closure_call_procdesc loc typename state closure fields params
+        let state =
+          if not (State.ClosureDeclarations.mem typename state.closure_declarations) then
+            let state, call_procdecl =
+              TransformClosures.closure_call_procdesc loc typename state closure fields params
+            in
+            State.add_closure_declaration struct_ call_procdecl state
+          else state
         in
-        let state = State.add_closure_declaration struct_ call_procdecl state in
         (Var id_object, state)
     | Apply {closure; args} ->
         let closure, state = flatten_exp loc closure state in
@@ -614,8 +635,11 @@ let remove_effects_in_subexprs lang decls_env _module =
     in
     ({pdesc with nodes= List.rev rev_nodes}, closure_declarations)
   in
-  let module_, closure_declarations = module_fold_procs ~init:[] ~f:flatten_pdesc _module in
-  ({module_ with decls= closure_declarations @ module_.decls}, List.length closure_declarations > 0)
+  let module_, closure_declarations =
+    module_fold_procs ~init:State.ClosureDeclarations.empty ~f:flatten_pdesc _module
+  in
+  ( {module_ with decls= closure_declarations.decls @ module_.decls}
+  , not (State.ClosureDeclarations.is_empty closure_declarations) )
 
 
 let remove_if_terminator module_ =
