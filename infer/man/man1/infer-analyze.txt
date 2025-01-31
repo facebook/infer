@@ -788,6 +788,10 @@ PULSE CHECKER OPTIONS
        --pulse-model-cheap-copy-type-list +regex
            Regex of methods that should be cheap to copy in Pulse
 
+       --pulse-model-deep-release-pattern string
+           Regex of methods that should be modelled as deep release in Pulse
+           (i.e. await all unawaited values reachable from its arguments).
+
        --pulse-model-free-pattern string
            Regex of methods that should be modelled as wrappers to free(3) in
            Pulse. The pointer to be freed should be the first argument of the

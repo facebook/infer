@@ -2541,6 +2541,13 @@ and pulse_model_cheap_copy_type_list =
     "Regex of methods that should be cheap to copy in Pulse"
 
 
+and pulse_model_deep_release_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-deep-release-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Regex of methods that should be modelled as deep release in Pulse (i.e. await all unawaited \
+     values reachable from its arguments)."
+
+
 and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4531,6 +4538,8 @@ and pulse_model_cheap_copy_type =
   join_patterns ~pattern_opt:pulse_model_cheap_copy_type
     ~pattern_list:pulse_model_cheap_copy_type_list
 
+
+and pulse_model_deep_release_pattern = Option.map ~f:Str.regexp !pulse_model_deep_release_pattern
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 

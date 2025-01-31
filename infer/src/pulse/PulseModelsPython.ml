@@ -258,12 +258,6 @@ let as_constant_string_exn aval : string DSL.model_monad =
   ret str
 
 
-let is_release_model tname attr =
-  Option.exists Config.pulse_model_release_pattern ~f:(fun regexp ->
-      let str = Printf.sprintf "%s::%s" tname attr in
-      Str.string_match regexp str 0 )
-
-
 module Dict = struct
   let make keys args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
@@ -450,6 +444,42 @@ let make_int_internal arg : DSL.aval DSL.model_monad =
       ret res
 
 
+module LibModel = struct
+  let match_pattern ~pattern ~module_name ~name =
+    Option.exists pattern ~f:(fun regexp ->
+        let str = Printf.sprintf "%s::%s" module_name name in
+        Str.string_match regexp str 0 )
+
+
+  let is_release ~module_name ~name =
+    match_pattern ~pattern:Config.pulse_model_release_pattern ~module_name ~name
+
+
+  let is_deep_release ~module_name ~name =
+    match_pattern ~pattern:Config.pulse_model_deep_release_pattern ~module_name ~name
+
+
+  let gen_awaitable _args =
+    let open DSL.Syntax in
+    let* res = fresh () in
+    let* () = allocation Attribute.Awaitable res in
+    ret (Some res)
+
+
+  let deep_release args =
+    let open DSL.Syntax in
+    let* () = remove_allocation_attr_transitively args in
+    let* res = fresh () in
+    ret (Some res)
+
+
+  let release args =
+    let open DSL.Syntax in
+    let* () = list_iter args ~f:await_awaitable in
+    let* res = fresh () in
+    ret (Some res)
+end
+
 type pymodel =
   | PyLib of {module_name: string; name: string}
   | PyBuiltin of PythonClassName.builtin_closure
@@ -459,22 +489,16 @@ type pymodel =
 let modelled_python_call model args : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   match (model, args) with
-  | PyLib {module_name= "asyncio"; name= "run"}, [arg] ->
-      let* () = await_awaitable arg in
-      let* res = fresh () in
-      ret (Some res)
-  | PyLib {module_name; name}, _ when is_release_model module_name name ->
-      let* () = list_iter args ~f:await_awaitable in
-      let* res = fresh () in
-      ret (Some res)
+  | PyLib {module_name= "asyncio"; name= "run"}, _ ->
+      LibModel.release args
+  | PyLib {module_name; name}, _ when LibModel.is_release ~module_name ~name ->
+      LibModel.release args
   | PyLib {module_name= "asyncio"; name= "gather"}, _ ->
-      let* res = fresh () in
-      let* () = remove_allocation_attr_transitively args in
-      ret (Some res)
+      LibModel.deep_release args
+  | PyLib {module_name; name}, _ when LibModel.is_deep_release ~module_name ~name ->
+      LibModel.deep_release args
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
-      let* res = fresh () in
-      let* () = allocation Attribute.Awaitable res in
-      ret (Some res)
+      LibModel.gen_awaitable args
   | PyBuiltin IntFun, [arg] ->
       let* res = make_int_internal arg in
       ret (Some res)
@@ -487,6 +511,15 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       let* res = fresh () in
       ret (Some res)
   | PyLib _, _ ->
+      ret None
+
+
+let try_catch_lib_model type_name args =
+  let open DSL.Syntax in
+  match Typ.Name.Python.split_module_attr type_name with
+  | Some (module_name, name) ->
+      modelled_python_call (PyLib {module_name; name}) args
+  | _ ->
       ret None
 
 
@@ -509,13 +542,13 @@ let call closure arg_names args : model =
               (PythonClassName.to_string (BuiltinClosure builtin)) ;
             ret res )
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
-      (* we introspect the dyntype of the callee tyring to recognize a Pyton library model *)
-      match Typ.Name.Python.split_module_attr type_name with
-      | Some (module_name, name) -> (
-          let* opt_res = modelled_python_call (PyLib {module_name; name}) args in
-          match opt_res with Some res -> ret res | None -> call_dsl ~closure ~arg_names ~args )
-      | _ ->
-          call_dsl ~closure ~arg_names ~args )
+        let* opt_catched_lib_model_res = try_catch_lib_model type_name args in
+        match opt_catched_lib_model_res with
+        | Some res ->
+            L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
+            ret res
+        | None ->
+            call_dsl ~closure ~arg_names ~args )
     | _ ->
         call_dsl ~closure ~arg_names ~args
   in
@@ -528,21 +561,31 @@ let call_function_ex closure tuple dict : model =
   start_model
   @@ fun () ->
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+  let args = [tuple; dict] in
   let* res =
     match opt_dynamic_type_data with
     | None -> (
         let* opt_static_type = get_static_type closure in
         match opt_static_type with
-        | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name})) -> (
-            let* opt_special_call =
-              modelled_python_call (PyLib {module_name; name}) [tuple; dict]
-            in
-            match opt_special_call with None -> fresh () | Some res -> ret res )
+        | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name}) as type_name) -> (
+            let* opt_special_call = modelled_python_call (PyLib {module_name; name}) args in
+            match opt_special_call with
+            | None ->
+                fresh ()
+            | Some res ->
+                L.d_printfln "catching reserved lib call using static type %a" Typ.Name.pp type_name ;
+                ret res )
         | _ ->
-            (* TODO: find situations where it happens and specific models are needed *)
+            fresh () )
+    | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
+        let* opt_catched_lib_model_res = try_catch_lib_model type_name args in
+        match opt_catched_lib_model_res with
+        | Some res ->
+            L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
+            ret res
+        | None ->
             fresh () )
     | _ ->
-        (* TODO: model regular call using tuple and dict contents as arguments *)
         fresh ()
   in
   assign_ret res

@@ -12,9 +12,13 @@ from dir1.dir3.testmod import (
     await_it as await_it3,
     dont_await_it as dont_await_it3,
     C,
-    wait
+    wait,
+    deep_wait
 )
-from not_captured.helper import not_captured_wait
+from not_captured.helper import (
+    not_captured_wait,
+    not_captured_deep_wait
+)
 import dir1.dir4.testmod
 from dir2.testmod import (
     await_it as await_it2,
@@ -90,3 +94,34 @@ def use_pulse_model_release_option_ok():
 
 def use_pulse_model_release_option_not_captured_ok():
     not_captured_wait(asyncio.sleep())
+
+
+def use_pulse_model_deep_release_option_args_ok(l):
+    deep_wait(*[
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        ])
+
+
+def use_pulse_model_deep_release_option_not_captured_args_ok():
+    not_captured_deep_wait(*[
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        ])
+
+def use_pulse_model_deep_release_option_ok(l):
+    deep_wait(
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        )
+
+
+def use_pulse_model_deep_release_option_not_captured_ok():
+    not_captured_deep_wait(
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        asyncio.sleep(1),
+        )
