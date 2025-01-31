@@ -9,6 +9,7 @@ homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
 depends: [
   "ANSITerminal" {= "0.8.5"}
+  "astring" {= "0.8.5"}
   "async" {= "v0.16.0"}
   "async_kernel" {= "v0.16.0"}
   "async_rpc_kernel" {= "v0.16.0"}
@@ -56,6 +57,7 @@ depends: [
   "extlib" {= "1.8.0"}
   "fieldslib" {= "v0.16.0"}
   "fmt" {= "0.9.0"}
+  "fpath" {= "0.7.3"}
   "gen" {= "1.1"}
   "int_repr" {= "v0.16.0"}
   "integers" {= "0.7.0"}

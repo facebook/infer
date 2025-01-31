@@ -25,6 +25,7 @@ depends: [
   "ctypes" {>="0.9.2"}
   "dune" {build & >="3.6"}
   "fmt" {>="0.9.0"}
+  "fpath" {>="0.7.3"}
   "iter"
   "javalib" {>="3.2.1"}
   "memtrace" {>="0.1.2"}
