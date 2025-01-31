@@ -1813,110 +1813,9 @@ async def foo():
             return
 |}
   in
-  PyIR.test ~debug:true source ;
+  PyIR.test source ;
   [%expect
     {|
-    Translating dummy...
-    Building a new node, starting from offset 0
-                  []
-       2        0 LOAD_CONST                        0 (<code object foo>)
-                  [<foo>]
-                2 LOAD_CONST                        1 ("foo")
-                  [<foo>; "foo"]
-                4 MAKE_FUNCTION                     0
-                  [n3]
-                6 STORE_NAME                        0 (foo)
-                  []
-                8 LOAD_CONST                        2 (None)
-                  [n0]
-               10 RETURN_VALUE                      0
-                  []
-    Successors:
-
-    Translating dummy.foo...
-    Building a new node, starting from offset 0
-                  []
-                0 GEN_START                         1
-                  []
-       3        2 LOAD_GLOBAL                       0 (range)
-                  [n3]
-                4 LOAD_GLOBAL                       1 (num)
-                  [n3; n4]
-                6 CALL_FUNCTION                     1
-                  [n5]
-                8 GET_ITER                          0
-                  [n6]
-    Successors: 10
-
-    Building a new node, starting from offset 10
-                  [n6]
-         >>>   10 FOR_ITER                         37 (to +74)
-                  [n6; n7]
-    Successors: 12,86
-
-    Building a new node, starting from offset 86
-                  []
-       3 >>>   86 LOAD_CONST                        0 (None)
-                  [n0]
-               88 RETURN_VALUE                      0
-                  []
-    Successors:
-
-    Building a new node, starting from offset 12
-                  [n6; n7]
-               12 STORE_FAST                        0 (i)
-                  [n6]
-       4       14 LOAD_GLOBAL                       2 (read)
-                  [n6; n9]
-               16 CALL_FUNCTION                     0
-                  [n6; n10]
-               18 GET_AWAITABLE                     0
-                  [n6; n11]
-               20 LOAD_CONST                        0 (None)
-                  [n6; n11; n0]
-               22 YIELD_FROM                        0
-                  [n6; n11]
-               24 BEFORE_ASYNC_WITH                 0
-                  [n6; CM(n11).__exit__; n13]
-               26 GET_AWAITABLE                     0
-                  [n6; CM(n11).__exit__; n14]
-               28 LOAD_CONST                        0 (None)
-                  [n6; CM(n11).__exit__; n14; n0]
-               30 YIELD_FROM                        0
-                  [n6; CM(n11).__exit__; n14]
-               32 SETUP_ASYNC_WITH                 14
-                  [n6; CM(n11).__exit__; n14]
-               34 STORE_FAST                        1 (f)
-                  [n6; CM(n11).__exit__]
-       5       36 NOP                               0
-                  [n6; CM(n11).__exit__]
-       4       38 POP_BLOCK                         0
-                  [n6; CM(n11).__exit__]
-               40 LOAD_CONST                        0 (None)
-                  [n6; CM(n11).__exit__; n0]
-               42 DUP_TOP                           0
-                  [n6; CM(n11).__exit__; n0; n0]
-               44 DUP_TOP                           0
-                  [n6; CM(n11).__exit__; n0; n0; n0]
-               46 CALL_FUNCTION                     3
-                  [n6; n16]
-               48 GET_AWAITABLE                     0
-                  [n6; n17]
-               50 LOAD_CONST                        0 (None)
-                  [n6; n17; n0]
-               52 YIELD_FROM                        0
-                  [n6; n17]
-               54 POP_TOP                           0
-                  [n6]
-               56 POP_TOP                           0
-                  []
-               58 LOAD_CONST                        0 (None)
-                  [n0]
-               60 RETURN_VALUE                      0
-                  []
-    Successors:
-
-
     module dummy:
 
       function toplevel():
@@ -1958,4 +1857,174 @@ async def foo():
           return n0
 
         b6:
+          return n0 |}]
+
+
+(* the two examples below show that with Python 3.10, the size of the opstack may
+   trigger a duplication of instructions (at bytecode level). *)
+let%expect_test _ =
+  let source =
+    {|
+l = make(
+    x1 = e1,
+    x2 = e2,
+    x3 = e3,
+    x4 = e4,
+    x5 = e5,
+    x6 = e6,
+    x7 = e7,
+    x8 = e8,
+    x_cond = v_true if b else v_false,
+    x9 = e9,
+    x10 = e10,
+    x11 = e11,
+    x12 = e12,
+    x13 = e13,
+    x14 = e14,
+    x15 = e15,
+)
+cloned_call()
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          n3 <- TOPLEVEL[make]
+          n4 <- $BuildMap()
+          n5 <- TOPLEVEL[e1]
+          n6 <- $DictSetItem(n4, "x1", n5, n0)
+          n7 <- TOPLEVEL[e2]
+          n8 <- $DictSetItem(n4, "x2", n7, n0)
+          n9 <- TOPLEVEL[e3]
+          n10 <- $DictSetItem(n4, "x3", n9, n0)
+          n11 <- TOPLEVEL[e4]
+          n12 <- $DictSetItem(n4, "x4", n11, n0)
+          n13 <- TOPLEVEL[e5]
+          n14 <- $DictSetItem(n4, "x5", n13, n0)
+          n15 <- TOPLEVEL[e6]
+          n16 <- $DictSetItem(n4, "x6", n15, n0)
+          n17 <- TOPLEVEL[e7]
+          n18 <- $DictSetItem(n4, "x7", n17, n0)
+          n19 <- TOPLEVEL[e8]
+          n20 <- $DictSetItem(n4, "x8", n19, n0)
+          n21 <- TOPLEVEL[b]
+          if n21 then jmp b1 else jmp b2
+
+        b1:
+          n41 <- TOPLEVEL[v_true]
+          jmp b3
+
+        b2:
+          n22 <- TOPLEVEL[v_false]
+          n23 <- $DictSetItem(n4, "x_cond", n22, n0)
+          n24 <- TOPLEVEL[e9]
+          n25 <- $DictSetItem(n4, "x9", n24, n0)
+          n26 <- TOPLEVEL[e10]
+          n27 <- $DictSetItem(n4, "x10", n26, n0)
+          n28 <- TOPLEVEL[e11]
+          n29 <- $DictSetItem(n4, "x11", n28, n0)
+          n30 <- TOPLEVEL[e12]
+          n31 <- $DictSetItem(n4, "x12", n30, n0)
+          n32 <- TOPLEVEL[e13]
+          n33 <- $DictSetItem(n4, "x13", n32, n0)
+          n34 <- TOPLEVEL[e14]
+          n35 <- $DictSetItem(n4, "x14", n34, n0)
+          n36 <- TOPLEVEL[e15]
+          n37 <- $DictSetItem(n4, "x15", n36, n0)
+          n38 <- $CallFunctionEx(n3, $BuildTuple(), n4, n0)
+          TOPLEVEL[l] <- n38
+          n39 <- TOPLEVEL[cloned_call]
+          n40 <- $Call(n39, n0)
+          return n0
+
+        b3:
+          n42 <- $DictSetItem(n4, "x_cond", n41, n0)
+          n43 <- TOPLEVEL[e9]
+          n44 <- $DictSetItem(n4, "x9", n43, n0)
+          n45 <- TOPLEVEL[e10]
+          n46 <- $DictSetItem(n4, "x10", n45, n0)
+          n47 <- TOPLEVEL[e11]
+          n48 <- $DictSetItem(n4, "x11", n47, n0)
+          n49 <- TOPLEVEL[e12]
+          n50 <- $DictSetItem(n4, "x12", n49, n0)
+          n51 <- TOPLEVEL[e13]
+          n52 <- $DictSetItem(n4, "x13", n51, n0)
+          n53 <- TOPLEVEL[e14]
+          n54 <- $DictSetItem(n4, "x14", n53, n0)
+          n55 <- TOPLEVEL[e15]
+          n56 <- $DictSetItem(n4, "x15", n55, n0)
+          n57 <- $CallFunctionEx(n3, $BuildTuple(), n4, n0)
+          TOPLEVEL[l] <- n57
+          n58 <- TOPLEVEL[cloned_call]
+          n59 <- $Call(n58, n0)
+          return n0 |}]
+
+
+let%expect_test _ =
+  let source =
+    {|
+l = make(
+    x1 = e1,
+    x2 = e2,
+    x3 = e3,
+    x4 = e4,
+    x5 = e5,
+    x6 = e6,
+    x7 = e7,
+    x8 = e8,
+    x_cond = v_true if b else v_false,
+    x9 = e9,
+    x10 = e10,
+    x11 = e11,
+    x12 = e12,
+    x13 = e13,
+    x14 = e14,
+)
+not_cloned_call()
+|}
+  in
+  PyIR.test source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          n3 <- TOPLEVEL[make]
+          n4 <- TOPLEVEL[e1]
+          n5 <- TOPLEVEL[e2]
+          n6 <- TOPLEVEL[e3]
+          n7 <- TOPLEVEL[e4]
+          n8 <- TOPLEVEL[e5]
+          n9 <- TOPLEVEL[e6]
+          n10 <- TOPLEVEL[e7]
+          n11 <- TOPLEVEL[e8]
+          n12 <- TOPLEVEL[b]
+          if n12 then jmp b1 else jmp b2
+
+        b1:
+          n14 <- TOPLEVEL[v_true]
+          jmp b3(n14)
+
+        b2:
+          n13 <- TOPLEVEL[v_false]
+          jmp b3(n13)
+
+        b3(n15):
+          n16 <- TOPLEVEL[e9]
+          n17 <- TOPLEVEL[e10]
+          n18 <- TOPLEVEL[e11]
+          n19 <- TOPLEVEL[e12]
+          n20 <- TOPLEVEL[e13]
+          n21 <- TOPLEVEL[e14]
+          n22 <- $Call(n3, n4, n5, n6, n7, n8, n9, n10, n11, n15, n16, n17, n18, n19, n20, n21, $BuildTuple("x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x_cond", "x9", "x10", "x11", "x12", "x13", "x14"))
+          TOPLEVEL[l] <- n22
+          n23 <- TOPLEVEL[not_cloned_call]
+          n24 <- $Call(n23, n0)
           return n0 |}]
