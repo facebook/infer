@@ -43,7 +43,7 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result, Pid.t) TaskGenerat
     match Queue.peek blocked with
     | Some w when not !waiting_for_blocked_target -> (
       (* see if we can acquire the locks needed by this job *)
-      match ProcLocker.lock_all child_pid w.dependency_filenames with
+      match ProcLocker.lock_all (Pid child_pid) w.dependency_filenames with
       | `LocksAcquired locks ->
           (* success! remove the job from [blocked] since we only [peek]ed before *)
           Queue.dequeue_exn blocked |> ignore ;
