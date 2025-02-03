@@ -38,7 +38,7 @@ val create :
   -> child_prologue:(Worker.id -> unit)
   -> f:('work -> 'result option)
   -> child_epilogue:(Worker.id -> 'final)
-  -> tasks:(unit -> ('work, 'result, Pid.t) TaskGenerator.t)
+  -> tasks:(unit -> ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t)
   -> unit
   -> ('work, 'final, 'result) t
 (** Create a new pool of processes running [jobs] jobs in parallel *)

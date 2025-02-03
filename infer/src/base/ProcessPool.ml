@@ -35,8 +35,8 @@ type ('work, 'final, 'result) t =
   ; children_updates: Unix.File_descr.t list
         (** each child has it's own pipe to send updates to the pool *)
   ; task_bar: TaskBar.t
-  ; tasks: ('work, 'result, Pid.t) TaskGenerator.t  (** generator for work remaining to be done *)
-  }
+  ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t
+        (** generator for work remaining to be done *) }
 
 (** {2 Constants} *)
 
@@ -207,7 +207,7 @@ let send_work_to_idle_children pool =
   let exception NoMoreWork in
   let is_first_update_ref = ref true in
   let send_work_to_child pool slot =
-    let child_id = pool.slots.(slot).pid in
+    let child_id = WorkerPoolState.Pid pool.slots.(slot).pid in
     let is_first_update = !is_first_update_ref in
     is_first_update_ref := false ;
     match pool.tasks.next {child_slot= slot; child_id; is_first_update} with
@@ -498,7 +498,7 @@ let create :
     -> child_prologue:(Worker.id -> unit)
     -> f:('work -> 'result option)
     -> child_epilogue:(Worker.id -> 'final)
-    -> tasks:(unit -> ('work, 'result, Pid.t) TaskGenerator.t)
+    -> tasks:(unit -> ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t)
     -> ('work, 'final, 'result) t =
  fun ~jobs ~child_prologue ~f ~child_epilogue ~tasks ->
   let task_bar = TaskBar.create ~jobs in

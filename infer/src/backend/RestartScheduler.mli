@@ -10,7 +10,10 @@ val setup : unit -> unit
 
 val make :
      SourceFile.t list
-  -> (TaskSchedulerTypes.target, TaskSchedulerTypes.analysis_result, Pid.t) TaskGenerator.t
+  -> ( TaskSchedulerTypes.target
+     , TaskSchedulerTypes.analysis_result
+     , WorkerPoolState.worker_id )
+     TaskGenerator.t
 
 val with_lock :
   get_actives:(unit -> SpecializedProcname.t list) -> f:(unit -> 'a) -> Procname.t -> 'a

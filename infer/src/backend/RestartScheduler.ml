@@ -19,7 +19,8 @@ type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_fil
 
 let restart_count = ref 0
 
-let of_queue ready : ('a, TaskSchedulerTypes.analysis_result, Pid.t) TaskGenerator.t =
+let of_queue ready :
+    ('a, TaskSchedulerTypes.analysis_result, WorkerPoolState.worker_id) TaskGenerator.t =
   let remaining = ref (Queue.length ready) in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
@@ -39,11 +40,11 @@ let of_queue ready : ('a, TaskSchedulerTypes.analysis_result, Pid.t) TaskGenerat
         incr restart_count ;
         Queue.enqueue blocked {target; dependency_filenames}
   in
-  let dequeue_from_blocked child_pid =
+  let dequeue_from_blocked worker_id =
     match Queue.peek blocked with
     | Some w when not !waiting_for_blocked_target -> (
       (* see if we can acquire the locks needed by this job *)
-      match ProcLocker.lock_all (Pid child_pid) w.dependency_filenames with
+      match ProcLocker.lock_all worker_id w.dependency_filenames with
       | `LocksAcquired locks ->
           (* success! remove the job from [blocked] since we only [peek]ed before *)
           Queue.dequeue_exn blocked |> ignore ;
