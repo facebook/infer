@@ -329,7 +329,7 @@ let process_output_in_parallel ic =
       { remaining_tasks= (fun () -> IterSeq.estimated_remaining unit_iter)
       ; is_empty= (fun () -> IterSeq.is_empty unit_iter)
       ; finished= (fun ~result _ -> on_finish result)
-      ; next= (fun _ -> IterSeq.next unit_iter |> Option.map ~f:(fun target -> (target, Fn.id))) }
+      ; next= (fun _ -> IterSeq.next unit_iter) }
   in
   (* Cap the number of capture workers based on the number of textual units. This will make the
        default behavior more reasonable on a high core-count machine. *)

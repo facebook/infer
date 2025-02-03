@@ -9,6 +9,7 @@ open! IStd
 type target =
   | Procname of {proc_name: Procname.t; specialization: Specialization.t option}
   | File of SourceFile.t
+[@@deriving equal, hash]
 
 type analysis_result =
   | Ok  (** Analysis finished normally. *)

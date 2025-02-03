@@ -22,7 +22,7 @@ type child_info = {pid: Pid.t; down_pipe: Out_channel.t}
       work item.
     - [Processing (x, finalizer)] means the worker is currently processing [x] and we should run
       [finalizer] when the worker has finished. *)
-type 'a child_state = Initializing | Idle | Processing of 'a * (unit -> unit)
+type 'a child_state = Initializing | Idle | Processing of 'a
 
 (** the state of the pool *)
 type ('work, 'final, 'result) t =
@@ -213,9 +213,9 @@ let send_work_to_idle_children pool =
     match pool.tasks.next {child_slot= slot; child_id; is_first_update} with
     | None ->
         raise_notrace NoMoreWork
-    | Some (x, finish) ->
+    | Some x ->
         let {down_pipe} = pool.slots.(slot) in
-        pool.children_states.(slot) <- Processing (x, finish) ;
+        pool.children_states.(slot) <- Processing x ;
         marshal_to_pipe down_pipe (Do x)
   in
   let throttled = Option.exists Config.oom_threshold ~f:should_throttle in
@@ -246,8 +246,7 @@ let process_update pool = function
       ( match pool.children_states.(slot) with
       | Initializing ->
           ()
-      | Processing (work, finish) ->
-          finish () ;
+      | Processing work ->
           pool.tasks.finished ~result work
       | Idle ->
           L.die InternalError "Received a Ready message from an idle worker@." ) ;
@@ -592,9 +591,8 @@ let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
   in
   let rec run_tasks () =
     if not (task_generator.is_empty ()) then (
-      Option.iter (task_generator.next for_child_info) ~f:(fun (t, finish) ->
+      Option.iter (task_generator.next for_child_info) ~f:(fun t ->
           let result = f t in
-          finish () ;
           task_generator.finished ~result t ) ;
       TaskBar.set_remaining_tasks task_bar (task_generator.remaining_tasks ()) ;
       TaskBar.refresh task_bar ;

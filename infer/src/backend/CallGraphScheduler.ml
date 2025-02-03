@@ -80,7 +80,7 @@ let bottom_up call_graph =
         incr scheduled ;
         log n.pname ;
         CallGraph.Node.set_flag n ;
-        Some (Procname {proc_name= n.pname; specialization= None}, Fn.id)
+        Some (Procname {proc_name= n.pname; specialization= None})
   in
   let finished ~result:_ = function
     | Procname {proc_name} ->

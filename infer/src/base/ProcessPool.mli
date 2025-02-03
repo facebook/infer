@@ -21,7 +21,7 @@ open! IStd
     respectively send them more tasks ("Do x") or update the task bar with the description provided
     by the child.
 
-    See also {!module-ProcessPoolState}. *)
+    See also {!module-WorkerPoolState}. *)
 
 (** A [('work, 'final) t] process pool accepts tasks of type ['work] and produces an array of
     results of type ['final]. ['work] and ['final] will be marshalled over a Unix pipe.*)

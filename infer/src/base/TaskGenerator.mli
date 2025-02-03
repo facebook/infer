@@ -21,13 +21,11 @@ type ('work, 'result, 'child_id) t =
             [None] when the item was completed successfully and [Some pname] when it failed because
             it could not lock [pname]. This is only called if [next ()] has previously returned
             [Some x] and [x] was sent to a worker. *)
-  ; next: 'child_id for_child_info -> ('work * (unit -> unit)) option
-        (** [next ()] generates the next work item together with a "finalizer" for that work item
-            that will be run once the work has completed (just before calling [finished]). If
-            [is_empty ()] is true then [next ()] must return [None]. However, it is OK to for
-            [next ()] to return [None] when [is_empty] is false. This corresponds to the case where
-            there is more work to be done, but it is not schedulable until some already scheduled
-            work is finished. *) }
+  ; next: 'child_id for_child_info -> 'work option
+        (** [next ()] generates the next work item. If [is_empty ()] is true then [next ()] must
+            return [None]. However, it is OK to for [next ()] to return [None] when [is_empty] is
+            false. This corresponds to the case where there is more work to be done, but it is not
+            schedulable until some already scheduled work is finished. *) }
 
 val chain :
   ('work, 'result, 'child_id) t -> ('work, 'result, 'child_id) t -> ('work, 'result, 'child_id) t

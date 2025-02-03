@@ -19,8 +19,15 @@ type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_fil
 
 let restart_count = ref 0
 
+module FinalizerMap = Stdlib.Hashtbl.Make (struct
+  type t = TaskSchedulerTypes.target [@@deriving equal, hash]
+end)
+
 let of_queue ready :
-    ('a, TaskSchedulerTypes.analysis_result, WorkerPoolState.worker_id) TaskGenerator.t =
+    ( TaskSchedulerTypes.target
+    , TaskSchedulerTypes.analysis_result
+    , WorkerPoolState.worker_id )
+    TaskGenerator.t =
   let remaining = ref (Queue.length ready) in
   let remaining_tasks () = !remaining in
   let is_empty () = Int.equal !remaining 0 in
@@ -29,7 +36,10 @@ let of_queue ready :
   (* a ref to avoid checking if the same first job in the [blocked] queue is blocked multiple times
      for different idle workers in the same process pool update cycle *)
   let waiting_for_blocked_target = ref false in
+  let finalizers = FinalizerMap.create 1 in
   let finished ~result target =
+    FinalizerMap.find_opt finalizers target |> Option.iter ~f:ProcLocker.unlock_all ;
+    FinalizerMap.remove finalizers target ;
     match result with
     | None | Some Ok ->
         decr remaining ;
@@ -50,7 +60,8 @@ let of_queue ready :
           Queue.dequeue_exn blocked |> ignore ;
           (* the scheduler will need to unlock the locks we acquired on behalf of the child once it
              is done with this work packet *)
-          Some (w.target, fun () -> ProcLocker.unlock_all locks)
+          FinalizerMap.add finalizers w.target locks ;
+          Some w.target
       | `FailedToLockAll ->
           (* failure; leave the job at the head of the queue and set the flag to avoid checking
              again for a while. This is better (perf wise) than trying to run jobs further down the
@@ -71,7 +82,7 @@ let of_queue ready :
     | None ->
         (* if there are no blocked jobs available to be run, continue with the original queue or
            wait for the next update if it's empty *)
-        Queue.dequeue ready |> Option.map ~f:(fun target -> (target, Fn.id))
+        Queue.dequeue ready
   in
   {remaining_tasks; is_empty; finished; next}
 

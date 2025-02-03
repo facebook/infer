@@ -13,7 +13,7 @@ type ('a, 'b, 'c) t =
   { remaining_tasks: unit -> int
   ; is_empty: unit -> bool
   ; finished: result:'b option -> 'a -> unit
-  ; next: 'c for_child_info -> ('a * (unit -> unit)) option }
+  ; next: 'c for_child_info -> 'a option }
 
 let chain (gen1 : ('a, 'b, 'c) t) (gen2 : ('a, 'b, 'c) t) : ('a, 'b, 'c) t =
   let remaining_tasks () = gen1.remaining_tasks () + gen2.remaining_tasks () in
@@ -50,7 +50,7 @@ let of_list ~finish (lst : 'a list) : ('a, _, _) t =
         None
     | x :: xs ->
         content := xs ;
-        Some (x, Fn.id)
+        Some x
   in
   {remaining_tasks; is_empty; finished; next}
 
