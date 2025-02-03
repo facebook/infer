@@ -7,6 +7,8 @@
 
 open! IStd
 
+type worker_id = Pid of Pid.t | Domain of int
+
 val set_in_child : int option -> unit
 (** Keep track of whether the current execution is in a child process/domain *)
 

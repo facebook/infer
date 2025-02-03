@@ -8,8 +8,6 @@
 open! IStd
 module L = Logging
 
-type worker_id = Pid of Pid.t | Domain of int
-
 module ProcessLocks = struct
   let locks_dir = ResultsDir.get_path ProcnamesLocks
 
@@ -84,33 +82,95 @@ module ProcessLocks = struct
         `FailedToLockAll
 end
 
+module DomainLocks = struct
+  module LockMap = IString.Hash
+
+  let mutex = Error_checking_mutex.create ()
+
+  let lock_map = LockMap.create 1009
+
+  let setup () = LockMap.clear lock_map
+
+  let unsafe_unlock_proc_uid proc_uid =
+    if LockMap.mem lock_map proc_uid then LockMap.remove lock_map proc_uid
+    else L.die InternalError "Tried to unlock not-locked proc_uid: %s@\n" proc_uid
+
+
+  let unlock pname =
+    let proc_uid = Procname.to_unique_id pname in
+    Error_checking_mutex.critical_section mutex ~f:(fun () -> unsafe_unlock_proc_uid proc_uid)
+
+
+  let unlock_all proc_filenames =
+    Error_checking_mutex.critical_section mutex ~f:(fun () ->
+        List.iter proc_filenames ~f:unsafe_unlock_proc_uid )
+
+
+  let unsafe_try_lock_key domain_id key =
+    match LockMap.find_opt lock_map key with
+    | None ->
+        LockMap.add lock_map key domain_id ;
+        `LockAcquired
+    | Some locker_id when Int.equal domain_id locker_id ->
+        `AlreadyLockedByUs
+    | Some _ ->
+        `LockedByAnotherProcess
+
+
+  let try_lock pname =
+    let our_id = WorkerPoolState.get_in_child () |> Option.value_exn in
+    let proc_uid = Procname.to_unique_id pname in
+    Error_checking_mutex.critical_section mutex ~f:(fun () -> unsafe_try_lock_key our_id proc_uid)
+
+
+  let lock_all domain_id keys =
+    let lock_result =
+      Error_checking_mutex.critical_section mutex ~f:(fun () ->
+          List.fold_result keys ~init:[] ~f:(fun locks key ->
+              match unsafe_try_lock_key domain_id key with
+              | `AlreadyLockedByUs ->
+                  Ok locks
+              | `LockAcquired ->
+                  Ok (key :: locks)
+              | `LockedByAnotherProcess ->
+                  Error locks ) )
+    in
+    match lock_result with
+    | Ok locks ->
+        `LocksAcquired locks
+    | Error locks ->
+        unlock_all locks ;
+        `FailedToLockAll
+end
+
 let record_time_of ~f ~log_f =
   let ExecutionDuration.{result; execution_duration} = ExecutionDuration.timed_evaluate ~f in
   log_f execution_duration ;
   result
 
 
-let setup () = if Config.multicore then assert false else ProcessLocks.setup ()
+let setup () = if Config.multicore then DomainLocks.setup () else ProcessLocks.setup ()
 
 let try_lock pname =
   record_time_of ~log_f:Stats.add_to_proc_locker_lock_time ~f:(fun () ->
-      if Config.multicore then assert false else ProcessLocks.try_lock pname )
+      if Config.multicore then DomainLocks.try_lock pname else ProcessLocks.try_lock pname )
 
 
 let unlock pname =
   record_time_of ~log_f:Stats.add_to_proc_locker_unlock_time ~f:(fun () ->
-      if Config.multicore then assert false else ProcessLocks.unlock pname )
+      if Config.multicore then DomainLocks.unlock pname else ProcessLocks.unlock pname )
 
 
 let lock_all worker_id proc_filenames =
-  match (worker_id, Config.multicore) with
+  match ((worker_id : WorkerPoolState.worker_id), Config.multicore) with
   | Pid pid, false ->
       ProcessLocks.lock_all pid proc_filenames
-  | Domain _, true ->
-      assert false
+  | Domain domain_id, true ->
+      DomainLocks.lock_all domain_id proc_filenames
   | _, _ ->
       Die.die InternalError "Tried to use incorrect worker type for current analysis mode.@\n"
 
 
 let unlock_all proc_filenames =
-  if Config.multicore then assert false else ProcessLocks.unlock_all proc_filenames
+  if Config.multicore then DomainLocks.unlock_all proc_filenames
+  else ProcessLocks.unlock_all proc_filenames
