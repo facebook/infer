@@ -30,10 +30,10 @@ let wait_for_completion request =
   Error_checking_mutex.critical_section request.mutex ~f:wait_loop
 
 
-let request_queue = SafeQueue.create ()
+let request_queue = ConcurrentQueue.create ()
 
 let rec server_loop () =
-  let request = SafeQueue.dequeue request_queue in
+  let request = ConcurrentQueue.dequeue request_queue in
   let command = request.command in
   ( try
       DBWriterCommand.perform command ;
@@ -59,7 +59,7 @@ let domain_server () =
 
 let send command =
   let request = make_request command in
-  SafeQueue.enqueue request request_queue ;
+  ConcurrentQueue.enqueue request request_queue ;
   wait_for_completion request
 
 
