@@ -371,8 +371,8 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
 
     Children never return. Instead they exit when done. *)
 let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
-  ProcessPoolState.in_child := Some slot ;
-  ProcessPoolState.reset_pid () ;
+  WorkerPoolState.set_in_child (Some slot) ;
+  WorkerPoolState.reset_pid () ;
   child_prologue () ;
   let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
   let send_final (final_message : 'a final_worker_message) =
@@ -394,7 +394,7 @@ let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
         in
         send_to_parent (UpdateStatus (slot, t, status))
   in
-  ProcessPoolState.update_status := update_status ;
+  WorkerPoolState.update_status := update_status ;
   let update_heap_words () =
     match Config.progress_bar with
     | `MultiLine ->
@@ -403,7 +403,7 @@ let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
     | `Quiet | `Plain ->
         ()
   in
-  ProcessPoolState.update_heap_words := update_heap_words ;
+  WorkerPoolState.update_heap_words := update_heap_words ;
   let receive_from_parent () =
     PerfEvent.log (fun logger ->
         PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"receive from pipe" () ) ;
@@ -581,7 +581,7 @@ type ('a, 'b) doer = 'a -> 'b option
 let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
   let task_generator = TaskGenerator.of_list ~finish tasks in
   let task_bar = TaskBar.create ~jobs:1 in
-  (ProcessPoolState.update_status :=
+  (WorkerPoolState.update_status :=
      fun t status ->
        TaskBar.update_status task_bar ~slot:0 t status ;
        TaskBar.refresh task_bar ) ;

@@ -29,7 +29,7 @@ let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
   let argv = cmd.executable :: cmd.escaped_arguments in
   ( ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
     | pid ->
-        !ProcessPoolState.update_status
+        !WorkerPoolState.update_status
           (Some (Mtime_clock.now ()))
           (SourceFile.to_string source_file) ;
         Unix.waitpid (Pid.of_int pid)

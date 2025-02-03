@@ -7,8 +7,11 @@
 
 open! IStd
 
-val in_child : int option ref
-(** Keep track of whether the current execution is in a child process *)
+val set_in_child : int option -> unit
+(** Keep track of whether the current execution is in a child process/domain *)
+
+val get_in_child : unit -> int option
+(** Get whether the current execution is in a child process/domain *)
 
 val update_status : (Mtime.t option -> string -> unit) ref
 (** Ping the task bar whenever a new task is started with the start time (or just rename the current

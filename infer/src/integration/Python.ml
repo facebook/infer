@@ -133,7 +133,7 @@ let capture_files ~is_binary files =
     let child_tenv = Tenv.create () in
     let child_action file =
       let t0 = Mtime_clock.now () in
-      !ProcessPoolState.update_status (Some t0) file ;
+      !WorkerPoolState.update_status (Some t0) file ;
       match capture_file ~is_binary file with
       | Ok file_tenv ->
           Option.iter file_tenv ~f:(fun file_tenv -> Tenv.merge ~src:file_tenv ~dst:child_tenv) ;

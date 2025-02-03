@@ -598,7 +598,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
     let instrs = CFG.instrs node in
     if Config.write_html then L.d_printfln "PRE STATE:@\n@[%a@]@\n" pp_domain_html pre ;
     let exec_instr idx pre instr =
-      call_once_in_ten ~f:!ProcessPoolState.update_heap_words () ;
+      call_once_in_ten ~f:!WorkerPoolState.update_heap_words () ;
       AnalysisState.set_instr instr ;
       let pp_result f result = dump_html f pre result in
       let result =

@@ -8,7 +8,11 @@
 open! IStd
 
 (** Keep track of whether the current execution is in a child process *)
-let in_child = ref None
+let in_child = DLS.new_key (fun () -> None)
+
+let get_in_child () = DLS.get in_child
+
+let set_in_child id_opt = DLS.set in_child id_opt
 
 let update_status = ref (fun _ _ -> ())
 

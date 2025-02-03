@@ -251,7 +251,7 @@ module CaptureWorker = struct
       let t0 = Mtime_clock.now () in
       if is_file_block_listed unit.source_path then None
       else (
-        !ProcessPoolState.update_status (Some t0) unit.Unit.source_path ;
+        !WorkerPoolState.update_status (Some t0) unit.Unit.source_path ;
         match Unit.capture_unit unit with
         | Ok file_tenv ->
             Tenv.merge ~src:file_tenv ~dst:child_tenv ;

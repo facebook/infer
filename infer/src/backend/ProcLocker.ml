@@ -64,7 +64,7 @@ let rec do_try_lock pid filename =
 let try_lock pname =
   record_time_of ~log_f:log_lock_time ~f:(fun () ->
       let filename = lock_of_procname pname in
-      do_try_lock (ProcessPoolState.get_pid ()) filename )
+      do_try_lock (WorkerPoolState.get_pid ()) filename )
 
 
 let unlock_all proc_filenames =

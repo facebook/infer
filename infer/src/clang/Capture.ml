@@ -28,7 +28,7 @@ let validate_decl_from_channel chan =
 
 let init_global_state_for_capture_and_linters source_file =
   L.debug Capture Medium "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file)) ;
-  !ProcessPoolState.update_status None (SourceFile.to_string source_file) ;
+  !WorkerPoolState.update_status None (SourceFile.to_string source_file) ;
   Language.set_language Clang ;
   if Config.capture then DB.Results_dir.init source_file ;
   CFrontend_config.reset_global_state ()

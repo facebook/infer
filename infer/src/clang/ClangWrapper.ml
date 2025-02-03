@@ -180,7 +180,7 @@ let exec_in_parallel ~prog ~args commands =
   let tasks () = TaskGenerator.of_list ~finish:TaskGenerator.finish_always_none commands in
   ProcessPool.create ~tasks ~jobs:Config.jobs ~child_prologue:ignore ~child_epilogue:ignore
     ~f:(fun command ->
-      !ProcessPoolState.update_status
+      !WorkerPoolState.update_status
         (Some (Mtime_clock.now ()))
         (status_string_of_action_item command) ;
       exec_action_item ~prog ~args command ;

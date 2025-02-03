@@ -16,7 +16,7 @@ let maybe_add_normal ~name ~value sample =
 let set_common_fields sample =
   let open StatsSample in
   sample
-  |> add_int ~name:"pid" ~value:(ProcessPoolState.get_pid () |> Pid.to_int)
+  |> add_int ~name:"pid" ~value:(WorkerPoolState.get_pid () |> Pid.to_int)
   |> add_int ~name:"is_main_process" ~value:(Bool.to_int Config.is_originator)
   |> add_normal ~name:"hostname" ~value:hostname
   |> maybe_add_normal ~name:"job_id" ~value:Config.job_id
@@ -51,7 +51,7 @@ let log_many ~loc entries =
     let dir_name = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Stats in
     Utils.create_dir dir_name ;
     let file_name =
-      match !ProcessPoolState.in_child with
+      match WorkerPoolState.get_in_child () with
       | None ->
           "stats.jsonl"
       | Some rank ->

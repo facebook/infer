@@ -21,7 +21,7 @@ let report_proc_json {Summary.payloads= {lineage}; proc_name} =
 let worker source_file =
   let t0 = Mtime_clock.now () in
   let status = Format.asprintf "%a" SourceFile.pp source_file in
-  !ProcessPoolState.update_status (Some t0) status ;
+  !WorkerPoolState.update_status (Some t0) status ;
   let proc_names = SourceFiles.proc_names_of_source source_file in
   List.iter
     ~f:(fun proc_name ->

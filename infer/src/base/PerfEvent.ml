@@ -175,7 +175,7 @@ let log_begin_event f ?timestamp ?categories ?arguments ~name () =
   pp_event_type_field f Begin ;
   pp_name_field f name ;
   pp_timestamp_field f timestamp ;
-  pp_process_id_field f (ProcessPoolState.get_pid ()) ;
+  pp_process_id_field f (WorkerPoolState.get_pid ()) ;
   Option.iter categories ~f:(pp_categories_field f) ;
   Option.iter arguments ~f:(pp_arguments_field f) ;
   JsonFragment.pp f AssocEnd
@@ -186,7 +186,7 @@ let log_end_event f ?timestamp ?arguments () =
   pp_event_type_field f End ;
   pp_timestamp_field f timestamp ;
   Option.iter arguments ~f:(pp_arguments_field f) ;
-  pp_process_id_field f (ProcessPoolState.get_pid ()) ;
+  pp_process_id_field f (WorkerPoolState.get_pid ()) ;
   JsonFragment.pp f AssocEnd
 
 
@@ -195,7 +195,7 @@ let log_complete_event f ~timestamp ?duration ?categories ?arguments ~name () =
   pp_event_type_field f Complete ;
   pp_name_field f name ;
   pp_timestamp_field f (Some timestamp) ;
-  pp_process_id_field f (ProcessPoolState.get_pid ()) ;
+  pp_process_id_field f (WorkerPoolState.get_pid ()) ;
   Option.iter duration ~f:(pp_duration_field f) ;
   Option.iter categories ~f:(pp_categories_field f) ;
   Option.iter arguments ~f:(pp_arguments_field f) ;
@@ -207,7 +207,7 @@ let log_instant_event f ?timestamp ~name scope =
   pp_event_type_field f Instant ;
   pp_name_field f name ;
   pp_timestamp_field f timestamp ;
-  pp_process_id_field f (ProcessPoolState.get_pid ()) ;
+  pp_process_id_field f (WorkerPoolState.get_pid ()) ;
   pp_scope_field f scope ;
   JsonFragment.pp f AssocEnd
 
@@ -232,7 +232,7 @@ let logger =
        ResultsDirEntryName.get_path ~results_dir:Config.toplevel_results_dir PerfEvents
      in
      let is_toplevel_process =
-       Config.is_originator && not (Option.is_some !ProcessPoolState.in_child)
+       Config.is_originator && not (Option.is_some @@ WorkerPoolState.get_in_child ())
      in
      ( if is_toplevel_process then
          let preexisting_logfile = ISys.file_exists log_file in
