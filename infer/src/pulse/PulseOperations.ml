@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -351,6 +352,13 @@ let eval_to_operand path location exp astate =
       (astate, `ValueOrigin value_origin)
 
 
+let pp_operand fmt = function
+  | `Constant c ->
+      Const.pp Pp.text fmt c
+  | `ValueOrigin vo ->
+      ValueOrigin.pp fmt vo
+
+
 let is_pvar vo astate ~f =
   match Decompiler.find (ValueOrigin.value vo) astate with
   | SourceExpr ((PVar pvar, [Dereference]), _) ->
@@ -370,10 +378,9 @@ let is_non_this_param pdesc vo astate =
 
 let is_constructor pdesc = Procname.is_constructor (Procdesc.get_proc_name pdesc)
 
-let is_infeasible pdesc ~negated bop lhs_op rhs_op astate =
+let is_this_equal_to_param_in_constructor pdesc ~negated bop lhs_op rhs_op astate =
   match ((negated, (bop : Binop.t)), lhs_op, rhs_op) with
   | (false, Eq | true, Ne), `ValueOrigin lhs, `ValueOrigin rhs ->
-      (* [this == param] is alwasy false inside a constructor. *)
       ( (is_this lhs astate && is_non_this_param pdesc rhs astate)
       || (is_non_this_param pdesc lhs astate && is_this rhs astate) )
       && is_constructor pdesc
@@ -388,7 +395,15 @@ let prune pdesc path location ~condition astate =
         (* TODO: eval to value origin and place an Invalidation event in the corresponding value history *)
         let** astate, lhs_op = eval_to_operand path location exp_lhs astate in
         let** astate, rhs_op = eval_to_operand path location exp_rhs astate in
-        if is_infeasible pdesc ~negated bop lhs_op rhs_op astate then Unsat
+        if is_this_equal_to_param_in_constructor pdesc ~negated bop lhs_op rhs_op astate then
+          let reason () =
+            F.asprintf
+              "%a=%a and %a=%a are \"this\" and a parameter and %a is a constructor, so cannot be \
+               equal"
+              Exp.pp exp_lhs pp_operand lhs_op Exp.pp exp_rhs pp_operand rhs_op Procname.pp
+              (Procdesc.get_proc_name pdesc)
+          in
+          Unsat {reason; source= __POS__}
         else
           let is_bop_equal =
             match (bop, negated) with Eq, false | Ne, true -> true | _ -> false
@@ -829,11 +844,13 @@ let mark_address_of_stack_variable history variable location address astate =
            (AddressOfStackVariable (variable, location, history))
            astate )
   | Some (variable', location', _) ->
-      L.d_printfln ~color:Orange
-        "UNSAT: variables %a and %a have the same address on the stack.@\n  %a: %a@\n  %a: %a"
-        Var.pp variable Var.pp variable' Var.pp variable Location.pp location Var.pp variable'
-        Location.pp location' ;
-      Unsat
+      let reason () =
+        F.asprintf
+          "UNSAT: variables %a and %a have the same address on the stack.@\n  %a: %a@\n  %a: %a"
+          Var.pp variable Var.pp variable' Var.pp variable Location.pp location Var.pp variable'
+          Location.pp location'
+      in
+      Unsat {reason; source= __POS__}
 
 
 let get_dynamic_type_unreachable_values vars astate =

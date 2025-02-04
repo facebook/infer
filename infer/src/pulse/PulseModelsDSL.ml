@@ -208,7 +208,8 @@ module Syntax = struct
   let exec_partial_command (f : astate -> astate PulseOperationResult.t) : unit model_monad =
    fun _data astate non_disj ->
     match f astate with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         ([], non_disj)
     | Sat res ->
         ([PulseResult.map res ~f:(fun astate -> ContinueProgram ((), astate))], non_disj)
@@ -221,7 +222,8 @@ module Syntax = struct
   let exec_partial_operation (f : astate -> (astate * 'a) PulseOperationResult.t) : 'a model_monad =
    fun _data astate non_disj ->
     match f astate with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         ([], non_disj)
     | Sat res ->
         ([PulseResult.map res ~f:(fun (astate, a) -> ContinueProgram (a, astate))], non_disj)
@@ -952,19 +954,20 @@ module Syntax = struct
   end
 end
 
-let unsafe_to_astate_transformer (monad : 'a model_monad) :
+let unsafe_to_astate_transformer unsat_info (monad : 'a model_monad) :
     CallEvent.t * model_data -> astate -> ('a * astate) sat_unsat_t =
  fun data astate ->
+  let unsat = Unsat unsat_info in
   (* warning: we currently ignore the non-disjunctive state *)
   match monad data astate NonDisjDomain.bottom |> fst with
   | [res] ->
       PulseResult.ok res
-      |> Option.value_map ~default:Unsat ~f:(function
+      |> Option.value_map ~default:unsat ~f:(function
            | ContinueProgram (a, astate) ->
                Sat (a, astate)
            | _ ->
-               Unsat )
+               unsat )
   | [] ->
-      Unsat
+      unsat
   | _ ->
-      Unsat
+      unsat

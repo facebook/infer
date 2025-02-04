@@ -1031,13 +1031,15 @@ module Internal = struct
             Continue (astate, error)
         | Equal (v1, v2) -> (
           match subst_var (v1, v2) astate with
-          | Unsat ->
-              Stop Unsat
+          | Unsat _ as unsat ->
+              Stop unsat
           | Sat astate' ->
               Continue (astate', error) )
         | EqZero v when is_stack_allocated stack_allocations v ->
-            L.d_printfln "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v ;
-            Stop Unsat
+            let reason () =
+              F.asprintf "CONTRADICTION: %a = 0 but is allocated" AbstractValue.pp v
+            in
+            Stop (Unsat {reason; source= __POS__})
         | EqZero v when is_heap_allocated astate v -> (
             (* We want to detect when we know [v|->-] and [v=0] together. This is a contradiction, but
                can also be the sign that there is a real issue. Consider:
@@ -1070,9 +1072,11 @@ module Internal = struct
             | None ->
                 (* we don't know why [v|->-] is in the state, weird and probably cannot happen; drop
                    the path because we won't be able to give a sensible error *)
-                L.d_printfln "Not clear why %a should be allocated in the first place, giving up"
-                  AbstractValue.pp v ;
-                Stop Unsat
+                let reason () =
+                  F.asprintf "Not clear why %a should be allocated in the first place, giving up"
+                    AbstractValue.pp v
+                in
+                Stop (Unsat {reason; source= __POS__})
             | Some (_, trace, reason_opt) ->
                 Stop (Sat (astate, Some (v, (trace, reason_opt)))) )
         | EqZero _ (* [v] not allocated *) ->
@@ -2250,9 +2254,9 @@ module Summary = struct
     match summary_sat with
     | Sat _ ->
         summary_sat
-    | Unsat ->
+    | Unsat _ as unsat ->
         Stats.incr_pulse_summaries_contradictions () ;
-        Unsat
+        unsat
 
 
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
@@ -2404,7 +2408,12 @@ let incorporate_new_eqs new_eqs astate =
       Sat (Ok astate)
   | Some (address, must_be_valid) ->
       L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
-      if is_allocated_this_pointer proc_attrs astate address then Unsat
+      if is_allocated_this_pointer proc_attrs astate address then
+        let reason () =
+          F.asprintf "%a is deduced to be equal to null but is already allocated" AbstractValue.pp
+            address
+        in
+        Unsat {reason; source= __POS__}
       else Sat (Error (`PotentialInvalidAccess (astate, address, must_be_valid)))
 
 

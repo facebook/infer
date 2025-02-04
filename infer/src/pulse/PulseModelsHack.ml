@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -1355,7 +1356,13 @@ module SplatedVec = struct
 end
 
 let build_vec_for_variadic_callee data args astate =
-  (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer)
+  let reason () =
+    F.asprintf "error when executing build_vec_for_variadic_callee [%a]"
+      (Pp.seq ~sep:"," AbstractValue.pp)
+      (List.map args ~f:fst)
+  in
+  ( SplatedVec.build_vec_for_variadic_callee args
+  |> DSL.unsafe_to_astate_transformer {reason; source= __POS__} )
     (Model "variadic args vec", data) astate
 
 

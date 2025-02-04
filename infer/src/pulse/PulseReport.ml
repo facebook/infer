@@ -250,8 +250,8 @@ let summary_of_error_post proc_desc location mk_error astate =
       Sat
         (AccessResult.of_abductive_summary_error
            (`PotentialInvalidAccessSummary (summary, astate, addr, trace)) )
-  | Unsat ->
-      Unsat
+  | Unsat _ as unsat ->
+      unsat
 
 
 let summary_error_of_error proc_desc location (error : AccessResult.error) : _ SatUnsat.t =
@@ -329,7 +329,7 @@ let report_errors analysis_data path location errors =
   List.rev errors
   |> List.fold ~init:(Sat None) ~f:(fun sat_result error ->
          match sat_result with
-         | Unsat | Sat (Some _) ->
+         | Unsat _ | Sat (Some _) ->
              sat_result
          | Sat None ->
              report_error analysis_data path location error )
@@ -343,8 +343,9 @@ let report_exec_results analysis_data path location results =
           Some post
       | Error errors -> (
         match report_errors analysis_data path location errors with
-        | Unsat ->
+        | Unsat unsat_info ->
             L.d_printfln "UNSAT discovered during error reporting" ;
+            SatUnsat.log_unsat unsat_info ;
             None
         | Sat None -> (
           match exec_result with

@@ -6,7 +6,7 @@
  *)
 
 open! IStd
-module L = Logging
+module F = Format
 open PulseBasicInterface
 
 (* {3 Heap domain } *)
@@ -91,7 +91,7 @@ let is_allocated memory v =
 
 
 let canonicalize ~get_var_repr memory =
-  let exception AliasingContradiction in
+  let exception AliasingContradiction of SatUnsat.unsat_info in
   try
     let memory', changed =
       Graph.fold
@@ -99,10 +99,12 @@ let canonicalize ~get_var_repr memory =
           if Edges.is_empty edges then (g, true)
           else
             let addr' = get_var_repr addr in
-            if is_allocated g addr' then (
-              L.d_printfln "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
-                AbstractValue.pp addr AbstractValue.pp addr' Graph.pp g ;
-              raise_notrace AliasingContradiction )
+            if is_allocated g addr' then
+              let reason () =
+                F.asprintf "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
+                  AbstractValue.pp addr AbstractValue.pp addr' Graph.pp g
+              in
+              raise_notrace (AliasingContradiction {reason; source= __POS__})
             else
               let edges' = Edges.canonicalize ~get_var_repr edges in
               let changed =
@@ -112,7 +114,7 @@ let canonicalize ~get_var_repr memory =
         memory (Graph.empty, false)
     in
     if changed then Sat memory' else Sat memory
-  with AliasingContradiction -> Unsat
+  with AliasingContradiction unsat_info -> Unsat unsat_info
 
 
 let subst_var ~for_summary (v, v') memory =
@@ -141,12 +143,14 @@ let subst_var ~for_summary (v, v') memory =
       | Some edges' ->
           if Edges.is_empty edges then Sat memory
           else if Edges.is_empty edges' then Sat (Graph.add v' edges memory)
-          else (
+          else
             (* both set of edges being non-empty means that [v] and [v'] have been treated as
                disjoint memory locations until now, contradicting the fact they are equal *)
-            L.d_printfln "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
-              AbstractValue.pp v AbstractValue.pp v' Graph.pp memory ;
-            Unsat ) )
+            let reason () =
+              F.asprintf "CONTRADICTION: %a = %a, which is already allocated in %a@\n"
+                AbstractValue.pp v AbstractValue.pp v' Graph.pp memory
+            in
+            Unsat {reason; source= __POS__} )
 
 
 include Graph

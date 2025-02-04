@@ -6,7 +6,6 @@
  *)
 open! IStd
 module F = Format
-module L = Logging
 open PulseBasicInterface
 
 (** Stacks: map addresses of variables to values and histoy. *)
@@ -50,19 +49,21 @@ module M = PrettyPrintable.MakePPMonoMap (VarAddress) (ValueOrigin)
 let yojson_of_t m = [%yojson_of: (VarAddress.t * ValueOrigin.t) list] (M.bindings m)
 
 let canonicalize ~get_var_repr stack =
-  let exception AliasingContradiction in
+  let exception AliasingContradiction of SatUnsat.unsat_info in
   try
     let (_allocated, changed), stack' =
       M.fold_mapi stack ~init:(AbstractValue.Set.empty, false)
         ~f:(fun var (allocated, changed) vo ->
           let addr = ValueOrigin.value vo in
           let addr' = get_var_repr addr in
-          if Var.is_pvar var && AbstractValue.Set.mem addr' allocated then (
-            L.d_printfln
-              "CONTRADICTION: %a = %a makes two stack variables' addresses equal (%a=%a) in %a@\n"
-              AbstractValue.pp addr AbstractValue.pp addr' AbstractValue.pp addr Var.pp var M.pp
-              stack ;
-            raise_notrace AliasingContradiction ) ;
+          ( if Var.is_pvar var && AbstractValue.Set.mem addr' allocated then
+              let reason () =
+                F.asprintf
+                  "CONTRADICTION: %a = %a makes two stack variables' addresses equal (%a=%a) in %a@\n"
+                  AbstractValue.pp addr AbstractValue.pp addr' AbstractValue.pp addr Var.pp var M.pp
+                  stack
+              in
+              raise_notrace (AliasingContradiction {reason; source= __POS__}) ) ;
           let allocated =
             if Var.is_pvar var then AbstractValue.Set.add addr' allocated else allocated
           in
@@ -72,7 +73,7 @@ let canonicalize ~get_var_repr stack =
             ((allocated, changed), ValueOrigin.with_value addr' vo) )
     in
     Sat (if changed then stack' else stack)
-  with AliasingContradiction -> Unsat
+  with AliasingContradiction unsat_info -> Unsat unsat_info
 
 
 let subst_var (v, v') stack =

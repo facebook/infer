@@ -149,7 +149,8 @@ module Basic = struct
       >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
       >>| AccessResult.with_summary
     with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         []
     | Sat (Ok astate) ->
         [Ok (ExitProgram astate)]

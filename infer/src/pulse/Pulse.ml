@@ -921,10 +921,13 @@ module PulseTransferFunctions = struct
                           ; ret }
                         in
                         let awaitable_val, astate =
+                          let reason () =
+                            F.asprintf "could not make new awaitable for %a" AbstractValue.pp rv
+                          in
                           Option.value
                             ( (* This is a bit ugly because we're out of the DSL monad here,
                                  but it seems better not to keep writing new lower-level stuff *)
-                              PulseModelsDSL.unsafe_to_astate_transformer
+                              PulseModelsDSL.unsafe_to_astate_transformer {reason; source= __POS__}
                                 (PulseModelsHack.make_new_awaitable (rv, vh))
                                 (Model "Awaitable", md) astate
                             |> SatUnsat.sat )
@@ -1164,13 +1167,15 @@ module PulseTransferFunctions = struct
           match PulseOperations.remove_vars vars location astate with
           | Sat astate ->
               Some (ContinueProgram astate)
-          | Unsat ->
+          | Unsat unsat_info ->
+              SatUnsat.log_unsat unsat_info ;
               None )
         | ExceptionRaised astate -> (
           match PulseOperations.remove_vars vars location astate with
           | Sat astate ->
               Some (ExceptionRaised astate)
-          | Unsat ->
+          | Unsat unsat_info ->
+              SatUnsat.log_unsat unsat_info ;
               None ) )
 
 

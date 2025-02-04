@@ -194,6 +194,10 @@ let pp_var fmt v =
       AbstractValue.pp fmt v
 
 
+(* we don't want to log the source info in the test results as it includes source line numbers,
+   which are subject to change *)
+let () = SatUnsat.log_source_info := false
+
 let test_f ~f phi init_phi =
   (* reset global state before each test so that variable id's remain stable when tests are added in
       the future *)
@@ -225,8 +229,8 @@ let test_with_all_types_Nil phi =
         let* phi, _ = and_dynamic_type v nil_typ phi in
         Sat phi )
   with
-  | Unsat ->
-      Logging.die InternalError "Failed to initialise test phi"
+  | Unsat {reason} ->
+      Logging.die InternalError "Failed to initialise test phi, got UNSAT: %s" (reason ())
   | Sat init_phi ->
       test_with_initial phi init_phi
 
@@ -247,18 +251,18 @@ let%test_module "normalization" =
     let%expect_test _ =
       test_with_all_types_Nil
         (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && z = i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
 
 
     let%expect_test _ =
       test_with_all_types_Nil
         (instanceof nil_typ x_var z_var && instanceof nil_typ y_var w_var && w = i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
 
 
     let%expect_test _ =
       test_with_all_types_Nil (instanceof cons_typ x_var y_var && instanceof nil_typ x_var y_var) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
 
 
     let%expect_test _ =
@@ -270,7 +274,7 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (x + i 1 - i 1 < x) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 < 0|}]
 
 
     let%expect_test _ =
@@ -280,34 +284,34 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (x + (y - x) < y) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 < 0|}]
 
 
     let%expect_test _ =
       test (x = y && y = z && z = i 0 && x = i 1) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: ([Some =0] == [Some =1]) UNSAT according to concrete intervals|}]
 
 
     (* should be false (x = w + (y+1) -> 1 = w + z -> 1 = 0)  *)
     let%expect_test _ =
       test (x = w + y + i 1 && y + i 1 = z && x = i 1 && w + z = i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: intersection =0*=1|}]
 
 
     (* same as above but atoms are given in the opposite order *)
     let%expect_test _ =
       test (w + z = i 0 && x = i 1 && y + i 1 = z && x = w + y + i 1) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: intersection =1*=0|}]
 
 
     let%expect_test _ =
       test (of_binop Ne x y = i 0 && x = i 0 && y = i 1) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: intersection =1*=0|}]
 
 
     let%expect_test _ =
       test (of_binop Ne x y = i 0 && x = i 0 && y = i 12) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: intersection =12*=0|}]
 
 
     let%expect_test _ =
@@ -320,12 +324,12 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (x = i 0 && x < i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: ([Some =0] < [Some =0]) UNSAT according to concrete intervals|}]
 
 
     let%expect_test _ =
       test (x + y < x + y) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 < 0|}]
 
 
     let%expect_test "nonlinear arithmetic" =
@@ -379,7 +383,7 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (is_int x_var && x + x = i 5) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
   end )
 
 
@@ -508,12 +512,12 @@ let%test_module "inequalities" =
   ( module struct
     let%expect_test "simple contradiction" =
       test (x < i 0 && x >= i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: ([Some =0] <= [Some ≤-1]) UNSAT according to concrete intervals|}]
 
 
     let%expect_test "simple contradiction" =
       test (x < y && x >= y) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: -a1 -1≥0 is false|}]
 
 
     let%expect_test "add to tableau with pivot" =
@@ -529,17 +533,17 @@ let%test_module "inequalities" =
 
     let%expect_test "add to tableau with pivot then unsat" =
       test (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: tableau|}]
 
 
     let%expect_test "contradiction using pivot" =
       test (x >= i 0 && y >= i 0 && z >= i 0 && x + y <= i 2 && y - z >= i 3) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: tableau|}]
 
 
     let%expect_test "constant propagation to tableau" =
       test (x < i 34 && y < i 2 * x && x = i 32 && y = i 64) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: tableau|}]
 
 
     let%expect_test "tableau simplified away by constant propagation" =
@@ -570,7 +574,7 @@ let%test_module "intervals" =
     (* rationals cannot detect the contradiction but intervals do integer reasoning *)
     let%expect_test "integer equality in concrete interval" =
       test (x >= i 0 && x < i 3 && x <> i 0 && x <> i 1 && x <> i 2) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: intersection ≠2*=2|}]
 
 
     (* same as above but we stop earlier to see that intervals infer that [x = 2] *)
@@ -604,13 +608,13 @@ let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: -a1 -1≥0 is false|}]
 
 
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: -a1 -1≥0 is false|}]
 
 
     let%expect_test "(x ≠ 0 ∨ y ≠ 0) && x = 0  => y ≠ 0" =
@@ -647,7 +651,7 @@ let%test_module "conjunctive normal form" =
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
       test (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 ≠ 0|}]
 
 
     let%expect_test _ =
@@ -674,7 +678,7 @@ let%test_module "non-numerical constants" =
 
     let%expect_test _ =
       test (x = s "hello" && x = s "world") ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: "hello" = "world"|}]
 
 
     let%expect_test _ =
@@ -689,7 +693,7 @@ let%test_module "non-numerical constants" =
 
     let%expect_test _ =
       test (x = s "hello" ^ s "world" && y = s "no match" && x = y) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: "helloworld" = "no match"|}]
 
 
     let%expect_test _ =
@@ -714,7 +718,7 @@ let%test_module "non-numerical constants" =
 
     let%expect_test _ =
       test (x = y ^ z && y = s "hello" && z = s "world" && x = y) ;
-      [%expect {|unsat|}]
+      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: "helloworld" = "hello"|}]
 
 
     let%expect_test _ =

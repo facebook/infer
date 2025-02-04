@@ -15,15 +15,19 @@ module Import = struct
   include PulseResult.Let_syntax
 
   let bind_bind sat_result ~f =
-    let exception Unsat in
+    let exception Unsat of SatUnsat.unsat_info in
     try
       SatUnsat.bind
         (fun result ->
           Sat
             (let* x = result in
-             match (f x : _ SatUnsat.t) with Sat y -> y | Unsat -> raise_notrace Unsat ) )
+             match (f x : _ SatUnsat.t) with
+             | Sat y ->
+                 y
+             | Unsat unsat_info ->
+                 raise_notrace (Unsat unsat_info) ) )
         sat_result
-    with Unsat -> SatUnsat.Unsat
+    with Unsat unsat_info -> SatUnsat.Unsat unsat_info
 
 
   let ( let** ) x f = bind_bind x ~f
@@ -83,7 +87,8 @@ module Import = struct
 
   let ( let<**> ) x f =
     match x with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         []
     | Sat (FatalError _ as err) ->
         [err]
@@ -95,7 +100,8 @@ module Import = struct
 
   let bind_sat_result non_disj x f =
     match x with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         ([], non_disj)
     | Sat (FatalError _ as err) ->
         ([err], non_disj)
@@ -118,7 +124,8 @@ module Import = struct
 
   let ( let<++> ) x f =
     match x with
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         []
     | Sat (FatalError _ as err) ->
         [err]
@@ -160,7 +167,10 @@ open Import
 let sat_ok : 'ok t -> _ = function
   | Sat (Ok x) ->
       Some x
-  | Unsat | Sat (FatalError _ | Recoverable _) ->
+  | Unsat unsat_info ->
+      SatUnsat.log_unsat unsat_info ;
+      None
+  | Sat (FatalError _ | Recoverable _) ->
       None
 
 

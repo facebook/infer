@@ -322,7 +322,7 @@ type contradiction =
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
-  | PathCondition
+  | PathCondition of unsat_info
 
 let pp_aliases fmt aliases =
   let pp fmt group = F.fprintf fmt "[%a]" (Pp.seq ~sep:";" HeapPath.pp) group in
@@ -347,8 +347,8 @@ let pp_contradiction fmt = function
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
-  | PathCondition ->
-      F.pp_print_string fmt "path condition evaluates to false"
+  | PathCondition unsat_info ->
+      F.fprintf fmt "path condition evaluates to false: %a" SatUnsat.pp_unsat_info unsat_info
 
 
 let log_contradiction = function
@@ -360,8 +360,8 @@ let log_contradiction = function
       Stats.incr_pulse_args_length_contradictions ()
   | CapturedFormalActualLength _ ->
       Stats.incr_pulse_captured_vars_length_contradictions ()
-  | PathCondition ->
-      ()
+  | PathCondition unsat_info ->
+      SatUnsat.log_unsat unsat_info
 
 
 let is_dynamic_type_needed_contradiction = function
@@ -371,17 +371,17 @@ let is_dynamic_type_needed_contradiction = function
   | AliasingWithAllAliases _
   | CapturedFormalActualLength _
   | FormalActualLength _
-  | PathCondition ->
+  | PathCondition _ ->
       None
 
 
 exception Contradiction of contradiction
 
-let raise_if_unsat contradiction = function
+let raise_if_unsat = function
   | Sat x ->
       x
-  | Unsat ->
-      raise_notrace (Contradiction contradiction)
+  | Unsat unsat_info ->
+      raise_notrace (Contradiction (PathCondition unsat_info))
 
 
 let fold_globals_of_callee_stack {PathContext.timestamp} call_loc stack call_state ~f =
@@ -411,9 +411,9 @@ let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
       let path_condition, new_eqs =
         Formula.and_equal_vars addr_caller0 addr_caller'
           call_state.astate.AbductiveDomain.path_condition
-        |> raise_if_unsat PathCondition
+        |> raise_if_unsat
       in
-      let+ call_state = incorporate_new_eqs new_eqs call_state |> raise_if_unsat PathCondition in
+      let+ call_state = incorporate_new_eqs new_eqs call_state |> raise_if_unsat in
       {call_state with astate= AbductiveDomain.set_path_condition path_condition call_state.astate}
   | _ ->
       Ok call_state
@@ -424,8 +424,7 @@ let and_restricted_arith ~addr_callee ~addr_caller call_state =
     (* [addr_callee] is implicitly [≥0] but [addr_caller] isn't, we need to propagate that fact to
        the caller address (no need to do anything in all other cases) *)
     let+ astate =
-      PulseArithmetic.prune_nonnegative ~depth:1 addr_caller call_state.astate
-      |> raise_if_unsat PathCondition
+      PulseArithmetic.prune_nonnegative ~depth:1 addr_caller call_state.astate |> raise_if_unsat
     in
     {call_state with astate}
   else Ok call_state
@@ -714,11 +713,11 @@ let conjoin_callee_arith callee_path_condition call_state =
     Formula.and_callee_formula
       (raw_map_of_to_caller_subst call_state.subst)
       call_state.astate.path_condition ~callee:callee_path_condition
-    |> raise_if_unsat PathCondition
+    |> raise_if_unsat
   in
   let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
   let call_state = {call_state with astate; subst= to_caller_subst_of_raw_map subst} in
-  incorporate_new_eqs new_eqs call_state |> raise_if_unsat PathCondition
+  incorporate_new_eqs new_eqs call_state |> raise_if_unsat
 
 
 let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history call_state
@@ -1263,12 +1262,12 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
       materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
         ~captured_actuals ~formals ~actuals empty_call_state
     with
-    | exception Contradiction reason ->
+    | exception Contradiction contradiction ->
         (* can't make sense of the pre-condition in the current context: give up on that particular
            pre/post pair *)
-        L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
-        log_contradiction reason ;
-        (Unsat, Some reason)
+        let reason () = F.asprintf "Cannot apply precondition: %a" pp_contradiction contradiction in
+        log_contradiction contradiction ;
+        (Unsat {reason; source= __POS__}, Some contradiction)
     | Ok {aliases} when HeapPath.Map.is_empty aliases |> not ->
         L.d_printfln ~color:Orange "Aliases found: %a@\n"
           (HeapPath.Map.pp ~pp_value:HeapPath.Set.pp)
@@ -1280,7 +1279,9 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
               new_alias_group :: aliases )
             aliases []
         in
-        (Unsat, Some (AliasingWithAllAliases aliases))
+        let contradiction = AliasingWithAllAliases aliases in
+        let reason () = F.asprintf "%a" pp_contradiction contradiction in
+        (Unsat {reason; source= __POS__}, Some contradiction)
     | result -> (
       try
         let pre_astate, pre_subst =
@@ -1303,12 +1304,14 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
              don't want to lose our precious single state because of this *)
           ( match call_state.first_error with
           | Some v when not path.PathContext.is_non_disj ->
-              L.d_printfln
-                "huho, we found an error on accessing invalid address %a when applying the \
-                 precondition but did not actually report an error. Abort!"
-                AbstractValue.pp v ;
+              let reason () =
+                F.asprintf
+                  "found an error on accessing invalid address %a when applying the precondition \
+                   but did not actually report an error. Abort!"
+                  AbstractValue.pp v
+              in
               (* HACK: abuse [PathCondition], sorry *)
-              raise (Contradiction PathCondition)
+              raise (Contradiction (PathCondition {reason; source= __POS__}))
           | _ ->
               () ) ;
           let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
@@ -1370,10 +1373,12 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
             Some (DynamicTypeNeeded caller_heap_paths)
         in
         (Sat res, contradiciton)
-      with Contradiction reason ->
-        L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
-        log_contradiction reason ;
-        (Unsat, Some reason) )
+      with Contradiction contradiction ->
+        let reason () =
+          F.asprintf "Cannot apply post-condition: %a" pp_contradiction contradiction
+        in
+        log_contradiction contradiction ;
+        (Unsat {reason; source= __POS__}, Some contradiction) )
   in
   let pp_formals = Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f (Var.of_pvar var)) in
   let pp_summary =

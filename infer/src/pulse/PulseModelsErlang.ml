@@ -137,10 +137,12 @@ let has_erlang_type value typ : value_maker =
 
 let prune_type path location (value, hist) typ astate : AbductiveDomain.t result =
   (let open SatUnsat.Import in
+   let reason () = F.asprintf "%a is invalid" AbstractValue.pp value in
    let* astate =
      (* If check_addr_access fails, we stop exploring this path by marking it [Unsat] *)
      PulseOperations.check_addr_access path Read location (value, hist) astate
-     |> PulseResult.ok |> SatUnsat.of_option
+     |> PulseResult.ok
+     |> SatUnsat.of_option {reason; source= __POS__}
    in
    let** astate, instanceof_val = has_erlang_type value typ astate in
    PulseArithmetic.prune_positive instanceof_val astate )

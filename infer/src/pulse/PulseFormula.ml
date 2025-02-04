@@ -252,9 +252,9 @@ end = struct
     match VarMap.min_binding_opt vs with
     | None ->
         if Q.is_zero c then Sat None
-        else (
-          L.d_printfln "Unsat when solving %a = 0" (pp Var.pp) l ;
-          Unsat )
+        else
+          let reason () = F.asprintf "Unsat when solving %a = 0" (pp Var.pp) l in
+          Unsat {reason; source= __POS__}
     | Some ((x, _) as x_coeff) ->
         Sat (Some (x, pivot x_coeff l))
 
@@ -355,7 +355,10 @@ end = struct
   let solve_for_unrestricted w l =
     if not (is_restricted l) then (
       match solve_eq l (of_var w) with
-      | Unsat | Sat None ->
+      | Unsat unsat_info ->
+          SatUnsat.log_unsat unsat_info ;
+          None
+      | Sat None ->
           None
       | Sat (Some (x, _) as r) ->
           assert (Var.is_unrestricted x) ;
@@ -890,12 +893,16 @@ module Term = struct
 
 
   let satunsat_map_direct_subterms t ~f =
-    let exception FoundUnsat in
+    let exception FoundUnsat of SatUnsat.unsat_info in
     try
       Sat
         (map_direct_subterms t ~f:(fun t' ->
-             match f t' with Unsat -> raise_notrace FoundUnsat | Sat t'' -> t'' ) )
-    with FoundUnsat -> Unsat
+             match f t' with
+             | Unsat unsat_info ->
+                 raise_notrace (FoundUnsat unsat_info)
+             | Sat t'' ->
+                 t'' ) )
+    with FoundUnsat unsat_info -> Unsat unsat_info
 
 
   let rec fold_subst_variables ~init ~f_subst ?(f_post = fun ~prev:_ acc t -> (acc, t)) t =
@@ -1083,8 +1090,8 @@ module Term = struct
     let t' = Z.protect eval_const_shallow_ t |> Option.join in
     match t' with
     | None ->
-        L.d_printfln ~color:Orange "Undefined result when evaluating %a" (pp_no_paren Var.pp) t ;
-        Unsat
+        let reason () = F.asprintf "Undefined result when evaluating %a" (pp_no_paren Var.pp) t in
+        Unsat {reason; source= __POS__}
     | Some t' ->
         if not (phys_equal t t') then
           Debug.p "eval_const_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
@@ -1200,12 +1207,14 @@ module Term = struct
     let t' = try Z.protect simplify_shallow_or_raise t with Undefined -> None in
     match t' with
     | None ->
-        L.d_printfln ~color:Orange "Undefined result when simplifying %a" (pp_no_paren Var.pp) t ;
-        Unsat
+        let reason () = F.asprintf "Undefined result when simplifying %a" (pp_no_paren Var.pp) t in
+        Unsat {reason; source= __POS__}
     | Some (Const q) when not (Q.is_rational q) ->
-        L.d_printfln ~color:Orange "Non-rational result %a when simplifying %a" Q.pp_print q
-          (pp_no_paren Var.pp) t ;
-        Unsat
+        let reason () =
+          F.asprintf "Non-rational result %a when simplifying %a" Q.pp_print q (pp_no_paren Var.pp)
+            t
+        in
+        Unsat {reason; source= __POS__}
     | Some t' ->
         if not (phys_equal t t') then
           Debug.p "simplify_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
@@ -1723,8 +1732,10 @@ module Atom = struct
     | True ->
         Sat (Some [])
     | False ->
-        L.d_printfln "UNSAT atom according to eval_const_shallow: %a" (pp_with_pp_var Var.pp) atom ;
-        Unsat
+        let reason () =
+          F.asprintf "UNSAT atom according to eval_const_shallow: %a" (pp_with_pp_var Var.pp) atom
+        in
+        Unsat {reason; source= __POS__}
     | Atom atom -> (
       match get_as_linear atom with
       | Some atom' ->
@@ -1737,9 +1748,11 @@ module Atom = struct
           | True ->
               Sat (Some [])
           | False ->
-              L.d_printfln "UNSAT atom according to eval_syntactically_equal_terms: %a"
-                (pp_with_pp_var Var.pp) atom ;
-              Unsat
+              let reason () =
+                F.asprintf "UNSAT atom according to eval_syntactically_equal_terms: %a"
+                  (pp_with_pp_var Var.pp) atom
+              in
+              Unsat {reason; source= __POS__}
           | Atom _atom ->
               (* HACK: [eval_syntactically_equal_terms] return [Atom _] only when it didn't manage
                  to normalize anything *)
@@ -1776,7 +1789,8 @@ module Atom = struct
     | Some atoms -> (
       (* terms that are atoms can be simplified in [eval_atom] *)
       match eval_atoms_with_normalized_terms ~is_neq_zero atoms with
-      | Unsat ->
+      | Unsat unsat_info ->
+          SatUnsat.log_unsat unsat_info ;
           Term.zero
       | Sat [] ->
           Term.one
@@ -1791,16 +1805,16 @@ module Atom = struct
   let eval ~is_neq_zero atom =
     Debug.p "Atom.val %a@\n" (pp_with_pp_var Var.pp) atom ;
     let* atom =
-      let exception FoundUnsat in
+      let exception FoundUnsat of SatUnsat.unsat_info in
       try
         Sat
           (map_terms atom ~f:(fun t ->
                match eval_term ~is_neq_zero t with
                | Sat t' ->
                    t'
-               | Unsat ->
-                   raise_notrace FoundUnsat ) )
-      with FoundUnsat -> Unsat
+               | Unsat unsat_info ->
+                   raise_notrace (FoundUnsat unsat_info) ) )
+      with FoundUnsat unsat_info -> Unsat unsat_info
     in
     let+ atoms_opt = eval_with_normalized_terms ~is_neq_zero atom in
     Option.value atoms_opt ~default:[atom]
@@ -2461,7 +2475,13 @@ module Formula = struct
       | None ->
           Sat {phi with const_eqs= Var.Map.add v t phi.const_eqs}
       | Some t' ->
-          if Term.equal_syntax t t' then Sat phi else Unsat
+          if Term.equal_syntax t t' then Sat phi
+          else
+            let reason () =
+              F.asprintf "equating distinct const terms %a and %a" (Term.pp Var.pp) t
+                (Term.pp Var.pp) t'
+            in
+            Unsat {reason; source= __POS__}
 
 
     let remove_const_eq v phi =
@@ -2708,8 +2728,9 @@ module Formula = struct
         | None ->
             Sat intv
         | Some intv' ->
-            Debug.p "intersection %a*%a@\n" CItv.pp intv CItv.pp intv' ;
-            CItv.intersection intv intv' |> SatUnsat.of_option
+            let reason () = F.asprintf "intersection %a*%a" CItv.pp intv CItv.pp intv' in
+            Debug.p "intersection %a*%a" CItv.pp intv CItv.pp intv' ;
+            CItv.intersection intv intv' |> SatUnsat.of_option {reason; source= __POS__}
       in
       Debug.p "adding %a%a@\n" Var.pp v CItv.pp possibly_better_intv ;
       Var.Map.add v possibly_better_intv intervals
@@ -3165,7 +3186,8 @@ module Formula = struct
           (* [l_c < 0], [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0 so [l] denotes
              only negative values, hence cannot be ≥0: contradiction *)
           Debug.p "Contradiction!@\n" ;
-          Unsat
+          let reason () = F.asprintf "tableau" in
+          Unsat {reason; source= __POS__}
       | `Negative, (`Minimized | `Neither) -> (
         (* stuck, let's pivot to try to add a feasible equality to the tableau; there are two ways
            to pivot in \[2\] *)
@@ -3300,7 +3322,13 @@ module Formula = struct
                 let+ phi = add_const_eq y c phi in
                 (phi, new_eqs)
             | Some c' ->
-                if Term.equal_syntax c c' then Sat (phi, new_eqs) else Unsat )
+                if Term.equal_syntax c c' then Sat (phi, new_eqs)
+                else
+                  let reason () =
+                    F.asprintf "propagating equates distinct const terms %a and %a" (Term.pp Var.pp)
+                      c (Term.pp Var.pp) c'
+                  in
+                  Unsat {reason; source= __POS__} )
       in
       Debug.p "@]end [propagate_in_const_eqs] %a=%a@\n" Var.pp x Var.pp y ;
       r
@@ -3564,7 +3592,7 @@ module Formula = struct
                                 subst_target_x
                           in
                           let* t' =
-                            let exception Unsat in
+                            let exception Unsat of unsat_info in
                             try
                               Sat
                                 (Term.subst_variables t
@@ -3580,11 +3608,11 @@ module Formula = struct
                                          with
                                          | Sat sub_t' ->
                                              sub_t'
-                                         | Unsat ->
-                                             raise Unsat
+                                         | Unsat unsat_info ->
+                                             raise (Unsat unsat_info)
                                      in
                                      ((), sub_t') ) )
-                            with Unsat -> Unsat
+                            with Unsat unsat_info -> Unsat unsat_info
                           in
                           let phi = remove_term_eq t y phi in
                           Debug.p "phi=%a@\n" (pp_with_pp_var Var.pp) phi ;
@@ -3762,7 +3790,8 @@ module Formula = struct
           Sat (phi, new_eqs) (* already trivially known: don't add to formula to avoid divergence *)
       | (`Maximized | `Constant) when l_restricted && l_c_sign < 0 ->
           Debug.p "Skip adding %a≥0: unsat@\n" (LinArith.pp Var.pp) l ;
-          Unsat
+          let reason () = F.asprintf "%a≥0 is false@\n" (LinArith.pp Var.pp) l in
+          Unsat {reason; source= __POS__}
       | _ ->
           let w = Var.mk_fresh_restricted () in
           with_base_fuel (solve_tableau_eq new_eqs w l phi)
@@ -3832,7 +3861,10 @@ module Formula = struct
 
 
     and and_var_is_zero v (phi, neweqs) =
-      if Language.curr_language_is Erlang then (* No null pointers in Erlang *) Unsat
+      if Language.curr_language_is Erlang then
+        (* No null pointers in Erlang *)
+        let reason () = F.asprintf "%a=0 but %a is an Erlang pointer, hence ≠0" Var.pp v Var.pp v in
+        Unsat {reason; source= __POS__}
       else solve_lin_eq neweqs (LinArith.of_var v) (LinArith.of_q Q.zero) phi
 
 
@@ -3997,7 +4029,12 @@ module Intervals = struct
     let v2_opt, i2_opt = interval_and_var_of_operand formula.phi op2 in
     match CItv.abduce_binop_is_true ~negated binop i1_opt i2_opt with
     | Unsatisfiable ->
-        Unsat
+        let reason () =
+          F.asprintf "%s(%a %a %a) UNSAT according to concrete intervals"
+            (if negated then "not" else "")
+            (Pp.option CItv.pp) i1_opt Binop.pp binop (Pp.option CItv.pp) i2_opt
+        in
+        Unsat {reason; source= __POS__}
     | Satisfiable (i1_better_opt, i2_better_opt) ->
         let refine v_opt i_better_opt formula_new_eqs =
           Option.both v_opt i_better_opt
@@ -4044,7 +4081,11 @@ module Intervals = struct
     let citv_caller_opt = Var.Map.find_opt v phi.Formula.intervals in
     match CItv.abduce_binop_is_true ~negated:false Eq citv_caller_opt (Some citv_callee) with
     | Unsatisfiable ->
-        Unsat
+        let reason () =
+          F.asprintf "%a=%a=%a UNSAT according to concrete intervals" Var.pp v (Pp.option CItv.pp)
+            citv_caller_opt CItv.pp citv_callee
+        in
+        Unsat {reason; source= __POS__}
     | Satisfiable (Some abduce_caller, _abduce_callee) ->
         let+ phi = Formula.add_interval v abduce_caller phi in
         (phi, new_eqs)
@@ -4282,9 +4323,9 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
     (acc', VarSubst v')
   in
   (* propagate [Unsat] faster using this exception *)
-  let exception Contradiction in
+  let exception Contradiction of unsat_info in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
+    match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
   in
   let and_var_eqs var_eqs_foreign acc_phi_new_eqs =
     VarUF.fold_congruences var_eqs_foreign ~init:acc_phi_new_eqs
@@ -4347,7 +4388,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
         |> and_term_eqs phi_foreign
         |> and_intervals phi_foreign.Formula.intervals
         |> and_atoms phi_foreign.Formula.atoms )
-    with Contradiction -> Unsat
+    with Contradiction unsat_info -> Unsat unsat_info
   in
   let open SatUnsat.Import in
   let+ acc, (phi, new_eqs) = and_ formula_foreign.phi init formula0.phi in
@@ -4361,9 +4402,9 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
     (acc', VarSubst v')
   in
   (* propagate [Unsat] faster using this exception *)
-  let exception Contradiction in
+  let exception Contradiction of unsat_info in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
+    match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
   in
   let add_conditions conditions_foreign init =
     IContainer.fold_of_pervasives_map_fold Atom.Map.fold conditions_foreign ~init
@@ -4376,7 +4417,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
     let acc, (phi, new_eqs) = add_conditions phi_foreign.conditions (init, (phi0, RevList.empty)) in
     Debug.p "END and_conditions_fold_subst_variables" ;
     Sat (acc, phi, new_eqs)
-  with Contradiction -> Unsat
+  with Contradiction unsat_info -> Unsat unsat_info
 
 
 module QuantifierElimination : sig
@@ -4386,7 +4427,7 @@ module QuantifierElimination : sig
       class of [x] in [formula.phi] such that [x' ∈ keep_pre ∪ keep_post]. It also similarly
       substitutes variables in [formula.conditions] that are not in [precondition_vocabulary]. *)
 end = struct
-  exception Contradiction
+  exception Contradiction of unsat_info
 
   let subst_var_linear_eqs subst linear_eqs =
     Var.Map.fold
@@ -4394,10 +4435,10 @@ end = struct
         let x' = subst_f subst x in
         let l' = LinArith.subst_variables ~f:(targetted_subst_var subst) l in
         match LinArith.solve_eq (LinArith.of_var x') l' with
-        | Unsat ->
+        | Unsat unsat_info ->
             L.d_printfln "Contradiction found: %a=%a became %a=%a with is Unsat" Var.pp x
               (LinArith.pp Var.pp) l Var.pp x' (LinArith.pp Var.pp) l' ;
-            raise_notrace Contradiction
+            raise_notrace (Contradiction unsat_info)
         | Sat None ->
             new_map
         | Sat (Some (x'', l'')) ->
@@ -4435,8 +4476,8 @@ end = struct
         in
         if changed then
           match Atom.eval ~is_neq_zero:(fun _ -> false) atom' with
-          | Unsat ->
-              raise_notrace Contradiction
+          | Unsat unsat_info ->
+              raise_notrace (Contradiction unsat_info)
           | Sat atoms'' ->
               add_conditions (atoms'', depth) atoms'
         else add_condition (atom', depth) atoms' )
@@ -4490,7 +4531,7 @@ end = struct
         { conditions=
             subst_var_atoms_for_conditions ~precondition_vocabulary subst formula.conditions
         ; phi= subst_var_phi subst formula.phi }
-    with Contradiction -> Unsat
+    with Contradiction unsat_info -> Unsat unsat_info
 end
 
 module DeadVariables = struct
@@ -4750,12 +4791,20 @@ let fold_variables {conditions; phi} ~init ~f =
   Formula.fold_variables phi ~init ~f
 
 
+(** careful with the axe! *)
+let assert_sat = function
+  | Sat x ->
+      x
+  | Unsat unsat_info ->
+      SatUnsat.log_unsat unsat_info ;
+      L.die InternalError "did not expect UNSAT here: %s" (unsat_info.reason ())
+
+
 let absval_of_int formula i =
   match Formula.get_term_eq formula.phi (Term.of_intlit i) with
   | Some v ->
       (formula, v)
   | None ->
-      let assert_sat = function Sat x -> x | Unsat -> assert false in
       let v = Var.mk_fresh () in
       let formula =
         and_equal (AbstractValueOperand v) (ConstOperand (Cint i)) formula |> assert_sat |> fst
@@ -4768,7 +4817,6 @@ let absval_of_string formula s =
   | Some v ->
       (formula, v)
   | None ->
-      let assert_sat = function Sat x -> x | Unsat -> assert false in
       let v = Var.mk_fresh () in
       let formula =
         and_equal (AbstractValueOperand v) (ConstOperand (Cstr s)) formula |> assert_sat |> fst

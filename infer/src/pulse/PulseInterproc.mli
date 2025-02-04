@@ -34,7 +34,7 @@ type contradiction = private
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
-  | PathCondition
+  | PathCondition of unsat_info
 
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option

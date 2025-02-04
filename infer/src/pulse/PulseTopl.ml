@@ -300,7 +300,8 @@ end = struct
           | True ->
               Sat in_constr
           | False ->
-              Unsat
+              let reason () = "false TOPL predicate" in
+              Unsat {reason; source= __POS__}
         in
         SatUnsat.list_fold constr ~f ~init:C.empty
       in
@@ -336,7 +337,9 @@ end = struct
           let is_trivial_valid () =
             match op with Eq | Ge | Le -> Formula.equal_operand l r | _ -> false
           in
-          if is_trivial_unsat () then Unsat
+          if is_trivial_unsat () then
+            let reason () = "TOPL detected trivial unsat" in
+            Unsat {reason; source= __POS__}
           else if is_trivial_valid () || is_implied_by_heap () || is_implied_by_pathcondition ()
           then (* drop (op.l.r) *) Sat (path_condition, heap, out_constr)
           else
@@ -365,7 +368,12 @@ end = struct
                 | Equal (v1, v2) ->
                     Memory.subst_var ~for_summary:true (v1, v2) heap
                 | EqZero v ->
-                    if Memory.is_allocated heap v then Unsat else Sat heap
+                    if Memory.is_allocated heap v then
+                      let reason () =
+                        F.asprintf "value %a is both zero and allocated" AbstractValue.pp v
+                      in
+                      Unsat {reason; source= __POS__}
+                    else Sat heap
               in
               SatUnsat.list_fold (RevList.to_list new_eqs) ~init:heap ~f:incorporate_eq
             in
@@ -438,7 +446,9 @@ end = struct
         in
         if List.for_all in_constr.C.notleadsto_constr ~f:ok then
           Sat C.{out_constr with notleadsto_constr= in_constr.C.notleadsto_constr}
-        else Unsat
+        else
+          let reason () = F.asprintf "a NotLeadsTo constraint is violated" in
+          Unsat {reason; source= __POS__}
       in
       Sat out_constr
     in
@@ -447,7 +457,8 @@ end = struct
         List.map out_constr.path_constr ~f:(function op, l, r -> Binary (Builtin op, l, r))
         @ List.map out_constr.leadsto_constr ~f:(function l, r -> Binary (LeadsTo, l, r))
         @ List.map out_constr.notleadsto_constr ~f:(function l, r -> Binary (NotLeadsTo, l, r))
-    | Unsat ->
+    | Unsat unsat_info ->
+        SatUnsat.log_unsat unsat_info ;
         [False]
 
 

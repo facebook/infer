@@ -10,14 +10,22 @@ module F = Format
 
 [@@@warning "-32-60"]
 
-type 'a t = Unsat | Sat of 'a [@@deriving equal]
+type unsat_info = {reason: unit -> string; source: string * int * int * int}
 
-val pp : (F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
+type 'a t = Unsat of unsat_info | Sat of 'a [@@deriving equal]
 
 (** for [open]ing to get [Sat] and [Unsat] in the namespace *)
 module Types : sig
-  type nonrec 'a sat_unsat_t = 'a t = Unsat | Sat of 'a
+  type nonrec unsat_info = unsat_info = {reason: unit -> string; source: string * int * int * int}
+
+  type 'a sat_unsat_t = 'a t = Unsat of unsat_info | Sat of 'a [@@deriving equal]
 end
+
+val pp_unsat_info : F.formatter -> unsat_info -> unit
+
+val log_unsat : unsat_info -> unit
+
+val pp : (F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 
 val map : ('a -> 'b) -> 'a t -> 'b t
 
@@ -25,7 +33,7 @@ val bind : ('a -> 'b t) -> 'a t -> 'b t
 
 val sat : 'a t -> 'a option
 
-val of_option : 'a option -> 'a t
+val of_option : unsat_info -> 'a option -> 'a t
 
 val list_fold : 'a list -> init:'accum -> f:('accum -> 'a -> 'accum t) -> 'accum t
 
@@ -47,3 +55,7 @@ module Import : sig
 
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 end
+
+val log_source_info : bool ref
+[@@warning "-unused-value-declaration"]
+(** whether to print the (infer) source location on [Unsat]; set to [false] in unit tests *)

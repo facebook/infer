@@ -121,7 +121,10 @@ let try_eval path location e astate =
   match PulseOperations.eval path NoAccess location e astate with
   | Sat (Ok (astate, (v, _))) ->
       Some (astate, v)
-  | Sat (Recoverable _ | FatalError _) | Unsat ->
+  | Sat (Recoverable _ | FatalError _) ->
+      None
+  | Unsat unsat_info ->
+      SatUnsat.log_unsat unsat_info ;
       None
 
 

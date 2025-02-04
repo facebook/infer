@@ -7,22 +7,47 @@
 
 open! IStd
 module F = Format
-
-type 'a t = Unsat | Sat of 'a [@@deriving equal]
-
-let pp pp_sat fmt = function Unsat -> F.pp_print_string fmt "unsat" | Sat x -> pp_sat fmt x
-
-let sat = function Unsat -> None | Sat x -> Some x
-
-let of_option = function None -> Unsat | Some x -> Sat x
+module L = Logging
 
 module Types = struct
-  type nonrec 'a sat_unsat_t = 'a t = Unsat | Sat of 'a
+  type unsat_info = {reason: unit -> string; source: string * int * int * int}
+
+  type 'a sat_unsat_t = Unsat of (unsat_info[@ignore]) | Sat of 'a [@@deriving equal]
 end
 
-let map f = function Unsat -> Unsat | Sat x -> Sat (f x)
+include Types
 
-let bind f = function Unsat -> Unsat | Sat x -> f x
+type nonrec 'a t = 'a sat_unsat_t = Unsat of (unsat_info[@ignore]) | Sat of 'a [@@deriving equal]
+
+let log_source_info = ref true
+
+let pp_unsat_info fmt {reason; source= file, lnum, cnum, enum} =
+  if !log_source_info then F.fprintf fmt "UNSAT(%s:%d:%d-%d): %s" file lnum cnum enum (reason ())
+  else F.fprintf fmt "UNSAT: %s" (reason ())
+
+
+let pp pp_sat fmt = function
+  | Unsat unsat_info ->
+      pp_unsat_info fmt unsat_info
+  | Sat x ->
+      pp_sat fmt x
+
+
+let log_unsat unsat_info = L.d_printfln "%a" pp_unsat_info unsat_info
+
+let sat = function
+  | Unsat unsat_info ->
+      log_unsat unsat_info ;
+      None
+  | Sat x ->
+      Some x
+
+
+let of_option unsat_info = function None -> Unsat unsat_info | Some x -> Sat x
+
+let map f = function Unsat _ as unsat -> unsat | Sat x -> Sat (f x)
+
+let bind f = function Unsat _ as unsat -> unsat | Sat x -> f x
 
 module Import = struct
   include Types
@@ -36,9 +61,9 @@ module Import = struct
   let ( let* ) x f = bind f x
 end
 
-let to_result = function Unsat -> Error () | Sat x -> Ok x
+let to_result = function Unsat unsat_info -> Error unsat_info | Sat x -> Ok x
 
-let of_result = function Error () -> Unsat | Ok x -> Sat x
+let of_result = function Error unsat_info -> Unsat unsat_info | Ok x -> Sat x
 
 let list_fold l ~init ~f =
   List.fold_result l ~init ~f:(fun accum x -> f accum x |> to_result) |> of_result
