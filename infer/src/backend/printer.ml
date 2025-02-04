@@ -273,14 +273,8 @@ end = struct
           Str.string_match regex fname 0
 
 
-  (*
-    Stores all the proc_descs in source files.
-    We need to keep collecting them because some may be captured by other files, happens especially
-    with templates in header files.
-  *)
-  let pdescs_in_source = Hashtbl.create 1
-
   let write_all_html_files source_file =
+    let pdescs_in_source = SourceFile.Hash.create 1 in
     let procs_in_source = SourceFiles.proc_names_of_source source_file in
     let source_files_in_cfg =
       List.fold procs_in_source ~init:SourceFile.Set.empty ~f:(fun files proc_name ->
@@ -290,11 +284,11 @@ end = struct
                 let file = (Procdesc.get_loc proc_desc).Location.file in
                 if is_allow_listed file then (
                   let pdescs_in_file =
-                    try Hashtbl.find pdescs_in_source file
+                    try SourceFile.Hash.find pdescs_in_source file
                     with Stdlib.Not_found -> Procname.Map.empty
                   in
                   let pdescs_in_file = Procname.Map.add proc_name proc_desc pdescs_in_file in
-                  Hashtbl.replace pdescs_in_source file pdescs_in_file ;
+                  SourceFile.Hash.replace pdescs_in_source file pdescs_in_file ;
                   SourceFile.Set.add file files )
                 else files
               else files
@@ -304,7 +298,7 @@ end = struct
     SourceFile.Set.iter
       (fun file ->
         let pdescs_in_file =
-          match Hashtbl.find pdescs_in_source file with
+          match SourceFile.Hash.find pdescs_in_source file with
           | pdescs_map ->
               Procname.Map.bindings pdescs_map |> List.map ~f:snd
           | exception Stdlib.Not_found ->
