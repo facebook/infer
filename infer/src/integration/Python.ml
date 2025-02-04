@@ -16,16 +16,18 @@ module Error = struct
     | TextualVerification of (Textual.SourceFile.t * TextualVerification.error list)
     | TextualTransformation of (Textual.SourceFile.t * Textual.transform_error list)
 
+  let log level =
+    let level = if Config.keep_going then L.InternalError else level in
+    match (level : L.error) with
+    | InternalError ->
+        L.internal_error
+    | ExternalError ->
+        L.external_error
+    | UserError ->
+        L.user_error
+
+
   let format_error file error =
-    let log level =
-      match (level : L.error) with
-      | InternalError ->
-          L.internal_error
-      | ExternalError ->
-          L.external_error
-      | UserError ->
-          L.user_error
-    in
     match error with
     | FFI (level, err) ->
         log level "[python:%s][-1] %a@\n" file FFI.Error.pp_kind err
@@ -33,9 +35,9 @@ module Error = struct
         log level "[python:%s][%a] %a@\n" file PyIR.Location.pp loc PyIR.Error.pp_kind err
     | TextualVerification (sourcefile, errs) ->
         List.iter errs
-          ~f:(L.internal_error "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
+          ~f:(log L.InternalError "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
     | TextualTransformation (sourcefile, errs) ->
-        List.iter errs ~f:(L.internal_error "%a@\n" (Textual.pp_transform_error sourcefile))
+        List.iter errs ~f:(log L.InternalError "%a@\n" (Textual.pp_transform_error sourcefile))
 
 
   let ffi x = FFI x
@@ -174,21 +176,21 @@ let capture_files ~is_binary files =
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner = ProcessPool.create ~jobs ~child_prologue ~f:child_action ~child_epilogue ~tasks () in
   let child_tenv_paths = ProcessPool.run runner in
-  (* Merge worker tenvs into a global tenv *)
-  let child_tenv_paths =
-    Array.mapi child_tenv_paths ~f:(fun child_num tenv_path ->
-        match tenv_path with
-        | Some tenv_path ->
-            tenv_path
-        | None ->
-            L.die ExternalError "Child %d did't return a path to its tenv" child_num )
-  in
   L.progress "Success: %d files@\n" !n_captured ;
   L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
-  if not Config.python_skip_db then
-    MergeCapture.merge_global_tenv ~normalize:true (Array.to_list child_tenv_paths) ;
-  Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
+  (* Merge worker tenvs into a global tenv *)
+  let child_tenv_paths =
+    Array.foldi child_tenv_paths ~init:[] ~f:(fun child_num acc tenv_path ->
+        match tenv_path with
+        | Some tenv_path ->
+            tenv_path :: acc
+        | None ->
+            Error.log L.ExternalError "Child %d did't return a path to its tenv" child_num ;
+            acc )
+  in
+  if not Config.python_skip_db then MergeCapture.merge_global_tenv ~normalize:true child_tenv_paths ;
+  List.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
 
 
 let capture input =
