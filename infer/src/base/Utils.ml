@@ -8,7 +8,6 @@
 open! IStd
 open PolyVariantEqual
 module F = Format
-module Hashtbl = Stdlib.Hashtbl
 module L = Die
 
 let fold_file_tree ~init ~f_dir ~f_reg ~path =
@@ -316,26 +315,13 @@ let out_channel_create_with_dir fname =
     Out_channel.create fname
 
 
-let realpath_cache = Hashtbl.create 1023
-
 let realpath ?(warn_on_error = true) path =
-  match Hashtbl.find realpath_cache path with
-  | exception Stdlib.Not_found -> (
-    match Filename.realpath path with
-    | realpath ->
-        Hashtbl.add realpath_cache path (Ok realpath) ;
-        realpath
-    | exception (Unix.Unix_error (code, _, arg) as exn) ->
-        IExn.reraise_after exn ~f:(fun () ->
-            if warn_on_error then
-              F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
-                (Unix.Error.message code) ;
-            (* cache failures as well *)
-            Hashtbl.add realpath_cache path (Error exn) ) )
-  | Ok path ->
-      path
-  | Error exn ->
-      raise exn
+  try Filename.realpath path
+  with Unix.Unix_error (code, _, arg) as exn ->
+    IExn.reraise_after exn ~f:(fun () ->
+        if warn_on_error then
+          F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
+            (Unix.Error.message code) )
 
 
 (* never closed *)
