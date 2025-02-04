@@ -235,16 +235,6 @@ let is_under_project_root = function
       false
 
 
-let exists_cache = IString.Hash.create 256
-
-let path_exists abs_path =
-  IString.Hash.find_opt exists_cache abs_path
-  |> Option.value_or_thunk ~default:(fun () ->
-         let result = ISys.file_exists abs_path in
-         IString.Hash.replace exists_cache abs_path result ;
-         result )
-
-
 let of_header ?(warn_on_error = true) header_file =
   let abs_path = to_abs_path header_file in
   let source_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
@@ -253,7 +243,7 @@ let of_header ?(warn_on_error = true) header_file =
   | file_no_ext, Some ext when List.mem ~equal:String.equal header_exts ext ->
       List.find_map source_exts ~f:(fun ext ->
           let possible_file = file_no_ext ^ "." ^ ext in
-          if path_exists possible_file then Some (from_abs_path ~warn_on_error possible_file)
+          if ISys.file_exists possible_file then Some (from_abs_path ~warn_on_error possible_file)
           else None )
   | _ ->
       None
