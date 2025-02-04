@@ -278,7 +278,7 @@ let run_files modules =
             Int i
         | String s ->
             String s
-        | Float _ | Complex _ | InvalidUnicode _ | Bytes _ ->
+        | Float _ | Complex _ | InvalidUnicode | Bytes _ ->
             (* I don't think it makes sense to deal with this kind of constant in the interpreter *)
             todo "eval_const"
       in

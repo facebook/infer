@@ -28,7 +28,7 @@ module rec Constant : sig
     | PYCFloat of float
     | PYCComplex of {real: float; imag: float}
     | PYCString of string
-    | PYCInvalidUnicode of int array
+    | PYCInvalidUnicode
     | PYCBytes of bytes
     | PYCTuple of t array
     | PYCFrozenSet of t list

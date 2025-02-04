@@ -131,7 +131,7 @@ let of_const cst =
       call_builtin "py_make_complex" [mk_const (Const.Float real); mk_const (Const.Float imag)]
   | String s ->
       call_builtin str_py_make_string [mk_const (Const.Str s)]
-  | InvalidUnicode _ ->
+  | InvalidUnicode ->
       call_builtin "py_invalid_unicode" []
   | Bytes bytes ->
       call_builtin "py_make_bytes" [mk_const (Const.Str (Bytes.to_string bytes))]

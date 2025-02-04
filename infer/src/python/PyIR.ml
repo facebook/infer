@@ -393,7 +393,7 @@ module Const = struct
     | Float of float
     | Complex of {real: float; imag: float}
     | String of string
-    | InvalidUnicode of int array
+    | InvalidUnicode
     | Bytes of bytes
     | None
   [@@deriving equal]
@@ -409,7 +409,7 @@ module Const = struct
         F.fprintf fmt "Complex[real:%f; imag:%f ]" real imag
     | String s ->
         F.fprintf fmt "\"%s\"" s
-    | InvalidUnicode _ ->
+    | InvalidUnicode ->
         F.pp_print_string fmt "InvalidUnicode"
     | Bytes bytes ->
         Bytes.pp fmt bytes
@@ -1566,8 +1566,8 @@ let rec convert_ffi_const st (const : FFI.Constant.t) : Exp.opstack_symbol pyres
       Ok (Exp (Const (Complex {real; imag})))
   | PYCString s ->
       Ok (Exp (Const (String s)))
-  | PYCInvalidUnicode arg ->
-      Ok (Exp (Const (InvalidUnicode arg)))
+  | PYCInvalidUnicode ->
+      Ok (Exp (Const InvalidUnicode))
   | PYCBytes bytes ->
       Ok (Exp (Const (Bytes bytes)))
   | PYCTuple array ->

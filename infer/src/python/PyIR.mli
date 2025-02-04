@@ -140,7 +140,7 @@ module Const : sig
     | Float of float
     | Complex of {real: float; imag: float}
     | String of string
-    | InvalidUnicode of int array
+    | InvalidUnicode
     | Bytes of bytes
     | None
 end

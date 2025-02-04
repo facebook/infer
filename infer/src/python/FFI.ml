@@ -60,7 +60,7 @@ type pyConstant =
   | PYCFloat of float
   | PYCComplex of {real: float; imag: float}
   | PYCString of string
-  | PYCInvalidUnicode of int array
+  | PYCInvalidUnicode
   | PYCBytes of bytes
   | PYCTuple of pyConstant array
   | PYCFrozenSet of pyConstant list
@@ -110,7 +110,7 @@ let rec pp_pyConstant fmt = function
       F.fprintf fmt "Complex[real:%f; imag:%f ]" real imag
   | PYCString s ->
       F.fprintf fmt "\"%s\"" s
-  | PYCInvalidUnicode _ ->
+  | PYCInvalidUnicode ->
       F.pp_print_string fmt "InvalidUnicode"
   | PYCBytes bytes ->
       Bytes.pp fmt bytes
@@ -253,9 +253,7 @@ let rec new_py_constant obj =
     try
       let s = Py.String.to_string obj in
       Ok (PYCString s)
-    with Py.E _ ->
-      let arr = Py.String.to_unicode obj in
-      Ok (PYCInvalidUnicode arr) )
+    with Py.E _ -> Ok PYCInvalidUnicode )
   | Unknown ->
       let ty = Py.Object.get_type obj in
       let* class_name = read_string "__name__" ty in
@@ -409,7 +407,7 @@ module Constant = struct
     | PYCFloat of float
     | PYCComplex of {real: float; imag: float}
     | PYCString of string
-    | PYCInvalidUnicode of int array
+    | PYCInvalidUnicode
     | PYCBytes of bytes
     | PYCTuple of t array
     | PYCFrozenSet of t list
