@@ -6,7 +6,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open PolyVariantEqual
 module F = Format
 module L = Die
 
@@ -170,10 +169,13 @@ let filename_to_relative ?(force_full_backtrack = false) ?(backtrack = 0) ~root 
 let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
     let full_path = current_dir ^/ path in
-    try
-      if Sys.is_directory full_path = `Yes then (accu, full_path :: dirs)
-      else (f accu full_path, dirs)
-    with Sys_error _ -> (accu, dirs)
+    match Sys.is_directory full_path with
+    | `Yes ->
+        (accu, full_path :: dirs)
+    | _ ->
+        (f accu full_path, dirs)
+    | exception Sys_error _ ->
+        (accu, dirs)
   in
   let rec loop accu dirs =
     match dirs with
@@ -183,18 +185,20 @@ let directory_fold f init path =
         let new_accu, new_dirs = Array.fold ~f:(collect d) ~init:(accu, tl) (Sys.readdir d) in
         loop new_accu new_dirs
   in
-  if Sys.is_directory path = `Yes then loop init [path] else f init path
+  match Sys.is_directory path with `Yes -> loop init [path] | _ -> f init path
 
 
 let directory_iter f path =
   let apply current_dir dirs path =
     let full_path = current_dir ^/ path in
-    try
-      if Sys.is_directory full_path = `Yes then full_path :: dirs
-      else
+    match Sys.is_directory full_path with
+    | `Yes ->
+        full_path :: dirs
+    | _ ->
         let () = f full_path in
         dirs
-    with Sys_error _ -> dirs
+    | exception Sys_error _ ->
+        dirs
   in
   let rec loop dirs =
     match dirs with
@@ -204,7 +208,7 @@ let directory_iter f path =
         let new_dirs = Array.fold ~f:(apply d) ~init:tl (Sys.readdir d) in
         loop new_dirs
   in
-  if Sys.is_directory path = `Yes then loop [path] else f path
+  match Sys.is_directory path with `Yes -> loop [path] | _ -> f path
 
 
 let string_crc_hex32 s = Stdlib.Digest.to_hex (Stdlib.Digest.string s)
