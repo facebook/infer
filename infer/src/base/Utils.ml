@@ -188,28 +188,7 @@ let directory_fold f init path =
   match Sys.is_directory path with `Yes -> loop init [path] | _ -> f init path
 
 
-let directory_iter f path =
-  let apply current_dir dirs path =
-    let full_path = current_dir ^/ path in
-    match Sys.is_directory full_path with
-    | `Yes ->
-        full_path :: dirs
-    | _ ->
-        let () = f full_path in
-        dirs
-    | exception Sys_error _ ->
-        dirs
-  in
-  let rec loop dirs =
-    match dirs with
-    | [] ->
-        ()
-    | d :: tl ->
-        let new_dirs = Array.fold ~f:(apply d) ~init:tl (Sys.readdir d) in
-        loop new_dirs
-  in
-  match Sys.is_directory path with `Yes -> loop [path] | _ -> f path
-
+let directory_iter f path = directory_fold (fun () path -> f path) () path
 
 let string_crc_hex32 s = Stdlib.Digest.to_hex (Stdlib.Digest.string s)
 
