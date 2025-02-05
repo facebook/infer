@@ -947,6 +947,11 @@ let unknown _ : model =
   assign_ret res
 
 
+let yield value : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> remove_allocation_attr_transitively [value]
+
+
 let die_if_other_builtin (_, proc_name) _ =
   if
     Language.curr_language_is Python
@@ -1102,7 +1107,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_unary_not" &::.*+++> unknown
   ; -"$builtins" &:: "py_unary_positive" &::.*+++> unknown
   ; -"$builtins" &:: "py_unpack_ex" &::.*+++> unknown
-  ; -"$builtins" &:: "py_yield" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_yield" <>$ arg $--> yield
   ; -"$builtins" &:: "py_yield_from" &::.*+++> unknown
   ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $--> yield_from
   ; +die_if_other_builtin &::.*+++> unknown ]

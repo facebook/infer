@@ -125,3 +125,14 @@ def use_pulse_model_deep_release_option_not_captured_ok():
         asyncio.sleep(1),
         asyncio.sleep(1),
         )
+
+def use_pulse_model_deep_release_option_generator_ok(l):
+    deep_wait(
+        asyncio.sleep(i) for i in l
+    )
+
+# we don't try to track  precisely generators for now
+def FN_generator_with_unwaited_bad(l):
+    l = (
+        asyncio.sleep(i) for i in l
+    )
