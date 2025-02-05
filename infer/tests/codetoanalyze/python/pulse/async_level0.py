@@ -92,6 +92,12 @@ async def call_fst_bad(i):
     return fst(i, sleep(1))
 
 
+# FN because of py_store_subscript model
+def FN_set_dict_with_unwaited_bad(key):
+    d = {}
+    d[key] = asyncio.sleep(0)
+
+
 def main_ok():
     asyncio.run(sleep(10))
 

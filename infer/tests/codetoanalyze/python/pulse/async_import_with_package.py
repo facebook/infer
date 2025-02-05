@@ -136,3 +136,7 @@ def FN_generator_with_unwaited_bad(l):
     l = (
         asyncio.sleep(i) for i in l
     )
+
+
+def use_pulse_model_deep_release_option_dict_ok(l):
+    deep_wait({ x.key: asyncio.sleep(x.i) for x in l})

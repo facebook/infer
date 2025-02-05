@@ -642,6 +642,14 @@ let get_awaitable arg : model =
   assign_ret arg
 
 
+let dict_set_item _dict _key value : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  (* TODO: of the dict is a constant, we could just update it *)
+  await_awaitable value
+
+
 let is_package aval : string option DSL.model_monad =
   let open DSL.Syntax in
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:false aval in
@@ -1035,7 +1043,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_delete_name" &::.*+++> unknown
   ; -"$builtins" &:: "py_delete_subscr" &::.*+++> unknown
   ; -"$builtins" &:: "py_dict_merge" &::.*+++> unknown
-  ; -"$builtins" &:: "py_dict_set_item" &::.*+++> unknown
+  ; -"$builtins" &:: "py_dict_set_item" <>$ arg $+ arg $+ arg $--> dict_set_item
   ; -"$builtins" &:: "py_dict_update" &::.*+++> unknown
   ; -"$builtins" &:: "py_format" &::.*+++> unknown
   ; -"$builtins" &:: "py_format_fn_ascii" &::.*+++> unknown
