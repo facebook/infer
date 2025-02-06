@@ -7,8 +7,7 @@
 
 open! IStd
 
-(** Log entry data model, global log entry store and functions to manipulate it. Direct access to
-    the store is not exposed. *)
+(** Log entry data model. *)
 
 type count_entry_data = {value: int}
 
@@ -26,7 +25,3 @@ val mk_count : label:string -> value:int -> t
 val mk_time : label:string -> duration_us:int -> t
 
 val mk_string : label:string -> message:string -> t
-
-val global_log_get : unit -> t list
-
-val global_log_erase : unit -> unit

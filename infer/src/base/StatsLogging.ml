@@ -105,12 +105,3 @@ let execute_with_time_logging label f =
   let entry = LogEntry.mk_time ~label ~duration_us in
   log_one entry ;
   ret_val
-
-
-let flush_log_events () =
-  log_many (LogEntry.global_log_get ()) ;
-  LogEntry.global_log_erase ()
-
-
-let register_global_log_flushing_at_exit () =
-  Epilogues.register ~f:flush_log_events ~description:"Flushing global stats log entries"

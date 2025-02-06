@@ -33,10 +33,3 @@ let mk_string ~label ~message =
   let created_at_ts = Unix.time () |> int_of_float in
   let data = String {message} in
   {label; created_at_ts; data}
-
-
-let global_entry_log : t list ref = ref []
-
-let global_log_get () = List.rev !global_entry_log
-
-let global_log_erase () = global_entry_log := []

@@ -39,5 +39,3 @@ val execute_with_time_logging : string -> (unit -> 'a) -> 'a
       let f a b = <some code>
       let f a b = StatsLogging.execute_with_time_logging "f" (fun () -> f a b)
     ]} *)
-
-val register_global_log_flushing_at_exit : unit -> unit
