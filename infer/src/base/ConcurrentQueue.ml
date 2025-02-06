@@ -21,13 +21,25 @@ let enqueue v t =
 
 
 let dequeue t =
-  Error_checking_mutex.critical_section t.mutex ~f:(fun () ->
-      let rec loop () =
-        match Queue.dequeue t.queue with
-        | Some v ->
-            v
-        | None ->
-            Condition.wait t.non_empty t.mutex ;
-            loop ()
-      in
-      loop () )
+  let rec dequeue_loop () =
+    match Queue.dequeue t.queue with
+    | Some v ->
+        v
+    | None ->
+        Condition.wait t.non_empty t.mutex ;
+        dequeue_loop ()
+  in
+  Error_checking_mutex.critical_section t.mutex ~f:dequeue_loop
+
+
+let dequeue_opt t =
+  Error_checking_mutex.critical_section t.mutex ~f:(fun () -> Queue.dequeue t.queue)
+
+
+let wait_until_non_empty t =
+  let rec wait_until_non_empty_loop () =
+    if Queue.is_empty t.queue then (
+      Condition.wait t.non_empty t.mutex ;
+      wait_until_non_empty_loop () )
+  in
+  Error_checking_mutex.critical_section t.mutex ~f:wait_until_non_empty_loop

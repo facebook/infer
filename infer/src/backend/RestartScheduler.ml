@@ -118,9 +118,7 @@ let make sources =
   of_queue queue
 
 
-let setup () =
-  match Config.scheduler with Restart when not Config.multicore -> ProcLocker.setup () | _ -> ()
-
+let setup () = match Config.scheduler with Restart -> ProcLocker.setup () | _ -> ()
 
 type locked_proc = {start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
 

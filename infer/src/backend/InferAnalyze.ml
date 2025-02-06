@@ -175,8 +175,15 @@ let analyze replay_call_graph source_files_to_analyze =
     ( [Stats.get ()]
     , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
     , [MissingDependencies.get ()] ) )
-  else if Config.multicore then
-    MulticoreAnalyze.run_analysis replay_call_graph source_files_to_analyze
+  else if Config.multicore then (
+    let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
+    DomainPool.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue:ignore
+      ~child_epilogue:ignore ~tasks:(fun () ->
+        tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze) )
+    |> DomainPool.run |> ignore ;
+    ( [Stats.get ()]
+    , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
+    , [MissingDependencies.get ()] ) )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
