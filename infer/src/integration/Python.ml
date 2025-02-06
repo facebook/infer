@@ -89,7 +89,8 @@ let dump_textual_file ~version pyc module_ =
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let project_root_prefix =
-    if Config.buck then Utils.filename_to_relative ~root:Config.buck2_root Config.project_root
+    if Config.python_trim_source_paths then
+      Utils.filename_to_relative ~root:Config.buck2_root Config.project_root
     else None
   in
   let sourcefile =

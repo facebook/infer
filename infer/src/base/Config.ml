@@ -3002,6 +3002,12 @@ and python_files_index =
      $(b,infer capture -- python3 file1.py file2.py) but not with $(b,--pyc-file)."
 
 
+and python_trim_source_paths =
+  CLOpt.mk_bool ~long:"python-trim-source-paths" ~default:false
+    "Remove any prefix calculated from the relative difference between $(b,--buck2-root) and \
+     $(b,--project-root) from captured source paths."
+
+
 and python_skip_db =
   CLOpt.mk_bool ~long:"python-skip-db" ~default:false "Skip the DB writing during Python capture"
 
@@ -4711,6 +4717,8 @@ and pure_by_default = !pure_by_default
 and pyc_file = RevList.to_list !pyc_file
 
 and python_files_index = !python_files_index
+
+and python_trim_source_paths = !python_trim_source_paths
 
 and python_skip_db = !python_skip_db
 

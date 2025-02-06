@@ -3278,6 +3278,11 @@ INTERNAL OPTIONS
            Activates: Skip the DB writing during Python capture (Conversely:
            --no-python-skip-db)
 
+       --python-trim-source-paths
+           Activates: Remove any prefix calculated from the relative
+           difference between --buck2-root and --project-root from captured
+           source paths. (Conversely: --no-python-trim-source-paths)
+
        --qualified-cpp-name-block-list-reset
            Set --qualified-cpp-name-block-list to the empty list.
 
