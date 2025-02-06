@@ -3260,25 +3260,6 @@ and scope_leakage_config =
     |}
 
 
-and _scuba_execution_id =
-  CLOpt.mk_int64_opt ~long:"scuba-execution-id"
-    "[DOES NOTHING] Execution ID attached to all samples logged to scuba"
-
-
-and _scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "[DOES NOTHING] (direct) logging to scuba"
-
-and _scuba_normals =
-  CLOpt.mk_string_map ~long:"scuba-normal"
-    "[DOES NOTHING] add an extra string (normal) field to be set for each sample of scuba, format \
-     <name>=<value>"
-
-
-and _scuba_tags =
-  CLOpt.mk_string_map ~long:"scuba-tags"
-    "[DOES NOTHING] add an extra set of strings (tagset) field to be set for each sample of scuba, \
-     format <name>=(<value>,<value>,<value>|NONE)"
-
-
 and select =
   CLOpt.mk_string_opt ~long:"select" ~meta:"(N|all)"
     ~in_help:InferCommand.[(Debug, manual_generic); (Explore, manual_explore_bugs)]

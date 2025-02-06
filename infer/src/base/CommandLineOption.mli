@@ -79,6 +79,7 @@ val mk_int64_opt :
   -> ?default_to_string:(Int64.t option -> string)
   -> ?f:(Int64.t -> Int64.t)
   -> Int64.t option ref t
+[@@warning "-unused-value-declaration"]
 
 val mk_float_opt :
   ?default:float -> ?default_to_string:(float option -> string) -> float option ref t
@@ -111,6 +112,7 @@ val mk_string_map :
      ?default:string String.Map.t
   -> ?default_to_string:(string String.Map.t -> string)
   -> string String.Map.t ref t
+[@@warning "-unused-value-declaration"]
 
 val mk_path :
   default:string -> ?default_to_string:(string -> string) -> ?f:(string -> string) -> string ref t
