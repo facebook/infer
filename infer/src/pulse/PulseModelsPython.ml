@@ -646,7 +646,7 @@ let dict_set_item _dict _key value : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  (* TODO: of the dict is a constant, we could just update it *)
+  (* TODO: when the dict is a constant, we could just update it *)
   await_awaitable value
 
 

@@ -11,6 +11,7 @@ from async_utils import (
     sleep,
     C
 )
+from not_captured import unknown
 
 async def with_import_bad():
     await utils.dont_await_it(sleep())
@@ -56,3 +57,7 @@ async def make_awaitables_dict(cond):
     if cond:
         awaitables_dict["a key"] = sleep()
     return awaitables_dict
+
+
+def unknown_call():
+    unknown(asyncio.sleep(1))

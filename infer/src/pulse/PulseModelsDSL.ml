@@ -879,6 +879,17 @@ module Syntax = struct
 
   let apply_closure lang (closure : aval) unresolved_pname closure_args : aval model_monad =
     let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+    let unknown_call () =
+      let unresolved_str = Format.asprintf "%a" Procname.pp unresolved_pname in
+      let* args =
+        match closure_args with
+        | Regular closure_args ->
+            ret closure_args
+        | FromAttributes gen_closure_args ->
+            gen_closure_args None
+      in
+      unknown_call lang unresolved_str args
+    in
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
         let* opt_resolved_pname = tenv_resolve_method type_name unresolved_pname in
@@ -886,8 +897,7 @@ module Syntax = struct
         | None ->
             L.d_printfln "[ocaml model] Closure dynamic type is %a but no implementation was found!"
               Typ.Name.pp type_name ;
-            let* unknown_res = fresh () in
-            ret unknown_res
+            unknown_call ()
         | Some resolved_pname ->
             L.d_printfln "[ocaml model] Closure resolved to a call to %a" Procname.pp resolved_pname ;
             let* closure_args =
@@ -906,15 +916,7 @@ module Syntax = struct
             ret res )
     | _ ->
         L.d_printfln "[ocaml model] Closure dynamic type is unknown." ;
-        let unresolved_str = Format.asprintf "%a" Procname.pp unresolved_pname in
-        let* args =
-          match closure_args with
-          | Regular closure_args ->
-              ret closure_args
-          | FromAttributes gen_closure_args ->
-              gen_closure_args None
-        in
-        unknown_call lang unresolved_str args
+        unknown_call ()
 
 
   let apply_hack_closure closure closure_args =

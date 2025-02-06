@@ -26,7 +26,8 @@ from dir2.testmod import (
 )
 import dir2.dir5.testmod as import5
 from dir2.dir6 import testmod as import6
-
+from not_captured.dir import unknown_module1 as unknown_module
+from not_captured.dir.unknown_module2 import unknown
 
 async def bad1():
     await dont_await_it1(asyncio.sleep(1))
@@ -140,3 +141,11 @@ def FN_generator_with_unwaited_bad(l):
 
 def use_pulse_model_deep_release_option_dict_ok(l):
     deep_wait({ x.key: asyncio.sleep(x.i) for x in l})
+
+
+def unknown_call1_ok():
+    unknown_module.foo(asyncio.sleep(1))
+
+
+def unknown_call2_ok():
+    unknown(asyncio.sleep(1))
