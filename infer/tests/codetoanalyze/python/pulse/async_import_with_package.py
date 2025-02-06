@@ -143,6 +143,43 @@ def use_pulse_model_deep_release_option_dict_ok(l):
     deep_wait({ x.key: asyncio.sleep(x.i) for x in l})
 
 
+def use_pulse_model_deep_release_option_set_ok(l):
+    deep_wait({ asyncio.sleep(i) for i in l})
+
+
+def use_pulse_model_deep_release_option_constant_dict_ok(key1, key2, key3, key4):
+    deep_wait(
+        {
+            key1: asyncio.sleep(1),
+            key2: asyncio.sleep(1),
+            key3: asyncio.sleep(1),
+            key4: asyncio.sleep(1),
+        }
+    )
+
+
+def use_pulse_model_deep_release_option_constant_set_ok():
+    deep_wait(
+        {
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+        }
+    )
+
+
+def use_pulse_model_deep_release_option_constant_list_ok(key1, key2):
+    deep_wait(
+        [
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+            asyncio.sleep(1),
+        ]
+    )
+
+
 def unknown_call1_ok():
     unknown_module.foo(asyncio.sleep(1))
 

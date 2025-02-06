@@ -947,11 +947,12 @@ let yield_from _ _ : model =
   start_model @@ fun () -> ret ()
 
 
-let unknown _ : model =
+let unknown args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* res = fresh () in
+  let* () = remove_allocation_attr_transitively args in
   assign_ret res
 
 
@@ -1056,7 +1057,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_get_attr" <>$ arg $+ arg $--> get_attr
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable
   ; -"$builtins" &:: "py_get_iter" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_len" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_get_len" &::.*+++> unknown
   ; -"$builtins" &:: "py_get_previous_exception" &::.*+++> unknown
   ; -"$builtins" &:: "py_get_yield_from_iter" &::.*+++> unknown
   ; -"$builtins" &:: "py_has_next_iter" &::.*+++> unknown
@@ -1082,22 +1083,22 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown
   ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown
   ; -"$builtins" &:: "py_load_assertion_error" &::.*+++> unknown
-  ; -"$builtins" &:: "py_load_class_deref" <>$ arg $--> unknown
-  ; -"$builtins" &:: "py_load_closure" <>$ arg $--> unknown
-  ; -"$builtins" &:: "py_load_deref" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_load_class_deref" &::.*+++> unknown
+  ; -"$builtins" &:: "py_load_closure" &::.*+++> unknown
+  ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown
   ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
   ; -"$builtins" &:: "py_load_global" <>$ arg $+ arg $--> load_global
   ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
-  ; -"$builtins" &:: "py_make_bytes" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown
   ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown
   ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
-  ; -"$builtins" &:: "py_make_float" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_make_float" &::.*+++> unknown
   ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
   ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
   ; -"$builtins" &:: "py_make_none" <>--> make_none
-  ; -"$builtins" &:: "py_make_string" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_make_string" &::.*+++> unknown
   ; -"$builtins" &:: "py_match_class" &::.*+++> unknown
-  ; -"$builtins" &:: "py_match_sequence" <>$ arg $--> unknown
+  ; -"$builtins" &:: "py_match_sequence" &::.*+++> unknown
   ; -"$builtins" &:: "py_next_iter" &::.*+++> unknown
   ; -"$builtins" &:: "py_nullify_locals" <>$ arg $+++$--> nullify_locals
   ; -"$builtins" &:: "py_set_add" &::.*+++> unknown
