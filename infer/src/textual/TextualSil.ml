@@ -168,6 +168,8 @@ let python_bool_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyBool)
 
 let python_none_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyNone)
 
+let python_string_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyString)
+
 let python_tuple_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyTuple)
 
 let mk_python_mixed_type_textual loc =

@@ -20,6 +20,8 @@ let dict_tname = TextualSil.python_dict_type_name
 
 let int_tname = TextualSil.python_int_type_name
 
+let string_tname = TextualSil.python_string_type_name
+
 let tuple_tname = TextualSil.python_tuple_type_name
 
 let none_tname = TextualSil.python_none_type_name
@@ -894,6 +896,23 @@ let make_random_bool () =
   ret res
 
 
+let make_string arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* opt_string = as_constant_string arg in
+  let* res =
+    match opt_string with
+    | None ->
+        constructor ~deref:false string_tname []
+    | Some s ->
+        let* res = string s in
+        let* () = and_dynamic_type_is res (Typ.mk_struct string_tname) in
+        ret res
+  in
+  assign_ret res
+
+
 let make_none : model =
   let open DSL.Syntax in
   start_model
@@ -1096,7 +1115,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
   ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
   ; -"$builtins" &:: "py_make_none" <>--> make_none
-  ; -"$builtins" &:: "py_make_string" &::.*+++> unknown
+  ; -"$builtins" &:: "py_make_string" <>$ arg $--> make_string
   ; -"$builtins" &:: "py_match_class" &::.*+++> unknown
   ; -"$builtins" &:: "py_match_sequence" &::.*+++> unknown
   ; -"$builtins" &:: "py_next_iter" &::.*+++> unknown

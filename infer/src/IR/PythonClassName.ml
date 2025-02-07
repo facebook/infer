@@ -12,7 +12,7 @@ module F = Format
    - module names
    - nested classes
 *)
-type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyTuple
+type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyString | PyTuple
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, show]
 
 type builtin_closure = IntFun | StrFun | TypeFun
@@ -98,3 +98,5 @@ let get_builtin_closure_from_builtin_type = function
       None
   | PyInt ->
       Some IntFun
+  | PyString ->
+      Some StrFun
