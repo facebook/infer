@@ -376,7 +376,7 @@ module ReplaceCallee = struct
 
 
   module CacheForMakeShared = struct
-    module Cache = PrettyPrintable.MakeConcurrentMap (Procname.Map)
+    module Cache = Concurrent.MakeMap (Procname.Map)
 
     let results : Procname.t option Cache.t = Cache.empty ()
 

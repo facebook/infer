@@ -30,33 +30,33 @@ type 'work worker_state = Idle | Processing of {work: 'work}
 
 type ('work, 'final) worker =
   { domain: 'final Domain.t
-  ; command_queue: 'work command ConcurrentQueue.t
+  ; command_queue: 'work command Concurrent.Queue.t
   ; mutable state: 'work worker_state }
 
 type ('work, 'final, 'result) t =
   { jobs: int
   ; workers: ('work, 'final) worker Array.t
-  ; message_queue: 'result worker_message ConcurrentQueue.t
+  ; message_queue: 'result worker_message Concurrent.Queue.t
   ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t }
 
 let rec child_loop ~f ~command_queue ~message_queue worker_id =
-  match ConcurrentQueue.dequeue command_queue with
+  match Concurrent.Queue.dequeue command_queue with
   | GoHome ->
       ()
   | Do work ->
       let go_on =
         try
           let result = f work in
-          ConcurrentQueue.enqueue (Ready {worker_id; result}) message_queue ;
+          Concurrent.Queue.enqueue (Ready {worker_id; result}) message_queue ;
           true
         with
         | exn when Config.keep_going ->
             L.internal_error "Error in worker %d: %a@." worker_id Exn.pp exn ;
-            ConcurrentQueue.enqueue (Ready {worker_id; result= None}) message_queue ;
+            Concurrent.Queue.enqueue (Ready {worker_id; result= None}) message_queue ;
             true
         | _exn ->
             let crash = Crash {worker_id; exn_backtrace= Printexc.get_backtrace ()} in
-            ConcurrentQueue.enqueue crash message_queue ;
+            Concurrent.Queue.enqueue crash message_queue ;
             false
       in
       if go_on then child_loop ~f ~command_queue ~message_queue worker_id
@@ -81,10 +81,10 @@ let create :
   DBWriter.terminate () ;
   DBWriter.use_multicore := true ;
   DBWriter.start () ;
-  let message_queue = ConcurrentQueue.create () in
+  let message_queue = Concurrent.Queue.create () in
   let workers =
     Array.init jobs ~f:(fun id ->
-        let command_queue = ConcurrentQueue.create () in
+        let command_queue = Concurrent.Queue.create () in
         let domain =
           Domain.spawn (fun () ->
               WorkerPoolState.set_in_child (Some id) ;
@@ -109,7 +109,7 @@ let handle_worker_message pool = function
 
 
 let rec handle_all_messages pool =
-  match ConcurrentQueue.dequeue_opt pool.message_queue with
+  match Concurrent.Queue.dequeue_opt pool.message_queue with
   | None ->
       ()
   | Some message ->
@@ -131,7 +131,7 @@ let send_work_to_idle_workers pool =
         raise_notrace NoMoreWork
     | Some work ->
         pool.workers.(worker_id).state <- Processing {work} ;
-        ConcurrentQueue.enqueue (Do work) pool.workers.(worker_id).command_queue
+        Concurrent.Queue.enqueue (Do work) pool.workers.(worker_id).command_queue
   in
   try
     Array.iteri pool.workers ~f:(fun worker_id {state} ->
@@ -146,12 +146,13 @@ let some_workers_processing pool =
 
 let rec run pool =
   if pool.tasks.is_empty () then (
-    Array.iter pool.workers ~f:(fun {command_queue} -> ConcurrentQueue.enqueue GoHome command_queue) ;
+    Array.iter pool.workers ~f:(fun {command_queue} ->
+        Concurrent.Queue.enqueue GoHome command_queue ) ;
     Array.init (Array.length pool.workers) ~f:(fun worker_id ->
         Domain.join pool.workers.(worker_id).domain |> Option.some ) )
   else (
     handle_all_messages pool ;
     send_work_to_idle_workers pool ;
-    if some_workers_processing pool then ConcurrentQueue.wait_until_non_empty pool.message_queue
+    if some_workers_processing pool then Concurrent.Queue.wait_until_non_empty pool.message_queue
     else Domain.cpu_relax () ;
     run pool )

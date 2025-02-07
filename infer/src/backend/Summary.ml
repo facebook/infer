@@ -183,7 +183,7 @@ module OnDisk = struct
     type t = Procname.t * AnalysisRequest.t [@@deriving compare]
   end)
 
-  module Cache = PrettyPrintable.MakeConcurrentMap (M)
+  module Cache = Concurrent.MakeMap (M)
 
   let clear_cache, remove_from_cache, add_to_cache, find_in_cache =
     let cache = Cache.empty () in

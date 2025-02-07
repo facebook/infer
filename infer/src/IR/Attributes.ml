@@ -29,7 +29,7 @@ let find =
       (run_query select_statement_adb)
 
 
-module Cache = PrettyPrintable.MakeConcurrentMap (Procname.Map)
+module Cache = Concurrent.MakeMap (Procname.Map)
 
 let load, clear_cache, store =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)

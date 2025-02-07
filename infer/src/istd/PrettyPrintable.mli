@@ -277,25 +277,3 @@ module MakePPUniqRankSet
     (Rank : PrintableEquatableOrderedType)
     (Val : PrintableRankedType with type rank = Rank.t) :
   PPUniqRankSet with type elt = Val.t and type rank = Rank.t
-
-module type ConcurrentMap = sig
-  type key
-
-  type 'a t
-
-  val empty : unit -> 'a t
-
-  val clear : 'a t -> unit
-
-  val add : 'a t -> key -> 'a -> unit
-
-  val filter : 'a t -> (key -> 'a -> bool) -> unit
-
-  val find_opt : 'a t -> key -> 'a option
-
-  val remove : 'a t -> key -> unit
-end
-
-(** a simple thread safe map that uses an atomic reference to a persistent map plus a mutex to
-    sequentialize updates *)
-module MakeConcurrentMap (Map : Stdlib.Map.S) : ConcurrentMap with type key = Map.key
