@@ -257,9 +257,9 @@ let maybe_make_hashtable_api ~loc td =
 
           let hash = [%e hash_name_expr]
         end) in
-        let table : [%t ct] H.t = H.create 11 in
-        let () = HashNormalizer.register_reset (fun () -> H.reset table) in
-        ((fun t -> H.find_opt table t), fun t -> H.add table t t)]
+        let table : [%t ct] H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+        let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
+        ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)]
     in
     let make_pattern stem =
       Ast_helper.Pat.var ~loc @@ Loc.make ~loc @@ func_name_from_typename ~stem td.ptype_name.txt
