@@ -13,23 +13,6 @@ module F = Format
 module L = Logging
 open TaskSchedulerTypes
 
-(** do a compaction if heap size over this value *)
-let compaction_if_heap_greater_equal_to_words =
-  (* we don't try hard to avoid overflow, apart from assuming that word size
-     divides 1024 perfectly, thus multiplying with a smaller factor *)
-  Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * (1024 / Sys.word_size_in_bits)
-
-
-let do_compaction_if_needed () =
-  let stat = Stdlib.Gc.quick_stat () in
-  let heap_words = stat.Stdlib.Gc.heap_words in
-  if heap_words >= compaction_if_heap_greater_equal_to_words then (
-    L.log_task "Triggering compaction, heap size= %d GB@\n"
-      (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
-    Gc.compact () )
-  else ()
-
-
 let clear_caches () =
   Summary.OnDisk.clear_cache () ;
   BufferOverrunUtils.clear_cache () ;
@@ -78,7 +61,6 @@ let analyze_target :
     (* clear cache for each source file to avoid it growing unboundedly; we do it here to
        release memory before potentially going idle *)
     clear_caches () ;
-    do_compaction_if_needed () ;
     Utils.with_dls useful_time ~f:(fun useful_time ->
         ExecutionDuration.add_duration_since useful_time start ) ;
     result

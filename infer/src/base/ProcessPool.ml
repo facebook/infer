@@ -317,6 +317,23 @@ let wait_all pool =
   results
 
 
+(** do a compaction if heap size over this value *)
+let compaction_if_heap_greater_equal_to_words =
+  (* we don't try hard to avoid overflow, apart from assuming that word size
+     divides 1024 perfectly, thus multiplying with a smaller factor *)
+  Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * (1024 / Sys.word_size_in_bits)
+
+
+let do_compaction_if_needed () =
+  let stat = Stdlib.Gc.quick_stat () in
+  let heap_words = stat.Stdlib.Gc.heap_words in
+  if heap_words >= compaction_if_heap_greater_equal_to_words then (
+    L.log_task "Triggering compaction, heap size= %d GB@\n"
+      (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
+    Gc.compact () )
+  else ()
+
+
 (** worker loop: wait for tasks and run [f] on them until we are told to go home *)
 let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue ~prev_result =
   let heap_words =
@@ -344,7 +361,10 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
               true ) ) )
   | Do stuff ->
       let result =
-        try f stuff
+        try
+          let result = f stuff in
+          do_compaction_if_needed () ;
+          result
         with e ->
           IExn.reraise_if e ~f:(fun () ->
               if Config.keep_going then (
