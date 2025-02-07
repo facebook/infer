@@ -370,11 +370,11 @@ module OnDisk = struct
              in
              let cost_opt : CostDomain.summary option =
                Sqlite3.column stmt 2 |> Payloads.SQLite.deserialize_payload_opt
-               |> ILazy.force_option
+               |> SafeLazy.force_option
              in
              let config_impact_opt : ConfigImpactAnalysis.Summary.t option =
                Sqlite3.column stmt 3 |> Payloads.SQLite.deserialize_payload_opt
-               |> ILazy.force_option
+               |> SafeLazy.force_option
              in
              f proc_name loc cost_opt config_impact_opt err_log )
 

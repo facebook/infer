@@ -251,9 +251,9 @@ let run_proc_analysis exe_env tenv analysis_req specialization_context ?caller_p
     let payloads =
       let biabduction =
         Some
-          (Lazy.from_val
+          (SafeLazy.from_val
              BiabductionSummary.
-               {preposts= []; phase= payloads.biabduction |> ILazy.force_option |> opt_get_phase} )
+               {preposts= []; phase= payloads.biabduction |> SafeLazy.force_option |> opt_get_phase} )
       in
       {payloads with biabduction}
     in

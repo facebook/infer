@@ -35,7 +35,7 @@ let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
 
 let mk_interprocedural_field_t payload_field =
   mk_interprocedural_t (Payloads.analysis_request_of_field payload_field) ~f_analyze_dep:Fn.id
-    ~get_payload:(fun payloads -> Field.get payload_field payloads |> ILazy.force_option )
+    ~get_payload:(fun payloads -> Field.get payload_field payloads |> SafeLazy.force_option )
 
 
 let interprocedural analysis_req ~f_analyze_dep ~get_payload ~set_payload checker
@@ -43,19 +43,19 @@ let interprocedural analysis_req ~f_analyze_dep ~get_payload ~set_payload checke
   let analysis_data, stats_ref =
     mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload args ()
   in
-  let result = checker analysis_data |> ILazy.from_val_option in
+  let result = checker analysis_data |> SafeLazy.from_val_option in
   {summary with payloads= set_payload summary.payloads result; stats= !stats_ref}
 
 
 let interprocedural_with_field payload_field checker ({Callbacks.summary} as args) =
   let analysis_data, stats_ref = mk_interprocedural_field_t payload_field args () in
-  let result = checker analysis_data |> ILazy.from_val_option in
+  let result = checker analysis_data |> SafeLazy.from_val_option in
   {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
 
 
 let interprocedural_with_field_and_specialization payload_field checker ?specialization
     ({Callbacks.summary} as args) =
-  let get_payload {Summary.payloads} = Field.get payload_field payloads |> ILazy.force_option in
+  let get_payload {Summary.payloads} = Field.get payload_field payloads |> SafeLazy.force_option in
   let analysis_data, stats_ref = mk_interprocedural_field_t payload_field args () in
   let specialization =
     let open IOption.Let_syntax in
@@ -63,12 +63,12 @@ let interprocedural_with_field_and_specialization payload_field checker ?special
     let+ specialization in
     (summary, specialization)
   in
-  let result = checker ?specialization analysis_data |> ILazy.from_val_option in
+  let result = checker ?specialization analysis_data |> SafeLazy.from_val_option in
   {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
 
 
 let make_is_already_specialized_test payload_field is_already_specialized specialization summary =
-  let get_payload {Summary.payloads} = Field.get payload_field payloads |> ILazy.force_option in
+  let get_payload {Summary.payloads} = Field.get payload_field payloads |> SafeLazy.force_option in
   match get_payload summary with
   | Some summary ->
       is_already_specialized specialization summary
@@ -79,14 +79,14 @@ let make_is_already_specialized_test payload_field is_already_specialized specia
 let interprocedural_with_field_dependency ~dep_field payload_field checker
     ({Callbacks.summary} as callbacks) =
   let checker analysis_data =
-    checker analysis_data (Field.get dep_field summary.payloads |> ILazy.force_option)
+    checker analysis_data (Field.get dep_field summary.payloads |> SafeLazy.force_option)
   in
   interprocedural
     (Payloads.analysis_request_of_field payload_field)
     ~f_analyze_dep:Option.some
     ~get_payload:(fun payloads ->
-      ( Field.get payload_field payloads |> ILazy.force_option
-      , Field.get dep_field payloads |> ILazy.force_option ) )
+      ( Field.get payload_field payloads |> SafeLazy.force_option
+      , Field.get dep_field payloads |> SafeLazy.force_option ) )
     ~set_payload:(Field.fset payload_field) checker callbacks
 
 
@@ -96,7 +96,7 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
       (Payloads.analysis_request_of_field payload_field)
       proc_name
     |> Result.bind ~f:(fun {Summary.payloads; _} ->
-           Field.get payload_field payloads |> ILazy.force_option |> AnalysisResult.of_option )
+           Field.get payload_field payloads |> SafeLazy.force_option |> AnalysisResult.of_option )
   in
   checker
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
@@ -113,5 +113,5 @@ let intraprocedural checker ({Callbacks.summary} as callbacks) =
 
 let intraprocedural_with_field_dependency payload_field checker ({Callbacks.summary} as callbacks) =
   checker (to_intraprocedural_t callbacks)
-    (Field.get payload_field summary.payloads |> ILazy.force_option) ;
+    (Field.get payload_field summary.payloads |> SafeLazy.force_option) ;
   summary

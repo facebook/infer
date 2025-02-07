@@ -11,7 +11,7 @@ module L = Logging
 let analysis_req = AnalysisRequest.one Lineage
 
 let report_proc_json {Summary.payloads= {lineage}; proc_name} =
-  match ILazy.force_option lineage with
+  match SafeLazy.force_option lineage with
   | None ->
       L.debug Report Verbose "No summary for %a@\n" Procname.pp proc_name
   | Some lineage_summary ->

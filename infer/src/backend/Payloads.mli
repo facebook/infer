@@ -19,24 +19,24 @@ include sig
 
       This type has to be in sync with PayloadId.t *)
   type t =
-    { annot_map: AnnotationReachabilityDomain.t Lazy.t option
-    ; biabduction: BiabductionSummary.t Lazy.t option
-    ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t Lazy.t option
-    ; buffer_overrun_checker: BufferOverrunCheckerSummary.t Lazy.t option
-    ; config_impact_analysis: ConfigImpactAnalysis.Summary.t Lazy.t option
-    ; cost: CostDomain.summary Lazy.t option
-    ; disjunctive_demo: DisjunctiveDemo.domain Lazy.t option
-    ; static_constructor_stall_checker: StaticConstructorStallChecker.Summary.t Lazy.t option
-    ; lab_resource_leaks: ResourceLeakDomain.summary Lazy.t option
-    ; litho_required_props: LithoDomain.summary Lazy.t option
-    ; pulse: PulseSummary.t Lazy.t option
-    ; purity: PurityDomain.summary Lazy.t option
-    ; racerd: RacerDDomain.summary Lazy.t option
-    ; scope_leakage: ScopeLeakage.Summary.t Lazy.t option
-    ; siof: SiofDomain.Summary.t Lazy.t option
-    ; lineage: Lineage.Summary.t Lazy.t option
-    ; lineage_shape: LineageShape.Summary.t Lazy.t option
-    ; starvation: StarvationDomain.summary Lazy.t option }
+    { annot_map: AnnotationReachabilityDomain.t SafeLazy.t option
+    ; biabduction: BiabductionSummary.t SafeLazy.t option
+    ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t SafeLazy.t option
+    ; buffer_overrun_checker: BufferOverrunCheckerSummary.t SafeLazy.t option
+    ; config_impact_analysis: ConfigImpactAnalysis.Summary.t SafeLazy.t option
+    ; cost: CostDomain.summary SafeLazy.t option
+    ; disjunctive_demo: DisjunctiveDemo.domain SafeLazy.t option
+    ; static_constructor_stall_checker: StaticConstructorStallChecker.Summary.t SafeLazy.t option
+    ; lab_resource_leaks: ResourceLeakDomain.summary SafeLazy.t option
+    ; litho_required_props: LithoDomain.summary SafeLazy.t option
+    ; pulse: PulseSummary.t SafeLazy.t option
+    ; purity: PurityDomain.summary SafeLazy.t option
+    ; racerd: RacerDDomain.summary SafeLazy.t option
+    ; scope_leakage: ScopeLeakage.Summary.t SafeLazy.t option
+    ; siof: SiofDomain.Summary.t SafeLazy.t option
+    ; lineage: Lineage.Summary.t SafeLazy.t option
+    ; lineage_shape: LineageShape.Summary.t SafeLazy.t option
+    ; starvation: StarvationDomain.summary SafeLazy.t option }
   [@@deriving fields, yojson_of]
 end
 
@@ -58,7 +58,7 @@ module SQLite : sig
   val eager_load : Sqlite3.stmt -> first_column:int -> t
   (** load all payload columns from the statement starting at [first_column] *)
 
-  val deserialize_payload_opt : Sqlite3.Data.t -> 'a Lazy.t option
+  val deserialize_payload_opt : ?eager:bool -> Sqlite3.Data.t -> 'a SafeLazy.t option
   (** use to deserialize the data from one column for a particular payload id; callers are
-      responsible for casting the result to the appropriate [payload option Lazy.t] type *)
+      responsible for casting the result to the appropriate [payload option SafeLazy.t] type *)
 end

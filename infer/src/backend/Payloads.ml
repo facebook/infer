@@ -10,29 +10,29 @@ module L = Logging
 module F = Format
 
 type t =
-  { annot_map: AnnotationReachabilityDomain.t Lazy.t option
-  ; biabduction: BiabductionSummary.t Lazy.t option
-  ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t Lazy.t option
-  ; buffer_overrun_checker: BufferOverrunCheckerSummary.t Lazy.t option
-  ; config_impact_analysis: ConfigImpactAnalysis.Summary.t Lazy.t option
-  ; cost: CostDomain.summary Lazy.t option
-  ; disjunctive_demo: DisjunctiveDemo.domain Lazy.t option
-  ; static_constructor_stall_checker: StaticConstructorStallChecker.Summary.t Lazy.t option
-  ; lab_resource_leaks: ResourceLeakDomain.summary Lazy.t option
-  ; litho_required_props: LithoDomain.summary Lazy.t option
-  ; pulse: PulseSummary.t Lazy.t option
-  ; purity: PurityDomain.summary Lazy.t option
-  ; racerd: RacerDDomain.summary Lazy.t option
-  ; scope_leakage: ScopeLeakage.Summary.t Lazy.t option
-  ; siof: SiofDomain.Summary.t Lazy.t option
-  ; lineage: Lineage.Summary.t Lazy.t option
-  ; lineage_shape: LineageShape.Summary.t Lazy.t option
-  ; starvation: StarvationDomain.summary Lazy.t option }
+  { annot_map: AnnotationReachabilityDomain.t SafeLazy.t option
+  ; biabduction: BiabductionSummary.t SafeLazy.t option
+  ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t SafeLazy.t option
+  ; buffer_overrun_checker: BufferOverrunCheckerSummary.t SafeLazy.t option
+  ; config_impact_analysis: ConfigImpactAnalysis.Summary.t SafeLazy.t option
+  ; cost: CostDomain.summary SafeLazy.t option
+  ; disjunctive_demo: DisjunctiveDemo.domain SafeLazy.t option
+  ; static_constructor_stall_checker: StaticConstructorStallChecker.Summary.t SafeLazy.t option
+  ; lab_resource_leaks: ResourceLeakDomain.summary SafeLazy.t option
+  ; litho_required_props: LithoDomain.summary SafeLazy.t option
+  ; pulse: PulseSummary.t SafeLazy.t option
+  ; purity: PurityDomain.summary SafeLazy.t option
+  ; racerd: RacerDDomain.summary SafeLazy.t option
+  ; scope_leakage: ScopeLeakage.Summary.t SafeLazy.t option
+  ; siof: SiofDomain.Summary.t SafeLazy.t option
+  ; lineage: Lineage.Summary.t SafeLazy.t option
+  ; lineage_shape: LineageShape.Summary.t SafeLazy.t option
+  ; starvation: StarvationDomain.summary SafeLazy.t option }
 [@@deriving fields]
 
 let yojson_of_t {pulse} =
   [%yojson_of: (string * PulseSummary.t option) list]
-    [(Checker.get_id Pulse, ILazy.force_option pulse)]
+    [(Checker.get_id Pulse, SafeLazy.force_option pulse)]
 
 
 let () =
@@ -43,7 +43,7 @@ let () =
 type 'a pp = Pp.env -> Procname.t -> F.formatter -> 'a -> unit
 
 type field =
-  | F : {field: (t, 'a Lazy.t option) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
+  | F : {field: (t, 'a SafeLazy.t option) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
 
 let all_fields =
   let mk_full field payload_id pp = F {field; payload_id; pp} in
@@ -87,7 +87,7 @@ let all_fields =
 let pp pe proc_name fmt payloads =
   let is_first = ref true in
   List.iter all_fields ~f:(fun (F {field; payload_id; pp}) ->
-      Field.get field payloads |> ILazy.force_option
+      Field.get field payloads |> SafeLazy.force_option
       |> Option.iter ~f:(fun x ->
              (match pe.Pp.kind with HTML when not !is_first -> F.fprintf fmt "<hr>" | _ -> ()) ;
              is_first := false ;
@@ -124,6 +124,29 @@ let empty =
   ; starvation= None }
 
 
+(* Force lazy payloads and allow marshalling of the resulting value *)
+let freeze t =
+  let freeze v = Option.map v ~f:SafeLazy.freeze in
+  { annot_map= freeze t.annot_map
+  ; biabduction= freeze t.biabduction
+  ; buffer_overrun_analysis= freeze t.buffer_overrun_analysis
+  ; buffer_overrun_checker= freeze t.buffer_overrun_checker
+  ; config_impact_analysis= freeze t.config_impact_analysis
+  ; cost= freeze t.cost
+  ; disjunctive_demo= freeze t.disjunctive_demo
+  ; static_constructor_stall_checker= freeze t.static_constructor_stall_checker
+  ; lab_resource_leaks= freeze t.lab_resource_leaks
+  ; litho_required_props= freeze t.litho_required_props
+  ; pulse= freeze t.pulse
+  ; purity= freeze t.purity
+  ; racerd= freeze t.racerd
+  ; scope_leakage= freeze t.scope_leakage
+  ; siof= freeze t.siof
+  ; lineage= freeze t.lineage
+  ; lineage_shape= freeze t.lineage_shape
+  ; starvation= freeze t.starvation }
+
+
 module PayloadIdToField =
   PrettyPrintable.MakePPMonoMap
     (PayloadId)
@@ -155,20 +178,22 @@ module SQLite = struct
   (** Each payload is stored in the DB as either [NULL] for the absence of payload, or the payload
       itself. We cannot give a good type to this function because it deserializes several payload
       types. *)
-  let deserialize_payload_opt = function[@warning "-partial-match"]
+  let deserialize_payload_opt ?(eager = false) = function[@warning "-partial-match"]
     | Sqlite3.Data.NULL ->
         None
+    | Sqlite3.Data.BLOB blob when eager ->
+        Some (SafeLazy.from_val (Marshal.from_string blob 0))
     | Sqlite3.Data.BLOB blob ->
         (* lazily deserialize the blob once we have it to save time in case it won't be used. This
            can happen when payloads were loaded eagerly by one analysis when other active analyses
            are not interested in the summaries for the same procedure, i.e. they don't have the same
            dependencies *)
-        Some (lazy (Marshal.from_string blob 0))
+        Some (SafeLazy.make (lazy (Marshal.from_string blob 0)))
 
 
   (** serialize a payload into the format described in {!deserialize_payload_opt} above *)
   let serialize_payload_opt payload_opt =
-    match ILazy.force_option payload_opt with
+    match SafeLazy.force_option payload_opt with
     | None ->
         Sqlite3.Data.NULL
     | Some payload ->
@@ -181,7 +206,8 @@ module SQLite = struct
     List.map all_fields ~f:(fun (F {field}) -> Field.get field payloads |> serialize_payload_opt)
 
 
-  let serialize ({pulse} as payloads) =
+  let serialize payloads =
+    let ({pulse} as payloads) = freeze payloads in
     let default = serialize payloads in
     fun ~old_pulse_payload ->
       (* All payloads must be null or blob. *)
@@ -191,20 +217,20 @@ module SQLite = struct
           default
       | Some (BLOB blob) -> (
           let old_pulse_payload : PulseSummary.t = Marshal.from_string blob 0 in
-          match ILazy.force_option pulse with
+          match SafeLazy.force_option pulse with
           | None ->
-              serialize {payloads with pulse= Some (lazy old_pulse_payload)}
+              serialize {payloads with pulse= Some (SafeLazy.from_val old_pulse_payload)}
           | Some pulse_payload ->
               let res = PulseSummary.merge pulse_payload old_pulse_payload in
               if phys_equal res pulse_payload then default
-              else serialize {payloads with pulse= Some (lazy res)} )
+              else serialize {payloads with pulse= Some (SafeLazy.from_val res)} )
 
 
   let make_eager =
     let data_of_sqlite_column _field column =
       ( (fun stmt ->
           let sqlite_data = Sqlite3.column stmt column in
-          deserialize_payload_opt sqlite_data )
+          deserialize_payload_opt ~eager:true sqlite_data )
       , column + 1 )
     in
     Fields.make_creator ~annot_map:data_of_sqlite_column ~biabduction:data_of_sqlite_column
