@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "llvm-c/Core.h"
+#include "llvm-c/DebugInfo.h"
 #include "llvm-c/Support.h"
 #include "llvm/Config/llvm-config.h"
 #include "caml/memory.h"
@@ -986,6 +987,112 @@ value llvm_value_as_metadata(value Val) {
 /* llcontext -> llmetadata -> llvalue */
 value llvm_metadata_as_value(value C, value MD) {
   return to_val(LLVMMetadataAsValue(Context_val(C), Metadata_val(MD)));
+}
+
+/* Get the DIVariable associated with a GlobalVariable */
+LLVMMetadataRef global_variable_get_divariable(LLVMValueRef GV) {
+  LLVMMetadataRef Var = NULL;
+  size_t NumEntries;
+  LLVMValueMetadataEntry *Entries = LLVMGlobalCopyAllMetadata(GV, &NumEntries);
+  unsigned dbg = LLVMGetMDKindID("dbg", 3);
+  for (int i = 0; i < NumEntries; i++) {
+    if (LLVMValueMetadataEntriesGetKind(Entries, i) == dbg) {
+      LLVMMetadataRef GVE = LLVMValueMetadataEntriesGetMetadata(Entries, i);
+      if (GVE) {
+        Var = LLVMDIGlobalVariableExpressionGetVariable(GVE);
+        break;
+      }
+    }
+  }
+  LLVMDisposeValueMetadataEntries(Entries);
+  return Var;
+}
+
+/* Get the DIFile associated with an Instruction, GlobalVariable, or Function */
+LLVMMetadataRef get_debug_file(LLVMValueRef Val) {
+  LLVMMetadataRef F = NULL;
+  if (LLVMIsAInstruction(Val)) {
+    LLVMMetadataRef Loc = LLVMInstructionGetDebugLoc(Val);
+    if (Loc) {
+      LLVMMetadataRef Scope = LLVMDILocationGetScope(Loc);
+      if (Scope) {
+        F = LLVMDIScopeGetFile(Scope);
+      }
+    }
+  } else if (LLVMIsAGlobalVariable(Val)) {
+    LLVMMetadataRef Var = global_variable_get_divariable(Val);
+    if (Var) {
+      F = LLVMDIVariableGetFile(Var);
+    }
+  } else if (LLVMIsAFunction(Val)) {
+    LLVMMetadataRef Subprogram = LLVMGetSubprogram(Val);
+    if (Subprogram) {
+      F = LLVMDIScopeGetFile(Subprogram);
+    }
+  }
+  return F;
+}
+
+/* llvalue -> string option */
+CAMLprim value llvm_get_debug_loc_directory(LLVMValueRef Val) {
+  CAMLparam0();
+  CAMLlocal1(Option);
+  unsigned Length = 0;
+  const char *Chars;
+  LLVMMetadataRef File = get_debug_file(Val);
+  if (File) {
+    Chars = LLVMDIFileGetDirectory(File, &Length);
+  };
+  Option = cstr_to_string_option(Chars, Length);
+  CAMLreturn(Option);
+}
+
+/* llvalue -> string option */
+CAMLprim value llvm_get_debug_loc_filename(LLVMValueRef Val) {
+  CAMLparam0();
+  CAMLlocal1(Option);
+  unsigned Length = 0;
+  const char *Chars;
+  LLVMMetadataRef File = get_debug_file(Val);
+  if (File) {
+    Chars = LLVMDIFileGetFilename(File, &Length);
+  };
+  Option = cstr_to_string_option(Chars, Length);
+  CAMLreturn(Option);
+}
+
+/* llvalue -> int */
+CAMLprim value llvm_get_debug_loc_line(LLVMValueRef Val) {
+  unsigned L = 0;
+  if (LLVMIsAInstruction(Val)) {
+    LLVMMetadataRef Loc = LLVMInstructionGetDebugLoc(Val);
+    if (Loc) {
+      L = LLVMDILocationGetLine(Loc);
+    }
+  } else if (LLVMIsAGlobalVariable(Val)) {
+    LLVMMetadataRef Var = global_variable_get_divariable(Val);
+    if (Var) {
+      L = LLVMDIVariableGetLine(Var);
+    }
+  } else if (LLVMIsAFunction(Val)) {
+    LLVMMetadataRef Subprogram = LLVMGetSubprogram(Val);
+    if (Subprogram) {
+      L = LLVMDISubprogramGetLine(Subprogram);
+    }
+  }
+  return Val_int(L);
+}
+
+/* llvalue -> int */
+CAMLprim value llvm_get_debug_loc_column(LLVMValueRef Val) {
+  unsigned C = 0;
+  if (LLVMIsAInstruction(Val)) {
+    LLVMMetadataRef Loc = LLVMInstructionGetDebugLoc(Val);
+    if (Loc) {
+      C = LLVMDILocationGetColumn(Loc);
+    }
+  }
+  return Val_int(C);
 }
 
 /*--... Operations on scalar constants .....................................--*/

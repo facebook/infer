@@ -557,7 +557,7 @@ val set_module_identifer : llmodule -> string -> unit
 val get_module_flag : llmodule -> string -> llmetadata option
 
 (** [add_module_flag m b k v] Add a module-level flag b, with key [k] and
-    value [v] to the flags metadata of module [m]. It will create the 
+    value [v] to the flags metadata of module [m]. It will create the
     module-level flags named metadata if it doesn't already exist. *)
 val add_module_flag : llmodule -> ModuleFlagBehavior.t ->
                         string -> llmetadata -> unit
@@ -961,6 +961,33 @@ val value_as_metadata : llvalue -> llmetadata
 (** Obtain a Value as a Metadata.
     See the method [llvm::MetadataAsValue::get()]. *)
 val metadata_as_value : llcontext -> llmetadata -> llvalue
+
+(** [get_debug_loc_directory v] returns the directory of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_directory : llvalue -> string option
+
+(** [get_debug_loc_filename v] returns the filename of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_filename : llvalue -> string option
+
+(** [get_debug_loc_line v] returns the line number of the debug location
+    for [v], which must be an [Instruction], [GlobalVariable], or [Function].
+    See the [llvm::Instruction::getDebugLoc()],
+    [llvm::GlobalVariable::getDebugInfo()], and
+    [llvm::Function::getSubprogram()] methods. *)
+val get_debug_loc_line : llvalue -> int
+
+(** [get_debug_loc_column v] returns the column number of the debug location
+    for [v], which must be an [Instruction].
+    See the [llvm::Instruction::getDebugLoc()] method. *)
+val get_debug_loc_column : llvalue -> int
+
 
 (** {7 Operations on scalar constants} *)
 

@@ -602,6 +602,10 @@ external add_named_metadata_operand : llmodule -> string -> llvalue -> unit
 external value_as_metadata : llvalue -> llmetadata = "llvm_value_as_metadata"
 external metadata_as_value : llcontext -> llmetadata -> llvalue
                         = "llvm_metadata_as_value"
+external get_debug_loc_directory : llvalue -> string option = "llvm_get_debug_loc_directory"
+external get_debug_loc_filename : llvalue -> string option = "llvm_get_debug_loc_filename"
+external get_debug_loc_line : llvalue -> int = "llvm_get_debug_loc_line"
+external get_debug_loc_column : llvalue -> int = "llvm_get_debug_loc_column"
 
 (*--... Operations on scalar constants .....................................--*)
 external const_int : lltype -> int -> llvalue = "llvm_const_int"
