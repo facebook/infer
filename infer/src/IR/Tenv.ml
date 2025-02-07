@@ -247,11 +247,6 @@ let merge_per_file ~src ~dst =
       L.die InternalError "Cannot merge Global tenv with FileLocal tenv"
 
 
-(** Serializer for type environments *)
-let tenv_serializer : t Serialization.serializer =
-  Serialization.create_serializer Serialization.Key.tenv
-
-
 let store_debug_file tenv tenv_filename =
   let debug_filename = DB.filename_to_string (DB.filename_add_suffix tenv_filename ".debug") in
   let out_channel = Out_channel.create debug_filename in
@@ -268,7 +263,9 @@ let store_debug_file_for_source source_file tenv =
 
 
 let write tenv tenv_filename =
-  Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
+  DB.filename_to_string tenv_filename
+  |> Utils.with_intermediate_temp_file_out ~retry:Sys.win32 ~f:(fun outc ->
+         Marshal.to_channel outc tenv [] ) ;
   if Config.debug_mode then store_debug_file tenv tenv_filename ;
   let lstat = DB.filename_to_string tenv_filename |> Unix.lstat in
   let size = Int64.to_int lstat.st_size |> Option.value_exn in
@@ -290,7 +287,10 @@ module Normalizer = struct
     new_tenv
 end
 
-let read path = Serialization.read_from_file tenv_serializer path
+let read filename =
+  try DB.filename_to_string filename |> Utils.with_file_in ~f:Marshal.from_channel |> Option.some
+  with Sys_error _ -> None
+
 
 module Global : sig
   val read : unit -> t option
