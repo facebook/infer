@@ -2660,6 +2660,10 @@ INTERNAL OPTIONS
            An analysis worker will trigger compaction if its heap size is
            equal or great to this value in Gigabytes. Defaults to 8
 
+       --compaction-if-heap-greater-equal-to-GB-multicore int
+           Multicore analysis will trigger compaction if the total heap size
+           is equal or great to this value in Gigabytes. Defaults to 40
+
        --compilation-database-escaped-reset
            Set --compilation-database-escaped to the empty list.
 

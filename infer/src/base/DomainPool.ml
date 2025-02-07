@@ -144,6 +144,30 @@ let some_workers_processing pool =
       match state with Idle -> false | Processing _ -> true )
 
 
+let do_compaction_if_needed =
+  let last_compaction_time = ref (Mtime_clock.counter ()) in
+  let min_compaction_interval = Mtime.Span.(1 * s) in
+  let compaction_if_heap_greater_equal_to_words =
+    Config.compaction_if_heap_greater_equal_to_GB_multicore * 1024 * 1024
+    * (1024 / Sys.word_size_in_bits)
+  in
+  let min_time_elapsed_between_compactions () =
+    let elapsed = Mtime_clock.count !last_compaction_time in
+    Mtime.Span.compare elapsed min_compaction_interval > 0
+  in
+  let do_compaction_if_needed () =
+    if min_time_elapsed_between_compactions () then
+      let stat = Stdlib.Gc.quick_stat () in
+      let heap_words = stat.Stdlib.Gc.heap_words in
+      if heap_words >= compaction_if_heap_greater_equal_to_words then (
+        L.debug Analysis Quiet "Triggering compaction, heap size= %d GB@\n"
+          (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
+        Gc.compact () ;
+        last_compaction_time := Mtime_clock.counter () )
+  in
+  do_compaction_if_needed
+
+
 let rec run pool =
   if pool.tasks.is_empty () then (
     Array.iter pool.workers ~f:(fun {command_queue} ->
@@ -155,4 +179,5 @@ let rec run pool =
     send_work_to_idle_workers pool ;
     if some_workers_processing pool then Concurrent.Queue.wait_until_non_empty pool.message_queue
     else Domain.cpu_relax () ;
+    do_compaction_if_needed () ;
     run pool )
