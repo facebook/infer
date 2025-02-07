@@ -11,10 +11,8 @@ open Option.Monad_infix
 
 (** Module for Type Environments. *)
 
-(** Hash tables on type names. *)
-module TypenameHash = Stdlib.Hashtbl.Make (Typ.Name)
+module TypenameHash = Concurrent.MakeHashtbl (Typ.Name.Hash)
 
-(** Type for type environment. *)
 type t = Struct.t TypenameHash.t
 
 let pp fmt (tenv : t) =
@@ -25,7 +23,6 @@ let length tenv = TypenameHash.length tenv
 
 let fold tenv ~init ~f = TypenameHash.fold f tenv init
 
-(** Create a new type environment. *)
 let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
@@ -46,8 +43,10 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
 (** Look up a name in the given type environment. *)
 let lookup tenv name : Struct.t option =
   let result =
-    try Some (TypenameHash.find tenv name)
-    with Stdlib.Not_found -> (
+    match TypenameHash.find_opt tenv name with
+    | Some _ as some_s ->
+        some_s
+    | None -> (
       (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
       match (name : Typ.Name.t) with
       | CStruct m ->
@@ -202,7 +201,7 @@ let pp_per_file fmt = function
 
 module SQLite : SqliteUtils.Data with type t = per_file = struct
   module Serializer = SqliteUtils.MarshalledDataNOTForComparison (struct
-    type nonrec t = t
+    type nonrec t = Struct.t Typ.Name.Hash.t
   end)
 
   type t = per_file
@@ -213,21 +212,21 @@ module SQLite : SqliteUtils.Data with type t = per_file = struct
     | Global ->
         Sqlite3.Data.TEXT global_string
     | FileLocal tenv ->
-        Serializer.serialize tenv
+        TypenameHash.with_hashtable Serializer.serialize tenv
 
 
   let deserialize = function
     | Sqlite3.Data.TEXT g when String.equal g global_string ->
         Global
     | blob ->
-        FileLocal (Serializer.deserialize blob)
+        FileLocal (Serializer.deserialize blob |> TypenameHash.wrap_hashtable)
 end
 
 let merge ~src ~dst =
   let merge_internal typename newer =
     match TypenameHash.find_opt dst typename with
     | None ->
-        TypenameHash.add dst typename newer
+        TypenameHash.replace dst typename newer
     | Some current ->
         let merged_struct = Struct.merge typename ~newer ~current in
         if not (phys_equal merged_struct current) then
@@ -263,9 +262,12 @@ let store_debug_file_for_source source_file tenv =
 
 
 let write tenv tenv_filename =
-  DB.filename_to_string tenv_filename
-  |> Utils.with_intermediate_temp_file_out ~retry:Sys.win32 ~f:(fun outc ->
-         Marshal.to_channel outc tenv [] ) ;
+  let tenv_path = DB.filename_to_string tenv_filename in
+  TypenameHash.with_hashtable
+    (fun hashtable ->
+      Utils.with_intermediate_temp_file_out ~retry:Sys.win32 tenv_path ~f:(fun outc ->
+          Marshal.to_channel outc hashtable [] ) )
+    tenv ;
   if Config.debug_mode then store_debug_file tenv tenv_filename ;
   let lstat = DB.filename_to_string tenv_filename |> Unix.lstat in
   let size = Int64.to_int lstat.st_size |> Option.value_exn in
@@ -281,14 +283,17 @@ module Normalizer = struct
     let normalize_mapping name tstruct =
       let name = Typ.Name.hash_normalize name in
       let tstruct = Struct.hash_normalize tstruct in
-      TypenameHash.add new_tenv name tstruct
+      TypenameHash.replace new_tenv name tstruct
     in
     TypenameHash.iter normalize_mapping tenv ;
     new_tenv
 end
 
 let read filename =
-  try DB.filename_to_string filename |> Utils.with_file_in ~f:Marshal.from_channel |> Option.some
+  try
+    DB.filename_to_string filename
+    |> Utils.with_file_in ~f:Marshal.from_channel
+    |> TypenameHash.wrap_hashtable |> Option.some
   with Sys_error _ -> None
 
 

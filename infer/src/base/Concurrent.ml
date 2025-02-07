@@ -87,6 +87,8 @@ module MakeMap (M : Stdlib.Map.S) : Map with type key = M.key = struct
 end
 
 module type Hashtbl = sig
+  module Hash : Stdlib.Hashtbl.S
+
   type key
 
   type 'a t
@@ -95,27 +97,50 @@ module type Hashtbl = sig
 
   val clear : 'a t -> unit
 
-  val replace : 'a t -> key -> 'a -> unit
-
   val find_opt : 'a t -> key -> 'a option
 
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+
+  val length : 'a t -> int
+
   val remove : 'a t -> key -> unit
+
+  val replace : 'a t -> key -> 'a -> unit
+
+  val with_hashtable : ('a Hash.t -> 'b) -> 'a t -> 'b
+
+  val wrap_hashtable : 'a Hash.t -> 'a t
 end
 
-module MakeHashtbl (Hash : Stdlib.Hashtbl.S) : Hashtbl with type key = Hash.key = struct
-  type key = Hash.key
+module MakeHashtbl (H : Stdlib.Hashtbl.S) : Hashtbl with type key = H.key with module Hash = H =
+struct
+  module Hash = H
 
-  type 'a t = {mutex: Error_checking_mutex.t; hash: 'a Hash.t}
+  type key = H.key
 
-  let create size = {mutex= Error_checking_mutex.create (); hash= Hash.create size}
+  type 'a t = {mutex: Error_checking_mutex.t; hash: 'a H.t}
+
+  let create size = {mutex= Error_checking_mutex.create (); hash= H.create size}
 
   let in_mutex {mutex; hash} ~f = Error_checking_mutex.critical_section mutex ~f:(fun () -> f hash)
 
-  let clear t = in_mutex t ~f:Hash.clear
+  let clear t = in_mutex t ~f:H.clear
 
-  let replace t k v = in_mutex t ~f:(fun h -> Hash.replace h k v)
+  let find_opt t key = in_mutex t ~f:(fun h -> H.find_opt h key)
 
-  let find_opt t key = in_mutex t ~f:(fun h -> Hash.find_opt h key)
+  let fold f t init = in_mutex t ~f:(fun h -> H.fold f h init)
 
-  let remove t key = in_mutex t ~f:(fun h -> Hash.remove h key)
+  let iter f t = in_mutex t ~f:(fun h -> H.iter f h)
+
+  let length t = in_mutex t ~f:H.length
+
+  let remove t key = in_mutex t ~f:(fun h -> H.remove h key)
+
+  let replace t k v = in_mutex t ~f:(fun h -> H.replace h k v)
+
+  let with_hashtable f t = in_mutex t ~f
+
+  let wrap_hashtable hash = {mutex= Error_checking_mutex.create (); hash}
 end

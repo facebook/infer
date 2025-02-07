@@ -47,6 +47,8 @@ end
 module MakeMap (M : Stdlib.Map.S) : Map with type key = M.key
 
 module type Hashtbl = sig
+  module Hash : Stdlib.Hashtbl.S
+
   type key
 
   type 'a t
@@ -55,12 +57,24 @@ module type Hashtbl = sig
 
   val clear : 'a t -> unit
 
-  val replace : 'a t -> key -> 'a -> unit
-
   val find_opt : 'a t -> key -> 'a option
 
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+
+  val length : 'a t -> int
+
   val remove : 'a t -> key -> unit
+
+  val replace : 'a t -> key -> 'a -> unit
+
+  val with_hashtable : ('a Hash.t -> 'b) -> 'a t -> 'b
+  (** Execute the given function on the underlying hashtable in a critical section *)
+
+  val wrap_hashtable : 'a Hash.t -> 'a t
+  (** Put a hashtable into a thread-safe wrapper; original hashtable must not be directly accessed. *)
 end
 
 (** a thread safe hashtable *)
-module MakeHashtbl (Hash : Stdlib.Hashtbl.S) : Hashtbl with type key = Hash.key
+module MakeHashtbl (H : Stdlib.Hashtbl.S) : Hashtbl with type key = H.key with module Hash = H
