@@ -12,7 +12,7 @@ depends: [
   "ocaml" {>= "4.14.0"}
   "apron" {>= "v0.9.13"}
   "base"
-  "conf-llvm" {= "12.0.1"}
+  "conf-llvm" {= "17"}
   "containers" {>= "3.4"}
   "containers-data"
   "core" {>= "v0.15" & < "v0.16"}
@@ -23,7 +23,7 @@ depends: [
   "dune-build-info" {build}
   "fpath"
   "memtrace"
-  "mtime"
+  "mtime" {< "2.0.0"}
   "parany"
   "ppx_compare"
   "ppxlib" {>= "0.21.0"}
