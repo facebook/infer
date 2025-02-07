@@ -1,4 +1,4 @@
-//===------------------------ private_typeinfo.h --------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -248,4 +248,4 @@ public:
 
 }  // __cxxabiv1
 
-#endif  // __PRIVATE_TYPEINFO_H_
+#endif // __PRIVATE_TYPEINFO_H_

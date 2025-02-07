@@ -1,6 +1,9 @@
-#!/bin/sh -e
+#!/bin/sh
 
-if test "$(dirname $0)" != '.'; then
+set -e
+set -x
+
+if test ! "$(dirname $0)" -ef '.'; then
     echo "The script must be executed from its current directory."
     exit 1
 fi
@@ -19,12 +22,19 @@ llvm_config() {
     "$llvm_config" $@
 }
 
-if llvm_config --link-static; then
+llvm_version=$(llvm_config --version | cut -d. -f1)
+expected_version=$(cat VERSION | cut -d. -f1)
+if test "$llvm_version" != "$expected_version"; then
+  echo "LLVM version does not match. Expected '$expected_version' but got '$llvm_version'"
+  exit 1
+fi
+
+if llvm_config --link-static --libs; then
     default_mode=static
     support_static_mode=true
 fi
 
-if llvm_config --link-shared; then
+if llvm_config --link-shared --libs; then
     default_mode=shared
     support_shared_mode=true
 fi
@@ -48,7 +58,6 @@ create_dune_file() {
     cfile=$4
     depends=$5
     components=$6
-    extra_deps=$7
 
     if test "$dirname" = "backends"; then
         basedir=src/$dirname/$components
@@ -79,6 +88,7 @@ create_dune_file() {
         test ! -d "$basedir/shared" && mkdir "$basedir/shared"
         cp "$basedir/$modname.ml" "$basedir/shared"
         cp "$basedir/$cfile.c" "$basedir/shared"
+        cp "src/llvm/llvm_ocaml.h" "$basedir/shared"
 
         echo "
 (library
@@ -88,8 +98,8 @@ create_dune_file() {
  (foreign_stubs
   (language c)
   (names ${cfile})
-  (extra_deps ${extra_deps})
-  (flags ($cflags -I../../llvm)))
+  (extra_deps llvm_ocaml.h)
+  (flags ($cflags)))
  (c_library_flags ($ldflags $(llvm_config --system-libs --link-shared --libs $components))))
 " >> "$basedir/shared/dune"
     fi
@@ -98,6 +108,7 @@ create_dune_file() {
         test ! -d "$basedir/static" && mkdir "$basedir/static"
         cp "$basedir/$modname.ml" "$basedir/static"
         cp "$basedir/$cfile.c" "$basedir/static"
+        cp "src/llvm/llvm_ocaml.h" "$basedir/static"
 
         echo "
 (library
@@ -107,8 +118,8 @@ create_dune_file() {
  (foreign_stubs
   (language c)
   (names ${cfile})
-  (extra_deps ${extra_deps})
-  (flags ($cflags -I../../llvm)))
+  (extra_deps llvm_ocaml.h)
+  (flags ($cflags)))
  (c_library_flags ($ldflags $(llvm_config --system-libs --link-static --libs $components))))
 " >> "$basedir/static/dune"
     fi
@@ -117,20 +128,17 @@ create_dune_file() {
     rm "$basedir/$cfile.c"
 }
 
-# ------------------ public name -------- directory ---------------- module name -------- C file name --------- OCaml dependencies -------------- LLVM components (for the linker) - extra-deps
-create_dune_file     llvm                 llvm                       llvm                 llvm_ocaml            ""                                "core support"                     ../llvm_ocaml.h
+# ------------------ public name -------- directory ---------------- module name -------- C file name --------- OCaml dependencies -------------- LLVM components (for the linker)
+create_dune_file     llvm                 llvm                       llvm                 llvm_ocaml            ""                                "core support"
 create_dune_file     llvm.analysis        analysis                   llvm_analysis        analysis_ocaml        "llvm"                            "analysis"
 create_dune_file     llvm.bitreader       bitreader                  llvm_bitreader       bitreader_ocaml       "llvm"                            "bitreader"
 create_dune_file     llvm.bitwriter       bitwriter                  llvm_bitwriter       bitwriter_ocaml       "llvm unix"                       "bitwriter"
-create_dune_file     llvm.executionengine executionengine            llvm_executionengine executionengine_ocaml "llvm llvm.target ctypes.foreign" "executionengine mcjit native"
-create_dune_file     llvm.ipo             transforms/ipo             llvm_ipo             ipo_ocaml             "llvm"                            "ipo"
+create_dune_file     llvm.executionengine executionengine            llvm_executionengine executionengine_ocaml "llvm llvm.target ctypes"         "executionengine mcjit native"
 create_dune_file     llvm.irreader        irreader                   llvm_irreader        irreader_ocaml        "llvm"                            "irreader"
-create_dune_file     llvm.scalar_opts     transforms/scalar_opts     llvm_scalar_opts     scalar_opts_ocaml     "llvm"                            "scalaropts"
 create_dune_file     llvm.transform_utils transforms/utils           llvm_transform_utils transform_utils_ocaml "llvm"                            "transformutils"
-create_dune_file     llvm.vectorize       transforms/vectorize       llvm_vectorize       vectorize_ocaml       "llvm"                            "vectorize"
-create_dune_file     llvm.passmgr_builder transforms/passmgr_builder llvm_passmgr_builder passmgr_builder_ocaml "llvm"                            "ipo"
-create_dune_file     llvm.target          target                     llvm_target          target_ocaml          "llvm"                            "target"                           ../../llvm/llvm_ocaml.h
+create_dune_file     llvm.target          target                     llvm_target          target_ocaml          "llvm"                            "target"
 create_dune_file     llvm.linker          linker                     llvm_linker          linker_ocaml          "llvm"                            "linker"
+create_dune_file     llvm.debuginfo       debuginfo                  llvm_debuginfo       debuginfo_ocaml       "llvm"                            "core"
 create_dune_file     llvm.all_backends    all_backends               llvm_all_backends    all_backends_ocaml    "llvm"                            "$llvm_targets"
 
 for target in $llvm_targets; do
