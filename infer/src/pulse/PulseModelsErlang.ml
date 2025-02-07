@@ -1602,10 +1602,12 @@ module Custom = struct
         List.fold mfas ~init:map ~f:(fun map mfa -> Map.set map ~key:mfa ~data:db) )
 
 
-  let dynamic_behavior_models = Hashtbl.create (module String)
+  module StringHash = Concurrent.MakeHashtbl (IString.Hash)
+
+  let dynamic_behavior_models = StringHash.create 1
 
   let fetch_model db mfa =
-    match Hashtbl.find dynamic_behavior_models mfa with
+    match StringHash.find_opt dynamic_behavior_models mfa with
     | None ->
         let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
         let stmt = Sqlite3.prepare db query in
@@ -1632,7 +1634,7 @@ module Custom = struct
               None
         in
         Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-        Hashtbl.add_exn dynamic_behavior_models ~key:mfa ~data:model_opt ;
+        StringHash.replace dynamic_behavior_models mfa model_opt ;
         model_opt
     | Some model_opt ->
         model_opt

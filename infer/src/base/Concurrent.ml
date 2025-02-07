@@ -85,3 +85,37 @@ module MakeMap (M : Stdlib.Map.S) : Map with type key = M.key = struct
 
   let remove t key = update_in_mutex t ~f:(M.remove key)
 end
+
+module type Hashtbl = sig
+  type key
+
+  type 'a t
+
+  val create : int -> 'a t
+
+  val clear : 'a t -> unit
+
+  val replace : 'a t -> key -> 'a -> unit
+
+  val find_opt : 'a t -> key -> 'a option
+
+  val remove : 'a t -> key -> unit
+end
+
+module MakeHashtbl (Hash : Stdlib.Hashtbl.S) : Hashtbl with type key = Hash.key = struct
+  type key = Hash.key
+
+  type 'a t = {mutex: Error_checking_mutex.t; hash: 'a Hash.t}
+
+  let create size = {mutex= Error_checking_mutex.create (); hash= Hash.create size}
+
+  let in_mutex {mutex; hash} ~f = Error_checking_mutex.critical_section mutex ~f:(fun () -> f hash)
+
+  let clear t = in_mutex t ~f:Hash.clear
+
+  let replace t k v = in_mutex t ~f:(fun h -> Hash.replace h k v)
+
+  let find_opt t key = in_mutex t ~f:(fun h -> Hash.find_opt h key)
+
+  let remove t key = in_mutex t ~f:(fun h -> Hash.remove h key)
+end
