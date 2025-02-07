@@ -1,0 +1,10 @@
+This directory contains code from other open source projects, which is
+subject to their own copyright and licensing terms.
+
+- llvm-dune:
+  Source: https://github.com/kit-ty-kate/llvm-dune
+  License: Apache-2.0 WITH LLVM-exception, see https://llvm.org/LICENSE.txt
+  
+- llvm-dune/llvm-project:
+  Source: https://github.com/llvm/llvm-project/tree/release/11.x
+  License: Apache-2.0 WITH LLVM-exception, see https://llvm.org/LICENSE.txt

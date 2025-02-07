@@ -1,0 +1,28 @@
+opam-version: "2.0"
+maintainer: "Kate <kit.ty.kate@disroot.org>"
+authors: [
+  "whitequark <whitequark@whitequark.org>"
+  "The LLVM team"
+]
+license: "Apache-2.0 WITH LLVM-exception"
+doc: "http://llvm.moe/ocaml"
+bug-reports: "http://llvm.org/bugs/"
+dev-repo: "git+https://github.com/kit-ty-kate/llvm-dune.git"
+homepage: "http://llvm.moe"
+build: [
+  ["./setup.sh" conf-llvm:config]
+  ["dune" "build" "--release" "-j" jobs]
+  ["rm" "%{name}%.install"]
+]
+install: [
+  ["./install.sh" prefix]
+]
+depends: [
+  "ocaml" {>= "4.00.0"}
+  "dune" {>= "2.7"}
+  "ctypes" {>= "0.4"}
+  "ounit" {with-test}
+  "conf-llvm" {build & = version}
+]
+synopsis: "The OCaml bindings distributed with LLVM"
+description: "Note: LLVM should be installed first."

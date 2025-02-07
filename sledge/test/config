@@ -1,0 +1,3 @@
+{
+  "entry-points": ["_llair_main", "_Z11_llair_mainv", "main"]
+}
