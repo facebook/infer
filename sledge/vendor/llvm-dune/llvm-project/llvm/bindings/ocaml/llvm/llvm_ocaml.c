@@ -1034,7 +1034,8 @@ LLVMMetadataRef get_debug_file(LLVMValueRef Val) {
 }
 
 /* llvalue -> string option */
-CAMLprim value llvm_get_debug_loc_directory(LLVMValueRef Val) {
+CAMLprim value llvm_get_debug_loc_directory(value v) {
+  LLVMValueRef Val = Value_val(v);
   CAMLparam0();
   CAMLlocal1(Option);
   unsigned Length = 0;
@@ -1048,7 +1049,8 @@ CAMLprim value llvm_get_debug_loc_directory(LLVMValueRef Val) {
 }
 
 /* llvalue -> string option */
-CAMLprim value llvm_get_debug_loc_filename(LLVMValueRef Val) {
+CAMLprim value llvm_get_debug_loc_filename(value v) {
+  LLVMValueRef Val = Value_val(v);
   CAMLparam0();
   CAMLlocal1(Option);
   unsigned Length = 0;
@@ -1062,7 +1064,8 @@ CAMLprim value llvm_get_debug_loc_filename(LLVMValueRef Val) {
 }
 
 /* llvalue -> int */
-CAMLprim value llvm_get_debug_loc_line(LLVMValueRef Val) {
+CAMLprim value llvm_get_debug_loc_line(value v) {
+  LLVMValueRef Val = Value_val(v);
   unsigned L = 0;
   if (LLVMIsAInstruction(Val)) {
     LLVMMetadataRef Loc = LLVMInstructionGetDebugLoc(Val);
@@ -1084,7 +1087,8 @@ CAMLprim value llvm_get_debug_loc_line(LLVMValueRef Val) {
 }
 
 /* llvalue -> int */
-CAMLprim value llvm_get_debug_loc_column(LLVMValueRef Val) {
+CAMLprim value llvm_get_debug_loc_column(value v) {
+  LLVMValueRef Val = Value_val(v);
   unsigned C = 0;
   if (LLVMIsAInstruction(Val)) {
     LLVMMetadataRef Loc = LLVMInstructionGetDebugLoc(Val);
