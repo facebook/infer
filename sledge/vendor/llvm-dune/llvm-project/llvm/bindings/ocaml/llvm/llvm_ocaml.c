@@ -1708,7 +1708,7 @@ CAMLprim value llvm_global_initializer(LLVMValueRef GlobalVar) {
   CAMLparam0();
   LLVMValueRef Init;
   if ((Init = LLVMGetInitializer(GlobalVar))) {
-    value Option = alloc(1, 0);
+    value Option = caml_alloc(1, 0);
     Field(Option, 0) = (value) Init;
     CAMLreturn(Option);
   }
@@ -2030,7 +2030,7 @@ value llvm_instr_fcmp_predicate(value Val) {
 value llvm_instr_get_atomicrmw_binop(LLVMValueRef Inst) {
   LLVMAtomicRMWBinOp o;
   if (!LLVMIsAInstruction(Inst))
-    failwith("Not an instruction");
+    caml_failwith("Not an instruction");
   o = LLVMGetAtomicRMWBinOp(Inst);
   assert(o <= LLVMAtomicRMWBinOpFSub);
   return Val_int(o);

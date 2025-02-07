@@ -526,12 +526,20 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | ConstantDataVector ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.vector_size (Llvm.type_of llv) in
-        let pre, args = xlate_values x len (Llvm.const_element llv) in
+        let pre, args =
+          xlate_values x len (fun i ->
+              Llvm.aggregate_element llv i
+              |> Option.get_exn_or "getting ConstantDataVector aggregate" )
+        in
         (pre, Exp.record typ args)
     | ConstantDataArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.array_length (Llvm.type_of llv) in
-        let pre, args = xlate_values x len (Llvm.const_element llv) in
+        let pre, args =
+          xlate_values x len (fun i ->
+              Llvm.aggregate_element llv i
+              |> Option.get_exn_or "getting ConstantDataArray aggregate" )
+        in
         (pre, Exp.record typ args)
     | ConstantStruct ->
         let typ = xlate_type x (Llvm.type_of llv) in
@@ -866,7 +874,7 @@ let check_exception_typ x instr llt =
       &&
       let llelts = Llvm.struct_element_types llt in
       Array.length llelts = 2
-      && Poly.(llelts.(0) = Llvm.pointer_type (Llvm.i8_type x.llcontext))
+      && Poly.(llelts.(0) = Llvm.pointer_type x.llcontext)
       && Poly.(llelts.(1) = Llvm.i32_type x.llcontext) )
   then
     todo "exception of type other than {i8*, i32}: %a" pp_llvalue instr ()
@@ -880,11 +888,9 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
   let llcontext =
     Llvm.(module_context (global_parent (block_parent (instr_parent instr))))
   in
-  let llpi8 = Llvm.(pointer_type (integer_type llcontext 8)) in
-  let ti = Llvm.(named_struct_type llcontext "class.std::type_info") in
-  let tip = Llvm.pointer_type ti in
-  let void = Llvm.void_type llcontext in
-  let dtor = Llvm.(pointer_type (function_type void [|llpi8|])) in
+  let ptr_t = Llvm.pointer_type llcontext in
+  let tip = ptr_t in
+  let dtor = ptr_t in
   let cxa_exception = Llvm.struct_type llcontext [|tip; dtor|] in
   (i32, xlate_type x tip, cxa_exception)
 
@@ -1633,10 +1639,9 @@ let add_function_attr ~attr ~pred =
       if pred (Llvm.value_name fn) then
         Llvm.add_function_attr fn attr Llvm.AttrIndex.Function )
 
-let transform ~internalize ~preserve_fns ~opt_level ~size_level :
+let transform ~internalize:_ ~preserve_fns ~opt_level:_ ~size_level:_ :
     Llvm.llmodule -> unit =
  fun llmodule ->
-  let pm = Llvm.PassManager.create () in
   let should_preserve_fn =
     let fns = Config.find_list "entry-points" @ preserve_fns in
     fun x -> List.exists ~f:(String.equal x) fns
@@ -1648,18 +1653,20 @@ let transform ~internalize ~preserve_fns ~opt_level ~size_level :
   add_function_attr
     ~attr:Llvm.(create_enum_attr (module_context llmodule) "noinline" 0L)
     ~pred:should_preserve_fn llmodule ;
-  if internalize then
-    Llvm_ipo.add_internalize_predicate pm should_preserve_fn ;
-  let pmb = Llvm_passmgr_builder.create () in
-  Llvm_passmgr_builder.set_opt_level opt_level pmb ;
-  Llvm_passmgr_builder.set_size_level size_level pmb ;
-  Llvm_passmgr_builder.populate_module_pass_manager pm pmb ;
-  Llvm_scalar_opts.add_scalarizer pm ;
-  Llvm_scalar_opts.add_memory_to_register_promotion pm ;
-  Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
-  Llvm_scalar_opts.add_cfg_simplification pm ;
-  Llvm.PassManager.run_module llmodule pm |> ignore ;
-  Llvm.PassManager.dispose pm
+  (* NOTE: PassManager is gone with no other way to run these passes,
+     commenting all this out :( *)
+  (* let pm = Llvm.PassManager.create () in if internalize then
+     Llvm_ipo.add_internalize_predicate pm should_preserve_fn ; let pmb =
+     Llvm_passmgr_builder.create () in Llvm_passmgr_builder.set_opt_level
+     opt_level pmb ; Llvm_passmgr_builder.set_size_level size_level pmb ;
+     Llvm_passmgr_builder.populate_module_pass_manager pm pmb ;
+     Llvm_scalar_opts.add_scalarizer pm ;
+     Llvm_scalar_opts.add_memory_to_register_promotion pm ;
+     Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
+     Llvm_scalar_opts.add_cfg_simplification pm ;
+     Llvm.PassManager.run_module llmodule pm |> ignore ;
+     Llvm.PassManager.dispose pm *)
+  ()
 
 let read_and_parse llcontext bc_file =
   [%Dbg.call fun {pf} -> pf "@ %s" bc_file]
