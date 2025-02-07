@@ -11,9 +11,28 @@ let iarray_to_list array = IArray.to_array array |> Array.to_list
 
 let reg_to_var_name reg = Textual.VarName.of_string (Reg.name reg)
 
-let to_textual_typ _llair_typ =
-  (* TODO: translate types *)
-  Textual.Typ.Void
+let rec to_textual_typ (typ : Llair.Typ.t) =
+  match typ with
+  | Function {return= _; args= _} ->
+      (* TODO: translate this to Textual when it will be added soon.  *)
+      Textual.Typ.Void
+  | Integer _ ->
+      Textual.Typ.Int
+  | Float _ ->
+      Textual.Typ.Float
+  | Pointer {elt} ->
+      Textual.Typ.Ptr (to_textual_typ elt)
+  | Array {elt} ->
+      Textual.Typ.Array (to_textual_typ elt)
+  | Tuple _ ->
+      Textual.Typ.Void
+      (* TODO: give this an annonymous name and add this struct to our type definitions *)
+  | Struct {name} ->
+      Textual.Typ.Struct (Textual.TypeName.of_string name)
+      (* TODO: add this struct to our type definitions *)
+  | Opaque {name} ->
+      (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
+      Textual.Typ.Struct (Textual.TypeName.of_string name)
 
 
 let to_annotated_textual_typ llair_typ =
@@ -48,7 +67,7 @@ let to_qualified_proc_name func_name loc =
 
 let to_result_type func_name =
   let typ = FuncName.typ func_name in
-  to_textual_typ typ
+  to_annotated_textual_typ typ
 
 
 let to_formals func =
@@ -71,7 +90,7 @@ let translate_llair_functions functions =
     let formals, formals_types = to_formals func in
     let locals = to_locals func in
     let qualified_name = to_qualified_proc_name func_name func.Llair.loc in
-    let result_type = to_result_type func_name |> to_annotated_textual_typ in
+    let result_type = to_result_type func_name in
     ( {params= formals; locals}
     , Textual.ProcDecl.
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types} )
