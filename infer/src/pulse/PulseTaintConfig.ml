@@ -22,26 +22,32 @@ module Kind = struct
   (** Taint "kinds" are user-configurable and thus represented as strings. This hash table ensures
       we only store one copy of each kind. It also identifies which kinds are designated for data
       flow reporting only. *)
-  let all_kinds = Hashtbl.create (module String)
+  module StringHash = Concurrent.MakeHashtbl (IString.Hash)
+
+  let all_kinds = StringHash.create 1
 
   let of_string name =
     (* use [all_kinds] to do a weak hashconsing and try to keep only one version of each string
        around. This does not ensure we always get the same representative for each string because
        kinds get marshalled in and out of summaries, which does not maintain physical equality
        between equal kinds *)
-    (Hashtbl.find_or_add all_kinds name ~default:(fun () -> {name; is_data_flow_only= false})).name
+    ( StringHash.find_opt all_kinds name
+    |> Option.value_or_thunk ~default:(fun () ->
+           let v = {name; is_data_flow_only= false} in
+           StringHash.replace all_kinds name v ;
+           v ) )
+      .name
 
 
   let hash kind = String.hash kind
 
   let sexp_of_t kind = String.sexp_of_t kind
 
-  let mark_data_flow_only name =
-    Hashtbl.update all_kinds name ~f:(fun _ -> {name; is_data_flow_only= true})
-
+  let mark_data_flow_only name = StringHash.replace all_kinds name {name; is_data_flow_only= true}
 
   let is_data_flow_only name =
-    Hashtbl.find all_kinds name |> Option.exists ~f:(fun {is_data_flow_only} -> is_data_flow_only)
+    StringHash.find_opt all_kinds name
+    |> Option.exists ~f:(fun {is_data_flow_only} -> is_data_flow_only)
 
 
   let pp fmt kind =
