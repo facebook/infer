@@ -1704,8 +1704,15 @@ value llvm_delete_global(value GlobalVar) {
 }
 
 /* llvalue -> llvalue option */
-value llvm_global_initializer(value GlobalVar) {
-  return ptr_to_option(LLVMGetInitializer(Value_val(GlobalVar)));
+CAMLprim value llvm_global_initializer(LLVMValueRef GlobalVar) {
+  CAMLparam0();
+  LLVMValueRef Init;
+  if ((Init = LLVMGetInitializer(GlobalVar))) {
+    value Option = alloc(1, 0);
+    Field(Option, 0) = (value) Init;
+    CAMLreturn(Option);
+  }
+  CAMLreturn(Val_int(0));
 }
 
 /* llvalue -> llvalue -> unit */
