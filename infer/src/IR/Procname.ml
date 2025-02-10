@@ -1384,7 +1384,6 @@ end)
 
 include Comparable
 module Hash = Hashtbl.Make (Hashable)
-module LRUHash = LRUHashtbl.Make (Hashable)
 module HashQueue = Hash_queue.Make (Hashable)
 module HashSet = HashSet.Make (Hashable)
 

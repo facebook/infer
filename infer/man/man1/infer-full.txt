@@ -3450,9 +3450,6 @@ INTERNAL OPTIONS
            changed files index is a suffix of its name. (Conversely:
            --no-suffix-match-changed-files)
 
-       --summaries-caches-max-size int
-           The maximum amount of elements the summaries LRU caches can hold
-
        --suppress-lint-ignore-types
            Activates: [DEPRECATED] Check only the presence of @SuppressLint
            but not the issues types specified as parameters to the

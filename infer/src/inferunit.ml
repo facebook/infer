@@ -36,7 +36,6 @@ let () =
         ; IListTests.tests
         ; JavaClassNameTests.tests
         ; LivenessTests.tests
-        ; LRUHashtblTests.tests
         ; ProcCfgTests.tests
         ; RestartSchedulerTests.tests
         ; SchedulerTests.tests
