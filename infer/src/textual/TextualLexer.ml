@@ -165,6 +165,8 @@ let build_mainlex keywords =
         LABEL (String.subo ~pos:1 lexeme)
     | "fun", blanks, "(" ->
         FUN
+    | "(", blanks, "fun", blanks, "_", blanks, "->", blanks, "_", blanks, ")" ->
+        FUNTYPE
     | ("?" | ident), blanks, ".", blanks, ident, blanks, "(" -> (
         let lexeme = Lexbuf.lexeme lexbuf in
         match String.split_on_chars lexeme ~on:['.'; '('] with

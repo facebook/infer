@@ -41,6 +41,8 @@ let rec compat ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       true (* no subtyping check yet *)
   | Array t1, Array t2 ->
       compat ~assigned:t1 ~given:t2
+  | (Fun _ as fun1), (Fun _ as fun2) ->
+      Typ.equal fun1 fun2
   | _, _ ->
       false
 

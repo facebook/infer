@@ -24,6 +24,7 @@ error2.sil, line 19, column 9: SIL consistency error: function g which can be ca
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
 error2.sil, line 15, column 8: SIL consistency error: label lab2 is not declared in function f
 error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function B.f
+fun_type.sil, line 12, column 8: textual type error: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected
 twice.sil: SIL consistency error: node entry is implemented twice in the same function f
 twice.sil: SIL consistency error: parameter x is declared twice in the same function f
 twice.sil: SIL consistency error: function f is implemented twice in the same file

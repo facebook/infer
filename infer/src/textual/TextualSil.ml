@@ -262,6 +262,12 @@ module TypBridge = struct
           Tfloat FFloat (* FIXME: add size *)
       | Void ->
           Tvoid
+      | Fun None ->
+          Tfun None
+      | Fun (Some {params_type; return_type}) ->
+          let params_type = List.map ~f:(to_sil lang) params_type in
+          let return_type = to_sil lang return_type in
+          Tfun (Some {params_type; return_type})
       | Ptr t ->
           Tptr (to_sil lang t, Pk_pointer)
       | Struct name ->

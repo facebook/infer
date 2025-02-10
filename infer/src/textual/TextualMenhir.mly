@@ -33,6 +33,7 @@
 %token FALSE
 %token FLOAT
 %token FUN
+%token FUNTYPE
 %token GLOBAL
 %token HANDLERS
 %token IF
@@ -313,6 +314,10 @@ base_typ:
     { Typ.Array typ }
   | LPAREN typ=typ RPAREN
     { typ }
+  | LPAREN FUN params_type=separated_list(COMMA, typ) RPAREN ARROW return_type=typ RPAREN
+    { Typ.Fun (Some {params_type; return_type}) }
+  | FUNTYPE
+    { Typ.Fun None}
 
 typ:
   | typ=base_typ

@@ -165,10 +165,13 @@ module Typ : sig
     | Float  (** float type *)
     | Null
     | Void  (** void type *)
+    | Fun of function_prototype option  (** function type *)
     | Ptr of t  (** pointer type *)
     | Struct of TypeName.t  (** structured value type name *)
     | Array of t  (** array type *)
   [@@deriving equal]
+
+  and function_prototype = {params_type: t list; return_type: t} [@@deriving equal]
 
   val pp : F.formatter -> t -> unit
 

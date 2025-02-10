@@ -341,8 +341,18 @@ module Attr = struct
 end
 
 module Typ = struct
-  type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
+  type t =
+    | Int
+    | Float
+    | Null
+    | Void
+    | Fun of function_prototype option
+    | Ptr of t
+    | Struct of TypeName.t
+    | Array of t
   [@@deriving equal, hash]
+
+  and function_prototype = {params_type: t list; return_type: t} [@@deriving equal, hash]
 
   let rec pp fmt = function
     | Int ->
@@ -353,6 +363,10 @@ module Typ = struct
         F.pp_print_string fmt "null"
     | Void ->
         F.pp_print_string fmt "void"
+    | Fun None ->
+        F.pp_print_string fmt "(fun _ -> _)"
+    | Fun (Some {params_type; return_type}) ->
+        F.fprintf fmt "(fun (%a) -> %a)" (Pp.comma_seq pp) params_type pp return_type
     | Ptr typ ->
         F.pp_print_char fmt '*' ;
         pp fmt typ
