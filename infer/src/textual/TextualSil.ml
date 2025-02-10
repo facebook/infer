@@ -448,7 +448,7 @@ module ProcDeclBridge = struct
            of the call site signature. This way we'll be able to match a particular overload of the
            procname with its definition from a different translation unit during the analysis
            phase. *)
-        let arity = match callsig with Hack {arity} | Python {arity} -> arity | Other _ -> None in
+        let arity = ProcSig.arity callsig in
         let improved_match name_to_sil make =
           if Option.is_some t.formals_types then to_sil lang t
           else

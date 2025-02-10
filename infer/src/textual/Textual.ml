@@ -450,7 +450,6 @@ module ProcSig = struct
   module T = struct
     type t =
       | Hack of {qualified_name: QualifiedProcName.t; arity: int option}
-      | Python of {qualified_name: QualifiedProcName.t; arity: int option}
       | Other of {qualified_name: QualifiedProcName.t}
     [@@deriving equal, hash, show {with_path= false}]
   end
@@ -458,19 +457,17 @@ module ProcSig = struct
   include T
 
   let to_qualified_procname = function
-    | Hack {qualified_name} | Python {qualified_name} | Other {qualified_name} ->
+    | Hack {qualified_name} | Other {qualified_name} ->
         qualified_name
 
 
-  let arity = function Hack {arity} | Python {arity} -> arity | Other _ -> None
+  let arity = function Hack {arity} -> arity | Other _ -> None
 
   let map_arity procsig ~f =
     match procsig with
     | Hack {qualified_name; arity= Some arity} ->
         Hack {qualified_name; arity= Some (f arity)}
-    | Python {qualified_name; arity= Some arity} ->
-        Python {qualified_name; arity= Some (f arity)}
-    | Hack {arity= None} | Python {arity= None} | Other _ ->
+    | Hack {arity= None} | Other _ ->
         procsig
 
 
@@ -481,7 +478,7 @@ module ProcSig = struct
   let is_hack_init = function
     | Hack {qualified_name} ->
         QualifiedProcName.is_hack_init qualified_name
-    | Python _ | Other _ ->
+    | Other _ ->
         false
 
 
@@ -504,9 +501,7 @@ module ProcDecl = struct
   let to_sig {qualified_name; formals_types} = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Python ->
-        ProcSig.Python {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Java | None ->
+    | Some Lang.Python | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -770,9 +765,7 @@ module Exp = struct
   let call_sig qualified_name nb_args = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Some nb_args}
-    | Some Lang.Python ->
-        ProcSig.Python {qualified_name; arity= Some nb_args}
-    | Some Lang.Java | None ->
+    | Some Lang.Python | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
