@@ -3830,11 +3830,7 @@ let post_parsing_initialization command_opt =
     let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
     (* increase the minor heap size *)
     let minor_heap_size = new_size 8 in
-    (* use the best-fit allocator *)
-    let allocation_policy = 2 in
-    (* increase the overhead as the default is tuned for the next-fit allocator *)
-    let space_overhead = 120 in
-    Gc.set {ctrl with minor_heap_size; allocation_policy; space_overhead}
+    Gc.set {ctrl with minor_heap_size}
   in
   set_gc_params () ;
   let biabd_symops_timeout, biabd_seconds_timeout =
