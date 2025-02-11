@@ -453,7 +453,8 @@ OPTIONS
 
        --timeout float
            Time after which any checker (except biabduction) should give up
-           analysing the current function or method, in seconds
+           analysing the current function or method, in seconds. Not
+           implemented for multicore mode
 
        --top-longest-proc-duration-size int
            Number of procedures for which we track longest analysis duration

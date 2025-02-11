@@ -47,7 +47,7 @@ let check_timeout timeout =
     raise (Timeout span) )
 
 
-let check_timeout () = Option.iter ~f:check_timeout Config.timeout
+let check_timeout () = if not Config.multicore then Option.iter ~f:check_timeout Config.timeout
 
 let time timeable ~on_timeout ~f =
   let timer = suspend () in
