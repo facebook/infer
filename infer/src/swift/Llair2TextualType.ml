@@ -29,9 +29,10 @@ let rec to_textual_field_decls struct_name fields =
 
 and to_textual_typ (typ : Llair.Typ.t) =
   match typ with
-  | Function {return= _; args= _} ->
-      (* TODO: translate this to Textual when it will be added soon.  *)
-      Textual.Typ.Void
+  | Function {return; args} ->
+      let params_type = StdUtils.iarray_to_list args |> List.map ~f:to_textual_typ in
+      let return_type = Option.value_map ~f:to_textual_typ return ~default:Textual.Typ.Void in
+      Textual.Typ.Fun (Some {params_type; return_type})
   | Integer _ ->
       Textual.Typ.Int
   | Float _ ->
