@@ -29,3 +29,4 @@ async_typing.py, async_typing.fp_await_condition_typing_user_defined_ok, 5, PULS
 async_typing.py, async_typing.fp_await_condition_typing_fun_ok, 7, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_typing.py, async_typing.fp_await_condition_val_equal_ok, 6, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_typing.py, async_typing.await_condition_phys_equal_bad, 6, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
+cyclic_import.py, cyclic_import.__module_body__, 5, MUTUAL_RECURSION_CYCLE, no_bucket, WARNING, [`cyclic_import.__module_body__` makes a recursive call to `cyclic_import.__module_body__`]

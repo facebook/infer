@@ -272,33 +272,38 @@ module Dict = struct
 
   let propagate_static_type_on_load dict key load_res : unit DSL.model_monad =
     let open DSL.Syntax in
-    let rec propagate_field_type tname key =
+    let rec propagate_field_type seen tname key =
       let field = Fieldname.make tname key in
-      let* opt_info = tenv_resolve_field_info tname field in
-      match opt_info with
-      | Some {Struct.typ= field_typ} -> (
-        match Typ.name (Typ.strip_ptr field_typ) with
-        | Some (PythonClass (ModuleAttribute {module_name; attr_name})) ->
-            let tname = Typ.PythonClass (Globals module_name) in
-            let* tname_is_defined = tenv_type_is_defined tname in
-            if tname_is_defined then propagate_field_type tname attr_name
-            else
-              Typ.Name.Python.concatenate_package_name_and_file_name tname attr_name
-              |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
-        | Some static_tname ->
-            add_static_type static_tname load_res
-        | None ->
-            ret () )
-      | None -> (
-        match tname with
-        | Typ.PythonClass (Globals module_name) ->
-            let static_type = Typ.PythonClass (ModuleAttribute {module_name; attr_name= key}) in
-            add_static_type static_type load_res
-        | _ ->
-            ret () )
+      if Fieldname.Set.mem field seen then
+        (* such a strange cyclic depency can happen in a file that imports itself *)
+        ret ()
+      else
+        let seen = Fieldname.Set.add field seen in
+        let* opt_info = tenv_resolve_field_info tname field in
+        match opt_info with
+        | Some {Struct.typ= field_typ} -> (
+          match Typ.name (Typ.strip_ptr field_typ) with
+          | Some (PythonClass (ModuleAttribute {module_name; attr_name})) ->
+              let tname = Typ.PythonClass (Globals module_name) in
+              let* tname_is_defined = tenv_type_is_defined tname in
+              if tname_is_defined then propagate_field_type seen tname attr_name
+              else
+                Typ.Name.Python.concatenate_package_name_and_file_name tname attr_name
+                |> option_iter ~f:(fun static_tname -> add_static_type static_tname load_res)
+          | Some static_tname ->
+              add_static_type static_tname load_res
+          | None ->
+              ret () )
+        | None -> (
+          match tname with
+          | Typ.PythonClass (Globals module_name) ->
+              let static_type = Typ.PythonClass (ModuleAttribute {module_name; attr_name= key}) in
+              add_static_type static_type load_res
+          | _ ->
+              ret () )
     in
     let* opt_static_type = get_static_type dict in
-    option_iter opt_static_type ~f:(fun tname -> propagate_field_type tname key)
+    option_iter opt_static_type ~f:(fun tname -> propagate_field_type Fieldname.Set.empty tname key)
 
 
   let get_str_key ?(propagate_static_type = false) dict key : DSL.aval DSL.model_monad =
