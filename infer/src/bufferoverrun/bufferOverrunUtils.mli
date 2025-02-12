@@ -131,3 +131,5 @@ module ReplaceCallee : sig
 end
 
 val clear_cache : unit -> unit
+
+val set_cache_lru_limit : lru_limit:int option -> unit

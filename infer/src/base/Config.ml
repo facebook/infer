@@ -1875,6 +1875,11 @@ and incremental_analysis, mark_unchanged_procs, invalidate_only =
   (incremental_analysis, mark_unchanged_procs, invalidate_only)
 
 
+and inferbo_lru_max_size =
+  CLOpt.mk_int ~long:"inferbo-lru-max-size" ~meta:"int" ~default:500
+    "Specify size of inferbo LRU cache. Relevant only to multicore mode. Defaults to 500"
+
+
 and _inferconfig_path =
   (* This is a no-op argument ensuring a meaningful message in case of error, as well as to
      silently consume the argument which is parsed specially. *)
@@ -4289,6 +4294,8 @@ and impurity_report_immutable_modifications = !impurity_report_immutable_modific
 and inclusive_cost = !inclusive_cost
 
 and incremental_analysis = !incremental_analysis
+
+and inferbo_lru_max_size = !inferbo_lru_max_size
 
 and inline_func_pointer_for_testing = !inline_func_pointer_for_testing
 

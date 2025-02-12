@@ -2925,6 +2925,10 @@ INTERNAL OPTIONS
            Deactivates: Computes the inclusive cost (Conversely:
            --inclusive-cost)
 
+       --inferbo-lru-max-size int
+           Specify size of inferbo LRU cache. Relevant only to multicore
+           mode. Defaults to 500
+
        --inferconfig-path path
            Path to the .inferconfig file, overriding the effects of the
            INFERCONFIG environment variable as well as the filesystem search

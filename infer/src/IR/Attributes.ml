@@ -29,9 +29,7 @@ let find =
       (run_query select_statement_adb)
 
 
-module Cache = Concurrent.MakeCache (struct
-  type t = Procname.t [@@deriving compare, equal, hash, show, sexp]
-end)
+module Cache = Procname.Cache
 
 let load, clear_cache, store, set_lru_limit =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)

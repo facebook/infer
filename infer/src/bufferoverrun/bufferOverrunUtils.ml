@@ -376,15 +376,17 @@ module ReplaceCallee = struct
 
 
   module CacheForMakeShared = struct
-    module Cache = Concurrent.MakeMap (Procname.Map)
+    module Cache = Procname.Cache
 
-    let results : Procname.t option Cache.t = Cache.empty ()
+    let results = Cache.create ~name:"inferbo"
 
     let add pname value = Cache.add results pname value
 
-    let find_opt pname = Cache.find_opt results pname
+    let find_opt pname = Cache.lookup results pname
 
     let clear () = Cache.clear results
+
+    let set_lru_limit ~lru_limit = Cache.set_lru_mode ~lru_limit results
   end
 
   let get_cpp_constructor_of_make_shared =
@@ -433,3 +435,5 @@ module ReplaceCallee = struct
 end
 
 let clear_cache () = ReplaceCallee.CacheForMakeShared.clear ()
+
+let set_cache_lru_limit ~lru_limit = ReplaceCallee.CacheForMakeShared.set_lru_limit ~lru_limit

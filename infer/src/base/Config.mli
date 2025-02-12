@@ -459,6 +459,8 @@ val infer_is_clang : bool
 
 val infer_is_javac : bool
 
+val inferbo_lru_max_size : int
+
 val inferconfig_file : string option
 
 val inline_func_pointer_for_testing : string option

@@ -1399,6 +1399,10 @@ module Set = PrettyPrintable.MakePPSet (struct
   let pp = pp
 end)
 
+module Cache = Concurrent.MakeCache (struct
+  type nonrec t = t [@@deriving compare, equal, hash, show, sexp]
+end)
+
 let get_qualifiers pname =
   match pname with
   | C {c_name} ->
