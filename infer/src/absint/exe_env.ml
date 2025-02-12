@@ -37,23 +37,10 @@ let get_proc_source pname =
       L.die InternalError "exe_env: could not find procedure attributes for %a@\n" Procname.pp pname
 
 
-let load_java_global_tenv _exe_env =
-  (* We don't use exe_env, though require it as a param.
-     This is to make API consistent with other methods and to allow for future implementation changes.
-     If somebody wants to fetch java global environment, they'd better have exe_env instance provided.
-     If they don't they are probably doing something wrong.
-  *)
-  match Tenv.Global.load () with
-  | None ->
-      L.die InternalError "Could not load the global tenv"
-  | Some tenv ->
-      tenv
-
-
 let get_proc_tenv exe_env pname =
   match pname with
   | Procname.Java _ ->
-      load_java_global_tenv exe_env
+      Tenv.Global.load () |> Option.value_exn
   | _ ->
       get_proc_source pname |> get_source_tenv exe_env
       |> Option.value_or_thunk ~default:(fun () ->

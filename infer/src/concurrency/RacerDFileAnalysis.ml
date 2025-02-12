@@ -719,7 +719,7 @@ let should_keep_container_access analyze tenv ((_base, path) : PathModuloThis.t)
 let analyze ({InterproceduralAnalysis.file_exe_env; analyze_file_dependency} as file_t) =
   let synchronized_container_filter = function
     | Typ.JavaClass _ ->
-        let tenv = Exe_env.load_java_global_tenv file_exe_env in
+        let tenv = Tenv.Global.load () |> Option.value_exn in
         ReportMap.filter_container_accesses
           (should_keep_container_access analyze_file_dependency tenv)
     | _ ->
