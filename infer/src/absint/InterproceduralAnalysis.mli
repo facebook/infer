@@ -16,7 +16,6 @@ type 'payload t =
   ; tenv: Tenv.t  (** {!IR.Tenv.t} corresponding to the current procedure *)
   ; err_log: Errlog.t
         (** the issue log for the current procedure (internally a mutable data structure) *)
-  ; exe_env: Exe_env.t  (** {!Exe_env.t} for the current analysis *)
   ; analyze_dependency: ?specialization:Specialization.t -> Procname.t -> 'payload AnalysisResult.t
         (** On-demand analysis of callees or other dependencies of the analysis of the current
             procedure. Uses [Ondemand.analyze_procedure]. If [specialization] is provided, the
@@ -33,7 +32,6 @@ val for_procedure : Procdesc.t -> Errlog.t -> 'a t -> 'a t
 type 'payload file_t =
   { source_file: SourceFile.t  (** the source file under analysis *)
   ; procedures: Procname.t list  (** list of procedures declared in the source file *)
-  ; file_exe_env: Exe_env.t  (** {!Exe_env.t} for the current analysis *)
   ; analyze_file_dependency: Procname.t -> 'payload AnalysisResult.t
         (** On-demand analysis of dependencies needed for the file analysis, e.g. the proc names in
             [procedures] *) }

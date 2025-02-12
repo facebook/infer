@@ -27,15 +27,14 @@ open! IStd
     - get_proc_desc to get a proc desc from a proc name
     - Type environment.
     - Procedure for the callback to act on. *)
-type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t; proc_desc: Procdesc.t}
+type proc_callback_args = {summary: Summary.t; proc_desc: Procdesc.t}
 
 (* Result is updated summary with all information relevant for the checker (including list of errors found by the checker for this procedure *)
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type proc_callback_with_specialization_t = ?specialization:Specialization.t -> proc_callback_t
 
-type file_callback_args =
-  {procedures: Procname.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
+type file_callback_args = {procedures: Procname.t list; source_file: SourceFile.t}
 
 (** Result is a list of additional issues found at this stage (complementary to issues generated on
     per-procedure analysis stage) *)
@@ -59,17 +58,12 @@ val register_file_callback : Checker.t -> Language.t -> file_callback_t -> unit
     checker. *)
 
 val iterate_procedure_callbacks :
-     Exe_env.t
-  -> AnalysisRequest.t
-  -> ?specialization:Specialization.t
-  -> Summary.t
-  -> Procdesc.t
-  -> Summary.t
+  AnalysisRequest.t -> ?specialization:Specialization.t -> Summary.t -> Procdesc.t -> Summary.t
 (** Invoke all registered procedure callbacks on the given procedure. *)
 
 val is_specialized_for : Specialization.t -> Summary.t -> bool
 (** Check if all callbacks are specialized wrt the given specialization *)
 
-val iterate_file_callbacks_and_store_issues : Procname.t list -> Exe_env.t -> SourceFile.t -> unit
+val iterate_file_callbacks_and_store_issues : Procname.t list -> SourceFile.t -> unit
 (** Invoke all registered file callbacks on a file, and store produced errors in a corresponding
     directory. Guaranteed to be called after all procedure-level callbacks are invoked *)

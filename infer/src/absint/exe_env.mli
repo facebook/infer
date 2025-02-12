@@ -11,11 +11,6 @@ open! IStd
 (** Execution environments are a means to get a function's type environment and integer widths and
     cache those *)
 
-type t
-
-val mk : unit -> t
-(** Create a new cache *)
-
 val get_proc_tenv : Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
 

@@ -36,29 +36,28 @@ let analyze_target :
     | MissingDependencyException.MissingDependencyException ->
         Some Ok
   in
-  let analyze_source_file exe_env source_file =
+  let analyze_source_file source_file =
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         let result =
           run_and_interpret_result ~f:(fun () ->
-              Ondemand.analyze_file exe_env AnalysisRequest.all source_file )
+              Ondemand.analyze_file AnalysisRequest.all source_file )
         in
         if Config.write_html then Printer.write_all_html_files source_file ;
         result )
   in
-  let analyze_proc_name exe_env ~specialization proc_name =
+  let analyze_proc_name ~specialization proc_name =
     run_and_interpret_result ~f:(fun () ->
-        Ondemand.analyze_proc_name_toplevel exe_env AnalysisRequest.all ~specialization proc_name )
+        Ondemand.analyze_proc_name_toplevel AnalysisRequest.all ~specialization proc_name )
   in
   fun target ->
     let start = ExecutionDuration.counter () in
-    let exe_env = Exe_env.mk () in
     let result =
       match target with
       | Procname {proc_name; specialization} ->
-          analyze_proc_name exe_env ~specialization proc_name
+          analyze_proc_name ~specialization proc_name
       | File source_file ->
-          analyze_source_file exe_env source_file
+          analyze_source_file source_file
     in
     (* clear cache for each source file to avoid it growing unboundedly; we do it here to
        release memory before potentially going idle *)

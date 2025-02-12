@@ -8,14 +8,13 @@
 open! IStd
 module L = Logging
 
-type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t; proc_desc: Procdesc.t}
+type proc_callback_args = {summary: Summary.t; proc_desc: Procdesc.t}
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
 type proc_callback_with_specialization_t = ?specialization:Specialization.t -> proc_callback_t
 
-type file_callback_args =
-  {procedures: Procname.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
+type file_callback_args = {procedures: Procname.t list; source_file: SourceFile.t}
 
 type file_callback_t = file_callback_args -> IssueLog.t
 
@@ -54,8 +53,8 @@ let register_file_callback checker language (callback : file_callback_t) =
   file_callbacks_rev := {checker; language; callback} :: !file_callbacks_rev
 
 
-let iterate_procedure_callbacks exe_env analysis_req ?specialization
-    ({Summary.proc_name} as summary) proc_desc =
+let iterate_procedure_callbacks analysis_req ?specialization ({Summary.proc_name} as summary)
+    proc_desc =
   let procedure_language = Procname.get_language proc_name in
   Language.set_language procedure_language ;
   let is_specialized = Procdesc.is_specialized proc_desc in
@@ -86,7 +85,7 @@ let iterate_procedure_callbacks exe_env analysis_req ?specialization
                 () ) ) ;
         let summary =
           Timer.time (Checker checker)
-            ~f:(fun () -> callback ?specialization {summary; exe_env; proc_desc})
+            ~f:(fun () -> callback ?specialization {summary; proc_desc})
             ~on_timeout:(fun span ->
               L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
                 (Checker.get_id checker) span SourceFile.pp
@@ -103,9 +102,9 @@ let is_specialized_for specialization summary =
       is_already_specialized specialization summary )
 
 
-let iterate_file_callbacks_and_store_issues procedures exe_env source_file =
+let iterate_file_callbacks_and_store_issues procedures source_file =
   if not (List.is_empty !file_callbacks_rev) then
-    let environment = {procedures; source_file; exe_env} in
+    let environment = {procedures; source_file} in
     let language_matches language =
       match procedures with
       | procname :: _ ->

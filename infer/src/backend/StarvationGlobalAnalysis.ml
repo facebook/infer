@@ -69,7 +69,7 @@ module WorkHashSet = struct
   let add_pair work_set caller pair = add (caller, pair) work_set
 end
 
-let report exe_env work_set =
+let report work_set =
   let open Domain in
   let task_bar = TaskBar.create ~jobs:1 in
   let to_do_items = ref (WorkHashSet.length work_set) in
@@ -86,7 +86,7 @@ let report exe_env work_set =
            let acc =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
-                 Ondemand.analyze_proc_name exe_env analysis_req ~caller_summary:summary pname
+                 Ondemand.analyze_proc_name analysis_req ~caller_summary:summary pname
                  |> AnalysisResult.to_option
                  |> Option.bind ~f:(fun summary ->
                         SafeLazy.force_option summary.Summary.payloads.starvation ) )
@@ -111,10 +111,9 @@ let report exe_env work_set =
 let whole_program_analysis () =
   L.progress "Starvation whole program analysis starts.@." ;
   let work_set = WorkHashSet.create 1 in
-  let exe_env = Exe_env.mk () in
   L.progress "Processing on-disk summaries...@." ;
   Summary.OnDisk.iter_specs ~f:(iter_summary ~f:(WorkHashSet.add_pair work_set)) ;
   let num_pairs = WorkHashSet.length work_set in
   L.progress "Loaded %d pairs@." num_pairs ;
   L.progress "Reporting on processed summaries...@." ;
-  report exe_env work_set
+  report work_set

@@ -12,10 +12,10 @@ open! IStd
 let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session}
 
 let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
-    {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
+    {Callbacks.proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
     ?(tenv = Exe_env.get_proc_tenv proc_name) () =
   let analyze_dependency ?specialization proc_name =
-    Ondemand.analyze_proc_name exe_env analysis_req ?specialization ~caller_summary proc_name
+    Ondemand.analyze_proc_name analysis_req ?specialization ~caller_summary proc_name
     |> Result.bind ~f:(fun {Summary.payloads} ->
            f_analyze_dep (get_payload payloads) |> AnalysisResult.of_option )
   in
@@ -26,7 +26,6 @@ let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
   ( { InterproceduralAnalysis.proc_desc
     ; tenv
     ; err_log
-    ; exe_env
     ; analyze_dependency
     ; update_stats
     ; add_errlog= Summary.OnDisk.add_errlog }
@@ -90,16 +89,15 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
     ~set_payload:(Field.fset payload_field) checker callbacks
 
 
-let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
+let interprocedural_file payload_field checker {Callbacks.procedures; source_file} =
   let analyze_file_dependency proc_name =
-    Ondemand.analyze_proc_name_for_file_analysis exe_env
+    Ondemand.analyze_proc_name_for_file_analysis
       (Payloads.analysis_request_of_field payload_field)
       proc_name
     |> Result.bind ~f:(fun {Summary.payloads; _} ->
            Field.get payload_field payloads |> SafeLazy.force_option |> AnalysisResult.of_option )
   in
-  checker
-    {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
+  checker {InterproceduralAnalysis.procedures; source_file; analyze_file_dependency}
 
 
 let to_intraprocedural_t {Callbacks.summary= {proc_name; err_log}; proc_desc} =

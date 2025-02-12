@@ -14,8 +14,6 @@ type t =
 
 let exe_env = {tenvs_map= SourceFile.Hash.create 1; int_widths_map= SourceFile.Hash.create 1}
 
-let mk () = exe_env
-
 let clear_caches () =
   SourceFile.Hash.clear exe_env.tenvs_map ;
   SourceFile.Hash.clear exe_env.int_widths_map
