@@ -29,11 +29,13 @@ let find =
       (run_query select_statement_adb)
 
 
-module Cache = Concurrent.MakeMap (Procname.Map)
+module Cache = Concurrent.MakeCache (struct
+  type t = Procname.t [@@deriving compare, equal, hash, show, sexp]
+end)
 
-let load, clear_cache, store =
+let load, clear_cache, store, set_lru_limit =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)
-  let cache : ProcAttributes.t Cache.t = Cache.empty () in
+  let cache : ProcAttributes.t Cache.t = Cache.create ~name:"attributes" in
   let load_from_uid uid =
     let result = find uid in
     Option.iter result ~f:(fun attrs -> Cache.add cache (ProcAttributes.get_proc_name attrs) attrs) ;
@@ -41,7 +43,7 @@ let load, clear_cache, store =
   in
   let load pname =
     Dependencies.record_pname_dep Other pname ;
-    match Cache.find_opt cache pname with
+    match Cache.lookup cache pname with
     | Some _ as result ->
         result
     | None -> (
@@ -72,7 +74,8 @@ let load, clear_cache, store =
     DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis ;
     Cache.remove cache pname
   in
-  (load, clear_cache, store)
+  let set_lru_limit ~lru_limit = Cache.set_lru_mode cache ~lru_limit in
+  (load, clear_cache, store, set_lru_limit)
 
 
 let load_exn pname = Option.value_exn (load pname)

@@ -144,3 +144,65 @@ struct
 
   let wrap_hashtable hash = {mutex= Error_checking_mutex.create (); hash}
 end
+
+module type CacheS = sig
+  type key
+
+  type 'a t
+
+  val create : name:string -> 'a t
+
+  val lookup : 'a t -> key -> 'a option
+
+  val add : 'a t -> key -> 'a -> unit
+
+  val remove : 'a t -> key -> unit
+
+  val clear : 'a t -> unit
+
+  val set_lru_mode : 'a t -> lru_limit:int option -> unit
+end
+
+module MakeCache (Key : sig
+  type t [@@deriving compare, equal, hash, show, sexp]
+end) : CacheS with type key = Key.t = struct
+  module HQ = Hash_queue.Make (Key)
+
+  type key = Key.t
+
+  type 'a t =
+    {mutex: Error_checking_mutex.t; name: string; hq: 'a HQ.t; mutable lru_limit: int option}
+
+  let create ~name = {name; mutex= Error_checking_mutex.create (); hq= HQ.create (); lru_limit= None}
+
+  let in_mutex {mutex; hq} ~f = Error_checking_mutex.critical_section mutex ~f:(fun () -> f hq)
+
+  let add t k v =
+    in_mutex t ~f:(fun hq ->
+        HQ.remove hq k |> ignore ;
+        HQ.enqueue_front_exn hq k v ;
+        match t.lru_limit with
+        | None ->
+            ()
+        | Some limit ->
+            let n = HQ.length hq - limit in
+            if n > 0 then HQ.drop_back ~n hq )
+
+
+  let lookup t k =
+    in_mutex t ~f:(fun hq ->
+        let result_opt = HQ.lookup_and_move_to_front hq k in
+        if Option.is_some result_opt then Stats.add_cache_hit ~name:t.name
+        else Stats.add_cache_miss ~name:t.name ;
+        result_opt )
+
+
+  let clear t = in_mutex t ~f:HQ.clear
+
+  let remove t key = in_mutex t ~f:(fun h -> HQ.remove h key |> ignore)
+
+  let set_lru_mode t ~lru_limit =
+    in_mutex t ~f:(fun hq ->
+        t.lru_limit <- lru_limit ;
+        HQ.clear hq )
+end

@@ -16,7 +16,7 @@ open TaskSchedulerTypes
 let clear_caches () =
   Summary.OnDisk.clear_cache () ;
   BufferOverrunUtils.clear_cache () ;
-  Attributes.clear_cache () ;
+  if not Config.multicore then Attributes.clear_cache () ;
   Dependencies.clear ()
 
 
@@ -159,6 +159,7 @@ let analyze replay_call_graph source_files_to_analyze =
     , [MissingDependencies.get ()] ) )
   else if Config.multicore then (
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
+    Attributes.set_lru_limit ~lru_limit:(Some Config.attributes_lru_max_size) ;
     DomainPool.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue:ignore
       ~child_epilogue:ignore ~tasks:(fun () ->
         tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze) )

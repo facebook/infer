@@ -140,6 +140,8 @@ val annotation_reachability_report_source_and_sink : bool
 
 val append_buck_flavors : string list
 
+val attributes_lru_max_size : int
+
 val biabduction_abs_struct : int
 
 val biabduction_abs_val : int

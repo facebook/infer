@@ -155,10 +155,78 @@ module LongestProcDurationHeap = struct
   include Heap
 end
 
+module CacheStats = struct
+  type cache_data = {mutable hits: int; mutable misses: int}
+
+  type t = cache_data IString.Map.t
+
+  let merge m1 m2 =
+    IString.Map.merge
+      (fun _name data1_opt data2_opt ->
+        match (data1_opt, data2_opt) with
+        | _, None ->
+            data1_opt
+        | None, _ ->
+            data2_opt
+        | Some data1, Some data2 ->
+            Some {hits= data1.hits + data2.hits; misses= data1.misses + data2.misses} )
+      m1 m2
+
+
+  let get_stats {hits; misses} =
+    let total_queries = hits + misses in
+    let hit_rate =
+      int_of_float @@ Float.round (float_of_int (100 * hits) /. float_of_int total_queries)
+    in
+    (hit_rate, total_queries)
+
+
+  let pp fmt t =
+    let pp_cache_data name data =
+      let hit_rate, total_queries = get_stats data in
+      F.fprintf fmt "cache stats: name=%s; hit rate=%d%%; total queries=%d@;" name hit_rate
+        total_queries
+    in
+    IString.Map.iter pp_cache_data t
+
+
+  let to_log_entries ~field_name:_ t =
+    IString.Map.fold
+      (fun name data acc ->
+        let hit_rate, total_queries = get_stats data in
+        LogEntry.mk_count ~label:(F.sprintf "backend_stats.cache.%s.hit_rate" name) ~value:hit_rate
+        :: LogEntry.mk_count
+             ~label:(F.sprintf "backend_stats.cache.%s.total_queries" name)
+             ~value:total_queries
+        :: acc )
+      t []
+
+
+  let init = IString.Map.empty
+
+  let add_hit t ~name =
+    IString.Map.update name
+      (fun data_opt ->
+        let data = Option.value data_opt ~default:{hits= 0; misses= 0} in
+        data.hits <- data.hits + 1 ;
+        Some data )
+      t
+
+
+  let add_miss t ~name =
+    IString.Map.update name
+      (fun data_opt ->
+        let data = Option.value data_opt ~default:{hits= 0; misses= 0} in
+        data.misses <- data.misses + 1 ;
+        Some data )
+      t
+end
+
 (* NOTE: there is a custom ppx for this data structure to generate boilerplate, see
    src/inferppx/StatsPpx.mli *)
 type t =
-  { mutable summary_file_try_load: IntCounter.t
+  { mutable cache_stats: CacheStats.t
+  ; mutable summary_file_try_load: IntCounter.t
   ; mutable summary_read_from_disk: IntCounter.t
   ; mutable summary_cache_hits: IntCounter.t
   ; mutable summary_cache_misses: IntCounter.t
@@ -255,6 +323,10 @@ let pp fmt stats =
     in
     F.fprintf fmt "pulse_summaries_total_disjuncts= %d@;" total
   in
+  let pp_cache_stats fmt field =
+    let cache_stats : CacheStats.t = Field.get field stats in
+    CacheStats.pp fmt cache_stats
+  in
   Fields.iter ~summary_file_try_load:(pp_int_field fmt) ~useful_times:(pp_time_counter_field fmt)
     ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
     ~summary_read_from_disk:(pp_int_field fmt)
@@ -284,6 +356,7 @@ let pp fmt stats =
     ~restart_scheduler_total_time:(pp_time_counter_field fmt)
     ~spec_store_times:(pp_time_counter_field fmt) ~topl_reachable_calls:(pp_int_field fmt)
     ~timings:(pp_serialized_field TimingsStat.deserialize Timings.pp fmt)
+    ~cache_stats:(pp_cache_stats fmt)
 
 
 (** machine-readable printing of selected fields, for tests *)
@@ -494,3 +567,8 @@ let set_useful_times execution_duration =
 
 let incr_spec_store_times counter =
   update_with Fields.spec_store_times ~f:(fun t -> TimeCounter.add_duration_since t counter)
+
+
+let add_cache_hit ~name = update_with Fields.cache_stats ~f:(fun t -> CacheStats.add_hit t ~name)
+
+let add_cache_miss ~name = update_with Fields.cache_stats ~f:(fun t -> CacheStats.add_miss t ~name)

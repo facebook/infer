@@ -84,3 +84,7 @@ val get : unit -> t
 
 val log_aggregate : t list -> unit
 (** log aggregated stats to infer's log file and to stats *)
+
+val add_cache_hit : name:string -> unit
+
+val add_cache_miss : name:string -> unit

@@ -78,3 +78,25 @@ end
 
 (** a thread safe hashtable *)
 module MakeHashtbl (H : Stdlib.Hashtbl.S) : Hashtbl with type key = H.key with module Hash = H
+
+module type CacheS = sig
+  type key
+
+  type 'a t
+
+  val create : name:string -> 'a t
+
+  val lookup : 'a t -> key -> 'a option
+
+  val add : 'a t -> key -> 'a -> unit
+
+  val remove : 'a t -> key -> unit
+
+  val clear : 'a t -> unit
+
+  val set_lru_mode : 'a t -> lru_limit:int option -> unit
+end
+
+module MakeCache (Key : sig
+  type t [@@deriving compare, equal, hash, show, sexp]
+end) : CacheS with type key = Key.t

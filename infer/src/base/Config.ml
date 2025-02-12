@@ -672,6 +672,12 @@ and append_buck_flavors =
      $(b,--buck-compilation-database) option."
 
 
+and attributes_lru_max_size =
+  CLOpt.mk_int ~long:"attributes-lru-max-size" ~meta:"int" ~default:500
+    "Specify size of procedure attribute LRU cache. Relevant only to multicore mode. Defaults to \
+     500"
+
+
 and biabduction_abs_struct =
   CLOpt.mk_int ~long:"biabduction-abs-struct" ~default:1 ~meta:"int"
     {|Specify abstraction level for fields of structs:
@@ -3894,6 +3900,8 @@ and annotation_reachability_no_allocation = !annotation_reachability_no_allocati
 and annotation_reachability_report_source_and_sink = !annotation_reachability_report_source_and_sink
 
 and append_buck_flavors = RevList.to_list !append_buck_flavors
+
+and attributes_lru_max_size = !attributes_lru_max_size
 
 and biabduction_abs_struct = !biabduction_abs_struct
 

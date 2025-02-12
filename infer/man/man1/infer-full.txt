@@ -2425,6 +2425,10 @@ INTERNAL OPTIONS
        --append-buck-flavors-reset
            Set --append-buck-flavors to the empty list.
 
+       --attributes-lru-max-size int
+           Specify size of procedure attribute LRU cache. Relevant only to
+           multicore mode. Defaults to 500
+
        --backtrack-level int
            Maximum level of backtracking to convert an absolute path to path
            relative to the common prefix between the project root and the

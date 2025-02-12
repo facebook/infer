@@ -25,3 +25,5 @@ val load_formal_types : Procname.t -> Typ.t list
 
 val clear_cache : unit -> unit
 (** clear attribute cache *)
+
+val set_lru_limit : lru_limit:int option -> unit
