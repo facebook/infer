@@ -23,3 +23,5 @@ val all : t
 val one : PayloadId.t -> t
 
 val checker_without_payload : checker_without_payload -> t
+
+module Map : PrettyPrintable.PPMap with type key = t

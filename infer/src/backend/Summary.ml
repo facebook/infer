@@ -179,25 +179,26 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
 
 
 module OnDisk = struct
-  module M = Stdlib.Map.Make (struct
-    type t = Procname.t * AnalysisRequest.t [@@deriving compare]
-  end)
-
-  module Cache = Concurrent.MakeMap (M)
+  (* a two-layer cache: procname -> analysis request -> summary *)
+  module Cache = Concurrent.MakeMap (Procname.Map)
 
   let clear_cache, remove_from_cache, add_to_cache, find_in_cache =
     let cache = Cache.empty () in
     let clear_cache () = Cache.clear cache in
     (* Remove an element from the cache of summaries. Contrast to reset which re-initializes a
         summary keeping the same Procdesc and updates the cache accordingly. *)
-    let remove_from_cache pname =
-      Cache.filter cache (fun (pname', _) _ -> not (Procname.equal pname pname'))
-    in
+    let remove_from_cache pname = Cache.remove cache pname in
     (* Add the summary to the table for the given function *)
-    let add proc_name analysis_req summary : unit =
-      Cache.add cache (proc_name, analysis_req) summary
+    let add proc_name analysis_req summary =
+      let analysis_request_map =
+        Cache.find_opt cache proc_name |> Option.value ~default:AnalysisRequest.Map.empty
+      in
+      let new_map = AnalysisRequest.Map.add analysis_req summary analysis_request_map in
+      Cache.add cache proc_name new_map
     in
-    let find_opt key = Cache.find_opt cache key in
+    let find_opt (proc_name, analysis_req) =
+      Cache.find_opt cache proc_name |> Option.bind ~f:(AnalysisRequest.Map.find_opt analysis_req)
+    in
     (clear_cache, remove_from_cache, add, find_opt)
 
 

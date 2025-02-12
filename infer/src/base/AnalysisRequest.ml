@@ -18,3 +18,8 @@ let one payload_id = if Config.detach_analysis_dependency then One payload_id el
 
 let checker_without_payload checker =
   if Config.detach_analysis_dependency then CheckerWithoutPayload checker else All
+
+
+module Map = PrettyPrintable.MakePPMap (struct
+  type nonrec t = t [@@deriving compare, show]
+end)
