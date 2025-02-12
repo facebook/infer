@@ -451,6 +451,18 @@ let make_int_internal arg : DSL.aval DSL.model_monad =
       ret res
 
 
+let make_str_internal arg : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_str = as_constant_string arg in
+  match opt_str with
+  | None ->
+      constructor ~deref:false string_tname []
+  | Some i ->
+      let* res = string i in
+      let* () = and_dynamic_type_is res (Typ.mk_struct string_tname) in
+      ret res
+
+
 module LibModel = struct
   let match_pattern ~pattern ~module_name ~name =
     Option.exists pattern ~f:(fun regexp ->
@@ -509,12 +521,12 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
   | PyBuiltin IntFun, [arg] ->
       let* res = make_int_internal arg in
       ret (Some res)
-  | PyBuiltin StrFun, _ ->
-      let* res = fresh () in
+  | PyBuiltin StrFun, [arg] ->
+      let* res = make_str_internal arg in
       ret (Some res)
   | PyBuiltin TypeFun, [arg] ->
       make_type arg
-  | PyBuiltin TypeFun, _ | PyBuiltin IntFun, _ ->
+  | PyBuiltin TypeFun, _ | PyBuiltin IntFun, _ | PyBuiltin StrFun, _ ->
       let* res = fresh () in
       ret (Some res)
   | PyLib _, _ ->
@@ -933,16 +945,7 @@ let make_string arg : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* opt_string = as_constant_string arg in
-  let* res =
-    match opt_string with
-    | None ->
-        constructor ~deref:false string_tname []
-    | Some s ->
-        let* res = string s in
-        let* () = and_dynamic_type_is res (Typ.mk_struct string_tname) in
-        ret res
-  in
+  let* res = make_str_internal arg in
   assign_ret res
 
 

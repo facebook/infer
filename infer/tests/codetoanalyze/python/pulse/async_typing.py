@@ -7,7 +7,7 @@ import asyncio
 import types
 
 
-async def await_condition_typing_ok():
+async def await_condition_typing_int_ok():
     x = int(5)
     if type(x) == int:
         await asyncio.sleep(1)
@@ -15,8 +15,16 @@ async def await_condition_typing_ok():
         asyncio.sleep(1)
 
 
-async def await_condition_typing_bad():
+async def await_condition_typing_int_bad():
     if type(5) == str:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def await_condition_typing_str_ok():
+    x = str("abc")
+    if type(x) == str and type(x) is str:
         await asyncio.sleep(1)
     else:
         asyncio.sleep(1)
