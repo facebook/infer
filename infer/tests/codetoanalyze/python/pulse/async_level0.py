@@ -112,6 +112,16 @@ async def compare_gt_ok():
     if i > 0:
         pass
 
+async def use_py_bool_bad():
+    x = sleep()
+    return x if x else None
+
+
+async def use_py_bool_ok():
+    x = await sleep()
+    return x if x else None
+
+
 # FN because of py_store_subscript model
 def FN_set_dict_with_unwaited_bad(key):
     d = {}

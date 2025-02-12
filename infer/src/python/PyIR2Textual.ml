@@ -238,7 +238,7 @@ let of_terminator terminator : Textual.Terminator.t =
   | Jump node_call ->
       mk_jump node_call
   | If {exp; then_; else_} ->
-      let exp = of_exp exp in
+      let exp = call_builtin "py_bool" [of_exp exp] in
       let then_ = mk_jump then_ in
       let else_ = mk_jump else_ in
       If {bexp= Exp exp; then_; else_}

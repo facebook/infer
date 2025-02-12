@@ -1032,6 +1032,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_binary_xor" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_bool_false" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_bool_of_match_class" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_bool_true" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
   ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown ~deep_release:true

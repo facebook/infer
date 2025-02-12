@@ -154,7 +154,7 @@ class C:
           n1 = locals
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_fast("y", n1)
-          if n3 then jmp b1 else jmp b2
+          if $builtins.py_bool(n3) then jmp b1 else jmp b2
 
       #b1:
           n13 = $builtins.py_load_global("g", n2)
@@ -171,7 +171,7 @@ class C:
       #b3:
           n6 = $builtins.py_next_iter(n5)
           n7 = $builtins.py_has_next_iter(n5)
-          if n7 then jmp b4 else jmp b5
+          if $builtins.py_bool(n7) then jmp b4 else jmp b5
 
       #b4:
           _ = $builtins.py_store_fast("i", n1, n6)
@@ -289,7 +289,7 @@ class C:
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_load_fast("y", n1)
-          if n3 then jmp b1 else jmp b2
+          if $builtins.py_bool(n3) then jmp b1 else jmp b2
 
       #b1:
           n13 = $builtins.py_load_global("g", n2)
@@ -306,7 +306,7 @@ class C:
       #b3:
           n6 = $builtins.py_next_iter(n5)
           n7 = $builtins.py_has_next_iter(n5)
-          if n7 then jmp b4 else jmp b5
+          if $builtins.py_bool(n7) then jmp b4 else jmp b5
 
       #b4:
           _ = $builtins.py_store_fast("i", n1, n6)
@@ -533,16 +533,18 @@ class C:
           jmp b1, b2
 
       #b1:
-          prune n3
+          n18 = $builtins.py_bool(n3)
+          prune n18
           n13 = $builtins.py_load_global("g", n16)
           n14 = $builtins.py_load_fast("y", n17)
-          n18 = $builtins.py_make_int(0)
-          n15 = $builtins.py_call(n13, n0, n18, n14)
-          n19 = $builtins.py_nullify_locals(n17, "i")
+          n19 = $builtins.py_make_int(0)
+          n15 = $builtins.py_call(n13, n0, n19, n14)
+          n20 = $builtins.py_nullify_locals(n17, "i")
           ret n0
 
       #b2:
-          prune __sil_lnot(n3)
+          n21 = $builtins.py_bool(n3)
+          prune __sil_lnot(n21)
           n4 = $builtins.py_load_fast("l", n17)
           n5 = $builtins.py_get_iter(n4)
           jmp b3
@@ -553,18 +555,20 @@ class C:
           jmp b4, b5
 
       #b4:
-          prune n7
-          n20 = $builtins.py_store_fast("i", n17, n6)
+          n22 = $builtins.py_bool(n7)
+          prune n22
+          n23 = $builtins.py_store_fast("i", n17, n6)
           n10 = $builtins.py_load_global("print", n16)
           n11 = $builtins.py_load_fast("i", n17)
           n12 = $builtins.py_call(n10, n0, n11)
           jmp b3
 
       #b5:
-          prune __sil_lnot(n7)
+          n24 = $builtins.py_bool(n7)
+          prune __sil_lnot(n24)
           n8 = $builtins.py_load_global("done", n16)
           n9 = $builtins.py_call(n8, n0)
-          n21 = $builtins.py_nullify_locals(n17, "i")
+          n25 = $builtins.py_nullify_locals(n17, "i")
           ret n0
 
     }
