@@ -3459,6 +3459,10 @@ INTERNAL OPTIONS
            changed files index is a suffix of its name. (Conversely:
            --no-suffix-match-changed-files)
 
+       --summaries-lru-max-size int
+           Specify size of summary LRU cache. Relevant only to multicore
+           mode. Defaults to 2000
+
        --suppress-lint-ignore-types
            Activates: [DEPRECATED] Check only the presence of @SuppressLint
            but not the issues types specified as parameters to the

@@ -228,8 +228,6 @@ type t =
   { mutable cache_stats: CacheStats.t
   ; mutable summary_file_try_load: IntCounter.t
   ; mutable summary_read_from_disk: IntCounter.t
-  ; mutable summary_cache_hits: IntCounter.t
-  ; mutable summary_cache_misses: IntCounter.t
   ; mutable summary_specializations: IntCounter.t
   ; mutable ondemand_procs_analyzed: IntCounter.t
   ; mutable ondemand_double_analysis_prevented: IntCounter.t
@@ -266,18 +264,7 @@ type t =
 
 let reset () = copy initial ~into:global_stats
 
-let log_to_jsonl stats =
-  let hit_percent hit miss =
-    let total = hit + miss in
-    if Int.equal total 0 then None else Some (hit * 100 / total)
-  in
-  let summary_cache_hit_percent_entry =
-    hit_percent stats.summary_cache_hits stats.summary_cache_misses
-    |> Option.map ~f:(fun hit_percent ->
-           LogEntry.mk_count ~label:"backend_stats.summary_cache_hit_rate" ~value:hit_percent )
-  in
-  Option.to_list summary_cache_hit_percent_entry @ to_log_entries stats |> StatsLogging.log_many
-
+let log_to_jsonl stats = to_log_entries stats |> StatsLogging.log_many
 
 (** human-readable pretty-printing of all fields *)
 let pp fmt stats =
@@ -287,11 +274,6 @@ let pp fmt stats =
   let pp_serialized_field deserializer pp_value fmt field =
     pp_field (fun fmt v -> pp_value fmt (deserializer v)) fmt field
   in
-  let pp_hit_percent hit miss fmt =
-    let total = hit + miss in
-    if Int.equal total 0 then F.pp_print_string fmt "N/A%%"
-    else F.fprintf fmt "%d%%" (hit * 100 / total)
-  in
   let pp_int_field fmt field = pp_field F.pp_print_int fmt field in
   let pp_percent_field fmt field =
     pp_field (fun fmt p -> F.fprintf fmt "%.1f%%" (float_of_int p /. 10.)) fmt field
@@ -300,11 +282,6 @@ let pp fmt stats =
     let field_value = Field.get field stats in
     let field_name = Field.name field in
     F.fprintf fmt "%a@;" (TimeCounter.pp ~prefix:field_name) field_value
-  in
-  let pp_cache_hits stats cache_misses fmt cache_hits_field =
-    let cache_hits = Field.get cache_hits_field stats in
-    F.fprintf fmt "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
-      (pp_hit_percent cache_hits cache_misses)
   in
   let pp_longest_proc_duration_heap fmt field =
     let heap : LongestProcDurationHeap.t = Field.get field stats in
@@ -329,9 +306,7 @@ let pp fmt stats =
   in
   Fields.iter ~summary_file_try_load:(pp_int_field fmt) ~useful_times:(pp_time_counter_field fmt)
     ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
-    ~summary_read_from_disk:(pp_int_field fmt)
-    ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses fmt)
-    ~summary_cache_misses:(pp_int_field fmt) ~summary_specializations:(pp_int_field fmt)
+    ~summary_read_from_disk:(pp_int_field fmt) ~summary_specializations:(pp_int_field fmt)
     ~ondemand_procs_analyzed:(pp_int_field fmt)
     ~ondemand_double_analysis_prevented:(pp_int_field fmt)
     ~ondemand_recursion_cycle_restart_limit_hit:(pp_int_field fmt)
@@ -473,10 +448,6 @@ let add_exe_duration field exe_duration = update_with field ~f:(TimeCounter.add 
 let incr_summary_file_try_load () = incr Fields.summary_file_try_load
 
 let incr_summary_read_from_disk () = incr Fields.summary_read_from_disk
-
-let incr_summary_cache_hits () = incr Fields.summary_cache_hits
-
-let incr_summary_cache_misses () = incr Fields.summary_cache_misses
 
 let incr_summary_specializations () = incr Fields.summary_specializations
 

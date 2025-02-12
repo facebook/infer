@@ -24,28 +24,6 @@ module Queue : sig
   val wait_until_non_empty : 'a t -> unit
 end
 
-module type Map = sig
-  type key
-
-  type 'a t
-
-  val empty : unit -> 'a t
-
-  val clear : 'a t -> unit
-
-  val add : 'a t -> key -> 'a -> unit
-
-  val filter : 'a t -> (key -> 'a -> bool) -> unit
-
-  val find_opt : 'a t -> key -> 'a option
-
-  val remove : 'a t -> key -> unit
-end
-
-(** a simple thread safe map that uses an atomic reference to a persistent map plus a mutex to
-    sequentialize updates *)
-module MakeMap (M : Stdlib.Map.S) : Map with type key = M.key
-
 module type Hashtbl = sig
   module Hash : Stdlib.Hashtbl.S
 
@@ -80,23 +58,25 @@ end
 module MakeHashtbl (H : Stdlib.Hashtbl.S) : Hashtbl with type key = H.key with module Hash = H
 
 module type CacheS = sig
-  type key
+  module HQ : Hash_queue.S
 
   type 'a t
 
   val create : name:string -> 'a t
 
-  val lookup : 'a t -> key -> 'a option
+  val lookup : 'a t -> HQ.key -> 'a option
 
-  val add : 'a t -> key -> 'a -> unit
+  val add : 'a t -> HQ.key -> 'a -> unit
 
-  val remove : 'a t -> key -> unit
+  val remove : 'a t -> HQ.key -> unit
 
   val clear : 'a t -> unit
 
   val set_lru_mode : 'a t -> lru_limit:int option -> unit
+
+  val with_hashqueue : ('a HQ.t -> unit) -> 'a t -> unit
 end
 
 module MakeCache (Key : sig
   type t [@@deriving compare, equal, hash, show, sexp]
-end) : CacheS with type key = Key.t
+end) : CacheS with type HQ.key = Key.t

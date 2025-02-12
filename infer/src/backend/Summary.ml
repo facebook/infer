@@ -180,26 +180,26 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
 
 module OnDisk = struct
   (* a two-layer cache: procname -> analysis request -> summary *)
-  module Cache = Concurrent.MakeMap (Procname.Map)
+  module Cache = Procname.Cache
 
-  let clear_cache, remove_from_cache, add_to_cache, find_in_cache =
-    let cache = Cache.empty () in
+  let clear_cache, remove_from_cache, add_to_cache, find_in_cache, set_lru_limit =
+    let cache = Cache.create ~name:"summaries" in
     let clear_cache () = Cache.clear cache in
-    (* Remove an element from the cache of summaries. Contrast to reset which re-initializes a
-        summary keeping the same Procdesc and updates the cache accordingly. *)
     let remove_from_cache pname = Cache.remove cache pname in
-    (* Add the summary to the table for the given function *)
     let add proc_name analysis_req summary =
-      let analysis_request_map =
-        Cache.find_opt cache proc_name |> Option.value ~default:AnalysisRequest.Map.empty
-      in
-      let new_map = AnalysisRequest.Map.add analysis_req summary analysis_request_map in
-      Cache.add cache proc_name new_map
+      Cache.with_hashqueue
+        (fun hq ->
+          Cache.HQ.lookup_and_remove hq proc_name
+          |> Option.value ~default:AnalysisRequest.Map.empty
+          |> AnalysisRequest.Map.add analysis_req summary
+          |> Cache.HQ.enqueue_front_exn hq proc_name )
+        cache
     in
     let find_opt (proc_name, analysis_req) =
-      Cache.find_opt cache proc_name |> Option.bind ~f:(AnalysisRequest.Map.find_opt analysis_req)
+      Cache.lookup cache proc_name |> Option.bind ~f:(AnalysisRequest.Map.find_opt analysis_req)
     in
-    (clear_cache, remove_from_cache, add, find_opt)
+    let set_lru_limit ~lru_limit = Cache.set_lru_mode ~lru_limit cache in
+    (clear_cache, remove_from_cache, add, find_opt, set_lru_limit)
 
 
   let spec_of_procname, spec_of_model =
@@ -261,17 +261,12 @@ module OnDisk = struct
 
 
   let get ~lazy_payloads analysis_req proc_name =
-    let found_from_cache summary =
-      BStats.incr_summary_cache_hits () ;
-      Some summary
-    in
     let not_found_from_cache () =
-      BStats.incr_summary_cache_misses () ;
       load_summary_to_spec_table ~lazy_payloads analysis_req proc_name
     in
     match find_in_cache (proc_name, analysis_req) with
-    | Some summary ->
-        found_from_cache summary
+    | Some _ as some_summary ->
+        some_summary
     | None -> (
       match (analysis_req : AnalysisRequest.t) with
       | All ->
@@ -280,8 +275,8 @@ module OnDisk = struct
       | One _ | CheckerWithoutPayload _ -> (
         (* If there is a cache for [All], we use it. *)
         match find_in_cache (proc_name, AnalysisRequest.all) with
-        | Some summary ->
-            found_from_cache summary
+        | Some _ as some_summary ->
+            some_summary
         | None ->
             not_found_from_cache () ) )
 

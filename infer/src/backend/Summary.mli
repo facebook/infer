@@ -48,6 +48,8 @@ module OnDisk : sig
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
 
+  val set_lru_limit : lru_limit:int option -> unit
+
   val get : lazy_payloads:bool -> AnalysisRequest.t -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 

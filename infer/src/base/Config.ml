@@ -3533,6 +3533,11 @@ and suffix_match_changed_files =
      analyzed if a name in the changed files index is a suffix of its name."
 
 
+and summaries_lru_max_size =
+  CLOpt.mk_int ~long:"summaries-lru-max-size" ~meta:"int" ~default:2000
+    "Specify size of summary LRU cache. Relevant only to multicore mode. Defaults to 2000"
+
+
 and suppress_lint_ignore_types =
   CLOpt.mk_bool ~long:"suppress-lint-ignore-types" ~default:false
     "[DEPRECATED] Check only the presence of @SuppressLint but not the issues types specified as \
@@ -4867,6 +4872,8 @@ and store_analysis_schedule = !store_analysis_schedule
 and subtype_multirange = !subtype_multirange
 
 and suffix_match_changed_files = !suffix_match_changed_files
+
+and summaries_lru_max_size = !summaries_lru_max_size
 
 and suppress_lint_ignore_types = !suppress_lint_ignore_types
 

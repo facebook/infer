@@ -903,6 +903,8 @@ val subtype_multirange : bool
 
 val suffix_match_changed_files : bool
 
+val summaries_lru_max_size : int
+
 val suppress_lint_ignore_types : bool
 
 val suppressions : bool

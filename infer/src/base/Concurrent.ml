@@ -46,46 +46,6 @@ module Queue = struct
     Error_checking_mutex.critical_section t.mutex ~f:wait_until_non_empty_loop
 end
 
-module type Map = sig
-  type key
-
-  type 'a t
-
-  val empty : unit -> 'a t
-
-  val clear : 'a t -> unit
-
-  val add : 'a t -> key -> 'a -> unit
-
-  val filter : 'a t -> (key -> 'a -> bool) -> unit
-
-  val find_opt : 'a t -> key -> 'a option
-
-  val remove : 'a t -> key -> unit
-end
-
-module MakeMap (M : Stdlib.Map.S) : Map with type key = M.key = struct
-  type key = M.key
-
-  type 'a t = Error_checking_mutex.t * 'a M.t Atomic.t
-
-  let empty () = (Error_checking_mutex.create (), Atomic.make M.empty)
-
-  let update_in_mutex (mutex, a) ~f =
-    Error_checking_mutex.critical_section mutex ~f:(fun () -> Atomic.get a |> f |> Atomic.set a)
-
-
-  let clear (t : 'a t) = update_in_mutex t ~f:(fun _ -> M.empty)
-
-  let filter (t : 'a t) f = update_in_mutex t ~f:(M.filter f)
-
-  let add t k v = update_in_mutex t ~f:(M.add k v)
-
-  let find_opt (_, atomic_map) key = Atomic.get atomic_map |> M.find_opt key
-
-  let remove t key = update_in_mutex t ~f:(M.remove key)
-end
-
 module type Hashtbl = sig
   module Hash : Stdlib.Hashtbl.S
 
@@ -146,29 +106,29 @@ struct
 end
 
 module type CacheS = sig
-  type key
+  module HQ : Hash_queue.S
 
   type 'a t
 
   val create : name:string -> 'a t
 
-  val lookup : 'a t -> key -> 'a option
+  val lookup : 'a t -> HQ.key -> 'a option
 
-  val add : 'a t -> key -> 'a -> unit
+  val add : 'a t -> HQ.key -> 'a -> unit
 
-  val remove : 'a t -> key -> unit
+  val remove : 'a t -> HQ.key -> unit
 
   val clear : 'a t -> unit
 
   val set_lru_mode : 'a t -> lru_limit:int option -> unit
+
+  val with_hashqueue : ('a HQ.t -> unit) -> 'a t -> unit
 end
 
 module MakeCache (Key : sig
   type t [@@deriving compare, equal, hash, show, sexp]
-end) : CacheS with type key = Key.t = struct
+end) : CacheS with type HQ.key = Key.t = struct
   module HQ = Hash_queue.Make (Key)
-
-  type key = Key.t
 
   type 'a t =
     {mutex: Error_checking_mutex.t; name: string; hq: 'a HQ.t; mutable lru_limit: int option}
@@ -205,4 +165,7 @@ end) : CacheS with type key = Key.t = struct
     in_mutex t ~f:(fun hq ->
         t.lru_limit <- lru_limit ;
         HQ.clear hq )
+
+
+  let with_hashqueue f t = in_mutex t ~f
 end
