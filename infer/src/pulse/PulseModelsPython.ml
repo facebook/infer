@@ -971,12 +971,12 @@ let yield_from _ _ : model =
   start_model @@ fun () -> ret ()
 
 
-let unknown args : model =
+let unknown ~deep_release args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* res = fresh () in
-  let* () = remove_allocation_attr_transitively args in
+  let* () = if deep_release then remove_allocation_attr_transitively args else ret () in
   assign_ret res
 
 
@@ -1016,132 +1016,132 @@ let compare_eq arg1 arg2 : model =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
-  [ -"$builtins" &:: "py_attributes_of_match_class" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_add" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_and" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_floor_divide" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_lshift" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_matrix_multiply" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_modulo" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_multiply" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_or" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_power" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_rshift" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_substract" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_true_divide" &::.*+++> unknown
-  ; -"$builtins" &:: "py_binary_xor" &::.*+++> unknown
-  ; -"$builtins" &:: "py_bool_false" &::.*+++> unknown
-  ; -"$builtins" &:: "py_bool_of_match_class" &::.*+++> unknown
-  ; -"$builtins" &:: "py_bool_true" &::.*+++> unknown
+  [ -"$builtins" &:: "py_attributes_of_match_class" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_add" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_and" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_floor_divide" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_lshift" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_matrix_multiply" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_modulo" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_multiply" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_or" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_power" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_rshift" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_substract" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_true_divide" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_xor" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool_false" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool_of_match_class" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool_true" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
-  ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown
+  ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_build_list" &::.*+++> build_tuple
-  ; -"$builtins" &:: "py_build_map" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_set" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_slice" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_string" &::.*+++> unknown
+  ; -"$builtins" &:: "py_build_map" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_set" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_slice" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_string" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
-  ; -"$builtins" &:: "py_build_unpack_list" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_unpack_map" &::.*+++> unknown
-  ; -"$builtins" &:: "py_build_unpack_set" &::.*+++> unknown
+  ; -"$builtins" &:: "py_build_unpack_list" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_unpack_map" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_unpack_set" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_build_unpack_tuple" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
   ; -"$builtins" &:: "py_call_function_ex" <>$ arg $+ arg $+ arg $--> call_function_ex
   ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
-  ; -"$builtins" &:: "py_compare_bad" &::.*+++> unknown
+  ; -"$builtins" &:: "py_compare_bad" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_compare_eq" <>$ arg $+ arg $--> compare_eq
-  ; -"$builtins" &:: "py_compare_exception" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_ge" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_gt" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_in" &::.*+++> unknown
+  ; -"$builtins" &:: "py_compare_exception" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_ge" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_gt" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_in" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_compare_is" <>$ arg $+ arg $--> compare_eq
-  ; -"$builtins" &:: "py_compare_is_not" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_le" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_lt" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_neq" &::.*+++> unknown
-  ; -"$builtins" &:: "py_compare_not_in" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_attr" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_deref" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_fast" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_global" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_name" &::.*+++> unknown
-  ; -"$builtins" &:: "py_delete_subscr" &::.*+++> unknown
-  ; -"$builtins" &:: "py_dict_merge" &::.*+++> unknown
+  ; -"$builtins" &:: "py_compare_is_not" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_le" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_lt" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_neq" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_not_in" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_delete_attr" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_delete_deref" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_delete_fast" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_delete_global" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_delete_name" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_delete_subscr" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_dict_merge" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_dict_set_item" <>$ arg $+ arg $+ arg $--> dict_set_item
-  ; -"$builtins" &:: "py_dict_update" &::.*+++> unknown
-  ; -"$builtins" &:: "py_format" &::.*+++> unknown
-  ; -"$builtins" &:: "py_format_fn_ascii" &::.*+++> unknown
-  ; -"$builtins" &:: "py_format_fn_repr" &::.*+++> unknown
-  ; -"$builtins" &:: "py_format_fn_str" &::.*+++> unknown
-  ; -"$builtins" &:: "py_gen_start_async_generator" &::.*+++> unknown
+  ; -"$builtins" &:: "py_dict_update" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_format" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_format_fn_ascii" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_format_fn_repr" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_format_fn_str" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_gen_start_async_generator" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
-  ; -"$builtins" &:: "py_gen_start_generator" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_aiter" &::.*+++> unknown
+  ; -"$builtins" &:: "py_gen_start_generator" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_get_aiter" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_get_attr" <>$ arg $+ arg $--> get_attr
   ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable
-  ; -"$builtins" &:: "py_get_iter" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_len" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_previous_exception" &::.*+++> unknown
-  ; -"$builtins" &:: "py_get_yield_from_iter" &::.*+++> unknown
-  ; -"$builtins" &:: "py_has_next_iter" &::.*+++> unknown
+  ; -"$builtins" &:: "py_get_iter" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_get_len" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_get_previous_exception" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_get_yield_from_iter" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_has_next_iter" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
   ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $+ arg $--> import_name
-  ; -"$builtins" &:: "py_import_star" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_add" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_and" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_floor_divide" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_lshift" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_matrix_multiply" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_modulo" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_multiply" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_or" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_power" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_rshift" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_substract" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_true_divide" &::.*+++> unknown
-  ; -"$builtins" &:: "py_inplace_xor" &::.*+++> unknown
-  ; -"$builtins" &:: "py_invalid_unicode" &::.*+++> unknown
-  ; -"$builtins" &:: "py_iter_data" &::.*+++> unknown
+  ; -"$builtins" &:: "py_import_star" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_inplace_add" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_and" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_floor_divide" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_lshift" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_matrix_multiply" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_modulo" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_multiply" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_or" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_power" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_rshift" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_substract" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_true_divide" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_inplace_xor" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_invalid_unicode" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_iter_data" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_list_append" <>$ arg $+ arg $--> list_append
-  ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown
-  ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown
-  ; -"$builtins" &:: "py_load_assertion_error" &::.*+++> unknown
-  ; -"$builtins" &:: "py_load_class_deref" &::.*+++> unknown
-  ; -"$builtins" &:: "py_load_closure" &::.*+++> unknown
-  ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown
+  ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_load_assertion_error" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_load_class_deref" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_load_closure" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
   ; -"$builtins" &:: "py_load_global" <>$ arg $+ arg $--> load_global
   ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
-  ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown
-  ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown
+  ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
-  ; -"$builtins" &:: "py_make_float" &::.*+++> unknown
+  ; -"$builtins" &:: "py_make_float" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
   ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
   ; -"$builtins" &:: "py_make_none" <>--> make_none
   ; -"$builtins" &:: "py_make_string" <>$ arg $--> make_string
-  ; -"$builtins" &:: "py_match_class" &::.*+++> unknown
-  ; -"$builtins" &:: "py_match_sequence" &::.*+++> unknown
-  ; -"$builtins" &:: "py_next_iter" &::.*+++> unknown
+  ; -"$builtins" &:: "py_match_class" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_match_sequence" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_next_iter" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_nullify_locals" <>$ arg $+++$--> nullify_locals
-  ; -"$builtins" &:: "py_set_add" &::.*+++> unknown
-  ; -"$builtins" &:: "py_set_attr" &::.*+++> unknown
-  ; -"$builtins" &:: "py_set_update" &::.*+++> unknown
-  ; -"$builtins" &:: "py_setup_annotations" &::.*+++> unknown
-  ; -"$builtins" &:: "py_store_deref" &::.*+++> unknown
+  ; -"$builtins" &:: "py_set_add" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_set_attr" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_set_update" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_setup_annotations" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_store_deref" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
   ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global
   ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name
   ; -"$builtins" &:: "py_store_subscript" <>$ arg $+ arg $+ arg $--> store_subscript
   ; -"$builtins" &:: "py_subscript" <>$ arg $+ arg $--> subscript
-  ; -"$builtins" &:: "py_unary_invert" &::.*+++> unknown
-  ; -"$builtins" &:: "py_unary_negative" &::.*+++> unknown
-  ; -"$builtins" &:: "py_unary_not" &::.*+++> unknown
-  ; -"$builtins" &:: "py_unary_positive" &::.*+++> unknown
-  ; -"$builtins" &:: "py_unpack_ex" &::.*+++> unknown
+  ; -"$builtins" &:: "py_unary_invert" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_unary_negative" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_unary_not" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_unary_positive" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_unpack_ex" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_yield" <>$ arg $--> yield
-  ; -"$builtins" &:: "py_yield_from" &::.*+++> unknown
+  ; -"$builtins" &:: "py_yield_from" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $--> yield_from
-  ; +die_if_other_builtin &::.*+++> unknown ]
+  ; +die_if_other_builtin &::.*+++> unknown ~deep_release:false ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

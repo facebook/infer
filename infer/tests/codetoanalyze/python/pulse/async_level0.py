@@ -92,10 +92,40 @@ async def call_fst_bad(i):
     return fst(i, sleep(1))
 
 
+async def compare_lt_bad():
+    i = sleep()
+    if i < 0:
+        pass
+
+async def compare_lt_ok():
+    i = await sleep()
+    if i < 0:
+        pass
+
+async def compare_gt_bad():
+    i = sleep()
+    if i > 0:
+        pass
+
+async def compare_gt_ok():
+    i = await sleep()
+    if i > 0:
+        pass
+
 # FN because of py_store_subscript model
 def FN_set_dict_with_unwaited_bad(key):
     d = {}
     d[key] = asyncio.sleep(0)
+
+
+async def use_py_get_iter_bad():
+    x = sleep()
+    return [ a.f for a in x ]
+
+
+async def use_py_get_iter_ok():
+    x = await sleep()
+    return [ a.f for a in x ]
 
 
 def main_ok():
