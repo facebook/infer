@@ -9,18 +9,17 @@
 open! IStd
 module L = Logging
 
-type t =
-  {tenvs_map: Tenv.t option SourceFile.Hash.t; int_widths_map: IntegerWidths.t SourceFile.Hash.t}
+let tenvs_map = SourceFile.Cache.create ~name:"tenvs"
 
-let exe_env = {tenvs_map= SourceFile.Hash.create 1; int_widths_map= SourceFile.Hash.create 1}
+let int_widths_map = SourceFile.Cache.create ~name:"int_widths"
 
 let clear_caches () =
-  SourceFile.Hash.clear exe_env.tenvs_map ;
-  SourceFile.Hash.clear exe_env.int_widths_map
+  SourceFile.Cache.clear tenvs_map ;
+  SourceFile.Cache.clear int_widths_map
 
 
 let[@alert "-tenv"] get_source_tenv source =
-  match SourceFile.Hash.find_opt exe_env.tenvs_map source with
+  match SourceFile.Cache.lookup tenvs_map source with
   | Some tenv_opt ->
       tenv_opt
   | None -> (
@@ -28,7 +27,7 @@ let[@alert "-tenv"] get_source_tenv source =
     | None when Config.log_missing_deps ->
         raise MissingDependencyException.MissingDependencyException
     | v ->
-        SourceFile.Hash.add exe_env.tenvs_map source v ;
+        SourceFile.Cache.add tenvs_map source v ;
         v )
 
 
@@ -54,13 +53,18 @@ let get_proc_tenv pname =
 
 let get_integer_type_widths pname =
   let source = get_proc_source pname in
-  match SourceFile.Hash.find_opt exe_env.int_widths_map source with
+  match SourceFile.Cache.lookup int_widths_map source with
   | Some widths ->
       widths
   | None -> (
     match IntegerWidths.load source with
     | Some widths ->
-        SourceFile.Hash.add exe_env.int_widths_map source widths ;
+        SourceFile.Cache.add int_widths_map source widths ;
         widths
     | None ->
         IntegerWidths.java )
+
+
+let set_lru_limit ~lru_limit =
+  SourceFile.Cache.set_lru_mode tenvs_map ~lru_limit ;
+  SourceFile.Cache.set_lru_mode int_widths_map ~lru_limit

@@ -3472,6 +3472,10 @@ INTERNAL OPTIONS
        --tenv-json-reset
            Cancel the effect of --tenv-json.
 
+       --tenvs-lru-max-size int
+           Specify size of type environment LRU cache. Relevant only to
+           multicore mode. Defaults to 500
+
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)

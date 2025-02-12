@@ -17,8 +17,8 @@ let clear_caches () =
   if not Config.multicore then (
     Summary.OnDisk.clear_cache () ;
     Attributes.clear_cache () ;
-    BufferOverrunUtils.clear_cache () ) ;
-  Exe_env.clear_caches () ;
+    BufferOverrunUtils.clear_cache () ;
+    Exe_env.clear_caches () ) ;
   Dependencies.clear ()
 
 
@@ -163,6 +163,8 @@ let analyze replay_call_graph source_files_to_analyze =
     Attributes.set_lru_limit ~lru_limit:(Some Config.attributes_lru_max_size) ;
     BufferOverrunUtils.set_cache_lru_limit ~lru_limit:(Some Config.inferbo_lru_max_size) ;
     Summary.OnDisk.set_lru_limit ~lru_limit:(Some Config.summaries_lru_max_size) ;
+    Exe_env.set_lru_limit ~lru_limit:(Some Config.tenvs_lru_max_size) ;
+    RestartScheduler.setup () ;
     DomainPool.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue:ignore
       ~child_epilogue:ignore ~tasks:(fun () ->
         tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze) )

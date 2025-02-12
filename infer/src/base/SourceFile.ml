@@ -24,16 +24,17 @@ type t =
             (** path relative to the workspace of the project root with respect to which the source
                 file was captured *)
       ; rel_path: string  (** path of the source file relative to the project root *) }
-[@@deriving compare, equal, sexp, hash, normalize]
+[@@deriving compare, equal, sexp, hash, normalize, show]
 
 module T = struct
-  type nonrec t = t [@@deriving compare, equal, hash, sexp]
+  type nonrec t = t [@@deriving compare, equal, hash, sexp, show]
 end
 
 module Map = Stdlib.Map.Make (T)
 module Set = Stdlib.Set.Make (T)
 module Hash = Stdlib.Hashtbl.Make (T)
 module HashSet = HashSet.Make (T)
+module Cache = Concurrent.MakeCache (T)
 
 let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
 

@@ -911,6 +911,8 @@ val suppressions : bool
 
 val tenv_json : string option
 
+val tenvs_lru_max_size : int
+
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Safe.t

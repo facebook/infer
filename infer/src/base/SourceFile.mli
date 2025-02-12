@@ -20,6 +20,8 @@ module Hash : Stdlib.Hashtbl.S with type key = t
 
 module HashSet : HashSet.S with type elt = t
 
+module Cache : Concurrent.CacheS with type HQ.key = t
+
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)
 

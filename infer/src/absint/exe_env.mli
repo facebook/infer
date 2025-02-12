@@ -21,3 +21,5 @@ val get_integer_type_widths : Procname.t -> IntegerWidths.t
 (** return the integer type widths associated with the procedure *)
 
 val clear_caches : unit -> unit
+
+val set_lru_limit : lru_limit:int option -> unit

@@ -3558,6 +3558,11 @@ and tenv_json =
     ~meta:"file" "Path to TEnv json file"
 
 
+and tenvs_lru_max_size =
+  CLOpt.mk_int ~long:"tenvs-lru-max-size" ~meta:"int" ~default:500
+    "Specify size of type environment LRU cache. Relevant only to multicore mode. Defaults to 500"
+
+
 and testing_mode =
   CLOpt.mk_bool ~long:"testing-mode"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
@@ -4880,6 +4885,8 @@ and suppress_lint_ignore_types = !suppress_lint_ignore_types
 and suppressions = !suppressions
 
 and tenv_json = !tenv_json
+
+and tenvs_lru_max_size = !tenvs_lru_max_size
 
 and testing_mode = !testing_mode
 
