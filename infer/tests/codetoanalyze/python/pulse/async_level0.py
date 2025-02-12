@@ -122,6 +122,28 @@ async def use_py_bool_ok():
     return x if x else None
 
 
+def true():
+    return True
+
+
+async def use_py_bool_true_ok():
+    x = sleep()
+    if true():
+        await x
+
+
+def false():
+    return False
+
+
+async def use_py_bool_false_ok():
+    x = sleep()
+    if false():
+        pass
+    else:
+        await x
+
+
 # FN because of py_store_subscript model
 def FN_set_dict_with_unwaited_bad(key):
     d = {}

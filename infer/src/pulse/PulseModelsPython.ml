@@ -901,6 +901,34 @@ let make_random_bool () =
   ret res
 
 
+let bool arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res =
+    dynamic_dispatch arg
+      ~cases:[(bool_tname, fun () -> ret arg)]
+      ~default:(fun () -> make_random_bool ())
+  in
+  assign_ret res
+
+
+let bool_false : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res = make_bool false in
+  assign_ret res
+
+
+let bool_true : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res = make_bool true in
+  assign_ret res
+
+
 let make_string arg : model =
   let open DSL.Syntax in
   start_model
@@ -1030,10 +1058,10 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_binary_substract" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_true_divide" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_xor" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_bool_false" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool_false" <>--> bool_false
   ; -"$builtins" &:: "py_bool_of_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_bool" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_bool_true" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_bool" <>$ arg $--> bool
+  ; -"$builtins" &:: "py_bool_true" <>--> bool_true
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
   ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown ~deep_release:true
