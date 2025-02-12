@@ -41,11 +41,11 @@ let should_report tenv procname =
       false
 
 
-let iter_summary ~f exe_env ({payloads; proc_name} : Summary.t) =
+let iter_summary ~f ({payloads; proc_name} : Summary.t) =
   let open Domain in
   Payloads.starvation payloads |> SafeLazy.force_option
   |> Option.iter ~f:(fun (payload : summary) ->
-         let tenv = Exe_env.get_proc_tenv exe_env proc_name in
+         let tenv = Exe_env.get_proc_tenv proc_name in
          if should_report tenv proc_name then iter_critical_pairs_of_summary (f proc_name) payload ;
          ScheduledWorkDomain.iter
            (iter_critical_pairs_of_scheduled_work (f proc_name))
@@ -82,7 +82,7 @@ let report exe_env work_set =
     Summary.OnDisk.get ~lazy_payloads:true analysis_req procname
     |> Option.fold ~init ~f:(fun acc summary ->
            let pattrs = Attributes.load_exn procname in
-           let tenv = Exe_env.get_proc_tenv exe_env procname in
+           let tenv = Exe_env.get_proc_tenv procname in
            let acc =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
@@ -113,7 +113,7 @@ let whole_program_analysis () =
   let work_set = WorkHashSet.create 1 in
   let exe_env = Exe_env.mk () in
   L.progress "Processing on-disk summaries...@." ;
-  Summary.OnDisk.iter_specs ~f:(iter_summary exe_env ~f:(WorkHashSet.add_pair work_set)) ;
+  Summary.OnDisk.iter_specs ~f:(iter_summary ~f:(WorkHashSet.add_pair work_set)) ;
   let num_pairs = WorkHashSet.length work_set in
   L.progress "Loaded %d pairs@." num_pairs ;
   L.progress "Reporting on processed summaries...@." ;

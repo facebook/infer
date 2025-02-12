@@ -517,7 +517,7 @@ let extract_state = Analyzer.extract_state
 
 let compute_invariant_map :
     BufferOverrunAnalysisSummary.t InterproceduralAnalysis.t -> invariant_map =
- fun ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependency} as interproc) ->
+ fun ({InterproceduralAnalysis.proc_desc; tenv; analyze_dependency} as interproc) ->
   let cfg = CFG.from_pdesc proc_desc in
   let analysis_data =
     let proc_name = Procdesc.get_proc_name proc_desc in
@@ -526,7 +526,7 @@ let compute_invariant_map :
     let get_formals callee_pname =
       Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
     in
-    let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
+    let integer_type_widths = Exe_env.get_integer_type_widths proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in
     {interproc; get_summary; get_formals; oenv}
   in

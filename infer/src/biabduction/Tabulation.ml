@@ -1021,8 +1021,7 @@ let missing_sigma_need_adding_to_tenv tenv hpreds =
   List.exists hpreds ~f:missing_hpred_need_adding_to_tenv
 
 
-let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hpreds
-    callee_attributes =
+let add_missing_field_to_tenv ~missing_sigma caller_tenv callee_pname hpreds callee_attributes =
   (* if hpreds are missing_sigma, we may not need to add the fields to the tenv, so we check that first *)
   let add_fields =
     if missing_sigma then missing_sigma_need_adding_to_tenv caller_tenv hpreds else true
@@ -1030,10 +1029,10 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
   (* if the callee is a model, then we don't have a tenv for it *)
   if (not callee_attributes.ProcAttributes.is_biabduction_model) && add_fields then
     let callee_tenv_opt =
-      try Some (Exe_env.get_proc_tenv exe_env callee_pname)
+      try Some (Exe_env.get_proc_tenv callee_pname)
       with _ ->
         let source_file = callee_attributes.ProcAttributes.loc.Location.file in
-        Exe_env.get_source_tenv exe_env source_file
+        Exe_env.get_source_tenv source_file
     in
     match callee_tenv_opt with
     | None ->
@@ -1055,8 +1054,7 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
 
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec
-    ({InterproceduralAnalysis.exe_env; proc_desc= caller_pdesc; err_log; tenv} as analysis_data)
+let exe_spec ({InterproceduralAnalysis.proc_desc= caller_pdesc; err_log; tenv} as analysis_data)
     ret_id (n, nspecs) callee_pname loc prop path_pre (spec : Prop.exposed BiabductionSummary.spec)
     actual_params formal_params callee_summary : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
@@ -1105,12 +1103,12 @@ let exe_spec
       in
       if not (List.is_empty missing_fld_objc_class) then (
         L.d_strln "Objective-C missing_fld not empty: adding it to current tenv..." ;
-        add_missing_field_to_tenv ~missing_sigma:false exe_env tenv callee_pname
-          missing_fld_objc_class callee_summary ) ;
+        add_missing_field_to_tenv ~missing_sigma:false tenv callee_pname missing_fld_objc_class
+          callee_summary ) ;
       if not (List.is_empty missing_sigma_objc_class) then (
         L.d_strln "Objective-C missing_sigma not empty: adding it to current tenv..." ;
-        add_missing_field_to_tenv ~missing_sigma:true exe_env tenv callee_pname
-          missing_sigma_objc_class callee_summary ) ;
+        add_missing_field_to_tenv ~missing_sigma:true tenv callee_pname missing_sigma_objc_class
+          callee_summary ) ;
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
         BiabductionReporting.log_issue_deprecated_using_state caller_pdesc err_log exn

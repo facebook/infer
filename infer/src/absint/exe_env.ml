@@ -12,9 +12,16 @@ module L = Logging
 type t =
   {tenvs_map: Tenv.t option SourceFile.Hash.t; int_widths_map: IntegerWidths.t SourceFile.Hash.t}
 
-let mk () = {tenvs_map= SourceFile.Hash.create 1; int_widths_map= SourceFile.Hash.create 1}
+let exe_env = {tenvs_map= SourceFile.Hash.create 1; int_widths_map= SourceFile.Hash.create 1}
 
-let[@alert "-tenv"] get_source_tenv exe_env source =
+let mk () = exe_env
+
+let clear_caches () =
+  SourceFile.Hash.clear exe_env.tenvs_map ;
+  SourceFile.Hash.clear exe_env.int_widths_map
+
+
+let[@alert "-tenv"] get_source_tenv source =
   match SourceFile.Hash.find_opt exe_env.tenvs_map source with
   | Some tenv_opt ->
       tenv_opt
@@ -37,17 +44,17 @@ let get_proc_source pname =
       L.die InternalError "exe_env: could not find procedure attributes for %a@\n" Procname.pp pname
 
 
-let get_proc_tenv exe_env pname =
+let get_proc_tenv pname =
   match pname with
   | Procname.Java _ ->
       Tenv.Global.load () |> Option.value_exn
   | _ ->
-      get_proc_source pname |> get_source_tenv exe_env
+      get_proc_source pname |> get_source_tenv
       |> Option.value_or_thunk ~default:(fun () ->
              L.die InternalError "exe_env: could not find tenv for %a@\n" Procname.pp pname )
 
 
-let get_integer_type_widths exe_env pname =
+let get_integer_type_widths pname =
   let source = get_proc_source pname in
   match SourceFile.Hash.find_opt exe_env.int_widths_map source with
   | Some widths ->

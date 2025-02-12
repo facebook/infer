@@ -13,7 +13,7 @@ let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePri
 
 let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
     {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
-    ?(tenv = Exe_env.get_proc_tenv exe_env proc_name) () =
+    ?(tenv = Exe_env.get_proc_tenv proc_name) () =
   let analyze_dependency ?specialization proc_name =
     Ondemand.analyze_proc_name exe_env analysis_req ?specialization ~caller_summary proc_name
     |> Result.bind ~f:(fun {Summary.payloads} ->
@@ -102,8 +102,8 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
 
 
-let to_intraprocedural_t {Callbacks.summary= {proc_name; err_log}; exe_env; proc_desc} =
-  {IntraproceduralAnalysis.proc_desc; tenv= Exe_env.get_proc_tenv exe_env proc_name; err_log}
+let to_intraprocedural_t {Callbacks.summary= {proc_name; err_log}; proc_desc} =
+  {IntraproceduralAnalysis.proc_desc; tenv= Exe_env.get_proc_tenv proc_name; err_log}
 
 
 let intraprocedural checker ({Callbacks.summary} as callbacks) =

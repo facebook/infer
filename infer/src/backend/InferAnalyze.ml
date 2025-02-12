@@ -18,6 +18,7 @@ let clear_caches () =
     Summary.OnDisk.clear_cache () ;
     Attributes.clear_cache () ;
     BufferOverrunUtils.clear_cache () ) ;
+  Exe_env.clear_caches () ;
   Dependencies.clear ()
 
 

@@ -489,7 +489,7 @@ let rec analyze_callee_can_raise_recursion exe_env ~lazy_payloads (analysis_req 
                   protect
                     ~f:(fun () ->
                       (* preload tenv to avoid tainting preanalysis timing with IO *)
-                      let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
+                      let tenv = Exe_env.get_proc_tenv callee_pname in
                       AnalysisGlobalState.initialize callee_pdesc tenv ;
                       Timer.time Preanalysis
                         ~f:(fun () ->

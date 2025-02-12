@@ -955,7 +955,7 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       report_map
 
 
-let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_dependency} =
+let reporting {InterproceduralAnalysis.procedures; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
     let report_on_proc tenv pattrs report_map payload =
@@ -973,7 +973,7 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
       | Some attributes ->
           analyze_file_dependency procname |> AnalysisResult.to_option
           |> Option.value_map ~default:report_map ~f:(fun summary ->
-                 let tenv = Exe_env.get_proc_tenv file_exe_env procname in
+                 let tenv = Exe_env.get_proc_tenv procname in
                  if should_report attributes then report_on_proc tenv attributes report_map summary
                  else report_map )
     in

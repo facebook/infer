@@ -16,11 +16,13 @@ type t
 val mk : unit -> t
 (** Create a new cache *)
 
-val get_proc_tenv : t -> Procname.t -> Tenv.t
+val get_proc_tenv : Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
 
-val get_source_tenv : t -> SourceFile.t -> Tenv.t option
+val get_source_tenv : SourceFile.t -> Tenv.t option
 (** return the type environment associated with the source file *)
 
-val get_integer_type_widths : t -> Procname.t -> IntegerWidths.t
+val get_integer_type_widths : Procname.t -> IntegerWidths.t
 (** return the integer type widths associated with the procedure *)
+
+val clear_caches : unit -> unit

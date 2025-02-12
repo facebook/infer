@@ -333,7 +333,7 @@ module PulseTransferFunctions = struct
     | ExactDevirtualization
     | HackFunctionReference
 
-  let find_override_for_virtual exe_env tenv astate receiver proc_name =
+  let find_override_for_virtual tenv astate receiver proc_name =
     let tenv_resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       Tenv.resolve_method ~is_virtual:true ~method_exists tenv type_name proc_name
@@ -357,8 +357,7 @@ module PulseTransferFunctions = struct
           Typ.Name.pp dynamic_type_name Procname.pp_verbose proc_name (Pp.option SourceFile.pp)
           source_file_opt ;
         let tenv =
-          Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
-          |> Option.value ~default:tenv
+          Option.bind source_file_opt ~f:Exe_env.get_source_tenv |> Option.value ~default:tenv
         in
         Result.map (tenv_resolve_method tenv dynamic_type_name proc_name) ~f:(fun method_info ->
             L.d_printfln "method_info is %a" Tenv.MethodInfo.pp method_info ;
@@ -385,9 +384,9 @@ module PulseTransferFunctions = struct
         "approximately"
 
 
-  let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
+  let resolve_virtual_call tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override_for_virtual exe_env tenv astate receiver proc_name with
+        match find_override_for_virtual tenv astate receiver proc_name with
         | Ok (info, devirtualization_status) ->
             let proc_name' = Tenv.MethodInfo.get_proc_name info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
@@ -615,8 +614,8 @@ module PulseTransferFunctions = struct
         false
 
 
-  let lookup_virtual_method_info {InterproceduralAnalysis.tenv; proc_desc; exe_env} path func_args
-      call_loc astate callee_pname default_info =
+  let lookup_virtual_method_info {InterproceduralAnalysis.tenv; proc_desc} path func_args call_loc
+      astate callee_pname default_info =
     let caller = Procdesc.get_proc_name proc_desc in
     let record_call_resolution_if_closure resolution astate =
       if
@@ -633,7 +632,7 @@ module PulseTransferFunctions = struct
     | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver} -> (
       match
         improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
-        |> resolve_virtual_call exe_env tenv astate (ValueOrigin.value receiver)
+        |> resolve_virtual_call tenv astate (ValueOrigin.value receiver)
       with
       | Some (info, HackFunctionReference, {missed_captures; unresolved_reason= unresolved_reason1})
         ->
@@ -1309,9 +1308,8 @@ module PulseTransferFunctions = struct
 
 
   let exec_instr_aux limit ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
-      (astate_n : NonDisjDomain.t)
-      ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) cfg_node
-      (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
+      (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
+      cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _
       ->
@@ -1503,7 +1501,7 @@ module PulseTransferFunctions = struct
             CallGlobalForStats.one_call_is_stuck () ) ;
           let astate_n, astates =
             let pname = Procdesc.get_proc_name proc_desc in
-            let integer_type_widths = Exe_env.get_integer_type_widths exe_env pname in
+            let integer_type_widths = Exe_env.get_integer_type_widths pname in
             PulseNonDisjunctiveOperations.call integer_type_widths tenv proc_desc cfg_node path loc
               ~call_exp ~actuals ~astates_before astates astate_n
           in
@@ -1808,11 +1806,11 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
   if exists_a_node_with_0_disjunct then Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
 
 
-let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) =
+let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_attrs = Procdesc.get_attributes proc_desc in
   let location = Procdesc.get_loc proc_desc in
-  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
+  let integer_type_widths = Exe_env.get_integer_type_widths proc_name in
   let initial =
     with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
       ~f:(fun () ->

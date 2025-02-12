@@ -440,11 +440,10 @@ let get_checks_summary : checks -> checks_summary =
   PO.ConditionSet.for_summary cond_set
 
 
-let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependency} as analysis_data)
-    =
+let checker ({InterproceduralAnalysis.proc_desc; tenv; analyze_dependency} as analysis_data) =
   let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
+  let integer_type_widths = Exe_env.get_integer_type_widths proc_name in
   let+ inv_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload_opt analysis_data ~f:snd)
