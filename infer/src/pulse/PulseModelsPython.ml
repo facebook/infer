@@ -353,15 +353,16 @@ module Tuple = struct
     ret dict
 
 
+  let get_idx_int tuple i : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let field = Fieldname.make tuple_tname (str_field_of_int i) in
+    load_access ~deref:false tuple (FieldAccess field)
+
+
   let get tuple idx : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* opt_int = as_constant_int idx in
-    match opt_int with
-    | None ->
-        fresh ()
-    | Some i ->
-        let field = Fieldname.make tuple_tname (str_field_of_int i) in
-        load_access ~deref:false tuple (FieldAccess field)
+    match opt_int with None -> fresh () | Some i -> get_idx_int tuple i
 
 
   let append _list value : unit DSL.model_monad =
@@ -876,12 +877,35 @@ let load_name name locals _globals : model =
   assign_ret value
 
 
-let make_dictionary _args : model =
+let get_key_as_str i keys : string option DSL.model_monad =
+  let open DSL.Syntax in
+  let* key_addr = Tuple.get_idx_int keys i in
+  as_constant_string key_addr
+
+
+let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
+    (string list * DSL.aval list) DSL.model_monad =
+  let open DSL.Syntax in
+  let* ks, vs, _ =
+    list_fold vals ~init:([], [], 0) ~f:(fun acc v ->
+        let acc_keys, acc_vals, c = acc in
+        let* key = get_key_as_str c keys in
+        match key with
+        (* For now we ignore keys that are not const strings *)
+        | None ->
+            (acc_keys, acc_vals, c + 1) |> ret
+        | Some key ->
+            (key :: acc_keys, v :: acc_vals, c + 1) |> ret )
+  in
+  ret (List.rev ks, List.rev vs)
+
+
+let make_const_key_map (keys : DSL.aval) (values : DSL.aval list) : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  (* TODO: take args into account *)
-  let* dict = Dict.make [] [] in
+  let* keys, vals = get_bindings keys values in
+  let* dict = Dict.make keys vals in
   assign_ret dict
 
 
@@ -1066,7 +1090,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_bool" <>$ arg $--> bool
   ; -"$builtins" &:: "py_bool_true" <>--> bool_true
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
-  ; -"$builtins" &:: "py_build_const_key_map" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_build_const_key_map" <>$ arg $+++$--> make_const_key_map
   ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_build_list" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_build_map" &::.*+++> unknown ~deep_release:true
@@ -1147,7 +1171,6 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
   ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_dictionary" &::.*+++> make_dictionary
   ; -"$builtins" &:: "py_make_float" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
   ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
