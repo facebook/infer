@@ -794,7 +794,8 @@ module PulseTransferFunctions = struct
           AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
             astate
       | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
-        when is_receiver_hack_builder tenv astate callee_pname arg ->
+        when Language.curr_language_is Hack && is_receiver_hack_builder tenv astate callee_pname arg
+        ->
           L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
             callee_pname ;
           AddressAttributes.set_hack_builder (ValueOrigin.value arg)
