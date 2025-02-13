@@ -576,6 +576,8 @@ module Name = struct
 
   let to_string t = F.asprintf "%a" pp t
 
+  let show = to_string
+
   let is_class = function
     | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ | PythonClass _ ->
         true

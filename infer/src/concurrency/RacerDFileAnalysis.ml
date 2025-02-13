@@ -683,17 +683,19 @@ let get_synchronized_container_fields_of analyze tenv classname =
          AttributeMapDomain.fold add_synchronized_container_field attributes acc )
 
 
-let get_synchronized_container_fields_of, clear_sync_container_cache =
-  let cache = Typ.Name.Hash.create 5 in
-  ( (fun analyze tenv classname ->
-      match Typ.Name.Hash.find_opt cache classname with
-      | Some fieldset ->
-          fieldset
-      | None ->
-          let fieldset = get_synchronized_container_fields_of analyze tenv classname in
-          Typ.Name.Hash.add cache classname fieldset ;
-          fieldset )
-  , fun () -> Typ.Name.Hash.clear cache )
+module TypeNameCache = Concurrent.MakeCache (Typ.Name)
+
+let get_synchronized_container_fields_of =
+  let cache = TypeNameCache.create ~name:"racerd_sync_fields" in
+  let () = TypeNameCache.set_lru_mode cache ~lru_limit:(Some 50) in
+  fun analyze tenv classname ->
+    match TypeNameCache.lookup cache classname with
+    | Some fieldset ->
+        fieldset
+    | None ->
+        let fieldset = get_synchronized_container_fields_of analyze tenv classname in
+        TypeNameCache.add cache classname fieldset ;
+        fieldset
 
 
 let should_keep_container_access analyze tenv ((_base, path) : PathModuloThis.t) =
@@ -726,13 +728,9 @@ let analyze ({InterproceduralAnalysis.analyze_file_dependency} as file_t) =
         Fn.id
   in
   let class_map = aggregate_by_class file_t in
-  let result =
-    Typ.Name.Map.fold
-      (fun classname methods issue_log ->
-        make_results_table methods
-        |> synchronized_container_filter classname
-        |> report_unsafe_accesses ~issue_log classname )
-      class_map IssueLog.empty
-  in
-  clear_sync_container_cache () ;
-  result
+  Typ.Name.Map.fold
+    (fun classname methods issue_log ->
+      make_results_table methods
+      |> synchronized_container_filter classname
+      |> report_unsafe_accesses ~issue_log classname )
+    class_map IssueLog.empty
