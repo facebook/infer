@@ -318,11 +318,25 @@ module Dict = struct
 
 
   (* beware: key is expected to be a constant string! *)
-  let get dict key : DSL.aval DSL.model_monad =
+  let get_exn dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* key = as_constant_string_exn key in
     let* load_res = get_str_key ~propagate_static_type:true dict key in
     ret load_res
+
+
+  (* similar to get_exn but doesn't throw error if key is not constant string *)
+  let get dict key : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let* key = as_constant_string key in
+    let* res =
+      match key with
+      | None ->
+          fresh ()
+      | Some key ->
+          get_str_key ~propagate_static_type:true dict key
+    in
+    ret res
 
 
   let set_str_key dict key value : unit DSL.model_monad =
@@ -626,13 +640,13 @@ let call_method name obj arg_names args : model =
         match opt_special_call with
         | None ->
             L.d_printfln "calling method %s on module object %s" str_name module_name ;
-            let* closure = Dict.get obj name in
+            let* closure = Dict.get_exn obj name in
             call_dsl ~closure ~arg_names ~args
         | Some res ->
             L.d_printfln "catching special call %s on module object %s" str_name module_name ;
             ret res )
     | _ ->
-        let* closure = Dict.get obj name in
+        let* closure = Dict.get_exn obj name in
         (* TODO: for OO method, gives self argument *)
         call_dsl ~closure ~arg_names ~args
   in
@@ -833,7 +847,7 @@ let load_fast name locals : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* value = Dict.get locals name in
+  let* value = Dict.get_exn locals name in
   assign_ret value
 
 
@@ -872,7 +886,7 @@ let load_name name locals _globals : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* value = Dict.get locals name in
+  let* value = Dict.get_exn locals name in
   (* TODO: decide what we do if the binding is missing in locals *)
   assign_ret value
 
@@ -1015,7 +1029,8 @@ let subscript seq idx : model =
   @@ fun () ->
   let* res =
     dynamic_dispatch seq
-      ~cases:[(tuple_tname, fun () -> Tuple.get seq idx)] (* TODO: other sequence types *)
+      ~cases:[(tuple_tname, fun () -> Tuple.get seq idx); (dict_tname, fun () -> Dict.get seq idx)]
+        (* TODO: other sequence types *)
       ~default:(fun () -> fresh ())
   in
   assign_ret res
