@@ -565,7 +565,7 @@ val merge_summaries : string list
 
 val modeled_expensive : string * Yojson.Safe.t
 
-val multicore : bool [@@warning "-unused-value-declaration"]
+val multicore : bool
 
 val never_returning_null : string * Yojson.Safe.t
 
@@ -972,3 +972,6 @@ val is_originator : bool
 (** {2 Global variables with initial values specified by command-line options} *)
 
 val clang_compilation_dbs : [`Escaped of string | `Raw of string] list
+
+val set_gc_params : unit -> unit
+(** set GC paramemters according to command line arguments and defaults *)

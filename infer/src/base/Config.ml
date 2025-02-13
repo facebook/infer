@@ -2223,6 +2223,11 @@ and merge_summaries =
      be merged together and deduplicated before reporting is done."
 
 
+and minor_heap_size_mb =
+  CLOpt.mk_int ~long:"minor-heap-size-mb" ~default:8
+    "Set minor heap size (in Mb) for each process/domain. Defaults to 8"
+
+
 and _method_decls_info =
   CLOpt.mk_path_opt ~long:"" ~deprecated:["-method-decls-info"] ~meta:"method_decls_info.json"
     "[DOES NOTHING, test determinator has been removed] Specifies the file containing the method \
@@ -3749,6 +3754,15 @@ let inferconfig_file =
         Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file) )
 
 
+let set_gc_params () =
+  let ctrl = Gc.get () in
+  let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size_in_bits in
+  let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
+  (* increase the minor heap size *)
+  let minor_heap_size = new_size !minor_heap_size_mb in
+  Gc.set {ctrl with minor_heap_size}
+
+
 let post_parsing_initialization command_opt =
   if CLOpt.is_originator [@warning "-3"] then
     (* make sure subprocesses read from the same .inferconfig as the toplevel process *)
@@ -3845,14 +3859,6 @@ let post_parsing_initialization command_opt =
   in
   Stdlib.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
-  let set_gc_params () =
-    let ctrl = Gc.get () in
-    let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size_in_bits in
-    let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
-    (* increase the minor heap size *)
-    let minor_heap_size = new_size 8 in
-    Gc.set {ctrl with minor_heap_size}
-  in
   set_gc_params () ;
   let biabd_symops_timeout, biabd_seconds_timeout =
     let default_symops_timeout = 1100 in

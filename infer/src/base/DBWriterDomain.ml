@@ -53,6 +53,7 @@ let rec server_loop () =
 
 
 let domain_server () =
+  Config.set_gc_params () ;
   Database.new_database_connections Primary ;
   server_loop ()
 
