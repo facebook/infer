@@ -193,6 +193,14 @@ void AnnotateSync1(id flowId, NS_NOESCAPE AnnotateSyncBlock1 block) {}
   BLOCK_CALL_SAFE_ON_QUEUE(dispatch_get_main_queue(), completion, nil);
 }
 
+- (void)startWithCompletionHandlerOk:(MyBlock)completion {
+  if (completion != nil) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      completion();
+    });
+  }
+}
+
 @end
 
 #ifdef __clang__
