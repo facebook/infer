@@ -1587,6 +1587,14 @@ let hhbc_concat arg1 arg2 : model =
   assign_ret res
 
 
+let hack_enum_label : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* any = fresh () in
+  assign_ret any
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
@@ -1660,5 +1668,6 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_iter_get_value" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hhbc_iter_get_value
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_iter_next
+  ; -"$builtins" &:: "hack_enum_label" <>--> hack_enum_label
   ; -"Infer$static" &:: "newUnconstrainedInt" <>$ any_arg $--> hack_unconstrained_int ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
