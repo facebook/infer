@@ -201,7 +201,6 @@ AS_IF([test "x$enable_python_analyzers" != "xno"], [
   python_version=$("$PYTHON" --version)
   AC_MSG_RESULT([$python_version])
   case $python_version in
-    Python\ 3.8.*) BUILD_PYTHON_ANALYZERS=yes; break;;
     Python\ 3.10.*) BUILD_PYTHON_ANALYZERS=yes; break;;
     *) BUILD_PYTHON_ANALYZERS=no;
       AS_IF([test "x$enable_python_analyzers" = "xauto"], [
