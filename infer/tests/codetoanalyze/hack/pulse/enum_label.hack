@@ -12,7 +12,7 @@ enum class E: int {
 
 class EnumLabel {
 
-  public function FN_labelParamBad(\HH\EnumClass\Label<E, int> $label): void {
+  public function labelParamBad(\HH\EnumClass\Label<E, int> $label): void {
     $taint = \Level1\taintSource();
     if ($label === E#A) {
       \Level1\taintSink($taint);
