@@ -623,10 +623,6 @@ type 'a pyresult = ('a, Error.t) result
 module Stmt = struct
   let pp_call_arg fmt value = Exp.pp fmt value
 
-  let unnamed_call_arg value = value
-
-  let unnamed_call_args args = List.map ~f:unnamed_call_arg args
-
   type gen_kind = Generator | Coroutine | AsyncGenerator
 
   type t =
@@ -1208,13 +1204,14 @@ let read_code_qual_name st c =
       internal_error st (Error.CodeWithoutQualifiedName c)
 
 
-let call_function_with_unnamed_args st ?arg_names exp args =
+let call_function st ?arg_names arg =
   let open IResult.Let_syntax in
-  let args = Stmt.unnamed_call_args args in
+  let* args, st = State.pop_n_and_cast st arg in
+  let* fun_exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
   let arg_names = Option.value arg_names ~default:Exp.none in
   let* stmt =
-    match exp with
+    match fun_exp with
     | Exp.BuiltinCaller call ->
         Ok (Stmt.BuiltinCall {lhs; call; args; arg_names})
     | Exp.ContextManagerExit self_if_needed ->
@@ -1225,12 +1222,12 @@ let call_function_with_unnamed_args st ?arg_names exp args =
         Stmt.Call {lhs; exp; args; arg_names}
   in
   let st = State.push_stmt st stmt in
-  Ok (lhs, st)
+  let st = State.push st (Exp.Temp lhs) in
+  Ok (st, None)
 
 
 let call_builtin_function st ?arg_names call args =
   let lhs, st = State.fresh_id st in
-  let args = Stmt.unnamed_call_args args in
   let arg_names = Option.value arg_names ~default:Exp.none in
   let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names} in
   let st = State.push_stmt st stmt in
@@ -1289,35 +1286,10 @@ let make_function st flags =
   Ok (st, None)
 
 
-let call_function st arg =
-  let open IResult.Let_syntax in
-  let* args, st = State.pop_n_and_cast st arg in
-  let* fun_exp, st = State.pop st in
-  let* id, st = call_function_with_unnamed_args st fun_exp args in
-  let st = State.push st (Exp.Temp id) in
-  Ok (st, None)
-
-
 let call_function_kw st argc =
   let open IResult.Let_syntax in
   let* arg_names, st = State.pop_and_cast st in
-  let arg_names = Some arg_names in
-  (* a tuple containing the arguments names *)
-  let* args, st = State.pop_n_and_cast st argc in
-  let* exp, st = State.pop st in
-  let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:Exp.none in
-  let* stmt =
-    match exp with
-    | Exp.BuiltinCaller call ->
-        Ok (Stmt.BuiltinCall {lhs; call; args; arg_names})
-    | exp ->
-        let+ exp = State.cast_exp st exp in
-        Stmt.Call {lhs; exp; args; arg_names}
-  in
-  let st = State.push_stmt st stmt in
-  let st = State.push st (Exp.Temp lhs) in
-  Ok (st, None)
+  call_function st ~arg_names argc
 
 
 let call_function_ex st flags =
