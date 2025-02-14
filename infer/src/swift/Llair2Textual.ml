@@ -27,7 +27,10 @@ let translate_llair_globals globals =
 
 
 type partial_proc_desc =
-  {params: Textual.VarName.t list; locals: Textual.VarName.t list; procdecl: Textual.ProcDecl.t}
+  { params: Textual.VarName.t list
+  ; locals: Textual.VarName.t list
+  ; procdecl: Textual.ProcDecl.t
+  ; start: Textual.NodeName.t }
 
 let to_qualified_proc_name func_name loc =
   let func_name = FuncName.name func_name in
@@ -56,6 +59,11 @@ let to_locals func =
   List.map ~f:to_textual_local locals
 
 
+let block_to_node_name block =
+  let name = block.Llair.lbl in
+  Textual.NodeName.of_string name
+
+
 let translate_llair_functions functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals, formals_types = to_formals func in
@@ -66,7 +74,7 @@ let translate_llair_functions functions =
       Textual.ProcDecl.
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
     in
-    {params= formals; locals; procdecl} :: proc_descs
+    {params= formals; locals; procdecl; start= block_to_node_name func.Llair.entry} :: proc_descs
   in
   let values = FuncName.Map.to_list functions in
   List.fold values ~f:function_to_formal ~init:[]
