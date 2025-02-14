@@ -51,21 +51,17 @@ struct
 
     let is_empty = XMap.is_empty
 
-    let find_opt reprs x =
-      let rec find_opt_aux candidate_repr =
-        (* [x] is in the relation and now we are climbing up to the final representative *)
-        match XMap.find_opt candidate_repr reprs with
-        | None ->
-            (* [candidate_repr] is the representative *)
-            candidate_repr
-        | Some candidate_repr' ->
-            (* keep climbing *)
-            find_opt_aux candidate_repr'
-      in
-      XMap.find_opt x reprs |> Option.map ~f:find_opt_aux
+    let find reprs x =
+      let r = ref x in
+      try
+        while true do
+          (* [x] is in the relation and now we are climbing up to the final representative *)
+          r := XMap.find !r reprs
+        done ;
+        (* never happens *)
+        x
+      with Stdlib.Not_found -> !r
 
-
-    let find reprs x = find_opt reprs x |> Option.value ~default:x
 
     let merge reprs x ~into:y = (* TODO: implement path compression *) XMap.add x y reprs
 
