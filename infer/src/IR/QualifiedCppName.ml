@@ -19,12 +19,24 @@ let append_qualifier quals ~qual = List.cons qual quals
 
 let extract_last = function last :: rest -> Some (last, rest) | [] -> None
 
-let strip_template_args quals =
-  let no_template_name s = List.hd_exn (String.split ~on:'<' s) in
-  List.map ~f:no_template_name quals
+let no_template_name s =
+  match String.index s '<' with None -> s | Some len -> String.sub s ~pos:0 ~len
 
 
-let compare_name quals1 quals2 = compare (strip_template_args quals1) (strip_template_args quals2)
+let strip_template_args quals = List.map ~f:no_template_name quals
+
+let rec compare_name quals1 quals2 =
+  match (quals1, quals2) with
+  | [], [] ->
+      0
+  | [], _ ->
+      -1
+  | _, [] ->
+      1
+  | q1 :: rest1, q2 :: rest2 ->
+      let n = String.compare (no_template_name q1) (no_template_name q2) in
+      if n <> 0 then n else compare_name rest1 rest2
+
 
 let append_template_args_to_last quals ~args =
   match quals with
