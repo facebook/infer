@@ -8,7 +8,14 @@
 open! IStd
 open Llair2TextualType
 
+let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
+  { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
+  ; name= Textual.ProcName.of_string name }
+
+
 let reg_to_var_name reg = Textual.VarName.of_string (Reg.name reg)
+
+let reg_to_id reg = Textual.Ident.of_int (Reg.id reg)
 
 let reg_to_annot_typ reg = to_annotated_textual_typ (Reg.typ reg)
 
@@ -30,13 +37,14 @@ type partial_proc_desc =
   { params: Textual.VarName.t list
   ; locals: Textual.VarName.t list
   ; procdecl: Textual.ProcDecl.t
-  ; start: Textual.NodeName.t }
+  ; start: Textual.NodeName.t
+  ; nodes: Textual.Node.t list }
 
-let to_qualified_proc_name func_name loc =
+let to_qualified_proc_name ?loc func_name =
   let func_name = FuncName.name func_name in
-  let loc = to_textual_loc loc in
+  let loc = Option.map ~f:to_textual_loc loc in
   Textual.QualifiedProcName.
-    {enclosing_class= TopLevel; name= Textual.ProcName.of_string ~loc func_name}
+    {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}
 
 
 let to_result_type func_name =
@@ -64,17 +72,96 @@ let block_to_node_name block =
   Textual.NodeName.of_string name
 
 
+(* TODO: translate expressions *)
+let to_textual_exp _exp = assert false
+
+let to_textual_call (call : 'a Llair.call) =
+  let loc = to_textual_loc call.loc in
+  let proc, kind, exp_opt =
+    match call.callee with
+    | Direct {func} ->
+        (to_qualified_proc_name func.Llair.name, Textual.Exp.NonVirtual, None)
+    | Indirect {ptr} ->
+        let proc = builtin_qual_proc_name "llvm_dynamic_call" in
+        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp ptr))
+    | _ ->
+        assert false (* TODO translate Intrinsic *)
+  in
+  let id = Option.map call.areturn ~f:(fun reg -> reg_to_id reg) in
+  let args = List.map ~f:to_textual_exp (StdUtils.iarray_to_list call.Llair.actuals) in
+  let args = List.append (Option.to_list exp_opt) args in
+  Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
+
+
+let to_terminator block =
+  match block.Llair.term with
+  | Call call ->
+      let label = block_to_node_name call.return.dst in
+      let node_call = Textual.Terminator.{label; ssa_args= []} in
+      Textual.Terminator.Jump [node_call]
+  | Return {exp= Some exp} ->
+      Textual.Terminator.Ret (to_textual_exp exp)
+  | Return {exp= None} ->
+      Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void)
+  | Throw {exc} ->
+      Textual.Terminator.Throw (to_textual_exp exc)
+  | Abort _ | Unreachable | Switch _ | Iswitch _ ->
+      Textual.Terminator.Unreachable (* TODO translate Switch *)
+
+
+let cmnd_to_instrs block =
+  let to_instr inst =
+    (* TODO translate instructions *)
+    match inst with
+    | Move _
+    | Load _
+    | Store _
+    | AtomicRMW _
+    | AtomicCmpXchg _
+    | Alloc _
+    | Free _
+    | Nondet _
+    | Builtin _ ->
+        assert false
+  in
+  let call_instr_opt =
+    match block.term with Call call -> Some (to_textual_call call) | _ -> None
+  in
+  let instrs = List.map ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
+  List.append instrs (Option.to_list call_instr_opt)
+
+
+(* TODO still various parts of the node left to be translated *)
+let block_to_node (block : Llair.block) =
+  Textual.Node.
+    { label= block_to_node_name block
+    ; ssa_parameters= []
+    ; exn_succs= []
+    ; last= to_terminator block
+    ; instrs= cmnd_to_instrs block
+    ; last_loc= Textual.Location.Unknown
+    ; label_loc= Textual.Location.Unknown }
+
+
+let func_to_nodes func =
+  let node = block_to_node func.Llair.entry in
+  (* TODO translate all nodes *)
+  [node]
+
+
 let translate_llair_functions functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals, formals_types = to_formals func in
     let locals = to_locals func in
-    let qualified_name = to_qualified_proc_name func_name func.Llair.loc in
+    let qualified_name = to_qualified_proc_name func_name ~loc:func.Llair.loc in
     let result_type = to_result_type func_name in
     let procdecl =
       Textual.ProcDecl.
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
     in
-    {params= formals; locals; procdecl; start= block_to_node_name func.Llair.entry} :: proc_descs
+    let nodes = func_to_nodes func in
+    {params= formals; locals; procdecl; start= block_to_node_name func.Llair.entry; nodes}
+    :: proc_descs
   in
   let values = FuncName.Map.to_list functions in
   List.fold values ~f:function_to_formal ~init:[]
