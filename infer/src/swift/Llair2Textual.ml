@@ -75,6 +75,8 @@ let block_to_node_name block =
 (* TODO: translate expressions *)
 let to_textual_exp _exp = assert false
 
+let to_textual_bool_exp exp = Textual.BoolExp.Exp (to_textual_exp exp)
+
 let to_textual_call (call : 'a Llair.call) =
   let loc = to_textual_loc call.loc in
   let proc, kind, exp_opt =
@@ -93,20 +95,33 @@ let to_textual_call (call : 'a Llair.call) =
   Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
 
 
-let to_terminator block =
-  match block.Llair.term with
+let to_textual_jump jump =
+  let label = block_to_node_name jump.dst in
+  let node_call = Textual.Terminator.{label; ssa_args= []} in
+  Textual.Terminator.Jump [node_call]
+
+
+let to_terminator term =
+  match term with
   | Call call ->
-      let label = block_to_node_name call.return.dst in
-      let node_call = Textual.Terminator.{label; ssa_args= []} in
-      Textual.Terminator.Jump [node_call]
+      to_textual_jump call.return
   | Return {exp= Some exp} ->
       Textual.Terminator.Ret (to_textual_exp exp)
   | Return {exp= None} ->
       Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void)
   | Throw {exc} ->
       Textual.Terminator.Throw (to_textual_exp exc)
-  | Abort _ | Unreachable | Switch _ | Iswitch _ ->
-      Textual.Terminator.Unreachable (* TODO translate Switch *)
+  | Switch {key; tbl; els} -> (
+    match StdUtils.iarray_to_list tbl with
+    | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
+        let bexp = to_textual_bool_exp key in
+        let else_ = to_textual_jump zero_jump in
+        let then_ = to_textual_jump els in
+        Textual.Terminator.If {bexp; then_; else_}
+    | _ ->
+        Textual.Terminator.Unreachable (* TODO translate Switch *) )
+  | Iswitch _ | Abort _ | Unreachable ->
+      Textual.Terminator.Unreachable
 
 
 let cmnd_to_instrs block =
@@ -137,7 +152,7 @@ let block_to_node (block : Llair.block) =
     { label= block_to_node_name block
     ; ssa_parameters= []
     ; exn_succs= []
-    ; last= to_terminator block
+    ; last= to_terminator block.term
     ; instrs= cmnd_to_instrs block
     ; last_loc= Textual.Location.Unknown
     ; label_loc= Textual.Location.Unknown }
