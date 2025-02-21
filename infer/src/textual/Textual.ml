@@ -972,14 +972,22 @@ module Terminator = struct
 end
 
 module Node = struct
-  type t =
-    { label: NodeName.t
-    ; ssa_parameters: (Ident.t * Typ.t) list
-    ; exn_succs: NodeName.t list
-    ; last: Terminator.t
-    ; instrs: Instr.t list
-    ; last_loc: Location.t
-    ; label_loc: Location.t }
+  module T = struct
+    type t =
+      { label: NodeName.t
+      ; ssa_parameters: (Ident.t * Typ.t) list
+      ; exn_succs: NodeName.t list
+      ; last: Terminator.t
+      ; instrs: Instr.t list
+      ; last_loc: Location.t
+      ; label_loc: Location.t }
+
+    let equal node1 node2 = NodeName.equal node1.label node2.label
+
+    let compare node1 node2 = NodeName.compare node1.label node2.label
+  end
+
+  include T
 
   (* see the specification of Instr.is_ready_for_to_sil_conversion above *)
   let is_ready_for_to_sil_conversion node =
@@ -1003,7 +1011,7 @@ module Node = struct
     F.fprintf fmt "@\n@]"
 
 
-  let equal node1 node2 = NodeName.equal node1.label node2.label
+  module Set = Stdlib.Set.Make (T)
 end
 
 module ProcDesc = struct

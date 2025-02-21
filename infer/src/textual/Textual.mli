@@ -374,6 +374,8 @@ module Terminator : sig
     | Unreachable
 end
 
+[@@@warning "-unused-module"]
+
 module Node : sig
   type t =
     { label: NodeName.t
@@ -384,6 +386,8 @@ module Node : sig
     ; last_loc: Location.t  (** location of last instruction in file *)
     ; label_loc: Location.t  (** location of label in file *) }
   [@@deriving equal]
+
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module ProcDesc : sig

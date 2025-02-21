@@ -92,35 +92,6 @@ let to_textual_call (call : 'a Llair.call) =
   Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
 
 
-let to_textual_jump jump =
-  let label = block_to_node_name jump.dst in
-  let node_call = Textual.Terminator.{label; ssa_args= []} in
-  Textual.Terminator.Jump [node_call]
-
-
-let to_terminator term =
-  match term with
-  | Call call ->
-      to_textual_jump call.return
-  | Return {exp= Some exp} ->
-      Textual.Terminator.Ret (to_textual_exp exp)
-  | Return {exp= None} ->
-      Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void)
-  | Throw {exc} ->
-      Textual.Terminator.Throw (to_textual_exp exc)
-  | Switch {key; tbl; els} -> (
-    match StdUtils.iarray_to_list tbl with
-    | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
-        let bexp = to_textual_bool_exp key in
-        let else_ = to_textual_jump zero_jump in
-        let then_ = to_textual_jump els in
-        Textual.Terminator.If {bexp; then_; else_}
-    | _ ->
-        Textual.Terminator.Unreachable (* TODO translate Switch *) )
-  | Iswitch _ | Abort _ | Unreachable ->
-      Textual.Terminator.Unreachable
-
-
 let cmnd_to_instrs block =
   let to_instr inst =
     (* TODO translate instructions *)
@@ -143,22 +114,70 @@ let cmnd_to_instrs block =
   List.append instrs (Option.to_list call_instr_opt)
 
 
+let rec to_textual_jump_and_succs ~seen_nodes jump =
+  let block = jump.dst in
+  let node_label = block_to_node_name block in
+  let node_label, succs =
+    (* If we've seen this node, stop the recursion *)
+    if Textual.NodeName.Set.mem node_label seen_nodes then (node_label, Textual.Node.Set.empty)
+    else
+      let node, nodes = block_to_node_and_succs ~seen_nodes jump.dst in
+      (node.label, nodes)
+  in
+  let node_call = Textual.Terminator.{label= node_label; ssa_args= []} in
+  (Textual.Terminator.Jump [node_call], succs)
+
+
+and to_terminator_and_succs ~seen_nodes term =
+  let no_succs = Textual.Node.Set.empty in
+  match term with
+  | Call call ->
+      to_textual_jump_and_succs ~seen_nodes call.return
+  | Return {exp= Some exp} ->
+      (Textual.Terminator.Ret (to_textual_exp exp), no_succs)
+  | Return {exp= None} ->
+      (Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), no_succs)
+  | Throw {exc} ->
+      (Textual.Terminator.Throw (to_textual_exp exc), no_succs)
+  | Switch {key; tbl; els} -> (
+    match StdUtils.iarray_to_list tbl with
+    | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
+        let bexp = to_textual_bool_exp key in
+        let else_, zero_nodes = to_textual_jump_and_succs ~seen_nodes zero_jump in
+        let then_, els_nodes = to_textual_jump_and_succs ~seen_nodes els in
+        let term = Textual.Terminator.If {bexp; then_; else_} in
+        let nodes = Textual.Node.Set.union zero_nodes els_nodes in
+        (term, nodes)
+    | _ ->
+        (Textual.Terminator.Unreachable, no_succs (* TODO translate Switch *)) )
+  | Iswitch _ | Abort _ | Unreachable ->
+      (Textual.Terminator.Unreachable, no_succs)
+
+
 (* TODO still various parts of the node left to be translated *)
-let block_to_node (block : Llair.block) =
-  Textual.Node.
-    { label= block_to_node_name block
-    ; ssa_parameters= []
-    ; exn_succs= []
-    ; last= to_terminator block.term
-    ; instrs= cmnd_to_instrs block
-    ; last_loc= Textual.Location.Unknown
-    ; label_loc= Textual.Location.Unknown }
+and block_to_node_and_succs ~seen_nodes (block : Llair.block) : Textual.Node.t * Textual.Node.Set.t
+    =
+  let node_name = block_to_node_name block in
+  let terminator, succs =
+    to_terminator_and_succs ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes) block.term
+  in
+  let node =
+    Textual.Node.
+      { label= node_name
+      ; ssa_parameters= []
+      ; exn_succs= []
+      ; last= terminator
+      ; instrs= cmnd_to_instrs block
+      ; last_loc= Textual.Location.Unknown
+      ; label_loc= Textual.Location.Unknown }
+  in
+  (* We add the nodes here to make sure they always get added even in the case of recursive jumps *)
+  (node, Textual.Node.Set.add node succs)
 
 
 let func_to_nodes func =
-  let node = block_to_node func.Llair.entry in
-  (* TODO translate all nodes *)
-  [node]
+  let _, nodes = block_to_node_and_succs ~seen_nodes:Textual.NodeName.Set.empty func.Llair.entry in
+  Textual.Node.Set.to_list nodes
 
 
 let translate_llair_functions functions =
