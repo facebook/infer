@@ -18,3 +18,5 @@ val curr_language_is : t -> bool
 val get_language : unit -> t
 
 val set_language : t -> unit
+
+val supports_pointer_arithmetic : t -> bool

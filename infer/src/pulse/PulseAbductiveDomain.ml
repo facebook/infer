@@ -1927,7 +1927,11 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
 
            We don't have a precise enough memory model to understand everything that goes on here
            but we should at least not report a leak. *)
-        if reaches_into addr live_addresses astate then (
+        let curr_language = Language.get_language () in
+        if
+          Language.supports_pointer_arithmetic curr_language
+          && reaches_into addr live_addresses astate
+        then (
           L.d_printfln ~color:Orange
             "False alarm: address is still reachable via other means; forgetting about its \
              allocation site to prevent leak false positives." ;

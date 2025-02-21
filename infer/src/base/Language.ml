@@ -26,3 +26,12 @@ let get_language () = DLS.get curr_language
 let curr_language_is lang = equal (get_language ()) lang
 
 let set_language lang = DLS.set curr_language lang
+
+let supports_pointer_arithmetic = function
+  | Clang ->
+      true
+  (* https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/pointer-related-operators *)
+  | CIL ->
+      true
+  | Erlang | Hack | Java | Python ->
+      false
