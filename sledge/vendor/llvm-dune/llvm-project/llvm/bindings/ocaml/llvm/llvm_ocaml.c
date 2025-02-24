@@ -1708,15 +1708,16 @@ value llvm_delete_global(value GlobalVar) {
 }
 
 /* llvalue -> llvalue option */
-CAMLprim value llvm_global_initializer(LLVMValueRef GlobalVar) {
+CAMLprim value llvm_global_initializer(value v) {
+  LLVMValueRef GlobalVar = Value_val(v);
   CAMLparam0();
   LLVMValueRef Init;
   if ((Init = LLVMGetInitializer(GlobalVar))) {
     value Option = caml_alloc(1, 0);
-    Field(Option, 0) = (value) Init;
+    Field(Option, 0) = to_val(Init);
     CAMLreturn(Option);
   }
-  CAMLreturn(Val_int(0));
+  CAMLreturn(Val_none);
 }
 
 /* llvalue -> llvalue -> unit */
@@ -2031,7 +2032,8 @@ value llvm_instr_fcmp_predicate(value Val) {
 }
 
 /* llvalue -> AtomicRMWBinOp.t */
-value llvm_instr_get_atomicrmw_binop(LLVMValueRef Inst) {
+value llvm_instr_get_atomicrmw_binop(value v) {
+  LLVMValueRef Inst = Value_val(v);
   LLVMAtomicRMWBinOp o;
   if (!LLVMIsAInstruction(Inst))
     caml_failwith("Not an instruction");
