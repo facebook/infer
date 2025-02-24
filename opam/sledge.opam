@@ -15,7 +15,7 @@ depends: [
   "conf-llvm" {= "17"}
   "containers" {>= "3.4"}
   "containers-data"
-  "core" {>= "v0.15" & < "v0.16"}
+  "core" {>= "v0.16" & < "v0.17"}
   "core_unix"
   "ctypes"
   "ctypes-foreign"
