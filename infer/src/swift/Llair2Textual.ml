@@ -74,8 +74,15 @@ let to_textual_exp _exp = assert false
 
 let to_textual_bool_exp exp = Textual.BoolExp.Exp (to_textual_exp exp)
 
+let to_textual_call_aux ~kind ?exp_opt proc return args loc =
+  let loc = to_textual_loc loc in
+  let id = Option.map return ~f:(fun reg -> reg_to_id reg) in
+  let args = List.map ~f:to_textual_exp (StdUtils.iarray_to_list args) in
+  let args = List.append (Option.to_list exp_opt) args in
+  Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
+
+
 let to_textual_call (call : 'a Llair.call) =
-  let loc = to_textual_loc call.loc in
   let proc, kind, exp_opt =
     match call.callee with
     | Direct {func} ->
@@ -83,29 +90,29 @@ let to_textual_call (call : 'a Llair.call) =
     | Indirect {ptr} ->
         let proc = builtin_qual_proc_name "llvm_dynamic_call" in
         (proc, Textual.Exp.NonVirtual, Some (to_textual_exp ptr))
-    | _ ->
-        assert false (* TODO translate Intrinsic *)
+    | Intrinsic intrinsic ->
+        let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
+        (proc, Textual.Exp.NonVirtual, None)
   in
-  let id = Option.map call.areturn ~f:(fun reg -> reg_to_id reg) in
-  let args = List.map ~f:to_textual_exp (StdUtils.iarray_to_list call.Llair.actuals) in
-  let args = List.append (Option.to_list exp_opt) args in
-  Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
+  to_textual_call_aux ~kind ?exp_opt proc call.areturn call.actuals call.loc
+
+
+let to_textual_builtin return name args loc =
+  let proc, kind =
+    let proc = builtin_qual_proc_name (Llair.Builtin.to_name name) in
+    (proc, Textual.Exp.NonVirtual)
+  in
+  to_textual_call_aux ~kind proc return args loc
 
 
 let cmnd_to_instrs block =
   let to_instr inst =
     (* TODO translate instructions *)
     match inst with
-    | Move _
-    | Load _
-    | Store _
-    | AtomicRMW _
-    | AtomicCmpXchg _
-    | Alloc _
-    | Free _
-    | Nondet _
-    | Builtin _ ->
+    | Move _ | Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ | Free _ | Nondet _ ->
         assert false
+    | Builtin {reg; name; args; loc} ->
+        to_textual_builtin reg name args loc
   in
   let call_instr_opt =
     match block.term with Call call -> Some (to_textual_call call) | _ -> None

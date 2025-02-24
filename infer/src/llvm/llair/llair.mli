@@ -23,6 +23,8 @@ module Builtin : sig
 
   val of_name : string -> t option
 
+  val to_name : t -> string
+
   val pp : t pp
 end
 
@@ -30,6 +32,8 @@ module Intrinsic : sig
   include module type of Intrinsics
 
   val of_name : string -> t option
+
+  val to_name : t -> string
 
   val pp : t pp
 end
