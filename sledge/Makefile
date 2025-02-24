@@ -33,7 +33,7 @@ link_llvm_dylib:
 	ln -s $$LLVMLIB/libLLVM.dylib $$LLVMLIB/libLLVM-12.dylib
 
 $(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
-	cd vendor/llvm-dune; ./setup.sh $$(opam var conf-llvm:config)
+	cd vendor/llvm-dune; EXTRA_LDFLAGS='$(EXTRA_LDFLAGS)' ./setup.sh $$(opam var conf-llvm:config)
 
 cli/llvm-config_ldflags.sexp: $(LLVM_OCAML_SENTINEL)
 	printf "(" > $@

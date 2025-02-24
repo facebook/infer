@@ -48,6 +48,9 @@ base_cflags=$(llvm_config --cflags)
 ldflags="$(llvm_config --ldflags) -lstdc++"
 llvm_targets=$(llvm_config --targets-built)
 
+# NOT UPSTREAM: add extra link flags if present
+ldflags="$ldflags ${EXTRA_LDFLAGS}"
+
 rm -rf src
 cp -r llvm-project/llvm/bindings/ocaml src
 
