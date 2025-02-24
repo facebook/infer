@@ -9,19 +9,19 @@
 
 (context
  (opam
-  (switch sledge)
+  (switch 5.2.1+flambda)
   (name debug)
   (profile debug)
   (merlin)))
 
 (context
  (opam
-  (switch sledge)
+  (switch 5.2.1+flambda)
   (name trace)
   (profile trace)))
 
 (context
  (opam
-  (switch sledge)
+  (switch 5.2.1+flambda)
   (name release)
   (profile release)))

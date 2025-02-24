@@ -67,7 +67,7 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries mtime mtime.clock.os parany psq nonstdlib llair fol)
+  (libraries mtime mtime.clock.os parany psq nonstdlib llair fol unix)
   (flags
    (:standard -open NS))
   (preprocess
@@ -106,7 +106,7 @@
   (libraries apron apron.boxMPQ core_unix.command_unix ctypes ctypes.foreign
     dbg dune-build-info llvm llvm.debuginfo llvm.analysis llvm.bitwriter
     llvm.irreader llvm.linker llvm.target memtrace yojson nonstdlib sledge
-    smtlib-utils)
+    smtlib-utils unix)
   (flags
    (:standard
     -w

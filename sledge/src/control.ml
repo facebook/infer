@@ -1234,7 +1234,7 @@ struct
         | [] -> map
         | _ -> Llair.FuncName.Map.add ~key ~data map )
 end
-[@@inlined]
+[@@inline]
 
 module Make (C : Config) (D : Domain) (Q : Queue) = struct
   module Ctrl = MakeDirected (C) (D) (Q) (Goal.Undirected)
@@ -1242,4 +1242,4 @@ module Make (C : Config) (D : Domain) (Q : Queue) = struct
   let exec_pgm pgm = Ctrl.exec_pgm pgm ()
   let compute_summaries pgm = Ctrl.compute_summaries pgm ()
 end
-[@@inlined]
+[@@inline]

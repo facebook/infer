@@ -138,10 +138,12 @@ type entry =
   | Coverage of coverage
 [@@deriving sexp]
 
+let span_to_s span = Mtime.Span.to_float_ns span /. 1_000_000_000.0
+
 let process_times () =
   let {Unix.tms_utime; tms_stime; tms_cutime; tms_cstime} = Unix.times () in
   let etime =
-    try Mtime.Span.to_s (Mtime_clock.elapsed ()) with Sys_error _ -> 0.
+    try span_to_s (Mtime_clock.elapsed ()) with Sys_error _ -> 0.
   in
   ProcessTimes
     { etime

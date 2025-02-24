@@ -23,7 +23,7 @@ depends: [
   "dune-build-info" {build}
   "fpath"
   "memtrace"
-  "mtime" {< "2.0.0"}
+  "mtime"
   "parany"
   "ppx_compare"
   "ppxlib" {>= "0.21.0"}
