@@ -108,7 +108,7 @@
     llvm.irreader llvm.linker llvm.target memtrace shexp.process yojson nonstdlib
     sledge smtlib-utils)
   (flags
-   (:standard -w -no-cmx-file -open NS -open Sledge))
+   (:standard -w -no-cmx-file -open NS -open Sledge (:include llvm-config_ldflags.sexp)))
   (preprocess
    (pps ppx_sledge ppx_dbg))))
 

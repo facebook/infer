@@ -35,11 +35,16 @@ link_llvm_dylib:
 $(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
 	cd vendor/llvm-dune; ./setup.sh $$(opam var conf-llvm:config)
 
+cli/llvm-config_ldflags.sexp: $(LLVM_OCAML_SENTINEL)
+	printf "(" > $@
+	$$(opam var conf-llvm:config) --ldflags | xargs -n 1 printf "-ccopt '%s' " >> $@
+	printf ")\n" >> $@
+
 clean_llvm:
 	rm -rf vendor/llvm-dune/{src,llvm_*.opam}
 
 .PHONY: setup
-setup: $(LLVM_OCAML_SENTINEL)
+setup: $(LLVM_OCAML_SENTINEL) cli/llvm-config_ldflags.sexp
 
 .PHONY: check
 check: setup

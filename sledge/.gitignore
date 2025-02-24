@@ -1,3 +1,4 @@
+/cli/llvm-config_ldflags.sexp
 /dep.pdf
 /model/cxxabi.bc
 /model/lib_fuzzer_main.bc
