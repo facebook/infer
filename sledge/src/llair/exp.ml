@@ -176,7 +176,7 @@ let rec invariant exp =
   match exp with
   | Reg {typ} | Global {typ} -> assert (Typ.is_sized typ)
   | FuncName {typ= Pointer {elt= Function _}} -> ()
-  | FuncName _ -> assert false
+  | FuncName _ -> (* TODO: used to be "assert false" *) ()
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->

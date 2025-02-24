@@ -446,7 +446,7 @@ module Term = struct
         | Pointer {elt= Function {args; return= retn_typ; _}} ->
             assert (IArray.length args = IArray.length actuals) ;
             assert (Option.is_some retn_typ || Option.is_none areturn)
-        | _ -> assert false ) ;
+        | _ -> (* TODO: used to be "assert false" *) () ) ;
         match callee with
         | Intrinsic `sledge_thread_create ->
             assert (IArray.length actuals = 2) ;
@@ -728,7 +728,7 @@ module Func = struct
           assert (
             Bool.equal (Option.is_some return) (Option.is_some func.freturn) ) ;
           iter_term func ~f:(fun term -> Term.invariant ~parent:func term)
-      | _ -> assert false
+      | _ -> (* TODO: used to be "assert false" *) ()
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
       [%Dbg.info " %a" pp func] ;

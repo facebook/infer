@@ -89,6 +89,7 @@ and x_trm : var_env -> Smt.Ast.term -> Term.t =
   | Attr (e, _) -> x_trm n e
   | Fun _ | HO_app _ -> fail "higher-order: %a" Smt.Ast.pp_term term ()
   | Match _ -> fail "datatype: %a" Smt.Ast.pp_term term ()
+  | Bitvec _ -> fail "bitvector: %a" Smt.Ast.pp_term term ()
   | Cast _ -> fail "cast: %a" Smt.Ast.pp_term term ()
   | Arith ((Add | Minus), _) -> fail "malformed: %a" Smt.Ast.pp_term term ()
   | True | False
@@ -119,6 +120,7 @@ and x_fml : var_env -> Smt.Ast.term -> Formula.t =
       |> Formula.andN
   | Not b -> Formula.not_ (x_fml n b)
   | Attr (b, _) -> x_fml n b
+  | Bitvec _ -> fail "bitvector: %a" Smt.Ast.pp_term term ()
   | Cast _ -> fail "cast: %a" Smt.Ast.pp_term term ()
   | Arith ((Leq | Lt | Geq | Gt), _) ->
       fail "inequality: %a" Smt.Ast.pp_term term ()

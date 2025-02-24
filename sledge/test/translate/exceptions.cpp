@@ -32,7 +32,7 @@ f()
 }
 
 void
-g() throw(E)
+g()  // TODO: "throw(E)" not accepted by clang anymore
 {
   F e;
   throw e;
