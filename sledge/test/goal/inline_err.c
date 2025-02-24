@@ -11,7 +11,8 @@ foo(int x)
   return x + __llair_choice();
 }
 
-inline int __attribute__((always_inline)) bar(int x)
+inline int __attribute__((always_inline))
+bar(int x)
 {
   return x * __llair_choice();
 }

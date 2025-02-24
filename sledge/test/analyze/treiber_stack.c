@@ -26,7 +26,7 @@ static_assert(
  */
 
 /* error code used to indicate a stack was unexpectedly empty */
-#define EMPTY ((error_t)-1)
+#define EMPTY ((error_t) - 1)
 
 typedef int data_t;
 

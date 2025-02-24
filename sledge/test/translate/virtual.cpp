@@ -13,7 +13,7 @@ class B
   {
     g();
   };
-  virtual void g(){};
+  virtual void g() {};
 };
 
 class C : public B
@@ -24,7 +24,7 @@ class C : public B
   {
     B::f();
   };
-  virtual void g(){};
+  virtual void g() {};
 };
 
 int

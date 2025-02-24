@@ -1134,7 +1134,7 @@ struct
         exec_call {call with callee} ams wl
     | Call
         ( {callee= Indirect {ptr= callee; candidates}; areturn; return} as
-        call ) -> (
+          call ) -> (
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->

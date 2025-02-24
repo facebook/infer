@@ -105,10 +105,17 @@
   (package sledge)
   (libraries apron apron.boxMPQ core_unix.command_unix ctypes ctypes.foreign
     dbg dune-build-info llvm llvm.debuginfo llvm.analysis llvm.bitwriter
-    llvm.irreader llvm.linker llvm.target memtrace yojson nonstdlib
-    sledge smtlib-utils)
+    llvm.irreader llvm.linker llvm.target memtrace yojson nonstdlib sledge
+    smtlib-utils)
   (flags
-   (:standard -w -no-cmx-file -open NS -open Sledge (:include llvm-config_ldflags.sexp)))
+   (:standard
+    -w
+    -no-cmx-file
+    -open
+    NS
+    -open
+    Sledge
+    (:include llvm-config_ldflags.sexp)))
   (preprocess
    (pps ppx_sledge ppx_dbg))))
 

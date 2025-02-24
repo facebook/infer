@@ -49,11 +49,12 @@ struct
 end
 [@@inlined]
 
-module Apply (F : sig
-  type ('a, 'compare_a) t [@@deriving compare]
-  type 'compare_a compare [@@deriving compare, equal, sexp]
-end)
-(A : S) =
+module Apply
+    (F : sig
+      type ('a, 'compare_a) t [@@deriving compare]
+      type 'compare_a compare [@@deriving compare, equal, sexp]
+    end)
+    (A : S) =
 struct
   module A = struct
     include A
@@ -68,11 +69,14 @@ struct
 end
 [@@inlined]
 
-module Apply1 (F : sig
-  type ('a, 'b, 'compare_a) t [@@deriving compare]
-  type ('compare_a, 'compare_b) compare [@@deriving compare, equal, sexp]
-end)
-(A : S) =
+module Apply1
+    (F : sig
+      type ('a, 'b, 'compare_a) t [@@deriving compare]
+
+      type ('compare_a, 'compare_b) compare
+      [@@deriving compare, equal, sexp]
+    end)
+    (A : S) =
 struct
   module A = struct
     include A

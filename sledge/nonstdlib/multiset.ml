@@ -18,12 +18,13 @@ type ('compare_elt, 'compare_mul) compare =
   ('compare_elt, 'compare_mul) Map.compare
 [@@deriving compare, equal, sexp]
 
-module Make (Elt : sig
-  type t [@@deriving equal, sexp_of]
+module Make
+    (Elt : sig
+      type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
-end)
-(Mul : MULTIPLICITY) =
+      include Comparer.S with type t := t
+    end)
+    (Mul : MULTIPLICITY) =
 struct
   module M = Map.Make_from_Comparer (Elt)
 

@@ -12,12 +12,13 @@ include module type of Multiset_intf
 type ('elt, 'mul, 'compare_elt) t [@@deriving compare, equal, sexp]
 type ('compare_elt, 'compare_mul) compare [@@deriving compare, equal, sexp]
 
-module Make (Elt : sig
-  type t [@@deriving equal, sexp_of]
+module Make
+    (Elt : sig
+      type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
-end)
-(Mul : MULTIPLICITY) :
+      include Comparer.S with type t := t
+    end)
+    (Mul : MULTIPLICITY) :
   S
     with type mul = Mul.t
     with type elt = Elt.t

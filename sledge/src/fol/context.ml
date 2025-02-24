@@ -115,8 +115,8 @@ end = struct
       Trm.Map.add ~key:var ~data:rep r' )
 
   (** map over a subst, applying [f] to both domain and range, requires that
-      [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
-      from [E] *)
+      [f] is injective and for any set of terms [E], [f[E]] is disjoint from
+      [E] *)
   let map_entries ~f s =
     Trm.Map.fold s s ~f:(fun ~key ~data s ->
         let key' = f key in

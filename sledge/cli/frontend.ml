@@ -768,8 +768,8 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
               let llelt =
                 match Llvm.classify_type lltyp with
                 | Pointer ->
-                    (* TODO(jul): i64 is rubbish, need to get the type from the
-                       getelementptr instruction itself if possible *)
+                    (* TODO(jul): i64 is rubbish, need to get the type from
+                       the getelementptr instruction itself if possible *)
                     Llvm.i64_type x.llcontext
                 | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
               in
@@ -1174,8 +1174,9 @@ let xlate_instr :
       let prefix, num = xlate_value x num_elts in
       let num = convert_to_siz (xlate_type x (Llvm.type_of num_elts)) num in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      (* TODO(jul): put some rubbish here because of opaque pointers, presumably
-         the size is now part of the alloca instruction itself? *)
+      (* TODO(jul): put some rubbish here because of opaque pointers,
+         presumably the size is now part of the alloca instruction
+         itself? *)
       let len = size_of x (Llvm.i64_type x.llcontext) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (

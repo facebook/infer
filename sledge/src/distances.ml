@@ -324,7 +324,7 @@ module Summary = struct
 
     let join
         ( {shortest_path= n; auto_state= a; dists= d; checkpoint_dists= c}
-        as di )
+          as di )
         ( { shortest_path= n'
           ; auto_state= a'
           ; dists= d'

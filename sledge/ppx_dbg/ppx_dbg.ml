@@ -11,20 +11,19 @@
     "debug" mode or not. To enable "debug" mode, pass
     [--cookie 'ppx_dbg_enabled="1"'] (or with [true] instead or [1]).
 
-    It rewrites [\[%dbg\] ~call ~retn ~rais] to a call
+    It rewrites [[%dbg] ~call ~retn ~rais] to a call
     [Dbg.dbg ~call ~retn ~rais fun_name] where [fun_name] is the value of
     [__FUNCTION__] at the call site. This is only done in debug mode,
-    otherwise [\[%dbg\] ~call ~retn ~rais] is rewritten to
-    [(fun k -> k ())].
+    otherwise [[%dbg] ~call ~retn ~rais] is rewritten to [(fun k -> k ())].
 
-    Similarly, it rewrites [\[%dbgs\] ~call ~retn ~rais] to a call
+    Similarly, it rewrites [[%dbgs] ~call ~retn ~rais] to a call
     [Dbg.dbgs ~call ~retn ~rais fun_name]. This is only done in debug mode,
-    otherwise [\[%dbgs\] ~call ~retn ~rais] is rewritten to [(fun x -> x)].
+    otherwise [[%dbgs] ~call ~retn ~rais] is rewritten to [(fun x -> x)].
 
-    Similarly, [\[%Dbg.info\]], [\[%Dbg.infok\]], [\[%Dbg.printf\]],
-    [\[%Dbg.fprintf\]], [\[%Dbg.kprintf\]], and [\[%Dbg.call\]] are
-    rewritten to their analogues in the [Dbg] module, or [()]; and
-    [\[%Dbg.retn\]] is rewritten to a call to [Dbg.retn] or [(fun x -> x)].
+    Similarly, [[%Dbg.info]], [[%Dbg.infok]], [[%Dbg.printf]],
+    [[%Dbg.fprintf]], [[%Dbg.kprintf]], and [[%Dbg.call]] are rewritten to
+    their analogues in the [Dbg] module, or [()]; and [[%Dbg.retn]] is
+    rewritten to a call to [Dbg.retn] or [(fun x -> x)].
 
     For example, this enables writing
 
@@ -53,7 +52,7 @@
     This mechanism can also be used e.g. to dynamically check assertions
     only in debug mode.
 
-    Additionally, [\[%debug\]] is rewritten to the compile-time boolean
+    Additionally, [[%debug]] is rewritten to the compile-time boolean
     constant indicating if rewriting was done in debug mode. *)
 
 open Ppxlib

@@ -49,11 +49,12 @@ end) : S with type t = Ord.t with type compare = Ord.compare
 (** [Apply (F) (A)] takes a type [('a, 'compare_a) F.t] with a type
     parameter ['a] and a compare type ['compare_a] for ['a], and a comparer
     [A], and creates a comparer for [F.t] with ['a] instantiated to [A.t]. *)
-module Apply (F : sig
-  type ('a, 'compare_a) t [@@deriving compare]
-  type 'compare_a compare [@@deriving compare, equal, sexp]
-end)
-(A : S) : sig
+module Apply
+    (F : sig
+      type ('a, 'compare_a) t [@@deriving compare]
+      type 'compare_a compare [@@deriving compare, equal, sexp]
+    end)
+    (A : S) : sig
   type t = (A.t, A.compare) F.t [@@deriving compare]
 
   include S with type t := t with type compare = A.compare F.compare
@@ -72,11 +73,14 @@ end
     parameters ['a], ['b] and a compare type ['compare_a] for ['a], and a
     comparer [A], and creates a comparer for [F.t] with ['a] instantiated to
     [A.t]. *)
-module Apply1 (F : sig
-  type ('a, 'b, 'compare_a) t [@@deriving compare]
-  type ('compare_a, 'compare_b) compare [@@deriving compare, equal, sexp]
-end)
-(A : S) : sig
+module Apply1
+    (F : sig
+      type ('a, 'b, 'compare_a) t [@@deriving compare]
+
+      type ('compare_a, 'compare_b) compare
+      [@@deriving compare, equal, sexp]
+    end)
+    (A : S) : sig
   type 'b t = (A.t, 'b, A.compare) F.t [@@deriving compare]
 
   include

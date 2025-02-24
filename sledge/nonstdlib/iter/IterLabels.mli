@@ -402,7 +402,7 @@ val group_join_by :
 (** [group_join_by ~f:key] associates to every element [x] of the first
     iterator, all the elements [y] of the second iterator such that
     [eq x (key y)]. Elements of the first iterators without corresponding
-    values in the second one are mapped to [\[\]] precondition: for any [x]
+    values in the second one are mapped to [[]] precondition: for any [x]
     and [y], if [eq x y] then [hash x=hash y] must hold.
 
     @since 0.10 *)
@@ -922,7 +922,7 @@ module IO : sig
       again, so different iterations might return different results
 
       @param mode default [0o644]
-      @param flags default: [\[Open_rdonly\]] *)
+      @param flags default: [[Open_rdonly]] *)
 
   val chunks_of :
     ?mode:int -> ?flags:open_flag list -> ?size:int -> string -> string t
@@ -938,7 +938,7 @@ module IO : sig
 
       @param mode default [0o644]
       @param flags
-        used by [open_out_gen]. Default: [\[Open_creat;Open_wronly\]]. *)
+        used by [open_out_gen]. Default: [[Open_creat;Open_wronly]]. *)
 
   val write_bytes_to :
     ?mode:int -> ?flags:open_flag list -> string -> Bytes.t t -> unit

@@ -146,9 +146,9 @@ let combine name b_result c_result =
               in
               List.fold times init
                 ~f:(fun
-                     {Report.etime; utime; stime; cutime; cstime}
-                     (etimes, utimes, stimes, cutimes, cstimes)
-                   ->
+                    {Report.etime; utime; stime; cutime; cstime}
+                    (etimes, utimes, stimes, cutimes, cstimes)
+                  ->
                   ( Iter.cons etime etimes
                   , Iter.cons utime utimes
                   , Iter.cons stime stimes
@@ -169,9 +169,9 @@ let combine name b_result c_result =
             let allocs, promos, peaks =
               List.fold gcs (Iter.empty, Iter.empty, Iter.empty)
                 ~f:(fun
-                     {Report.allocated; promoted; peak_size}
-                     (allocs, promos, peaks)
-                   ->
+                    {Report.allocated; promoted; peak_size}
+                    (allocs, promos, peaks)
+                  ->
                   ( Iter.cons allocated allocs
                   , Iter.cons promoted promos
                   , Iter.cons peak_size peaks ) )
@@ -573,9 +573,9 @@ let average row =
       let alloc, promo, peak =
         List.fold gcs (Iter.empty, Iter.empty, Iter.empty)
           ~f:(fun
-               {Report.allocated; promoted; peak_size}
-               (alloc, promo, peak)
-             ->
+              {Report.allocated; promoted; peak_size}
+              (alloc, promo, peak)
+            ->
             ( Iter.cons allocated alloc
             , Iter.cons promoted promo
             , Iter.cons peak_size peak ) )
