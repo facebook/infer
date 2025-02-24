@@ -275,7 +275,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Pointer ->
           if byts <> ptr_siz x then
             todo "non-integral pointer types: %a" pp_lltype llt () ;
-          let elt = xlate_type x (Llvm.element_type llt) in
+          let elt = Typ.opaque ~name:"ptr_elt" in
           Typ.pointer ~elt
       | Array ->
           let elt = xlate_type x (Llvm.element_type llt) in
@@ -767,7 +767,10 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
               let lltyp = Llvm.type_of (Llvm.operand llv 0) in
               let llelt =
                 match Llvm.classify_type lltyp with
-                | Pointer -> Llvm.element_type lltyp
+                | Pointer ->
+                    (* TODO(jul): i64 is rubbish, need to get the type from the
+                       getelementptr instruction itself if possible *)
+                    Llvm.i64_type x.llcontext
                 | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
               in
               (* translate [gep t*, iN M] as [gep [1 x t]*, iN M] *)
@@ -994,20 +997,10 @@ let norm_callee llfunc =
   | GlobalAlias -> Llvm.operand llfunc 0
   | _ -> todo "callee kind %a" pp_llvalue llfunc ()
 
-let num_actuals instr lltyp llfunc =
+let num_actuals instr lltyp _llfunc =
   assert (Poly.(Llvm.classify_type lltyp = Pointer)) ;
-  let llelt = Llvm.element_type lltyp in
-  if not (Llvm.is_var_arg llelt) then Llvm.num_arg_operands instr
-  else
-    let fname = Llvm.value_name llfunc in
-    let is_decl llfunc =
-      Poly.(Llvm.classify_value llfunc = Function)
-      (* llfunc might be a formal, which Llvm.is_declaration doesn't like *)
-      && Llvm.is_declaration llfunc
-    in
-    if StringS.add ignored_callees fname && not (is_decl llfunc) then
-      warn "ignoring variable arguments to variadic function: %s" fname () ;
-    Array.length (Llvm.param_types llelt)
+  (* TODO: likely incorrect for var_args *)
+  Llvm.num_arg_operands instr
 
 let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
@@ -1181,7 +1174,9 @@ let xlate_instr :
       let prefix, num = xlate_value x num_elts in
       let num = convert_to_siz (xlate_type x (Llvm.type_of num_elts)) num in
       assert (Poly.(Llvm.classify_type (Llvm.type_of instr) = Pointer)) ;
-      let len = size_of x (Llvm.element_type (Llvm.type_of instr)) in
+      (* TODO(jul): put some rubbish here because of opaque pointers, presumably
+         the size is now part of the alloca instruction itself? *)
+      let len = size_of x (Llvm.i64_type x.llcontext) in
       emit_inst ~prefix (Inst.alloc ~reg ~num ~len ~loc)
   | Call -> (
       let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
