@@ -109,7 +109,19 @@ let cmnd_to_instrs block =
   let to_instr inst =
     (* TODO translate instructions *)
     match inst with
-    | Move _ | Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ | Free _ | Nondet _ ->
+    | Move _ ->
+        assert false
+    | Load {reg; ptr; loc} ->
+        let loc = to_textual_loc loc in
+        let id = reg_to_id reg in
+        let exp = to_textual_exp ptr in
+        Textual.Instr.Load {id; exp; typ= None; loc}
+    | Store {ptr; exp; loc} ->
+        let loc = to_textual_loc loc in
+        let exp1 = to_textual_exp ptr in
+        let exp2 = to_textual_exp exp in
+        Textual.Instr.Store {exp1; typ= None; exp2; loc}
+    | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ | Free _ | Nondet _ ->
         assert false
     | Builtin {reg; name; args; loc} ->
         to_textual_builtin reg name args loc
