@@ -445,8 +445,7 @@ Stdlib.Sys.catch_break true ;;
 
 Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
-     [ ("buck", Sledge_buck.main ~command)
-     ; ("llvm", llvm_grp)
+     [ ("llvm", llvm_grp)
      ; ("analyze", analyze_cmd)
      ; ("validate", validate_cmd)
      ; ("disassemble", disassemble_cmd)

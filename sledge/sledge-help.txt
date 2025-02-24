@@ -6,9 +6,6 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
 
 === subcommands ===
 
-  buck                       . integration with Buck
-  . bitcode                  . report bitcode files in buck target
-  . link                     . link buck target to LLVM bitcode
   llvm                       . integration with LLVM
   . analyze                  . analyze LLVM bitcode
   . translate                . translate LLVM bitcode to LLAIR
@@ -20,67 +17,6 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
   smt                        . process SMT-LIB benchmarks
   version                    . print version information
   help                       . explain a given subcommand (perhaps recursively)
-
-
-====== sledge buck ======
-
-integration with Buck
-
-  sledge buck SUBCOMMAND
-
-Code can be provided by a buck build target, such as //fully/qualified/build:target. The mechanism used to integrate with buck uses the arguments passed to the linker, so the target must specify a binary that will be linked, not for instance a library archive. Sledge passes the --config sledge.build=True flag to buck, which can be used to configure buck targets for sledge.
-
-=== subcommands ===
-
-  bitcode                    . report bitcode files in buck target
-  link                       . link buck target to LLVM bitcode
-  help                       . explain a given subcommand (perhaps recursively)
-
-
-====== sledge buck bitcode ======
-
-report bitcode files in buck target
-
-  sledge buck bitcode <target>
-
-Build a buck target and report the included bitcode files.
-
-=== flags ===
-
-  [-append-report]           . append to report file
-  [-colors]                  . enable printing in colors
-  [-margin <cols>]           . wrap debug tracing at <cols> columns
-  [-modules <file>]          . write list of bitcode files to <file>, or to
-                               standard output if <file> is `-`
-  [-report <file>]           . write report sexp to <file>, or to standard error
-                               if "-"
-  [-trace <spec>]            . enable debug tracing
-  [-unbuffered]              . disable buffering of stdout and stderr
-  [-help], -?                . print this help text and exit
-
-
-====== sledge buck link ======
-
-link buck target to LLVM bitcode
-
-  sledge buck link <target>
-
-Link code in a buck target to a single LLVM bitcode module. This also internalizes all symbols except `main` and removes dead code.
-
-=== flags ===
-
-  -bitcode-output <file>     . write linked bitcode to <file>
-  [-append-report]           . append to report file
-  [-colors]                  . enable printing in colors
-  [-fuzzer]                  . add a harness for libFuzzer targets
-  [-margin <cols>]           . wrap debug tracing at <cols> columns
-  [-modules <file>]          . write list of bitcode files to <file>, or to
-                               standard output if <file> is `-`
-  [-report <file>]           . write report sexp to <file>, or to standard error
-                               if "-"
-  [-trace <spec>]            . enable debug tracing
-  [-unbuffered]              . disable buffering of stdout and stderr
-  [-help], -?                . print this help text and exit
 
 
 ====== sledge llvm ======
