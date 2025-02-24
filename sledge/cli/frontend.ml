@@ -1711,9 +1711,8 @@ let check_datalayout llcontext lldatalayout =
    and likely segfault. Therefore it is necessary to ensure that all the
    values containing naked pointers are dead (which is the reason for
    clearing the hashtbls) and then collected (which is the reason for the
-   Gc.full_major) before freeing the memory with Llvm.dispose_module and
-   Llvm.dispose_context. *)
-let cleanup llmodule llcontext =
+   Gc.full_major) before freeing the memory with Llvm.dispose_module. *)
+let cleanup llmodule =
   SymTbl.clear sym_tbl ;
   ScopeTbl.clear scope_tbl ;
   LltypeTbl.clear anon_struct_name ;
@@ -1725,7 +1724,7 @@ let cleanup llmodule llcontext =
   String.Tbl.clear func_tbl ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
-  Llvm.dispose_context llcontext
+  ()
 
 let translate ~internalize ~preserve_fns ~opt_level ~size_level
     ?dump_bitcode : string -> Llair.program =
@@ -1781,7 +1780,7 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
       [] llmodule
   in
   backpatch_calls x ;
-  cleanup llmodule llcontext ;
+  cleanup llmodule ;
   Llair.Program.mk ~globals ~functions
   |>
   [%Dbg.retn fun {pf} _ ->
