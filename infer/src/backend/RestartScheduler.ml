@@ -17,8 +17,6 @@ let read_procs_to_analyze () =
 
 type target_with_dependency = {target: TaskSchedulerTypes.target; dependency_filenames: string list}
 
-let restart_count = ref 0
-
 module FinalizerMap = Stdlib.Hashtbl.Make (struct
   type t = TaskSchedulerTypes.target [@@deriving equal, hash]
 end)
@@ -37,6 +35,7 @@ let of_queue ready :
      for different idle workers in the same process pool update cycle *)
   let waiting_for_blocked_target = ref false in
   let finalizers = FinalizerMap.create 1 in
+  let restart_count = ref 0 in
   let finished ~result target =
     FinalizerMap.find_opt finalizers target |> Option.iter ~f:ProcLocker.unlock_all ;
     FinalizerMap.remove finalizers target ;
@@ -122,15 +121,15 @@ let setup () = match Config.scheduler with Restart -> ProcLocker.setup () | _ ->
 
 type locked_proc = {start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
 
-let locked_procs = Stack.create ()
+let locked_procs = DLS.new_key Stack.create
 
 let unlock ~after_exn pname =
-  match Stack.pop locked_procs with
+  match Stack.pop @@ DLS.get locked_procs with
   | None ->
       L.internal_error "Trying to unlock %a but it does not appear to be locked.@\n" Procname.pp
         pname
   | Some {start; callees_useful} ->
-      ( match Stack.top locked_procs with
+      ( match Stack.top @@ DLS.get locked_procs with
       | Some caller ->
           caller.callees_useful <-
             ( if after_exn then ExecutionDuration.add caller.callees_useful callees_useful
@@ -144,12 +143,12 @@ let unlock ~after_exn pname =
 
 let with_lock ~get_actives ~f pname =
   match Config.scheduler with
-  | Restart when not Config.multicore -> (
+  | Restart -> (
     match ProcLocker.try_lock pname with
     | `AlreadyLockedByUs ->
         f ()
     | `LockAcquired ->
-        Stack.push locked_procs
+        Stack.push (DLS.get locked_procs)
           {start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero} ;
         let res =
           try f () with exn -> IExn.reraise_after ~f:(fun () -> unlock ~after_exn:true pname) exn
