@@ -119,8 +119,11 @@ let cmnd_to_instrs block =
         let exp1 = to_textual_exp ptr in
         let exp2 = to_textual_exp exp in
         Textual.Instr.Store {exp1; typ= None; exp2; loc}
-    | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ ->
+    | AtomicRMW _ | AtomicCmpXchg _ ->
         assert false
+    | Alloc {reg; loc} ->
+        let ret = to_textual_exp reg in
+        to_textual_builtin ret "llvm_alloc" [] loc
     | Free {ptr; loc} ->
         let arg = to_textual_exp ptr in
         let proc = Textual.ProcDecl.free_name in
