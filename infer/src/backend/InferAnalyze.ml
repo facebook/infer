@@ -159,21 +159,29 @@ let analyze replay_call_graph source_files_to_analyze =
     , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
     , [MissingDependencies.get ()] ) )
   else if Config.multicore then (
-    let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
     Attributes.set_lru_limit ~lru_limit:(Some Config.attributes_lru_max_size) ;
     BufferOverrunUtils.set_cache_lru_limit ~lru_limit:(Some Config.inferbo_lru_max_size) ;
     Summary.OnDisk.set_lru_limit ~lru_limit:(Some Config.summaries_lru_max_size) ;
     Exe_env.set_lru_limit ~lru_limit:(Some Config.tenvs_lru_max_size) ;
     RestartScheduler.setup () ;
-    DomainPool.create ~jobs:Config.jobs ~f:analyze_target
-      ~child_prologue:(fun _ -> Config.set_gc_params ())
-      ~child_epilogue:ignore
-      ~tasks:(fun () ->
-        tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze) )
-    |> DomainPool.run |> ignore ;
-    ( [Stats.get ()]
-    , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
-    , [MissingDependencies.get ()] ) )
+    Stats.reset () ;
+    let gc_stats_pre_spawn = DLS.new_key (fun () -> None) in
+    let gc_stats =
+      DomainPool.create ~jobs:Config.jobs ~f:analyze_target
+        ~child_prologue:(fun _ ->
+          Config.set_gc_params () ;
+          DLS.set gc_stats_pre_spawn (Some (GCStats.get ~since:ProgramStart)) )
+        ~child_epilogue:(fun _ ->
+          match DLS.get gc_stats_pre_spawn with
+          | Some stats ->
+              GCStats.get ~since:(PreviousStats stats)
+          | None ->
+              L.die InternalError "domain did not store GC stats in its prologue, what happened?@\n" )
+        ~tasks:(fun () ->
+          tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze) )
+      |> DomainPool.run
+    in
+    ([Stats.get ()], Array.to_list gc_stats |> List.filter_opt, [MissingDependencies.get ()]) )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
