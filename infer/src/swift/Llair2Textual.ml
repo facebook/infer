@@ -77,7 +77,7 @@ let to_textual_bool_exp exp = Textual.BoolExp.Exp (to_textual_exp exp)
 let to_textual_call_aux ~kind ?exp_opt proc return args loc =
   let loc = to_textual_loc loc in
   let id = Option.map return ~f:(fun reg -> reg_to_id reg) in
-  let args = List.map ~f:to_textual_exp (StdUtils.iarray_to_list args) in
+  let args = List.map ~f:to_textual_exp args in
   let args = List.append (Option.to_list exp_opt) args in
   Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
 
@@ -94,15 +94,13 @@ let to_textual_call (call : 'a Llair.call) =
         let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
         (proc, Textual.Exp.NonVirtual, None)
   in
-  to_textual_call_aux ~kind ?exp_opt proc call.areturn call.actuals call.loc
+  let args = StdUtils.iarray_to_list call.actuals in
+  to_textual_call_aux ~kind ?exp_opt proc call.areturn args call.loc
 
 
 let to_textual_builtin return name args loc =
-  let proc, kind =
-    let proc = builtin_qual_proc_name (Llair.Builtin.to_name name) in
-    (proc, Textual.Exp.NonVirtual)
-  in
-  to_textual_call_aux ~kind proc return args loc
+  let proc = builtin_qual_proc_name name in
+  to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc return args loc
 
 
 let cmnd_to_instrs block =
@@ -121,9 +119,17 @@ let cmnd_to_instrs block =
         let exp1 = to_textual_exp ptr in
         let exp2 = to_textual_exp exp in
         Textual.Instr.Store {exp1; typ= None; exp2; loc}
-    | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ | Free _ | Nondet _ ->
+    | AtomicRMW _ | AtomicCmpXchg _ | Alloc _ ->
+        assert false
+    | Free {ptr; loc} ->
+        let arg = to_textual_exp ptr in
+        let proc = Textual.ProcDecl.free_name in
+        to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [arg] loc
+    | Nondet _ ->
         assert false
     | Builtin {reg; name; args; loc} ->
+        let name = Llair.Builtin.to_name name in
+        let args = StdUtils.iarray_to_list args in
         to_textual_builtin reg name args loc
   in
   let call_instr_opt =

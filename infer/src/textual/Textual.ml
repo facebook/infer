@@ -126,6 +126,8 @@ module FieldName : NAME = Name
 
 let builtin_allocate = "__sil_allocate"
 
+let builtin_free = "__sil_free"
+
 let builtin_allocate_array = "__sil_allocate_array"
 
 let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
@@ -531,6 +533,8 @@ module ProcDecl = struct
 
   let allocate_object_name = make_toplevel_name builtin_allocate Location.Unknown
 
+  let free_name = make_toplevel_name builtin_free Location.Unknown
+
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
 
   let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
@@ -647,6 +651,8 @@ module ProcDecl = struct
   let is_allocate_object_builtin qualified_name =
     QualifiedProcName.equal allocate_object_name qualified_name
 
+
+  let is_free_builtin qualified_name = QualifiedProcName.equal free_name qualified_name
 
   let is_allocate_array_builtin qualified_name =
     QualifiedProcName.equal allocate_array_name qualified_name
