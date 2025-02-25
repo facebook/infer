@@ -128,8 +128,8 @@ let cmnd_to_instrs block =
         let arg = to_textual_exp ptr in
         let proc = Textual.ProcDecl.free_name in
         to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [arg] loc
-    | Nondet _ ->
-        assert false
+    | Nondet {reg; loc} ->
+        to_textual_builtin reg "llvm_nondet" [] loc
     | Builtin {reg; name; args; loc} ->
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in
