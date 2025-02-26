@@ -112,14 +112,14 @@ async def compare_gt_ok():
     if i > 0:
         pass
 
-async def use_py_bool_bad():
+async def use_py_bool_bad(b):
     x = sleep()
-    return x if x else None
+    return x if b else None
 
 
-async def use_py_bool_ok():
+async def use_py_bool_ok(b):
     x = await sleep()
-    return x if x else None
+    return x if b else None
 
 
 def true():
@@ -158,6 +158,11 @@ async def use_py_get_iter_bad():
 async def use_py_get_iter_ok():
     x = await sleep()
     return [ a.f for a in x ]
+
+
+async def gather_condition_awaitable_ok():
+    awaitable = sleep()
+    asyncio.gather(awaitable if awaitable else sleep())
 
 
 async def concat_list_left_ok(l):

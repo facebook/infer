@@ -237,6 +237,8 @@ val always_reachable : AbstractValue.t -> t -> t
 
 val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
+val is_allocated : AbstractValue.t -> t -> bool
+
 val java_resource_release : recursive:bool -> AbstractValue.t -> t -> t
 (** releases the resource of the argument, and recursively calls itself on the delegated resource if
     [recursive==true] *)

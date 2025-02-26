@@ -566,6 +566,10 @@ module Syntax = struct
     PulseOperations.allocate attr location addr |> exec_command
 
 
+  let is_allocated (addr, _) : bool model_monad =
+    PulseOperations.is_allocated addr |> exec_pure_operation
+
+
   let fresh_ var_type ?more () : aval model_monad =
     let addr =
       match var_type with

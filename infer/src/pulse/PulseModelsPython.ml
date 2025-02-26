@@ -968,10 +968,13 @@ let bool arg : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
+  let* is_awaitable = is_allocated arg in
   let* res =
-    dynamic_dispatch arg
-      ~cases:[(bool_tname, fun () -> ret arg)]
-      ~default:(fun () -> make_random_bool ())
+    if is_awaitable then make_bool true
+    else
+      dynamic_dispatch arg
+        ~cases:[(bool_tname, fun () -> ret arg)]
+        ~default:(fun () -> make_random_bool ())
   in
   assign_ret res
 
