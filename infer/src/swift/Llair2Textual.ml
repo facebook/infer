@@ -70,14 +70,24 @@ let block_to_node_name block =
 
 
 (* TODO: translate expressions *)
-let to_textual_exp _exp = assert false
+let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
+  match exp with
+  | Integer int_exp ->
+      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ int_exp.typ)
+      else assert false
+  | Float float_exp ->
+      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ float_exp.typ)
+      else assert false
+  | _ ->
+      assert false
+
 
 let to_textual_bool_exp exp = Textual.BoolExp.Exp (to_textual_exp exp)
 
-let to_textual_call_aux ~kind ?exp_opt proc return args loc =
+let to_textual_call_aux ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let loc = to_textual_loc loc in
   let id = Option.map return ~f:(fun reg -> reg_to_id reg) in
-  let args = List.map ~f:to_textual_exp args in
+  let args = List.map ~f:(to_textual_exp ?generate_typ_exp) args in
   let args = List.append (Option.to_list exp_opt) args in
   Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
 
@@ -122,19 +132,18 @@ let cmnd_to_instrs block =
     | AtomicRMW _ | AtomicCmpXchg _ ->
         assert false
     | Alloc {reg; loc} ->
-        let ret = to_textual_exp reg in
-        to_textual_builtin ret "llvm_alloc" [] loc
+        to_textual_builtin (Some reg) "llvm_alloc" [] loc
     | Free {ptr; loc} ->
-        let arg = to_textual_exp ptr in
         let proc = Textual.ProcDecl.free_name in
-        to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [arg] loc
+        to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [ptr] loc
     | Nondet {reg; loc} ->
         to_textual_builtin reg "llvm_nondet" [] loc
     | Builtin {reg; name; args; loc} when Llair.Builtin.equal name `malloc -> (
         let proc = Textual.ProcDecl.malloc_name in
         match StdUtils.iarray_to_list args with
-        | [Llair.Exp.Integer {typ}] | [Llair.Exp.Float {typ}] ->
-            to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc reg [to_textual_typ typ] loc
+        | [((Llair.Exp.Integer _ | Llair.Exp.Float _) as exp)] ->
+            to_textual_call_aux ~generate_typ_exp:(Some true) ~kind:Textual.Exp.NonVirtual proc reg
+              [exp] loc
         | _ ->
             assert false )
     | Builtin {reg; name; args; loc} ->
