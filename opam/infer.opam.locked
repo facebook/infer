@@ -10,10 +10,6 @@ bug-reports: "https://github.com/facebook/infer/issues"
 depends: [
   "ANSITerminal" {= "0.8.5"}
   "astring" {= "0.8.5"}
-  "async" {= "v0.16.0"}
-  "async_kernel" {= "v0.16.0"}
-  "async_rpc_kernel" {= "v0.16.0"}
-  "async_unix" {= "v0.16.0"}
   "atd" {= "2.15.0"}
   "atdgen" {= "2.15.0"}
   "atdgen-runtime" {= "2.15.0"}
@@ -134,7 +130,6 @@ depends: [
   "ppx_yojson_conv" {= "v0.16.0"}
   "ppx_yojson_conv_lib" {= "v0.16.0"}
   "ppxlib" {= "0.33.0"}
-  "protocol_version_header" {= "v0.16.0"}
   "pyml" {= "20220905"}
   "re" {= "1.12.0"}
   "react" {= "1.2.2"}
@@ -152,15 +147,13 @@ depends: [
   "stdio" {= "v0.16.0"}
   "stdlib-shims" {= "0.3.0"}
   "tdigest" {= "2.2.0"}
-  "textutils" {= "v0.16.0"}
-  "textutils_kernel" {= "v0.16.0"}
   "time_now" {= "v0.16.0"}
   "timezone" {= "v0.16.0"}
   "topkg" {= "1.0.7"}
   "trie" {= "1.0.0"}
   "typerep" {= "v0.16.0"}
   "uchar" {= "0.0.2"}
-  "utop" {= "2.15.0" & with-test}
+  "utop" {= "2.14.0" & with-test}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}
   "uutf" {= "1.0.3"}

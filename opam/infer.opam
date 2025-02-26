@@ -10,7 +10,6 @@ dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 depends: [
   "ANSITerminal" {>="0.7"}
-  "async" {>= "v0.16.0" & < "v0.17"}
   "atdgen" {>="2.0.0"}
   "base64" {>="3.0.0"}
   "bheap"
