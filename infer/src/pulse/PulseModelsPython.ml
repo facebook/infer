@@ -951,6 +951,19 @@ let make_random_bool () =
   ret res
 
 
+let binary_add arg1 arg2 : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res = fresh () in
+  (* lists and tuples share the same type for now *)
+  let* arg1_is_tuple = is_tuple arg1 in
+  let* () = if arg1_is_tuple then remove_allocation_attr_transitively [arg1] else ret () in
+  let* arg2_is_tuple = is_tuple arg2 in
+  let* () = if arg2_is_tuple then remove_allocation_attr_transitively [arg2] else ret () in
+  assign_ret res
+
+
 let bool arg : model =
   let open DSL.Syntax in
   start_model
@@ -1087,7 +1100,7 @@ let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
   [ -"$builtins" &:: "py_attributes_of_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_add" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_binary_add" <>$ arg $+ arg $--> binary_add
   ; -"$builtins" &:: "py_binary_and" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_floor_divide" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_lshift" &::.*+++> unknown ~deep_release:false

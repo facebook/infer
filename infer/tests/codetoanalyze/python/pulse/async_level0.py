@@ -160,6 +160,22 @@ async def use_py_get_iter_ok():
     return [ a.f for a in x ]
 
 
+async def concat_list_left_ok(l):
+    return [sleep()] + l
+
+
+async def concat_list_right_ok(l):
+    return l + [sleep()]
+
+
+async def concat_tuple_left_ok(l):
+    return (sleep(), sleep ()) + l
+
+
+async def concat_tuple_right_ok(l):
+    return l + (sleep(), sleep ())
+
+
 def main_ok():
     asyncio.run(sleep(10))
 
