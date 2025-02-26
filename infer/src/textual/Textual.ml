@@ -126,6 +126,8 @@ module FieldName : NAME = Name
 
 let builtin_allocate = "__sil_allocate"
 
+let builtin_malloc = "__sil_malloc"
+
 let builtin_free = "__sil_free"
 
 let builtin_allocate_array = "__sil_allocate_array"
@@ -533,6 +535,8 @@ module ProcDecl = struct
 
   let allocate_object_name = make_toplevel_name builtin_allocate Location.Unknown
 
+  let malloc_name = make_toplevel_name builtin_malloc Location.Unknown
+
   let free_name = make_toplevel_name builtin_free Location.Unknown
 
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
@@ -651,6 +655,8 @@ module ProcDecl = struct
   let is_allocate_object_builtin qualified_name =
     QualifiedProcName.equal allocate_object_name qualified_name
 
+
+  let is_malloc_builtin qualified_name = QualifiedProcName.equal malloc_name qualified_name
 
   let is_free_builtin qualified_name = QualifiedProcName.equal free_name qualified_name
 

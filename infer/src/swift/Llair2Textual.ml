@@ -130,6 +130,13 @@ let cmnd_to_instrs block =
         to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [arg] loc
     | Nondet {reg; loc} ->
         to_textual_builtin reg "llvm_nondet" [] loc
+    | Builtin {reg; name; args; loc} when Llair.Builtin.equal name `malloc -> (
+        let proc = Textual.ProcDecl.malloc_name in
+        match StdUtils.iarray_to_list args with
+        | [Llair.Exp.Integer {typ}] | [Llair.Exp.Float {typ}] ->
+            to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc reg [to_textual_typ typ] loc
+        | _ ->
+            assert false )
     | Builtin {reg; name; args; loc} ->
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in
