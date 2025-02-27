@@ -558,10 +558,12 @@ module Dict = struct
 
   let type_name = TextualSil.hack_dict_type_name
 
+  let field_of_string = TextualSil.wildcard_sil_fieldname Hack
+
   let field_of_string_value value : Fieldname.t option DSL.model_monad =
     let open DSL.Syntax in
     let* string = read_string_value_dsl value in
-    ret (Option.map string ~f:(fun string -> TextualSil.wildcard_sil_fieldname Hack string))
+    ret (Option.map string ~f:(fun string -> field_of_string string))
 
 
   let read_dict_field_with_check dict field : DSL.aval DSL.model_monad =
@@ -569,26 +571,24 @@ module Dict = struct
     add_dict_read_const_key dict field @@> load_access dict (FieldAccess field)
 
 
-  type key_types = AllConstStrs | SomeOthers
-
-  let get_bindings values : ((Fieldname.t * DSL.aval) list * key_types) DSL.model_monad =
+  let get_bindings values : ((string * DSL.aval) list * bool) DSL.model_monad =
     let open DSL.Syntax in
     let chunked = List.chunks_of ~length:2 values in
-    let bindings_type = ref AllConstStrs in
+    let const_strings_only = ref true in
     let* res =
       list_filter_map chunked ~f:(fun chunk ->
           let* res =
             match chunk with
             | [string; value] ->
-                let* field = field_of_string_value string in
-                ret (Option.map field ~f:(fun field -> (field, value)))
+                let* string = read_string_value_dsl string in
+                ret (Option.map string ~f:(fun string -> (string, value)))
             | _ ->
                 ret None
           in
-          if Option.is_none res then bindings_type := SomeOthers ;
+          if Option.is_none res then const_strings_only := false ;
           ret res )
     in
-    ret (res, !bindings_type)
+    ret (res, !const_strings_only)
 
 
   (* TODO: handle integers keys *)
@@ -596,15 +596,9 @@ module Dict = struct
     let open DSL.Syntax in
     start_model
     @@ fun () ->
-    let* bindings, key_types = get_bindings args in
-    let* dict = constructor type_name [] in
-    list_iter bindings ~f:(fun (field, value) -> store_field ~ref:dict field value)
-    @@> ( match key_types with
-        | AllConstStrs ->
-            add_dict_contain_const_keys dict
-        | SomeOthers ->
-            ret () )
-    @@> assign_ret dict
+    let* bindings, const_strings_only = get_bindings args in
+    let* dict = construct_dict ~field_of_string type_name bindings ~const_strings_only in
+    assign_ret dict
 
 
   let dict_from_async _dummy dict : model =

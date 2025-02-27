@@ -682,7 +682,7 @@ module Syntax = struct
         unreachable
 
 
-  let constructor ?(deref = true) type_name fields : aval model_monad =
+  let constructor ?(deref = true) ?field_of_string type_name fields : aval model_monad =
     let exp =
       Exp.Sizeof
         { typ= Typ.mk_struct type_name
@@ -692,12 +692,21 @@ module Syntax = struct
         ; nullable= false }
     in
     let* new_obj = new_ exp in
+    let field_of_string =
+      match field_of_string with None -> Fieldname.make type_name | Some f -> f
+    in
     let* () =
       list_iter fields ~f:(fun (fieldname, obj) ->
-          let field = Fieldname.make type_name fieldname in
+          let field = field_of_string fieldname in
           store_field ~deref ~ref:new_obj field obj )
     in
     ret new_obj
+
+
+  let construct_dict ?(deref = true) ?field_of_string type_name bindings ~const_strings_only =
+    let* dict = constructor ~deref ?field_of_string type_name bindings in
+    let* () = if const_strings_only then add_dict_contain_const_keys dict else ret () in
+    ret dict
 
 
   let remove_hack_builder_attributes bv : unit model_monad =

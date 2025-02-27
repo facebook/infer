@@ -119,8 +119,6 @@ module Syntax : sig
 
   val data_dependency_to_ret : ValueOrigin.t list -> unit model_monad
 
-  val add_dict_contain_const_keys : aval -> unit model_monad
-
   val add_dict_read_const_key : aval -> Fieldname.t -> unit model_monad
 
   val remove_dict_contain_const_keys : aval -> unit model_monad
@@ -168,9 +166,22 @@ module Syntax : sig
 
   val new_ : Exp.t -> aval model_monad
 
-  val constructor : ?deref:bool -> Typ.Name.t -> (string * aval) list -> aval model_monad
+  val constructor :
+       ?deref:bool
+    -> ?field_of_string:(string -> Fieldname.t)
+    -> Typ.Name.t
+    -> (string * aval) list
+    -> aval model_monad
   (** [constructor_dsl typ_name fields] builds a fresh object of type [typ_name] and initializes its
       fields using list [fields] *)
+
+  val construct_dict :
+       ?deref:bool
+    -> ?field_of_string:(string -> Fieldname.t)
+    -> Typ.name
+    -> (string * (AbstractValue.t * ValueHistory.t)) list
+    -> const_strings_only:bool
+    -> aval model_monad
 
   val remove_hack_builder_attributes : aval -> unit model_monad
   [@@warning "-unused-value-declaration"]

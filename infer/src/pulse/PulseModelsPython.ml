@@ -261,20 +261,12 @@ let as_constant_string_exn aval : string DSL.model_monad =
 
 
 module Dict = struct
-  type key_types = AllConstStrs | SomeOthers
-
-  let make keys args bindings_type : DSL.aval DSL.model_monad =
+  let make keys args ~const_strings_only : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     if not (Int.equal (List.length args) (List.length keys)) then
       L.die InternalError "Dict.make expects two list of same length@\n" ;
     let bindings = List.zip_exn keys args in
-    let* dict = constructor ~deref:false dict_tname bindings in
-    ( match bindings_type with
-    | AllConstStrs ->
-        add_dict_contain_const_keys dict
-    | SomeOthers ->
-        ret () )
-    @@> ret dict
+    construct_dict ~deref:false dict_tname bindings ~const_strings_only
 
 
   let propagate_static_type_on_load dict key load_res : unit DSL.model_monad =
@@ -414,7 +406,7 @@ let build_class closure _name _args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* class_ = Dict.make [] [] Dict.AllConstStrs in
+  let* class_ = Dict.make [] [] ~const_strings_only:true in
   let gen_closure_args _ = ret [class_] in
   let* _ = apply_python_closure closure gen_closure_args in
   assign_ret class_
@@ -437,7 +429,7 @@ let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
           L.d_printfln "[ocaml model] Failed to load attributes" ;
           List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
     in
-    let* locals = Dict.make python_args args Dict.AllConstStrs in
+    let* locals = Dict.make python_args args ~const_strings_only:true in
     ret [locals]
   in
   apply_python_closure closure gen_closure_args
@@ -910,9 +902,9 @@ let get_key_as_str i keys : string option DSL.model_monad =
 
 
 let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
-    (string list * DSL.aval list * Dict.key_types) DSL.model_monad =
+    (string list * DSL.aval list * bool) DSL.model_monad =
   let open DSL.Syntax in
-  let bindings_type = ref Dict.AllConstStrs in
+  let const_strings_only = ref true in
   let* ks, vs, _ =
     list_fold vals ~init:([], [], 0) ~f:(fun acc v ->
         let acc_keys, acc_vals, c = acc in
@@ -920,20 +912,20 @@ let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
         match key with
         (* For now we ignore keys that are not const strings *)
         | None ->
-            bindings_type := Dict.SomeOthers ;
+            const_strings_only := false ;
             (acc_keys, acc_vals, c + 1) |> ret
         | Some key ->
             (key :: acc_keys, v :: acc_vals, c + 1) |> ret )
   in
-  ret (List.rev ks, List.rev vs, !bindings_type)
+  ret (List.rev ks, List.rev vs, !const_strings_only)
 
 
 let make_const_key_map (keys : DSL.aval) (values : DSL.aval list) : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* keys, vals, bindings_type = get_bindings keys values in
-  let* dict = Dict.make keys vals bindings_type in
+  let* keys, vals, const_strings_only = get_bindings keys values in
+  let* dict = Dict.make keys vals ~const_strings_only in
   assign_ret dict
 
 
