@@ -14,8 +14,21 @@ def dict_missing_key_const_str_bad():
     return d["Samantha"]
 
 
-def fn_dict_missing_key_const_str_with_int_key_bad():
+def dict_missing_key_const_str_with_int_key_bad():
     d = {"John": 30, "Mary": 28, 1: 234}
+    return d["Samantha"]
+
+
+def dict_missing_key_const_str_store_int_key_bad():
+    d = {"John": 30, "Mary": 28}
+    d[1] = 234
+    return d["Samantha"]
+
+
+def dict_missing_key_const_str_store_str_key_ok(s):
+    d = {"John": 30, "Mary": 28}
+    s = str(s)
+    d[s] = 234
     return d["Samantha"]
 
 

@@ -901,6 +901,16 @@ let get_key_as_str i keys : string option DSL.model_monad =
   as_constant_string key_addr
 
 
+let is_dynamic_type_maybe_string addr : bool DSL.model_monad =
+  let open DSL.Syntax in
+  let* val_dynamic_type_data = get_dynamic_type ~ask_specialization:true addr in
+  match val_dynamic_type_data with
+  | None | Some {Formula.typ= {desc= Tstruct (PythonClass (Builtin PyString))}} ->
+      ret true
+  | _ ->
+      ret false
+
+
 let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
     (string list * DSL.aval list * bool) DSL.model_monad =
   let open DSL.Syntax in
@@ -912,7 +922,8 @@ let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
         match key with
         (* For now we ignore keys that are not const strings *)
         | None ->
-            const_strings_only := false ;
+            let* is_maybe_string = is_dynamic_type_maybe_string keys in
+            if is_maybe_string then const_strings_only := false ;
             (acc_keys, acc_vals, c + 1) |> ret
         | Some key ->
             (key :: acc_keys, v :: acc_vals, c + 1) |> ret )
@@ -1047,7 +1058,10 @@ let store_subscript dict key value =
   let* key_str = as_constant_string key in
   match key_str with
   | None ->
-      remove_allocation_attr_transitively [value] @@> remove_dict_contain_const_keys dict
+      let* is_maybe_string = is_dynamic_type_maybe_string key in
+      if is_maybe_string then
+        remove_allocation_attr_transitively [value] @@> remove_dict_contain_const_keys dict
+      else remove_allocation_attr_transitively [value]
   | Some key ->
       Dict.set_str_key dict key value @@> ret ()
 
