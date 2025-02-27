@@ -219,8 +219,6 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin str_py_make_function
         ( closure
         :: List.map ~f:of_exp [default_values; default_values_kw; annotations; cells_for_closure] )
-  | Yield exp ->
-      call_builtin "py_yield" [of_exp exp]
 
 
 let mk_node_name node_name = F.asprintf "%a" NodeName.pp node_name |> Textual.NodeName.of_string
@@ -465,6 +463,8 @@ let of_stmt loc stmt : Textual.Instr.t =
             "async_generator"
       in
       Let {id= None; exp= call_builtin ("py_gen_start_" ^ kind) []; loc}
+  | Yield {lhs; rhs} ->
+      Let {id= Some (mk_ident lhs); exp= call_builtin "py_yield" [of_exp rhs]; loc}
 
 
 let of_node is_module_body nullify_locals entry

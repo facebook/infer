@@ -117,25 +117,21 @@ foo(1.1)
           if $BoolOfMatchClass(n5) then jmp b1 else jmp b2
 
         b1:
-          n13 <- $AttributesOfMatchClass(n5)
-          n14 <- GLOBAL[print]
-          n15 <- $Call(n14, "int", n0)
+          n10 <- GLOBAL[print]
+          n11 <- $Call(n10, "int", n0)
           return n0
 
         b2:
-          n6 <- $AttributesOfMatchClass(n5)
-          n7 <- GLOBAL[float]
-          n8 <- $MatchClass(n3, n7, 0, $BuildTuple())
-          if $BoolOfMatchClass(n8) then jmp b3 else jmp b4
+          n6 <- GLOBAL[float]
+          n7 <- $MatchClass(n3, n6, 0, $BuildTuple())
+          if $BoolOfMatchClass(n7) then jmp b3 else jmp b4
 
         b3:
-          n10 <- $AttributesOfMatchClass(n8)
-          n11 <- GLOBAL[print]
-          n12 <- $Call(n11, "float", n0)
+          n8 <- GLOBAL[print]
+          n9 <- $Call(n8, "float", n0)
           return n0
 
         b4:
-          n9 <- $AttributesOfMatchClass(n8)
           return n0 |}]
 
 
@@ -408,24 +404,21 @@ def location(point):
           if n7 then jmp b2 else jmp b4
 
         b10:
-          n21 <- $AttributesOfMatchClass(n17)
-          jmp b11(n18)
+          jmp b11(n16)
 
-        b11(n22):
-          n23 <- GLOBAL[Point]
-          n24 <- $MatchClass(n3, n23, 0, $BuildTuple())
-          if $BoolOfMatchClass(n24) then jmp b12 else jmp b13
+        b11(n19):
+          n20 <- GLOBAL[Point]
+          n21 <- $MatchClass(n3, n20, 0, $BuildTuple())
+          if $BoolOfMatchClass(n21) then jmp b12 else jmp b13
 
         b12:
-          n28 <- $AttributesOfMatchClass(n24)
-          n29 <- GLOBAL[print]
-          n30 <- $Call(n29, "The point is located somewhere else on the plane.", n0)
+          n24 <- GLOBAL[print]
+          n25 <- $Call(n24, "The point is located somewhere else on the plane.", n0)
           return n0
 
         b13:
-          n25 <- $AttributesOfMatchClass(n24)
-          n26 <- GLOBAL[print]
-          n27 <- $Call(n26, "Not a point", n0)
+          n22 <- GLOBAL[print]
+          n23 <- $Call(n22, "Not a point", n0)
           return n0
 
         b2:
@@ -434,53 +427,48 @@ def location(point):
           if n9 then jmp b3 else jmp b4
 
         b3:
-          n44 <- $AttributesOfMatchClass(n5)
-          n45 <- GLOBAL[print]
-          n46 <- $Call(n45, "Origin is the point's location.", n0)
+          n37 <- GLOBAL[print]
+          n38 <- $Call(n37, "Origin is the point's location.", n0)
           return n0
 
         b4:
-          n10 <- $AttributesOfMatchClass(n5)
-          n11 <- GLOBAL[Point]
-          n12 <- $MatchClass(n3, n11, 0, $BuildTuple("x", "y"))
-          if $BoolOfMatchClass(n12) then jmp b5 else jmp b7
+          n10 <- GLOBAL[Point]
+          n11 <- $MatchClass(n3, n10, 0, $BuildTuple("x", "y"))
+          if $BoolOfMatchClass(n11) then jmp b5 else jmp b7
 
         b5:
-          n13 <- $AttributesOfMatchClass(n12)[0]
-          n14 <- $Compare.eq(n13, 0, n0)
-          if n14 then jmp b6 else jmp b7
+          n12 <- $AttributesOfMatchClass(n11)[0]
+          n13 <- $Compare.eq(n12, 0, n0)
+          if n13 then jmp b6 else jmp b7
 
         b6:
-          n37 <- $AttributesOfMatchClass(n12)[1]
-          n38 <- $AttributesOfMatchClass(n12)
-          LOCAL[y] <- n37
-          n39 <- GLOBAL[print]
-          n40 <- LOCAL[y]
-          n41 <- $Format(n40, n0, n0)
-          n42 <- $BuildString("Y=", n41, " and the point is on the y-axis.")
-          n43 <- $Call(n39, n42, n0)
+          n31 <- $AttributesOfMatchClass(n11)[1]
+          LOCAL[y] <- n31
+          n32 <- GLOBAL[print]
+          n33 <- LOCAL[y]
+          n34 <- $Format(n33, n0, n0)
+          n35 <- $BuildString("Y=", n34, " and the point is on the y-axis.")
+          n36 <- $Call(n32, n35, n0)
           return n0
 
         b7:
-          n15 <- $AttributesOfMatchClass(n12)
-          n16 <- GLOBAL[Point]
-          n17 <- $MatchClass(n3, n16, 0, $BuildTuple("x", "y"))
-          if $BoolOfMatchClass(n17) then jmp b8 else jmp b11($AttributesOfMatchClass(n17))
+          n14 <- GLOBAL[Point]
+          n15 <- $MatchClass(n3, n14, 0, $BuildTuple("x", "y"))
+          if $BoolOfMatchClass(n15) then jmp b8 else jmp b11($AttributesOfMatchClass(n15))
 
         b8:
-          n18 <- $AttributesOfMatchClass(n17)[0]
-          n19 <- $AttributesOfMatchClass(n17)[1]
-          n20 <- $Compare.eq(n19, 0, n0)
-          if n20 then jmp b9 else jmp b10
+          n16 <- $AttributesOfMatchClass(n15)[0]
+          n17 <- $AttributesOfMatchClass(n15)[1]
+          n18 <- $Compare.eq(n17, 0, n0)
+          if n18 then jmp b9 else jmp b10
 
         b9:
-          n31 <- $AttributesOfMatchClass(n17)
-          LOCAL[x] <- n18
-          n32 <- GLOBAL[print]
-          n33 <- LOCAL[x]
-          n34 <- $Format(n33, n0, n0)
-          n35 <- $BuildString("X=", n34, " and the point is on the x-axis.")
-          n36 <- $Call(n32, n35, n0)
+          LOCAL[x] <- n16
+          n26 <- GLOBAL[print]
+          n27 <- LOCAL[x]
+          n28 <- $Format(n27, n0, n0)
+          n29 <- $BuildString("X=", n28, " and the point is on the x-axis.")
+          n30 <- $Call(n26, n29, n0)
           return n0 |}]
 
 
@@ -553,24 +541,21 @@ def location(point):
           if n7 then jmp b2 else jmp b4
 
         b10:
-          n21 <- $AttributesOfMatchClass(n17)
-          jmp b11(n18)
+          jmp b11(n16)
 
-        b11(n22):
-          n23 <- GLOBAL[Point]
-          n24 <- $MatchClass(n3, n23, 0, $BuildTuple())
-          if $BoolOfMatchClass(n24) then jmp b12 else jmp b13
+        b11(n19):
+          n20 <- GLOBAL[Point]
+          n21 <- $MatchClass(n3, n20, 0, $BuildTuple())
+          if $BoolOfMatchClass(n21) then jmp b12 else jmp b13
 
         b12:
-          n28 <- $AttributesOfMatchClass(n24)
-          n29 <- GLOBAL[print]
-          n30 <- $Call(n29, "The point is located somewhere else on the plane.", n0)
+          n24 <- GLOBAL[print]
+          n25 <- $Call(n24, "The point is located somewhere else on the plane.", n0)
           return n0
 
         b13:
-          n25 <- $AttributesOfMatchClass(n24)
-          n26 <- GLOBAL[print]
-          n27 <- $Call(n26, "Not a point", n0)
+          n22 <- GLOBAL[print]
+          n23 <- $Call(n22, "Not a point", n0)
           return n0
 
         b2:
@@ -579,53 +564,48 @@ def location(point):
           if n9 then jmp b3 else jmp b4
 
         b3:
-          n44 <- $AttributesOfMatchClass(n5)
-          n45 <- GLOBAL[print]
-          n46 <- $Call(n45, "Origin is the point's location.", n0)
+          n37 <- GLOBAL[print]
+          n38 <- $Call(n37, "Origin is the point's location.", n0)
           return n0
 
         b4:
-          n10 <- $AttributesOfMatchClass(n5)
-          n11 <- GLOBAL[Point]
-          n12 <- $MatchClass(n3, n11, 2, $BuildTuple())
-          if $BoolOfMatchClass(n12) then jmp b5 else jmp b7
+          n10 <- GLOBAL[Point]
+          n11 <- $MatchClass(n3, n10, 2, $BuildTuple())
+          if $BoolOfMatchClass(n11) then jmp b5 else jmp b7
 
         b5:
-          n13 <- $AttributesOfMatchClass(n12)[0]
-          n14 <- $Compare.eq(n13, 0, n0)
-          if n14 then jmp b6 else jmp b7
+          n12 <- $AttributesOfMatchClass(n11)[0]
+          n13 <- $Compare.eq(n12, 0, n0)
+          if n13 then jmp b6 else jmp b7
 
         b6:
-          n37 <- $AttributesOfMatchClass(n12)[1]
-          n38 <- $AttributesOfMatchClass(n12)
-          LOCAL[y] <- n37
-          n39 <- GLOBAL[print]
-          n40 <- LOCAL[y]
-          n41 <- $Format(n40, n0, n0)
-          n42 <- $BuildString("Y=", n41, " and the point is on the y-axis.")
-          n43 <- $Call(n39, n42, n0)
+          n31 <- $AttributesOfMatchClass(n11)[1]
+          LOCAL[y] <- n31
+          n32 <- GLOBAL[print]
+          n33 <- LOCAL[y]
+          n34 <- $Format(n33, n0, n0)
+          n35 <- $BuildString("Y=", n34, " and the point is on the y-axis.")
+          n36 <- $Call(n32, n35, n0)
           return n0
 
         b7:
-          n15 <- $AttributesOfMatchClass(n12)
-          n16 <- GLOBAL[Point]
-          n17 <- $MatchClass(n3, n16, 2, $BuildTuple())
-          if $BoolOfMatchClass(n17) then jmp b8 else jmp b11($AttributesOfMatchClass(n17))
+          n14 <- GLOBAL[Point]
+          n15 <- $MatchClass(n3, n14, 2, $BuildTuple())
+          if $BoolOfMatchClass(n15) then jmp b8 else jmp b11($AttributesOfMatchClass(n15))
 
         b8:
-          n18 <- $AttributesOfMatchClass(n17)[0]
-          n19 <- $AttributesOfMatchClass(n17)[1]
-          n20 <- $Compare.eq(n19, 0, n0)
-          if n20 then jmp b9 else jmp b10
+          n16 <- $AttributesOfMatchClass(n15)[0]
+          n17 <- $AttributesOfMatchClass(n15)[1]
+          n18 <- $Compare.eq(n17, 0, n0)
+          if n18 then jmp b9 else jmp b10
 
         b9:
-          n31 <- $AttributesOfMatchClass(n17)
-          LOCAL[x] <- n18
-          n32 <- GLOBAL[print]
-          n33 <- LOCAL[x]
-          n34 <- $Format(n33, n0, n0)
-          n35 <- $BuildString("X=", n34, " and the point is on the x-axis.")
-          n36 <- $Call(n32, n35, n0)
+          LOCAL[x] <- n16
+          n26 <- GLOBAL[print]
+          n27 <- LOCAL[x]
+          n28 <- $Format(n27, n0, n0)
+          n29 <- $BuildString("X=", n28, " and the point is on the x-axis.")
+          n30 <- $Call(n26, n29, n0)
           return n0 |}]
 
 
@@ -700,36 +680,34 @@ def location(point):
 
         b4:
           n9 <- $AttributesOfMatchClass(n6)[1]
-          n10 <- $AttributesOfMatchClass(n6)
-          n11 <- GLOBAL[Point]
-          n12 <- $MatchClass(n3[1], n11, 2, $BuildTuple())
-          if $BoolOfMatchClass(n12) then jmp b5 else jmp b7(n9, $AttributesOfMatchClass(n12))
+          n10 <- GLOBAL[Point]
+          n11 <- $MatchClass(n3[1], n10, 2, $BuildTuple())
+          if $BoolOfMatchClass(n11) then jmp b5 else jmp b7(n9, $AttributesOfMatchClass(n11))
 
         b5:
-          n13 <- $AttributesOfMatchClass(n12)[0]
-          n14 <- $Compare.eq(n13, 0, n0)
-          if n14 then jmp b6 else jmp b7(n9, $AttributesOfMatchClass(n12))
+          n12 <- $AttributesOfMatchClass(n11)[0]
+          n13 <- $Compare.eq(n12, 0, n0)
+          if n13 then jmp b6 else jmp b7(n9, $AttributesOfMatchClass(n11))
 
         b6:
-          n20 <- $AttributesOfMatchClass(n12)[1]
-          n21 <- $AttributesOfMatchClass(n12)
+          n19 <- $AttributesOfMatchClass(n11)[1]
           LOCAL[y1] <- n9
-          LOCAL[y2] <- n20
-          n22 <- GLOBAL[print]
-          n23 <- LOCAL[y1]
+          LOCAL[y2] <- n19
+          n20 <- GLOBAL[print]
+          n21 <- LOCAL[y1]
+          n22 <- $Format(n21, n0, n0)
+          n23 <- LOCAL[y2]
           n24 <- $Format(n23, n0, n0)
-          n25 <- LOCAL[y2]
-          n26 <- $Format(n25, n0, n0)
-          n27 <- $BuildString("Two points on the Y axis at ", n24, ", ", n26, " are in the list.")
-          n28 <- $Call(n22, n27, n0)
+          n25 <- $BuildString("Two points on the Y axis at ", n22, ", ", n24, " are in the list.")
+          n26 <- $Call(n20, n25, n0)
           return n0
 
-        b7(n15, n16):
-          jmp b8(n15)
+        b7(n14, n15):
+          jmp b8(n14)
 
-        b8(n17):
-          n18 <- GLOBAL[print]
-          n19 <- $Call(n18, "Something else is found in the list.", n0)
+        b8(n16):
+          n17 <- GLOBAL[print]
+          n18 <- $Call(n17, "Something else is found in the list.", n0)
           return n0 |}]
 
 
@@ -787,24 +765,21 @@ def main():
           if n13 then jmp b6 else jmp b7
 
         b6:
-          n16 <- $AttributesOfMatchClass(n11)
-          n17 <- $AttributesOfMatchClass(n7)
           LOCAL[a] <- n12[0]
           LOCAL[b] <- n12[1]
           LOCAL[c] <- n12[2]
-          n18 <- GLOBAL[action]
-          n19 <- LOCAL[a]
-          n20 <- LOCAL[b]
-          n21 <- LOCAL[c]
-          n22 <- $Call(n18, n19, n20, n21, n0)
+          n15 <- GLOBAL[action]
+          n16 <- LOCAL[a]
+          n17 <- LOCAL[b]
+          n18 <- LOCAL[c]
+          n19 <- $Call(n15, n16, n17, n18, n0)
           return n0
 
         b7:
           jmp b8
 
         b8:
-          n14 <- $AttributesOfMatchClass(n11)
           jmp b9($AttributesOfMatchClass(n7))
 
-        b9(n15):
+        b9(n14):
           return n0 |}]

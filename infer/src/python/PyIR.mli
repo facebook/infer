@@ -175,7 +175,6 @@ module Exp : sig
     | Subscript of {exp: t; index: t}
     | Temp of SSA.t
     | Var of ScopedIdent.t
-    | Yield of t
 
   val pp : Format.formatter -> t -> unit
 end
@@ -199,6 +198,7 @@ module Stmt : sig
     | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
+    | Yield of {lhs: SSA.t; rhs: Exp.t}
 end
 
 module Terminator : sig

@@ -345,8 +345,7 @@ let run_files modules =
         | Collection _
         | LoadClosure _
         | LoadDeref _
-        | LoadClassDeref _
-        | Yield _ ->
+        | LoadClassDeref _ ->
             todo "eval_exp"
       in
       let exec_stmt stmt =
@@ -432,7 +431,8 @@ let run_files modules =
         | StoreDeref _
         | SetupAnnotations
         | ImportStar _
-        | GenStart _ ->
+        | GenStart _
+        | Yield _ ->
             todo "exec_stmt"
       in
       let rec exec_terminator terminator =

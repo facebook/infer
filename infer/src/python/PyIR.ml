@@ -460,7 +460,6 @@ module Exp = struct
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
     | Temp of SSA.t
     | Var of ScopedIdent.t
-    | Yield of t
   [@@deriving equal]
 
   type opstack_symbol =
@@ -522,8 +521,6 @@ module Exp = struct
     | Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure} ->
         F.fprintf fmt "$MakeFunction[\"%a\", %a, %a, %a, %a]" QualName.pp qual_name pp
           default_values pp default_values_kw pp annotations pp cells_for_closure
-    | Yield exp ->
-        F.fprintf fmt "$Yield(%a)" pp exp
 
 
   let pp_opstack_symbol fmt = function
@@ -641,6 +638,7 @@ module Stmt = struct
     | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
+    | Yield of {lhs: SSA.t; rhs: Exp.t}
 
   let pp fmt = function
     | Let {lhs; rhs} ->
@@ -684,6 +682,8 @@ module Stmt = struct
         F.fprintf fmt "$GenStart%s()" kind
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
+    | Yield {lhs; rhs} ->
+        F.fprintf fmt "%a <- $Yield(%a)" SSA.pp lhs Exp.pp rhs
 end
 
 let cast_exp ~loc = function
@@ -1637,21 +1637,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       call_function_kw st arg
   | "CALL_FUNCTION_EX" ->
       call_function_ex st arg
-  | "POP_TOP" -> (
-      (* TODO: rethink this in the future.
-         Keep the popped values around in case their construction involves side effects.
-         dpichardie: I don't see any reason to keep the popped value, except special care
-         with the YIELD operations. *)
-      let* rhs, st = State.pop st in
-      match (rhs : Exp.opstack_symbol) with
-      | Exp (Temp _) ->
-          Ok (st, None)
-      | _ ->
-          let id, st = State.fresh_id st in
-          let* rhs = State.cast_exp st rhs in
-          let stmt = Stmt.Let {lhs= id; rhs} in
-          let st = State.push_stmt st stmt in
-          Ok (st, None) )
+  | "POP_TOP" ->
+      let* _, st = State.pop st in
+      Ok (st, None)
   | "BINARY_ADD" ->
       parse_op st (Binary Add) 2
   | "BINARY_SUBTRACT" ->
@@ -1980,11 +1968,10 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          the code is known to compile *)
       build_collection st arg ~f:(fun values -> Exp.Collection {kind= Map; values; unpack= true})
   | "YIELD_VALUE" ->
-      (* TODO: it is quite uncertain how we'll deal with these in textual.
-         At the moment this seems to correctly model the stack life-cycle, so
-         I'm happy. We might change/improve things in the future *)
-      let* tos, st = State.pop_and_cast st in
-      let st = State.push st (Exp.Yield tos) in
+      let lhs, st = State.fresh_id st in
+      let* rhs, st = State.pop_and_cast st in
+      let st = State.push_stmt st (Yield {lhs; rhs}) in
+      let st = State.push st (Temp lhs) in
       Ok (st, None)
   | "YIELD_FROM" ->
       (* TODO: it is quite uncertain how we'll deal with these in textual.
