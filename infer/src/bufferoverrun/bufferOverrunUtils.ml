@@ -16,6 +16,7 @@ module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 module TypModels = BufferOverrunTypModels
+module BoField = BufferOverrunField
 
 module ModelEnv = struct
   type model_env =
@@ -52,7 +53,23 @@ module Exec = struct
         mem
 
 
-  let rec decl_local_loc ({tenv} as model_env) loc typ ~inst_num ~represents_multiple_values
+  let rec decl_local_struct_fields_loc: ModelEnv.model_env -> Loc.t -> Struct.fields -> Dom.Mem.t * int -> Dom.Mem.t * int =
+    fun model_env loc fields (mem, inst_num) ->
+      match fields with
+      | field :: tl -> (
+        match field with
+        | (fn, typ, _) -> (
+          match typ.desc with
+          | Tarray {elt= _; length; stride} ->
+            let child_loc = BoField.Field {prefix= loc; fn; typ = (Some typ)} in
+            let stride = Option.map ~f:IntLit.to_int_exn stride in
+            let (mem, inst_num) = decl_local_array model_env child_loc typ ~length ?stride ~inst_num
+              ~represents_multiple_values:false ~dimension:1 mem
+            in
+              decl_local_struct_fields_loc model_env loc tl (mem, inst_num)
+          | _ -> decl_local_struct_fields_loc model_env loc tl (mem, inst_num)))
+      | [] -> (mem, inst_num)
+  and decl_local_loc ({tenv} as model_env) loc typ ~inst_num ~represents_multiple_values
       ~dimension mem =
     match typ.Typ.desc with
     | Typ.Tarray {elt= typ; length; stride} ->
@@ -60,6 +77,13 @@ module Exec = struct
         decl_local_array model_env loc typ ~length ?stride ~inst_num ~represents_multiple_values
           ~dimension mem
     | Typ.Tstruct typname -> (
+      let mem = (
+        match Tenv.lookup tenv typname with
+        | Some {fields} -> 
+            let (mem, _) = decl_local_struct_fields_loc model_env loc fields (mem, 1) in mem
+        | None -> mem 
+      ) 
+      in 
       match TypModels.dispatch tenv typname with
       | Some (CArray {element_typ; length}) ->
           decl_local_array model_env loc element_typ ~length:(Some length) ~inst_num
