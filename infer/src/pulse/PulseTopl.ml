@@ -1088,8 +1088,8 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
     match q.last_step with
     | Some {step_data= LargeStep {post; pulse_is_manifest; topl_is_manifest}} ->
         is_issue post
-        && Bool.(equal caller_pulse_is_manifest pulse_is_manifest)
-        && Bool.(equal caller_topl_is_manifest topl_is_manifest)
+        && Bool.(caller_pulse_is_manifest <= pulse_is_manifest)
+        && Bool.(caller_topl_is_manifest <= topl_is_manifest)
     | _ ->
         false
   in
