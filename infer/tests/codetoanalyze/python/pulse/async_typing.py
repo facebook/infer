@@ -60,12 +60,36 @@ async def fp_await_condition_typing_fun_ok():
         asyncio.sleep(1)
 
 
+async def fn_await_condition_is_none_bad():
+    x = None
+    if x is None:
+        asyncio.sleep(1)
+    else:
+        await asyncio.sleep(1)
+
+
 async def await_condition_is_none_ok():
     x = None
     if x is None:
         await asyncio.sleep(1)
     else:
         asyncio.sleep(1)
+
+
+async def await_condition_bool_none_bad():
+    x = None
+    if x:
+        await asyncio.sleep(1)
+    else:
+        asyncio.sleep(1)
+
+
+async def await_condition_bool_none_ok():
+    x = None
+    if x:
+        asyncio.sleep(1)
+    else:
+        await asyncio.sleep(1)
 
 
 async def fp_await_condition_val_equal_ok():

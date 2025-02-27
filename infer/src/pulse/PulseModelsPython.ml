@@ -990,7 +990,7 @@ let bool arg : model =
     if is_awaitable then make_bool true
     else
       dynamic_dispatch arg
-        ~cases:[(bool_tname, fun () -> ret arg)]
+        ~cases:[(bool_tname, fun () -> ret arg); (none_tname, fun () -> make_bool false)]
         ~default:(fun () -> make_random_bool ())
   in
   assign_ret res
