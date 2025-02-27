@@ -79,6 +79,8 @@ let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   | Float {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
       else Textual.Exp.Const (Float (Float.of_string data))
+  | FuncName {name} ->
+      Textual.Exp.Const (Str name)
   | _ ->
       assert false
 
