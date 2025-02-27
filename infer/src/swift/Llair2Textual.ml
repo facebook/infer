@@ -72,12 +72,13 @@ let block_to_node_name block =
 (* TODO: translate expressions *)
 let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
-  | Integer int_exp ->
-      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ int_exp.typ)
-      else assert false
-  | Float float_exp ->
-      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ float_exp.typ)
-      else assert false
+  | Integer {data; typ} ->
+      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
+      else if Z.is_false data then Textual.Exp.Const Null
+      else Textual.Exp.Const (Int data)
+  | Float {data; typ} ->
+      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
+      else Textual.Exp.Const (Float (Float.of_string data))
   | _ ->
       assert false
 
