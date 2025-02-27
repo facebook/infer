@@ -379,6 +379,8 @@ module Reg = struct
 
   let of_exp = function Reg _ as e -> Some (e |> check invariant) | _ -> None
 
+  let to_exp reg : t = Reg {id= id reg; name= name reg; typ= typ reg}
+
   let mk typ id name = Reg {id; name; typ} |> check invariant
 end
 

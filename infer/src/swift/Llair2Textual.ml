@@ -115,10 +115,7 @@ let to_textual_builtin return name args loc =
 
 let cmnd_to_instrs block =
   let to_instr inst =
-    (* TODO translate instructions *)
     match inst with
-    | Move _ ->
-        assert false
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc loc in
         let id = reg_to_id reg in
@@ -129,8 +126,6 @@ let cmnd_to_instrs block =
         let exp1 = to_textual_exp ptr in
         let exp2 = to_textual_exp exp in
         Textual.Instr.Store {exp1; typ= None; exp2; loc}
-    | AtomicRMW _ | AtomicCmpXchg _ ->
-        assert false
     | Alloc {reg; loc} ->
         to_textual_builtin (Some reg) "llvm_alloc" [] loc
     | Free {ptr; loc} ->
@@ -150,6 +145,14 @@ let cmnd_to_instrs block =
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in
         to_textual_builtin reg name args loc
+    | Move {reg_exps: (Reg.t * Exp.t) iarray; loc} ->
+        let reg_exps = StdUtils.iarray_to_list reg_exps in
+        let exps = List.concat_map ~f:(fun (reg, exp) -> [Reg.to_exp reg; exp]) reg_exps in
+        to_textual_builtin None "llvm_move" exps loc
+    | AtomicRMW {reg; ptr; exp; loc} ->
+        to_textual_builtin (Some reg) "llvm_atomicRMW" [ptr; exp] loc
+    | AtomicCmpXchg {reg; ptr; cmp; exp; loc} ->
+        to_textual_builtin (Some reg) "llvm_atomicCmpXchg" [ptr; cmp; exp] loc
   in
   let call_instr_opt =
     match block.term with Call call -> Some (to_textual_call call) | _ -> None
