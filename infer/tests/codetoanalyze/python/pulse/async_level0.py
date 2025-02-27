@@ -97,20 +97,24 @@ async def compare_lt_bad():
     if i < 0:
         pass
 
+
 async def compare_lt_ok():
     i = await sleep()
     if i < 0:
         pass
+
 
 async def compare_gt_bad():
     i = sleep()
     if i > 0:
         pass
 
+
 async def compare_gt_ok():
     i = await sleep()
     if i > 0:
         pass
+
 
 async def use_py_bool_bad(b):
     x = sleep()
@@ -152,12 +156,12 @@ def FN_set_dict_with_unwaited_bad(key):
 
 async def use_py_get_iter_bad():
     x = sleep()
-    return [ a.f for a in x ]
+    return [a.f for a in x]
 
 
 async def use_py_get_iter_ok():
     x = await sleep()
-    return [ a.f for a in x ]
+    return [a.f for a in x]
 
 
 async def gather_condition_awaitable_ok():
@@ -174,11 +178,11 @@ async def concat_list_right_ok(l):
 
 
 async def concat_tuple_left_ok(l):
-    return (sleep(), sleep ()) + l
+    return (sleep(), sleep()) + l
 
 
 async def concat_tuple_right_ok(l):
-    return l + (sleep(), sleep ())
+    return l + (sleep(), sleep())
 
 
 def main_ok():

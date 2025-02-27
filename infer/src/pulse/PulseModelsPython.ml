@@ -1048,9 +1048,16 @@ let store_name name locals _globals value : model =
   start_model @@ fun () -> Dict.set locals name value
 
 
-let store_subscript _dict _key value =
+let store_subscript dict key value =
   let open DSL.Syntax in
-  start_model @@ fun () -> remove_allocation_attr_transitively [value]
+  start_model
+  @@ fun () ->
+  let* key_str = as_constant_string key in
+  match key_str with
+  | None ->
+      remove_allocation_attr_transitively [value] @@> remove_dict_contain_const_keys dict
+  | Some key ->
+      Dict.set_str_key dict key value @@> ret ()
 
 
 let subscript seq idx : model =

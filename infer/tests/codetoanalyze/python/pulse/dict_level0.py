@@ -19,7 +19,7 @@ def fn_dict_missing_key_const_str_with_int_key_bad():
     return d["Samantha"]
 
 
-def fp_dict_set_key_after_init_ok():
+def dict_set_key_after_init_ok():
     d = {"John": 30, "Mary": 28}
     d["Samantha"] = 60
     return d["Samantha"]
