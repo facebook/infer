@@ -14,7 +14,7 @@ SOURCES = $(sort $(wildcard *.py) $(wildcard */*.py) $(wildcard */*/*.py))
 default: test
 
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
-	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions \
+	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions --enable-issue-type PULSE_DICT_MISSING_KEY \
 		--dump-duplicate-symbols \
 		-o $(INFER_OUT) \
 		-- python3 $(SOURCES)

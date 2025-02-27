@@ -261,13 +261,20 @@ let as_constant_string_exn aval : string DSL.model_monad =
 
 
 module Dict = struct
-  let make keys args : DSL.aval DSL.model_monad =
+  type key_types = AllConstStrs | SomeOthers
+
+  let make keys args bindings_type : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     if not (Int.equal (List.length args) (List.length keys)) then
       L.die InternalError "Dict.make expects two list of same length@\n" ;
     let bindings = List.zip_exn keys args in
     let* dict = constructor ~deref:false dict_tname bindings in
-    ret dict
+    ( match bindings_type with
+    | AllConstStrs ->
+        add_dict_contain_const_keys dict
+    | SomeOthers ->
+        ret () )
+    @@> ret dict
 
 
   let propagate_static_type_on_load dict key load_res : unit DSL.model_monad =
@@ -306,9 +313,11 @@ module Dict = struct
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type Fieldname.Set.empty tname key)
 
 
-  let get_str_key ?(propagate_static_type = false) dict key : DSL.aval DSL.model_monad =
+  let get_str_key ?(dict_read_const_key = false) ?(propagate_static_type = false) dict key :
+      DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let field = Fieldname.make dict_tname key in
+    let* () = if dict_read_const_key then add_dict_read_const_key dict field else ret () in
     let* load_res = load_access ~deref:false dict (FieldAccess field) in
     let* () =
       if propagate_static_type then propagate_static_type_on_load dict key load_res else ret ()
@@ -325,7 +334,10 @@ module Dict = struct
     ret load_res
 
 
-  (* similar to get_exn but doesn't throw error if key is not constant string *)
+  (* used for py dict access
+     1. Doesn't throw error if key is not str
+     2. Enables DictMissingKey error through dict_read_const_key option
+  *)
   let get dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* key = as_constant_string key in
@@ -334,7 +346,7 @@ module Dict = struct
       | None ->
           fresh ()
       | Some key ->
-          get_str_key ~propagate_static_type:true dict key
+          get_str_key ~dict_read_const_key:true ~propagate_static_type:true dict key
     in
     ret res
 
@@ -402,7 +414,7 @@ let build_class closure _name _args : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* class_ = Dict.make [] [] in
+  let* class_ = Dict.make [] [] Dict.AllConstStrs in
   let gen_closure_args _ = ret [class_] in
   let* _ = apply_python_closure closure gen_closure_args in
   assign_ret class_
@@ -425,7 +437,7 @@ let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
           L.d_printfln "[ocaml model] Failed to load attributes" ;
           List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
     in
-    let* locals = Dict.make python_args args in
+    let* locals = Dict.make python_args args Dict.AllConstStrs in
     ret [locals]
   in
   apply_python_closure closure gen_closure_args
@@ -898,8 +910,9 @@ let get_key_as_str i keys : string option DSL.model_monad =
 
 
 let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
-    (string list * DSL.aval list) DSL.model_monad =
+    (string list * DSL.aval list * Dict.key_types) DSL.model_monad =
   let open DSL.Syntax in
+  let bindings_type = ref Dict.AllConstStrs in
   let* ks, vs, _ =
     list_fold vals ~init:([], [], 0) ~f:(fun acc v ->
         let acc_keys, acc_vals, c = acc in
@@ -907,19 +920,20 @@ let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
         match key with
         (* For now we ignore keys that are not const strings *)
         | None ->
+            bindings_type := Dict.SomeOthers ;
             (acc_keys, acc_vals, c + 1) |> ret
         | Some key ->
             (key :: acc_keys, v :: acc_vals, c + 1) |> ret )
   in
-  ret (List.rev ks, List.rev vs)
+  ret (List.rev ks, List.rev vs, !bindings_type)
 
 
 let make_const_key_map (keys : DSL.aval) (values : DSL.aval list) : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* keys, vals = get_bindings keys values in
-  let* dict = Dict.make keys vals in
+  let* keys, vals, bindings_type = get_bindings keys values in
+  let* dict = Dict.make keys vals bindings_type in
   assign_ret dict
 
 

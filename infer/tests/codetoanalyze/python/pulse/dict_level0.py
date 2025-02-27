@@ -9,8 +9,19 @@ def dict_missing_key_const_str_ok():
     return d["name"]
 
 
-def fn_dict_missing_key_const_str_bad():
+def dict_missing_key_const_str_bad():
     d = {"John": 30, "Mary": 28}
+    return d["Samantha"]
+
+
+def fn_dict_missing_key_const_str_with_int_key_bad():
+    d = {"John": 30, "Mary": 28, 1: 234}
+    return d["Samantha"]
+
+
+def fp_dict_set_key_after_init_ok():
+    d = {"John": 30, "Mary": 28}
+    d["Samantha"] = 60
     return d["Samantha"]
 
 
@@ -23,6 +34,11 @@ def dict_access_fun_call_ok():
     return ages["John"]
 
 
+def dict_access_fun_call_bad():
+    ages = get_dict()
+    return ages["Samantha"]
+
+
 def get_val():
     return 1
 
@@ -31,3 +47,10 @@ def dict_missing_key_var_ok():
     y = get_val()
     d = {"ABC": 1, y: 2}
     return d[1]
+
+
+class DictField:
+
+    def fn_get_key_bad(self):
+        self.d = {"name": "Alice", "city": "New York"}
+        return self.d["bla"]

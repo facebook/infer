@@ -438,10 +438,17 @@ module Syntax = struct
         ret false
 
 
+  (* is_dict_non_alias was introduced as an attempt to differentiate dicts from shapes in Hack *)
+  (* For python for now we don't have any similar heuristic in place *)
+  let should_add_read_const_key proc_desc addr : bool model_monad =
+    if Language.curr_language_is Python then ret true
+    else is_dict_non_alias (Procdesc.get_pvar_formals proc_desc) addr
+
+
   let add_dict_read_const_key (addr, history) key : unit model_monad =
     let* {analysis_data= {proc_desc}; path= {timestamp}; location} = get_data in
-    let* is_dict_non_alias = is_dict_non_alias (Procdesc.get_pvar_formals proc_desc) addr in
-    if is_dict_non_alias then
+    let* should_add_read = should_add_read_const_key proc_desc addr in
+    if should_add_read then
       PulseOperations.add_dict_read_const_key timestamp (Immediate {location; history}) addr key
       >> sat |> exec_partial_command
     else ret ()
