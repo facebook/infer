@@ -357,6 +357,43 @@ module Dict = struct
     set_str_key dict key value
 end
 
+module Integer = struct
+  let make arg : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let* opt_int = as_constant_int arg in
+    match opt_int with
+    | None ->
+        constructor ~deref:false int_tname []
+    | Some i ->
+        let* int_value = int i in
+        (* we wrap the Pulse integer in a box, because all Pulse integers with a same value are shared *)
+        constructor ~deref:false int_tname [("val", int_value)]
+
+
+  let get boxed_int : int option DSL.model_monad =
+    let open DSL.Syntax in
+    let field = Fieldname.make int_tname "val" in
+    let* unboxed = load_access ~deref:false boxed_int (FieldAccess field) in
+    as_constant_int unboxed
+end
+
+module Bool = struct
+  let make bool : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    (* Contrary to Integer above, we don't wrap the pulse integer value. Should be safe as long as it is the only
+       pulse integer value tagged with a dynamic type information *)
+    let* bool = int (if bool then 1 else 0) in
+    let* () = and_dynamic_type_is bool (Typ.mk_struct bool_tname) in
+    ret bool
+
+
+  let make_random () : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let* res = fresh () in
+    let* () = and_dynamic_type_is res (Typ.mk_struct bool_tname) in
+    ret res
+end
+
 module Tuple = struct
   let str_field_of_int i = F.asprintf "#%d" i
 
@@ -379,7 +416,11 @@ module Tuple = struct
 
   let get tuple idx : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let* opt_int = as_constant_int idx in
+    let* opt_int =
+      dynamic_dispatch idx
+        ~cases:[(int_tname, fun () -> Integer.get idx)]
+        ~default:(fun () -> ret None)
+    in
     match opt_int with None -> fresh () | Some i -> get_idx_int tuple i
 
 
@@ -458,18 +499,6 @@ let make_type arg : DSL.aval option DSL.model_monad =
       ret (Some res)
 
 
-let make_int_internal arg : DSL.aval DSL.model_monad =
-  let open DSL.Syntax in
-  let* opt_int = as_constant_int arg in
-  match opt_int with
-  | None ->
-      constructor ~deref:false int_tname []
-  | Some i ->
-      let* res = int i in
-      let* () = and_dynamic_type_is res (Typ.mk_struct int_tname) in
-      ret res
-
-
 let make_str_internal arg : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* opt_str = as_constant_string arg in
@@ -538,7 +567,7 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       LibModel.gen_awaitable args
   | PyBuiltin IntFun, [arg] ->
-      let* res = make_int_internal arg in
+      let* res = Integer.make arg in
       ret (Some res)
   | PyBuiltin StrFun, [arg] ->
       let* res = make_str_internal arg in
@@ -950,22 +979,8 @@ let make_int arg : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* res = make_int_internal arg in
+  let* res = Integer.make arg in
   assign_ret res
-
-
-let make_bool bool : DSL.aval DSL.model_monad =
-  let open DSL.Syntax in
-  let* bool = int (if bool then 1 else 0) in
-  let* () = and_dynamic_type_is bool (Typ.mk_struct bool_tname) in
-  ret bool
-
-
-let make_random_bool () =
-  let open DSL.Syntax in
-  let* res = fresh () in
-  let* () = and_dynamic_type_is res (Typ.mk_struct bool_tname) in
-  ret res
 
 
 let binary_add arg1 arg2 : model =
@@ -987,11 +1002,11 @@ let bool arg : model =
   @@ fun () ->
   let* is_awaitable = is_allocated arg in
   let* res =
-    if is_awaitable then make_bool true
+    if is_awaitable then Bool.make true
     else
       dynamic_dispatch arg
-        ~cases:[(bool_tname, fun () -> ret arg); (none_tname, fun () -> make_bool false)]
-        ~default:(fun () -> make_random_bool ())
+        ~cases:[(bool_tname, fun () -> ret arg); (none_tname, fun () -> Bool.make false)]
+        ~default:(fun () -> Bool.make_random ())
   in
   assign_ret res
 
@@ -1000,7 +1015,7 @@ let bool_false : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* res = make_bool false in
+  let* res = Bool.make false in
   assign_ret res
 
 
@@ -1008,7 +1023,7 @@ let bool_true : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* res = make_bool true in
+  let* res = Bool.make true in
   assign_ret res
 
 
@@ -1118,10 +1133,10 @@ let compare_eq arg1 arg2 : model =
       , Some {Formula.typ= {desc= Tstruct arg2_type_name}} )
       when Typ.Name.Python.is_singleton arg1_type_name
            || Typ.Name.Python.is_singleton arg2_type_name ->
-        make_bool (Typ.Name.equal arg1_type_name arg2_type_name)
+        Bool.make (Typ.Name.equal arg1_type_name arg2_type_name)
     | _ ->
         L.d_printfln "py_compare_eq: at least one unknown dynamic type: unknown result" ;
-        make_random_bool ()
+        Bool.make_random ()
   in
   assign_ret res
 

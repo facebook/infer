@@ -60,7 +60,7 @@ async def fp_await_condition_typing_fun_ok():
         asyncio.sleep(1)
 
 
-async def fn_await_condition_is_none_bad():
+async def await_condition_is_none_bad():
     x = None
     if x is None:
         asyncio.sleep(1)
