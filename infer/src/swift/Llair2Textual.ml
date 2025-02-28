@@ -192,12 +192,16 @@ and to_terminator_and_succs ~seen_nodes term =
   | Switch {key; tbl; els} -> (
     match StdUtils.iarray_to_list tbl with
     | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
+        (* if then else *)
         let bexp = to_textual_bool_exp key in
         let else_, zero_nodes = to_textual_jump_and_succs ~seen_nodes zero_jump in
         let then_, els_nodes = to_textual_jump_and_succs ~seen_nodes els in
         let term = Textual.Terminator.If {bexp; then_; else_} in
         let nodes = Textual.Node.Set.union zero_nodes els_nodes in
         (term, nodes)
+    | [] when Exp.equal key Exp.false_ ->
+        (* goto *)
+        to_textual_jump_and_succs ~seen_nodes els
     | _ ->
         (Textual.Terminator.Unreachable, no_succs (* TODO translate Switch *)) )
   | Iswitch _ | Abort _ | Unreachable ->
