@@ -16,9 +16,11 @@ let addStructToMap name struct_ =
     structMap := Textual.TypeName.Map.add name struct_ !structMap
 
 
+let field_of_pos pos = Format.asprintf "field_%s" (Int.to_string pos)
+
 let rec to_textual_field_decls struct_name fields =
   let to_textual_field_decl (pos, typ) =
-    let name = Format.asprintf "field_%s" (Int.to_string pos) in
+    let name = field_of_pos pos in
     let qualified_name = Textual.{enclosing_class= struct_name; name= FieldName.of_string name} in
     let textual_typ = to_textual_typ typ in
     Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes= []}

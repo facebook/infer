@@ -7,6 +7,8 @@
 
 open! IStd
 
+val field_of_pos : int -> label
+
 val to_annotated_textual_typ : Typ.t -> Textual.Typ.annotated
 
 val to_textual_typ : Typ.t -> Textual.Typ.t

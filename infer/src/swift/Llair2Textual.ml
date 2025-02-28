@@ -70,7 +70,7 @@ let block_to_node_name block =
 
 
 (* TODO: translate expressions *)
-let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
+let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
   | Integer {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
@@ -87,6 +87,13 @@ let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       Textual.Exp.Var (reg_to_id (Reg.mk typ id name))
   | Global {name} ->
       Textual.Exp.Lvar (Textual.VarName.of_string name)
+  | Ap1 (Select n, Struct {name}, exp) ->
+      let typ_name = Textual.TypeName.of_string name in
+      Textual.Exp.Field
+        { exp= to_textual_exp exp
+        ; field=
+            { enclosing_class= typ_name
+            ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
   | _ ->
       assert false
 
