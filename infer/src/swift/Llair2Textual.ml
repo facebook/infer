@@ -94,6 +94,11 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
         ; field=
             { enclosing_class= typ_name
             ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
+  | Ap1 (Convert _, dst_typ, exp) ->
+      let exp = to_textual_exp exp in
+      let typ = to_textual_typ dst_typ in
+      let proc = Textual.ProcDecl.cast_name in
+      Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual}
   | _ ->
       assert false
 

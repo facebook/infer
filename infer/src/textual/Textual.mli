@@ -284,6 +284,8 @@ module ProcDecl : sig
 
   val free_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
 
+  val cast_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
+
   val is_free_builtin : QualifiedProcName.t -> bool
 
   val allocate_array_name : QualifiedProcName.t
