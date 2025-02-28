@@ -81,6 +81,12 @@ let to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       else Textual.Exp.Const (Float (Float.of_string data))
   | FuncName {name} ->
       Textual.Exp.Const (Str name)
+  | Reg {id; name; typ} ->
+      (* TODO: find a way to figure out when to use the id and when to use the name. In Llair Reg is used everywhere
+         but in textual we sometimes need Var and sometimes LVar. *)
+      Textual.Exp.Var (reg_to_id (Reg.mk typ id name))
+  | Global {name} ->
+      Textual.Exp.Lvar (Textual.VarName.of_string name)
   | _ ->
       assert false
 
