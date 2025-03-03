@@ -99,6 +99,11 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       let typ = to_textual_typ dst_typ in
       let proc = Textual.ProcDecl.cast_name in
       Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual}
+  | Ap1 (Splat, _, _) ->
+      (* [splat exp] initialises every element of an array with the element exp, so to be precise it
+         needs to be translated as a loop. We translate here to a non-deterministic value for the array *)
+      let proc = builtin_qual_proc_name "llvm_nondet" in
+      Call {proc; args= []; kind= Textual.Exp.NonVirtual}
   | _ ->
       assert false
 
