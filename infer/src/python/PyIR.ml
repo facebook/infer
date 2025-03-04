@@ -1805,6 +1805,25 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* rhs, st = State.pop_and_cast st in
         let st = State.push_stmt st (StoreSlice {container; start; end_; rhs}) in
         Ok (st, None)
+    | "CHECK_EXC_MATCH" ->
+        only_supported_from_python_3_12 opname version ;
+        let* _, st = State.pop st in
+        let* _, st = State.pop st in
+        let st = State.push_symbol st Exp.Null in
+        Ok (st, None)
+    | "CLEANUP_THROW" ->
+        only_supported_from_python_3_12 opname version ;
+        Ok (st, None)
+    | "PUSH_EXC_INFO" ->
+        only_supported_from_python_3_12 opname version ;
+        let* tos, st = State.pop st in
+        let st = State.push_symbol st Null in
+        let st = State.push_symbol st tos in
+        Ok (st, None)
+    | "RETURN_GENERATOR" ->
+        let st = State.push_symbol st Exp.Null in
+        (* NOTE: unclear what we should do with generated value *)
+        Ok (st, None)
     | "RETURN_VALUE" ->
         let* ret, st = State.pop_and_cast st in
         Ok (st, Some (TerminatorBuilder.Return ret))
@@ -2157,7 +2176,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "ROT_N" ->
         let* st = State.rot_n st arg in
         Ok (st, None)
-    | "SETUP_WITH" ->
+    | "SETUP_WITH" | "BEFORE_WITH" ->
+        (* SETUP_WITH is used in Python3.10 while BEFORE_WITH is used in Python3.12 *)
         let* context_manager, st = State.pop_and_cast st in
         let st = State.push_symbol st (ContextManagerExit context_manager) in
         let id, st = call_method st Ident.Special.enter context_manager [] in
@@ -2411,6 +2431,10 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "STORE_SUBSCR"
   | "STORE_DEREF"
   | "STORE_SLICE"
+  | "CHECK_EXC_MATCH"
+  | "CLEANUP_THROW"
+  | "PUSH_EXC_INFO"
+  | "RETURN_GENERATOR"
   | "KW_NAMES"
   | "CALL"
   | "CALL_FUNCTION"
@@ -2491,6 +2515,7 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "ROT_FOUR"
   | "ROT_N"
   | "SETUP_WITH"
+  | "BEFORE_WITH"
   | "SETUP_FINALLY"
   | "POP_FINALLY"
   | "POP_EXCEPT"

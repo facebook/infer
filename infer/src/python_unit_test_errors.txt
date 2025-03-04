@@ -1,5 +1,3 @@
-      5     IR error: Unsupported opcode: BEFORE_WITH 
-      3     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
+      4     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
       6     IR error: Unsupported opcode: MAKE_CELL 
-     15     IR error: Unsupported opcode: PUSH_EXC_INFO 
-     10     IR error: Unsupported opcode: RETURN_GENERATOR 
+      8     IR error: Unsupported opcode: SEND 

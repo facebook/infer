@@ -162,8 +162,7 @@ with open("foo.txt", "wt") as fp:
     fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: BEFORE_WITH |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

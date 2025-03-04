@@ -383,8 +383,7 @@ class defaultdict:
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -407,7 +406,7 @@ def powerset(s):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: SEND |}]
 
 
 let%expect_test _ =

@@ -45,5 +45,4 @@ done()
 |}
   in
   PyIR.test_cfg_skeleton source ;
-  [%expect {|
-    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
+  [%expect {| |}]

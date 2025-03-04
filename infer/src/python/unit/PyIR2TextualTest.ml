@@ -66,4 +66,4 @@ class C:
   in
   PyIR.test ~run source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: SEND |}]

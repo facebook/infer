@@ -191,8 +191,7 @@ def f(ok):
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -259,5 +258,4 @@ except Exception as error:
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
+  [%expect {| |}]

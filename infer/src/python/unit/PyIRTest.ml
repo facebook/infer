@@ -143,8 +143,7 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: BEFORE_WITH |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -314,8 +313,7 @@ def f(foo, bar):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: BEFORE_WITH |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -467,7 +465,7 @@ async def g():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: SEND |}]
 
 
 let%expect_test _ =
@@ -535,7 +533,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: SEND |}]
 
 
 (* the two examples below show that with Python 3.10, the size of the opstack may
@@ -611,8 +609,7 @@ async def main(b):
     return f(g(*b))
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

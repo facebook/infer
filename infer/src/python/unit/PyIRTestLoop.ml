@@ -32,8 +32,7 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: BEFORE_WITH |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -70,7 +69,7 @@ async def async_loop1():
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: SEND |}]
 
 
 let%expect_test _ =
@@ -80,7 +79,7 @@ async def async_loop2():
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_GENERATOR |}]
+    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
 
 
 let%expect_test _ =
