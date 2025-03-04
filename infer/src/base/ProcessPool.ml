@@ -607,7 +607,7 @@ let run_sequentially ~finish ~(f : ('a, 'b) doer) (tasks : 'a list) : unit =
   TaskBar.set_tasks_total task_bar (task_generator.remaining_tasks ()) ;
   TaskBar.tasks_done_reset task_bar ;
   let for_child_info =
-    {TaskGenerator.child_slot= -1; child_id= Unix.getpid (); is_first_update= true}
+    {TaskGenerator.child_slot= -1; child_id= IUnix.getpid (); is_first_update= true}
   in
   let rec run_tasks () =
     if not (task_generator.is_empty ()) then (

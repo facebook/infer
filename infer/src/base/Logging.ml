@@ -60,7 +60,7 @@ let prev_category = DLS.new_key (fun () -> "")
 let mk_file_formatter file_fmt category0 =
   DLS.new_key (fun () ->
       let out_functions_orig = F.pp_get_formatter_out_functions (DLS.get file_fmt) () in
-      let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (Unix.getpid ())) category0 in
+      let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (IUnix.getpid ())) category0 in
       let print_prefix_if_newline () =
         let category_has_changed =
           (* take category + PID into account *)

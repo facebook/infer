@@ -149,7 +149,7 @@ let do_in_db_dir db_path ~f =
 
 let create_db location id =
   let final_db_path = get_db_path location id in
-  let pid = Unix.getpid () in
+  let pid = IUnix.getpid () in
   let temp_db_path =
     Filename.temp_file ~in_dir:(results_dir_get_path Temporary)
       ( match id with

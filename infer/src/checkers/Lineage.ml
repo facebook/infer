@@ -948,7 +948,7 @@ module Out = struct
     IUnix.mkdir_p output_dir ;
     match DLS.get channel_key with
     | None ->
-        let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in
+        let filename = Format.asprintf "lineage-%a.json" Pid.pp (IUnix.getpid ()) in
         let channel = Filename.concat output_dir filename |> Out_channel.create in
         let close_channel () =
           DLS.get channel_key |> Option.iter ~f:Out_channel.close_no_err ;

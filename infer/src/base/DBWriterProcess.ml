@@ -130,7 +130,7 @@ module Server = struct
 
   let server socket =
     L.debug Analysis Quiet "Sqlite write daemon: process starting, pid= %a@." Pid.pp
-      (Unix.getpid ()) ;
+      (IUnix.getpid ()) ;
     let finally () = ServerSocket.remove_socket socket in
     Exception.try_finally ~finally ~f:(fun () ->
         let ExecutionDuration.{execution_duration} =

@@ -20,8 +20,8 @@ let update_status = ref (fun _ _ -> ())
 
 let update_heap_words = ref (fun () -> ())
 
-let pid = ref (lazy (Unix.getpid ()))
+let pid = ref (lazy (IUnix.getpid ()))
 
-let reset_pid () = pid := lazy (Unix.getpid ())
+let reset_pid () = pid := lazy (IUnix.getpid ())
 
 let get_pid () = Lazy.force !pid

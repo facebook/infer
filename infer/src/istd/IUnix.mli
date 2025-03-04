@@ -31,3 +31,7 @@ val open_process_in : string -> In_channel.t
 module Exit_or_signal = Unix.Exit_or_signal
 
 val close_process_in : In_channel.t -> Exit_or_signal.t
+
+module Pid = Pid
+
+val getpid : unit -> Pid.t

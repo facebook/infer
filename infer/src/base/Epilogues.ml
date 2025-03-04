@@ -17,7 +17,7 @@ let register callback_ref ~f ~description =
     with exn ->
       F.eprintf
         "%a: Error while running epilogue \"%s\":@\n  @[<v>%a@\n%s@]@\nPowering through...@." Pid.pp
-        (Unix.getpid ()) description Exn.pp exn (Printexc.get_backtrace ())
+        (IUnix.getpid ()) description Exn.pp exn (Printexc.get_backtrace ())
   in
   let g = !callback_ref in
   callback_ref :=

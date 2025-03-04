@@ -208,7 +208,7 @@ let analyze replay_call_graph source_files_to_analyze =
         process_times_counter := Some (ExecutionDuration.counter ()) ;
         if Config.memtrace_analysis then
           let filename =
-            allocation_traces_dir ^/ F.asprintf "memtrace.%a" Pid.pp (Unix.getpid ())
+            allocation_traces_dir ^/ F.asprintf "memtrace.%a" Pid.pp (IUnix.getpid ())
           in
           Memtrace.start_tracing ~context:None ~sampling_rate:Config.memtrace_sampling_rate
             ~filename

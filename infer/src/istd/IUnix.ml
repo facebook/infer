@@ -63,3 +63,5 @@ let open_process_in = Caml_unix.open_process_in
 module Exit_or_signal = Unix.Exit_or_signal
 
 let close_process_in ic = Exit_or_signal.of_unix (Caml_unix.close_process_in ic)
+
+let getpid () = Pid.of_int (Caml_unix.getpid ())
