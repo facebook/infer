@@ -939,7 +939,13 @@ module CodeInfo = struct
     ; is_async: bool
     ; is_generator: bool }
 
-  let is_async = function {FFI.Instruction.opname= "GEN_START"; arg= 1} :: _ -> true | _ -> false
+  let is_async = function
+    | {FFI.Instruction.opname= "GEN_START"; arg= 1} :: _
+    | {FFI.Instruction.opname= "RETURN_GENERATOR"} :: _ ->
+        true
+    | _ ->
+        false
+
 
   let of_code
       { FFI.Code.co_name

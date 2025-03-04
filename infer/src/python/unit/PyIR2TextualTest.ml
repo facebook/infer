@@ -188,7 +188,7 @@ class C:
 
     }
 
-    define dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = globals
           n1 = locals
@@ -327,7 +327,7 @@ class C:
 
     }
 
-    define dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n2 = [&globals:*PyGlobals<dummy>]
           n1 = [&locals:*PyLocals]
@@ -407,7 +407,7 @@ class C:
 
     type .final PyClosure<dummy.g> = {globals: *PyGlobals<dummy>}
 
-    define .closure_wrapper PyClosure<dummy.g>.call(__this: *PyClosure<dummy.g>, locals: *PyLocals) : *PyObject {
+    define .closure_wrapper .async PyClosure<dummy.g>.call(__this: *PyClosure<dummy.g>, locals: *PyLocals) : *PyObject {
       #entry:
           n0:*PyClosure<dummy.g> = load &__this
           n1:*PyGlobals<dummy> = load n0.?.globals
@@ -581,7 +581,7 @@ class C:
 
     }
 
-    define dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+    define .async dummy.g(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0:
           n6:*PyGlobals<dummy> = load &globals
           n7:*PyLocals = load &locals
