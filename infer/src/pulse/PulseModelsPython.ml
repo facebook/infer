@@ -590,6 +590,22 @@ let try_catch_lib_model type_name args =
       ret None
 
 
+let try_catch_lib_model_using_static_type ~default closure args =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type closure in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name}) as type_name) -> (
+      let* opt_special_call = modelled_python_call (PyLib {module_name; name}) args in
+      match opt_special_call with
+      | None ->
+          default ()
+      | Some res ->
+          L.d_printfln "catching reserved lib call using static type %a" Typ.Name.pp type_name ;
+          ret res )
+  | _ ->
+      default ()
+
+
 let call closure arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
@@ -631,19 +647,8 @@ let call_function_ex closure tuple dict : model =
   let args = [tuple; dict] in
   let* res =
     match opt_dynamic_type_data with
-    | None -> (
-        let* opt_static_type = get_static_type closure in
-        match opt_static_type with
-        | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name}) as type_name) -> (
-            let* opt_special_call = modelled_python_call (PyLib {module_name; name}) args in
-            match opt_special_call with
-            | None ->
-                fresh ()
-            | Some res ->
-                L.d_printfln "catching reserved lib call using static type %a" Typ.Name.pp type_name ;
-                ret res )
-        | _ ->
-            fresh () )
+    | None ->
+        try_catch_lib_model_using_static_type ~default:fresh closure args
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
         let* opt_catched_lib_model_res = try_catch_lib_model type_name args in
         match opt_catched_lib_model_res with
