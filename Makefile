@@ -224,6 +224,12 @@ DIRECT_TESTS += \
 endif
 endif # BUILD_PYTHON_ANALYZERS
 
+ifdef PYTHONNEXT
+DIRECT_TESTS += \
+  python-next_pulse \
+
+endif
+
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \

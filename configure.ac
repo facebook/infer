@@ -206,9 +206,10 @@ AS_IF([test "x$enable_python_analyzers" != "xno"], [
       AS_IF([test "x$enable_python_analyzers" = "xauto"], [
         AC_MSG_WARN([python version $python_version is not supported, disabling python support])
         ], [
-        AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.8 instead or disable python support with --disable-python-analyzers])
+        AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.10 instead or disable python support with --disable-python-analyzers])
       ]); break;;
   esac
+AC_SUBST([PYTHONNEXT])
 ]) # end if($enable_python_analyzers)
 
 AC_ARG_VAR([PYTHONHOME], [the location of the standard Python libraries])

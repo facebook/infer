@@ -237,6 +237,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@XCODE_SELECT[@]|$(XCODE_SELECT)|g" \
 	  -e "s|@INFER_MAN_LAST_MODIFIED[@]|$(INFER_MAN_LAST_MODIFIED)|g" \
 	  -e "s|@PYTHON[@]|$(PYTHON)|g" \
+	  -e "s|@PYTHONNEXT[@]|$(PYTHONNEXT)|g" \
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	echo -e "\n;;" >> $@; \
