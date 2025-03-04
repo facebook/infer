@@ -3,21 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-TESTS_DIR = ../../..
-INFER_OUT ?= infer-out$(TEST_SUFFIX)
-INFERPRINT_OPTIONS = --issues-tests
+ROOT_DIR = ../../../../..
+include $(ROOT_DIR)/Makefile.config
 
-include $(TESTS_DIR)/infer.make
+default: compile
 
-SOURCEDIR = ../../python/pulse/
-SOURCES = $(sort $(shell find $(SOURCEDIR) -name '*.py'))
-
-default: test
-
-$(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
-	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions --enable-issue-type PULSE_DICT_MISSING_KEY \
-		--python-exe $(PYTHONNEXT) \
-		--inferconfig-path $(SOURCEDIR).inferconfig \
-		--dump-duplicate-symbols \
-		-o $(INFER_OUT) \
-		-- python3 $(SOURCES)
+.PHONY: print replace test clean
+print replace test clean:
+	$(QUIET)INFER_ARGS=--python-exe^$(PYTHONNEXT) $(MAKE) -C ../../python/pulse TEST_SUFFIX=-next TEST_RESULT_SUFFIX=-next ROOT_REL_SUFFIX=-next $@
