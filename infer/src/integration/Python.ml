@@ -132,6 +132,7 @@ let capture_file ~is_binary file = process_file ~is_binary file
 
 let capture_files ~is_binary files =
   let n_files = List.length files in
+  let interpreter = Config.python_exe |> Option.value ~default:Version.python_exe in
   let child_action, child_prologue, child_epilogue =
     let child_tenv = Tenv.create () in
     let child_action file =
@@ -145,7 +146,7 @@ let capture_files ~is_binary files =
           Error.format_error file err ;
           Some ()
     in
-    let child_prologue _ = Py.initialize ~interpreter:Version.python_exe () in
+    let child_prologue _ = Py.initialize ~interpreter () in
     let child_epilogue worker_id =
       let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
       let tenv_path = DB.filename_add_suffix tenv_path (ProcessPool.Worker.show_id worker_id) in

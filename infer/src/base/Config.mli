@@ -765,6 +765,8 @@ val python_trim_source_paths : bool
 
 val python_skip_db : bool
 
+val python_exe : string option
+
 val qualified_cpp_name_block_list : string list
 
 val quiet : bool

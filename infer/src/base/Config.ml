@@ -3034,6 +3034,12 @@ and python_skip_db =
   CLOpt.mk_bool ~long:"python-skip-db" ~default:false "Skip the DB writing during Python capture"
 
 
+and python_exe =
+  CLOpt.mk_path_opt ~long:"python-exe" ~meta:"path"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "A filepath to a python interpreter. It will bypass the interpreter set by PYTHON variable"
+
+
 and qualified_cpp_name_block_list =
   CLOpt.mk_string_list ~long:"qualified-cpp-name-block-list" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4734,6 +4740,8 @@ and python_files_index = !python_files_index
 and python_trim_source_paths = !python_trim_source_paths
 
 and python_skip_db = !python_skip_db
+
+and python_exe = !python_exe
 
 and qualified_cpp_name_block_list = RevList.to_list !qualified_cpp_name_block_list
 

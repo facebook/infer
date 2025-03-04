@@ -1888,6 +1888,11 @@ OPTIONS
            (Conversely: --no-purity-only)
            See also infer-analyze(1).
 
+       --python-exe path
+           A filepath to a python interpreter. It will bypass the interpreter
+           set by PYTHON variable
+           See also infer-capture(1).
+
        --python-files-index path
            A file containing a list of newline-separated Python files to
            capture. Compatible with infer capture -- python3 file1.py
@@ -3286,6 +3291,9 @@ INTERNAL OPTIONS
 
        --pyc-file-reset
            Set --pyc-file to the empty list.
+
+       --python-exe-reset
+           Cancel the effect of --python-exe.
 
        --python-files-index-reset
            Cancel the effect of --python-files-index.
