@@ -34,3 +34,5 @@ let nanosleep nanoseconds = Caml_unix.sleepf (nanoseconds *. 1_000_000_000.)
 let readdir_opt dir_handle = try Some (Caml_unix.readdir dir_handle) with End_of_file -> None
 
 let mkdtemp prefix = Filename.temp_dir prefix ""
+
+let putenv ~key ~data = Caml_unix.putenv key data

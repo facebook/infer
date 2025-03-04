@@ -16,3 +16,5 @@ val nanosleep : float -> unit
 val readdir_opt : Caml_unix.dir_handle -> string option
 
 val mkdtemp : string -> string
+
+val putenv : key:string -> data:string -> unit

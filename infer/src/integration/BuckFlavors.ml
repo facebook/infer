@@ -58,7 +58,7 @@ let capture build_cmd =
       ~sep:(String.of_char CLOpt.env_var_sep)
       (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
   in
-  Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
+  IUnix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
   let {command; rev_not_targets; targets} =
     add_flavors_to_buck_arguments Clang ~extra_flavors:[] buck_args
   in

@@ -22,6 +22,8 @@ module Unix = struct
   let readdir_opt _ = `Dont_use_istd_unix
 
   let mkdtemp _ = `Dont_use_istd_unix
+
+  let putenv ~key:_ ~data:_ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

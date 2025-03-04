@@ -437,7 +437,7 @@ let implicit_sdk_root =
         path
     | None ->
         let maybe_root = locate_sdk_root () in
-        let putenv x = Unix.putenv ~key:infer_sdkroot_env_var ~data:x in
+        let putenv x = IUnix.putenv ~key:infer_sdkroot_env_var ~data:x in
         Option.iter ~f:putenv maybe_root ;
         maybe_root )
 
@@ -3773,7 +3773,7 @@ let post_parsing_initialization command_opt =
             CLOpt.init_work_dir ^/ filename
           else filename
         in
-        Unix.putenv ~key:CommandDoc.inferconfig_env_var ~data:abs_filename ) ;
+        IUnix.putenv ~key:CommandDoc.inferconfig_env_var ~data:abs_filename ) ;
   ( match !version with
   | `Full when !buck ->
       (* Buck reads stderr in some versions, stdout in others *)
@@ -5012,6 +5012,6 @@ let is_originator =
 let toplevel_results_dir =
   if is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
-    Unix.putenv ~key:CLOpt.infer_top_results_dir_env_var ~data:results_dir ;
+    IUnix.putenv ~key:CLOpt.infer_top_results_dir_env_var ~data:results_dir ;
     results_dir )
   else Sys.getenv CLOpt.infer_top_results_dir_env_var |> Option.value ~default:results_dir

@@ -29,7 +29,7 @@ let init_work_dir, is_originator =
       (dir, false)
   | None ->
       let real_cwd = Utils.realpath (Sys.getcwd ()) in
-      Unix.putenv ~key:infer_cwd_env_var ~data:real_cwd ;
+      IUnix.putenv ~key:infer_cwd_env_var ~data:real_cwd ;
       (real_cwd, true)
 
 
@@ -1117,7 +1117,7 @@ let parse ?config_file ~usage action initial_command =
       "@" ^ file )
     else ""
   in
-  Unix.putenv ~key:args_env_var ~data:to_export ;
+  IUnix.putenv ~key:args_env_var ~data:to_export ;
   (!curr_command, curr_usage)
 
 
@@ -1240,10 +1240,10 @@ let add_to_env_args extra_args =
       old_infer_args :: extra_args
   in
   let env_value = String.concat ~sep:(String.of_char env_var_sep) args in
-  Unix.putenv ~key:args_env_var ~data:env_value
+  IUnix.putenv ~key:args_env_var ~data:env_value
 
 
 let in_env_with_extra_args extra_args ~f =
   let old_infer_args = Sys.getenv args_env_var |> Option.value ~default:"" in
   add_to_env_args extra_args ;
-  protect ~f ~finally:(fun () -> Unix.putenv ~key:args_env_var ~data:old_infer_args)
+  protect ~f ~finally:(fun () -> IUnix.putenv ~key:args_env_var ~data:old_infer_args)
