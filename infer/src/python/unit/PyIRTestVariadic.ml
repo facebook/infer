@@ -21,7 +21,7 @@ def f(**kwargs):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -52,7 +52,7 @@ start()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -94,7 +94,7 @@ f(**d1, x=42)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =

@@ -1,21 +1,19 @@
       1     IR error: Cannot pop, stack is empty 
       1     IR error: COMPARE_OP(26): invalid operation
       2     IR error: COMPARE_OP(26): invalid operation 
-      3     IR error: COMPARE_OP(40): invalid operation 
+      7     IR error: COMPARE_OP(40): invalid operation 
       2     IR error: COMPARE_OP(55): invalid operation 
       2     IR error: COMPARE_OP(68): invalid operation 
-      4     IR error: Jump to next instruction detected, but next instruction is missing 
       1     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error
-     22     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error 
+     23     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error 
       1     IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error
-     10     IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error 
+     12     IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error 
       5     IR error: Unsupported opcode: BEFORE_WITH 
       1     IR error: Unsupported opcode: BINARY_SLICE 
       6     IR error: Unsupported opcode: CALL_INTRINSIC_1 
-     17     IR error: Unsupported opcode: JUMP_BACKWARD 
+     14     IR error: Unsupported opcode: END_FOR 
       3     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
       6     IR error: Unsupported opcode: MAKE_CELL 
-      5     IR error: Unsupported opcode: POP_JUMP_IF_NONE 
-      9     IR error: Unsupported opcode: PUSH_EXC_INFO 
+     10     IR error: Unsupported opcode: PUSH_EXC_INFO 
       9     IR error: Unsupported opcode: RETURN_GENERATOR 
       1     IR error: Unsupported opcode: STORE_SLICE 

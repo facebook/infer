@@ -93,7 +93,7 @@ def f(x):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -133,7 +133,7 @@ def subhelper():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -194,7 +194,7 @@ def call_finally_with_break():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -260,7 +260,7 @@ def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
 
 
 let%expect_test _ =

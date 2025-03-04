@@ -42,7 +42,7 @@ foo(1.1)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -114,7 +114,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -141,7 +141,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -162,7 +162,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -176,4 +176,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
+    IR error: COMPARE_OP(40): invalid operation |}]

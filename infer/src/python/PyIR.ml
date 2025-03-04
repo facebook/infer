@@ -945,6 +945,7 @@ module State = struct
   (** Internal state of the Bytecode -> IR compiler *)
   type t =
     { debug: bool
+    ; version: FFI.version
     ; code_qual_name: FFI.Code.t -> QualName.t option
     ; get_node_name: Offset.t -> NodeName.t pyresult
     ; loc: Location.t
@@ -973,9 +974,10 @@ module State = struct
     (cfg, get_node_name)
 
 
-  let empty ~debug ~code_qual_name ~loc ~cfg_skeleton =
+  let empty ~debug ~code_qual_name ~loc ~cfg_skeleton version =
     let cfg, get_node_name = build_get_node_name loc cfg_skeleton in
     { debug
+    ; version
     ; code_qual_name
     ; get_node_name
     ; loc
@@ -996,8 +998,8 @@ module State = struct
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
-  let enter ~debug:d ~code_qual_name ~loc ~cfg_skeleton qual_name =
-    let st = empty ~debug:d ~code_qual_name ~loc ~cfg_skeleton in
+  let enter ~debug:d ~code_qual_name ~loc ~cfg_skeleton version qual_name =
+    let st = empty ~debug:d ~code_qual_name ~loc ~cfg_skeleton version in
     Option.iter qual_name ~f:(debug st "Translating %a...@\n" QualName.pp) ;
     st
 
@@ -1410,14 +1412,17 @@ let mk_if b exp then_ else_ =
   else TerminatorBuilder.If {exp; then_= else_; else_= then_}
 
 
-let pop_jump_if ~next_is st target next_offset_opt =
+let pop_jump_if ~next_is st arg next_offset_opt =
   let open IResult.Let_syntax in
   let {State.loc} = st in
   let* condition, st = State.pop_and_cast st in
   (* Turn the stack into SSA parameters *)
   let* next_offset = Offset.get ~loc next_offset_opt in
   let* next_label = State.get_node_name st next_offset in
-  let* other_label = State.get_node_name st target in
+  let other_target =
+    match st.State.version with Python_3_10 -> 2 * arg | Python_3_12 -> next_offset + (2 * arg)
+  in
+  let* other_label = State.get_node_name st other_target in
   let mk_if = mk_if next_is condition in
   let {State.stack} = st in
   Ok
@@ -1642,6 +1647,15 @@ let binary_ops : BinaryOp.t array =
 
 
 let nb_binary_ops = Array.length binary_ops
+
+let jump_absolute st arg next_offset =
+  let open IResult.Let_syntax in
+  let offset = next_offset + (2 * arg) in
+  let* label = State.get_node_name st offset in
+  let {State.stack} = st in
+  let jump = TerminatorBuilder.mk_jump label stack in
+  Ok (st, Some jump)
+
 
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
     ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
@@ -1968,19 +1982,23 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "FORMAT_VALUE" ->
         format_value st arg
     | "POP_JUMP_IF_TRUE" ->
-        pop_jump_if ~next_is:false st (2 * arg) next_offset_opt
+        pop_jump_if ~next_is:false st arg next_offset_opt
     | "POP_JUMP_IF_FALSE" ->
-        pop_jump_if ~next_is:true st (2 * arg) next_offset_opt
+        pop_jump_if ~next_is:true st arg next_offset_opt
+    | "POP_JUMP_IF_NONE" ->
+        only_supported_from_python_3_12 opname version ;
+        pop_jump_if ~next_is:true st arg next_offset_opt
+    | "POP_JUMP_IF_NOT_NONE" ->
+        only_supported_from_python_3_12 opname version ;
+        pop_jump_if ~next_is:false st arg next_offset_opt
     | "JUMP_FORWARD" ->
         let {State.loc} = st in
-        (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
-           absolute offset right away *)
         let* next_offset = Offset.get ~loc next_offset_opt in
-        let offset = next_offset + (2 * arg) in
-        let* label = State.get_node_name st offset in
-        let {State.stack} = st in
-        let jump = TerminatorBuilder.mk_jump label stack in
-        Ok (st, Some jump)
+        jump_absolute st arg next_offset
+    | "JUMP_BACKWARD" | "JUMP_BACKWARD_NO_INTERRUPT" ->
+        only_supported_from_python_3_12 opname version ;
+        let next_offset = instr.FFI.Instruction.offset + 2 in
+        jump_absolute st (-arg) next_offset
     | "JUMP_ABSOLUTE" ->
         let* label = State.get_node_name st (2 * arg) in
         let {State.stack} = st in
@@ -2259,7 +2277,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
   with Invalid_argument _ -> internal_error st (Error.IndexOutOfBound opname)
 
 
-let get_successors_offset {FFI.Instruction.opname; arg} =
+let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} =
   match opname with
   | "LOAD_ASSERTION_ERROR"
   | "LOAD_CONST"
@@ -2390,14 +2408,24 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
       `NextInstrOnly
   | "RETURN_CONST" | "RETURN_VALUE" ->
       `Return
-  | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" | "JUMP_IF_NOT_EXC_MATCH" ->
-      `NextInstrOrAbsolute (2 * arg)
+  | "POP_JUMP_IF_TRUE"
+  | "POP_JUMP_IF_FALSE"
+  | "JUMP_IF_NOT_EXC_MATCH"
+  | "POP_JUMP_IF_NONE"
+  | "POP_JUMP_IF_NOT_NONE" -> (
+    match version with
+    | Python_3_10 ->
+        `NextInstrOrAbsolute (2 * arg)
+    | Python_3_12 ->
+        `NextInstrOrRelative (2 * arg) )
   | "JUMP_IF_TRUE_OR_POP" | "JUMP_IF_FALSE_OR_POP" ->
       `NextInstrWithPopOrAbsolute (2 * arg)
   | "FOR_ITER" ->
       `NextInstrOrRelativeWith2Pop (2 * arg)
   | "JUMP_FORWARD" ->
       `Relative (2 * arg)
+  | "JUMP_BACKWARD" | "JUMP_BACKWARD_NO_INTERRUPT" ->
+      `Relative (-2 * arg)
   | "CALL_FINALLY" ->
       `CallFinallyRelative arg
   | "BEGIN_FINALLY" ->
@@ -2462,7 +2490,7 @@ type cfg_info =
 
 let dummy_cfg_info = {successors= []; predecessors= []; instructions= []}
 
-let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
+let build_cfg_skeleton_without_predecessors {FFI.Code.instructions; version} :
     (cfg_info IMap.t, Error.t) result =
   let open IResult.Let_syntax in
   let process_instr map action next_offset_opt next_is_jump_target
@@ -2488,7 +2516,7 @@ let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
             map
         , `StartNewOne )
     in
-    match get_successors_offset instr with
+    match get_successors_offset version instr with
     | `NextInstrOnly when not next_is_jump_target ->
         Ok (map, action)
     | `NextInstrOnly ->
@@ -2502,11 +2530,14 @@ let build_cfg_skeleton_without_predecessors {FFI.Code.instructions} :
     | `NextInstrOrAbsolute other_offset ->
         let* next_offset = get_next_offset () in
         register_current_node [(next_offset, 0, Nop); (other_offset, 0, Nop)]
+    | `NextInstrOrRelative delta ->
+        let* next_offset = get_next_offset () in
+        register_current_node [(next_offset, 0, Nop); (next_offset + delta, 0, Nop)]
     | `NextInstrOrRelativeWith2Pop delta ->
         let* next_offset = get_next_offset () in
         register_current_node [(next_offset, 0, Nop); (next_offset + delta, -2, Nop)]
     | `Relative delta ->
-        let* next_offset = get_next_offset () in
+        let* next_offset = if delta > 0 then get_next_offset () else Ok (offset + 2) in
         register_current_node [(next_offset + delta, 0, Nop)]
     | `BeginFinally ->
         let* next_offset = get_next_offset () in
@@ -2728,7 +2759,8 @@ let build_cfg ~debug ~code_qual_name code =
     Ok (st, arity_map)
   in
   let qual_name = code_qual_name code in
-  let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton qual_name in
+  let {FFI.Code.version} = code in
+  let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton version qual_name in
   let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
   let* cfg = CFG.of_builder st.State.cfg code in
   Ok cfg

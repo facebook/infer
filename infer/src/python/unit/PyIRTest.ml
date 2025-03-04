@@ -134,7 +134,7 @@ for x in range(10):
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -241,8 +241,7 @@ def f(x, y, z, t):
         return (x and y) or (z and t)
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect {||}]
 
 
 let%expect_test _ =
@@ -363,8 +362,7 @@ def f(m, a, b, c):
   |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -510,8 +508,7 @@ def m(x, y, test):
     return (x if test else y).foo()
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect {| IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -584,8 +581,7 @@ cloned_call()
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect {||}]
 
 
 let%expect_test _ =
@@ -612,8 +608,7 @@ not_cloned_call()
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Jump to next instruction detected, but next instruction is missing |}]
+  [%expect {||}]
 
 
 let%expect_test _ =
@@ -660,4 +655,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]

@@ -18,7 +18,7 @@ for x in range(10):
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -48,7 +48,7 @@ def f(match, it, n):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -62,7 +62,7 @@ def f(foo):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -99,7 +99,7 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
 
 
 let%expect_test _ =
@@ -114,4 +114,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: JUMP_BACKWARD |}]
+    IR error: Unsupported opcode: END_FOR |}]
