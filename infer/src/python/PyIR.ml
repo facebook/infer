@@ -483,6 +483,8 @@ module Exp = struct
     | LoadClassDeref of {name: Ident.t; slot: int}  (** [LOAD_CLASSDEREF] *)
     | LoadClosure of {name: Ident.t; slot: int}  (** [LOAD_CLOSURE] *)
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
+    | LoadFastCheck of {name: Ident.t}  (** [LOAD_FAST_CHECK] *)
+    | LoadFastAndClear of {name: Ident.t}  (** [LOAD_FAST_AND_CLEAR] *)
     | MatchClass of {subject: t; type_: t; count: int; names: t}
     | BoolOfMatchClass of t
     | AttributesOfMatchClass of t
@@ -551,6 +553,10 @@ module Exp = struct
         F.fprintf fmt "$LoadDeref(%d,\"%a\")" slot Ident.pp name
     | LoadClassDeref {name; slot} ->
         F.fprintf fmt "$LoadClassDeref(%d,\"%a\")" slot Ident.pp name
+    | LoadFastCheck {name} ->
+        F.fprintf fmt "$LoadFastCheck(\"%a\")" Ident.pp name
+    | LoadFastAndClear {name} ->
+        F.fprintf fmt "$LoadFastAndClear(\"%a\")" Ident.pp name
     | Function {qual_name; default_values; default_values_kw; annotations; cells_for_closure} ->
         F.fprintf fmt "$MakeFunction[\"%a\", %a, %a, %a, %a]" QualName.pp qual_name pp
           default_values pp default_values_kw pp annotations pp cells_for_closure
@@ -1770,6 +1776,24 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push_stmt st stmt in
         let st = State.push st (Exp.Temp lhs) in
         Ok (st, None)
+    | "LOAD_FAST_CHECK" ->
+        only_supported_from_python_3_12 opname version ;
+        let name = co_varnames.(arg) |> Ident.mk in
+        let rhs = Exp.LoadFastCheck {name} in
+        let lhs, st = State.fresh_id st in
+        let stmt = Stmt.Let {lhs; rhs} in
+        let st = State.push_stmt st stmt in
+        let st = State.push st (Exp.Temp lhs) in
+        Ok (st, None)
+    | "LOAD_FAST_AND_CLEAR" ->
+        only_supported_from_python_3_12 opname version ;
+        let name = co_varnames.(arg) |> Ident.mk in
+        let rhs = Exp.LoadFastAndClear {name} in
+        let lhs, st = State.fresh_id st in
+        let stmt = Stmt.Let {lhs; rhs} in
+        let st = State.push_stmt st stmt in
+        let st = State.push st (Exp.Temp lhs) in
+        Ok (st, None)
     | "STORE_NAME" ->
         store st Name co_names.(arg)
     | "STORE_GLOBAL" ->
@@ -2440,6 +2464,8 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "LOAD_ATTR"
   | "LOAD_CLASSDEREF"
   | "LOAD_DEREF"
+  | "LOAD_FAST_CHECK"
+  | "LOAD_FAST_AND_CLEAR"
   | "STORE_NAME"
   | "STORE_GLOBAL"
   | "STORE_FAST"

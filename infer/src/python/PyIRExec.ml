@@ -345,7 +345,9 @@ let run_files modules =
         | Collection _
         | LoadClosure _
         | LoadDeref _
-        | LoadClassDeref _ ->
+        | LoadClassDeref _
+        | LoadFastCheck _
+        | LoadFastAndClear _ ->
             todo "eval_exp"
       in
       let exec_stmt stmt =

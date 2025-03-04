@@ -433,8 +433,7 @@ def f(l):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -446,8 +445,7 @@ def f(l):
 
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -597,8 +595,7 @@ def main(l):
     return bar(foo([exp(x) for x in l]))
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

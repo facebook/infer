@@ -77,8 +77,7 @@ async def async_loop2():
     [ x async for x in read() ]
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

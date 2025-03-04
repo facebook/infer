@@ -169,6 +169,10 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_load_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
   | LoadClassDeref {name; slot= _} ->
       call_builtin "py_load_class_deref" [exp_of_ident_str name] (* TODO: more arg needed *)
+  | LoadFastCheck {name} ->
+      call_builtin "py_load_fast_check" [exp_of_ident_str name; exp_locals]
+  | LoadFastAndClear {name} ->
+      call_builtin "py_load_fast_and_clear" [exp_of_ident_str name; exp_locals]
   | ImportName {name; fromlist; level} ->
       let str = typename_of_ident name |> F.asprintf "%a" Textual.TypeName.pp in
       call_builtin str_py_import_name

@@ -1246,6 +1246,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
   ; -"$builtins" &:: "py_load_global" <>$ arg $+ arg $--> load_global
+  ; -"$builtins" &:: "py_load_fast_and_clear" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
   ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown ~deep_release:false
