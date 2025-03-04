@@ -2720,8 +2720,15 @@ let mk ~debug ~path_prefix code =
   Ok {Module.name; toplevel; functions}
 
 
+let initialize ?(next_version = false) () =
+  if not (Py.is_initialized ()) then
+    let interpreter = if next_version then Version.python_next_exe else Version.python_exe in
+    Py.initialize ~interpreter ()
+
+
 let test_generator ~filename ~f source =
-  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
+  initialize ~next_version:true () ;
+  (* pass argument ~next_version:true if you want to activate unit tests on Python 3.12 *)
   let code =
     match FFI.from_string ~source ~filename with
     | Error (kind, err) ->

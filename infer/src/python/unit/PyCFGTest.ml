@@ -24,7 +24,7 @@ def foo():
 |}
   in
   PyIR.test_cfg_skeleton source ;
-  [%expect {| |}]
+  [%expect {| IR error: Unsupported opcode: RESUME |}]
 
 
 let%expect_test _ =
@@ -45,4 +45,4 @@ done()
 |}
   in
   PyIR.test_cfg_skeleton source ;
-  [%expect {| |}]
+  [%expect {| IR error: Unsupported opcode: RESUME |}]
