@@ -425,6 +425,7 @@ let run_files modules =
             let key = eval_exp index |> expect_string ~who ~how:"as 2nd argument" |> Ident.mk in
             set key (eval_exp rhs)
         | BuiltinCall _
+        | CallEx _
         | Delete _
         | DeleteDeref _
         | DeleteAttr _

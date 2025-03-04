@@ -328,8 +328,6 @@ let builtin_name builtin =
       "py_format_fn_repr"
   | FormatFn Ascii ->
       "py_format_fn_ascii"
-  | CallFunctionEx ->
-      "py_call_function_ex"
   | Inplace op ->
       F.asprintf "py_inplace_%s" (binary_op_name op)
   | Binary op ->
@@ -421,6 +419,9 @@ let of_stmt loc stmt : Textual.Instr.t =
   | Call {lhs; exp; args; arg_names} ->
       let args = of_exp exp :: of_exp arg_names :: List.map ~f:of_exp args in
       Let {id= Some (mk_ident lhs); exp= call_builtin str_py_call args; loc}
+  | CallEx {lhs; exp; kargs; arg_names} ->
+      let args = [of_exp exp; of_exp kargs; of_exp arg_names] in
+      Let {id= Some (mk_ident lhs); exp= call_builtin "py_call_function_ex" args; loc}
   | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
       Let
         { id= Some (mk_ident lhs)

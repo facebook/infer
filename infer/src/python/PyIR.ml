@@ -298,7 +298,6 @@ module BuiltinCaller = struct
     | BuildConstKeyMap  (** [BUILD_CONST_KEY_MAP] *)
     | Format
     | FormatFn of FormatFunction.t
-    | CallFunctionEx  (** [CALL_FUNCTION_EX] *)
     | Inplace of BinaryOp.t
     | Binary of BinaryOp.t
     | Unary of UnaryOp.t
@@ -333,8 +332,6 @@ module BuiltinCaller = struct
         "$Format"
     | FormatFn fn ->
         sprintf "$FormatFn.%s" (FormatFunction.to_string fn)
-    | CallFunctionEx ->
-        "$CallFunctionEx"
     | Binary op ->
         let op = BinaryOp.to_string op in
         sprintf "$Binary.%s" op
@@ -634,6 +631,7 @@ module Stmt = struct
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: Exp.t list; arg_names: Exp.t}
+    | CallEx of {lhs: SSA.t; exp: Exp.t; kargs: Exp.t; arg_names: Exp.t}
     | CallMethod of
         {lhs: SSA.t; name: Ident.t; self_if_needed: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list; arg_names: Exp.t}
@@ -658,6 +656,9 @@ module Stmt = struct
     | Call {lhs; exp; args; arg_names} ->
         F.fprintf fmt "%a <- $Call(@[%a@])" SSA.pp lhs (Pp.seq ~sep:", " pp_call_arg)
           ((exp :: args) @ [arg_names])
+    | CallEx {lhs; exp; kargs; arg_names} ->
+        F.fprintf fmt "%a <- $Call(@[%a@])" SSA.pp lhs (Pp.seq ~sep:", " pp_call_arg)
+          [exp; kargs; arg_names]
     | CallMethod {lhs; name; self_if_needed; args; arg_names} ->
         F.fprintf fmt "%a <- $CallMethod[%a](@[%a@])" SSA.pp lhs Ident.pp name
           (Pp.seq ~sep:", " Exp.pp)
@@ -1210,8 +1211,11 @@ let read_code_qual_name st c =
       internal_error st (Error.CodeWithoutQualifiedName c)
 
 
-let call_function st ?arg_names arg =
+type calling_mode = Kargs | Args of int
+
+let call_function st ?arg_names mode =
   let open IResult.Let_syntax in
+  let arg = match mode with Kargs -> 1 | Args arg -> arg in
   let* args, st = State.pop_n_and_cast st arg in
   let* fun_exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
@@ -1223,9 +1227,15 @@ let call_function st ?arg_names arg =
     | Exp.ContextManagerExit self_if_needed ->
         let name = Ident.Special.exit in
         Ok (Stmt.CallMethod {lhs; name; self_if_needed; args= []; arg_names})
-    | exp ->
+    | exp -> (
         let+ exp = State.cast_exp st exp in
-        Stmt.Call {lhs; exp; args; arg_names}
+        match (mode, args) with
+        | Args _, _ ->
+            Stmt.Call {lhs; exp; args; arg_names}
+        | Kargs, [kargs] ->
+            Stmt.CallEx {lhs; exp; kargs; arg_names}
+        | Kargs, _ ->
+            L.die InternalError "unexpected number of arguments" )
   in
   let st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
@@ -1295,22 +1305,16 @@ let make_function st flags =
 let call_function_kw st argc =
   let open IResult.Let_syntax in
   let* arg_names, st = State.pop_and_cast st in
-  call_function st ~arg_names argc
+  call_function st ~arg_names (Args argc)
 
 
 let call_function_ex st flags =
   let open IResult.Let_syntax in
   let with_keyword_args = flags land 1 <> 0 in
-  let call = BuiltinCaller.CallFunctionEx in
-  let* keyword_args, st = if with_keyword_args then State.pop_and_cast st else Ok (Exp.none, st) in
-  let* tuple, st = State.pop_and_cast st in
-  let* callee, st = State.pop_and_cast st in
-  let args = [callee; tuple; keyword_args] in
-  let lhs, st = State.fresh_id st in
-  let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names= Exp.none} in
-  let st = State.push_stmt st stmt in
-  let st = State.push st (Exp.Temp lhs) in
-  Ok (st, None)
+  if with_keyword_args then
+    let* arg_names, st = State.pop_and_cast st in
+    call_function st ~arg_names Kargs
+  else call_function st Kargs
 
 
 let unpack_sequence st count =
@@ -1665,7 +1669,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* ret, st = State.pop_and_cast st in
         Ok (st, Some (TerminatorBuilder.Return ret))
     | "CALL_FUNCTION" ->
-        call_function st arg
+        call_function st (Args arg)
     | "CALL_FUNCTION_KW" ->
         call_function_kw st arg
     | "CALL_FUNCTION_EX" ->
