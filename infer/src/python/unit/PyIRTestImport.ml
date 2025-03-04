@@ -247,8 +247,7 @@ def f():
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
