@@ -10,7 +10,11 @@ include Core
 [@@@warning "-unused-value-declaration"]
 
 (* easier to write Unix than Core_unix *)
-module Unix = Core_unix
+module Unix = struct
+  include Core_unix
+
+  let rename ~src:_ ~dst:_ = `Dont_use_istd_unix
+end
 
 (* we don't care about the _unix distinction *)
 module Filename = struct

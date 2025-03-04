@@ -239,7 +239,7 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
     Out_channel.close temp_oc ;
     (* Retry n times with exponential backoff when [retry] is true *)
     let rec rename n delay =
-      try Unix.rename ~src:temp_filename ~dst:file
+      try IUnix.rename ~src:temp_filename ~dst:file
       with e ->
         if Int.equal n 0 then raise e
         else

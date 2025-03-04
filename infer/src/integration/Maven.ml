@@ -151,14 +151,14 @@ let add_profile_to_pom_in_directory dir =
   let saved_pom_path = dir ^/ "pom.xml.infer-orig" in
   let infer_pom_path = dir ^/ "pom.xml.infer" in
   add_infer_profile maven_pom_path infer_pom_path ;
-  Unix.rename ~src:maven_pom_path ~dst:saved_pom_path ;
+  IUnix.rename ~src:maven_pom_path ~dst:saved_pom_path ;
   Epilogues.register
-    ~f:(fun () -> Unix.rename ~src:saved_pom_path ~dst:maven_pom_path)
+    ~f:(fun () -> IUnix.rename ~src:saved_pom_path ~dst:maven_pom_path)
     ~description:"restoring Maven's pom.xml to its original state" ;
-  Unix.rename ~src:infer_pom_path ~dst:maven_pom_path ;
+  IUnix.rename ~src:infer_pom_path ~dst:maven_pom_path ;
   if Config.debug_mode then
     Epilogues.register
-      ~f:(fun () -> Unix.rename ~src:maven_pom_path ~dst:infer_pom_path)
+      ~f:(fun () -> IUnix.rename ~src:maven_pom_path ~dst:infer_pom_path)
       ~description:"saving infer's pom.xml"
 
 
