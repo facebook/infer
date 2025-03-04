@@ -16,6 +16,8 @@ module Unix = struct
   let rename ~src:_ ~dst:_ = `Dont_use_istd_unix
 
   let mkdir_p ?perm:_ _name = `Dont_use_istd_unix
+
+  let nanosleep _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

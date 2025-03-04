@@ -244,7 +244,7 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
         if Int.equal n 0 then raise e
         else
           let delay = delay ** 2.0 in
-          ignore (Unix.nanosleep delay) ;
+          ignore (IUnix.nanosleep delay) ;
           rename (n - 1) delay
     in
     if retry then rename 5 0.1 else rename 0 0.0

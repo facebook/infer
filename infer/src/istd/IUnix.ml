@@ -27,3 +27,6 @@ let mkdir_p ?(perm = 0o777) name =
         mkdir_idempotent ~perm dir )
   in
   mkdir_p name ~perm
+
+
+let nanosleep nanoseconds = Caml_unix.sleepf (nanoseconds *. 1_000_000_000.)
