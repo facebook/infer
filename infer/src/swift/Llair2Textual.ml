@@ -87,6 +87,22 @@ let to_textual_arith_exp_builtin (op : Llair.Exp.op2) typ =
       assert false
 
 
+let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
+  match op with
+  | Eq ->
+      "__sil_eq"
+  | Dq ->
+      "__sil_ne"
+  | Gt ->
+      "__sil_gt"
+  | Ge ->
+      "__sil_ge"
+  | Le ->
+      "__sil_le"
+  | _ ->
+      assert false
+
+
 (* TODO: translate expressions *)
 let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
@@ -126,6 +142,11 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       Call {proc; args= []; kind= Textual.Exp.NonVirtual}
   | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
       let proc = builtin_qual_proc_name (to_textual_arith_exp_builtin op typ) in
+      let exp1 = to_textual_exp e1 in
+      let exp2 = to_textual_exp e2 in
+      Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
+  | Ap2 (((Eq | Dq | Gt | Ge | Le) as op), _, e1, e2) ->
+      let proc = builtin_qual_proc_name (to_textual_bool_exp_builtin op) in
       let exp1 = to_textual_exp e1 in
       let exp2 = to_textual_exp e2 in
       Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
