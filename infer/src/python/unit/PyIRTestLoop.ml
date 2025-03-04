@@ -18,7 +18,7 @@ for x in range(10):
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -34,7 +34,7 @@ def f(x, y, l, bar, toto):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: BEFORE_WITH |}]
 
 
 let%expect_test _ =
@@ -48,7 +48,7 @@ def f(match, it, n):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -62,7 +62,7 @@ def f(foo):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -73,7 +73,7 @@ async def async_loop1():
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 let%expect_test _ =
@@ -83,7 +83,7 @@ async def async_loop2():
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 let%expect_test _ =
@@ -99,7 +99,7 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -114,4 +114,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]

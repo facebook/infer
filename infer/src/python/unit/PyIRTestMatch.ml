@@ -23,7 +23,7 @@ match n:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -42,7 +42,7 @@ foo(1.1)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
 
 
 let%expect_test _ =
@@ -65,7 +65,7 @@ foo(C.BAR)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -88,7 +88,7 @@ foo(C.BAR, C.BAR)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -114,7 +114,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
 
 
 let%expect_test _ =
@@ -141,7 +141,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
 
 
 let%expect_test _ =
@@ -162,7 +162,7 @@ def location(point):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]
 
 
 let%expect_test _ =
@@ -176,4 +176,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: POP_JUMP_IF_NONE |}]

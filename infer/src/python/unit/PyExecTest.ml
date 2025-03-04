@@ -24,9 +24,28 @@ builtin_print(print, None, "hello world", True, False)
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          TOPLEVEL[x] <- 42
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[x]
+          n5 <- $Call(n3, n4, n0)
+          n6 <- TOPLEVEL[print]
+          TOPLEVEL[builtin_print] <- n6
+          TOPLEVEL[print] <- 0
+          n7 <- TOPLEVEL[builtin_print]
+          n8 <- TOPLEVEL[print]
+          n9 <- $Call(n7, n8, n0, "hello world", true, false, n0)
+          return n0
+
+
+
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    42
+    0 None hello world True False |}]
 
 
 let%expect_test _ =
@@ -43,9 +62,34 @@ print("fst(x, y) =", fst(x, y))
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          n3 <- $MakeFunction["dummy.fst", n0, n0, n0, n0]
+          TOPLEVEL[fst] <- n3
+          TOPLEVEL[x] <- "x"
+          TOPLEVEL[y] <- "y"
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[fst]
+          n6 <- TOPLEVEL[x]
+          n7 <- TOPLEVEL[y]
+          n8 <- $Call(n5, n6, n7, n0)
+          n9 <- $Call(n4, "fst(x, y) =", n8, n0)
+          return n0
+
+
+      function dummy.fst(y, x):
+        b0:
+          n0 <- None
+          n3 <- LOCAL[y]
+          return n3
+
+
+
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    fst(x, y) = x |}]
 
 
 let%expect_test _ =
@@ -71,8 +115,8 @@ print('n =', n)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -93,8 +137,8 @@ print('fact(5) =', fact(5))
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    IR error: COMPARE_OP(26): invalid operation
+    IR error: COMPARE_OP(26): invalid operation |}]
 
 
 let%expect_test _ =
@@ -132,11 +176,8 @@ def set(v):
 |})
   in
   PyIR.test_files ~run:PyIRExec.run_files [main; module1] ;
-  [%expect
-    {|
-    nothing to execute
-    IR error: Unsupported opcode: CALL
-    IR error: Cannot pop, stack is empty |}]
+  [%expect {|
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -164,8 +205,8 @@ print('saved x is', C.saved_x)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -192,6 +233,59 @@ print(d)
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          TOPLEVEL[l] <- $BuildTuple(1, "1", $BuildTuple(0, true))
+          n3 <- TOPLEVEL[print]
+          n4 <- TOPLEVEL[l]
+          n5 <- $Call(n3, n4, n0)
+          n6 <- $BuildMap()
+          TOPLEVEL[d] <- n6
+          n7 <- TOPLEVEL[print]
+          n8 <- TOPLEVEL[d]
+          n9 <- $Call(n7, n8, n0)
+          TOPLEVEL[key1] <- "k1"
+          n10 <- $MakeFunction["dummy.key2", n0, n0, n0, n0]
+          TOPLEVEL[key2] <- n10
+          n11 <- TOPLEVEL[key1]
+          n12 <- TOPLEVEL[key2]
+          n13 <- $Call(n12, n0)
+          n14 <- $BuildMap(n11, "val1", n13, "val2")
+          TOPLEVEL[d] <- n14
+          n15 <- TOPLEVEL[print]
+          n16 <- TOPLEVEL[d]
+          n17 <- $Call(n15, n16, n0)
+          n18 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", n0)
+          TOPLEVEL[d] <- n18
+          n19 <- TOPLEVEL[print]
+          n20 <- TOPLEVEL[d]
+          n21 <- $Call(n19, n20, n0)
+          n22 <- TOPLEVEL[print]
+          n23 <- TOPLEVEL[d]
+          n24 <- n23["x"]
+          n25 <- $Call(n22, n24, n0)
+          n26 <- TOPLEVEL[d]
+          n26["z"] <- true
+          n27 <- TOPLEVEL[print]
+          n28 <- TOPLEVEL[d]
+          n29 <- $Call(n27, n28, n0)
+          return n0
+
+
+      function dummy.key2():
+        b0:
+          n0 <- None
+          return "key2"
+
+
+
     Running interpreter:
-    IR error: Unsupported opcode: CALL
-    IR error: Unsupported opcode: CALL |}]
+    (1, '1', (0, True))
+    {}
+    {'k1': 'val1', 'key2': 'val2'}
+    {'x': 0, 'y': 'something'}
+    0
+    {'x': 0, 'y': 'something', 'z': True} |}]

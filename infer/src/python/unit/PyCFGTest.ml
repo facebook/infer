@@ -46,4 +46,4 @@ done()
   in
   PyIR.test_cfg_skeleton source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]

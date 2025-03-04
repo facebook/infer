@@ -22,7 +22,7 @@ base.f(0)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -42,8 +42,7 @@ g()
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -54,8 +53,7 @@ class MyTest(unittest.TestCase):
         pass
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 (* Extracted from Cinder's PyIR.test suite. Currently amended to avoid unsupported opcodes *)
@@ -96,7 +94,7 @@ if __name__ == '__main__':
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -115,8 +113,7 @@ path.X()
       |}
   in
   PyIR.test ~filename:"some/long/path/dummy.py" source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -144,8 +141,7 @@ tata()
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -170,7 +166,7 @@ class Test(unittest.TestCase):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -182,7 +178,7 @@ def f():
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -200,7 +196,7 @@ def f(ok):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
 
 
 let%expect_test _ =
@@ -270,4 +266,4 @@ except Exception as error:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]

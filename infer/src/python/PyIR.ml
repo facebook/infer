@@ -463,6 +463,7 @@ module Exp = struct
     | Exp of t
     | Null
     | Code of FFI.Code.t
+    | Keywords of t
     | LoadMethod of (t * Ident.t)  (** [LOAD_METHOD] *)
     | BuiltinCaller of BuiltinCaller.t
     | CallFinallyReturn of {offset: int}
@@ -528,6 +529,8 @@ module Exp = struct
         F.pp_print_string fmt "NULL"
     | Code {FFI.Code.co_name} ->
         F.fprintf fmt "<%s>" co_name
+    | Keywords tuple ->
+        F.fprintf fmt "KW %a" pp tuple
     | LoadMethod (self, meth) ->
         F.fprintf fmt "$LoadMethod(%a, %a)" pp self Ident.pp meth
     | BuiltinCaller bc ->
@@ -1213,13 +1216,35 @@ let read_code_qual_name st c =
 
 type calling_mode = Kargs | Args of int
 
-let call_function st ?arg_names mode =
+let call_function st version mode =
   let open IResult.Let_syntax in
+  let* tos = State.peek st in
+  let* arg_names, st =
+    match tos with
+    | Exp.Keywords exp ->
+        let* _, st = State.pop st in
+        Ok (exp, st)
+    | _ ->
+        Ok (Exp.none, st)
+  in
   let arg = match mode with Kargs -> 1 | Args arg -> arg in
   let* args, st = State.pop_n_and_cast st arg in
-  let* fun_exp, st = State.pop st in
+  let* fun_exp, args, st =
+    match (version : FFI.version) with
+    | Python_3_10 ->
+        let+ fun_exp, st = State.pop st in
+        (fun_exp, args, st)
+    | Python_3_12 -> (
+        let* tos1, st = State.pop st in
+        let* tos2, st = State.pop st in
+        match tos2 with
+        | Exp.Null ->
+            Ok (tos1, args, st)
+        | _ ->
+            let+ self = State.cast_exp st tos1 in
+            (tos2, self :: args, st) )
+  in
   let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:Exp.none in
   let* stmt =
     match fun_exp with
     | Exp.BuiltinCaller call ->
@@ -1267,9 +1292,16 @@ let parse_op st call n =
   Ok (st, None)
 
 
-let make_function st flags =
+let make_function st version flags =
   let open IResult.Let_syntax in
-  let* _qual_name, st = State.pop st in
+  let* st =
+    match (version : FFI.version) with
+    | Python_3_10 ->
+        let+ _qual_name, st = State.pop st in
+        st
+    | Python_3_12 ->
+        Ok st
+  in
   (* we use our own notion of qualified name *)
   let* codeobj, st = State.pop st in
   let* code =
@@ -1302,19 +1334,24 @@ let make_function st flags =
   Ok (st, None)
 
 
-let call_function_kw st argc =
+let call_function_kw st version argc =
   let open IResult.Let_syntax in
-  let* arg_names, st = State.pop_and_cast st in
-  call_function st ~arg_names (Args argc)
+  let* kw_exp, st = State.pop_and_cast st in
+  let st = State.push_symbol st (Keywords kw_exp) in
+  call_function st version (Args argc)
 
 
-let call_function_ex st flags =
+let call_function_ex st version flags =
   let open IResult.Let_syntax in
   let with_keyword_args = flags land 1 <> 0 in
-  if with_keyword_args then
-    let* arg_names, st = State.pop_and_cast st in
-    call_function st ~arg_names Kargs
-  else call_function st Kargs
+  let* st =
+    if with_keyword_args then
+      let* kw_exp, st = State.pop_and_cast st in
+      let st = State.push_symbol st (Keywords kw_exp) in
+      Ok st
+    else Ok st
+  in
+  call_function st version Kargs
 
 
 let unpack_sequence st count =
@@ -1572,6 +1609,14 @@ and map_convert_ffi_const st values =
       exp :: values )
 
 
+let only_supported_in_python_3_10 opname version =
+  match version with
+  | FFI.Python_3_10 ->
+      ()
+  | FFI.Python_3_12 ->
+      L.die UserError "opcode %s should not appear with Python3.12" opname
+
+
 let only_supported_from_python_3_12 opname version =
   match version with
   | FFI.Python_3_12 ->
@@ -1668,12 +1713,23 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "RETURN_VALUE" ->
         let* ret, st = State.pop_and_cast st in
         Ok (st, Some (TerminatorBuilder.Return ret))
+    | "KW_NAMES" ->
+        only_supported_from_python_3_12 opname version ;
+        let* exp = convert_ffi_const st co_consts.(arg) in
+        let* names_tuple = State.cast_exp st exp in
+        let st = State.push_symbol st (Keywords names_tuple) in
+        Ok (st, None)
+    | "CALL" ->
+        only_supported_from_python_3_12 opname version ;
+        call_function st version (Args arg)
     | "CALL_FUNCTION" ->
-        call_function st (Args arg)
+        only_supported_in_python_3_10 opname version ;
+        call_function st version (Args arg)
     | "CALL_FUNCTION_KW" ->
-        call_function_kw st arg
+        only_supported_in_python_3_10 opname version ;
+        call_function_kw st version arg
     | "CALL_FUNCTION_EX" ->
-        call_function_ex st arg
+        call_function_ex st version arg
     | "POP_TOP" ->
         let* _, st = State.pop st in
         Ok (st, None)
@@ -1746,7 +1802,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "UNARY_INVERT" ->
         parse_op st (Unary Invert) 1
     | "MAKE_FUNCTION" ->
-        make_function st arg
+        make_function st version arg
     | "BUILD_CONST_KEY_MAP" ->
         let* keys, st = State.pop_and_cast st in
         let* tys, st = State.pop_n_and_cast st arg in
@@ -2219,6 +2275,8 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "STORE_ATTR"
   | "STORE_SUBSCR"
   | "STORE_DEREF"
+  | "KW_NAMES"
+  | "CALL"
   | "CALL_FUNCTION"
   | "CALL_FUNCTION_KW"
   | "CALL_FUNCTION_EX"

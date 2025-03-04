@@ -28,7 +28,7 @@ print(z)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -45,8 +45,7 @@ print(z)
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -64,7 +63,7 @@ def f(x, y):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -84,7 +83,7 @@ def f(x, y):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -112,7 +111,7 @@ def f(x, y):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -125,7 +124,7 @@ def f(x):
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -135,7 +134,7 @@ for x in range(10):
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -151,7 +150,7 @@ def f(x, y, l, bar, toto):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: BEFORE_WITH |}]
 
 
 let%expect_test _ =
@@ -170,7 +169,7 @@ def f(x):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -184,8 +183,7 @@ def f1(x, y:str) -> bool:
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: MAKE_FUNCTION: expected a code object but got n5 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -201,8 +199,7 @@ expect_int(get())
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -218,8 +215,7 @@ expect(get())
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -229,7 +225,7 @@ def f(x, y):
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: COMPARE_OP(40): invalid operation |}]
 
 
 let%expect_test _ =
@@ -246,7 +242,7 @@ def f(x, y, z, t):
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -256,7 +252,7 @@ def f(x, y):
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: COMPARE_OP(68): invalid operation |}]
 
 
 let%expect_test _ =
@@ -266,7 +262,7 @@ def f(x, y):
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: COMPARE_OP(26): invalid operation |}]
 
 
 let%expect_test _ =
@@ -286,8 +282,7 @@ def in_not_check(x, l):
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -299,8 +294,7 @@ def f(x, y, z):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -316,8 +310,7 @@ def build_list():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -334,7 +327,7 @@ def f(foo, bar):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: BEFORE_WITH |}]
 
 
 let%expect_test _ =
@@ -345,8 +338,7 @@ def f():
 (a, b) = f()
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -357,8 +349,7 @@ def f(z, x, y):
 f(0, y=2, x=1)
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: KW_NAMES |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -373,7 +364,7 @@ def f(m, a, b, c):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]
 
 
 let%expect_test _ =
@@ -387,8 +378,7 @@ def test_arguments(x, y, width):
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -409,7 +399,7 @@ def inv(x):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
 
 
 let%expect_test _ =
@@ -440,7 +430,7 @@ print(g()) # prints 2
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -473,7 +463,7 @@ def f(l):
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
 
 
 let%expect_test _ =
@@ -491,7 +481,7 @@ async def g():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 let%expect_test _ =
@@ -501,7 +491,7 @@ def m(self, x, y, test):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -511,7 +501,7 @@ def m(self, x, y, test):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -521,7 +511,7 @@ def m(x, y, test):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -541,7 +531,7 @@ o.foo()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -550,7 +540,7 @@ res = dict.attr(0 if not False else 1)
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -564,7 +554,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 (* the two examples below show that with Python 3.10, the size of the opstack may
@@ -595,7 +585,7 @@ cloned_call()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -623,7 +613,7 @@ not_cloned_call()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: KW_NAMES |}]
+    IR error: Jump to next instruction detected, but next instruction is missing |}]
 
 
 let%expect_test _ =
@@ -633,7 +623,7 @@ def main(l):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR |}]
 
 
 let%expect_test _ =
@@ -643,7 +633,7 @@ async def main(b):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 let%expect_test _ =
@@ -653,7 +643,7 @@ def main(a, i, v):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: STORE_SLICE |}]
 
 
 let%expect_test _ =
@@ -670,4 +660,4 @@ def main():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]

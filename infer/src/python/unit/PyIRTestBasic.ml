@@ -23,8 +23,7 @@ x = 42
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -34,8 +33,7 @@ y = 10
 print(x + y)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -45,8 +43,7 @@ y = 10
 print(x - y)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -56,8 +53,7 @@ x += 10
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -67,8 +63,7 @@ x -= 10
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -111,8 +106,7 @@ l = [1, 2, 3]
 print(l[0])
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -152,8 +146,7 @@ d = { 0x78: "abc", # 1-n decoding mapping
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -163,7 +156,7 @@ fp.write("yolo")
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -173,7 +166,7 @@ with open("foo.txt", "wt") as fp:
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: BEFORE_WITH |}]
 
 
 let%expect_test _ =
@@ -202,8 +195,7 @@ x = x + (x := 0)
 print(x) # will print 1
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -228,7 +220,7 @@ x = o.f(0, *args1, *args2, **d1, **d2)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
 
 
 let%expect_test _ =
@@ -242,7 +234,7 @@ def main(arg):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -252,7 +244,7 @@ def foo(n):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -262,4 +254,4 @@ def foo(n):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+    IR error: COMPARE_OP(68): invalid operation |}]

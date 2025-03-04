@@ -66,4 +66,4 @@ class C:
   in
   PyIR.test ~run source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: JUMP_BACKWARD |}]

@@ -33,7 +33,7 @@ c.set(42)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -76,7 +76,7 @@ print(c.z)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -96,8 +96,7 @@ class D(C):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -111,7 +110,7 @@ C.f()
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -131,7 +130,7 @@ def g(c: C) -> None:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -148,8 +147,7 @@ class C(A, B):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -169,7 +167,7 @@ cs[0].x
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -190,7 +188,7 @@ f()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -202,8 +200,7 @@ class D(C):
   pass
   |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -227,7 +224,7 @@ class D0(C0):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -242,7 +239,7 @@ class C(foo.D):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -267,8 +264,7 @@ class C(ABC):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -287,7 +283,7 @@ class C:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -303,7 +299,7 @@ class PwdTest(unittest.TestCase):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -321,7 +317,7 @@ def g():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -342,8 +338,7 @@ f(0, 0, 0, "toto")
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -356,8 +351,7 @@ class TestHook:
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -375,7 +369,7 @@ c.f(0, 1, 2)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -384,8 +378,7 @@ class C:
         x : int = 0
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -401,7 +394,7 @@ class defaultdict:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
 
 
 let%expect_test _ =
@@ -424,7 +417,7 @@ def powerset(s):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: RETURN_GENERATOR |}]
 
 
 let%expect_test _ =
@@ -457,7 +450,7 @@ def g(a, b):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -474,7 +467,7 @@ class C:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL |}]
+    IR error: Unsupported opcode: MAKE_CELL |}]
 
 
 let%expect_test _ =
@@ -483,5 +476,4 @@ class C(metaclass=m):
     pass
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: KW_NAMES |}]
+  [%expect {| |}]
