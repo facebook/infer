@@ -602,6 +602,7 @@ module Error = struct
   type kind =
     | EmptyStack of string
     | IndexOutOfBound of string
+    | ArgValStringExpected of FFI.Constant.t
     | UnsupportedOpcode of string
     | MakeFunction of string * Exp.opstack_symbol
     | LoadMethodExpected of Exp.opstack_symbol
@@ -624,6 +625,8 @@ module Error = struct
         F.fprintf fmt "Cannot %s, stack is empty" op
     | IndexOutOfBound opname ->
         F.fprintf fmt "opcode %s raised in IndexOutOfBound error" opname
+    | ArgValStringExpected cst ->
+        F.fprintf fmt "argval %a should be a string" FFI.Constant.pp cst
     | UnsupportedOpcode s ->
         F.fprintf fmt "Unsupported opcode: %s" s
     | MakeFunction (kind, exp) ->
@@ -683,6 +686,8 @@ module Stmt = struct
     | Delete of ScopedIdent.t  (** [DELETE_FAST] & cie *)
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | MakeCell of int  (** [MAKE_CELL] *)
+    | CopyFreeVars of int  (** [COPY_FREE_VARS] *)
     | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
@@ -733,6 +738,10 @@ module Stmt = struct
               "AsyncGenerator"
         in
         F.fprintf fmt "$GenStart%s()" kind
+    | MakeCell i ->
+        F.fprintf fmt "$MakeCell(%d)" i
+    | CopyFreeVars i ->
+        F.fprintf fmt "$CopyFreeVars(%d)" i
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
     | Yield {lhs; rhs} ->
@@ -1571,9 +1580,18 @@ let raise_varargs st argc =
       external_error st (Error.RaiseExceptionInvalid argc)
 
 
-let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
-  let sz = Array.length co_cellvars in
-  if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
+let get_cell_name {FFI.Code.co_cellvars; co_freevars; version} st arg argval =
+  match (version : FFI.version) with
+  | Python_3_10 ->
+      let sz = Array.length co_cellvars in
+      let name = if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz) in
+      Ok (Ident.mk name)
+  | Python_3_12 -> (
+    match argval with
+    | FFI.Constant.PYCString str ->
+        Ok (Ident.mk str)
+    | _ ->
+        external_error st (Error.ArgValStringExpected argval) )
 
 
 let build_collection st count ~f =
@@ -1721,7 +1739,7 @@ let jump_absolute st arg next_offset =
 
 
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
-    ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
+    ({FFI.Instruction.opname; starts_line; arg; argval} as instr) next_offset_opt =
   let open IResult.Let_syntax in
   let st = if Option.is_some starts_line then {st with State.loc= starts_line} else st in
   State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
@@ -1761,7 +1779,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         in
         assign_to_temp_and_push st exp
     | "LOAD_DEREF" ->
-        let name = get_cell_name code arg |> Ident.mk in
+        let* name = get_cell_name code st arg argval in
         let rhs = Exp.LoadDeref {slot= arg; name} in
         let lhs, st = State.fresh_id st in
         let stmt = Stmt.Let {lhs; rhs} in
@@ -1769,7 +1787,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push st (Exp.Temp lhs) in
         Ok (st, None)
     | "LOAD_CLASSDEREF" ->
-        let name = get_cell_name code arg |> Ident.mk in
+        let* name = get_cell_name code st arg argval in
         let rhs = Exp.LoadClassDeref {slot= arg; name} in
         let lhs, st = State.fresh_id st in
         let stmt = Stmt.Let {lhs; rhs} in
@@ -1816,7 +1834,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push_stmt st stmt in
         Ok (st, None)
     | "STORE_DEREF" ->
-        let name = get_cell_name code arg |> Ident.mk in
+        let* name = get_cell_name code st arg argval in
         let* rhs, st = State.pop_and_cast st in
         let stmt = Stmt.StoreDeref {name; slot= arg; rhs} in
         let st = State.push_stmt st stmt in
@@ -1828,6 +1846,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* container, st = State.pop_and_cast st in
         let* rhs, st = State.pop_and_cast st in
         let st = State.push_stmt st (StoreSlice {container; start; end_; rhs}) in
+        Ok (st, None)
+    | "COPY_FREE_VARS" ->
+        only_supported_from_python_3_12 opname version ;
+        let st = State.push_stmt st (CopyFreeVars arg) in
+        Ok (st, None)
+    | "MAKE_CELL" ->
+        only_supported_from_python_3_12 opname version ;
+        let st = State.push_stmt st (MakeCell arg) in
         Ok (st, None)
     | "CHECK_EXC_MATCH" ->
         only_supported_from_python_3_12 opname version ;
@@ -2076,7 +2102,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push st (Exp.Temp id) in
         Ok (st, None)
     | "LOAD_CLOSURE" ->
-        let name = get_cell_name code arg |> Ident.mk in
+        let* name = get_cell_name code st arg argval in
         let rhs = Exp.LoadClosure {slot= arg; name} in
         let lhs, st = State.fresh_id st in
         let stmt = Stmt.Let {lhs; rhs} in
@@ -2338,7 +2364,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push_stmt st stmt in
         Ok (st, None)
     | "DELETE_DEREF" ->
-        let name = get_cell_name code arg |> Ident.mk in
+        let* name = get_cell_name code st arg argval in
         let stmt = Stmt.DeleteDeref {name; slot= arg} in
         let st = State.push_stmt st stmt in
         Ok (st, None)
@@ -2594,6 +2620,8 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "MATCH_CLASS"
   | "MATCH_SEQUENCE"
   | "GET_LEN"
+  | "MAKE_CELL"
+  | "COPY_FREE_VARS"
   | "END_SEND" ->
       `NextInstrOnly
   | "RETURN_CONST" | "RETURN_VALUE" ->

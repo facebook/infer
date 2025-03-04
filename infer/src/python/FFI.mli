@@ -37,6 +37,8 @@ module rec Constant : sig
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare, equal]
+
+  val pp : Format.formatter -> t -> unit
 end
 
 and Code : sig

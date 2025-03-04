@@ -491,6 +491,12 @@ let of_stmt loc stmt : Textual.Instr.t =
         ; loc }
   | DeleteAttr {exp; attr} ->
       Let {id= None; exp= call_builtin "py_delete_attr" [of_exp exp; exp_of_ident_str attr]; loc}
+  | MakeCell i ->
+      let arg = Textual.(Exp.Const (Const.Int (Z.of_int i))) in
+      Let {id= None; exp= call_builtin "py_make_cell" [arg]; loc}
+  | CopyFreeVars i ->
+      let arg = Textual.(Exp.Const (Const.Int (Z.of_int i))) in
+      Let {id= None; exp= call_builtin "py_copy_free_vars" [arg]; loc}
   | SetupAnnotations ->
       Let {id= None; exp= call_builtin "py_setup_annotations" []; loc}
   | ImportStar exp ->

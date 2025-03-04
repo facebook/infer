@@ -218,7 +218,7 @@ class D0(C0):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: MAKE_CELL |}]
+    IR error: Unsupported opcode: LOAD_SUPER_ATTR |}]
 
 
 let%expect_test _ =
@@ -233,7 +233,7 @@ class C(foo.D):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: MAKE_CELL |}]
+    IR error: Unsupported opcode: LOAD_SUPER_ATTR |}]
 
 
 let%expect_test _ =
@@ -437,8 +437,7 @@ def g(a, b):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: MAKE_CELL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -455,7 +454,7 @@ class C:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: MAKE_CELL |}]
+    IR error: Unsupported opcode: EAGER_IMPORT_NAME |}]
 
 
 let%expect_test _ =

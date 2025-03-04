@@ -436,6 +436,8 @@ let run_files modules =
         | SetupAnnotations
         | ImportStar _
         | GenStart _
+        | MakeCell _
+        | CopyFreeVars _
         | Yield _ ->
             todo "exec_stmt"
       in

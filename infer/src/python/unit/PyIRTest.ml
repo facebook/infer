@@ -413,8 +413,7 @@ print(g()) # prints 2
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: MAKE_CELL |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

@@ -429,6 +429,8 @@ module Constant = struct
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare, equal]
+
+  let pp = pp_pyConstant
 end
 
 module Instruction = struct

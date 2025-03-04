@@ -220,6 +220,8 @@ module Stmt : sig
     | Delete of ScopedIdent.t
     | DeleteDeref of {name: Ident.t; slot: int}  (** [DELETE_DEREF] *)
     | DeleteAttr of {exp: Exp.t; attr: Ident.t}
+    | MakeCell of int  (** [MAKE_CELL] *)
+    | CopyFreeVars of int  (** [COPY_FREE_VARS] *)
     | ImportStar of Exp.t
     | GenStart of {kind: gen_kind}
     | SetupAnnotations
