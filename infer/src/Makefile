@@ -94,6 +94,11 @@ test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
 unit: runtest test
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
 	$(QUIET)LD_LIBRARY_PATH=$(LDPATH) INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN)
+	git grep "IR error" python/unit/ | sed \
+	  -e 's/python\/unit\/Py.*Test.*\.ml*://g' \
+	  -e 's/\[%expect {|/ /g' \
+	  -e 's/|}\]//g' \
+	| sort | uniq -c > python_unit_test_errors.txt
 
 .PHONY: build_all
 build_all: $(SRC_BUILD_COMMON)

@@ -1,0 +1,10 @@
+      2     IR error: Unsupported opcode: BINARY_OP 
+      1     IR error: Unsupported opcode: BINARY_SLICE 
+      1     IR error: Unsupported opcode: CALL 
+      2     IR error: Unsupported opcode: CALL_INTRINSIC_1 
+      2     IR error: Unsupported opcode: COPY 
+      1     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
+      7     IR error: Unsupported opcode: PUSH_NULL
+     77     IR error: Unsupported opcode: PUSH_NULL 
+     63     IR error: Unsupported opcode: RETURN_CONST 
+      1     IR error: Unsupported opcode: SWAP 
