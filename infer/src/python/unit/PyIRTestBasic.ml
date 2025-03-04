@@ -14,7 +14,8 @@ module L = Logging
 let%expect_test _ =
   let source = "x = 42" in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -23,7 +24,8 @@ x = 42
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -33,7 +35,8 @@ y = 10
 print(x + y)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -43,7 +46,8 @@ y = 10
 print(x - y)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -53,7 +57,8 @@ x += 10
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: BINARY_OP |}]
 
 
 let%expect_test _ =
@@ -63,7 +68,8 @@ x -= 10
 print(x)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: BINARY_OP |}]
 
 
 let%expect_test _ =
@@ -71,7 +77,8 @@ let%expect_test _ =
 pi = 3.14
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -79,7 +86,8 @@ let%expect_test _ =
 byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -89,13 +97,15 @@ l[0:2]
 l[0:2:1]
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: BINARY_SLICE |}]
 
 
 let%expect_test _ =
   let source = "True != False" in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -104,7 +114,8 @@ l = [1, 2, 3]
 print(l[0])
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -114,7 +125,8 @@ x = 0
 l[x] = 10
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -122,7 +134,8 @@ let%expect_test _ =
 s = {1, 2, 3}
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -144,7 +157,8 @@ d = { 0x78: "abc", # 1-n decoding mapping
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -153,7 +167,8 @@ fp = open("foo.txt", "wt")
 fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -162,7 +177,8 @@ with open("foo.txt", "wt") as fp:
     fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -180,7 +196,8 @@ print(result)
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
 
 
 let%expect_test _ =
@@ -190,7 +207,8 @@ x = x + (x := 0)
 print(x) # will print 1
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: COPY |}]
 
 
 let%expect_test _ =
@@ -214,7 +232,8 @@ x = o.f(0, *args1, *args2, **d1, **d2)
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -227,7 +246,8 @@ def main(arg):
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -236,7 +256,8 @@ def foo(n):
     o.update({ "key": "*" * n})
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -245,4 +266,5 @@ def foo(n):
     assert(n>0)
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]

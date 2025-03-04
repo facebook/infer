@@ -21,7 +21,8 @@ base.f(0)
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -41,7 +42,8 @@ g()
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -52,7 +54,8 @@ class MyTest(unittest.TestCase):
         pass
         |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 (* Extracted from Cinder's PyIR.test suite. Currently amended to avoid unsupported opcodes *)
@@ -92,7 +95,8 @@ if __name__ == '__main__':
       |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -111,7 +115,8 @@ path.X()
       |}
   in
   PyIR.test ~filename:"some/long/path/dummy.py" source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -119,7 +124,8 @@ let%expect_test _ =
 pass
 |} in
   PyIR.test ~filename:"./dir1/dir2/script.py" source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -139,7 +145,8 @@ tata()
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -148,7 +155,8 @@ let%expect_test _ =
 import xml.etree.ElementTree as ET
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: SWAP |}]
 
 
 let%expect_test _ =
@@ -163,7 +171,8 @@ class Test(unittest.TestCase):
   |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -174,7 +183,8 @@ def f():
           raise foo.bar(42)
           |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -191,7 +201,8 @@ def f(ok):
           |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -211,7 +222,8 @@ def test_format_specifier_expressions(self):
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -235,7 +247,8 @@ def f():
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -243,7 +256,8 @@ let%expect_test _ =
 from foo import *
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
 
 
 let%expect_test _ =
@@ -258,4 +272,5 @@ except Exception as error:
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]

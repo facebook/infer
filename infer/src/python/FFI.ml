@@ -54,6 +54,17 @@ module Z = struct
   let pp fmt z = F.pp_print_string fmt (Z.to_string z)
 end
 
+type version = Python_3_10 | Python_3_12 [@@deriving equal, compare]
+
+let pp_version fmt = function
+  | Python_3_10 ->
+      F.pp_print_string fmt "python3.10"
+  | Python_3_12 ->
+      F.pp_print_string fmt "python3.12"
+
+
+let get_version () = match Py.version_pair () with 3, 12 -> Python_3_12 | _ -> Python_3_10
+
 type pyConstant =
   | PYCBool of bool
   | PYCInt of Z.t
@@ -85,7 +96,8 @@ and pyCode =
   ; co_lnotab: char array
   ; co_consts: pyConstant array
   ; (* Instead of keeping [co_code], they are translated into Python's [Instruction] *)
-    instructions: pyInstruction list }
+    instructions: pyInstruction list
+  ; version: version }
 [@@deriving equal]
 
 and pyInstruction =
@@ -332,6 +344,7 @@ pybc.output = l
       Result.all l
     else die_invalid_field ~kind:"list of instructions" "co_code" obj
   in
+  let version = get_version () in
   Ok
     { co_name
     ; co_filename
@@ -348,7 +361,8 @@ pybc.output = l
     ; co_kwonlyargcount
     ; co_lnotab
     ; co_consts
-    ; instructions }
+    ; instructions
+    ; version }
 
 
 and new_py_instruction obj =
@@ -396,7 +410,8 @@ module Code = struct
     ; co_kwonlyargcount: int [@compare.ignore] [@equal.ignore]
     ; co_lnotab: char array [@compare.ignore] [@equal.ignore]
     ; co_consts: pyConstant array [@compare.ignore] [@equal.ignore]
-    ; instructions: pyInstruction list [@compare.ignore] [@equal.ignore] }
+    ; instructions: pyInstruction list [@compare.ignore] [@equal.ignore]
+    ; version: version [@compare.ignore] [@equal.ignore] }
   [@@deriving show, compare, equal]
 end
 

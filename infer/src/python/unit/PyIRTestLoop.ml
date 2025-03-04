@@ -17,7 +17,8 @@ for x in range(10):
     print(x)
       |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -32,7 +33,8 @@ def f(x, y, l, bar, toto):
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -45,7 +47,8 @@ def f(match, it, n):
           |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -58,7 +61,8 @@ def f(foo):
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -68,7 +72,8 @@ async def async_loop1():
         foo(doc)
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -77,7 +82,8 @@ async def async_loop2():
     [ x async for x in read() ]
 |} in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -92,7 +98,8 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -106,4 +113,5 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]

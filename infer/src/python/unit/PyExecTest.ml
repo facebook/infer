@@ -25,8 +25,8 @@ builtin_print(print, None, "hello world", True, False)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -44,8 +44,8 @@ print("fst(x, y) =", fst(x, y))
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -71,8 +71,8 @@ print('n =', n)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -93,8 +93,8 @@ print('fact(5) =', fact(5))
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -135,8 +135,8 @@ def set(v):
   [%expect
     {|
     nothing to execute
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: RETURN_CONST |}]
 
 
 let%expect_test _ =
@@ -164,8 +164,8 @@ print('saved x is', C.saved_x)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -193,5 +193,5 @@ print(d)
   [%expect
     {|
     Running interpreter:
-    IR error: Unsupported opcode: RESUME
-    IR error: Unsupported opcode: RESUME |}]
+    IR error: Unsupported opcode: PUSH_NULL
+    IR error: Unsupported opcode: PUSH_NULL |}]

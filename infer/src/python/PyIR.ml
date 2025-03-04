@@ -1562,7 +1562,15 @@ and map_convert_ffi_const st values =
       exp :: values )
 
 
-let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
+let only_supported_from_python_3_12 opname version =
+  match version with
+  | FFI.Python_3_12 ->
+      ()
+  | FFI.Python_3_10 ->
+      L.die UserError "opcode %s should not appear with Python3.10" opname
+
+
+let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
     ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
   let open IResult.Let_syntax in
   let st = if Option.is_some starts_line then {st with State.loc= starts_line} else st in
@@ -1816,6 +1824,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let stmt = Stmt.Let {lhs; rhs} in
       let st = State.push_stmt st stmt in
       let st = State.push st (Exp.Temp lhs) in
+      Ok (st, None)
+  | "RESUME" ->
+      only_supported_from_python_3_12 opname version ;
       Ok (st, None)
   | "NOP" ->
       Ok (st, None)
@@ -2200,6 +2211,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "IMPORT_STAR"
   | "COMPARE_OP"
   | "LOAD_CLOSURE"
+  | "RESUME"
   | "NOP"
   | "IS_OP"
   | "CONTAINS_OP"

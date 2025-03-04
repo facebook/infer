@@ -21,6 +21,8 @@ module Error : sig
   val pp_kind : Format.formatter -> kind -> unit
 end
 
+type version = Python_3_10 | Python_3_12 [@@deriving equal, compare]
+
 module rec Constant : sig
   type t = private
     | PYCBool of bool
@@ -65,7 +67,8 @@ and Code : sig
     ; co_consts: Constant.t array
           (** A tuple containing the literals used by the bytecode. By experience, it is only [int],
               [string], [tuple]s, [None] or [code] objects *)
-    ; instructions: Instruction.t list }
+    ; instructions: Instruction.t list
+    ; version: version }
   [@@deriving show, compare, equal]
 end
 

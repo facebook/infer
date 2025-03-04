@@ -22,7 +22,8 @@ match n:
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: COPY |}]
 
 
 let%expect_test _ =
@@ -40,7 +41,8 @@ foo(1.1)
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -62,7 +64,8 @@ foo(C.BAR)
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -84,7 +87,8 @@ foo(C.BAR, C.BAR)
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -109,7 +113,8 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -135,7 +140,8 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -155,7 +161,8 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: PUSH_NULL |}]
 
 
 let%expect_test _ =
@@ -168,4 +175,5 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RESUME |}]
+  [%expect {|
+    IR error: Unsupported opcode: RETURN_CONST |}]
