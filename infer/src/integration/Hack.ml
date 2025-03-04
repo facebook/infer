@@ -407,8 +407,8 @@ let start_hackc compiler args =
   let stderr_log = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "hackc" "stderr" in
   let escaped_cmd = List.map ~f:Escape.escape_shell (compiler :: args) |> String.concat ~sep:" " in
   let redirected_cmd = F.sprintf "exec %s 2>%s" escaped_cmd stderr_log in
-  let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
+  let {IUnix.Process_info.stdin; stdout; stderr; pid} =
+    IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
   in
   Unix.close stdin ;
   Unix.close stderr ;

@@ -30,8 +30,8 @@ let capture ~build_cmd =
   L.(debug Capture Verbose)
     "Running command %s %s with env %s@." prog (String.concat ~sep:" " args)
     (List.to_string ~f:(fun (a, b) -> a ^ "=" ^ b) new_env) ;
-  let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog ~args ~env:(`Extend new_env) ()
+  let {IUnix.Process_info.stdin; stdout; stderr; pid} =
+    IUnix.create_process_env ~prog ~args ~env:(`Extend new_env)
   in
   let ndk_stderr = Unix.in_channel_of_descr stderr in
   Utils.with_channel_in ndk_stderr ~f:(L.progress "NDKBUILD: %s@.") ;

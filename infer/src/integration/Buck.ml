@@ -100,8 +100,8 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
     else `Extend env_vars
   in
   L.debug Capture Quiet "Running buck command '%s'@." command ;
-  let Unix.Process_info.{stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog:"sh" ~args:["-c"; command] ~env ()
+  let IUnix.Process_info.{stdin; stdout; stderr; pid} =
+    IUnix.create_process_env ~prog:"sh" ~args:["-c"; command] ~env
   in
   let buck_stderr = Unix.in_channel_of_descr stderr in
   let buck_logger = if is_buck2 then L.progress "BUCK2: %s@\n" else L.progress "BUCK: %s@\n" in

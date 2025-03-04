@@ -24,6 +24,17 @@ module Unix = struct
   let mkdtemp _ = `Dont_use_istd_unix
 
   let putenv ~key:_ ~data:_ = `Dont_use_istd_unix
+
+  let create_process_env ?working_dir:_ ?prog_search_path:_ ?argv0:_ ?setpgid:_ ~prog:_ ~args:_
+      ~env:_ () =
+    `Dont_use_istd_unix
+
+
+  let create_process ~prog:_ ~args:_ = `Dont_use_istd_unix
+
+  let open_process_in _ = `Dont_use_istd_unix
+
+  let close_process_in _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

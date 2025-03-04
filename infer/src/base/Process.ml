@@ -32,8 +32,8 @@ let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
   in
   let escaped_cmd = List.map ~f:Escape.escape_shell (prog :: args) |> String.concat ~sep:" " in
   let redirected_cmd = Printf.sprintf "exec %s %s'%s'" escaped_cmd redirect_spec output_file in
-  let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog:"sh" ~args:["-c"; redirected_cmd] ~env ()
+  let {IUnix.Process_info.stdin; stdout; stderr; pid} =
+    IUnix.create_process_env ~prog:"sh" ~args:["-c"; redirected_cmd] ~env
   in
   let fd_to_log, redirected_fd =
     match action with ReadStderr -> (stdout, stderr) | ReadStdout -> (stderr, stdout)

@@ -265,11 +265,11 @@ let consume_in chan_in = with_channel_in ~f:ignore chan_in
 let echo_in chan_in = with_channel_in ~f:print_endline chan_in
 
 let with_process_in command read =
-  let chan = Unix.open_process_in command in
+  let chan = IUnix.open_process_in command in
   let f () = read chan in
   let finally () =
     consume_in chan ;
-    Unix.close_process_in chan
+    IUnix.close_process_in chan
   in
   do_finally_swallow_timeout ~f ~finally
 

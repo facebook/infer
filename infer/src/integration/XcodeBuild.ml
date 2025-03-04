@@ -32,10 +32,9 @@ let capture ~prog ~args =
       ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg )
   in
   L.debug Capture Verbose "%s [%s] [%s]@." prog (String.concat ~sep:"," args) infer_args ;
-  let {Unix.Process_info.stdin; stdout; stderr; pid} =
-    Unix.create_process_env ~prog ~args
+  let {IUnix.Process_info.stdin; stdout; stderr; pid} =
+    IUnix.create_process_env ~prog ~args
       ~env:(`Extend [(CommandLineOption.args_env_var, infer_args)])
-      ()
   in
   let stdout_chan = Unix.in_channel_of_descr stdout in
   let stderr_chan = Unix.in_channel_of_descr stderr in
