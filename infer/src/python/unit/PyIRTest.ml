@@ -128,8 +128,7 @@ for x in range(10):
     print(x)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: END_FOR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

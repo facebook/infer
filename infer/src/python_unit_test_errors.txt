@@ -1,9 +1,8 @@
       5     IR error: Unsupported opcode: BEFORE_WITH 
       1     IR error: Unsupported opcode: BINARY_SLICE 
-      6     IR error: Unsupported opcode: CALL_INTRINSIC_1 
-     14     IR error: Unsupported opcode: END_FOR 
+      7     IR error: Unsupported opcode: CALL_INTRINSIC_1 
       3     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
       6     IR error: Unsupported opcode: MAKE_CELL 
-     10     IR error: Unsupported opcode: PUSH_EXC_INFO 
-      9     IR error: Unsupported opcode: RETURN_GENERATOR 
+     14     IR error: Unsupported opcode: PUSH_EXC_INFO 
+     10     IR error: Unsupported opcode: RETURN_GENERATOR 
       1     IR error: Unsupported opcode: STORE_SLICE 

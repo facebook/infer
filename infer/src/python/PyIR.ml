@@ -1459,7 +1459,15 @@ let jump_if_or_pop st ~jump_if target next_offset_opt =
 let for_iter st delta next_offset_opt =
   let open IResult.Let_syntax in
   let {State.loc} = st in
-  let* iter, st = State.pop_and_cast st in
+  let* iter, st =
+    match st.State.version with
+    | Python_3_10 ->
+        State.pop_and_cast st
+    | Python_3_12 ->
+        let* iter = State.peek st in
+        let+ iter = State.cast_exp st iter in
+        (iter, st)
+  in
   let {State.stack= other_stack} = st in
   let* id, st = call_builtin_function st NextIter [iter] in
   let* has_item, st = call_builtin_function st HasNextIter [iter] in
@@ -1467,11 +1475,23 @@ let for_iter st delta next_offset_opt =
   (* In the next branch, we know the iterator has an item available. Let's fetch it and
      push it on the stack. *)
   let* next_offset = Offset.get ~loc next_offset_opt in
-  (* The iterator object stays on the stack while in the for loop, let's push it back *)
-  let st = State.push st iter in
+  let st =
+    match st.State.version with
+    | Python_3_10 ->
+        (* The iterator object stays on the stack while in the for loop, let's push it back *)
+        State.push st iter
+    | Python_3_12 ->
+        st
+  in
   let st = State.push st (Exp.Temp id) in
   let* next_label = State.get_node_name st next_offset in
-  let {State.stack= next_stack} = st in
+  let next_stack, other_stack =
+    match st.State.version with
+    | Python_3_10 ->
+        (st.State.stack, other_stack)
+    | Python_3_12 ->
+        (st.State.stack, st.State.stack)
+  in
   let other_offset = delta + next_offset in
   let* other_label = State.get_node_name st other_offset in
   Ok
@@ -2034,6 +2054,10 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         Ok (st, None)
     | "FOR_ITER" ->
         for_iter st (2 * arg) next_offset_opt
+    | "END_FOR" ->
+        let* _, st = State.pop st in
+        let* _, st = State.pop st in
+        Ok (st, None)
     | "JUMP_IF_TRUE_OR_POP" ->
         jump_if_or_pop ~jump_if:true st (2 * arg) next_offset_opt
     | "JUMP_IF_FALSE_OR_POP" ->
@@ -2419,6 +2443,7 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "DELETE_ATTR"
   | "DELETE_DEREF"
   | "DELETE_SUBSCR"
+  | "END_FOR"
   | "GET_AWAITABLE"
   | "BEFORE_ASYNC_WITH"
   | "SETUP_ASYNC_WITH"
@@ -2443,8 +2468,12 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
         `NextInstrOrRelative (2 * arg) )
   | "JUMP_IF_TRUE_OR_POP" | "JUMP_IF_FALSE_OR_POP" ->
       `NextInstrWithPopOrAbsolute (2 * arg)
-  | "FOR_ITER" ->
-      `NextInstrOrRelativeWith2Pop (2 * arg)
+  | "FOR_ITER" -> (
+    match version with
+    | Python_3_10 ->
+        `NextInstrOrRelativeWith2Pop (2 * arg)
+    | Python_3_12 ->
+        `NextInstrOrRelative (2 * arg) )
   | "JUMP_FORWARD" ->
       `Relative (2 * arg)
   | "JUMP_BACKWARD" | "JUMP_BACKWARD_NO_INTERRUPT" ->
