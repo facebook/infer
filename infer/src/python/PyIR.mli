@@ -102,6 +102,25 @@ module FormatFunction : sig
 end
 
 module BuiltinCaller : sig
+  type unary_intrinsics =
+    | PrintExpr
+    | ImportStar
+    | StopiterationError
+    | AsyncGenValueWrapperNew
+    | UnaryPos
+    | ListToTuple
+    | MakeTypevar
+    | MakeParamspec
+    | MakeTypevartuple
+    | SubscriptGeneric
+    | MakeTypealias
+
+  type binary_intrinsics =
+    | PrepReraiseStar
+    | TypevarWithBound
+    | TypevarWithConstraints
+    | SetFunctionTypeParams
+
   type t =
     | BuildClass
     | BuildConstKeyMap
@@ -131,6 +150,8 @@ module BuiltinCaller : sig
     | GetAwaitable
     | UnpackEx
     | GetPreviousException
+    | UnaryIntrinsic of unary_intrinsics
+    | BinaryIntrinsic of binary_intrinsics
 end
 
 module Const : sig

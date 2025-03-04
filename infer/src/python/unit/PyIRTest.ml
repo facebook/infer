@@ -385,8 +385,7 @@ def inv(x):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

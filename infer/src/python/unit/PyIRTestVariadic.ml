@@ -50,8 +50,7 @@ start()
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -70,8 +69,7 @@ def f(foo, a, b, c):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

@@ -293,6 +293,31 @@ module FormatFunction = struct
 end
 
 module BuiltinCaller = struct
+  type unary_intrinsics =
+    | PrintExpr
+    | ImportStar
+    | StopiterationError
+    | AsyncGenValueWrapperNew
+    | UnaryPos
+    | ListToTuple
+    | MakeTypevar
+    | MakeParamspec
+    | MakeTypevartuple
+    | SubscriptGeneric
+    | MakeTypealias
+  [@@deriving equal, show, enumerate]
+
+  let unary_intrinsics = Array.of_list all_of_unary_intrinsics
+
+  type binary_intrinsics =
+    | PrepReraiseStar
+    | TypevarWithBound
+    | TypevarWithConstraints
+    | SetFunctionTypeParams
+  [@@deriving equal, show, enumerate]
+
+  let binary_intrinsics = Array.of_list all_of_binary_intrinsics
+
   type t =
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
     | BuildConstKeyMap  (** [BUILD_CONST_KEY_MAP] *)
@@ -322,6 +347,8 @@ module BuiltinCaller = struct
     | GetAwaitable  (** [GET_AWAITABLE] *)
     | UnpackEx  (** [UNPACK_EX] *)
     | GetPreviousException  (** [RAISE_VARARGS] *)
+    | UnaryIntrinsic of unary_intrinsics
+    | BinaryIntrinsic of binary_intrinsics
   [@@deriving equal]
 
   let show = function
@@ -384,6 +411,10 @@ module BuiltinCaller = struct
         "$UnpackEx"
     | GetPreviousException ->
         "GetPreviousException"
+    | UnaryIntrinsic unop ->
+        show_unary_intrinsics unop
+    | BinaryIntrinsic binop ->
+        show_binary_intrinsics binop
 end
 
 module Const = struct
@@ -1794,6 +1825,23 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         call_function_kw st version arg
     | "CALL_FUNCTION_EX" ->
         call_function_ex st version arg
+    | "CALL_INTRINSIC_1" ->
+        let* tos, st = State.pop_and_cast st in
+        let* id, st =
+          call_builtin_function st (UnaryIntrinsic BuiltinCaller.unary_intrinsics.(arg - 1)) [tos]
+        in
+        let st = State.push st (Exp.Temp id) in
+        Ok (st, None)
+    | "CALL_INTRINSIC_2" ->
+        let* arg2, st = State.pop_and_cast st in
+        let* arg1, st = State.pop_and_cast st in
+        let* id, st =
+          call_builtin_function st
+            (BinaryIntrinsic BuiltinCaller.binary_intrinsics.(arg - 1))
+            [arg1; arg2]
+        in
+        let st = State.push st (Exp.Temp id) in
+        Ok (st, None)
     | "POP_TOP" ->
         let* _, st = State.pop st in
         Ok (st, None)
@@ -2368,6 +2416,8 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "CALL_FUNCTION"
   | "CALL_FUNCTION_KW"
   | "CALL_FUNCTION_EX"
+  | "CALL_INTRINSIC_1"
+  | "CALL_INTRINSIC_2"
   | "POP_TOP"
   | "COPY"
   | "SWAP"

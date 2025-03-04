@@ -376,6 +376,36 @@ let builtin_name builtin =
       "py_unpack_ex"
   | GetPreviousException ->
       "py_get_previous_exception"
+  | UnaryIntrinsic PrintExpr ->
+      "py_print_expr"
+  | UnaryIntrinsic ImportStar ->
+      "py_import_star"
+  | UnaryIntrinsic StopiterationError ->
+      "stopiteration_error"
+  | UnaryIntrinsic AsyncGenValueWrapperNew ->
+      "py_async_gen_value_wrapper_new"
+  | UnaryIntrinsic UnaryPos ->
+      "py_unary_pos"
+  | UnaryIntrinsic ListToTuple ->
+      "py_list_to_tuple"
+  | UnaryIntrinsic MakeTypevar ->
+      "make_typevar"
+  | UnaryIntrinsic MakeParamspec ->
+      "py_make_paramspec"
+  | UnaryIntrinsic MakeTypevartuple ->
+      "py_make_typevartuple"
+  | UnaryIntrinsic SubscriptGeneric ->
+      "py_subscript_generic"
+  | UnaryIntrinsic MakeTypealias ->
+      "py_make_typealias"
+  | BinaryIntrinsic PrepReraiseStar ->
+      "py_prep_reraise_star"
+  | BinaryIntrinsic TypevarWithBound ->
+      "py_typevar_with_bound"
+  | BinaryIntrinsic TypevarWithConstraints ->
+      "py_typevar_with_constraints"
+  | BinaryIntrinsic SetFunctionTypeParams ->
+      "py_set_function_type_params"
 
 
 let str_py_store_name = "py_store_name"

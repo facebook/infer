@@ -244,8 +244,7 @@ let%expect_test _ =
 from foo import *
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -261,4 +260,4 @@ except Exception as error:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: CALL_INTRINSIC_1 |}]
+    IR error: Unsupported opcode: PUSH_EXC_INFO |}]
