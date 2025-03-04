@@ -94,7 +94,9 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
         ; field=
             { enclosing_class= typ_name
             ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
-  | Ap1 (Convert _, dst_typ, exp) ->
+  | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
+      (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
+         and convert translates other types of cast *)
       let exp = to_textual_exp exp in
       let typ = to_textual_typ dst_typ in
       let proc = Textual.ProcDecl.cast_name in
