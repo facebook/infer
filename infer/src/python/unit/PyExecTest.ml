@@ -114,9 +114,49 @@ print('n =', n)
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          n3 <- $MakeFunction["dummy.incr", n0, n0, n0, n0]
+          TOPLEVEL[incr] <- n3
+          n4 <- $MakeFunction["dummy.no_effect", n0, n0, n0, n0]
+          TOPLEVEL[no_effect] <- n4
+          GLOBAL[n] <- 0
+          n5 <- TOPLEVEL[incr]
+          n6 <- $Call(n5, 3, n0)
+          n7 <- TOPLEVEL[incr]
+          n8 <- $Call(n7, 2, n0)
+          n9 <- TOPLEVEL[no_effect]
+          n10 <- $Call(n9, -1, n0)
+          n11 <- TOPLEVEL[print]
+          n12 <- GLOBAL[n]
+          n13 <- $Call(n11, "n =", n12, n0)
+          return n0
+
+
+      function dummy.incr(k):
+        b0:
+          n0 <- None
+          n3 <- GLOBAL[n]
+          n4 <- LOCAL[k]
+          n5 <- $Inplace.Add(n3, n4, n0)
+          GLOBAL[n] <- n5
+          return n0
+
+
+      function dummy.no_effect(k):
+        b0:
+          n0 <- None
+          n3 <- LOCAL[k]
+          LOCAL[n] <- n3
+          return n0
+
+
+
     Running interpreter:
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+    n = 5 |}]
 
 
 let%expect_test _ =
@@ -136,9 +176,43 @@ print('fact(5) =', fact(5))
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          n3 <- $MakeFunction["dummy.fact", n0, n0, n0, n0]
+          TOPLEVEL[fact] <- n3
+          n4 <- TOPLEVEL[print]
+          n5 <- TOPLEVEL[fact]
+          n6 <- $Call(n5, 5, n0)
+          n7 <- $Call(n4, "fact(5) =", n6, n0)
+          return n0
+
+
+      function dummy.fact(n):
+        b0:
+          n0 <- None
+          n3 <- LOCAL[n]
+          n4 <- $Compare.le(n3, 0, n0)
+          if n4 then jmp b1 else jmp b2
+
+        b1:
+          return 1
+
+        b2:
+          n5 <- LOCAL[n]
+          n6 <- GLOBAL[fact]
+          n7 <- LOCAL[n]
+          n8 <- $Binary.Subtract(n7, 1, n0)
+          n9 <- $Call(n6, n8, n0)
+          n10 <- $Binary.Multiply(n5, n9, n0)
+          return n10
+
+
+
     Running interpreter:
-    IR error: COMPARE_OP(26): invalid operation
-    IR error: COMPARE_OP(26): invalid operation |}]
+    fact(5) = 120 |}]
 
 
 let%expect_test _ =
@@ -176,8 +250,13 @@ def set(v):
 |})
   in
   PyIR.test_files ~run:PyIRExec.run_files [main; module1] ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect
+    {|
+    module1.f = module1.f
+    module1.f = explicitly modified from main
+    module1.f = modified with a setter
+    module1.f = modified with an imported setter
+    module1.f = modified with an imported setter |}]
 
 
 let%expect_test _ =
@@ -204,9 +283,77 @@ print('saved x is', C.saved_x)
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
     {|
+    module dummy:
+
+      function toplevel():
+        b0:
+          n0 <- None
+          TOPLEVEL[x] <- "global"
+          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
+          n4 <- $BuildClass(n3, "C", n0)
+          TOPLEVEL[C] <- n4
+          n5 <- TOPLEVEL[print]
+          n6 <- TOPLEVEL[C]
+          n7 <- n6.get_x
+          n8 <- $Call(n7, n0)
+          n9 <- $Call(n5, "x is", n8, n0)
+          TOPLEVEL[x] <- "assigned by module body"
+          n10 <- TOPLEVEL[print]
+          n11 <- TOPLEVEL[C]
+          n12 <- n11.get_x
+          n13 <- $Call(n12, n0)
+          n14 <- $Call(n10, "x is", n13, n0)
+          n15 <- TOPLEVEL[C]
+          n15.x <- "assigned as a class attribute"
+          n16 <- TOPLEVEL[print]
+          n17 <- TOPLEVEL[C]
+          n18 <- n17.get_C_x
+          n19 <- $Call(n18, n0)
+          n20 <- $Call(n16, "x is", n19, n0)
+          n21 <- TOPLEVEL[print]
+          n22 <- TOPLEVEL[C]
+          n23 <- n22.saved_x
+          n24 <- $Call(n21, "saved x is", n23, n0)
+          return n0
+
+
+      function dummy.C():
+        b0:
+          n0 <- None
+          n3 <- TOPLEVEL[__name__]
+          TOPLEVEL[__module__] <- n3
+          TOPLEVEL[__qualname__] <- "C"
+          n4 <- TOPLEVEL[x]
+          TOPLEVEL[saved_x] <- n4
+          TOPLEVEL[x] <- "local to class body"
+          n5 <- $MakeFunction["dummy.C.get_x", n0, n0, n0, n0]
+          TOPLEVEL[get_x] <- n5
+          n6 <- $MakeFunction["dummy.C.get_C_x", n0, n0, n0, n0]
+          TOPLEVEL[get_C_x] <- n6
+          return n0
+
+
+      function dummy.C.get_C_x():
+        b0:
+          n0 <- None
+          n3 <- GLOBAL[C]
+          n4 <- n3.x
+          return n4
+
+
+      function dummy.C.get_x():
+        b0:
+          n0 <- None
+          n3 <- GLOBAL[x]
+          return n3
+
+
+
     Running interpreter:
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+    x is global
+    x is assigned by module body
+    x is assigned as a class attribute
+    saved x is global |}]
 
 
 let%expect_test _ =

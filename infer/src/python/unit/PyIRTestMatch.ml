@@ -22,8 +22,7 @@ match n:
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -41,8 +40,7 @@ foo(1.1)
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -64,8 +62,7 @@ foo(C.BAR)
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -87,8 +84,7 @@ foo(C.BAR, C.BAR)
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -113,8 +109,7 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -140,8 +135,7 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -161,8 +155,7 @@ def location(point):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -175,5 +168,4 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]

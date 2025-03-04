@@ -21,8 +21,7 @@ base.f(0)
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -93,8 +92,7 @@ if __name__ == '__main__':
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -165,8 +163,7 @@ class Test(unittest.TestCase):
   |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -177,8 +174,7 @@ def f():
           raise foo.bar(42)
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -216,8 +212,7 @@ def test_format_specifier_expressions(self):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Cannot pop, stack is empty |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -241,7 +236,7 @@ def f():
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

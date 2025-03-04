@@ -108,5 +108,4 @@ print(lst) # [2, 3, 4, 5, 6]
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]

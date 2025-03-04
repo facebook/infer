@@ -32,8 +32,7 @@ c.set(42)
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -75,8 +74,7 @@ print(c.z)
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -109,8 +107,7 @@ class C:
 C.f()
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -129,8 +126,7 @@ def g(c: C) -> None:
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -166,8 +162,7 @@ cs[0].x
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -187,8 +182,7 @@ f()
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -282,8 +276,7 @@ class C:
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -298,8 +291,7 @@ class PwdTest(unittest.TestCase):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -316,8 +308,7 @@ def g():
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -368,8 +359,7 @@ c.f(0, 1, 2)
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

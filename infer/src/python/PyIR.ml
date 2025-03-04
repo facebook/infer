@@ -1673,13 +1673,29 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "LOAD_NAME" ->
         load st Name co_names.(arg)
     | "LOAD_GLOBAL" ->
-        load st Global co_names.(arg)
+        let idx = match version with Python_3_10 -> arg | Python_3_12 -> arg lsr 1 in
+        let st =
+          match version with
+          | Python_3_12 when arg land 1 <> 0 ->
+              State.push_symbol st Null
+          | _ ->
+              st
+        in
+        load st Global co_names.(idx)
     | "LOAD_FAST" ->
         load st Fast co_varnames.(arg)
     | "LOAD_ATTR" ->
-        let attr = co_names.(arg) |> Ident.mk in
+        let idx = match version with Python_3_10 -> arg | Python_3_12 -> arg lsr 1 in
+        let attr = co_names.(idx) |> Ident.mk in
         let* exp, st = State.pop_and_cast st in
         let exp = Exp.GetAttr {exp; attr} in
+        let st =
+          match version with
+          | Python_3_12 when arg land 1 <> 0 ->
+              State.push_symbol st Null
+          | _ ->
+              st
+        in
         assign_to_temp_and_push st exp
     | "LOAD_DEREF" ->
         let name = get_cell_name code arg |> Ident.mk in
@@ -1913,12 +1929,13 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let st = State.push st (Exp.Temp lhs) in
         Ok (st, None)
     | "COMPARE_OP" ->
+        let idx = match version with Python_3_10 -> arg | Python_3_12 -> arg lsr 4 in
         let* cmp_op =
-          match List.nth CompareOp.all arg with
+          match List.nth CompareOp.all idx with
           | Some op ->
               Ok op
           | None ->
-              external_error st (Error.CompareOp arg)
+              external_error st (Error.CompareOp idx)
         in
         let* rhs, st = State.pop_and_cast st in
         let* lhs, st = State.pop_and_cast st in
@@ -2260,7 +2277,13 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let stmt = Stmt.Let {lhs; rhs= MatchClass {subject; type_; count= arg; names}} in
         let st = State.push_stmt st stmt in
         let st = State.push st (AttributesOfMatchClass (Temp lhs)) in
-        let st = State.push st (BoolOfMatchClass (Temp lhs)) in
+        let st =
+          match version with
+          | Python_3_10 ->
+              State.push st (BoolOfMatchClass (Temp lhs))
+          | Python_3_12 ->
+              st
+        in
         Ok (st, None)
     | "MATCH_SEQUENCE" ->
         let* tos = State.peek st in

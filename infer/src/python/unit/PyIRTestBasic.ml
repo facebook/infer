@@ -96,8 +96,7 @@ l[0:2:1]
 let%expect_test _ =
   let source = "True != False" in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(55): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -155,8 +154,7 @@ fp = open("foo.txt", "wt")
 fp.write("yolo")
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -243,8 +241,7 @@ def foo(n):
     o.update({ "key": "*" * n})
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -253,5 +250,4 @@ def foo(n):
     assert(n>0)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(68): invalid operation |}]
+  [%expect {| |}]

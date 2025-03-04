@@ -1,13 +1,3 @@
-      1     IR error: Cannot pop, stack is empty 
-      1     IR error: COMPARE_OP(26): invalid operation
-      2     IR error: COMPARE_OP(26): invalid operation 
-      7     IR error: COMPARE_OP(40): invalid operation 
-      2     IR error: COMPARE_OP(55): invalid operation 
-      2     IR error: COMPARE_OP(68): invalid operation 
-      1     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error
-     23     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error 
-      1     IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error
-     12     IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error 
       5     IR error: Unsupported opcode: BEFORE_WITH 
       1     IR error: Unsupported opcode: BINARY_SLICE 
       6     IR error: Unsupported opcode: CALL_INTRINSIC_1 

@@ -27,8 +27,7 @@ print(z)
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -62,8 +61,7 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -82,8 +80,7 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -110,8 +107,7 @@ def f(x, y):
       |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -123,8 +119,7 @@ def f(x):
     foo(1 if x else 0)
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -168,8 +163,7 @@ def f(x):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -224,15 +218,13 @@ def f(x, y):
   return (x == y)
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(40): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
   let source = "True != False" in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(55): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -250,8 +242,7 @@ def f(x, y):
   return (x > y)
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(68): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -260,8 +251,7 @@ def f(x, y):
   return (x <= y +1 )
         |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: COMPARE_OP(26): invalid operation |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -488,8 +478,7 @@ def m(self, x, y, test):
     return foo(self, x if test else y)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -498,8 +487,7 @@ def m(self, x, y, test):
     return self.foo(x if test else y)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -508,7 +496,7 @@ def m(x, y, test):
     return (x if test else y).foo()
 |} in
   PyIR.test source ;
-  [%expect {| IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -527,8 +515,7 @@ o.foo()
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -536,8 +523,7 @@ let%expect_test _ =
 res = dict.attr(0 if not False else 1)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
+  [%expect {||}]
 
 
 let%expect_test _ =
@@ -654,5 +640,4 @@ def main():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: opcode LOAD_GLOBAL raised in IndexOutOfBound error |}]
+  [%expect {| |}]
