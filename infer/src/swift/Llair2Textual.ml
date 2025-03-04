@@ -69,6 +69,24 @@ let block_to_node_name block =
   Textual.NodeName.of_string name
 
 
+let to_textual_arith_exp_builtin (op : Llair.Exp.op2) typ =
+  match (op, typ) with
+  | Add, Llair.Typ.Integer _ ->
+      "__sil_plusa_int"
+  | Sub, Llair.Typ.Integer _ ->
+      "__sil_minusa_int"
+  | Mul, Llair.Typ.Integer _ ->
+      "__sil_mult_int"
+  | Div, Llair.Typ.Integer _ ->
+      "__sil_divi"
+  | Div, Llair.Typ.Float _ ->
+      "__sil_divf"
+  | Rem, Llair.Typ.Integer _ ->
+      "__sil_mod"
+  | _ ->
+      assert false
+
+
 (* TODO: translate expressions *)
 let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
@@ -106,6 +124,11 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
          needs to be translated as a loop. We translate here to a non-deterministic value for the array *)
       let proc = builtin_qual_proc_name "llvm_nondet" in
       Call {proc; args= []; kind= Textual.Exp.NonVirtual}
+  | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
+      let proc = builtin_qual_proc_name (to_textual_arith_exp_builtin op typ) in
+      let exp1 = to_textual_exp e1 in
+      let exp2 = to_textual_exp e2 in
+      Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
   | _ ->
       assert false
 
