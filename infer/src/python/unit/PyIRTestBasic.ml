@@ -14,8 +14,7 @@ module L = Logging
 let%expect_test _ =
   let source = "x = 42" in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -25,7 +24,7 @@ print(x)
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -36,7 +35,7 @@ print(x + y)
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -47,7 +46,7 @@ print(x - y)
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -58,7 +57,7 @@ print(x)
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: BINARY_OP |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -69,7 +68,7 @@ print(x)
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: BINARY_OP |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -77,8 +76,7 @@ let%expect_test _ =
 pi = 3.14
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -86,8 +84,7 @@ let%expect_test _ =
 byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
       |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -105,7 +102,7 @@ let%expect_test _ =
   let source = "True != False" in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: COMPARE_OP(55): invalid operation |}]
 
 
 let%expect_test _ =
@@ -115,7 +112,7 @@ print(l[0])
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -125,8 +122,7 @@ x = 0
 l[x] = 10
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -134,8 +130,7 @@ let%expect_test _ =
 s = {1, 2, 3}
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -158,7 +153,7 @@ d = { 0x78: "abc", # 1-n decoding mapping
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -168,7 +163,7 @@ fp.write("yolo")
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -178,7 +173,7 @@ with open("foo.txt", "wt") as fp:
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -208,7 +203,7 @@ print(x) # will print 1
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: COPY |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -233,7 +228,7 @@ x = o.f(0, *args1, *args2, **d1, **d2)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -247,7 +242,7 @@ def main(arg):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -257,7 +252,7 @@ def foo(n):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -267,4 +262,4 @@ def foo(n):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]

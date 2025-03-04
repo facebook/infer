@@ -464,6 +464,7 @@ module Exp = struct
 
   type opstack_symbol =
     | Exp of t
+    | Null
     | Code of FFI.Code.t
     | LoadMethod of (t * Ident.t)  (** [LOAD_METHOD] *)
     | BuiltinCaller of BuiltinCaller.t
@@ -526,6 +527,8 @@ module Exp = struct
   let pp_opstack_symbol fmt = function
     | Exp exp ->
         pp fmt exp
+    | Null ->
+        F.pp_print_string fmt "NULL"
     | Code {FFI.Code.co_name} ->
         F.fprintf fmt "<%s>" co_name
     | LoadMethod (self, meth) ->
@@ -1573,6 +1576,24 @@ let only_supported_from_python_3_12 opname version =
       L.die UserError "opcode %s should not appear with Python3.10" opname
 
 
+let binary_ops : BinaryOp.t array =
+  [| Add
+   ; And
+   ; FloorDivide
+   ; LShift
+   ; MatrixMultiply
+   ; Multiply
+   ; Modulo (* named Remainder in Python 3.12 *)
+   ; Or
+   ; Power
+   ; RShift
+   ; Subtract
+   ; TrueDivide
+   ; Xor |]
+
+
+let nb_binary_ops = Array.length binary_ops
+
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
     ({FFI.Instruction.opname; starts_line; arg} as instr) next_offset_opt =
   let open IResult.Let_syntax in
@@ -1652,6 +1673,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     | "POP_TOP" ->
         let* _, st = State.pop st in
         Ok (st, None)
+    | "BINARY_OP" ->
+        only_supported_from_python_3_12 opname version ;
+        let op : BuiltinCaller.t =
+          if arg < nb_binary_ops then Binary binary_ops.(arg)
+          else if arg < 2 * nb_binary_ops then Inplace binary_ops.(arg - nb_binary_ops)
+          else assert false
+        in
+        parse_op st op 2
     | "BINARY_ADD" ->
         parse_op st (Binary Add) 2
     | "BINARY_SUBTRACT" ->
@@ -1849,10 +1878,31 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* id, st = call_builtin_function st (Compare cmp) [lhs; rhs] in
         let st = State.push st (Exp.Temp id) in
         Ok (st, None)
+    | "COPY" ->
+        only_supported_from_python_3_12 opname version ;
+        let* elt = State.peek ~depth:(arg - 1) st in
+        let st = State.push_symbol st elt in
+        Ok (st, None)
     | "DUP_TOP" ->
         let* tos = State.peek st in
         let st = State.push_symbol st tos in
         Ok (st, None)
+    | "SWAP" ->
+        only_supported_from_python_3_12 opname version ;
+        let* tos1, st = State.pop st in
+        let* tos2, st = State.pop st in
+        let st = State.push_symbol st tos1 in
+        let st = State.push_symbol st tos2 in
+        Ok (st, None)
+    | "PUSH_NULL" ->
+        only_supported_from_python_3_12 opname version ;
+        let st = State.push_symbol st Null in
+        Ok (st, None)
+    | "RETURN_CONST" ->
+        only_supported_from_python_3_12 opname version ;
+        let* exp = convert_ffi_const st co_consts.(arg) in
+        let* ret = State.cast_exp st exp in
+        Ok (st, Some (TerminatorBuilder.Return ret))
     | "UNPACK_SEQUENCE" ->
         unpack_sequence st arg
     | "FORMAT_VALUE" ->
@@ -2169,6 +2219,10 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "CALL_FUNCTION_KW"
   | "CALL_FUNCTION_EX"
   | "POP_TOP"
+  | "COPY"
+  | "SWAP"
+  | "PUSH_NULL"
+  | "BINARY_OP"
   | "BINARY_ADD"
   | "BINARY_SUBTRACT"
   | "BINARY_AND"
@@ -2272,7 +2326,7 @@ let get_successors_offset {FFI.Instruction.opname; arg} =
   | "MATCH_SEQUENCE"
   | "GET_LEN" ->
       `NextInstrOnly
-  | "RETURN_VALUE" ->
+  | "RETURN_CONST" | "RETURN_VALUE" ->
       `Return
   | "POP_JUMP_IF_TRUE" | "POP_JUMP_IF_FALSE" | "JUMP_IF_NOT_EXC_MATCH" ->
       `NextInstrOrAbsolute (2 * arg)

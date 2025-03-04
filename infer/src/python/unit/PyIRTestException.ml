@@ -20,7 +20,7 @@ finally:
       |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -39,7 +39,7 @@ print("END")
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -54,7 +54,7 @@ print("END")
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -74,7 +74,7 @@ except (ValueError, AttributeError):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -93,7 +93,7 @@ def f(x):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -113,7 +113,7 @@ with open("foo", "r") as fp:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -133,7 +133,7 @@ def subhelper():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -150,7 +150,7 @@ except C as c:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -163,7 +163,7 @@ async def async_with(filename):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -178,7 +178,7 @@ def call_finally():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -194,7 +194,7 @@ def call_finally_with_break():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -204,7 +204,7 @@ def raise_from(e):
 |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -218,7 +218,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -236,7 +236,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -261,7 +261,7 @@ def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -280,4 +280,4 @@ def foo(test):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]

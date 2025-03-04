@@ -22,7 +22,7 @@ base.f(0)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -43,7 +43,7 @@ g()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -55,7 +55,7 @@ class MyTest(unittest.TestCase):
         |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 (* Extracted from Cinder's PyIR.test suite. Currently amended to avoid unsupported opcodes *)
@@ -96,7 +96,7 @@ if __name__ == '__main__':
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -116,7 +116,7 @@ path.X()
   in
   PyIR.test ~filename:"some/long/path/dummy.py" source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -124,8 +124,7 @@ let%expect_test _ =
 pass
 |} in
   PyIR.test ~filename:"./dir1/dir2/script.py" source ;
-  [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -146,7 +145,7 @@ tata()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -155,8 +154,7 @@ let%expect_test _ =
 import xml.etree.ElementTree as ET
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SWAP |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -172,7 +170,7 @@ class Test(unittest.TestCase):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -184,7 +182,7 @@ def f():
           |} in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -202,7 +200,7 @@ def f(ok):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -223,7 +221,7 @@ def test_format_specifier_expressions(self):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -247,7 +245,7 @@ def f():
         |}
   in
   PyIR.test source ;
-  [%expect {| IR error: Unsupported opcode: RETURN_CONST |}]
+  [%expect {| IR error: opcode LOAD_ATTR raised in IndexOutOfBound error |}]
 
 
 let%expect_test _ =
@@ -272,4 +270,4 @@ except Exception as error:
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]

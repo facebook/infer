@@ -21,7 +21,7 @@ def f(**kwargs):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -52,7 +52,7 @@ start()
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -72,7 +72,7 @@ def f(foo, a, b, c):
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: RETURN_CONST |}]
+    IR error: Cannot pop, stack is empty |}]
 
 
 let%expect_test _ =
@@ -94,7 +94,7 @@ f(**d1, x=42)
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]
 
 
 let%expect_test _ =
@@ -109,4 +109,4 @@ print(lst) # [2, 3, 4, 5, 6]
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]

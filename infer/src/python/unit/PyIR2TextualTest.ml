@@ -66,4 +66,4 @@ class C:
   in
   PyIR.test ~run source ;
   [%expect {|
-    IR error: Unsupported opcode: PUSH_NULL |}]
+    IR error: Unsupported opcode: CALL |}]

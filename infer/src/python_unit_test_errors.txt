@@ -1,10 +1,10 @@
-      2     IR error: Unsupported opcode: BINARY_OP 
+     52     IR error: Cannot pop, stack is empty 
+      2     IR error: COMPARE_OP(55): invalid operation 
+      1     IR error: MAKE_FUNCTION: expected a code object but got n5 
+      1     IR error: opcode LOAD_ATTR raised in IndexOutOfBound error 
       1     IR error: Unsupported opcode: BINARY_SLICE 
-      1     IR error: Unsupported opcode: CALL 
+      7     IR error: Unsupported opcode: CALL
+     79     IR error: Unsupported opcode: CALL 
       2     IR error: Unsupported opcode: CALL_INTRINSIC_1 
-      2     IR error: Unsupported opcode: COPY 
+      3     IR error: Unsupported opcode: KW_NAMES 
       1     IR error: Unsupported opcode: LOAD_FAST_AND_CLEAR 
-      7     IR error: Unsupported opcode: PUSH_NULL
-     77     IR error: Unsupported opcode: PUSH_NULL 
-     63     IR error: Unsupported opcode: RETURN_CONST 
-      1     IR error: Unsupported opcode: SWAP 
