@@ -332,6 +332,8 @@ let builtin_name builtin =
       F.asprintf "py_inplace_%s" (binary_op_name op)
   | Binary op ->
       F.asprintf "py_binary_%s" (binary_op_name op)
+  | BinarySlice ->
+      "py_binary_slice"
   | Unary op ->
       F.asprintf "py_unary_%s" (unary_op_name op)
   | Compare op ->
@@ -410,6 +412,12 @@ let of_stmt loc stmt : Textual.Instr.t =
       Let
         { id= None
         ; exp= call_builtin "py_store_deref" [exp_of_ident_str name; (* TODO: add arg *) of_exp rhs]
+        ; loc }
+  | StoreSlice {container; start; end_; rhs} ->
+      Let
+        { id= None
+        ; exp=
+            call_builtin "py_store_slice" [of_exp container; of_exp start; of_exp end_; of_exp rhs]
         ; loc }
   | StoreSubscript {lhs; index; rhs} ->
       Let

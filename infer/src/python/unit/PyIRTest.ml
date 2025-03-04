@@ -622,8 +622,7 @@ def main(a, i, v):
     a[i:] = v
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: STORE_SLICE |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

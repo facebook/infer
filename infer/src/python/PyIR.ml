@@ -300,6 +300,7 @@ module BuiltinCaller = struct
     | FormatFn of FormatFunction.t
     | Inplace of BinaryOp.t
     | Binary of BinaryOp.t
+    | BinarySlice
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
     | GetAIter  (** [GET_AITER] *)
@@ -335,6 +336,8 @@ module BuiltinCaller = struct
     | Binary op ->
         let op = BinaryOp.to_string op in
         sprintf "$Binary.%s" op
+    | BinarySlice ->
+        "$BinarySlice"
     | Inplace op ->
         let op = BinaryOp.to_string op in
         sprintf "$Inplace.%s" op
@@ -632,6 +635,7 @@ module Stmt = struct
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
+    | StoreSlice of {container: Exp.t; start: Exp.t; end_: Exp.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | CallEx of {lhs: SSA.t; exp: Exp.t; kargs: Exp.t; arg_names: Exp.t}
@@ -654,6 +658,8 @@ module Stmt = struct
         F.fprintf fmt "%a.%a <- %a" Exp.pp lhs Ident.pp attr Exp.pp rhs
     | Store {lhs; rhs} ->
         F.fprintf fmt "%a <- %a" ScopedIdent.pp lhs Exp.pp rhs
+    | StoreSlice {container; start; end_; rhs} ->
+        F.fprintf fmt "%a[%a:%a] <- %a" Exp.pp container Exp.pp start Exp.pp end_ Exp.pp rhs
     | StoreSubscript {lhs; index; rhs} ->
         F.fprintf fmt "%a[%a] <- %a" Exp.pp lhs Exp.pp index Exp.pp rhs
     | Call {lhs; exp; args; arg_names} ->
@@ -1760,6 +1766,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let stmt = Stmt.StoreDeref {name; slot= arg; rhs} in
         let st = State.push_stmt st stmt in
         Ok (st, None)
+    | "STORE_SLICE" ->
+        only_supported_from_python_3_12 opname version ;
+        let* end_, st = State.pop_and_cast st in
+        let* start, st = State.pop_and_cast st in
+        let* container, st = State.pop_and_cast st in
+        let* rhs, st = State.pop_and_cast st in
+        let st = State.push_stmt st (StoreSlice {container; start; end_; rhs}) in
+        Ok (st, None)
     | "RETURN_VALUE" ->
         let* ret, st = State.pop_and_cast st in
         Ok (st, Some (TerminatorBuilder.Return ret))
@@ -1813,6 +1827,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         parse_op st (Binary Power) 2
     | "BINARY_RSHIFT" ->
         parse_op st (Binary RShift) 2
+    | "BINARY_SLICE" ->
+        only_supported_from_python_3_12 opname version ;
+        let* end_, st = State.pop_and_cast st in
+        let* start, st = State.pop_and_cast st in
+        let* container, st = State.pop_and_cast st in
+        let* id, st = call_builtin_function st BinarySlice [container; start; end_] in
+        let st = State.push st (Exp.Temp id) in
+        Ok (st, None)
     | "BINARY_TRUE_DIVIDE" ->
         parse_op st (Binary TrueDivide) 2
     | "BINARY_XOR" ->
@@ -2340,6 +2362,7 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "STORE_ATTR"
   | "STORE_SUBSCR"
   | "STORE_DEREF"
+  | "STORE_SLICE"
   | "KW_NAMES"
   | "CALL"
   | "CALL_FUNCTION"
@@ -2361,6 +2384,7 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "BINARY_OR"
   | "BINARY_POWER"
   | "BINARY_RSHIFT"
+  | "BINARY_SLICE"
   | "BINARY_TRUE_DIVIDE"
   | "BINARY_XOR"
   | "INPLACE_ADD"

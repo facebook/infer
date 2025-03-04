@@ -89,8 +89,7 @@ l[0:2]
 l[0:2:1]
           |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: BINARY_SLICE |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

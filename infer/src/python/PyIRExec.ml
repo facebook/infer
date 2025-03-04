@@ -430,6 +430,7 @@ let run_files modules =
         | DeleteDeref _
         | DeleteAttr _
         | StoreDeref _
+        | StoreSlice _
         | SetupAnnotations
         | ImportStar _
         | GenStart _

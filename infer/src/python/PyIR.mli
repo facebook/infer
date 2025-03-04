@@ -109,6 +109,7 @@ module BuiltinCaller : sig
     | FormatFn of FormatFunction.t
     | Inplace of BinaryOp.t
     | Binary of BinaryOp.t
+    | BinarySlice
     | Unary of UnaryOp.t
     | Compare of CompareOp.t
     | GetAIter
@@ -185,6 +186,7 @@ module Stmt : sig
     | Let of {lhs: SSA.t; rhs: Exp.t}
     | SetAttr of {lhs: Exp.t; attr: Ident.t; rhs: Exp.t}
     | Store of {lhs: ScopedIdent.t; rhs: Exp.t}
+    | StoreSlice of {container: Exp.t; start: Exp.t; end_: Exp.t; rhs: Exp.t}
     | StoreSubscript of {lhs: Exp.t; index: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: Exp.t list; arg_names: Exp.t}
     | CallEx of {lhs: SSA.t; exp: Exp.t; kargs: Exp.t; arg_names: Exp.t}
