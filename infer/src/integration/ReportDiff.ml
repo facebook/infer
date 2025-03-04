@@ -50,5 +50,5 @@ let reportdiff ~report_current:current_report_fname ~report_previous:previous_re
     else unfiltered_diff
   in
   let out_path = ResultsDir.get_path Differential in
-  Unix.mkdir_p out_path ;
+  IUnix.mkdir_p out_path ;
   Differential.to_files diff out_path

@@ -8,3 +8,5 @@
 open! IStd
 
 val rename : src:string -> dst:string -> unit
+
+val mkdir_p : ?perm:int -> string -> unit

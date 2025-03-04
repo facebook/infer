@@ -118,8 +118,8 @@ let create_results_dir () =
              remove_results_dir () )
            else
              L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
-  Unix.mkdir_p Config.results_dir ;
-  Unix.mkdir_p (get_path Temporary) ;
+  IUnix.mkdir_p Config.results_dir ;
+  IUnix.mkdir_p (get_path Temporary) ;
   prepare_logging_and_db () ;
   ()
 

@@ -50,7 +50,7 @@ let check_for_existing_file args =
               match List.hd rest with
               | Some arg ->
                   if Str.string_match clang_ignore_regex arg 0 && not (ISys.file_exists arg) then (
-                    Unix.mkdir_p (Filename.dirname arg) ;
+                    IUnix.mkdir_p (Filename.dirname arg) ;
                     let file = Unix.openfile ~mode:[O_CREAT; O_RDONLY] arg in
                     Unix.close file )
               | None ->

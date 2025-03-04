@@ -14,6 +14,8 @@ module Unix = struct
   include Core_unix
 
   let rename ~src:_ ~dst:_ = `Dont_use_istd_unix
+
+  let mkdir_p ?perm:_ _name = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

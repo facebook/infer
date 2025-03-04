@@ -282,7 +282,7 @@ let create_dir dir =
     if not (is_dir_kind (Unix.stat dir).Unix.st_kind) then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
   with Unix.Unix_error _ -> (
-    try Unix.mkdir_p dir ~perm:0o700
+    try IUnix.mkdir_p dir ~perm:0o700
     with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
@@ -294,7 +294,7 @@ let create_dir dir =
 let out_channel_create_with_dir fname =
   try Out_channel.create fname
   with Sys_error _ ->
-    Unix.mkdir_p ~perm:0o700 (Filename.dirname fname) ;
+    IUnix.mkdir_p ~perm:0o700 (Filename.dirname fname) ;
     Out_channel.create fname
 
 

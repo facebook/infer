@@ -945,7 +945,7 @@ module Out = struct
     (* We keep the old simple-lineage output dir for historical reasons and should change it to
        lineage once no external infra code depends on it anymore *)
     let output_dir = Filename.concat Config.results_dir "simple-lineage" in
-    Unix.mkdir_p output_dir ;
+    IUnix.mkdir_p output_dir ;
     match DLS.get channel_key with
     | None ->
         let filename = Format.asprintf "lineage-%a.json" Pid.pp (Unix.getpid ()) in

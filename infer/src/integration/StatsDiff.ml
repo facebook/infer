@@ -180,7 +180,7 @@ let compute_diff ~before ~after =
 
 let file_output (extra_before, extra_after, unchanged, diff) =
   let out_dir = ResultsDir.get_path Differential in
-  Unix.mkdir_p out_dir ;
+  IUnix.mkdir_p out_dir ;
   Yojson.Safe.to_file (out_dir ^/ "stats_previous_only.json") (`List extra_before) ;
   Yojson.Safe.to_file (out_dir ^/ "stats_current_only.json") (`List extra_after) ;
   Yojson.Safe.to_file (out_dir ^/ "stats_unchanged.json") (json_of_entries unchanged) ;

@@ -154,7 +154,7 @@ let clang_cc1_cmd_sanitizer cmd =
         (* replace armv7k arch with armv7 *) "armv7"
     | _, arg when String.is_suffix arg ~suffix:"dep.tmp" ->
         (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
-        Unix.mkdir_p (Filename.dirname arg) ;
+        IUnix.mkdir_p (Filename.dirname arg) ;
         arg
     | "-dependency-file" :: _, _
       when Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db ->

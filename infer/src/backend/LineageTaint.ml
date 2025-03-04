@@ -524,7 +524,7 @@ let collect_coreachable (config : TaintConfig.t) reachable_graph =
 
 let with_result_file filename_parts ~f =
   let filename = Filename.of_parts (Config.results_dir :: filename_parts) in
-  Unix.mkdir_p (Filename.dirname filename) ;
+  IUnix.mkdir_p (Filename.dirname filename) ;
   Out_channel.with_file filename ~f:(fun outchan ->
       f outchan ;
       Out_channel.flush outchan ) ;
