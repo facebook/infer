@@ -20,6 +20,8 @@ module Unix = struct
   let nanosleep _ = `Dont_use_istd_unix
 
   let readdir_opt _ = `Dont_use_istd_unix
+
+  let mkdtemp _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

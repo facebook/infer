@@ -48,7 +48,7 @@ let process_gradle_output_line =
            if IString.Set.mem content seen then acc
            else
              let javac_data = parse_gradle_line ~kotlin:Config.kotlin_capture ~line:content in
-             let out_dir = Unix.mkdtemp capture_output_template in
+             let out_dir = IUnix.mkdtemp capture_output_template in
              (IString.Set.add content seen, (out_dir, javac_data) :: target_dirs) )
 
 

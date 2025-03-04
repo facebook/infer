@@ -14,3 +14,5 @@ val mkdir_p : ?perm:int -> string -> unit
 val nanosleep : float -> unit
 
 val readdir_opt : Caml_unix.dir_handle -> string option
+
+val mkdtemp : string -> string
