@@ -32,70 +32,7 @@ c.set(42)
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- TOPLEVEL[C]
-          n6 <- $Call(n5, 0, "a", n0)
-          TOPLEVEL[c] <- n6
-          n7 <- TOPLEVEL[c]
-          n8 <- n7.x
-          n9 <- TOPLEVEL[c]
-          n10 <- $CallMethod[get](n9, n0)
-          n11 <- TOPLEVEL[c]
-          n12 <- $CallMethod[set](n11, 42, n0)
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- $MakeFunction["dummy.C.__init__", n0, n0, n0, n0]
-          TOPLEVEL[__init__] <- n4
-          n5 <- $MakeFunction["dummy.C.get", n0, n0, n0, n0]
-          TOPLEVEL[get] <- n5
-          n6 <- $MakeFunction["dummy.C.set", n0, n0, n0, n0]
-          TOPLEVEL[set] <- n6
-          return n0
-
-
-      function dummy.C.__init__(self, x, y):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[self]
-          n4.x <- n3
-          n5 <- LOCAL[y]
-          n6 <- LOCAL[self]
-          n6.y <- n5
-          return n0
-
-
-      function dummy.C.get(self):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n4 <- n3.x
-          return n4
-
-
-      function dummy.C.set(self, x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[self]
-          n4.x <- n3
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -137,120 +74,7 @@ print(c.z)
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.IntBox", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "IntBox", n0)
-          TOPLEVEL[IntBox] <- n4
-          n5 <- TOPLEVEL[IntBox]
-          n6 <- TOPLEVEL[int]
-          n7 <- $BuildTuple("box", n5, "return", n6)
-          n8 <- $MakeFunction["dummy.getX", n0, n0, n7, n0]
-          TOPLEVEL[getX] <- n8
-          n9 <- TOPLEVEL[IntBox]
-          n10 <- $Call(n9, 10, n0)
-          TOPLEVEL[c] <- n10
-          n11 <- TOPLEVEL[c]
-          n12 <- n11.x
-          n13 <- TOPLEVEL[c]
-          n13.z <- 10
-          n14 <- TOPLEVEL[c]
-          n15 <- $CallMethod[get](n14, n0)
-          n16 <- TOPLEVEL[c]
-          n17 <- $CallMethod[set](n16, 42, n0)
-          n18 <- TOPLEVEL[c]
-          n19 <- $CallMethod[run](n18, n0)
-          n20 <- TOPLEVEL[print]
-          n21 <- TOPLEVEL[c]
-          n22 <- n21.z
-          n23 <- $Call(n20, n22, n0)
-          return n0
-
-
-      function dummy.IntBox():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "IntBox"
-          $SETUP_ANNOTATIONS
-          n4 <- TOPLEVEL[int]
-          n5 <- TOPLEVEL[__annotations__]
-          n5["x"] <- n4
-          n6 <- TOPLEVEL[int]
-          n7 <- $BuildTuple("x", n6, "return", n0)
-          n8 <- $MakeFunction["dummy.IntBox.__init__", n0, n0, n7, n0]
-          TOPLEVEL[__init__] <- n8
-          n9 <- TOPLEVEL[int]
-          n10 <- $BuildTuple("return", n9)
-          n11 <- $MakeFunction["dummy.IntBox.get", n0, n0, n10, n0]
-          TOPLEVEL[get] <- n11
-          n12 <- TOPLEVEL[int]
-          n13 <- $BuildTuple("x", n12, "return", n0)
-          n14 <- $MakeFunction["dummy.IntBox.set", n0, n0, n13, n0]
-          TOPLEVEL[set] <- n14
-          n15 <- $MakeFunction["dummy.IntBox.run", n0, n0, $BuildTuple("return", n0), n0]
-          TOPLEVEL[run] <- n15
-          n16 <- TOPLEVEL[staticmethod]
-          n17 <- TOPLEVEL[int]
-          n18 <- TOPLEVEL[int]
-          n19 <- $BuildTuple("x", n17, "return", n18)
-          n20 <- $MakeFunction["dummy.IntBox.id", n0, n0, n19, n0]
-          n21 <- $Call(n16, n20, n0)
-          TOPLEVEL[id] <- n21
-          return n0
-
-
-      function dummy.IntBox.__init__(self, x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[self]
-          n4.x <- n3
-          return n0
-
-
-      function dummy.IntBox.get(self):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n4 <- n3.x
-          return n4
-
-
-      function dummy.IntBox.id(x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          return n3
-
-
-      function dummy.IntBox.run(self):
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.IntBox.set(self, x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[self]
-          n4.x <- n3
-          return n0
-
-
-      function dummy.getX(box):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[box]
-          n4 <- $CallMethod[get](n3, n0)
-          return n4 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -270,63 +94,7 @@ class D(C):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["dummy.D", n0, n0, n0, n0]
-          n6 <- TOPLEVEL[C]
-          n7 <- $BuildClass(n5, "D", n6, n0)
-          TOPLEVEL[D] <- n7
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- TOPLEVEL[staticmethod]
-          n5 <- $MakeFunction["dummy.C.f", n0, n0, n0, n0]
-          n6 <- $Call(n4, n5, n0)
-          TOPLEVEL[f] <- n6
-          n7 <- TOPLEVEL[staticmethod]
-          n8 <- TOPLEVEL[int]
-          n9 <- TOPLEVEL[int]
-          n10 <- $BuildTuple("x", n8, "return", n9)
-          n11 <- $MakeFunction["dummy.C.typed_f", n0, n0, n10, n0]
-          n12 <- $Call(n7, n11, n0)
-          TOPLEVEL[typed_f] <- n12
-          return n0
-
-
-      function dummy.C.f():
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.C.typed_f(x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          return n3
-
-
-      function dummy.D():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "D"
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -339,38 +107,7 @@ class C:
 C.f()
         |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- TOPLEVEL[C]
-          n6 <- $CallMethod[f](n5, n0)
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- TOPLEVEL[staticmethod]
-          n5 <- $MakeFunction["dummy.C.f", n0, n0, n0, n0]
-          n6 <- $Call(n4, n5, n0)
-          TOPLEVEL[f] <- n6
-          return n0
-
-
-      function dummy.C.f():
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -389,65 +126,7 @@ def g(c: C) -> None:
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.A", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "A", n0)
-          TOPLEVEL[A] <- n4
-          n5 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n6 <- $BuildClass(n5, "C", n0)
-          TOPLEVEL[C] <- n6
-          n7 <- TOPLEVEL[C]
-          n8 <- $BuildTuple("c", n7, "return", n0)
-          n9 <- $MakeFunction["dummy.g", n0, n0, n8, n0]
-          TOPLEVEL[g] <- n9
-          return n0
-
-
-      function dummy.A():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "A"
-          n4 <- $MakeFunction["dummy.A.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n4
-          return n0
-
-
-      function dummy.A.f(self):
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          $SETUP_ANNOTATIONS
-          n4 <- TOPLEVEL[A]
-          n5 <- TOPLEVEL[__annotations__]
-          n5["a"] <- n4
-          return n0
-
-
-      function dummy.g(c):
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[print]
-          n4 <- LOCAL[c]
-          n5 <- n4.a
-          n6 <- $CallMethod[f](n5, n0)
-          n7 <- $Call(n3, n6, n0)
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -464,52 +143,7 @@ class C(A, B):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.A", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "A", n0)
-          TOPLEVEL[A] <- n4
-          n5 <- $MakeFunction["dummy.B", n0, n0, n0, n0]
-          n6 <- $BuildClass(n5, "B", n0)
-          TOPLEVEL[B] <- n6
-          n7 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n8 <- TOPLEVEL[A]
-          n9 <- TOPLEVEL[B]
-          n10 <- $BuildClass(n7, "C", n8, n9, n0)
-          TOPLEVEL[C] <- n10
-          return n0
-
-
-      function dummy.A():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "A"
-          return n0
-
-
-      function dummy.B():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "B"
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -528,53 +162,7 @@ cs[0].x
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["dummy.build", n0, n0, n0, n0]
-          TOPLEVEL[build] <- n5
-          n6 <- TOPLEVEL[build]
-          n7 <- $Call(n6, n0)
-          TOPLEVEL[cs] <- n7
-          n8 <- TOPLEVEL[cs]
-          n9 <- n8[0]
-          n10 <- n9.x
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- $MakeFunction["dummy.C.__init__", n0, n0, n0, n0]
-          TOPLEVEL[__init__] <- n4
-          return n0
-
-
-      function dummy.C.__init__(self):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n3.x <- 0
-          return n0
-
-
-      function dummy.build():
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[C]
-          n4 <- $Call(n3, n0)
-          n5 <- $BuildList(n4)
-          return n5 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -594,61 +182,7 @@ f()
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n3
-          n4 <- TOPLEVEL[f]
-          n5 <- $Call(n4, n0)
-          return n0
-
-
-      function dummy.f(A, a):
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.f.A", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "A", n0)
-          LOCAL[A] <- n4
-          n5 <- LOCAL[A]
-          n6 <- $Call(n5, n0)
-          LOCAL[a] <- n6
-          n7 <- LOCAL[a]
-          n8 <- $CallMethod[get](n7, n0)
-          return n8
-
-
-      function dummy.f.A():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "f.<locals>.A"
-          n4 <- $MakeFunction["dummy.f.A.__init__", n0, n0, n0, n0]
-          TOPLEVEL[__init__] <- n4
-          n5 <- $MakeFunction["dummy.f.A.get", n0, n0, n0, n0]
-          TOPLEVEL[get] <- n5
-          return n0
-
-
-      function dummy.f.A.__init__(self):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n3.x <- 0
-          return n0
-
-
-      function dummy.f.A.get(self):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n4 <- n3.x
-          return n4 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -660,39 +194,7 @@ class D(C):
   pass
   |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["dummy.D", n0, n0, n0, n0]
-          n6 <- TOPLEVEL[C]
-          n7 <- $BuildClass(n5, "D", n6, n0)
-          TOPLEVEL[D] <- n7
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0
-
-
-      function dummy.D():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "D"
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -715,105 +217,7 @@ class D0(C0):
   |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["dummy.D", n0, n0, n0, n0]
-          n6 <- TOPLEVEL[C]
-          n7 <- $BuildClass(n5, "D", n6, n0)
-          TOPLEVEL[D] <- n7
-          n8 <- $MakeFunction["dummy.C0", n0, n0, n0, n0]
-          n9 <- $BuildClass(n8, "C0", n0)
-          TOPLEVEL[C0] <- n9
-          n10 <- $MakeFunction["dummy.D0", n0, n0, n0, n0]
-          n11 <- TOPLEVEL[C0]
-          n12 <- $BuildClass(n10, "D0", n11, n0)
-          TOPLEVEL[D0] <- n12
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0
-
-
-      function dummy.C0():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C0"
-          n4 <- $MakeFunction["dummy.C0.__init__", n0, n0, n0, n0]
-          TOPLEVEL[__init__] <- n4
-          return n0
-
-
-      function dummy.C0.__init__(foo, x):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[foo]
-          n4.x <- n3
-          return n0
-
-
-      function dummy.D():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "D"
-          n4 <- $LoadClosure(0,"__class__")
-          n5 <- $BuildTuple(n4)
-          n6 <- $MakeFunction["dummy.D.__init__", n0, n0, n0, n5]
-          TOPLEVEL[__init__] <- n6
-          n7 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n7
-          return n7
-
-
-      function dummy.D.__init__(self):
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[super]
-          n4 <- $Call(n3, n0)
-          n5 <- $CallMethod[__init__](n4, n0)
-          return n0
-
-
-      function dummy.D0():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "D0"
-          n4 <- $LoadClosure(0,"__class__")
-          n5 <- $BuildTuple(n4)
-          n6 <- $MakeFunction["dummy.D0.__init__", n0, n0, n0, n5]
-          TOPLEVEL[__init__] <- n6
-          n7 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n7
-          return n7
-
-
-      function dummy.D0.__init__(bar):
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[super]
-          n4 <- $Call(n3, n0)
-          n5 <- $CallMethod[__init__](n4, 42, n0)
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -827,46 +231,7 @@ class C(foo.D):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $ImportName(foo, n0, 0)
-          TOPLEVEL[foo] <- n3
-          n4 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n5 <- TOPLEVEL[foo]
-          n6 <- n5.D
-          n7 <- $BuildClass(n4, "C", n6, n0)
-          TOPLEVEL[C] <- n7
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- $LoadClosure(0,"__class__")
-          n5 <- $BuildTuple(n4)
-          n6 <- $MakeFunction["dummy.C.__init__", n0, n0, n0, n5]
-          TOPLEVEL[__init__] <- n6
-          n7 <- $LoadClosure(0,"__class__")
-          TOPLEVEL[__classcell__] <- n7
-          return n7
-
-
-      function dummy.C.__init__(self, x):
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[super]
-          n4 <- $Call(n3, n0)
-          n5 <- LOCAL[x]
-          n6 <- $CallMethod[__init__](n4, n5, n0)
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -891,66 +256,7 @@ class C(ABC):
 |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $ImportName(abc, $BuildTuple("ABC", "abstractmethod"), 0)
-          n4 <- $ImportFrom(ABC, n3)
-          TOPLEVEL[ABC] <- n4
-          n5 <- $ImportFrom(abstractmethod, n3)
-          TOPLEVEL[abstractmethod] <- n5
-          n6 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n7 <- TOPLEVEL[ABC]
-          n8 <- $BuildClass(n6, "C", n7, n0)
-          TOPLEVEL[C] <- n8
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- TOPLEVEL[abstractmethod]
-          n5 <- $MakeFunction["dummy.C.get", n0, n0, $BuildTuple("return", n0), n0]
-          n6 <- $Call(n4, n5, n0)
-          TOPLEVEL[get] <- n6
-          n7 <- TOPLEVEL[abstractmethod]
-          n8 <- TOPLEVEL[staticmethod]
-          n9 <- $MakeFunction["dummy.C.get_static0", n0, n0, $BuildTuple("return", n0), n0]
-          n10 <- $Call(n8, n9, n0)
-          n11 <- $Call(n7, n10, n0)
-          TOPLEVEL[get_static0] <- n11
-          n12 <- TOPLEVEL[staticmethod]
-          n13 <- TOPLEVEL[abstractmethod]
-          n14 <- $MakeFunction["dummy.C.get_static1", n0, n0, $BuildTuple("return", n0), n0]
-          n15 <- $Call(n13, n14, n0)
-          n16 <- $Call(n12, n15, n0)
-          TOPLEVEL[get_static1] <- n16
-          return n0
-
-
-      function dummy.C.get(self):
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.C.get_static0():
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.C.get_static1():
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -968,54 +274,7 @@ class C:
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- TOPLEVEL[foo]
-          n5 <- TOPLEVEL[x]
-          n6 <- TOPLEVEL[y]
-          n7 <- TOPLEVEL[z]
-          n8 <- $Call(n4, n5, n6, n7, n0)
-          n9 <- $MakeFunction["dummy.C.f", n0, n0, n0, n0]
-          n10 <- $Call(n8, n9, n0)
-          TOPLEVEL[f] <- n10
-          n11 <- TOPLEVEL[foo]
-          n12 <- TOPLEVEL[x]
-          n13 <- TOPLEVEL[y]
-          n14 <- TOPLEVEL[z]
-          n15 <- $CallMethod[bar](n11, n12, n13, n14, n0)
-          n16 <- $MakeFunction["dummy.C.g", n0, n0, n0, n0]
-          n17 <- $Call(n15, n16, n0)
-          TOPLEVEL[g] <- n17
-          return n0
-
-
-      function dummy.C.f(self):
-        b0:
-          n0 <- None
-          return n0
-
-
-      function dummy.C.g(self):
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1030,48 +289,7 @@ class PwdTest(unittest.TestCase):
       |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $ImportName(unittest, n0, 0)
-          TOPLEVEL[unittest] <- n3
-          n4 <- $MakeFunction["dummy.PwdTest", n0, n0, n0, n0]
-          n5 <- TOPLEVEL[unittest]
-          n6 <- n5.TestCase
-          n7 <- $BuildClass(n4, "PwdTest", n6, n0)
-          TOPLEVEL[PwdTest] <- n7
-          return n0
-
-
-      function dummy.PwdTest():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "PwdTest"
-          n4 <- $MakeFunction["dummy.PwdTest.test_values", n0, n0, n0, n0]
-          TOPLEVEL[test_values] <- n4
-          return n0
-
-
-      function dummy.PwdTest.test_values(self, e):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[self]
-          n4 <- GLOBAL[type]
-          n5 <- LOCAL[e]
-          n6 <- n5.pw_gecos
-          n7 <- $Call(n4, n6, n0)
-          n8 <- GLOBAL[str]
-          n9 <- GLOBAL[type]
-          n10 <- $Call(n9, n0, n0)
-          n11 <- $BuildTuple(n8, n10)
-          n12 <- $CallMethod[assertIn](n3, n7, n11, n0)
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1088,46 +306,7 @@ def g():
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- TOPLEVEL[Exception]
-          n5 <- $BuildClass(n3, "C", n4, n0)
-          TOPLEVEL[C] <- n5
-          n6 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n6
-          n7 <- $MakeFunction["dummy.g", n0, n0, n0, n0]
-          TOPLEVEL[g] <- n7
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0
-
-
-      function dummy.f():
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[C]
-          throw n3
-
-
-      function dummy.g():
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[C]
-          n4 <- $Call(n3, n0)
-          throw n4 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1148,42 +327,7 @@ f(0, 0, 0, "toto")
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- $MakeFunction["dummy.f", $BuildTuple(1, 2, "zuck"), n0, n0, n0]
-          TOPLEVEL[f] <- n5
-          n6 <- TOPLEVEL[f]
-          n7 <- $Call(n6, 0, n0)
-          n8 <- TOPLEVEL[f]
-          n9 <- $Call(n8, 10, 100, n0)
-          n10 <- TOPLEVEL[f]
-          n11 <- $Call(n10, 100, 1000, 0, n0)
-          n12 <- TOPLEVEL[f]
-          n13 <- $Call(n12, 0, 0, 0, "toto", n0)
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0
-
-
-      function dummy.f(x, y, z, s):
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1196,36 +340,7 @@ class TestHook:
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.TestHook", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "TestHook", n0)
-          TOPLEVEL[TestHook] <- n4
-          return n0
-
-
-      function dummy.TestHook():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "TestHook"
-          n4 <- TOPLEVEL[RuntimeError]
-          n5 <- $BuildTuple(n0, n4)
-          n6 <- $MakeFunction["dummy.TestHook.__init__", n5, n0, n0, n0]
-          TOPLEVEL[__init__] <- n6
-          return n0
-
-
-      function dummy.TestHook.__init__(self, raise_on_events, exc_type):
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1242,48 +357,7 @@ c.f(0, 1, 2)
 |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- TOPLEVEL[C]
-          n6 <- $Call(n5, n0)
-          TOPLEVEL[c] <- n6
-          n7 <- TOPLEVEL[c]
-          n8 <- $CallMethod[f](n7, 0, n0)
-          n9 <- TOPLEVEL[c]
-          n10 <- $CallMethod[f](n9, 0, 1, n0)
-          n11 <- TOPLEVEL[c]
-          n12 <- $CallMethod[f](n11, 0, 1, 2, n0)
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- $MakeFunction["dummy.C.f", $BuildTuple(1, 10), n0, n0, n0]
-          TOPLEVEL[f] <- n4
-          return n0
-
-
-      function dummy.C.f(self, x, y, z):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[x]
-          n4 <- LOCAL[y]
-          n5 <- $Binary.Add(n3, n4, n0)
-          n6 <- LOCAL[z]
-          n7 <- $Binary.Add(n5, n6, n0)
-          return n7 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1292,31 +366,7 @@ class C:
         x : int = 0
         |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          $SETUP_ANNOTATIONS
-          TOPLEVEL[x] <- 0
-          n4 <- TOPLEVEL[int]
-          n5 <- TOPLEVEL[__annotations__]
-          n5["x"] <- n4
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1331,34 +381,7 @@ class defaultdict:
           |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.defaultdict", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "defaultdict", n0)
-          TOPLEVEL[defaultdict] <- n4
-          return n0
-
-
-      function dummy.defaultdict():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "defaultdict"
-          n4 <- $MakeFunction["dummy.defaultdict.__getitem__", n0, n0, n0, n0]
-          TOPLEVEL[__getitem__] <- n4
-          return n0
-
-
-      function dummy.defaultdict.__getitem__(self, key):
-        b0:
-          n0 <- None
-          return 42 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1380,88 +403,7 @@ def powerset(s):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $ImportName(itertools, n0, 0)
-          TOPLEVEL[itertools] <- n3
-          n4 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n4
-          n5 <- $MakeFunction["dummy.AsyncYieldFrom", n0, n0, n0, n0]
-          n6 <- $BuildClass(n5, "AsyncYieldFrom", n0)
-          TOPLEVEL[AsyncYieldFrom] <- n6
-          n7 <- $MakeFunction["dummy.powerset", n0, n0, n0, n0]
-          TOPLEVEL[powerset] <- n7
-          return n0
-
-
-      function dummy.AsyncYieldFrom():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "AsyncYieldFrom"
-          n4 <- $MakeFunction["dummy.AsyncYieldFrom.__await__", n0, n0, n0, n0]
-          TOPLEVEL[__await__] <- n4
-          return n0
-
-
-      function dummy.AsyncYieldFrom.__await__(self):
-        b0:
-          n0 <- None
-          $GenStartGenerator()
-          n3 <- LOCAL[self]
-          n4 <- n3.obj
-          n5 <- $GetYieldFromIter(n4, n0)
-          n6 <- $YieldFrom(n5, n0, n0)
-          return n0
-
-
-      function dummy.f():
-        b0:
-          n0 <- None
-          $GenStartGenerator()
-          n3 <- $Yield(42)
-          return n0
-
-
-      function dummy.powerset(s):
-        b0:
-          n0 <- None
-          $GenStartGenerator()
-          n3 <- GLOBAL[range]
-          n4 <- GLOBAL[len]
-          n5 <- LOCAL[s]
-          n6 <- $Call(n4, n5, n0)
-          n7 <- $Binary.Add(n6, 1, n0)
-          n8 <- $Call(n3, n7, n0)
-          n9 <- $GetIter(n8, n0)
-          jmp b1
-
-        b1:
-          n10 <- $NextIter(n9, n0)
-          n11 <- $HasNextIter(n9, n0)
-          if n11 then jmp b2 else jmp b3
-
-        b2:
-          LOCAL[i] <- n10
-          n12 <- GLOBAL[map]
-          n13 <- GLOBAL[frozenset]
-          n14 <- GLOBAL[itertools]
-          n15 <- LOCAL[s]
-          n16 <- LOCAL[i]
-          n17 <- $CallMethod[combinations](n14, n15, n16, n0)
-          n18 <- $Call(n12, n13, n17, n0)
-          n19 <- $GetYieldFromIter(n18, n0)
-          n20 <- $YieldFrom(n19, n0, n0)
-          jmp b1
-
-        b3:
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1493,71 +435,7 @@ def g(a, b):
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          n5 <- TOPLEVEL[C]
-          n6 <- $Call(n5, n0)
-          TOPLEVEL[c] <- n6
-          $Delete(TOPLEVEL[c])
-          n7 <- TOPLEVEL[C]
-          n8 <- $Call(n7, n0)
-          GLOBAL[c0] <- n8
-          n9 <- GLOBAL[c0]
-          $DeleteAttr(n9, foo)
-          n10 <- $MakeFunction["dummy.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n10
-          n11 <- $MakeFunction["dummy.g", n0, n0, n0, n0]
-          TOPLEVEL[g] <- n11
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0
-
-
-      function dummy.f(x):
-        b0:
-          n0 <- None
-          $Delete(GLOBAL[c0])
-          $Delete(LOCAL[x])
-          $StoreDeref(0,"z", 0)
-          n3 <- $LoadClosure(0,"z")
-          n4 <- $BuildTuple(n3)
-          n5 <- $MakeFunction["dummy.f.inner", n0, n0, n0, n4]
-          LOCAL[inner] <- n5
-          return n0
-
-
-      function dummy.f.inner():
-        b0:
-          n0 <- None
-          n3 <- GLOBAL[print]
-          n4 <- $LoadDeref(0,"z")
-          n5 <- $Call(n3, n4, n0)
-          $DeleteDeref[0,"z")
-          return n0
-
-
-      function dummy.g(a, b):
-        b0:
-          n0 <- None
-          n3 <- LOCAL[a]
-          n4 <- LOCAL[b]
-          n5 <- $DeleteSubscr(n3, n4, n0)
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1573,61 +451,7 @@ class C:
         |}
   in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- $BuildClass(n3, "C", n0)
-          TOPLEVEL[C] <- n4
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          n4 <- $MakeFunction["dummy.C.f", n0, n0, n0, n0]
-          TOPLEVEL[f] <- n4
-          return n0
-
-
-      function dummy.C.f(self):
-        b0:
-          n0 <- None
-          n3 <- $ImportName(binascii, n0, 0)
-          $StoreDeref(0,"binascii", n3)
-          n4 <- $LoadClosure(0,"binascii")
-          n5 <- $BuildTuple(n4)
-          n6 <- $MakeFunction["dummy.C.f.D", n0, n0, n0, n5]
-          n7 <- $BuildClass(n6, "D", n0)
-          LOCAL[D] <- n7
-          return n0
-
-
-      function dummy.C.f.D():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C.f.<locals>.D"
-          n4 <- $LoadClassDeref(0,"binascii")
-          n5 <- n4.unhexlify
-          n6 <- $BuildTuple(n5)
-          n7 <- $MakeFunction["dummy.C.f.D.g", n6, n0, n0, n0]
-          TOPLEVEL[g] <- n7
-          return n0
-
-
-      function dummy.C.f.D.g(self, unhexlify):
-        b0:
-          n0 <- None
-          return n0 |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -1636,24 +460,4 @@ class C(metaclass=m):
     pass
         |} in
   PyIR.test source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0:
-          n0 <- None
-          n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
-          n4 <- TOPLEVEL[m]
-          n5 <- $BuildClass(n3, "C", n4, $BuildTuple("metaclass"))
-          TOPLEVEL[C] <- n5
-          return n0
-
-
-      function dummy.C():
-        b0:
-          n0 <- None
-          n3 <- TOPLEVEL[__name__]
-          TOPLEVEL[__module__] <- n3
-          TOPLEVEL[__qualname__] <- "C"
-          return n0 |}]
+  [%expect {| |}]

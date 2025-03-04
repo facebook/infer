@@ -249,12 +249,15 @@ end
 
 val mk : debug:bool -> path_prefix:string option -> FFI.Code.t -> (Module.t, Error.t) result
 
-val test : ?filename:string -> ?debug:bool -> ?run:(Module.t -> unit) -> string -> unit
+val test :
+  ?filename:string -> ?debug:bool -> ?run:(Module.t -> unit) -> ?show:bool -> string -> unit
 [@@warning "-unused-value-declaration"]
-(* takes a Python source program as string argument, convert it into PyIR and print the result (or executes [run] on the result) *)
+(* takes a Python source program as string argument, convert it into PyIR and executes [run] on the result
+   (or print the result if [run] is not given and [show] is true) *)
 
 val test_files : ?debug:bool -> ?run:(Module.t list -> unit) -> (string * string) list -> unit
 [@@warning "-unused-value-declaration"]
 (* same as [test] but on a collection of module string representation. The input is a list of (filename, source) pairs *)
 
-val test_cfg_skeleton : ?filename:string -> string -> unit [@@warning "-unused-value-declaration"]
+val test_cfg_skeleton : ?filename:string -> ?show:bool -> string -> unit
+[@@warning "-unused-value-declaration"]

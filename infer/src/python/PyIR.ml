@@ -2661,7 +2661,7 @@ let fold_all_inner_codes_and_build_map ~code_qual_name ~(f : FFI.Code.t -> 'a py
   fold_codes QualName.Map.empty code.FFI.Code.co_consts
 
 
-let test_cfg_skeleton ~code_qual_name code =
+let test_cfg_skeleton ~show ~code_qual_name code =
   let test =
     let open IResult.Let_syntax in
     let* map = build_cfg_skeleton_without_predecessors code in
@@ -2670,7 +2670,7 @@ let test_cfg_skeleton ~code_qual_name code =
   match test with
   | Error (_, _, err) ->
       L.internal_error "IR error: %a@\n" Error.pp_kind err
-  | Ok (topological_order, map) ->
+  | Ok (topological_order, map) when show ->
       let qual_name = code_qual_name code |> Option.value_exn in
       F.printf "%a@\n" QualName.pp qual_name ;
       List.iter code.FFI.Code.instructions ~f:(F.printf "%a@\n" (FFI.Instruction.pp ~code)) ;
@@ -2688,6 +2688,8 @@ let test_cfg_skeleton ~code_qual_name code =
           F.printf "%4d: %a@\n" offset (Pp.seq ~sep:" " F.pp_print_int) predecessors )
         map ;
       F.printf "topological order: %a@\n@\n" (Pp.seq ~sep:" " F.pp_print_int) topological_order
+  | Ok _ ->
+      ()
 
 
 let module_name ~path_prefixes {FFI.Code.co_filename} =
@@ -2743,11 +2745,13 @@ let test_generator ~filename ~f source =
       L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)
 
 
-let test ?(filename = "dummy.py") ?(debug = false) ?run source =
+let test ?(filename = "dummy.py") ?(debug = false) ?run ?(show = false) source =
   let open IResult.Let_syntax in
   let f code =
     let+ module_ = mk ~debug ~path_prefix:None code in
-    let run = Option.value run ~default:(F.printf "%a" Module.pp) in
+    let run =
+      Option.value run ~default:(fun module_ -> if show then F.printf "%a" Module.pp module_)
+    in
     run module_
   in
   test_generator ~filename ~f source
@@ -2765,12 +2769,12 @@ let test_files ?(debug = false) ?run list =
   run (List.rev !units)
 
 
-let test_cfg_skeleton ?(filename = "dummy.py") source =
+let test_cfg_skeleton ?(filename = "dummy.py") ?(show = false) source =
   let open IResult.Let_syntax in
   let f code =
     let file_path = module_name code ~path_prefixes:[] in
     let code_qual_name = build_code_object_unique_name file_path code in
-    test_cfg_skeleton ~code_qual_name code ;
+    test_cfg_skeleton ~show ~code_qual_name code ;
     let f code = Ok (test_cfg_skeleton ~code_qual_name code) in
     let* _ = fold_all_inner_codes_and_build_map code ~code_qual_name ~f in
     Ok ()

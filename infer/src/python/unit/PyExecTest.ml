@@ -19,7 +19,7 @@ print = 0
 builtin_print(print, None, "hello world", True, False)
 |}
   in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
@@ -57,7 +57,7 @@ x = 'x'
 y = 'y'
 print("fst(x, y) =", fst(x, y))
 |} in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
@@ -109,7 +109,7 @@ no_effect(-1)
 print('n =', n)
 |}
   in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
@@ -171,7 +171,7 @@ def fact(n):
 print('fact(5) =', fact(5))
 |}
   in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
@@ -278,7 +278,7 @@ print('x is', C.get_C_x())
 print('saved x is', C.saved_x)
 |}
   in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
@@ -372,7 +372,7 @@ d['z'] = True
 print(d)
 |}
   in
-  PyIR.test source ;
+  PyIR.test ~show:true source ;
   F.printf "Running interpreter:@\n" ;
   PyIR.test ~run:PyIRExec.run source ;
   [%expect
