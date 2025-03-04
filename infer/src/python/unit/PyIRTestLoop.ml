@@ -68,8 +68,7 @@ async def async_loop1():
         foo(doc)
 |} in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

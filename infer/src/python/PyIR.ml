@@ -2409,6 +2409,22 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* exp = State.cast_exp st tos in
         let st = State.push st (GetLen exp) in
         Ok (st, None)
+    | "END_SEND" ->
+        only_supported_from_python_3_12 opname version ;
+        let* tos1, st = State.pop st in
+        let* _, st = State.pop st in
+        let st = State.push_symbol st tos1 in
+        Ok (st, None)
+    | "SEND" ->
+        (* this instruction has 2 successors but the next instr (1st successor) is the entry of a loop
+           we chose to not translate sincie it is just a a waiting loop "while not computation is not done" *)
+        only_supported_from_python_3_12 opname version ;
+        let {State.loc} = st in
+        let* next_offset = Offset.get ~loc next_offset_opt in
+        let* label = State.get_node_name st (next_offset + (2 * arg)) in
+        let {State.stack} = st in
+        let jump = TerminatorBuilder.mk_jump label stack in
+        Ok (st, Some jump)
     | _ ->
         internal_error st (Error.UnsupportedOpcode opname)
   with Invalid_argument _ -> internal_error st (Error.IndexOutOfBound opname)
@@ -2551,7 +2567,8 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "UNPACK_EX"
   | "MATCH_CLASS"
   | "MATCH_SEQUENCE"
-  | "GET_LEN" ->
+  | "GET_LEN"
+  | "END_SEND" ->
       `NextInstrOnly
   | "RETURN_CONST" | "RETURN_VALUE" ->
       `Return
@@ -2573,7 +2590,7 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
         `NextInstrOrRelativeWith2Pop (2 * arg)
     | Python_3_12 ->
         `NextInstrOrRelative (2 * arg) )
-  | "JUMP_FORWARD" ->
+  | "JUMP_FORWARD" | "SEND" ->
       `Relative (2 * arg)
   | "JUMP_BACKWARD" | "JUMP_BACKWARD_NO_INTERRUPT" ->
       `Relative (-2 * arg)

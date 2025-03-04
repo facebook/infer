@@ -464,8 +464,7 @@ async def g():
           |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -532,8 +531,7 @@ async def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+  [%expect {| |}]
 
 
 (* the two examples below show that with Python 3.10, the size of the opstack may

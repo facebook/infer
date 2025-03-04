@@ -154,8 +154,7 @@ async def async_with(filename):
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -206,8 +205,7 @@ async def foo():
 |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -225,7 +223,7 @@ async def foo():
   in
   PyIR.test source ;
   [%expect {|
-    IR error: Unsupported opcode: SEND |}]
+    IR error: Unsupported opcode: LOAD_FAST_CHECK |}]
 
 
 let%expect_test _ =
