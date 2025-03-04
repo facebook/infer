@@ -328,7 +328,7 @@ let suppress_stderr2 f2 x1 x2 =
 let iter_dir name ~f =
   let dir = Unix.opendir name in
   let rec iter dir =
-    match Unix.readdir_opt dir with
+    match IUnix.readdir_opt dir with
     | Some entry ->
         if
           not
