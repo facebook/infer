@@ -173,6 +173,14 @@ let rec of_exp exp : Textual.Exp.t =
       call_builtin "py_load_fast_check" [exp_of_ident_str name; exp_locals]
   | LoadFastAndClear {name} ->
       call_builtin "py_load_fast_and_clear" [exp_of_ident_str name; exp_locals]
+  | LoadLocals ->
+      call_builtin "py_load_locals" [exp_locals]
+  | LoadFromDictOrDeref {slot; mapping} ->
+      let slot = Textual.(Exp.Const (Const.Int (Z.of_int slot))) in
+      call_builtin "py_load_from_dict_or_deref" [slot; of_exp mapping]
+  | LoadSuperAttr {attr; super; class_; self} ->
+      call_builtin "py_load_super_attr"
+        [exp_of_ident_str attr; of_exp super; of_exp class_; of_exp self]
   | ImportName {name; fromlist; level} ->
       let str = typename_of_ident name |> F.asprintf "%a" Textual.TypeName.pp in
       call_builtin str_py_import_name

@@ -1,2 +1,0 @@
-      1     IR error: Unsupported opcode: EAGER_IMPORT_NAME 
-      2     IR error: Unsupported opcode: LOAD_SUPER_ATTR 

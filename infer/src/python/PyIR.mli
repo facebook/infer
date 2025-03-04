@@ -190,6 +190,9 @@ module Exp : sig
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadFastCheck of {name: Ident.t}  (** [LOAD_FAST_CHECK] *)
     | LoadFastAndClear of {name: Ident.t}  (** [LOAD_FAST_AND_CLEAR] *)
+    | LoadLocals  (** [LOAD_LOCALS] *)
+    | LoadFromDictOrDeref of {slot: int; mapping: t}  (** [LOAD_FROM_DICT_OR_DEREF] *)
+    | LoadSuperAttr of {attr: Ident.t; super: t; class_: t; self: t}  (** [LOAD_SUPER_ATTR] *)
     | MatchClass of {subject: t; type_: t; count: int; names: t}
     | BoolOfMatchClass of t
     | AttributesOfMatchClass of t

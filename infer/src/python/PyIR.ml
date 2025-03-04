@@ -485,6 +485,9 @@ module Exp = struct
     | LoadDeref of {name: Ident.t; slot: int}  (** [LOAD_DEREF] *)
     | LoadFastCheck of {name: Ident.t}  (** [LOAD_FAST_CHECK] *)
     | LoadFastAndClear of {name: Ident.t}  (** [LOAD_FAST_AND_CLEAR] *)
+    | LoadLocals  (** [LOAD_LOCALS] *)
+    | LoadFromDictOrDeref of {slot: int; mapping: t}  (** [LOAD_FROM_DICT_OR_DEREF] *)
+    | LoadSuperAttr of {attr: Ident.t; super: t; class_: t; self: t}  (** [LOAD_SUPER_ATTR] *)
     | MatchClass of {subject: t; type_: t; count: int; names: t}
     | BoolOfMatchClass of t
     | AttributesOfMatchClass of t
@@ -551,6 +554,12 @@ module Exp = struct
         F.fprintf fmt "$LoadClosure(%d,\"%a\")" slot Ident.pp name
     | LoadDeref {name; slot} ->
         F.fprintf fmt "$LoadDeref(%d,\"%a\")" slot Ident.pp name
+    | LoadLocals ->
+        F.pp_print_string fmt "$Loadlocals()"
+    | LoadFromDictOrDeref {slot; mapping} ->
+        F.fprintf fmt "$LoadFromDictOrDeref(%d, %a)" slot pp mapping
+    | LoadSuperAttr {attr; self; class_; super} ->
+        F.fprintf fmt "$LoadSuperAttr(\"%a\", %a, %a, %a)" Ident.pp attr pp self pp class_ pp super
     | LoadClassDeref {name; slot} ->
         F.fprintf fmt "$LoadClassDeref(%d,\"%a\")" slot Ident.pp name
     | LoadFastCheck {name} ->
@@ -2063,7 +2072,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let stmt = Stmt.GenStart {kind} in
         let st = State.push_stmt st stmt in
         Ok (st, None)
-    | "IMPORT_NAME" ->
+    | "IMPORT_NAME" | "EAGER_IMPORT_NAME" (* note: I did not find spec for this opcode *) ->
         let name = co_names.(arg) |> Ident.mk in
         let* fromlist, st = State.pop_and_cast st in
         let* level, st = State.pop_and_cast st in
@@ -2100,6 +2109,25 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* lhs, st = State.pop_and_cast st in
         let* id, st = call_builtin_function st (Compare cmp_op) [lhs; rhs] in
         let st = State.push st (Exp.Temp id) in
+        Ok (st, None)
+    | "LOAD_LOCALS" ->
+        let st = State.push st LoadLocals in
+        Ok (st, None)
+    | "LOAD_FROM_DICT_OR_DEREF" ->
+        let* mapping, st = State.pop_and_cast st in
+        let st = State.push st (LoadFromDictOrDeref {slot= arg; mapping}) in
+        Ok (st, None)
+    | "LOAD_SUPER_ATTR" ->
+        let* self, st = State.pop_and_cast st in
+        let* class_, st = State.pop_and_cast st in
+        let* super, st = State.pop_and_cast st in
+        let attr = co_names.(arg lsr 2) |> Ident.mk in
+        let lhs, st = State.fresh_id st in
+        let rhs = Exp.LoadSuperAttr {attr; self; class_; super} in
+        let st = State.push_stmt st (Let {lhs; rhs}) in
+        (* TODO: use [arg land 2] *)
+        let st = if arg land 1 <> 0 then State.push_symbol st Null else st in
+        let st = State.push st (Exp.Temp lhs) in
         Ok (st, None)
     | "LOAD_CLOSURE" ->
         let* name = get_cell_name code st arg argval in
@@ -2561,9 +2589,13 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
   | "GEN_START"
   | "SETUP_ANNOTATIONS"
   | "IMPORT_NAME"
+  | "EAGER_IMPORT_NAME"
   | "IMPORT_FROM"
   | "IMPORT_STAR"
   | "COMPARE_OP"
+  | "LOAD_LOCALS"
+  | "LOAD_FROM_DICT_OR_DEREF"
+  | "LOAD_SUPER_ATTR"
   | "LOAD_CLOSURE"
   | "RESUME"
   | "NOP"

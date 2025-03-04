@@ -217,8 +217,7 @@ class D0(C0):
   |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_SUPER_ATTR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -232,8 +231,7 @@ class C(foo.D):
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: LOAD_SUPER_ATTR |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -453,8 +451,7 @@ class C:
         |}
   in
   PyIR.test source ;
-  [%expect {|
-    IR error: Unsupported opcode: EAGER_IMPORT_NAME |}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
