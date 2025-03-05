@@ -37,6 +37,8 @@ module Unix = struct
   let close_process_in _ = `Dont_use_istd_unix
 
   let getpid () = `Dont_use_istd_unix
+
+  let waitpid _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

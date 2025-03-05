@@ -150,7 +150,7 @@ let killall slots =
   Array.iter slots ~f:(fun {pid} ->
       match Signal_unix.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
   Array.iter slots ~f:(fun {pid} ->
-      try Unix.wait (`Pid pid) |> ignore
+      try IUnix.waitpid pid |> ignore
       with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
   has_running_children := false
@@ -164,7 +164,7 @@ let one_child_died pool ~slot status =
 
 let has_dead_child pool =
   let open Option.Monad_infix in
-  Unix.wait_nohang `Any
+  IUnix.wait_nohang_any ()
   >>= fun (dead_pid, status) ->
   (* Some joker can [exec] an infer binary from a process that already has children. When some of
      these pre-existing children die they'll get detected here but won't appear in our list of
@@ -240,7 +240,7 @@ let process_update pool = function
          we receive it we know we should fail hard *)
       let {pid} = pool.slots.(slot) in
       (* clean crash, give the child process a chance to cleanup *)
-      Unix.wait (`Pid pid) |> ignore ;
+      IUnix.waitpid pid |> ignore ;
       one_child_died pool ~slot "see backtrace above"
   | Ready {worker= slot; heap_words; result} ->
       ( match pool.children_states.(slot) with
@@ -300,10 +300,10 @@ let wait_all pool =
      eventually anyway. *)
   let errors =
     Array.foldi ~init:[] pool.slots ~f:(fun slot errors {pid} ->
-        match Unix.wait (`Pid pid) with
-        | _pid, Ok () ->
+        match IUnix.waitpid pid with
+        | Ok () ->
             errors
-        | _pid, (Error _ as status) ->
+        | Error _ as status ->
             (* Collect all children errors and die only at the end to avoid creating zombies. *)
             (slot, status) :: errors )
   in

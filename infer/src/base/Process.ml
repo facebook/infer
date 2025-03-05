@@ -43,7 +43,7 @@ let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
   In_channel.close channel_to_log ;
   Unix.close redirected_fd ;
   Unix.close stdin ;
-  match Unix.waitpid pid with
+  match IUnix.waitpid pid with
   | Ok () ->
       Utils.with_file_in output_file ~f:In_channel.input_all
   | Error _ as status ->
@@ -70,8 +70,8 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
       ~stdout:Unix.stdout ~stderr:Unix.stderr
   in
   (* wait for children *)
-  let producer_status = Unix.waitpid (Pid.of_int producer_pid) in
-  let consumer_status = Unix.waitpid (Pid.of_int consumer_pid) in
+  let producer_status = IUnix.waitpid (Pid.of_int producer_pid) in
+  let consumer_status = IUnix.waitpid (Pid.of_int consumer_pid) in
   Unix.close pipe_out ;
   Unix.close pipe_in ;
   (producer_status, consumer_status)

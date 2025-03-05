@@ -41,7 +41,7 @@ let capture ~prog ~args =
   Unix.close stdin ;
   Utils.with_channel_in stdout_chan ~f:(L.progress "XCODEBUILD: %s@.") ;
   Utils.with_channel_in stderr_chan ~f:(L.progress "XCODEBUILD: %s@.") ;
-  match Unix.waitpid pid with
+  match IUnix.waitpid pid with
   | Ok () ->
       In_channel.close stdout_chan ;
       In_channel.close stderr_chan

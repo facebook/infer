@@ -423,7 +423,7 @@ let compile compiler args ~process_output =
   let hackc_pid, hackc_stdout = start_hackc compiler args in
   let tenv, _, n_error = process_output hackc_stdout in
   In_channel.close hackc_stdout ;
-  ( match Unix.waitpid hackc_pid with
+  ( match IUnix.waitpid hackc_pid with
   | Error _ as status ->
       L.die ExternalError "Error executing hackc: %s@\n" (Unix.Exit_or_signal.to_string_hum status)
   | Ok () ->

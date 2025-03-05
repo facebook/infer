@@ -35,3 +35,7 @@ val close_process_in : In_channel.t -> Exit_or_signal.t
 module Pid = Pid
 
 val getpid : unit -> Pid.t
+
+val waitpid : Pid.t -> Exit_or_signal.t
+
+val wait_nohang_any : unit -> (Pid.t * Exit_or_signal.t) option

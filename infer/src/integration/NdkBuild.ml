@@ -38,7 +38,7 @@ let capture ~build_cmd =
   Unix.close stdin ;
   Unix.close stdout ;
   In_channel.close ndk_stderr ;
-  match Unix.waitpid pid with
+  match IUnix.waitpid pid with
   | Ok () ->
       ()
   | Error _ as err ->

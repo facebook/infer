@@ -109,7 +109,7 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
   Unix.close stdin ;
   Unix.close stdout ;
   In_channel.close buck_stderr ;
-  match Unix.waitpid pid with
+  match IUnix.waitpid pid with
   | Ok () -> (
     match Utils.read_file stdout_file with
     | Ok lines ->

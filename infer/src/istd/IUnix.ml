@@ -65,3 +65,21 @@ module Exit_or_signal = Unix.Exit_or_signal
 let close_process_in ic = Exit_or_signal.of_unix (Caml_unix.close_process_in ic)
 
 let getpid () = Pid.of_int (Caml_unix.getpid ())
+
+let do_maybe_restart ~restart f =
+  let rec retry_until_no_eintr f =
+    try f () with Caml_unix.Unix_error (EINTR, _, _) -> retry_until_no_eintr f
+  in
+  if restart then retry_until_no_eintr f else f ()
+
+
+let waitpid pid =
+  do_maybe_restart ~restart:true (fun () ->
+      let _, process_status = Caml_unix.waitpid [] (Pid.to_int pid) in
+      Exit_or_signal.of_unix process_status )
+
+
+let wait_nohang_any () =
+  do_maybe_restart ~restart:true (fun () ->
+      let pid, process_status = Caml_unix.waitpid [WNOHANG] (-1) in
+      if Int.( = ) 0 pid then None else Some (Pid.of_int pid, Exit_or_signal.of_unix process_status) )
