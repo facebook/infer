@@ -133,7 +133,7 @@ let reset_duplicates_file () =
 
 
 let check_xcpretty () =
-  match Unix.system "xcpretty --version" with
+  match IUnix.system "xcpretty --version" with
   | Ok () ->
       ()
   | Error _ ->

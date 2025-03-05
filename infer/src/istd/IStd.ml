@@ -61,6 +61,8 @@ module Unix = struct
   let listen _fd ~backlog:_ = `Dont_use_istd_unix
 
   let select ?restart:_ ~read:_ ~write:_ ~except:_ ~timeout:_ () = `Dont_use_istd_unix
+
+  let system _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

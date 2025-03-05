@@ -90,3 +90,5 @@ val select :
   -> timeout:select_timeout
   -> unit
   -> Select_fds.t
+
+val system : string -> Exit_or_signal.t

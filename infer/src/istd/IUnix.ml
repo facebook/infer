@@ -144,3 +144,6 @@ let select ?(restart = false) ~read ~write ~except ~timeout () =
     do_maybe_restart ~restart (fun () -> Caml_unix.select read write except timeout)
   in
   {Select_fds.read; write; except}
+
+
+let system s = Exit_or_signal.of_unix (Caml_unix.system s)
