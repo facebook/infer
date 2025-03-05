@@ -148,7 +148,7 @@ let has_running_children = ref false
 
 let killall slots =
   Array.iter slots ~f:(fun {pid} ->
-      match Signal_unix.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
+      try Caml_unix.kill (Pid.to_int pid) Signal.(to_caml_int term) with _ -> () ) ;
   Array.iter slots ~f:(fun {pid} ->
       try IUnix.waitpid pid |> ignore
       with Caml_unix.Unix_error (ECHILD, _, _) ->

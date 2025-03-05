@@ -31,8 +31,7 @@
  -cclib -Wl,-Bdynamic
  -cclib -lcomprmarsh -cclib -lcamlzip -cclib -lz -cclib -lpthread -cclib -lparmap_stubs
  -cclib -lmtime_clock_stubs -cclib -lrt -cclib -lcamlstrnat -cclib -lfilename_unix_stubs
- -cclib -lsys_unix_stubs -cclib -lcore_unix_stubs -cclib -lspawn_stubs -cclib -lsignal_unix_stubs
- -cclib -lerror_checking_mutex_stubs -cclib -lthreadsnat -cclib -lpthread
+ -cclib -lsys_unix_stubs -cclib -lspawn_stubs -cclib -lthreadsnat -cclib -lpthread
  -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lstdcompat_stubs -cclib -lcore_stubs -cclib -lheap_block_stubs
  -cclib -lbase_bigstring_stubs -cclib -lexpect_test_collector_stubs -cclib -ltime_now_stubs
  -cclib -lbin_prot_stubs -cclib -lunixnat -cclib -lbase_stubs -cclib -lbase_internalhash_types_stubs

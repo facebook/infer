@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t = Caml_threads.Mutex.t
+type t = Stdlib.Mutex.t
 
 val create : unit -> t
 

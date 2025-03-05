@@ -6,10 +6,10 @@
  *)
 open! IStd
 
-type t = Caml_threads.Mutex.t
+type t = Stdlib.Mutex.t
 
-let create () = Caml_threads.Mutex.create ()
+let create () = Stdlib.Mutex.create ()
 
 let critical_section l ~f =
-  Caml_threads.Mutex.lock l ;
-  Exn.protect ~f ~finally:(fun () -> Caml_threads.Mutex.unlock l)
+  Stdlib.Mutex.lock l ;
+  Exn.protect ~f ~finally:(fun () -> Stdlib.Mutex.unlock l)
