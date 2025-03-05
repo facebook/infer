@@ -29,12 +29,12 @@ module ServerSocket = struct
      not using DbWriter at all in case it fails. See {!can_use_socket} below. *)
   let setup_socket () =
     if socket_exists () then L.die InternalError "Sqlite write daemon: socket already exists@." ;
-    let socket = Unix.socket ~domain:socket_domain ~kind:SOCK_STREAM ~protocol:0 () in
-    in_results_dir ~f:(fun () -> Unix.bind socket ~addr:socket_addr) ;
+    let socket = IUnix.socket ~domain:socket_domain ~kind:SOCK_STREAM ~protocol:0 () in
+    in_results_dir ~f:(fun () -> IUnix.bind socket ~addr:socket_addr) ;
     (* [backlog] is (supposedly) the length of the queue for pending connections ;
        there are no rules about the implied behaviour though.  Here use optimistically
        the number of workers, though even that is a guess. *)
-    Unix.listen socket ~backlog:Config.jobs ;
+    IUnix.listen socket ~backlog:Config.jobs ;
     socket
 
 

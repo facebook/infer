@@ -111,3 +111,17 @@ type open_flag = Caml_unix.open_flag
 let openfile ?(perm = 0o644) ~mode filename = Caml_unix.openfile filename mode perm
 
 let close fd = Caml_unix.close fd
+
+type socket_domain = Caml_unix.socket_domain
+
+type socket_type = Caml_unix.socket_type
+
+let socket ?close_on_exec ~domain ~kind ~protocol () =
+  Caml_unix.socket ?cloexec:close_on_exec domain kind protocol
+
+
+type sockaddr = Caml_unix.sockaddr
+
+let bind fd ~addr = Caml_unix.bind fd addr
+
+let listen fd ~backlog = Caml_unix.listen fd backlog

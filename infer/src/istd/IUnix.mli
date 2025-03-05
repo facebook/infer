@@ -59,3 +59,21 @@ type open_flag = Caml_unix.open_flag
 val openfile : ?perm:file_perm -> mode:open_flag list -> string -> File_descr.t
 
 val close : File_descr.t -> unit
+
+type socket_domain = Caml_unix.socket_domain
+
+type socket_type = Caml_unix.socket_type
+
+val socket :
+     ?close_on_exec:bool
+  -> domain:socket_domain
+  -> kind:socket_type
+  -> protocol:int
+  -> unit
+  -> File_descr.t
+
+type sockaddr = Caml_unix.sockaddr
+
+val bind : File_descr.t -> addr:sockaddr -> unit
+
+val listen : File_descr.t -> backlog:int -> unit

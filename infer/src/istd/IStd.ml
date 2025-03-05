@@ -53,6 +53,12 @@ module Unix = struct
   let openfile ?perm:_ ~mode:_ _filename = `Dont_use_istd_unix
 
   let close _ = `Dont_use_istd_unix
+
+  let socket ?close_on_exec:_ ~domain:_ ~kind:_ ~protocol:_ () = `Dont_use_istd_unix
+
+  let bind _fd ~addr:_ = `Dont_use_istd_unix
+
+  let listen _fd ~backlog:_ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)
