@@ -145,4 +145,4 @@ let to_list_rev xs = fold ~f:(fun x ys -> x :: ys) xs []
 
 let to_list_rev_map xs ~f = fold ~f:(fun x ys -> f x :: ys) xs []
 
-let pp sep pp_elt fs a = List.pp sep pp_elt fs (to_list a)
+let pp sep pp_elt fs a = NSList.pp sep pp_elt fs (to_list a)

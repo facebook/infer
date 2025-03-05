@@ -17,11 +17,7 @@
    -open
    IBase
    -open
-   Textuallib
-   -open
-   Llair
-   -open
-   NS))
+   Textuallib))
  (libraries core zarith IStdlib IBase Textuallib Llair NS ppx_show.runtime)
  (preprocess
   (pps ppx_compare ppx_enumerate ppx_hash ppx_show)))

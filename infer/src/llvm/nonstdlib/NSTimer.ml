@@ -35,7 +35,7 @@ let stop_ t =
   t.uaggregate <- t.uaggregate +. ud ;
   t.saggregate <- t.saggregate +. sd ;
   let usd = ud +. sd in
-  if Float.(t.max < usd) then t.max <- usd ;
+  if NSFloat.(t.max < usd) then t.max <- usd ;
   t.count <- t.count + 1 ;
   (tms_utime, tms_stime)
 
@@ -46,7 +46,7 @@ let stop_report t report =
   if !enabled then
     let tms_utime, tms_stime = stop_ t in
     let elapsed = tms_utime +. tms_stime -. (t.ustart +. t.sstart) in
-    if Float.(elapsed > t.threshold) then (
+    if NSFloat.(elapsed > t.threshold) then (
       t.threshold <- elapsed ;
       report ~name:t.name ~elapsed:(elapsed *. 1000.)
         ~aggregate:((t.uaggregate +. t.saggregate) *. 1000.)
@@ -57,7 +57,7 @@ let create ?at_exit:printf name =
   let t =
     {ustart= 0.; uaggregate= 0.; sstart= 0.; saggregate= 0.; count= 0; max= 0.; threshold= 0.; name}
   in
-  Option.iter printf ~f:(fun report ->
+  NSOption.iter printf ~f:(fun report ->
       at_exit (fun () ->
           if !enabled then
             report ~name:t.name ~elapsed:(t.max *. 1000.)

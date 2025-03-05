@@ -15,7 +15,7 @@ type 'compare_elt compare = 'compare_elt Set.compare [@@deriving compare, equal,
 module Make_from_Comparer (Elt : sig
   type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 end) =
 struct
   module S = Set.Make [@inlined] (Elt)
@@ -39,11 +39,11 @@ struct
 
   let of_ = S.singleton
 
-  let of_option xo = Option.map_or ~f:S.singleton xo ~default:empty
+  let of_option xo = NSOption.map_or ~f:S.singleton xo ~default:empty
 
   let add x s = S.add x s
 
-  let add_option = Option.fold ~f:add
+  let add_option = NSOption.fold ~f:add
 
   let add_list xs s = S.union (S.of_list xs) s
 
@@ -59,7 +59,7 @@ struct
 
   let diff_inter_diff s t = (diff s t, inter s t, diff t s)
 
-  let union_list ss = List.fold ~f:union ss empty
+  let union_list ss = NSList.fold ~f:union ss empty
 
   let is_empty = S.is_empty
 
@@ -126,7 +126,7 @@ struct
   let reduce xs ~f = match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
 
   let pp_full ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
-    List.pp ?pre ?suf sep pp_elt fs (S.elements x)
+    NSList.pp ?pre ?suf sep pp_elt fs (S.elements x)
 
 
   module Provide_pp (Elt : sig
@@ -153,6 +153,6 @@ module Make (Elt : sig
 end) =
 Make_from_Comparer (struct
   include Elt
-  include Comparer.Make (Elt)
+  include NSComparer.Make (Elt)
 end)
 [@@inline]

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open Llair
 open Llair2TextualType
 
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
@@ -108,7 +109,7 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
   | Integer {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
-      else if Z.is_false data then Textual.Exp.Const Null
+      else if NS.Z.is_false data then Textual.Exp.Const Null
       else Textual.Exp.Const (Int data)
   | Float {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
@@ -217,7 +218,7 @@ let cmnd_to_instrs block =
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in
         to_textual_builtin reg name args loc
-    | Move {reg_exps: (Reg.t * Exp.t) iarray; loc} ->
+    | Move {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
         let reg_exps = StdUtils.iarray_to_list reg_exps in
         let exps = List.concat_map ~f:(fun (reg, exp) -> [Reg.to_exp reg; exp]) reg_exps in
         to_textual_builtin None "llvm_move" exps loc

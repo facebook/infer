@@ -11,7 +11,7 @@ include module type of Containers.Option with module Infix := Containers.Option.
 
 type 'a t = 'a option [@@deriving compare, equal, sexp]
 
-include Monad_intf.S with type 'a t := 'a t
+include NSMonad_intf.S with type 'a t := 'a t
 
 val get_exn : 'a t -> 'a
 

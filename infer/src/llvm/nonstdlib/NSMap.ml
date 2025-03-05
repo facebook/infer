@@ -16,7 +16,7 @@ type ('compare_key, 'compare_a) compare = ('compare_key, 'compare_a) Map.compare
 module Make_from_Comparer (Key : sig
   type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 end) =
 struct
   module M = Map.Make [@inlined] (Key)
@@ -175,10 +175,10 @@ struct
               Some v )
         m
     in
-    (Option.get_exn !result, m)
+    (NSOption.get_exn !result, m)
 
 
-  let pop_min_binding m = min_binding m |> Option.map ~f:(fun (k, v) -> (k, v, remove k m))
+  let pop_min_binding m = min_binding m |> NSOption.map ~f:(fun (k, v) -> (k, v, remove k m))
 
   let update k m ~f = M.update k f m
 
@@ -234,7 +234,7 @@ struct
 
   let pp pp_k pp_v fs m =
     Format.fprintf fs "@[<1>[%a]@]"
-      (List.pp ",@ " (fun fs (k, v) -> Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v))
+      (NSList.pp ",@ " (fun fs (k, v) -> Format.fprintf fs "@[%a@ @<2>↦ %a@]" pp_k k pp_v v))
       (Iter.to_list (to_iter m))
 
 
@@ -249,7 +249,7 @@ struct
           Format.fprintf fs "[@[%a@ @<2>↦ %a@]]" pp_key k pp_diff_val vv
     in
     let sd = Iter.to_list (symmetric_diff ~eq x y) in
-    List.pp ~pre ~suf sep pp_diff_elt fs sd
+    NSList.pp ~pre ~suf sep pp_diff_elt fs sd
 end
 [@@inline]
 
@@ -258,6 +258,6 @@ module Make (Key : sig
 end) =
 Make_from_Comparer (struct
   include Key
-  include Comparer.Make (Key)
+  include NSComparer.Make (Key)
 end)
 [@@inline]

@@ -7,6 +7,8 @@
 
 (** Expressions *)
 
+open! NS
+
 [@@@warning "+missing-record-field-pattern"]
 
 module T = struct
@@ -14,7 +16,7 @@ module T = struct
     (* conversion *)
     | Signed of {bits: int}
     | Unsigned of {bits: int}
-    | Convert of {src: Typ.t}
+    | Convert of {src: LlairTyp.t}
     (* array/struct operations *)
     | Splat
     | Select of int
@@ -60,16 +62,16 @@ module T = struct
     | Record [@@deriving compare, equal, sexp]
 
   type t =
-    | Reg of {id: int; name: string; typ: Typ.t}
-    | Global of {name: string; typ: Typ.t [@ignore]}
-    | FuncName of {name: string; typ: Typ.t [@ignore]}
+    | Reg of {id: int; name: string; typ: LlairTyp.t}
+    | Global of {name: string; typ: LlairTyp.t [@ignore]}
+    | FuncName of {name: string; typ: LlairTyp.t [@ignore]}
     | Label of {parent: string; name: string}
-    | Integer of {data: Z.t; typ: Typ.t}
-    | Float of {data: string; typ: Typ.t}
-    | Ap1 of op1 * Typ.t * t
-    | Ap2 of op2 * Typ.t * t * t
-    | Ap3 of op3 * Typ.t * t * t * t
-    | ApN of opN * Typ.t * t iarray
+    | Integer of {data: Z.t; typ: LlairTyp.t}
+    | Float of {data: string; typ: LlairTyp.t}
+    | Ap1 of op1 * LlairTyp.t * t
+    | Ap2 of op2 * LlairTyp.t * t * t
+    | Ap3 of op3 * LlairTyp.t * t * t * t
+    | ApN of opN * LlairTyp.t * t iarray
   [@@deriving compare, equal, sexp]
 
   let hash = Poly.hash
@@ -162,11 +164,11 @@ module T = struct
     | Float {data} ->
         pf "%s" data
     | Ap1 (Signed {bits}, dst, arg) ->
-        pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg
+        pf "((%a)(s%i)@ %a)" LlairTyp.pp dst bits pp arg
     | Ap1 (Unsigned {bits}, dst, arg) ->
-        pf "((%a)(u%i)@ %a)" Typ.pp dst bits pp arg
+        pf "((%a)(u%i)@ %a)" LlairTyp.pp dst bits pp arg
     | Ap1 (Convert {src}, dst, arg) ->
-        pf "((%a)(%a)@ %a)" Typ.pp dst Typ.pp src pp arg
+        pf "((%a)(%a)@ %a)" LlairTyp.pp dst LlairTyp.pp src pp arg
     | Ap1 (Splat, _, byt) ->
         pf "%a^" pp byt
     | Ap1 (Select idx, _, rcd) ->
@@ -219,7 +221,7 @@ let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
   | Reg {typ} | Global {typ} ->
-      assert (Typ.is_sized typ)
+      assert (LlairTyp.is_sized typ)
   | FuncName {typ= Pointer {elt= Function _}} ->
       ()
   | FuncName _ ->
@@ -239,16 +241,16 @@ let rec invariant exp =
   | Label _ ->
       assert true
   | Ap1 (Signed {bits}, Integer {bits= dst_bits}, arg) -> (
-    match typ_of arg with Typ.Integer _ -> assert (bits <= dst_bits) | _ -> assert false )
+    match typ_of arg with LlairTyp.Integer _ -> assert (bits <= dst_bits) | _ -> assert false )
   | Ap1 (Unsigned {bits}, Integer {bits= dst_bits}, arg) -> (
     match typ_of arg with
-    | Typ.Integer _ ->
+    | LlairTyp.Integer _ ->
         assert (bits < dst_bits || fail "Unsigned conversion requires at least one spare bit" ())
     | _ ->
         assert false )
   | Ap1 (Signed {bits}, Array {len= dst_len; elt= Integer {bits= dst_bits}}, arg) -> (
     match typ_of arg with
-    | Typ.Array {len= src_len; elt= Integer {bits= src_bits}} ->
+    | LlairTyp.Array {len= src_len; elt= Integer {bits= src_bits}} ->
         assert (bits == src_bits) ;
         assert (src_bits <= dst_bits) ;
         assert (src_len == dst_len)
@@ -256,7 +258,7 @@ let rec invariant exp =
         assert false )
   | Ap1 (Unsigned {bits}, Array {len= dst_len; elt= Integer {bits= dst_bits}}, arg) -> (
     match typ_of arg with
-    | Typ.Array {len= src_len; elt= Integer {bits= src_bits}} ->
+    | LlairTyp.Array {len= src_len; elt= Integer {bits= src_bits}} ->
         assert (bits == src_bits) ;
         assert (src_bits < dst_bits) ;
         assert (dst_len == src_len)
@@ -267,11 +269,11 @@ let rec invariant exp =
   | Ap1 (Convert {src= Integer _}, Integer _, _) ->
       assert false
   | Ap1 (Convert {src}, dst, arg) ->
-      assert (Typ.convertible src dst) ;
-      assert (Typ.castable src (typ_of arg)) ;
-      assert (not (Typ.equal src dst) (* avoid redundant representations *))
+      assert (LlairTyp.convertible src dst) ;
+      assert (LlairTyp.castable src (typ_of arg)) ;
+      assert (not (LlairTyp.equal src dst) (* avoid redundant representations *))
   | Ap1 (Select idx, typ, rcd) -> (
-      assert (Typ.castable typ (typ_of rcd)) ;
+      assert (LlairTyp.castable typ (typ_of rcd)) ;
       match typ with
       | Array _ ->
           assert true
@@ -280,16 +282,16 @@ let rec invariant exp =
       | _ ->
           assert false )
   | Ap1 (Splat, typ, byt) ->
-      assert (Typ.convertible Typ.byt (typ_of byt)) ;
-      assert (Typ.is_sized typ)
+      assert (LlairTyp.convertible LlairTyp.byt (typ_of byt)) ;
+      assert (LlairTyp.is_sized typ)
   | Ap2 (Update idx, typ, rcd, elt) -> (
-      assert (Typ.castable typ (typ_of rcd)) ;
+      assert (LlairTyp.castable typ (typ_of rcd)) ;
       match typ with
       | Tuple {elts} | Struct {elts} ->
           assert (valid_idx idx elts) ;
-          assert (Typ.castable (snd (IArray.get elts idx)) (typ_of elt))
+          assert (LlairTyp.castable (snd (IArray.get elts idx)) (typ_of elt))
       | Array {elt= typ_elt} ->
-          assert (Typ.castable typ_elt (typ_of elt))
+          assert (LlairTyp.castable typ_elt (typ_of elt))
       | _ ->
           assert false )
   | Ap2 (op, typ, x, y) -> (
@@ -301,23 +303,23 @@ let rec invariant exp =
     | (Mul | Div | Rem), (Integer _ | Float _)
     | (Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr), Integer _ ->
         let typ_x = typ_of x and typ_y = typ_of y in
-        assert (Typ.castable typ typ_x) ;
-        assert (Typ.castable typ_x typ_y)
+        assert (LlairTyp.castable typ typ_x) ;
+        assert (LlairTyp.castable typ_x typ_y)
     | _ ->
         assert false )
   | Ap3 (Conditional, typ, cnd, thn, els) ->
-      assert (Typ.is_sized typ) ;
-      assert (Typ.castable Typ.bool (typ_of cnd)) ;
-      assert (Typ.castable typ (typ_of thn)) ;
-      assert (Typ.castable typ (typ_of els))
+      assert (LlairTyp.is_sized typ) ;
+      assert (LlairTyp.castable LlairTyp.bool (typ_of cnd)) ;
+      assert (LlairTyp.castable typ (typ_of thn)) ;
+      assert (LlairTyp.castable typ (typ_of els))
   | ApN (Record, typ, args) -> (
     match typ with
     | Array {elt} ->
-        assert (IArray.for_all args ~f:(fun arg -> Typ.castable elt (typ_of arg)))
+        assert (IArray.for_all args ~f:(fun arg -> LlairTyp.castable elt (typ_of arg)))
     | Tuple {elts} | Struct {elts} ->
         assert (IArray.length elts = IArray.length args) ;
         assert (
-          IArray.for_all2_exn elts args ~f:(fun (_, typ) arg -> Typ.castable typ (typ_of arg) ) )
+          IArray.for_all2_exn elts args ~f:(fun (_, typ) arg -> LlairTyp.castable typ (typ_of arg) ) )
     | _ ->
         assert false )
 [@@warning "-missing-record-field-pattern"]
@@ -330,7 +332,7 @@ and typ_of exp =
   | Reg {typ} | Global {typ} | FuncName {typ} | Integer {typ} | Float {typ} ->
       typ
   | Label _ ->
-      Typ.ptr
+      LlairTyp.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) ->
       dst
   | Ap1 (Select idx, typ, _) -> (
@@ -342,7 +344,7 @@ and typ_of exp =
     | _ ->
         violates invariant exp )
   | Ap2 ((Eq | Dq | Gt | Ge | Lt | Le | Ugt | Uge | Ult | Ule | Ord | Uno), _, _, _) ->
-      Typ.bool
+      LlairTyp.bool
   | Ap2
       ( (Add | Sub | Mul | Div | Rem | Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr | Update _)
       , typ
@@ -425,7 +427,9 @@ module FuncName = struct
   let mk typ name = FuncName {name; typ} |> check invariant
 
   let counterfeit =
-    let dummy_function_type = Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None) in
+    let dummy_function_type =
+      LlairTyp.pointer ~elt:(LlairTyp.function_ ~args:IArray.empty ~return:None)
+    in
     fun name -> mk dummy_function_type name
 
 
@@ -449,9 +453,9 @@ let label ~parent ~name = Label {parent; name} |> check invariant
 
 let integer typ data = Integer {data; typ} |> check invariant
 
-let null = integer Typ.ptr Z.zero
+let null = integer LlairTyp.ptr Z.zero
 
-let bool b = integer Typ.bool (Z.of_bool b)
+let bool b = integer LlairTyp.bool (Z.of_bool b)
 
 let true_ = bool true
 
@@ -483,7 +487,7 @@ let bitcast ~signed src_bits x ~to_:typ =
     record typ elts
   in
   match (typ_of x, typ) with
-  | (Typ.Array _ as from_typ), Typ.Array {elt= Integer i as elt; len; _} ->
+  | (LlairTyp.Array _ as from_typ), LlairTyp.Array {elt= Integer i as elt; len; _} ->
       cast_vector from_typ len i.bits elt
   | _ ->
       cast_scalar src_bits typ x
@@ -560,7 +564,7 @@ let xor = binary Xor
 let shl ?typ x y =
   let typ = match typ with Some typ -> typ | None -> typ_of x in
   match (y, typ) with
-  | Integer {data; _}, Typ.Integer {bits; _} -> (
+  | Integer {data; _}, LlairTyp.Integer {bits; _} -> (
     match Z.to_int data with
     | data when 0 <= data && data < bits - 1 ->
         mul ~typ x (integer typ (Z.pow (Z.of_int 2) data))

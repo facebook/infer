@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-include Monad_intf
+include NSMonad_intf
 
 module Make (M : sig
   type 'a t

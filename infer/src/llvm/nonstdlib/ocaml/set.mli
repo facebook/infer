@@ -76,7 +76,7 @@ module type S =
     type t
     (** The type of sets. *)
 
-    include Comparer.S with type t := t
+    include NSComparer.S with type t := t
 
     val empty: t
     (** The empty set. *)
@@ -350,7 +350,7 @@ type ('elt, 'cmp) t [@@deriving compare, equal, sexp]
 
 type 'compare_elt compare [@@deriving compare, equal, sexp]
 
-module Make (Ord : Comparer.S) :
+module Make (Ord : NSComparer.S) :
   S with type elt = Ord.t
     with type t = (Ord.t, Ord.compare) t
     with type compare = Ord.compare compare

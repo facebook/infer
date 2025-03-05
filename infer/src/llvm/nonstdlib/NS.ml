@@ -38,30 +38,30 @@ let map4 f e cons w x y z =
 
 
 let mapN f e cons xs =
-  let xs' = Array.map_endo ~f xs in
+  let xs' = NSArray.map_endo ~f xs in
   if xs' == xs then e else cons xs'
 
 
-module Comparer = Comparer
-module Array = Array
-module Float = Float
-module HashSet = HashSet
-module HashTable = HashTable
-module IArray = IArray
+module Comparer = NSComparer
+module Array = NSArray
+module Float = NSFloat
+module HashSet = NSHashSet
+module HashTable = NSHashTable
+module IArray = NSIArray
 include IArray.Import
-module Int = Int
-module List = List
+module Int = NSInt
+module List = NSList
 module Map = NSMap
-module Monad = Monad
-module Multiset = Multiset
-module Option = Option
+module Monad = NSMonad
+module Multiset = NSMultiset
+module Option = NSOption
 include Option.Import
-module Q = Q_ext
-module RAL = Ral
-module Result = Result
+module Q = NSQ_ext
+module RAL = NSRal
+module Result = NSResult
 module Set = NSSet
-module Sign = Sign
-module String = String
-module Sys = Sys
-module Timer = Timer
-module Z = Z_ext
+module Sign = NSSign
+module String = NSString
+module Sys = NSSys
+module Timer = NSTimer
+module Z = NSZ_ext

@@ -7,7 +7,7 @@
 
 (** Multiset - Set with multiplicity for each element *)
 
-include module type of Multiset_intf
+include module type of NSMultiset_intf
 
 type ('elt, 'mul, 'compare_elt) t [@@deriving compare, equal, sexp]
 
@@ -17,7 +17,7 @@ module Make
     (Elt : sig
       type t [@@deriving equal, sexp_of]
 
-      include Comparer.S with type t := t
+      include NSComparer.S with type t := t
     end)
     (Mul : MULTIPLICITY) :
   S

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open! Llair
 
 val field_of_pos : int -> label
 

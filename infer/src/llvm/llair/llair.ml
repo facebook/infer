@@ -7,12 +7,14 @@
 
 (** LLAIR (Low-Level Analysis Internal Representation) *)
 
+open! NS
+
 [@@@warning "+missing-record-field-pattern"]
 
 module Loc = Loc
-module Typ = Typ
+module Typ = LlairTyp
 module Reg = Reg
-module Exp = Exp
+module Exp = LlairExp
 module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn

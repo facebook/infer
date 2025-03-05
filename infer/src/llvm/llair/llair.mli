@@ -8,10 +8,11 @@
 (** LLAIR (Low-Level Analysis Internal Representation) is an IR tailored for static analysis using a
     low-level model of memory. *)
 
+open! NS
 module Loc = Loc
-module Typ = Typ
+module Typ = LlairTyp
 module Reg = Reg
-module Exp = Exp
+module Exp = LlairExp
 module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn

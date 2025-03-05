@@ -9,6 +9,6 @@ open! NS0
 
 (** Hash tables *)
 
-include module type of HashTable_intf
+include module type of NSHashTable_intf
 
 module Make (Key : HashedType) : S with type key = Key.t

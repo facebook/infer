@@ -8,5 +8,5 @@
 (** Function names *)
 
 include module type of struct
-  include Exp.FuncName
+  include LlairExp.FuncName
 end

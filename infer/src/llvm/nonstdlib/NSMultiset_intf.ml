@@ -12,7 +12,7 @@ open! NS0
 module type MULTIPLICITY = sig
   type t [@@deriving compare, equal, sexp]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 
   val zero : t
 
@@ -30,7 +30,7 @@ module type S = sig
 
   type t [@@deriving compare, equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 
   module Provide_of_sexp (_ : sig
     type t = elt [@@deriving of_sexp]

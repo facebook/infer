@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open! Llair
 
 type structMap = Textual.Struct.t Textual.TypeName.Map.t
 

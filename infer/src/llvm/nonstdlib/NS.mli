@@ -154,17 +154,17 @@ end
 
 (** Monads *)
 
-module Monad = Monad
+module Monad = NSMonad
 
 (** Data types *)
 
-module Sign = Sign
+module Sign = NSSign
 module Char = Containers.Char
-module Int = Int
-module Z = Z_ext
-module Q = Q_ext
-module Float = Float
-module String = String
+module Int = NSInt
+module Z = NSZ_ext
+module Q = NSQ_ext
+module Float = NSFloat
+module String = NSString
 
 (** Iterators *)
 
@@ -174,37 +174,37 @@ include module type of Iter.Import
 
 (** Containers *)
 
-module Comparer = Comparer
-module Option = Option
+module Comparer = NSComparer
+module Option = NSOption
 
 include module type of Option.Import
 
-module Result = Result
+module Result = NSResult
 
 type 'a zero_one_many = Zero | One of 'a | Many
 
 type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
 
 module Pair = Containers.Pair
-module List = List
-module RAL = Ral
-module Array = Array
-module IArray = IArray
+module List = NSList
+module RAL = NSRal
+module Array = NSArray
+module IArray = NSIArray
 
 include module type of IArray.Import
 
 module Set = NSSet
 module Map = NSMap
-module Multiset = Multiset
+module Multiset = NSMultiset
 module Bijection = CCBijection [@@warning "-no-cmi-file"]
-module HashSet = HashSet
-module HashTable = HashTable
+module HashSet = NSHashSet
+module HashTable = NSHashTable
 module HashQueue = Core.Hash_queue
 
 (** System interfaces *)
 
-module Sys = Sys
-module Timer = Timer
+module Sys = NSSys
+module Timer = NSTimer
 
 (** Invariants *)
 module Invariant : sig

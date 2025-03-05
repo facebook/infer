@@ -8,7 +8,7 @@
 (** IArray - Immutable view of an array *)
 
 open! NS0
-include Array
+include NSArray
 
 type 'a t = 'a array
 

@@ -14,7 +14,7 @@ module type S = sig
 
   type t [@@deriving compare, equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 
   module Provide_of_sexp (_ : sig
     type t = elt [@@deriving of_sexp]

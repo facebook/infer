@@ -6,5 +6,6 @@
  *)
 
 open! IStd
+open! NS
 
 val iarray_to_list : 'a iarray -> 'a list

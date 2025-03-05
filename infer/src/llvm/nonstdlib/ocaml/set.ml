@@ -31,7 +31,7 @@ module type S =
   sig
     type elt
     type t
-    include Comparer.S with type t := t
+    include NSComparer.S with type t := t
 
     val empty: t
     val is_empty: t -> bool
@@ -201,7 +201,7 @@ let t_of_sexp elt_of_sexp _ s =
   Sexplib.Conv.list_of_sexp elt_of_sexp s
   |> of_sorted_list
 
-module Make(Ord: Comparer.S) =
+module Make(Ord: NSComparer.S) =
   struct
     module Ord = struct
       include Ord
@@ -210,7 +210,7 @@ module Make(Ord: Comparer.S) =
 
     type elt = Ord.t
 
-    include (Comparer.Apply (T) (Ord))
+    include (NSComparer.Apply (T) (Ord))
 
     module Provide_equal (Elt : sig
       type t = Ord.t [@@deriving equal]
@@ -695,7 +695,7 @@ module Make(Ord: Comparer.S) =
       | [x0; x1; x2] -> add x2 (add x1 (singleton x0))
       | [x0; x1; x2; x3] -> add x3 (add x2 (add x1 (singleton x0)))
       | [x0; x1; x2; x3; x4] -> add x4 (add x3 (add x2 (add x1 (singleton x0))))
-      | _ -> of_sorted_list (List.sort_uniq ~cmp:Ord.compare l)
+      | _ -> of_sorted_list (NSList.sort_uniq ~cmp:Ord.compare l)
 
     let add_seq i m =
       Seq.fold_left (fun s x -> add x s) m i

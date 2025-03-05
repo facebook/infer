@@ -8,5 +8,5 @@
 (** Variables *)
 
 include module type of struct
-  include Exp.Reg
+  include LlairExp.Reg
 end

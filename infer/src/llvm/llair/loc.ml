@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open! NS
+
 (** Source code debug locations *)
 
 type t = {dir: string; file: string; line: int; col: int} [@@deriving compare, equal, sexp]

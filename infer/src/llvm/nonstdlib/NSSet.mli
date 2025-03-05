@@ -18,7 +18,7 @@ end) : S with type elt = Elt.t
 module Make_from_Comparer (Elt : sig
   type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 end) :
   S
     with type elt = Elt.t

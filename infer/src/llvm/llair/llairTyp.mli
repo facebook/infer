@@ -7,6 +7,8 @@
 
 (** Types *)
 
+open! NS
+
 type t = private
   | Function of {return: t option; args: t iarray}
       (** (Global) function names have type Pointer to Function. *)

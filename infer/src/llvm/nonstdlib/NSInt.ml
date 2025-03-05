@@ -56,7 +56,7 @@ let of_string = int_of_string_opt
 
 let of_string_exn = int_of_string
 
-let sign = Sign.of_int
+let sign = NSSign.of_int
 
 let incr = incr
 
@@ -70,4 +70,4 @@ let post_incr x =
 
 module Set = NSSet.Make (T)
 module Map = NSMap.Make (T)
-module Tbl = HashTable.Make (T)
+module Tbl = NSHashTable.Make (T)

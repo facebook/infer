@@ -37,4 +37,4 @@ module Set : NSSet.S with type elt = string
 
 module Map : NSMap.S with type key = string
 
-module Tbl : HashTable.S with type key = string
+module Tbl : NSHashTable.S with type key = string

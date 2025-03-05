@@ -18,7 +18,7 @@ end) : S with type key = Key.t
 module Make_from_Comparer (Key : sig
   type t [@@deriving equal, sexp_of]
 
-  include Comparer.S with type t := t
+  include NSComparer.S with type t := t
 end) :
   S
     with type key = Key.t

@@ -8,5 +8,5 @@
 (** Globals *)
 
 include module type of struct
-  include Exp.Global
+  include LlairExp.Global
 end

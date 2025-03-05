@@ -29,4 +29,4 @@ val is_true : t -> bool
 
 val is_false : t -> bool
 
-module Tbl : HashTable.S with type key := Z.t
+module Tbl : NSHashTable.S with type key := Z.t

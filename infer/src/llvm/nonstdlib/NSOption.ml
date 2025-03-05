@@ -7,7 +7,7 @@
 
 open! NS0
 include Containers.Option
-include Monad.Make (Containers.Option)
+include NSMonad.Make (Containers.Option)
 
 type 'a t = 'a option [@@deriving compare, equal, sexp]
 

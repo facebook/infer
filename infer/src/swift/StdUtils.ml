@@ -6,5 +6,6 @@
  *)
 
 open! IStd
+open! NS
 
 let iarray_to_list array = IArray.to_array array |> Array.to_list

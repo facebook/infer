@@ -75,7 +75,7 @@ module type S =
     type !+'a t
     (** The type of maps from type [key] to type ['a]. *)
 
-    include Comparer.S1 with type 'a t := 'a t
+    include NSComparer.S1 with type 'a t := 'a t
 
     val empty: 'a t
     (** The empty map. *)
@@ -407,7 +407,7 @@ type ('key, !+'a, 'compare_key) t [@@deriving compare, equal, sexp]
 
 type ('compare_key, 'compare_a) compare [@@deriving compare, equal, sexp]
 
-module Make (Ord : Comparer.S) :
+module Make (Ord : NSComparer.S) :
   S with type key = Ord.t
     with type !+'a t = (Ord.t, 'a, Ord.compare) t
     with type 'compare_a compare = (Ord.compare, 'compare_a) compare

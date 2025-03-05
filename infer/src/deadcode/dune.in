@@ -10,13 +10,14 @@
   (:standard -w +60
    -open
    Ppx_yojson_conv_lib.Yojson_conv.Primitives))
- (libraries javalib ANSITerminal atdgen base base64 bheap cmdliner core core_unix.filename_unix fmt
-   iter memtrace menhirLib mtime.clock.os ocamlgraph oUnit parmap ppx_show.runtime pyml re sawja sedlex sqlite3
-   spawn tdigest unix xmlm yojson zarith zip)
+ (libraries javalib ANSITerminal atdgen base base64 bheap cmdliner containers containers-data core
+   core_unix.filename_unix dbg fmt fpath iter memtrace menhirLib mtime.clock.os ocamlgraph
+   oUnit parmap ppx_show.runtime pyml re sawja sedlex sexplib spawn sqlite3 tdigest unix xmlm yojson
+   zarith zip)
  (modules All_infer_in_one_file)
  (preprocess
-   (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
-     ppx_sexp_conv ppx_show ppx_variants_conv ppx_yojson_conv inferppx sedlex.ppx -no-check))
+   (pps ppx_blob ppx_compare ppx_dbg ppx_enumerate ppx_fields_conv ppx_hash ppx_here ppx_let
+     ppx_sexp_conv ppx_sexp_value ppx_show ppx_variants_conv ppx_yojson_conv inferppx sedlex.ppx -no-check))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
   (glob_files ../../documentation/issues/*.md)))

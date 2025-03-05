@@ -32,7 +32,7 @@ module type S =
     type key
     type !+'a t
 
-    include Comparer.S1 with type 'a t := 'a t
+    include NSComparer.S1 with type 'a t := 'a t
 
     val empty: 'a t
     val is_empty: 'a t -> bool
@@ -199,7 +199,7 @@ let t_of_sexp key_of_sexp data_of_sexp _ m =
        (Sexplib.Conv.pair_of_sexp key_of_sexp data_of_sexp)
   |> of_sorted_list
 
-module Make (Ord : Comparer.S) = struct
+module Make (Ord : NSComparer.S) = struct
     module Ord = struct
       include Ord
       let compare = (comparer :> t -> t -> int)
@@ -207,7 +207,7 @@ module Make (Ord : Comparer.S) = struct
 
     type key = Ord.t
 
-    include (Comparer.Apply1 (T) (Ord))
+    include (NSComparer.Apply1 (T) (Ord))
 
     module Provide_equal (Key : sig
       type t = Ord.t [@@deriving equal]

@@ -7,6 +7,8 @@
 
 (** Types *)
 
+open! NS
+
 type t =
   | Function of {return: t option; args: t iarray}
   | Integer of {bits: int; byts: int}

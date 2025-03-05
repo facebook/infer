@@ -7,18 +7,21 @@
 
 (** Global variables *)
 
-type t = {name: Global.t; init: Exp.t option; loc: Loc.t} [@@deriving compare, equal, sexp]
+open! NS
+
+type t = {name: Global.t; init: LlairExp.t option; loc: Loc.t} [@@deriving compare, equal, sexp]
 
 let pp ppf {name; init; loc} =
-  Format.fprintf ppf "@[<2>%a %a%a %a@]" Typ.pp (Global.typ name) Global.pp name
-    (Option.pp "@ = @[%a@]" Exp.pp) init Loc.pp loc
+  Format.fprintf ppf "@[<2>%a %a%a %a@]" LlairTyp.pp (Global.typ name) Global.pp name
+    (Option.pp "@ = @[%a@]" LlairExp.pp)
+    init Loc.pp loc
 
 
 let invariant g =
   let@ () = Invariant.invariant [%here] g [%sexp_of: t] in
   match Global.typ g.name with
   | Pointer {elt} ->
-      assert (Option.is_none g.init || Typ.is_sized elt)
+      assert (Option.is_none g.init || LlairTyp.is_sized elt)
   | _ ->
       assert false
 

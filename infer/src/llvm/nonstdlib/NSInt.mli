@@ -17,7 +17,7 @@ val of_string : string -> int option
 
 val of_string_exn : string -> int
 
-val sign : int -> Sign.t
+val sign : int -> NSSign.t
 
 val incr : int ref -> unit
 
@@ -67,4 +67,4 @@ module Set : NSSet.S with type elt = int
 
 module Map : NSMap.S with type key = int
 
-module Tbl : HashTable.S with type key = int
+module Tbl : NSHashTable.S with type key = int

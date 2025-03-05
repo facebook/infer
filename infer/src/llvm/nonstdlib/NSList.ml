@@ -34,7 +34,7 @@ let find xs ~f = find_opt ~f xs
 
 let find_map xs ~f = find_map ~f xs
 
-let find_map_exn xs ~f = Option.get_exn (find_map xs ~f)
+let find_map_exn xs ~f = NSOption.get_exn (find_map xs ~f)
 
 let remove_one_exn ~eq x xs =
   let rec remove_ ys = function
@@ -183,10 +183,10 @@ let rec pp ?pre ?suf sep pp_elt fs = function
   | [] ->
       ()
   | x :: xs ->
-      Option.iter ~f:(Format.fprintf fs) pre ;
+      NSOption.iter ~f:(Format.fprintf fs) pre ;
       pp_elt fs x ;
       (match xs with [] -> () | xs -> Format.fprintf fs "%( %)%a" sep (pp sep pp_elt) xs) ;
-      Option.iter ~f:(Format.fprintf fs) suf
+      NSOption.iter ~f:(Format.fprintf fs) suf
 
 
 let pp_diff ~cmp ?pre ?suf sep pp_elt fs (xs, ys) =

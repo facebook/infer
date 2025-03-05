@@ -9,7 +9,7 @@ open! NS0
 
 (** Hash tables *)
 
-include HashTable_intf
+include NSHashTable_intf
 
 module Make (Key : HashedType) = struct
   include CCHashtbl.Make [@inlined] (Key)
@@ -39,7 +39,7 @@ module Make (Key : HashedType) = struct
       | Some v ->
           found := Some v ;
           Some v ) ;
-    Option.get_exn !found
+    NSOption.get_exn !found
 
 
   let iteri tbl ~f = iter (fun key data -> f ~key ~data) tbl

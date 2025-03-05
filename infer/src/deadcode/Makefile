@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./dotnet ./pulse ./scripts ./topl ./unit ./swift
-INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I pulse -I scripts -I topl -I unit -I swift
+LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./llvm/llair ./llvm/nonstdlib ./llvm/nonstdlib/iter ./llvm/nonstdlib/ocaml ./dotnet ./pulse ./scripts ./topl ./unit ./swift
+INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I llvm/llair -I llvm/nonstdlib -I llvm/nonstdlib/iter -I llvm/nonstdlib/ocaml -I pulse -I scripts -I topl -I unit -I swift
 
 ml_src_files = $(shell \
   cd $(INFER_BUILD_DIR); \
@@ -99,6 +99,8 @@ depend:
 	$(QUIET)echo "include struct  module type " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	suppress some warnings for generated code
 	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
+#	suppress some warnings for sledge code for now
+	$(QUIET)if [[ $@ =~ llvm/ ]]; then echo '  [@warning "-32-34-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 #	compute module name from file name: capitalize first letter
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  = sig " >> $(ALL_INFER_IN_ONE_FILE_ML)
@@ -118,6 +120,7 @@ depend:
 	$(QUIET)echo "(* START OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "include struct  module " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)if [[ $@ =~ (atd|deadcode)/ ]]; then echo '  [@warning "-27-32-34-35-39"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
+	$(QUIET)if [[ $@ =~ llvm/ ]]; then echo '  [@warning "-32-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  : " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)

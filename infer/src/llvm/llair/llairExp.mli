@@ -10,6 +10,8 @@
     Pure (heap-independent) expressions are complex arithmetic, bitwise-logical, etc. operations
     over literal values and registers. *)
 
+open! NS
+
 type op1 =
   | Signed of {bits: int}
       (** [Ap1 (Signed {bits= n}, dst, arg)] is [arg] interpreted as an [n]-bit signed integer and
@@ -25,10 +27,10 @@ type op1 =
           the infinite two's-complement encoding of [arg]. The injection into [dst] is a no-op, so
           [dst] must be an integer type with bitwidth greater than [n]. This expression can be
           lifted to arrays, as described for [Signed] just above. *)
-  | Convert of {src: Typ.t}
+  | Convert of {src: LlairTyp.t}
       (** [Ap1 (Convert {src}, dst, arg)] is [arg] converted from type [src] to type [dst], possibly
-          with loss of information. The [src] and [dst] types must be [Typ.convertible] and must not
-          both be [Integer] types. *)
+          with loss of information. The [src] and [dst] types must be [LlairTyp.convertible] and
+          must not both be [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
 [@@deriving compare, equal, sexp]
@@ -69,17 +71,17 @@ type op3 = Conditional  (** If-then-else *) [@@deriving compare, equal, sexp]
 type opN = Record  (** Record (array / struct) constant *) [@@deriving compare, equal, sexp]
 
 type t = private
-  | Reg of {id: int; name: string; typ: Typ.t}  (** Virtual register *)
-  | Global of {name: string; typ: Typ.t [@ignore]}  (** Global constant *)
-  | FuncName of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
+  | Reg of {id: int; name: string; typ: LlairTyp.t}  (** Virtual register *)
+  | Global of {name: string; typ: LlairTyp.t [@ignore]}  (** Global constant *)
+  | FuncName of {name: string; typ: LlairTyp.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
-  | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
-  | Float of {data: string; typ: Typ.t}  (** Floating-point constant *)
-  | Ap1 of op1 * Typ.t * t
-  | Ap2 of op2 * Typ.t * t * t
-  | Ap3 of op3 * Typ.t * t * t * t
-  | ApN of opN * Typ.t * t iarray
+  | Integer of {data: Z.t; typ: LlairTyp.t}  (** Integer constant *)
+  | Float of {data: string; typ: LlairTyp.t}  (** Floating-point constant *)
+  | Ap1 of op1 * LlairTyp.t * t
+  | Ap2 of op2 * LlairTyp.t * t * t
+  | Ap3 of op3 * LlairTyp.t * t * t * t
+  | ApN of opN * LlairTyp.t * t iarray
 [@@deriving compare, equal, sexp]
 
 val pp : t pp
@@ -117,13 +119,13 @@ module Reg : sig
 
   val to_exp : t -> exp
 
-  val mk : Typ.t -> int -> string -> t
+  val mk : LlairTyp.t -> int -> string -> t
 
   val id : t -> int
 
   val name : t -> string
 
-  val typ : t -> Typ.t
+  val typ : t -> LlairTyp.t
 end
 
 (** Exp.Global is re-exported as Global *)
@@ -149,11 +151,11 @@ module Global : sig
 
   val of_exp : exp -> t option
 
-  val mk : Typ.t -> string -> t
+  val mk : LlairTyp.t -> string -> t
 
   val name : t -> string
 
-  val typ : t -> Typ.t
+  val typ : t -> LlairTyp.t
 end
 
 (** Exp.FuncName is re-exported as FuncName *)
@@ -172,7 +174,7 @@ module FuncName : sig
 
   val of_exp : exp -> t option
 
-  val mk : Typ.t -> string -> t
+  val mk : LlairTyp.t -> string -> t
 
   val counterfeit : string -> t
   (** [compare] ignores [FuncName.typ], so it is possible to construct [FuncName]s using a dummy
@@ -180,7 +182,7 @@ module FuncName : sig
 
   val name : t -> string
 
-  val typ : t -> Typ.t
+  val typ : t -> LlairTyp.t
 end
 
 (** Construct *)
@@ -203,83 +205,83 @@ val true_ : t
 
 val false_ : t
 
-val integer : Typ.t -> Z.t -> t
+val integer : LlairTyp.t -> Z.t -> t
 
-val float : Typ.t -> string -> t
+val float : LlairTyp.t -> string -> t
 
 (* type conversions *)
-val signed : int -> t -> to_:Typ.t -> t
+val signed : int -> t -> to_:LlairTyp.t -> t
 
-val unsigned : int -> t -> to_:Typ.t -> t
+val unsigned : int -> t -> to_:LlairTyp.t -> t
 
-val convert : Typ.t -> to_:Typ.t -> t -> t
+val convert : LlairTyp.t -> to_:LlairTyp.t -> t -> t
 
 (* comparisons *)
-val eq : ?typ:Typ.t -> t -> t -> t
+val eq : ?typ:LlairTyp.t -> t -> t -> t
 
-val dq : ?typ:Typ.t -> t -> t -> t
+val dq : ?typ:LlairTyp.t -> t -> t -> t
 
-val gt : ?typ:Typ.t -> t -> t -> t
+val gt : ?typ:LlairTyp.t -> t -> t -> t
 
-val ge : ?typ:Typ.t -> t -> t -> t
+val ge : ?typ:LlairTyp.t -> t -> t -> t
 
-val lt : ?typ:Typ.t -> t -> t -> t
+val lt : ?typ:LlairTyp.t -> t -> t -> t
 
-val le : ?typ:Typ.t -> t -> t -> t
+val le : ?typ:LlairTyp.t -> t -> t -> t
 
-val ugt : ?typ:Typ.t -> t -> t -> t
+val ugt : ?typ:LlairTyp.t -> t -> t -> t
 
-val uge : ?typ:Typ.t -> t -> t -> t
+val uge : ?typ:LlairTyp.t -> t -> t -> t
 
-val ult : ?typ:Typ.t -> t -> t -> t
+val ult : ?typ:LlairTyp.t -> t -> t -> t
 
-val ule : ?typ:Typ.t -> t -> t -> t
+val ule : ?typ:LlairTyp.t -> t -> t -> t
 
-val ord : ?typ:Typ.t -> t -> t -> t
+val ord : ?typ:LlairTyp.t -> t -> t -> t
 
-val uno : ?typ:Typ.t -> t -> t -> t
+val uno : ?typ:LlairTyp.t -> t -> t -> t
 
 (* arithmetic *)
-val add : ?typ:Typ.t -> t -> t -> t
+val add : ?typ:LlairTyp.t -> t -> t -> t
 
-val sub : ?typ:Typ.t -> t -> t -> t
+val sub : ?typ:LlairTyp.t -> t -> t -> t
 
-val mul : ?typ:Typ.t -> t -> t -> t
+val mul : ?typ:LlairTyp.t -> t -> t -> t
 
-val div : ?typ:Typ.t -> t -> t -> t
+val div : ?typ:LlairTyp.t -> t -> t -> t
 
-val rem : ?typ:Typ.t -> t -> t -> t
+val rem : ?typ:LlairTyp.t -> t -> t -> t
 
-val udiv : ?typ:Typ.t -> t -> t -> t
+val udiv : ?typ:LlairTyp.t -> t -> t -> t
 
-val urem : ?typ:Typ.t -> t -> t -> t
+val urem : ?typ:LlairTyp.t -> t -> t -> t
 
 (* boolean / bitwise *)
-val and_ : ?typ:Typ.t -> t -> t -> t
+val and_ : ?typ:LlairTyp.t -> t -> t -> t
 
-val or_ : ?typ:Typ.t -> t -> t -> t
+val or_ : ?typ:LlairTyp.t -> t -> t -> t
 
 (* bitwise *)
-val xor : ?typ:Typ.t -> t -> t -> t
+val xor : ?typ:LlairTyp.t -> t -> t -> t
 
-val shl : ?typ:Typ.t -> t -> t -> t
+val shl : ?typ:LlairTyp.t -> t -> t -> t
 
-val lshr : ?typ:Typ.t -> t -> t -> t
+val lshr : ?typ:LlairTyp.t -> t -> t -> t
 
-val ashr : ?typ:Typ.t -> t -> t -> t
+val ashr : ?typ:LlairTyp.t -> t -> t -> t
 
 (* if-then-else *)
-val conditional : Typ.t -> cnd:t -> thn:t -> els:t -> t
+val conditional : LlairTyp.t -> cnd:t -> thn:t -> els:t -> t
 
 (* sequences *)
-val splat : Typ.t -> t -> t
+val splat : LlairTyp.t -> t -> t
 
 (* records (struct / array values) *)
-val record : Typ.t -> t iarray -> t
+val record : LlairTyp.t -> t iarray -> t
 
-val select : Typ.t -> t -> int -> t
+val select : LlairTyp.t -> t -> int -> t
 
-val update : Typ.t -> rcd:t -> int -> elt:t -> t
+val update : LlairTyp.t -> rcd:t -> int -> elt:t -> t
 
 (** Traverse *)
 
@@ -293,4 +295,4 @@ val is_true : t -> bool
 
 val is_false : t -> bool
 
-val typ_of : t -> Typ.t
+val typ_of : t -> LlairTyp.t

@@ -9,7 +9,7 @@
 
 open! NS0
 module Map = NSMap
-include Multiset_intf
+include NSMultiset_intf
 
 type ('elt, 'mul, 'compare_elt) t = ('elt, 'mul, 'compare_elt) Map.t
 [@@deriving compare, equal, sexp]
@@ -21,7 +21,7 @@ module Make
     (Elt : sig
       type t [@@deriving equal, sexp_of]
 
-      include Comparer.S with type t := t
+      include NSComparer.S with type t := t
     end)
     (Mul : MULTIPLICITY) =
 struct
@@ -46,7 +46,7 @@ struct
     let t_of_sexp = t_of_sexp Mul.t_of_sexp
   end
 
-  let pp ?pre ?suf sep pp_elt fs s = List.pp ?pre ?suf sep pp_elt fs (Iter.to_list (M.to_iter s))
+  let pp ?pre ?suf sep pp_elt fs s = NSList.pp ?pre ?suf sep pp_elt fs (Iter.to_list (M.to_iter s))
 
   let empty = M.empty
 
