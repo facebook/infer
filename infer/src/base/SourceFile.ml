@@ -122,7 +122,7 @@ let recreate_hashed_buck_out_path_abs =
   let buck_out_gen_abs = project_root_real ^/ Config.buck_out_gen in
   let find_file path =
     try
-      Sys.readdir buck_out_gen_abs
+      Stdlib.Sys.readdir buck_out_gen_abs
       |> Array.find_map ~f:(fun entry ->
              let root = buck_out_gen_abs ^/ entry in
              let full_path = root ^/ path in

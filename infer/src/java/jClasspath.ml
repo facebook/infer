@@ -53,7 +53,7 @@ let read_package_declaration source_file =
 
 
 let add_source_file =
-  let cwd = lazy (Sys.getcwd ()) in
+  let cwd = lazy (Stdlib.Sys.getcwd ()) in
   let convert_to_absolute p =
     if Filename.is_relative p then Filename.concat (Lazy.force cwd) p else p
   in
@@ -95,7 +95,7 @@ let read_modules_1 path =
     |> List.map ~f:Escape.escape_shell |> String.concat ~sep:" "
   in
   L.debug Capture Medium "reading Java modules with: %s@\n" jimage_cmd ;
-  let jimage_ret = Sys.command jimage_cmd in
+  let jimage_ret = Stdlib.Sys.command jimage_cmd in
   let root_paths = ref [] in
   if Int.equal jimage_ret 0 then
     Utils.iter_dir temp_dir ~f:(fun path -> root_paths := path :: !root_paths)
@@ -202,7 +202,7 @@ let search_classes path =
 let is_valid_source_file path =
   ( Filename.check_suffix path ".java"
   || (Config.kotlin_capture && Filename.check_suffix path Config.kotlin_source_extension) )
-  && PolyVariantEqual.(Sys.is_file path <> `No)
+  && PolyVariantEqual.(Sys_unix.is_file path <> `No)
 
 
 let search_sources sources =

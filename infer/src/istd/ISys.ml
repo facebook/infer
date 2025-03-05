@@ -8,4 +8,4 @@
 open! IStd
 
 let file_exists ?follow_symlinks path =
-  match Sys.file_exists ?follow_symlinks path with `Yes -> true | `No | `Unknown -> false
+  match Sys_unix.file_exists ?follow_symlinks path with `Yes -> true | `No | `Unknown -> false

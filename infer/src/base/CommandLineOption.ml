@@ -28,7 +28,7 @@ let init_work_dir, is_originator =
   | Some dir ->
       (dir, false)
   | None ->
-      let real_cwd = Utils.realpath (Sys.getcwd ()) in
+      let real_cwd = Utils.realpath (Stdlib.Sys.getcwd ()) in
       IUnix.putenv ~key:infer_cwd_env_var ~data:real_cwd ;
       (real_cwd, true)
 
@@ -1023,7 +1023,7 @@ let extra_env_args = ref []
 let extend_env_args args = extra_env_args := List.rev_append args !extra_env_args
 
 let parse_args ~usage initial_action ?initial_command args =
-  let exe_name = Sys.executable_name in
+  let exe_name = Stdlib.Sys.executable_name in
   args_to_parse := Array.of_list (exe_name :: args) ;
   arg_being_parsed := 0 ;
   let curr_usage = select_parse_mode ~usage initial_action in

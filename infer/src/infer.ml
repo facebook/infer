@@ -80,7 +80,7 @@ let print_scheduler () =
 let print_cores_used () = L.environment_info "Cores used: %d@\n" Config.jobs
 
 let log_environment_info () =
-  L.environment_info "CWD = %s@\n" (Sys.getcwd ()) ;
+  L.environment_info "CWD = %s@\n" (Stdlib.Sys.getcwd ()) ;
   ( match Config.inferconfig_file with
   | Some file ->
       L.environment_info "Read configuration in %s@\n" file

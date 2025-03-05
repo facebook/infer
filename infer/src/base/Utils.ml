@@ -23,7 +23,7 @@ let fold_file_tree ~init ~f_dir ~f_reg ~path =
       | exception Caml_unix.Unix_error (ENOENT, _, _) ->
           acc'
     in
-    Sys.fold_dir ~init:acc ~f:(aux dir_path) dir_path
+    Sys_unix.fold_dir ~init:acc ~f:(aux dir_path) dir_path
   in
   traverse_dir_aux init path
 
@@ -169,7 +169,7 @@ let filename_to_relative ?(force_full_backtrack = false) ?(backtrack = 0) ~root 
 let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
     let full_path = current_dir ^/ path in
-    match Sys.is_directory full_path with
+    match Sys_unix.is_directory full_path with
     | `Yes ->
         (accu, full_path :: dirs)
     | _ ->
@@ -182,10 +182,12 @@ let directory_fold f init path =
     | [] ->
         accu
     | d :: tl ->
-        let new_accu, new_dirs = Array.fold ~f:(collect d) ~init:(accu, tl) (Sys.readdir d) in
+        let new_accu, new_dirs =
+          Array.fold ~f:(collect d) ~init:(accu, tl) (Stdlib.Sys.readdir d)
+        in
         loop new_accu new_dirs
   in
-  match Sys.is_directory path with `Yes -> loop init [path] | _ -> f init path
+  match Sys_unix.is_directory path with `Yes -> loop init [path] | _ -> f init path
 
 
 let directory_iter f path = directory_fold (fun () path -> f path) () path

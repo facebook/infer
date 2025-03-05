@@ -175,7 +175,7 @@ let create_db location id =
   (* load biabduction models *)
   load_model_specs db id ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db_path final_db_path
+  try Stdlib.Sys.rename temp_db_path final_db_path
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 

@@ -15,12 +15,6 @@ module Filename = struct
   include Filename_unix
 end
 
-(* we don't care about the _unix distinction *)
-module Sys = struct
-  include Sys
-  include Sys_unix
-end
-
 (* easy access to sub-module *)
 module DLS = struct
   include Domain.DLS

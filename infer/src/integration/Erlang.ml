@@ -134,7 +134,7 @@ let save_beams_from_report ~project_root ~report beam_list_path =
   in
   let get_beams beams dir =
     let ebin_dir = project_root ^/ dir ^/ "ebin" in
-    match Sys.is_directory ebin_dir with
+    match Sys_unix.is_directory ebin_dir with
     | `Yes ->
         let new_beams = Utils.find_files ~path:ebin_dir ~extension:".beam" in
         Set.union beams (String.Set.of_list new_beams)
@@ -147,10 +147,10 @@ let save_beams_from_report ~project_root ~report beam_list_path =
 
 
 let run_in_dir ~dir ~prog ~args =
-  let here = Sys.getcwd () in
-  Sys.chdir dir ;
+  let here = Stdlib.Sys.getcwd () in
+  Stdlib.Sys.chdir dir ;
   let _ignore_err = Process.create_process_and_wait_with_output ~prog ~args ReadStderr in
-  Sys.chdir here
+  Stdlib.Sys.chdir here
 
 
 let process_beams ~project_root beam_list_path =

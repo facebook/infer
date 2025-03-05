@@ -111,7 +111,7 @@ let expand_target ~root acc (target, target_path) =
         acc )
   in
   let target_path = if Filename.is_absolute target_path then target_path else root ^/ target_path in
-  match Sys.is_directory target_path with
+  match Sys_unix.is_directory target_path with
   | `Yes ->
       expand_dir acc (target, target_path)
   | _ when String.is_suffix target_path ~suffix:ResultsDirEntryName.infer_deps_file_name ->

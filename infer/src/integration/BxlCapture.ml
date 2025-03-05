@@ -19,7 +19,7 @@ let traverse ~root visited acc target_path =
     if Visited.mem visited real_path then acc
     else (
       Visited.add real_path visited ;
-      match Sys.is_directory target_path with
+      match Sys_unix.is_directory target_path with
       | `Yes when ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB)
         ->
           (* we found a capture DB so add this as a target line *)
@@ -39,7 +39,7 @@ let get_buck2_root_relative_changed_files () =
         SourceFile.Set.fold
           (fun file acc ->
             let abs_file_path = SourceFile.to_abs_path file in
-            match Sys.file_exists abs_file_path with `Yes -> abs_file_path :: acc | _ -> acc )
+            match Sys_unix.file_exists abs_file_path with `Yes -> abs_file_path :: acc | _ -> acc )
           files []
       in
       List.fold existing_absolute_paths ~init:[] ~f:(fun acc abs_file_path ->

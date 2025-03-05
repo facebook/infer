@@ -345,7 +345,7 @@ let clang_exe_aliases =
 
 
 let exe_basename =
-  (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
+  (* Stdlib.Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
   Filename.basename (Sys.get_argv ()).(0)
 
 
@@ -357,7 +357,7 @@ let initial_command =
 
 let infer_binary =
   (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
-  Utils.realpath Sys.executable_name
+  Utils.realpath Stdlib.Sys.executable_name
 
 
 let bin_dir = Filename.dirname infer_binary
@@ -3748,7 +3748,7 @@ let inferconfig_dir =
       let is_root = String.equal dir parent in
       if is_root then None else find parent
   in
-  find (Sys.getcwd ())
+  find (Stdlib.Sys.getcwd ())
 
 
 let parse_inferconfig_path_arg () =

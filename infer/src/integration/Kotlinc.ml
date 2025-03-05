@@ -27,7 +27,7 @@ let compile prog args =
     file
   in
   let args = cli_args @ ["@" ^ args_file] in
-  L.debug Capture Quiet "Current working directory: '%s'@." (Sys.getcwd ()) ;
+  L.debug Capture Quiet "Current working directory: '%s'@." (Stdlib.Sys.getcwd ()) ;
   let run cmd =
     let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
     L.debug Capture Quiet "Trying to execute: %s@." shell_cmd ;
