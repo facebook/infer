@@ -102,3 +102,12 @@ let dup2 ?close_on_exec ~src ~dst () = Caml_unix.dup2 ?cloexec:close_on_exec src
 
 let read ?(restart = true) ~pos ~len fd ~buf =
   do_maybe_restart ~restart (fun () -> Caml_unix.read fd buf pos len)
+
+
+type file_perm = Caml_unix.file_perm
+
+type open_flag = Caml_unix.open_flag
+
+let openfile ?(perm = 0o644) ~mode filename = Caml_unix.openfile filename mode perm
+
+let close fd = Caml_unix.close fd

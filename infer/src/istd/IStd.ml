@@ -49,6 +49,10 @@ module Unix = struct
   let dup2 ?close_on_exec:_ ~src:_ ~dst:_ () = `Dont_use_istd_unix
 
   let read ?restart:_ ?pos:_ ?len:_ _fd ~buf:_ = `Dont_use_istd_unix
+
+  let openfile ?perm:_ ~mode:_ _filename = `Dont_use_istd_unix
+
+  let close _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

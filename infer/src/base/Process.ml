@@ -41,8 +41,8 @@ let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
   let channel_to_log = Unix.in_channel_of_descr fd_to_log in
   Utils.with_channel_in channel_to_log ~f:(L.progress "%s-%s: %s@." prog redirected_fd_name) ;
   In_channel.close channel_to_log ;
-  Unix.close redirected_fd ;
-  Unix.close stdin ;
+  IUnix.close redirected_fd ;
+  IUnix.close stdin ;
   match IUnix.waitpid pid with
   | Ok () ->
       Utils.with_file_in output_file ~f:In_channel.input_all
@@ -72,6 +72,6 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
   (* wait for children *)
   let producer_status = IUnix.waitpid (Pid.of_int producer_pid) in
   let consumer_status = IUnix.waitpid (Pid.of_int consumer_pid) in
-  Unix.close pipe_out ;
-  Unix.close pipe_in ;
+  IUnix.close pipe_out ;
+  IUnix.close pipe_in ;
   (producer_status, consumer_status)

@@ -131,7 +131,7 @@ summary { margin-left: -20pt; }
   let open_out source path =
     let full_fname = get_full_fname source path in
     let fd =
-      Unix.openfile (DB.filename_to_string full_fname) ~mode:[O_WRONLY; O_APPEND] ~perm:0o777
+      IUnix.openfile (DB.filename_to_string full_fname) ~mode:[O_WRONLY; O_APPEND] ~perm:0o777
     in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.synchronized_formatter_of_out_channel outc in
@@ -148,7 +148,7 @@ summary { margin-left: -20pt; }
   (** Close an Html file *)
   let close (fd, fmt) =
     F.fprintf (DLS.get fmt) "</body>@\n</html>@." ;
-    Unix.close fd
+    IUnix.close fd
 
 
   (** Print a horizontal line *)

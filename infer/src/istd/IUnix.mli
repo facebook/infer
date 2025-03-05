@@ -51,3 +51,11 @@ module File_descr = Unix.File_descr
 val dup2 : ?close_on_exec:bool -> src:File_descr.t -> dst:File_descr.t -> unit -> unit
 
 val read : ?restart:bool -> pos:int -> len:int -> File_descr.t -> buf:Bytes.t -> int
+
+type file_perm = Caml_unix.file_perm
+
+type open_flag = Caml_unix.open_flag
+
+val openfile : ?perm:file_perm -> mode:open_flag list -> string -> File_descr.t
+
+val close : File_descr.t -> unit

@@ -106,8 +106,8 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
   let buck_stderr = Unix.in_channel_of_descr stderr in
   let buck_logger = if is_buck2 then L.progress "BUCK2: %s@\n" else L.progress "BUCK: %s@\n" in
   Utils.with_channel_in buck_stderr ~f:buck_logger ;
-  Unix.close stdin ;
-  Unix.close stdout ;
+  IUnix.close stdin ;
+  IUnix.close stdout ;
   In_channel.close buck_stderr ;
   match IUnix.waitpid pid with
   | Ok () -> (

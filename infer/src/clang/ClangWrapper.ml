@@ -51,8 +51,8 @@ let check_for_existing_file args =
               | Some arg ->
                   if Str.string_match clang_ignore_regex arg 0 && not (ISys.file_exists arg) then (
                     IUnix.mkdir_p (Filename.dirname arg) ;
-                    let file = Unix.openfile ~mode:[O_CREAT; O_RDONLY] arg in
-                    Unix.close file )
+                    let file = IUnix.openfile ~mode:[O_CREAT; O_RDONLY] arg in
+                    IUnix.close file )
               | None ->
                   ()
             else check_for_existing_file_arg rest

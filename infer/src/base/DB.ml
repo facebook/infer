@@ -149,5 +149,5 @@ module Results_dir = struct
           L.(die InternalError) "create_path"
     in
     let full_fname = Filename.concat (create dir_path) filename in
-    Unix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
+    IUnix.openfile full_fname ~mode:Unix.[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o777
 end

@@ -35,8 +35,8 @@ let capture ~build_cmd =
   in
   let ndk_stderr = Unix.in_channel_of_descr stderr in
   Utils.with_channel_in ndk_stderr ~f:(L.progress "NDKBUILD: %s@.") ;
-  Unix.close stdin ;
-  Unix.close stdout ;
+  IUnix.close stdin ;
+  IUnix.close stdout ;
   In_channel.close ndk_stderr ;
   match IUnix.waitpid pid with
   | Ok () ->

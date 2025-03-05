@@ -445,14 +445,14 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
   let to_child_r, to_child_w = Unix.pipe () in
   match IUnix.fork () with
   | `In_the_child ->
-      Unix.close updates_r ;
-      Unix.close to_child_w ;
+      IUnix.close updates_r ;
+      IUnix.close to_child_w ;
       let orders_ic = Unix.in_channel_of_descr to_child_r in
       let updates_oc = Unix.out_channel_of_descr updates_w in
       child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
   | `In_the_parent pid ->
-      Unix.close to_child_r ;
-      Unix.close updates_w ;
+      IUnix.close to_child_r ;
+      IUnix.close updates_w ;
       {pid; down_pipe= Unix.out_channel_of_descr to_child_w}
 
 
@@ -491,7 +491,7 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
     child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
   in
   Marshal.to_channel down_pipe (child_thunk : child_data) [Closures] ;
-  Unix.close to_child_r ;
+  IUnix.close to_child_r ;
   {pid= Pid.of_int pid; down_pipe}
 
 

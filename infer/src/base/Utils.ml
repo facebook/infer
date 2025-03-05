@@ -207,7 +207,7 @@ let with_file_in file ~f =
   (* Use custom code instead of In_channel.create to be able to pass [O_SHARE_DELETE] *)
   let ic =
     let fd =
-      try Unix.openfile ~mode:[Unix.O_RDONLY; Unix.O_SHARE_DELETE] file
+      try IUnix.openfile ~mode:[Unix.O_RDONLY; Unix.O_SHARE_DELETE] file
       with Unix.Unix_error (e, _, _) ->
         let msg =
           match e with
@@ -310,13 +310,13 @@ let realpath ?(warn_on_error = true) path =
 (* never closed *)
 let devnull =
   let file = if Sys.win32 then "NUL" else "/dev/null" in
-  lazy (Unix.openfile file ~mode:[Unix.O_WRONLY])
+  lazy (IUnix.openfile file ~mode:[Unix.O_WRONLY])
 
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
     IUnix.dup2 ~src ~dst:Unix.stderr () ;
-    Unix.close src
+    IUnix.close src
   in
   let orig_stderr = Unix.dup Unix.stderr in
   IUnix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr () ;
