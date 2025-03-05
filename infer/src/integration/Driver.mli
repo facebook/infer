@@ -30,6 +30,7 @@ type mode =
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Kotlinc of {prog: string; args: string list}
+  | Llair of {source_file: string; llair_file: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}

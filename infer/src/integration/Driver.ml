@@ -31,6 +31,7 @@ type mode =
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Kotlinc of {prog: string; args: string list}
+  | Llair of {source_file: string; llair_file: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}
@@ -44,7 +45,7 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
-  | Javac _ | Python _ | Swiftc _ | PythonBytecode _ ->
+  | Javac _ | Llair _ | Python _ | PythonBytecode _ | Swiftc _ ->
       true
   | _ ->
       false
@@ -82,6 +83,9 @@ let pp_mode fmt = function
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Kotlinc {prog; args} ->
       F.fprintf fmt "Kotlinc driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | Llair {source_file; llair_file} ->
+      F.fprintf fmt "Llair driver mode:@\nsource_file = '%s'@\nllair_file = '%s'" source_file
+        llair_file
   | JsonSIL {cfg_json; tenv_json} ->
       F.fprintf fmt "Json driver mode:@\ncfg_json= '%s'@\ntenv_json = %s" cfg_json tenv_json
   | Maven {prog; args} ->
@@ -200,6 +204,9 @@ let capture ~changed_files mode =
       | Kotlinc {prog; args} ->
           if Config.is_originator then L.progress "Capturing in kotlinc mode...@." ;
           Kotlinc.capture ~prog ~args
+      | Llair {source_file; llair_file} ->
+          L.progress "Capturing llair program...@." ;
+          Swift.capture_llair ~source_file ~llair_file
       | JsonSIL {cfg_json; tenv_json} ->
           L.progress "Capturing using JSON mode...@." ;
           CaptureSILJson.capture ~cfg_json ~tenv_json
@@ -484,15 +491,26 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       PythonBytecode {files= Config.pyc_file}
   | [] -> (
       let textualfiles = Config.capture_textual in
-      match (Config.clang_compilation_dbs, textualfiles) with
-      | _ :: _, _ :: _ ->
-          L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
-      | _ :: _, [] ->
+      match (Config.clang_compilation_dbs, textualfiles, Config.capture_llair) with
+      | _ :: _, _ :: _, _ | _ :: _, _, Some _ | _, _ :: _, Some _ ->
+          L.die UserError
+            "Only one of --clang-compilation-dbs, --capture-textual, and --capture-llair can be \
+             set at once."
+      | _ :: _, [], None ->
           assert_supported_mode `Clang "clang compilation database" ;
           ClangCompilationDB {db_files= Config.clang_compilation_dbs}
-      | [], _ :: _ ->
+      | [], _ :: _, None ->
           Textual {textualfiles}
-      | [], [] -> (
+      | [], [], Some llair_file ->
+          let source_file =
+            match Config.llair_source_file with
+            | Some file ->
+                file
+            | None ->
+                L.die UserError "--llair-source-file must be given when --capture-llair is given."
+          in
+          Llair {source_file; llair_file}
+      | [], [], None -> (
         match (Config.cfg_json, Config.tenv_json) with
         | Some cfg_json, Some tenv_json ->
             JsonSIL {cfg_json; tenv_json}
@@ -620,7 +638,8 @@ let run_epilogue () =
 
 let run driver_mode =
   if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
-    L.die UserError "ERROR: Textual generation is only allowed in Java and Python mode currently" ;
+    L.die UserError
+      "ERROR: Textual generation is only allowed in Java, Llair, Python, Swift modes currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
   capture driver_mode ~changed_files ;

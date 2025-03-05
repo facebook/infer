@@ -1182,6 +1182,13 @@ and capture_block_list =
        analyzed either. Clang, Java, and Hack only." )
 
 
+and capture_llair =
+  CLOpt.mk_path_opt ~long:"capture-llair" ~meta:"path"
+    "Generate a SIL program from a Llair program obtained from running sledge, for example with \
+     $(b,sledge llvm translate foo.bc -output foo.llair). This requires $(b,--llair-source-file) \
+     to also be set."
+
+
 and capture_textual =
   CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in .sil files."
@@ -2121,6 +2128,12 @@ and liveness_ignored_constant =
   CLOpt.mk_string_list ~default:["0"] ~long:"liveness-ignored-constant"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "List of integer constants to be ignored by liveness analysis"
+
+
+and llair_source_file =
+  CLOpt.mk_path_opt ~long:"llair-source-file" ~meta:"path"
+    "Path to the original source file corresponding to the Llair program passed to \
+     $(b,--capture-llair)."
 
 
 and load_average =
@@ -4050,6 +4063,8 @@ and capture = !capture
 
 and capture_block_list = match capture_block_list with k, r -> (k, !r)
 
+and capture_llair = !capture_llair
+
 and capture_textual = RevList.to_list !capture_textual
 
 and censor_report =
@@ -4400,6 +4415,8 @@ and liveness_block_list_var_regex = Option.map ~f:Str.regexp !liveness_block_lis
 and liveness_dangerous_classes = !liveness_dangerous_classes
 
 and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
+
+and llair_source_file = !llair_source_file
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int Utils.cpus) | _ -> !load_average

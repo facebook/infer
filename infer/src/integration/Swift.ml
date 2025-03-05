@@ -60,3 +60,10 @@ let capture ~command ~args =
   L.debug Capture Quiet "processed swiftc command is %s, args are %a@\n" command
     (Pp.comma_seq F.pp_print_string) args ;
   llvm_capture command args
+
+
+let capture_llair ~source_file ~llair_file =
+  Utils.with_file_in llair_file ~f:(fun llair_in ->
+      let llair_program : Llair.program = Marshal.from_channel llair_in in
+      L.progress "did not crash yet!@\n" ;
+      SwiftFrontend.capture_llair source_file llair_program )

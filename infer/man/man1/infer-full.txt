@@ -2581,6 +2581,14 @@ INTERNAL OPTIONS
            Deactivates: capture and translate source files into infer's
            intermediate language for analysis (Conversely: --capture)
 
+       --capture-llair path
+           Generate a SIL program from a Llair program obtained from running
+           sledge, for example with sledge llvm translate foo.bc -output
+           foo.llair. This requires --llair-source-file to also be set.
+
+       --capture-llair-reset
+           Cancel the effect of --capture-llair.
+
        --capture-textual +path
            Generate a SIL program from a textual representation given in .sil
            files.
@@ -3009,6 +3017,13 @@ INTERNAL OPTIONS
 
        --liveness-ignored-constant-reset
            Set --liveness-ignored-constant to the empty list.
+
+       --llair-source-file path
+           Path to the original source file corresponding to the Llair
+           program passed to --capture-llair.
+
+       --llair-source-file-reset
+           Cancel the effect of --llair-source-file.
 
        --load-average-reset
            Cancel the effect of --load-average.

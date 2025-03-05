@@ -8,3 +8,5 @@
 open! IStd
 
 val capture : string -> IStd.In_channel.t -> unit
+
+val capture_llair : string -> Llair.program -> unit

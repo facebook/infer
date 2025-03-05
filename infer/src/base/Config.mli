@@ -249,6 +249,8 @@ val capture : bool
 
 val capture_block_list : string * Yojson.Safe.t
 
+val capture_llair : string option
+
 val capture_textual : string list
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
@@ -534,6 +536,8 @@ val liveness_block_list_var_regex : Str.regexp option
 val liveness_dangerous_classes : Yojson.Safe.t
 
 val liveness_ignored_constant : string list
+
+val llair_source_file : string option
 
 val load_average : float option
 
