@@ -11,7 +11,7 @@ open! IStd
 (** Module to handle IO. Includes html and xml modules. *)
 
 module Html : sig
-  type t = IUnix.File_descr.t * Format.formatter DLS.key
+  type t = Caml_unix.file_descr * Format.formatter DLS.key
 
   val close : t -> unit
   (** Close an Html file *)

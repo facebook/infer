@@ -19,5 +19,5 @@ let capture compiler ~prog ~args =
       let new_path = Config.wrappers_dir ^ ":" ^ old_path in
       let extended_env = `Extend [(path_var, new_path); ("INFER_OLD_PATH", old_path)] in
       L.environment_info "Running command %s with env:@\n%s@\n@." prog
-        (IUnix.sexp_of_env extended_env |> Sexp.to_string) ;
+        (IUnix.Env.sexp_of_t extended_env |> Sexp.to_string) ;
       Process.create_process_and_wait ~prog ~args ~env:extended_env ()

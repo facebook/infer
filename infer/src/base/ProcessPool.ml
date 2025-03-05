@@ -32,7 +32,7 @@ type ('work, 'final, 'result) t =
         (** array of child processes with their pids and channels we can use to send work down to
             each child *)
   ; children_states: 'work child_state Array.t  (** array tracking the state of each worker *)
-  ; children_updates: IUnix.File_descr.t list
+  ; children_updates: Caml_unix.file_descr list
         (** each child has it's own pipe to send updates to the pool *)
   ; task_bar: TaskBar.t
   ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t

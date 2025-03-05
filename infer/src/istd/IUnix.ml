@@ -5,6 +5,92 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module Pid = Pid
+
+module Process_info = struct
+  type t =
+    { pid: Pid.t
+    ; stdin: Caml_unix.file_descr
+    ; stdout: Caml_unix.file_descr
+    ; stderr: Caml_unix.file_descr }
+end
+
+module Env = struct
+  type t =
+    [ `Replace of (string * string) list
+    | `Extend of (string * string) list
+    | `Override of (string * string option) list
+    | `Replace_raw of string list ]
+  [@@deriving sexp]
+
+  let current () =
+    let base = Array.to_list (Caml_unix.environment ()) in
+    List.map base ~f:(fun s -> String.lsplit2_exn s ~on:'=')
+
+
+  let env_map env =
+    let map_of_list list = String.Map.of_alist_reduce list ~f:(fun _ x -> x) in
+    match env with
+    | `Replace env ->
+        map_of_list env
+    | `Extend extend ->
+        map_of_list (current () @ extend)
+    | `Override overrides ->
+        List.fold_left overrides
+          ~init:(map_of_list (current ()))
+          ~f:(fun acc (key, v) ->
+            match v with None -> Map.remove acc key | Some data -> Map.set acc ~key ~data )
+
+
+  let expand env =
+    match env with
+    | `Replace_raw env ->
+        env
+    | (`Replace _ | `Extend _ | `Override _) as env ->
+        Map.fold (env_map env) ~init:[] ~f:(fun ~key ~data acc -> (key ^ "=" ^ data) :: acc)
+
+
+  let expand_array env = Array.of_list (expand env)
+end
+
+module Select_fds = struct
+  type t =
+    { read: Caml_unix.file_descr list
+    ; write: Caml_unix.file_descr list
+    ; except: Caml_unix.file_descr list }
+end
+
+module Exit_or_signal = struct
+  type error = [`Exit_non_zero of int | `Signal of int] [@@deriving compare, sexp]
+
+  type t = (unit, error) Result.t [@@deriving compare, sexp]
+
+  let of_unix (u : Caml_unix.process_status) =
+    match u with
+    | WEXITED i ->
+        if Int.( = ) i 0 then Ok () else Error (`Exit_non_zero i)
+    | WSIGNALED i ->
+        Error (`Signal i)
+    | WSTOPPED _ ->
+        assert false
+
+
+  let to_string_hum = function
+    | Ok () ->
+        "exited normally"
+    | Error (`Exit_non_zero i) ->
+        sprintf "exited with code %d" i
+    | Error (`Signal s) ->
+        sprintf "died after receiving signal number %d" s
+end
+
+module Error = struct
+  type t = Caml_unix.error
+
+  let message = Caml_unix.error_message
+end
+
+type select_timeout = [`Never | `Immediately | `After of Time_ns.Span.t]
 
 let rename ~src ~dst = Caml_unix.rename src dst
 
@@ -33,10 +119,6 @@ let nanosleep nanoseconds = Caml_unix.sleepf (nanoseconds *. 1_000_000_000.)
 
 let putenv ~key ~data = Caml_unix.putenv key data
 
-module Pid = Pid
-module Process_info = Core_unix.Process_info
-module Env = Core_unix.Env
-
 let create_process_env ~prog ~args ~env =
   let in_read, in_write = Caml_unix.pipe () in
   let out_read, out_write = Caml_unix.pipe () in
@@ -53,8 +135,6 @@ let create_process_env ~prog ~args ~env =
 
 
 let create_process ~prog ~args = create_process_env ~prog ~args ~env:(`Extend [])
-
-module Exit_or_signal = Core_unix.Exit_or_signal
 
 let close_process_in ic = Exit_or_signal.of_unix (Caml_unix.close_process_in ic)
 
@@ -88,37 +168,21 @@ let fork () =
 
 let symlink ~target ~link_name = Caml_unix.symlink target link_name
 
-module File_descr = Core_unix.File_descr
-
 let dup2 ?close_on_exec ~src ~dst () = Caml_unix.dup2 ?cloexec:close_on_exec src dst
 
 let read ?(restart = true) ~pos ~len fd ~buf =
   do_maybe_restart ~restart (fun () -> Caml_unix.read fd buf pos len)
 
 
-type file_perm = Caml_unix.file_perm
-
-type open_flag = Caml_unix.open_flag
-
 let openfile ?(perm = 0o644) ~mode filename = Caml_unix.openfile filename mode perm
-
-type socket_domain = Caml_unix.socket_domain
-
-type socket_type = Caml_unix.socket_type
 
 let socket ?close_on_exec ~domain ~kind ~protocol () =
   Caml_unix.socket ?cloexec:close_on_exec domain kind protocol
 
 
-type sockaddr = Caml_unix.sockaddr
-
 let bind fd ~addr = Caml_unix.bind fd addr
 
 let listen fd ~backlog = Caml_unix.listen fd backlog
-
-module Select_fds = Core_unix.Select_fds
-
-type select_timeout = Core_unix.select_timeout
 
 let select ?(restart = false) ~read ~write ~except ~timeout () =
   let timeout =
@@ -137,7 +201,3 @@ let select ?(restart = false) ~read ~write ~except ~timeout () =
 
 
 let system s = Exit_or_signal.of_unix (Caml_unix.system s)
-
-module Error = Core_unix.Error
-
-type env = Core_unix.env [@@deriving sexp]

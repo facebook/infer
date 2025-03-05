@@ -40,7 +40,7 @@ val build_system_of_exe_name : string -> build_system
 
 val string_of_build_system : build_system -> string
 
-val maven_env : IUnix.env
+val maven_env : IUnix.Env.t
 (** tell Infer it's running inside maven and disable JAVA_HOME *)
 
 (** {2 Constant configuration values} *)

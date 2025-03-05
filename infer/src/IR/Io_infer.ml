@@ -15,7 +15,7 @@ module L = Logging
 
 (* =============== START of module Html =============== *)
 module Html = struct
-  type t = IUnix.File_descr.t * Format.formatter DLS.key
+  type t = Caml_unix.file_descr * Format.formatter DLS.key
 
   (** Create a new html file *)
   let create source path =

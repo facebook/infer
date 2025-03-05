@@ -179,7 +179,7 @@ let terminate () =
         let exit_or_signal = IUnix.waitpid server_pid in
         Result.iter_error exit_or_signal ~f:(function error ->
             ( L.internal_error "ERROR: Sqlite write daemon terminated with an error: %s@\n"
-                (Core_unix.Exit_or_signal.to_string_hum (Error error)) ;
+                (IUnix.Exit_or_signal.to_string_hum (Error error)) ;
               try ServerSocket.remove_socket_file () with Caml_unix.Unix_error _ -> () ) ) ;
         L.debug Analysis Quiet "Sqlite write daemon: process %a terminated@." Pid.pp server_pid
       with Caml_unix.Unix_error _ -> () )
