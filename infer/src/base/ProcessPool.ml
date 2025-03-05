@@ -104,7 +104,7 @@ let wait_for_updates pool buffer =
        timeout. The timeout is for giving a chance to the taskbar of refreshing from time to time,
        as well as for checking for new work where none were previously available. *)
     let {Unix.Select_fds.read= read_fds} =
-      Unix.select ~read:pool.children_updates ~write:[] ~except:[] ~timeout ()
+      IUnix.select ~read:pool.children_updates ~write:[] ~except:[] ~timeout ()
     in
     match read_fds with
     | [] ->

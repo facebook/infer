@@ -125,3 +125,22 @@ type sockaddr = Caml_unix.sockaddr
 let bind fd ~addr = Caml_unix.bind fd addr
 
 let listen fd ~backlog = Caml_unix.listen fd backlog
+
+module Select_fds = Unix.Select_fds
+
+type select_timeout = Unix.select_timeout
+
+let select ?(restart = false) ~read ~write ~except ~timeout () =
+  let timeout =
+    match timeout with
+    | `Never ->
+        -1.
+    | `Immediately ->
+        0.
+    | `After span ->
+        if Time_ns.Span.( < ) span Time_ns.Span.zero then 0. else Time_ns.Span.to_sec span
+  in
+  let read, write, except =
+    do_maybe_restart ~restart (fun () -> Caml_unix.select read write except timeout)
+  in
+  {Select_fds.read; write; except}

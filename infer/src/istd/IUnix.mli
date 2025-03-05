@@ -77,3 +77,16 @@ type sockaddr = Caml_unix.sockaddr
 val bind : File_descr.t -> addr:sockaddr -> unit
 
 val listen : File_descr.t -> backlog:int -> unit
+
+module Select_fds = Unix.Select_fds
+
+type select_timeout = Unix.select_timeout
+
+val select :
+     ?restart:bool (** defaults to [false] *)
+  -> read:File_descr.t list
+  -> write:File_descr.t list
+  -> except:File_descr.t list
+  -> timeout:select_timeout
+  -> unit
+  -> Select_fds.t
