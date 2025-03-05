@@ -209,8 +209,10 @@ AS_IF([test "x$enable_python_analyzers" != "xno"], [
         AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.10 instead or disable python support with --disable-python-analyzers])
       ]); break;;
   esac
-AC_SUBST([PYTHONNEXT])
 ]) # end if($enable_python_analyzers)
+
+AC_ARG_VAR([PYTHONNEXT], [path to an alternative python binary corresponding to the next supported version])
+AS_IF([test "x$PYTHONNEXT" = "x"], [PYTHONNEXT=no])
 
 AC_ARG_VAR([PYTHONHOME], [the location of the standard Python libraries])
 AC_SUBST([PYTHONHOME])

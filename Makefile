@@ -222,13 +222,12 @@ DIRECT_TESTS += \
   python_pulse \
 
 endif
-endif # BUILD_PYTHON_ANALYZERS
-
-ifdef PYTHONNEXT
+ifneq ($(PYTHONNEXT),no)
 DIRECT_TESTS += \
   python-next_pulse \
 
 endif
+endif # BUILD_PYTHON_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
