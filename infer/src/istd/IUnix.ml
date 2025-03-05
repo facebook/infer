@@ -95,3 +95,10 @@ let fork () =
 let symlink ~target ~link_name = Caml_unix.symlink target link_name
 
 let unlink file = Caml_unix.unlink file
+
+module File_descr = Unix.File_descr
+
+let dup2 ?close_on_exec ~src ~dst () = Caml_unix.dup2 ?cloexec:close_on_exec src dst
+
+let read ?(restart = true) ~pos ~len fd ~buf =
+  do_maybe_restart ~restart (fun () -> Caml_unix.read fd buf pos len)

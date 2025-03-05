@@ -45,3 +45,9 @@ val fork : unit -> [`In_the_child | `In_the_parent of Pid.t]
 val symlink : target:string -> link_name:string -> unit
 
 val unlink : string -> unit
+
+module File_descr = Unix.File_descr
+
+val dup2 : ?close_on_exec:bool -> src:File_descr.t -> dst:File_descr.t -> unit -> unit
+
+val read : ?restart:bool -> pos:int -> len:int -> File_descr.t -> buf:Bytes.t -> int

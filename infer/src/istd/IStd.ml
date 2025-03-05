@@ -45,6 +45,10 @@ module Unix = struct
   let symlink ~target:_ ~link_name:_ = `Dont_use_istd_unix
 
   let unlink _ = `Dont_use_istd_unix
+
+  let dup2 ?close_on_exec:_ ~src:_ ~dst:_ () = `Dont_use_istd_unix
+
+  let read ?restart:_ ?pos:_ ?len:_ _fd ~buf:_ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

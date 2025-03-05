@@ -90,7 +90,7 @@ let marshal_to_pipe fd x =
 (** like [Unix.read] but reads until [len] bytes have been read *)
 let rec really_read ?(pos = 0) ~len fd ~buf =
   if len > 0 then (
-    let read = Unix.read ~pos ~len fd ~buf in
+    let read = IUnix.read ~pos ~len fd ~buf in
     if Int.equal read 0 then raise End_of_file ;
     really_read ~pos:(pos + read) ~len:(len - read) fd ~buf )
 
