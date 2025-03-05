@@ -90,3 +90,8 @@ let fork () =
   if Int.( < ) pid 0 then assert false
   else if Int.( = ) pid 0 then `In_the_child
   else `In_the_parent (Pid.of_int pid)
+
+
+let symlink ~target ~link_name = Caml_unix.symlink target link_name
+
+let unlink file = Caml_unix.unlink file

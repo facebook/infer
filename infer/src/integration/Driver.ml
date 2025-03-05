@@ -126,7 +126,7 @@ let clean_compilation_command mode =
 
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
-  let delete () = Unix.unlink start in
+  let delete () = IUnix.unlink start in
   let create () = Unix.close (Unix.openfile ~perm:0o0666 ~mode:[O_CREAT; O_WRONLY] start) in
   if ISys.file_exists start then delete () ;
   create ()

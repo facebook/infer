@@ -38,7 +38,7 @@ module ServerSocket = struct
     socket
 
 
-  let remove_socket_file () = if socket_exists () then Unix.unlink socket_path
+  let remove_socket_file () = if socket_exists () then IUnix.unlink socket_path
 
   let remove_socket socket =
     Unix.close socket ;

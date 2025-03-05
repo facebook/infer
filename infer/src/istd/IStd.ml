@@ -41,6 +41,10 @@ module Unix = struct
   let waitpid _ = `Dont_use_istd_unix
 
   let fork _ = `Dont_use_istd_unix
+
+  let symlink ~target:_ ~link_name:_ = `Dont_use_istd_unix
+
+  let unlink _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

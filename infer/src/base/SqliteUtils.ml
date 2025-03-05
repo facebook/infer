@@ -108,8 +108,8 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
     else
       let in_dir = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Temporary in
       let link_name = Filename.temp_file ~in_dir "infer-merge-sqlite-trampoline-out" "" in
-      Unix.unlink link_name ;
-      Unix.symlink ~target:(Filename.dirname db_file) ~link_name ;
+      IUnix.unlink link_name ;
+      IUnix.symlink ~target:(Filename.dirname db_file) ~link_name ;
       (Filename.concat link_name (Filename.basename db_file), true)
   in
   let attach_stmt =
@@ -123,7 +123,7 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
   exec db ~stmt:attach_stmt ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   let result = f () in
   exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
-  if remove_after_use then Unix.unlink db_file ;
+  if remove_after_use then IUnix.unlink db_file ;
   result
 
 

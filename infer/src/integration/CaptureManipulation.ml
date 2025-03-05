@@ -151,7 +151,7 @@ let complete ~input_capture_path =
              (fun s acc -> copy_sourcefile_with_procedures s || acc)
              missing_deps.sources )
   in
-  Unix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingProcedures) ;
-  Unix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingSourceFiles) ;
+  IUnix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingProcedures) ;
+  IUnix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingSourceFiles) ;
   DBWriter.canonicalize () ;
   rows_changed

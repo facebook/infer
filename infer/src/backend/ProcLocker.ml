@@ -22,7 +22,7 @@ module ProcessLocks = struct
   let lock_of_procname pname = lock_of_filename (Procname.to_filename pname)
 
   let unlock pname =
-    try Unix.unlink (lock_of_procname pname)
+    try IUnix.unlink (lock_of_procname pname)
     with Unix.Unix_error (ENOENT, _, _) ->
       L.die InternalError "Tried to unlock not-locked pname: %a@\n" Procname.pp pname
 
@@ -60,7 +60,7 @@ module ProcessLocks = struct
 
 
   let unlock_all proc_filenames =
-    List.iter proc_filenames ~f:(fun proc_filename -> Unix.unlink (lock_of_filename proc_filename))
+    List.iter proc_filenames ~f:(fun proc_filename -> IUnix.unlink (lock_of_filename proc_filename))
 
 
   let lock_all pid proc_filenames =

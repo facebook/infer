@@ -357,7 +357,7 @@ let rec rmtree_ ?except name =
   | _ ->
       if is_string_in_list_option except name then false
       else (
-        Unix.unlink name ;
+        IUnix.unlink name ;
         true )
   | exception Unix.Unix_error (ENOENT, _, _) ->
       (* no entry: already deleted/was never there *)
@@ -382,7 +382,7 @@ let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Stdlib.Digest.st
 
 let unlink_file_on_exit temp_file =
   let description = "Cleaning temporary file " ^ temp_file in
-  Epilogues.register ~description ~f:(fun () -> try Unix.unlink temp_file with _ -> ())
+  Epilogues.register ~description ~f:(fun () -> try IUnix.unlink temp_file with _ -> ())
 
 
 (** drop at most one layer of well-balanced first and last characters satisfying [drop] from the
