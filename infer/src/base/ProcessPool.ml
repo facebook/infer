@@ -443,7 +443,7 @@ let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
     the parent to send instructions down to the child. *)
 let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
   let to_child_r, to_child_w = Unix.pipe () in
-  match Unix.fork () with
+  match IUnix.fork () with
   | `In_the_child ->
       Unix.close updates_r ;
       Unix.close to_child_w ;

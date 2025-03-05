@@ -65,7 +65,7 @@ module TenvMerger = struct
              Database.new_database_connections Primary ;
              merge_global_tenvs ~normalize:true infer_deps_file ) )
     else
-      match Unix.fork () with
+      match IUnix.fork () with
       | `In_the_child ->
           ForkUtils.protect ~f:(merge_global_tenvs ~normalize:true) infer_deps_file ;
           L.exit 0

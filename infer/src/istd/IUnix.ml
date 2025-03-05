@@ -83,3 +83,10 @@ let wait_nohang_any () =
   do_maybe_restart ~restart:true (fun () ->
       let pid, process_status = Caml_unix.waitpid [WNOHANG] (-1) in
       if Int.( = ) 0 pid then None else Some (Pid.of_int pid, Exit_or_signal.of_unix process_status) )
+
+
+let fork () =
+  let pid = Caml_unix.fork () in
+  if Int.( < ) pid 0 then assert false
+  else if Int.( = ) pid 0 then `In_the_child
+  else `In_the_parent (Pid.of_int pid)

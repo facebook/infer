@@ -39,3 +39,5 @@ val getpid : unit -> Pid.t
 val waitpid : Pid.t -> Exit_or_signal.t
 
 val wait_nohang_any : unit -> (Pid.t * Exit_or_signal.t) option
+
+val fork : unit -> [`In_the_child | `In_the_parent of Pid.t]

@@ -39,6 +39,8 @@ module Unix = struct
   let getpid () = `Dont_use_istd_unix
 
   let waitpid _ = `Dont_use_istd_unix
+
+  let fork _ = `Dont_use_istd_unix
 end
 
 (* we don't care about the _unix distinction *)

@@ -158,7 +158,7 @@ module Server = struct
     L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
     let socket = ServerSocket.setup_socket () in
     L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
-    match Unix.fork () with
+    match IUnix.fork () with
     | `In_the_child ->
         ForkUtils.protect ~f:server socket ;
         L.exit 0
