@@ -410,9 +410,9 @@ let start_hackc compiler args =
   let {IUnix.Process_info.stdin; stdout; stderr; pid} =
     IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
   in
-  IUnix.close stdin ;
-  IUnix.close stderr ;
-  let stdout = Unix.in_channel_of_descr stdout in
+  Caml_unix.close stdin ;
+  Caml_unix.close stderr ;
+  let stdout = Caml_unix.in_channel_of_descr stdout in
   (pid, stdout)
 
 
@@ -425,10 +425,10 @@ let compile compiler args ~process_output =
   In_channel.close hackc_stdout ;
   ( match IUnix.waitpid hackc_pid with
   | Error _ as status ->
-      L.die ExternalError "Error executing hackc: %s@\n" (Unix.Exit_or_signal.to_string_hum status)
+      L.die ExternalError "Error executing hackc: %s@\n" (IUnix.Exit_or_signal.to_string_hum status)
   | Ok () ->
       ()
-  | exception Unix.Unix_error (ECHILD, _, _) ->
+  | exception Caml_unix.Unix_error (ECHILD, _, _) ->
       (* ProcessPool has a code path that awaits any children inside and outside of its pool,
          including possibly a hackc process. When this happens a waitpid above will raise, but it's
          fine. *)

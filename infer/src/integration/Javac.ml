@@ -54,7 +54,7 @@ let compile compiler build_prog build_args =
       | Some k ->
           L.(debug Capture Quiet)
             "*** Failed: %s!@\n%s@."
-            (Unix.Exit_or_signal.to_string_hum (Error err))
+            (IUnix.Exit_or_signal.to_string_hum (Error err))
             log ;
           k ()
       | None ->
@@ -66,7 +66,7 @@ let compile compiler build_prog build_args =
              *** Output:@\n\
              %s%s@\n\
              *** Infer needs a working compilation command to run.@."
-            (Unix.Exit_or_signal.to_string_hum (Error err))
+            (IUnix.Exit_or_signal.to_string_hum (Error err))
             shell_cmd log verbose_errlog )
     | exception exn ->
         IExn.reraise_if exn ~f:(fun () ->
@@ -117,4 +117,4 @@ let capture compiler ~prog ~args =
   if not (Config.buck_cache_mode && no_source_file args) then (
     let verbose_out_file = compile compiler prog args in
     if not (InferCommand.equal Config.command Compile) then JMain.from_verbose_out verbose_out_file ;
-    if not Config.debug_mode then IUnix.unlink verbose_out_file )
+    if not Config.debug_mode then Caml_unix.unlink verbose_out_file )

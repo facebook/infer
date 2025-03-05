@@ -13,22 +13,16 @@ val mkdir_p : ?perm:int -> string -> unit
 
 val nanosleep : float -> unit
 
-val readdir_opt : Caml_unix.dir_handle -> string option
-
-val mkdtemp : string -> string
-
 val putenv : key:string -> data:string -> unit
 
-module Env = Unix.Env
-module Process_info = Unix.Process_info
+module Env = Core_unix.Env
+module Process_info = Core_unix.Process_info
 
 val create_process_env : prog:string -> args:string list -> env:Env.t -> Process_info.t
 
 val create_process : prog:string -> args:string list -> Process_info.t
 
-val open_process_in : string -> In_channel.t
-
-module Exit_or_signal = Unix.Exit_or_signal
+module Exit_or_signal = Core_unix.Exit_or_signal
 
 val close_process_in : In_channel.t -> Exit_or_signal.t
 
@@ -44,9 +38,7 @@ val fork : unit -> [`In_the_child | `In_the_parent of Pid.t]
 
 val symlink : target:string -> link_name:string -> unit
 
-val unlink : string -> unit
-
-module File_descr = Unix.File_descr
+module File_descr = Core_unix.File_descr
 
 val dup2 : ?close_on_exec:bool -> src:File_descr.t -> dst:File_descr.t -> unit -> unit
 
@@ -57,8 +49,6 @@ type file_perm = Caml_unix.file_perm
 type open_flag = Caml_unix.open_flag
 
 val openfile : ?perm:file_perm -> mode:open_flag list -> string -> File_descr.t
-
-val close : File_descr.t -> unit
 
 type socket_domain = Caml_unix.socket_domain
 
@@ -78,9 +68,9 @@ val bind : File_descr.t -> addr:sockaddr -> unit
 
 val listen : File_descr.t -> backlog:int -> unit
 
-module Select_fds = Unix.Select_fds
+module Select_fds = Core_unix.Select_fds
 
-type select_timeout = Unix.select_timeout
+type select_timeout = Core_unix.select_timeout
 
 val select :
      ?restart:bool (** defaults to [false] *)
@@ -92,3 +82,7 @@ val select :
   -> Select_fds.t
 
 val system : string -> Exit_or_signal.t
+
+module Error = Core_unix.Error
+
+type env = Core_unix.env [@@deriving sexp]

@@ -77,7 +77,7 @@ let parse_translate_store ?(base_dir = None) result_dir =
 
 
 let capture ~command ~args =
-  let base_dir = Utils.filename_to_relative (Unix.getcwd ()) ~root:Config.project_root in
+  let base_dir = Utils.filename_to_relative (Caml_unix.getcwd ()) ~root:Config.project_root in
   Option.iter ~f:(parse_translate_store ~base_dir) Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let in_dir = ResultsDir.get_path Temporary in

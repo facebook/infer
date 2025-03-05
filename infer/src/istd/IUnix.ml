@@ -31,15 +31,11 @@ let mkdir_p ?(perm = 0o777) name =
 
 let nanosleep nanoseconds = Caml_unix.sleepf (nanoseconds *. 1_000_000_000.)
 
-let readdir_opt dir_handle = try Some (Caml_unix.readdir dir_handle) with End_of_file -> None
-
-let mkdtemp prefix = Filename.temp_dir prefix ""
-
 let putenv ~key ~data = Caml_unix.putenv key data
 
 module Pid = Pid
-module Process_info = Unix.Process_info
-module Env = Unix.Env
+module Process_info = Core_unix.Process_info
+module Env = Core_unix.Env
 
 let create_process_env ~prog ~args ~env =
   let in_read, in_write = Caml_unix.pipe () in
@@ -58,9 +54,7 @@ let create_process_env ~prog ~args ~env =
 
 let create_process ~prog ~args = create_process_env ~prog ~args ~env:(`Extend [])
 
-let open_process_in = Caml_unix.open_process_in
-
-module Exit_or_signal = Unix.Exit_or_signal
+module Exit_or_signal = Core_unix.Exit_or_signal
 
 let close_process_in ic = Exit_or_signal.of_unix (Caml_unix.close_process_in ic)
 
@@ -94,9 +88,7 @@ let fork () =
 
 let symlink ~target ~link_name = Caml_unix.symlink target link_name
 
-let unlink file = Caml_unix.unlink file
-
-module File_descr = Unix.File_descr
+module File_descr = Core_unix.File_descr
 
 let dup2 ?close_on_exec ~src ~dst () = Caml_unix.dup2 ?cloexec:close_on_exec src dst
 
@@ -109,8 +101,6 @@ type file_perm = Caml_unix.file_perm
 type open_flag = Caml_unix.open_flag
 
 let openfile ?(perm = 0o644) ~mode filename = Caml_unix.openfile filename mode perm
-
-let close fd = Caml_unix.close fd
 
 type socket_domain = Caml_unix.socket_domain
 
@@ -126,9 +116,9 @@ let bind fd ~addr = Caml_unix.bind fd addr
 
 let listen fd ~backlog = Caml_unix.listen fd backlog
 
-module Select_fds = Unix.Select_fds
+module Select_fds = Core_unix.Select_fds
 
-type select_timeout = Unix.select_timeout
+type select_timeout = Core_unix.select_timeout
 
 let select ?(restart = false) ~read ~write ~except ~timeout () =
   let timeout =
@@ -147,3 +137,7 @@ let select ?(restart = false) ~read ~write ~except ~timeout () =
 
 
 let system s = Exit_or_signal.of_unix (Caml_unix.system s)
+
+module Error = Core_unix.Error
+
+type env = Core_unix.env [@@deriving sexp]

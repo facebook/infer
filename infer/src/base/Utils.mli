@@ -82,7 +82,7 @@ val echo_in : In_channel.t -> unit
 
 val with_channel_in : f:(string -> unit) -> In_channel.t -> unit
 
-val with_process_in : string -> (In_channel.t -> 'a) -> 'a * Unix.Exit_or_signal.t
+val with_process_in : string -> (In_channel.t -> 'a) -> 'a * IUnix.Exit_or_signal.t
 
 val create_dir : string -> unit
 (** recursively create a directory if it does not exist already *)

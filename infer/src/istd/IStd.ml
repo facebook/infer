@@ -9,62 +9,6 @@ include Core
 
 [@@@warning "-unused-value-declaration"]
 
-(* easier to write Unix than Core_unix *)
-module Unix = struct
-  include Core_unix
-
-  let rename ~src:_ ~dst:_ = `Dont_use_istd_unix
-
-  let mkdir_p ?perm:_ _name = `Dont_use_istd_unix
-
-  let nanosleep _ = `Dont_use_istd_unix
-
-  let readdir_opt _ = `Dont_use_istd_unix
-
-  let mkdtemp _ = `Dont_use_istd_unix
-
-  let putenv ~key:_ ~data:_ = `Dont_use_istd_unix
-
-  let create_process_env ?working_dir:_ ?prog_search_path:_ ?argv0:_ ?setpgid:_ ~prog:_ ~args:_
-      ~env:_ () =
-    `Dont_use_istd_unix
-
-
-  let create_process ~prog:_ ~args:_ = `Dont_use_istd_unix
-
-  let open_process_in _ = `Dont_use_istd_unix
-
-  let close_process_in _ = `Dont_use_istd_unix
-
-  let getpid () = `Dont_use_istd_unix
-
-  let waitpid _ = `Dont_use_istd_unix
-
-  let fork _ = `Dont_use_istd_unix
-
-  let symlink ~target:_ ~link_name:_ = `Dont_use_istd_unix
-
-  let unlink _ = `Dont_use_istd_unix
-
-  let dup2 ?close_on_exec:_ ~src:_ ~dst:_ () = `Dont_use_istd_unix
-
-  let read ?restart:_ ?pos:_ ?len:_ _fd ~buf:_ = `Dont_use_istd_unix
-
-  let openfile ?perm:_ ~mode:_ _filename = `Dont_use_istd_unix
-
-  let close _ = `Dont_use_istd_unix
-
-  let socket ?close_on_exec:_ ~domain:_ ~kind:_ ~protocol:_ () = `Dont_use_istd_unix
-
-  let bind _fd ~addr:_ = `Dont_use_istd_unix
-
-  let listen _fd ~backlog:_ = `Dont_use_istd_unix
-
-  let select ?restart:_ ~read:_ ~write:_ ~except:_ ~timeout:_ () = `Dont_use_istd_unix
-
-  let system _ = `Dont_use_istd_unix
-end
-
 (* we don't care about the _unix distinction *)
 module Filename = struct
   include Filename
@@ -110,15 +54,19 @@ module ANSITerminal : module type of ANSITerminal = struct
 
   (* more careful about when the channel is connected to a tty *)
 
-  let print_string = if Unix.(isatty stdout) then print_string else fun _ -> Stdlib.print_string
+  let print_string =
+    if Caml_unix.(isatty stdout) then print_string else fun _ -> Stdlib.print_string
 
-  let prerr_string = if Unix.(isatty stderr) then prerr_string else fun _ -> Stdlib.prerr_string
+
+  let prerr_string =
+    if Caml_unix.(isatty stderr) then prerr_string else fun _ -> Stdlib.prerr_string
+
 
   let printf styles fmt = Format.ksprintf (fun s -> print_string styles s) fmt
 
   let eprintf styles fmt = Format.ksprintf (fun s -> prerr_string styles s) fmt
 
-  let sprintf = if Unix.(isatty stderr) then sprintf else fun _ -> Printf.sprintf
+  let sprintf = if Caml_unix.(isatty stderr) then sprintf else fun _ -> Printf.sprintf
 end
 
 (* HACK to make the deadcode script record dependencies on [HashNormalizer]: the "normalize" ppx in

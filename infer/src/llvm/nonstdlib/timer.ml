@@ -23,13 +23,13 @@ let enabled = ref false
 
 let start t =
   if !enabled then (
-    let {Unix.tms_utime; tms_stime} = Unix.times () in
+    let {Caml_unix.tms_utime; tms_stime} = Caml_unix.times () in
     t.ustart <- tms_utime ;
     t.sstart <- tms_stime )
 
 
 let stop_ t =
-  let {Unix.tms_utime; tms_stime} = Unix.times () in
+  let {Caml_unix.tms_utime; tms_stime} = Caml_unix.times () in
   let ud = tms_utime -. t.ustart in
   let sd = tms_stime -. t.sstart in
   t.uaggregate <- t.uaggregate +. ud ;

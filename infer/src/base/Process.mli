@@ -29,5 +29,5 @@ val pipeline :
   -> producer_args:string list
   -> consumer_prog:string
   -> consumer_args:string list
-  -> Unix.Exit_or_signal.t * Unix.Exit_or_signal.t
+  -> IUnix.Exit_or_signal.t * IUnix.Exit_or_signal.t
 (** Pipeline producer program into consumer program *)

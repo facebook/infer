@@ -36,7 +36,7 @@ module Hash = Stdlib.Hashtbl.Make (T)
 module HashSet = HashSet.Make (T)
 module Cache = Concurrent.MakeCache (T)
 
-let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
+let realpath_if_exists path = try Utils.realpath path with Caml_unix.Unix_error _ -> path
 
 let project_root_real = realpath_if_exists Config.project_root
 
@@ -62,7 +62,7 @@ let from_abs_path ?(warn_on_error = true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
-  let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
+  let fname_real = try Utils.realpath ~warn_on_error fname with Caml_unix.Unix_error _ -> fname in
   match
     Utils.filename_to_relative ~backtrack:Config.relative_path_backtrack ~root:project_root_real
       fname_real
@@ -264,7 +264,8 @@ let from_rel_path ?(warn_on_error = true) fname =
         RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
   in
   ( if warn_on_error then
-      try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore with Unix.Unix_error _ -> () ) ;
+      try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore
+      with Caml_unix.Unix_error _ -> () ) ;
   file
 
 

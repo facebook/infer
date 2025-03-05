@@ -33,14 +33,14 @@ end
 
 type t = {user: Duration.t; sys: Duration.t; wall: Mtime.Span.t}
 
-type counter = {process_times: Unix.process_times; wall_time: Mtime_clock.counter}
+type counter = {process_times: Caml_unix.process_times; wall_time: Mtime_clock.counter}
 
 type 'a evaluation_result = {result: 'a; execution_duration: t}
 
 let zero = {user= Duration.zero; sys= Duration.zero; wall= Mtime.Span.zero}
 
 let since {process_times; wall_time} =
-  let now = Unix.times () in
+  let now = Caml_unix.times () in
   { user= Duration.since process_times.tms_utime ~now:now.tms_utime
   ; sys= Duration.since process_times.tms_stime ~now:now.tms_stime
   ; wall= Mtime_clock.count wall_time }
@@ -74,7 +74,7 @@ let pp ~prefix fmt exe_duration =
     (oncpu_pct exe_duration)
 
 
-let counter () = {process_times= Unix.times (); wall_time= Mtime_clock.counter ()}
+let counter () = {process_times= Caml_unix.times (); wall_time= Mtime_clock.counter ()}
 
 let timed_evaluate ~f =
   let start = counter () in

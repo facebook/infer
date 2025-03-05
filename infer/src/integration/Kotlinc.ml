@@ -39,7 +39,7 @@ let compile prog args =
            *** Command: %s@\n\
            *** Output:@\n\
            *** Infer needs a working compilation command to run.@."
-          (Unix.Exit_or_signal.to_string_hum (Error err))
+          (IUnix.Exit_or_signal.to_string_hum (Error err))
           shell_cmd log
     | log, Ok () ->
         L.(debug Capture Quiet) "*** Success. Logs:@\n%s" log

@@ -80,7 +80,7 @@ module TenvMerger = struct
       match IUnix.waitpid child_pid with
       | Error _ as err ->
           L.die InternalError "Worker terminated abnormally: %s.@\n"
-            (Unix.Exit_or_signal.to_string_hum err)
+            (IUnix.Exit_or_signal.to_string_hum err)
       | Ok () ->
           Tenv.Global.force_load () |> ignore )
 end

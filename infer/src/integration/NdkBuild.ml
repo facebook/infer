@@ -33,15 +33,15 @@ let capture ~build_cmd =
   let {IUnix.Process_info.stdin; stdout; stderr; pid} =
     IUnix.create_process_env ~prog ~args ~env:(`Extend new_env)
   in
-  let ndk_stderr = Unix.in_channel_of_descr stderr in
+  let ndk_stderr = Caml_unix.in_channel_of_descr stderr in
   Utils.with_channel_in ndk_stderr ~f:(L.progress "NDKBUILD: %s@.") ;
-  IUnix.close stdin ;
-  IUnix.close stdout ;
+  Caml_unix.close stdin ;
+  Caml_unix.close stdout ;
   In_channel.close ndk_stderr ;
   match IUnix.waitpid pid with
   | Ok () ->
       ()
   | Error _ as err ->
       L.die ExternalError "ndkbuild capture failed to execute: %s"
-        (Unix.Exit_or_signal.to_string_hum err)
+        (IUnix.Exit_or_signal.to_string_hum err)
         ()

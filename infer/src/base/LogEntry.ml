@@ -18,18 +18,18 @@ type entry_data = Count of count_entry_data | Time of time_entry_data | String o
 type t = {label: string; created_at_ts: int; data: entry_data}
 
 let mk_count ~label ~value =
-  let created_at_ts = Unix.time () |> int_of_float in
+  let created_at_ts = Caml_unix.time () |> int_of_float in
   let data = Count {value} in
   {label; created_at_ts; data}
 
 
 let mk_time ~label ~duration_us =
-  let created_at_ts = Unix.time () |> int_of_float in
+  let created_at_ts = Caml_unix.time () |> int_of_float in
   let data = Time {duration_us} in
   {label; created_at_ts; data}
 
 
 let mk_string ~label ~message =
-  let created_at_ts = Unix.time () |> int_of_float in
+  let created_at_ts = Caml_unix.time () |> int_of_float in
   let data = String {message} in
   {label; created_at_ts; data}

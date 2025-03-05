@@ -14,7 +14,7 @@ type sample =
   ; tagset_section: string list SMap.t  (** All sets of strings type fields and their values *) }
 
 let new_sample ~time =
-  let time = match time with Some time -> time | None -> int_of_float (Unix.time ()) in
+  let time = match time with Some time -> time | None -> int_of_float (Caml_unix.time ()) in
   { (* time is a single mandatory field. *)
     int_section= SMap.singleton "time" time
   ; normal_section= SMap.empty
