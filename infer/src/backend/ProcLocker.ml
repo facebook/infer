@@ -86,7 +86,7 @@ end
 module DomainLocks = struct
   module LockMap = IString.Hash
 
-  let mutex = Error_checking_mutex.create ()
+  let mutex = IMutex.create ()
 
   let lock_map = LockMap.create 1009
 
@@ -99,12 +99,11 @@ module DomainLocks = struct
 
   let unlock pname =
     let proc_uid = Procname.to_unique_id pname in
-    Error_checking_mutex.critical_section mutex ~f:(fun () -> unsafe_unlock_proc_uid proc_uid)
+    IMutex.critical_section mutex ~f:(fun () -> unsafe_unlock_proc_uid proc_uid)
 
 
   let unlock_all proc_filenames =
-    Error_checking_mutex.critical_section mutex ~f:(fun () ->
-        List.iter proc_filenames ~f:unsafe_unlock_proc_uid )
+    IMutex.critical_section mutex ~f:(fun () -> List.iter proc_filenames ~f:unsafe_unlock_proc_uid)
 
 
   let unsafe_try_lock_key domain_id key =
@@ -121,12 +120,12 @@ module DomainLocks = struct
   let try_lock pname =
     let our_id = WorkerPoolState.get_in_child () |> Option.value_exn in
     let proc_uid = Procname.to_unique_id pname in
-    Error_checking_mutex.critical_section mutex ~f:(fun () -> unsafe_try_lock_key our_id proc_uid)
+    IMutex.critical_section mutex ~f:(fun () -> unsafe_try_lock_key our_id proc_uid)
 
 
   let lock_all domain_id keys =
     let lock_result =
-      Error_checking_mutex.critical_section mutex ~f:(fun () ->
+      IMutex.critical_section mutex ~f:(fun () ->
           List.fold_result keys ~init:[] ~f:(fun locks key ->
               match unsafe_try_lock_key domain_id key with
               | `AlreadyLockedByUs ->

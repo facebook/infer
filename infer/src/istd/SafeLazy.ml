@@ -9,15 +9,15 @@ open! IStd
 
 type 'a t =
   | Eager of 'a  (** avoid allocating a mutex with [from_val] *)
-  | Lazy of {mutex: Error_checking_mutex.t; v: 'a Lazy.t}
+  | Lazy of {mutex: IMutex.t; v: 'a Lazy.t}
 
-let make v = Lazy {mutex= Error_checking_mutex.create (); v}
+let make v = Lazy {mutex= IMutex.create (); v}
 
 let force = function
   | Eager v ->
       v
   | Lazy t ->
-      Error_checking_mutex.critical_section t.mutex ~f:(fun () -> Lazy.force t.v)
+      IMutex.critical_section t.mutex ~f:(fun () -> Lazy.force t.v)
 
 
 let force_option v_opt = Option.map ~f:force v_opt

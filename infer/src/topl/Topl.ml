@@ -7,7 +7,7 @@
 
 open! IStd
 
-let mutex = Error_checking_mutex.create ()
+let mutex = IMutex.create ()
 
 let automaton =
   lazy
@@ -15,7 +15,7 @@ let automaton =
        (Config.topl_properties @ DataFlowQuery.convert_to_topl Config.data_flow_queries_on_topl) )
 
 
-let automaton () = Error_checking_mutex.critical_section mutex ~f:(fun () -> Lazy.force automaton)
+let automaton () = IMutex.critical_section mutex ~f:(fun () -> Lazy.force automaton)
 
 let is_active () =
   Config.is_checker_enabled Topl

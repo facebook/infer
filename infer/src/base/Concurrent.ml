@@ -7,16 +7,14 @@
 open! IStd
 
 module Queue = struct
-  type 'a t = {mutex: Error_checking_mutex.t; non_empty: Condition.t; queue: 'a Queue.t}
+  type 'a t = {mutex: IMutex.t; non_empty: Condition.t; queue: 'a Queue.t}
 
   let create ?capacity () =
-    { mutex= Error_checking_mutex.create ()
-    ; non_empty= Condition.create ()
-    ; queue= Queue.create ?capacity () }
+    {mutex= IMutex.create (); non_empty= Condition.create (); queue= Queue.create ?capacity ()}
 
 
   let enqueue v t =
-    Error_checking_mutex.critical_section t.mutex ~f:(fun () ->
+    IMutex.critical_section t.mutex ~f:(fun () ->
         Queue.enqueue t.queue v ;
         Condition.signal t.non_empty )
 
@@ -30,12 +28,10 @@ module Queue = struct
           Condition.wait t.non_empty t.mutex ;
           dequeue_loop ()
     in
-    Error_checking_mutex.critical_section t.mutex ~f:dequeue_loop
+    IMutex.critical_section t.mutex ~f:dequeue_loop
 
 
-  let dequeue_opt t =
-    Error_checking_mutex.critical_section t.mutex ~f:(fun () -> Queue.dequeue t.queue)
-
+  let dequeue_opt t = IMutex.critical_section t.mutex ~f:(fun () -> Queue.dequeue t.queue)
 
   let wait_until_non_empty t =
     let rec wait_until_non_empty_loop () =
@@ -43,7 +39,7 @@ module Queue = struct
         Condition.wait t.non_empty t.mutex ;
         wait_until_non_empty_loop () )
     in
-    Error_checking_mutex.critical_section t.mutex ~f:wait_until_non_empty_loop
+    IMutex.critical_section t.mutex ~f:wait_until_non_empty_loop
 end
 
 module type Hashtbl = sig
@@ -80,11 +76,11 @@ struct
 
   type key = H.key
 
-  type 'a t = {mutex: Error_checking_mutex.t; hash: 'a H.t}
+  type 'a t = {mutex: IMutex.t; hash: 'a H.t}
 
-  let create size = {mutex= Error_checking_mutex.create (); hash= H.create size}
+  let create size = {mutex= IMutex.create (); hash= H.create size}
 
-  let in_mutex {mutex; hash} ~f = Error_checking_mutex.critical_section mutex ~f:(fun () -> f hash)
+  let in_mutex {mutex; hash} ~f = IMutex.critical_section mutex ~f:(fun () -> f hash)
 
   let clear t = in_mutex t ~f:H.clear
 
@@ -102,7 +98,7 @@ struct
 
   let with_hashtable f t = in_mutex t ~f
 
-  let wrap_hashtable hash = {mutex= Error_checking_mutex.create (); hash}
+  let wrap_hashtable hash = {mutex= IMutex.create (); hash}
 end
 
 module type CacheS = sig
@@ -130,12 +126,11 @@ module MakeCache (Key : sig
 end) : CacheS with type HQ.key = Key.t = struct
   module HQ = Hash_queue.Make (Key)
 
-  type 'a t =
-    {mutex: Error_checking_mutex.t; name: string; hq: 'a HQ.t; mutable lru_limit: int option}
+  type 'a t = {mutex: IMutex.t; name: string; hq: 'a HQ.t; mutable lru_limit: int option}
 
-  let create ~name = {name; mutex= Error_checking_mutex.create (); hq= HQ.create (); lru_limit= None}
+  let create ~name = {name; mutex= IMutex.create (); hq= HQ.create (); lru_limit= None}
 
-  let in_mutex {mutex; hq} ~f = Error_checking_mutex.critical_section mutex ~f:(fun () -> f hq)
+  let in_mutex {mutex; hq} ~f = IMutex.critical_section mutex ~f:(fun () -> f hq)
 
   let add t k v =
     in_mutex t ~f:(fun hq ->

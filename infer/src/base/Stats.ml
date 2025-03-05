@@ -423,10 +423,10 @@ let log_aggregate stats_list =
       log_to_file stats
 
 
-let mutex = Error_checking_mutex.create ()
+let mutex = IMutex.create ()
 
 let get () =
-  Error_checking_mutex.critical_section mutex ~f:(fun () ->
+  IMutex.critical_section mutex ~f:(fun () ->
       {global_stats with timings= TimingsStat.serialize global_stats.timings} )
 
 
@@ -435,7 +435,7 @@ let update_with field ~f =
   | None ->
       L.die InternalError "incr on non-mutable field %s" (Field.name field)
   | Some set ->
-      Error_checking_mutex.critical_section mutex ~f:(fun () ->
+      IMutex.critical_section mutex ~f:(fun () ->
           set global_stats (f (Field.get field global_stats)) )
 
 

@@ -404,10 +404,10 @@ let timeit ~f =
   (ret_val, duration)
 
 
-let mutex = Error_checking_mutex.create ()
+let mutex = IMutex.create ()
 
 let do_in_dir ~dir ~f =
-  Error_checking_mutex.critical_section mutex ~f:(fun () ->
+  IMutex.critical_section mutex ~f:(fun () ->
       let cwd = Caml_unix.getcwd () in
       Caml_unix.chdir dir ;
       Exception.try_finally ~f ~finally:(fun () -> Caml_unix.chdir cwd) )

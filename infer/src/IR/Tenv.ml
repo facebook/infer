@@ -312,11 +312,10 @@ end = struct
 
   let read () = read global_tenv_path
 
-  let global_tenv_mutex = Error_checking_mutex.create ()
+  let global_tenv_mutex = IMutex.create ()
 
   let set tenv =
-    Error_checking_mutex.critical_section global_tenv_mutex ~f:(fun () ->
-        Atomic.set global_tenv tenv )
+    IMutex.critical_section global_tenv_mutex ~f:(fun () -> Atomic.set global_tenv tenv)
 
 
   let force_load () =

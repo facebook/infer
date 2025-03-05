@@ -64,19 +64,19 @@ let load () =
   {procedures; sources}
 
 
-let mutex = Error_checking_mutex.create ()
+let mutex = IMutex.create ()
 
 let missing_deps = {procedures= ProcUidSet.create 1; sources= SourceFile.HashSet.create 1}
 
-let get () = Error_checking_mutex.critical_section mutex ~f:(fun () -> missing_deps)
+let get () = IMutex.critical_section mutex ~f:(fun () -> missing_deps)
 
 let record_procname callee =
   if Config.log_missing_deps && not (BuiltinDecl.is_declared callee) then
-    Error_checking_mutex.critical_section mutex ~f:(fun () ->
+    IMutex.critical_section mutex ~f:(fun () ->
         ProcUidSet.add (Procname.to_unique_id callee) missing_deps.procedures )
 
 
 let record_sourcefile sourcefile =
   if Config.log_missing_deps then
-    Error_checking_mutex.critical_section mutex ~f:(fun () ->
+    IMutex.critical_section mutex ~f:(fun () ->
         SourceFile.HashSet.add sourcefile missing_deps.sources )

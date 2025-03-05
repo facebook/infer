@@ -7,15 +7,13 @@
 open! IStd
 module L = Logging
 
-let dbwriter_command_mutex = Error_checking_mutex.create ()
+let dbwriter_command_mutex = IMutex.create ()
 
 let perform cmd =
   match (cmd : DBWriterCommand.t) with
   | Terminate ->
       L.debug Analysis Quiet "Sqlite write daemon: terminating@." ;
       ExecutionDuration.log ~prefix:"dbwriter.store_sql" Analysis !DBWriterCommand.store_sql_time ;
-      Error_checking_mutex.critical_section dbwriter_command_mutex ~f:(fun () ->
-          DBWriterCommand.perform cmd )
+      IMutex.critical_section dbwriter_command_mutex ~f:(fun () -> DBWriterCommand.perform cmd)
   | _ ->
-      Error_checking_mutex.critical_section dbwriter_command_mutex ~f:(fun () ->
-          DBWriterCommand.perform cmd )
+      IMutex.critical_section dbwriter_command_mutex ~f:(fun () -> DBWriterCommand.perform cmd)
