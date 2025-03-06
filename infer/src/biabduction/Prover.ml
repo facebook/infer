@@ -827,7 +827,7 @@ let check_lt_normalized tenv prop e1 e2 =
 (** Given an atom and a proposition returns a unique identifier. We use this to distinguish among
     different queries. *)
 let get_smt_key a p =
-  let tmp_filename = Filename.temp_file "smt_query" ".cns" in
+  let tmp_filename = IFilename.temp_file "smt_query" ".cns" in
   let outc_tmp = Out_channel.create tmp_filename in
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
   let () = F.fprintf fmt_tmp "%a%a" (Predicates.pp_atom Pp.text) a (Prop.pp_prop Pp.text) p in

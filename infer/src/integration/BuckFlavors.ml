@@ -77,7 +77,7 @@ let capture build_cmd =
       if Config.keep_going && not Config.continue_capture then
         Process.create_process_and_wait ~prog ~args:["clean"] () ;
       let build_report_file =
-        Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
+        IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
       in
       run_buck_build prog (buck_build_cmd @ capture_buck_args build_report_file) ;
       if Config.buck_merge_all_deps then get_all_infer_deps_under_buck_out ()

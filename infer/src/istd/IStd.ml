@@ -10,12 +10,6 @@ module Unix = UnixLabels
 
 [@@@warning "-unused-value-declaration"]
 
-(* we don't care about the _unix distinction *)
-module Filename = struct
-  include Filename
-  include Filename_unix
-end
-
 (* easy access to sub-module *)
 module DLS = struct
   include Domain.DLS

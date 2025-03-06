@@ -18,7 +18,7 @@ let compile prog args =
   in
   (* Pass non-special args via a file to avoid exceeding the command line size limit. *)
   let args_file =
-    let file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "kotlinc_args" "" in
+    let file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "kotlinc_args" "" in
     let quoted_file_args =
       List.map file_args ~f:(fun arg ->
           if String.contains arg '\'' then arg else F.sprintf "'%s'" arg )

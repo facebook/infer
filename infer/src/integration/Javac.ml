@@ -30,7 +30,7 @@ let compile compiler build_prog build_args =
   in
   (* Pass non-special args via a file to avoid exceeding the command line size limit. *)
   let args_file =
-    let file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac_args" "" in
+    let file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac_args" "" in
     let quoted_file_args =
       List.map file_args ~f:(fun arg ->
           if String.contains arg '\'' then arg else F.sprintf "'%s'" arg )
@@ -42,7 +42,7 @@ let compile compiler build_prog build_args =
   let args = prog_args @ cli_file_args in
   L.(debug Capture Quiet) "Current working directory: '%s'@." (Stdlib.Sys.getcwd ()) ;
   let verbose_out_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac" ".out"
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac" ".out"
   in
   let try_run cmd error_k =
     let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in

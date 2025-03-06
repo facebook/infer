@@ -27,7 +27,7 @@ let store_args_in_file ~identifier args =
         exceed_length ~max:(max - String.length h) t
   in
   if exceed_length ~max:max_command_line_length args then (
-    let file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) identifier ".txt" in
+    let file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) identifier ".txt" in
     let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" args) in
     Utils.with_file_out file ~f:write_args ;
     L.debug Capture Quiet "Buck targets options stored in file '%s'@\n" file ;
@@ -56,7 +56,7 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
   let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
     let prefix = Printf.sprintf "%s_%s" (binary_of_version version) label in
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
   in
   let cmd =
     match (cmd, Config.buck2_isolation_dir) with

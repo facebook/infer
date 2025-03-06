@@ -86,7 +86,7 @@ let add_source_file =
 let add_root_path path roots = IString.Set.add path roots
 
 let read_modules_1 path =
-  let temp_dir = Filename.temp_dir "java_modules_lib" "" in
+  let temp_dir = IFilename.temp_dir "java_modules_lib" "" in
   Epilogues.register
     ~f:(fun () -> Utils.rmtree temp_dir)
     ~description:("Remove the temp dir for java modules: " ^ temp_dir) ;

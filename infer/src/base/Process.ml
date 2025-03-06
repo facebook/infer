@@ -28,7 +28,7 @@ let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
     match action with ReadStderr -> ("stderr", "2>") | ReadStdout -> ("stdout", ">")
   in
   let output_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prog redirected_fd_name
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prog redirected_fd_name
   in
   let escaped_cmd = List.map ~f:Escape.escape_shell (prog :: args) |> String.concat ~sep:" " in
   let redirected_cmd = Printf.sprintf "exec %s %s'%s'" escaped_cmd redirect_spec output_file in

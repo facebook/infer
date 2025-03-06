@@ -48,13 +48,13 @@ let process_gradle_output_line =
            if IString.Set.mem content seen then acc
            else
              let javac_data = parse_gradle_line ~kotlin:Config.kotlin_capture ~line:content in
-             let out_dir = Filename.temp_dir capture_output_template "" in
+             let out_dir = IFilename.temp_dir capture_output_template "" in
              (IString.Set.add content seen, (out_dir, javac_data) :: target_dirs) )
 
 
 let run_gradle ~prog ~args =
   let gradle_output_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_output" ".log"
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_output" ".log"
   in
   let shell_cmd =
     List.map ~f:Escape.escape_shell (prog :: "--debug" :: args)
@@ -73,7 +73,7 @@ let run_gradle ~prog ~args =
 
 
 let write_args_file prefix args =
-  let argfile, oc = Filename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix "" in
+  let argfile, oc = IFilename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix "" in
   List.iter args ~f:(fun arg ->
       Out_channel.output_string oc (Escape.escape_shell arg) ;
       Out_channel.newline oc ) ;

@@ -1111,7 +1111,7 @@ let parse ?config_file ~usage action initial_command =
          too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
          to prevent this from happening *)
       let in_dir = Sys.getenv "TMPDIR" in
-      let file = Filename.temp_file ?in_dir "args" "" in
+      let file = IFilename.temp_file ?in_dir "args" "" in
       Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
       if not !keep_args_file then Utils.unlink_file_on_exit file ;
       "@" ^ file )

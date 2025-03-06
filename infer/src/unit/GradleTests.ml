@@ -25,9 +25,9 @@ let test_parse line files opts =
 
 
 let tests_wrapper _test_ctxt =
-  let tmpjava = Filename.temp_file "" ".java" in
+  let tmpjava = IFilename.temp_file "" ".java" in
   let tmpjavanoexist = "foo" ^/ tmpjava in
-  let tmpnojava = Filename.temp_file "" "" in
+  let tmpnojava = IFilename.temp_file "" "" in
   test_parse "" [] [""] ;
   test_parse ("-opt1 " ^ tmpjava) [tmpjava] ["-opt1"] ;
   test_parse ("-opt1 optval1 " ^ tmpjava) [tmpjava] ["-opt1"; "optval1"] ;
@@ -56,7 +56,7 @@ let tests_wrapper _test_ctxt =
     ["-XDuseUnsharedTable=true"; "-classpath"; "''"; "-Xmaxerrs"; "1000"] ;
   test_parse "-XDuseUnsharedTable=true -classpath foo -Xmaxerrs 1000" []
     ["-XDuseUnsharedTable=true"; "-classpath"; "foo"; "-Xmaxerrs"; "1000"] ;
-  let tmpkotlin = Filename.temp_file "" ".kt" in
+  let tmpkotlin = IFilename.temp_file "" ".kt" in
   test_parse ("-opt1 " ^ tmpkotlin) [tmpkotlin] ["-opt1"] ;
   ()
 

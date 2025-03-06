@@ -216,7 +216,7 @@ let exn_retain_cycle tenv cycle =
   if Config.debug_mode then (
     let rc_dotty_dir = ResultsDir.get_path RetainCycles in
     Utils.create_dir rc_dotty_dir ;
-    let rc_dotty_file = Filename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
+    let rc_dotty_file = IFilename.temp_file ~in_dir:rc_dotty_dir "rc" ".dot" in
     RetainCyclesType.write_dotty_to_file rc_dotty_file cycle ) ;
   let desc =
     Localise.desc_retain_cycle retain_cycle (AnalysisState.get_loc_exn ()) (Some cycle_dotty)

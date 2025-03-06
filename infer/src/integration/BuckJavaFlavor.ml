@@ -20,7 +20,7 @@ let capture build_cmd =
     (Mtime_clock.count time0) ;
   let all_args = List.rev_append rev_not_targets targets in
   let build_report_file =
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck_build_report" ".json"
   in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)

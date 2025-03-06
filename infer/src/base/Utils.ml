@@ -235,7 +235,9 @@ let with_file_out ?append ?fail_if_exists file ~f =
 
 
 let with_intermediate_temp_file_out ?(retry = false) file ~f =
-  let temp_filename, temp_oc = Filename.open_temp_file ~in_dir:(Filename.dirname file) "infer" "" in
+  let temp_filename, temp_oc =
+    IFilename.open_temp_file ~in_dir:(Filename.dirname file) "infer" ""
+  in
   let f () = f temp_oc in
   let finally () =
     Out_channel.close temp_oc ;
@@ -301,7 +303,7 @@ let out_channel_create_with_dir fname =
 
 
 let realpath ?(warn_on_error = true) path =
-  try Filename.realpath path
+  try Caml_unix.realpath path
   with Unix.Unix_error (code, _, arg) as exn ->
     IExn.reraise_after exn ~f:(fun () ->
         if warn_on_error then

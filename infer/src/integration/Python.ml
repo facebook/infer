@@ -81,7 +81,7 @@ let dump_textual_file ~version pyc module_ =
   let suffix = Format.asprintf ".v%d.sil" version in
   let filename =
     let textual_filename = TextualSil.to_filename pyc in
-    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
   in
   TextualSil.dump_module ~filename module_
 
