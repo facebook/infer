@@ -66,6 +66,7 @@ type pulse_taint_config =
 type pulse_hack_builder_pattern =
   { class_name: string [@yojson.key "class"]
   ; finalizers: string list
+  ; receiver_finalizers: string list option [@yojson.option]
   ; immediately_non_discardable_class: string option [@yojson.option] }
 [@@deriving of_yojson]
 

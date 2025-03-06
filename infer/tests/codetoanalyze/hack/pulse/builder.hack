@@ -9,6 +9,16 @@ interface TestBuilderBase {
   public function doFinalize(): void;
 }
 
+trait FinalizerTrait {
+  public function finalizeViaTrait1(): void {
+    return;
+  }
+
+  public function finalizeViaTrait2(): void {
+    return;
+  }
+}
+
 // so this should be recognised as a builder
 // which it is, provided we have a known __construct
 class NoBuilderSuffix implements TestBuilderBase {
@@ -37,6 +47,8 @@ class MyImmediatelyDiscardableBuilder implements TestBuilderBase {
 
 <<__ConsistentConstruct>>
 abstract class AbstractBuilder {
+  use FinalizerTrait;
+
   abstract public function __construct(int $foo);
 }
 
@@ -143,6 +155,17 @@ class BuilderTester {
   // from the .inferconfig and handle them accordingly
   public static function testImmediatelyDiscardableBuilderBad(): void {
     $b = new MyImmediatelyDiscardableBuilder();
+  }
+
+  public static function testFinalizeViaTrait1Ok(): void {
+    $b = new MyBuilder(0);
+    $b->finalizeViaTrait1();
+  }
+
+  public static function testFinalizeViaTrait2Ok(): void {
+    $b = new MyBuilder(0);
+    $b->setA(42);
+    $b->finalizeViaTrait2();
   }
 }
 

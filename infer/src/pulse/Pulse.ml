@@ -614,6 +614,20 @@ module PulseTransferFunctions = struct
         false
 
 
+  (* Necessary for the cases whenever finalizer is defined in a trait *)
+  let is_hack_builder_receiver_consumer tenv astate pname receiver =
+    let res =
+      is_receiver_hack_builder tenv astate pname receiver
+      && List.exists Config.hack_builder_patterns ~f:(fun Config.{receiver_finalizers} ->
+             Option.exists receiver_finalizers ~f:(fun receiver_finalizers ->
+                 let pname = Procname.get_method pname in
+                 List.exists receiver_finalizers ~f:(fun finalizer_prefix ->
+                     String.is_prefix pname ~prefix:finalizer_prefix ) ) )
+    in
+    L.d_printfln "doing builder finalizer check, result is %b" res ;
+    res
+
+
   let lookup_virtual_method_info {InterproceduralAnalysis.tenv; proc_desc} path func_args call_loc
       astate callee_pname default_info =
     let caller = Procdesc.get_proc_name proc_desc in
@@ -787,21 +801,23 @@ module PulseTransferFunctions = struct
       modify_receiver_if_hack_function_reference path call_loc astate callee_pname func_args
     in
     let astate =
-      match (callee_pname, func_args) with
-      | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
-        when is_hack_builder_consumer tenv callee_pname ->
-          L.d_printfln "**it's a builder consumer" ;
-          AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
+      if Language.curr_language_is Hack then
+        match (callee_pname, func_args) with
+        | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+          when is_hack_builder_consumer tenv callee_pname
+               || is_hack_builder_receiver_consumer tenv astate callee_pname arg ->
+            L.d_printfln "**it's a builder consumer" ;
+            AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
+              astate
+        | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+          when is_receiver_hack_builder tenv astate callee_pname arg ->
+            L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
+              callee_pname ;
+            AddressAttributes.set_hack_builder (ValueOrigin.value arg)
+              Attribute.Builder.NonDiscardable astate
+        | _, _ ->
             astate
-      | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
-        when Language.curr_language_is Hack && is_receiver_hack_builder tenv astate callee_pname arg
-        ->
-          L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
-            callee_pname ;
-          AddressAttributes.set_hack_builder (ValueOrigin.value arg)
-            Attribute.Builder.NonDiscardable astate
-      | _, _ ->
-          astate
+      else astate
     in
     let astate =
       match (callee_pname, func_args) with

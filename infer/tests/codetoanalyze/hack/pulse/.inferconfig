@@ -11,6 +11,9 @@
         "doFinalize",
         "altFinalize"
         ],
+      "receiver_finalizers": [
+        "finalizeViaTrait"
+      ],
       "immediately_non_discardable_class": "MyImmediatelyDiscardableBuilder"
       },
     { "class": "MyBuilder",
