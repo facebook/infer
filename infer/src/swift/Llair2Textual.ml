@@ -71,49 +71,55 @@ let block_to_node_name block =
 
 
 let to_textual_arith_exp_builtin (op : Llair.Exp.op2) typ =
-  match (op, typ) with
-  | Add, Llair.Typ.Integer _ ->
-      "__sil_plusa_int"
-  | Sub, Llair.Typ.Integer _ ->
-      "__sil_minusa_int"
-  | Mul, Llair.Typ.Integer _ ->
-      "__sil_mult_int"
-  | Div, Llair.Typ.Integer _ ->
-      "__sil_divi"
-  | Div, Llair.Typ.Float _ ->
-      "__sil_divf"
-  | Rem, Llair.Typ.Integer _ ->
-      "__sil_mod"
-  | _ ->
-      assert false
+  let sil_binop =
+    match (op, typ) with
+    | Add, Llair.Typ.Integer _ ->
+        Binop.PlusA (Some IInt)
+    | Sub, Llair.Typ.Integer _ ->
+        Binop.MinusA (Some IInt)
+    | Mul, Llair.Typ.Integer _ ->
+        Binop.Mult (Some IInt)
+    | Div, Llair.Typ.Integer _ ->
+        Binop.DivI
+    | Div, Llair.Typ.Float _ ->
+        Binop.DivF
+    | Rem, Llair.Typ.Integer _ ->
+        Binop.Mod
+    | _ ->
+        assert false
+  in
+  Textual.ProcDecl.of_binop sil_binop
 
 
 let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
-  match op with
-  | Eq ->
-      "__sil_eq"
-  | Dq ->
-      "__sil_ne"
-  | Gt ->
-      "__sil_gt"
-  | Ge ->
-      "__sil_ge"
-  | Le ->
-      "__sil_le"
-  | And ->
-      "__sil_land"
-  | Or ->
-      "__sil_lor"
-  | Xor ->
-      "__sil_bxor"
-  | Shl ->
-      "__sil_shiftlt"
-  | Lshr ->
-      "__sil_shiftrt"
-  | Ashr ->
-      "__sil_shiftrt"
-  | _ ->
-      assert false
+  let sil_bin_op =
+    match op with
+    | Eq ->
+        Binop.Eq
+    | Dq ->
+        Binop.Ne
+    | Gt ->
+        Binop.Gt
+    | Ge ->
+        Binop.Ge
+    | Le ->
+        Binop.Le
+    | And ->
+        Binop.LAnd
+    | Or ->
+        Binop.LOr
+    | Xor ->
+        Binop.BXor
+    | Shl ->
+        Binop.Shiftlt
+    | Lshr ->
+        Binop.Shiftrt
+    | Ashr ->
+        Binop.Shiftrt
+    | _ ->
+        assert false
+  in
+  Textual.ProcDecl.of_binop sil_bin_op
 
 
 (* TODO: translate expressions *)
@@ -154,12 +160,12 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       let proc = builtin_qual_proc_name "llvm_nondet" in
       Call {proc; args= []; kind= Textual.Exp.NonVirtual}
   | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
-      let proc = builtin_qual_proc_name (to_textual_arith_exp_builtin op typ) in
+      let proc = to_textual_arith_exp_builtin op typ in
       let exp1 = to_textual_exp e1 in
       let exp2 = to_textual_exp e2 in
       Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
   | Ap2 (((Eq | Dq | Gt | Ge | Le | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
-      let proc = builtin_qual_proc_name (to_textual_bool_exp_builtin op) in
+      let proc = to_textual_bool_exp_builtin op in
       let exp1 = to_textual_exp e1 in
       let exp2 = to_textual_exp e2 in
       Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
