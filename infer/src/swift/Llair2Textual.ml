@@ -100,6 +100,18 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
       "__sil_ge"
   | Le ->
       "__sil_le"
+  | And ->
+      "__sil_land"
+  | Or ->
+      "__sil_lor"
+  | Xor ->
+      "__sil_bxor"
+  | Shl ->
+      "__sil_shiftlt"
+  | Lshr ->
+      "__sil_shiftrt"
+  | Ashr ->
+      "__sil_shiftrt"
   | _ ->
       assert false
 
@@ -146,7 +158,7 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
       let exp1 = to_textual_exp e1 in
       let exp2 = to_textual_exp e2 in
       Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
-  | Ap2 (((Eq | Dq | Gt | Ge | Le) as op), _, e1, e2) ->
+  | Ap2 (((Eq | Dq | Gt | Ge | Le | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
       let proc = builtin_qual_proc_name (to_textual_bool_exp_builtin op) in
       let exp1 = to_textual_exp e1 in
       let exp2 = to_textual_exp e2 in
