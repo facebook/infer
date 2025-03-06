@@ -38,11 +38,11 @@ let create_process_and_wait_with_output ~prog ~args ?(env = `Extend []) action =
   let fd_to_log, redirected_fd =
     match action with ReadStderr -> (stdout, stderr) | ReadStdout -> (stderr, stdout)
   in
-  let channel_to_log = Caml_unix.in_channel_of_descr fd_to_log in
+  let channel_to_log = Unix.in_channel_of_descr fd_to_log in
   Utils.with_channel_in channel_to_log ~f:(L.progress "%s-%s: %s@." prog redirected_fd_name) ;
   In_channel.close channel_to_log ;
-  Caml_unix.close redirected_fd ;
-  Caml_unix.close stdin ;
+  Unix.close redirected_fd ;
+  Unix.close stdin ;
   match IUnix.waitpid pid with
   | Ok () ->
       Utils.with_file_in output_file ~f:In_channel.input_all
@@ -58,20 +58,20 @@ let create_process_and_wait ~prog ~args ?env () =
 
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
-  let pipe_in, pipe_out = Caml_unix.pipe () in
+  let pipe_in, pipe_out = Unix.pipe () in
   let producer_args = Array.of_list producer_args in
   let consumer_args = Array.of_list consumer_args in
   let producer_pid =
-    UnixLabels.create_process ~prog:producer_prog ~args:producer_args ~stdin:Caml_unix.stdin
-      ~stdout:pipe_out ~stderr:Caml_unix.stderr
+    UnixLabels.create_process ~prog:producer_prog ~args:producer_args ~stdin:Unix.stdin
+      ~stdout:pipe_out ~stderr:Unix.stderr
   in
   let consumer_pid =
     UnixLabels.create_process ~prog:consumer_prog ~args:consumer_args ~stdin:pipe_in
-      ~stdout:Caml_unix.stdout ~stderr:Caml_unix.stderr
+      ~stdout:Unix.stdout ~stderr:Unix.stderr
   in
   (* wait for children *)
   let producer_status = IUnix.waitpid (Pid.of_int producer_pid) in
   let consumer_status = IUnix.waitpid (Pid.of_int consumer_pid) in
-  Caml_unix.close pipe_out ;
-  Caml_unix.close pipe_in ;
+  Unix.close pipe_out ;
+  Unix.close pipe_in ;
   (producer_status, consumer_status)

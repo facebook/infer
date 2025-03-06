@@ -10,7 +10,7 @@ module L = Logging
 
 exception Timeout of float
 
-let now () = if Config.multicore then 0.0 else (Caml_unix.times ()).tms_utime
+let now () = if Config.multicore then 0.0 else (Unix.times ()).tms_utime
 
 let timer = DLS.new_key (fun () -> None)
 

@@ -236,7 +236,7 @@ let logger =
      in
      ( if is_toplevel_process then
          let preexisting_logfile = ISys.file_exists log_file in
-         if preexisting_logfile then Caml_unix.unlink log_file ) ;
+         if preexisting_logfile then Unix.unlink log_file ) ;
      let out_channel = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 log_file in
      let logger = F.formatter_of_out_channel out_channel in
      register_gc_stats logger ;

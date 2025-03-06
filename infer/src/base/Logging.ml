@@ -99,7 +99,7 @@ let color_console ?(use_stdout = false) scheme =
   DLS.new_key (fun () ->
       let scheme = Option.value scheme ~default:Normal in
       let formatter = if use_stdout then F.get_std_formatter () else F.get_err_formatter () in
-      let can_colorize = Caml_unix.(isatty (if use_stdout then stdout else stderr)) in
+      let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
       if can_colorize then
         let styles = term_styles_of_style scheme in
         let orig_out_functions = F.pp_get_formatter_out_functions formatter () in

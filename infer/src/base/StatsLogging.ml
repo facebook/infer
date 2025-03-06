@@ -7,7 +7,7 @@
 
 open! IStd
 
-let hostname = Caml_unix.gethostname ()
+let hostname = Unix.gethostname ()
 
 let maybe_add_normal ~name ~value sample =
   match value with None -> sample | Some value -> StatsSample.add_normal ~name ~value sample

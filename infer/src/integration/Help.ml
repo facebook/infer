@@ -390,7 +390,7 @@ let delete_checkers_website ~website_root =
     (fun path ->
       if String.is_prefix ~prefix:basename_checker_prefix (Filename.basename path) then (
         L.progress "deleting '%s'@\n" path ;
-        Caml_unix.unlink path ) )
+        Unix.unlink path ) )
     (website_root ^/ docs_dir)
 
 

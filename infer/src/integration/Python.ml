@@ -192,7 +192,7 @@ let capture_files ~is_binary files =
             acc )
   in
   if not Config.python_skip_db then MergeCapture.merge_global_tenv ~normalize:true child_tenv_paths ;
-  List.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Caml_unix.unlink)
+  List.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
 
 
 let capture input =

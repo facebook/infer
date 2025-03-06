@@ -303,7 +303,7 @@ let main ~changed_files =
     analysis_duration ;
   (* delete any previous analysis schedule once the new analysis has finished to avoid keeping a
      stale schedule around that could be misused later *)
-  ( try Caml_unix.unlink (ResultsDir.get_path AnalysisDependencyGraph) with _ -> () ) ;
+  ( try Unix.unlink (ResultsDir.get_path AnalysisDependencyGraph) with _ -> () ) ;
   if Config.is_originator && Config.store_analysis_schedule then
     AnalysisDependencyGraph.store_previous_schedule () ;
   ()

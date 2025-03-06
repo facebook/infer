@@ -36,7 +36,7 @@ let set_alarm nsecs =
   match Config.os_type with
   | Config.Unix | Config.Cygwin ->
       ignore
-        (Caml_unix.setitimer ITIMER_REAL
+        (Unix.setitimer ITIMER_REAL
            {it_interval= 3.0 (* try again after 3 seconds if the signal is lost *); it_value= nsecs} )
   | Config.Win32 ->
       SymOp.set_wallclock_alarm nsecs
@@ -53,7 +53,7 @@ let unset_alarm () =
 let get_seconds_remaining () =
   match Config.os_type with
   | Unix | Cygwin ->
-      (Caml_unix.getitimer ITIMER_REAL).it_value
+      (Unix.getitimer ITIMER_REAL).it_value
   | Win32 ->
       SymOp.get_remaining_wallclock_time ()
 

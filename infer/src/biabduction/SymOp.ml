@@ -65,7 +65,7 @@ let wallclock_timeout_handler = ref None
 let set_wallclock_timeout_handler handler = wallclock_timeout_handler := Some handler
 
 (** Set the wallclock alarm checked at every pay() *)
-let set_wallclock_alarm nsecs = !gs.last_wallclock <- Some (Caml_unix.gettimeofday () +. nsecs)
+let set_wallclock_alarm nsecs = !gs.last_wallclock <- Some (Unix.gettimeofday () +. nsecs)
 
 (** Unset the wallclock alarm checked at every pay() *)
 let unset_wallclock_alarm () = !gs.last_wallclock <- None
@@ -73,7 +73,7 @@ let unset_wallclock_alarm () = !gs.last_wallclock <- None
 (** if the wallclock alarm has expired, raise a timeout exception *)
 let check_wallclock_alarm () =
   match (!gs.last_wallclock, !wallclock_timeout_handler) with
-  | Some alarm_time, Some handler when Float.(Caml_unix.gettimeofday () >= alarm_time) ->
+  | Some alarm_time, Some handler when Float.(Unix.gettimeofday () >= alarm_time) ->
       unset_wallclock_alarm () ;
       handler ()
   | _ ->
@@ -84,7 +84,7 @@ let check_wallclock_alarm () =
 let get_remaining_wallclock_time () =
   match !gs.last_wallclock with
   | Some alarm_time ->
-      Float.(max 0.0 (alarm_time -. Caml_unix.gettimeofday ()))
+      Float.(max 0.0 (alarm_time -. Unix.gettimeofday ()))
   | None ->
       0.0
 

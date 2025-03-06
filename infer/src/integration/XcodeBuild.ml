@@ -36,9 +36,9 @@ let capture ~prog ~args =
     IUnix.create_process_env ~prog ~args
       ~env:(`Extend [(CommandLineOption.args_env_var, infer_args)])
   in
-  let stdout_chan = Caml_unix.in_channel_of_descr stdout in
-  let stderr_chan = Caml_unix.in_channel_of_descr stderr in
-  Caml_unix.close stdin ;
+  let stdout_chan = Unix.in_channel_of_descr stdout in
+  let stderr_chan = Unix.in_channel_of_descr stderr in
+  Unix.close stdin ;
   Utils.with_channel_in stdout_chan ~f:(L.progress "XCODEBUILD: %s@.") ;
   Utils.with_channel_in stderr_chan ~f:(L.progress "XCODEBUILD: %s@.") ;
   match IUnix.waitpid pid with

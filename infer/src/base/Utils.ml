@@ -13,14 +13,14 @@ let fold_file_tree ~init ~f_dir ~f_reg ~path =
   let rec traverse_dir_aux acc dir_path =
     let aux base_path acc' rel_path =
       let full_path = base_path ^/ rel_path in
-      match (Caml_unix.stat full_path).st_kind with
+      match (Unix.stat full_path).st_kind with
       | S_DIR ->
           traverse_dir_aux (f_dir acc' full_path) full_path
       | S_REG ->
           f_reg acc' full_path
       | _ ->
           acc'
-      | exception Caml_unix.Unix_error (ENOENT, _, _) ->
+      | exception Unix.Unix_error (ENOENT, _, _) ->
           acc'
     in
     Sys_unix.fold_dir ~init:acc ~f:(aux dir_path) dir_path
@@ -210,7 +210,7 @@ let with_file_in file ~f =
   let ic =
     let fd =
       try IUnix.openfile ~mode:[O_RDONLY; O_SHARE_DELETE] file
-      with Caml_unix.Unix_error (e, _, _) ->
+      with Unix.Unix_error (e, _, _) ->
         let msg =
           match e with
           | ENOENT ->
@@ -220,7 +220,7 @@ let with_file_in file ~f =
         in
         raise (Sys_error (file ^ msg))
     in
-    Caml_unix.in_channel_of_descr fd
+    Unix.in_channel_of_descr fd
   in
   let f () = f ic in
   let finally () = In_channel.close ic in
@@ -241,7 +241,7 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
     Out_channel.close temp_oc ;
     (* Retry n times with exponential backoff when [retry] is true *)
     let rec rename n delay =
-      try IUnix.rename ~src:temp_filename ~dst:file
+      try Unix.rename ~src:temp_filename ~dst:file
       with e ->
         if Int.equal n 0 then raise e
         else
@@ -267,7 +267,7 @@ let consume_in chan_in = with_channel_in ~f:ignore chan_in
 let echo_in chan_in = with_channel_in ~f:print_endline chan_in
 
 let with_process_in command read =
-  let chan = Caml_unix.open_process_in command in
+  let chan = Unix.open_process_in command in
   let f () = read chan in
   let finally () =
     consume_in chan ;
@@ -276,20 +276,19 @@ let with_process_in command read =
   do_finally_swallow_timeout ~f ~finally
 
 
-let is_dir_kind (kind : Caml_unix.file_kind) = match kind with S_DIR -> true | _ -> false
+let is_dir_kind (kind : Unix.file_kind) = match kind with S_DIR -> true | _ -> false
 
 (** Recursively create a directory if it does not exist already. *)
 let create_dir dir =
   try
-    if not (is_dir_kind (Caml_unix.stat dir).st_kind) then
+    if not (is_dir_kind (Unix.stat dir).st_kind) then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
-  with Caml_unix.Unix_error _ -> (
+  with Unix.Unix_error _ -> (
     try IUnix.mkdir_p dir ~perm:0o700
-    with Caml_unix.Unix_error _ ->
+    with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
-        try Poly.equal (Caml_unix.stat dir).st_kind Caml_unix.S_DIR
-        with Caml_unix.Unix_error _ -> false
+        try Poly.equal (Unix.stat dir).st_kind Unix.S_DIR with Unix.Unix_error _ -> false
       in
       if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir )
 
@@ -303,7 +302,7 @@ let out_channel_create_with_dir fname =
 
 let realpath ?(warn_on_error = true) path =
   try Filename.realpath path
-  with Caml_unix.Unix_error (code, _, arg) as exn ->
+  with Unix.Unix_error (code, _, arg) as exn ->
     IExn.reraise_after exn ~f:(fun () ->
         if warn_on_error then
           F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
@@ -318,28 +317,28 @@ let devnull =
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
-    IUnix.dup2 ~src ~dst:Caml_unix.stderr () ;
-    Caml_unix.close src
+    IUnix.dup2 ~src ~dst:Unix.stderr () ;
+    Unix.close src
   in
-  let orig_stderr = Caml_unix.dup Caml_unix.stderr in
-  IUnix.dup2 ~src:(Lazy.force devnull) ~dst:Caml_unix.stderr () ;
+  let orig_stderr = Unix.dup Unix.stderr in
+  IUnix.dup2 ~src:(Lazy.force devnull) ~dst:Unix.stderr () ;
   let f () = f2 x1 x2 in
   let finally () = restore_stderr orig_stderr in
   protect ~f ~finally
 
 
 let iter_dir name ~f =
-  let dir = Caml_unix.opendir name in
+  let dir = Unix.opendir name in
   let rec iter dir =
     try
-      let entry = Caml_unix.readdir dir in
+      let entry = Unix.readdir dir in
       if
         not
           ( String.equal entry Filename.current_dir_name
           || String.equal entry Filename.parent_dir_name )
       then f (name ^/ entry) ;
       iter dir
-    with End_of_file -> Caml_unix.closedir dir
+    with End_of_file -> Unix.closedir dir
   in
   iter dir
 
@@ -350,18 +349,18 @@ let is_string_in_list_option list_opt s =
 
 (** delete [name] recursively, return whether the file is not there at the end *)
 let rec rmtree_ ?except name =
-  match (Caml_unix.lstat name).st_kind with
+  match (Unix.lstat name).st_kind with
   | S_DIR ->
       if rm_all_in_dir_ ?except name then (
-        Caml_unix.rmdir name ;
+        Unix.rmdir name ;
         true )
       else false
   | _ ->
       if is_string_in_list_option except name then false
       else (
-        Caml_unix.unlink name ;
+        Unix.unlink name ;
         true )
-  | exception Caml_unix.Unix_error (ENOENT, _, _) ->
+  | exception Unix.Unix_error (ENOENT, _, _) ->
       (* no entry: already deleted/was never there *)
       true
 
@@ -384,7 +383,7 @@ let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Stdlib.Digest.st
 
 let unlink_file_on_exit temp_file =
   let description = "Cleaning temporary file " ^ temp_file in
-  Epilogues.register ~description ~f:(fun () -> try Caml_unix.unlink temp_file with _ -> ())
+  Epilogues.register ~description ~f:(fun () -> try Unix.unlink temp_file with _ -> ())
 
 
 (** drop at most one layer of well-balanced first and last characters satisfying [drop] from the
@@ -410,9 +409,9 @@ let mutex = IMutex.create ()
 
 let do_in_dir ~dir ~f =
   IMutex.critical_section mutex ~f:(fun () ->
-      let cwd = Caml_unix.getcwd () in
-      Caml_unix.chdir dir ;
-      Exception.try_finally ~f ~finally:(fun () -> Caml_unix.chdir cwd) )
+      let cwd = Unix.getcwd () in
+      Unix.chdir dir ;
+      Exception.try_finally ~f ~finally:(fun () -> Unix.chdir cwd) )
 
 
 let get_available_memory_MB () =

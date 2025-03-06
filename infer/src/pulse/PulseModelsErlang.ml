@@ -1546,14 +1546,14 @@ module Custom = struct
       if Filename.check_suffix path suffix then loader path :: models else models
     in
     List.fold Config.pulse_models_for_erlang ~init:[] ~f:(fun models path ->
-        match (Caml_unix.stat path).st_kind with
+        match (Unix.stat path).st_kind with
         | S_DIR ->
             Utils.fold_files ~init:models ~f:maybe_load ~path
         | S_REG ->
             maybe_load models path
         | _ ->
             models
-        | exception Caml_unix.Unix_error (ENOENT, _, _) ->
+        | exception Unix.Unix_error (ENOENT, _, _) ->
             models )
 
 

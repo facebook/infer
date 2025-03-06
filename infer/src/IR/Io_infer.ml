@@ -15,7 +15,7 @@ module L = Logging
 
 (* =============== START of module Html =============== *)
 module Html = struct
-  type t = Caml_unix.file_descr * Format.formatter DLS.key
+  type t = Unix.file_descr * Format.formatter DLS.key
 
   (** Create a new html file *)
   let create source path =
@@ -29,7 +29,7 @@ module Html = struct
           raise (Failure "Html.create")
     in
     let fd = DB.Results_dir.(create_file (Abs_source_dir source)) dir_path in
-    let outc = Caml_unix.out_channel_of_descr fd in
+    let outc = Unix.out_channel_of_descr fd in
     let fmt = F.synchronized_formatter_of_out_channel outc in
     let script =
       {|
@@ -133,7 +133,7 @@ summary { margin-left: -20pt; }
     let fd =
       IUnix.openfile (DB.filename_to_string full_fname) ~mode:[O_WRONLY; O_APPEND] ~perm:0o777
     in
-    let outc = Caml_unix.out_channel_of_descr fd in
+    let outc = Unix.out_channel_of_descr fd in
     let fmt = F.synchronized_formatter_of_out_channel outc in
     (fd, fmt)
 
@@ -148,7 +148,7 @@ summary { margin-left: -20pt; }
   (** Close an Html file *)
   let close (fd, fmt) =
     F.fprintf (DLS.get fmt) "</body>@\n</html>@." ;
-    Caml_unix.close fd
+    Unix.close fd
 
 
   (** Print a horizontal line *)

@@ -35,7 +35,7 @@ let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
         IUnix.waitpid (Pid.of_int pid)
         |> Result.map_error ~f:(fun unix_error ->
                IUnix.Exit_or_signal.to_string_hum (Error unix_error) )
-    | exception Caml_unix.Unix_error (err, f, arg) ->
+    | exception Unix.Unix_error (err, f, arg) ->
         Error (F.asprintf "%s(%s): %s@." f arg (IUnix.Error.message err)) )
   |> function
   | Ok () ->

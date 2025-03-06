@@ -130,8 +130,8 @@ let clean_compilation_command mode =
 
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
-  let delete () = Caml_unix.unlink start in
-  let create () = Caml_unix.close (IUnix.openfile ~perm:0o0666 ~mode:[O_CREAT; O_WRONLY] start) in
+  let delete () = Unix.unlink start in
+  let create () = Unix.close (IUnix.openfile ~perm:0o0666 ~mode:[O_CREAT; O_WRONLY] start) in
   if ISys.file_exists start then delete () ;
   create ()
 
@@ -269,7 +269,7 @@ let log_db_size_mb db db_entry debug_mode label =
   if Config.developer_mode then (
     Database.get_database db
     |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint(TRUNCATE)" ;
-    let lstat = ResultsDir.get_path db_entry |> Caml_unix.lstat in
+    let lstat = ResultsDir.get_path db_entry |> Unix.lstat in
     let size = lstat.st_size in
     let value = size / 1024 / 1024 in
     L.debug debug_mode Quiet "Database size %s: %d@\n" label value ;

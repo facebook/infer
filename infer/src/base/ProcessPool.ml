@@ -32,7 +32,7 @@ type ('work, 'final, 'result) t =
         (** array of child processes with their pids and channels we can use to send work down to
             each child *)
   ; children_states: 'work child_state Array.t  (** array tracking the state of each worker *)
-  ; children_updates: Caml_unix.file_descr list
+  ; children_updates: Unix.file_descr list
         (** each child has it's own pipe to send updates to the pool *)
   ; task_bar: TaskBar.t
   ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t
@@ -87,7 +87,7 @@ let marshal_to_pipe fd x =
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
-(** like [Caml_unix.read] but reads until [len] bytes have been read *)
+(** like [Unix.read] but reads until [len] bytes have been read *)
 let rec really_read ?(pos = 0) ~len fd ~buf =
   if len > 0 then (
     let read = IUnix.read ~pos ~len fd ~buf in
@@ -148,10 +148,10 @@ let has_running_children = ref false
 
 let killall slots =
   Array.iter slots ~f:(fun {pid} ->
-      try Caml_unix.kill (Pid.to_int pid) Signal.(to_caml_int term) with _ -> () ) ;
+      try Unix.kill ~pid:(Pid.to_int pid) ~signal:Signal.(to_caml_int term) with _ -> () ) ;
   Array.iter slots ~f:(fun {pid} ->
       try IUnix.waitpid pid |> ignore
-      with Caml_unix.Unix_error (ECHILD, _, _) ->
+      with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
   has_running_children := false
 
@@ -275,7 +275,7 @@ let collect_results (pool : (_, 'final, _) t) =
   Array.init pool.jobs ~f:(fun i ->
       if !failed then None
       else
-        let updates_in = List.nth_exn pool.children_updates i |> Caml_unix.in_channel_of_descr in
+        let updates_in = List.nth_exn pool.children_updates i |> Unix.in_channel_of_descr in
         match (Marshal.from_channel updates_in : 'final final_worker_message) with
         | exception (End_of_file | Failure _) ->
             failed := true ;
@@ -442,18 +442,18 @@ let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
     The child inherits [updates_w] to send updates up to the parent, and a new pipe is set up for
     the parent to send instructions down to the child. *)
 let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
-  let to_child_r, to_child_w = Caml_unix.pipe () in
+  let to_child_r, to_child_w = Unix.pipe () in
   match IUnix.fork () with
   | `In_the_child ->
-      Caml_unix.close updates_r ;
-      Caml_unix.close to_child_w ;
-      let orders_ic = Caml_unix.in_channel_of_descr to_child_r in
-      let updates_oc = Caml_unix.out_channel_of_descr updates_w in
+      Unix.close updates_r ;
+      Unix.close to_child_w ;
+      let orders_ic = Unix.in_channel_of_descr to_child_r in
+      let updates_oc = Unix.out_channel_of_descr updates_w in
       child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
   | `In_the_parent pid ->
-      Caml_unix.close to_child_r ;
-      Caml_unix.close updates_w ;
-      {pid; down_pipe= Caml_unix.out_channel_of_descr to_child_w}
+      Unix.close to_child_r ;
+      Unix.close updates_w ;
+      {pid; down_pipe= Unix.out_channel_of_descr to_child_w}
 
 
 module Worker = struct
@@ -470,7 +470,7 @@ type child_data = updates_oc:Out_channel.t -> orders_ic:In_channel.t -> never_re
     The child inherits [updates_w] to send updates up to the parent, and a new pipe is set up for
     the parent to send instructions down to the child. *)
 let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
-  let to_child_r, to_child_w = Caml_unix.pipe () in
+  let to_child_r, to_child_w = Unix.pipe () in
   let prog = (Sys.get_argv ()).(0) in
   let pid =
     CLOpt.in_env_with_extra_args
@@ -479,9 +479,9 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
         (* reset [args] to only include the program name since all other args are passed via
            [INFER_ARGS] *)
         UnixLabels.create_process ~prog ~args:[|prog|] ~stdin:to_child_r ~stdout:updates_w
-          ~stderr:Caml_unix.stderr )
+          ~stderr:Unix.stderr )
   in
-  let down_pipe = Caml_unix.out_channel_of_descr to_child_w in
+  let down_pipe = Unix.out_channel_of_descr to_child_w in
   Stdlib.set_binary_mode_out down_pipe true ;
   (* Send the closure _after_ the child has been created, so that it may start reading
      it, hence unblocking the parent if the closure is too big. The scary messages
@@ -491,16 +491,16 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
     child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
   in
   Marshal.to_channel down_pipe (child_thunk : child_data) [Closures] ;
-  Caml_unix.close to_child_r ;
+  Unix.close to_child_r ;
   {pid= Pid.of_int pid; down_pipe}
 
 
 let run_as_child () =
-  let updates_oc = Caml_unix.out_channel_of_descr Caml_unix.stdout in
+  let updates_oc = Unix.out_channel_of_descr Unix.stdout in
   (* Note: the documentation in the Unix module is lying on that point, and this call seems
      to be required under Windows. *)
   Stdlib.set_binary_mode_out updates_oc true ;
-  let orders_ic = Caml_unix.in_channel_of_descr Caml_unix.stdin in
+  let orders_ic = Unix.in_channel_of_descr Unix.stdin in
   (* Same remark as for [updates_oc]. *)
   Stdlib.set_binary_mode_in orders_ic true ;
   (* Get what we should do and who we are from our parent. Do NOT use [really_read] here,
@@ -510,7 +510,7 @@ let run_as_child () =
   child_thunk ~updates_oc ~orders_ic
 
 
-let rec create_pipes n = if Int.equal n 0 then [] else Caml_unix.pipe () :: create_pipes (n - 1)
+let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)
 
 let create :
        jobs:int

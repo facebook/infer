@@ -77,9 +77,9 @@ let file_exists path = ISys.file_exists path
 (** Return the time when a file was last modified. The file must exist. *)
 let file_modified_time ?(symlink = false) fname =
   try
-    let stat = (if symlink then Caml_unix.lstat else Caml_unix.stat) fname in
+    let stat = (if symlink then Unix.lstat else Unix.stat) fname in
     stat.st_mtime
-  with Caml_unix.Unix_error _ -> L.(die InternalError) "File %s does not exist." fname
+  with Unix.Unix_error _ -> L.(die InternalError) "File %s does not exist." fname
 
 
 (** {2 Results Directory} *)

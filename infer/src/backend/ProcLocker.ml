@@ -22,8 +22,8 @@ module ProcessLocks = struct
   let lock_of_procname pname = lock_of_filename (Procname.to_filename pname)
 
   let unlock pname =
-    try Caml_unix.unlink (lock_of_procname pname)
-    with Caml_unix.Unix_error (ENOENT, _, _) ->
+    try Unix.unlink (lock_of_procname pname)
+    with Unix.Unix_error (ENOENT, _, _) ->
       L.die InternalError "Tried to unlock not-locked pname: %a@\n" Procname.pp pname
 
 
@@ -42,14 +42,14 @@ module ProcessLocks = struct
       try_taking_lock pid filename ;
       (* the lock file did not exist and we were the first to create it, i.e. lock it *)
       `LockAcquired
-    with Caml_unix.Unix_error ((EEXIST | EACCES), _, _) | Sys_error _ -> (
+    with Unix.Unix_error ((EEXIST | EACCES), _, _) | Sys_error _ -> (
       (* the lock file already existed; now to figure which process locked it in case it was us *)
       match read_lock_value filename with
       | Some owner_pid ->
           if Int.equal owner_pid (Pid.to_int pid) then `AlreadyLockedByUs
           else `LockedByAnotherProcess
-      | None
-      | (exception (Sys_error _ | Caml_unix.Unix_error ((ENOENT | EINVAL), _, _) | End_of_file)) ->
+      | None | (exception (Sys_error _ | Unix.Unix_error ((ENOENT | EINVAL), _, _) | End_of_file))
+        ->
           (* the lock file went away, opportunistically try taking the lock for ourselves again *)
           do_try_lock pid filename )
 
@@ -60,8 +60,7 @@ module ProcessLocks = struct
 
 
   let unlock_all proc_filenames =
-    List.iter proc_filenames ~f:(fun proc_filename ->
-        Caml_unix.unlink (lock_of_filename proc_filename) )
+    List.iter proc_filenames ~f:(fun proc_filename -> Unix.unlink (lock_of_filename proc_filename))
 
 
   let lock_all pid proc_filenames =

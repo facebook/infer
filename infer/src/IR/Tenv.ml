@@ -269,7 +269,7 @@ let write tenv tenv_filename =
           Marshal.to_channel outc hashtable [] ) )
     tenv ;
   if Config.debug_mode then store_debug_file tenv tenv_filename ;
-  let lstat = DB.filename_to_string tenv_filename |> Caml_unix.lstat in
+  let lstat = DB.filename_to_string tenv_filename |> Unix.lstat in
   let size = lstat.st_size in
   let value = size / 1024 / 1024 in
   let label = "global_tenv_size_mb" in

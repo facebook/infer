@@ -121,7 +121,7 @@ end = struct
       Io_infer.Html.node_filename proc_name nodeid
     in
     let fd = Hashtbl.find (DLS.get log_files) (node_fname, source) in
-    Caml_unix.close fd ;
+    Unix.close fd ;
     Hashtbl.remove (DLS.get log_files) (node_fname, source) ;
     DLS.set curr_html_formatter (F.get_std_formatter ())
 end

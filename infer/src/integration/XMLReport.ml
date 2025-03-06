@@ -9,9 +9,7 @@ open! IStd
 module F = Format
 
 let pp_current_date_and_time f =
-  let {Caml_unix.tm_year; tm_mon; tm_mday; tm_hour; tm_min; tm_sec} =
-    Caml_unix.time () |> Caml_unix.localtime
-  in
+  let {Unix.tm_year; tm_mon; tm_mday; tm_hour; tm_min; tm_sec} = Unix.time () |> Unix.localtime in
   F.fprintf f "%d-%02d-%dT%d:%d:%d.000000" (1900 + tm_year) tm_mon tm_mday tm_hour tm_min tm_sec
 
 

@@ -9,11 +9,7 @@ open! IStd
 module Pid = Pid
 
 module Process_info : sig
-  type t =
-    { pid: Pid.t
-    ; stdin: Caml_unix.file_descr
-    ; stdout: Caml_unix.file_descr
-    ; stderr: Caml_unix.file_descr }
+  type t = {pid: Pid.t; stdin: Unix.file_descr; stdout: Unix.file_descr; stderr: Unix.file_descr}
 end
 
 module Env : sig
@@ -34,21 +30,16 @@ module Exit_or_signal : sig
 end
 
 module Select_fds : sig
-  type t =
-    { read: Caml_unix.file_descr list
-    ; write: Caml_unix.file_descr list
-    ; except: Caml_unix.file_descr list }
+  type t = {read: Unix.file_descr list; write: Unix.file_descr list; except: Unix.file_descr list}
 end
 
 module Error : sig
-  type t = Caml_unix.error
+  type t = Unix.error
 
   val message : t -> string
 end
 
 type select_timeout = [`Never | `Immediately | `After of Time_ns.Span.t]
-
-val rename : src:string -> dst:string -> unit
 
 val mkdir_p : ?perm:int -> string -> unit
 
@@ -70,33 +61,19 @@ val wait_nohang_any : unit -> (Pid.t * Exit_or_signal.t) option
 
 val fork : unit -> [`In_the_child | `In_the_parent of Pid.t]
 
-val symlink : target:string -> link_name:string -> unit
+val symlink : ?to_dir:bool -> target:string -> link_name:string -> unit -> unit
 
-val dup2 :
-  ?close_on_exec:bool -> src:Caml_unix.file_descr -> dst:Caml_unix.file_descr -> unit -> unit
+val dup2 : ?close_on_exec:bool -> src:Unix.file_descr -> dst:Unix.file_descr -> unit -> unit
 
-val read : ?restart:bool -> pos:int -> len:int -> Caml_unix.file_descr -> buf:Bytes.t -> int
+val read : ?restart:bool -> pos:int -> len:int -> Unix.file_descr -> buf:Bytes.t -> int
 
-val openfile :
-  ?perm:Caml_unix.file_perm -> mode:Caml_unix.open_flag list -> string -> Caml_unix.file_descr
-
-val socket :
-     ?close_on_exec:bool
-  -> domain:Caml_unix.socket_domain
-  -> kind:Caml_unix.socket_type
-  -> protocol:int
-  -> unit
-  -> Caml_unix.file_descr
-
-val bind : Caml_unix.file_descr -> addr:Caml_unix.sockaddr -> unit
-
-val listen : Caml_unix.file_descr -> backlog:int -> unit
+val openfile : ?perm:Unix.file_perm -> mode:Unix.open_flag list -> string -> Unix.file_descr
 
 val select :
      ?restart:bool (** defaults to [false] *)
-  -> read:Caml_unix.file_descr list
-  -> write:Caml_unix.file_descr list
-  -> except:Caml_unix.file_descr list
+  -> read:Unix.file_descr list
+  -> write:Unix.file_descr list
+  -> except:Unix.file_descr list
   -> timeout:select_timeout
   -> unit
   -> Select_fds.t
