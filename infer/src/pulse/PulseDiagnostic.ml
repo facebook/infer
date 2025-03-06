@@ -939,7 +939,7 @@ let make_autofix {Location.file; line; col} candidates =
   let open IOption.Let_syntax in
   let* line_str =
     let file_path = SourceFile.to_abs_path file in
-    match Sys_unix.is_file file_path with
+    match ISys.is_file file_path with
     | `No | `Unknown ->
         None
     | `Yes ->

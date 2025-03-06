@@ -73,7 +73,7 @@ end
 
 let is_results_dir () =
   let results_db_path = get_path CaptureDB in
-  let has_all_markers = Sys_unix.is_file results_db_path = `Yes in
+  let has_all_markers = ISys.is_file results_db_path = `Yes in
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" results_db_path)
 
 
@@ -82,7 +82,7 @@ let non_empty_directory_exists results_dir =
      alone. This allows users to create a temporary directory for the infer results without infer
      removing it to recreate it, which could be racy. *)
   let safe_entries = ResultsDirEntryName.to_keep_before_new_capture ~results_dir in
-  Sys_unix.is_directory results_dir = `Yes
+  ISys.is_directory results_dir = `Yes
   && Iter.exists
        (fun entry -> not (List.mem ~equal:String.equal safe_entries entry))
        (Utils.iter_dir results_dir |> Iter.from_labelled_iter)
@@ -103,8 +103,8 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  if Sys_unix.is_file (get_path AnalysisDB) <> `Yes then Database.create_db Primary AnalysisDatabase ;
-  if Sys_unix.is_file (get_path CaptureDB) <> `Yes then Database.create_db Primary CaptureDatabase ;
+  if ISys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db Primary AnalysisDatabase ;
+  if ISys.is_file (get_path CaptureDB) <> `Yes then Database.create_db Primary CaptureDatabase ;
   Database.new_database_connections Primary
 
 

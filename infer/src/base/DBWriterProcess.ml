@@ -23,7 +23,7 @@ module ServerSocket = struct
       function. *)
   let in_results_dir ~f = Utils.do_in_dir ~dir:Config.toplevel_results_dir ~f
 
-  let socket_exists () = Sys_unix.file_exists_exn socket_path
+  let socket_exists () = ISys.file_exists_exn socket_path
 
   (* Error recuperation is done by attempting this function at module initialization time, and
      not using DbWriter at all in case it fails. See {!can_use_socket} below. *)

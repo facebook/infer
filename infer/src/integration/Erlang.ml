@@ -134,7 +134,7 @@ let save_beams_from_report ~project_root ~report beam_list_path =
   in
   let get_beams beams dir =
     let ebin_dir = project_root ^/ dir ^/ "ebin" in
-    match Sys_unix.is_directory ebin_dir with
+    match ISys.is_directory ebin_dir with
     | `Yes ->
         let new_beams = Utils.find_files ~path:ebin_dir ~extension:".beam" in
         Set.union beams (String.Set.of_list new_beams)

@@ -83,7 +83,7 @@ let pp_source_context ~indent fmt
   let source_name =
     if Filename.is_absolute source_name then source_name else Config.project_root ^/ source_name
   in
-  match Sys_unix.is_file source_name with
+  match ISys.is_file source_name with
   | `No | `Unknown ->
       ()
   | `Yes ->

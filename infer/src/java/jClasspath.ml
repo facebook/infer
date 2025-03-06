@@ -202,7 +202,7 @@ let search_classes path =
 let is_valid_source_file path =
   ( Filename.check_suffix path ".java"
   || (Config.kotlin_capture && Filename.check_suffix path Config.kotlin_source_extension) )
-  && PolyVariantEqual.(Sys_unix.is_file path <> `No)
+  && PolyVariantEqual.(ISys.is_file path <> `No)
 
 
 let search_sources sources =
