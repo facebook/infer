@@ -303,7 +303,7 @@ let out_channel_create_with_dir fname =
 
 
 let realpath ?(warn_on_error = true) path =
-  try Caml_unix.realpath path
+  try Unix.realpath path
   with Unix.Unix_error (code, _, arg) as exn ->
     IExn.reraise_after exn ~f:(fun () ->
         if warn_on_error then

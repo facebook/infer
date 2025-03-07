@@ -159,7 +159,7 @@ let process_beams ~project_root beam_list_path =
   if not Config.erlang_skip_compile then (
     let jsonast_dir =
       let in_dir = ResultsDir.get_path Temporary in
-      Caml_unix.realpath (IFilename.temp_dir ~in_dir "buck2-erlang" "infer")
+      Unix.realpath (IFilename.temp_dir ~in_dir "buck2-erlang" "infer")
     in
     let prog = Config.lib_dir ^/ "erlang" ^/ "extract.escript" in
     let args =

@@ -11,7 +11,7 @@
    -open
    Ppx_yojson_conv_lib.Yojson_conv.Primitives))
  (libraries javalib ANSITerminal atdgen base base64 bheap cmdliner containers containers-data core
-   core_unix.filename_unix dbg fmt fpath iter memtrace menhirLib mtime.clock.os ocamlgraph
+   dbg fmt fpath iter memtrace menhirLib mtime.clock.os ocamlgraph
    oUnit parmap ppx_show.runtime pyml re sawja sedlex sexplib spawn sqlite3 tdigest unix xmlm yojson
    zarith zip)
  (modules All_infer_in_one_file)

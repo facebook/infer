@@ -8,16 +8,7 @@
  (public_name infer.IStdlib)
  (flags
   (:standard -open Core))
- (libraries
-  ANSITerminal
-  core
-  core_unix.filename_unix
-  fmt
-  iter
-  mtime
-  re
-  str
-  yojson)
+ (libraries ANSITerminal core fmt iter mtime re str yojson)
  (preprocess
   (pps ppx_compare ppx_hash ppx_sexp_conv)))
 
