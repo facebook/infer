@@ -224,7 +224,7 @@ DIRECT_TESTS += \
 endif
 ifneq ($(PYTHONNEXT),no)
 DIRECT_TESTS += \
-  python-next_pulse \
+  python_pulse-next-python \
 
 endif
 endif # BUILD_PYTHON_ANALYZERS

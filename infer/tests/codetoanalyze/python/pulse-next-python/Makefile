@@ -10,4 +10,4 @@ default: compile
 
 .PHONY: print replace test clean
 print replace test clean:
-	$(QUIET)INFER_ARGS=--python-exe^$(PYTHONNEXT) $(MAKE) -C ../../python/pulse TEST_SUFFIX=-next TEST_RESULT_SUFFIX=-next ROOT_REL_SUFFIX=-next $@
+	$(QUIET)INFER_ARGS=--python-exe^$(PYTHONNEXT) $(MAKE) -C ../pulse TEST_SUFFIX=-next-python TEST_RESULT_SUFFIX=-next-python ROOT_REL_SUFFIX=-next-python $@
