@@ -10,11 +10,11 @@ module F = Format
 module Hashtbl = Stdlib.Hashtbl
 
 module Lang : sig
-  type t = Java | Hack | Python [@@deriving equal]
+  type t = C | Hack | Java | Python [@@deriving equal]
 
   val of_string : string -> t option [@@warning "-unused-value-declaration"]
 
-  val to_string : t -> string [@@warning "-unused-value-declaration"]
+  val to_string : t -> string
 end
 
 module Location : sig

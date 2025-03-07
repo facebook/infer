@@ -868,7 +868,7 @@ module Syntax = struct
         TextualSil.hack_mixed_type_name
     | Python ->
         TextualSil.python_mixed_type_name
-    | Java ->
+    | Java | C ->
         L.die InternalError "DSL.call not supported on Java"
 
 

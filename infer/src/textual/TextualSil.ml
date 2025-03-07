@@ -56,10 +56,9 @@ module VarNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack ->
-        L.die UserError "of_pvar conversion is not supported in Hack mode"
-    | Python ->
-        L.die UserError "of_pvar conversion is not supported in Python mode"
+    | Hack | Python | C ->
+        L.die UserError "of_pvar conversion is not supported in %s mode"
+          (Textual.Lang.to_string lang)
 end
 
 module TypeNameBridge = struct
@@ -77,10 +76,9 @@ module TypeNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack ->
-        L.die UserError "of_global_pvar conversion is not supported in Hack mode"
-    | Python ->
-        L.die UserError "of_global_pvar conversion is not supported in Python mode"
+    | Hack | Python | C ->
+        L.die UserError "of_global_pvar conversion is not supported in %s mode"
+          (Textual.Lang.to_string lang)
 
 
   let replace_2colons_with_dot str = String.substr_replace_all str ~pattern:"::" ~with_:"."
@@ -122,6 +120,10 @@ module TypeNameBridge = struct
         L.die InternalError "to_sil conversion failed on Hack type name with non-empty args"
     | Python, _ ->
         PythonClass (to_python_class_name value args)
+    | C, [] ->
+        SilTyp.Name.C.from_string value
+    | C, _ ->
+        L.die InternalError "to_sil conversion failed on C type name with non-empty args"
 
 
   let java_lang_object = of_string "java.lang.Object"
@@ -238,7 +240,7 @@ let mangle_java_procname jpname =
 
 let wildcard_sil_fieldname lang name =
   match (lang : Lang.t) with
-  | Java ->
+  | Java | C ->
       L.die InternalError "a wildcard fieldname is only supported in Hack or Python"
   | Hack ->
       SilFieldname.make (HackClass HackClassName.wildcard) name
@@ -436,6 +438,8 @@ module ProcDeclBridge = struct
     | Python ->
         let class_name = python_class_name_to_sil t.qualified_name.enclosing_class in
         SilProcname.make_python ~class_name ~function_name:method_name
+    | C ->
+        SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
@@ -457,7 +461,7 @@ module ProcDeclBridge = struct
             make ~class_name ~function_name ~arity
         in
         improved_match hack_class_name_to_sil Procname.make_hack
-    | Python ->
+    | Python | C ->
         to_sil lang t
 end
 

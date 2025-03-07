@@ -166,6 +166,8 @@ module C : sig
   val c : QualifiedCppName.t -> ?mangled:string -> Typ.template_spec_info -> t
   (** Create a C procedure name from plain and mangled name. *)
 
+  val from_string : string -> t
+
   val is_make_shared : t -> bool
 end
 
