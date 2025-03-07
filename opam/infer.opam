@@ -15,7 +15,6 @@ depends: [
   "bheap"
   "cmdliner" {>="1.0.0"}
   "core" {>= "v0.16.1" & < "v0.17"}
-  "core_unix" {>= "v0.16.0" & < "v0.17"}
   "conf-autoconf" {build}
   "conf-sqlite3" {build}
   "conf-zlib" {build}
@@ -46,6 +45,7 @@ depends: [
   "pyml" {= "20220905"}
   "sawja" {>="1.5.11"}
   "sedlex" {>="3.0"}
+  "spawn" {>= "v0.17.0"}
   "sqlite3"
   "tdigest" {>="2.0.0"}
   "utop" {with-test}
