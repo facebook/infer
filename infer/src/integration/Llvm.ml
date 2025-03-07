@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-let run_swift_frontend source_file llvm_bitcode = SwiftFrontend.capture source_file llvm_bitcode
+let run_swift_frontend source_file llvm_bitcode = LlvmFrontend.capture source_file llvm_bitcode
 
 let run_swift_frontend source_file llvm_bitcode =
   PerfEvent.(
@@ -66,4 +66,4 @@ let capture_llair ~source_file ~llair_file =
   Utils.with_file_in llair_file ~f:(fun llair_in ->
       let llair_program : Llair.program = Marshal.from_channel llair_in in
       L.progress "did not crash yet!@\n" ;
-      SwiftFrontend.capture_llair source_file llair_program )
+      LlvmFrontend.capture_llair source_file llair_program )
