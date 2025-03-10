@@ -62,6 +62,31 @@ def dict_missing_key_var_ok():
     return d[1]
 
 
+def dict_missing_key_dict_builtin_const_map_bad():
+    d = dict({"John": 30, "Mary": 28, 1: 234})
+    return d["missing_key"]
+
+
+def dict_missing_key_builtin_empty_bad():
+    d = dict()
+    return d["missing_key"]
+
+
+def fn_dict_missing_key_builtin_empty_list_bad():
+    d = dict([])
+    return d["missing_key"]
+
+
+def fn_dict_missing_key_builtin_list_comp_bad():
+    d = dict([(x, x) for x in range(10)])
+    return d["missing_key"]
+
+
+def fn_dict_missing_key_named_arguments_bad():
+    d = dict(name="Alice", city="New York")
+    return d["missing_key"]
+
+
 class DictField:
 
     def fn_get_key_bad(self):

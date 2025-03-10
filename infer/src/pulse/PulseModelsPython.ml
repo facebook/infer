@@ -355,6 +355,23 @@ module Dict = struct
     let open DSL.Syntax in
     let* key = as_constant_string_exn key in
     set_str_key dict key value
+
+
+  let builtin args : DSL.aval DSL.model_monad =
+    let default_value ~const_strings_only = make [] [] ~const_strings_only in
+    let open DSL.Syntax in
+    match args with
+    | [] ->
+        default_value ~const_strings_only:true
+    | [arg] -> (
+        let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+        match arg_dynamic_type_data with
+        | Some {Formula.typ= {desc= Tstruct (PythonClass (Builtin PyDict))}} ->
+            ret arg
+        | _ ->
+            default_value ~const_strings_only:false )
+    | _ ->
+        default_value ~const_strings_only:false
 end
 
 module Integer = struct
@@ -566,6 +583,9 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       LibModel.deep_release args
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       LibModel.gen_awaitable args
+  | PyBuiltin DictFun, args ->
+      let* dict = Dict.builtin args in
+      ret (Some dict)
   | PyBuiltin IntFun, [arg] ->
       let* res = Integer.make arg in
       ret (Some res)
@@ -900,6 +920,8 @@ let tag_if_builtin name aval : unit DSL.model_monad =
         Some IntFun
     | "type" ->
         Some TypeFun
+    | "dict" ->
+        Some DictFun
     | _ ->
         None
   in

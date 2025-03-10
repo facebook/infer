@@ -15,7 +15,7 @@ module F = Format
 type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyString | PyTuple
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, show]
 
-type builtin_closure = IntFun | StrFun | TypeFun
+type builtin_closure = DictFun | IntFun | StrFun | TypeFun
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 type t =
@@ -32,7 +32,16 @@ type t =
 
 let builtin_type_to_string = show_builtin_type
 
-let builtin_closure_to_string = function IntFun -> "int" | StrFun -> "str" | TypeFun -> "type"
+let builtin_closure_to_string = function
+  | DictFun ->
+      "dict"
+  | IntFun ->
+      "int"
+  | StrFun ->
+      "str"
+  | TypeFun ->
+      "type"
+
 
 let pp fmt = function
   | Builtin builtin ->
@@ -94,8 +103,10 @@ let concatenate_package_name_and_file_name typename filename =
 
 
 let get_builtin_closure_from_builtin_type = function
-  | PyObject | PyDict | PyTuple | PyNone | PyBool ->
+  | PyObject | PyTuple | PyNone | PyBool ->
       None
+  | PyDict ->
+      Some DictFun
   | PyInt ->
       Some IntFun
   | PyString ->
