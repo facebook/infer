@@ -74,12 +74,12 @@ let capture_llair source_file llair_program =
   let open IResult.Let_syntax in
   let result =
     let textual = to_module source_file llair_program in
+    if should_dump_textual () then dump_textual_file source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
     let* verified_textual =
       let f = Error.textual_verification textual_source_file in
       TextualVerification.verify textual |> Result.map_error ~f
     in
-    if should_dump_textual () then dump_textual_file source_file verified_textual ;
     let lang = language_of_source_file source_file in
     let transformed_textual, decls = TextualTransform.run lang verified_textual in
     let* cfg, tenv =

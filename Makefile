@@ -83,6 +83,7 @@ ifeq ($(BUILD_CPU),x86_64)
 DIRECT_TESTS += \
   c_biabduction \
   c_frontend \
+  c_llvm-frontend \
 
 endif
 
