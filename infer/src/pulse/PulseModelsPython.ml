@@ -305,6 +305,23 @@ module Dict = struct
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type Fieldname.Set.empty tname key)
 
 
+  let contains_str_key dict key : bool option DSL.model_monad =
+    let open DSL.Syntax in
+    let* fields = get_known_fields dict in
+    let field_names =
+      List.fold fields ~init:[] ~f:(fun acc field ->
+          match (field : Access.t) with
+          | FieldAccess fieldname ->
+              Fieldname.to_string fieldname :: acc
+          | _ ->
+              acc )
+    in
+    if List.mem field_names key ~equal:String.( = ) then Some true |> ret
+    else
+      let* dict_contains_const_keys = is_dict_contain_const_keys dict in
+      if dict_contains_const_keys then Some false |> ret else None |> ret
+
+
   let get_str_key ?(dict_read_const_key = false) ?(propagate_static_type = false) dict key :
       DSL.aval DSL.model_monad =
     let open DSL.Syntax in
@@ -1169,6 +1186,29 @@ let compare_eq arg1 arg2 : model =
   assign_ret res
 
 
+let compare_in arg1 arg2 : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* arg1_str = as_constant_string arg1 in
+  match arg1_str with
+  | Some s -> (
+      let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
+      match arg2_dynamic_type_data with
+      | Some {Formula.typ= {desc= Tstruct (PythonClass (Builtin PyDict))}} ->
+          let* dict_contains_key = Dict.contains_str_key arg2 s in
+          let* b_res =
+            match dict_contains_key with None -> Bool.make_random () | Some res -> Bool.make res
+          in
+          assign_ret b_res
+      | _ ->
+          let* res = Bool.make_random () in
+          assign_ret res )
+  | None ->
+      let* res = Bool.make_random () in
+      assign_ret res
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
@@ -1213,7 +1253,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_compare_exception" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_compare_ge" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_compare_gt" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_in" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_compare_in" <>$ arg $+ arg $--> compare_in
   ; -"$builtins" &:: "py_compare_is" <>$ arg $+ arg $--> compare_eq
   ; -"$builtins" &:: "py_compare_is_not" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_compare_le" &::.*+++> unknown ~deep_release:false

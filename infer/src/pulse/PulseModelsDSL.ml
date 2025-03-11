@@ -377,6 +377,10 @@ module Syntax = struct
     PulseOperations.add_dict_contain_const_keys addr |> exec_command
 
 
+  let is_dict_contain_const_keys (addr, _) : bool model_monad =
+    AddressAttributes.is_dict_contain_const_keys addr |> exec_pure_operation
+
+
   let find_decompiler_expr addr : DecompilerExpr.t model_monad =
     (fun {decompiler} -> PulseDecompiler.find addr decompiler) |> exec_pure_operation
 

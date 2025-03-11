@@ -87,6 +87,57 @@ def fn_dict_missing_key_named_arguments_bad():
     return d["missing_key"]
 
 
+def dict_missing_str_key_in_op_ok():
+    d = dict({"John": 30, "Mary": 28, 1: 234})
+    if "missing_key" in d:
+        return d["missing_key"]
+    else:
+        return 0
+
+
+def dict_missing_str_key_in_op_bad():
+    d = dict({"John": None, "Mary": 28, 1: 234})
+    if "John" in d:
+        return d["missing_key"]
+    else:
+        return 0
+
+
+def dict_missing_str_key_not_const_in_op_ok(x):
+    k = str(x)
+    d = dict({"John": None, "Mary": 28, 1: 234, k: "unknown"})
+    if "missing_key" in d:
+        return d["missing_key"]
+    else:
+        return 0
+
+
+def dict_missing_str_key_not_const_in_op_ok2(x):
+    d = dict({"John": None, "Mary": 28, 1: 234})
+    k = str(x)
+    d[k] = "unknown"
+    if "John" in d:
+        return d["missing_key"]
+    else:
+        return 0
+
+
+def dict_missing_int_key_in_op_ok():
+    d = dict({"John": 30, "Mary": 28, 1: 234})
+    if 1 in d:
+        return d[1]
+    else:
+        return 0
+
+
+def fp_dict_missing_int_key_in_op_ok():
+    d = dict({"John": 30, "Mary": 28, 1: 234})
+    if 2 in d:
+        return d["missing"]
+    else:
+        return 0
+
+
 class DictField:
 
     def fn_get_key_bad(self):
