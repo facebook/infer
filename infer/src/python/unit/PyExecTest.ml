@@ -30,12 +30,24 @@ builtin_print(print, None, "hello world", True, False)
         b0:
           n0 <- None
           TOPLEVEL[x] <- 42
+          jmp b1
+
+        b1:
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[x]
           n5 <- $Call(n3, n4, n0)
+          jmp b2
+
+        b2:
           n6 <- TOPLEVEL[print]
           TOPLEVEL[builtin_print] <- n6
+          jmp b3
+
+        b3:
           TOPLEVEL[print] <- 0
+          jmp b4
+
+        b4:
           n7 <- TOPLEVEL[builtin_print]
           n8 <- TOPLEVEL[print]
           n9 <- $Call(n7, n8, n0, "hello world", true, false, n0)
@@ -69,8 +81,17 @@ print("fst(x, y) =", fst(x, y))
           n0 <- None
           n3 <- $MakeFunction["dummy.fst", n0, n0, n0, n0]
           TOPLEVEL[fst] <- n3
+          jmp b1
+
+        b1:
           TOPLEVEL[x] <- "x"
+          jmp b2
+
+        b2:
           TOPLEVEL[y] <- "y"
+          jmp b3
+
+        b3:
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[fst]
           n6 <- TOPLEVEL[x]
@@ -121,15 +142,33 @@ print('n =', n)
           n0 <- None
           n3 <- $MakeFunction["dummy.incr", n0, n0, n0, n0]
           TOPLEVEL[incr] <- n3
+          jmp b1
+
+        b1:
           n4 <- $MakeFunction["dummy.no_effect", n0, n0, n0, n0]
           TOPLEVEL[no_effect] <- n4
+          jmp b2
+
+        b2:
           GLOBAL[n] <- 0
+          jmp b3
+
+        b3:
           n5 <- TOPLEVEL[incr]
           n6 <- $Call(n5, 3, n0)
+          jmp b4
+
+        b4:
           n7 <- TOPLEVEL[incr]
           n8 <- $Call(n7, 2, n0)
+          jmp b5
+
+        b5:
           n9 <- TOPLEVEL[no_effect]
           n10 <- $Call(n9, -1, n0)
+          jmp b6
+
+        b6:
           n11 <- TOPLEVEL[print]
           n12 <- GLOBAL[n]
           n13 <- $Call(n11, "n =", n12, n0)
@@ -183,6 +222,9 @@ print('fact(5) =', fact(5))
           n0 <- None
           n3 <- $MakeFunction["dummy.fact", n0, n0, n0, n0]
           TOPLEVEL[fact] <- n3
+          jmp b1
+
+        b1:
           n4 <- TOPLEVEL[print]
           n5 <- TOPLEVEL[fact]
           n6 <- $Call(n5, 5, n0)
@@ -289,24 +331,45 @@ print('saved x is', C.saved_x)
         b0:
           n0 <- None
           TOPLEVEL[x] <- "global"
+          jmp b1
+
+        b1:
           n3 <- $MakeFunction["dummy.C", n0, n0, n0, n0]
           n4 <- $BuildClass(n3, "C", n0)
           TOPLEVEL[C] <- n4
+          jmp b2
+
+        b2:
           n5 <- TOPLEVEL[print]
           n6 <- TOPLEVEL[C]
           n7 <- $CallMethod[get_x](n6, n0)
           n8 <- $Call(n5, "x is", n7, n0)
+          jmp b3
+
+        b3:
           TOPLEVEL[x] <- "assigned by module body"
+          jmp b4
+
+        b4:
           n9 <- TOPLEVEL[print]
           n10 <- TOPLEVEL[C]
           n11 <- $CallMethod[get_x](n10, n0)
           n12 <- $Call(n9, "x is", n11, n0)
+          jmp b5
+
+        b5:
           n13 <- TOPLEVEL[C]
           n13.x <- "assigned as a class attribute"
+          jmp b6
+
+        b6:
           n14 <- TOPLEVEL[print]
           n15 <- TOPLEVEL[C]
           n16 <- $CallMethod[get_C_x](n15, n0)
           n17 <- $Call(n14, "x is", n16, n0)
+          jmp b7
+
+        b7:
           n18 <- TOPLEVEL[print]
           n19 <- TOPLEVEL[C]
           n20 <- n19.saved_x
@@ -320,11 +383,23 @@ print('saved x is', C.saved_x)
           n3 <- TOPLEVEL[__name__]
           TOPLEVEL[__module__] <- n3
           TOPLEVEL[__qualname__] <- "C"
+          jmp b1
+
+        b1:
           n4 <- TOPLEVEL[x]
           TOPLEVEL[saved_x] <- n4
+          jmp b2
+
+        b2:
           TOPLEVEL[x] <- "local to class body"
+          jmp b3
+
+        b3:
           n5 <- $MakeFunction["dummy.C.get_x", n0, n0, n0, n0]
           TOPLEVEL[get_x] <- n5
+          jmp b4
+
+        b4:
           n6 <- $MakeFunction["dummy.C.get_C_x", n0, n0, n0, n0]
           TOPLEVEL[get_C_x] <- n6
           return n0
@@ -383,40 +458,76 @@ print(d)
         b0:
           n0 <- None
           TOPLEVEL[l] <- $BuildTuple(1, "1", $BuildTuple(0, true))
+          jmp b1
+
+        b1:
           n3 <- TOPLEVEL[print]
           n4 <- TOPLEVEL[l]
           n5 <- $Call(n3, n4, n0)
+          jmp b2
+
+        b10:
+          n22 <- TOPLEVEL[print]
+          n23 <- TOPLEVEL[d]
+          n24 <- n23["x"]
+          n25 <- $Call(n22, n24, n0)
+          jmp b11
+
+        b11:
+          n26 <- TOPLEVEL[d]
+          n26["z"] <- true
+          jmp b12
+
+        b12:
+          n27 <- TOPLEVEL[print]
+          n28 <- TOPLEVEL[d]
+          n29 <- $Call(n27, n28, n0)
+          return n0
+
+        b2:
           n6 <- $BuildMap()
           TOPLEVEL[d] <- n6
+          jmp b3
+
+        b3:
           n7 <- TOPLEVEL[print]
           n8 <- TOPLEVEL[d]
           n9 <- $Call(n7, n8, n0)
+          jmp b4
+
+        b4:
           TOPLEVEL[key1] <- "k1"
+          jmp b5
+
+        b5:
           n10 <- $MakeFunction["dummy.key2", n0, n0, n0, n0]
           TOPLEVEL[key2] <- n10
+          jmp b6
+
+        b6:
           n11 <- TOPLEVEL[key1]
           n12 <- TOPLEVEL[key2]
           n13 <- $Call(n12, n0)
           n14 <- $BuildMap(n11, "val1", n13, "val2")
           TOPLEVEL[d] <- n14
+          jmp b7
+
+        b7:
           n15 <- TOPLEVEL[print]
           n16 <- TOPLEVEL[d]
           n17 <- $Call(n15, n16, n0)
+          jmp b8
+
+        b8:
           n18 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", n0)
           TOPLEVEL[d] <- n18
+          jmp b9
+
+        b9:
           n19 <- TOPLEVEL[print]
           n20 <- TOPLEVEL[d]
           n21 <- $Call(n19, n20, n0)
-          n22 <- TOPLEVEL[print]
-          n23 <- TOPLEVEL[d]
-          n24 <- n23["x"]
-          n25 <- $Call(n22, n24, n0)
-          n26 <- TOPLEVEL[d]
-          n26["z"] <- true
-          n27 <- TOPLEVEL[print]
-          n28 <- TOPLEVEL[d]
-          n29 <- $Call(n27, n28, n0)
-          return n0
+          jmp b10
 
 
       function dummy.key2():

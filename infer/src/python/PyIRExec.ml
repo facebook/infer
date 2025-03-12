@@ -451,6 +451,8 @@ let run_files modules =
         | If {exp; then_; else_} ->
             let test = eval_exp exp |> expect_bool ~who:"If terminator" in
             if test then exec_node_call then_ else exec_node_call else_
+        | Jump node_call ->
+            exec_node_call node_call
         | _ ->
             todo "exec_terminator"
       and exec_node_call {Terminator.label; ssa_args} =

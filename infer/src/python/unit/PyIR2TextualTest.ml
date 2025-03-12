@@ -79,22 +79,46 @@ class C:
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_import_name(n2, "random", n0, $builtins.py_make_int(0))
           _ = $builtins.py_store_name("random", n1, n2, n3)
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_import_name(n2, "asyncio", n0, $builtins.py_make_int(0))
           _ = $builtins.py_store_name("a", n1, n2, n4)
+          jmp b2
+
+      #b2:
           n5 = $builtins.py_import_name(n2, "dir1::dir2::mod", $builtins.py_build_tuple($builtins.py_make_string("x")), $builtins.py_make_int(0))
           n6 = $builtins.py_import_from("x", n5)
           _ = $builtins.py_store_name("y", n1, n2, n6)
+          jmp b3
+
+      #b3:
           n7 = $builtins.py_import_name(n2, "dir1::dir2", $builtins.py_build_tuple($builtins.py_make_string("mod")), $builtins.py_make_int(0))
           n8 = $builtins.py_import_from("mod", n7)
           _ = $builtins.py_store_name("mod", n1, n2, n8)
+          jmp b4
+
+      #b4:
           _ = $builtins.py_store_name("x", n1, n2, $builtins.py_make_int(0))
+          jmp b5
+
+      #b5:
           n9 = $builtins.py_make_function(.name = "dummy.f"fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("f", n1, n2, n9)
+          jmp b6
+
+      #b6:
           n10 = $builtins.py_make_function(.name = "dummy.g"fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("g", n1, n2, n10)
+          jmp b7
+
+      #b7:
           n11 = $builtins.py_make_function(.name = "dummy.D"fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
           n12 = $builtins.py_build_class(n11, $builtins.py_make_string("D"))
           _ = $builtins.py_store_name("D", n1, n2, n12)
+          jmp b8
+
+      #b8:
           n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C"))
           _ = $builtins.py_store_name("C", n1, n2, n14)
@@ -110,6 +134,9 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("C"))
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_make_function(.name = "dummy.C.foo"fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
@@ -133,6 +160,9 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("D"))
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_make_function(.name = "dummy.D.foo"fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
@@ -171,16 +201,19 @@ class C:
       #b3:
           n6 = $builtins.py_next_iter(n5)
           n7 = $builtins.py_has_next_iter(n5)
-          if $builtins.py_bool(n7) then jmp b4 else jmp b5
+          if $builtins.py_bool(n7) then jmp b4 else jmp b6
 
       #b4:
           _ = $builtins.py_store_fast("i", n1, n6)
+          jmp b5
+
+      #b5:
           n10 = $builtins.py_load_global("print", n2)
           n11 = $builtins.py_load_fast("i", n1)
           n12 = $builtins.py_call(n10, n0, n11)
           jmp b3
 
-      #b5:
+      #b6:
           n8 = $builtins.py_load_global("done", n2)
           n9 = $builtins.py_call(n8, n0)
           _ = $builtins.py_nullify_locals(n1, "i")
@@ -194,6 +227,9 @@ class C:
           n1 = locals
           n0 = $builtins.py_make_none()
           _ = $builtins.py_gen_start_coroutine()
+          jmp b1
+
+      #b1:
           n3 = $builtins.py_load_global("sleep", n2)
           n4 = $builtins.py_call(n3, n0, $builtins.py_make_int(1))
           n5 = $builtins.py_get_awaitable(n4)
@@ -214,22 +250,46 @@ class C:
           n0 = $builtins.py_make_none()
           n3 = $builtins.py_import_name(n2, "random", n0, $builtins.py_make_int(0))
           _ = $builtins.py_store_name("random", n1, n2, n3)
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_import_name(n2, "asyncio", n0, $builtins.py_make_int(0))
           _ = $builtins.py_store_name("a", n1, n2, n4)
+          jmp b2
+
+      #b2:
           n5 = $builtins.py_import_name(n2, "dir1::dir2::mod", $builtins.py_build_tuple($builtins.py_make_string("x")), $builtins.py_make_int(0))
           n6 = $builtins.py_import_from("x", n5)
           _ = $builtins.py_store_name("y", n1, n2, n6)
+          jmp b3
+
+      #b3:
           n7 = $builtins.py_import_name(n2, "dir1::dir2", $builtins.py_build_tuple($builtins.py_make_string("mod")), $builtins.py_make_int(0))
           n8 = $builtins.py_import_from("mod", n7)
           _ = $builtins.py_store_name("mod", n1, n2, n8)
+          jmp b4
+
+      #b4:
           _ = $builtins.py_store_name("x", n1, n2, $builtins.py_make_int(0))
+          jmp b5
+
+      #b5:
           n9 = $builtins.py_make_function(.name = "dummy.f"fun (locals) -> dummy.f(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("f", n1, n2, n9)
+          jmp b6
+
+      #b6:
           n10 = $builtins.py_make_function(.name = "dummy.g"fun (locals) -> dummy.g(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("g", n1, n2, n10)
+          jmp b7
+
+      #b7:
           n11 = $builtins.py_make_function(.name = "dummy.D"fun (locals) -> dummy.D(n2, locals), n0, n0, n0, n0)
           n12 = $builtins.py_build_class(n11, $builtins.py_make_string("D"))
           _ = $builtins.py_store_name("D", n1, n2, n12)
+          jmp b8
+
+      #b8:
           n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0)
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C"))
           _ = $builtins.py_store_name("C", n1, n2, n14)
@@ -245,6 +305,9 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("C"))
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_make_function(.name = "dummy.C.foo"fun (locals) -> dummy.C::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
@@ -268,6 +331,9 @@ class C:
           n3 = $builtins.py_load_name("__name__", n1, n2)
           _ = $builtins.py_store_name("__module__", n1, n2, n3)
           _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("D"))
+          jmp b1
+
+      #b1:
           n4 = $builtins.py_make_function(.name = "dummy.D.foo"fun (locals) -> dummy.D::foo(n2, locals), n0, n0, n0, n0)
           _ = $builtins.py_store_name("foo", n1, n2, n4)
           ret n0
@@ -306,16 +372,19 @@ class C:
       #b3:
           n6 = $builtins.py_next_iter(n5)
           n7 = $builtins.py_has_next_iter(n5)
-          if $builtins.py_bool(n7) then jmp b4 else jmp b5
+          if $builtins.py_bool(n7) then jmp b4 else jmp b6
 
       #b4:
           _ = $builtins.py_store_fast("i", n1, n6)
+          jmp b5
+
+      #b5:
           n10 = $builtins.py_load_global("print", n2)
           n11 = $builtins.py_load_fast("i", n1)
           n12 = $builtins.py_call(n10, n0, n11)
           jmp b3
 
-      #b5:
+      #b6:
           n8 = $builtins.py_load_global("done", n2)
           n9 = $builtins.py_call(n8, n0)
           _ = $builtins.py_nullify_locals(n1, "i")
@@ -329,6 +398,9 @@ class C:
           n1 = [&locals:*PyLocals]
           n0 = $builtins.py_make_none()
           _ = $builtins.py_gen_start_coroutine()
+          jmp b1
+
+      #b1:
           n3 = $builtins.py_load_global("sleep", n2)
           n4 = $builtins.py_call(n3, n0, $builtins.py_make_int(1))
           n5 = $builtins.py_get_awaitable(n4)
@@ -431,37 +503,61 @@ class C:
           n17 = $builtins.py_make_int(0)
           n3 = $builtins.py_import_name(n15, "random", n0, n17)
           n18 = $builtins.py_store_name("random", n16, n15, n3)
+          jmp b1
+
+      #b1:
           n19 = $builtins.py_make_int(0)
           n4 = $builtins.py_import_name(n15, "asyncio", n0, n19)
           n20 = $builtins.py_store_name("a", n16, n15, n4)
+          jmp b2
+
+      #b2:
           n21 = $builtins.py_make_string("x")
           n22 = $builtins.py_build_tuple(n21)
           n23 = $builtins.py_make_int(0)
           n5 = $builtins.py_import_name(n15, "dir1::dir2::mod", n22, n23)
           n6 = $builtins.py_import_from("x", n5)
           n24 = $builtins.py_store_name("y", n16, n15, n6)
+          jmp b3
+
+      #b3:
           n25 = $builtins.py_make_string("mod")
           n26 = $builtins.py_build_tuple(n25)
           n27 = $builtins.py_make_int(0)
           n7 = $builtins.py_import_name(n15, "dir1::dir2", n26, n27)
           n8 = $builtins.py_import_from("mod", n7)
           n28 = $builtins.py_store_name("mod", n16, n15, n8)
+          jmp b4
+
+      #b4:
           n29 = $builtins.py_make_int(0)
           n30 = $builtins.py_store_name("x", n16, n15, n29)
+          jmp b5
+
+      #b5:
           n31 = __sil_allocate(<PyClosure<dummy.f>>)
           store n31.?.globals <- n15:*PyGlobals<dummy>
           n9 = $builtins.py_make_function(n31, n0, n0, n0, n0)
           n33 = $builtins.py_store_name("f", n16, n15, n9)
+          jmp b6
+
+      #b6:
           n34 = __sil_allocate(<PyClosure<dummy.g>>)
           store n34.?.globals <- n15:*PyGlobals<dummy>
           n10 = $builtins.py_make_function(n34, n0, n0, n0, n0)
           n36 = $builtins.py_store_name("g", n16, n15, n10)
+          jmp b7
+
+      #b7:
           n37 = __sil_allocate(<PyClosure<dummy.D>>)
           store n37.?.globals <- n15:*PyGlobals<dummy>
           n11 = $builtins.py_make_function(n37, n0, n0, n0, n0)
           n39 = $builtins.py_make_string("D")
           n12 = $builtins.py_build_class(n11, n39)
           n40 = $builtins.py_store_name("D", n16, n15, n12)
+          jmp b8
+
+      #b8:
           n41 = __sil_allocate(<PyClosure<dummy.C>>)
           store n41.?.globals <- n15:*PyGlobals<dummy>
           n13 = $builtins.py_make_function(n41, n0, n0, n0, n0)
@@ -481,6 +577,9 @@ class C:
           n7 = $builtins.py_store_name("__module__", n6, n5, n3)
           n8 = $builtins.py_make_string("C")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
+          jmp b1
+
+      #b1:
           n10 = __sil_allocate(<PyClosure<dummy.C.foo>>)
           store n10.?.globals <- n5:*PyGlobals<dummy>
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
@@ -507,6 +606,9 @@ class C:
           n7 = $builtins.py_store_name("__module__", n6, n5, n3)
           n8 = $builtins.py_make_string("D")
           n9 = $builtins.py_store_name("__qualname__", n6, n5, n8)
+          jmp b1
+
+      #b1:
           n10 = __sil_allocate(<PyClosure<dummy.D.foo>>)
           store n10.?.globals <- n5:*PyGlobals<dummy>
           n4 = $builtins.py_make_function(n10, n0, n0, n0, n0)
@@ -552,18 +654,21 @@ class C:
       #b3:
           n6 = $builtins.py_next_iter(n5)
           n7 = $builtins.py_has_next_iter(n5)
-          jmp b4, b5
+          jmp b4, b6
 
       #b4:
           n22 = $builtins.py_bool(n7)
           prune n22
           n23 = $builtins.py_store_fast("i", n17, n6)
+          jmp b5
+
+      #b5:
           n10 = $builtins.py_load_global("print", n16)
           n11 = $builtins.py_load_fast("i", n17)
           n12 = $builtins.py_call(n10, n0, n11)
           jmp b3
 
-      #b5:
+      #b6:
           n24 = $builtins.py_bool(n7)
           prune __sil_lnot(n24)
           n8 = $builtins.py_load_global("done", n16)
@@ -579,6 +684,9 @@ class C:
           n8:*PyLocals = load &locals
           n0 = $builtins.py_make_none()
           n9 = $builtins.py_gen_start_coroutine()
+          jmp b1
+
+      #b1:
           n3 = $builtins.py_load_global("sleep", n7)
           n10 = $builtins.py_make_int(1)
           n4 = $builtins.py_call(n3, n0, n10)

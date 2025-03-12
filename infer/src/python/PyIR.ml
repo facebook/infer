@@ -2703,8 +2703,8 @@ let get_successors_offset (version : FFI.version) {FFI.Instruction.opname; arg} 
 let lookup_remaining = function
   | [] ->
       (None, false)
-  | {FFI.Instruction.offset; is_jump_target} :: _ ->
-      (Some offset, is_jump_target)
+  | {FFI.Instruction.offset; is_jump_target; starts_line} :: _ ->
+      (Some offset, is_jump_target || Option.is_some starts_line)
 
 
 module Subroutine = struct
