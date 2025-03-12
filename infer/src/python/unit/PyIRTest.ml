@@ -231,7 +231,7 @@ def f(x, y, z, t):
         return (x and y) or (z and t)
         |} in
   PyIR.test source ;
-  [%expect {||}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -515,7 +515,7 @@ let%expect_test _ =
 res = dict.attr(0 if not False else 1)
 |} in
   PyIR.test source ;
-  [%expect {||}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -558,7 +558,7 @@ cloned_call()
 |}
   in
   PyIR.test source ;
-  [%expect {||}]
+  [%expect {| |}]
 
 
 let%expect_test _ =
@@ -585,7 +585,7 @@ not_cloned_call()
 |}
   in
   PyIR.test source ;
-  [%expect {||}]
+  [%expect {| |}]
 
 
 let%expect_test _ =

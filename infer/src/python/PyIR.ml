@@ -1015,13 +1015,21 @@ module State = struct
     ; version: FFI.version
     ; code_qual_name: FFI.Code.t -> QualName.t option
     ; get_node_name: Offset.t -> NodeName.t pyresult
-    ; loc: Location.t
+    ; first_loc: Location.t (* the first source location we have seen during this node session *)
+    ; loc: Location.t (* the last source location we have seen during this node sesssion *)
     ; cfg: CFGBuilder.t
     ; stack: Exp.opstack_symbol Stack.t
     ; stmts: (Location.t * Stmt.t) list
     ; ssa_parameters: SSA.t list
     ; stack_at_loop_headers: Exp.opstack_symbol Stack.t IMap.t
     ; fresh_id: SSA.t }
+
+  let try_set_current_source_location ({first_loc} as st) loc =
+    if Option.is_none loc then st
+    else
+      let first_loc = if Option.is_none first_loc then loc else first_loc in
+      {st with first_loc; loc}
+
 
   let build_get_node_name loc cfg_skeleton =
     let map, cfg =
@@ -1047,7 +1055,8 @@ module State = struct
     ; version
     ; code_qual_name
     ; get_node_name
-    ; loc
+    ; first_loc= None
+    ; loc= None
     ; cfg
     ; stack= Stack.empty
     ; stmts= []
@@ -1250,7 +1259,7 @@ module State = struct
 
 
   let enter_node st ~offset ~arity bottom_stack =
-    let st = {st with stmts= []; stack= bottom_stack} in
+    let st = {st with stmts= []; stack= bottom_stack; first_loc= None; loc= None} in
     let ssa_parameters, st = mk_ssa_parameters st (arity - List.length bottom_stack) in
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
     let st = {st with ssa_parameters} in
@@ -1756,7 +1765,7 @@ let jump_absolute st arg next_offset =
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
     ({FFI.Instruction.opname; starts_line; arg; argval} as instr) next_offset_opt =
   let open IResult.Let_syntax in
-  let st = if Option.is_some starts_line then {st with State.loc= starts_line} else st in
+  let st = State.try_set_current_source_location st starts_line in
   State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
   try
     match opname with
@@ -2939,7 +2948,7 @@ let process_node st code ~offset ~arity ({instructions; successors} as info) =
   let open IResult.Let_syntax in
   let* name = State.get_node_name st offset in
   let* st, bottom_stack = constant_folding_ssa_params st name info in
-  let ({State.loc= first_loc} as st) = State.enter_node st ~offset ~arity bottom_stack in
+  let st = State.enter_node st ~offset ~arity bottom_stack in
   let ssa_parameters = State.get_ssa_parameters st in
   let {State.stack} = st in
   State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp_opstack_symbol) stack ;
@@ -2961,13 +2970,13 @@ let process_node st code ~offset ~arity ({instructions; successors} as info) =
             let {FFI.Instruction.offset} = instr in
             let* new_last = State.check_terminator_if_back_edge st offset last in
             let last = Option.value new_last ~default:last in
-            let {State.loc= last_loc} = st in
+            let {State.loc= last_loc; first_loc} = st in
             let stmts = State.get_stmts st in
             let st = State.add_new_node st name ~first_loc ~last_loc ssa_parameters stmts last in
             show_completion () ;
             Ok st
         | None when next_is_jump_target ->
-            let {State.loc= last_loc; stack} = st in
+            let {State.loc= last_loc; first_loc; stack} = st in
             let stmts = State.get_stmts st in
             let* next_offset = Offset.get ~loc:last_loc next_offset_opt in
             let* next_name = State.get_node_name st next_offset in
