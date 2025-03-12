@@ -3154,7 +3154,7 @@ let initialize ?(next_version = false) () =
 
 
 let test_generator ~filename ~f source =
-  initialize ~next_version:true () ;
+  initialize ~next_version:false () ;
   (* pass argument ~next_version:true if you want to activate unit tests on Python 3.12 *)
   let code =
     match FFI.from_string ~source ~filename with
