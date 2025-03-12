@@ -7,7 +7,7 @@
 open! IStd
 module L = Logging
 
-let should_use_daemon = ref true
+let should_use_daemon = ref Config.dbwriter
 
 let use_daemon () = !should_use_daemon
 

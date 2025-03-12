@@ -25,8 +25,6 @@ let stat_check f ?follow_symlinks path =
 
 let file_exists = stat_check (fun _ -> true)
 
-let file_exists_exn = stat_check_exn (fun _ -> true)
-
 let is_directory = stat_check (fun stat -> Poly.equal stat.st_kind Unix.S_DIR)
 
 (* let is_directory_exn = stat_check_exn (fun stat -> Poly.equal stat.st_kind Unix.S_DIR) *)

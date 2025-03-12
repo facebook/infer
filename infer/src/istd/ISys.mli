@@ -15,6 +15,4 @@ val is_directory : ?follow_symlinks:bool -> string -> [`No | `Unknown | `Yes]
 
 val is_file : ?follow_symlinks:bool -> string -> [> `No | `Unknown | `Yes]
 
-val file_exists_exn : ?follow_symlinks:bool -> string -> bool
-
 val fold_dir : init:'a -> f:('a -> string -> 'a) -> string -> 'a

@@ -7,8 +7,6 @@
 
 open! IStd
 
-let db_writer_socket_name = "sqlite_write_socket"
-
 let infer_deps_file_name = "infer-deps.txt"
 
 type id =
@@ -26,7 +24,6 @@ type id =
   | CaptureDependencies
   | ChangedFunctions
   | DBLock
-  | DBWriterSocket
   | Debug
   | Differential
   | DuplicateFunctions
@@ -118,8 +115,6 @@ let of_id = function
       file "changed_functions.json" ~keep_before_caching_capture:()
   | DBLock ->
       file "db.lock"
-  | DBWriterSocket ->
-      file db_writer_socket_name ~keep_before_incremental_analysis:()
   | Debug ->
       directory "captured" ~keep_before_incremental_analysis:()
   | Differential ->
