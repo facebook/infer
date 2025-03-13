@@ -317,6 +317,11 @@ module TypBridge = struct
   let python_mixed =
     let mixed_struct = SilTyp.mk_struct python_mixed_type_name in
     SilTyp.mk_ptr mixed_struct
+
+
+  let c_mixed =
+    let void = SilTyp.mk SilTyp.Tvoid in
+    SilTyp.mk_ptr void
 end
 
 module IdentBridge = struct
@@ -908,8 +913,12 @@ module InstrBridge = struct
                     (* Declarations with unknown formals are expected in Python. Assume that unknown
                        formal types are *PyObject. *)
                     TypBridge.python_mixed
+                | Lang.C ->
+                    (* Declarations with unknown formals are expected in C. Assume that unknown
+                       formal types are *void. *)
+                    TypBridge.c_mixed
                 | other ->
-                    L.die InternalError "Unexpected unknown formals outside of Hack/Python: %s"
+                    L.die InternalError "Unexpected unknown formals outside of Hack/Python/C: %s"
                       (Lang.to_string other)
               in
               List.map args ~f:(fun arg -> (arg, default_typ))
