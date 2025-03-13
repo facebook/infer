@@ -149,6 +149,8 @@ module BaseTypeName : sig
 
   val python_builtin : t
 
+  val llvm_builtin : t
+
   val hack_generics : t
 
   val wildcard : t
@@ -160,6 +162,8 @@ end = struct
   let hack_builtin = {value= "$builtins"; loc= Location.Unknown}
 
   let python_builtin = {value= "$builtins"; loc= Location.Unknown}
+
+  let llvm_builtin = {value= "$builtins"; loc= Location.Unknown}
 
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
 end
@@ -182,6 +186,8 @@ module TypeName : sig
   val hack_builtin : t
 
   val python_builtin : t
+
+  val llvm_builtin : t
 
   val hack_generics : t
 
@@ -212,6 +218,8 @@ end = struct
   let hack_builtin = from_basename BaseTypeName.hack_builtin
 
   let python_builtin = from_basename BaseTypeName.python_builtin
+
+  let llvm_builtin = from_basename BaseTypeName.llvm_builtin
 
   let hack_generics = from_basename BaseTypeName.hack_generics
 end
@@ -245,6 +253,14 @@ module QualifiedProcName = struct
     match enclosing_class with
     | Enclosing class_name ->
         TypeName.equal class_name TypeName.python_builtin
+    | TopLevel ->
+        false
+
+
+  let is_llvm_builtin {enclosing_class} =
+    match enclosing_class with
+    | Enclosing class_name ->
+        TypeName.equal class_name TypeName.llvm_builtin
     | TopLevel ->
         false
 
@@ -712,6 +728,31 @@ module ProcDecl = struct
   let is_variadic {formals_types} =
     Option.value_map formals_types ~default:false
       ~f:(List.exists ~f:(Typ.is_annotated ~f:Attr.is_variadic))
+
+
+  let builtins =
+    let builtins =
+      [ builtin_allocate
+      ; builtin_malloc
+      ; builtin_free
+      ; builtin_allocate_array
+      ; builtin_lazy_class_initialize
+      ; builtin_generics_constructor
+      ; builtin_cast
+      ; builtin_get_lazy_class
+      ; builtin_instanceof ]
+    in
+    let unop_builtins = List.unzip unop_table |> snd in
+    let binop_builtins = Map.Poly.keys binop_inverse_map in
+    builtins @ unop_builtins @ binop_builtins
+
+
+  let is_builtin (proc : QualifiedProcName.t) lang_opt =
+    match lang_opt with
+    | Some lang when Lang.equal lang C ->
+        List.mem builtins ~equal:String.equal proc.name.value
+    | _ ->
+        false
 end
 
 module Global = struct

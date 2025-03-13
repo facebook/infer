@@ -99,6 +99,8 @@ module QualifiedProcName : sig
 
   val is_python_builtin : t -> bool
 
+  val is_llvm_builtin : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 end
 
@@ -303,6 +305,8 @@ module ProcDecl : sig
   val is_curry_invoke : t -> bool
 
   val is_variadic : t -> bool
+
+  val is_builtin : QualifiedProcName.t -> Lang.t option -> bool
 end
 
 module Global : sig
