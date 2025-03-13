@@ -1332,7 +1332,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_nullify_locals" <>$ arg $+++$--> nullify_locals
   ; -"$builtins" &:: "py_prep_reraise_star" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_set_add" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_set_attr" &::.*+++> unknown ~deep_release:true
+  ; -"$builtins" &:: "py_set_attr" <>$ arg $+ arg $+ arg $--> store_subscript
   ; -"$builtins" &:: "py_set_update" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_setup_annotations" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_store_deref" &::.*+++> unknown ~deep_release:true

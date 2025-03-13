@@ -140,6 +140,6 @@ def fp_dict_missing_int_key_in_op_ok():
 
 class DictField:
 
-    def fn_get_key_bad(self):
+    def get_key_bad(self):
         self.d = {"name": "Alice", "city": "New York"}
         return self.d["bla"]
