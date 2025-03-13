@@ -61,7 +61,8 @@ let to_module source_file llair_program =
 
 let capture source_file _llvm_bitcode =
   let dummy_program = Llair.Program.mk ~globals:[] ~functions:[] in
-  let module_ = to_module source_file dummy_program in
+  (* TODO: make generic and add language for Swift *)
+  let module_ = to_module source_file dummy_program C in
   if should_dump_textual () then dump_textual_file source_file module_
 
 
@@ -72,15 +73,15 @@ let language_of_source_file source_file =
 
 let capture_llair source_file llair_program =
   let open IResult.Let_syntax in
+  let lang = language_of_source_file source_file in
   let result =
-    let textual = to_module source_file llair_program in
+    let textual = to_module source_file llair_program lang in
     if should_dump_textual () then dump_textual_file source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
     let* verified_textual =
       let f = Error.textual_verification textual_source_file in
       TextualVerification.verify textual |> Result.map_error ~f
     in
-    let lang = language_of_source_file source_file in
     let transformed_textual, decls = TextualTransform.run lang verified_textual in
     let* cfg, tenv =
       let f = Error.textual_transformation textual_source_file in

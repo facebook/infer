@@ -8,4 +8,4 @@
 open! IStd
 open Llair
 
-val translate : Textual.SourceFile.t -> Program.t -> Textual.Module.t
+val translate : Textual.SourceFile.t -> Program.t -> Textual.Lang.t -> Textual.Module.t

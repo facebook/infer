@@ -346,7 +346,7 @@ let translate_llair_functions functions =
   List.fold values ~f:function_to_formal ~init:[]
 
 
-let translate sourcefile (llair_program : Llair.Program.t) : Textual.Module.t =
+let translate sourcefile (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let globals = translate_llair_globals llair_program.Llair.globals in
   (* We'll build the procdesc partially until we have all the pieces required in Textual
      and can add them to the list of declarations *)
@@ -366,4 +366,5 @@ let translate sourcefile (llair_program : Llair.Program.t) : Textual.Module.t =
   let decls = List.append proc_decls globals in
   let decls = List.append decls proc_desc_declarations in
   let decls = List.append decls structs in
-  Textual.Module.{attrs= []; decls; sourcefile}
+  let attrs = [Textual.Attr.mk_source_language lang] in
+  Textual.Module.{attrs; decls; sourcefile}

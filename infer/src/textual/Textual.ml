@@ -21,6 +21,8 @@ module Lang = struct
         Some Hack
     | "python" ->
         Some Python
+    | "c" ->
+        Some C
     | _ ->
         None
 

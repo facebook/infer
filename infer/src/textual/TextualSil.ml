@@ -178,16 +178,21 @@ let mk_python_mixed_type_textual loc =
   Typ.Struct (TypeName.of_string ~loc PythonClassName.(classname (Builtin PyObject)))
 
 
+let mk_c_mixed_type_textual = Typ.Void
+
 let default_return_type (lang : Lang.t option) loc =
   match lang with
   | Some Hack ->
       Typ.Ptr (mk_hack_mixed_type_textual loc)
   | Some Python ->
       Typ.Ptr (mk_python_mixed_type_textual loc)
+  | Some C ->
+      Typ.Ptr mk_c_mixed_type_textual
   | Some other ->
-      L.die InternalError "Unexpected return type outside of Hack/Python: %s" (Lang.to_string other)
+      L.die InternalError "Unexpected return type outside of Hack/Python/C: %s"
+        (Lang.to_string other)
   | None ->
-      L.die InternalError "Unexpected return type outside of Hack/Python: None"
+      L.die InternalError "Unexpected return type outside of Hack/Python/C: None"
 
 
 let mangle_java_procname jpname =
@@ -862,10 +867,12 @@ module InstrBridge = struct
               (variadic_flag, procdecl)
           | None
             when QualifiedProcName.contains_wildcard proc
-                 || QualifiedProcName.is_python_builtin proc ->
+                 || QualifiedProcName.is_python_builtin proc
+                 || QualifiedProcName.is_llvm_builtin proc
+                 || ProcDecl.is_builtin proc (Some lang) ->
               let textual_ret_typ =
-                (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
-                   return types are *HackMixed/*PyObject respectively. *)
+                (* Declarations with unknown formals are expected in Hack/Python/C. Assume that unknown
+                   return types are *HackMixed/*PyObject/*void respectively. *)
                 default_return_type (Some lang) loc
               in
               ( TextualDecls.NotVariadic

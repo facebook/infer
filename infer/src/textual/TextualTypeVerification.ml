@@ -391,8 +391,11 @@ let count_generics_args args : int monad =
           ret count )
 
 
-let skip_type_verification proc =
-  QualifiedProcName.contains_wildcard proc || QualifiedProcName.is_python_builtin proc
+let skip_type_verification lang proc =
+  QualifiedProcName.contains_wildcard proc
+  || QualifiedProcName.is_python_builtin proc
+  || QualifiedProcName.is_llvm_builtin proc
+  || ProcDecl.is_builtin proc lang
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
@@ -415,7 +418,9 @@ let rec typeof_procname (procsig : ProcSig.t) args nb_generics state =
           typeof_procname procsig args 0 state
       | _ ->
           ret (procdecl.result_type.typ, formals_types, variadic_status, procsig, args) state )
-  | None when ProcSig.to_qualified_procname procsig |> skip_type_verification ->
+  | None
+    when ProcSig.to_qualified_procname procsig
+         |> skip_type_verification (TextualDecls.lang state.decls) ->
       ret (Typ.Void, None, TextualDecls.NotVariadic, procsig, args) state
   | None when nb_generics > 0 ->
       (* second and last attempt where the arity does not take into account the generics args *)
@@ -505,7 +510,9 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (* TODO(T177210383): fix the type declared by hackc in order to deal with
          this case as a regular call *)
       ret (exp, typeof_generics)
-  | Call {proc; args; kind} when Textual.QualifiedProcName.is_python_builtin proc ->
+  | Call {proc; args; kind}
+    when Textual.QualifiedProcName.is_python_builtin proc
+         || Textual.QualifiedProcName.is_llvm_builtin proc ->
       let* lang = get_lang in
       let* loc = get_location in
       let+ args =
