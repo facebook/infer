@@ -13,6 +13,10 @@ def dict_missing_key_const_str_bad():
     d = {"John": 30, "Mary": 28}
     return d["Samantha"]
 
+def fn_dict_size1_missing_key_const_str_bad():
+    d = {"John": 30} #use build_map instead of build_const_key_map
+    return d["Samantha"]
+
 
 def dict_missing_key_const_str_with_int_key_bad():
     d = {"John": 30, "Mary": 28, 1: 234}
