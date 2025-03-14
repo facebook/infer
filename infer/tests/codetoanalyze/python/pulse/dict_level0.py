@@ -143,3 +143,20 @@ class DictField:
     def get_key_bad(self):
         self.d = {"name": "Alice", "city": "New York"}
         return self.d["bla"]
+
+
+class D:
+    class_property1 = "key1"
+
+    def __init__(self):
+        pass
+
+
+def read_class_companion_property_bad():
+    my_dict = {'key2': 0, "key": 1}
+    return my_dict[D.class_property1]
+
+
+def read_class_companion_property_ok():
+    my_dict = {'key1': 0, "key": 1}
+    return my_dict[D.class_property1]

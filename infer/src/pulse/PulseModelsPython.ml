@@ -971,6 +971,16 @@ let tag_if_builtin name aval : unit DSL.model_monad =
       ret ()
 
 
+let get_class_companion aval =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type aval in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; attr_name= class_name})) ->
+      ret (Some (module_name, class_name))
+  | _ ->
+      ret None
+
+
 let load_global name globals : model =
   let open DSL.Syntax in
   start_model
@@ -978,6 +988,17 @@ let load_global name globals : model =
   let* name = as_constant_string_exn name in
   let* value = Dict.get_str_key ~propagate_static_type:true globals name in
   let* () = tag_if_builtin name value in
+  let* opt_class_companion = get_class_companion value in
+  let* () =
+    option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
+        L.d_printfln ~color:Orange "global value is companion class %s" class_name ;
+        let* module_, _ = lookup_module module_name in
+        let module_tname = PythonClassName.Filename module_name in
+        let class_initializer =
+          Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
+        in
+        python_call class_initializer [("globals", module_); ("locals", value)] |> ignore )
+  in
   assign_ret value
 
 
