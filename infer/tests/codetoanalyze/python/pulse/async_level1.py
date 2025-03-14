@@ -11,10 +11,22 @@ class C:
 
 
 class D:
+    def __init__(self):
+        self.unawaited = C.gen()
+
     def main():
         x = C.gen()
 
 
-if __name__ == "__main__":
+async def instantiate_D_ok():
+    d = D()
+    await d.unawaited
+
+
+def instantiate_D_bad():
+    d = D()
+
+
+if __name__ == '__main__':
     # common pattern
     pass

@@ -24,6 +24,7 @@ type t =
   | Closure of string
   | BuiltinClosure of builtin_closure
   | ClassCompanion of {module_name: string; attr_name: string}
+  | ClassInstance of {module_name: string; class_name: string}
   | ModuleAttribute of {module_name: string; attr_name: string}
   | Filename of string
   | Package of string
@@ -54,6 +55,8 @@ let pp fmt = function
       F.fprintf fmt "ClosureBuiltin[%s]" (builtin_closure_to_string builtin)
   | ClassCompanion {module_name; attr_name} ->
       F.fprintf fmt "ClassCompanion[%s,%s]" module_name attr_name
+  | ClassInstance {module_name; class_name} ->
+      F.fprintf fmt "ClassInstance[%s,%s]" module_name class_name
   | ModuleAttribute {module_name; attr_name} ->
       F.fprintf fmt "ModuleAttribute[%s,%s]" module_name attr_name
   | Filename name ->

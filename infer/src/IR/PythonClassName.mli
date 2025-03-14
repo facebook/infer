@@ -20,6 +20,7 @@ type t =
   | Closure of string
   | BuiltinClosure of builtin_closure
   | ClassCompanion of {module_name: string; attr_name: string}
+  | ClassInstance of {module_name: string; class_name: string}
   | ModuleAttribute of {module_name: string; attr_name: string}
   | Filename of string
   | Package of string

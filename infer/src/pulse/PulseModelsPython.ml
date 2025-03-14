@@ -643,6 +643,25 @@ let try_catch_lib_model_using_static_type ~default closure args =
       default ()
 
 
+let try_object_instanciation_using_static_type ~default companion_class args =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type companion_class in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; attr_name= class_name})) ->
+      let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
+      L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
+      let* new_instance = constructor ~deref:false instance_type [] in
+      L.d_printfln ~color:Orange "looking for attribtue __init__ in %a" AbstractValue.pp
+        (fst companion_class) ;
+      let* init_closure = Dict.get_str_key ~propagate_static_type:true companion_class "__init__" in
+      (* TODO arg_names not implemented yet *)
+      let args = new_instance :: args in
+      let* _ = call_dsl ~closure:init_closure ~arg_names:[] ~args in
+      ret new_instance
+  | _ ->
+      default ()
+
+
 let call closure arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
@@ -668,9 +687,11 @@ let call closure arg_names args : model =
             L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
             ret res
         | None ->
-            call_dsl ~closure ~arg_names ~args )
+            let default () = call_dsl ~closure ~arg_names ~args in
+            try_object_instanciation_using_static_type ~default closure args )
     | _ ->
         let default () = call_dsl ~closure ~arg_names ~args in
+        let default () = try_object_instanciation_using_static_type ~default closure args in
         try_catch_lib_model_using_static_type ~default closure args
   in
   assign_ret res
