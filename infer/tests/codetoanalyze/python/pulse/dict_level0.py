@@ -196,8 +196,7 @@ def fn_neither_instance_nor_class_attribute_bad():
     return d.unknown
 
 
-#TODO: run class initializer during get_attr builtin
-def fn_read_class_companion_property_with_import_bad():
+def read_class_companion_property_with_import_bad():
     my_dict = {'key2': 0, "key": 1}
     return my_dict[Imported.C.class_property]
 

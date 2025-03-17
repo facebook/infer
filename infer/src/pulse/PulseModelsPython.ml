@@ -796,6 +796,24 @@ let initialize_class_companion ~module_name ~class_name class_companion_object =
   python_call class_initializer [("globals", module_); ("locals", class_companion_object)] |> ignore
 
 
+let get_class_companion aval =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type aval in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
+      ret (Some (module_name, class_name))
+  | _ ->
+      ret None
+
+
+let initialize_if_class_companion value : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_class_companion = get_class_companion value in
+  option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
+      L.d_printfln ~color:Orange "initializing companion class %s" class_name ;
+      initialize_class_companion ~module_name ~class_name value )
+
+
 let get_class_instance aval =
   (* For now we just try to catch instances using static types. This is a bit limited in
      case of interprocedural propagation *)
@@ -840,6 +858,7 @@ let get_attr obj attr : model =
                be great to 'record' such an assumption to make sure the caller context agrees *)
             Dict.get_str_key ~propagate_static_type:true obj attr
   in
+  let* () = initialize_if_class_companion res in
   assign_ret res
 
 
@@ -1020,16 +1039,6 @@ let tag_if_builtin name aval : unit DSL.model_monad =
       ret ()
 
 
-let get_class_companion aval =
-  let open DSL.Syntax in
-  let* opt_static_type = get_static_type aval in
-  match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
-      ret (Some (module_name, class_name))
-  | _ ->
-      ret None
-
-
 let load_global name globals : model =
   let open DSL.Syntax in
   start_model
@@ -1037,12 +1046,7 @@ let load_global name globals : model =
   let* name = as_constant_string_exn name in
   let* value = Dict.get_str_key ~propagate_static_type:true globals name in
   let* () = tag_if_builtin name value in
-  let* opt_class_companion = get_class_companion value in
-  let* () =
-    option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
-        L.d_printfln ~color:Orange "global value is companion class %s" class_name ;
-        initialize_class_companion ~module_name ~class_name value )
-  in
+  let* () = initialize_if_class_companion value in
   assign_ret value
 
 
