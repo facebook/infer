@@ -94,10 +94,10 @@ module TypeNameBridge = struct
         PythonClassName.Closure (to_string tname)
     | "PyGlobals", [tname] ->
         PythonClassName.Globals (to_string tname)
-    | "PyClassCompanion", [module_tname; attr_tname] ->
+    | "PyClassCompanion", [module_tname; class_tname] ->
         let module_name = to_string module_tname in
-        let attr_name = to_string attr_tname in
-        PythonClassName.ClassCompanion {module_name; attr_name}
+        let class_name = to_string class_tname in
+        PythonClassName.ClassCompanion {module_name; class_name}
     | "PyModuleAttr", [module_tname; attr_tname] ->
         let module_name = to_string module_tname in
         let attr_name = to_string attr_tname in

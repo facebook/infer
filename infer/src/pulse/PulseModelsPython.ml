@@ -260,6 +260,12 @@ let as_constant_string_exn aval : string DSL.model_monad =
   ret str
 
 
+module ThreeValuedLogic = struct
+  type t = bool option
+
+  let is_true = function None -> false | Some b -> b
+end
+
 module Dict = struct
   let make keys args ~const_strings_only : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
@@ -305,7 +311,7 @@ module Dict = struct
     option_iter opt_static_type ~f:(fun tname -> propagate_field_type Fieldname.Set.empty tname key)
 
 
-  let contains_str_key dict key : bool option DSL.model_monad =
+  let contains_str_key dict key : ThreeValuedLogic.t DSL.model_monad =
     let open DSL.Syntax in
     let* fields = get_known_fields dict in
     let field_names =
@@ -647,7 +653,7 @@ let try_object_instanciation_using_static_type ~default companion_class args =
   let open DSL.Syntax in
   let* opt_static_type = get_static_type companion_class in
   match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; attr_name= class_name})) ->
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
       let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
       L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
       let* new_instance = constructor ~deref:false instance_type [] in
@@ -755,13 +761,89 @@ let gen_start_coroutine : model =
   start_model @@ fun () -> ret ()
 
 
+let is_module_captured module_name =
+  let function_name = "__module_body__" in
+  let class_name = PythonClassName.Filename module_name in
+  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
+  IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
+
+
+let lookup_module module_name =
+  let open DSL.Syntax in
+  match is_module_captured module_name with
+  | Some proc_name ->
+      let* module_ = PyModule.make module_name in
+      ret (module_, Some proc_name)
+  | None -> (
+      (* it is not a capture module name *)
+      let module_name_init = module_name ^ "::__init__" in
+      match is_module_captured module_name_init with
+      | None ->
+          (* neither it is a captured package name *)
+          if not (IString.Set.mem module_name stdlib_modules) then
+            StatsLogging.log_message ~label:"python_missing_module" ~message:module_name ;
+          let* module_ = PyModule.make module_name in
+          ret (module_, None)
+      | Some proc_name ->
+          (* it is a captured package name *)
+          let* module_ = PyModule.make module_name_init in
+          ret (module_, Some proc_name) )
+
+
+let initialize_class_companion ~module_name ~class_name class_companion_object =
+  let open DSL.Syntax in
+  let* module_, _ = lookup_module module_name in
+  let module_tname = PythonClassName.Filename module_name in
+  let class_initializer =
+    Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
+  in
+  python_call class_initializer [("globals", module_); ("locals", class_companion_object)] |> ignore
+
+
+let get_class_instance aval =
+  (* For now we just try to catch instances using static types. This is a bit limited in
+     case of interprocedural propagation *)
+  let open DSL.Syntax in
+  let* opt_static_type = get_dynamic_type ~ask_specialization:true aval in
+  match opt_static_type with
+  | Some {Formula.typ= {desc= Tstruct (Typ.PythonClass (ClassInstance {module_name; class_name}))}}
+    ->
+      ret (Some (module_name, class_name))
+  | _ ->
+      ret None
+
+
 let get_attr obj attr : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let* attr = as_constant_string_exn attr in
   (* TODO: look into companion class object if necessary *)
-  let* res = Dict.get_str_key ~propagate_static_type:true obj attr in
+  let* key_in = Dict.contains_str_key obj attr in
+  let* res =
+    if ThreeValuedLogic.is_true key_in then Dict.get_str_key ~propagate_static_type:true obj attr
+    else
+      let* opt_class_instance = get_class_instance obj in
+      match opt_class_instance with
+      | None ->
+          (* will return an unknown value and assume the key was there, but an other option would
+             be to mark this case as unreachable. We may come back later if specialization gives us
+             some dynamic type for [obj]. *)
+          Dict.get_str_key ~propagate_static_type:true obj attr
+      | Some (module_name, class_name) ->
+          let* class_companion_object = Dict.make ~const_strings_only:true [] [] in
+          let* () = initialize_class_companion ~module_name ~class_name class_companion_object in
+          L.d_printfln ~color:Orange
+            "checking if the attribute %s belongs to the companion class %s.%s (in value %a)...@;"
+            attr module_name class_name AbstractValue.pp (fst class_companion_object) ;
+          let* key_in_companion = Dict.contains_str_key class_companion_object attr in
+          if ThreeValuedLogic.is_true key_in_companion then
+            Dict.get_str_key ~propagate_static_type:true class_companion_object attr
+          else
+            (* for now, we assume in such a situation that the attribute is in the instance. It would
+               be great to 'record' such an assumption to make sure the caller context agrees *)
+            Dict.get_str_key ~propagate_static_type:true obj attr
+  in
   assign_ret res
 
 
@@ -802,35 +884,6 @@ let is_global aval : bool DSL.model_monad =
         true
     | _ ->
         false )
-
-
-let is_module_captured module_name =
-  let function_name = "__module_body__" in
-  let class_name = PythonClassName.Filename module_name in
-  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
-  IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
-
-
-let lookup_module module_name =
-  let open DSL.Syntax in
-  match is_module_captured module_name with
-  | Some proc_name ->
-      let* module_ = PyModule.make module_name in
-      ret (module_, Some proc_name)
-  | None -> (
-      (* it is not a capture module name *)
-      let module_name_init = module_name ^ "::__init__" in
-      match is_module_captured module_name_init with
-      | None ->
-          (* neither it is a captured package name *)
-          if not (IString.Set.mem module_name stdlib_modules) then
-            StatsLogging.log_message ~label:"python_missing_module" ~message:module_name ;
-          let* module_ = PyModule.make module_name in
-          ret (module_, None)
-      | Some proc_name ->
-          (* it is a captured package name *)
-          let* module_ = PyModule.make module_name_init in
-          ret (module_, Some proc_name) )
 
 
 let import_module module_name : DSL.aval DSL.model_monad =
@@ -975,7 +1028,7 @@ let get_class_companion aval =
   let open DSL.Syntax in
   let* opt_static_type = get_static_type aval in
   match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; attr_name= class_name})) ->
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
       ret (Some (module_name, class_name))
   | _ ->
       ret None
@@ -992,12 +1045,7 @@ let load_global name globals : model =
   let* () =
     option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
         L.d_printfln ~color:Orange "global value is companion class %s" class_name ;
-        let* module_, _ = lookup_module module_name in
-        let module_tname = PythonClassName.Filename module_name in
-        let class_initializer =
-          Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
-        in
-        python_call class_initializer [("globals", module_); ("locals", value)] |> ignore )
+        initialize_class_companion ~module_name ~class_name value )
   in
   assign_ret value
 

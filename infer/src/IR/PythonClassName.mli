@@ -19,7 +19,7 @@ type t =
   | Globals of string
   | Closure of string
   | BuiltinClosure of builtin_closure
-  | ClassCompanion of {module_name: string; attr_name: string}
+  | ClassCompanion of {module_name: string; class_name: string}
   | ClassInstance of {module_name: string; class_name: string}
   | ModuleAttribute of {module_name: string; attr_name: string}
   | Filename of string

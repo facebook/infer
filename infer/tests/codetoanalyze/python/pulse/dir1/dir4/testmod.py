@@ -8,3 +8,9 @@ async def await_it(arg):
 
 async def dont_await_it(arg):
     pass
+
+
+class C:
+    class_property = "testmod.C.class_property"
+    def __init__(self):
+        self.property = "testmod.C.instance_property"

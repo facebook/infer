@@ -17,6 +17,12 @@ class C:
         pass
 
 
+class D:
+    class_property = "testmod.D.class_property"
+    def __init__(self):
+        self.property = "testmod.D.instance_property"
+
+
 def wait(arg):
     """
     This function is expected to be modeled as awaiting its argument because of .inferconfig
