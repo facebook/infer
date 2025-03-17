@@ -207,8 +207,7 @@ def read_class_companion_property_with_import_ok():
     return my_dict[Imported.C.class_property]
 
 
-#TODO: constructor call going through a call_method builtin
-def fn_instance_attribute_from_class_companion_with_import_bad():
+def instance_attribute_from_class_companion_with_import_bad():
     my_dict = {'key2': 0, "key": 1}
     o = Imported.C()
     return my_dict[o.class_property]
@@ -220,8 +219,7 @@ def instance_attribute_from_class_companion_with_import_ok():
     return my_dict[o.class_property]
 
 
-#TODO: constructor call going through a call_method builtin
-def fn_instance_attribute_with_import_bad():
+def instance_attribute_with_import_bad():
     my_dict = {'key2': 0, "key": 1}
     o = Imported.C()
     return my_dict[o.property]

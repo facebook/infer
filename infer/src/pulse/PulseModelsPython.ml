@@ -493,7 +493,7 @@ let build_class closure _name _args : model =
   assign_ret class_
 
 
-let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
+let call_closure_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   let gen_closure_args opt_proc_attrs =
@@ -514,6 +514,23 @@ let call_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
     ret [locals]
   in
   apply_python_closure closure gen_closure_args
+
+
+let call_dsl ~callable ~arg_names ~args =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type callable in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
+      let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
+      L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
+      let* new_instance = constructor ~deref:false instance_type [] in
+      let* init_closure = Dict.get_str_key ~propagate_static_type:true callable "__init__" in
+      let args = new_instance :: args in
+      let* _ = call_closure_dsl ~closure:init_closure ~arg_names:[] ~args in
+      ret new_instance
+  | _ ->
+      L.d_printfln ~color:Orange "calling closure %a" AbstractValue.pp (fst callable) ;
+      call_closure_dsl ~closure:callable ~arg_names ~args
 
 
 let await_awaitable arg : unit DSL.model_monad =
@@ -649,31 +666,12 @@ let try_catch_lib_model_using_static_type ~default closure args =
       default ()
 
 
-let try_object_instanciation_using_static_type ~default companion_class args =
-  let open DSL.Syntax in
-  let* opt_static_type = get_static_type companion_class in
-  match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
-      let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
-      L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
-      let* new_instance = constructor ~deref:false instance_type [] in
-      L.d_printfln ~color:Orange "looking for attribtue __init__ in %a" AbstractValue.pp
-        (fst companion_class) ;
-      let* init_closure = Dict.get_str_key ~propagate_static_type:true companion_class "__init__" in
-      (* TODO arg_names not implemented yet *)
-      let args = new_instance :: args in
-      let* _ = call_dsl ~closure:init_closure ~arg_names:[] ~args in
-      ret new_instance
-  | _ ->
-      default ()
-
-
-let call closure arg_names args : model =
+let call callable arg_names args : model =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true callable in
   let* res =
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (BuiltinClosure builtin))}} -> (
@@ -693,12 +691,10 @@ let call closure arg_names args : model =
             L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
             ret res
         | None ->
-            let default () = call_dsl ~closure ~arg_names ~args in
-            try_object_instanciation_using_static_type ~default closure args )
+            call_dsl ~callable ~arg_names ~args )
     | _ ->
-        let default () = call_dsl ~closure ~arg_names ~args in
-        let default () = try_object_instanciation_using_static_type ~default closure args in
-        try_catch_lib_model_using_static_type ~default closure args
+        let default () = call_dsl ~callable ~arg_names ~args in
+        try_catch_lib_model_using_static_type ~default callable args
   in
   assign_ret res
 
@@ -743,15 +739,15 @@ let call_method name obj arg_names args : model =
         match opt_special_call with
         | None ->
             L.d_printfln "calling method %s on module object %s" str_name module_name ;
-            let* closure = Dict.get_exn obj name in
-            call_dsl ~closure ~arg_names ~args
+            let* callable = Dict.get_exn obj name in
+            call_dsl ~callable ~arg_names ~args
         | Some res ->
             L.d_printfln "catching special call %s on module object %s" str_name module_name ;
             ret res )
     | _ ->
-        let* closure = Dict.get_exn obj name in
+        let* callable = Dict.get_exn obj name in
         (* TODO: for OO method, gives self argument *)
-        call_dsl ~closure ~arg_names ~args
+        call_dsl ~callable ~arg_names ~args
   in
   assign_ret res
 
