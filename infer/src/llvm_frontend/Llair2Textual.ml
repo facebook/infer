@@ -127,7 +127,7 @@ let rec to_textual_exp ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
   match exp with
   | Integer {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
-      else if NS.Z.is_false data then Textual.Exp.Const Null
+      else if NS.Z.is_false data && not (Llair.Typ.is_int typ) then Textual.Exp.Const Null
       else Textual.Exp.Const (Int data)
   | Float {data; typ} ->
       if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)

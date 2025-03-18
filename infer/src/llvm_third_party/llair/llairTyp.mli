@@ -66,6 +66,8 @@ val opaque : name:string -> t
 val is_sized : t -> bool
 (** Holds of types which are first-class and have a statically-known size. *)
 
+val is_int : t -> bool
+
 val bit_size_of : t -> int
 (** The number of bits required to hold a value of the given type. Raises unless [is_sized] holds. *)
 

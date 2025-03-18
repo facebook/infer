@@ -72,6 +72,8 @@ let is_sized = function
       true
 
 
+let is_int t = match t with Integer _ -> true | _ -> false
+
 let invariant t =
   let@ () = Invariant.invariant [%here] t [%sexp_of: t] in
   match t with

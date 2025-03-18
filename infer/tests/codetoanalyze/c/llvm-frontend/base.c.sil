@@ -6,15 +6,23 @@
 
 .source_language = "C"
 
+declare test() : *ptr_elt
+
 declare main() : *ptr_elt
+
+define test() : *ptr_elt {
+  #:
+      ret null
+      
+}
 
 define main() : *ptr_elt {
   local 1: *ptr_elt
   #:
       n3 = $builtins.llvm_alloc()
-      store n3 <- null
+      store n3 <- 0
       _ = __sil_free(n3)
-      ret null
+      ret 0
       
 }
 
