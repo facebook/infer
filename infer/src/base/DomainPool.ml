@@ -37,7 +37,22 @@ type ('work, 'final, 'result) t =
   { jobs: int
   ; workers: ('work, 'final) worker Array.t
   ; message_queue: 'result worker_message Concurrent.Queue.t
+  ; task_bar: TaskBar.t
   ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t }
+
+let update_status task_bar ~slot t status =
+  match Config.progress_bar with
+  | `Quiet | `Plain ->
+      ()
+  | `MultiLine ->
+      let status =
+        (* Truncate status if too big: it's pointless to spam the status bar with long status, and
+            also difficult to achieve technically over pipes (it's easier if all the messages fit
+            into a buffer of reasonable size). *)
+        if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
+      in
+      TaskBar.update_status task_bar ~slot t status
+
 
 let rec child_loop ~f ~command_queue ~message_queue worker_id =
   match Concurrent.Queue.dequeue command_queue with
@@ -92,7 +107,12 @@ let create :
         in
         {domain; command_queue; state= Idle} )
   in
-  {jobs; workers; message_queue; tasks= tasks ()}
+  let task_bar = TaskBar.create ~jobs in
+  (WorkerPoolState.update_status :=
+     fun t status ->
+       let slot = WorkerPoolState.get_in_child () |> Option.value_exn in
+       update_status ~slot task_bar t status ) ;
+  {jobs; workers; message_queue; tasks= tasks (); task_bar}
 
 
 let handle_worker_message pool = function
@@ -105,7 +125,9 @@ let handle_worker_message pool = function
         L.die InternalError "DomainPool: Received Ready from an idle worker@."
     | Processing {work} ->
         pool.tasks.finished ~result work ;
-        pool.workers.(worker_id).state <- Idle )
+        pool.workers.(worker_id).state <- Idle ;
+        TaskBar.set_remaining_tasks pool.task_bar (pool.tasks.remaining_tasks ()) ;
+        TaskBar.update_status pool.task_bar ~slot:worker_id (Some (Mtime_clock.now ())) "idle" )
 
 
 let rec handle_all_messages pool =
@@ -168,16 +190,25 @@ let do_compaction_if_needed =
   do_compaction_if_needed
 
 
-let rec run pool =
-  if pool.tasks.is_empty () then (
-    Array.iter pool.workers ~f:(fun {command_queue} ->
-        Concurrent.Queue.enqueue GoHome command_queue ) ;
-    Array.init (Array.length pool.workers) ~f:(fun worker_id ->
-        Domain.join pool.workers.(worker_id).domain |> Option.some ) )
-  else (
-    handle_all_messages pool ;
-    send_work_to_idle_workers pool ;
-    if some_workers_processing pool then Concurrent.Queue.wait_until_non_empty pool.message_queue
-    else Domain.cpu_relax () ;
-    do_compaction_if_needed () ;
-    run pool )
+let run pool =
+  let rec run_inner pool =
+    if pool.tasks.is_empty () then (
+      Array.iter pool.workers ~f:(fun {command_queue} ->
+          Concurrent.Queue.enqueue GoHome command_queue ) ;
+      Array.init (Array.length pool.workers) ~f:(fun worker_id ->
+          Domain.join pool.workers.(worker_id).domain |> Option.some ) )
+    else (
+      handle_all_messages pool ;
+      send_work_to_idle_workers pool ;
+      TaskBar.refresh pool.task_bar ;
+      if some_workers_processing pool then Concurrent.Queue.wait_until_non_empty pool.message_queue
+      else Domain.cpu_relax () ;
+      do_compaction_if_needed () ;
+      run_inner pool )
+  in
+  let total_tasks = pool.tasks.remaining_tasks () in
+  TaskBar.set_tasks_total pool.task_bar total_tasks ;
+  TaskBar.tasks_done_reset pool.task_bar ;
+  let results = run_inner pool in
+  TaskBar.finish pool.task_bar ;
+  results

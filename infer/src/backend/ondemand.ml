@@ -151,26 +151,24 @@ let () =
 let logged_error = DLS.new_key (fun () -> false)
 
 let update_taskbar proc_name_opt source_file_opt =
-  if Config.multicore then ()
-  else
-    let t0 = Mtime_clock.now () in
-    let status =
-      match (proc_name_opt, source_file_opt) with
-      | Some pname, Some src_file ->
-          let nesting =
-            let n = DLS.get nesting in
-            if n <= max_nesting_to_print then String.make n '>' else Printf.sprintf "%d>" n
-          in
-          F.asprintf "%s%a: %a" nesting SourceFile.pp src_file Procname.pp pname
-      | Some pname, None ->
-          Procname.to_string pname
-      | None, Some src_file ->
-          SourceFile.to_string src_file
-      | None, None ->
-          "Unspecified task"
-    in
-    DLS.set current_taskbar_status (Some (t0, status)) ;
-    !WorkerPoolState.update_status (Some t0) status
+  let t0 = Mtime_clock.now () in
+  let status =
+    match (proc_name_opt, source_file_opt) with
+    | Some pname, Some src_file ->
+        let nesting =
+          let n = DLS.get nesting in
+          if n <= max_nesting_to_print then String.make n '>' else Printf.sprintf "%d>" n
+        in
+        F.asprintf "%s%a: %a" nesting SourceFile.pp src_file Procname.pp pname
+    | Some pname, None ->
+        Procname.to_string pname
+    | None, Some src_file ->
+        SourceFile.to_string src_file
+    | None, None ->
+        "Unspecified task"
+  in
+  DLS.set current_taskbar_status (Some (t0, status)) ;
+  !WorkerPoolState.update_status (Some t0) status
 
 
 let set_complete_result analysis_req summary =
