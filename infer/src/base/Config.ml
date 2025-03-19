@@ -3364,6 +3364,11 @@ and skip_translation_headers =
      string during capture."
 
 
+and source_debug =
+  CLOpt.mk_bool ~long:"source-debug" ~default:false
+    "Generate a copy of each source files with invariants at each line"
+
+
 and source_files =
   CLOpt.mk_bool ~long:"source-files"
     ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
@@ -4820,7 +4825,7 @@ and run_python_interpreter = !run_python_interpreter
 
 and sarif = !sarif
 
-and scheduler = !scheduler
+and scheduler = if !source_debug then File else !scheduler
 
 and scope_leakage_config = !scope_leakage_config
 
@@ -4853,6 +4858,8 @@ and skip_duplicated_types = !skip_duplicated_types
 and skip_non_capture_clang_commands = !skip_non_capture_clang_commands
 
 and skip_translation_headers = RevList.to_list !skip_translation_headers
+
+and source_debug = !source_debug
 
 and source_files = !source_files
 

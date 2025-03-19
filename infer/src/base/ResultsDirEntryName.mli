@@ -48,6 +48,7 @@ type id =
   | ReportXML  (** a PMD-style XML version of [report.json] *)
   | RetainCycles  (** directory of retain cycles dotty files *)
   | RunState  (** internal data about the last infer run *)
+  | SourceDebug  (** directory where we output .py files with invariants if --source-debug is set *)
   | Stats  (** internal statistics about the infer run *)
   | SyntacticDependencyGraphDot
       (** the inter-procedures dependencies obtained by syntactically inspecting the source of each

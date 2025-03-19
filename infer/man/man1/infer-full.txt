@@ -3417,6 +3417,10 @@ INTERNAL OPTIONS
        --skip-translation-headers-reset
            Set --skip-translation-headers to the empty list.
 
+       --source-debug
+           Activates: Generate a copy of each source files with invariants at
+           each line (Conversely: --no-source-debug)
+
        --source-files-call-graph-partition-reset
            Cancel the effect of --source-files-call-graph-partition.
 

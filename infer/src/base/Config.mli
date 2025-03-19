@@ -856,6 +856,8 @@ val skip_non_capture_clang_commands : bool
 
 val skip_translation_headers : string list
 
+val source_debug : bool
+
 val source_files : bool
 
 val source_files_call_graph : bool

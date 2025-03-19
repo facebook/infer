@@ -644,8 +644,7 @@ let run driver_mode =
   let changed_files = SourceFile.read_config_files_to_analyze () in
   capture driver_mode ~changed_files ;
   if Config.incremental_analysis then AnalysisDependencyGraph.invalidate ~changed_files ;
-  analyze_and_report driver_mode ~changed_files ;
-  ()
+  analyze_and_report driver_mode ~changed_files
 
 
 let run driver_mode =

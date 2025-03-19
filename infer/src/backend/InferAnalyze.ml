@@ -43,6 +43,7 @@ let analyze_target :
           run_and_interpret_result ~f:(fun () ->
               Ondemand.analyze_file AnalysisRequest.all source_file )
         in
+        if Config.source_debug then SourcePrinter.write_all () ;
         if Config.write_html then Printer.write_all_html_files source_file ;
         result )
   in
