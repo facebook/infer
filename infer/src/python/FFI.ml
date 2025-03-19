@@ -104,9 +104,9 @@ and pyInstruction =
   { opname: string
   ; opcode: int
   ; arg: int
+  ; argrepr: string
   ; argval: pyConstant
-  ; (* TODO: python provides argval, not sure it is needed ? *)
-    offset: int
+  ; offset: int
   ; starts_line: int option
   ; is_jump_target: bool }
 [@@deriving compare]
@@ -136,14 +136,9 @@ let rec pp_pyConstant fmt = function
       F.pp_print_string fmt "None"
 
 
-let pp_hint ~code:{co_consts; co_names; co_varnames; co_cellvars; co_freevars} fmt opname arg =
-  let get_cell_name arg =
-    let sz = Array.length co_cellvars in
-    if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
-  in
+let use_pp_hint opname =
   match opname with
-  | "LOAD_CONST" ->
-      F.fprintf fmt "(%a)" pp_pyConstant co_consts.(arg)
+  | "LOAD_CONST"
   | "LOAD_NAME"
   | "LOAD_GLOBAL"
   | "LOAD_ATTR"
@@ -155,26 +150,29 @@ let pp_hint ~code:{co_consts; co_names; co_varnames; co_cellvars; co_freevars} f
   | "IMPORT_FROM"
   | "DELETE_NAME"
   | "DELETE_GLOBAL"
-  | "DELETE_ATTR" ->
-      F.fprintf fmt "(%s)" co_names.(arg)
-  | "LOAD_FAST" | "DELETE_FAST" | "STORE_FAST" ->
-      F.fprintf fmt "(%s)" co_varnames.(arg)
-  | "LOAD_DEREF" | "LOAD_CLASSDEREF" | "STORE_DEREF" | "LOAD_CLOSURE" | "DELETE_DEREF" ->
-      F.fprintf fmt "(%s)" (get_cell_name arg)
+  | "DELETE_ATTR"
+  | "LOAD_FAST"
+  | "DELETE_FAST"
+  | "STORE_FAST"
+  | "LOAD_DEREF"
+  | "LOAD_CLASSDEREF"
+  | "STORE_DEREF"
+  | "LOAD_CLOSURE"
+  | "DELETE_DEREF"
   | "POP_JUMP_IF_TRUE"
   | "POP_JUMP_IF_FALSE"
   | "JUMP_ABSOLUTE"
   | "JUMP_IF_TRUE_OR_POP"
-  | "JUMP_IF_FALSE_OR_POP" ->
-      F.fprintf fmt "(to %d)" (2 * arg)
-  | "JUMP_FORWARD" | "FOR_ITER" ->
-      F.fprintf fmt "(to +%d)" (2 * arg)
+  | "JUMP_IF_FALSE_OR_POP"
+  | "JUMP_FORWARD"
+  | "FOR_ITER" ->
+      true
   | _ ->
-      F.fprintf fmt ""
+      false
 
 
-let pp_pyInstruction ?code fmt {opname; arg; offset; starts_line; is_jump_target} =
-  let pp_hint fmt = Option.iter code ~f:(fun code -> pp_hint ~code fmt opname arg) in
+let pp_pyInstruction fmt {opname; arg; argrepr; offset; starts_line; is_jump_target} =
+  let pp_hint fmt = if use_pp_hint opname then F.fprintf fmt "(%s)" argrepr else () in
   F.fprintf fmt "%s %s %4d %-30s %4d %t"
     (match starts_line with None -> "    " | Some line -> F.asprintf "%4d" line)
     (if is_jump_target then ">>>" else "   ")
@@ -381,6 +379,7 @@ and new_py_instruction obj =
       let* opt = read_field obj (fun _ x -> Ok x) "argval" in
       new_py_constant opt
   in
+  let* argrepr = read_string "argrepr" obj in
   let* offset = read_int "offset" obj in
   let* starts_line =
     let* opt = read_field obj (fun _ x -> Ok x) "starts_line" in
@@ -390,7 +389,7 @@ and new_py_instruction obj =
       Ok (Some i)
   in
   let* is_jump_target = read_bool "is_jump_target" obj in
-  Ok {opname; opcode; arg; argval; offset; starts_line; is_jump_target}
+  Ok {opname; opcode; arg; argval; argrepr; offset; starts_line; is_jump_target}
 
 
 module Code = struct
@@ -438,6 +437,7 @@ module Instruction = struct
     { opname: string
     ; opcode: int
     ; arg: int
+    ; argrepr: string
     ; argval: pyConstant
     ; offset: int
     ; starts_line: int option

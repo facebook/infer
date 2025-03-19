@@ -1766,7 +1766,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
     ({FFI.Instruction.opname; starts_line; arg; argval} as instr) next_offset_opt =
   let open IResult.Let_syntax in
   let st = State.try_set_current_source_location st starts_line in
-  State.debug st "%a@\n" (FFI.Instruction.pp ~code) instr ;
+  State.debug st "%a@\n" FFI.Instruction.pp instr ;
   try
     match opname with
     | "LOAD_ASSERTION_ERROR" ->
@@ -3109,7 +3109,7 @@ let test_cfg_skeleton ~show ~code_qual_name code =
   | Ok (topological_order, map) when show ->
       let qual_name = code_qual_name code |> Option.value_exn in
       F.printf "%a@\n" QualName.pp qual_name ;
-      List.iter code.FFI.Code.instructions ~f:(F.printf "%a@\n" (FFI.Instruction.pp ~code)) ;
+      List.iter code.FFI.Code.instructions ~f:(F.printf "%a@\n" FFI.Instruction.pp) ;
       let pp_succ_and_delta fmt (succ, delta, _) =
         if Int.equal delta 0 then F.pp_print_int fmt succ else F.fprintf fmt "%d(%d)" succ delta
       in

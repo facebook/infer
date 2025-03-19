@@ -80,13 +80,14 @@ and Instruction : sig
     { opname: string
     ; opcode: int
     ; arg: int
+    ; argrepr: string
     ; argval: Constant.t
     ; offset: int
     ; starts_line: int option
     ; is_jump_target: bool }
   [@@deriving compare]
 
-  val pp : ?code:Code.t -> Format.formatter -> t -> unit
+  val pp : Format.formatter -> t -> unit
 end
 
 val from_string : source:string -> filename:string -> (Code.t, Error.t) result
