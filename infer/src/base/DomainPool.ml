@@ -79,10 +79,14 @@ let rec child_loop ~f ~command_queue ~message_queue worker_id =
 
 let child ~f ~child_prologue ~child_epilogue ~command_queue ~message_queue worker_id =
   Printexc.record_backtrace true ;
+  Config.set_gc_params () ;
+  L.reset_formatters () ;
   Database.new_database_connections Primary ;
   child_prologue worker_id ;
   child_loop ~f ~command_queue ~message_queue worker_id ;
-  child_epilogue worker_id
+  let result = child_epilogue worker_id in
+  L.flush_formatters () ;
+  result
 
 
 let create :
