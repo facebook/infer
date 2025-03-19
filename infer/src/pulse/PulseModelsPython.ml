@@ -799,10 +799,8 @@ let get_class_instance aval =
       ret None
 
 
-let get_attr obj attr : model =
+let get_attr_dsl obj attr : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* attr = as_constant_string_exn attr in
   (* TODO: look into companion class object if necessary *)
   let* key_in = Dict.contains_str_key obj attr in
@@ -831,6 +829,14 @@ let get_attr obj attr : model =
             Dict.get_str_key ~propagate_static_type:true obj attr
   in
   let* () = initialize_if_class_companion res in
+  ret res
+
+
+let get_attr obj attr : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* res = get_attr_dsl obj attr in
   assign_ret res
 
 
@@ -855,9 +861,9 @@ let call_method name obj arg_names args : model =
             L.d_printfln "catching special call %s on module object %s" str_name module_name ;
             ret res )
     | _ ->
-        let* callable = Dict.get_exn obj name in
+        let* callable = get_attr_dsl obj name in
         (* TODO: for OO method, gives self argument *)
-        call_dsl ~callable ~arg_names ~args
+        call_dsl ~callable ~arg_names ~args:(obj :: args)
   in
   assign_ret res
 
