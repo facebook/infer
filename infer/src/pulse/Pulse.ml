@@ -1823,25 +1823,32 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
   if exists_a_node_with_0_disjunct then Stats.incr_pulse_summaries_with_some_unreachable_nodes ()
 
 
-let python_register_info_per_source_lines proc_desc invariant_map =
+let python_register_info_per_source_lines proc_desc initial invariant_map =
   let nodes = Procdesc.get_nodes proc_desc in
-  let pp_disjs fmt = function
-    | [(ContinueProgram astate, path)] ->
-        PulsePp.pp ~simplified:true Pp.TEXT (Some path) fmt astate
-    | [_] ->
-        F.fprintf fmt "not a valid execution state"
-    | [] ->
-        F.fprintf fmt "0 disjsuncts"
-    | l ->
-        F.fprintf fmt "%d disjsuncts" (List.length l)
+  let get_info (disjs, _) =
+    let pp_disjs fmt = function
+      | [(ContinueProgram astate, path)] ->
+          PulsePp.pp ~simplified:true Pp.TEXT (Some path) fmt astate
+      | [_] ->
+          F.fprintf fmt "not a valid execution state"
+      | [] ->
+          F.fprintf fmt "0 disjsuncts"
+      | l ->
+          F.fprintf fmt "%d disjsuncts" (List.length l)
+    in
+    F.asprintf "'''%a\n'''" pp_disjs disjs
   in
+  let start_node = Procdesc.get_start_node proc_desc in
+  let start_loc = Procdesc.Node.get_loc start_node in
+  let info = get_info initial in
+  SourcePrinter.add_info_before ~sourcefile:start_loc.file ~line:start_loc.line ~info ;
   List.iter nodes ~f:(fun node ->
       let id = Procdesc.Node.get_id node in
       DisjunctiveAnalyzer.extract_post id invariant_map
-      |> Option.iter ~f:(fun (disjs, _) ->
+      |> Option.iter ~f:(fun inv ->
              let loc = Procdesc.Node.get_loc node in
-             let info = F.asprintf "'''%a\n'''" pp_disjs disjs in
-             SourcePrinter.add_info ~sourcefile:loc.file ~line:loc.line ~info ) )
+             let info = get_info inv in
+             SourcePrinter.add_info_after ~sourcefile:loc.file ~line:loc.line ~info ) )
 
 
 let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) =
@@ -1862,7 +1869,7 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysi
         (initial_disjuncts, initial_non_disj) )
   in
   let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
-  if Config.source_debug then python_register_info_per_source_lines proc_desc invariant_map ;
+  if Config.source_debug then python_register_info_per_source_lines proc_desc initial invariant_map ;
   log_number_of_unreachable_nodes proc_desc invariant_map ;
   if CallGlobalForStats.is_one_call_stuck () then Stats.incr_pulse_summaries_unsat_for_caller () ;
   let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in

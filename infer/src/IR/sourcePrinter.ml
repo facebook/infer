@@ -12,22 +12,33 @@ open! IStd
 
 let infos_per_sourcefiles_and_lines = DLS.new_key (fun () -> SourceFile.Hash.create 1)
 
-let add_info ~sourcefile ~line ~info =
+type position = Before | After
+
+let add_info position ~sourcefile ~line ~info =
   let tbl = DLS.get infos_per_sourcefiles_and_lines in
-  let per_lines =
+  let per_lines_before, per_lines_after =
     SourceFile.Hash.find_opt tbl sourcefile
     |> Option.value_or_thunk ~default:(fun () ->
-           let per_lines_tbl = IInt.Hash.create 1 in
-           SourceFile.Hash.replace tbl sourcefile per_lines_tbl ;
-           per_lines_tbl )
+           let per_lines_after_tbl = IInt.Hash.create 1 in
+           let per_lines_before_tbl = IInt.Hash.create 1 in
+           SourceFile.Hash.replace tbl sourcefile (per_lines_before_tbl, per_lines_after_tbl) ;
+           (per_lines_before_tbl, per_lines_after_tbl) )
   in
-  IInt.Hash.replace per_lines line info
+  match position with
+  | Before ->
+      IInt.Hash.replace per_lines_before line info
+  | After ->
+      IInt.Hash.replace per_lines_after line info
 
+
+let add_info_before = add_info Before
+
+let add_info_after = add_info After
 
 let write_all () =
   let linereader = LineReader.create () in
   SourceFile.Hash.iter
-    (fun sourcefile per_lines_tbl ->
+    (fun sourcefile (per_lines_before_tbl, per_lines_after_tbl) ->
       let output_dir = ResultsDirEntryName.get_path SourceDebug ~results_dir:Config.results_dir in
       IUnix.mkdir_p output_dir ;
       let filename =
@@ -36,8 +47,10 @@ let write_all () =
       Filename.concat output_dir filename
       |> Utils.with_file_out ~f:(fun channel ->
              let print_one_line line_number raw_line =
+               IInt.Hash.find_opt per_lines_before_tbl line_number
+               |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info) ;
                Printf.fprintf channel "%s\n" raw_line ;
-               IInt.Hash.find_opt per_lines_tbl line_number
+               IInt.Hash.find_opt per_lines_after_tbl line_number
                |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info)
              in
              LineReader.iteri linereader sourcefile ~f:print_one_line ) )
