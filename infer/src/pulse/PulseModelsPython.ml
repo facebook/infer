@@ -724,34 +724,6 @@ let call_function_ex closure tuple dict : model =
   assign_ret res
 
 
-let call_method name obj arg_names args : model =
-  (* TODO: take into account named args *)
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
-  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
-  let* res =
-    match opt_dynamic_type_data with
-    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals module_name))}} -> (
-        (* since module types are final, static type will save us most of the time *)
-        let* str_name = as_constant_string_exn name in
-        let* opt_special_call = modelled_python_call (PyLib {module_name; name= str_name}) args in
-        match opt_special_call with
-        | None ->
-            L.d_printfln "calling method %s on module object %s" str_name module_name ;
-            let* callable = Dict.get_exn obj name in
-            call_dsl ~callable ~arg_names ~args
-        | Some res ->
-            L.d_printfln "catching special call %s on module object %s" str_name module_name ;
-            ret res )
-    | _ ->
-        let* callable = Dict.get_exn obj name in
-        (* TODO: for OO method, gives self argument *)
-        call_dsl ~callable ~arg_names ~args
-  in
-  assign_ret res
-
-
 let gen_start_coroutine : model =
   let open DSL.Syntax in
   start_model @@ fun () -> ret ()
@@ -859,6 +831,34 @@ let get_attr obj attr : model =
             Dict.get_str_key ~propagate_static_type:true obj attr
   in
   let* () = initialize_if_class_companion res in
+  assign_ret res
+
+
+let call_method name obj arg_names args : model =
+  (* TODO: take into account named args *)
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
+  let* res =
+    match opt_dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals module_name))}} -> (
+        (* since module types are final, static type will save us most of the time *)
+        let* str_name = as_constant_string_exn name in
+        let* opt_special_call = modelled_python_call (PyLib {module_name; name= str_name}) args in
+        match opt_special_call with
+        | None ->
+            L.d_printfln "calling method %s on module object %s" str_name module_name ;
+            let* callable = Dict.get_exn obj name in
+            call_dsl ~callable ~arg_names ~args
+        | Some res ->
+            L.d_printfln "catching special call %s on module object %s" str_name module_name ;
+            ret res )
+    | _ ->
+        let* callable = Dict.get_exn obj name in
+        (* TODO: for OO method, gives self argument *)
+        call_dsl ~callable ~arg_names ~args
+  in
   assign_ret res
 
 
