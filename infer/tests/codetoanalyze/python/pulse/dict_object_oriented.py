@@ -21,9 +21,8 @@ def set_attribute_with_init_ok():
     box = Box("key0")
     return my_dict[box.key]
 
-#not a FN anymore for 3.10 but still missing with 3.12
-#TODO: change the 3.12 capture of method calls
-def fn_set_attribute_with_init_read_with_getter_bad():
+
+def set_attribute_with_init_read_with_getter_bad():
     my_dict = {"key0": 0, "key1": 1}
     box = Box("key2")
     return my_dict[box.get_key()]

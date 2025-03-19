@@ -1292,6 +1292,14 @@ let read_code_qual_name st c =
       internal_error st (Error.CodeWithoutQualifiedName c)
 
 
+let call_method st name ?arg_names self_if_needed args =
+  let lhs, st = State.fresh_id st in
+  let arg_names = Option.value arg_names ~default:Exp.none in
+  let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args; arg_names} in
+  let st = State.push_stmt st stmt in
+  (lhs, st)
+
+
 type calling_mode = Kargs | Args of int
 
 let call_function st version mode =
@@ -1307,41 +1315,51 @@ let call_function st version mode =
   in
   let arg = match mode with Kargs -> 1 | Args arg -> arg in
   let* args, st = State.pop_n_and_cast st arg in
-  let* fun_exp, args, st =
+  let* prepare_args =
     match (version : FFI.version) with
     | Python_3_10 ->
         let+ fun_exp, st = State.pop st in
-        (fun_exp, args, st)
+        `RegularCall (fun_exp, args, st)
     | Python_3_12 -> (
         let* tos1, st = State.pop st in
         let* tos2, st = State.pop st in
         match tos2 with
+        | Exp.LoadMethod (self, name) ->
+            let id, st = call_method st name self args in
+            let st = State.push st (Exp.Temp id) in
+            Ok (`MethodCall st)
         | Exp.Null ->
-            Ok (tos1, args, st)
+            Ok (`RegularCall (tos1, args, st))
         | _ ->
-            let+ self = State.cast_exp st tos1 in
-            (tos2, self :: args, st) )
+            let* self = State.cast_exp st tos1 in
+            Ok (`RegularCall (tos2, self :: args, st)) )
   in
-  let lhs, st = State.fresh_id st in
-  let* stmt =
-    match fun_exp with
-    | Exp.BuiltinCaller call ->
-        Ok (Stmt.BuiltinCall {lhs; call; args; arg_names})
-    | Exp.ContextManagerExit self_if_needed ->
-        let name = Ident.Special.exit in
-        Ok (Stmt.CallMethod {lhs; name; self_if_needed; args= []; arg_names})
-    | exp -> (
-        let+ exp = State.cast_exp st exp in
-        match (mode, args) with
-        | Args _, _ ->
-            Stmt.Call {lhs; exp; args; arg_names}
-        | Kargs, [kargs] ->
-            Stmt.CallEx {lhs; exp; kargs; arg_names}
-        | Kargs, _ ->
-            L.die InternalError "unexpected number of arguments" )
+  let* st =
+    match prepare_args with
+    | `RegularCall (fun_exp, args, st) ->
+        let lhs, st = State.fresh_id st in
+        let+ stmt =
+          match fun_exp with
+          | Exp.BuiltinCaller call ->
+              Ok (Stmt.BuiltinCall {lhs; call; args; arg_names})
+          | Exp.ContextManagerExit self_if_needed ->
+              let name = Ident.Special.exit in
+              Ok (Stmt.CallMethod {lhs; name; self_if_needed; args= []; arg_names})
+          | exp -> (
+              let+ exp = State.cast_exp st exp in
+              match (mode, args) with
+              | Args _, _ ->
+                  Stmt.Call {lhs; exp; args; arg_names}
+              | Kargs, [kargs] ->
+                  Stmt.CallEx {lhs; exp; kargs; arg_names}
+              | Kargs, _ ->
+                  L.die InternalError "unexpected number of arguments" )
+        in
+        let st = State.push_stmt st stmt in
+        State.push st (Exp.Temp lhs)
+    | `MethodCall st ->
+        Ok st
   in
-  let st = State.push_stmt st stmt in
-  let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
 
@@ -1351,14 +1369,6 @@ let call_builtin_function st ?arg_names call args =
   let stmt = Stmt.BuiltinCall {lhs; call; args; arg_names} in
   let st = State.push_stmt st stmt in
   Ok (lhs, st)
-
-
-let call_method st name ?arg_names self_if_needed args =
-  let lhs, st = State.fresh_id st in
-  let arg_names = Option.value arg_names ~default:Exp.none in
-  let stmt = Stmt.CallMethod {lhs; name; self_if_needed; args; arg_names} in
-  let st = State.push_stmt st stmt in
-  (lhs, st)
 
 
 (** Helper to compile the binary/unary/... ops into IR *)
@@ -1789,19 +1799,18 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         load st Global co_names.(idx)
     | "LOAD_FAST" ->
         load st Fast co_varnames.(arg)
-    | "LOAD_ATTR" ->
+    | "LOAD_ATTR" -> (
         let idx = match version with Python_3_10 -> arg | Python_3_12 -> arg lsr 1 in
         let attr = co_names.(idx) |> Ident.mk in
         let* exp, st = State.pop_and_cast st in
-        let exp = Exp.GetAttr {exp; attr} in
-        let st =
-          match version with
-          | Python_3_12 when arg land 1 <> 0 ->
-              State.push_symbol st Null
-          | _ ->
-              st
-        in
-        assign_to_temp_and_push st exp
+        match version with
+        | Python_3_12 when arg land 1 <> 0 ->
+            let st = State.push_symbol st (LoadMethod (exp, attr)) in
+            let st = State.push st exp in
+            Ok (st, None)
+        | _ ->
+            let exp = Exp.GetAttr {exp; attr} in
+            assign_to_temp_and_push st exp )
     | "LOAD_DEREF" ->
         let* name = get_cell_name code st arg argval in
         let rhs = Exp.LoadDeref {slot= arg; name} in
