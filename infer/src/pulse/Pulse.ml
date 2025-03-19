@@ -1825,13 +1825,22 @@ let log_number_of_unreachable_nodes proc_desc invariant_map =
 
 let python_register_info_per_source_lines proc_desc invariant_map =
   let nodes = Procdesc.get_nodes proc_desc in
+  let pp_disjs fmt = function
+    | [(ContinueProgram astate, path)] ->
+        PulsePp.pp ~simplified:true Pp.TEXT (Some path) fmt astate
+    | [_] ->
+        F.fprintf fmt "not a valid execution state"
+    | [] ->
+        F.fprintf fmt "0 disjsuncts"
+    | l ->
+        F.fprintf fmt "%d disjsuncts" (List.length l)
+  in
   List.iter nodes ~f:(fun node ->
       let id = Procdesc.Node.get_id node in
-      DisjunctiveAnalyzer.InvariantMap.find_opt id invariant_map
-      |> Option.iter ~f:(fun {AbstractInterpreter.State.post= disjs, _} ->
-             let nb_disjs = List.length disjs in
+      DisjunctiveAnalyzer.extract_post id invariant_map
+      |> Option.iter ~f:(fun (disjs, _) ->
              let loc = Procdesc.Node.get_loc node in
-             let info = F.asprintf "'''\n%d disjunct(s)\n'''" nb_disjs in
+             let info = F.asprintf "'''%a\n'''" pp_disjs disjs in
              SourcePrinter.add_info ~sourcefile:loc.file ~line:loc.line ~info ) )
 
 

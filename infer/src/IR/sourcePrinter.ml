@@ -36,9 +36,9 @@ let write_all () =
       Filename.concat output_dir filename
       |> Utils.with_file_out ~f:(fun channel ->
              let print_one_line line_number raw_line =
+               Printf.fprintf channel "%s\n" raw_line ;
                IInt.Hash.find_opt per_lines_tbl line_number
-               |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info) ;
-               Printf.fprintf channel "%s\n" raw_line
+               |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info)
              in
              LineReader.iteri linereader sourcefile ~f:print_one_line ) )
     (DLS.get infos_per_sourcefiles_and_lines)
