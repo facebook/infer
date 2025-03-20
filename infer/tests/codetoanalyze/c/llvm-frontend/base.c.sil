@@ -6,9 +6,53 @@
 
 .source_language = "C"
 
+declare test3(*ptr_elt) : *ptr_elt
+
+declare test2() : *ptr_elt
+
+declare test1(int, int) : *ptr_elt
+
 declare test() : *ptr_elt
 
 declare main() : *ptr_elt
+
+define test3(var0: *ptr_elt) : *ptr_elt {
+  local var2: *ptr_elt
+  #:
+      n29 = load &var0
+      store &var2 <- n29
+      n34 = load &var2
+      n35 = load n34
+      _ = __sil_free(&var2)
+      ret n35
+      
+}
+
+define test2() : *ptr_elt {
+  local var2: *ptr_elt, var1: *ptr_elt
+  #:
+      n25 = load &var1
+      n26 = load &var2
+      _ = __sil_free(&var1)
+      _ = __sil_free(&var2)
+      ret __sil_plusa_int(n25, n26)
+      
+}
+
+define test1(var0: int, var1: int) : *ptr_elt {
+  local var4: *ptr_elt, var3: *ptr_elt
+  #:
+      n9 = load &var0
+      store &var3 <- n9
+      n10 = load &var1
+      store &var4 <- n10
+      n17 = load &var3
+      n18 = load &var4
+      _ = __sil_free(&var3)
+      _ = __sil_free(&var4)
+      ret __sil_plusa_int(n17, n18)
+      
+}
 
 define test() : *ptr_elt {
   #:
@@ -17,11 +61,10 @@ define test() : *ptr_elt {
 }
 
 define main() : *ptr_elt {
-  local 1: *ptr_elt
+  local var1: *ptr_elt
   #:
-      n3 = $builtins.llvm_alloc()
-      store n3 <- 0
-      _ = __sil_free(n3)
+      store &var1 <- 0
+      _ = __sil_free(&var1)
       ret 0
       
 }

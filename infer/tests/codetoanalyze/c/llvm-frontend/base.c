@@ -6,13 +6,15 @@
  */
 #include <stdlib.h>
 
-int
-main()
-{
-  return 0;
+int main() { return 0; }
+int* test() { return NULL; }
+
+int test1(int n1, int n2) { return n1 + n2; }
+
+int test2() {
+  int n1;
+  int n2;
+  return n1 + n2;
 }
-int*
-test()
-{
-  return NULL;
-}
+
+int test3(int* ptr) { return *ptr; }
