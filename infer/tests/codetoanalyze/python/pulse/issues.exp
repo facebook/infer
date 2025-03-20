@@ -60,3 +60,5 @@ dict_level0.py, dict_level0.instance_attribute_from_class_companion_bad, 3, PULS
 dict_level0.py, dict_level0.instance_attribute_bad, 3, PULSE_DICT_MISSING_KEY, no_bucket, ERROR, [allocated by call to `new` (modelled),read to uninitialized value occurs here]
 dict_object_oriented.py, dict_object_oriented.set_attribute_with_init_bad, 3, PULSE_DICT_MISSING_KEY, no_bucket, ERROR, [allocated by call to `new` (modelled),read to uninitialized value occurs here]
 dict_object_oriented.py, dict_object_oriented.set_attribute_with_init_read_with_getter_bad, 3, PULSE_DICT_MISSING_KEY, no_bucket, ERROR, [allocated by call to `new` (modelled),read to uninitialized value occurs here]
+dict_object_oriented.py, dict_object_oriented.set_attribute_with_setter_read_with_getter_bad, 4, PULSE_DICT_MISSING_KEY, no_bucket, ERROR, [allocated by call to `new` (modelled),read to uninitialized value occurs here]
+dict_object_oriented.py, dict_object_oriented.set_attribute_with_init_read_with_return_get_key_bad, 3, PULSE_DICT_MISSING_KEY, no_bucket, ERROR, [allocated by call to `new` (modelled),read to uninitialized value occurs here]
