@@ -250,6 +250,47 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     Suppressions.is_suppressed ~suppressions ~issue_type ~line
 
 
+  (* Temporary function that will be deleted once we migrate to the new autofix format *)
+  let get_autofixes (err_data : Errlog.err_data) proc_name =
+    let autofix_require_post_filter = Language.equal (Procname.get_language proc_name) Hack in
+    match err_data.autofix with
+    | [] ->
+        (None, None, None)
+    | autofix_fst :: _ ->
+        let autofixes_converted =
+          List.map err_data.autofix ~f:(fun (autofix : Jsonbug_t.autofix) ->
+              let transformations =
+                match autofix.additional with
+                | None ->
+                    []
+                | Some additional ->
+                    List.map additional ~f:(fun (additional_field : Jsonbug_t.additional_autofix) ->
+                        let transformation : Jsonbug_t.transformation =
+                          { column= additional_field.column
+                          ; file= SourceFile.to_string err_data.loc.Location.file
+                          ; line= additional_field.line
+                          ; original= additional_field.original
+                          ; replacement= additional_field.replacement }
+                        in
+                        transformation )
+              in
+              match (autofix.original, autofix.replacement) with
+              | Some original, Some replacement ->
+                  let new_transformation : Jsonbug_t.transformation =
+                    { column= err_data.loc.Location.col
+                    ; file= SourceFile.to_string err_data.loc.Location.file
+                    ; line= err_data.loc.Location.line
+                    ; original
+                    ; replacement }
+                  in
+                  transformations @ [new_transformation]
+              | _, _ ->
+                  transformations )
+        in
+        if autofix_require_post_filter then (None, None, Some autofixes_converted)
+        else (Some autofix_fst, Some autofixes_converted, None)
+
+
   let to_string ({error_filter; proc_name; proc_location_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
       match proc_location_opt with
@@ -309,7 +350,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else base_qualifier
       in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
-      let autofix = match err_data.autofix with [] -> None | autofix :: _ -> Some autofix in
+      let autofix, autofixes, autofix_candidates = get_autofixes err_data proc_name in
       let suppressed =
         Config.suppressions
         && is_suppressed source_file ~issue_type:bug_type ~line:err_data.loc.Location.line
@@ -321,8 +362,8 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; category
         ; suggestion
         ; autofix
-        ; autofixes= None
-        ; autofix_candidates= None
+        ; autofixes
+        ; autofix_candidates
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name
