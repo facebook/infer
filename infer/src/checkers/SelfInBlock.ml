@@ -504,7 +504,7 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
   let to_string pvar = Mangled.to_string (Pvar.get_name pvar) in
   let strongSelf_opt = find_strong_self domain in
   let autofix =
-    Option.bind
+    Option.map
       ~f:(fun (strongSelf, strongSelfLoc) ->
         if
           strongSelfLoc.Location.line < self.loc.line
@@ -515,8 +515,8 @@ let report_mix_self_weakself_issues proc_desc err_log domain (weakSelf : DomainD
             if self.is_implicit then ("", F.asprintf "%s->" (to_string strongSelf))
             else (to_string self.DomainData.pvar, to_string strongSelf)
           in
-          Some {Jsonbug_j.original= Some original; replacement= Some replacement; additional= None}
-        else None )
+          [{Jsonbug_j.original= Some original; replacement= Some replacement; additional= None}]
+        else [] )
       strongSelf_opt
   in
   Reporting.log_issue proc_desc err_log ~ltr ~loc:self.loc ?autofix SelfInBlock
@@ -616,14 +616,14 @@ let report_unchecked_strongself_issues proc_desc err_log domain (strongSelf : Do
         let replacement =
           F.asprintf "\n if (!%s) { return; }" (Mangled.to_string (Pvar.get_name strongSelf.pvar))
         in
-        Some
-          { Jsonbug_t.original= None
+        [ { Jsonbug_t.original= None
           ; replacement= None
           ; additional=
               Some [{Jsonbug_t.line= strongSelf.loc.line; column= 1; original= ""; replacement}] }
-      else None
+        ]
+      else []
     in
-    Reporting.log_issue proc_desc err_log ~ltr ~loc:strongSelf.loc SelfInBlock ?autofix
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:strongSelf.loc SelfInBlock ~autofix
       IssueType.strong_self_not_checked message
 
 

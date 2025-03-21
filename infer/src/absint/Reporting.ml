@@ -11,7 +11,7 @@ type log_t =
      ?loc_instantiated:Location.t
   -> ?ltr:Errlog.loc_trace
   -> ?extras:Jsonbug_t.extra
-  -> ?autofix:Jsonbug_t.autofix
+  -> ?autofix:Jsonbug_t.autofix list
   -> ?suggestion:string
   -> Checker.t
   -> IssueType.t
@@ -91,10 +91,10 @@ module Suppression = struct
 end
 
 let log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras
-    ~autofix checker (issue_to_report : IssueToReport.t) =
+    ?autofix checker (issue_to_report : IssueToReport.t) =
   let issue_type = issue_to_report.issue_type in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
-    Errlog.log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras ~autofix
+    Errlog.log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras ?autofix
       checker issue_to_report
 
 
@@ -132,7 +132,7 @@ let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~
     Logging.debug Analysis Medium "Reporting is suppressed!@\n" (* Skip the reporting *)
   else
     log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~access:None ~extras
-      ~autofix checker exn
+      ?autofix checker exn
 
 
 let mk_issue_to_report ?suggestion issue_type error_message =
@@ -170,7 +170,7 @@ let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access 
   let issue_log, errlog = IssueLog.get_or_add issue_log ~proc:procname in
   let node = Errlog.UnknownNode in
   log_issue_from_errlog ?severity_override errlog ~loc ~node ~session:0 ~ltr ~access ~extras
-    ~autofix checker issue_to_report ;
+    ?autofix checker issue_to_report ;
   issue_log
 
 

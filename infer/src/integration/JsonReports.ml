@@ -309,7 +309,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else base_qualifier
       in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
-      let autofix = err_data.autofix in
+      let autofix = match err_data.autofix with [] -> None | autofix :: _ -> Some autofix in
       let suppressed =
         Config.suppressions
         && is_suppressed source_file ~issue_type:bug_type ~line:err_data.loc.Location.line

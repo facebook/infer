@@ -86,7 +86,7 @@ type err_data =
   ; visibility: IssueType.visibility
   ; access: string option
   ; extras: Jsonbug_t.extra option (* NOTE: Please consider adding new fields as part of extras *)
-  ; autofix: Jsonbug_t.autofix option }
+  ; autofix: Jsonbug_t.autofix list }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
@@ -194,8 +194,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras ~autofix checker
-    (error : IssueToReport.t) =
+let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras ?(autofix = [])
+    checker (error : IssueToReport.t) =
   if not (IssueType.checker_can_report checker error.issue_type) then
     L.die InternalError
       "Issue type \"%s\" cannot be reported by the checker \"%s\". The only checker that is \

@@ -161,11 +161,11 @@ module Mem = struct
                   Some
                     (F.asprintf "%s(%s%s" objc_block_execution_macro (Mangled.to_string name) comma)
                 in
-                Some {Jsonbug_j.original; replacement; additional= None}
+                [{Jsonbug_j.original; replacement; additional= None}]
             | _ ->
-                None
+                []
           in
-          Reporting.log_issue proc_desc err_log ~ltr ~loc ?autofix ParameterNotNullChecked
+          Reporting.log_issue proc_desc err_log ~ltr ~loc ~autofix ParameterNotNullChecked
             IssueType.block_parameter_not_null_checked message ;
           ()
       | _ ->

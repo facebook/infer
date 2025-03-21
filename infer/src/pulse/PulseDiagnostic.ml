@@ -936,8 +936,7 @@ let get_message_and_suggestion diagnostic =
 
 
 let make_autofix {Location.file; line; col} candidates =
-  let open IOption.Let_syntax in
-  let* line_str =
+  let line_str =
     let file_path = SourceFile.to_abs_path file in
     match ISys.is_file file_path with
     | `No | `Unknown ->
@@ -952,14 +951,20 @@ let make_autofix {Location.file; line; col} candidates =
                 if Int.equal line_number line then Stop (Some line_str)
                 else Continue (line_number + 1) ) )
   in
-  List.find_map candidates ~f:(fun (original, replacement) ->
-      if String.is_substring_at line_str ~pos:(col - 1) ~substring:original then
-        Some {Jsonbug_t.original= Some original; replacement= Some replacement; additional= None}
-      else
-        Option.map (String.substr_index line_str ~pattern:original) ~f:(fun idx ->
-            { Jsonbug_t.original= None
-            ; replacement= None
-            ; additional= Some [{line; column= idx + 1; original; replacement}] } ) )
+  match line_str with
+  | None ->
+      []
+  | Some line_str ->
+      List.filter_opt
+        (List.map candidates ~f:(fun (original, replacement) ->
+             if String.is_substring_at line_str ~pos:(col - 1) ~substring:original then
+               Some
+                 {Jsonbug_t.original= Some original; replacement= Some replacement; additional= None}
+             else
+               Option.map (String.substr_index line_str ~pattern:original) ~f:(fun idx ->
+                   { Jsonbug_t.original= None
+                   ; replacement= None
+                   ; additional= Some [{line; column= idx + 1; original; replacement}] } ) ) )
 
 
 let get_autofix pdesc diagnostic =
@@ -997,9 +1002,9 @@ let get_autofix pdesc diagnostic =
           let tgt = Pvar.to_string pvar in
           make_autofix location [(F.asprintf "auto %s = " tgt, F.asprintf "auto& %s = " tgt)]
       | _ ->
-          None )
+          [] )
   | _ ->
-      None
+      []
 
 
 let add_errlog_header ~nesting ~title location errlog =
