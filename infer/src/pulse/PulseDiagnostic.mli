@@ -135,8 +135,6 @@ val aborts_execution : PathContext.t -> t -> bool
 
 val get_message_and_suggestion : t -> string * string option
 
-val get_autofix : Procdesc.t -> t -> Jsonbug_t.autofix list
-
 val get_location : t -> Location.t
 
 val get_location_instantiated : t -> Location.t option

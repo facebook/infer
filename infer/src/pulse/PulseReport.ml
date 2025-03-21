@@ -137,7 +137,7 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
     in
     let issue_type = get_issue_type tenv ~latent diagnostic proc_desc in
     let message, suggestion = get_message_and_suggestion diagnostic in
-    let autofix = get_autofix proc_desc diagnostic in
+    let autofix = PulseAutofix.get_autofix proc_desc diagnostic in
     L.d_printfln ~color:Red "Reporting issue: %a: %s" IssueType.pp issue_type message ;
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ?loc_instantiated
       ~ltr:(extra_trace @ get_trace diagnostic)
