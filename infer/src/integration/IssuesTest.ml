@@ -128,6 +128,12 @@ let pp_custom_of_report fmt report fields =
               F.fprintf fmt "%a" pp_autofix_opt (original, replacement, issue.line, issue.column) ;
               Option.iter additional ~f:(fun additional ->
                   List.iter additional ~f:(fun {line; column; original; replacement} ->
+                      F.fprintf fmt "+%a" pp_autofix (original, replacement, line, column) ) ) ) ;
+          Option.iter issue.autofix_candidates ~f:(fun autofixes ->
+              F.pp_print_string fmt (comma_separator index) ;
+              List.iter autofixes ~f:(fun autofix ->
+                  List.iter autofix
+                    ~f:(fun ({line; column; original; replacement} : Jsonbug_t.transformation) ->
                       F.fprintf fmt "+%a" pp_autofix (original, replacement, line, column) ) ) )
     in
     List.iteri ~f:pp_field fields ;

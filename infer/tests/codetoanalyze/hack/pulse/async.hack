@@ -84,6 +84,12 @@ async function genAndAwaitOk(): Awaitable<void> {
   return;
 }
 
+async function genAndAwaitWithBadFormattingBad(): Awaitable<void> {
+  $_ = genAwaitParam(genInt()
+  );
+  return;
+}
+
 async function genAndAwaitBad(): Awaitable<void> {
   $x = genInt();
   await genDontAwaitParam($x);

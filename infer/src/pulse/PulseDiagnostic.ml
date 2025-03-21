@@ -38,6 +38,44 @@ type access_to_invalid_address =
 
 let yojson_of_access_to_invalid_address = [%yojson_of: _]
 
+(* Regular expression to match a Hack function call like foo(...) *)
+let re_unawaited_awaitable =
+  let open Re in
+  let identifier = rep1 (alt [alnum; char '_']) in
+  let function_name = seq [lower; rep (alt [alnum; char '_'])] in
+  let constructor = seq [alt [alnum; char '_']] in
+  (* Matches function parameters (anything inside ()) *)
+  let params =
+    rep
+      (alt
+         [ diff any (set "()")
+         ; (* Match anything except `(` and `)` *)
+           seq [char '('; rep any; char ')'] (* Allow nested parentheses *) ] )
+  in
+  compile
+  @@ alt
+       [ (* Match $x->foo(...) *)
+         seq [str "$"; identifier; str "->"; function_name; str "("; params; str ")"]
+       ; (* Match C::foo(...) *)
+         seq [identifier; str "::"; function_name; str "("; params; str ")"]
+       ; (* Match foo(...) *)
+         seq [alt [bos; space]; group (seq [function_name; str "("; params; str ")"])]
+       ; (* Match (new C())->gen() *)
+         seq
+           [ str "("
+           ; str "new"
+           ; rep space
+           ; constructor
+           ; params
+           ; (* Match (new C()) *)
+             str ")"
+           ; str "->"
+           ; identifier
+           ; str "("
+           ; params
+           ; str ")" ] ]
+
+
 let pp_access_to_invalid_address fmt
     ({ calling_context
      ; invalid_address
@@ -935,7 +973,7 @@ let get_message_and_suggestion diagnostic =
           , Some (get_suggestion_msg source_opt) ) )
 
 
-let make_autofix {Location.file; line; col} ~replacer =
+let make_autofix ?(is_alloc_loc = false) {Location.file; line; col} ~replacer =
   let line_str =
     let file_path = SourceFile.to_abs_path file in
     match ISys.is_file file_path with
@@ -957,7 +995,10 @@ let make_autofix {Location.file; line; col} ~replacer =
   | Some line_str ->
       List.filter_opt
         (List.map (replacer line_str) ~f:(fun (original, replacement) ->
-             if String.is_substring_at line_str ~pos:(col - 1) ~substring:original then
+             if
+               Bool.equal is_alloc_loc false
+               && String.is_substring_at line_str ~pos:(col - 1) ~substring:original
+             then
                Some
                  {Jsonbug_t.original= Some original; replacement= Some replacement; additional= None}
              else
@@ -965,6 +1006,18 @@ let make_autofix {Location.file; line; col} ~replacer =
                    { Jsonbug_t.original= None
                    ; replacement= None
                    ; additional= Some [{line; column= idx + 1; original; replacement}] } ) ) )
+
+
+let rec check_balanced str index depth =
+  if index >= String.length str then Int.equal depth 0
+  else
+    match str.[index] with
+    | '(' ->
+        check_balanced str (index + 1) (depth + 1)
+    | ')' ->
+        if Int.equal depth 0 then false else check_balanced str (index + 1) (depth - 1)
+    | _ ->
+        check_balanced str (index + 1) depth
 
 
 let get_autofix pdesc diagnostic =
@@ -1004,6 +1057,28 @@ let get_autofix pdesc diagnostic =
               [(F.asprintf "auto %s = " tgt, F.asprintf "auto& %s = " tgt)] )
       | _ ->
           [] )
+  | ResourceLeak {resource= Awaitable; allocation_trace} ->
+      if Language.curr_language_is Hack then
+        let allocation_loc = Trace.get_outer_location allocation_trace in
+        let is_alloc_loc = true in
+        make_autofix ~is_alloc_loc allocation_loc ~replacer:(fun line_str ->
+            let pos = allocation_loc.col - 1 in
+            let input =
+              if pos >= 0 then String.sub line_str ~pos ~len:(String.length line_str - pos)
+              else line_str
+            in
+            let matches = Re.matches re_unawaited_awaitable input in
+            match matches with
+            | [] ->
+                []
+            | matched :: _ ->
+                if check_balanced matched 0 0 then
+                  let matched = String.chop_prefix_if_exists matched ~prefix:" " in
+                  let new_str = "await " ^ matched in
+                  if String.is_substring line_str ~substring:new_str then []
+                  else [(matched, new_str)]
+                else [] )
+      else []
   | _ ->
       []
 
