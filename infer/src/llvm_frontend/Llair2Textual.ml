@@ -138,60 +138,77 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
   Textual.ProcDecl.of_binop sil_bin_op
 
 
-let rec to_textual_exp ~formals ?generate_typ_exp (exp : Llair.Exp.t) : Textual.Exp.t =
+let rec to_textual_exp ~formals ?generate_typ_exp (exp : Llair.Exp.t) :
+    Textual.Exp.t * Textual.Typ.t option =
   match exp with
   | Integer {data; typ} ->
-      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
-      else if NS.Z.is_false data && not (Llair.Typ.is_int typ) then Textual.Exp.Const Null
-      else Textual.Exp.Const (Int data)
+      let textual_typ = to_textual_typ typ in
+      let textual_exp =
+        if Option.is_some generate_typ_exp then Textual.Exp.Typ textual_typ
+        else if NS.Z.is_false data && not (Llair.Typ.is_int typ) then Textual.Exp.Const Null
+        else Textual.Exp.Const (Int data)
+      in
+      (textual_exp, Some textual_typ)
   | Float {data; typ} ->
-      if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
-      else Textual.Exp.Const (Float (Float.of_string data))
+      let textual_typ = to_textual_typ typ in
+      let textual_exp =
+        if Option.is_some generate_typ_exp then Textual.Exp.Typ (to_textual_typ typ)
+        else Textual.Exp.Const (Float (Float.of_string data))
+      in
+      (textual_exp, Some textual_typ)
   | FuncName {name} ->
-      Textual.Exp.Const (Str name)
+      (Textual.Exp.Const (Str name), None)
   | Reg {id; name; typ} ->
-      reg_to_textual_var ~formals (Reg.mk typ id name)
-  | Global {name} ->
-      Textual.Exp.Lvar (Textual.VarName.of_string name)
+      let textual_typ = to_textual_typ typ in
+      let textual_exp = reg_to_textual_var ~formals (Reg.mk typ id name) in
+      (textual_exp, Some textual_typ)
+  | Global {name; typ} ->
+      let textual_typ = to_textual_typ typ in
+      let textual_exp = Textual.Exp.Lvar (Textual.VarName.of_string name) in
+      (textual_exp, Some textual_typ)
   | Ap1 (Select n, Struct {name}, exp) ->
       let typ_name = Textual.TypeName.of_string name in
-      Textual.Exp.Field
-        { exp= to_textual_exp ~formals exp
-        ; field=
-            { enclosing_class= typ_name
-            ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
+      ( Textual.Exp.Field
+          { exp= to_textual_exp ~formals exp |> fst
+          ; field=
+              { enclosing_class= typ_name
+              ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
+      , None )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
-      let exp = to_textual_exp ~formals exp in
-      let typ = to_textual_typ dst_typ in
+      let exp = to_textual_exp ~formals exp |> fst in
+      let textual_dst_typ = to_textual_typ dst_typ in
       let proc = Textual.ProcDecl.cast_name in
-      Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual}
+      (Call {proc; args= [Textual.Exp.Typ textual_dst_typ; exp]; kind= Textual.Exp.NonVirtual}, None)
   | Ap1 (Splat, _, _) ->
       (* [splat exp] initialises every element of an array with the element exp, so to be precise it
          needs to be translated as a loop. We translate here to a non-deterministic value for the array *)
       let proc = builtin_qual_proc_name "llvm_nondet" in
-      Call {proc; args= []; kind= Textual.Exp.NonVirtual}
+      (Call {proc; args= []; kind= Textual.Exp.NonVirtual}, None)
   | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
       let proc = to_textual_arith_exp_builtin op typ in
-      let exp1 = to_textual_exp ~formals e1 in
-      let exp2 = to_textual_exp ~formals e2 in
-      Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
+      let exp1, typ1 = to_textual_exp ~formals e1 in
+      let exp2, _ = to_textual_exp ~formals e2 in
+      (Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}, typ1)
   | Ap2 (((Eq | Dq | Gt | Ge | Le | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
       let proc = to_textual_bool_exp_builtin op in
-      let exp1 = to_textual_exp ~formals e1 in
-      let exp2 = to_textual_exp ~formals e2 in
-      Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
+      let exp1, typ1 = to_textual_exp ~formals e1 in
+      let exp2, _ = to_textual_exp ~formals e2 in
+      (Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}, typ1)
   | _ ->
       assert false
 
 
-let to_textual_bool_exp ~formals exp = Textual.BoolExp.Exp (to_textual_exp ~formals exp)
+let to_textual_bool_exp ~formals exp =
+  let textual_exp, textual_typ_opt = to_textual_exp ~formals exp in
+  (Textual.BoolExp.Exp textual_exp, textual_typ_opt)
+
 
 let to_textual_call_aux ~formals ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let loc = to_textual_loc loc in
   let id = Option.map return ~f:(fun reg -> reg_to_id reg) in
-  let args = List.map ~f:(to_textual_exp ~formals ?generate_typ_exp) args in
+  let args = List.map ~f:(fun exp -> to_textual_exp ?generate_typ_exp ~formals exp |> fst) args in
   let args = List.append (Option.to_list exp_opt) args in
   Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc}
 
@@ -203,7 +220,7 @@ let to_textual_call ~formals (call : 'a Llair.call) =
         (to_qualified_proc_name func.Llair.name, Textual.Exp.NonVirtual, None)
     | Indirect {ptr} ->
         let proc = builtin_qual_proc_name "llvm_dynamic_call" in
-        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp ~formals ptr))
+        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp ~formals ptr |> fst))
     | Intrinsic intrinsic ->
         let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
         (proc, Textual.Exp.NonVirtual, None)
@@ -223,24 +240,29 @@ let cmnd_to_instrs ~formals block =
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc loc in
         let id = reg_to_id reg in
-        let exp = to_textual_exp ~formals ptr in
-        let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
+        let exp, _ = to_textual_exp ~formals ptr in
+        let reg_typ = to_textual_typ (Reg.typ reg) in
+        let textual_instr = Textual.Instr.Load {id; exp; typ= Some reg_typ; loc} in
         textual_instr :: textual_instrs
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc loc in
-        let exp2 = to_textual_exp ~formals exp in
+        let exp2, typ_exp2 = to_textual_exp ~formals exp in
         let exp2, exp2_instrs =
           match (exp, exp2) with
-          | Llair.Exp.Reg {id}, Textual.Exp.Lvar _ ->
+          | Llair.Exp.Reg {id; typ}, Textual.Exp.Lvar _ ->
               let id = Textual.Ident.of_int id in
               let new_exp2 = Textual.Exp.Var id in
-              let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= None; loc} in
+              let reg_typ = to_textual_typ typ in
+              let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= Some reg_typ; loc} in
               (new_exp2, [exp2_instr])
           | _ ->
               (exp2, [])
         in
-        let exp1 = to_textual_exp ~formals ptr in
-        let textual_instr = Textual.Instr.Store {exp1; typ= None; exp2; loc} in
+        let exp1, typ_ptr = to_textual_exp ~formals ptr in
+        let typ =
+          match typ_exp2 with Some typ_exp2 -> Some (Textual.Typ.Ptr typ_exp2) | None -> typ_ptr
+        in
+        let textual_instr = Textual.Instr.Store {exp1; typ; exp2; loc} in
         (textual_instr :: exp2_instrs) @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = reg_to_var_name reg in
@@ -302,11 +324,11 @@ let rec to_textual_jump_and_succs ~formals ~seen_nodes jump =
     (* If we've seen this node, stop the recursion *)
     if Textual.NodeName.Set.mem node_label seen_nodes then (node_label, Textual.Node.Set.empty)
     else
-      let node, nodes = block_to_node_and_succs ~formals ~seen_nodes jump.dst in
+      let node, _, nodes = block_to_node_and_succs ~formals ~seen_nodes jump.dst in
       (node.label, nodes)
   in
   let node_call = Textual.Terminator.{label= node_label; ssa_args= []} in
-  (Textual.Terminator.Jump [node_call], succs)
+  (Textual.Terminator.Jump [node_call], None, succs)
 
 
 and to_terminator_and_succs ~formals ~seen_nodes term =
@@ -315,35 +337,36 @@ and to_terminator_and_succs ~formals ~seen_nodes term =
   | Call call ->
       to_textual_jump_and_succs ~formals ~seen_nodes call.return
   | Return {exp= Some exp} ->
-      (Textual.Terminator.Ret (to_textual_exp ~formals exp), no_succs)
+      let textual_exp, textual_typ_opt = to_textual_exp ~formals exp in
+      (Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs)
   | Return {exp= None} ->
-      (Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), no_succs)
+      (Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), None, no_succs)
   | Throw {exc} ->
-      (Textual.Terminator.Throw (to_textual_exp ~formals exc), no_succs)
+      (Textual.Terminator.Throw (to_textual_exp ~formals exc |> fst), None, no_succs)
   | Switch {key; tbl; els} -> (
     match StdUtils.iarray_to_list tbl with
     | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
         (* if then else *)
-        let bexp = to_textual_bool_exp ~formals key in
-        let else_, zero_nodes = to_textual_jump_and_succs ~formals ~seen_nodes zero_jump in
-        let then_, els_nodes = to_textual_jump_and_succs ~formals ~seen_nodes els in
+        let bexp = to_textual_bool_exp ~formals key |> fst in
+        let else_, _, zero_nodes = to_textual_jump_and_succs ~formals ~seen_nodes zero_jump in
+        let then_, _, els_nodes = to_textual_jump_and_succs ~formals ~seen_nodes els in
         let term = Textual.Terminator.If {bexp; then_; else_} in
         let nodes = Textual.Node.Set.union zero_nodes els_nodes in
-        (term, nodes)
+        (term, None, nodes)
     | [] when Exp.equal key Exp.false_ ->
         (* goto *)
         to_textual_jump_and_succs ~formals ~seen_nodes els
     | _ ->
-        (Textual.Terminator.Unreachable, no_succs (* TODO translate Switch *)) )
+        (Textual.Terminator.Unreachable, None, no_succs (* TODO translate Switch *)) )
   | Iswitch _ | Abort _ | Unreachable ->
-      (Textual.Terminator.Unreachable, no_succs)
+      (Textual.Terminator.Unreachable, None, no_succs)
 
 
 (* TODO still various parts of the node left to be translated *)
 and block_to_node_and_succs ~formals ~seen_nodes (block : Llair.block) :
-    Textual.Node.t * Textual.Node.Set.t =
+    Textual.Node.t * Textual.Typ.t option * Textual.Node.Set.t =
   let node_name = block_to_node_name block in
-  let terminator, succs =
+  let terminator, typ_opt, succs =
     to_terminator_and_succs ~formals
       ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes)
       block.term
@@ -359,27 +382,33 @@ and block_to_node_and_succs ~formals ~seen_nodes (block : Llair.block) :
       ; label_loc= Textual.Location.Unknown }
   in
   (* We add the nodes here to make sure they always get added even in the case of recursive jumps *)
-  (node, Textual.Node.Set.add node succs)
+  (node, typ_opt, Textual.Node.Set.add node succs)
 
 
 let func_to_nodes ~formals func =
-  let _, nodes =
+  let _, typ_opt, nodes =
     block_to_node_and_succs ~formals ~seen_nodes:Textual.NodeName.Set.empty func.Llair.entry
   in
-  Textual.Node.Set.to_list nodes
+  (typ_opt, Textual.Node.Set.to_list nodes)
 
 
 let translate_llair_functions functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals_, formals_types = to_formals func in
     let qualified_name = to_qualified_proc_name func_name ~loc:func.Llair.loc in
-    let result_type = to_result_type func_name in
+    reset_current_locals () ;
+    let typ_opt, nodes = func_to_nodes ~formals:formals_ func in
+    let result_type =
+      match typ_opt with
+      | Some typ ->
+          {typ; Textual.Typ.attributes= []}
+      | None ->
+          to_result_type func_name
+    in
     let procdecl =
       Textual.ProcDecl.
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
     in
-    reset_current_locals () ;
-    let nodes = func_to_nodes ~formals:formals_ func in
     let locals =
       VarSet.fold (fun {varname; typ} locals -> (varname, typ) :: locals) !current_locals []
     in

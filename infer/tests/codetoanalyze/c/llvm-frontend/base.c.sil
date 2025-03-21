@@ -6,64 +6,64 @@
 
 .source_language = "C"
 
-declare test3(*ptr_elt) : *ptr_elt
+declare test3(*ptr_elt) : int
 
-declare test2() : *ptr_elt
+declare test2() : int
 
-declare test1(int, int) : *ptr_elt
+declare test1(int, int) : int
 
-declare test() : *ptr_elt
+declare test() : *int
 
-declare main() : *ptr_elt
+declare main() : int
 
-define test3(var0: *ptr_elt) : *ptr_elt {
+define test3(var0: *ptr_elt) : int {
   local var2: *ptr_elt
   #:
-      n29 = load &var0
-      store &var2 <- n29
-      n34 = load &var2
-      n35 = load n34
+      n29:*ptr_elt = load &var0
+      store &var2 <- n29:**ptr_elt
+      n34:*ptr_elt = load &var2
+      n35:int = load n34
       _ = __sil_free(&var2)
       ret n35
       
 }
 
-define test2() : *ptr_elt {
+define test2() : int {
   local var2: *ptr_elt, var1: *ptr_elt
   #:
-      n25 = load &var1
-      n26 = load &var2
+      n25:int = load &var1
+      n26:int = load &var2
       _ = __sil_free(&var1)
       _ = __sil_free(&var2)
       ret __sil_plusa_int(n25, n26)
       
 }
 
-define test1(var0: int, var1: int) : *ptr_elt {
+define test1(var0: int, var1: int) : int {
   local var4: *ptr_elt, var3: *ptr_elt
   #:
-      n9 = load &var0
-      store &var3 <- n9
-      n10 = load &var1
-      store &var4 <- n10
-      n17 = load &var3
-      n18 = load &var4
+      n9:int = load &var0
+      store &var3 <- n9:*int
+      n10:int = load &var1
+      store &var4 <- n10:*int
+      n17:int = load &var3
+      n18:int = load &var4
       _ = __sil_free(&var3)
       _ = __sil_free(&var4)
       ret __sil_plusa_int(n17, n18)
       
 }
 
-define test() : *ptr_elt {
+define test() : *int {
   #:
       ret null
       
 }
 
-define main() : *ptr_elt {
+define main() : int {
   local var1: *ptr_elt
   #:
-      store &var1 <- 0
+      store &var1 <- 0:*int
       _ = __sil_free(&var1)
       ret 0
       
