@@ -82,7 +82,9 @@ let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
   ; access= None
   ; extras= None
   ; suppressed= false
-  ; autofix= None }
+  ; autofix= None
+  ; autofixes= None
+  ; autofix_candidates= None }
 
 
 module CostsSummary = struct

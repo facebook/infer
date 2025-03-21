@@ -321,6 +321,8 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; category
         ; suggestion
         ; autofix
+        ; autofixes= None
+        ; autofix_candidates= None
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name

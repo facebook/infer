@@ -76,6 +76,16 @@ type autofix = {
   ?additional: additional_autofix list option;
 }
 
+type transformation = {
+  column: int;
+  file: string;
+  line: int;
+  original: string;
+  replacement: string;
+}
+
+type autofixes = transformation list list
+
 type jsonbug = {
   bug_type : string;
   qualifier : string;
@@ -101,6 +111,8 @@ type jsonbug = {
   ?access : string option;
   ?extras : extra option;
   ?autofix: autofix option;
+  ?autofixes: autofixes option;
+  ?autofix_candidates: autofixes option;
   ~suppressed: bool;
 }
 
