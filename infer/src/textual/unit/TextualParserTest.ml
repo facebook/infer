@@ -30,30 +30,32 @@ let%expect_test _ =
   F.printf "%a" (Pp.seq ~sep:"\n" Attr.pp_with_loc) attrs ;
   [%expect
     {|
-        line 2, column 7: .source_language = "hack"
-        line 3, column 7: .source_file = "original.hack"
-        line 5, column 7: .source_language = "java" |}] ;
+        .source_language = "hack" @[2:7]
+        .source_file = "original.hack" @[3:7]
+        .source_language = "java" @[5:7] |}] ;
   let lang = Option.value_exn (Module.lang module_) in
   F.printf "%s" (Lang.to_string lang) ;
   [%expect {| hack |}]
 
 
+let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
+
 let%expect_test _ =
   let module_ = parse_module text in
-  F.printf "%a" Module.pp module_ ;
+  show module_ ;
   [%expect
     {|
-        .source_language = "hack"
+        .source_language = "hack" @[2:7]
 
-        .source_file = "original.hack"
+        .source_file = "original.hack" @[3:7]
 
-        .source_language = "java"
+        .source_language = "java" @[5:7]
 
         define nothing() : void {
-          #node0:
-              ret null
+          #node0: @[8:9]
+              ret null @[9:11]
 
-        } |}]
+        } @[10:8] |}]
 
 
 let text =
@@ -72,19 +74,19 @@ let text =
 
 let%expect_test _ =
   let m = parse_module text in
-  F.printf "%a" Module.pp m ;
+  show m ;
   [%expect
     {|
-        .source_language = "hack"
+        .source_language = "hack" @[2:7]
 
         declare HackMixed.foo(*HackMixed, int) : int
 
         define foo(x: *HackMixed) : int {
-          #b0:
-              n0:*HackMixed = load &x
-              ret n0.HackMixed.foo(42)
+          #b0: @[7:7]
+              n0:*HackMixed = load &x @[8:9]
+              ret n0.HackMixed.foo(42) @[9:9]
 
-        } |}]
+        } @[10:8] |}]
 
 
 let text =
@@ -97,7 +99,7 @@ let text =
 
 let%expect_test _ =
   let m = parse_module text in
-  F.printf "%a" Module.pp m ;
+  show m ;
   [%expect
     {|
         type A = {f1: int; f2: int}
@@ -117,10 +119,10 @@ let%expect_test "standalone ellipsis are OK" =
            declare bar(int, float): *Mixed
            |}
   in
-  F.printf "%a" Module.pp m ;
+  show m ;
   [%expect
     {|
-    .source_language = "hack"
+    .source_language = "hack" @[2:11]
 
     declare todo(...) : *Mixed
 
@@ -159,26 +161,26 @@ let%expect_test "numbers lexing" =
          |}
   in
   let m = parse_module text in
-  F.printf "%a" Module.pp m ;
+  show m ;
   [%expect
     {|
-        .source_language = "hack"
+        .source_language = "hack" @[2:9]
 
         define foo() : int {
-          #entry:
-              n0 = 12
-              n1 = -42
-              n2 = 10.
-              n3 = 2.
-              n4 = 3.14
-              n5 = 6.022137e+23
-              n2 = -10.
-              n3 = -2.
-              n4 = -3.14
-              n5 = -6.022137e+23
-              ret n1
+          #entry: @[4:9]
+              n0 = 12 @[5:11]
+              n1 = -42 @[6:11]
+              n2 = 10. @[7:11]
+              n3 = 2. @[8:11]
+              n4 = 3.14 @[9:11]
+              n5 = 6.022137e+23 @[10:11]
+              n2 = -10. @[11:11]
+              n3 = -2. @[12:11]
+              n4 = -3.14 @[13:11]
+              n5 = -6.022137e+23 @[14:11]
+              ret n1 @[15:11]
 
-        } |}]
+        } @[16:10] |}]
 
 
 let text =
@@ -193,14 +195,14 @@ let text =
 
 let%expect_test "keywords as idents" =
   let module_ = parse_module text |> TextualTransform.out_of_ssa in
-  F.printf "%a" Module.pp module_ ;
+  show module_ ;
   [%expect
     {|
           define f(declare: int) : int {
-            #type:
-                jmp type
+            #type: @[3:7]
+                jmp type @[4:7]
 
-          } |}]
+          } @[6:8] |}]
 
 
 let%expect_test "overloaded functions" =
@@ -222,29 +224,29 @@ let%expect_test "overloaded functions" =
      |}
   in
   let m = parse_module text in
-  F.printf "%a" Module.pp m ;
+  show m ;
   [%expect
     {|
-    .source_language = "hack"
+    .source_language = "hack" @[2:5]
 
     define f(a: int) : void {
-      #b0:
-          ret null
+      #b0: @[4:30]
+          ret null @[4:35]
 
-    }
+    } @[4:45]
 
     define f(a: int, b: bool) : void {
-      #b0:
-          ret null
+      #b0: @[5:39]
+          ret null @[5:44]
 
-    }
+    } @[5:53]
 
     define g(a: int, b: bool) : void {
-      #b0:
-          n0:int = load &a
-          n1:bool = load &b
-          n2 = f(n0)
-          n3 = f(n0, n1)
-          ret null
+      #b0: @[8:5]
+          n0:int = load &a @[9:7]
+          n1:bool = load &b @[10:7]
+          n2 = f(n0) @[11:7]
+          n3 = f(n0, n1) @[12:7]
+          ret null @[13:7]
 
-    } |}]
+    } @[14:6] |}]

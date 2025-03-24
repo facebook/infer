@@ -374,7 +374,7 @@ module Instr : sig
 
   val loc : t -> Location.t
 
-  val pp : F.formatter -> t -> unit
+  val pp : ?show_location:bool -> F.formatter -> t -> unit
 end
 
 module Terminator : sig
@@ -413,7 +413,7 @@ module ProcDesc : sig
     ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
 
-  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+  val pp : ?show_location:bool -> F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   val formals : t -> Typ.annotated list
 
@@ -458,7 +458,7 @@ module Module : sig
 
   val lang : t -> Lang.t option
 
-  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+  val pp : ?show_location:bool -> F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 type transform_error = {loc: Location.t; msg: string Lazy.t}

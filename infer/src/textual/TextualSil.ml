@@ -890,7 +890,7 @@ module InstrBridge = struct
                 lazy
                   (F.asprintf
                      "no procdecl for %a the expression in %a should start with a regular call"
-                     ProcSig.pp procsig pp i )
+                     ProcSig.pp procsig (pp ~show_location:false) i )
               in
               raise (TextualTransformError [{loc; msg}])
         in
@@ -944,7 +944,8 @@ module InstrBridge = struct
               | Ok l ->
                   l
               | _ ->
-                  L.die UserError "the call %a has been given a wrong number of arguments" pp i )
+                  L.die UserError "the call %a has been given a wrong number of arguments"
+                    (pp ~show_location:false) i )
         in
         let loc = LocationBridge.to_sil sourcefile loc in
         let cf_virtual = Exp.equal_call_kind kind Virtual in
@@ -957,7 +958,11 @@ module InstrBridge = struct
         let msg = lazy "closure call should have been transformed before SIL conversion" in
         raise (TextualTransformError [{loc; msg}])
     | Let {loc; _} ->
-        let msg = lazy (F.asprintf "the expression in %a should start with a regular call" pp i) in
+        let msg =
+          lazy
+            (F.asprintf "the expression in %a should start with a regular call"
+               (pp ~show_location:false) i )
+        in
         raise (TextualTransformError [{loc; msg}])
 end
 
@@ -1368,11 +1373,11 @@ let from_java ~filename tenv cfg =
       Format.pp_print_flush fmt () )
 
 
-let dump_module ~filename module_ =
+let dump_module ~show_location ~filename module_ =
   Utils.with_file_out filename ~f:(fun oc ->
       let fmt = F.formatter_of_out_channel oc in
       pp_copyright fmt ;
-      Module.pp fmt module_ ;
+      Module.pp ~show_location fmt module_ ;
       Format.pp_print_flush fmt () )
 
 

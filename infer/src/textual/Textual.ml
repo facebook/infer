@@ -48,6 +48,18 @@ module Location = struct
         F.fprintf fmt "<unknown location>"
 
 
+  let pp_optional show_location fmt loc =
+    if show_location then
+      match loc with
+      | Known {line; col= -1} ->
+          F.fprintf fmt " @%d" line
+      | Known {line; col} ->
+          F.fprintf fmt " @@[%d:%d]" line col
+      | Unknown ->
+          F.fprintf fmt " @@?"
+    else ()
+
+
   let pp_line fmt = function
     | Known {line} ->
         F.fprintf fmt "line %d" line
@@ -359,7 +371,7 @@ module Attr = struct
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
 
 
-  let pp_with_loc fmt t = F.fprintf fmt "%a: %a" Location.pp t.loc pp t
+  let pp_with_loc fmt t = F.fprintf fmt "%a%a" pp t (Location.pp_optional true) t.loc
 end
 
 module Typ = struct
@@ -947,21 +959,29 @@ module Instr = struct
 
   let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
 
-  let pp fmt = function
-    | Load {id; exp; typ= None} ->
-        F.fprintf fmt "%a = load %a" Ident.pp id Exp.pp exp
-    | Load {id; exp; typ= Some typ} ->
-        F.fprintf fmt "%a:%a = load %a" Ident.pp id Typ.pp typ Exp.pp exp
-    | Store {exp1; typ= None; exp2} ->
-        F.fprintf fmt "store %a <- %a" Exp.pp exp1 Exp.pp exp2
-    | Store {exp1; typ= Some typ; exp2} ->
-        F.fprintf fmt "store %a <- %a:%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
-    | Prune {exp} ->
-        F.fprintf fmt "prune %a" Exp.pp exp
-    | Let {id= None; exp} ->
-        F.fprintf fmt "_ = %a" Exp.pp exp
-    | Let {id= Some id; exp} ->
-        F.fprintf fmt "%a = %a" Ident.pp id Exp.pp exp
+  let pp ?(show_location = false) fmt = function
+    | Load {id; exp; typ= None; loc} ->
+        F.fprintf fmt "%a = load %a%a" Ident.pp id Exp.pp exp
+          (Location.pp_optional show_location)
+          loc
+    | Load {id; exp; typ= Some typ; loc} ->
+        F.fprintf fmt "%a:%a = load %a%a" Ident.pp id Typ.pp typ Exp.pp exp
+          (Location.pp_optional show_location)
+          loc
+    | Store {exp1; typ= None; exp2; loc} ->
+        F.fprintf fmt "store %a <- %a%a" Exp.pp exp1 Exp.pp exp2
+          (Location.pp_optional show_location)
+          loc
+    | Store {exp1; typ= Some typ; exp2; loc} ->
+        F.fprintf fmt "store %a <- %a:%a%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
+          (Location.pp_optional show_location)
+          loc
+    | Prune {exp; loc} ->
+        F.fprintf fmt "prune %a%a" Exp.pp exp (Location.pp_optional show_location) loc
+    | Let {id= None; exp; loc} ->
+        F.fprintf fmt "_ = %a%a" Exp.pp exp (Location.pp_optional show_location) loc
+    | Let {id= Some id; exp; loc} ->
+        F.fprintf fmt "%a = %a%a" Ident.pp id Exp.pp exp (Location.pp_optional show_location) loc
 
 
   (* to be ready, an instruction should satisfy 2 properties:
@@ -1050,7 +1070,7 @@ module Node = struct
     && List.for_all node.instrs ~f:Instr.is_ready_for_to_sil_conversion
 
 
-  let pp fmt node =
+  let pp ?(show_location = false) fmt node =
     let pp_label_with_ssa_params fmt =
       if List.is_empty node.ssa_parameters then F.fprintf fmt "#%a:" NodeName.pp node.label
       else
@@ -1058,9 +1078,13 @@ module Node = struct
         F.fprintf fmt "#%a(%a):" NodeName.pp node.label (pp_list_with_comma pp_param)
           node.ssa_parameters
     in
-    F.fprintf fmt "@\n@[<v 4>%t" pp_label_with_ssa_params ;
-    List.iter ~f:(F.fprintf fmt "@\n%a" Instr.pp) node.instrs ;
-    F.fprintf fmt "@\n%a" Terminator.pp node.last ;
+    F.fprintf fmt "@\n@[<v 4>%t%a" pp_label_with_ssa_params
+      (Location.pp_optional show_location)
+      node.label_loc ;
+    List.iter ~f:(F.fprintf fmt "@\n%a" (Instr.pp ~show_location)) node.instrs ;
+    F.fprintf fmt "@\n%a%a" Terminator.pp node.last
+      (Location.pp_optional show_location)
+      node.last_loc ;
     if not (List.is_empty node.exn_succs) then
       F.fprintf fmt "@\n.handlers %a" (pp_list_with_comma NodeName.pp) node.exn_succs ;
     F.fprintf fmt "@\n@]"
@@ -1098,15 +1122,15 @@ module ProcDesc = struct
           (List.length params) (List.length formals_types)
 
 
-  let pp fmt t =
+  let pp ?(show_location = false) fmt t =
     F.fprintf fmt "@[<v 2>define %a {" pp_signature t ;
     let pp_local fmt (var, annotated_typ) =
       F.fprintf fmt "%a: %a" VarName.pp var Typ.pp_annotated annotated_typ
     in
     if not (List.is_empty t.locals) then
       F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) t.locals ;
-    List.iter ~f:(F.fprintf fmt "%a" Node.pp) t.nodes ;
-    F.fprintf fmt "@]\n}@\n@\n"
+    List.iter ~f:(F.fprintf fmt "%a" (Node.pp ~show_location)) t.nodes ;
+    F.fprintf fmt "@]\n}%a@\n@\n" (Location.pp_optional show_location) t.exit_loc
 end
 
 module Body = struct
@@ -1188,22 +1212,25 @@ module Module = struct
     lang_attr |> Option.bind ~f:(fun x -> Attr.values x |> List.hd |> Option.bind ~f:Lang.of_string)
 
 
-  let pp_attr fmt attr = F.fprintf fmt "%a@\n@\n" Attr.pp attr
+  let pp_attr ~show_location fmt attr =
+    let pp = if show_location then Attr.pp_with_loc else Attr.pp in
+    F.fprintf fmt "%a@\n@\n" pp attr
 
-  let pp_decl fmt = function
+
+  let pp_decl ~show_location fmt = function
     | Global global ->
         F.fprintf fmt "global %a@\n@\n" Global.pp global
     | Proc pdesc ->
-        ProcDesc.pp fmt pdesc
+        ProcDesc.pp ~show_location fmt pdesc
     | Procdecl procdecl ->
         F.fprintf fmt "declare %a@\n@\n" ProcDecl.pp procdecl
     | Struct struct_ ->
         F.fprintf fmt "type %a@\n@\n" Struct.pp struct_
 
 
-  let pp fmt module_ =
-    List.iter ~f:(pp_attr fmt) module_.attrs ;
-    List.iter ~f:(pp_decl fmt) module_.decls
+  let pp ?(show_location = false) fmt module_ =
+    List.iter ~f:(pp_attr ~show_location fmt) module_.attrs ;
+    List.iter ~f:(pp_decl ~show_location fmt) module_.decls
 end
 
 exception SpecialSyntaxError of Location.t * string

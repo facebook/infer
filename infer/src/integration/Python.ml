@@ -83,7 +83,7 @@ let dump_textual_file ~version pyc module_ =
     let textual_filename = TextualSil.to_filename pyc in
     IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
   in
-  TextualSil.dump_module ~filename module_
+  TextualSil.dump_module ~show_location:true ~filename module_
 
 
 let process_file ~is_binary file =

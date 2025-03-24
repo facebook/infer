@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C"
+.source_language = "C" @?
 
 declare test3(*ptr_elt) : int
 
@@ -18,54 +18,54 @@ declare main() : int
 
 define test3(var0: *ptr_elt) : int {
   local var2: *ptr_elt
-  #:
-      n29:*ptr_elt = load &var0
-      store &var2 <- n29:**ptr_elt
-      n34:*ptr_elt = load &var2
-      n35:int = load n34
-      _ = __sil_free(&var2)
-      ret n35
+  #: @?
+      n29:*ptr_elt = load &var0 @[0:0]
+      store &var2 <- n29:**ptr_elt @[0:0]
+      n34:*ptr_elt = load &var2 @[0:0]
+      n35:int = load n34 @[0:0]
+      _ = __sil_free(&var2) @[0:0]
+      ret n35 @?
       
-}
+} @?
 
 define test2() : int {
   local var2: *ptr_elt, var1: *ptr_elt
-  #:
-      n25:int = load &var1
-      n26:int = load &var2
-      _ = __sil_free(&var1)
-      _ = __sil_free(&var2)
-      ret __sil_plusa_int(n25, n26)
+  #: @?
+      n25:int = load &var1 @[0:0]
+      n26:int = load &var2 @[0:0]
+      _ = __sil_free(&var1) @[0:0]
+      _ = __sil_free(&var2) @[0:0]
+      ret __sil_plusa_int(n25, n26) @?
       
-}
+} @?
 
 define test1(var0: int, var1: int) : int {
   local var4: *ptr_elt, var3: *ptr_elt
-  #:
-      n9:int = load &var0
-      store &var3 <- n9:*int
-      n10:int = load &var1
-      store &var4 <- n10:*int
-      n17:int = load &var3
-      n18:int = load &var4
-      _ = __sil_free(&var3)
-      _ = __sil_free(&var4)
-      ret __sil_plusa_int(n17, n18)
+  #: @?
+      n9:int = load &var0 @[0:0]
+      store &var3 <- n9:*int @[0:0]
+      n10:int = load &var1 @[0:0]
+      store &var4 <- n10:*int @[0:0]
+      n17:int = load &var3 @[0:0]
+      n18:int = load &var4 @[0:0]
+      _ = __sil_free(&var3) @[0:0]
+      _ = __sil_free(&var4) @[0:0]
+      ret __sil_plusa_int(n17, n18) @?
       
-}
+} @?
 
 define test() : *int {
-  #:
-      ret null
+  #: @?
+      ret null @?
       
-}
+} @?
 
 define main() : int {
   local var1: *ptr_elt
-  #:
-      store &var1 <- 0:*int
-      _ = __sil_free(&var1)
-      ret 0
+  #: @?
+      store &var1 <- 0:*int @[0:0]
+      _ = __sil_free(&var1) @[0:0]
+      ret 0 @?
       
-}
+} @?
 

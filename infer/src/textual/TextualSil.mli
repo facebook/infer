@@ -22,7 +22,7 @@ val module_to_sil :
 val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
 (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
 
-val dump_module : filename:string -> Textual.Module.t -> unit
+val dump_module : show_location:bool -> filename:string -> Textual.Module.t -> unit
 (** generate a .sil file with name [filename] with all the content of the input module *)
 
 val default_return_type : Textual.Lang.t option -> Textual.Location.t -> Textual.Typ.t
