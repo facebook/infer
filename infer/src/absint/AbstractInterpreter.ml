@@ -586,12 +586,13 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
 
   let call_once_in_ten =
-    let n = ref 0 in
+    let n = DLS.new_key (fun () -> 0) in
     fun ~f () ->
-      if !n >= 10 then (
+      let n_val = DLS.get n in
+      if n_val >= 10 then (
         f () ;
-        n := 0 )
-      else incr n
+        DLS.set n 0 )
+      else DLS.set n (n_val + 1)
 
 
   let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
