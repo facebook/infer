@@ -593,10 +593,7 @@ end
 module Location = struct
   type t = int option
 
-  let pp fmt loc =
-    let loc = Option.value ~default:(-1) loc in
-    F.pp_print_int fmt loc
-
+  let pp fmt = function None -> F.pp_print_string fmt "?" | Some line -> F.pp_print_int fmt line
 
   let of_instruction {FFI.Instruction.starts_line} = starts_line
 
@@ -890,13 +887,16 @@ module Node = struct
     ; stmts: (Location.t * Stmt.t) list
     ; last: Terminator.t }
 
-  let pp fmt {name; ssa_parameters; stmts; last} =
-    F.fprintf fmt "@[<hv2>%a%t:@\n" NodeName.pp name (fun fmt ->
+  let pp fmt {name; first_loc; ssa_parameters; stmts; last; last_loc} =
+    F.fprintf fmt "@[<hv2>%a%t: @%a@\n" NodeName.pp name
+      (fun fmt ->
         if List.is_empty ssa_parameters then F.pp_print_string fmt ""
-        else F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters ) ;
-    List.iter stmts ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
+        else F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters )
+      Location.pp first_loc ;
+    List.iter stmts ~f:(fun (loc, stmt) ->
+        F.fprintf fmt "@[<hv2>%a @%a@]@\n" Stmt.pp stmt Location.pp loc ) ;
     F.fprintf fmt "%a@\n" Terminator.pp last ;
-    F.fprintf fmt "@]@\n"
+    F.fprintf fmt "@] @%a@\n" Location.pp last_loc
 end
 
 module CFGBuilder = struct
