@@ -98,10 +98,11 @@ let is_copy_cted_into_var from copied_into =
 let is_in_loop_dls = DLS.new_key (fun () -> lazy (assert false))
 
 let () =
-  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv is_in_loop_dls ~init:(fun pdesc _ ->
-      lazy
-        (let nodes_in_loop = Procdesc.Loop.compute_loop_nodes pdesc in
-         fun node -> Procdesc.NodeSet.mem node nodes_in_loop ) )
+  if Config.is_checker_enabled Pulse then
+    AnalysisGlobalState.register_dls_with_proc_desc_and_tenv is_in_loop_dls ~init:(fun pdesc _ ->
+        lazy
+          (let nodes_in_loop = Procdesc.Loop.compute_loop_nodes pdesc in
+           fun node -> Procdesc.NodeSet.mem node nodes_in_loop ) )
 
 
 let is_unnecessary_copy_intermediate_in_loop node copied_into =

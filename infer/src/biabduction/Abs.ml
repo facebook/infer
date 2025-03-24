@@ -683,7 +683,8 @@ module Global = struct
 end
 
 let[@alert "-deprecated"] () =
-  AnalysisGlobalState.register_ref Global.current_rules ~init:(fun () -> [])
+  if Config.is_checker_enabled Biabduction then
+    AnalysisGlobalState.register_ref Global.current_rules ~init:(fun () -> [])
 
 
 let eqs_sub subst eqs =

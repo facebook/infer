@@ -12,13 +12,15 @@ let proc_desc_key = DLS.new_key (fun () -> None)
 let tenv_key = DLS.new_key (fun () : Tenv.t Option.t -> None)
 
 let () =
-  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv proc_desc_key
-    ~init:(fun proc_desc _tenv -> Some proc_desc )
+  if Config.is_checker_enabled Pulse then
+    AnalysisGlobalState.register_dls_with_proc_desc_and_tenv proc_desc_key
+      ~init:(fun proc_desc _tenv -> Some proc_desc )
 
 
 let () =
-  AnalysisGlobalState.register_dls_with_proc_desc_and_tenv tenv_key ~init:(fun _proc_desc tenv ->
-      Some tenv )
+  if Config.is_checker_enabled Pulse then
+    AnalysisGlobalState.register_dls_with_proc_desc_and_tenv tenv_key ~init:(fun _proc_desc tenv ->
+        Some tenv )
 
 
 let proc_desc () = DLS.get proc_desc_key

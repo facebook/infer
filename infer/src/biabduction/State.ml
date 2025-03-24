@@ -46,7 +46,9 @@ let initial () =
 (** Global state *)
 let gs = ref (initial ())
 
-let[@alert "-deprecated"] () = AnalysisGlobalState.register_ref gs ~init:initial
+let[@alert "-deprecated"] () =
+  if Config.is_checker_enabled Biabduction then AnalysisGlobalState.register_ref gs ~init:initial
+
 
 let reset_diverging_states_node () = !gs.diverging_states_node <- Paths.PathSet.empty
 
