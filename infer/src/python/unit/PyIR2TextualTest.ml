@@ -199,14 +199,14 @@ class C:
           n5 = $builtins.py_get_iter(n4) @13
           jmp b3 @13
 
-      #b3: @?
-          n6 = $builtins.py_next_iter(n5) @?
-          n7 = $builtins.py_has_next_iter(n5) @?
-          if $builtins.py_bool(n7) then jmp b4 else jmp b6 @?
+      #b3: @13
+          n6 = $builtins.py_next_iter(n5) @13
+          n7 = $builtins.py_has_next_iter(n5) @13
+          if $builtins.py_bool(n7) then jmp b4 else jmp b6 @13
 
-      #b4: @?
-          _ = $builtins.py_store_fast("i", n1, n6) @?
-          jmp b5 @?
+      #b4: @13
+          _ = $builtins.py_store_fast("i", n1, n6) @13
+          jmp b5 @13
 
       #b5: @14
           n10 = $builtins.py_load_global("print", n2) @14
@@ -370,14 +370,14 @@ class C:
           n5 = $builtins.py_get_iter(n4) @13
           jmp b3 @13
 
-      #b3: @?
-          n6 = $builtins.py_next_iter(n5) @?
-          n7 = $builtins.py_has_next_iter(n5) @?
-          if $builtins.py_bool(n7) then jmp b4 else jmp b6 @?
+      #b3: @13
+          n6 = $builtins.py_next_iter(n5) @13
+          n7 = $builtins.py_has_next_iter(n5) @13
+          if $builtins.py_bool(n7) then jmp b4 else jmp b6 @13
 
-      #b4: @?
-          _ = $builtins.py_store_fast("i", n1, n6) @?
-          jmp b5 @?
+      #b4: @13
+          _ = $builtins.py_store_fast("i", n1, n6) @13
+          jmp b5 @13
 
       #b5: @14
           n10 = $builtins.py_load_global("print", n2) @14
@@ -652,16 +652,16 @@ class C:
           n5 = $builtins.py_get_iter(n4) @13
           jmp b3 @13
 
-      #b3: @?
-          n6 = $builtins.py_next_iter(n5) @?
-          n7 = $builtins.py_has_next_iter(n5) @?
-          jmp b4, b6 @?
+      #b3: @13
+          n6 = $builtins.py_next_iter(n5) @13
+          n7 = $builtins.py_has_next_iter(n5) @13
+          jmp b4, b6 @13
 
-      #b4: @?
-          n22 = $builtins.py_bool(n7) @?
-          prune n22 @?
-          n23 = $builtins.py_store_fast("i", n17, n6) @?
-          jmp b5 @?
+      #b4: @13
+          n22 = $builtins.py_bool(n7) @13
+          prune n22 @13
+          n23 = $builtins.py_store_fast("i", n17, n6) @13
+          jmp b5 @13
 
       #b5: @14
           n10 = $builtins.py_load_global("print", n16) @14
@@ -670,8 +670,8 @@ class C:
           jmp b3 @14
 
       #b6: @15
-          n24 = $builtins.py_bool(n7) @?
-          prune __sil_lnot(n24) @?
+          n24 = $builtins.py_bool(n7) @13
+          prune __sil_lnot(n24) @13
           n8 = $builtins.py_load_global("done", n16) @15
           n9 = $builtins.py_call(n8, n0) @15
           n25 = $builtins.py_nullify_locals(n17, "i") @15

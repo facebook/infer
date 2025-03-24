@@ -1017,6 +1017,7 @@ module State = struct
     ; get_node_name: Offset.t -> NodeName.t pyresult
     ; first_loc: Location.t (* the first source location we have seen during this node session *)
     ; loc: Location.t (* the last source location we have seen during this node sesssion *)
+    ; no_loc_seen_during_this_session: bool
     ; cfg: CFGBuilder.t
     ; stack: Exp.opstack_symbol Stack.t
     ; stmts: (Location.t * Stmt.t) list
@@ -1024,11 +1025,12 @@ module State = struct
     ; stack_at_loop_headers: Exp.opstack_symbol Stack.t IMap.t
     ; fresh_id: SSA.t }
 
-  let try_set_current_source_location ({first_loc} as st) loc =
+  let try_set_current_source_location ({no_loc_seen_during_this_session} as st) loc =
     if Option.is_none loc then st
-    else
-      let first_loc = if Option.is_none first_loc then loc else first_loc in
-      {st with first_loc; loc}
+    else if no_loc_seen_during_this_session then
+      (* this is first instruction we found with a loc during this node-construction session *)
+      {st with first_loc= loc; loc; no_loc_seen_during_this_session= false}
+    else {st with loc}
 
 
   let build_get_node_name loc cfg_skeleton =
@@ -1057,6 +1059,7 @@ module State = struct
     ; get_node_name
     ; first_loc= None
     ; loc= None
+    ; no_loc_seen_during_this_session= true
     ; cfg
     ; stack= Stack.empty
     ; stmts= []
@@ -1258,8 +1261,15 @@ module State = struct
     mk st [] arity
 
 
-  let enter_node st ~offset ~arity bottom_stack =
-    let st = {st with stmts= []; stack= bottom_stack; first_loc= None; loc= None} in
+  let enter_node st ~offset ~arity previous_last_loc bottom_stack =
+    let st =
+      { st with
+        stmts= []
+      ; stack= bottom_stack
+      ; first_loc= previous_last_loc
+      ; loc= previous_last_loc
+      ; no_loc_seen_during_this_session= true }
+    in
     let ssa_parameters, st = mk_ssa_parameters st (arity - List.length bottom_stack) in
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
     let st = {st with ssa_parameters} in
@@ -2953,11 +2963,11 @@ let constant_folding_ssa_params st succ_name {predecessors} =
   Ok (st, bottom_stack)
 
 
-let process_node st code ~offset ~arity ({instructions; successors} as info) =
+let process_node st code ~offset ~arity previous_last_loc ({instructions; successors} as info) =
   let open IResult.Let_syntax in
   let* name = State.get_node_name st offset in
   let* st, bottom_stack = constant_folding_ssa_params st name info in
-  let st = State.enter_node st ~offset ~arity bottom_stack in
+  let st = State.enter_node st ~offset ~arity previous_last_loc bottom_stack in
   let ssa_parameters = State.get_ssa_parameters st in
   let {State.stack} = st in
   State.debug st "              %a@\n" (Stack.pp ~pp:Exp.pp_opstack_symbol) stack ;
@@ -3013,33 +3023,38 @@ let build_cfg ~debug ~code_qual_name code =
     | Some l ->
         Ok l
   in
-  let visit (st, arity_map) offset =
+  let visit (st, arity_and_loc_map) offset =
     let* ({successors} as info) = get_info offset in
-    let* arity =
-      match IMap.find_opt offset arity_map with
-      | Some arity ->
-          Ok arity
+    let* arity, previous_last_loc =
+      match IMap.find_opt offset arity_and_loc_map with
+      | Some (arity, loc) ->
+          Ok (arity, loc)
       | None ->
           internal_error st (Error.MissingNodeInformation offset)
     in
-    let* st = process_node st code ~offset ~arity info in
+    let* st = process_node st code ~offset ~arity previous_last_loc info in
     let arity = State.size st in
-    let* arity_map =
-      List.fold_result successors ~init:arity_map ~f:(fun arity_map (succ, delta, _) ->
+    let loc = st.State.loc in
+    (* the last location we have seen *)
+    let* arity_and_loc_map =
+      List.fold_result successors ~init:arity_and_loc_map
+        ~f:(fun arity_and_loc_map (succ, delta, _) ->
           let succ_arity = arity + delta in
-          if IMap.mem succ arity_map then
-            let current_succ_arity = IMap.find succ arity_map in
+          if IMap.mem succ arity_and_loc_map then
+            let current_succ_arity, _ = IMap.find succ arity_and_loc_map in
             if not (Int.equal current_succ_arity succ_arity) then
               internal_error st (Error.IllFormedOpstack succ)
-            else Ok arity_map
-          else Ok (IMap.add succ succ_arity arity_map) )
+            else Ok arity_and_loc_map
+          else Ok (IMap.add succ (succ_arity, loc) arity_and_loc_map) )
     in
-    Ok (st, arity_map)
+    Ok (st, arity_and_loc_map)
   in
   let qual_name = code_qual_name code in
   let {FFI.Code.version} = code in
   let st = State.enter ~debug ~code_qual_name ~loc ~cfg_skeleton version qual_name in
-  let* st, _ = List.fold_result topological_order ~init:(st, IMap.add 0 0 IMap.empty) ~f:visit in
+  let* st, _ =
+    List.fold_result topological_order ~init:(st, IMap.add 0 (0, None) IMap.empty) ~f:visit
+  in
   let* cfg = CFG.of_builder st.State.cfg code in
   Ok cfg
 

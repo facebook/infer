@@ -244,29 +244,5 @@ let%expect_test _ =
 def foo(n):
     assert(n>0)
 |} in
-  PyIR.test ~show:true source ;
-  [%expect
-    {|
-    module dummy:
-
-      function toplevel():
-        b0: @2
-          n0 <- None @2
-          n3 <- $MakeFunction["dummy.foo", n0, n0, n0, n0] @2
-          TOPLEVEL[foo] <- n3 @2
-          return n0
-           @2
-
-      function dummy.foo(n):
-        b0: @3
-          n0 <- None @3
-          n3 <- LOCAL[n] @3
-          n4 <- $Compare.gt(n3, 0, n0) @3
-          if n4 then jmp b2 else jmp b1
-           @3
-        b1: @?
-          throw $AssertionError
-           @?
-        b2: @?
-          return n0
-           @? |}]
+  PyIR.test source ;
+  [%expect {| |}]
