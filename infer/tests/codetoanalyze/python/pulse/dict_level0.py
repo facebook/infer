@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+
 def dict_missing_key_const_str_ok():
     d = dict(name="Alice", age=25, city="New York")
     return d["name"]
@@ -12,8 +13,9 @@ def dict_missing_key_const_str_bad():
     d = {"John": 30, "Mary": 28}
     return d["Samantha"]
 
-def fn_dict_size1_missing_key_const_str_bad():
-    d = {"John": 30} #use build_map instead of build_const_key_map
+
+def dict_size1_missing_key_const_str_bad():
+    d = {"John": 30}  # use build_map instead of build_const_key_map
     return d["Samantha"]
 
 
@@ -156,39 +158,42 @@ class D:
 
 
 def read_class_companion_property_bad():
-    my_dict = {'key2': 0, "key": 1}
+    my_dict = {"key2": 0, "key": 1}
     return my_dict[D.class_property1]
 
 
 def read_class_companion_property_ok():
-    my_dict = {'key1': 0, "key": 1}
+    my_dict = {"key1": 0, "key": 1}
     return my_dict[D.class_property1]
 
 
 def instance_attribute_from_class_companion_bad():
-    my_dict = {'key2': 0, "key": 1}
+    my_dict = {"key2": 0, "key": 1}
     d = D()
     return my_dict[d.class_property1]
 
 
 def instance_attribute_from_class_companion_ok():
-    my_dict = {'key1': 0, "key": 1}
+    my_dict = {"key1": 0, "key": 1}
     d = D()
     return my_dict[d.class_property1]
 
+
 def instance_attribute_bad():
-    my_dict = {'key2': 0, "key": 1}
+    my_dict = {"key2": 0, "key": 1}
     d = D()
     return my_dict[d.key]
 
 
 def instance_attribute_ok():
-    my_dict = {'key1': 0, "instance_key": 1}
+    my_dict = {"key1": 0, "instance_key": 1}
     d = D()
     return my_dict[d.key]
 
-#TODO: implement missing-attribute logic (we will need to make sure the capture is deep enough regarding inherited class)
-#TODO: decide if missing-attribute deserves a specific signal, distinct from dict-missing-key
+
+# TODO: implement missing-attribute logic
+# (we will need to make sure the capture is deep enough regarding inherited class)
+# TODO: decide if missing-attribute deserves a specific signal, distinct from dict-missing-key
 def fn_neither_instance_nor_class_attribute_bad():
     d = D()
     return d.unknown
