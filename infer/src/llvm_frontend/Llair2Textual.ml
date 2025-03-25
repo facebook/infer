@@ -283,10 +283,8 @@ let cmnd_to_instrs block =
         let ptr_typ = to_annotated_textual_typ (Reg.typ reg) in
         update_current_locals reg_var_name ptr_typ ;
         textual_instrs
-    | Free {ptr; loc} ->
-        let proc = Textual.ProcDecl.free_name in
-        let textual_instr = to_textual_call_aux ~kind:Textual.Exp.NonVirtual proc None [ptr] loc in
-        textual_instr :: textual_instrs
+    | Free _ ->
+        textual_instrs
     | Nondet {reg; loc} ->
         let textual_instr = to_textual_builtin reg "llvm_nondet" [] loc in
         textual_instr :: textual_instrs

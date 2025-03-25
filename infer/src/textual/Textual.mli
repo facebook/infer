@@ -284,7 +284,7 @@ module ProcDecl : sig
 
   val is_malloc_builtin : QualifiedProcName.t -> bool
 
-  val free_name : QualifiedProcName.t
+  val free_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
 
   val cast_name : QualifiedProcName.t
 
