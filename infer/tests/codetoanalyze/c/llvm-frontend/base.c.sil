@@ -20,7 +20,7 @@ define test3(var0: *ptr_elt) : int {
   local var2: *ptr_elt
   #: @?
       n29:*ptr_elt = load &var0 @[0:0]
-      store &var2 <- n29:**ptr_elt @[0:0]
+      store &var2 <- n29:*ptr_elt @[0:0]
       n34:*ptr_elt = load &var2 @[0:0]
       n35:int = load n34 @[0:0]
       _ = __sil_free(&var2) @[0:0]
@@ -29,7 +29,7 @@ define test3(var0: *ptr_elt) : int {
 } @?
 
 define test2() : int {
-  local var2: *ptr_elt, var1: *ptr_elt
+  local var2: int, var1: int
   #: @?
       n25:int = load &var1 @[0:0]
       n26:int = load &var2 @[0:0]
@@ -40,12 +40,12 @@ define test2() : int {
 } @?
 
 define test1(var0: int, var1: int) : int {
-  local var4: *ptr_elt, var3: *ptr_elt
+  local var4: int, var3: int
   #: @?
       n9:int = load &var0 @[0:0]
-      store &var3 <- n9:*int @[0:0]
+      store &var3 <- n9:int @[0:0]
       n10:int = load &var1 @[0:0]
-      store &var4 <- n10:*int @[0:0]
+      store &var4 <- n10:int @[0:0]
       n17:int = load &var3 @[0:0]
       n18:int = load &var4 @[0:0]
       _ = __sil_free(&var3) @[0:0]
@@ -61,9 +61,9 @@ define test() : *int {
 } @?
 
 define main() : int {
-  local var1: *ptr_elt
+  local var1: int
   #: @?
-      store &var1 <- 0:*int @[0:0]
+      store &var1 <- 0:int @[0:0]
       _ = __sil_free(&var1) @[0:0]
       ret 0 @?
       

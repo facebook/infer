@@ -8,24 +8,18 @@
 open! IStd
 open Llair
 open Llair2TextualType
-module Set = Stdlib.Set
+module VarMap = Textual.VarName.Map
 
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
   ; name= Textual.ProcName.of_string name }
 
 
-module T = struct
-  type t = {varname: Textual.VarName.t; typ: Textual.Typ.annotated [@ignore]} [@@deriving compare]
-end
+let current_locals : Textual.Typ.annotated VarMap.t ref = ref VarMap.empty
 
-module VarSet = Set.Make (T)
+let reset_current_locals () = current_locals := VarMap.empty
 
-let current_locals : VarSet.t ref = ref VarSet.empty
-
-let reset_current_locals () = current_locals := VarSet.empty
-
-let update_current_locals exp typ = current_locals := VarSet.add {varname= exp; typ} !current_locals
+let update_current_locals varname typ = current_locals := VarMap.add varname typ !current_locals
 
 let string_name_of_reg reg = Format.sprintf "var%s" (Reg.name reg)
 
@@ -37,9 +31,7 @@ let reg_to_textual_var ~(formals : Textual.VarName.t list) reg =
   let reg_var_name = reg_to_var_name reg in
   if
     List.mem ~equal:Textual.VarName.equal formals reg_var_name
-    || VarSet.mem
-         {varname= reg_var_name; typ= {typ= Textual.Typ.Void; Textual.Typ.attributes= []}}
-         !current_locals
+    || VarMap.mem reg_var_name !current_locals
   then Textual.Exp.Lvar reg_var_name
   else Textual.Exp.Var (reg_to_id reg)
 
@@ -234,14 +226,24 @@ let to_textual_builtin ~formals return name args loc =
   to_textual_call_aux ~formals ~kind:Textual.Exp.NonVirtual proc return args loc
 
 
+let update_local_type exp typ =
+  match exp with
+  | Textual.Exp.Lvar var_name when VarMap.mem var_name !current_locals ->
+      let typ = Textual.Typ.mk_without_attributes typ in
+      update_current_locals var_name typ
+  | _ ->
+      ()
+
+
 let cmnd_to_instrs ~formals block =
   let to_instr textual_instrs inst =
     match inst with
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc loc in
         let id = reg_to_id reg in
-        let exp, _ = to_textual_exp ~formals ptr in
         let reg_typ = to_textual_typ (Reg.typ reg) in
+        let exp, _ = to_textual_exp ~formals ptr in
+        update_local_type exp reg_typ ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= Some reg_typ; loc} in
         textual_instr :: textual_instrs
     | Store {ptr; exp; loc} ->
@@ -258,11 +260,15 @@ let cmnd_to_instrs ~formals block =
           | _ ->
               (exp2, [])
         in
-        let exp1, typ_ptr = to_textual_exp ~formals ptr in
-        let typ =
-          match typ_exp2 with Some typ_exp2 -> Some (Textual.Typ.Ptr typ_exp2) | None -> typ_ptr
+        let exp1, _ = to_textual_exp ~formals ptr in
+        let typ_exp2 =
+          Option.map
+            ~f:(fun typ_exp2 ->
+              update_local_type exp1 typ_exp2 ;
+              typ_exp2 )
+            typ_exp2
         in
-        let textual_instr = Textual.Instr.Store {exp1; typ; exp2; loc} in
+        let textual_instr = Textual.Instr.Store {exp1; typ= typ_exp2; exp2; loc} in
         (textual_instr :: exp2_instrs) @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = reg_to_var_name reg in
@@ -410,7 +416,7 @@ let translate_llair_functions functions =
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
     in
     let locals =
-      VarSet.fold (fun {varname; typ} locals -> (varname, typ) :: locals) !current_locals []
+      VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) !current_locals []
     in
     Textual.ProcDesc.
       { params= formals_
