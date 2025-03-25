@@ -45,6 +45,8 @@ module Syntax : sig
 
   val report : Diagnostic.t -> unit model_monad
 
+  val report_assert_error : unit model_monad
+
   val list_fold :
     'a list -> init:'accum -> f:('accum -> 'a -> 'accum model_monad) -> 'accum model_monad
 

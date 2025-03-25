@@ -617,6 +617,11 @@ module Preconditions = struct
     astate
 end
 
+let assertion_error _ : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> report_assert_error
+
+
 let non_static_method name1 (_, procname) name2 =
   (not (Procname.is_java_static_method procname)) && String.equal name1 name2
 
@@ -857,6 +862,7 @@ let matchers : matcher list =
     $!--> (fun x ->
             Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
     |> with_non_disj
+  ; -"java.lang.AssertionError" &:: "<init>" <>$ capt_arg $--> assertion_error
   ; -"java.lang.Object" &:: "<init>" &--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
     &:: "equals"

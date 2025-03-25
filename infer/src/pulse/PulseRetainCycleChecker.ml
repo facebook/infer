@@ -64,8 +64,8 @@ let get_assignment_trace astate addr =
   AddressAttributes.get_written_to addr astate |> Option.map ~f:snd
 
 
-let create_values astate cycle =
-  let values =
+let create_values astate (cycle : cycle_data list) =
+  let values : Diagnostic.retain_cycle_data list =
     List.map
       ~f:(fun {addr} ->
         let value = Decompiler.find addr astate in
@@ -76,8 +76,10 @@ let create_values astate cycle =
   in
   let sorted_values =
     List.sort
-      ~compare:(fun {Diagnostic.location= loc1} {Diagnostic.location= loc2} ->
-        Option.compare Location.compare loc1 loc2 )
+      ~compare:(fun
+          ({location= loc1} : Diagnostic.retain_cycle_data)
+          ({location= loc2} : Diagnostic.retain_cycle_data)
+        -> Option.compare Location.compare loc1 loc2 )
       values
   in
   List.map

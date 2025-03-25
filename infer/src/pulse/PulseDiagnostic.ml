@@ -187,7 +187,14 @@ let resource_closed_s = function
       "freed"
 
 
+type assertion_error = {location: Location.t} [@@deriving compare, equal]
+
+let yojson_of_assertion_error = [%yojson_of: _]
+
+let pp_assertion_error fmt {location} = F.fprintf fmt "{@[location=%a;@;@]}" Location.pp location
+
 type t =
+  | AssertionError of assertion_error
   | AccessToInvalidAddress of access_to_invalid_address
   | ConfigUsage of
       { pname: Procname.t
@@ -238,6 +245,8 @@ type t =
 let pp fmt diagnostic =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
   match[@warning "+missing-record-field-pattern"] diagnostic with
+  | AssertionError assertion_error ->
+      F.fprintf fmt "Assertion error %a" pp_assertion_error assertion_error
   | AccessToInvalidAddress access_to_invalid_address ->
       F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
         access_to_invalid_address
@@ -336,6 +345,7 @@ let get_location = function
   | ReadUninitialized {calling_context= []; trace= access_trace}
   | TransitiveAccess {call_trace= access_trace} ->
       Trace.get_outer_location access_trace
+  | AssertionError {location}
   | DynamicTypeMismatch {location}
   | ErlangError (Badarg {location; calling_context= []})
   | ErlangError (Badgenerator {location; calling_context= []})
@@ -395,6 +405,7 @@ let get_copy_type = function
 
 
 let aborts_execution (path : PathContext.t) = function
+  | AssertionError _
   | AccessToInvalidAddress _
   | ErlangError
       ( Badarg _
@@ -513,6 +524,8 @@ let pp_retain_cycle fmt values =
 
 let get_message_and_suggestion diagnostic =
   match diagnostic with
+  | AssertionError {location} ->
+      F.asprintf "assertion error at %a" Location.pp location |> no_suggestion
   | AccessToInvalidAddress
       { calling_context
       ; invalid_address
@@ -1012,6 +1025,9 @@ let pp_copy_typ fmt =
 
 
 let get_trace = function
+  | AssertionError {location} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location "" []]
   | AccessToInvalidAddress
       { calling_context= _
       ; invalidation= ComparedToNullInThisProcedure null_comparison as invalidation
@@ -1171,6 +1187,8 @@ let get_trace = function
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
+  | AssertionError _, _ ->
+      IssueType.pulse_assertion_error
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
   | ConfigUsage _, false ->

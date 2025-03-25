@@ -77,8 +77,11 @@ type resource =
   | HackBuilderResource of HackClassName.t
   | Memory of Attribute.allocator
 
+type assertion_error = {location: Location.t} [@@deriving compare, equal, yojson_of]
+
 (** an error to report to the user *)
 type t =
+  | AssertionError of assertion_error
   | AccessToInvalidAddress of access_to_invalid_address
   | ConfigUsage of
       { pname: Procname.t

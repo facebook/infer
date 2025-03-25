@@ -1168,6 +1168,11 @@ let bool_true : model =
   assign_ret res
 
 
+let load_assertion_error : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> report_assert_error
+
+
 let make_string arg : model =
   let open DSL.Syntax in
   start_model
@@ -1402,7 +1407,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_list_append" <>$ arg $+ arg $--> list_append
   ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_load_assertion_error" &::.*+++> unknown ~deep_release:false
+  ; -"$builtins" &:: "py_load_assertion_error" <>--> load_assertion_error
   ; -"$builtins" &:: "py_load_class_deref" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_load_closure" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown ~deep_release:false

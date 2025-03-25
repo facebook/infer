@@ -184,6 +184,7 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | AssertionError _
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _

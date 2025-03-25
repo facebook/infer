@@ -98,6 +98,7 @@ let add_call call_and_loc call_substs astate latent_issue =
    not true as calling context cannot possibly influence such conditions *)
 let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | AssertionError _
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _

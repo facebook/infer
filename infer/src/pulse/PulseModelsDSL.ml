@@ -470,6 +470,11 @@ module Syntax = struct
     AddressAttributes.add_one addr HackConstinitCalled |> exec_command
 
 
+  let report_assert_error : unit model_monad =
+    let* {location} = get_data in
+    report (AssertionError {location})
+
+
   let and_dynamic_type_is (v, _) t : unit model_monad =
     PulseArithmetic.and_dynamic_type_is v t |> exec_partial_command
 

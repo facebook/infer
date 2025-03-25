@@ -303,6 +303,8 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
+val pulse_assertion_error : t
+
 val pulse_cannot_instantiate_abstract_class : t
 
 val pulse_dict_missing_key : t

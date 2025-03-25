@@ -1790,7 +1790,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
   try
     match opname with
     | "LOAD_ASSERTION_ERROR" ->
-        Ok (State.push st Exp.AssertionError, None)
+        assign_to_temp_and_push st AssertionError
     | "LOAD_CONST" ->
         let* exp = convert_ffi_const st co_consts.(arg) in
         let st = State.push_symbol st exp in

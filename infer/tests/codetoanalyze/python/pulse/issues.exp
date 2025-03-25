@@ -1,3 +1,5 @@
+assert_level0.py, assert_level0.assert_true_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+assert_level0.py, assert_level0.run_assert_latent_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 async_dict.py, async_dict.fp_int_key_access_ok, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_dict.py, async_dict.int_key_access_bad, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_dict.py, async_dict.str_key_access_bad, 2, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]

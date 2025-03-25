@@ -862,6 +862,11 @@ let premature_nil_termination =
     ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
+let pulse_assertion_error =
+  register ~category:RuntimeException ~enabled:false ~id:"PULSE_ASSERTION_ERROR" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_ASSERTION_ERROR.md"]
+
+
 let pulse_cannot_instantiate_abstract_class =
   register ~category:RuntimeException ~enabled:false ~id:"PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS"
     Error Pulse

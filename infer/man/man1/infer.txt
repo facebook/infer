@@ -717,6 +717,7 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+             PULSE_ASSERTION_ERROR (disabled by default),
              PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS (disabled by default),
              PULSE_CONST_REFABLE (enabled by default),
              PULSE_DICT_MISSING_KEY (disabled by default),
