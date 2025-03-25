@@ -181,6 +181,8 @@ module Typ : sig
 
   val is_annotated : f:(Attr.t -> bool) -> annotated -> bool
 
+  val pp_annotated : F.formatter -> annotated -> unit
+
   val mk_without_attributes : t -> annotated
 end
 

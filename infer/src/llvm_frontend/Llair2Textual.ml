@@ -8,7 +8,9 @@
 open! IStd
 open Llair
 open Llair2TextualType
+module F = Format
 module VarMap = Textual.VarName.Map
+module IdentMap = Textual.Ident.Map
 
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
@@ -19,14 +21,26 @@ let current_locals : Textual.Typ.annotated VarMap.t ref = ref VarMap.empty
 
 let current_formals : Textual.Typ.annotated VarMap.t ref = ref VarMap.empty
 
+let current_ids : Textual.Typ.annotated IdentMap.t ref = ref IdentMap.empty
+
+let pp_ids fmt current_ids =
+  F.fprintf fmt "%a"
+    (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:Textual.Typ.pp_annotated))
+    (IdentMap.bindings current_ids)
+[@@warning "-unused-value-declaration"]
+
+
 let reset_current_vars () =
   current_locals := VarMap.empty ;
-  current_formals := VarMap.empty
+  current_formals := VarMap.empty ;
+  current_ids := IdentMap.empty
 
 
 let update_current_locals varname typ = current_locals := VarMap.add varname typ !current_locals
 
 let update_current_formals varname typ = current_formals := VarMap.add varname typ !current_formals
+
+let update_current_ids id typ = current_ids := IdentMap.add id typ !current_ids
 
 let string_name_of_reg reg = Format.sprintf "var%s" (Reg.name reg)
 
@@ -237,8 +251,11 @@ let update_local_or_formal_type exp typ =
       let typ = Textual.Typ.mk_without_attributes typ in
       update_current_locals var_name typ
   | Textual.Exp.Lvar var_name when VarMap.mem var_name !current_formals ->
-      let typ = {typ; Textual.Typ.attributes= []} in
+      let typ = Textual.Typ.mk_without_attributes typ in
       update_current_formals var_name typ
+  | Textual.Exp.Var id when IdentMap.mem id !current_ids ->
+      let new_ptr_typ = Textual.Typ.Ptr typ in
+      update_current_ids id (Textual.Typ.mk_without_attributes new_ptr_typ)
   | _ ->
       ()
 
@@ -250,6 +267,7 @@ let cmnd_to_instrs block =
         let loc = to_textual_loc loc in
         let id = reg_to_id reg in
         let reg_typ = to_textual_typ (Reg.typ reg) in
+        update_current_ids id (Textual.Typ.mk_without_attributes reg_typ) ;
         let exp, _ = to_textual_exp ptr in
         update_local_or_formal_type exp reg_typ ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= Some reg_typ; loc} in
@@ -263,6 +281,7 @@ let cmnd_to_instrs block =
               let id = Textual.Ident.of_int id in
               let new_exp2 = Textual.Exp.Var id in
               let reg_typ = to_textual_typ typ in
+              update_current_ids id (Textual.Typ.mk_without_attributes reg_typ) ;
               let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= Some reg_typ; loc} in
               (new_exp2, [exp2_instr])
           | _ ->
