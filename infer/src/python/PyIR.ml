@@ -320,7 +320,6 @@ module BuiltinCaller = struct
 
   type t =
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
-    | BuildConstKeyMap  (** [BUILD_CONST_KEY_MAP] *)
     | Format
     | FormatFn of FormatFunction.t
     | Inplace of BinaryOp.t
@@ -354,8 +353,6 @@ module BuiltinCaller = struct
   let show = function
     | BuildClass ->
         "$BuildClass"
-    | BuildConstKeyMap ->
-        "$BuildConstKeyMap"
     | Format ->
         "$Format"
     | FormatFn fn ->

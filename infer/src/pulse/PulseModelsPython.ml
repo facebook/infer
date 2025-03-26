@@ -1065,12 +1065,6 @@ let load_name name locals _globals : model =
   assign_ret value
 
 
-let get_key_as_str i keys : string option DSL.model_monad =
-  let open DSL.Syntax in
-  let* key_addr = Tuple.get_idx_int keys i in
-  as_constant_string key_addr
-
-
 let is_dynamic_type_maybe_string addr : bool DSL.model_monad =
   let open DSL.Syntax in
   let* val_dynamic_type_data = get_dynamic_type ~ask_specialization:true addr in
@@ -1079,35 +1073,6 @@ let is_dynamic_type_maybe_string addr : bool DSL.model_monad =
       ret true
   | _ ->
       ret false
-
-
-let get_bindings (keys : DSL.aval) (vals : DSL.aval list) :
-    (string list * DSL.aval list * bool) DSL.model_monad =
-  let open DSL.Syntax in
-  let const_strings_only = ref true in
-  let* ks, vs, _ =
-    list_fold vals ~init:([], [], 0) ~f:(fun acc v ->
-        let acc_keys, acc_vals, c = acc in
-        let* key = get_key_as_str c keys in
-        match key with
-        (* For now we ignore keys that are not const strings *)
-        | None ->
-            let* is_maybe_string = is_dynamic_type_maybe_string keys in
-            if is_maybe_string then const_strings_only := false ;
-            (acc_keys, acc_vals, c + 1) |> ret
-        | Some key ->
-            (key :: acc_keys, v :: acc_vals, c + 1) |> ret )
-  in
-  ret (List.rev ks, List.rev vs, !const_strings_only)
-
-
-let make_const_key_map (keys : DSL.aval) (values : DSL.aval list) : model =
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
-  let* keys, vals, const_strings_only = get_bindings keys values in
-  let* dict = Dict.make keys vals ~const_strings_only in
-  assign_ret dict
 
 
 let build_map (args : DSL.aval list) : model =
@@ -1362,7 +1327,6 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_bool" <>$ arg $--> bool
   ; -"$builtins" &:: "py_bool_true" <>--> bool_true
   ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
-  ; -"$builtins" &:: "py_build_const_key_map" <>$ arg $+++$--> make_const_key_map
   ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown ~deep_release:true
   ; -"$builtins" &:: "py_build_list" &::.*+++> build_tuple
   ; -"$builtins" &:: "py_build_map" &::.*+++> build_map

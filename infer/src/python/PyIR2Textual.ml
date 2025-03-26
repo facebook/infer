@@ -330,8 +330,6 @@ let builtin_name builtin =
   match (builtin : BuiltinCaller.t) with
   | BuildClass ->
       str_py_build_class
-  | BuildConstKeyMap ->
-      "py_build_const_key_map"
   | Format ->
       "py_format"
   | FormatFn Str ->

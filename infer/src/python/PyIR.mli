@@ -123,7 +123,6 @@ module BuiltinCaller : sig
 
   type t =
     | BuildClass
-    | BuildConstKeyMap
     | Format
     | FormatFn of FormatFunction.t
     | Inplace of BinaryOp.t

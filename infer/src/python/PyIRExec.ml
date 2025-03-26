@@ -113,15 +113,6 @@ let expect_dict ~who ?how = function
         how pp_pval v
 
 
-let expect_tuple ~who ?how = function
-  | Tuple l ->
-      l
-  | v ->
-      L.die InternalError "%s expects a tuple%a and received %a" who
-        (Pp.option (fun fmt how -> F.fprintf fmt " as %s" how))
-        how pp_pval v
-
-
 let expect_bool ~who ?how = function
   | Bool b ->
       b
@@ -379,18 +370,6 @@ let run_files modules =
             let locals = Locals.mk_raw_object name in
             body ~locals [] |> ignore ;
             ssa_set lhs (Dict locals)
-        | BuiltinCall {lhs; call= BuildConstKeyMap; args} ->
-            let who = "$BuildConstKeyMap" in
-            let keys, arg0, args = expect_at_least_2_args ~who args in
-            let args = List.map (arg0 :: args) ~f:eval_exp in
-            let keys = eval_exp keys |> expect_tuple ~who ~how:"as first argument" in
-            if not (Int.equal (List.length args) (List.length keys)) then
-              L.die InternalError "$BuildConstKeyMap keys and values shouds have the same length" ;
-            let ({Dict.set} as dict) = Dict.create () in
-            List.iter2_exn keys args ~f:(fun key arg ->
-                let key = expect_string ~who ~how:"as key" key |> Ident.mk in
-                set key arg ) ;
-            ssa_set lhs (Dict dict)
         | BuiltinCall {lhs; call= Inplace Add; args} ->
             let who = "$BuiltinCall.Inplace.Add" in
             let arg1, arg2 = expect_2_args ~who args in
