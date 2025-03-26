@@ -2000,20 +2000,10 @@ let get_reachable astate =
   (pre_addresses, post_addresses, always_reachable_trans_closure)
 
 
-let topl_view ({pre; post; path_condition} as astate) =
+let topl_view {pre; post; path_condition} =
   let pulse_pre = (pre :> BaseDomain.t) in
   let pulse_post = (post :> BaseDomain.t) in
-  let get_reachable () =
-    let pre_addresses, post_addresses, always_reachable_trans_closure = get_reachable astate in
-    let in_path_condition =
-      Formula.fold_variables path_condition ~init:AbstractValue.Set.empty ~f:(fun vars v ->
-          AbstractValue.Set.add v vars )
-    in
-    let ( ++ ) = CanonValue.Set.union in
-    AbstractValue.Set.union in_path_condition
-      (pre_addresses ++ post_addresses ++ always_reachable_trans_closure |> CanonValue.downcast_set)
-  in
-  {PulseTopl.pulse_pre; pulse_post; path_condition; get_reachable}
+  {PulseTopl.pulse_pre; pulse_post; path_condition}
 
 
 let discard_unreachable_ ~for_summary ({pre; post} as astate) =

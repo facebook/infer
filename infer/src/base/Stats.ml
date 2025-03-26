@@ -253,7 +253,6 @@ type t =
   ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
   ; mutable pulse_summaries_count_0_continue_program: IntCounter.t
   ; mutable pulse_summaries_count_0_percent: IntCounter.t
-  ; mutable topl_reachable_calls: IntCounter.t
   ; mutable timeouts: IntCounter.t
   ; mutable timings: TimingsStat.t
   ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
@@ -329,7 +328,7 @@ let pp fmt stats =
     ~pulse_summaries_with_some_unreachable_returns_percent:(pp_percent_field fmt)
     ~timeouts:(pp_int_field fmt) ~restart_scheduler_useful_time:(pp_time_counter_field fmt)
     ~restart_scheduler_total_time:(pp_time_counter_field fmt)
-    ~spec_store_times:(pp_time_counter_field fmt) ~topl_reachable_calls:(pp_int_field fmt)
+    ~spec_store_times:(pp_time_counter_field fmt)
     ~timings:(pp_serialized_field TimingsStat.deserialize Timings.pp fmt)
     ~cache_stats:(pp_cache_stats fmt)
 
@@ -518,8 +517,6 @@ let add_proc_duration_us file pname duration_us =
       LongestProcDurationHeap.update new_elt heap ;
       heap )
 
-
-let incr_topl_reachable_calls () = incr Fields.topl_reachable_calls
 
 let incr_timeouts () = incr Fields.timeouts
 

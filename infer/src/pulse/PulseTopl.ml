@@ -10,7 +10,8 @@ module F = Format
 module L = Logging
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
-module Memory = PulseBaseMemory
+module BaseMemory = PulseBaseMemory
+module BaseStack = PulseBaseStack
 open IOption.Let_syntax
 
 type value = AbstractValue.t [@@deriving compare, equal]
@@ -89,11 +90,25 @@ let sub_list : 'a substitutor -> 'a list substitutor =
   (sub, List.rev xs)
 
 
-type pulse_state =
-  { pulse_post: BaseDomain.t
-  ; pulse_pre: BaseDomain.t
-  ; path_condition: Formula.t
-  ; get_reachable: unit -> AbstractValue.Set.t }
+type pulse_state = {pulse_post: BaseDomain.t; pulse_pre: BaseDomain.t; path_condition: Formula.t}
+
+let vals_of_basedomain {BaseDomain.heap; stack; attrs= _ignore_for_now} =
+  let vals = AbstractValue.Set.empty in
+  let add v vals = AbstractValue.Set.add v vals in
+  let collect_edge vals (_access, (v, _hist)) = add v vals in
+  let collect_heap_binding v edges vals =
+    BaseMemory.Edges.fold edges ~init:(add v vals) ~f:collect_edge
+  in
+  let collect_stack_binding _var v_orig vals = add (ValueOrigin.value v_orig) vals in
+  let vals = BaseMemory.fold collect_heap_binding heap vals in
+  let vals = BaseStack.fold collect_stack_binding stack vals in
+  vals
+
+
+let vals_of_formula phi =
+  let add vals v = AbstractValue.Set.add v vals in
+  Formula.fold_variables phi ~init:AbstractValue.Set.empty ~f:add
+
 
 module Constraint : sig
   type predicate
@@ -118,9 +133,6 @@ module Constraint : sig
 
   val negate : t list -> t list
   (** computes ¬(c1∨...∨cm) as d1∨...∨dn, where n=|c1|x...x|cm| *)
-
-  val eliminate_exists : keep:(AbstractValue.t -> bool) -> t -> t
-  (** quantifier elimination *)
 
   val size : t -> int
 
@@ -264,7 +276,7 @@ end = struct
           "path predicate" = value of shape Constraint.Builtin (_, _, _)
           "heap predicate" = value of shape Constraint.LeadsTo (_,_) or Constraint.NotLeadsTo (_,_)
           "path condition" = (possibly modified) pulse_state.path_condition (of type Formula.t)
-          "heap" = (possibly modified) pulse_state.pulse_post.heap (of type Memory.t)
+          "heap" = (possibly modified) pulse_state.pulse_post.heap (of type BaseMemory.t)
           "new_eqs" = value of type Formula.new_eqs
        end of terminology aside.)
 
@@ -339,10 +351,10 @@ end = struct
           let is_implied_by_heap () =
             match (op, l, r) with
             | Ne, AbstractValueOperand l, AbstractValueOperand r ->
-                Memory.is_allocated heap l && Memory.is_allocated heap r
+                BaseMemory.is_allocated heap l && BaseMemory.is_allocated heap r
             | Ne, AbstractValueOperand v, ConstOperand (Cint z)
             | Ne, ConstOperand (Cint z), AbstractValueOperand v ->
-                IntLit.iszero z && Memory.is_allocated heap v
+                IntLit.iszero z && BaseMemory.is_allocated heap v
             | _ ->
                 false
           in
@@ -381,9 +393,9 @@ end = struct
               let incorporate_eq heap (eq : Formula.new_eq) =
                 match eq with
                 | Equal (v1, v2) ->
-                    Memory.subst_var ~for_summary:true (v1, v2) heap
+                    BaseMemory.subst_var ~for_summary:true (v1, v2) heap
                 | EqZero v ->
-                    if Memory.is_allocated heap v then
+                    if BaseMemory.is_allocated heap v then
                       let reason () =
                         F.asprintf "value %a is both zero and allocated" AbstractValue.pp v
                       in
@@ -411,9 +423,10 @@ end = struct
                 []
           in
           let true_successors =
-            match Memory.find_opt v heap with
+            match BaseMemory.find_opt v heap with
             | Some edges ->
-                Memory.Edges.bindings edges |> List.map ~f:(function _access, (w, _history) -> w)
+                BaseMemory.Edges.bindings edges
+                |> List.map ~f:(function _access, (w, _history) -> w)
             | None ->
                 []
           in
@@ -475,22 +488,6 @@ end = struct
     | Unsat unsat_info ->
         SatUnsat.log_unsat unsat_info ;
         [False]
-
-
-  let eliminate_exists ~keep constr =
-    (* TODO(rgrigore): replace the current weak approximation *)
-    let is_live_operand : Formula.operand -> bool = function
-      | AbstractValueOperand v ->
-          keep v
-      | ConstOperand _ ->
-          true
-      | FunctionApplicationOperand _ ->
-          true
-    in
-    let is_live_predicate pred =
-      match pred with Binary (_op, l, r) -> is_live_operand l && is_live_operand r | _ -> true
-    in
-    List.filter ~f:is_live_predicate constr
 end
 
 type step =
@@ -577,11 +574,11 @@ let make_field class_name field_name : Fieldname.t =
 let deref_field_access pulse_state value class_name field_name : Formula.operand option =
   (* Dereferencing is done in 2 steps: (v) --f-> (v1) --*-> (v2) *)
   let heap = pulse_state.pulse_post.heap in
-  let* edges = Memory.find_opt value heap in
+  let* edges = BaseMemory.find_opt value heap in
   let field = make_field class_name field_name in
-  let* v1, _hist = Memory.Edges.find_opt (FieldAccess field) edges in
-  let* edges = Memory.find_opt v1 heap in
-  let* v2, _hist = Memory.Edges.find_opt Dereference edges in
+  let* v1, _hist = BaseMemory.Edges.find_opt (FieldAccess field) edges in
+  let* edges = BaseMemory.find_opt v1 heap in
+  let* v2, _hist = BaseMemory.Edges.find_opt Dereference edges in
   match Formula.as_constant_string pulse_state.path_condition v2 with
   | Some r ->
       Some (Formula.ConstOperand (Const.Cstr r))
@@ -857,38 +854,19 @@ let drop_garbage ~keep state =
 let simplify pulse_state state =
   (* NOTE: For dropping garbage, we do not consider registers live. If the Topl monitor has a hold
      of something that is garbage for the program, then that something is still garbage. *)
-  let reachable =
-    Stats.incr_topl_reachable_calls () ;
-    pulse_state.get_reachable ()
-  in
-  let eliminate_exists {pre; post; pruned; last_step} =
-    L.d_printfln "@[<v>@[DBG eliminate_exists pulse_state.path_condition %a@]@;@]" Formula.pp
-      pulse_state.path_condition ;
-    let collect memory keep =
-      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
-    in
-    let keep = reachable |> collect pre.memory |> collect post.memory in
-    L.d_printfln "@[<v>@[DBG eliminate_exists keep = %a@]@;@]" AbstractValue.Set.pp keep ;
-    let keep v = AbstractValue.Set.mem v keep in
-    let keep v =
-      let result = keep v in
-      L.d_printfln "@[<v>@[DBG keep %a %b@]@;@]" AbstractValue.pp v result ;
-      result
-    in
-    let pruned = Constraint.eliminate_exists ~keep pruned in
-    {pre; post; pruned; last_step}
+  let pulse_vals =
+    let ( ++ ) = AbstractValue.Set.union in
+    vals_of_basedomain pulse_state.pulse_pre
+    ++ vals_of_basedomain pulse_state.pulse_post
+    ++ vals_of_formula pulse_state.path_condition
   in
   let simplify_pruned {pre; post; pruned; last_step} =
     let pruned = Constraint.simplify pulse_state pruned in
     {pre; post; pruned; last_step}
   in
-  (* The following three steps are ordered from fastest to slowest, except that `drop_infeasible`
+  (* The following steps are ordered from fastest to slowest, except that `drop_infeasible`
      has to come after `simplify_pruned`. *)
-  let state =
-    (* T147875161 *)
-    if false then List.map ~f:eliminate_exists state else state
-  in
-  let state = drop_garbage ~keep:reachable state in
+  let state = drop_garbage ~keep:pulse_vals state in
   let state = List.map ~f:simplify_pruned state in
   let state = drop_infeasible pulse_state state in
   List.dedup_and_sort ~compare:compare_simple_state state

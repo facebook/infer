@@ -60,8 +60,6 @@ val add_pulse_summaries_count : int -> unit
 
 val add_proc_duration_us : string -> string -> int -> unit
 
-val incr_topl_reachable_calls : unit -> unit
-
 val incr_timeouts : unit -> unit
 
 val add_timing : Timeable.t -> float -> unit
