@@ -7,7 +7,9 @@
 // should trigger Pulse to add x==y.
 
 .source_language = "hack"
-define f_Latent(x: int, y: int) : *void {
+
+// T218031082
+define fn_f_Latent(x: int, y: int) : *void {
 #b0:
   n0 = __sil_eq(x, y)
   n1 = g(n0)

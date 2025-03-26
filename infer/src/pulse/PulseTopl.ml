@@ -57,12 +57,13 @@ type 'a substitutor = substitution * 'a -> substitution * 'a
 
 let sub_value : warn:bool -> value substitutor =
   let incomplete_sub_reported = AnalysisGlobalState.make_dls ~init:(fun () -> false) in
-  let report_incomplete_sub () =
+  let report_incomplete_sub value =
     (* Without this guard, when something is wrong, the message usually gets printed so many times
        that analysis jobs get slowed down a LOT. *)
     if not (DLS.get incomplete_sub_reported) then (
       DLS.set incomplete_sub_reported true ;
-      L.internal_error "PulseTopl.sub_value given incomplete subtitution@\n" )
+      L.internal_error "PulseTopl.sub_value given incomplete subtitution for %a@\n" AbstractValue.pp
+        value )
   in
   let sub_value ~warn (sub, value) =
     match AbstractValue.Map.find_opt value sub with
@@ -72,7 +73,7 @@ let sub_value : warn:bool -> value substitutor =
         (* This happens if the abstract values mentioned in a Topl summary were not matched to abstract
            values in the caller. It should not happen, but it may if summaries mention "free" abstract
            values or if the matching algorithm is incomplete. *)
-        if warn then report_incomplete_sub () ;
+        if warn then report_incomplete_sub value ;
         let v = AbstractValue.mk_fresh () in
         let sub = AbstractValue.Map.add value (v, ValueHistory.epoch) sub in
         (sub, v)
@@ -140,6 +141,8 @@ module Constraint : sig
 
   val simplify : pulse_state -> t -> t
   (** Drop constraints implied by Pulse state. Detect infeasible constraints. *)
+
+  val fold_values : t -> init:'acc -> f:('acc -> value -> 'acc) -> 'acc
 
   val pp : F.formatter -> t -> unit
 end = struct
@@ -287,7 +290,7 @@ end = struct
        or by the heap, we drop it. Otherwise we conjoin it to the path condition and we normalize
        the path condition. Both conjoining and normalization may render the path condition
        unsatisfiable; if they do not then they may generate new deduced equalities. If the predicate
-       was an equality, we also add it to new equalities, before updating the heap according.
+       was an equality, we also add it to new equalities, before updating the heap accordingly.
        When we apply new equalities as substitutions to the heap, we have one more opportunity to
        detect unsatisfiability. After these updates to the path condition and the heap, we are ready
        to process the next predicate. (The invariant we try to maintain here is that the path
@@ -488,6 +491,24 @@ end = struct
     | Unsat unsat_info ->
         SatUnsat.log_unsat unsat_info ;
         [False]
+
+
+  let fold_values (constr : t) ~init ~f =
+    let fold_operand (op : Formula.operand) acc =
+      match op with
+      | AbstractValueOperand v ->
+          f acc v
+      | ConstOperand _ | FunctionApplicationOperand _ ->
+          acc
+    in
+    let fold_predicate acc p =
+      match p with
+      | Binary (_op, l, r) ->
+          acc |> fold_operand l |> fold_operand r
+      | True | False ->
+          acc
+    in
+    List.fold constr ~init ~f:fold_predicate
 end
 
 type step =
@@ -851,14 +872,30 @@ let drop_garbage ~keep state =
   List.filter ~f:should_keep state
 
 
+(* Drop the simple states that mention in the pruned part other variables except those in
+   [pulse_vals_pre] and those in the registers of the pre-simple-state. This is necessary before
+   extracting summaries, so that we don't mentions local values. And it under-approximates if applied
+   in the middle of the symbolic execution. *)
+let drop_ambiguous pulse_state state =
+  let pulse_vals_pre = vals_of_basedomain pulse_state.pulse_pre in
+  let should_keep {pre; pruned; post= _} =
+    let add_register values (_register, v) = AbstractValue.Set.add v values in
+    let ok = List.fold ~f:add_register ~init:pulse_vals_pre pre.memory in
+    let is_ok b v = b && AbstractValue.Set.mem v ok in
+    Constraint.fold_values pruned ~init:true ~f:is_ok
+  in
+  List.filter ~f:should_keep state
+
+
 let simplify pulse_state state =
   (* NOTE: For dropping garbage, we do not consider registers live. If the Topl monitor has a hold
      of something that is garbage for the program, then that something is still garbage. *)
   let pulse_vals =
+    let pulse_vals_pre = vals_of_basedomain pulse_state.pulse_pre in
+    let pulse_vals_post = vals_of_basedomain pulse_state.pulse_post in
+    let pulse_vals_path_condition = vals_of_formula pulse_state.path_condition in
     let ( ++ ) = AbstractValue.Set.union in
-    vals_of_basedomain pulse_state.pulse_pre
-    ++ vals_of_basedomain pulse_state.pulse_post
-    ++ vals_of_formula pulse_state.path_condition
+    pulse_vals_pre ++ pulse_vals_post ++ pulse_vals_path_condition
   in
   let simplify_pruned {pre; post; pruned; last_step} =
     let pruned = Constraint.simplify pulse_state pruned in
@@ -869,7 +906,8 @@ let simplify pulse_state state =
   let state = drop_garbage ~keep:pulse_vals state in
   let state = List.map ~f:simplify_pruned state in
   let state = drop_infeasible pulse_state state in
-  List.dedup_and_sort ~compare:compare_simple_state state
+  let state = List.dedup_and_sort ~compare:compare_simple_state state in
+  state
 
 
 let simplify =
@@ -1021,7 +1059,12 @@ let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~calle
   result |> apply_limits pulse_state
 
 
-let filter_for_summary pulse_state state = drop_infeasible pulse_state state
+let filter_for_summary pulse_state state =
+  (* NOTE: [drop_infeasible] is likely a nop, but it's cheap. *)
+  let state = drop_infeasible pulse_state state in
+  let state = drop_ambiguous pulse_state state in
+  state
+
 
 let description_of_step_data step_data =
   ( match step_data with
