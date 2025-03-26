@@ -54,14 +54,29 @@ type substitution = (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
 
 type 'a substitutor = substitution * 'a -> substitution * 'a
 
-let sub_value (sub, value) =
-  match AbstractValue.Map.find_opt value sub with
-  | Some (v, _history) ->
-      (sub, v)
-  | None ->
-      let v = AbstractValue.mk_fresh () in
-      let sub = AbstractValue.Map.add value (v, ValueHistory.epoch) sub in
-      (sub, v)
+let sub_value : warn:bool -> value substitutor =
+  let incomplete_sub_reported = AnalysisGlobalState.make_dls ~init:(fun () -> false) in
+  let report_incomplete_sub () =
+    (* Without this guard, when something is wrong, the message usually gets printed so many times
+       that analysis jobs get slowed down a LOT. *)
+    if not (DLS.get incomplete_sub_reported) then (
+      DLS.set incomplete_sub_reported true ;
+      L.internal_error "PulseTopl.sub_value given incomplete subtitution@\n" )
+  in
+  let sub_value ~warn (sub, value) =
+    match AbstractValue.Map.find_opt value sub with
+    | Some (v, _history) ->
+        (sub, v)
+    | None ->
+        (* This happens if the abstract values mentioned in a Topl summary were not matched to abstract
+           values in the caller. It should not happen, but it may if summaries mention "free" abstract
+           values or if the matching algorithm is incomplete. *)
+        if warn then report_incomplete_sub () ;
+        let v = AbstractValue.mk_fresh () in
+        let sub = AbstractValue.Map.add value (v, ValueHistory.epoch) sub in
+        (sub, v)
+  in
+  sub_value
 
 
 let sub_list : 'a substitutor -> 'a list substitutor =
@@ -109,7 +124,7 @@ module Constraint : sig
 
   val size : t -> int
 
-  val substitute : t substitutor
+  val substitute : ?warn:bool -> t substitutor
 
   val simplify : pulse_state -> t -> t
   (** Drop constraints implied by Pulse state. Detect infeasible constraints. *)
@@ -187,24 +202,24 @@ end = struct
 
   let size constr = List.length constr
 
-  let substitute_predicate (sub, predicate) =
+  let substitute_predicate ~warn (sub, predicate) =
     let avo x : Formula.operand = AbstractValueOperand x in
     match (predicate : predicate) with
     | Binary (op, AbstractValueOperand l, AbstractValueOperand r) ->
-        let sub, l = sub_value (sub, l) in
-        let sub, r = sub_value (sub, r) in
+        let sub, l = sub_value ~warn (sub, l) in
+        let sub, r = sub_value ~warn (sub, r) in
         (sub, Binary (op, avo l, avo r))
     | Binary (op, AbstractValueOperand l, r) ->
-        let sub, l = sub_value (sub, l) in
+        let sub, l = sub_value ~warn (sub, l) in
         (sub, Binary (op, avo l, r))
     | Binary (op, l, AbstractValueOperand r) ->
-        let sub, r = sub_value (sub, r) in
+        let sub, r = sub_value ~warn (sub, r) in
         (sub, Binary (op, l, avo r))
     | _ ->
         (sub, predicate)
 
 
-  let substitute = sub_list substitute_predicate
+  let substitute ?(warn = false) = sub_list (substitute_predicate ~warn)
 
   let pp_operator f operator =
     match operator with
@@ -963,18 +978,18 @@ let of_unequal (or_unequal : 'a List.Or_unequal_lengths.t) =
       L.die InternalError "PulseTopl expected lists to be of equal lengths"
 
 
-let sub_configuration (sub, {vertex; memory}) =
+let sub_configuration ?(warn = false) (sub, {vertex; memory}) =
   let keys, values = List.unzip memory in
-  let sub, values = sub_list sub_value (sub, values) in
+  let sub, values = sub_list (sub_value ~warn) (sub, values) in
   let memory = of_unequal (List.zip keys values) in
   (sub, {vertex; memory})
 
 
 (* Does not substitute in [last_step]: not usually needed, and takes much time. *)
 let sub_simple_state (sub, {pre; post; pruned; last_step}) =
-  let sub, pre = sub_configuration (sub, pre) in
-  let sub, post = sub_configuration (sub, post) in
-  let sub, pruned = Constraint.substitute (sub, pruned) in
+  let sub, pre = sub_configuration ~warn:true (sub, pre) in
+  let sub, post = sub_configuration ~warn:false (sub, post) in
+  let sub, pruned = Constraint.substitute ~warn:true (sub, pruned) in
   (sub, {pre; post; pruned; last_step})
 
 
