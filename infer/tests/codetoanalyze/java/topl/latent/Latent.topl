@@ -1,0 +1,4 @@
+property Latent
+  prefix "Latent"
+  start -> start: *
+  start -> error: g(Arg, Ret) when Arg == 42

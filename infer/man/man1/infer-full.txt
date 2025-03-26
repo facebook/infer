@@ -3517,6 +3517,19 @@ INTERNAL OPTIONS
        --top-longest-proc-duration-size-reset
            Cancel the effect of --top-longest-proc-duration-size.
 
+       --topl-filter-unsure
+           Activates: When set, reports only a subset of the latent issues.
+           Issues can be latent for two reasons: the usual reason for Pulse
+           (that it has not seen a callsite with appropriate arguments), or
+           because Topl is unsure (it did not discharge all conditions
+           specified by the user in the Topl property). When this option is
+           given, the issues where Topl is unsure are not reported. When this
+           option is not given, tags TOPL_MANIFEST and PULSE_MANIFEST can be
+           used to distinguish the reason why an issue is latern.
+           TOPL_MANIFEST means that Topl is sure. NOTE: If Topl latent issues
+           reporting is turned off completely, then this option has no
+           effect. (Conversely: --no-topl-filter-unsure)
+
        --topl-max-conjuncts int
            Stop tracking states that have at least int conjuncts
 

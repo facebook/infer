@@ -1132,7 +1132,7 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
   let report_simple_state q =
     (* We assume simplifications happened before calling report_errors. *)
     let topl_is_manifest = Constraint.(equal true_ q.pruned) in
-    if is_issue q then (
+    if is_issue q && (topl_is_manifest || not Config.topl_filter_unsure) then (
       let q = first_error_ss q in
       L.d_printfln ~color:Red "found TOPL error %a" pp_simple_state q ;
       (* Only report at the innermost level where error appears. *)
@@ -1144,16 +1144,19 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
         let latent = (not topl_is_manifest) || not pulse_is_manifest in
+        let message = ToplAutomaton.message a q.post.vertex in
         let message =
-          (* 1. topl_is_manifest && not pulse_is_manifest:
-           *    if program execution conditions would be satisfied, monitor would signal error
-           * 2. not topl_is_manifest && pulse_is_manifest:
-           *    execution is unconditional, but the monitor still waits for some conditions to be
-           *    satisfied before signaling error *)
-          String.concat ~sep:" "
-            ( [ToplAutomaton.message a q.post.vertex]
-            @ (if latent && topl_is_manifest then ["TOPL_MANIFEST"] else [])
-            @ if latent && pulse_is_manifest then ["PULSE_MANIFEST"] else [] )
+          if Config.topl_filter_unsure then message
+          else
+            (* 1. topl_is_manifest && not pulse_is_manifest:
+             *    if program execution conditions would be satisfied, monitor would signal error
+             * 2. not topl_is_manifest && pulse_is_manifest:
+             *    execution is unconditional, but the monitor still waits for some conditions to be
+             *    satisfied before signaling error *)
+            String.concat ~sep:" "
+              ( [message]
+              @ (if latent && topl_is_manifest then ["TOPL_MANIFEST"] else [])
+              @ if latent && pulse_is_manifest then ["PULSE_MANIFEST"] else [] )
         in
         if (not latent) || Config.topl_report_latent_issues then
           Reporting.log_issue proc_desc err_log ~loc ~ltr Topl (IssueType.topl_error ~latent)

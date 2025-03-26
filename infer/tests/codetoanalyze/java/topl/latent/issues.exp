@@ -1,0 +1,1 @@
+codetoanalyze/java/topl/latent/Latent.java, Latent.test_Latent(N):void, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to Latent.g(int):void]
