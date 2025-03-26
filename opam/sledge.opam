@@ -29,7 +29,6 @@ depends: [
   "ppxlib" {>= "0.21.0"}
   "psq"
   "sexplib"
-  "shexp"
   "smtlib-utils" {> "0.1"}
   "yojson"
   "z3"
