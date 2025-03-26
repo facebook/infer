@@ -206,7 +206,7 @@ let capture ~changed_files mode =
           Kotlinc.capture ~prog ~args
       | Llair {source_file; llair_file} ->
           L.progress "Capturing llair program...@." ;
-          Llvm.capture_llair ~source_file ~llair_file
+          Bitcode.capture_llair ~source_file ~llair_file
       | JsonSIL {cfg_json; tenv_json} ->
           L.progress "Capturing using JSON mode...@." ;
           CaptureSILJson.capture ~cfg_json ~tenv_json
@@ -227,7 +227,7 @@ let capture ~changed_files mode =
           Erlang.capture ~command:"rebar3" ~args
       | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
-          Llvm.capture ~command:prog ~args
+          Bitcode.capture ~command:prog ~args
       | Erlc {args} ->
           L.progress "Capturing in erlc mode...@." ;
           Erlang.capture ~command:"erlc" ~args
