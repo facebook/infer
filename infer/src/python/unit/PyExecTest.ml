@@ -519,7 +519,7 @@ print(d)
           jmp b8
            @10
         b8: @11
-          n18 <- $BuildConstKeyMap($BuildTuple("x", "y"), 0, "something", n0) @11
+          n18 <- $BuildMap("x", 0, "y", "something") @11
           TOPLEVEL[d] <- n18 @11
           jmp b9
            @11

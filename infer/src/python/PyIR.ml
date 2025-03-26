@@ -2035,12 +2035,17 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         parse_op st (Unary Invert) 1
     | "MAKE_FUNCTION" ->
         make_function st version arg
-    | "BUILD_CONST_KEY_MAP" ->
+    | "BUILD_CONST_KEY_MAP" -> (
         let* keys, st = State.pop_and_cast st in
-        let* tys, st = State.pop_n_and_cast st arg in
-        let* id, st = call_builtin_function st BuildConstKeyMap (keys :: tys) in
-        let st = State.push st (Exp.Temp id) in
-        Ok (st, None)
+        match keys with
+        | Exp.Collection {kind= Tuple; values= keys_list} ->
+            build_collection st arg ~f:(fun values ->
+                let bindings =
+                  List.concat (List.map2_exn ~f:(fun x y -> [x; y]) keys_list values)
+                in
+                Exp.Collection {kind= Map; values= bindings; unpack= false} )
+        | _ ->
+            L.die InternalError "BUILD_CONST_KEY_MAP: keys must be a tuple" )
     | "BUILD_LIST" ->
         build_collection st arg ~f:(fun values ->
             Exp.Collection {kind= List; values; unpack= false} )

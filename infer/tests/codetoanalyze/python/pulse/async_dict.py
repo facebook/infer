@@ -6,7 +6,7 @@
 import asyncio
 
 
-def fp_int_key_access_ok():
+def int_key_access_ok():
     d = {"ABC": 1, 2: asyncio.sleep(1)}
     return d[2]
 
@@ -16,7 +16,7 @@ def str_key_access_ok():
     return d["DEF"]
 
 
-def int_key_access_bad():
+def fn_int_key_access_bad():
     d = {123: 1, 456: asyncio.sleep(1)}
     return d[123]
 
