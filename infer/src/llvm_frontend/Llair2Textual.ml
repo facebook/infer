@@ -340,8 +340,16 @@ let cmnd_to_instrs block =
   let call_instr_opt =
     match block.term with Call call -> Some (to_textual_call call) | _ -> None
   in
-  let instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) |> List.rev in
-  List.append instrs (Option.to_list call_instr_opt)
+  let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
+  let instrs = List.rev rev_instrs in
+  let first_loc, last_loc =
+    match (instrs, rev_instrs) with
+    | first :: _, last :: _ ->
+        (Textual.Instr.loc first, Textual.Instr.loc last)
+    | _ ->
+        (Textual.Location.Unknown, Textual.Location.Unknown)
+  in
+  (List.append instrs (Option.to_list call_instr_opt), first_loc, last_loc)
 
 
 let rec to_textual_jump_and_succs ~seen_nodes jump =
@@ -396,15 +404,16 @@ and block_to_node_and_succs ~seen_nodes (block : Llair.block) :
   let terminator, typ_opt, succs =
     to_terminator_and_succs ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes) block.term
   in
+  let instrs, first_loc, last_loc = cmnd_to_instrs block in
   let node =
     Textual.Node.
       { label= node_name
       ; ssa_parameters= []
       ; exn_succs= []
       ; last= terminator
-      ; instrs= cmnd_to_instrs block
-      ; last_loc= Textual.Location.Unknown
-      ; label_loc= Textual.Location.Unknown }
+      ; instrs
+      ; last_loc
+      ; label_loc= first_loc }
   in
   (* We add the nodes here to make sure they always get added even in the case of recursive jumps *)
   (node, typ_opt, Textual.Node.Set.add node succs)

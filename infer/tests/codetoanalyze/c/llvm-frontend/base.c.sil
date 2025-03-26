@@ -18,34 +18,34 @@ declare main() : int
 
 define test3(var0: *ptr_elt) : int {
   local var2: *ptr_elt
-  #: @?
+  #: @[0:0]
       n29:*ptr_elt = load &var0 @[0:0]
       store &var2 <- n29:*ptr_elt @[0:0]
       n34:*ptr_elt = load &var2 @[0:0]
       n35:int = load n34 @[0:0]
-      ret n35 @?
+      ret n35 @[0:0]
       
 } @?
 
 define test2() : int {
   local var2: int, var1: int
-  #: @?
+  #: @[0:0]
       n25:int = load &var1 @[0:0]
       n26:int = load &var2 @[0:0]
-      ret __sil_plusa_int(n25, n26) @?
+      ret __sil_plusa_int(n25, n26) @[0:0]
       
 } @?
 
 define test1(var0: int, var1: int) : int {
   local var4: int, var3: int
-  #: @?
+  #: @[0:0]
       n9:int = load &var0 @[0:0]
       store &var3 <- n9:int @[0:0]
       n10:int = load &var1 @[0:0]
       store &var4 <- n10:int @[0:0]
       n17:int = load &var3 @[0:0]
       n18:int = load &var4 @[0:0]
-      ret __sil_plusa_int(n17, n18) @?
+      ret __sil_plusa_int(n17, n18) @[0:0]
       
 } @?
 
@@ -57,9 +57,9 @@ define test() : *int {
 
 define main() : int {
   local var1: int
-  #: @?
+  #: @[0:0]
       store &var1 <- 0:int @[0:0]
-      ret 0 @?
+      ret 0 @[0:0]
       
 } @?
 
