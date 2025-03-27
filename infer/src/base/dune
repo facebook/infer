@@ -6,7 +6,8 @@
 (ocamllex ToplLexer)
 
 (menhir
- (flags --unused-token INDENT --explain)
+ (explain true)
+ (flags --unused-token INDENT)
  (modules ToplParser))
 
 (library

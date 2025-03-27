@@ -20,4 +20,5 @@
 
 (menhir
  (modules TextualMenhir)
- (flags --explain --unused-tokens))
+ (explain true)
+ (flags --unused-tokens))
