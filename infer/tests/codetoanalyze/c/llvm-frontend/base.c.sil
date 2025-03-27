@@ -12,8 +12,8 @@ declare foo() : *ptr_elt
 
 define main() : int {
   local var1: int
-  #: @[0:0]
-      store &var1 <- 0:int @[0:0]
+  #: @[11:0]
+      store &var1 <- 0:int @[11:0]
       ret 0 @[13:3]
       
 } @?
@@ -26,11 +26,11 @@ define test() : *int {
 
 define test1(var0: int, var1: int) : int {
   local var4: int, var3: int
-  #: @[0:0]
-      n9:int = load &var0 @[0:0]
-      store &var3 <- n9:int @[0:0]
-      n10:int = load &var1 @[0:0]
-      store &var4 <- n10:int @[0:0]
+  #: @[22:0]
+      n9:int = load &var0 @[22:0]
+      store &var3 <- n9:int @[22:0]
+      n10:int = load &var1 @[22:0]
+      store &var4 <- n10:int @[22:0]
       n19:int = load &var3 @[24:10]
       n20:int = load &var4 @[24:15]
       ret __sil_plusa_int(n19, n20) @[24:3]
@@ -48,9 +48,9 @@ define test2() : int {
 
 define test3(var0: *ptr_elt) : int {
   local var2: *ptr_elt
-  #: @[0:0]
-      n37:*ptr_elt = load &var0 @[0:0]
-      store &var2 <- n37:*ptr_elt @[0:0]
+  #: @[36:0]
+      n37:*ptr_elt = load &var0 @[36:0]
+      store &var2 <- n37:*ptr_elt @[36:0]
       n43:*ptr_elt = load &var2 @[38:11]
       n44:int = load n43 @[38:10]
       ret n44 @[38:3]
