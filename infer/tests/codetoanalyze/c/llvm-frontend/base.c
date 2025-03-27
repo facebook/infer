@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include "my_lib.h"
 #include <stdlib.h>
 
 int main() { return 0; }
@@ -18,3 +19,9 @@ int test2() {
 }
 
 int test3(int* ptr) { return *ptr; }
+
+int foo();
+
+int test4() { return foo(); }
+
+int test5() { return bar(); }

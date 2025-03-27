@@ -426,6 +426,17 @@ let func_to_nodes func =
   (typ_opt, Textual.Node.Set.to_list nodes)
 
 
+let is_undefined func =
+  let entry = func.Llair.entry in
+  match entry.term with
+  | Unreachable ->
+      String.equal entry.lbl "undefined" && List.is_empty (StdUtils.iarray_to_list entry.cmnd)
+  | _ ->
+      false
+
+
+type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
+
 let translate_llair_functions functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals_, formals_types = to_formals func in
@@ -448,17 +459,20 @@ let translate_llair_functions functions =
       Textual.ProcDecl.
         {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
     in
-    let locals =
-      VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) !current_locals []
-    in
-    Textual.ProcDesc.
-      { params= formals_
-      ; locals
-      ; procdecl
-      ; start= block_to_node_name func.Llair.entry
-      ; nodes
-      ; exit_loc= Unknown (* TODO: get this location *) }
-    :: proc_descs
+    if is_undefined func then ProcDecl procdecl :: proc_descs
+    else
+      let locals =
+        VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) !current_locals []
+      in
+      ProcDesc
+        Textual.ProcDesc.
+          { params= formals_
+          ; locals
+          ; procdecl
+          ; start= block_to_node_name func.Llair.entry
+          ; nodes
+          ; exit_loc= Unknown (* TODO: get this location *) }
+      :: proc_descs
   in
   let values = FuncName.Map.to_list functions in
   List.fold values ~f:function_to_formal ~init:[]
@@ -466,12 +480,16 @@ let translate_llair_functions functions =
 
 let translate sourcefile (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let globals = translate_llair_globals llair_program.Llair.globals in
-  let proc_descs = translate_llair_functions llair_program.Llair.functions in
-  let proc_decls =
-    List.map ~f:(fun Textual.ProcDesc.{procdecl} -> Textual.Module.Procdecl procdecl) proc_descs
-  in
-  let proc_desc_declarations =
-    List.map ~f:(fun proc_desc -> Textual.Module.Proc proc_desc) proc_descs
+  let procs = translate_llair_functions llair_program.Llair.functions in
+  let procs =
+    List.fold
+      ~f:(fun procs proc ->
+        match proc with
+        | ProcDecl proc_decl ->
+            Textual.Module.Procdecl proc_decl :: procs
+        | ProcDesc proc_desc ->
+            Textual.Module.Proc proc_desc :: procs )
+      procs ~init:[]
   in
   let globals = List.map ~f:(fun global -> Textual.Module.Global global) globals in
   let structs =
@@ -479,8 +497,7 @@ let translate sourcefile (llair_program : Llair.Program.t) lang : Textual.Module
       ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
       (Textual.TypeName.Map.bindings !Llair2TextualType.structMap)
   in
-  let decls = List.append proc_decls globals in
-  let decls = List.append decls proc_desc_declarations in
+  let decls = List.append procs globals in
   let decls = List.append decls structs in
   let attrs = [Textual.Attr.mk_source_language lang] in
   Textual.Module.{attrs; decls; sourcefile}
