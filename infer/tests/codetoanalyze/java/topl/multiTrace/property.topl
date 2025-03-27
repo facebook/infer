@@ -1,0 +1,5 @@
+property Taint
+  prefix "Flows"
+  start -> start: *
+  start -> tracking: "foo.*"(Ret) => x := Ret
+  tracking -> error: "bar"(Arg, Ret) when x == Arg

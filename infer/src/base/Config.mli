@@ -349,6 +349,8 @@ val debug_mode : bool
 
 val deduplicate : bool
 
+val deduplicate_by : [`Location | `Trace]
+
 val default_hack_builtin_models_rel : string
 
 val dependency_mode : bool

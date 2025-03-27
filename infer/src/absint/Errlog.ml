@@ -15,6 +15,7 @@ type node_tag =
   | Exception of Typ.name
   | Procedure_start of Procname.t
   | Procedure_end of Procname.t
+[@@deriving compare]
 
 (** Element of a loc trace *)
 type loc_trace_elem =
@@ -22,6 +23,7 @@ type loc_trace_elem =
   ; lt_loc: Location.t  (** source location at the current step in the trace *)
   ; lt_description: string  (** description of the current step in the trace *)
   ; lt_node_tags: node_tag list  (** tags describing the node at the current location *) }
+[@@deriving compare]
 
 let pp_loc_trace_elem fmt {lt_level; lt_loc} = F.fprintf fmt "%d %a" lt_level Location.pp lt_loc
 
@@ -39,7 +41,7 @@ let make_trace_element lt_level lt_loc lt_description lt_node_tags =
 
 
 (** Trace of locations *)
-type loc_trace = loc_trace_elem list
+type loc_trace = loc_trace_elem list [@@deriving compare]
 
 let concat_traces labelled_traces =
   List.fold_right labelled_traces ~init:[] ~f:(fun labelled_trace res ->
@@ -88,7 +90,19 @@ type err_data =
   ; extras: Jsonbug_t.extra option (* NOTE: Please consider adding new fields as part of extras *)
   ; autofix: Jsonbug_t.autofix list }
 
-let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
+let compare_err_data =
+  let compare_err_data_by_location err_data1 err_data2 =
+    Location.compare err_data1.loc err_data2.loc
+  in
+  let compare_err_data_by_trace err_data1 err_data2 =
+    compare_loc_trace err_data1.loc_trace err_data2.loc_trace
+  in
+  match Config.deduplicate_by with
+  | `Location ->
+      compare_err_data_by_location
+  | `Trace ->
+      compare_err_data_by_trace
+
 
 module ErrDataSet = (* set err_data with no repeated loc *)
 Stdlib.Set.Make (struct
@@ -175,8 +189,8 @@ let pp_html source path_to_root fmt (errlog : t) =
   List.iter IssueType.all_of_severity ~f:pp
 
 
-(** Add an error description to the error log unless there is one already at the same node +
-    session; return true if added *)
+(** Add an error description to the error log unless there is one already at the same location (or
+    with the same trace, depending on Config.deduplicate_by); return true if added *)
 let add_issue tbl err_key (err_datas : ErrDataSet.t) : bool =
   try
     let current_eds = ErrLogHash.find tbl err_key in

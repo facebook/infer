@@ -81,6 +81,14 @@ OPTIONS
            Deactivates: Apply issue-specific deduplication during analysis
            and/or reporting. (Conversely: --deduplicate)
 
+       --deduplicate-by { location | trace }
+           Controls a generic deduplication mechanism. Issue description and
+           issue type are always taken into account when deduplicating for
+           reporting. In addition, one can also take into account the
+           location OR the trace. Using the trace to de-duplicate can result
+           in multiple distinct traces being reported at the same location,
+           which is not possible with the default deduplication by location.
+
        --differential-filter-files string
            Specify the file containing the list of source files for which a
            differential report is desired. Source files should be specified

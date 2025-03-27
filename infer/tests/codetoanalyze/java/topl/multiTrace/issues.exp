@@ -1,0 +1,2 @@
+codetoanalyze/java/topl/multiTrace/Flows.java, Flows.test(int):void, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to Flows.get(int):java.lang.Object,call to Flows.foo1():java.lang.Object,call to Flows.bar(java.lang.Object):void]
+codetoanalyze/java/topl/multiTrace/Flows.java, Flows.test(int):void, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to Flows.get(int):java.lang.Object,call to Flows.foo2():java.lang.Object,call to Flows.bar(java.lang.Object):void]

@@ -798,6 +798,7 @@ and ( biabduction_write_dotty
     , debug_level_capture
     , debug_level_report
     , deduplicate
+    , deduplicate_by
     , developer_mode
     , filtering
     , frontend_tests
@@ -833,6 +834,16 @@ and ( biabduction_write_dotty
         InferCommand.
           [(Analyze, manual_generic); (Report, manual_generic); (ReportDiff, manual_generic)]
       "Apply issue-specific deduplication during analysis and/or reporting."
+  and deduplicate_by =
+    CLOpt.mk_symbol ~long:"deduplicate-by"
+      ~symbols:[("location", `Location); ("trace", `Trace)]
+      ~eq:PolyVariantEqual.( = ) ~default:`Location
+      ~in_help:InferCommand.[(Report, manual_generic)]
+      "Controls a generic deduplication mechanism. Issue description and issue type are always \
+       taken into account when deduplicating for reporting. In addition, one can also take into \
+       account the location OR the trace. Using the trace to de-duplicate can result in multiple \
+       distinct traces being reported at the same location, which is not possible with the default \
+       deduplication by location."
   and debug_level_analysis =
     CLOpt.mk_int ~long:"debug-level-analysis" ~default:0 ~in_help:all_generic_manuals
       "Debug level for the analysis. See $(b,--debug-level) for accepted values."
@@ -936,6 +947,7 @@ and ( biabduction_write_dotty
   , debug_level_capture
   , debug_level_report
   , deduplicate
+  , deduplicate_by
   , developer_mode
   , filtering
   , frontend_tests
@@ -4210,6 +4222,8 @@ and debug_level_report = !debug_level_report
 and debug_mode = !debug
 
 and deduplicate = !deduplicate
+
+and deduplicate_by = !deduplicate_by
 
 and dependency_mode = !dependencies
 
