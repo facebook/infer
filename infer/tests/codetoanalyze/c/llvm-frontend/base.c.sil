@@ -14,13 +14,13 @@ define main() : int {
   local var1: int
   #: @[0:0]
       store &var1 <- 0:int @[0:0]
-      ret 0 @[0:0]
+      ret 0 @[13:3]
       
 } @?
 
 define test() : *int {
-  #: @?
-      ret null @?
+  #: @[18:3]
+      ret null @[18:3]
       
 } @?
 
@@ -33,7 +33,7 @@ define test1(var0: int, var1: int) : int {
       store &var4 <- n10:int @[0:0]
       n19:int = load &var3 @[24:10]
       n20:int = load &var4 @[24:15]
-      ret __sil_plusa_int(n19, n20) @[24:15]
+      ret __sil_plusa_int(n19, n20) @[24:3]
       
 } @?
 
@@ -42,7 +42,7 @@ define test2() : int {
   #: @[32:10]
       n33:int = load &var1 @[32:10]
       n34:int = load &var2 @[32:15]
-      ret __sil_plusa_int(n33, n34) @[32:15]
+      ret __sil_plusa_int(n33, n34) @[32:3]
       
 } @?
 
@@ -53,27 +53,27 @@ define test3(var0: *ptr_elt) : int {
       store &var2 <- n37:*ptr_elt @[0:0]
       n43:*ptr_elt = load &var2 @[38:11]
       n44:int = load n43 @[38:10]
-      ret n44 @[38:10]
+      ret n44 @[38:3]
       
 } @?
 
 define test4() : *ptr_elt {
-  #: @?
+  #: @[46:10]
       n48 = foo() @[46:10]
-      jmp 1::ret @?
+      jmp 1::ret @[46:10]
       
-  #1::ret: @?
-      ret n48 @?
+  #1::ret: @[46:3]
+      ret n48 @[46:3]
       
 } @?
 
 define test5() : *ptr_elt {
-  #: @?
+  #: @[52:10]
       n53 = bar() @[52:10]
-      jmp 1::ret @?
+      jmp 1::ret @[52:10]
       
-  #1::ret: @?
-      ret n53 @?
+  #1::ret: @[52:3]
+      ret n53 @[52:3]
       
 } @?
 

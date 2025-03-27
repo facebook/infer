@@ -345,9 +345,9 @@ let cmnd_to_instrs block =
   let first_loc, last_loc =
     match (instrs, rev_instrs) with
     | first :: _, last :: _ ->
-        (Textual.Instr.loc first, Textual.Instr.loc last)
+        (Some (Textual.Instr.loc first), Some (Textual.Instr.loc last))
     | _ ->
-        (Textual.Location.Unknown, Textual.Location.Unknown)
+        (None, None)
   in
   (List.append instrs (Option.to_list call_instr_opt), first_loc, last_loc)
 
@@ -366,18 +366,23 @@ let rec to_textual_jump_and_succs ~seen_nodes jump =
   (Textual.Terminator.Jump [node_call], None, succs)
 
 
-and to_terminator_and_succs ~seen_nodes term =
+and to_terminator_and_succs ~seen_nodes term :
+    (Textual.Terminator.t * Textual.Typ.t option * Textual.Node.Set.t) * Textual.Location.t option =
   let no_succs = Textual.Node.Set.empty in
   match term with
-  | Call call ->
-      to_textual_jump_and_succs ~seen_nodes call.return
-  | Return {exp= Some exp} ->
+  | Call {return; loc} ->
+      let loc = to_textual_loc loc in
+      (to_textual_jump_and_succs ~seen_nodes return, Some loc)
+  | Return {exp= Some exp; loc} ->
       let textual_exp, textual_typ_opt = to_textual_exp exp in
-      (Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs)
-  | Return {exp= None} ->
-      (Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), None, no_succs)
-  | Throw {exc} ->
-      (Textual.Terminator.Throw (to_textual_exp exc |> fst), None, no_succs)
+      let loc = to_textual_loc loc in
+      ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc)
+  | Return {exp= None; loc} ->
+      let loc = to_textual_loc loc in
+      ((Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), None, no_succs), Some loc)
+  | Throw {exc; loc} ->
+      let loc = to_textual_loc loc in
+      ((Textual.Terminator.Throw (to_textual_exp exc |> fst), None, no_succs), Some loc)
   | Switch {key; tbl; els} -> (
     match StdUtils.iarray_to_list tbl with
     | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
@@ -387,24 +392,40 @@ and to_terminator_and_succs ~seen_nodes term =
         let then_, _, els_nodes = to_textual_jump_and_succs ~seen_nodes els in
         let term = Textual.Terminator.If {bexp; then_; else_} in
         let nodes = Textual.Node.Set.union zero_nodes els_nodes in
-        (term, None, nodes)
+        ((term, None, nodes), None)
     | [] when Exp.equal key Exp.false_ ->
         (* goto *)
-        to_textual_jump_and_succs ~seen_nodes els
+        (to_textual_jump_and_succs ~seen_nodes els, None)
     | _ ->
-        (Textual.Terminator.Unreachable, None, no_succs (* TODO translate Switch *)) )
+        ((Textual.Terminator.Unreachable, None, no_succs), None (* TODO translate Switch *)) )
   | Iswitch _ | Abort _ | Unreachable ->
-      (Textual.Terminator.Unreachable, None, no_succs)
+      ((Textual.Terminator.Unreachable, None, no_succs), None)
 
 
 (* TODO still various parts of the node left to be translated *)
 and block_to_node_and_succs ~seen_nodes (block : Llair.block) :
     Textual.Node.t * Textual.Typ.t option * Textual.Node.Set.t =
   let node_name = block_to_node_name block in
-  let terminator, typ_opt, succs =
+  let (terminator, typ_opt, succs), term_loc_opt =
     to_terminator_and_succs ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes) block.term
   in
   let instrs, first_loc, last_loc = cmnd_to_instrs block in
+  let last_loc =
+    match term_loc_opt with
+    | Some loc ->
+        loc
+    | None ->
+        Option.value last_loc ~default:Textual.Location.Unknown
+  in
+  let first_loc =
+    match first_loc with
+    | Some loc ->
+        loc
+    | None when List.is_empty (StdUtils.iarray_to_list block.cmnd) ->
+        last_loc
+    | _ ->
+        Textual.Location.Unknown
+  in
   let node =
     Textual.Node.
       { label= node_name
