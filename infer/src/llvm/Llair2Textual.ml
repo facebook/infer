@@ -8,7 +8,7 @@
 open! IStd
 open Llair
 open Llair2TextualType
-module F = Format
+module ProcState = Llair2TextualProcState
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 
@@ -17,37 +17,13 @@ let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   ; name= Textual.ProcName.of_string name }
 
 
-type proc_state =
-  { qualified_name: Textual.QualifiedProcName.t
-  ; loc: Textual.Location.t
-  ; mutable locals: Textual.Typ.annotated VarMap.t
-  ; mutable formals: Textual.Typ.annotated VarMap.t
-  ; mutable ids: Textual.Typ.annotated IdentMap.t }
-
-let pp_ids fmt current_ids =
-  F.fprintf fmt "%a"
-    (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:Textual.Typ.pp_annotated))
-    (IdentMap.bindings current_ids)
-[@@warning "-unused-value-declaration"]
-
-
-let update_current_locals ~proc_state varname typ =
-  proc_state.locals <- VarMap.add varname typ proc_state.locals
-
-
-let update_current_formals ~proc_state varname typ =
-  proc_state.formals <- VarMap.add varname typ proc_state.formals
-
-
-let update_current_ids ~proc_state id typ = proc_state.ids <- IdentMap.add id typ proc_state.ids
-
 let string_name_of_reg reg = Format.sprintf "var%s" (Reg.name reg)
 
 let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
 
 let reg_to_id reg = Textual.Ident.of_int (Reg.id reg)
 
-let reg_to_textual_var ~proc_state reg =
+let reg_to_textual_var ~(proc_state : ProcState.t) reg =
   let reg_var_name = reg_to_var_name reg in
   if VarMap.mem reg_var_name proc_state.formals || VarMap.mem reg_var_name proc_state.locals then
     Textual.Exp.Lvar reg_var_name
@@ -66,7 +42,7 @@ let is_loc_default loc =
       false
 
 
-let to_textual_loc_instr ~proc_state loc =
+let to_textual_loc_instr ~(proc_state : ProcState.t) loc =
   let loc = to_textual_loc loc in
   if is_loc_default loc then proc_state.loc else loc
 
@@ -259,21 +235,6 @@ let to_textual_builtin ~proc_state return name args loc =
   to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
 
 
-let update_local_or_formal_type ~proc_state exp typ =
-  match exp with
-  | Textual.Exp.Lvar var_name when VarMap.mem var_name proc_state.locals ->
-      let typ = Textual.Typ.mk_without_attributes typ in
-      update_current_locals ~proc_state var_name typ
-  | Textual.Exp.Lvar var_name when VarMap.mem var_name proc_state.formals ->
-      let typ = Textual.Typ.mk_without_attributes typ in
-      update_current_formals ~proc_state var_name typ
-  | Textual.Exp.Var id when IdentMap.mem id proc_state.ids ->
-      let new_ptr_typ = Textual.Typ.Ptr typ in
-      update_current_ids ~proc_state id (Textual.Typ.mk_without_attributes new_ptr_typ)
-  | _ ->
-      ()
-
-
 let cmnd_to_instrs ~proc_state block =
   let to_instr textual_instrs inst =
     match inst with
@@ -281,9 +242,9 @@ let cmnd_to_instrs ~proc_state block =
         let loc = to_textual_loc_instr ~proc_state loc in
         let id = reg_to_id reg in
         let reg_typ = to_textual_typ (Reg.typ reg) in
-        update_current_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
+        ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
         let exp, _ = to_textual_exp ~proc_state ptr in
-        update_local_or_formal_type ~proc_state exp reg_typ ;
+        ProcState.update_local_or_formal_type ~proc_state exp reg_typ ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= Some reg_typ; loc} in
         textual_instr :: textual_instrs
     | Store {ptr; exp; loc} ->
@@ -295,7 +256,7 @@ let cmnd_to_instrs ~proc_state block =
               let id = Textual.Ident.of_int id in
               let new_exp2 = Textual.Exp.Var id in
               let reg_typ = to_textual_typ typ in
-              update_current_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
+              ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
               let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= Some reg_typ; loc} in
               (new_exp2, [exp2_instr])
           | _ ->
@@ -305,7 +266,7 @@ let cmnd_to_instrs ~proc_state block =
         let typ_exp2 =
           Option.map
             ~f:(fun typ_exp2 ->
-              update_local_or_formal_type ~proc_state exp1 typ_exp2 ;
+              ProcState.update_local_or_formal_type ~proc_state exp1 typ_exp2 ;
               typ_exp2 )
             typ_exp2
         in
@@ -314,7 +275,7 @@ let cmnd_to_instrs ~proc_state block =
     | Alloc {reg} ->
         let reg_var_name = reg_to_var_name reg in
         let ptr_typ = to_annotated_textual_typ (Reg.typ reg) in
-        update_current_locals ~proc_state reg_var_name ptr_typ ;
+        ProcState.update_locals ~proc_state reg_var_name ptr_typ ;
         textual_instrs
     | Free _ ->
         textual_instrs
@@ -486,7 +447,7 @@ let translate_llair_functions functions =
         ~f:(fun formals varname typ -> Textual.VarName.Map.add varname typ formals)
         formals_list formals_types ~init:Textual.VarName.Map.empty
     in
-    let proc_state =
+    let proc_state : ProcState.t =
       {qualified_name; loc= proc_loc; formals= formals_; locals= VarMap.empty; ids= IdentMap.empty}
     in
     let typ_opt, nodes = func_to_nodes ~proc_state func in
