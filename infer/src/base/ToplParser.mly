@@ -17,6 +17,7 @@
 %token ARRAYWRITE
 %token ARROW
 %token ARROWARROW
+%token AT
 %token BANG
 %token COLON
 %token COLONEQ
@@ -39,6 +40,7 @@
 %token RP
 %token SEMI
 %token STAR
+%token TILDE
 %token WHEN
 
 %start <ToplAst.t list> properties
@@ -64,13 +66,13 @@ state: i=identifier { i }
 
 label:
     STAR { None }
-  | procedure_name_regex=regex arg_types=arguments_pattern?
+  | annot_pattern=annot_pattern? procedure_name_regex=regex arg_types=arguments_pattern?
     condition=condition? action=action?
     { let condition = Option.value ~default:[] condition in
       let action = Option.value ~default:[] action in
       let arguments = Option.map ~f:(List.map ~f:fst) arg_types in
       let type_regexes = Option.map ~f:(List.map ~f:snd) arg_types in
-      let pattern = ToplAst.CallPattern {procedure_name_regex; type_regexes} in
+      let pattern = ToplAst.CallPattern {annot_pattern; procedure_name_regex; type_regexes} in
       Some ToplAst.{ arguments; condition; action; pattern } }
   | ARRAYWRITE LP arr=UID COMMA index=UID RP
     condition=condition? action=action?
@@ -78,6 +80,13 @@ label:
       let condition = Option.value ~default:[] condition in
       let action = Option.value ~default:[] action in
       Some ToplAst.{ arguments; condition; action; pattern= ToplAst.ArrayWritePattern } }
+
+annot_pattern:
+    n=TILDE? annot_regex=preceded(AT, regex)
+      {
+        let annot_negated = Option.is_some n in
+        {ToplAst.annot_negated; annot_regex}
+      }
 
 condition: WHEN ps=condition_expression { ps }
 
@@ -114,10 +123,7 @@ arguments_pattern:
     LP a=separated_list(COMMA, argument_typeopt) RP { a }
 
 argument_typeopt:
-    a=UID t=colon_regex? { (a, t) }
-
-colon_regex:
-    COLON r=regex { r }
+    a=UID t=preceded(COLON, regex)? { (a, t) }
 
 regex:
     i=identifier { ToplAst.mk_regex false i }

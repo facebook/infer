@@ -695,7 +695,7 @@ let static_match_array_write arr index label : tcontext option =
 
 let typ_void = Typ.{desc= Tvoid; quals= mk_type_quals ()}
 
-let static_match_call tenv return arguments procname label : tcontext option =
+let static_match_call tenv return arguments (procname : Procname.t) label : tcontext option =
   let cnot a b = (* "controlled not", aka xor *) if a then not b else b in
   let is_match {ToplAst.re; re_negated} text = cnot re_negated (Str.string_match re text 0) in
   let is_match_type_base re typ = is_match re (Fmt.to_to_string pp_type typ) in
@@ -727,24 +727,38 @@ let static_match_call tenv return arguments procname label : tcontext option =
         cnot re.ToplAst.re_negated (is_match_type map {re with ToplAst.re_negated= false} typ)
   in
   let match_name () : bool =
+    let is_match_annotation {ToplAst.annot_negated; annot_regex} =
+      match procname with
+      | Java _ ->
+          let check_annot {Annot.class_name} = is_match annot_regex class_name in
+          let check_annot_item ia = Annotations.ia_has_annotation_with ia check_annot in
+          let class_has_annotation () =
+            PatternMatch.Java.check_class_attributes check_annot_item tenv procname
+          in
+          let proc_has_annotation () =
+            Annotations.pname_has_return_annot procname check_annot_item
+          in
+          cnot annot_negated (proc_has_annotation () || class_has_annotation ())
+      | _ ->
+          false
+    in
+    let is_match_types regexes =
+      let types =
+        let argument_types = List.map ~f:snd arguments in
+        let return_type = Option.value_map ~default:typ_void ~f:snd return in
+        argument_types @ [return_type]
+      in
+      match List.for_all2 regexes types ~f:(is_match_type Fn.id) with
+      | Ok ok ->
+          ok
+      | Unequal_lengths ->
+          false
+    in
     match label.ToplAst.pattern with
-    | CallPattern {procedure_name_regex; type_regexes} -> (
-        is_match procedure_name_regex (Fmt.to_to_string pp_procname procname)
-        &&
-        match type_regexes with
-        | None ->
-            true
-        | Some regexes -> (
-            let types =
-              let argument_types = List.map ~f:snd arguments in
-              let return_type = Option.value_map ~default:typ_void ~f:snd return in
-              argument_types @ [return_type]
-            in
-            match List.for_all2 regexes types ~f:(is_match_type Fn.id) with
-            | Ok ok ->
-                ok
-            | Unequal_lengths ->
-                false ) )
+    | CallPattern {annot_pattern; procedure_name_regex; type_regexes} ->
+        Option.value_map ~default:true ~f:is_match_annotation annot_pattern
+        && is_match procedure_name_regex (Fmt.to_to_string pp_procname procname)
+        && Option.value_map ~default:true ~f:is_match_types type_regexes
     | _ ->
         false
   in

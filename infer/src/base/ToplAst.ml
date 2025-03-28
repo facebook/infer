@@ -40,8 +40,13 @@ type regex = {re: (Str.regexp[@show.opaque]); re_negated: bool; re_text: string}
 
 let mk_regex re_negated re_text = {re= Str.regexp re_text; re_negated; re_text}
 
+type annot_pattern = {annot_negated: bool; annot_regex: regex} [@@deriving show]
+
 type call_pattern =
-  {procedure_name_regex: regex; type_regexes: regex option list option (* [None] means anything *)}
+  { (* [None] matches anything; i.e., does no filtering *)
+    annot_pattern: annot_pattern option
+  ; procedure_name_regex: regex
+  ; type_regexes: regex option list option }
 [@@deriving show]
 
 type label_pattern = ArrayWritePattern | CallPattern of call_pattern [@@deriving show]

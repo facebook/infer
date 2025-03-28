@@ -101,6 +101,7 @@ let make properties =
           ToplAst.mk_regex re_negated ("^\\(" ^ String.concat ps ^ "\\)" ^ re_text ^ "\\((\\|$\\)")
       in
       let prefix_pattern (label_pattern : ToplAst.label_pattern) =
+        (* TODO: Consider adding the prefix to the annotation_regex *)
         match label_pattern with
         | CallPattern call_pattern ->
             ToplAst.CallPattern

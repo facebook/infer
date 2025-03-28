@@ -36,6 +36,7 @@ rule raw_token = parse
   | ' '+ { raw_token lexbuf }
   | "->" { ARROW }
   | "=>" { ARROWARROW }
+  | '@'  { AT }
   | "~~>"{ LEADSTO }
   | ':'  { COLON }
   | ":=" { COLONEQ }
@@ -55,6 +56,7 @@ rule raw_token = parse
   | "!=" { NE }
   | "&&" { AND }
   | "!"  { BANG }
+  | "~"  { TILDE }
   | "#ArrayWrite" { ARRAYWRITE }
   | "prefix" { PREFIX }
   | "property" { PROPERTY }

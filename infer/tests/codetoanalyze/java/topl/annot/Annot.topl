@@ -1,0 +1,5 @@
+property Annot
+  start -> start: *
+  start -> track: ~@".*Safe" ".*sourceUnlessSafe.*"(This, Ret) => dirty := Ret
+  start -> track: @".*Danger" ".*sourceIfDanger.*"(This, Ret) => dirty := Ret
+  track -> error: ".*sink"(Arg, VoidRet) when dirty == Arg
