@@ -16,6 +16,7 @@ module NodeSet = SpecializedProcname.Set
 let get_missed_captures ~get_summary entry_nodes =
   let from_execution = function
     | ExecutionDomain.ContinueProgram summary
+    | ExecutionDomain.InfiniteProgram summary
     | ExceptionRaised summary
     | ExitProgram summary
     | AbortProgram summary ->

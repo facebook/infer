@@ -23,3 +23,6 @@ val initial : t
 
 val post_exec_instr : t -> t
 (** call this after each step of the symbolic execution to update the path information *)
+
+val back_edge : t list -> t list -> int -> t list * int
+(** pulse-infinite do nothing but needed for compilation *)

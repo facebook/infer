@@ -63,8 +63,9 @@ let realloc_common ~null_case ~desc allocator pointer size : model =
          let<*> exec_state = result in
          match (exec_state : ExecutionDomain.t) with
          | ContinueProgram astate ->
-             alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate
-               non_disj
+            alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate
+              non_disj
+         | InfiniteProgram _
          | ExceptionRaised _
          | ExitProgram _
          | AbortProgram _

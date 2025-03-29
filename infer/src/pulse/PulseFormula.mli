@@ -18,11 +18,99 @@ module Var :
      and module Set = PulseAbstractValue.Set
      and module Map = PulseAbstractValue.Map
 
+(* Pulse-infinite added *)
+(** Linear Arithmetic *)
+module LinArith : sig
+  (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
+  type t [@@deriving compare, yojson_of, equal]
+end
+
+module Term : sig
+  type t =
+    | Const of Q.t
+    | String of string
+    | Var of Var.t
+    | Procname of Procname.t
+    | FunctionApplication of {f: t; actuals: t list}
+    | Linear of LinArith.t
+    | Add of t * t
+    | Minus of t
+    | LessThan of t * t
+    | LessEqual of t * t
+    | Equal of t * t
+    | NotEqual of t * t
+    | Mult of t * t
+    | DivI of t * t
+    | DivF of t * t
+    | And of t * t
+    | Or of t * t
+    | Not of t
+    | Mod of t * t
+    | BitAnd of t * t
+    | BitOr of t * t
+    | BitNot of t
+    | BitShiftLeft of t * t
+    | BitShiftRight of t * t
+    | BitXor of t * t
+    | StringConcat of t * t
+    | IsInstanceOf of {var: Var.t; typ: Typ.t; nullable: bool}
+    | IsInt of t
+ [@@deriving compare, equal, yojson_of]
+
+ module Set : Stdlib.Set.S [@@deriving compare]
+             
+end
+     
+module Atom : sig
+  type t =
+    | LessEqual of Term.t * Term.t
+    | LessThan of Term.t * Term.t
+    | Equal of Term.t * Term.t
+    | NotEqual of Term.t * Term.t
+   [@@deriving compare, equal, yojson_of]
+
+  val equal : Term.t -> Term.t -> t
+                
+  module Set : Stdlib.Set.S [@@deriving compare]
+  module Map : Stdlib.Map.S [@@deriving compare]
+end
+
+module Formula : sig
+  type t [@@deriving compare, equal, yojson_of]
+end
+
+type t =
+  { conditions: int Atom.Map.t
+        (** collection of conditions that have been assumed (via [PRUNE] CFG nodes) along the path.
+            Note that these conditions are *not* normalized w.r.t. [phi]: [phi] already contains
+            them so normalization w.r.t. [phi] would make them trivially true most of the time. *)
+  ; phi: Formula.t
+        (** the arithmetic constraints of the current symbolic state; true in both the pre and post
+            since abstract values [Var.t] have immutable semantics *)
+  }
+[@@deriving compare, equal, yojson_of]
+
+val extract_path_cond : t -> int Atom.Map.t
+
+val extract_term_cond : t -> Atom.Set.t
+
+val extract_term_cond2 : t -> Term.Set.t
+
+val map_is_empty : int Atom.Map.t -> bool
+
+val set_is_empty : Atom.Set.t -> bool
+
+val termset_is_empty : Term.Set.t -> bool  
+
+val formula_is_empty : t -> bool
+(* End pulse-infinite *)
+
+               
 (** {2 Arithmetic solver}
 
     Build formulas from SIL and tries to decide if they are (mostly un-)satisfiable. *)
 
-type t [@@deriving compare, equal, yojson_of]
+(* type t [@@deriving compare, equal, yojson_of] *)
 
 val pp : F.formatter -> t -> unit
 
@@ -86,8 +174,7 @@ val and_equal_string_concat : Var.t -> operand -> operand -> t -> (t * new_eqs) 
 
 val and_is_int : Var.t -> t -> (t * new_eqs) SatUnsat.t
 
-val prune_binop :
-  ?depth:int -> negated:bool -> Binop.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
+val prune_binop : ?depth:int -> negated:bool -> Binop.t -> ?ifk:bool -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 (** {3 Operations} *)
 
