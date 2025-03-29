@@ -205,6 +205,7 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
+  | InfiniteError of {location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
   | MutualRecursionCycle of
       {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}
@@ -261,7 +262,9 @@ let pp fmt diagnostic =
   | DynamicTypeMismatch {location} ->
       F.fprintf fmt "DynamicTypeMismatch {@[location:%a@]}" Location.pp location
   | ErlangError erlang_error ->
-      ErlangError.pp fmt erlang_error
+     ErlangError.pp fmt erlang_error
+  | InfiniteError {location} ->
+     F.fprintf fmt "InfiniteExecution {@[location:%a@]}" Location.pp location
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
         type_name (Trace.pp ~pp_immediate) trace
@@ -383,10 +386,10 @@ let get_location = function
   | RetainCycle {location}
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
-  | UninitMethod {location}
-  | UnnecessaryCopy {location} ->
-      location
 
+  | UninitMethod {location}
+  | UnnecessaryCopy {location} -> location
+  | InfiniteError {location} -> location
 
 let get_location_instantiated = function
   | UnnecessaryCopy {location_instantiated} ->
@@ -424,6 +427,8 @@ let aborts_execution (path : PathContext.t) = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       not path.is_non_disj
+
+  | InfiniteError _    
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _
@@ -691,7 +696,9 @@ let get_message_and_suggestion diagnostic =
   | ErlangError (If_clause {calling_context= _; location}) ->
       F.asprintf "no true branch in if expression at %a" Location.pp location |> no_suggestion
   | ErlangError (Try_clause {calling_context= _; location}) ->
-      F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
+     F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
+  | InfiniteError {location} ->
+     F.asprintf "Recurring state leading to infinite execution at %a" Location.pp location |> no_suggestion
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       let pp_trace fmt (trace : Trace.t) =
         match trace with
@@ -1183,7 +1190,8 @@ let get_trace = function
       ; Errlog.make_trace_element nesting copied_location
           (F.asprintf "%a here%a" PulseAttribute.CopyOrigin.pp from pp_copy_typ source_typ)
           [] ]
-
+  | InfiniteError {location} ->
+     [Errlog.make_trace_element 0 location "in loop" []]
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
@@ -1191,6 +1199,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_assertion_error
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | InfiniteError {location}, _ ->
+     let _ = location in IssueType.pulse_infinite
   | ConfigUsage _, false ->
       IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->
